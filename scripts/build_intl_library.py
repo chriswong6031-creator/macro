@@ -164,7 +164,12 @@ def _one(ticker: str, close: pd.Series, name: str, sector: str,
     }
 
 
-def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: int = 42) -> str:
+def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: int = 42,
+               zone_lo: float | None = None, zone_hi: float | None = None,
+               zone_state: str | None = None) -> str:
+    # zone_lo/zone_hi/zone_state: optional prophet-card buy-zone band (parity with the
+    # US/CN/HK/CA generators). INTL has no entry gauge today, so no caller passes them —
+    # args absent -> output byte-identical to the band-less render.
     vals = [float(v) for v in vals if v is not None and v == v]
     if len(vals) < 2:
         return ""
@@ -177,7 +182,33 @@ def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: i
 
     pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in (xy(i, v) for i, v in enumerate(vals)))
     lx, ly = xy(n - 1, vals[-1])
-    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" width="100%" height="{h}">'
+    band = ""
+    if zone_hi is not None or zone_lo is not None:
+        # Buy-zone band (prophet-card E1) — same drawing contract as the other boards:
+        # filled low-opacity rect when ACTIVE, dashed edge lines only when PENDING;
+        # price-clamped into the plotted window; lines carry no fill attribute so the
+        # card's hue override recolors them without flattening the band.
+        try:
+            zh = float(zone_hi if zone_hi is not None else zone_lo)
+            zl = float(zone_lo if zone_lo is not None else zone_hi)
+            zl, zh = min(zl, zh), max(zl, zh)
+            if zh > 0 and zh >= lo and zl <= hi:
+                yt = (h - pad) - ((min(zh, hi) - lo) / rng) * (h - 2 * pad) + pad
+                yb = (h - pad) - ((max(zl, lo) - lo) / rng) * (h - 2 * pad) + pad
+                x0 = w * 0.60
+                if zone_state == "active":
+                    band = (f'<rect x="{x0:.1f}" y="{yt:.1f}" width="{w - x0:.1f}" '
+                            f'height="{max(yb - yt, 0.0):.1f}" fill="{color}" '
+                            f'fill-opacity="0.09" stroke="none"/>')
+                band += (f'<line x1="{x0:.1f}" y1="{yt:.1f}" x2="{w}" y2="{yt:.1f}" '
+                         f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                         f'stroke-opacity="0.65"/>'
+                         f'<line x1="{x0:.1f}" y1="{yb:.1f}" x2="{w}" y2="{yb:.1f}" '
+                         f'stroke="{color}" stroke-width="1" stroke-dasharray="4 3" '
+                         f'stroke-opacity="0.65"/>')
+        except (TypeError, ValueError):
+            band = ""  # malformed zone — never a broken spark
+    return (f'<svg class="nch" viewBox="0 0 {w} {h}" preserveAspectRatio="none" width="100%" height="{h}">{band}'
             f'<polyline points="0,{h} {pts} {w},{h}" fill="{color}" opacity="0.12" stroke="none"/>'
             f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="1.7" '
             f'stroke-linejoin="round" stroke-linecap="round"/>'

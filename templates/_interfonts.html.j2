@@ -1,8 +1,14 @@
 {#- Self-hosted Inter @font-face for STANDALONE pages that do not link theme.css
     (pages extending report_base.html.j2 already get these via that link).
     The 6 blocks are copied verbatim from the top of templates/theme.css — keep
-    the two in sync. Relative fonts/ URLs assume the page renders to the site
-    root; every current user does (all builders write flat site/*.html). -#}
+    the two in sync (CI: scripts/check_interfonts_sync.py requires the
+    @font-face lines byte-identical to theme.css's, so no Jinja inside them).
+    Relative fonts/ URLs assume the page renders to the site root; flat
+    site/*.html users get working URLs. seo_base.html.j2 (estate: /tools
+    /learn /blog) includes this at nested depths where fonts/ does NOT
+    resolve — inert there, since those pages also link theme.css, which
+    re-declares the same faces later (last-defined face wins) with
+    stylesheet-relative URLs. -#}
 <style>
 @font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}

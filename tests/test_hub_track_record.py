@@ -140,3 +140,22 @@ def test_by_source_grades_discovery_feeds():
     assert bs["insider_cluster"]["n"] == 3
     assert bs["insider_cluster"]["hit_rate"] == round(2 / 3, 3)
     assert bs["insider_cluster"]["mean_fwd_rel"] == round((0.03 - 0.01 + 0.05) / 3, 4)
+
+
+def test_snapshot_stamps_regime_and_compute_breaks_out_by_regime(tmp_path, monkeypatch):
+    """Regime-conditioning: snapshots carry the day's macro quad; compute breaks performance out
+    by_regime so a signal that only leads in one quadrant can't hide behind a blended IC — and the
+    governor won't demote on one-regime evidence. Rows without a regime stamp are excluded."""
+    import json
+    H.snapshot(_rows(12), _OLD, root=tmp_path, regime="Q1")
+    H.snapshot(_rows(12), _OLD + timedelta(days=1), root=tmp_path, regime="Q3")
+    H.snapshot([{"t": "NORG", "opp": 60, "edge": 0.6, "stage": "early", "lean": 1}],
+               _OLD + timedelta(days=2), root=tmp_path)                     # no regime → excluded from by_regime
+    recs = [json.loads(ln) for ln in
+            (tmp_path / "data" / "hub" / "signal_snapshots.jsonl").read_text().splitlines()]
+    assert {r.get("regime") for r in recs} == {"Q1", "Q3", None}            # stamped where provided
+    monkeypatch.setattr(H, "_covers", lambda *a, **k: True)
+    monkeypatch.setattr(H, "_fwd_rel", lambda t, root, start, h: 0.02)
+    out = H.compute(_NOW, root=tmp_path)
+    br = out["horizons"]["21"]["by_regime"]
+    assert set(br) == {"Q1", "Q3"} and br["Q1"]["n"] == 12                  # None-regime row excluded

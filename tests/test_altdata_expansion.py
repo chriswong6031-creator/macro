@@ -118,8 +118,13 @@ def test_special_situations_handshake_lights_channels():
     assert recs["AAA"]["channels"] == ["activist_13d"]
     assert "Elliott" in recs["AAA"]["channel_detail"]["activist_13d"]
     assert recs["BBB"]["channels"] == ["special_situation"]
-    # the activist 13D handshake outweighs a generic special-situation
-    assert M.CHANNEL_WEIGHTS["activist_13d"] > M.CHANNEL_WEIGHTS["special_situation"]
+    # activist_13d AND special_situation are each GAUNTLET-CAPPED to the context tier by their own
+    # pre-registered event studies (activist_ownership.gate.v1 and special_situation.gate.v1 — both
+    # NEGATIVE/null post-filing drift, scored:false). Both now sit at the news_sentiment floor: the
+    # channels still fire (display/confluence) but neither carries an authority handshake vote.
+    assert M.CHANNEL_WEIGHTS["activist_13d"] <= M.CHANNEL_WEIGHTS["news_sentiment"]
+    assert M.CHANNEL_WEIGHTS["special_situation"] <= M.CHANNEL_WEIGHTS["news_sentiment"]
+    assert M.CHANNEL_WEIGHTS["special_situation"] == M.CHANNEL_WEIGHTS["activist_13d"]
 
 
 def test_special_situations_reader_drops_low_confidence(tmp_path, monkeypatch):
@@ -339,12 +344,19 @@ def test_finnhub_channels():
     signals = {
         "analyst": [{"ticker": "AAA", "bull_ratio": 0.7, "rising": True, "hot": True}],
         "insider_mspr": [{"ticker": "BBB", "mspr": 40.0, "hot": True}],
-        "earnings": [{"ticker": "CCC", "surprise_pct": 12.0, "hot": True}],
+        # earnings is a NON-directional catalyst clock (#3211): metric-only, NO convergence
+        # channel — an imminent earnings date is a watch/timing overlay, never a bullish vote.
+        # Shape mirrors earnings_calendar(): next_date / days_to / (sparse) last_surprise_pct.
+        "earnings": [{"ticker": "CCC", "next_date": "2099-01-15", "days_to": 3, "last_surprise_pct": 12.0}],
     }
     recs = M.channel_records(signals)
     assert recs["AAA"]["channels"] == ["analyst_upgrade_cluster"]
     assert recs["BBB"]["channels"] == ["insider_mspr"]
-    assert recs["CCC"]["channels"] == ["earnings_beat"]
+    # earnings fires no convergence channel; it lands only as the catalyst-clock metric.
+    assert recs["CCC"]["channels"] == []
+    assert recs["CCC"]["days_to_earnings"] == 3
+    assert recs["CCC"]["next_earnings"] == "2099-01-15"
+    assert recs["CCC"]["earnings_surprise_pct"] == 12.0
     # insider_mspr supersedes a weak single insider_buy on the same name
     recs2 = M.channel_records({"insider_mspr": [{"ticker": "DDD", "mspr": 40.0, "hot": True}],
                                "insiders": {"buys": [{"ticker": "DDD", "net_usd": 1.0, "buyers": 1}]}})

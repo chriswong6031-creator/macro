@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ARCHIVED COMPONENT — Options Flow feed (intraday sweeps/blocks ticker)
+     Lifted from the landing Terminal panel when the Terminal section became
+     the full Safari-framed product showcase (2026-07-22). Operator direction:
+     "save options flow for a separate features panel."
+     Self-contained: CSS + markup + JS. Drop into any dark panel; requires
+     only a LANG shim (or delete the zh branch) and CALM/document.hidden gates.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<html lang="en"><head><meta charset="utf-8"><title>Options Flow feed — archived landing component</title>
+<style>
+  body{background:#0b1120;margin:0;padding:40px;font-family:Inter,system-ui,sans-serif}
+  .term-flow{max-width:560px;border:1px solid rgba(160,180,215,.12);border-radius:12px;padding:8px 12px 10px;color:#dbe4f4}
+  .term-flow #flow{height:94px;overflow:hidden}
+  .term-flow .rl{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.14em;color:#6d7f9e;display:flex;align-items:center;gap:7px;margin-bottom:6px}
+  .term-flow .rl i{width:5px;height:5px;border-radius:50%;background:#5eead4;font-style:normal}
+  .fl-row{display:grid;grid-template-columns:44px 96px 46px 1fr auto;gap:8px;align-items:center;height:23.5px;padding:0 2px;font-size:10.5px;color:#93a5c4}
+  .fl-row.enter{animation:flIn .45s cubic-bezier(.2,.8,.3,1)}
+  @keyframes flIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+  .fl-row .tm{font-variant-numeric:tabular-nums;color:#63769a}
+  .fl-row .ty{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;border-radius:5px;padding:2.5px 6px;text-align:center;white-space:nowrap}
+  .fl-row .ty.cs{color:#34d399;background:rgba(52,211,153,.12)}
+  .fl-row .ty.ps{color:#f87171;background:rgba(248,113,113,.12)}
+  .fl-row .ty.bl{color:#7ea8ff;background:rgba(126,168,255,.13)}
+  .fl-row .tk{font-weight:700;color:#e7edf8}
+  .fl-row .pm{font-weight:700;color:#cdd9ee;text-align:right;font-variant-numeric:tabular-nums}
+</style></head><body>
+
+<div class="term-flow">
+  <p class="rl"><i></i>OPTIONS FLOW — INTRADAY</p>
+  <div id="flow"></div>
+</div>
+
+<script>
+/* Shims so the archived component runs standalone; on the live site these
+   came from the page (LANG i18n engine + CALM reduced-motion const). */
+const LANG={cur:()=>'en',onChange:()=>{}};
+const CALM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* — terminal: options-flow feed (verbatim from templates/index.html) — */
+(function(){
+  const box=document.getElementById('flow'); if(!box) return;
+  const TY={'CALL SWEEP':'看涨扫单','PUT SWEEP':'看跌扫单','BLOCK':'大宗交易'};
+  const SD={'ask-side':'扫买','at bid':'压价成交','bought':'买入','mid':'中间价'};
+  const POOL=[['CALL SWEEP','cs','NVDA','$2.4M','ask-side'],['BLOCK','bl','SPY','$18.2M','at bid'],
+    ['CALL SWEEP','cs','XLE','$1.1M','ask-side'],['PUT SWEEP','ps','QQQ','$6.0M','bought'],
+    ['CALL SWEEP','cs','MU','$860K','ask-side'],['PUT SWEEP','ps','ARKK','$540K','bought'],
+    ['BLOCK','bl','IWM','$9.4M','mid'],['CALL SWEEP','cs','MSFT','$1.9M','ask-side']];
+  let md=631, idx=0;
+  function row(anim){ const p=POOL[idx++%POOL.length]; md+=7; const zh=LANG.cur()==='zh';
+    const d=document.createElement('div'); d.className='fl-row'+(anim?' enter':'');
+    d.innerHTML=`<span class="tm">${Math.floor(md/60)}:${String(md%60).padStart(2,'0')}</span><span class="ty ${p[1]}">${zh?TY[p[0]]:p[0]}</span><span class="tk">${p[2]}</span><span>${zh?SD[p[4]]:p[4]}</span><span class="pm tnum">${p[3]}</span>`;
+    box.prepend(d); while(box.children.length>4) box.lastElementChild.remove(); }
+  function seed(){ box.innerHTML=''; md=631; idx=0; row(); row(); row(); row(); }
+  seed();
+  LANG.onChange(seed);
+  if (!CALM) setInterval(()=>{ if(!document.hidden) row(true); },3400);
+})();
+</script>
+</body></html>

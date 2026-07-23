@@ -1,0 +1,15 @@
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:13px/1.5 var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif); margin:0; padding:8px 0 0; }
+  /* premium page wash — soft, static (no repaint churn), theme-var driven so it flips with dark/light/zh */
+  body.page-radar::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(78% 48% at 12% -6%, color-mix(in srgb, var(--warn) 9%, transparent), transparent 60%),
+      radial-gradient(66% 44% at 102% -2%, color-mix(in srgb, var(--info) 8%, transparent), transparent 56%); }
+  /* loading skeleton — replaced the moment radar_panel.js mounts */
+  .rx-skel { max-width:1180px; margin:0 auto; padding:26px 16px; }
+  .rx-skel-bar { height:14px; border-radius:8px; margin:11px 0;
+    background:linear-gradient(90deg, var(--panel2) 0%, color-mix(in srgb,var(--muted) 16%,var(--panel2)) 50%, var(--panel2) 100%);
+    background-size:200% 100%; animation:rxShimmer 1.3s ease-in-out infinite; }
+  @keyframes rxShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  @media (prefers-reduced-motion: reduce) { .rx-skel-bar { animation:none } }

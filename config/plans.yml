@@ -1,0 +1,50 @@
+# config/plans.yml — monetization catalog (MNZ-R12: prices/tiers ship as config, never literals).
+#
+# Single source of truth consumed by:
+#   scripts/stripe_bootstrap.py  — creates the matching Stripe products / prices / entitlement features
+#   app/billing.py               — maps (tier, interval) -> price lookup_key, and price/product -> tier + features
+#   templates/plans.html.j2      — renders the pricing table + computed savings badges (baked at build time)
+#
+# Amounts are integer minor units of `currency` (USD cents). `annual.unit_amount` is the FULL yearly
+# charge; the per-month-equivalent shown on the plans page is DERIVED (annual/12), never stored — so the
+# savings badge `round((monthly - annual/12) / monthly * 100)` recomputes whenever these numbers change
+# (masterplan §2.1 display law). Names are still adjustable before the W4 copy freeze (MNZ-OD1).
+schema: plans_catalog.v1
+currency: usd
+
+# Entitlement features (Stripe Entitlements, GA). `key` is the Stripe feature lookup_key + the value
+# mirrored into user_entitlements.features[]. These gate real surfaces:
+#   site_full             -> the premium HTML/JSON wall (W3)
+#   terminal_live_options -> the Terminal live-options surface (Terminal repo; paid + trialing)
+#   chat_opus             -> the Mastermind Pro (Opus) chat lane
+features:
+  - key: site_full
+    name: Full site access
+  - key: terminal_live_options
+    name: Terminal live options
+  - key: chat_opus
+    name: Mastermind Pro chat (Opus)
+
+# Paid products. `tier` is the string written to user_entitlements.tier and read by
+# brain_gateway._resolve_tier (must match config/brain.yml quota keys: insider | pro).
+products:
+  insider:
+    tier: insider
+    name: Insider
+    trial_days: 7
+    features: [site_full, terminal_live_options]
+    prices:
+      monthly: { lookup_key: insider_monthly, unit_amount: 5900,  interval: month }
+      annual:  { lookup_key: insider_annual,  unit_amount: 58800, interval: year }
+  pro:
+    tier: pro
+    name: Pro
+    trial_days: 7
+    features: [site_full, terminal_live_options, chat_opus]
+    prices:
+      monthly: { lookup_key: pro_monthly, unit_amount: 8900,  interval: month }
+      annual:  { lookup_key: pro_annual,  unit_amount: 82800, interval: year }
+
+# Entitlement precedence — if a customer ever holds overlapping active subscriptions, the
+# highest-ranked tier wins. Also the display order (low -> high) on the plans page.
+tier_rank: [free, insider, pro]

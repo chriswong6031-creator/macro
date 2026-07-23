@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Covered Call Return Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Covered call return calculator: enter cost basis, strike, and premium to get your static income return, return if called, and break-even price.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/covered-call.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Covered Call Return Calculator">
+<meta property="og:description" content="Covered call return calculator: enter cost basis, strike, and premium to get your static income return, return if called, and break-even price.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/covered-call.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Covered Call Return Calculator">
+<meta name="twitter:description" content="Covered call return calculator: enter cost basis, strike, and premium to get your static income return, return if called, and break-even price.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Covered Call Return Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Covered Call Return Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Covered Call Return Calculator</h1>
+  <p class="est-dek">Covered call return calculator: enter cost basis, strike, and premium to get your static income return, return if called, and break-even price.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <path class="egl-still" d="M10 14 h44" stroke-dasharray="3 3"/>
+  <path class="egl-draw" d="M12 30 C 24 27, 30 18, 40 14"/>
+  <path class="egl-mark" d="M40 14 L52 14"/>
+  <circle class="egl-mark-dot" cx="40" cy="14" r="2.4"/>
+  <rect class="egl-fill" x="46" y="22" width="9" height="7" rx="1.5"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter your cost basis, the call strike you sold, and the premium you collected. You get the income if the stock stays flat, the total return if it’s called away, and the break-even — per 100 shares.</span><span class="l-zh">填入你的持股成本、卖出的看涨期权行权价，以及收到的权利金，即可得到——股价持平时的收入、被行权（call away）时的总回报，以及保本价（每 100 股）。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Cost basis ($/share)</span><span class="l-zh">成本价（$/股）</span></span>
+    <input id="basis" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Call strike ($)</span><span class="l-zh">行权价（$）</span> <span class="hint"><span class="l-en">the price you sold</span><span class="l-zh">你卖出的价位</span></span></span>
+    <input id="strike" inputmode="decimal" autocomplete="off" placeholder="105"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Premium received ($/share)</span><span class="l-zh">收到的权利金（$/股）</span></span>
+    <input id="prem" inputmode="decimal" autocomplete="off" placeholder="3"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Days to expiration</span><span class="l-zh">到期天数</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">选填</span></span></span>
+    <input id="days" inputmode="decimal" autocomplete="off" placeholder="30"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">if called</span><span class="l-zh">被行权</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in cost basis, strike and premium to see the return.</span><span class="l-zh">填入成本价、行权价与权利金即可查看回报。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Static (income) return</span><span class="l-zh">静态（收入）回报</span></dt><dd id="out-static">—</dd></div>
+    <div><dt><span class="l-en">Break-even price</span><span class="l-zh">保本价</span></dt><dd id="out-breakeven">—</dd></div>
+    <div><dt><span class="l-en">Downside protection</span><span class="l-zh">下行保护</span></dt><dd id="out-protect">—</dd></div>
+    <div><dt><span class="l-en">Annualized if called</span><span class="l-zh">被行权年化</span></dt><dd id="out-annual">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">A covered call earns you the <strong>premium</strong> up front in exchange for capping your upside at the <strong>strike</strong>. Two returns matter: the <strong>static return</strong> — the income you keep if the stock stays flat and the option expires worthless — and the <strong>return if called</strong> — the total gain if the stock finishes above the strike and your shares are sold at it. Both are measured against your cost basis.</span><span class="l-zh">备兑看涨期权（covered call）让你预先赚取<strong>权利金</strong>，代价是把上涨空间封顶在<strong>行权价</strong>。有两个回报值得关注：<strong>静态回报</strong>——若股价持平、期权作废，你留下的收入；以及<strong>被行权回报</strong>——若股价收在行权价之上、股票以行权价被卖出时的总收益。两者都以你的成本价为基准衡量。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Static return %</strong> = 100 × premium ÷ cost basis</span><span class="l-zh"><strong>静态回报 %</strong> = 100 × 权利金 ÷ 成本价</span><br>
+<span class="l-en"><strong>Return if called %</strong> = 100 × (strike − basis + premium) ÷ basis</span><span class="l-zh"><strong>被行权回报 %</strong> = 100 × (行权价 − 成本价 + 权利金) ÷ 成本价</span><br>
+<span class="l-en"><strong>Break-even</strong> = cost basis − premium</span><span class="l-zh"><strong>保本价</strong> = 成本价 − 权利金</span><br>
+<span class="l-en"><strong>Annualized if called %</strong> = 100 × ( (1 + return if called)^(365 ÷ days) − 1 )</span><span class="l-zh"><strong>被行权年化 %</strong> = 100 × ( (1 + 被行权回报)^(365 ÷ 天数) − 1 )</span>
+</div>
+<p><span class="l-en">The premium does double duty: it is your income <em>and</em> your first line of downside protection — the stock can fall by the premium before you’re underwater, which is exactly the break-even. The annualized figure simply scales the if-called return to a full year; it assumes the same trade could be repeated at the same pace, which is a big assumption.</span><span class="l-zh">权利金一物两用：既是你的收入，<em>也是</em>你的第一道下行保护——股价可以下跌至多一个权利金的幅度你才开始亏损，这个点正是保本价。年化数字只是把被行权回报按比例换算成整年；它假设同样的交易能以同样的节奏反复进行——这是一个很大的假设。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader owns shares at a <span class="num">$100.00</span> cost basis and sells a one-month call at the <span class="num">$105</span> strike, collecting <span class="num">$3.00</span> per share. Days to expiration: <span class="num">30</span>.</span><span class="l-zh">假设某交易者以 <span class="num">$100.00</span> 的成本持股，卖出一个月后到期、行权价 <span class="num">$105</span> 的看涨期权，每股收取 <span class="num">$3.00</span> 权利金。到期天数：<span class="num">30</span>。</span></p>
+<ul>
+<li><span class="l-en">Static return = <span class="num">100 × 3 ÷ 100 = 3.00%</span> — the income if the stock is flat.</span><span class="l-zh">静态回报 = <span class="num">100 × 3 ÷ 100 = 3.00%</span>——股价持平时的收入。</span></li>
+<li><span class="l-en">Return if called = <span class="num">100 × (105 − 100 + 3) ÷ 100 = 8.00%</span>.</span><span class="l-zh">被行权回报 = <span class="num">100 × (105 − 100 + 3) ÷ 100 = 8.00%</span>。</span></li>
+<li><span class="l-en">Break-even = <span class="num">100 − 3 = $97.00</span>.</span><span class="l-zh">保本价 = <span class="num">100 − 3 = $97.00</span>。</span></li>
+<li><span class="l-en">Annualized if called = <span class="num">100 × (1.08^(365÷30) − 1) ≈ 155%</span> — hypothetical, if repeated every month for a year.</span><span class="l-zh">被行权年化 = <span class="num">100 × (1.08^(365÷30) − 1) ≈ 155%</span>——假设性数字，前提是每月重复一整年。</span></li>
+</ul>
+</div>
+<p><span class="l-en">That ~155% headline is the number covered-call marketing loves to quote — and it is illustrative only. It presumes you can re-sell a call at the same premium, twelve times, with the stock landing just right each time. The honest figures here are the 3% you actually collect this month and the 8% ceiling if the shares are called.</span><span class="l-zh">这个约 155% 的醒目数字，正是备兑看涨营销最爱引用的——但它仅供说明。它假设你能以同样的权利金反复卖出看涨期权十二次，且每次股价都恰到好处。真正诚实的数字，是你这个月实际收到的 3%，以及股票被行权时 8% 的上限。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Treating the annualized number as a forecast</span><span class="l-zh">把年化数字当成预测</span></span>
+<p><span class="l-en">The annualized-if-called figure is a scaling, not a promise. It quietly assumes the trade repeats perfectly all year — same premium, same favorable close — and it ignores the months the stock falls (where the premium only softens the loss) or gaps far above the strike (where you leave the extra upside on the table). A single good month annualized to triple digits is a hypothetical, not an expected return.</span><span class="l-zh">被行权年化数字是一种换算，而非承诺。它悄悄假设交易全年完美重复——同样的权利金、同样有利的收盘价——却忽略了股价下跌的月份（那时权利金只是减轻亏损），以及远高于行权价的跳空（那时你放弃了额外的上涨）。把一个好月份年化成三位数，只是假设，而非预期回报。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math gives a clean picture of one covered call at expiration. A few honest limits:</span><span class="l-zh">这套算法清晰地描绘了单个备兑看涨期权在到期时的情形。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Capped upside.</strong> If the stock rockets past the strike, your gain stops at the strike plus premium — the return if called is your ceiling, no matter how high it runs.</span><span class="l-zh"><strong>上涨封顶。</strong>若股价一飞冲天越过行权价，你的收益止步于行权价加权利金——无论涨多高，被行权回报就是你的天花板。</span></li>
+<li><span class="l-en"><strong>Real downside remains.</strong> The premium cushions a fall only down to the break-even; below that you lose money on the shares, and a large drop dwarfs the income collected.</span><span class="l-zh"><strong>真实下行仍在。</strong>权利金只能缓冲下跌到保本价为止；再往下你就在股票上亏钱，一次大跌足以让收到的收入相形见绌。</span></li>
+<li><span class="l-en"><strong>Taxes, fees, dividends, and early assignment.</strong> This calculator ignores commissions, the tax treatment of premium and any called-away gain, dividends you may lose to early assignment, and the chance of being assigned before expiration. All shift the real outcome.</span><span class="l-zh"><strong>税费、股息与提前行权。</strong>本计算器不计佣金、权利金与被行权收益的税务处理、可能因提前行权而失去的股息，以及到期前被指派行权的可能。这些都会改变真实结果。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">A covered call trades your upside above the strike for income today. Judge it by the premium you keep and the ceiling you accept — not by an annualized number that assumes a perfect year.</span><span class="l-zh">备兑看涨期权，是用行权价以上的上涨空间，换取今天的收入。用你留下的权利金和你接受的上限来评判它——而不是用一个假设完美一整年的年化数字。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See what a single closed trade actually returned with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/trade-profit.html"><span class="l-en">trade profit calculator</span><span class="l-zh">交易盈亏计算器</span></a><span class="l-en">, or weigh a stop against a target with the <a href="</span><span class="l-zh">看单笔平仓交易的实际回报，或用 <a href="</span>../../tools/calculators/risk-reward.html"><span class="l-en">risk-to-reward calculator</span><span class="l-zh">盈亏比计算器</span></a><span class="l-en">.</span><span class="l-zh">权衡止损与目标。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/options-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Options Profit Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (covered-call spec — do not re-derive) ────────────────────
+  // inputs: {c basis, K strike, prem premium, d daysToExp (optional, 0 = none)}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var c=inp.c, K=inp.K, prem=inp.prem, d=inp.d;
+    if(!(c>0)) return {ok:false, msg:"Enter a cost basis above zero."};
+    if(!(K>0)) return {ok:false, msg:"Enter the call strike you sold."};
+    if(!(prem>0)) return {ok:false, msg:"Enter the premium you received per share."};
+    var staticReturnPct = 100 * prem / c;
+    var ifCalledReturnPct = 100 * (K - c + prem) / c;
+    var breakeven = c - prem;
+    var downsideProtectionPct = 100 * prem / c;
+    var hasDays = isFinite(d) && d > 0;
+    var annualizedIfCalled = null;
+    if(hasDays){
+      annualizedIfCalled = 100 * (Math.pow(1 + ifCalledReturnPct/100, 365/d) - 1);
+      if(!isFinite(annualizedIfCalled)) annualizedIfCalled = null;
+    }
+    return {
+      ok:true,
+      staticReturnPct:staticReturnPct,
+      ifCalledReturnPct:ifCalledReturnPct,
+      breakeven:breakeven,
+      downsideProtectionPct:downsideProtectionPct,
+      hasDays:hasDays,
+      annualizedIfCalled:annualizedIfCalled,
+      strikeBelowBasis: K < c
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{c:100, K:105, prem:3, d:30}, want:{staticReturnPct:3, ifCalledReturnPct:8, breakeven:97, annualizedIfCalled:155.08} },
+    { in:{c:50,  K:52,  prem:1.5, d:0}, want:{staticReturnPct:3, ifCalledReturnPct:7, breakeven:48.5} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("covered-call self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(got[k]===null || Math.abs(got[k] - w[k]) > 0.5){
+          console.error("covered-call self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { basis:$("basis"), strike:$("strike"), prem:$("prem"), days:$("days") };
+    var outMain=$("out-main"), outUnit=null, outPlain=$("out-plain"),
+        outStatic=$("out-static"), outBreak=$("out-breakeven"),
+        outProtect=$("out-protect"), outAnnual=$("out-annual"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outStatic,outBreak,outProtect,outAnnual].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ c:numFrom(els.basis), K:numFrom(els.strike), prem:numFrom(els.prem), d:numFrom(els.days) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = res.ifCalledReturnPct.toFixed(2) + "%";
+      outStatic.textContent  = pct(res.staticReturnPct);
+      outBreak.textContent   = money(res.breakeven);
+      outProtect.textContent = pct(res.downsideProtectionPct);
+      outStatic.className = "pos";
+      outAnnual.textContent  = res.hasDays ? pct(res.annualizedIfCalled) : "—";
+
+      // Law 3: plain-word interpretation under the number
+      var plain = "You keep " + pct(res.staticReturnPct) + " as income if the stock stays flat, "
+        + "and make " + pct(res.ifCalledReturnPct) + " in total if it’s called away at the strike. "
+        + "Break-even is " + money(res.breakeven) + " — below that, the premium no longer covers the loss.";
+      if(res.hasDays && res.annualizedIfCalled !== null){
+        plain += " Annualized, the if-called return is " + pct(res.annualizedIfCalled)
+          + " — illustrative only, if the trade repeated all year.";
+      }
+      if(res.strikeBelowBasis){
+        plain = "Your strike is below your cost basis, so being called locks in a loss even after the premium. " + plain;
+        outPlain.className = "co-plain warn";
+      } else {
+        outPlain.className = "co-plain";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var s = "Covered call: static " + pct(last.staticReturnPct)
+        + " · if called " + pct(last.ifCalledReturnPct)
+        + " · break-even " + money(last.breakeven);
+      if(last.hasDays && last.annualizedIfCalled !== null){
+        s += " · ~" + pct(last.annualizedIfCalled) + " annualized (hypothetical)";
+      }
+      return s + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["basis","strike","prem","days"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

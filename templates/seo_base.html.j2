@@ -1,20 +1,23 @@
 {#=============================================================================
   seo_base.html.j2 — shared chrome for the Mastermind Free Estate
-  (/tools/, /learn/, /blog/ + plain pages). Design system: "The Reading Room".
+  (/tools/, /learn/, /blog/ + plain pages). Design system: MACRO TERMINAL —
+  ported from body.page-macro / mx5 (the macro.html Bloomberg-grade dialect).
 
-  DESIGN NOTES (for the sonnet builder cloning calculators — read once):
-  · Identity = serif prose (Newsreader, one Google Fonts request) + monospace
-    math (house --font-mono). Every computed number, formula, eyebrow and data
-    cell is mono; all reading copy is serif. "Honest math wears a mono face."
-  · Palette = house theme.css vars only (dark/light/zh aware). Two estate-scoped
-    tokens derived from house vars: --ink (the plotted-line pen = --text) and
-    --rule (ledger/plot hairline, --line tinted toward --info). No parallel
-    palette; nothing hard-codes a dark background.
-  · Signature = "the plotted line": a hand-drawn ink stroke that draws itself
-    left-to-right (echoes the house Signal Ink grammar — stroke-linecap:round,
-    vector-effect:non-scaling-stroke, stroke-dashoffset draw-on-reveal). It
-    crowns the page kicker, rules the sections, and tops the calculator card.
-    Respects prefers-reduced-motion.
+  DESIGN NOTES (for anyone touching an estate surface — read once):
+  · Identity = Inter UI (house --font-ui, self-hosted) prose + a terminal MONO
+    numeral face (--num, SF Mono system stack). Every figure, formula, eyebrow
+    and data cell is mono-tabular; reading copy is Inter. "Figures wear the
+    terminal face." NO web-font request (Newsreader serif is retired).
+  · Palette = house theme.css vars only (dark/light/zh aware) + a deep terminal
+    canvas (--bg/--panel/--panel2) and an ink ramp (--ink-1/2/3) SCOPED to
+    body.estate so the rest of the site is byte-untouched. theme.css is never
+    edited. Colour routes through house vars → dark/light + zh red/green at paint.
+  · Signature = the REGIME RAIL section-header system: a 3px gradient bar + a
+    strong sentence-case title + a hairline rule to the edge, with a mono
+    eyebrow. It unifies hub, calculator and article (it replaces the old
+    plotted-line underline, now retired). Draw-on ink survives only in the
+    per-calculator glyph family (.egl, see _estate_glyphs.html.j2), which
+    respects prefers-reduced-motion.
 
   CONTEXT CONTRACT (builder → template, per CONTRACT.md §5):
     rel   — asset prefix to site root ("../", "../../"); use for theme.css etc.
@@ -58,11 +61,10 @@
 <link rel="icon" href="{{ rel }}favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="{{ rel }}apple-touch-icon.png">
 
-{#-- one Google Fonts request: Newsreader (serif prose), optical-size range + italic --#}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
-
+{#-- Type is the house UI stack (Inter, self-hosted via theme.css) + a terminal
+    mono for numerals. No web-font request — the estate now speaks the macro
+    terminal language, not the old Newsreader serif. --#}
+{% include "_interfonts.html.j2" %}
 <link rel="stylesheet" href="{{ rel }}theme.css">
 
 {#-- BreadcrumbList JSON-LD (every page) --#}
@@ -72,52 +74,120 @@
 
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
-   THE READING ROOM — Free Estate design system
-   Serif prose (Newsreader) + monospace math (house --font-mono). House palette
-   only; two estate tokens derive from house vars so every theme resolves at
-   paint. Scoped under body.estate so nothing here can leak onto dashboards.
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
    ══════════════════════════════════════════════════════════════════════════ */
-*{box-sizing:border-box;}
+/* --font-ui local definition (#2647 tripwire pattern, commodities.html.j2
+   precedent): theme.css defines the same token, but its href here is
+   Jinja-prefixed ({{ rel }}) so the guard cannot see the link — and a local
+   definition keeps the estate off Times even if theme.css ever fails to load.
+   Value mirrors theme.css verbatim. The _interfonts.html.j2 include (head)
+   completes the #2647 pattern; note its page-relative fonts/ URLs don't
+   resolve at estate depths — inert, because theme.css re-declares the same
+   Inter faces later (last-defined face wins) with stylesheet-relative URLs. */
 :root{
-  /* estate-scoped accents, all derived from house vars (theme/zh-safe) */
-  --ink: var(--text);                                       /* the plotted-line pen */
-  --serif: "Newsreader", Georgia, "Songti SC", "Noto Serif CJK SC", serif;
-  --rule: color-mix(in srgb, var(--line) 74%, var(--info)); /* ledger / plot hairline */
-  --measure: 68ch;                                          /* reading-room line length */
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
 }
-html[data-lang="zh"] body.estate{
-  /* Hanzi reads better in the house CJK sans than a Latin serif; theme.css already
-     forces the CJK stack on body, so estate prose inherits it under zh. */
-  --serif: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
 }
 html body.estate{
-  background:var(--bg); color:var(--text);
-  font-family:var(--serif); font-size:17px; line-height:1.68;
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
   margin:0; padding:0 0 72px;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
 }
 html,body{overflow-x:clip;}                                 /* 390px bleed guard */
 body.estate a{color:var(--link); text-decoration:none;}
 body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
-.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
 .est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
 
-/* ── the plotted-line signature ─────────────────────────────────────────────
-   A hand-drawn ink stroke that draws itself L→R. Reused as the kicker underline,
-   the section rule and the calc-card crown. Grammar borrowed from house Signal
-   Ink: round caps, non-scaling stroke, stroke-dashoffset draw-on-reveal. */
-.plot-line{display:block; width:100%; height:14px; overflow:visible; color:var(--link);}
-.plot-line path{fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round;
-  stroke-linejoin:round; vector-effect:non-scaling-stroke;
-  stroke-dasharray:var(--pl-len,240); stroke-dashoffset:var(--pl-len,240);
-  animation:plotDraw 1100ms cubic-bezier(.33,.62,.26,1) 120ms forwards;}
-.plot-line .dot{fill:currentColor; filter:drop-shadow(0 0 4px color-mix(in srgb,currentColor 62%,transparent));
-  opacity:0; animation:plotDot .01s linear 1160ms forwards;}
-@keyframes plotDraw{to{stroke-dashoffset:0;}}
-@keyframes plotDot{to{opacity:1;}}
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
 @media (prefers-reduced-motion:reduce){
-  .plot-line path{animation:none; stroke-dashoffset:0;}
-  .plot-line .dot{animation:none; opacity:1;}
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
 }
 
 /* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
@@ -185,33 +255,42 @@ html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
 .est-crumb .sep{opacity:.4;}
 .est-crumb li[aria-current="page"]{color:var(--text);}
 
-/* ── shared prose vocabulary (CONTRACT §4 body classes) ─────────────────────── */
-.est-prose{font-size:17px; line-height:1.72;}
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
 .est-prose > *{max-width:var(--measure);}
-.est-prose h2{font-family:var(--serif); font-size:25px; font-weight:600; line-height:1.24;
-  letter-spacing:-.01em; margin:38px 0 12px; scroll-margin-top:76px;
-  display:flex; align-items:baseline; gap:11px;}
-.est-prose h2 .est-h2-mark{font-family:var(--font-mono); font-size:13px; font-weight:500;
-  color:var(--link); flex:none; opacity:.9;}
-.est-prose h3{font-family:var(--serif); font-size:19.5px; font-weight:600; margin:26px 0 6px; color:var(--text);}
-.est-prose p{margin:12px 0;}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
 .est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
 .est-prose li{margin:7px 0;}
-.est-prose li::marker{color:var(--muted);}
-.est-prose strong{font-weight:600; color:var(--text);}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
 .est-prose em{font-style:italic;}
-.est-prose code{font-family:var(--font-mono); font-size:.86em; background:var(--panel2);
-  border:1px solid var(--line); border-radius:5px; padding:1px 6px;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
 .est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
 .est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
-.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rule);
-  color:var(--text); font-style:italic; opacity:.92;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
 
-/* callouts — lead / warn / key (house colours, serif body, mono heading label) */
-.est-prose .callout{border-radius:13px; padding:15px 18px; margin:18px 0; border:1px solid var(--line);
-  background:var(--panel2); position:relative; max-width:var(--measure);}
-.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--font-ui);
-  font-size:12px; font-weight:700; letter-spacing:.02em; text-transform:uppercase;}
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
 .est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
 .est-prose .callout.lead{border-left:4px solid var(--link);}
 .est-prose .callout.lead .co-h{color:var(--link);}
@@ -222,96 +301,103 @@ html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
   background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
 .est-prose .callout.key .co-h{color:var(--ok);}
 
-/* formula — the desk's chalk line. Mono, centred, on a faint ruled slab. */
-.est-prose .formula{font-family:var(--font-mono); font-size:15px; line-height:1.7;
-  background:linear-gradient(var(--panel2),var(--panel2)) padding-box,
-             var(--panel2); border:1px solid var(--rule); border-radius:11px;
-  padding:16px 18px; margin:18px 0; overflow-x:auto; max-width:var(--measure);
-  color:var(--text); letter-spacing:.01em;}
-.est-prose .formula strong{color:var(--link); font-weight:600;}
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
 
-/* worked example — the marginalia. A ledger-ruled block with a mono heading. */
-.est-prose .worked{border:1px solid var(--line); border-radius:13px; margin:18px 0;
-  padding:16px 18px; max-width:var(--measure);
-  background:
-    linear-gradient(var(--rule),var(--rule)) 0 0/100% 1px no-repeat,
-    var(--panel);}
-.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--font-ui);
-  font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted);}
-.est-prose .worked .num,.est-prose .worked code{font-family:var(--font-mono);}
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
 
-/* data table — the ruled column */
+/* data table — the terminal ruled column (mono body, mono caps head) */
 .est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
-  font-family:var(--font-mono); font-size:13.5px; margin:18px 0;}
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
 .est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
-  color:var(--muted); font-family:var(--font-ui); font-weight:600; font-size:12px;
-  letter-spacing:.02em; border-bottom:2px solid var(--rule);}
-.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
-.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--info) 5%,var(--panel));}
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
 .est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
 .est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
 .est-tbl-scroll table.data{margin:0;}
 
 .est-prose figure{margin:20px 0; max-width:var(--measure);}
-.est-prose figcaption{font-family:var(--font-ui); font-size:12.5px; color:var(--muted); margin-top:8px;}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
 
 /* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
-.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--rule);}
-.est-related .rel-h{font-family:var(--font-ui); font-size:11.5px; font-weight:700; letter-spacing:.1em;
-  text-transform:uppercase; color:var(--muted); margin:0 0 12px;}
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
 .est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
-.est-relcard{display:block; border:1px solid var(--line); border-radius:12px; padding:13px 15px;
-  background:var(--panel); text-decoration:none; transition:transform .18s,border-color .18s,box-shadow .18s;}
-.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line));
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
   box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
-.est-relcard .rc-kind{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em;
-  text-transform:uppercase; color:var(--link); opacity:.9;}
-.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--serif); font-size:16px;
-  font-weight:600; color:var(--text); line-height:1.32;}
-
-.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--line));
-  border-radius:16px; padding:22px 24px; background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
-    var(--panel); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
-.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
-.est-cta-block .cta-k{font-family:var(--font-mono); font-size:11px; letter-spacing:.08em;
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
   text-transform:uppercase; color:var(--link);}
-.est-cta-block .cta-t{font-family:var(--serif); font-size:19px; font-weight:600; margin:3px 0 0; line-height:1.3;}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
 .est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
 
 /* ── estate footer ──────────────────────────────────────────────────────────── */
 .est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
-  border-top:1px solid var(--line); font-family:var(--font-ui);}
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
 .est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
 .est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
-.est-foot-col .fh{font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:3px;}
-.est-foot-col a{font-size:13px; color:var(--muted); text-decoration:none;}
-.est-foot-col a:hover{color:var(--text);}
-.est-foot-disc{font-size:12px; color:var(--muted); line-height:1.6; border-top:1px solid var(--line);
-  padding-top:13px; margin-top:6px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
 .est-foot-disc .mono{opacity:.85;}
 
-/* ── page header (kicker + plotted-line + title + dek) ──────────────────────── */
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
 .est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
-.est-kicker{font-family:var(--font-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--link); display:inline-block; margin:0 0 2px;}
-.est-kicker-plot{max-width:220px; margin:2px 0 14px;}
-.est-title{font-family:var(--serif); font-size:clamp(30px,4.6vw,46px); font-weight:600; line-height:1.1;
-  letter-spacing:-.015em; margin:0;}
-.est-dek{font-family:var(--serif); font-size:19px; line-height:1.5; color:var(--muted);
-  margin:12px 0 0; max-width:60ch;}
-.est-meta{font-family:var(--font-ui); font-size:12.5px; color:var(--muted); margin:14px 0 0;
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
   display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
 .est-meta .dot{opacity:.4;}
 
 @media (max-width:600px){
-  html body.estate{font-size:16px;}
+  html body.estate{font-size:var(--fs-body);}
   .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
-  .est-prose{font-size:16px;}
-  .est-prose h2{font-size:22px; margin:30px 0 10px;}
-  .est-prose h3{font-size:18px;}
-  .est-dek{font-size:17px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
   .est-cta-block{padding:18px; gap:14px;}
 }
 {% block estate_css %}{% endblock %}
@@ -330,7 +416,7 @@ html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
               stroke-linecap="round" stroke-linejoin="round" fill="none"/>
         <circle cx="25" cy="13" r="2" fill="var(--link)"/>
       </svg>
-      <span class="word">MASTERMIND<span class="sub">{{ t('READING ROOM', '阅览室') }}</span></span>
+      <span class="word">MASTERMIND<span class="sub">{{ t('FREE TERMINAL', '免费终端') }}</span></span>
     </a>
     <nav class="est-nav" aria-label="Estate sections">
       <a href="{{ rel }}tools/index.html"{% if page.section == 'tools' %} aria-current="page"{% endif %}>{{ t('Tools', '工具') }}</a>

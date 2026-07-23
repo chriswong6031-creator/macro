@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>CN Pick Lab — Mastermind</title>
-<link rel="stylesheet" href="theme.css?v=de86232e">
+<link rel="stylesheet" href="theme.css?v=24ca655a">
 <link rel="stylesheet" href="assets/css/71c30cf8.css?v=71c30cf8">
 </head>
 <body>
@@ -20,7 +20,7 @@
 
     <div class="nav-links">
     
-    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -70,7 +70,7 @@
             <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
             <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
             <a href="movers.html">📈 <span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
             <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
             <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
             <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
@@ -223,10 +223,12 @@
         </div>
       </div>
     </div>
+      
+      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=2758e158" defer></script>
+  <script src="live.js?v=e1a3ca0d" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -254,7 +256,7 @@
     <p class="pl-eyebrow"><span class="l-en">CN Pick Lab · Display-only · ACCRUING</span><span class="l-zh">CN选股实验室 · 仅展示 · 累积中</span></p>
     <h1 class="pl-title">🧪 <span class="l-en">A-Share Candidate Pick Engines</span><span class="l-zh">A股候选选股引擎</span></h1>
     <p class="pl-sub"><span class="l-en">20 shadow books running on forward ledgers — measured against a random-control yardstick and the CSI 300. Ruler: 21-session CSI 300 excess (T+1 fill, hl2 proxy). All data is display-only; nothing here drives live selection or gating.</span><span class="l-zh">20个影子书在前向账本上运行 — 与随机控制基准和沪深300对比衡量。标尺：21节沪深300超额（T+1入场，最高最低均价代理）。所有数据仅供展示；这里没有任何内容驱动实时选股或门控。</span></p>
-    <p class="pl-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-21 · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-21 09:52 UTC</p>
+    <p class="pl-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-23 · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-23 10:09 UTC</p>
     <a class="pl-back" href="china_stocks.html">← <span class="l-en">Back to A-Share Dashboard</span><span class="l-zh">返回A股看板</span></a>
   </div>
 
@@ -327,10 +329,10 @@
               </span>
               
             </td>
-            <td>21</td>
+            <td>22</td>
             <td class="neu">—</td>
-            <td>21</td>
-            <td>3</td>
+            <td>22</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -397,10 +399,10 @@
               </span>
               
             </td>
-            <td>19</td>
+            <td>22</td>
             <td class="neu">—</td>
-            <td>19</td>
-            <td>3</td>
+            <td>22</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -467,10 +469,10 @@
               </span>
               
             </td>
-            <td>35</td>
+            <td>46</td>
             <td class="neu">—</td>
-            <td>35</td>
-            <td>3</td>
+            <td>46</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -502,10 +504,10 @@
               </span>
               
             </td>
-            <td>35</td>
+            <td>46</td>
             <td class="neu">—</td>
-            <td>35</td>
-            <td>3</td>
+            <td>46</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -572,10 +574,10 @@
               </span>
               
             </td>
-            <td>35</td>
+            <td>41</td>
             <td class="neu">—</td>
-            <td>35</td>
-            <td>3</td>
+            <td>41</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -817,10 +819,10 @@
               </span>
               
             </td>
-            <td>13</td>
+            <td>15</td>
             <td class="neu">—</td>
-            <td>13</td>
-            <td>3</td>
+            <td>15</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -852,10 +854,10 @@
               </span>
               
             </td>
-            <td>6</td>
+            <td>11</td>
             <td class="neu">—</td>
-            <td>6</td>
-            <td>2</td>
+            <td>11</td>
+            <td>3</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -887,10 +889,10 @@
               </span>
               
             </td>
-            <td>29</td>
+            <td>32</td>
             <td class="neu">—</td>
-            <td>29</td>
-            <td>3</td>
+            <td>32</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -957,10 +959,10 @@
               </span>
               
             </td>
-            <td>21</td>
+            <td>22</td>
             <td class="neu">—</td>
-            <td>21</td>
-            <td>3</td>
+            <td>22</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -992,10 +994,10 @@
               </span>
               
             </td>
-            <td>36</td>
+            <td>47</td>
             <td class="neu">—</td>
-            <td>36</td>
-            <td>3</td>
+            <td>47</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -1027,10 +1029,10 @@
               </span>
               
             </td>
-            <td>20</td>
+            <td>23</td>
             <td class="neu">—</td>
-            <td>20</td>
-            <td>3</td>
+            <td>23</td>
+            <td>4</td>
             <td>0.4</td>
             <td class="">—</td>
             <td class="">—</td>
@@ -1069,7 +1071,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N</span><span class="l-zh">N</span>=35
+          <span class="l-en">N</span><span class="l-zh">N</span>=46
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -1084,10 +1086,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">300134.SZ</span>
+            <span class="pick-tk">002531.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
@@ -1096,7 +1098,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 4.0</span><span><b>rsi_10</b> 30.872360165345697</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 27.205930237863228</span>
           </div>
           
         </div>
@@ -1104,10 +1106,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#2</span>
-            <span class="pick-tk">600338.SS</span>
+            <span class="pick-tk">688390.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Technology</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
@@ -1116,7 +1118,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 33.11918625206697</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 29.407557266706704</span>
           </div>
           
         </div>
@@ -1124,7 +1126,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#3</span>
-            <span class="pick-tk">603920.SS</span>
+            <span class="pick-tk">688717.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -1136,7 +1138,27 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 34.08873168987306</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 29.750576318699245</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">300322.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Technology</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 30.009996854171945</span>
           </div>
           
         </div>
@@ -1144,10 +1166,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">600776.SS</span>
+            <span class="pick-tk">600577.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
@@ -1156,7 +1178,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 3.0</span><span><b>rsi_10</b> 35.08494999733253</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 30.472962046394684</span>
           </div>
           
         </div>
@@ -1164,7 +1186,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#6</span>
-            <span class="pick-tk">600416.SS</span>
+            <span class="pick-tk">688063.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1176,7 +1198,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 35.35493120956296</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 30.649977476960174</span>
           </div>
           
         </div>
@@ -1184,10 +1206,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#7</span>
-            <span class="pick-tk">600089.SS</span>
+            <span class="pick-tk">600773.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Real Estate</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
@@ -1196,7 +1218,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 35.6065533422353</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 30.660946822819483</span>
           </div>
           
         </div>
@@ -1204,7 +1226,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">300035.SZ</span>
+            <span class="pick-tk">301268.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1216,15 +1238,35 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.178980066747314</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 30.905212773334753</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#9</span>
-            <span class="pick-tk">000420.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">301622.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 32.903543930353635</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#11</span>
+            <span class="pick-tk">000559.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Consumer Cyclical</div>
@@ -1236,47 +1278,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.92104512576399</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">603220.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Communication Services</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.97489663368511</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">002706.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤2</span><span class="why-chip accent">1D K×D✚≤8</span><span class="why-chip accent">from_OS</span><span class="why-chip accent">RSI10&lt;70</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 7.0</span><span><b>rsi_10</b> 37.84473496807756</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 33.67376808807059</span>
           </div>
           
         </div>
@@ -1284,7 +1286,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#12</span>
-            <span class="pick-tk">601727.SS</span>
+            <span class="pick-tk">601126.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1296,7 +1298,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 38.38840963207437</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 34.15601965146878</span>
           </div>
           
         </div>
@@ -1315,6 +1317,94 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>002531.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688390.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688717.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>300322.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600577.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688063.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600773.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301268.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301622.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000559.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601126.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>300134.SZ</td>
@@ -1466,94 +1556,6 @@
             <td class="neu">—</td>
             <td class="">—</td>
             <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>301171.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>688327.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002368.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002271.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>000875.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>000035.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>001382.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002181.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601096.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601778.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601068.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
           </tr>
           
         </tbody>
@@ -1570,7 +1572,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N</span><span class="l-zh">N</span>=35
+          <span class="l-en">N</span><span class="l-zh">N</span>=46
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -1585,7 +1587,27 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">300134.SZ</span>
+            <span class="pick-tk">002531.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">688390.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -1604,11 +1626,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">600338.SS</span>
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">688717.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Technology</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
@@ -1624,8 +1646,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">603920.SS</span>
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">300322.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -1645,10 +1667,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">600776.SS</span>
+            <span class="pick-tk">600577.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
@@ -1665,7 +1687,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#6</span>
-            <span class="pick-tk">600416.SS</span>
+            <span class="pick-tk">688063.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1685,10 +1707,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#7</span>
-            <span class="pick-tk">600089.SS</span>
+            <span class="pick-tk">600773.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Real Estate</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
@@ -1705,7 +1727,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">300035.SZ</span>
+            <span class="pick-tk">301268.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1724,8 +1746,28 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#9</span>
-            <span class="pick-tk">000420.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">301622.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#11</span>
+            <span class="pick-tk">000559.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Consumer Cyclical</div>
@@ -1744,48 +1786,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">603220.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Communication Services</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">002706.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D base</span><span class="why-chip accent">cycle-phase✓</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
             <span class="pick-rank">#12</span>
-            <span class="pick-tk">601727.SS</span>
+            <span class="pick-tk">601126.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -1816,6 +1818,94 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>002531.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688390.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688717.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>300322.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600577.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688063.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600773.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301268.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301622.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000559.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601126.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>300134.SZ</td>
@@ -1967,94 +2057,6 @@
             <td class="neu">—</td>
             <td class="">—</td>
             <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>301171.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>688327.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002368.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002271.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>000875.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>000035.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>001382.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002181.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601096.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601778.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601068.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
           </tr>
           
         </tbody>
@@ -2096,7 +2098,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N</span><span class="l-zh">N</span>=35
+          <span class="l-en">N</span><span class="l-zh">N</span>=41
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -2111,7 +2113,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">002475.SZ</span>
+            <span class="pick-tk">601138.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -2130,31 +2132,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">002463.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
             <span class="pick-rank">#3</span>
-            <span class="pick-tk">001389.SZ</span>
+            <span class="pick-tk">688321.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Healthcare</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
@@ -2163,18 +2145,18 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#4</span>
-            <span class="pick-tk">600726.SS</span>
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">603225.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Utilities</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
@@ -2190,31 +2172,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#6</span>
-            <span class="pick-tk">603629.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
             <span class="pick-rank">#7</span>
-            <span class="pick-tk">000921.SZ</span>
+            <span class="pick-tk">002203.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Consumer Cyclical</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
@@ -2231,10 +2193,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">300209.SZ</span>
+            <span class="pick-tk">000301.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
@@ -2251,67 +2213,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#9</span>
-            <span class="pick-tk">000951.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">300001.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">603296.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            <span class="why-chip accent">1D MACD✚≤3</span><span class="why-chip accent">3D not yet</span><span class="why-chip accent">above_ma120</span><span class="why-chip accent">no-chase</span>
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#12</span>
-            <span class="pick-tk">600352.SS</span>
+            <span class="pick-tk">002648.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Basic Materials</div>
@@ -2323,7 +2225,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
+            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
           </div>
           
         </div>
@@ -2342,6 +2244,54 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>601138.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688321.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603225.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002203.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000301.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002648.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002475.SZ</td>
@@ -2535,54 +2485,6 @@
             <td>matured</td>
           </tr>
           
-          <tr>
-            <td>601699.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>688018.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>301269.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>603228.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002838.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>688605.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
         </tbody>
       </table>
       
@@ -2740,7 +2642,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=21
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=22
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -2763,83 +2665,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">002487.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">300342.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">rev deepest Q1</span>
-            
-            <span class="why-chip accent">no gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span><span><b>rev_deepest_quintile</b> True</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#8</span>
-            <span class="pick-tk">600773.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Real Estate</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">rev deepest Q1</span>
-            
-            <span class="why-chip accent">no gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span><span><b>rev_deepest_quintile</b> True</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">000534.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Healthcare</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">rev deepest Q1</span>
-            
-            <span class="why-chip accent">no gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 2.0</span><span><b>rev_deepest_quintile</b> True</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#12</span>
-            <span class="pick-tk">301225.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Consumer Cyclical</div>
           
           <div class="pick-why">
             
@@ -2871,6 +2701,14 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>300342.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002487.SZ</td>
@@ -3110,7 +2948,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=19
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=22
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -3133,8 +2971,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#1</span>
-            <span class="pick-tk">002487.SZ</span>
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">300342.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -3150,42 +2988,18 @@
           
           
           <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span><span><b>coiled</b> True</span><span><b>star</b> True</span>
+            <span><b>rev_3m_sector_rank</b> 2.0</span><span><b>coiled</b> True</span><span><b>star</b> False</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#6</span>
-            <span class="pick-tk">600773.SS</span>
+            <span class="pick-rank">#8</span>
+            <span class="pick-tk">603103.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Real Estate</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">rev deepest Q1</span>
-            
-            <span class="why-chip accent">coiled/STAR✓</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span><span><b>coiled</b> True</span><span><b>star</b> False</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#7</span>
-            <span class="pick-tk">301225.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Consumer Cyclical</div>
+          <div class="pick-sector">Communication Services</div>
           
           <div class="pick-why">
             
@@ -3199,6 +3013,30 @@
           
           <div class="pick-feats">
             <span><b>rev_3m_sector_rank</b> 2.0</span><span><b>coiled</b> True</span><span><b>star</b> False</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#9</span>
+            <span class="pick-tk">603698.SS</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">rev deepest Q1</span>
+            
+            <span class="why-chip accent">coiled/STAR✓</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>rev_3m_sector_rank</b> 3.0</span><span><b>coiled</b> True</span><span><b>star</b> False</span>
           </div>
           
         </div>
@@ -3217,6 +3055,30 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>300342.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603103.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603698.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002487.SZ</td>
@@ -3464,7 +3326,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=35
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=46
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -3488,10 +3350,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">300134.SZ</span>
+            <span class="pick-tk">002531.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -3508,7 +3370,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 4.0</span><span><b>rsi_10</b> 30.872360165345697</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 27.205930237863228</span>
           </div>
           
         </div>
@@ -3516,10 +3378,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#2</span>
-            <span class="pick-tk">600338.SS</span>
+            <span class="pick-tk">688390.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Technology</div>
           
           <div class="pick-why">
             
@@ -3536,7 +3398,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 33.11918625206697</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 29.407557266706704</span>
           </div>
           
         </div>
@@ -3544,7 +3406,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#3</span>
-            <span class="pick-tk">603920.SS</span>
+            <span class="pick-tk">688717.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -3564,7 +3426,35 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 34.08873168987306</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 29.750576318699245</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">300322.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Technology</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤2</span>
+            
+            <span class="why-chip accent">1D K×D✚≤8</span>
+            
+            <span class="why-chip accent">from_OS</span>
+            
+            <span class="why-chip accent">RSI10&lt;70</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 30.009996854171945</span>
           </div>
           
         </div>
@@ -3572,10 +3462,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">600776.SS</span>
+            <span class="pick-tk">600577.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -3592,7 +3482,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 3.0</span><span><b>rsi_10</b> 35.08494999733253</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 30.472962046394684</span>
           </div>
           
         </div>
@@ -3600,7 +3490,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#6</span>
-            <span class="pick-tk">600416.SS</span>
+            <span class="pick-tk">688063.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -3620,7 +3510,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 35.35493120956296</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 30.649977476960174</span>
           </div>
           
         </div>
@@ -3628,10 +3518,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#7</span>
-            <span class="pick-tk">600089.SS</span>
+            <span class="pick-tk">600773.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Real Estate</div>
           
           <div class="pick-why">
             
@@ -3648,7 +3538,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 35.6065533422353</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 30.660946822819483</span>
           </div>
           
         </div>
@@ -3656,7 +3546,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">300035.SZ</span>
+            <span class="pick-tk">301268.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -3676,15 +3566,43 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.178980066747314</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 30.905212773334753</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#9</span>
-            <span class="pick-tk">000420.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">301622.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤2</span>
+            
+            <span class="why-chip accent">1D K×D✚≤8</span>
+            
+            <span class="why-chip accent">from_OS</span>
+            
+            <span class="why-chip accent">RSI10&lt;70</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 1.0</span><span><b>rsi_10</b> 32.903543930353635</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#11</span>
+            <span class="pick-tk">000559.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Consumer Cyclical</div>
@@ -3704,63 +3622,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.92104512576399</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">603220.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Communication Services</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤2</span>
-            
-            <span class="why-chip accent">1D K×D✚≤8</span>
-            
-            <span class="why-chip accent">from_OS</span>
-            
-            <span class="why-chip accent">RSI10&lt;70</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 36.97489663368511</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">002706.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤2</span>
-            
-            <span class="why-chip accent">1D K×D✚≤8</span>
-            
-            <span class="why-chip accent">from_OS</span>
-            
-            <span class="why-chip accent">RSI10&lt;70</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 7.0</span><span><b>rsi_10</b> 37.84473496807756</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 33.67376808807059</span>
           </div>
           
         </div>
@@ -3768,7 +3630,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#12</span>
-            <span class="pick-tk">601727.SS</span>
+            <span class="pick-tk">601126.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -3788,7 +3650,7 @@
           
           
           <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 0.0</span><span><b>rsi_10</b> 38.38840963207437</span>
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d1_kd_xup_bars</b> 2.0</span><span><b>rsi_10</b> 34.15601965146878</span>
           </div>
           
         </div>
@@ -3807,6 +3669,94 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>002531.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688390.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688717.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>300322.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600577.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688063.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600773.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301268.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301622.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000559.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601126.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>300134.SZ</td>
@@ -3958,94 +3908,6 @@
             <td class="neu">—</td>
             <td class="">—</td>
             <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>301171.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>688327.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002368.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002271.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>000875.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>000035.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>001382.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002181.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601096.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601778.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601068.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
           </tr>
           
         </tbody>
@@ -4062,7 +3924,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=35
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=46
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -4086,7 +3948,31 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">300134.SZ</span>
+            <span class="pick-tk">002531.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D base</span>
+            
+            <span class="why-chip accent">cycle-phase✓</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">688390.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -4109,11 +3995,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">600338.SS</span>
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">688717.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Technology</div>
           
           <div class="pick-why">
             
@@ -4133,8 +4019,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">603920.SS</span>
+            <span class="pick-rank">#4</span>
+            <span class="pick-tk">300322.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -4158,10 +4044,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">600776.SS</span>
+            <span class="pick-tk">600577.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -4182,7 +4068,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#6</span>
-            <span class="pick-tk">600416.SS</span>
+            <span class="pick-tk">688063.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -4206,10 +4092,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#7</span>
-            <span class="pick-tk">600089.SS</span>
+            <span class="pick-tk">600773.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Real Estate</div>
           
           <div class="pick-why">
             
@@ -4230,7 +4116,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">300035.SZ</span>
+            <span class="pick-tk">301268.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -4253,8 +4139,32 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#9</span>
-            <span class="pick-tk">000420.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">301622.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Industrials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D base</span>
+            
+            <span class="why-chip accent">cycle-phase✓</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#11</span>
+            <span class="pick-tk">000559.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Consumer Cyclical</div>
@@ -4277,56 +4187,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">603220.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Communication Services</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D base</span>
-            
-            <span class="why-chip accent">cycle-phase✓</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">002706.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D base</span>
-            
-            <span class="why-chip accent">cycle-phase✓</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>cycle_phase</b> POLICY_PUT</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
             <span class="pick-rank">#12</span>
-            <span class="pick-tk">601727.SS</span>
+            <span class="pick-tk">601126.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -4361,6 +4223,94 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>002531.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688390.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688717.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>300322.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600577.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688063.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600773.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301268.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301622.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000559.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601126.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>300134.SZ</td>
@@ -4512,94 +4462,6 @@
             <td class="neu">—</td>
             <td class="">—</td>
             <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>301171.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>688327.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002368.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>002271.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>000875.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>000035.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>001382.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002181.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601096.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601778.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601068.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
           </tr>
           
         </tbody>
@@ -4652,7 +4514,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=35
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=41
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -4676,7 +4538,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">002475.SZ</span>
+            <span class="pick-tk">601138.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -4697,34 +4559,6 @@
           
           <div class="pick-feats">
             <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">002463.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
           </div>
           
         </div>
@@ -4732,66 +4566,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#3</span>
-            <span class="pick-tk">001389.SZ</span>
+            <span class="pick-tk">688321.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#4</span>
-            <span class="pick-tk">600726.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Utilities</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#6</span>
-            <span class="pick-tk">603629.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Healthcare</div>
           
           <div class="pick-why">
             
@@ -4815,148 +4593,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#7</span>
-            <span class="pick-tk">000921.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Consumer Cyclical</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#8</span>
-            <span class="pick-tk">300209.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#9</span>
-            <span class="pick-tk">000951.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#10</span>
-            <span class="pick-tk">300001.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 1.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">603296.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Technology</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">1D MACD✚≤3</span>
-            
-            <span class="why-chip accent">3D not yet</span>
-            
-            <span class="why-chip accent">above_ma120</span>
-            
-            <span class="why-chip accent">no-chase</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#12</span>
-            <span class="pick-tk">600352.SS</span>
+            <span class="pick-rank">#5</span>
+            <span class="pick-tk">603225.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Basic Materials</div>
@@ -4981,6 +4619,90 @@
           
         </div>
         
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#7</span>
+            <span class="pick-tk">002203.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Basic Materials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">3D not yet</span>
+            
+            <span class="why-chip accent">above_ma120</span>
+            
+            <span class="why-chip accent">no-chase</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#8</span>
+            <span class="pick-tk">000301.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Basic Materials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">3D not yet</span>
+            
+            <span class="why-chip accent">above_ma120</span>
+            
+            <span class="why-chip accent">no-chase</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 0.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card">
+          <div class="pick-top">
+            <span class="pick-rank">#9</span>
+            <span class="pick-tk">002648.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Basic Materials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip accent">1D MACD✚≤3</span>
+            
+            <span class="why-chip accent">3D not yet</span>
+            
+            <span class="why-chip accent">above_ma120</span>
+            
+            <span class="why-chip accent">no-chase</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>d1_macd_xup_bars</b> 3.0</span><span><b>d3_macd_xup_bars</b> None</span><span><b>above_ma120</b> True</span><span><b>chase_veto</b> None</span>
+          </div>
+          
+        </div>
+        
       </div>
       
 
@@ -4995,6 +4717,54 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>601138.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688321.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603225.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002203.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000301.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002648.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002475.SZ</td>
@@ -5182,54 +4952,6 @@
           
           <tr>
             <td>000887.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601699.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>688018.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>301269.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>603228.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>002838.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>688605.SS</td>
             <td>2026-07-10</td>
             <td class="neu">—</td>
             <td class="">—</td>
@@ -5468,7 +5190,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=13
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=15
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -5491,8 +5213,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#1</span>
-            <span class="pick-tk">300209.SZ</span>
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">688002.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -5512,18 +5234,18 @@
           
           
           <div class="pick-feats">
-            <span><b>board</b> chinext</span><span><b>d1_macd_xup_bars</b> 0.0</span><span><b>above_ma120</b> True</span>
+            <span><b>board</b> star</span><span><b>d1_macd_xup_bars</b> 0.0</span><span><b>above_ma120</b> True</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">300001.SZ</span>
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">301536.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Technology</div>
           
           <div class="pick-why">
             
@@ -5559,6 +5281,22 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>688002.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301536.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>300209.SZ</td>
@@ -5678,7 +5416,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=6
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=11
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -5707,11 +5445,11 @@
         
         <div class="pick-card avoid-card">
           <div class="pick-top">
-            <span class="pick-rank">#1</span>
-            <span class="pick-tk">603567.SS</span>
+            <span class="pick-rank">#2</span>
+            <span class="pick-tk">600331.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Healthcare</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             
@@ -5726,15 +5464,15 @@
           
           
           <div class="pick-feats">
-            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.355</span><span><b>limit_state</b> open</span>
+            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.216</span><span><b>limit_state</b> open</span>
           </div>
           
         </div>
         
         <div class="pick-card avoid-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">600744.SS</span>
+            <span class="pick-rank">#3</span>
+            <span class="pick-tk">600821.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Utilities</div>
@@ -5752,33 +5490,7 @@
           
           
           <div class="pick-feats">
-            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.337</span><span><b>limit_state</b> open</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card avoid-card">
-          <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">600415.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Consumer Cyclical</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip">AVOID/inverse</span>
-            
-            <span class="why-chip">chase_veto✓</span>
-            
-            <span class="why-chip">CNPL-R7 avoid</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.201</span><span><b>limit_state</b> open</span>
+            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.183</span><span><b>limit_state</b> open</span>
           </div>
           
         </div>
@@ -5786,10 +5498,10 @@
         <div class="pick-card avoid-card">
           <div class="pick-top">
             <span class="pick-rank">#4</span>
-            <span class="pick-tk">002881.SZ</span>
+            <span class="pick-tk">000603.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             
@@ -5804,7 +5516,7 @@
           
           
           <div class="pick-feats">
-            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.158</span><span><b>limit_state</b> open</span>
+            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.171</span><span><b>limit_state</b> open</span>
           </div>
           
         </div>
@@ -5812,10 +5524,10 @@
         <div class="pick-card avoid-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">600602.SS</span>
+            <span class="pick-tk">600312.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -5830,7 +5542,33 @@
           
           
           <div class="pick-feats">
-            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.121</span><span><b>limit_state</b> open</span>
+            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.164</span><span><b>limit_state</b> open</span>
+          </div>
+          
+        </div>
+        
+        <div class="pick-card avoid-card">
+          <div class="pick-top">
+            <span class="pick-rank">#6</span>
+            <span class="pick-tk">002539.SZ</span>
+            <span class="pick-close">—</span>
+          </div>
+          <div class="pick-sector">Basic Materials</div>
+          
+          <div class="pick-why">
+            
+            <span class="why-chip">AVOID/inverse</span>
+            
+            <span class="why-chip">chase_veto✓</span>
+            
+            <span class="why-chip">CNPL-R7 avoid</span>
+            
+            
+          </div>
+          
+          
+          <div class="pick-feats">
+            <span><b>chase_veto</b> True</span><span><b>extension_score</b> 0.079</span><span><b>limit_state</b> open</span>
           </div>
           
         </div>
@@ -5849,6 +5587,46 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>600331.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600821.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000603.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600312.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002539.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>603567.SS</td>
@@ -5912,7 +5690,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=29
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=32
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -5935,11 +5713,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#1</span>
-            <span class="pick-tk">600529.SS</span>
+            <span class="pick-rank">#9</span>
+            <span class="pick-tk">601096.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Consumer Cyclical</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -5959,11 +5737,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#2</span>
-            <span class="pick-tk">600507.SS</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">601083.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -5983,59 +5761,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">301262.SZ</span>
+            <span class="pick-rank">#12</span>
+            <span class="pick-tk">601900.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Communication Services</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">lowvol tercile</span>
-            
-            <span class="why-chip accent">defensive</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>lowvol_tercile</b> low</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#4</span>
-            <span class="pick-tk">002901.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Healthcare</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">lowvol tercile</span>
-            
-            <span class="why-chip accent">defensive</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>lowvol_tercile</b> low</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">002221.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Energy</div>
           
           <div class="pick-why">
             
@@ -6067,6 +5797,30 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>601096.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601083.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601900.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>600529.SS</td>
@@ -6284,22 +6038,6 @@
             <td>matured</td>
           </tr>
           
-          <tr>
-            <td>601187.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601107.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
         </tbody>
       </table>
       
@@ -6350,7 +6088,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=21
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=22
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -6373,77 +6111,11 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">002487.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">300342.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">CN composite no-US-gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#8</span>
-            <span class="pick-tk">600773.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Real Estate</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">CN composite no-US-gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 1.0</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">000534.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Healthcare</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">CN composite no-US-gate</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>rev_3m_sector_rank</b> 2.0</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#12</span>
-            <span class="pick-tk">301225.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Consumer Cyclical</div>
           
           <div class="pick-why">
             
@@ -6473,6 +6145,14 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>300342.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002487.SZ</td>
@@ -6656,7 +6336,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=36
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=47
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -6680,10 +6360,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#1</span>
-            <span class="pick-tk">002379.SZ</span>
+            <span class="pick-tk">601998.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Financial Services</div>
           
           <div class="pick-why">
             
@@ -6694,7 +6374,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6702,7 +6382,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#2</span>
-            <span class="pick-tk">000768.SZ</span>
+            <span class="pick-tk">600031.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -6716,7 +6396,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6724,10 +6404,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#3</span>
-            <span class="pick-tk">300570.SZ</span>
+            <span class="pick-tk">600547.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Basic Materials</div>
           
           <div class="pick-why">
             
@@ -6738,7 +6418,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6746,10 +6426,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#4</span>
-            <span class="pick-tk">603629.SS</span>
+            <span class="pick-tk">300498.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Technology</div>
+          <div class="pick-sector">Consumer Defensive</div>
           
           <div class="pick-why">
             
@@ -6760,7 +6440,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6768,10 +6448,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#5</span>
-            <span class="pick-tk">001267.SZ</span>
+            <span class="pick-tk">002961.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Industrials</div>
+          <div class="pick-sector">Financial Services</div>
           
           <div class="pick-why">
             
@@ -6782,7 +6462,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6790,29 +6470,7 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#6</span>
-            <span class="pick-tk">002245.SZ</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Industrials</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">CN random-ctrl</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#7</span>
-            <span class="pick-tk">300353.SZ</span>
+            <span class="pick-tk">688691.SS</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Technology</div>
@@ -6826,7 +6484,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6834,10 +6492,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">688382.SS</span>
+            <span class="pick-tk">601038.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Healthcare</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -6848,7 +6506,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6856,10 +6514,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#9</span>
-            <span class="pick-tk">300641.SZ</span>
+            <span class="pick-tk">601068.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -6870,7 +6528,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6878,10 +6536,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#10</span>
-            <span class="pick-tk">600456.SS</span>
+            <span class="pick-tk">301031.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -6892,7 +6550,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6900,10 +6558,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#11</span>
-            <span class="pick-tk">600986.SS</span>
+            <span class="pick-tk">000901.SZ</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Communication Services</div>
+          <div class="pick-sector">Consumer Cyclical</div>
           
           <div class="pick-why">
             
@@ -6914,7 +6572,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6922,10 +6580,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#12</span>
-            <span class="pick-tk">000932.SZ</span>
+            <span class="pick-tk">603766.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Basic Materials</div>
+          <div class="pick-sector">Consumer Cyclical</div>
           
           <div class="pick-why">
             
@@ -6936,7 +6594,7 @@
           
           
           <div class="pick-feats">
-            <span><b>seed</b> cnlab_random_ctrl2026-07-21</span>
+            <span><b>seed</b> cnlab_random_ctrl2026-07-23</span>
           </div>
           
         </div>
@@ -6955,6 +6613,94 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>601998.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600031.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>600547.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>300498.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>002961.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>688691.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601038.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>601068.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>301031.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>000901.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603766.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002379.SZ</td>
@@ -7108,94 +6854,6 @@
             <td>open</td>
           </tr>
           
-          <tr>
-            <td>301589.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>688658.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>301207.SZ</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>600888.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>601528.SS</td>
-            <td>2026-07-17</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>open</td>
-          </tr>
-          
-          <tr>
-            <td>601336.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>601111.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>605499.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>300776.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>603129.SS</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
-          <tr>
-            <td>000728.SZ</td>
-            <td>2026-07-10</td>
-            <td class="neu">—</td>
-            <td class="">—</td>
-            <td>matured</td>
-          </tr>
-          
         </tbody>
       </table>
       
@@ -7210,7 +6868,7 @@
         </span>
         
         <span class="book-sb">
-          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=20
+          <span class="l-en">N fires</span><span class="l-zh">N触发</span>=23
           · <span class="l-en">WR21 CSI exc</span><span class="l-zh">WR21沪深超额</span> —
           · <span class="badge-accruing">
               <span class="l-en">ACCRUING</span>
@@ -7233,8 +6891,8 @@
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#3</span>
-            <span class="pick-tk">002487.SZ</span>
+            <span class="pick-rank">#7</span>
+            <span class="pick-tk">300342.SZ</span>
             <span class="pick-close">—</span>
           </div>
           <div class="pick-sector">Industrials</div>
@@ -7248,29 +6906,7 @@
           
           
           <div class="pick-feats">
-            <span><b>score</b> 1.25</span>
-          </div>
-          
-        </div>
-        
-        <div class="pick-card">
-          <div class="pick-top">
-            <span class="pick-rank">#7</span>
-            <span class="pick-tk">600773.SS</span>
-            <span class="pick-close">—</span>
-          </div>
-          <div class="pick-sector">Real Estate</div>
-          
-          <div class="pick-why">
-            
-            <span class="why-chip accent">flagship2_mirror</span>
-            
-            
-          </div>
-          
-          
-          <div class="pick-feats">
-            <span><b>score</b> 1.25</span>
+            <span><b>score</b> 1.2469</span>
           </div>
           
         </div>
@@ -7278,10 +6914,10 @@
         <div class="pick-card">
           <div class="pick-top">
             <span class="pick-rank">#8</span>
-            <span class="pick-tk">301225.SZ</span>
+            <span class="pick-tk">603698.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Consumer Cyclical</div>
+          <div class="pick-sector">Industrials</div>
           
           <div class="pick-why">
             
@@ -7292,18 +6928,18 @@
           
           
           <div class="pick-feats">
-            <span><b>score</b> 1.2419</span>
+            <span><b>score</b> 1.2439</span>
           </div>
           
         </div>
         
         <div class="pick-card">
           <div class="pick-top">
-            <span class="pick-rank">#11</span>
-            <span class="pick-tk">000534.SZ</span>
+            <span class="pick-rank">#10</span>
+            <span class="pick-tk">603103.SS</span>
             <span class="pick-close">—</span>
           </div>
-          <div class="pick-sector">Healthcare</div>
+          <div class="pick-sector">Communication Services</div>
           
           <div class="pick-why">
             
@@ -7314,7 +6950,7 @@
           
           
           <div class="pick-feats">
-            <span><b>score</b> 0.9926</span>
+            <span><b>score</b> 1.2296</span>
           </div>
           
         </div>
@@ -7333,6 +6969,30 @@
           <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
         </tr></thead>
         <tbody>
+          
+          <tr>
+            <td>300342.SZ</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603698.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
+          
+          <tr>
+            <td>603103.SS</td>
+            <td>2026-07-23</td>
+            <td class="neu">—</td>
+            <td class="">—</td>
+            <td>open</td>
+          </tr>
           
           <tr>
             <td>002487.SZ</td>
@@ -7580,7 +7240,7 @@
       <span class="l-en">Authority: display_only. All numbers from committed CN audit artifacts (SA-W2). Cluster-unit CIs per SA-R10. No verdict language before floor.</span>
       <span class="l-zh">授权：仅展示。所有数字来自已提交CN审计工件（SA-W2）。集群单元置信区间按SA-R10。下限前无结论语言。</span>
        · taxonomy v2
-      · <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-21
+      · <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-23
     </p>
   </section>
 
@@ -7647,7 +7307,7 @@
 
       <p style="margin-top:20px;font-size:11.5px;color:var(--muted)">
         <span class="l-en">Authority: display_only. All rows carry authority: &#34;display_only&#34; per CNPL-R1.</span><span class="l-zh">授权：仅展示。所有行按照CNPL-R1携带授权：&#34;display_only&#34;。</span>
-        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-21 09:52 UTC
+        · <span class="l-en">Built</span><span class="l-zh">生成时间</span> 2026-07-23 10:09 UTC
       </p>
     </div>
   </section>
@@ -7685,6 +7345,6 @@
   });
 })();
 </script>
-<script src="theme.js?v=e63903ba" defer></script>
+<script src="theme.js?v=62a16bd4" defer></script>
 </body>
 </html>

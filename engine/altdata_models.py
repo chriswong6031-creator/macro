@@ -113,9 +113,15 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "insider_buy":        0.60,   # single open-market insider buy
     "insider_mspr":       0.55,   # Finnhub insider sentiment (MSPR) strongly positive — cross-check
     "material_8k":        0.55,   # cluster of material 8-K filings (filing-time corporate activity)
-    "activist_13d":       0.55,   # Special-Situations handshake (P3.3): a high-conf 13D activist campaign
+    "activist_13d":       0.20,   # 13D activist campaign. GAUNTLET-CAPPED to context tier (was 0.55):
+                                  # activist_ownership.gate.v1 = NEGATIVE post-filing drift (5d abn -0.96%,
+                                  # 10d -1.04%, hit 0.42, HAC-t -1.56, p 0.12 -> scored:false, weight 0.0).
+                                  # Null/neg-edge signal: display-only confluence confirmer, not a handshake vote.
     "darkpool_accum":     0.55,   # off-exchange accumulation (z-scored)
-    "special_situation":  0.40,   # Special-Situations handshake (P3.3): a high-conf live deal/event on the name
+    "special_situation":  0.20,   # live deal/event handshake (P3.3). GAUNTLET-CAPPED to context tier (was 0.40):
+                                  # special_situation.gate.v1 = NEGATIVE post-filing drift (5d abn -0.37%, 10d -0.53%,
+                                  # 21d -1.46% at HAC-t -2.37; names run up PRE-filing then give it back), scored:false.
+                                  # Null/neg-edge event: display-only confluence confirmer, not a handshake vote.
     "lobbying_spike":     0.50,   # lobbying spend spiking off a real base
     "trump":              0.50,   # Donald-Trump trade / branded affiliation
     "affiliation":        0.50,   # influence-graph edge (actor -> this name)
@@ -129,7 +135,11 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "clinical_phase3_start": 0.35,  # new Phase-3 trial registration (biotech pipeline advancing)
     "hf_model_momentum":  0.35,   # Hugging Face model-download velocity (AI adoption proxy)
     "github_momentum":    0.30,   # GitHub star velocity (developer-mindshare proxy)
-    "earnings_beat":      0.30,   # Finnhub earnings surprise — single beat is weak context
+    # earnings_beat: no convergence weight (#3211) — the earnings feed is now a NON-directional
+    # catalyst clock that lands as the days_to_earnings metric only, so channel_records never
+    # emits an earnings_beat channel and it can never score here. The name survives downstream as
+    # an altdata_ledger family channel (_FAMILY_CHANNELS -> altdata_event); that path reads
+    # weights.get(c, 0.2), so the 0.2 default covers the routing with no entry needed here.
     "lobbying":           0.30,   # lobbying present (no spike)
     "short_squeeze":      0.30,   # FINRA high days-to-cover — squeeze FUEL, confirms a buy channel
     "bill_catalyst":      0.30,   # pending legislation tied to the name's sector

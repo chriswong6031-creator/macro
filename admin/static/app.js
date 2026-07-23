@@ -153,6 +153,7 @@ const ICONS = {
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
   marketing_outbox:      NAV_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  marketing_publish:     NAV_ICO('<path d="M21 4L3 11l6 2.5L11 20l3.5-6L21 4Z"/><path d="M9 13.5L21 4"/>'),
   marketing_sentinel:    NAV_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
   marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
@@ -161,7 +162,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -425,7 +426,8 @@ function renderHeader() {
   const hh = SUMMARY.health || {};
   const sv = SUMMARY.services || {};
   const allOk = hh.healthy && (!sv.available || sv.healthy);
-  const led = allOk ? "ok" : ((hh.broad_outage || (hh.sources && hh.sources.dead) || (sv.available && !sv.healthy)) ? "bad" : "warn");
+  const hhDown = hh.down_count != null ? hh.down_count : ((hh.sources && hh.sources.down) || 0);
+  const led = allOk ? "ok" : ((hh.broad_outage || hhDown > 0 || (sv.available && !sv.healthy)) ? "bad" : "warn");
   const el = $("#hmeta"); el.innerHTML = "";
   el.appendChild(h(`<span class="pill"><span class="led ${led}"></span>${allOk ? "Healthy" : "Attention"}</span>`));
   const ex = SUMMARY.experiments || {};
@@ -1354,7 +1356,10 @@ RENDER.users = async () => {
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
-    <div id="uTbl"><div class="spin">loading…</div></div>`;
+    <div id="uTbl"><div class="spin">loading…</div></div>
+    <div class="section" style="margin-top:22px">Subscribers <span class="cnt" id="subCnt"></span> <span class="sub">— paid + trial, from Stripe (user_entitlements)</span></div>
+    <div id="subSummary"></div>
+    <div id="subTbl"><div class="spin">loading…</div></div>`;
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
@@ -1363,6 +1368,19 @@ RENDER.users = async () => {
         <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
+
+  const subs = await api("/api/users/subscribers?limit=200");
+  if (subs.ok) {
+    const bd = (subs.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>";
+    $("#subSummary").innerHTML = `<div class="card">${bd}</div>`;
+    const rows = subs.subscribers || [];
+    $("#subCnt").textContent = rows.length;
+    $("#subTbl").innerHTML = rows.length ? `<table><thead><tr><th>Email</th><th>Tier</th><th>Status</th><th>Renews</th><th>Source</th><th>Updated</th></tr></thead><tbody>
+      ${rows.map(u => `<tr><td class="mono">${esc(u.email)}</td><td><b>${esc(u.tier)}</b></td>
+        <td><span class="statpill ${["active", "trialing"].includes(u.status) ? "s-ok" : "s-mut"}">${esc(u.status)}</span></td>
+        <td class="mono sub">${esc(u.renews || "—")}</td><td class="sub">${esc(u.source || "")}</td><td class="mono sub">${esc(u.updated_at || "—")}</td></tr>`).join("")}
+    </tbody></table>` : `<div class="card sub">No paid or trialing subscribers yet.</div>`;
+  } else { $("#subTbl").innerHTML = `<div class="card sub">${esc(subs.error || "could not load")}</div>`; }
 };
 
 /* ---- SYSTEM + SERVICES + UPTIME ----------------------------------------- */
@@ -1483,12 +1501,24 @@ async function toggleFlag(el, path, value, label) {
 }
 
 /* ---- BUILD & DEPLOY ----------------------------------------------------- */
+let _dispatching = false;   /* re-entry guard — a second dispatch mid-flight can cancel an in-flight Pages deploy */
 async function dispatch(workflow) {
   const names = { "daily.yml": "full rebuild + deploy", "pages.yml": "redeploy committed site", "weekly.yml": "weekly deep rebuild" };
+  if (_dispatching) { toast("A deploy is already being dispatched — wait for it to finish.", true); return; }
   if (!confirm(`Trigger ${names[workflow] || workflow} on main? This runs GitHub Actions and may update the live site.`)) return;
-  const r = await post("/api/deploy/dispatch", { workflow, confirm: true });
-  if (r.ok) { toast(`Dispatched ${workflow}`); setTimeout(() => { if (CURRENT === "deploy") RENDER.deploy(); }, 1500); }
-  else toast(r.error || "dispatch failed", true);
+  _dispatching = true;
+  // disable every deploy trigger (overview quick-actions + the Build & Deploy tab) so a
+  // rapid double-click can't fire a second run that cancels the first.
+  const btns = document.querySelectorAll("#depActions button, #qa button");
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    const r = await post("/api/deploy/dispatch", { workflow, confirm: true });
+    if (r.ok) { toast(`Dispatched ${workflow}`); setTimeout(() => { if (CURRENT === "deploy") RENDER.deploy(); }, 1500); }
+    else toast(r.error || "dispatch failed", true);
+  } finally {
+    _dispatching = false;
+    btns.forEach(b => { b.disabled = false; });
+  }
 }
 const STATUS_PILL = (r) => {
   if (r.status !== "completed") return `<span class="statpill s-warn">${esc(r.status)}</span>`;
@@ -1517,16 +1547,34 @@ RENDER.health = async () => {
   const v = $("#view"); const d = await api("/api/health");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const src = d.sources || {};
-  const sp = (s) => { const lbl = s === "stale" ? "out of date" : s === "dead" ? "down" : s; return `<span class="statpill ${s === "ok" ? "s-ok" : s === "stale" ? "s-warn" : s === "dead" ? "s-bad" : "s-mut"}">${esc(lbl)}</span>`; };
+  const down = d.down_count != null ? d.down_count : (src.down || 0);
+  const sp = (s) => {
+    const map = {
+      ok: ["s-ok", "ok"], stale: ["s-warn", "out of date"], dead: ["s-bad", "down"],
+      failed: ["s-bad", "failed"], error: ["s-bad", "error"], check_failed: ["s-bad", "check failed"],
+      not_run: ["s-bad", "didn't run"], blocked: ["s-warn", "blocked"],
+      no_creds: ["s-mut", "needs creds"], empty: ["s-warn", "empty"],
+    };
+    const [cls, lbl] = map[s] || ["s-mut", s];
+    return `<span class="statpill ${cls}">${esc(lbl)}</span>`;
+  };
+  const verdictColor = d.healthy ? "var(--ok)" : (down > 0 || d.broad_outage ? "var(--bad)" : "var(--warn)");
+  const reason = d.healthy ? "all feeds delivering"
+    : ([down > 0 ? `${down} feed${down > 1 ? "s" : ""} failed` : "",
+        d.stale ? "pipeline out of date" : "",
+        d.broad_outage ? "many feeds auto-paused" : ""].filter(Boolean).join(" · ") || "needs a look");
+  const feedExtra = [src.down ? `${src.down} down` : "", src.blocked ? `${src.blocked} blocked` : "",
+      src.gated ? `${src.gated} need creds` : "", src.empty ? `${src.empty} empty` : "",
+      src.stale ? `${src.stale} out of date` : ""].filter(Boolean).join(" · ") || "all delivering";
   v.innerHTML = `
     <div class="sub" style="margin-bottom:10px">Health of the nightly data pipeline and each data feed it pulls from.</div>
     <div class="grid">
-      ${card("Nightly pipeline", `<div class="big" style="color:${d.healthy ? "var(--ok)" : "var(--warn)"}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago${d.stale ? " · OUT OF DATE" : ""}</div>`)}
-      ${card("Data feeds", `<div class="big">${src.ok}/${src.total}</div><div class="sub">${src.stale} out of date · ${src.dead} down</div>`)}
+      ${card("Nightly pipeline", `<div class="big" style="color:${verdictColor}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago · ${esc(reason)}</div>`)}
+      ${card("Data feeds", `<div class="big" style="color:${down > 0 ? "var(--bad)" : "var(--text)"}">${src.ok}/${src.total}</div><div class="sub">${esc(feedExtra)}</div>`)}
       ${card("Auto-paused feeds", `<div class="big" style="color:${d.broad_outage ? "var(--bad)" : "var(--text)"}">${d.breaker_tripped}</div><div class="sub">paused after repeated errors${d.broad_outage ? " · MANY FEEDS DOWN" : ""}</div>`)}
     </div>
     <div class="section">Dashboard freshness</div>
-    <div class="grid">${(d.markets || []).map(m => `<div class="card"><h3>${esc(m.label)}</h3><div class="big" style="font-size:18px">${m.exists ? fmtAge(m.age_hours) + " ago" : "<span style='color:var(--bad)'>missing</span>"}</div><div class="sub">${esc(m.date || "")}</div></div>`).join("")}</div>
+    <div class="grid">${(d.markets || []).map(m => `<div class="card"><h3>${esc(m.label)}</h3><div class="big" style="font-size:18px">${m.exists ? fmtAge(m.age_hours) + " ago" : "<span style='color:var(--bad)'>missing</span>"}</div><div class="sub">${esc(m.date || "")}${m.age_source === "mtime" ? " <span style='opacity:.55'>(file time)</span>" : ""}</div></div>`).join("")}</div>
     <div class="section">Data feeds <span class="cnt">${(d.source_rows || []).length}</span></div>
     <table><thead><tr><th>Feed</th><th>Status</th><th class="r">Rows</th><th>Last date</th><th class="r">Auto-pause</th><th>Error</th></tr></thead><tbody>
       ${(d.source_rows || []).map(s => `<tr><td class="mono">${esc(s.name)}</td><td>${sp(s.status)}</td><td class="r">${s.rows ?? "—"}</td>
@@ -1767,7 +1815,7 @@ RENDER.content = async () => {
   };
   $("#lkBtn").onclick = async () => {
     $("#lkBox").innerHTML = "<span class='muted'>scanning…</span>"; const l = await api("/api/content/links");
-    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">${l.checked_pages} pages scanned</div>`;
+    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">scanned ${l.checked_pages} of ${l.total_pages != null ? l.total_pages : l.checked_pages} pages${l.truncated ? " · TRUNCATED" : ""}${l.ci_built_count ? ` · ${l.ci_built_count} built by CI (not broken)` : ""}</div>`;
     if (l.count) { const sec = h(`<div></div>`); sec.innerHTML = `<div class="section">Broken internal links <span class="cnt">${l.count}</span></div>
       <table><thead><tr><th>Page</th><th>Link</th></tr></thead><tbody>${l.broken.map(b => `<tr><td class="mono">${esc(b.page)}</td><td class="mono" style="color:var(--bad)">${esc(b.link)}</td></tr>`).join("")}</tbody></table>`; $("#view").appendChild(sec); }
   };
@@ -2122,8 +2170,34 @@ function nwIndependenceCard(indep) {
   </div>`;
 }
 
+/* Plain-word explanation of a degraded cortex run (health.json cortex.run_status /
+   orchestrator d.cortex). Returns "" when the cortex ran clean — the AI review lobe
+   silently falling back to a weaker model for days is exactly the blindness this fixes. */
+const CORTEX_DEGRADE_REASON = {
+  model_unavailable: "the preferred AI model was unavailable",
+  rate_limited: "the AI key was rate-limited",
+  timeout: "the AI call timed out",
+  error: "the AI call errored",
+  no_key: "no AI key was configured",
+};
+function cortexShortModel(m) {
+  const s = String(m || "");
+  if (/opus/i.test(s)) return "Opus";
+  if (/sonnet/i.test(s)) return "Sonnet";
+  if (/haiku/i.test(s)) return "Haiku";
+  if (/deepseek/i.test(s)) return "DeepSeek";
+  return s || "a fallback model";
+}
+function cortexDegradeLine(rs) {
+  rs = rs || {};
+  if (String(rs.status || "").toLowerCase() !== "degraded") return "";
+  const why = CORTEX_DEGRADE_REASON[rs.degradation_reason] || rs.degradation_reason || "of an unknown fault";
+  return `AI review ran degraded — fell back to ${cortexShortModel(rs.model_used)} because ${why}`;
+}
+
 function nwHero(d) {
   const st = d.overall_status || "unknown";
+  const cortexDeg = cortexDegradeLine(d.cortex || {});
   const sc = d.summary_counts || {};
   const dh = d.desc_health || {};
   const chip = (label, n, cls) => `<span class="pill"><span class="led ${cls}"></span>${n != null ? n : "—"} ${label}</span>`;
@@ -2147,7 +2221,9 @@ function nwHero(d) {
       ${(sc.degraded || 0) > 0 ? chip("degraded", sc.degraded, "bad") : ""}
       ${(sc.fresh_partial || 0) > 0 ? chip("partial", sc.fresh_partial, "warn") : ""}
       ${(sc.unknown || 0) > 0 ? chip("unknown", sc.unknown, "") : ""}
+      ${cortexDeg ? `<span class="pill"><span class="led bad"></span>cortex degraded</span>` : ""}
     </div>
+    ${cortexDeg ? `<div class="sub" style="margin-top:4px;color:var(--warn)">⚠︎ ${esc(cortexDeg)}</div>` : ""}
     ${descLine}
     <div class="nw-hero-note">${note}</div>
   </div>
@@ -2671,6 +2747,7 @@ RENDER.orchestrator = async () => {
       <span class="statpill s-mut">${hero.directives_n || 0} directive${hero.directives_n === 1 ? "" : "s"}</span>
       <span class="statpill s-mut">feedback ${esc(hero.feedback_state || "absent")}</span>
     </div>
+    ${cortexDegradeLine(cx) ? `<div class="sub" style="margin-top:6px;color:var(--warn)">⚠︎ ${esc(cortexDegradeLine(cx))}</div>` : ""}
     <div class="note muted" style="margin-top:8px">${esc(hero.next_run_note || "")} · ${hero.n_entries || 0} run${hero.n_entries === 1 ? "" : "s"} logged${hero.last_review_at ? ` · last review ${esc(String(hero.last_review_at).slice(0, 16).replace("T", " "))}` : ""}${prob.tier ? ` · cortex probation ${esc(prob.tier)}${prob.granted ? "" : " (not granted)"}` : ""}</div>
   </div>`;
 
@@ -2904,11 +2981,19 @@ RENDER.prophet = async () => {
        <table><thead><tr><th>Market</th><th>Freshness</th><th>Data gaps</th><th>Status</th></tr></thead><tbody>
        ${intMkts.map(mk => {
          const ib = integrityBlk[mk] || {};
+         // real schema: {artifact_checks:[{age_hours,status,...}], data_gap_count, overall_health}.
+         // freshness = the oldest artifact; pill = overall_health (the old code read
+         // freshness_hours/ok/status, none of which exist, so every market showed a false red "stale").
+         const checks = Array.isArray(ib.artifact_checks) ? ib.artifact_checks : [];
+         const oldest = checks.reduce((mx, c) => Math.max(mx, Number(c.age_hours) || 0), 0);
+         const gaps = Number(ib.data_gap_count || 0);
+         const health = ib.overall_health || "unknown";
+         const pillCls = health === "ok" ? "s-ok" : health === "degraded" ? "s-warn" : "s-bad";
          return `<tr>
            <td class="mono"><b>${esc(mk)}</b></td>
-           <td class="sub">${ib.freshness_hours != null ? `${Number(ib.freshness_hours).toFixed(1)}h old` : "—"}</td>
-           <td class="r mono">${ib.data_gap_count != null ? Number(ib.data_gap_count) : "—"}</td>
-           <td><span class="statpill ${ib.ok ? "s-ok" : "s-bad"}">${esc(ib.status || (ib.ok ? "ok" : "stale"))}</span></td>
+           <td class="sub">${checks.length ? `${oldest.toFixed(1)}h old` : "—"}</td>
+           <td class="r mono" style="${gaps > 0 ? "color:var(--warn)" : ""}">${gaps}</td>
+           <td><span class="statpill ${pillCls}">${esc(health)}</span></td>
          </tr>`;
        }).join("")}
        </tbody></table>`
@@ -2970,7 +3055,7 @@ RENDER.prophet = async () => {
       ${card("CN fitness", `<div class="kv"><span>Lobe</span><b>${esc(fitCn.lobe || "site-china-standouts")}</b></div>
         <div class="kv"><span>Maturity</span><b>${esc(fitCn.maturity || "accruing")}</b></div>
         <div class="kv"><span>As of</span><b>${esc(fitCn.as_of || "—")}</b></div>
-        <div class="note muted">Last audit: ${esc((astCn.last_run_utc || "—").slice(0, 16).replace("T", " "))} · attributed ${Number(astCn.rows_attributed_total || 0)}</div>`)}
+        <div class="note muted">Last audit: ${esc((astCn.attribution_last_run || "—").slice(0, 16).replace("T", " "))}${astCn.regime_store_last_date ? ` · regime ${esc(astCn.regime_store_last_date)}` : ""}</div>`)}
     </div>`;
 
   /* --- Track record summary --- */
@@ -3605,6 +3690,7 @@ RENDER.marketing_lobes = async () => {
       ${card("Growth events", `
         <div class="kv"><span>Instrumented</span><b>${geNames.length}</b></div>
         <div class="kv"><span>Observed</span><b>${Number(ge.observed || 0)}</b></div>
+        ${ge.seeded ? `<div class="note muted">${esc(ge.seed_note || `${ge.seeded} seeded, awaiting real events`)}</div>` : ""}
         <div class="note muted">Taxonomy: ${esc(geNames.slice(0, 4).join(", "))}${geNames.length > 4 ? ` + ${geNames.length - 4} more` : ""}</div>`)}
     </div>`;
 
@@ -4452,6 +4538,170 @@ function sentVerdict(d) {
     error:              { cls: "sent-plan-bad",  word: "Gate errored — treat as held" },
   }[ps] || { cls: "sent-plan-mut", word: ps ? `Plan: ${ps}` : "Plan not yet gated" };
   return { live, planMeta };
+}
+
+/* ---- Publisher (D02 W1) — the live-publish control plane ------------------ */
+RENDER.marketing_publish = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/publish");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Publisher unavailable", (d && d.error) || "panel error"); return; }
+
+  const cfg = d.config || {};
+  const sc = d.status_counts || {};
+  const armed = cfg.token_present && cfg.any_channel_set;
+
+  /* Header — honest arm-state pill in plain words. Nothing here posts; the
+     workflow/runner does, and only when MARKETING_PUBLISH_ENABLED=1 + --live. */
+  const asOfChip = d.as_of ? `<span class="cnt">queue as of ${esc(d.as_of)}</span>` : "";
+  const armPill = armed
+    ? `<span class="obx-shadow-pill" style="color:var(--warn)"><span class="obx-shadow-dot" style="background:var(--warn)"></span>Ready to arm — posts only with the kill-switch on</span>`
+    : `<span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Dark — no token/channel; nothing can post</span>`;
+  const header = `<div class="section">Publisher ${asOfChip}${armPill}</div>
+  <div class="obx-lede">The publisher posts APPROVED, DUE outbox items to X through Buffer. It stays dark until the operator sets <code>MARKETING_PUBLISH_ENABLED=1</code> and a channel id. Run a dry-run below to see exactly what the next live run would post — no network, no writes.</div>`;
+
+  /* Status strip — one tile per publisher state. */
+  const tileDefs = [
+    ["queued", "Queued", null],
+    ["approved", "Approved", "var(--ok)"],
+    ["posting", "Posting", "var(--warn)"],
+    ["posted", "Posted", "var(--muted)"],
+    ["failed", "Failed", "var(--bad)"],
+    ["quarantined", "Quarantined", "var(--bad)"],
+  ];
+  const tiles = `<div class="metric-tiles-row">
+    ${tileDefs.map(([k, lbl, color]) => {
+      const val = sc[k] != null ? sc[k] : 0;
+      return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
+        <div class="eyebrow">${esc(lbl)}</div>
+        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+
+  /* Config strip — read-only echo of config/marketing.yml publish + token
+     presence (boolean only; the token value is NEVER surfaced). */
+  const chSet = cfg.channels_set || {};
+  const chLine = Object.keys(chSet).length
+    ? Object.entries(chSet).map(([a, on]) =>
+        `<span class="pub-cfg-chip ${on ? "on" : "off"}">${esc(a)}: ${on ? "channel set" : "no channel"}</span>`).join("")
+    : `<span class="note muted">no accounts configured</span>`;
+  const cfgCard = `<div class="card">
+    <div class="section">Configuration <span class="cnt">config/marketing.yml · read-only</span></div>
+    <div class="pub-cfg-grid">
+      <div><span class="eyebrow">Backend</span> <b>${esc(cfg.backend || "buffer")}</b></div>
+      <div><span class="eyebrow">Daily cap</span> <b>${cfg.cap != null ? cfg.cap : "—"}</b> / account</div>
+      <div><span class="eyebrow">Require approval</span> <b>${cfg.require_approval ? "yes" : "no"}</b></div>
+      <div><span class="eyebrow">Auto-approve</span> <b>${cfg.auto_approve ? "ON" : "off"}</b></div>
+      <div><span class="eyebrow">Buffer token</span> <b style="color:${cfg.token_present ? "var(--ok)" : "var(--muted)"}">${cfg.token_present ? "present" : "not set"}</b></div>
+    </div>
+    <div class="pub-cfg-channels">${chLine}</div>
+  </div>`;
+
+  /* PROMINENT callout — anything stuck in 'posting' (a crashed in-flight post)
+     or quarantined needs a human look. Loud, above the fold. */
+  const stuck = d.stuck_posting || [];
+  const quar = d.quarantined || [];
+  let callout = "";
+  if (stuck.length || quar.length) {
+    const stuckRows = stuck.map(r => `<div class="pub-alert-row">
+      <span class="pub-alert-tag warn">stuck posting</span>
+      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
+      <span class="pub-alert-note">${esc(r.note || "in-flight from a crashed run — never auto-reposted")}</span>
+    </div>`).join("");
+    const quarRows = quar.map(r => `<div class="pub-alert-row">
+      <span class="pub-alert-tag bad">quarantined</span>
+      <code>${esc(r.id)}</code> <span class="muted">${esc(r.account || "")}</span>
+      <span class="pub-alert-note">${esc(r.note || "no reason recorded")}</span>
+    </div>`).join("");
+    callout = `<div class="card pub-callout">
+      <div class="section">Needs attention <span class="cnt">${stuck.length} stuck · ${quar.length} quarantined</span></div>
+      ${stuck.length ? `<div class="note muted" style="margin-bottom:6px">Items left in <b>posting</b> are in-flight markers from a crashed run. The runner reports them and NEVER reposts (no-double-post). Confirm on X, then resolve manually.</div>` : ""}
+      ${stuckRows}${quarRows}
+    </div>`;
+  }
+
+  /* Recent posted table — with receipts (external id + link when present). */
+  const posted = d.recent_posted || [];
+  let postedCard;
+  if (posted.length) {
+    const rows = posted.map(r => {
+      const idCell = r.external_url
+        ? `<a href="${esc(r.external_url)}" target="_blank" rel="noopener">${esc(r.external_id || "post")}</a>`
+        : (r.external_id ? esc(r.external_id) : `<span class="muted">—</span>`);
+      return `<tr>
+        <td class="muted">${esc(r.at || "")}</td>
+        <td>${esc(r.account || "")}</td>
+        <td class="pub-text">${esc((r.text || "").slice(0, 120))}</td>
+        <td>${esc(r.backend || "")}</td>
+        <td><code>${idCell}</code></td>
+      </tr>`;
+    }).join("");
+    postedCard = `<div class="card">
+      <div class="section">Recent posts <span class="cnt">last ${posted.length} · newest first</span></div>
+      <table class="tbl pub-tbl"><thead><tr><th>at</th><th>desk</th><th>post</th><th>via</th><th>receipt</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>`;
+  } else {
+    postedCard = `<div class="card"><div class="section">Recent posts</div>
+      <div class="note muted">Nothing posted yet. Live posts land here with their Buffer receipt once the publisher is armed and runs.</div></div>`;
+  }
+
+  /* Dry-run action + result zone. */
+  const actionCard = `<div class="card">
+    <div class="section">Dry-run preview</div>
+    <div class="note muted" style="margin-bottom:8px">See exactly what the next <code>--live</code> run would post right now. Runs in-process: no network call, no ledger write.</div>
+    <button class="btn primary" id="pub-dryrun-btn" onclick="pubRunDryRun(this)">Run dry-run</button>
+    <div id="pub-dryrun-out" style="margin-top:10px"></div>
+  </div>`;
+
+  /* Activity strip — publisher run tallies. */
+  const activity = d.activity || [];
+  const actStrip = activity.length ? `<div class="card"><div class="section">Recent runs</div>
+    ${activity.map(a => `<div class="pub-act-row"><span class="muted">${esc(a.at || "")}</span>
+      <span class="pub-act-lane">${esc(a.lane || "")}</span>
+      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}</div>`).join("")}
+  </div>` : "";
+
+  /* Cold outbox → honest note (still show config + action so the operator can arm). */
+  if (d.note && !posted.length && !stuck.length && !quar.length) {
+    v.innerHTML = header + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+    return;
+  }
+
+  v.innerHTML = header + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+};
+
+/* POST the dry-run and render the "would post" report into #pub-dryrun-out. */
+async function pubRunDryRun(btn) {
+  const out = document.getElementById("pub-dryrun-out");
+  if (btn) { btn.disabled = true; btn.textContent = "Running…"; }
+  const d = await post("/api/marketing/publish/dryrun", {});
+  if (btn) { btn.disabled = false; btn.textContent = "Run dry-run"; }
+  if (!out) return;
+  if (!d || !d.ok) { out.innerHTML = `<div class="note err">${esc((d && d.error) || "dry-run failed")}</div>`; return; }
+
+  const c = d.counts || {};
+  const wp = d.would_post || [];
+  const q = d.quarantine || [];
+  const wa = d.would_auto_approve || [];
+  const killWord = d.kill_switch
+    ? `<span style="color:var(--warn)">kill-switch ON — a live run WOULD post</span>`
+    : `<span class="muted">kill-switch off — a live run stays dry</span>`;
+
+  const summary = `<div class="note" style="margin-bottom:8px">
+    <b>${wp.length}</b> would post · <b>${q.length}</b> would quarantine · <b>${c.skipped_cap || 0}</b> capped · <b>${c.skipped_no_channel || 0}</b> no-channel${d.auto_approve ? ` · <b>${wa.length}</b> would auto-approve` : ""}. ${killWord}.</div>`;
+
+  const wpRows = wp.length ? `<table class="tbl pub-tbl"><thead><tr><th>desk</th><th>chars</th><th>sched</th><th>preview</th></tr></thead>
+    <tbody>${wp.map(p => `<tr><td>${esc(p.account || "")}</td><td>${p.chars}</td><td class="muted">${esc(p.scheduled_at || "immediate")}</td><td class="pub-text">${esc(p.preview || "")}</td></tr>`).join("")}</tbody></table>`
+    : `<div class="note muted">Nothing is APPROVED and DUE right now — nothing would post.</div>`;
+
+  const qRows = q.length ? `<div class="note muted" style="margin-top:8px">Would quarantine:</div>
+    ${q.map(x => `<div class="pub-alert-row"><span class="pub-alert-tag bad">${esc((x.reasons || []).join(", "))}</span><code>${esc(x.id)}</code> <span class="muted">${esc(x.account || "")}</span></div>`).join("")}` : "";
+
+  const waRows = (d.auto_approve && wa.length) ? `<div class="note muted" style="margin-top:8px">Would auto-approve (queued → approved): ${wa.map(x => `<code>${esc(x.id)}</code>`).join(" ")}</div>` : "";
+
+  out.innerHTML = summary + wpRows + qRows + waRows;
 }
 
 RENDER.marketing_sentinel = async () => {
@@ -5967,14 +6217,22 @@ function seoCensusBlock(census) {
   const rows = fams.map(fam => {
     const f = byFam[fam] || {};
     const pages = Number(f.pages || 0);
+    // coverage % is a share of what was actually scanned. Big families (e.g. stocks,
+    // 1630 pages) are crawled on a sample, so the signal counts are out of `sampled`,
+    // not `pages` — dividing by pages showed a false ~2% "red" when the sample was ~100%.
+    const sampled = f.sampled != null ? Number(f.sampled) : null;
+    const denom = sampled != null ? sampled : pages;
     const cells = SEO_COV_COLS.map(([key]) => {
-      const pct = seoPct(Number(f[key] || 0), pages);
+      const pct = seoPct(Number(f[key] || 0), denom);
       const cls = seoCovCls(pct);
       return `<td class="r"><span class="mkt-seo-cov band-${cls}">${pct == null ? "—" : pct + "%"}</span></td>`;
     }).join("");
+    const pagesCell = sampled != null
+      ? `<td class="r sub" title="coverage measured on a ${sampled}-page sample of ${pages}">${sampled}<span class="muted">/${pages}</span></td>`
+      : `<td class="r sub">${pages}</td>`;
     return `<tr>
-      <td><span class="mkt-seo-fam">${esc(fam)}</span></td>
-      <td class="r sub">${pages}</td>
+      <td><span class="mkt-seo-fam">${esc(fam)}</span>${sampled != null ? ` <span class="statpill s-mut" style="font-size:9px">sample</span>` : ""}</td>
+      ${pagesCell}
       ${cells}
     </tr>`;
   }).join("");
@@ -6217,6 +6475,16 @@ RENDER.mastermind_ai = async () => {
   const lastLoops = d.last_loops || [];
   const lastLoop = lastLoops[lastLoops.length - 1] || {};   /* status().last_loops is oldest-first */
   const refl = d.reflection || {};
+  /* Bot-loop LIVENESS — the hero showed the loop summary but never its AGE, so an
+     8-day-stale loop looked identical to one that ran overnight. Compute age from the
+     newest recorded cycle's timestamp and flag it stale (the loop-strip below shows the
+     unrelated metabolism/codex pipelines, not the bot's own cadence). */
+  const loopTs = lastLoop.ts || lastLoop.asof || null;
+  const loopAgeH = loopTs ? Math.max(0, (Date.now() - new Date(loopTs).getTime()) / 3.6e6) : null;
+  const loopStale = loopAgeH != null && loopAgeH > 48;   /* healthy cadence is at least every couple days */
+  const loopAgeChip = loopAgeH == null
+    ? `<span class="statpill s-mut">last cycle: unknown</span>`
+    : `<span class="statpill ${loopStale ? "s-bad" : "s-ok"}" title="newest recorded self-improvement cycle (${esc(String(loopTs))})">last cycle ${fmtAge(loopAgeH)} ago${loopStale ? " · STALE" : ""}</span>`;
   const dia = d.dialogue;   /* status "dialogue" block — absent on older bots, degrade to "—" */
 
   /* honest tri-state: never claim "loop on" when the bot didn't report the setting */
@@ -6233,11 +6501,13 @@ RENDER.mastermind_ai = async () => {
     </div>
     <div class="sub" style="margin-top:6px">${esc(lastLoop.summary || (d.last_review && d.last_review.summary) || "No loop summary reported yet.")}</div>
     <div class="mb-hero-chips">
+      ${loopAgeChip}
       <span class="statpill s-mut">loop #${d.loop_n != null ? d.loop_n : "—"}</span>
       ${nudgesN != null ? `<span class="statpill ${nudgesN ? "s-warn" : "s-mut"}" title="coded fix-requests published to the NW orchestrator">${nudgesN} nudge${nudgesN === 1 ? "" : "s"}</span>` : ""}
       ${refl.contract_drift_n != null ? `<span class="statpill ${refl.contract_drift_n ? "s-bad" : "s-mut"}" title="NW context fields the bot's decision rules need but cannot use">${refl.contract_drift_n} contract drift${refl.contract_drift_n === 1 ? "" : "s"}</span>` : ""}
       ${countChips(typeof flagsObj === "object" && !Array.isArray(flagsObj) ? flagsObj : null)}
     </div>
+    ${loopStale ? `<div class="sub" style="margin-top:6px;color:var(--bad)">⚠︎ The bot hasn't completed a self-improvement cycle in ${fmtAge(loopAgeH)} — its cron may have stopped or the bot may be down. "Loop on" is only the setting, not proof it's running.</div>` : ""}
   </div>
   <div class="note muted" style="margin:0 0 20px;line-height:1.5">Every night the bot audits the Neural Web data it trades against. A contract-drift finding means a data field its decision rules consume is missing or dead in the published artifact. A nudge is the fix request it publishes back to the macro pipeline. Nudges flow out automatically. Formal directives are queued from open findings automatically each cycle when "Auto-act on findings" is on — or by hand via "Act on findings" / the composer below.</div>`;
 
@@ -6494,6 +6764,30 @@ function wireDirectiveComposer(scope) {
 
 /* ---- ALERTS (operator capture) ------------------------------------------ */
 const SEV_CLS = { critical: "s-bad", major: "s-warn", minor: "" };
+/* Triage-calibration card — which alert rules earned predictive authority, and how
+   stale the calibration is. The Alerts tab had zero visibility into this lobe. */
+function alertsCalCard(cal) {
+  if (!cal) return "";
+  const stale = cal.age_days != null && cal.age_days > 14;
+  const ageTxt = cal.age_days != null ? `${Math.round(cal.age_days)}d ago` : "—";
+  const pct = (x) => x != null ? Math.round(x * 100) + "%" : "—";
+  const rows = (cal.rules || []).map(r => {
+    const up = r.hit_uplift;
+    const upTxt = up != null ? `${up >= 0 ? "+" : ""}${(up * 100).toFixed(1)}pp` : "—";
+    const upCls = up == null ? "s-mut" : up > 0.01 ? "s-ok" : up < -0.01 ? "s-warn" : "s-mut";
+    return `<tr>
+      <td><b>${esc(r.label)}</b>${r.thesis ? ` <span class="sub mono">${esc(r.thesis)}</span>` : ""}</td>
+      <td class="r mono">${r.horizon_d ? r.horizon_d + "d" : "—"}</td>
+      <td class="r mono">${pct(r.hit)}${r.base_hit != null ? ` <span class="sub">vs ${pct(r.base_hit)}</span>` : ""}</td>
+      <td class="r"><span class="statpill ${upCls}">${upTxt}</span></td>
+      <td class="r mono sub">${r.q_fdr != null ? r.q_fdr.toFixed(3) : "—"}</td>
+      <td>${r.survives ? '<span class="statpill s-ok">earned</span>' : '<span class="statpill s-mut">no edge</span>'}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="section" style="margin-top:14px">Triage calibration ${stale ? '<span class="statpill s-bad">stale</span>' : ""}</div>
+    <div class="sub muted" style="margin-bottom:6px">Which alert rules earned predictive authority (backtested hit-rate vs base rate). Calibration generated ${ageTxt}${stale ? " — overdue for a refresh" : ""}. <b>${cal.n_earned != null ? cal.n_earned : "?"} of ${cal.n_total}</b> rules earned an edge.</div>
+    <table><thead><tr><th>Rule</th><th class="r">Horizon</th><th class="r">Hit</th><th class="r">Uplift</th><th class="r">q-FDR</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
 RENDER.alerts = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="sub" style="margin-bottom:12px">Recent alerts from the live site feed. Log your action against any alert — Acted, Dismissed, Overrode, or Snoozed — to build the operator capture ledger (L4 instrumentation). All writes go through /api/actions behind auth.</div>
@@ -6504,9 +6798,10 @@ RENDER.alerts = async () => {
     return;
   }
   const alerts = d.alerts || [];
+  const calCard = alertsCalCard(d.triage_calibration);
   const genLine = d.generated_utc ? `<div class="sub muted" style="margin-bottom:8px">Feed generated: ${esc(d.generated_utc)} UTC${d.note ? " — " + esc(d.note) : ""}</div>` : (d.note ? `<div class="sub muted" style="margin-bottom:8px">${esc(d.note)}</div>` : "");
   if (!alerts.length) {
-    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>`;
+    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>${calCard}`;
     return;
   }
   v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">${alerts.length}</span></div>
@@ -6522,7 +6817,7 @@ RENDER.alerts = async () => {
         <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="overrode">Override</button>
         <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="snoozed">Snooze</button>
       </td></tr>`).join("")}
-    </tbody></table>`;
+    </tbody></table>${calCard}`;
   // Wire action buttons — POST {surface: alert_id, action, direction_note, alert_emit_ts}
   v.querySelectorAll(".alert-act-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
@@ -6740,7 +7035,9 @@ RENDER.context_lobe = async () => {
         const gate = lobe.gate || {};
         detail = Object.entries(gate).map(([k, v2]) => `${esc(k)}=${esc(String(v2))}`).join(" · ") || "—";
       } else if (name === "cortex") {
-        detail = `probation=${lobe.probation ? "yes" : "no"} · active_signals=${lobe.active_signals != null ? lobe.active_signals : "—"}`;
+        const probTxt = lobe.probation_granted ? `granted${lobe.probation_tier ? " (" + esc(lobe.probation_tier) + ")" : ""}`
+          : `not granted${lobe.probation_reason ? " — " + esc(lobe.probation_reason) : ""}`;
+        detail = `probation: ${probTxt} · active_signals=${lobe.active_signals != null ? lobe.active_signals : "—"}`;
       } else if (name === "contradictions") {
         detail = `${lobe.n_records != null ? lobe.n_records : "—"} records`;
       } else if (name === "cycle_pattern") {
@@ -7739,7 +8036,16 @@ RENDER.codex = async () => {
     ? `<div class="sub muted">No loop journal entries yet.</div>`
     : loop.map(row => {
         const ts = esc((row.ts || "").slice(0, 16).replace("T", " "));
-        return `<div class="kv"><span class="sub mono">${ts}</span><span>${esc(row.action || row.event || JSON.stringify(row))}</span></div>`;
+        // rows are {ts, lane, iteration, results:{<lane>:{ok,action,detail,n_admitted}}, stop_reason};
+        // the old code read row.action/row.event (neither exists) and always dumped raw JSON.
+        const results = (row.results && typeof row.results === "object") ? row.results : {};
+        const outcomes = Object.entries(results).map(([ln, r]) => {
+          const act = (r && (r.action || (r.ok ? "ok" : "—"))) || "—";
+          const adm = (r && r.n_admitted) ? ` +${r.n_admitted}` : "";
+          return `${esc(ln)}: ${esc(String(act))}${adm}`;
+        }).join(" · ") || "—";
+        const stop = row.stop_reason ? ` · <span class="sub muted">stop: ${esc(String(row.stop_reason))}</span>` : "";
+        return `<div class="kv"><span class="sub mono">${ts}</span><span>lane <b>${esc(row.lane || "?")}</b> iter ${row.iteration != null ? esc(String(row.iteration)) : "?"} · ${outcomes}${stop}</span></div>`;
       }).join("");
 
   // --- Workflow runs ---

@@ -23,15 +23,9 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:13px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 0 0; }
-  .wrap { max-width:1200px; margin:0 auto; padding:12px 16px 40px; }
-  header h1 { font-size:20px; margin:0 0 2px; }
-  header .sub { color:var(--muted); font-size:12.5px; margin:0 0 12px; max-width:800px; line-height:1.5; }
-</style>
-</head>
+<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="assets/css/d54211b8.css?v=d54211b8">
+<style>/* nav-gap hotfix: body top padding — templates carry the real fix; next full render supersedes this inline rule */body{padding-top:18px}</style></head>
 <body class="page-radar">
 <nav class="site-nav">
     
@@ -39,7 +33,7 @@
 
     <div class="nav-links">
     
-    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -89,7 +83,7 @@
             <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
             <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
             <a href="movers.html">📈 <span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
             <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
             <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
             <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
@@ -242,12 +236,12 @@
         </div>
       </div>
     </div>
+      
+      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=e1a3ca0d" defer></script>
-  
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
@@ -262,17 +256,24 @@
   </div>
 </nav>
 
-<div class="wrap">
-  <header>
-    <h1>🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></h1>
-    <p class="sub"><span class="l-en">Where independent REAL ACTIVITY — federal contracts, Quiver gov-contracts / congress / lobbying / patents, and modeled news flow — runs AHEAD of or BEHIND price. The radar stays silent when activity and price agree; it speaks only on the divergence. Plus a Claude reading of each theme&#39;s durability, graded against the tape over time. Display-only context, never a trade trigger.</span><span class="l-zh">独立的真实活动 —— 联邦合同、Quiver 政府合同／国会／游说／专利，以及建模新闻流 —— 领先或落后于价格之处。活动与价格一致时雷达保持沉默，只在背离时发声。另含 Claude 对各主题持续力的解读，并随时间对照行情评分。仅供参考，非交易触发。</span></p>
-  </header>
-
-  <section id="divergence-radar" class="panel pad"></section>
+<div id="divergence-radar">
+  <div class="rx-skel" aria-hidden="true">
+    <div class="rx-skel-bar" style="width:38%;height:11px"></div>
+    <div class="rx-skel-bar" style="width:72%;height:32px"></div>
+    <div class="rx-skel-bar" style="width:52%"></div>
+    <div class="rx-skel-bar" style="width:90%;height:118px;margin-top:20px"></div>
+    <div class="rx-skel-bar" style="width:100%;height:220px;margin-top:16px"></div>
+  </div>
+  <noscript>
+    <div style="max-width:1180px;margin:0 auto;padding:26px 16px;color:var(--muted)">
+      <h1 style="color:var(--text);font-size:24px">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></h1>
+      <p style="max-width:760px;line-height:1.6"><span class="l-en">Where independent real activity — federal contracts, congress, lobbying, patents and modeled news flow — runs ahead of or behind price. This page needs JavaScript to show the live read. Context only, never a trade signal.</span><span class="l-zh">独立的真实活动 —— 联邦合同、国会、游说、专利与建模新闻流 —— 领先或落后于价格之处。本页需要 JavaScript 才能显示实时解读。仅供参考，绝非交易信号。</span></p>
+    </div>
+  </noscript>
 </div>
 
-<script src="radar_panel.js?v=937b1390" defer></script>
+<script src="radar_panel.js?v=f83f2284" defer></script>
 <script>renderRadarFull({ base: "basketdata/" });</script>
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js?v=d4dfefdc" defer></script>
 </body>
 </html>

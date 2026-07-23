@@ -18,7 +18,7 @@ Seven checks against `lib.hk_calendar.expected_last_session()`:
     2. Bellwether spot-check: data/hk_stocks/9988.HK.parquet index.max() <= 2 cal days.
     3. Standouts artifact: site/factordata/hk_standouts.json `.as_of` <= 2 cal days.
     4. Regime artifact: data/hk_regime/latest.json `.date` <= 1 cal day.
-    5. Coherence: standouts.as_of == regime.date (divergence = incoherent snapshot).
+    5. Coherence: standouts.as_of and regime.date within <= 1 business day of each other.
     6. Regression: cache index.max() must never DECREASE run-over-run (detects the
        `-X theirs` clobber that caused the incident).
     7. Southbound holdings: data/hk_southbound/holdings.parquet index.max() <= 2 cal days.
@@ -26,13 +26,38 @@ Seven checks against `lib.hk_calendar.expected_last_session()`:
 State thresholds:
     lag <= 2 cal days -> "fresh"
     lag <= 4 cal days -> "slow" (weekend gaps, missed session)
-    lag >= 5 cal days -> "stale"
-    missing           -> "dead"
+    lag >= 5 cal days -> "stale"     (present but too old)
+    file absent       -> "missing"   (never present this run — SECONDARY, degraded-only)
+    read error        -> "error"     (present but unreadable — PRIMARY, red)
 
 Page-level verdict: ok | degraded | stale
     ok       = all checks fresh/slow (no check stale/dead)
-    degraded  = at most one non-critical check is stale/dead (coherence/regression OK)
-    stale    = cache (check 1) is stale/dead, OR coherence is broken, OR regression fired
+    degraded  = at most one non-critical store is stale/missing/error (coherence/regression OK)
+    stale    = cache (check 1) is stale/error, OR coherence is broken, OR regression fired
+
+REVISION 2026-07-23 — stop the chronic false "STALE — do not act" red:
+    Two structural mismatches made the sentinel fire red every night even when the
+    engine classified the day fine. Both are fixed here (fail-open still holds).
+
+    (a) COHERENCE PHASE TOLERANCE. There is a real pipeline phase gap: the stock scan
+        (standouts) advances to session T in the evening render lanes, but the committed
+        regime artifact (data/hk_regime/latest.json) only advances the NEXT morning on
+        the asia lane (engine-render lanes discard data/ writes). So through the whole
+        evening→next-asia-close window, standouts.as_of is exactly ONE session ahead of
+        regime.date — a normal, expected phase, not an incoherent snapshot. The old
+        exact-equality check (standouts.as_of == regime.date) turned that normal phase
+        into a full-red "do not act" banner all night. Coherence is now OK when the two
+        dates are within <= 1 business day of each other; a plain-word note explains the
+        one-session lag, and `gap_sessions` records the size. A gap > 1 session (either
+        direction) still breaks coherence -> stale.
+
+    (b) CACHE MISSING vs CACHE STALE. `_closes_cache.parquet` is gitignored: the
+        persistent Mac Studio carries it, GitHub-hosted runners do NOT. A merely-absent
+        cache on an ephemeral runner is not evidence of stale data — it is a runner that
+        never had the file. Absent cache is now state "missing" and treated as SECONDARY
+        (can only produce "degraded", never "stale"). The 2026-07-08 incident was cache
+        PRESENT-but-old (a 5-day rollback) — that is state "stale" and still forces red,
+        as does an unreadable cache ("error"). Protection for the real incident is intact.
 """
 from __future__ import annotations
 
@@ -41,6 +66,7 @@ import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from lib import config
@@ -161,10 +187,19 @@ def _save_state(state_path: Path, payload: dict) -> None:
         log.warning("hk_freshness: state write failed (%s)", e)
 
 
-def _badge(asof: date | None, expected: date, *, tight: bool = False) -> dict:
-    """Build a per-store staleness badge dict."""
+def _badge(asof: date | None, expected: date, *, tight: bool = False,
+           null_state: str = "dead") -> dict:
+    """Build a per-store staleness badge dict.
+
+    `null_state` is the state assigned when `asof` is None (no readable date). It
+    defaults to "dead" (present-but-unreadable / never-there, treated as red for the
+    stores where absence is itself a fault). The cache check passes
+    ``null_state="missing"`` for the file-absent case: a gitignored cache that never
+    shipped to an ephemeral runner is a runner condition, not stale data, so it is
+    demoted to secondary (degraded-only). See the module docstring, revision 2026-07-23.
+    """
     if asof is None:
-        return {"asof": None, "lag_days": None, "state": "dead"}
+        return {"asof": None, "lag_days": None, "state": null_state}
     lag = (expected - asof).days
     # Negative lag (asof AFTER expected) = store has fresh data.
     lag = max(lag, 0)
@@ -215,10 +250,20 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
     checks: dict[str, dict] = {}
 
     # Check 1: _closes_cache.parquet
+    # File-absent -> "missing" (SECONDARY: gitignored cache is not carried by ephemeral
+    # runners; its absence is a runner condition, not stale data). Present-but-unreadable
+    # -> "error" (PRIMARY, red). Present-but-old (lag>=5) -> "stale" (PRIMARY, red — the
+    # 2026-07-08 rollback incident). See docstring revision 2026-07-23.
     try:
         cache_path = data_root / "hk_breadth" / "_closes_cache.parquet"
         cache_max = _parquet_index_max(cache_path)
-        checks["cache"] = _badge(cache_max, expected)
+        if cache_max is None and not cache_path.exists():
+            checks["cache"] = {"asof": None, "lag_days": None, "state": "missing"}
+        elif cache_max is None:
+            # File present but returned no readable date -> unreadable/corrupt.
+            checks["cache"] = {"asof": None, "lag_days": None, "state": "error"}
+        else:
+            checks["cache"] = _badge(cache_max, expected)
     except Exception as e:  # noqa: BLE001
         log.error("hk_freshness check 1 (cache) crashed: %s", e)
         checks["cache"] = {"asof": None, "lag_days": None, "state": "error"}
@@ -258,17 +303,37 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
         regime_date = None
         regime_date_str = None
 
-    # Check 5: Coherence — standouts.as_of == regime.date
+    # Check 5: Coherence — standouts.as_of within <= 1 business day of regime.date.
+    # The regime artifact advances one asia-close BEHIND the evening stock scan (the
+    # committed data/ file lags the render lanes by one session); that one-session lag
+    # is a normal pipeline phase, not an incoherent snapshot. Tolerate a gap of <= 1
+    # business day (either direction); a larger gap breaks coherence -> stale.
+    # See docstring revision 2026-07-23. HK-holiday exactness is not required here.
     try:
-        coherent = (standouts_asof is not None
-                    and regime_date is not None
-                    and standouts_asof == regime_date)
+        if standouts_asof is not None and regime_date is not None:
+            # busday_count is signed and half-open [start, end); take the absolute
+            # count so either ordering yields the session distance between the dates.
+            gap_sessions = int(abs(np.busday_count(regime_date, standouts_asof)))
+            coherent = gap_sessions <= 1
+            if not coherent:
+                note = (f"the stock scan and the regime read are {gap_sessions} "
+                        "sessions apart — a bigger gap than the normal one-session lag")
+            elif gap_sessions == 1:
+                note = ("regime read is one session behind the stock scan — "
+                        "catches up after the next Asia close")
+            else:
+                note = None
+        else:
+            # A missing date on either side cannot be judged coherent.
+            gap_sessions = None
+            coherent = False
+            note = "standouts or regime date unavailable — coherence cannot be checked"
         coherence = {
             "ok": coherent,
             "standouts_asof": str(standouts_asof) if standouts_asof else None,
             "regime_date": str(regime_date) if regime_date else None,
-            "note": (None if coherent
-                     else "standouts.as_of != regime.date — snapshot is incoherent"),
+            "gap_sessions": gap_sessions,
+            "note": note,
         }
     except Exception as e:  # noqa: BLE001
         log.error("hk_freshness check 5 (coherence) crashed: %s", e)
@@ -318,14 +383,21 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
     # Verdict
     # ---------------------------------------------------------------------------
     cache_state = checks.get("cache", {}).get("state", "error")
-    cache_primary_bad = cache_state in ("stale", "dead", "error")
+    # Cache is PRIMARY-red only when present-but-old ("stale") or present-but-unreadable
+    # ("error"). An absent cache ("missing") is a runner condition, not stale data, and
+    # is demoted to SECONDARY (degraded-only). See docstring revision 2026-07-23.
+    cache_primary_bad = cache_state in ("stale", "error")
     coherence_bad = not coherence.get("ok", True)
     regression_bad = not regression.get("ok", True)
 
-    # Any secondary stores stale/dead (non-cache)?
-    secondary_bad = any(
-        checks.get(k, {}).get("state") in ("stale", "dead", "error")
-        for k in ("bellwether", "standouts", "regime", "southbound")
+    # Any secondary stores stale/dead/missing/error? Cache="missing" counts here so an
+    # absent cache still surfaces a "degraded" banner (never full-red "stale").
+    secondary_bad = (
+        cache_state == "missing"
+        or any(
+            checks.get(k, {}).get("state") in ("stale", "dead", "missing", "error")
+            for k in ("bellwether", "standouts", "regime", "southbound")
+        )
     )
 
     if cache_primary_bad or coherence_bad or regression_bad:
@@ -336,60 +408,61 @@ def hk_freshness_sentinel(now: datetime | None = None) -> dict:
         verdict = "ok"
 
     # ---------------------------------------------------------------------------
-    # Banner message (bilingual) — only when degraded or stale
+    # Banner message (bilingual) — only when degraded or stale.
+    # PLAIN WORDS ONLY (User-First Design Doctrine, Tier 1). No internal vocabulary —
+    # no store slugs (cache/bellwether/southbound), no "snapshot", no "incoherent".
+    # The mechanical per-store details stay in `stores` for the Tier-2 data-feeds panel.
+    # Copy shape: one lead sentence stating what it means for the reader, then ONE short
+    # specific clause (a date) so it isn't vague. See docstring revision 2026-07-23.
     # ---------------------------------------------------------------------------
     banner = None
     if verdict in ("stale", "degraded"):
-        stale_parts_en: list[str] = []
-        stale_parts_zh: list[str] = []
-
+        # Pick the single most relevant date for the trailing clause, without naming
+        # any internal store. Prefer the freshest price date we know; fall back to the
+        # regime read date, else the expected session.
         cache_info = checks.get("cache", {})
-        cache_lag = cache_info.get("lag_days")
-        cache_asof = cache_info.get("asof") or "—"
-        if cache_info.get("state") in ("stale", "dead", "error"):
-            sessions_str = f"{cache_lag} sessions" if cache_lag is not None else "unknown sessions"
-            stale_parts_en.append(
-                f"cache {sessions_str} behind (last {cache_asof})")
-            stale_parts_zh.append(
-                f"价格缓存落后 {cache_lag if cache_lag is not None else '—'} 个交易日（最后 {cache_asof}）")
+        bell_info = checks.get("bellwether", {})
+        price_asof = bell_info.get("asof") or cache_info.get("asof")
+        regime_asof = coherence.get("regime_date")
 
-        if regression_bad and regression.get("note"):
-            stale_parts_en.append(regression["note"])
-            stale_parts_zh.append(f"缓存数据回退：{regression.get('prev_cache_max','—')} → {regression.get('curr_cache_max','—')}")
+        if verdict == "stale":
+            # What triggered stale? Choose the clause that best explains it, in plain words.
+            if regression_bad:
+                prev = regression.get("prev_cache_max") or "—"
+                clause_en = f"today's prices came in older than yesterday's (back to {prev})"
+                clause_zh = f"今日价格比昨日更旧（回退至 {prev}）"
+            elif coherence_bad:
+                # Name the two dates plainly, no store slugs.
+                s_asof = coherence.get("standouts_asof") or "—"
+                r_date = coherence.get("regime_date") or "—"
+                clause_en = (f"the stock picks (from {s_asof}) and the regime read "
+                             f"(from {r_date}) are more than a session apart")
+                clause_zh = (f"选股结果（{s_asof}）与周期判断（{r_date}）相差超过一个交易日")
+            elif price_asof:
+                clause_en = f"prices last updated {price_asof}"
+                clause_zh = f"价格最后更新于 {price_asof}"
+            else:
+                clause_en = f"expected session {expected}"
+                clause_zh = f"预期交易日 {expected}"
 
-        if coherence_bad:
-            s_asof = coherence.get("standouts_asof") or "—"
-            r_date = coherence.get("regime_date") or "—"
-            stale_parts_en.append(
-                f"snapshot incoherent — standouts {s_asof} vs regime {r_date}")
-            stale_parts_zh.append(
-                f"快照不一致 — 精选个股 {s_asof} vs 周期判断 {r_date}")
-
-        # De-dup: when coherence fires it already names standouts and regime inline;
-        # skip those two in the per-store loop so each store appears at most once.
-        skip_in_store_loop: set[str] = {"standouts", "regime"} if coherence_bad else set()
-        for k in ("bellwether", "standouts", "regime", "southbound"):
-            if k in skip_in_store_loop:
-                continue
-            info = checks.get(k, {})
-            if info.get("state") in ("stale", "dead", "error"):
-                lag = info.get("lag_days")
-                asof = info.get("asof") or "—"
-                lag_str = f"{lag}d" if lag is not None else "—"
-                stale_parts_en.append(f"{k} {lag_str} behind (last {asof})")
-                stale_parts_zh.append(f"{k} 落后 {lag_str}（最后 {asof}）")
-
-        if stale_parts_en:
-            prefix_en = "HK data stale" if verdict == "stale" else "HK data degraded"
-            prefix_zh = "港股数据已过期" if verdict == "stale" else "港股数据降级"
+            lead_en = ("HK data is stale — some numbers may be from an older session. "
+                       "Treat them as yesterday's until tonight's update.")
+            lead_zh = ("港股数据已过期 — 部分数值可能来自较早的交易日，"
+                       "在今晚更新前请当作昨日数据看待。")
             banner = {
-                "en": f"{prefix_en} — {'; '.join(stale_parts_en)}",
-                "zh": f"{prefix_zh} — {'；'.join(stale_parts_zh)}",
+                "en": f"{lead_en} ({clause_en})",
+                "zh": f"{lead_zh}（{clause_zh}）",
             }
-        else:
+        else:  # degraded — background feeds behind; prices and picks are current.
+            clause_asof = price_asof or regime_asof or str(expected)
+            lead_en = ("Some background feeds are a step behind — prices and picks "
+                       "are current.")
+            lead_zh = ("部分后台数据来源稍有滞后 — 价格和选股仍是最新的。")
+            clause_en = f"prices current as of {clause_asof}"
+            clause_zh = f"价格截至 {clause_asof} 为最新"
             banner = {
-                "en": f"HK data {verdict} (expected session {expected})",
-                "zh": f"港股数据{verdict}（预期交易日 {expected}）",
+                "en": f"{lead_en} ({clause_en})",
+                "zh": f"{lead_zh}（{clause_zh}）",
             }
 
     result = {

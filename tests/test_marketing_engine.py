@@ -569,15 +569,33 @@ def test_governor_public_safe_subset_excludes_budgets(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_seed_opportunities_roundtrip():
+    """opportunities.jsonl is a forward ledger, not a shadow-only seed file.
+
+    Shadow-mode seed rows (``seed-*``) bootstrap it; the nightly radar then
+    accrues live ``radar-*`` rows. ``radar_internal.sync_opportunities``
+    partitions on the ``radar-`` prefix — preserving the seed rows verbatim
+    while it appends/expires/prunes radar rows — and ``emit_opportunities``
+    stamps every radar row ``mode="live"``. Assert that two-family contract
+    rather than the original shadow-only invariant, which the first nightly
+    radar run necessarily violated (the test was copied from
+    ``test_seed_claims_roundtrip``, but unlike claims.jsonl nothing keeps this
+    ledger seed-only).
+    """
     from engine.marketing.ledgers import read_jsonl
     opps = read_jsonl(ROOT / "data" / "marketing" / "opportunities.jsonl")
     assert len(opps) >= 1
-    # All seed rows have mode=shadow and id prefix seed-
+    seed_rows = [o for o in opps if str(o.get("opportunity_id", "")).startswith("seed-")]
+    assert seed_rows, "seed bootstrap rows (seed-*) missing from opportunities.jsonl"
     for o in opps:
-        assert o.get("mode") == "shadow", f"opportunity {o.get('opportunity_id')} not shadow"
-        assert o.get("opportunity_id", "").startswith("seed-"), (
-            f"non-seed id found: {o.get('opportunity_id')}"
-        )
+        oid = str(o.get("opportunity_id", ""))
+        if oid.startswith("seed-"):
+            assert o.get("mode") == "shadow", f"seed opportunity {oid} not shadow"
+        elif oid.startswith("radar-"):
+            assert o.get("mode") == "live", f"radar opportunity {oid} not live"
+        else:
+            raise AssertionError(
+                f"unexpected opportunity id (neither seed- nor radar-): {oid}"
+            )
 
 
 def test_seed_claims_roundtrip():

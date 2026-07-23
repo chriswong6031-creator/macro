@@ -5,17 +5,18 @@
     "cn_ai_compute",
     "cn_coal",
     "cn_consumer_elec",
+    "cn_metals",
     "cn_pharma_cxo",
     "cn_robotics",
     "cn_semis"
   ],
   "held": [
-    "cn_semis",
+    "cn_ai_compute",
     "cn_pharma_cxo",
-    "cn_robotics",
-    "cn_coal"
+    "cn_metals",
+    "cn_robotics"
   ],
-  "leader": "cn_semis",
+  "leader": "cn_ai_compute",
   "names": {
     "cn_ai_compute": "AI Compute & Optics",
     "cn_appliances": "Home Appliances",

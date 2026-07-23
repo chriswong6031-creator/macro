@@ -1,6 +1,6 @@
 # MKT-D05 — Breaking Desks: News / Policy-Feed Ingestion + Cite Cards
 
-**Department:** Radar (intelligence) + Studio · **Priority: P1** · **Status: W0 MERGED 2026-07-19 (PR #3054) — breaking_feed/breaking_relevance/breaking_summary + render_breaking_card + fixture tests (adversarial unsourced-number rejection incl.); W0.5 quality-hardening pass same day (operator-ordered opus/main-loop re-review: RFC-2822 named-zone dates, Atom content fix, real 304/Retry-After/backoff handling, stance+alias word-boundary fixes, ticker price enrichment, event-class kicker, ops smoke CLI); next = W1 wiring through D01's fastlane outbox (#3053)**
+**Department:** Radar (intelligence) + Studio · **Priority: P1** · **Status: W0 MERGED 2026-07-19 (PR #3054) — breaking_feed/breaking_relevance/breaking_summary + render_breaking_card + fixture tests (adversarial unsourced-number rejection incl.); W0.5 quality-hardening pass same day (operator-ordered opus/main-loop re-review: RFC-2822 named-zone dates, Atom content fix, real 304/Retry-After/backoff handling, stance+alias word-boundary fixes, ticker price enrichment, event-class kicker, ops smoke CLI); next = W1 wiring through D01's fastlane outbox (#3053); W2 item-7 red-team DONE 2026-07-22 → [`D05_APPENDIX_TRUTH_SOCIAL_AND_OFFICIAL_ACCOUNT_REDTEAM.md`](D05_APPENDIX_TRUTH_SOCIAL_AND_OFFICIAL_ACCOUNT_REDTEAM.md) (verdict: use the existing wire-relay lane; scrape lanes killed on ToS)**
 **Operator intent:** breaking market-moving news (macro prints, policy/tariff headlines, Truth Social posts, CENTCOM-class geopolitical events) should become fast, cited, illustrated posts — the second immediate-content lane beside earnings.
 
 ## Why
@@ -27,7 +27,7 @@ Breaking reaction is a top reach format from zero followers (the event's cashtag
 6. Emit qualifying items (salience ≥ threshold) as `breaking` outbox items through D01's path, Sentinel-gated (D08). Scheduled next-morning digest of sub-threshold items as a fallback `event` post in the nightly plan.
 
 ### W2 — harder sources
-7. Truth-Social / X official-account monitors need scrape lanes with real ToS/fragility review — red-team memo first (opus `reviewer`), then implement only the sources that pass. Screenshot-of-source as citation imagery where APIs don't exist.
+7. Truth-Social / X official-account monitors — **RED-TEAM MEMO DONE 2026-07-22: [`D05_APPENDIX_TRUTH_SOCIAL_AND_OFFICIAL_ACCOUNT_REDTEAM.md`](D05_APPENDIX_TRUTH_SOCIAL_AND_OFFICIAL_ACCOUNT_REDTEAM.md).** Verdicts: direct-scrape of Truth Social **and** X = **DO NOT BUILD** (flat ToS violation both platforms; Nitter/RSS-bridge dead); official Truth API exists but is a ~$100k/mo HFT product → **out of scope on cost**; X API read-only lane is policy-clear but **deferred** (metered paid dep, named mitigations in memo §4B). **Recommended path = the existing wire-relay lane** (`breaking_feed.py` already relays market-moving Trump/company events within minutes — "fast enough" for a marketing post; JPMorgan shows *most* such posts don't move markets anyway). Screenshot-of-source as card imagery is **rejected** (redistribution + implies a direct feed we don't have) — wire tier chip only.
 
 ## Acceptance
 

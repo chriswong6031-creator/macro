@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROI Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Return on investment: compute ROI percent, net dollar profit, and the annualized return per year from what you invested and its final value.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/roi.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="ROI Calculator">
+<meta property="og:description" content="Return on investment: compute ROI percent, net dollar profit, and the annualized return per year from what you invested and its final value.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/roi.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ROI Calculator">
+<meta name="twitter:description" content="Return on investment: compute ROI percent, net dollar profit, and the annualized return per year from what you invested and its final value.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"ROI Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      ROI Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">ROI Calculator</h1>
+  <p class="est-dek">Return on investment: compute ROI percent, net dollar profit, and the annualized return per year from what you invested and its final value.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <circle class="egl-still-dot" cx="12" cy="30" r="2.2"/>
+  <path class="egl-draw" d="M12 30 C 26 30, 34 16, 48 12"/>
+  <path class="egl-up" d="M48 12 l-6 1 M48 12 l-1 6"/>
+  <circle class="egl-mark-dot" cx="48" cy="12" r="3"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter what you put in and what it’s worth now. You get the return as a percentage, the dollar profit, and — if you add a holding period — the return expressed per year.</span><span class="l-zh">填入你投入的本金与如今的价值，即可得到以百分比表示的回报、美元利润，以及——若填入持有年限——折算成的年化回报。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Initial investment ($)</span><span class="l-zh">初始投资（$）</span></span>
+    <input id="cost" inputmode="decimal" autocomplete="off" placeholder="1,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Final value ($)</span><span class="l-zh">最终价值（$）</span></span>
+    <input id="value" inputmode="decimal" autocomplete="off" placeholder="1,500"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Holding period (years)</span><span class="l-zh">持有年限（年）</span> <span class="hint"><span class="l-en">optional — for annualized return</span><span class="l-zh">可选——用于年化回报</span></span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">ROI</span><span class="l-zh">投资回报率</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Enter what you invested and what it’s worth now.</span><span class="l-zh">填入你的投资本金与现值即可计算。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Net profit</span><span class="l-zh">净利润</span></dt><dd id="out-profit">—</dd></div>
+    <div><dt><span class="l-en">Return %</span><span class="l-zh">回报率</span></dt><dd id="out-roi">—</dd></div>
+    <div><dt><span class="l-en">Annualized return</span><span class="l-zh">年化回报</span></dt><dd id="out-annual">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Return on investment is your <strong>profit</strong> divided by what you <strong>put in</strong>, shown as a percent. Profit is simply the final value minus the initial investment; dividing it by the initial investment turns a raw dollar gain into a rate you can compare across trades of any size. Add a holding period and the same figures become an <em>annualized</em> return — the rate per year that would grow the initial investment to its final value.</span><span class="l-zh">投资回报率（ROI）是你的<strong>利润</strong>除以<strong>投入本金</strong>，以百分比表示。利润就是最终价值减去初始投资；用它除以初始投资，便把绝对的美元收益变成一个可以跨不同规模交易比较的比率。再填入持有年限，同样的数字就成了<em>年化</em>回报——即能让初始投资增长到最终价值的每年增长率。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Net profit</strong> = Final value − Initial investment</span><span class="l-zh"><strong>净利润</strong> = 最终价值 − 初始投资</span><br>
+<span class="l-en"><strong>ROI</strong> = 100 × ( Final − Initial ) ÷ Initial</span><span class="l-zh"><strong>投资回报率</strong> = 100 × ( 最终 − 初始 ) ÷ 初始</span><br>
+<span class="l-en"><strong>Annualized</strong> = 100 × ( ( Final ÷ Initial ) ^ (1 ÷ years) − 1 )</span><span class="l-zh"><strong>年化回报</strong> = 100 × ( ( 最终 ÷ 初始 ) ^ (1 ÷ 年限) − 1 )</span>
+</div>
+<p><span class="l-en">The plain ROI treats the whole gain as one lump, no matter how long it took. The annualized figure spreads that gain across time and compounds it — which is why it is the only fair way to compare a return earned in three months against one earned over five years.</span><span class="l-zh">普通 ROI 把整段收益视为一个整体，不论花了多久。年化数字则把这段收益摊到时间上并按复利计算——这也是为什么它是把三个月赚到的回报与五年赚到的回报公平比较的唯一方式。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader invests <span class="num">$1,000</span> and, some time later, the position is worth <span class="num">$1,500</span>.</span><span class="l-zh">假设一位交易者投入 <span class="num">$1,000</span>，一段时间后，该仓位价值 <span class="num">$1,500</span>。</span></p>
+<ul>
+<li><span class="l-en">Net profit = <span class="num">1,500 − 1,000 = $500</span></span><span class="l-zh">净利润 = <span class="num">1,500 − 1,000 = $500</span></span></li>
+<li><span class="l-en">ROI = <span class="num">100 × 500 ÷ 1,000 = 50%</span></span><span class="l-zh">投资回报率 = <span class="num">100 × 500 ÷ 1,000 = 50%</span></span></li>
+<li><span class="l-en">If that gain took <span class="num">2 years</span>: annualized = <span class="num">100 × (1.5^0.5 − 1) ≈ 22.47%</span> per year.</span><span class="l-zh">若这段收益历时 <span class="num">2 年</span>：年化 = <span class="num">100 × (1.5^0.5 − 1) ≈ 22.47%</span> 每年。</span></li>
+</ul>
+</div>
+<p><span class="l-en">The headline 50% and the 22.47% per year describe the <em>same</em> trade. Over two years, earning about 22.47% each year and letting it compound lands you exactly at a 50% total gain. Neither number is “wrong” — they answer different questions.</span><span class="l-zh">醒目的 50% 与每年 22.47% 描述的是<em>同一</em>笔交易。两年内每年约赚 22.47% 并让其复利，最终恰好是 50% 的总收益。两个数字都没有「错」——它们回答的是不同的问题。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Comparing raw ROIs across different time spans</span><span class="l-zh">拿不同时间跨度的原始 ROI 作比较</span></span>
+<p><span class="l-en">A 50% return sounds better than a 20% return — until you learn the 50% took eight years and the 20% took one. Over a year, that 20% compounds to more than a 50% gain stretched across eight. Raw ROI hides time entirely, so a slow winner can masquerade as a fast one. Whenever the holding periods differ, compare the <em>annualized</em> figures, not the headline percentages.</span><span class="l-zh">50% 的回报听起来比 20% 好——直到你发现那 50% 花了八年，而 20% 只用了一年。一年内，20% 复利下来会超过摊在八年里的 50%。原始 ROI 完全掩盖了时间，因此一个缓慢的赢家可能伪装成快速的赢家。只要持有期不同，就该比较<em>年化</em>数字，而非醒目的百分比。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math cleanly measures a <em>single, closed</em> investment from one dollar in to one dollar out. It does not know about anything more complicated. A few honest limits:</span><span class="l-zh">这套算法能干净地衡量<em>单笔、已了结</em>的投资——从投入的一元到取出的一元。它并不了解任何更复杂的情形。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Cash flows in between.</strong> If you added money, took some out, or reinvested dividends partway through, a simple final-minus-initial ROI misstates the result. Money-weighted returns (IRR) exist for that.</span><span class="l-zh"><strong>中途的现金流。</strong>若你中途加仓、部分取出或再投资分红，简单的「最终减初始」ROI 会失真。资金加权回报（内部收益率 IRR）正是为此而生。</span></li>
+<li><span class="l-en"><strong>Fees, taxes and inflation.</strong> The formula reads gross value. Commissions, spreads, taxes on gains, and the erosion of purchasing power all sit outside it — a real, spendable return is smaller than the number here.</span><span class="l-zh"><strong>费用、税收与通胀。</strong>公式读取的是毛值。佣金、点差、收益税以及购买力的侵蚀都在其之外——真正可支配的回报要小于这里的数字。</span></li>
+<li><span class="l-en"><strong>Annualizing very short holds.</strong> Compounding a two-week gain out to a full year assumes you can repeat it fifty more times. A single lucky trade annualized to a huge rate is arithmetic, not a forecast.</span><span class="l-zh"><strong>年化极短的持有期。</strong>把两周的收益折算成整年，等于假设你还能再重复五十次。把一笔运气好的交易年化成一个巨大的比率，只是算术，而非预测。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">ROI tells you how much a trade returned; annualized return tells you how fast. Only the second lets you compare trades that took different amounts of time.</span><span class="l-zh">ROI 告诉你一笔交易赚了多少；年化回报告诉你赚得多快。只有后者能让你比较耗时不同的交易。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Turn a percentage into money-per-year with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">CAGR 计算器</span></a><span class="l-en">, or see how repeated gains stack up in the <a href="</span><span class="l-zh"> 把百分比折算成年增长率，或在 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en">.</span><span class="l-zh"> 中查看反复收益如何累积。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/trade-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Trade Profit &amp; Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/percentage-gain-loss.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Percentage Gain/Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/stock-average.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Stock Average (Average Down) Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (ROI — do not re-derive) ─────────────────────────────────
+  // inputs: {C initial, V final, n years (optional, 0 = not given)}.
+  // Returns an outputs object, or {ok:false,msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var C=inp.C, V=inp.V, n=inp.n;
+    if(!(C>0)) return {ok:false, msg:"Enter your initial investment (above zero)."};
+    if(!isFinite(V)) return {ok:false, msg:"Enter what the investment is worth now."};
+    var netProfit = V - C;
+    var roiPct = 100 * netProfit / C;
+    var annualPct = null;
+    var shortHold = false;
+    if(isFinite(n) && n > 0){
+      // annualized needs a positive final value (V/C)^(1/n) is only real when V>0
+      if(V > 0){ annualPct = 100 * (Math.pow(V / C, 1 / n) - 1); }
+      if(n < 1) shortHold = true;
+    }
+    return {
+      ok:true, netProfit:netProfit, roiPct:roiPct,
+      annualPct:annualPct, shortHold:shortHold, gain:(netProfit>=0)
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{C:1000, V:1500, n:0}, want:{netProfit:500, roiPct:50} },
+    { in:{C:1000, V:1500, n:2}, want:{netProfit:500, roiPct:50, annualPct:22.4745} },
+    { in:{C:5000, V:4000, n:0}, want:{netProfit:-1000, roiPct:-20} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("roi self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(got[k] == null || Math.abs(got[k] - w[k]) > 0.01){
+          console.error("roi self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]);
+        }
+      }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { cost:$("cost"), value:$("value"), years:$("years") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outProfit=$("out-profit"), outRoi=$("out-roi"), outAnnual=$("out-annual"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var s=(el.value||"").replace(/,/g,"").trim();
+      if(s==="") return NaN; var v=parseFloat(s); return isFinite(v)?v:NaN; }
+    function money(n){ return (n<0?"-$":"$") + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return (n>=0?"+":"") + n.toFixed(Math.abs(n)<10?2:1) + "%"; }
+    function dash(){ outMain.textContent="—";
+      [outProfit,outRoi,outAnnual].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ C:numFrom(els.cost), V:numFrom(els.value), n:numFrom(els.years) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      var cls = res.gain ? "pos" : "neg";
+      outMain.textContent = pct(res.roiPct);
+      outMain.className = "";
+      outProfit.textContent = money(res.netProfit); outProfit.className = cls;
+      outRoi.textContent    = pct(res.roiPct);      outRoi.className = cls;
+      if(res.annualPct != null){
+        outAnnual.textContent = pct(res.annualPct);
+        outAnnual.className = (res.annualPct>=0?"pos":"neg");
+      } else {
+        outAnnual.textContent = "—"; outAnnual.className = "";
+      }
+
+      // Law 3: plain-word interpretation under the number
+      var verb = res.gain ? "gained" : "lost";
+      var plain = "This investment " + verb + " " + money(Math.abs(res.netProfit)) +
+        " — a " + pct(res.roiPct) + " return on what was put in.";
+      if(res.annualPct != null){
+        plain += " That works out to " + pct(res.annualPct) + " per year over the holding period.";
+      }
+      if(res.shortHold){
+        plain += " The period is under a year, so the annualized figure extrapolates a short result.";
+        outPlain.className = "co-plain warn";
+      } else {
+        outPlain.className = "co-plain";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var line = "ROI: " + pct(last.roiPct) + " · net " + money(last.netProfit);
+      if(last.annualPct != null){ line += " · " + pct(last.annualPct) + "/yr annualized"; }
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["cost","value","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

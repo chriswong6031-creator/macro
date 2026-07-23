@@ -1,0 +1,286 @@
+{#=============================================================================
+  calculators/options_profit.html.j2 — Options Profit Calculator
+  Single-leg option P/L at expiration (100 shares per contract). Clones the
+  position_size.html.j2 structure: PURE compute() + WORKED_EXAMPLES self-check
+  (CONTRACT §6), §7-style formulas, §8 bilingual explainer (direct answer →
+  formula → worked example → common trap → limits → links).
+
+  Formulas (per task spec):
+    intrinsic  = call ? max(0,S−K) : max(0,K−S)
+    perShare   = long ? (intrinsic−prem) : (prem−intrinsic)
+    P/L        = perShare · 100 · nC
+    breakeven  = call ? K+prem : K−prem
+    premium$   = prem · 100 · nC   (long debit paid / short credit received)
+    return%    = 100 · P/L / premium$
+    max profit / max loss per leg type (long call: loss=premium$, profit=∞;
+    long put: profit=(K−prem)·100·nC, loss=premium$; short call: profit=credit,
+    loss=∞; short put: profit=credit, loss=(K−prem)·100·nC).
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('options-profit', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Pick the option type and your side, then enter the strike, the premium per share, how many contracts, and a price at expiration. You get the profit or loss on the whole position, the break-even price, and the most you can make or lose.',
+   '选择期权类型和你的方向，再填入行权价、每股权利金、合约数量，以及到期时的标的价格，即可得到整个头寸的盈亏、盈亏平衡价，以及可能的最大盈利与最大亏损。') }}</p>
+
+<div class="calc-in">
+  <div class="ci ci-wide">
+    <span class="ci-l">{{ t('Option type', '期权类型') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="type" id="seg-type">
+      <button class="on" type="button" data-v="call" role="radio" aria-checked="true">{{ t('Call', '看涨') }}</button>
+      <button type="button" data-v="put" role="radio" aria-checked="false">{{ t('Put', '看跌') }}</button>
+    </div>
+  </div>
+  <div class="ci ci-wide">
+    <span class="ci-l">{{ t('Your position', '你的方向') }} <span class="hint">{{ t('long = you bought · short = you wrote', '多头=买入 · 空头=卖出') }}</span></span>
+    <div class="ci-seg" role="radiogroup" data-name="position" id="seg-pos">
+      <button class="on" type="button" data-v="long" role="radio" aria-checked="true">{{ t('Long', '多头') }}</button>
+      <button type="button" data-v="short" role="radio" aria-checked="false">{{ t('Short', '空头') }}</button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l">{{ t('Strike price ($)', '行权价（$）') }}</span>
+    <input id="strike" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <label class="ci"><span class="ci-l">{{ t('Premium ($/share)', '权利金（$/股）') }} <span class="hint">{{ t('per share', '每股') }}</span></span>
+    <input id="prem" inputmode="decimal" autocomplete="off" placeholder="3"></label>
+  <label class="ci"><span class="ci-l">{{ t('Contracts', '合约数') }} <span class="hint">{{ t('100 shares each', '每张100股') }}</span></span>
+    <input id="contracts" inputmode="decimal" autocomplete="off" placeholder="1"></label>
+  <label class="ci"><span class="ci-l">{{ t('Price at expiration ($)', '到期标的价（$）') }}</span>
+    <input id="spot" inputmode="decimal" autocomplete="off" placeholder="110"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('at expiration', '到期时') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the fields to see the profit or loss at expiration.', '填入各字段即可看到到期时的盈亏。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Break-even price', '盈亏平衡价') }}</dt><dd id="out-be">—</dd></div>
+    <div><dt>{{ t('Max profit', '最大盈利') }}</dt><dd id="out-maxp">—</dd></div>
+    <div><dt>{{ t('Max loss', '最大亏损') }}</dt><dd id="out-maxl">—</dd></div>
+    <div><dt>{{ t('Return on premium', '权利金回报率') }}</dt><dd id="out-ret">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('At expiration a single option is worth only its <strong>intrinsic value</strong> — how far it is in the money — and your profit is that value minus the premium that changed hands, times 100 shares per contract. A call is in the money when the price sits above the strike; a put, when it sits below. Time value is gone, so the whole payoff reduces to simple arithmetic.',
+   '到期时，一张期权只值它的<strong>内在价值</strong>——即实值的深度——你的盈亏就是这份价值减去已支付或收取的权利金，再乘以每张合约的100股。当标的价高于行权价时看涨期权为实值；标的价低于行权价时看跌期权为实值。时间价值归零，整个收益就化为简单的算术。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Intrinsic (call)</strong> = max( 0, Price − Strike )', '<strong>内在价值（看涨）</strong> = max( 0, 标的价 − 行权价 )') }}<br>
+{{ t('<strong>Intrinsic (put)</strong> = max( 0, Strike − Price )', '<strong>内在价值（看跌）</strong> = max( 0, 行权价 − 标的价 )') }}<br>
+{{ t('<strong>P/L per share</strong> = Long: Intrinsic − Premium · Short: Premium − Intrinsic', '<strong>每股盈亏</strong> = 多头：内在价值 − 权利金 · 空头：权利金 − 内在价值') }}<br>
+{{ t('<strong>P/L</strong> = P/L per share × 100 × Contracts', '<strong>盈亏</strong> = 每股盈亏 × 100 × 合约数') }}<br>
+{{ t('Break-even = Strike + Premium (call) · Strike − Premium (put)', '盈亏平衡价 = 行权价 + 权利金（看涨） · 行权价 − 权利金（看跌）') }}
+</div>
+<p>{{ t('One contract controls 100 shares, so every per-share number is multiplied by 100 and again by the number of contracts. The premium is a debit when you buy the option and a credit when you write it — which is why a long position and a short position on the same contract are mirror images of each other.',
+   '一张合约对应100股，因此每一个每股数字都要乘以100，再乘以合约数。买入期权时权利金是支出，卖出期权时是收入——这正是为何同一份合约的多头与空头互为镜像。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader buys one <span class="num">$100</span> call for a premium of <span class="num">$3.00</span> per share, and at expiration the stock closes at <span class="num">$110</span>.',
+   '假设一位交易者以每股 <span class="num">$3.00</span> 的权利金买入一张 <span class="num">$100</span> 的看涨期权，到期时标的收于 <span class="num">$110</span>。') }}</p>
+<ul>
+<li>{{ t('Intrinsic = <span class="num">max(0, 110 − 100) = $10.00</span>', '内在价值 = <span class="num">max(0, 110 − 100) = $10.00</span>') }}</li>
+<li>{{ t('P/L per share = <span class="num">10 − 3 = $7.00</span>', '每股盈亏 = <span class="num">10 − 3 = $7.00</span>') }}</li>
+<li>{{ t('P/L = <span class="num">7 × 100 × 1 = $700</span>', '盈亏 = <span class="num">7 × 100 × 1 = $700</span>') }}</li>
+<li>{{ t('Break-even = <span class="num">100 + 3 = $103</span>, max loss = <span class="num">$300</span> (the premium), return = <span class="num">+233%</span> on the premium.',
+   '盈亏平衡价 = <span class="num">100 + 3 = $103</span>，最大亏损 = <span class="num">$300</span>（即权利金），权利金回报率 = <span class="num">+233%</span>。') }}</li>
+</ul>
+</div>
+<p>{{ t('The most a long call can lose is the $300 premium — no matter how far the stock falls — while its upside has no fixed ceiling. That asymmetry is the whole appeal of buying options, and it is exactly reversed for the trader on the other side who wrote the contract.',
+   '一张看涨期权多头最多亏损 $300 的权利金——无论标的跌多深——而其上行空间没有固定上限。这种不对称正是买入期权的全部吸引力，而对写出这张合约、站在另一边的交易者而言则恰好相反。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('Reading break-even off the strike, not the premium', '把行权价当成盈亏平衡价') }}</span>
+<p>{{ t('A long call is not profitable the moment the stock crosses the strike — it only recovers the premium first. A $100 call bought for $3 needs the stock above $103 just to break even; between $100 and $103 the option is in the money yet the position still loses money. The same shift applies to short options: writing a call brings in a credit, but the break-even sits at strike plus that credit, and the loss above it can grow without limit.',
+   '标的一穿过行权价，看涨期权多头并不会立刻盈利——它得先赚回权利金。以 $3 买入的 $100 看涨期权，标的需涨到 $103 以上才刚好回本；在 $100 到 $103 之间，期权虽为实值，头寸却仍在亏损。空头期权同理：卖出看涨期权会收到一笔权利金，但盈亏平衡价在行权价加上该权利金之处，超过之后的亏损可无限扩大。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This tool prices a <em>single</em> option leg <em>at expiration</em> only. It is exact for that one moment and silent about everything before it. A few honest limits:',
+   '本工具只对<em>单腿</em>期权在<em>到期时</em>定价。它对那一刻是精确的，但对此前发生的一切保持沉默。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>No time value.</strong> Before expiration an option carries extra value from time and volatility, so an in-the-money option can trade well above intrinsic — and lose value even when the stock does not move. This math ignores all of that.',
+   '<strong>不含时间价值。</strong>到期前，期权因时间与波动率而带有额外价值，因此一张实值期权的市价可能远高于内在价值——即便标的不动也会随时间损耗。本算法完全忽略这部分。') }}</li>
+<li>{{ t('<strong>Early assignment.</strong> American-style short options can be assigned before expiration, especially around dividends. A short leg is not guaranteed to survive untouched until the day this math assumes.',
+   '<strong>提前行权。</strong>美式空头期权可能在到期前被指派行权，尤其在分红前后。空头一腿不一定能安然无恙地存续到本算法所假定的那一天。') }}</li>
+<li>{{ t('<strong>One leg only.</strong> Spreads, straddles and multi-leg positions net several of these payoffs together; run each leg and add the results, or the risk picture will be wrong.',
+   '<strong>仅限单腿。</strong>价差、跨式及多腿头寸会把多份此类收益叠加在一起；请逐腿计算再相加，否则风险图景会失真。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('An option pays off its intrinsic value at expiration; break-even is the strike shifted by the premium, not the strike itself.',
+   '期权在到期时兑付其内在价值；盈亏平衡价是行权价按权利金平移后的位置，而非行权价本身。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Weigh the trade’s reward against its risk with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t(', or work through a stock trade end to end with the <a href="', '权衡这笔交易的收益与风险，或用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t('.', '完整推演一笔股票交易。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute ───────────────────────────────────────────────────────────
+  // inputs: {type 'call'|'put', pos 'long'|'short', K strike, prem, nC contracts,
+  //          S price at expiry}. Returns outputs, or {ok:false,msg}. No NaN/Infinity.
+  function compute(inp){
+    var type=inp.type, pos=inp.pos, K=inp.K, prem=inp.prem, nC=inp.nC, S=inp.S;
+    if(!(K>0)) return {ok:false, msg:"Enter a strike price above zero."};
+    if(!(prem>0)) return {ok:false, msg:"Enter the premium per share."};
+    if(!(nC>0)) return {ok:false, msg:"Enter how many contracts (each is 100 shares)."};
+    if(!(S>=0)) return {ok:false, msg:"Enter the underlying price at expiration."};
+    // a put's premium can't exceed its strike (break-even = K − prem would go
+    // negative, an impossible price) — guard rather than render a broken figure
+    if(type==="put" && prem>=K) return {ok:false, msg:"On a put, the premium can't be at or above the strike — check your inputs."};
+    var shares = 100 * nC;
+    var intrinsic = type==="call" ? Math.max(0, S - K) : Math.max(0, K - S);
+    var perShare = pos==="long" ? (intrinsic - prem) : (prem - intrinsic);
+    var pl = perShare * shares;
+    var breakeven = type==="call" ? (K + prem) : (K - prem);
+    var premiumDollars = prem * shares;              // long debit paid / short credit
+    var returnPct = 100 * pl / premiumDollars;
+    // max profit / max loss (per-leg character)
+    var maxProfit, maxLoss, profitCapped, lossCapped;
+    if(pos==="long"){
+      if(type==="call"){ maxLoss = premiumDollars; maxProfit = Infinity; }
+      else            { maxProfit = (K - prem) * shares; maxLoss = premiumDollars; } // long put
+      lossCapped = true; profitCapped = (type==="put");
+    } else { // short
+      if(type==="call"){ maxProfit = premiumDollars; maxLoss = Infinity; }
+      else            { maxProfit = premiumDollars; maxLoss = (K - prem) * shares; } // short put
+      profitCapped = true; lossCapped = (type==="put");
+    }
+    return {
+      ok:true, type:type, pos:pos, intrinsic:intrinsic, perShare:perShare,
+      pl:pl, breakeven:breakeven, premiumDollars:premiumDollars, returnPct:returnPct,
+      maxProfit:maxProfit, maxLoss:maxLoss, profitCapped:profitCapped, lossCapped:lossCapped
+    };
+  }
+
+  // ── §6 self-check: canonical fixtures through compute(), console.error on drift ─
+  var WORKED_EXAMPLES = [
+    // Long call K=100, prem=3, nC=1, S=110 → intrinsic 10, P/L 700, be 103, maxLoss 300, return 233.33%
+    { in:{type:"call", pos:"long", K:100, prem:3, nC:1, S:110},
+      want:{intrinsic:10, pl:700, breakeven:103, maxLoss:300, returnPct:233.333} },
+    // Long put K=50, prem=2, nC=2, S=40 → intrinsic 10, perShare 8, P/L 1600, be 48, maxLoss 400
+    { in:{type:"put", pos:"long", K:50, prem:2, nC:2, S:40},
+      want:{intrinsic:10, pl:1600, breakeven:48, maxLoss:400} },
+    // Short call K=100, prem=3, nC=1, S=110 → intrinsic 10, perShare -7, P/L -700, be 103, maxProfit 300
+    { in:{type:"call", pos:"short", K:100, prem:3, nC:1, S:110},
+      want:{intrinsic:10, pl:-700, breakeven:103, maxProfit:300} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("options-profit self-check "+i+": compute failed", got); return; }
+      for(k in w){
+        if(!isFinite(w[k])){ if(got[k] !== w[k]) console.error("options-profit self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); continue; }
+        if(Math.abs(got[k] - w[k]) > 0.01){
+          console.error("options-profit self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); }
+      }
+    });
+  })();
+
+  // ── DOM wiring ─────────────────────────────────────────────────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { strike:$("strike"), prem:$("prem"), contracts:$("contracts"), spot:$("spot") };
+    var segType=$("seg-type"), segPos=$("seg-pos");
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outBe=$("out-be"), outMaxP=$("out-maxp"), outMaxL=$("out-maxl"), outRet=$("out-ret"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var state = { type:"call", pos:"long" };
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return (n<0?"-$":"$") + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function signed(n){ return (n>0?"+":"") + money(n); }
+    function dash(){ outMain.textContent="—"; outMain.className="";
+      [outBe,outMaxP,outMaxL,outRet].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    function segWire(seg, key){
+      seg.querySelectorAll("button").forEach(function(b){
+        b.addEventListener("click", function(){
+          state[key] = b.getAttribute("data-v");
+          seg.querySelectorAll("button").forEach(function(x){
+            var on = x===b; x.classList.toggle("on", on); x.setAttribute("aria-checked", on?"true":"false"); });
+          render();
+        });
+      });
+    }
+
+    var last=null;
+    function render(){
+      var inp={ type:state.type, pos:state.pos,
+        K:numFrom(els.strike), prem:numFrom(els.prem), nC:numFrom(els.contracts), S:numFrom(els.spot) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+
+      outMain.textContent = signed(res.pl);
+      outMain.className = res.pl>0 ? "pos" : (res.pl<0 ? "neg" : "");
+      outBe.textContent = money(res.breakeven);
+      outMaxP.textContent = isFinite(res.maxProfit) ? signed(res.maxProfit) : "Unlimited";
+      outMaxP.className = "pos";
+      outMaxL.textContent = isFinite(res.maxLoss) ? "-" + money(res.maxLoss) : "Unlimited";
+      outMaxL.className = "neg";
+      outRet.textContent = (res.returnPct>0?"+":"") + res.returnPct.toFixed(Math.abs(res.returnPct)<10?1:0) + "%";
+      outRet.className = res.returnPct>0 ? "pos" : (res.returnPct<0 ? "neg" : "");
+
+      // Law 3: plain-word interpretation under the number
+      var legName = (res.pos==="long"?"long ":"short ") + (res.type==="call"?"call":"put");
+      var verb = res.pl>0 ? "makes " + money(res.pl)
+               : res.pl<0 ? "loses " + money(Math.abs(res.pl))
+               : "breaks even";
+      var tail = res.pl!==0 ? " at expiration" : " exactly at expiration";
+      var beNote = res.type==="call"
+        ? " It turns a profit once the stock is above " + money(res.breakeven) + "."
+        : " It turns a profit once the stock is below " + money(res.breakeven) + ".";
+      if(res.pos==="short"){
+        beNote = res.type==="call"
+          ? " It stays profitable while the stock holds below " + money(res.breakeven) + "."
+          : " It stays profitable while the stock holds above " + money(res.breakeven) + ".";
+      }
+      var riskNote = "";
+      if(!isFinite(res.maxLoss)) riskNote = " Loss on this side has no fixed ceiling.";
+      else if(!isFinite(res.maxProfit)) riskNote = " Profit on this side has no fixed ceiling.";
+      outPlain.textContent = "This " + legName + " " + verb + tail + "." + beNote + riskNote;
+      outPlain.className = "co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var legName = (last.pos==="long"?"Long ":"Short ") + (last.type==="call"?"call":"put");
+      var maxL = isFinite(last.maxLoss) ? "-"+money(last.maxLoss) : "unlimited";
+      return legName + " P/L at expiration: " + signed(last.pl) +
+        " · break-even " + money(last.breakeven) +
+        " · max loss " + maxL +
+        " · " + (last.returnPct>0?"+":"") + last.returnPct.toFixed(1) + "% on premium — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    segWire(segType, "type"); segWire(segPos, "pos");
+    ["strike","prem","contracts","spot"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

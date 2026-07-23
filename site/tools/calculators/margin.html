@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin &amp; Buying Power Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Reg-T margin and buying power calculator: enter equity and margin rules to see your leverage, max shares, and the price that triggers a margin call.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/margin.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Margin &amp; Buying Power Calculator">
+<meta property="og:description" content="Reg-T margin and buying power calculator: enter equity and margin rules to see your leverage, max shares, and the price that triggers a margin call.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/margin.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Margin &amp; Buying Power Calculator">
+<meta name="twitter:description" content="Reg-T margin and buying power calculator: enter equity and margin rules to see your leverage, max shares, and the price that triggers a margin call.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Margin \u0026 Buying Power Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Margin &amp; Buying Power Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Margin &amp; Buying Power Calculator</h1>
+  <p class="est-dek">Reg-T margin and buying power calculator: enter equity and margin rules to see your leverage, max shares, and the price that triggers a margin call.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <rect class="egl-fill" x="10" y="24" width="10" height="8" rx="1"/>
+  <path class="egl-still" d="M22 28 h9"/>
+  <path class="egl-mark" d="M31 32 l3 -5 l3 5"/>
+  <rect class="egl-draw-fill" x="40" y="10" width="16" height="22" rx="1"/>
+  <path class="egl-mark" d="M44 10 l4 -4 l4 4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter your account equity and the margin requirements. You get the buying power that equity unlocks, your leverage, how many shares you could hold at a given price, and the price that would trigger a margin call on a fully-margined long.</span><span class="l-zh">填入你的账户净值与保证金要求，即可得到——该净值所释放的购买力、杠杆倍数、在给定价格下可持有的股数，以及在满仓做多时触发追加保证金通知的价格。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Account equity ($)</span><span class="l-zh">账户净值（$）</span></span>
+    <input id="equity" inputmode="decimal" autocomplete="off" placeholder="10,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Initial margin (%)</span><span class="l-zh">初始保证金（%）</span> <span class="hint"><span class="l-en">Reg-T is 50</span><span class="l-zh">Reg-T 为 50</span></span></span>
+    <input id="initial" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Maintenance margin (%)</span><span class="l-zh">维持保证金（%）</span> <span class="hint"><span class="l-en">typically 25</span><span class="l-zh">通常 25</span></span></span>
+    <input id="maint" inputmode="decimal" autocomplete="off" placeholder="25"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Entry price ($)</span><span class="l-zh">入场价（$）</span> <span class="hint"><span class="l-en">for share count</span><span class="l-zh">用于算股数</span></span></span>
+    <input id="price" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">buying power</span><span class="l-zh">购买力</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in equity and the margin requirements to see your buying power.</span><span class="l-zh">填入净值与保证金要求即可查看购买力。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></dt><dd id="out-lev">—</dd></div>
+    <div><dt><span class="l-en">Max shares at entry</span><span class="l-zh">入场价可持股数</span></dt><dd id="out-shares">—</dd></div>
+    <div><dt><span class="l-en">Position value</span><span class="l-zh">仓位价值</span></dt><dd id="out-pos">—</dd></div>
+    <div><dt><span class="l-en">Margin-call price</span><span class="l-zh">追缴价格</span></dt><dd id="out-call">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Your <strong>buying power</strong> is your account equity divided by the initial margin requirement — at Reg-T’s 50%, $10,000 of equity controls $20,000 of stock, or <strong>2:1 leverage</strong>. That extra reach cuts both ways: the same move that doubles your gain also doubles your loss, and a big enough loss triggers a <strong>margin call</strong> that can force you to sell at exactly the wrong moment.</span><span class="l-zh">你的<strong>购买力</strong>等于账户净值除以初始保证金要求——在 Reg-T 的 50% 下，$10,000 净值可操控 $20,000 的股票，即 <strong>2:1 杠杆</strong>。这份额外的操控力是双刃剑：让收益翻倍的那个波动，也会让亏损翻倍；而足够大的亏损会触发<strong>追加保证金通知</strong>，可能迫使你在最糟的时刻卖出。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Buying power</strong> = Equity ÷ (Initial margin% ÷ 100)</span><span class="l-zh"><strong>购买力</strong> = 净值 ÷ (初始保证金% ÷ 100)</span><br>
+<span class="l-en"><strong>Leverage</strong> = 100 ÷ Initial margin%</span><span class="l-zh"><strong>杠杆</strong> = 100 ÷ 初始保证金%</span><br>
+<span class="l-en"><strong>Max shares</strong> = floor( Buying power ÷ Entry )</span><span class="l-zh"><strong>可持股数</strong> = 向下取整( 购买力 ÷ 入场价 )</span><br>
+<span class="l-en"><strong>Margin-call price</strong> = Entry × (1 − Init% ÷ 100) ÷ (1 − Maint% ÷ 100)</span><span class="l-zh"><strong>追缴价格</strong> = 入场价 × (1 − 初始% ÷ 100) ÷ (1 − 维持% ÷ 100)</span>
+</div>
+<p><span class="l-en">The call-price formula assumes a fully-margined long — you borrowed the maximum the initial requirement allows, so your starting equity is exactly the initial margin on the position. As the price falls, your equity falls faster than the position value; the call fires the moment equity drops to the maintenance requirement.</span><span class="l-zh">追缴价格公式假设满仓做多——你借入了初始保证金允许的上限，因此起始净值恰好等于该仓位的初始保证金。价格下跌时，你的净值下跌得比仓位价值更快；当净值降至维持保证金水平的那一刻，追缴便触发。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader has <span class="num">$10,000</span> of equity, a <span class="num">50%</span> initial requirement and a <span class="num">25%</span> maintenance requirement, and buys at <span class="num">$50.00</span>.</span><span class="l-zh">假设一位交易者有 <span class="num">$10,000</span> 净值、<span class="num">50%</span> 初始保证金要求、<span class="num">25%</span> 维持保证金要求，并在 <span class="num">$50.00</span> 入场。</span></p>
+<ul>
+<li><span class="l-en">Buying power = <span class="num">10,000 ÷ 0.50 = $20,000</span></span><span class="l-zh">购买力 = <span class="num">10,000 ÷ 0.50 = $20,000</span></span></li>
+<li><span class="l-en">Leverage = <span class="num">100 ÷ 50 = 2:1</span></span><span class="l-zh">杠杆 = <span class="num">100 ÷ 50 = 2:1</span></span></li>
+<li><span class="l-en">Max shares = <span class="num">floor(20,000 ÷ 50) = 400</span></span><span class="l-zh">可持股数 = <span class="num">向下取整(20,000 ÷ 50) = 400</span></span></li>
+<li><span class="l-en">Margin-call price = <span class="num">50 × 0.50 ÷ 0.75 = $33.33</span> — a 33% drop wipes out the maintenance cushion.</span><span class="l-zh">追缴价格 = <span class="num">50 × 0.50 ÷ 0.75 = $33.33</span>——约 33% 的跌幅即耗尽维持保证金的缓冲。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Notice the call comes long before the position is worthless: the stock only has to fall a third for the borrowed money to eat through the cushion. Without the loan, that same $50 stock at $33.33 would just be a paper loss you could wait out.</span><span class="l-zh">注意追缴远在仓位归零之前就会到来：股价只需下跌三分之一，借来的钱便会吃穿缓冲。若没有借款，同一只 $50 的股票跌到 $33.33 只是一笔可以慢慢等待的账面浮亏。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Treating buying power as free money</span><span class="l-zh">把购买力当成免费的钱</span></span>
+<p><span class="l-en">Seeing $20,000 of buying power on $10,000 of equity tempts many traders to fill it — but every borrowed dollar carries interest and shrinks the distance to a margin call. Using the full 2:1 means a 25% drop in the stock can cut your equity in half and force a sale near the lows. Leverage is a tool for conviction, not a default setting; holding cash in reserve is what lets you survive the drop and add, rather than being forced out at it.</span><span class="l-zh">在 $10,000 净值上看到 $20,000 购买力，会诱使许多交易者把它填满——但每一块借来的钱都要付利息，并缩短到追缴的距离。用满 2:1 意味着股价下跌 25% 就可能让净值腰斩，并在低点附近被迫卖出。杠杆是用于高把握时刻的工具，而非默认设置；留有现金储备，才能让你熬过下跌并加仓，而不是在低点被强平出局。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This math gives a clean Reg-T snapshot for a single long. Real accounts carry frictions it does not model. A few honest limits:</span><span class="l-zh">这套算法为单笔做多给出干净的 Reg-T 快照，但真实账户还有它未纳入模型的种种摩擦。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Broker house rules.</strong> Brokers may set maintenance requirements well above the 25% regulatory floor — often 30–40%, higher still for volatile or concentrated names. Your real call price can be closer than this tool shows.</span><span class="l-zh"><strong>券商自定规则。</strong>券商可将维持保证金要求设得远高于 25% 的监管下限——通常 30–40%，对波动大或高度集中的标的更高。你真实的追缴价格可能比本工具显示的更近。</span></li>
+<li><span class="l-en"><strong>Margin interest and pattern-day rules.</strong> Borrowed cash accrues interest daily, and accounts under $25,000 face pattern-day-trading limits. Neither shows up in the buying-power number.</span><span class="l-zh"><strong>保证金利息与日内交易规则。</strong>借入的现金按日计息，且低于 $25,000 的账户还受日内交易（PDT）限制。这两者都不会体现在购买力数字里。</span></li>
+<li><span class="l-en"><strong>Gaps beat the call price.</strong> A margin call assumes the price passes smoothly through the trigger. An overnight gap can open below it, so the forced liquidation fills lower than the call price and the loss runs deeper than the math suggests.</span><span class="l-zh"><strong>跳空会击穿追缴价。</strong>追缴计算假设价格平滑地穿过触发点。而隔夜跳空可能直接低开于该价位之下，强制平仓的成交价因此低于追缴价，亏损也比公式所示更深。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Buying power is borrowed reach, not extra capital — leverage multiplies the loss and the loss is what brings the call.</span><span class="l-zh">购买力是借来的操控范围，而非额外的资本——杠杆会放大亏损，而正是亏损引来追缴。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Size a leveraged trade off risk with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">, or go deeper in the lesson on <a href="</span><span class="l-zh">为杠杆交易按风险定仓，或在这节课中深入了解 <a href="</span>../../learn/risk/position-sizing.html"><span class="l-en">position sizing</span><span class="l-zh">仓位管理</span></a><span class="l-en">.</span><span class="l-zh">。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/position-size.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Position Size Calculator</span></a><a class="est-relcard" href="../../tools/calculators/risk-reward.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Risk-Reward Calculator</span></a><a class="est-relcard" href="../../tools/calculators/drawdown-recovery.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Drawdown Recovery Calculator</span></a>
+        <a class="est-relcard" href="../../learn/risk/position-sizing.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Position Sizing: The Only Edge You Fully Control</span></a>
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">Read the lesson: Position Sizing: The Only Edge You Fully Control</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../learn/risk/position-sizing.html">Read the lesson: Position Sizing: The Only Edge You Fully Control</a>
+    </aside>
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (Reg-T style margin — do not re-derive) ───────────────────
+  // inputs: {E equity, im initial%, mm maint%, p entry}. Returns an outputs
+  // object, or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, im=inp.im, mm=inp.mm, p=inp.p;
+    if(!(E>0)) return {ok:false, msg:"Enter your account equity above zero."};
+    if(!(im>0)) return {ok:false, msg:"Enter the initial margin requirement (Reg-T is 50%)."};
+    if(im>100) return {ok:false, msg:"Initial margin can't exceed 100%."};
+    if(!(mm>0)) return {ok:false, msg:"Enter the maintenance margin requirement (often 25%)."};
+    if(mm>100) return {ok:false, msg:"Maintenance margin can't exceed 100%."};
+    if(mm>=im) return {ok:false, msg:"Maintenance margin must be below the initial requirement — otherwise a call would fire at entry."};
+    if(!(p>0)) return {ok:false, msg:"Enter an entry price to count shares."};
+    var buyingPower = E / (im/100);
+    var leverage = 100 / im;
+    var maxShares = Math.floor(buyingPower / p);
+    var positionValue = maxShares * p;
+    var marginCallPrice = p * (1 - im/100) / (1 - mm/100);
+    return {
+      ok:true, buyingPower:buyingPower, leverage:leverage, maxShares:maxShares,
+      positionValue:positionValue, marginCallPrice:marginCallPrice
+    };
+  }
+
+  // ── self-check: run the canonical fixtures on load, console.error on drift ──
+  var WORKED_EXAMPLES = [
+    { in:{E:10000, im:50, mm:25, p:50}, want:{buyingPower:20000, leverage:2, maxShares:400, marginCallPrice:33.333333} },
+    { in:{E:25000, im:40, mm:30, p:100}, want:{buyingPower:62500, leverage:2.5, maxShares:625, marginCallPrice:85.714286} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("margin self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.01){
+        console.error("margin self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { equity:$("equity"), initial:$("initial"), maint:$("maint"), price:$("price") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outLev=$("out-lev"), outShares=$("out-shares"), outPos=$("out-pos"), outCall=$("out-call"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function levStr(x){ return (x % 1 === 0 ? x.toFixed(0) : x.toFixed(2).replace(/0+$/,"").replace(/\.$/,"")) + ":1"; }
+    function dash(){ outMain.textContent="—";
+      [outLev,outShares,outPos,outCall].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.equity), im:numFrom(els.initial), mm:numFrom(els.maint), p:numFrom(els.price) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent   = money(res.buyingPower);
+      outLev.textContent    = levStr(res.leverage);
+      outShares.textContent = res.maxShares.toLocaleString("en-US");
+      outPos.textContent    = money(res.positionValue);
+      outCall.textContent   = money(res.marginCallPrice);
+      // Law 3: plain-word interpretation under the number
+      var plain = money(res.buyingPower) + " of buying power — " + levStr(res.leverage) +
+        " leverage. At " + money(inp.p) + " that's up to " + res.maxShares.toLocaleString("en-US") +
+        " shares; a fully-margined long would face a margin call near " + money(res.marginCallPrice) + ".";
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Margin: " + money(last.buyingPower) + " buying power · " + levStr(last.leverage) +
+        " leverage · " + last.maxShares.toLocaleString("en-US") + " shares · call near " +
+        money(last.marginCallPrice) + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["equity","initial","maint","price"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

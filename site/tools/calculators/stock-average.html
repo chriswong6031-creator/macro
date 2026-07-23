@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Average (Average Down) Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Average down across up to five buys: enter shares and price for each lot to get your share-weighted cost basis and break-even price.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/stock-average.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Stock Average (Average Down) Calculator">
+<meta property="og:description" content="Average down across up to five buys: enter shares and price for each lot to get your share-weighted cost basis and break-even price.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/stock-average.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Stock Average (Average Down) Calculator">
+<meta name="twitter:description" content="Average down across up to five buys: enter shares and price for each lot to get your share-weighted cost basis and break-even price.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Stock Average (Average Down) Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Stock Average (Average Down) Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Stock Average (Average Down) Calculator</h1>
+  <p class="est-dek">Average down across up to five buys: enter shares and price for each lot to get your share-weighted cost basis and break-even price.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <rect class="egl-still" x="14" y="12" width="8" height="20" rx="1"/>
+  <rect class="egl-fill" x="40" y="22" width="8" height="10" rx="1"/>
+  <path class="egl-draw" d="M18 12 C 26 12, 31 17, 44 17"/>
+  <path class="egl-mark" d="M8 17 h48"/>
+  <circle class="egl-mark-dot" cx="31" cy="17" r="2.4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter each buy — the number of shares and the price you paid. The calculator blends them into one average cost per share, which is also your break-even price.</span><span class="l-zh">逐笔填入你的买入——股数与成交价。计算器会把它们合成一个平均成本价，这也就是你的保本价。</span></p>
+
+<div class="calc-in">
+  <div class="ci ci-wide"><span class="ci-l"><span class="l-en">Lot 1</span><span class="l-zh">第 1 笔</span> <span class="hint"><span class="l-en">shares · price ($)</span><span class="l-zh">股数 · 价格（$）</span></span></span>
+    <div class="lot-row">
+      <input id="s1" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Lot 1 shares">
+      <input id="p1" inputmode="decimal" autocomplete="off" placeholder="50" aria-label="Lot 1 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l"><span class="l-en">Lot 2</span><span class="l-zh">第 2 笔</span> <span class="hint"><span class="l-en">shares · price ($)</span><span class="l-zh">股数 · 价格（$）</span></span></span>
+    <div class="lot-row">
+      <input id="s2" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Lot 2 shares">
+      <input id="p2" inputmode="decimal" autocomplete="off" placeholder="40" aria-label="Lot 2 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l"><span class="l-en">Lot 3</span><span class="l-zh">第 3 笔</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <div class="lot-row">
+      <input id="s3" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 3 shares">
+      <input id="p3" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 3 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l"><span class="l-en">Lot 4</span><span class="l-zh">第 4 笔</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <div class="lot-row">
+      <input id="s4" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 4 shares">
+      <input id="p4" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 4 price">
+    </div></div>
+  <div class="ci ci-wide"><span class="ci-l"><span class="l-en">Lot 5</span><span class="l-zh">第 5 笔</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <div class="lot-row">
+      <input id="s5" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 5 shares">
+      <input id="p5" inputmode="decimal" autocomplete="off" placeholder="—" aria-label="Lot 5 price">
+    </div></div>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">avg / share</span><span class="l-zh">均价 / 股</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in at least two lots to blend your average cost.</span><span class="l-zh">至少填入两笔买入即可计算平均成本。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Total shares</span><span class="l-zh">总股数</span></dt><dd id="out-shares">—</dd></div>
+    <div><dt><span class="l-en">Total cost</span><span class="l-zh">总成本</span></dt><dd id="out-cost">—</dd></div>
+    <div><dt><span class="l-en">Break-even price</span><span class="l-zh">保本价</span></dt><dd id="out-be">—</dd></div>
+    <div><dt><span class="l-en">Lots counted</span><span class="l-zh">计入笔数</span></dt><dd id="out-lots">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+<style>
+  .lot-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+</style>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Your average cost per share is the <strong>total dollars spent</strong> divided by the <strong>total shares held</strong> — not the average of the prices. A buy of 100 shares at $50 and another 100 at $40 blends to $45.00, because both lots are the same size; weight the price by the shares and the number falls out on its own. That blended figure is also your <strong>break-even</strong>: the price the stock must reclaim before the whole position is above water.</span><span class="l-zh">你的每股平均成本，是<strong>总投入金额</strong>除以<strong>总持有股数</strong>——而不是各价格的简单平均。以 $50 买入 100 股、再以 $40 买入 100 股，合成后为 $45.00，因为两笔规模相同；用股数为价格加权，结果自然得出。这个合成价也是你的<strong>保本价</strong>：股价必须重回该位，整个仓位才回本。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Total shares</strong> = Σ shares of each lot</span><span class="l-zh"><strong>总股数</strong> = Σ 各笔股数</span><br>
+<span class="l-en"><strong>Total cost</strong> = Σ ( shares × price )</span><span class="l-zh"><strong>总成本</strong> = Σ ( 股数 × 价格 )</span><br>
+<span class="l-en"><strong>Average cost</strong> = Total cost ÷ Total shares</span><span class="l-zh"><strong>平均成本</strong> = 总成本 ÷ 总股数</span><br>
+<span class="l-en">Break-even price = Average cost</span><span class="l-zh">保本价 = 平均成本</span>
+</div>
+<p><span class="l-en">This is a <em>share-weighted</em> mean. A large lot pulls the average toward its price and a small one barely moves it — which is why adding a few shares at a much lower price lowers your basis only a little, while a big add near the lows lowers it a lot.</span><span class="l-zh">这是一个<em>按股数加权</em>的平均值。大笔买入会把均价拉向它的价格，小笔则几乎不动它——这就是为什么在低位补几股只能略微拉低成本，而在低位重仓补入才能大幅拉低成本。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader buys <span class="num">100</span> shares at <span class="num">$50.00</span>, then the stock falls and they add <span class="num">100</span> more at <span class="num">$40.00</span>.</span><span class="l-zh">假设一位交易者以 <span class="num">$50.00</span> 买入 <span class="num">100</span> 股，随后股价下跌，又在 <span class="num">$40.00</span> 补入 <span class="num">100</span> 股。</span></p>
+<ul>
+<li><span class="l-en">Total shares = <span class="num">100 + 100 = 200</span></span><span class="l-zh">总股数 = <span class="num">100 + 100 = 200</span></span></li>
+<li><span class="l-en">Total cost = <span class="num">(100 × 50) + (100 × 40) = $9,000</span></span><span class="l-zh">总成本 = <span class="num">(100 × 50) + (100 × 40) = $9,000</span></span></li>
+<li><span class="l-en">Average cost = <span class="num">9,000 ÷ 200 = $45.00</span></span><span class="l-zh">平均成本 = <span class="num">9,000 ÷ 200 = $45.00</span></span></li>
+<li><span class="l-en">Break-even = <span class="num">$45.00</span> — the stock only needs to climb from $40 back to $45, not all the way to $50, for the blended position to break even.</span><span class="l-zh">保本价 = <span class="num">$45.00</span>——股价只需从 $40 回升到 $45，而非一路涨回 $50，整个仓位即可回本。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Averaging down does two things at once: it lowers the basis <em>and</em> it enlarges the position. The lower break-even is the appealing half; the bigger position is the half that gets ignored.</span><span class="l-zh">摊低成本同时做了两件事：拉低成本价，<em>并且</em>放大仓位。更低的保本价是诱人的一半；更大的仓位则是常被忽略的另一半。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Averaging into a broken thesis</span><span class="l-zh">向一个已破的逻辑里摊平</span></span>
+<p><span class="l-en">A lower average cost feels like progress, but it is only progress if the reason you bought is still intact. Adding shares because the price fell — rather than because the thesis got stronger — turns one losing position into a larger losing position, and quietly makes it the biggest weight in the book. The number this tool prints goes down; the risk goes up. Decide in advance how much you are willing to commit to a name in total, and let the average cost be a consequence of that plan, not the reason to keep adding.</span><span class="l-zh">更低的平均成本让人感觉在进步，但只有当你当初买入的理由依然成立时，它才算进步。因价格下跌——而非因逻辑变强——而补仓，只会把一个亏损仓位变成更大的亏损仓位，并悄悄让它成为账簿中最重的一笔。本工具打印的数字在下降，风险却在上升。请事先决定你愿意在一只标的上总共投入多少，让平均成本成为该计划的结果，而非继续加码的理由。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The arithmetic is exact, but it describes a bare cost basis — not the full picture a real account carries. A few honest limits:</span><span class="l-zh">这套算法在数学上是精确的，但它描述的只是一个裸露的成本价——而非一个真实账户所承载的全貌。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Fees and commissions.</strong> This blends the price you paid; it does not add per-trade fees or bid-ask slippage. On thin names or many small lots, your true basis sits a little above what this shows.</span><span class="l-zh"><strong>费用与佣金。</strong>本工具合成的是你的成交价，不包含每笔手续费或买卖价差滑点。在流动性差的标的或多笔小额买入上，你的真实成本会略高于此处显示。</span></li>
+<li><span class="l-en"><strong>Cost-basis method for taxes.</strong> Brokers may track lots by FIFO, specific-identification, or average cost, and the method changes your <em>taxable</em> gain when you sell part of the position. This calculator shows the plain share-weighted average only.</span><span class="l-zh"><strong>报税的成本计算法。</strong>券商可能按先进先出、指定批次或平均成本来记账，而在你卖出部分仓位时，所选方法会改变你的<em>应税</em>收益。本计算器仅展示朴素的按股加权平均。</span></li>
+<li><span class="l-en"><strong>Break-even is not a target.</strong> Reclaiming your average cost only means the loss is erased — it is not a reason to sell, nor a promise the price will get there. Size and thesis decide that, not the basis line.</span><span class="l-zh"><strong>保本价不是目标价。</strong>重回平均成本只意味着亏损被抹平——它既不是卖出的理由，也不保证价格会到那里。决定这一切的是仓位与逻辑，而非成本线。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Averaging down lowers your cost and raises your size at the same time. A lower break-even is only worth having if the reason you own the stock is still true.</span><span class="l-zh">摊低成本会在拉低成本价的同时放大你的仓位。只有当你持有这只股票的理由依然成立时，更低的保本价才值得拥有。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Turn a cost basis into a plan with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">, or measure a completed trade with the <a href="</span><span class="l-zh">把成本价化为计划，或用 <a href="</span>../../tools/calculators/trade-profit.html"><span class="l-en">trade profit calculator</span><span class="l-zh">交易盈亏计算器</span></a><span class="l-en">.</span><span class="l-zh">衡量一笔已完成的交易。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/trade-profit.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Trade Profit &amp; Loss Calculator</span></a><a class="est-relcard" href="../../tools/calculators/roi.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">ROI Calculator</span></a><a class="est-relcard" href="../../tools/calculators/percentage-gain-loss.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Percentage Gain/Loss Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (share-weighted average cost) ─────────────────────────────
+  // inputs: {lots:[{s shares, p price}, ...up to 5]}. Blank/zero rows ignored.
+  // Returns an outputs object, or {ok:false, msg}. Never returns NaN/Infinity.
+  function compute(inp){
+    var lots = inp.lots || [], totalShares = 0, totalCost = 0, counted = 0, i, s, p, sawPartial = false;
+    for(i=0; i<lots.length; i++){
+      s = lots[i].s; p = lots[i].p;
+      var haveS = isFinite(s) && s > 0, haveP = isFinite(p) && p > 0;
+      if(!haveS && !haveP) continue;          // fully blank row — ignore
+      if(!haveS || !haveP){ sawPartial = true; continue; } // half-filled — flag, ignore
+      totalShares += s;
+      totalCost   += s * p;
+      counted++;
+    }
+    if(counted === 0) return {ok:false, msg:"Fill in at least two lots to blend your average cost."};
+    if(counted === 1) return {ok:false, msg:"Add a second lot — with one buy, the average is just that price.", partial:sawPartial};
+    if(!(totalShares > 0)) return {ok:false, msg:"Total shares must be above zero."};
+    var avgCost = totalCost / totalShares;
+    return {
+      ok:true, avgCost:avgCost, totalShares:totalShares, totalCost:totalCost,
+      breakEven:avgCost, counted:counted, partial:sawPartial
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{lots:[{s:100,p:50},{s:100,p:40}]},          want:{avgCost:45, totalShares:200, totalCost:9000, counted:2} },
+    { in:{lots:[{s:100,p:50},{s:100,p:40},{s:200,p:30}]}, want:{avgCost:37.5, totalShares:400, totalCost:15000, counted:3} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("stock-average self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.005){
+        console.error("stock-average self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var ids = ["s1","p1","s2","p2","s3","p3","s4","p4","s5","p5"];
+    var els = {}; ids.forEach(function(id){ els[id] = $(id); });
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outShares=$("out-shares"), outCost=$("out-cost"), outBE=$("out-be"), outLots=$("out-lots"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function intFmt(n){ return n.toLocaleString("en-US",{maximumFractionDigits:4}); }
+    function dash(){ outMain.textContent="—";
+      [outShares,outCost,outBE,outLots].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var lots=[];
+      for(var i=1;i<=5;i++){ lots.push({ s:numFrom(els["s"+i]), p:numFrom(els["p"+i]) }); }
+      var res=compute({lots:lots}); last=res;
+      if(!res.ok){
+        dash();
+        outPlain.textContent = res.msg;
+        outPlain.className = res.partial ? "co-plain warn" : "co-plain";
+        return;
+      }
+      outMain.textContent   = money(res.avgCost);
+      outShares.textContent = intFmt(res.totalShares);
+      outCost.textContent   = money(res.totalCost);
+      outBE.textContent     = money(res.breakEven);
+      outLots.textContent   = String(res.counted);
+      // Law 3: plain-word interpretation under the number
+      var plain = "Your average cost across " + res.counted + " lots is " + money(res.avgCost) +
+        " on " + intFmt(res.totalShares) + " shares. The position breaks even at " + money(res.breakEven) + ".";
+      if(res.partial){
+        plain += " A half-filled lot (only shares or only price) was skipped.";
+        outPlain.className="co-plain warn";
+      } else { outPlain.className="co-plain"; }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Average cost: " + money(last.avgCost) + " on " + intFmt(last.totalShares) +
+        " shares · total " + money(last.totalCost) + " · break-even " + money(last.breakEven) +
+        " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ids.forEach(function(id){ els[id].addEventListener("input", render); });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

@@ -13,124 +13,358 @@
 {%- endblock %}
 
 {% block base_css %}
-  .rep-hero { max-width:1060px; margin:18px auto 0; }
-  .rep-hero .eyebrow { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
-  .rep-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
-  .rep-hero .lede { font-size:15.5px; color:var(--text); opacity:.82; margin:0; max-width:78ch; }
-  html[data-lang="zh"] .rep-hero h1 { letter-spacing:0; }
-
-  .controls { max-width:1060px; margin:22px auto 0; display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
-              padding-bottom:14px; border-bottom:1px solid var(--line); }
-  .search-box { position:relative; flex:1 1 280px; min-width:200px; }
-  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
-              border-radius:10px; padding:10px 12px 10px 34px; font-size:13.5px; outline:none; transition:border-color .15s; }
-  .search-box input:focus { border-color:var(--link); }
-  .search-box .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; font-size:13px; }
-  .sortsel { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
-  .sortsel select { background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:8px 10px; font-size:13px; cursor:pointer; }
-  .tagbar { width:100%; display:flex; flex-wrap:wrap; gap:7px; }
-  .tagbar .chip { cursor:pointer; user-select:none; transition:transform .12s, border-color .15s, background .15s; }
-  .tagbar .chip:hover { transform:translateY(-1px); }
-  .tagbar .chip.on { background:var(--link); border-color:var(--link); color:#fff; }
-  .rescount { font-size:12px; color:var(--muted); margin-left:auto; white-space:nowrap; }
-
-  .report-list { max-width:1060px; margin:6px auto 0; display:flex; flex-direction:column; }
-  .report-row { display:grid; grid-template-columns:84px minmax(0,1fr) auto; gap:20px; align-items:center;
-                padding:20px 18px; border-bottom:1px solid var(--line); position:relative;
-                border-left:3px solid transparent; border-radius:10px; transition:background .15s, border-color .15s, transform .12s; }
-  .report-row:hover { background:var(--panel); border-left-color:var(--link); transform:translateX(2px); }
-  .rr-date { text-align:center; line-height:1; color:var(--muted); }
-  .rr-date .mo { display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--link); font-weight:700; }
-  .rr-date .day { display:block; font-size:26px; font-weight:700; color:var(--text); margin:3px 0; font-variant-numeric:tabular-nums; }
-  .rr-date .yr { display:block; font-size:11px; }
-  .rr-title { font-size:18px; font-weight:680; color:var(--text); line-height:1.25; margin:0 0 5px; letter-spacing:-.005em; }
-  html[data-lang="zh"] .rr-title { letter-spacing:0; }
-  .report-row:hover .rr-title { color:var(--link); }
-  .rr-dek { font-size:13.5px; color:var(--muted); line-height:1.5; margin:0 0 9px; }
-  .rr-tags { display:flex; flex-wrap:wrap; gap:6px; }
-  .rr-aside { display:flex; flex-direction:column; align-items:flex-end; gap:8px; color:var(--muted); font-size:12px; white-space:nowrap; }
-  .rr-arrow { font-size:18px; color:var(--line); transition:color .15s, transform .15s; }
-  .report-row:hover .rr-arrow { color:var(--link); transform:translateX(3px); }
-
-  /* featured (latest) row */
-  .report-row.feat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--link);
-                     border-radius:14px; margin-bottom:10px; padding:24px 22px; box-shadow:var(--card-shadow); }
-  .report-row.feat .rr-title { font-size:22px; }
-  .report-row.feat .rr-dek { font-size:14.5px; color:var(--text); opacity:.82; }
-  .feat-badge { position:absolute; top:-9px; left:18px; background:var(--link); color:#fff; font-size:10px; font-weight:700;
-                letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
-
-  .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
-  @media (max-width:760px){
-    body{ padding-left:14px; padding-right:14px; }
-    .rep-hero h1{ font-size:24px; }
-    .rep-hero .lede{ font-size:14px; }
-    .controls{ margin-top:16px; gap:8px 12px; }
-    .search-box{ flex:1 1 100%; }
-    .rescount{ margin-left:0; }
+  /* ═══════════════════════════════════════════════════════════════════
+     Research Reports Center — Aurora-Glass (mx5 design family).
+     Accent = intelligence blue/indigo (the reports desk's own identity;
+     macro's green is market-state semantics and would misread here).
+     Display face = editorial serif for TITLES ONLY (Georgia + CJK serif
+     fallbacks, self-hosted/system → zero network cost), against Inter UI.
+     ═══════════════════════════════════════════════════════════════════ */
+  .rc-shell{
+    --rc-accent:      var(--info);
+    --rc-accent-2:    #6366f1;
+    --rc-ink-2:       color-mix(in srgb, var(--text) 62%, transparent);
+    --rc-glass-bg:    color-mix(in srgb, var(--panel) 58%, transparent);
+    --rc-glass-brd:   color-mix(in srgb, var(--text) 12%, transparent);
+    --rc-glass-shadow:0 10px 34px -12px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+    --rc-glass-hover: 0 16px 42px -14px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07);
+    --rc-blur:        blur(18px) saturate(140%);
+    --rc-radius:      18px;
+    --rc-serif:       Georgia,"Songti SC","Noto Serif SC","Source Han Serif SC","Times New Roman",serif;
+    position:relative; z-index:1; max-width:1080px; margin:0 auto;
   }
-  @media (max-width:640px){
-    .report-row { grid-template-columns:54px minmax(0,1fr); gap:14px; padding:16px 12px; }
-    .report-row.feat{ padding:18px 14px; }
-    .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
-    .rr-arrow{ display:none; }
-    .rr-date .day { font-size:21px; }
-    .rr-title{ font-size:16.5px; }
-    .report-row.feat .rr-title{ font-size:18.5px; }
-    .rr-dek{ font-size:13px; }
+  [data-theme="light"] .rc-shell{
+    --rc-glass-bg:    color-mix(in srgb, var(--panel) 80%, transparent);
+    --rc-glass-brd:   color-mix(in srgb, var(--text) 9%, transparent);
+    --rc-glass-shadow:0 8px 26px -12px rgba(20,30,50,.16), inset 0 1px 0 rgba(255,255,255,.9);
+    --rc-glass-hover: 0 12px 34px -12px rgba(20,30,50,.22), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  html[data-lang="zh"] .rc-serif-on{ letter-spacing:0; }
+
+  /* ── Aurora backdrop — indigo/blue research haze (calm, offset from macro's green) ── */
+  .rc-aurora{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .rc-aurora i{ position:absolute; display:block; border-radius:50%; filter:blur(92px); }
+  .rc-aurora .a1{ width:840px; height:640px; top:-230px; left:-170px;
+    background:radial-gradient(ellipse, color-mix(in srgb, var(--rc-accent) 22%, transparent) 0%, transparent 70%); }
+  .rc-aurora .a2{ width:700px; height:580px; bottom:-160px; right:-130px;
+    background:radial-gradient(ellipse, color-mix(in srgb, var(--rc-accent-2) 18%, transparent) 0%, transparent 70%); }
+  .rc-aurora .a3{ width:560px; height:460px; top:42%; left:54%; transform:translate(-50%,-50%);
+    background:radial-gradient(ellipse, color-mix(in srgb, var(--rc-accent) 12%, transparent) 0%, transparent 70%); }
+  [data-theme="light"] .rc-aurora i{ opacity:.6; }
+
+  /* ── Masthead ─────────────────────────────────────────────────────── */
+  .rc-mast{ padding:6px 0 0; }
+  .rc-mast .rc-eyebrow{ display:inline-flex; align-items:center; gap:8px;
+    font:700 11px/1 var(--font-ui); letter-spacing:.2em; text-transform:uppercase;
+    color:var(--rc-accent); margin:0 0 12px; }
+  .rc-mast .rc-eyebrow::before{ content:""; width:22px; height:1.5px; border-radius:2px;
+    background:linear-gradient(90deg, var(--rc-accent), transparent); }
+  .rc-mast h1{ font-family:var(--rc-serif); font-size:44px; font-weight:600; line-height:1.02;
+    letter-spacing:-.015em; margin:0 0 12px; color:var(--text); }
+  .rc-mast .rc-lede{ font-size:15.5px; line-height:1.62; color:var(--rc-ink-2);
+    margin:0; max-width:70ch; }
+  .rc-mast .rc-deskstat{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center;
+    margin:16px 0 0; font-size:12.5px; color:var(--muted); }
+  .rc-mast .rc-deskstat b{ color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+  .rc-mast .rc-deskstat .sep{ opacity:.4; }
+
+  /* ── Hero: featured briefing (left) + Desk coverage panel (right) ─── */
+  .rc-hero{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:18px;
+    margin:22px 0 6px; align-items:start; }
+  .rc-glass{ background:var(--rc-glass-bg); border:1px solid var(--rc-glass-brd);
+    border-radius:var(--rc-radius); -webkit-backdrop-filter:var(--rc-blur); backdrop-filter:var(--rc-blur);
+    box-shadow:var(--rc-glass-shadow); }
+
+  .rc-feat{ padding:26px 28px 24px; display:flex; flex-direction:column;
+    position:relative; overflow:hidden; }
+  .rc-feat::before{ content:""; position:absolute; inset:0 auto 0 0; width:3px;
+    background:linear-gradient(180deg, var(--rc-accent), var(--rc-accent-2)); opacity:.9; }
+  .rc-feat-kicker{ display:inline-flex; align-items:center; gap:8px; align-self:flex-start;
+    font:700 10.5px/1 var(--font-ui); letter-spacing:.14em; text-transform:uppercase;
+    color:var(--rc-accent); margin:0 0 14px; }
+  .rc-kick-dot{ width:7px; height:7px; border-radius:50%; background:var(--rc-accent);
+    box-shadow:0 0 0 0 color-mix(in srgb, var(--rc-accent) 60%, transparent);
+    animation:rcPulse 2.6s ease-in-out infinite; }
+  @keyframes rcPulse{ 0%,100%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--rc-accent) 55%, transparent); }
+    50%{ box-shadow:0 0 0 5px color-mix(in srgb, var(--rc-accent) 0%, transparent); } }
+  .rc-feat-kicker time{ color:var(--muted); font-weight:600; letter-spacing:.06em; }
+  .rc-feat-title{ font-family:var(--rc-serif); font-size:30px; font-weight:600; line-height:1.12;
+    letter-spacing:-.01em; margin:0 0 12px; }
+  .rc-feat-title a{ color:var(--text); }
+  .rc-feat:hover .rc-feat-title a{ color:var(--rc-accent); }
+  .rc-feat-dek{ font-size:14px; line-height:1.62; color:var(--rc-ink-2); margin:0 0 18px;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+  .rc-feat-tags{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 18px; }
+  .rc-feat-foot{ display:flex; align-items:center; gap:16px; margin-top:auto; flex-wrap:wrap; }
+  .rc-read{ font-size:13px; padding:9px 16px; }
+  .rc-min{ font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  /* Desk coverage panel — reuses macro's factor-bar idiom as topic-coverage bars */
+  .rc-desk{ padding:20px 22px; display:flex; flex-direction:column; }
+  .rc-desk-h{ display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    margin:0 0 4px; }
+  .rc-desk-h .lab{ font:700 10.5px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase;
+    color:var(--muted); }
+  .rc-desk-h .hint{ font-size:10.5px; color:var(--muted); opacity:.8; }
+  .rc-desk-sub{ font-size:11.5px; color:var(--muted); margin:0 0 15px; }
+  .rc-cov{ display:flex; flex-direction:column; gap:9px; }
+  .rc-cov-row{ display:grid; grid-template-columns:minmax(0,auto) 1fr auto; align-items:center; gap:11px;
+    background:none; border:0; padding:2px 0; margin:0; cursor:pointer; font-family:inherit;
+    text-align:left; color:inherit; border-radius:7px; transition:transform .14s ease; }
+  .rc-cov-row:hover{ transform:translateX(2px); }
+  .rc-cov-name{ font-size:12.5px; color:var(--text); white-space:nowrap; }
+  .rc-cov-row:hover .rc-cov-name{ color:var(--rc-accent); }
+  .rc-cov-track{ height:6px; border-radius:999px; background:color-mix(in srgb, var(--text) 8%, transparent);
+    overflow:hidden; }
+  .rc-cov-fill{ display:block; height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--rc-accent-2), var(--rc-accent));
+    transform-origin:left; animation:rcGrow .9s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes rcGrow{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+  .rc-cov-count{ font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+    min-width:14px; text-align:right; }
+  .rc-cov-row[aria-pressed="true"] .rc-cov-name{ color:var(--rc-accent); font-weight:700; }
+  .rc-cov-row[aria-pressed="true"] .rc-cov-track{ box-shadow:0 0 0 1px color-mix(in srgb, var(--rc-accent) 45%, transparent); }
+  .rc-cov-foot{ margin-top:14px; padding-top:13px; border-top:1px solid var(--rc-glass-brd);
+    font-size:11px; color:var(--muted); line-height:1.5; }
+
+  /* ── Controls bar (glass) ─────────────────────────────────────────── */
+  .rc-controls{ margin:24px 0 0; padding:14px 16px; border-radius:14px; }
+  .rc-controls-top{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; }
+  .rc-search{ position:relative; flex:1 1 300px; min-width:200px; }
+  .rc-search .mag{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.55; font-size:13px; }
+  .rc-search input{ width:100%; background:color-mix(in srgb, var(--panel2) 60%, transparent);
+    border:1px solid var(--rc-glass-brd); color:var(--text); border-radius:10px;
+    padding:10px 12px 10px 36px; font-size:13.5px; font-family:inherit; outline:none;
+    transition:border-color .15s, box-shadow .15s; }
+  .rc-search input::placeholder{ color:var(--muted); }
+  .rc-search input:focus{ border-color:var(--rc-accent);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--rc-accent) 18%, transparent); }
+  .rc-search kbd{ position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    font:600 10px/1 var(--font-mono); color:var(--muted); border:1px solid var(--rc-glass-brd);
+    border-radius:5px; padding:3px 5px; background:color-mix(in srgb, var(--panel2) 70%, transparent);
+    pointer-events:none; }
+  .rc-search input:focus ~ kbd{ opacity:0; }
+  .rc-sort{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+  .rc-sort select{ background:color-mix(in srgb, var(--panel2) 60%, transparent);
+    border:1px solid var(--rc-glass-brd); color:var(--text); border-radius:9px;
+    padding:8px 10px; font-size:12.5px; font-family:inherit; cursor:pointer; }
+  .rc-sort select:focus-visible{ outline:2px solid var(--rc-accent); outline-offset:1px; }
+  .rc-count{ font-size:12px; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .rc-clear{ display:none; align-items:center; gap:5px; font-size:11.5px; color:var(--rc-accent);
+    background:none; border:0; cursor:pointer; font-family:inherit; padding:4px 6px; border-radius:7px; }
+  .rc-clear.on{ display:inline-flex; }
+  .rc-clear:hover{ background:color-mix(in srgb, var(--rc-accent) 12%, transparent); }
+  .rc-tagbar{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px;
+    padding-top:12px; border-top:1px solid var(--rc-glass-brd); }
+  .rc-tagbar .chip{ cursor:pointer; user-select:none;
+    transition:transform .12s, border-color .15s, background .15s, color .15s; }
+  .rc-tagbar .chip:hover{ transform:translateY(-1px); }
+  .rc-tagbar .chip .n{ opacity:.6; font-variant-numeric:tabular-nums; margin-left:1px; }
+  .rc-tagbar .chip.on{ background:var(--rc-accent); border-color:var(--rc-accent); color:#fff; }
+  .rc-tagbar .chip.on .n{ opacity:.85; }
+  .rc-tagbar .chip:focus-visible{ outline:2px solid var(--rc-accent); outline-offset:2px; }
+
+  /* ── The archive as a timeline (chronological intelligence tape) ──── */
+  .rc-arch-h{ display:flex; align-items:center; gap:10px; margin:30px 2px 6px; }
+  .rc-arch-h .lab{ font:700 11px/1 var(--font-ui); letter-spacing:.16em; text-transform:uppercase;
+    color:var(--muted); white-space:nowrap; }
+  .rc-arch-h .rule{ flex:1; height:1px; background:linear-gradient(90deg, var(--rc-glass-brd), transparent); }
+
+  .rc-tl{ position:relative; margin:8px 0 0; padding-left:0; }
+  .rc-tl::before{ content:""; position:absolute; left:31px; top:14px; bottom:14px; width:2px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--rc-accent) 55%, transparent),
+      color-mix(in srgb, var(--rc-accent-2) 40%, transparent) 45%, transparent);
+    border-radius:2px; }
+  .rc-node{ display:grid; grid-template-columns:64px minmax(0,1fr); gap:16px; align-items:start;
+    padding:9px 0; position:relative; }
+  .rc-node.hide{ display:none; }
+  .rc-rail{ position:relative; text-align:center; padding-top:16px; }
+  .rc-rail .dot{ position:absolute; left:23px; top:22px; width:15px; height:15px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--rc-accent);
+    box-shadow:0 0 0 4px color-mix(in srgb, var(--rc-accent) 14%, transparent); z-index:1;
+    transition:box-shadow .18s ease, border-color .18s ease; }
+  .rc-node:hover .rc-rail .dot{ box-shadow:0 0 0 5px color-mix(in srgb, var(--rc-accent) 22%, transparent); }
+  .rc-rail .mo{ display:block; font:700 10px/1 var(--font-ui); letter-spacing:.08em; text-transform:uppercase;
+    color:var(--rc-accent); }
+  .rc-rail .day{ display:block; font-size:22px; font-weight:800; color:var(--text); margin:2px 0;
+    font-variant-numeric:tabular-nums; line-height:1; }
+  .rc-rail .yr{ display:block; font-size:10.5px; color:var(--muted); }
+
+  .rc-card{ display:block; padding:18px 20px; border-radius:14px; position:relative;
+    background:var(--rc-glass-bg); border:1px solid var(--rc-glass-brd);
+    -webkit-backdrop-filter:var(--rc-blur); backdrop-filter:var(--rc-blur);
+    box-shadow:var(--rc-glass-shadow);
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  .rc-card:hover{ transform:translateY(-2px); border-color:color-mix(in srgb, var(--rc-accent) 40%, var(--rc-glass-brd));
+    box-shadow:var(--rc-glass-hover); }
+  .rc-card-title{ font-family:var(--rc-serif); font-size:19px; font-weight:600; line-height:1.22;
+    letter-spacing:-.005em; margin:0 0 6px; color:var(--text); }
+  .rc-card:hover .rc-card-title{ color:var(--rc-accent); }
+  .rc-card-dek{ font-size:13px; line-height:1.55; color:var(--rc-ink-2); margin:0 0 11px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rc-card-foot{ display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap; }
+  .rc-card-tags{ display:flex; flex-wrap:wrap; gap:6px; }
+  .rc-card-min{ margin-left:auto; font-size:11.5px; color:var(--muted); white-space:nowrap;
+    font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:5px; }
+  .rc-card-min .arw{ color:var(--rc-glass-brd); transition:color .15s, transform .15s; }
+  .rc-card:hover .rc-card-min .arw{ color:var(--rc-accent); transform:translateX(3px); }
+
+  .rc-empty{ display:none; margin:26px auto; padding:34px 20px; text-align:center;
+    border-radius:14px; }
+  .rc-empty.on{ display:block; }
+  .rc-empty .big{ font-family:var(--rc-serif); font-size:19px; color:var(--text); margin:0 0 6px; }
+  .rc-empty p{ font-size:13px; color:var(--muted); margin:0 0 16px; }
+
+  @media(prefers-reduced-motion:reduce){
+    .rc-kick-dot, .rc-cov-fill{ animation:none; }
+    .rc-cov-fill{ transform:none; }
+    .rc-card, .rc-cov-row, .rc-tagbar .chip{ transition:none; }
+    .rc-card:hover{ transform:none; }
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media(max-width:900px){
+    .rc-hero{ grid-template-columns:1fr; }
+    .rc-mast h1{ font-size:36px; }
+  }
+  @media(max-width:640px){
+    .rc-mast h1{ font-size:29px; }
+    .rc-mast .rc-lede{ font-size:14px; }
+    .rc-feat{ padding:20px 18px; }
+    .rc-feat-title{ font-size:24px; }
+    .rc-node{ grid-template-columns:50px minmax(0,1fr); gap:11px; }
+    .rc-tl::before{ left:24px; }
+    .rc-rail .dot{ left:17px; width:13px; height:13px; }
+    .rc-rail .day{ font-size:18px; }
+    .rc-card{ padding:15px 15px; }
+    .rc-card-title{ font-size:17px; }
+    .rc-controls-top{ gap:8px 10px; }
+    .rc-search{ flex:1 1 100%; order:-1; }
   }
 {% endblock %}
 
 {% block content %}
-<section class="rep-hero">
-  <p class="eyebrow">📰 {{ t('Research Reports', '研究报告') }}</p>
-  <h1>{{ t('Research Reports', '研究报告') }}</h1>
-  <p class="lede">{{ t('In-depth, source-grounded reports on the market events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, and read in either language.',
-        '围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。') }}</p>
-</section>
+<div class="rc-aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 
-<div class="controls">
-  <div class="search-box">
-    <span class="mag">🔎</span>
-    <input id="repSearch" type="text" autocomplete="off"
-      placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
-  </div>
-  <label class="sortsel">{{ t('Sort', '排序') }}
-    <select id="repSort">
-      <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
-      <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
-    </select>
-  </label>
-  <span class="rescount" id="repCount"></span>
-  <div class="tagbar" id="tagBar">
-    <span class="chip on" data-tag="all">{{ t('All', '全部') }}</span>
-    {% for tg in all_tags %}<span class="chip tag-{{ tg.key }}" data-tag="{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
-  </div>
-</div>
+<div class="rc-shell">
 
-<div class="report-list" id="reportList">
-  {% for r in reports %}
-  <a class="report-row {{ 'feat' if loop.first }}" href="{{ r.slug }}.html"
-     data-date="{{ r.date }}"
-     data-tags="{{ r.tags | map(attribute='key') | join(' ') }}"
-     data-search="{{ (r.title_en ~ ' ' ~ r.dek_en ~ ' ' ~ r.title_zh ~ ' ' ~ r.dek_zh) | lower }}">
-    {% if loop.first %}<span class="feat-badge">{{ t('Latest', '最新') }}</span>{% endif %}
-    <div class="rr-date"><span class="mo">{{ r.mon }}</span><span class="day">{{ r.day }}</span><span class="yr">{{ r.year }}</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">{{ r.title_en }}</span><span class="l-zh">{{ r.title_zh }}</span></div>
-      <div class="rr-dek"><span class="l-en">{{ r.dek_en }}</span><span class="l-zh">{{ r.dek_zh }}</span></div>
-      <div class="rr-tags">
-        {% for tg in r.tags %}<span class="chip tag-{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
+  <header class="rc-mast">
+    <p class="rc-eyebrow">{{ t('Research Desk', '研究台') }}</p>
+    <h1 class="rc-serif-on">{{ t('Research Reports', '研究报告') }}</h1>
+    <p class="rc-lede">{{ t('In-depth, source-grounded reads on the events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, in either language.',
+          '围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。') }}</p>
+    {% if stats and stats.n_reports %}
+    <div class="rc-deskstat">
+      <span><b>{{ stats.n_reports }}</b> {{ t('reports', '篇报告') }}</span>
+      <span class="sep">·</span>
+      <span><b>{{ stats.n_topics }}</b> {{ t('topics covered', '个覆盖主题') }}</span>
+      <span class="sep">·</span>
+      <span>~<b>{{ stats.total_min }}</b> {{ t('min of reading', '分钟阅读') }}</span>
+    </div>
+    {% endif %}
+  </header>
+
+  {% set latest = stats.latest if stats else (reports[0] if reports else none) %}
+  <section class="rc-hero">
+    {% if latest %}
+    <article class="rc-feat rc-glass">
+      <span class="rc-feat-kicker">
+        <span class="rc-kick-dot"></span>{{ t('Latest briefing', '最新简报') }}
+        <time>· {{ latest.mon }} {{ latest.day }}, {{ latest.year }}</time>
+      </span>
+      <h2 class="rc-feat-title rc-serif-on"><a href="{{ latest.slug }}.html"><span class="l-en">{{ latest.title_en }}</span><span class="l-zh">{{ latest.title_zh }}</span></a></h2>
+      <p class="rc-feat-dek"><span class="l-en">{{ latest.dek_en }}</span><span class="l-zh">{{ latest.dek_zh }}</span></p>
+      <div class="rc-feat-tags">
+        {% for tg in latest.tags %}<span class="chip tag-{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
       </div>
+      <div class="rc-feat-foot">
+        <a class="rc-read gbtn gbtn-cta" href="{{ latest.slug }}.html">{{ t('Read the report', '阅读报告') }} <span aria-hidden="true">→</span></a>
+        <span class="rc-min">⏱ {{ latest.read_min }} {{ t('min read', '分钟') }}</span>
+      </div>
+    </article>
+    {% endif %}
+
+    {% if all_tags %}
+    <aside class="rc-desk rc-glass" aria-label="Coverage">
+      <div class="rc-desk-h">
+        <span class="lab">{{ t('The Desk', '研究台') }}</span>
+        <span class="hint">{{ t('tap to filter', '点按筛选') }}</span>
+      </div>
+      <p class="rc-desk-sub">{{ t('What this archive covers', '本档案的覆盖领域') }}</p>
+      <div class="rc-cov" id="covBars">
+        {% set maxc = all_tags[0].count %}
+        {% for tg in all_tags %}
+        <button type="button" class="rc-cov-row" data-tag="{{ tg.key }}" aria-pressed="false"
+          aria-label="{{ tg.en }} — {{ tg.count }} reports">
+          <span class="rc-cov-name"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:{{ ((tg.count / maxc) * 100) | round(0, 'floor') | int }}%"></span></span>
+          <span class="rc-cov-count">{{ tg.count }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <div class="rc-cov-foot">{{ t('Every report is read-only analysis — not investment advice.', '所有报告仅为分析，不构成投资建议。') }}</div>
+    </aside>
+    {% endif %}
+  </section>
+
+  <div class="rc-controls rc-glass">
+    <div class="rc-controls-top">
+      <div class="rc-search">
+        <span class="mag" aria-hidden="true">🔎</span>
+        <input id="repSearch" type="text" autocomplete="off"
+          placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
+        <kbd>/</kbd>
+      </div>
+      <label class="rc-sort">{{ t('Sort', '排序') }}
+        <select id="repSort">
+          <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
+          <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
+        </select>
+      </label>
+      <span class="rc-count" id="repCount"></span>
+      <button type="button" class="rc-clear" id="repClear">✕ <span class="l-en">Clear</span><span class="l-zh">清除</span></button>
     </div>
-    <div class="rr-aside">
-      <span>⏱ {{ r.read_min }} {{ t('min', '分钟') }}</span>
-      <span class="rr-arrow">→</span>
+    <div class="rc-tagbar" id="tagBar" role="group" aria-label="Filter by topic">
+      <span class="chip on" data-tag="all" tabindex="0" role="button">{{ t('All', '全部') }}</span>
+      {% for tg in all_tags %}<span class="chip tag-{{ tg.key }}" data-tag="{{ tg.key }}" tabindex="0" role="button"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span> <span class="n">{{ tg.count }}</span></span>{% endfor %}
     </div>
-  </a>
-  {% endfor %}
+  </div>
+
+  <div class="rc-arch-h">
+    <span class="lab">{{ t('The Archive', '全部档案') }}</span>
+    <span class="rule"></span>
+  </div>
+
+  <div class="rc-tl" id="reportList">
+    {% for r in reports %}
+    <div class="rc-node" data-date="{{ r.date }}"
+         data-tags="{{ r.tags | map(attribute='key') | join(' ') }}"
+         data-search="{{ (r.title_en ~ ' ' ~ r.dek_en ~ ' ' ~ r.title_zh ~ ' ' ~ r.dek_zh) | lower }}">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">{{ r.mon }}</span><span class="day">{{ r.day }}</span><span class="yr">{{ r.year }}</span>
+      </div>
+      <a class="rc-card" href="{{ r.slug }}.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">{{ r.title_en }}</span><span class="l-zh">{{ r.title_zh }}</span></div>
+        <div class="rc-card-dek"><span class="l-en">{{ r.dek_en }}</span><span class="l-zh">{{ r.dek_zh }}</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            {% for tg in r.tags %}<span class="chip tag-{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
+          </div>
+          <span class="rc-card-min">⏱ {{ r.read_min }} {{ t('min', '分钟') }} <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="rc-empty rc-glass" id="noResults">
+    <div class="big">{{ t('Nothing matches yet', '暂无匹配结果') }}</div>
+    <p>{{ t('No reports fit that search or topic. Try a broader term, or clear the filters.', '没有符合该搜索或主题的报告。可尝试更宽泛的关键词，或清除筛选。') }}</p>
+    <button type="button" class="gbtn" id="repClear2">{{ t('Clear filters', '清除筛选') }}</button>
+  </div>
+
 </div>
-<div class="noresults" id="noResults">{{ t('No reports match your filters.', '没有符合筛选条件的报告。') }}</div>
 {% endblock %}
 
 {% block body_scripts %}
@@ -138,57 +372,118 @@
 (function(){
   var list=document.getElementById('reportList');
   if(!list) return;
-  var rows=[].slice.call(list.querySelectorAll('.report-row'));
+  var nodes=[].slice.call(list.querySelectorAll('.rc-node'));
   var search=document.getElementById('repSearch');
   var sortSel=document.getElementById('repSort');
   var tagBar=document.getElementById('tagBar');
+  var cov=document.getElementById('covBars');
   var count=document.getElementById('repCount');
   var none=document.getElementById('noResults');
+  var clearBtns=[document.getElementById('repClear'),document.getElementById('repClear2')].filter(Boolean);
   var activeTag='all', q='';
 
   function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
   function langSync(){ // keep non-span UI (placeholder, <option>s) in sync with language
     var zh=isZh();
-    search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
-    [].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
+    if(search) search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
+    if(sortSel)[].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
   }
+
+  function syncTagUI(){
+    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){
+      x.classList.toggle('on',(x.getAttribute('data-tag')||'all')===activeTag);
+    });
+    if(cov)[].forEach.call(cov.querySelectorAll('.rc-cov-row'),function(x){
+      x.setAttribute('aria-pressed',(x.getAttribute('data-tag')===activeTag)?'true':'false');
+    });
+    var dirty=(activeTag!=='all'||!!q);
+    clearBtns.forEach(function(b){ b.classList.toggle('on',dirty); });
+  }
+
   function apply(){
     var shown=0;
-    rows.forEach(function(r){
-      var tags=(r.getAttribute('data-tags')||'');
-      var hay=(r.getAttribute('data-search')||'');
+    nodes.forEach(function(n){
+      var tags=(n.getAttribute('data-tags')||'');
+      var hay=(n.getAttribute('data-search')||'');
       var okTag=activeTag==='all'||tags.split(' ').indexOf(activeTag)>=0;
       var okQ=!q||hay.indexOf(q)>=0;
       var show=okTag&&okQ;
-      r.style.display=show?'':'none';
+      n.classList.toggle('hide',!show);
       if(show) shown++;
     });
-    // featured badge only meaningful in default (newest, no filter) view
-    var pristine=(activeTag==='all'&&!q&&sortSel.value==='new');
-    rows.forEach(function(r){ var b=r.querySelector('.feat-badge'); if(b) b.style.display=pristine?'':'none';
-      r.classList.toggle('feat', pristine && r===rows[0] && r.style.display!=='none'); });
-    none.style.display=shown?'none':'block';
+    none.classList.toggle('on',shown===0);
     if(count) count.textContent=isZh()?(shown+' 篇报告'):(shown+(shown===1?' report':' reports'));
+    syncTagUI();
   }
-  function sortRows(){
-    var mode=sortSel.value;
-    var ordered=rows.slice().sort(function(a,b){
+
+  function sortNodes(){
+    var mode=sortSel?sortSel.value:'new';
+    nodes.slice().sort(function(a,b){
       var da=a.getAttribute('data-date'), db=b.getAttribute('data-date');
       return mode==='old' ? (da<db?-1:da>db?1:0) : (da>db?-1:da<db?1:0);
-    });
-    ordered.forEach(function(r){ list.appendChild(r); });
+    }).forEach(function(n){ list.appendChild(n); });
   }
-  search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
-  sortSel.addEventListener('change',function(){ sortRows(); apply(); });
+
+  function setTag(tag){ activeTag=tag||'all'; apply(); writeURL(true); }
+  function reset(){ activeTag='all'; q=''; if(search) search.value=''; apply(); writeURL(true); }
+
+  // ── shareable state: reflect search/topic/sort in the URL, restore on load + back/fwd ──
+  function writeURL(push){
+    var p=[];
+    var qv=search?search.value.trim():'';
+    if(qv) p.push('q='+encodeURIComponent(qv));
+    if(activeTag&&activeTag!=='all') p.push('tag='+encodeURIComponent(activeTag));
+    if(sortSel&&sortSel.value==='old') p.push('sort=old');
+    var url=location.pathname+(p.length?('?'+p.join('&')):'')+location.hash;
+    try{ history[push?'pushState':'replaceState'](null,'',url); }catch(e){}
+  }
+  function readState(){
+    var p=new URLSearchParams(location.search||'');
+    var tg=(p.get('tag')||'all').replace(/[^a-z0-9_-]/gi,'')||'all';   // sanitize before selector use
+    if(tg!=='all'&&!tagBar.querySelector('.chip[data-tag="'+tg+'"]')) tg='all';
+    activeTag=tg;
+    if(search){ search.value=p.get('q')||''; q=search.value.trim().toLowerCase(); }
+    if(sortSel){ sortSel.value=(p.get('sort')==='old')?'old':'new'; }
+    sortNodes(); apply();
+  }
+
+  if(search) search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); writeURL(false); });
+  if(sortSel) sortSel.addEventListener('change',function(){ sortNodes(); apply(); writeURL(true); });
+
   tagBar.addEventListener('click',function(e){
     var c=e.target.closest('.chip'); if(!c) return;
-    activeTag=c.getAttribute('data-tag')||'all';
-    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){ x.classList.toggle('on',x===c); });
-    apply();
+    setTag(c.getAttribute('data-tag'));
   });
+  tagBar.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    var c=e.target.closest('.chip'); if(!c) return;
+    e.preventDefault(); setTag(c.getAttribute('data-tag'));
+  });
+  if(cov) cov.addEventListener('click',function(e){
+    var r=e.target.closest('.rc-cov-row'); if(!r) return;
+    var tag=r.getAttribute('data-tag');
+    setTag(activeTag===tag?'all':tag); // second tap on the same topic clears it
+  });
+  clearBtns.forEach(function(b){ b.addEventListener('click',reset); });
+  window.addEventListener('popstate',readState);   // browser back/fwd restores the filtered view
+
+  document.addEventListener('keydown',function(e){
+    // Esc clears the search while it's focused (keeps focus for a fresh query)
+    if(e.key==='Escape'&&search&&document.activeElement===search&&search.value){
+      e.preventDefault(); search.value=''; q=''; apply(); writeURL(false); return;
+    }
+    // "/" focuses search (unless already typing in a field)
+    if(e.key!=='/'||e.metaKey||e.ctrlKey||e.altKey) return;
+    var el=document.activeElement, tag=el&&el.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(el&&el.isContentEditable)) return;
+    e.preventDefault(); if(search) search.focus();
+  });
+
   // re-sync non-span UI + count when the global language toggle flips
   document.addEventListener('click',function(e){ if(e.target.closest('.lang-toggle')) setTimeout(function(){ langSync(); apply(); },0); });
-  langSync(); apply();
+
+  langSync(); readState(); writeURL(false);   // restore any shared ?q=/?tag=/?sort= then canonicalize
 })();
 </script>
 {% endblock %}

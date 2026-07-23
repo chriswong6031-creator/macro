@@ -15,152 +15,268 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Intraday Flow · 盘中资金流</title>
-{% set seo_title = "Intraday Flow: China — Mastermind" %}{% set seo_desc = "Intraday money-flow tracking for China's market — what is being bought and sold during the session." %}{% set seo_path = "intraday_flow.html" %}
+{% set seo_title = "Intraday Flow Tracker — Mastermind" %}{% set seo_desc = "Which washed-out market leaders (Mag 7, AI, semis, defense, power grid) are being bought back on real volume right now — with a plain-word call on each." %}{% set seo_path = "intraday_flow.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
+  /* ══ Intraday Flow — mx5 desk design (macro.html visual language, kinetic-desk signature) ══ */
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1440px)/2)); } }
+  body.page-intraday-flow {
+    /* deeper canvas + strict mono/type scale, macro parity */
+    --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+    --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --fs-display:44px; --fs-num-xl:38px; --fs-h1:27px; --fs-num-lg:22px;
+    --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+    --hair:color-mix(in srgb, var(--line) 70%, transparent);
+    --hair-strong:var(--line);
+    --glass:color-mix(in srgb, var(--panel) 62%, transparent);
+    --glass-2:color-mix(in srgb, var(--panel2) 70%, transparent);
+    --glass-line:color-mix(in srgb, #fff 9%, transparent);
+    --glass-sh:0 10px 34px -8px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.05) inset;
+    --blur:blur(18px) saturate(150%);
+    --trk:.16em;
+    --rail:var(--info,#5b9bf0);
+    background:var(--bg); color:var(--text);
+    font:var(--fs-body)/1.5 var(--font-ui,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif);
+    margin:0; padding:18px;
+  }
+  html[data-theme="light"] body.page-intraday-flow {
+    --bg:#f5f7fb; --panel:#ffffff; --panel2:#eef1f6;
+    --glass:color-mix(in srgb, #ffffff 72%, transparent);
+    --glass-2:color-mix(in srgb, #ffffff 80%, transparent);
+    --glass-line:color-mix(in srgb, #1c2430 8%, transparent);
+    --glass-sh:0 10px 30px -10px rgba(20,30,50,.16), 0 1px 0 rgba(255,255,255,.7) inset;
+  }
+  @media (min-width:1100px){ body.page-intraday-flow{ padding:24px max(40px,calc((100vw - 1440px)/2)); } }
   a { text-decoration:none; color:inherit; }
-  h1 { font-size:20px; margin:0; }
-  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
-  h3 { font-size:12px; margin:0 0 6px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
-  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
+  .muted { color:var(--muted); } .sm { font-size:var(--fs-sm); } .xs { font-size:var(--fs-micro); }
   .pos { color:var(--up); } .neg { color:var(--down); }
-  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
-  .note { margin:8px 0 0; line-height:1.5; }
+  .tabnum, .num { font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .soft-tag { display:inline-block; font-size:9.5px; font-style:italic; color:var(--orange,#e08b45); margin-left:3px; vertical-align:1px; }
+  .delayed-tag { display:inline-block; font-size:var(--fs-micro); background:color-mix(in srgb,var(--panel2) 70%,transparent); border:1px solid var(--hair); border-radius:5px; padding:1px 6px; color:var(--muted); letter-spacing:.02em; }
+
+  /* help ? tip (Tier-2 home) */
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:4px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto; max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; text-align:left; white-space:normal; }
-  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
-  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help .tip { display:none; position:absolute; top:150%; left:50%; transform:translateX(-50%); width:290px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:10px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; text-align:left; white-space:normal; }
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:12px; }
   .help:hover .tip { display:block; }
-  .tabnum { font-variant-numeric:tabular-nums; }
-  .lag-tag { display:inline-block; font-size:10px; background:var(--panel2); border:1px solid var(--line); border-radius:5px; padding:1px 6px; color:var(--muted); vertical-align:middle; margin-left:4px; }
-  .soft-tag { display:inline-block; font-size:10px; font-style:italic; color:var(--orange,#f97316); margin-left:3px; }
 
-  /* ── "What's set up now" stance strip ─────────────────────────── */
-  .stance-strip { display:flex; flex-wrap:wrap; gap:8px; }
-  .stance-card { flex:1 1 140px; min-width:130px; border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; user-select:none; background:var(--panel2); transition:border-color .15s, background .15s, transform .1s; position:relative; }
-  .stance-card:hover { border-color:var(--muted); transform:translateY(-1px); }
-  .stance-card.active { border-color:var(--blue,#3b82f6); box-shadow:inset 0 0 0 1px var(--blue,#3b82f6); }
+  /* ── state-tinted aurora backdrop ─────────────────────────────── */
+  .ift-aurora { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+  .ift-aurora::before, .ift-aurora::after { content:""; position:absolute; border-radius:50%; filter:blur(95px); transition:background 1.4s ease, opacity 1.4s ease; }
+  .ift-aurora::before { width:920px; height:720px; top:-230px; left:-170px; background:radial-gradient(ellipse, var(--au-1, rgba(61,165,100,.13)) 0%, transparent 70%); }
+  .ift-aurora::after  { width:780px; height:640px; bottom:-150px; right:-130px; background:radial-gradient(ellipse, var(--au-2, rgba(91,155,240,.10)) 0%, transparent 70%); }
+  body.tape-green { --au-1:rgba(61,165,100,.15); --au-2:rgba(91,155,240,.11); }
+  body.tape-blue  { --au-1:rgba(91,155,240,.14); --au-2:rgba(140,110,240,.11); }
+  body.tape-amber { --au-1:rgba(224,139,69,.14); --au-2:rgba(224,160,48,.10); }
+  body.tape-quiet { --au-1:rgba(120,132,148,.10); --au-2:rgba(91,110,140,.09); }
+
+  /* ── generic panel / section header (macro idiom) ─────────────── */
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:18px; }
+  .glass { background:var(--glass); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); border:1px solid var(--glass-line); box-shadow:var(--glass-sh); }
+  .sect-h { display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin:0 0 15px; padding:0 0 12px; border-bottom:1px solid var(--hair-strong); font-size:var(--fs-h2); font-weight:700; letter-spacing:-.01em; }
+  .sect-h::before { content:""; flex:none; width:3px; height:18px; border-radius:2px; background:linear-gradient(180deg, var(--rail), color-mix(in srgb, var(--rail) 30%, transparent)); }
+  .sect-note { font-size:var(--fs-sm); font-weight:500; color:var(--muted); letter-spacing:0; }
+  .sect-h .help { margin-left:0; }
+
+  /* ══ HERO — Session Pulse ══════════════════════════════════════ */
+  .ift-hero { position:relative; border-radius:22px; padding:22px 26px 24px; margin-bottom:18px; overflow:hidden; }
+  .ift-hero::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:linear-gradient(160deg, rgba(255,255,255,.04) 0%, transparent 46%); }
+  .hero-inner { position:relative; z-index:1; }
+  .hero-eyebrow { display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk); text-transform:uppercase; color:var(--muted); }
+  .sess-pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:100px; border:1px solid color-mix(in srgb, var(--sess-c, var(--muted)) 40%, transparent); background:color-mix(in srgb, var(--sess-c, var(--muted)) 12%, transparent); color:var(--sess-c, var(--muted)); letter-spacing:.06em; }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--sess-c, var(--muted)); box-shadow:0 0 7px var(--sess-c, var(--muted)); }
+  body .sess-live { --sess-c:var(--ok); }
+  body .sess-pre  { --sess-c:var(--info); }
+  body .sess-post { --sess-c:var(--orange); }
+  body .sess-closed { --sess-c:var(--muted); }
+  .sess-live .live-dot { animation:iftPulse 1.6s ease-in-out infinite; }
+  .hero-thesis { font-size:var(--fs-h1); font-weight:800; line-height:1.2; letter-spacing:-.02em; margin:13px 0 0; max-width:34ch;
+    background-image:linear-gradient(118deg, var(--t1,var(--muted)) 0%, var(--t2,#9aa6b6) 50%, var(--t3,var(--muted)) 92%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .thesis-green { --t1:var(--ok,#3da564); --t2:#5fc89a; --t3:var(--info,#5b9bf0); }
+  .thesis-blue  { --t1:var(--info,#5b9bf0); --t2:#7db0f5; --t3:#9d7cf0; }
+  .thesis-amber { --t1:var(--orange,#e08b45); --t2:var(--warn,#e0a030); --t3:var(--info,#5b9bf0); }
+  .thesis-slate { --t1:var(--muted); --t2:#9aa6b6; --t3:var(--muted); }
+  .hero-sub { font-size:var(--fs-md); color:var(--text); margin:9px 0 0; max-width:60ch; line-height:1.5; }
+  .hero-grid { display:grid; grid-template-columns:minmax(0,auto) 1fr; gap:20px 34px; align-items:center; margin-top:20px; }
+  @media (max-width:720px){ .hero-grid { grid-template-columns:1fr; gap:16px; } }
+
+  /* score block */
+  .hero-score { min-width:230px; }
+  .hs-top { display:flex; align-items:flex-end; gap:12px; }
+  .hs-num { font-family:var(--num); font-size:64px; font-weight:800; line-height:.92; letter-spacing:-.04em; color:var(--score-c, var(--muted)); text-shadow:0 0 46px color-mix(in srgb, var(--score-c, var(--muted)) 34%, transparent); }
+  .hs-label { display:flex; flex-direction:column; padding-bottom:5px; }
+  .hs-l1 { font-size:var(--fs-sm); font-weight:700; color:var(--text); }
+  .hs-l2 { font-size:var(--fs-micro); color:var(--muted); margin-top:1px; }
+  /* composition ribbon — the session's shape */
+  .comp { display:flex; height:12px; border-radius:7px; overflow:hidden; margin-top:16px; background:color-mix(in srgb,var(--muted) 14%,transparent); border:1px solid var(--hair); }
+  .comp-seg { height:100%; min-width:0; background:var(--lane,var(--muted)); transition:flex .7s cubic-bezier(.4,0,.2,1); position:relative; }
+  .comp-seg + .comp-seg { border-left:1px solid color-mix(in srgb,var(--bg) 55%,transparent); }
+  .comp-legend { display:flex; flex-wrap:wrap; gap:4px 13px; margin-top:9px; font-size:var(--fs-micro); }
+  .cl-item { display:inline-flex; align-items:center; gap:5px; color:var(--muted); }
+  .cl-dot { width:8px; height:8px; border-radius:3px; background:var(--lane,var(--muted)); }
+
+  /* context card */
+  .hero-ctx { display:flex; flex-direction:column; gap:7px; align-self:center; padding-left:26px; border-left:1px solid var(--hair); min-width:0; }
+  @media (max-width:720px){ .hero-ctx { padding-left:0; border-left:0; border-top:1px solid var(--hair); padding-top:14px; } }
+  .ctx-row { display:flex; align-items:baseline; gap:8px; font-size:var(--fs-sm); line-height:1.45; }
+  .ctx-row .ctx-ic { flex:none; font-size:12px; opacity:.9; }
+  .ctx-row b { font-family:var(--num); font-weight:700; letter-spacing:-.01em; }
+  .ctx-stamp { font-size:var(--fs-micro); color:var(--muted); margin-top:2px; }
+
+  /* ══ "What's set up now" stance strip ══════════════════════════ */
+  .stance-strip { display:flex; flex-wrap:wrap; gap:9px; }
+  .stance-card { flex:1 1 145px; min-width:132px; border:1px solid var(--glass-line); border-radius:13px; padding:11px 13px; cursor:pointer; user-select:none; background:var(--glass-2); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); transition:border-color .16s, transform .12s, box-shadow .2s; position:relative; overflow:hidden; }
+  .stance-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--lane); }
+  .stance-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--lane) 55%,transparent); box-shadow:0 8px 22px -12px color-mix(in srgb,var(--lane) 60%,transparent); }
+  .stance-card.active { border-color:var(--lane); box-shadow:inset 0 0 0 1px var(--lane), 0 8px 22px -12px color-mix(in srgb,var(--lane) 55%,transparent); }
   .stance-card .sc-top { display:flex; align-items:center; gap:6px; }
-  .stance-card .sc-dot { font-size:14px; line-height:1; }
+  .stance-card .sc-dot { width:9px; height:9px; border-radius:50%; background:var(--lane); box-shadow:0 0 8px color-mix(in srgb,var(--lane) 70%,transparent); }
   .stance-card .sc-label { font-size:12.5px; font-weight:700; }
-  .stance-card .sc-count { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1; }
-  .stance-card .sc-sub { font-size:10.5px; color:var(--muted); margin-top:2px; line-height:1.3; }
-  .stance-card .sc-accent { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:10px 0 0 10px; }
-  /* lane colors */
-  .lane-act    { --lane:var(--up,#16a34a); }
-  .lane-ready  { --lane:var(--blue,#3b82f6); }
-  .lane-fav    { --lane:#22c55e; }
-  html[data-lang="zh"] .lane-fav { --lane:#ef4444; }
-  .lane-profit { --lane:var(--orange,#f97316); }
-  .lane-watch  { --lane:#eab308; }
+  .stance-card .sc-count { font-family:var(--num); font-size:27px; font-weight:800; margin-top:5px; line-height:1; color:var(--lane); }
+  .stance-card .sc-sub { font-size:var(--fs-micro); color:var(--muted); margin-top:3px; line-height:1.3; }
+  /* lane colors — stance/mood colors are fixed across languages (only in_favour flips, per ruling) */
+  .lane-act    { --lane:var(--ok,#3da564); }
+  .lane-ready  { --lane:var(--info,#5b9bf0); }
+  .lane-fav    { --lane:#3fb37a; }
+  html[data-lang="zh"] .lane-fav { --lane:#e06464; }
+  .lane-profit { --lane:var(--orange,#e08b45); }
+  .lane-watch  { --lane:var(--warn,#e0a030); }
   .lane-aside  { --lane:var(--muted); }
-  .sc-accent { background:var(--lane); }
 
-  /* ── Filter / toolbar ─────────────────────────────────────────── */
-  .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:2px; }
-  .chip { display:inline-block; font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); transition:background .15s,border-color .15s,color .15s; }
-  .chip.active { background:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); color:#fff; }
+  /* ══ Spotlight — "Look here first" ═════════════════════════════ */
+  .spot-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:14px; }
+  .spot-card { position:relative; border:1px solid color-mix(in srgb,var(--lane) 34%,var(--glass-line)); border-top-color:color-mix(in srgb,var(--lane) 55%,rgba(255,255,255,.4)); border-radius:15px; padding:15px 16px 16px; background:var(--glass-2); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); box-shadow:0 10px 30px -14px color-mix(in srgb,var(--lane) 45%,transparent), var(--glass-sh); overflow:hidden; }
+  .spot-card::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; box-shadow:0 0 44px -12px color-mix(in srgb,var(--lane) 40%,transparent) inset; }
+  .spot-hd { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .spot-tk { font-family:var(--num); font-size:20px; font-weight:800; letter-spacing:-.01em; color:var(--text); }
+  .spot-tk:hover { color:var(--lane); }
+  .spot-tk-sub { font-size:var(--fs-micro); color:var(--muted); margin-top:0; }
+  .spot-reason { font-size:var(--fs-sm); color:var(--text); line-height:1.42; margin:11px 0 0; }
+  .spot-metrics { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; margin-top:13px; padding-top:12px; border-top:1px solid var(--hair); }
+  .sm-k { display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .sm-v { display:block; font-size:12.5px; font-weight:600; margin-top:1px; font-variant-numeric:tabular-nums; }
+  .spot-empty { padding:22px; text-align:center; color:var(--muted); font-size:var(--fs-md); line-height:1.6; }
+  .spot-empty b { color:var(--text); font-weight:700; }
+
+  /* stance pill (shared) */
+  .stance-pill { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:100px; border:1px solid color-mix(in srgb,var(--lane) 45%,transparent); background:color-mix(in srgb,var(--lane) 13%,transparent); color:var(--lane); white-space:nowrap; }
+  .stance-pill .sp-dot { width:7px; height:7px; border-radius:50%; background:var(--lane); }
+
+  /* ══ Board (toolbar merged into header) ════════════════════════ */
+  .board-tools { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-left:auto; }
+  .chip { display:inline-flex; align-items:center; font-size:11px; padding:4px 10px; border-radius:100px; border:1px solid var(--glass-line); cursor:pointer; user-select:none; background:var(--glass-2); color:var(--muted); transition:background .15s,border-color .15s,color .15s; }
+  .chip.active { background:color-mix(in srgb,var(--rail) 20%,transparent); border-color:var(--rail); color:var(--text); }
   .chip:hover:not(.active) { border-color:var(--muted); color:var(--text); }
-  .search-box { flex:1; min-width:120px; max-width:220px; }
-  .search-box input { width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:4px 10px; font-size:12px; outline:none; }
-  .search-box input:focus { border-color:var(--blue,#3b82f6); }
-  .toggle-btn { font-size:11px; padding:3px 10px; border-radius:6px; border:1px solid var(--line); cursor:pointer; user-select:none; background:var(--panel2); color:var(--muted); }
-  .toggle-btn.active { color:var(--text); border-color:var(--muted); }
-  .stamp-row { margin-left:auto; font-size:11px; color:var(--muted); white-space:nowrap; }
+  .toggle-btn { font-size:11px; padding:4px 11px; border-radius:100px; border:1px solid var(--glass-line); cursor:pointer; user-select:none; background:var(--glass-2); color:var(--muted); display:inline-flex; align-items:center; gap:5px; }
+  .toggle-btn::before { content:""; width:7px; height:7px; border-radius:50%; border:1px solid var(--muted); }
+  .toggle-btn.active { color:var(--text); border-color:var(--rail); }
+  .toggle-btn.active::before { background:var(--rail); border-color:var(--rail); }
+  .search-box { position:relative; }
+  .search-box input { width:150px; background:var(--glass-2); border:1px solid var(--glass-line); color:var(--text); border-radius:100px; padding:5px 12px; font-size:12px; outline:none; }
+  .search-box input:focus { border-color:var(--rail); width:180px; }
+  .basket-scroll { display:flex; gap:6px; flex-wrap:wrap; }
 
-  /* ── Leaders table ────────────────────────────────────────────── */
   .leaders-wrap { overflow-x:auto; }
   table.leaders { width:100%; border-collapse:collapse; font-size:13px; }
-  table.leaders th { padding:7px 10px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); border-bottom:2px solid var(--line); cursor:pointer; white-space:nowrap; user-select:none; }
+  table.leaders th { padding:9px 11px; text-align:left; font-size:var(--fs-micro); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border-bottom:1px solid var(--hair-strong); cursor:pointer; white-space:nowrap; user-select:none; }
   table.leaders th:hover { color:var(--text); }
   table.leaders th .sort-ic { display:inline-block; margin-left:3px; opacity:.4; }
   table.leaders th.sort-asc .sort-ic::after { content:"↑"; opacity:1; }
   table.leaders th.sort-desc .sort-ic::after { content:"↓"; opacity:1; }
   table.leaders th:not(.sort-asc):not(.sort-desc) .sort-ic::after { content:"↕"; }
-  table.leaders td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
-  table.leaders tr.lead-row:hover td { background:var(--panel2); }
-  table.leaders tr.group-head td { background:var(--panel2); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); padding:5px 10px; border-bottom:1px solid var(--line); }
-  .tk-link { font-weight:700; font-size:14px; color:var(--blue,#3b82f6); }
-  .tk-link:hover { text-decoration:underline; }
-  .tk-baskets { font-size:10px; color:var(--muted); margin-top:1px; }
-  .price-cell { white-space:nowrap; }
-  .pct-chg { font-size:11px; margin-left:4px; }
-  .expander { cursor:pointer; color:var(--muted); font-size:12px; user-select:none; padding:2px 4px; border-radius:4px; }
-  .expander:hover { color:var(--text); background:var(--panel2); }
+  table.leaders td { padding:9px 11px; border-bottom:1px solid var(--hair); vertical-align:top; }
+  table.leaders tr.lead-row { transition:background .12s; }
+  table.leaders tr.lead-row:hover td { background:color-mix(in srgb,var(--panel2) 60%,transparent); }
+  table.leaders tr.group-head td { background:transparent; font-weight:700; font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:.06em; color:var(--lane,var(--muted)); padding:14px 11px 6px; border-bottom:1px solid color-mix(in srgb,var(--lane,var(--line)) 30%,transparent); }
+  table.leaders tr.group-head .gh-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--lane); margin-right:6px; vertical-align:middle; box-shadow:0 0 7px color-mix(in srgb,var(--lane) 70%,transparent); }
+  .tk-link { font-family:var(--num); font-weight:700; font-size:14px; color:var(--text); }
+  .tk-link:hover { color:var(--rail); text-decoration:underline; }
+  .tk-baskets { font-size:9.5px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.03em; }
+  .price-cell { white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .pct-chg { font-size:11px; margin-left:4px; font-variant-numeric:tabular-nums; }
+  .expander { cursor:pointer; color:var(--muted); font-size:12px; user-select:none; padding:3px 6px; border-radius:6px; border:1px solid transparent; }
+  .expander:hover { color:var(--text); background:var(--panel2); border-color:var(--hair); }
 
-  /* ── Stance pill + reason ─────────────────────────────────────── */
-  .stance-cell { min-width:210px; }
-  .stance-pill { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; padding:3px 9px; border-radius:20px; border:1px solid var(--lane); color:var(--lane); white-space:nowrap; }
-  .stance-reason { font-size:11.5px; color:var(--text); margin-top:3px; line-height:1.35; max-width:320px; }
+  .stance-cell { min-width:212px; }
+  .stance-reason { font-size:11.5px; color:var(--text); margin-top:4px; line-height:1.35; max-width:330px; }
   .stance-reason.muted { color:var(--muted); }
 
-  /* ── Plain metric cells ───────────────────────────────────────── */
   .metric-lead { font-size:12.5px; }
-  .metric-sub { font-size:10.5px; color:var(--muted); margin-top:1px; }
-  .gauge-wrap { display:flex; align-items:center; gap:6px; white-space:nowrap; }
-  .gauge-bar { width:48px; height:6px; background:var(--line); border-radius:4px; overflow:hidden; flex-shrink:0; }
-  .gauge-fill { height:100%; border-radius:4px; background:var(--blue,#3b82f6); }
-  .gauge-hi { background:var(--up); } .gauge-med { background:var(--orange,#f97316); } .gauge-lo { background:var(--muted); }
+  .metric-sub { font-size:var(--fs-micro); color:var(--muted); margin-top:2px; }
+  .gauge-wrap { display:flex; align-items:center; gap:7px; white-space:nowrap; }
+  .gauge-bar { width:50px; height:6px; background:color-mix(in srgb,var(--muted) 18%,transparent); border-radius:4px; overflow:hidden; flex-shrink:0; }
+  .gauge-fill { height:100%; border-radius:4px; background:var(--info,#5b9bf0); }
+  .gauge-hi { background:var(--ok,#3da564); } .gauge-med { background:var(--orange,#e08b45); } .gauge-lo { background:var(--muted); }
 
-  /* ── Chips / badges ───────────────────────────────────────────── */
-  .chip-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
-  .badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
-  .badge-green { color:var(--up); border-color:var(--up); }
-  .badge-red { color:var(--down); border-color:var(--down); }
-  .badge-blue { color:var(--blue,#3b82f6); border-color:var(--blue,#3b82f6); }
-  .badge-orange { color:var(--orange,#f97316); border-color:var(--orange,#f97316); }
-  .badge-muted { color:var(--muted); border-color:var(--line); }
+  .chip-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:3px; }
+  .badge { display:inline-block; font-size:9.5px; font-weight:600; padding:2px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
+  .badge-blue { color:var(--info,#5b9bf0); border-color:color-mix(in srgb,var(--info) 45%,transparent); background:color-mix(in srgb,var(--info) 10%,transparent); }
 
-  /* ── Dealer map cell ──────────────────────────────────────────── */
   .dealer-cell { min-width:150px; font-size:11.5px; }
-  .dealer-line { line-height:1.4; }
-  .regime-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:middle; }
-  .rd-long { background:var(--up); } .rd-short { background:var(--down); } .rd-neutral { background:var(--muted); }
+  .dealer-line { line-height:1.42; }
+  .regime-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .rd-long { background:var(--info); } .rd-short { background:var(--orange); } .rd-neutral { background:var(--muted); }
   .dealer-na { color:var(--muted); font-style:italic; }
 
-  /* ── Expanded detail row ──────────────────────────────────────── */
-  tr.detail-row td { background:var(--panel2); padding:0; border-bottom:1px solid var(--line); }
-  .detail-inner { display:none; padding:14px 16px; }
-  tr.detail-row.open .detail-inner { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; }
-  .detail-block h4 { font-size:11px; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); margin:0 0 6px; font-weight:700; }
-  .detail-block .dl { display:grid; grid-template-columns:auto 1fr; gap:2px 10px; font-size:12px; }
+  /* expanded Tier-2 detail */
+  tr.detail-row td { background:color-mix(in srgb,var(--panel2) 55%,transparent); padding:0; border-bottom:1px solid var(--hair); }
+  .detail-inner { display:none; padding:16px 18px; }
+  tr.detail-row.open .detail-inner { display:grid; grid-template-columns:repeat(auto-fit,minmax(238px,1fr)); gap:15px; }
+  .detail-block { background:var(--panel); border:1px solid var(--hair); border-radius:12px; padding:13px 14px; }
+  .detail-block h4 { font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; font-weight:700; }
+  .detail-block .dl { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12px; }
   .detail-block .dl .k { color:var(--muted); }
-  .detail-block .dl .v { text-align:right; font-variant-numeric:tabular-nums; }
-  .posture { font-size:12px; line-height:1.5; margin:6px 0 0; color:var(--text); }
-  .receipt { font-size:10.5px; color:var(--muted); margin-top:6px; font-style:italic; }
-  /* checks (legs) */
-  .checks { display:flex; flex-wrap:wrap; gap:4px 8px; }
-  .check { display:inline-flex; align-items:center; gap:3px; font-size:11px; }
+  .detail-block .dl .v { text-align:right; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .posture { font-size:12px; line-height:1.55; margin:8px 0 0; color:var(--text); }
+  .receipt { font-size:10.5px; color:var(--muted); margin-top:7px; font-style:italic; line-height:1.5; }
+  .checks { display:flex; flex-wrap:wrap; gap:5px 9px; }
+  .check { display:inline-flex; align-items:center; gap:4px; font-size:11px; }
   .check .ic { font-weight:700; }
-  .check.on { color:var(--up); } .check.off { color:var(--muted); } .check.na { color:var(--muted); opacity:.65; }
+  .check.on { color:var(--ok,#3da564); } .check.off { color:var(--muted); } .check.na { color:var(--muted); opacity:.6; }
 
-  /* ── Playbook accordion ──────────────────────────────────────── */
-  .playbook-section { border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:8px; }
-  .playbook-hd { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; cursor:pointer; font-weight:600; font-size:13px; user-select:none; }
+  /* ══ Field guide accordion ═════════════════════════════════════ */
+  .playbook-section { border:1px solid var(--hair); border-radius:12px; overflow:hidden; margin-bottom:9px; background:color-mix(in srgb,var(--panel2) 40%,transparent); }
+  .playbook-hd { display:flex; align-items:center; justify-content:space-between; padding:12px 15px; cursor:pointer; font-weight:600; font-size:13px; user-select:none; }
   .playbook-hd:hover { background:var(--panel2); }
   .playbook-hd .caret { font-size:11px; color:var(--muted); transition:transform .2s; }
   .playbook-section.open .playbook-hd .caret { transform:rotate(90deg); }
-  .playbook-body { display:none; padding:10px 14px; font-size:13px; line-height:1.6; border-top:1px solid var(--line); }
+  .playbook-body { display:none; padding:2px 15px 13px; font-size:13px; line-height:1.62; border-top:1px solid var(--hair); }
   .playbook-section.open .playbook-body { display:block; }
-  .playbook-body ul { margin:6px 0 0 18px; padding:0; }
-  .playbook-body li { margin-bottom:3px; }
+  .playbook-body ul { margin:8px 0 0 18px; padding:0; }
+  .playbook-body li { margin-bottom:5px; }
+  .foot-note { font-size:var(--fs-micro); color:var(--muted); margin-top:12px; line-height:1.55; }
 
-  .loading-row td { color:var(--muted); font-style:italic; text-align:center; padding:24px; }
+  .loading-row td { color:var(--muted); font-style:italic; text-align:center; padding:26px; }
+
+  /* ══ entrance / kinetic animations (reduced-motion gated) ══════ */
+  @keyframes iftPulse { 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.4; transform:scale(.82);} }
+  @keyframes iftRise { from{ opacity:0; transform:translateY(9px) scale(.99);} to{ opacity:1; transform:none;} }
+  @keyframes iftBreathe { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-2px);} }
+  @media (prefers-reduced-motion:no-preference) {
+    .reveal { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both; }
+    .reveal-1{ animation-delay:.04s;} .reveal-2{ animation-delay:.10s;} .reveal-3{ animation-delay:.16s;}
+    .spot-card { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both; }
+    .spot-card:nth-child(2){ animation-delay:.07s;} .spot-card:nth-child(3){ animation-delay:.14s;}
+    .spot-card.breathe { animation:iftRise .5s cubic-bezier(.2,.7,.3,1) both, iftBreathe 6s ease-in-out 1s infinite; }
+  }
+  @media (prefers-reduced-motion:reduce) { .sess-live .live-dot { animation:none; } }
 
   @media (max-width:820px) {
+    body.page-intraday-flow { padding:14px; }
+    .hero-thesis { font-size:22px; }
+    .hs-num { font-size:52px; }
     table.leaders { font-size:12px; }
-    table.leaders th, table.leaders td { padding:6px 7px; }
+    table.leaders th, table.leaders td { padding:7px 8px; }
     .hide-narrow { display:none; }
+    .stance-card { flex-basis:calc(50% - 5px); min-width:0; }
   }
 </style>
 </head>
-<body class="page-intraday-flow">
+<body class="page-intraday-flow tape-quiet">
+<div class="ift-aurora" id="ift-aurora"></div>
 
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
@@ -184,87 +300,113 @@
   </div>
 </nav>
 
-<!-- Header panel — Tier 1: title ≤4 words, subtitle ≤14, one as-of, one footnote -->
-<div class="panel">
-  <div class="topline">
-    <h1>📊 {{ t('Intraday Flow', '盘中资金流') }}</h1>
-    <span class="lag-tag">{{ t('≈15-min delayed', '≈15分钟延迟') }}</span>
-    {{ help(
-      'Washed-out leaders reclaiming on real volume. Direction on the options tape is approximate (~soft) — it leans, it does not confirm. Everything here annotates; nothing is trade advice, and the dealer map is a levels-and-timing map, never a forecast.',
-      '经历洗盘后在真实成交量上收复的领涨股。期权带的方向为近似（~软性）——只作倾向，不作确认。所有内容仅为标注，均不构成交易建议；做市商地图仅为价位与择时参考，绝非预测。') }}
-  </div>
-  <p class="muted sm note">{{ t(
-    "Which washed-out leaders are being bought back — right now — and what to do about each.",
-    "哪些洗盘后的领涨股正在被重新买入——就在当下——以及每一只该怎么应对。") }}</p>
-  <div class="topline" style="margin-top:8px">
-    <span class="xs muted">{{ ift.n_leaders if ift.n_leaders else 0 }} {{ t('leaders watched', '只领涨股') }}</span>
-    <span class="xs muted" id="ift-stamp">{{ t('Base:', '基础：') }} {{ ift.as_of if ift.as_of else '—' }} · <span class="l-en">tape loading…</span><span class="l-zh">资金带加载中…</span></span>
-  </div>
-</div>
+<!-- ══ HERO — Session Pulse (Tier 1: state + stance + one plain line) ══ -->
+<header class="ift-hero glass reveal" id="ift-hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <span class="sess-pill sess-closed" id="sess-pill"><span class="live-dot"></span><span id="sess-state">{{ t('Loading tape…','读取资金带…') }}</span></span>
+      <span class="delayed-tag">{{ t('≈15-min delayed','≈15分钟延迟') }}</span>
+      {{ help(
+        'A fixed watchlist of institutional leaders — Mag 7, AI infrastructure/software/semis, semicap, reshoring, defense and power grid. It looks for one thing: a leader that sold off, absorbed the selling, and is being bought back on real volume. Every read is a deterministic rule — no score, no black box. Options-tape direction is approximate (~soft): it leans, it does not confirm. Nothing here is trade advice.',
+        '一份固定的机构领涨股观察名单——Mag 7、AI基础设施/软件/半导体、半导体设备、回流制造、国防与电网。它只找一件事：某只领涨股下跌、消化卖压、如今正被放量重新买入。每个判断均为确定性规则——无评分、无黑箱。期权带方向为近似（~软性）：只作倾向，不作确认。所有内容均不构成交易建议。') }}
+    </div>
+    <h1 class="hero-thesis thesis-slate" id="hero-thesis"><span class="l-en">Reading the tape…</span><span class="l-zh">正在读取资金带…</span></h1>
+    <p class="hero-sub" id="hero-sub"><span class="l-en">Sorting {{ ift.n_leaders if ift.n_leaders else 0 }} leaders into plain-word calls…</span><span class="l-zh">正在将 {{ ift.n_leaders if ift.n_leaders else 0 }} 只领涨股归类为通俗结论……</span></p>
 
-<!-- "What's set up now" stance strip — the glance tier -->
-<div class="panel">
-  <h2>{{ t("What's set up now", '当前布局一览') }}
-    {{ help('Each leader is sorted into one plain-word call from deterministic rules — no score, no black box. Click a card to show only those names. Counts update live as the tape moves.',
-            '每只领涨股按确定性规则归入一个通俗结论——无评分、无黑箱。点击卡片仅显示该类。计数随资金带实时更新。') }}
+    <div class="hero-grid">
+      <div class="hero-score">
+        <div class="hs-top">
+          <span class="hs-num" id="hs-count">—</span>
+          <div class="hs-label">
+            <span class="hs-l1">{{ t('setups live','活跃布局') }}</span>
+            <span class="hs-l2">{{ t('buy-now + almost-ready','现在买入 + 即将就绪') }}</span>
+          </div>
+        </div>
+        <div class="comp" id="comp-bar" aria-hidden="true"></div>
+        <div class="comp-legend" id="comp-legend"></div>
+      </div>
+      <div class="hero-ctx">
+        <div class="ctx-row"><span class="ctx-ic">⚡</span><span id="ctx-strong">{{ t('Waiting for the tape…','等待资金带……') }}</span></div>
+        <div class="ctx-row muted"><span class="ctx-ic">🧭</span><span id="ctx-watch">{{ t('The board below carries every name and the reasoning behind each call.','下方看板列出每只标的及其结论依据。') }}</span></div>
+        <div class="ctx-stamp" id="ift-stamp">{{ t('Base:', '基础：') }} {{ ift.as_of if ift.as_of else '—' }} · <span class="l-en">tape loading…</span><span class="l-zh">资金带加载中…</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══ "What's set up now" stance strip — the glance filter ══ -->
+<section class="panel glass reveal reveal-1">
+  <h2 class="sect-h">{{ t("What's set up now", '当前布局一览') }}
+    <span class="sect-note">{{ t('click a lane to filter the board','点击类别以筛选看板') }}</span>
+    {{ help('Each leader is sorted into one plain-word call from deterministic rules — no score, no black box. Click a card to show only those names on the board. Counts update live as the tape moves.',
+            '每只领涨股按确定性规则归入一个通俗结论——无评分、无黑箱。点击卡片仅在看板显示该类标的。计数随资金带实时更新。') }}
   </h2>
   <div class="stance-strip" id="stance-strip">
-    <div class="stance-card lane-act" data-stance="act"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">🟢</span><span class="sc-label">{{ t('Buy now', '现在买入') }}</span></div>
+    <div class="stance-card lane-act" data-stance="act">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t('Buy now', '现在买入') }}</span></div>
       <div class="sc-count" data-count="act">0</div>
       <div class="sc-sub">{{ t('reclaimed on durable volume', '放量收复') }}</div>
     </div>
-    <div class="stance-card lane-ready" data-stance="get_ready"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">🔵</span><span class="sc-label">{{ t('Almost ready', '即将就绪') }}</span></div>
+    <div class="stance-card lane-ready" data-stance="get_ready">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t('Almost ready', '即将就绪') }}</span></div>
       <div class="sc-count" data-count="get_ready">0</div>
       <div class="sc-sub">{{ t('base built, awaiting reclaim', '底部已成，待收复') }}</div>
     </div>
-    <div class="stance-card lane-fav" data-stance="in_favour"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">🏃</span><span class="sc-label">{{ t('In favour', '走势占优') }}</span></div>
+    <div class="stance-card lane-fav" data-stance="in_favour">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t('In favour', '走势占优') }}</span></div>
       <div class="sc-count" data-count="in_favour">0</div>
       <div class="sc-sub">{{ t('trending — ride, no fresh chase', '趋势中——持有不追') }}</div>
     </div>
-    <div class="stance-card lane-profit" data-stance="take_profits"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">🟠</span><span class="sc-label">{{ t('Take profits', '获利了结') }}</span></div>
+    <div class="stance-card lane-profit" data-stance="take_profits">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t('Take profits', '获利了结') }}</span></div>
       <div class="sc-count" data-count="take_profits">0</div>
       <div class="sc-sub">{{ t('stretched into resistance', '冲高至阻力') }}</div>
     </div>
-    <div class="stance-card lane-watch" data-stance="watch"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">👀</span><span class="sc-label">{{ t("Watch — don't chase", '观望——勿追') }}</span></div>
+    <div class="stance-card lane-watch" data-stance="watch">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t("Watch — don't chase", '观望——勿追') }}</span></div>
       <div class="sc-count" data-count="watch">0</div>
       <div class="sc-sub">{{ t('moving without a base', '无底部的异动') }}</div>
     </div>
-    <div class="stance-card lane-aside" data-stance="stand_aside"><span class="sc-accent"></span>
-      <div class="sc-top"><span class="sc-dot">⚪</span><span class="sc-label">{{ t('Stand aside', '暂时观望') }}</span></div>
+    <div class="stance-card lane-aside" data-stance="stand_aside">
+      <div class="sc-top"><span class="sc-dot"></span><span class="sc-label">{{ t('Stand aside', '暂时观望') }}</span></div>
       <div class="sc-count" data-count="stand_aside">0</div>
       <div class="sc-sub">{{ t('quiet — no setup', '平静——无布局') }}</div>
     </div>
   </div>
-</div>
+</section>
 
-<!-- Toolbar: basket filters + view toggle + search -->
-<div class="panel" style="padding:10px 16px">
-  <div class="toolbar">
-    <span class="chip active" data-basket="all">{{ t('All', '全部') }}</span>
-    <span class="chip" data-basket="mag7">Mag7</span>
-    <span class="chip" data-basket="ai_infra">{{ t('AI Infra', 'AI基础') }}</span>
-    <span class="chip" data-basket="ai_software">{{ t('AI Software', 'AI软件') }}</span>
-    <span class="chip" data-basket="ai_semiconductors">{{ t('AI Semis', 'AI芯片') }}</span>
-    <span class="chip" data-basket="semicap_equipment">{{ t('Semicap', '设备') }}</span>
-    <span class="chip" data-basket="reshoring">{{ t('Reshoring', '回流') }}</span>
-    <span class="chip" data-basket="defense">{{ t('Defense', '国防') }}</span>
-    <span class="chip" data-basket="power_grid">{{ t('Power Grid', '电网') }}</span>
-    <span class="toggle-btn active" id="group-toggle">{{ t('Group by call', '按结论分组') }}</span>
-    <div class="search-box">
-      {# EN in placeholder, ZH in data-ph-zh — never dual-language spans inside an attribute. #}
-      <input type="text" id="ift-search" placeholder="Ticker search…" data-ph-zh="搜索代码…" autocomplete="off">
-    </div>
-    <span class="stamp-row xs muted" id="sort-label">{{ t('Most active first', '最活跃优先') }}</span>
+<!-- ══ Spotlight — Look here first ══ -->
+<section class="panel glass reveal reveal-2" id="spotlight-panel">
+  <h2 class="sect-h">{{ t('Look here first', '优先关注') }}
+    <span class="sect-note" id="spot-note">{{ t('the strongest setups on the tape right now','当前资金带上最强的布局') }}</span>
+  </h2>
+  <div class="spot-grid" id="spot-grid">
+    <div class="spot-empty">{{ t('Reading the tape…','正在读取资金带……') }}</div>
   </div>
-</div>
+</section>
 
-<!-- Leaders table -->
-<div class="panel">
+<!-- ══ Board ══ -->
+<section class="panel glass reveal reveal-3">
+  <h2 class="sect-h">{{ t('The full board', '完整看板') }}
+    <span class="sect-note" id="sort-label">{{ t('grouped by call · most active first','按结论分组 · 最活跃优先') }}</span>
+    <div class="board-tools">
+      <div class="basket-scroll">
+        <span class="chip active" data-basket="all">{{ t('All', '全部') }}</span>
+        <span class="chip" data-basket="mag7">Mag7</span>
+        <span class="chip" data-basket="ai_infra">{{ t('AI Infra', 'AI基础') }}</span>
+        <span class="chip" data-basket="ai_software">{{ t('AI Software', 'AI软件') }}</span>
+        <span class="chip" data-basket="ai_semiconductors">{{ t('AI Semis', 'AI芯片') }}</span>
+        <span class="chip" data-basket="semicap_equipment">{{ t('Semicap', '设备') }}</span>
+        <span class="chip" data-basket="reshoring">{{ t('Reshoring', '回流') }}</span>
+        <span class="chip" data-basket="defense">{{ t('Defense', '国防') }}</span>
+        <span class="chip" data-basket="power_grid">{{ t('Power Grid', '电网') }}</span>
+      </div>
+      <span class="toggle-btn active" id="group-toggle">{{ t('Group by call', '按结论分组') }}</span>
+      <div class="search-box">
+        <input type="text" id="ift-search" placeholder="Ticker…" data-ph-zh="搜索代码…" autocomplete="off">
+      </div>
+    </div>
+  </h2>
   <div class="leaders-wrap">
     <table class="leaders" id="leaders-table">
       <thead>
@@ -283,13 +425,13 @@
       </tbody>
     </table>
   </div>
-  <p class="xs muted" style="margin-top:8px;text-align:right" id="count-label"></p>
-</div>
+  <p class="xs muted" style="margin-top:10px;text-align:right" id="count-label"></p>
+</section>
 
-<!-- Playbook accordion -->
-<div class="panel">
-  <h2>{{ t('How to read this board', '如何看懂本看板') }}
-    <span class="lag-tag">{{ t('field guide', '实战指南') }}</span>
+<!-- ══ Field guide ══ -->
+<section class="panel glass">
+  <h2 class="sect-h">{{ t('How to read this board', '如何看懂本看板') }}
+    <span class="sect-note">{{ t('field guide','实战指南') }}</span>
   </h2>
 
   <div class="playbook-section open">
@@ -350,16 +492,16 @@
     </div>
   </div>
 
-  <p class="xs muted" style="margin-top:10px">
+  <p class="foot-note">
     {{ t('Options-tape direction is approximate (~soft — a tape rule, not bid/offer matching). Every call is a deterministic rule with no score and no black box. Reference levels and the dealer map are context for timing and stops, not trade advice.',
          '期权带方向为近似（~软性——盘口规则，非买卖报价匹配）。每个结论均为确定性规则，无评分、无黑箱。参考价位与做市商地图仅为择时与止损背景，不构成交易建议。') }}
   </p>
-</div>
+</section>
 
 <!-- data_base.js sets window.DATA_BASE → routes the live options-flow fetch to the
      public R2 data plane (present on 171 site pages; v1 omitted it, so R2 flow never loaded). -->
 <script src="data_base.js"></script>
-<!-- Inline JS — data loads, polling, table render -->
+<!-- Inline JS — data loads, polling, hero/spotlight/board render -->
 <script>
 (function(){
 'use strict';
@@ -372,6 +514,7 @@ var WASHOUT_LB = BASE_DATA.washout_lookback || 10;
 var leaders = BASE_DATA.leaders || [];
 var LEADERS_BY_TK = {};
 leaders.forEach(function(l){ LEADERS_BY_TK[l.ticker] = l; });
+var REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ── Live state ─────────────────────────────────────────────────────────────
 var quoteState = {};   // ticker -> {price, changePct, vol, hi, lo}
@@ -410,6 +553,15 @@ function _etMinutes() {
   return h*60 + m;
 }
 function isMarketHours() { var e=_etMinutes(); return e >= (9*60+25) && e <= (16*60+5); }
+// session phase: pre | live | post | closed  (weekday check is intentionally omitted —
+// off-hours simply renders the nightly skeleton, which is correct on weekends too)
+function sessionPhase() {
+  var e = _etMinutes();
+  if (e >= (9*60+25) && e <= (16*60+5)) return 'live';
+  if (e >= (4*60) && e < (9*60+25)) return 'pre';
+  if (e > (16*60+5) && e <= (20*60)) return 'post';
+  return 'closed';
+}
 
 // ── Derived metrics ────────────────────────────────────────────────────────
 function computeRvol(leader, quote, pulse) {
@@ -694,39 +846,217 @@ function updateFlowStamp(asof) {
   stamp.innerHTML = lz('Base: '+base+' · '+tapeEn, '基础：'+base+' · '+tapeZh);
 }
 
-// ── Build one leader row (glance) + detail row (Tier-2) ───────────────────
-function buildRow(leader) {
-  var tk = leader.ticker;
-  var quote = quoteState[tk] || null, pulse = pulseState[tk] || null, flow = flowState[tk] || null;
-  var conf = computeLegs(leader, quote, pulse, flow);
-  var stance = computeStance(leader, quote, pulse, flow, conf);
-  var meta = STANCE_META[stance.key] || STANCE_META.stand_aside;
-  var rvol = computeRvol(leader, quote, pulse);
-  var rangePos = computeRangePos(quote);
-  var vwapDelta = computeVwapDelta(quote, pulse);
-  var d = dealerOf(leader);
+// ══ compute-once pipeline (shared by hero, spotlight, board) ═══════════════
+function computeAll() {
+  return leaders.map(function(l){
+    var q = quoteState[l.ticker] || null, p = pulseState[l.ticker] || null, f = flowState[l.ticker] || null;
+    var conf = computeLegs(l, q, p, f);
+    var st = computeStance(l, q, p, f, conf);
+    return { l:l, q:q, p:p, f:f, conf:conf, st:st,
+             rvol:computeRvol(l,q,p), vwapDelta:computeVwapDelta(q,p), rangePos:computeRangePos(q),
+             d:dealerOf(l), meta:STANCE_META[st.key]||STANCE_META.stand_aside };
+  });
+}
+function laneCounts(rows) {
+  var c = { act:0, get_ready:0, in_favour:0, take_profits:0, watch:0, stand_aside:0 };
+  rows.forEach(function(r){ if (c[r.st.key]!=null) c[r.st.key]++; });
+  return c;
+}
 
-  // Name cell
+// ── count-up animation ─────────────────────────────────────────────────────
+function animateCount(el, to) {
+  if (!el) return;
+  var from = parseInt(el.getAttribute('data-cv')||'0',10) || 0;
+  el.setAttribute('data-cv', String(to));
+  if (REDUCED_MOTION || from === to) { el.textContent = String(to); return; }
+  var start = null, dur = 550;
+  function step(ts){ if (start==null) start=ts; var k=Math.min((ts-start)/dur,1); var e=1-Math.pow(1-k,3);
+    el.textContent = String(Math.round(from + (to-from)*e)); if (k<1) requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+
+// ══ HERO — Session Pulse ═══════════════════════════════════════════════════
+function buildHero(rows, counts) {
+  var phase = sessionPhase();
+  var live = phase === 'live';
+  var actionable = counts.act + counts.get_ready;
+
+  // session pill
+  var pill = document.getElementById('sess-pill'), sstate = document.getElementById('sess-state');
+  var pmap = { live:['sess-live', lz('Market open','开盘中')], pre:['sess-pre', lz('Pre-market','盘前')],
+    post:['sess-post', lz('After hours','盘后')], closed:['sess-closed', lz('Market closed','已收盘')] };
+  if (pill) { pill.className = 'sess-pill '+pmap[phase][0]; }
+  if (sstate) sstate.innerHTML = pmap[phase][1];
+
+  // thesis + sub + tint
+  var thesis, sub, tint, tape;
+  if (live && counts.act > 0) {
+    var n = counts.act;
+    thesis = lz(n+' leader'+(n>1?'s are':' is')+' being bought back on real volume.', n+' 只领涨股正被放量重新买入。');
+    sub = lz('Each reclaimed a washout on durable volume — the continuation setups are live.',
+             '各标的在放量中收复了洗盘底部——延续布局已激活。');
+    tint = 'thesis-green'; tape = 'tape-green';
+  } else if (live && counts.get_ready > 0) {
+    var g = counts.get_ready;
+    thesis = lz('Bases are building — '+g+' name'+(g>1?'s':'')+' almost ready, none triggered yet.', g+' 只标的底部渐成、即将就绪，暂无触发。');
+    sub = lz('Bases are in place, waiting for a reclaim on volume — watch, don\'t pre-empt.',
+             '底部已就位，等待放量收复——观察为宜，勿抢跑。');
+    tint = 'thesis-blue'; tape = 'tape-blue';
+  } else if (live && counts.take_profits > 0) {
+    thesis = lz('Leaders are stretched — protect gains, don\'t chase.', '领涨股已拉伸——保护利润，勿追高。');
+    sub = lz('The movers are stretched or pinned into a ceiling — nothing fresh to start here.',
+             '活跃标的已拉伸或顶到天花板——此处无新入场。');
+    tint = 'thesis-amber'; tape = 'tape-amber';
+  } else if (live) {
+    thesis = lz('Quiet tape — nothing set up to chase right now.', '资金带平静——当前无可追布局。');
+    sub = lz('No leader is being bought back from a washout yet — the board updates itself.',
+             '暂无领涨股在洗盘后被买回——看板将自动更新。');
+    tint = 'thesis-slate'; tape = 'tape-quiet';
+  } else {
+    // off-hours skeleton
+    var readyN = counts.get_ready;
+    if (readyN > 0) {
+      thesis = lz('Market\'s '+(phase==='pre'?'not open yet':'closed')+' — '+readyN+' name'+(readyN>1?'s have':' has')+' a base ready for the open.', '市场'+(phase==='pre'?'尚未开盘':'已收盘')+'——'+readyN+' 只标的底部已就位、静候开盘。');
+      sub = lz('Built a washout base overnight — watch for a reclaim on volume at the open.',
+               '隔夜筑成洗盘底部——开盘后留意放量收复。');
+      tint = 'thesis-blue'; tape = 'tape-blue';
+    } else {
+      thesis = lz('Market\'s '+(phase==='pre'?'not open yet':'closed')+' — nothing set up for the open.', '市场'+(phase==='pre'?'尚未开盘':'已收盘')+'——暂无为开盘准备的布局。');
+      sub = lz('No washout base is ready across the watchlist — check back when the tape runs.',
+               '观察名单中暂无就绪底部——资金带运行时再来。');
+      tint = 'thesis-slate'; tape = 'tape-quiet';
+    }
+  }
+  var thEl = document.getElementById('hero-thesis');
+  if (thEl) { thEl.className = 'hero-thesis '+tint; thEl.innerHTML = thesis; }
+  var subEl = document.getElementById('hero-sub'); if (subEl) subEl.innerHTML = sub;
+  // toggle only the tape-* tint class — never clobber classes theme.js owns on <body>
+  document.body.classList.remove('tape-green','tape-blue','tape-amber','tape-quiet');
+  document.body.classList.add(tape);
+
+  // score number
+  var num = document.getElementById('hs-count');
+  var scoreC = actionable>0 ? (counts.act>0 ? 'var(--ok,#3da564)' : 'var(--info,#5b9bf0)')
+             : (live && counts.take_profits>0 ? 'var(--orange,#e08b45)' : 'var(--muted)');
+  if (num) { num.style.setProperty('--score-c', scoreC); animateCount(num, actionable); }
+
+  // composition ribbon + legend — segment/dot color comes from the .lane-* class
+  // (CSS var --lane), so in_favour auto-flips red in zh with no re-render. No title=
+  // tooltip (would jam EN+ZH into an OS tooltip that ignores the lang toggle); the
+  // legend below is the key.
+  var order = ['act','get_ready','in_favour','take_profits','watch','stand_aside'];
+  var seg = '', leg = '';
+  order.forEach(function(k){
+    var v = counts[k]||0; if (v<=0) return;
+    var meta = STANCE_META[k], cls = 'lane-'+laneSuffix(k);
+    seg += '<div class="comp-seg '+cls+'" style="flex:'+v+' '+v+' 0%"></div>';
+    leg += '<span class="cl-item"><span class="cl-dot '+cls+'"></span>'+lz(meta.en,meta.zh)+' '+v+'</span>';
+  });
+  var comp = document.getElementById('comp-bar'); if (comp) comp.innerHTML = seg || '<div class="comp-seg" style="flex:1;background:var(--muted);opacity:.3"></div>';
+  var legEl = document.getElementById('comp-legend'); if (legEl) legEl.innerHTML = leg;
+
+  // strongest tape / most-ready context
+  var strong = document.getElementById('ctx-strong');
+  if (strong) {
+    if (live) {
+      var pool = rows.filter(function(r){ return r.rvol != null; }).sort(function(a,b){ return (b.rvol||0)-(a.rvol||0); });
+      if (pool.length && pool[0].rvol >= 0.8) {
+        var top = pool[0]; var vw = volumeWords(top.rvol, top.p?top.p.vol_durability:null);
+        strong.innerHTML = lz('Strongest tape: <b>'+esc(top.l.ticker)+'</b> · '+vw.en, '最强资金带：<b>'+esc(top.l.ticker)+'</b> · '+vw.zh);
+      } else strong.innerHTML = lz('No name is trading at unusual volume yet.','暂无标的出现异常放量。');
+    } else {
+      var ready = rows.filter(function(r){ return r.st.key==='get_ready'; }).sort(function(a,b){ return (b.conf.K||0)-(a.conf.K||0); });
+      if (ready.length) strong.innerHTML = lz('Most ready for the open: <b>'+esc(ready[0].l.ticker)+'</b> · base built', '最接近开盘就绪：<b>'+esc(ready[0].l.ticker)+'</b> · 底部已成');
+      else strong.innerHTML = lz('No base is set up across the watchlist right now.','观察名单中暂无就绪布局。');
+    }
+  }
+  var watchEl = document.getElementById('ctx-watch');
+  if (watchEl) {
+    if (live && counts.take_profits>0) watchEl.innerHTML = lz(counts.take_profits+' name'+(counts.take_profits>1?'s are':' is')+' stretched into resistance — take profits, don\'t chase.', counts.take_profits+' 只标的冲高至阻力——获利了结，勿追。');
+    else if (counts.watch>0) watchEl.innerHTML = lz(counts.watch+' name'+(counts.watch>1?'s are':' is')+' moving without a base — watch, don\'t chase.', counts.watch+' 只标的无底部异动——观望，勿追。');
+    else watchEl.innerHTML = lz('The board below carries every name and the reasoning behind each call.','下方看板列出每只标的及其结论依据。');
+  }
+}
+function laneSuffix(k){ return { act:'act',get_ready:'ready',in_favour:'fav',take_profits:'profit',watch:'watch',stand_aside:'aside' }[k]||'aside'; }
+
+// ══ SPOTLIGHT — Look here first ════════════════════════════════════════════
+function buildSpotlight(rows, counts) {
+  var grid = document.getElementById('spot-grid'), note = document.getElementById('spot-note');
+  if (!grid) return;
+  var live = sessionPhase() === 'live';
+  var pick = [];
+  // priority: act (rvol desc) → get_ready (K desc) → live: take_profits (protect, 1)
+  var acts = rows.filter(function(r){ return r.st.key==='act'; }).sort(function(a,b){ return (b.rvol||0)-(a.rvol||0); });
+  var readies = rows.filter(function(r){ return r.st.key==='get_ready'; }).sort(function(a,b){ return (b.conf.K||0)-(a.conf.K||0) || (b.rvol||0)-(a.rvol||0); });
+  pick = acts.concat(readies).slice(0,3);
+  var noteTxt = live ? lz('the strongest setups on the tape right now','当前资金带上最强的布局')
+                     : lz('bases ready for the open','静候开盘的就绪底部');
+  if (!pick.length && live && counts.take_profits>0) {
+    pick = rows.filter(function(r){ return r.st.key==='take_profits'; }).slice(0,2);
+    noteTxt = lz('stretched — protect gains, don\'t chase','已拉伸——保护利润，勿追');
+  }
+  if (note) note.innerHTML = noteTxt;
+
+  if (!pick.length) {
+    grid.innerHTML = '<div class="spot-empty">'+
+      (live ? lz('<b>No fresh setups right now.</b> No leader is being bought back out of a washout — the board below is on watch and will surface names here as they set up.',
+                 '<b>当前无新布局。</b> 暂无领涨股在洗盘后被重新买入——下方看板处于观察状态，一旦成形便会在此呈现。')
+            : lz('<b>Nothing set up for the open yet.</b> When a leader builds a washout base, it will appear here first.',
+                 '<b>暂无为开盘准备的布局。</b> 一旦有领涨股筑成洗盘底部，将优先在此显示。'))
+      +'</div>';
+    return;
+  }
+  grid.innerHTML = pick.map(function(r, i){ return spotCard(r, i); }).join('');
+}
+function spotCard(r, i) {
+  var l = r.l, meta = r.meta, st = r.st, d = r.d, q = r.q, p = r.p, f = r.f;
+  var vw = volumeWords(r.rvol, p ? p.vol_durability : null);
+  var vwapDelta = r.vwapDelta;
+  var vwapV = vwapDelta!=null ? '<span class="'+(vwapDelta>=0?'pos':'neg')+'">'+fmtPct(vwapDelta)+'</span>' : '<span class="muted">—</span>';
+  var leanV;
+  if (f && f.ncp != null) leanV = lz((f.ncp>0?'~call-heavy':'~put-heavy'), (f.ncp>0?'~偏看涨':'~偏看跌'))+'<span class="soft-tag">~soft</span>';
+  else leanV = '<span class="muted">'+lz('quiet','平静')+'</span>';
+  var entry = l.entry_signal || {};
+  var stopV = entry.stop!=null ? fmtDollar(entry.stop) : (d && d.put_wall!=null ? '~$'+fmtNum(d.put_wall,0) : (q && q.lo!=null ? fmtDollar(q.lo) : '—'));
+  var breathe = (i===0 && st.key==='act' && !REDUCED_MOTION) ? ' breathe' : '';
+  var bk = (l.baskets||[]).slice(0,1).map(prettyBasket).join('');
+  return '<article class="spot-card '+meta.lane+breathe+'">'
+    + '<div class="spot-hd">'
+    +   '<div><a class="spot-tk" href="stock.html#'+l.ticker+'">'+esc(l.ticker)+'</a>'+(bk?'<div class="spot-tk-sub">'+esc(bk)+'</div>':'')+'</div>'
+    +   '<span class="stance-pill '+meta.lane+'"><span class="sp-dot"></span>'+lz(meta.en,meta.zh)+'</span>'
+    + '</div>'
+    + '<p class="spot-reason">'+lz(st.reason_en, st.reason_zh)+'</p>'
+    + '<div class="spot-metrics">'
+    +   '<div><span class="sm-k">'+lz('Volume','成交量')+'</span><span class="sm-v">'+lz(vw.en,vw.zh)+'</span></div>'
+    +   '<div><span class="sm-k">'+lz('Vs avg price','对均价')+'</span><span class="sm-v">'+vwapV+'</span></div>'
+    +   '<div><span class="sm-k">'+lz('Options lean','期权倾向')+'</span><span class="sm-v">'+leanV+'</span></div>'
+    +   '<div><span class="sm-k">'+lz('Stop ref','止损参考')+'</span><span class="sm-v">'+stopV+'</span></div>'
+    + '</div>'
+    + '</article>';
+}
+
+// ── Build one leader row (glance) + detail row (Tier-2) ───────────────────
+function buildRow(row) {
+  var leader = row.l, quote = row.q, pulse = row.p, flow = row.f, conf = row.conf;
+  var tk = leader.ticker;
+  var stance = row.st, meta = row.meta, rvol = row.rvol, rangePos = row.rangePos, vwapDelta = row.vwapDelta, d = row.d;
+
   var bk = (leader.baskets || []).slice(0,1).map(function(b){ return prettyBasket(b); }).join('');
   var nameCell = '<td><a class="tk-link" href="stock.html#'+tk+'">'+tk+'</a>'
     + (bk ? '<div class="tk-baskets">'+esc(bk)+'</div>' : '') + '</td>';
 
-  // Stance cell (primary)
-  var pill = '<span class="stance-pill '+meta.lane+'" style="border-color:var(--lane);color:var(--lane)">'
-    + meta.dot + ' ' + lz(meta.en, meta.zh) + '</span>';
+  var pill = '<span class="stance-pill '+meta.lane+'"><span class="sp-dot"></span>' + lz(meta.en, meta.zh) + '</span>';
   var reason = '<div class="stance-reason '+(stance.muted?'muted':'')+'">'+lz(stance.reason_en, stance.reason_zh)+'</div>';
   var stanceCell = '<td class="stance-cell '+meta.lane+'">'+pill+reason+'</td>';
 
-  // Price cell
   var px = quote && quote.price != null ? fmtDollar(quote.price) : '—';
   var chg = quote && quote.changePct != null ? fmtPct(quote.changePct) : '';
   var chgCls = quote && quote.changePct != null ? (quote.changePct>=0?'pos':'neg') : '';
   var rw = rangeWords(rangePos);
-  var priceCell = '<td class="price-cell tabnum hide-narrow"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span>'
+  var priceCell = '<td class="price-cell hide-narrow"><span class="nb-px" data-sym="'+tk+'" data-mkt="us">'+px+'</span>'
     + '<span class="pct-chg '+chgCls+'">'+chg+'</span>'
     + (rw ? '<div class="metric-sub">'+rw+'</div>' : '') + '</td>';
 
-  // Volume cell
   var volDur = pulse ? pulse.vol_durability : null;
   var vw = volumeWords(rvol, volDur);
   var volCell = '<td>'
@@ -735,7 +1065,6 @@ function buildRow(leader) {
     + (pulse && pulse.higher_lows != null && pulse.higher_lows > 0 ? '<div class="metric-sub">'+lz('higher lows ×'+pulse.higher_lows, '更高低点 ×'+pulse.higher_lows)+'</div>' : '')
     + '</td>';
 
-  // Tape cell (VWAP + ~options lean)
   var vwapWord = vwapDelta != null ? (vwapDelta > 0 ? lz('above avg price','高于均价') : lz('below avg price','低于均价')) : lz('—','—');
   var vwapCls = vwapDelta != null ? (vwapDelta>0?'pos':'neg') : 'muted';
   var lean = '';
@@ -751,14 +1080,10 @@ function buildRow(leader) {
   var badgeHtml = badges.length ? '<div class="chip-row">'+badges.slice(0,3).map(function(b){ return '<span class="badge badge-blue">'+esc(b)+'</span>'; }).join('')+'</div>' : '';
   var tapeCell = '<td class="hide-narrow"><span class="metric-lead '+vwapCls+'">'+vwapWord+'</span>'+lean+badgeHtml+'</td>';
 
-  // Dealer map cell (compact)
   var dealerCell = '<td class="dealer-cell hide-narrow">'+dealerCompact(d, quote)+'</td>';
-
-  // Expander
   var expCell = '<td class="col-expand"><span class="expander" data-exp="'+tk+'">'+(openRows[tk]?'▾':'▸')+'</span></td>';
 
-  var rowClass = 'lead-row';
-  var tr = '<tr class="'+rowClass+'" data-ticker="'+tk+'" data-stance="'+stance.key+'"'
+  var tr = '<tr class="lead-row" data-ticker="'+tk+'" data-stance="'+stance.key+'"'
     + ' data-rvol="'+(rvol||0)+'" data-k="'+conf.K+'" data-last="'+((quote&&quote.price)||0)+'"'
     + ' data-stance-order="'+meta.order+'" data-baskets="'+esc((leader.baskets||[]).join(' ')||'all')+'">'
     + nameCell + stanceCell + priceCell + volCell + tapeCell + dealerCell + expCell + '</tr>';
@@ -791,7 +1116,7 @@ function dealerCompact(d, quote) {
   if (d.vol_hole_state && d.vol_hole_state !== 'NONE') {
     var vh = { IN_HOLE: lz('pinned between walls','被夹在墙位间'), COILED_UP: lz('coiled — upward','蓄势向上'),
       COILED_DOWN: lz('coiled — downward','蓄势向下'), EXPANSION: lz('breaking out','正在扩张') }[d.vol_hole_state];
-    if (vh) out.push('<div class="dealer-line" style="color:var(--orange,#f97316)">'+vh+'</div>');
+    if (vh) out.push('<div class="dealer-line" style="color:var(--orange,#e08b45)">'+vh+'</div>');
   }
   return out.join('');
 }
@@ -799,8 +1124,6 @@ function dealerCompact(d, quote) {
 // ── Detail (Tier-2 full depth) ─────────────────────────────────────────────
 function detailContent(leader, quote, pulse, flow, conf, d) {
   var blocks = [];
-
-  // Block: exact tape numbers
   var rvol = computeRvol(leader, quote, pulse), vwapDelta = computeVwapDelta(quote, pulse);
   var tapeDl = [];
   tapeDl.push(dlRow(lz('Relative volume','相对成交量'), rvol!=null ? fmtNum(rvol,2)+'×' : '—'));
@@ -812,7 +1135,6 @@ function detailContent(leader, quote, pulse, flow, conf, d) {
   tapeDl.push(dlRow(lz('Flow durability','资金持续'), flow&&flow.flow_dur!=null ? (flow.flow_dur*100).toFixed(0)+'%' : '—'));
   blocks.push(detailBlock(lz('Tape &amp; volume','盘口与量能'), '<div class="dl">'+tapeDl.join('')+'</div>'));
 
-  // Block: the seven checks (K/7 demoted here, plain names)
   var names = [
     lz('Recent washout','近期洗盘'), lz('Reclaimed above VWAP','收复VWAP上方'), lz('Volume elevated','放量'),
     lz('Volume holding','量能持稳'), lz('~Options leaning in','~期权偏多'), lz('Trend turning up','趋势转强'), lz('Clean leader (no trap)','干净领涨（无陷阱）')
@@ -824,10 +1146,8 @@ function detailContent(leader, quote, pulse, flow, conf, d) {
   }).join('');
   blocks.push(detailBlock(lz(conf.K+' of 7 checks aligned','7项中'+conf.K+'项一致'), '<div class="checks">'+checks+'</div>'));
 
-  // Block: dealer map full (ported renderGex idiom)
   blocks.push(detailBlock(lz('Dealer map (options chains)','做市商地图（期权链）'), dealerFull(d, quote)));
 
-  // Block: reference levels
   var entry = leader.entry_signal || {};
   var lvl = [];
   if (entry.stop != null) lvl.push(dlRow(lz('Stop (nightly)','止损（夜间）'), '<span class="neg">'+fmtDollar(entry.stop)+'</span>'));
@@ -869,7 +1189,7 @@ function dealerFull(d, quote) {
     : '');
   var pin = '';
   if (d.opex_days != null && d.opex_days <= 7 && d.regime === 'long' && quote && quote.price && d.magnet_up != null && Math.abs(quote.price - d.magnet_up)/quote.price < 0.015) {
-    pin = '<div class="receipt" style="color:var(--orange,#f97316)">📌 '+lz('Pinned into expiry ('+d.opex_days+'d) near '+fmtNum(d.magnet_up,2)+' — expect range-compression; a breakout here may just be a pin.', '临近到期（'+d.opex_days+'天）且贴近 '+fmtNum(d.magnet_up,2)+' —— 预期区间收敛；此处突破可能只是钉住。')+'</div>';
+    pin = '<div class="receipt" style="color:var(--orange,#e08b45)">📌 '+lz('Pinned into expiry ('+d.opex_days+'d) near '+fmtNum(d.magnet_up,2)+' — expect range-compression; a breakout here may just be a pin.', '临近到期（'+d.opex_days+'天）且贴近 '+fmtNum(d.magnet_up,2)+' —— 预期区间收敛；此处突破可能只是钉住。')+'</div>';
   }
   var caveat = '<div class="receipt">'+lz('Daily options chains — a levels + timing map. Context for stops, never a direction call. Single-name regime is a near-constant product trait, not a live signal.', '每日期权链——价位与择时地图。仅作止损背景，非方向判断。单只标的体制为产品近乎恒定的属性，非实时信号。')+'</div>';
   return '<div class="dl">'+dl.join('')+'</div>'+(posture?'<p class="posture">'+posture+'</p>':'')+pin+caveat;
@@ -878,12 +1198,9 @@ function ivBandWord(b){ var m={ very_cheap:lz('very cheap','很便宜'), cheap:l
 function skewWord(t){ var m={ fear:lz('downside fear bid','下行恐慌买盘'), greed:lz('upside chased','上行追捧'), balanced:lz('balanced','均衡') }; return m[t]||esc(t); }
 function evidenceWord(q){ var m={ full:lz('full','完整'), partial:lz('partial','部分'), thin:lz('thin','稀薄'), stale:lz('stale','过时') }; return m[q]||lz('—','—'); }
 
-// ── Stance counts + strip ──────────────────────────────────────────────────
-function updateStanceCounts() {
-  var counts = { act:0, get_ready:0, in_favour:0, take_profits:0, watch:0, stand_aside:0 };
-  var rows = document.querySelectorAll('#leaders-body tr.lead-row');
-  rows.forEach(function(r){ var s = r.getAttribute('data-stance'); if (counts[s]!=null) counts[s]++; });
-  Object.keys(counts).forEach(function(k){ var el = document.querySelector('[data-count="'+k+'"]'); if (el) el.textContent = counts[k]; });
+// ── Stance counts (strip) ──────────────────────────────────────────────────
+function updateStanceCounts(counts) {
+  Object.keys(counts).forEach(function(k){ var el = document.querySelector('[data-count="'+k+'"]'); if (el) animateCount(el, counts[k]); });
 }
 
 // ── Sort / filter / group ──────────────────────────────────────────────────
@@ -906,9 +1223,7 @@ function sortRows(rows) {
 function applyView() {
   var tbody = document.getElementById('leaders-body');
   if (!tbody) return;
-  // drop stale group headers from a prior view (standalone filter/sort re-runs)
   [].slice.call(tbody.querySelectorAll('tr.group-head')).forEach(function(g){ g.parentNode.removeChild(g); });
-  // pair each lead-row with its detail-row
   var leadRows = [].slice.call(tbody.querySelectorAll('tr.lead-row'));
   var detailByTk = {};
   [].slice.call(tbody.querySelectorAll('tr.detail-row')).forEach(function(d){ detailByTk[d.getAttribute('data-detail')] = d; });
@@ -925,8 +1240,8 @@ function applyView() {
     if (groupByStance && st !== curGroup) {
       curGroup = st;
       var meta = STANCE_META[st] || STANCE_META.stand_aside;
-      var gh = document.createElement('tr'); gh.className='group-head';
-      gh.innerHTML = '<td colspan="7">'+meta.dot+' '+lz(meta.en, meta.zh)+'</td>';
+      var gh = document.createElement('tr'); gh.className='group-head '+meta.lane;
+      gh.innerHTML = '<td colspan="7"><span class="gh-dot"></span>'+lz(meta.en, meta.zh)+'</td>';
       frag.appendChild(gh);
     }
     r.style.display=''; frag.appendChild(r);
@@ -946,16 +1261,23 @@ function render() {
   if (_rendering) return; _rendering = true;
   var tbody = document.getElementById('leaders-body');
   if (!tbody) { _rendering = false; return; }
-  // cache options_entry for detail (dealer._tk/_eq threading)
+  var computed = computeAll();
+  var counts = laneCounts(computed);
+
+  // hero + spotlight from the shared compute
+  buildHero(computed, counts);
+  buildSpotlight(computed, counts);
+  updateStanceCounts(counts);
+
+  // board
   var html = '';
-  leaders.forEach(function(l){
-    var d = dealerOf(l);
-    if (d) { d._tk = l.ticker; d._eq = (l.options_entry||{}).evidence_quality; }
-    html += buildRow(l);
+  computed.forEach(function(row){
+    var d = row.d;
+    if (d) { d._tk = row.l.ticker; d._eq = (row.l.options_entry||{}).evidence_quality; }
+    html += buildRow(row);
   });
   tbody.innerHTML = html || '<tr class="loading-row"><td colspan="7">'+lz('No data yet','暂无数据')+'</td></tr>';
   applyView();
-  updateStanceCounts();
   if (window.__mmLang) window.__mmLang();
   _rendering = false;
 }
@@ -985,6 +1307,8 @@ document.querySelectorAll('.stance-card[data-stance]').forEach(function(card){
     var s = card.getAttribute('data-stance');
     if (activeStance === s) { activeStance = 'all'; card.classList.remove('active'); }
     else { document.querySelectorAll('.stance-card').forEach(function(c){ c.classList.remove('active'); }); activeStance = s; card.classList.add('active'); }
+    // scroll the board into view when a lane is picked
+    if (activeStance !== 'all') { var bd = document.getElementById('leaders-table'); if (bd && bd.scrollIntoView) bd.scrollIntoView({behavior: REDUCED_MOTION?'auto':'smooth', block:'start'}); }
     applyView();
   });
 });
@@ -1007,6 +1331,8 @@ if (searchEl) {
     function setPh(){ searchEl.placeholder = document.documentElement.getAttribute('data-lang')==='zh'?zh:en; }
     setPh(); document.addEventListener('langchange', setPh); })();
 }
+// No langchange→render needed: static bilingual spans swap via CSS (l-en/l-zh), and the
+// composition ribbon's in_favour segment flips red in zh through the .lane-fav CSS var.
 
 // ── Polling ────────────────────────────────────────────────────────────────
 function startPolling() {

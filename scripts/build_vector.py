@@ -790,16 +790,18 @@ def chart_etf_flow(df: pd.DataFrame) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# landing hub (owns site/index.html exclusively). build_site.py writes the macro
-# dashboard straight to macro.html, so index.html is never the raw dashboard and
-# Home (-> index.html) can't regress to it — even if this step is skipped, the
+# signed-in hub (owns site/start.html exclusively; 2026-07-22 operator order:
+# index.html is now the static anonymous-visitor landing page, a PAIRED plain
+# template templates/index.html — never write index.html from here).
+# build_site.py writes the macro dashboard straight to macro.html, so
+# start.html is never the raw dashboard — even if this step is skipped, the
 # committed hub stays in place.
 # --------------------------------------------------------------------------- #
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
 
 
 def build_landing(site: Path, vm: dict) -> None:
-    """Install the landing hub at index.html. Idempotent: safe to run every
+    """Install the signed-in hub at start.html. Idempotent: safe to run every
     build, independent of build_site.py ordering — the hub is rendered from the
     stored engine state, not from any HTML file build_site emits."""
     macro = _macro_state()
@@ -807,9 +809,9 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state())
-    write_page(site / "index.html", hub)
-    log.info("wrote landing hub -> index.html")
+                    canada=_canada_state(), ipo=_ipo_state())
+    write_page(site / "start.html", hub)
+    log.info("wrote signed-in hub -> start.html")
 
 
 def _macro_state() -> dict:
@@ -1095,10 +1097,15 @@ def _ipo_state() -> dict:
         gap = d.get("gap_5y")
         return {"present": present, "band": d.get("window_band") or "—",
                 "verdict": d.get("verdict"), "priced_90d": d.get("priced_90d"),
-                "gap_5y_pp": (round(gap * 100, 1) if gap is not None else None)}
+                "gap_5y_pp": (round(gap * 100, 1) if gap is not None else None),
+                "next_lockup": d.get("next_lockup"),
+                "next_lockup_date": d.get("next_lockup_date"),
+                "lockups_approaching": d.get("lockups_approaching")}
     except Exception:  # noqa: BLE001
         return {"present": present, "band": "—", "verdict": None,
-                "priced_90d": None, "gap_5y_pp": None}
+                "priced_90d": None, "gap_5y_pp": None,
+                "next_lockup": None, "next_lockup_date": None,
+                "lockups_approaching": None}
 
 
 MACRO_SEV = {"act": "high", "warn": "medium", "info": "info"}
@@ -1946,7 +1953,7 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .nav.vc .card-top{margin:0;flex:1;min-width:0}
 .nav.vc .ico{width:26px;height:26px;font-size:13px;border-radius:7px}
 .nav.vc .card-h{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav.vc .chips,.nav.vc .bar{display:none}
+.nav.vc .chips,.nav.vc .bar,.nav.vc .ipo-line,.nav.vc .rep-latest{display:none}
 .nav.vc .go{margin:0;flex:none;font-size:12px}
 .nav.vc .go .go-tx{display:none}
 }
@@ -1965,9 +1972,11 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
+.ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
 </style>"""
 
-# Critical a11y CSS that must ship INLINE in index.html itself: the hub-a11y CI
+# Critical a11y CSS that must ship INLINE in the hub page itself (start.html
+# since 2026-07-22; index.html before that): the hub-a11y CI
 # guard (scripts/check_hub_a11y.py checks c+d) greps the page HTML for the
 # body{} safe-area padding and the light-theme .pill contrast override, while
 # scripts/externalize_css.py lifts every <style> block >= 1024 bytes into an
@@ -2211,7 +2220,7 @@ def _latest_report_data() -> dict | None:
 
 
 def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
-               latest_report: "dict | None" = None):
+               latest_report: "dict | None" = None, ipo: "dict | None" = None):
     risk_cls = "on" if vm["risk_on"] else "off"
     mom_cls = "neg" if (vm.get("momentum") is not None and vm["momentum"] < 0) else ""
     fav = ", ".join((commodities or {}).get("favored", []))
@@ -2264,6 +2273,49 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
                 + '<span class="l-en">Latest: ' + _rdate + ' · ' + _dek_en + '</span>'
                 + '<span class="l-zh">最新：' + _rdate + ' · ' + _dek_zh + '</span>'
                 + '</div>')
+    # IPO Radar — display-only, never-scored glance card. Mirrors ipo.html's own
+    # plain-word doctrine (window band + aftermarket "why" + next lock-up cliff);
+    # gated on ipo.present so it only shows once build_ipo has shipped the page.
+    ipo_card = None
+    if ipo and ipo.get("present"):
+        _iband = (ipo.get("band") or "").upper()
+        _bw_en, _bw_zh, _bcls = {
+            "OPEN":  ("Window open",  "窗口开启", "q1"),
+            "SHUT":  ("Window shut",  "窗口关闭", "q3"),
+            "MIXED": ("Window mixed", "窗口混合", "q2"),
+        }.get(_iband, ("Window unclear", "窗口不明", ""))
+        # stance (Law 1 plain verb): shut -> stand aside; otherwise watch, don't chase
+        if _iband == "SHUT":
+            _ist_en, _ist_zh = "Stand aside", "靠边站"
+        else:
+            _ist_en, _ist_zh = "Watch — don't chase", "观望，别追"
+        # aftermarket reality — the honest "why" behind the stance. Omitted when the
+        # verdict is unknown, so the card never asserts a comparison we don't have.
+        _aft_map = {
+            "trails": ("New issues have lagged the S&P", "新股跑输标普"),
+            "beats":  ("New-issue basket keeping pace", "新股与大盘同步"),
+            "tracks": ("New issues roughly tracking the market", "新股大致跟随大盘"),
+        }
+        _iaft = ipo.get("verdict")
+        _aft = ('<div class="ipo-line">' + _bi(*_aft_map[_iaft]) + '</div>') if _iaft in _aft_map else ""
+        # next lock-up cliff (ticker · MM-DD · N approaching)
+        _itk = ipo.get("next_lockup")
+        _idate = ipo.get("next_lockup_date") or ""
+        _iappr = ipo.get("lockups_approaching")
+        _imd = _idate[5:] if len(_idate) >= 10 else _idate   # YYYY-MM-DD -> MM-DD
+        _cliff = ""
+        if _itk:
+            _cl_en = "🔓 Next un-lock: " + _itk + ((" " + _imd) if _imd else "")
+            _cl_zh = "🔓 下一解禁：" + _itk + ((" " + _imd) if _imd else "")
+            if _iappr:
+                _cl_en += " · " + str(_iappr) + " approaching"
+                _cl_zh += " · 临近 " + str(_iappr) + " 只"
+            _cliff = '<div class="ipo-line">' + _bi(_cl_en, _cl_zh) + '</div>'
+        ipo_body = ('<div class="chips"><span class="pill ' + _bcls + '">' + _bi(_bw_en, _bw_zh) + '</span>'
+                    '<span class="pill">' + _bi(_ist_en, _ist_zh) + '</span></div>'
+                    + _aft + _cliff)
+        ipo_card = card("ipo", "🚀", "IPO Radar", "新股雷达", "IPO", "新股", ipo_body,
+                        "New-issue window & lock-up cliffs", "新股窗口与解禁日历", "ipo.html")
     cards = [
         card("term", "▣", "Terminal", "交易终端", "Terminal", "终端", term, "Trading charts & stock workspace", "交易图表与个股工作台", "https://app.mastermind-x.com", ' rel="noopener"'),
         card("cyc", "◷", "Cycle Intelligence", "周期智能", "Cycle Intel", "周期", cyc, "Country cycle dashboards", "国家周期看板", "cycle.html"),
@@ -2275,6 +2327,8 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
         card("com", "◆", "Commodity Vector", "大宗商品向量", "Commodities", "商品", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
         card("fx", "💱", "Forex Vector", "外汇向量", "Forex", "外汇", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
     ]
+    if ipo_card:
+        cards.append(ipo_card)
     return ('<div class="band"><h2>' + _bi("Other Features", "其他功能") + '</h2><span class="ln"></span></div>'
             '<div class="nav vc reveal">' + "".join(cards) + '</div>')
 
@@ -2461,9 +2515,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
               canada: dict | None = None,
               intl: dict | None = None, ipo: dict | None = None, spr: dict | None = None,
               **_ignored) -> str:
-    """The AURORA globe flight-deck landing hub. intl/ipo/spr (+ any future state)
-    are accepted-and-ignored: build_landing still passes them, so the signature must
-    absorb them or every daily build crashes (TypeError)."""
+    """The AURORA globe flight-deck landing hub. ipo feeds the IPO Radar vector card
+    (rendered in _g_vectors when ipo.present); intl/spr (+ any future state) are still
+    accepted-and-ignored: build_landing passes them, so the signature must absorb them
+    or every daily build crashes (TypeError)."""
     blob = _globe_markets()
     us_n = (us_stocks or {}).get("n_setups") or 0
     cn_n = (china_stocks or {}).get("n_setups") or 0
@@ -2483,25 +2538,26 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
                          regime_changed_ccs=regime_ccs,
                          standout_tickers=_tickers)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist,
-                         latest_report=latest_rpt)
+                         latest_report=latest_rpt, ipo=ipo)
     alerts_html = _g_alerts(alerts)
     blob_json = json.dumps(blob, ensure_ascii=False)
 
-    # SEO + social + favicon (the landing page — highest-value target). Plain,
-    # static HTML: social scrapers (Slack/X/iMessage) don't run JS. Mirrors the
-    # shared templates/_seo_head.html.j2 used by the Jinja hub pages.
+    # SEO + social + favicon. Plain, static HTML: social scrapers
+    # (Slack/X/iMessage) don't run JS. Mirrors the shared
+    # templates/_seo_head.html.j2 used by the Jinja hub pages. Canonical is
+    # /start.html — the root canonical belongs to the marketing landing page.
     _seo_title = "Mastermind — Global Macro Regime & Market Cycle Intelligence"
     _seo_desc = ("Mastermind is a live macro dashboard tracking market regimes, sector "
                  "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
                  "global markets — risk radar, signals and cycle clocks in one place.")
     _seo = (
         '<meta name="description" content="%s">\n'
-        '<link rel="canonical" href="https://www.mastermind-x.com/">\n'
+        '<link rel="canonical" href="https://www.mastermind-x.com/start.html">\n'
         '<meta property="og:type" content="website">\n'
         '<meta property="og:site_name" content="Mastermind">\n'
         '<meta property="og:title" content="%s">\n'
         '<meta property="og:description" content="%s">\n'
-        '<meta property="og:url" content="https://www.mastermind-x.com/">\n'
+        '<meta property="og:url" content="https://www.mastermind-x.com/start.html">\n'
         '<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">\n'
         '<meta name="twitter:card" content="summary">\n'
         '<meta name="twitter:title" content="%s">\n'

@@ -1,0 +1,257 @@
+{#=============================================================================
+  calculators/stop_loss_take_profit.html.j2 — Stop-Loss & Take-Profit
+  Clones the position_size.html.j2 exemplar STRUCTURE exactly. Implements the
+  brief's stop/target-price formulas + the §6 WORKED_EXAMPLES self-check.
+  Explainer body follows §8 structure: direct answer → formula → worked example
+  → common trap → where it breaks → links.
+
+  Turns a % (or R) distance into exact stop and target PRICES from an entry.
+  compute() is PURE (no DOM); wire() does all DOM reads/writes; WORKED_EXAMPLES
+  runs each fixture through compute() on load and console.error's any mismatch.
+  Never renders NaN/Infinity; empty/invalid → plain-word sentence + "—". Inputs
+  accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('stop-loss-take-profit', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your entry price, pick a side, and set how far away your stop and target sit as a percent. You get the exact stop and target prices, the reward-to-risk ratio, and — if you add a share count — the dollars at stake.',
+   '填入入场价，选择方向，再以百分比设定止损与目标离入场价的距离，即可得到确切的止损价与目标价、盈亏比，若再填入股数，还能算出对应的金额。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Entry price ($)', '入场价（$）') }}</span>
+    <input id="entry" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+  <div class="ci">
+    <span class="ci-l">{{ t('Side', '方向') }}</span>
+    <div class="ci-seg" role="radiogroup" data-name="side" aria-label="Trade side">
+      <button type="button" class="on" data-v="long" aria-checked="true" role="radio">{{ t('Long', '做多') }}</button>
+      <button type="button" data-v="short" aria-checked="false" role="radio">{{ t('Short', '做空') }}</button>
+    </div>
+  </div>
+  <label class="ci"><span class="ci-l">{{ t('Stop distance (%)', '止损距离（%）') }} <span class="hint">{{ t('from entry', '距入场价') }}</span></span>
+    <input id="stoppct" inputmode="decimal" autocomplete="off" placeholder="5"></label>
+  <label class="ci"><span class="ci-l">{{ t('Target distance (%)', '目标距离（%）') }} <span class="hint">{{ t('from entry', '距入场价') }}</span></span>
+    <input id="targetpct" inputmode="decimal" autocomplete="off" placeholder="15"></label>
+  <label class="ci ci-wide"><span class="ci-l">{{ t('Shares', '股数') }} <span class="hint">{{ t('optional — for dollar risk and reward', '可选——用于计算风险与回报金额') }}</span></span>
+    <input id="shares" inputmode="decimal" autocomplete="off" placeholder="100"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit" id="out-unit">{{ t('target', '目标') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in the entry and both distances to see your stop and target.', '填入入场价与两个距离，即可看到止损价与目标价。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Stop price', '止损价') }}</dt><dd id="out-stop">—</dd></div>
+    <div><dt>{{ t('Target price', '目标价') }}</dt><dd id="out-target">—</dd></div>
+    <div><dt>{{ t('Reward : risk', '盈亏比') }}</dt><dd id="out-rr">—</dd></div>
+    <div><dt>{{ t('Dollar risk', '风险金额') }}</dt><dd id="out-drisk">—</dd></div>
+    <div><dt>{{ t('Dollar reward', '回报金额') }}</dt><dd id="out-dreward">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('A percent stop and target are just multipliers on your <strong>entry price</strong>: for a long, the stop sits below entry and the target above; for a short, the stop is above and the target below. The <strong>reward-to-risk ratio</strong> is the target distance divided by the stop distance — and it does not depend on the price or the share count at all.',
+   '百分比的止损与目标，只是<strong>入场价</strong>上的乘数：做多时，止损在入场价下方、目标在上方；做空时则相反。<strong>盈亏比</strong>等于目标距离除以止损距离——它与价格和股数都无关。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('The formula', '公式') }}</h2>
+<div class="formula">
+{{ t('<strong>Long</strong> — Stop = Entry × (1 − Stop% ÷ 100), Target = Entry × (1 + Target% ÷ 100)', '<strong>做多</strong> — 止损价 = 入场价 × (1 − 止损% ÷ 100)，目标价 = 入场价 × (1 + 目标% ÷ 100)') }}<br>
+{{ t('<strong>Short</strong> — Stop = Entry × (1 + Stop% ÷ 100), Target = Entry × (1 − Target% ÷ 100)', '<strong>做空</strong> — 止损价 = 入场价 × (1 + 止损% ÷ 100)，目标价 = 入场价 × (1 − 目标% ÷ 100)') }}<br>
+{{ t('<strong>Reward : risk</strong> = Target% ÷ Stop%', '<strong>盈亏比</strong> = 目标% ÷ 止损%') }}<br>
+{{ t('With shares Q: Dollar risk = |Entry − Stop| × Q, Dollar reward = |Target − Entry| × Q', '若有股数 Q：风险金额 = |入场价 − 止损价| × Q，回报金额 = |目标价 − 入场价| × Q') }}
+</div>
+<p>{{ t('Notice the ratio ignores price entirely. A 5% stop against a 15% target is a reward-to-risk of 3-to-1 whether the stock trades at $8 or $800. Price and share count only set the <em>dollars</em> at stake, not the shape of the trade.',
+   '注意盈亏比完全与价格无关。5% 的止损配上 15% 的目标，就是 3 比 1 的盈亏比，无论股价是 $8 还是 $800。价格和股数只决定所涉及的<em>金额</em>，而非交易的结构。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader goes <span class="num">long</span> at <span class="num">$100.00</span>, sets the stop <span class="num">5%</span> away and the target <span class="num">15%</span> away.',
+   '假设一位交易者在 <span class="num">$100.00</span> <span class="num">做多</span>，止损设在 <span class="num">5%</span> 处，目标设在 <span class="num">15%</span> 处。') }}</p>
+<ul>
+<li>{{ t('Stop = <span class="num">100 × (1 − 0.05) = $95.00</span>', '止损价 = <span class="num">100 × (1 − 0.05) = $95.00</span>') }}</li>
+<li>{{ t('Target = <span class="num">100 × (1 + 0.15) = $115.00</span>', '目标价 = <span class="num">100 × (1 + 0.15) = $115.00</span>') }}</li>
+<li>{{ t('Reward : risk = <span class="num">15 ÷ 5 = 3.0</span> — three dollars of upside sought for every one at risk.', '盈亏比 = <span class="num">15 ÷ 5 = 3.0</span>——每承担 1 元风险，就寻求 3 元的上行空间。') }}</li>
+<li>{{ t('With <span class="num">100</span> shares: risk = <span class="num">5 × 100 = $500</span>, reward = <span class="num">15 × 100 = $1,500</span>.', '若持有 <span class="num">100</span> 股：风险 = <span class="num">5 × 100 = $500</span>，回报 = <span class="num">15 × 100 = $1,500</span>。') }}</li>
+</ul>
+</div>
+<p>{{ t('A short at the same entry simply flips the prices: the stop lands at $105.00 and the target at $85.00, with the identical 3-to-1 ratio. The percentages define the trade; the side just decides which way the prices point.',
+   '在同一入场价做空只是把价格翻转：止损价变为 $105.00，目标价变为 $85.00，盈亏比仍是 3 比 1。百分比决定交易的结构，方向只决定价格朝哪边走。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('A wide target does not fix a bad stop', '宽目标救不了差止损') }}</span>
+<p>{{ t('It is tempting to chase a fat reward-to-risk by stretching the target far away — a 2% stop against a 20% target reads as a glorious 10-to-1. But a target the price rarely reaches is a number on paper, not a trade. Reward-to-risk only matters alongside how <em>often</em> the target is actually hit; a 10-to-1 ratio that fills once in twenty tries loses money. Set the target where the price can plausibly go, then read the ratio — not the other way around.',
+   '为了追求漂亮的盈亏比，把目标拉得很远很诱人——2% 的止损配 20% 的目标，看起来是壮观的 10 比 1。但价格很少触及的目标，只是纸面上的数字，而非真实的交易。盈亏比只有结合目标实际<em>被触及的频率</em>才有意义；若 20 次才成 1 次，10 比 1 也是亏钱的。先把目标设在价格有望到达之处，再读盈亏比——而非反过来。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This math places two clean price levels from an entry. It says nothing about whether the trade is a good one. A few honest limits:',
+   '这套算法能从入场价干净地放出两个价格水平，但它并不判断这笔交易本身好不好。几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>A stop is a request, not a guarantee.</strong> Overnight gaps and thin liquidity can fill you well past the stop price, so the real loss can exceed the dollar risk shown here.',
+   '<strong>止损是一个请求，而非保证。</strong>隔夜跳空与流动性不足可能让你的成交价远超止损价，因此实际亏损可能超过这里显示的风险金额。') }}</li>
+<li>{{ t('<strong>Percent distances ignore volatility.</strong> A 5% stop is loose on a sleepy utility and tight on a small-cap that swings 8% in a day. Match the distance to how the specific name actually moves, not a habit.',
+   '<strong>百分比距离忽略了波动性。</strong>5% 的止损对一只平稳的公用事业股是宽的，对一天波动 8% 的小盘股却是紧的。要让距离贴合该个股实际的波动幅度，而非套用习惯。') }}</li>
+<li>{{ t('<strong>The ratio is not the odds.</strong> Reward-to-risk describes the payoff shape, never the probability of reaching the target. A rich ratio with a low hit rate can still lose over many trades.',
+   '<strong>盈亏比不是胜率。</strong>盈亏比描述的是回报的结构，从不代表触及目标的概率。高盈亏比若配上低胜率，在多笔交易后仍可能亏损。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('The percentages set the reward-to-risk shape; the price and share count only scale the dollars. Neither one tells you how often the target is reached.',
+   '百分比决定盈亏比的结构；价格与股数只放大金额。两者都无法告诉你目标被触及的频率。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn this ratio into a break-even win rate with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t(', or turn a stop into a share count with the <a href="', '把这个比率换算成保本胜率，或用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t('.', '把止损换算成股数。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute — do not re-derive ────────────────────────────────────────
+  // inputs: {E entry, side 'long'|'short', sp stopPct, tp targetPct, Q shares?}.
+  // Returns an outputs object, or {ok:false, msg} for invalid input.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var E=inp.E, side=inp.side, sp=inp.sp, tp=inp.tp, Q=inp.Q;
+    if(!(E>0)) return {ok:false, msg:"Enter your entry price."};
+    if(!(sp>0)) return {ok:false, msg:"Enter how far your stop sits from entry, as a percent."};
+    if(!(tp>0)) return {ok:false, msg:"Enter how far your target sits from entry, as a percent."};
+    if(side!=="long" && side!=="short") side="long";
+    var stopPrice, targetPrice;
+    if(side==="long"){
+      stopPrice   = E * (1 - sp/100);
+      targetPrice = E * (1 + tp/100);
+    } else {
+      stopPrice   = E * (1 + sp/100);
+      targetPrice = E * (1 - tp/100);
+    }
+    var riskPerShare   = Math.abs(E - stopPrice);
+    var rewardPerShare = Math.abs(targetPrice - E);
+    var rr = riskPerShare > 0 ? rewardPerShare / riskPerShare : 0;
+    var hasQ = (Q>0);
+    var dollarRisk   = hasQ ? riskPerShare   * Q : null;
+    var dollarReward = hasQ ? rewardPerShare * Q : null;
+    var stopBelowZero = stopPrice <= 0 || targetPrice <= 0; // e.g. short target% >= 100
+    return {
+      ok:true, side:side, stopPrice:stopPrice, targetPrice:targetPrice,
+      riskPerShare:riskPerShare, rewardPerShare:rewardPerShare, rr:rr,
+      hasQ:hasQ, dollarRisk:dollarRisk, dollarReward:dollarReward,
+      belowZero: stopBelowZero
+    };
+  }
+
+  // ── §6 self-check: run the fixtures on load, console.error on drift ─────────
+  var WORKED_EXAMPLES = [
+    { in:{E:100, side:"long",  sp:5, tp:15, Q:100}, want:{stopPrice:95, targetPrice:115, rr:3, dollarRisk:500, dollarReward:1500} },
+    { in:{E:50,  side:"short", sp:4, tp:10, Q:100}, want:{stopPrice:52, targetPrice:45,  rr:2.5, dollarRisk:200, dollarReward:500} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("stop-loss-take-profit self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.005){
+        console.error("stop-loss-take-profit self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { entry:$("entry"), stoppct:$("stoppct"), targetpct:$("targetpct"), shares:$("shares") };
+    var seg = document.querySelector('.ci-seg[data-name="side"]');
+    var outMain=$("out-main"), outUnit=$("out-unit"), outPlain=$("out-plain"),
+        outStop=$("out-stop"), outTarget=$("out-target"), outRR=$("out-rr"),
+        outDRisk=$("out-drisk"), outDReward=$("out-dreward"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    var side = "long";
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function dash(){ outMain.textContent="—";
+      [outStop,outTarget,outRR,outDRisk,outDReward].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ E:numFrom(els.entry), side:side, sp:numFrom(els.stoppct), tp:numFrom(els.targetpct), Q:numFrom(els.shares) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      if(res.belowZero){
+        dash();
+        outPlain.textContent = "That distance would price the stop or target at or below zero — trim the percent.";
+        outPlain.className="co-plain warn"; last=null; return;
+      }
+      // co-main = the target price (the outcome you're aiming for)
+      outMain.textContent = money(res.targetPrice);
+      outUnit.textContent = side==="long" ? "target" : "target";
+      outStop.textContent   = money(res.stopPrice);
+      outStop.className     = "neg";
+      outTarget.textContent = money(res.targetPrice);
+      outTarget.className   = "pos";
+      outRR.textContent     = res.rr.toFixed(res.rr < 10 ? 2 : 1).replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1") + " : 1";
+      if(res.hasQ){
+        outDRisk.textContent   = money(res.dollarRisk);   outDRisk.className   = "neg";
+        outDReward.textContent = money(res.dollarReward); outDReward.className = "pos";
+      } else {
+        outDRisk.textContent="—";   outDRisk.className="";
+        outDReward.textContent="—"; outDReward.className="";
+      }
+      // Law 3: plain-word interpretation under the number
+      var rrTxt = res.rr.toFixed(2).replace(/\.?0+$/,"");
+      var lead = side==="long"
+        ? "Going long at " + money(numFrom(els.entry)) + ": stop at " + money(res.stopPrice) + ", target at " + money(res.targetPrice)
+        : "Going short at " + money(numFrom(els.entry)) + ": stop at " + money(res.stopPrice) + ", target at " + money(res.targetPrice);
+      var plain = lead + " — a reward-to-risk of " + rrTxt + " to 1";
+      if(res.hasQ){
+        plain += ", risking " + money(res.dollarRisk) + " to make " + money(res.dollarReward);
+      }
+      plain += ".";
+      outPlain.textContent = plain; outPlain.className="co-plain";
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var rrTxt = last.rr.toFixed(2).replace(/\.?0+$/,"");
+      var line = "Stop/target (" + last.side + "): stop " + money(last.stopPrice) +
+        " · target " + money(last.targetPrice) + " · reward:risk " + rrTxt + ":1";
+      if(last.hasQ){ line += " · risk " + money(last.dollarRisk) + " · reward " + money(last.dollarReward); }
+      return line + " — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    // segmented side toggle
+    if(seg){
+      seg.addEventListener("click", function(e){
+        var b=e.target.closest("button[data-v]"); if(!b) return;
+        side=b.getAttribute("data-v");
+        [].forEach.call(seg.querySelectorAll("button[data-v]"), function(btn){
+          var on=btn===b; btn.classList.toggle("on",on); btn.setAttribute("aria-checked", on?"true":"false");
+        });
+        render();
+      });
+    }
+    ["entry","stoppct","targetpct","shares"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

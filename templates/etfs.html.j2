@@ -1,125 +1,285 @@
-{% macro help(en, zh='') -%}
-<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
-{%- endmacro %}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
-{# ---- logo(ticker): eager company logo via the nvstly CDN, onerror hides the
-       img and reveals the ticker-text fallback (heatmap.js pattern) ---- #}
+{% macro b(d) -%}
+<span class="l-en">{{ d.en }}</span><span class="l-zh">{{ d.zh if d.zh else d.en }}</span>
+{%- endmacro %}
+{# ---- ? help tip — CSS-only bilingual Tier-2 popover (mechanics live here) ---- #}
+{% macro help(en, zh='') -%}
+<span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{# ---- logo(ticker): eager company logo via the nvstly CDN; onerror reveals a
+       ticker-text fallback (heatmap.js pattern) ---- #}
 {% macro logo(ticker) -%}
 <span class="tk-logo"><img src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/{{ ticker | upper }}.png" alt="" loading="eager" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="tk-fb" style="display:none">{{ ticker | upper | truncate(4, true, '') }}</span></span>
 {%- endmacro %}
-{# ---- spark(series): min-max normalized inline-SVG sparkline (~72x18), no JS.
-       up-colored if last>=first else down. em dash when <2 points. ---- #}
+{# ---- spark(series): min–max normalized inline sparkline, up/down colored ---- #}
 {% macro spark(series) -%}
 {%- if series and (series | length) >= 2 -%}
-  {%- set lo = series | min -%}
-  {%- set hi = series | max -%}
-  {%- set n = series | length -%}
-  {%- set rng = (hi - lo) -%}
+  {%- set lo = series | min -%}{%- set hi = series | max -%}
+  {%- set n = series | length -%}{%- set rng = (hi - lo) -%}
   {%- set up = (series[-1] >= series[0]) -%}
-  <svg class="spark" viewBox="0 0 72 18" width="72" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="{{ 'var(--up)' if up else 'var(--down)' }}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" points="
-  {%- for v in series -%}
-    {{ "%.1f" | format(1.0 + (loop.index0 / (n - 1)) * 70.0) }},{{ "%.1f" | format(16.0 - (((v - lo) / rng) if rng > 0 else 0.5) * 14.0) }}{{ ' ' }}
-  {%- endfor -%}
+  <svg class="spark" viewBox="0 0 66 18" width="66" height="18" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="{{ 'var(--lift)' if up else 'var(--drag)' }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="
+  {%- for v in series -%}{{ "%.1f" | format(1.0 + (loop.index0 / (n - 1)) * 64.0) }},{{ "%.1f" | format(16.0 - (((v - lo) / rng) if rng > 0 else 0.5) * 14.0) }}{{ ' ' }}{%- endfor -%}
   "/></svg>
-{%- else -%}
-  <span class="muted">—</span>
-{%- endif -%}
+{%- else -%}<span class="faint">—</span>{%- endif -%}
+{%- endmacro %}
+{# ---- stance(s): the doctrine "so what do I do?" pill, tone-colored ---- #}
+{% macro stance(s) -%}
+{%- if s -%}<span class="stpill st-{{ s.tone }}"{% if s.why %} data-tip-en="{{ s.why.en }}" data-tip-zh="{{ s.why.zh }}"{% endif %}><span class="stdot"></span>{{ b(s) }}</span>{%- endif -%}
+{%- endmacro %}
+{# ---- breadth(na, nt): fund-agreement constellation — accumulating vs trimming ---- #}
+{% macro breadth(na, nt) -%}
+<span class="bdots" title="{{ na }} fund{{ 's' if na != 1 else '' }} accumulating{% if nt %}, {{ nt }} trimming{% endif %}">
+{%- for i in range([na, 6] | min) %}<i class="up"></i>{% endfor -%}
+{%- if na > 6 %}<i class="ov">+{{ na - 6 }}</i>{% endif -%}
+{%- if nt %}<i class="sep"></i>{% for i in range([nt, 4] | min) %}<i class="dn"></i>{% endfor %}{% endif -%}
+</span>
+{%- endmacro %}
+{# ---- presbar(net, scale): center-anchored net-conviction pressure bar ---- #}
+{% macro presbar(net, scale) -%}
+{%- set a = net if net >= 0 else -net -%}
+{%- set frac = (a / scale) if scale else 0 -%}
+{%- set w = (7 + 93 * frac) if a > 0.0001 else 0 -%}
+<span class="pbar"><span class="pb-mid"></span><span class="pb-fill {{ 'u' if net >= 0 else 'd' }}" style="width:{{ "%.0f" | format(w) }}%"></span></span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Real fund moves — where managers are accumulating</title>
-{% set seo_title = "Real Fund Moves — Mastermind" %}{% set seo_desc = "Which stocks real money managers are accumulating — fund ownership moves ranked and updated with each filing cycle." %}{% set seo_path = "etfs.html" %}
+<title>Real fund moves — where managers are building conviction</title>
+{% set seo_title = "Real Fund Moves — Mastermind" %}{% set seo_desc = "Which stocks real money managers are accumulating — cross-fund conviction ranked, with a plain-word stance and the rotation backdrop, updated each filing cycle." %}{% set seo_path = "etfs.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,
-         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1200px)/2)); } }
-  a { text-decoration:none; }
-  h1 { font-size:20px; margin:0; }
-  h2 { font-size:14px; margin:0 0 10px; color:var(--muted); text-transform:uppercase;
-       letter-spacing:.06em; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
-           padding:14px 16px; margin-bottom:14px; }
-  .panel.hero { padding:16px 18px; }
-  .muted { color:var(--muted); }
-  .state { display:inline-block; padding:2px 11px; border-radius:12px; font-weight:700;
-           font-size:12.5px; }
-  table { border-collapse:collapse; width:100%; font-size:13px;
-          font-variant-numeric:tabular-nums; }
-  th,td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line);
-          vertical-align:middle; }
-  th { color:var(--muted); font-weight:500; }
-  td.r, th.r { text-align:right; }
-  td.num, th.num { font-variant-numeric:tabular-nums; }
-  .pos { color:var(--up); } .neg { color:var(--down); }
-  .tag { display:inline-block; padding:1px 8px; border-radius:8px; font-size:11px;
-         font-weight:600; }
-  .tag-active { background:color-mix(in srgb,var(--info) 15%,var(--panel));
-                color:color-mix(in srgb,var(--info) 80%,var(--text)); }
-  .tag-passive { background:color-mix(in srgb,var(--muted) 15%,var(--panel));
-                 color:var(--muted); }
-  .tag-3p { background:color-mix(in srgb,var(--muted) 12%,var(--panel));
-            color:var(--muted); border:1px solid var(--line); }
-  .tag-contested { background:color-mix(in srgb,var(--down) 14%,var(--panel));
-                   color:color-mix(in srgb,var(--down) 82%,var(--text)); }
-  /* ---- company logo + ticker-text fallback (heatmap.js pattern) ---- */
-  .tk-logo { display:inline-flex; align-items:center; justify-content:center;
-             width:22px; height:22px; border-radius:5px; overflow:hidden;
-             background:color-mix(in srgb,var(--muted) 10%,var(--panel));
-             flex:0 0 22px; margin-right:8px; vertical-align:middle; }
-  .tk-logo img { width:22px; height:22px; object-fit:contain; display:block; }
-  .tk-fb { font-size:8.5px; font-weight:700; letter-spacing:-.02em; color:var(--muted);
-           align-items:center; justify-content:center; width:22px; height:22px; }
-  .stock-cell { display:flex; align-items:center; }
-  .stock-cell .stk-txt { min-width:0; }
-  .stock-cell .stk-txt b { display:block; line-height:1.2; }
-  .stock-cell .stk-txt .name { display:block; font-size:11.5px; line-height:1.2; }
-  /* ---- consensus breadth chips ---- */
-  .chip { display:inline-flex; align-items:center; gap:2px; padding:1px 6px;
-          border-radius:7px; font-size:11px; font-weight:700; margin-right:3px; }
-  .chip-accum { background:color-mix(in srgb,var(--up) 15%,var(--panel));
-                color:color-mix(in srgb,var(--up) 82%,var(--text)); }
-  .chip-trim { background:color-mix(in srgb,var(--down) 15%,var(--panel));
-               color:color-mix(in srgb,var(--down) 82%,var(--text)); }
-  .brk { color:var(--muted); font-size:12px; }
-  .brk b.pos { color:var(--up); } .brk b.neg { color:var(--down); }
-  .spark { display:inline-block; vertical-align:middle; }
-  /* ---- freshness dot ---- */
-  .fdot { display:inline-block; width:9px; height:9px; border-radius:50%;
-          vertical-align:middle; margin-right:6px; }
-  .fdot.fresh { background:var(--up); }
-  .fdot.aging { background:#d9a441; }
-  .fdot.stale { background:var(--down); }
-  .fdot.none  { background:var(--muted); }
-  details > summary { cursor:pointer; }
-  details[open] > summary { margin-bottom:2px; }
-  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
-          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
-          font-size:10px; font-weight:600; cursor:help; position:relative;
-          vertical-align:middle; margin-left:5px; }
-  .help .tip { display:none; position:absolute; top:140%; left:50%;
-               transform:translateX(-50%); width:320px; background:var(--panel);
-               border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60;
-               font-size:12px; line-height:1.45; color:var(--text); font-weight:400;
-               box-shadow:var(--popover-shadow); pointer-events:auto;
-               max-height:min(60vh,420px); overflow-y:auto; }
-  .help:hover::before { content:""; position:absolute; top:100%; left:50%;
-               transform:translateX(-50%); width:60px; height:40%; }
-  .help:hover .tip { display:block; }
+/* ═══ tokens: layered on theme.css (dark default) — components inherit light/dark ═══ */
+:root{--card:var(--panel);--grid:var(--line);--ink:#eef2f7;
+  --faint:color-mix(in srgb,var(--muted) 72%,var(--bg));
+  --amber:#fbbf24;--teal:#2dd4bf;--ch-a:#8b96f8;--ch-b:#2dd4bf;--ch-c:#fbbf24;
+  --lift:#54c39a;--drag:#e58a97;--accent:var(--ch-b)}
+html[data-theme="light"]{--ink:#141b26;--faint:color-mix(in srgb,var(--muted) 82%,var(--bg));
+  --amber:#b45309;--teal:#0f766e;--ch-a:#4559dc;--ch-b:#0f766e;--ch-c:#b45309;
+  --lift:#2f9270;--drag:#c65b6e}
+/* zh 红涨绿跌 (operator ruling): accumulate/trim are DIRECTION reads → swap. */
+html[data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
+html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
+  font-family:var(--font-ui),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 64px}
+a{color:var(--link);text-decoration:none}
+.faint{color:var(--faint)}.muted{color:var(--muted)}
+.pos{color:var(--lift)}.neg{color:var(--drag)}
+
+/* ═══ hero ═══ */
+.eh{padding:26px 0 6px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.eh-brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.eh-brand h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.022em;color:var(--ink)}
+.eh-brand .gn{background:linear-gradient(94deg,var(--ch-a),var(--ch-b) 52%,var(--ch-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.eh-brand .tag{font-size:13px;color:var(--muted)}
+.eh-verdict{font-size:clamp(20px,3vw,28px);font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.3;margin:16px 0 8px;max-width:920px}
+.eh-verdict b{background:linear-gradient(94deg,var(--ch-a),var(--ch-b) 60%,var(--ch-c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.eh-asof{display:block;font-size:12.5px;color:var(--muted);line-height:1.7}
+.eh-asof .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lift);animation:txBreathe 2.8s ease-in-out infinite;vertical-align:middle;margin-right:5px}
+/* hero tiles */
+.eh-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+@media(max-width:760px){.eh-tiles{grid-template-columns:1fr}}
+.tile{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:16px 18px;overflow:hidden;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tile:nth-child(2){animation-delay:.06s}.tile:nth-child(3){animation-delay:.12s}
+.tile::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--tc,var(--accent))}
+.tile.t-lift{--tc:var(--lift)}.tile.t-drag{--tc:var(--drag)}.tile.t-accent{--tc:var(--ch-a)}.tile.t-neutral{--tc:var(--faint)}
+.tile .tk{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile .tv{font-size:27px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.1;margin:5px 0 2px;font-variant-numeric:tabular-nums}
+.tile .tm{font-size:12px;color:var(--faint);line-height:1.4}
+.tile .tstance{margin-top:9px}
+
+/* ═══ section chrome ═══ */
+.sec{margin-top:38px}
+.sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 3px}
+.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sc,var(--accent));align-self:center;flex:none}
+.sec-head h2{margin:0;font-size:13px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 0 15px;max-width:760px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.card::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--accent)}
+
+/* ═══ stance pill ═══ */
+.stpill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;cursor:help;
+  background:color-mix(in srgb,var(--sp,var(--muted)) 12%,var(--card));color:var(--sp,var(--muted));border:1px solid color-mix(in srgb,var(--sp,var(--muted)) 26%,var(--grid))}
+.stpill .stdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.st-act{--sp:var(--lift)}.st-act .stdot,.st-ready .stdot{animation:txBreathe 2.4s ease-in-out infinite}
+.st-ready{--sp:var(--teal)}.st-watch{--sp:var(--link)}.st-trim{--sp:var(--amber)}.st-aside{--sp:var(--faint)}.st-ignore{--sp:var(--faint)}
+
+/* ═══ breadth constellation ═══ */
+.bdots{display:inline-flex;align-items:center;gap:3px;line-height:1}
+.bdots i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.bdots i.up{background:var(--lift)}.bdots i.dn{background:var(--drag)}
+.bdots i.sep{width:1px;height:12px;border-radius:0;background:var(--grid);margin:0 2px}
+.bdots i.ov{width:auto;height:auto;border-radius:0;font-size:10px;font-weight:800;color:var(--lift);font-style:normal;margin-left:1px}
+
+/* ═══ pressure bar ═══ */
+.pbar{position:relative;display:block;height:8px;background:color-mix(in srgb,var(--grid) 55%,var(--card));border-radius:999px;width:100%}
+.pb-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.45}
+.pb-fill{position:absolute;top:0;bottom:0;border-radius:999px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pb-fill.u{left:50%;transform-origin:left;background:linear-gradient(90deg,color-mix(in srgb,var(--lift) 22%,transparent),color-mix(in srgb,var(--lift) 62%,transparent))}
+.pb-fill.d{right:50%;transform-origin:right;background:linear-gradient(270deg,color-mix(in srgb,var(--drag) 22%,transparent),color-mix(in srgb,var(--drag) 62%,transparent))}
+
+/* ═══ consensus board (signature) ═══ */
+.cb-head,.cb-row{display:grid;grid-template-columns:30px minmax(148px,1.35fr) 116px minmax(116px,1fr) 168px;gap:16px;align-items:center}
+.cb-head{padding:0 2px 9px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.cb-head .r{text-align:right}
+.cb-row{padding:12px 2px}
+.cb-row+.cb-row{border-top:1px solid color-mix(in srgb,var(--grid) 62%,transparent)}
+.cb-rank{font-size:14px;font-weight:800;color:var(--faint);font-variant-numeric:tabular-nums;text-align:center}
+.cb-row:nth-child(-n+4) .cb-rank{color:var(--accent)}
+.stock-cell{display:flex;align-items:center;gap:9px;min-width:0}
+.stock-cell .st-txt{min-width:0}
+.stock-cell .st-txt b{display:block;font-size:14px;color:var(--ink);line-height:1.15}
+.stock-cell .st-txt .nm{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.themetag{display:inline-block;margin-top:2px;padding:0 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.01em;
+  background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
+.cb-net{text-align:right;font-variant-numeric:tabular-nums}
+.cb-net .v{font-size:13.5px;font-weight:800}.cb-net .v.u{color:var(--lift)}.cb-net .v.d{color:var(--drag)}
+.cb-pres{display:flex;flex-direction:column;gap:5px}
+.cb-flags{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.mini{display:inline-block;padding:0 7px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em}
+.mini.new{background:color-mix(in srgb,var(--lift) 16%,var(--card));color:var(--lift)}
+.mini.exit{background:color-mix(in srgb,var(--drag) 15%,var(--card));color:var(--drag)}
+.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--amber)}
+.mini.active{background:color-mix(in srgb,var(--ch-a) 15%,var(--card));color:var(--ch-a)}
+/* the whose-conviction hover popover */
+.cb-who{position:relative;display:inline-flex}
+.cb-who .who-src{font-size:11px;color:var(--muted);cursor:help;border-bottom:1px dashed var(--grid)}
+.cb-who .who-pop{display:none;position:absolute;left:0;top:20px;z-index:40;width:230px;padding:10px 12px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.4);font-size:12px;line-height:1.5;color:var(--text)}
+.cb-who:hover .who-pop{display:block}
+.who-pop .wl{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.who-pop .wl b{color:var(--ink)}
+.who-pop .wl .wv.u{color:var(--lift)}.who-pop .wl .wv.d{color:var(--drag)}
+@media(max-width:720px){
+  .cb-head{display:none}
+  .cb-row{grid-template-columns:26px 1fr auto;gap:11px;row-gap:9px;padding:13px 2px}
+  .cb-net,.cb-pres{grid-column:2/-1}
+  .cb-stance-cell{grid-column:2/-1}
+}
+
+/* ═══ fresh conviction cards ═══ */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px}
+.fc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:15px;padding:15px 16px;overflow:hidden;
+  animation:txUp .5s cubic-bezier(.2,.7,.3,1) both}
+.fc::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--lift)}
+.fc-top{display:flex;align-items:center;gap:9px}
+.fc-top .st-txt b{display:block;font-size:14.5px;color:var(--ink);line-height:1.1}
+.fc-top .st-txt .nm{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.fc-mid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 9px}
+.fc-mid .fund-n{font-size:12px;color:var(--muted)}
+.fc-mid .fund-n b{color:var(--ink);font-weight:800}
+.fc-conv{font-size:12px;font-weight:800;color:var(--lift);font-variant-numeric:tabular-nums}
+.fc-funds{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.fchip{padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
+.fchip.act{background:color-mix(in srgb,var(--ch-a) 14%,var(--card));color:var(--ch-a)}
+.fc-foot{margin-top:11px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+
+/* ═══ rotation rail (market backdrop) ═══ */
+.rr{display:grid;grid-template-columns:1.05fr 1.25fr 1.05fr;gap:16px}
+@media(max-width:900px){.rr{grid-template-columns:1fr}}
+.rrc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:19px 20px;overflow:hidden;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.rrc:nth-child(2){animation-delay:.06s}.rrc:nth-child(3){animation-delay:.12s}
+.rrc::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--rc,var(--accent))}
+.rrc.c-risk{--rc:var(--ch-a)}.rrc.c-sect{--rc:var(--ch-b)}.rrc.c-style{--rc:var(--ch-c)}
+.rrc .rr-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--rc,var(--accent))}
+.rrc .rr-state{font-size:23px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.1;margin:8px 0 3px}
+.rrc .rr-read{font-size:12px;color:var(--muted);line-height:1.45}
+.rr-legs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.leg{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:600;background:color-mix(in srgb,var(--grid) 45%,var(--card));color:var(--text)}
+.leg .ar{font-size:9px}.leg.u{color:var(--lift)}.leg.d{color:var(--drag)}
+/* sector ladder */
+.slad{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.slad .sl{display:grid;grid-template-columns:20px 74px 1fr auto;gap:9px;align-items:center;font-size:12px}
+.slad .sl .rk{font-size:10.5px;font-weight:800;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
+.slad .sl .nm{font-weight:700;color:var(--ink)}
+.slad .sl .track{position:relative;height:7px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.slad .sl .track i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both}
+.slad .sl .track i.u{transform-origin:left;background:color-mix(in srgb,var(--lift) 55%,transparent)}
+.slad .sl .track i.d{right:50%;left:auto;transform-origin:right;background:color-mix(in srgb,var(--drag) 55%,transparent)}
+.slad .sl .mv{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:44px}
+.slad .sl .mv.u{color:var(--lift)}.slad .sl .mv.d{color:var(--drag)}
+/* style tug-of-war */
+.tug{display:flex;flex-direction:column;gap:11px;margin-top:6px}
+.tug .tw{font-size:12px}
+.tug .tw .lab{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.tug .tw .lab .nm{font-weight:700;color:var(--ink)}
+.tug .tw .lab .ld{font-size:11px;font-weight:700;color:var(--ch-c)}
+.tug .tw .bar{position:relative;height:8px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.tug .tw .bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.4}
+.tug .tw .bar i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both;
+  background:color-mix(in srgb,var(--ch-c) 48%,transparent)}
+.tug .tw .bar i.u{transform-origin:left}
+.tug .tw .bar i.d{right:50%;left:auto;transform-origin:right}
+
+/* ═══ accumulation table ═══ */
+.atbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.atbl th{text-align:left;padding:0 10px 9px;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.atbl td{padding:10px;border-bottom:1px solid color-mix(in srgb,var(--grid) 60%,transparent);vertical-align:middle}
+.atbl tr:last-child td{border-bottom:none}
+.atbl th.r,.atbl td.r{text-align:right}
+.atbl .conv{font-weight:800}.atbl .conv.u{color:var(--lift)}.atbl .conv.d{color:var(--drag)}
+.fundcell b{color:var(--ink)}
+.atbl-wrap{overflow-x:auto}
+@media(max-width:640px){.atbl .hide-sm{display:none}}
+
+/* ═══ shelf (trims / coverage) ═══ */
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--accent) 5%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.shelf summary .sh-sub{font-weight:500;color:var(--muted);font-size:12.5px}
+.shelf summary .sh-caret{margin-left:auto;flex:none;font-size:11px;color:var(--faint);transition:transform .25s}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
+.fdot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.fdot.fresh{background:var(--lift)}.fdot.aging{background:var(--amber)}.fdot.stale{background:var(--drag)}.fdot.none{background:var(--muted)}
+.tag3p{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted);border:1px solid var(--grid)}
+
+/* ═══ disclosure ═══ */
+.disc{font-size:12px;color:var(--muted);margin:30px 0 0;padding-top:16px;border-top:1px solid var(--grid);line-height:1.6}
+.disc b{color:var(--ink)}
+
+/* ═══ tk logo ═══ */
+.tk-logo{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;overflow:hidden;flex:0 0 26px;
+  background:color-mix(in srgb,var(--muted) 10%,var(--card))}
+.tk-logo img{width:26px;height:26px;object-fit:contain;display:block}
+.tk-fb{font-size:9px;font-weight:800;letter-spacing:-.02em;color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px}
+.spark{display:inline-block;vertical-align:middle}
+
+/* ═══ ? tip ═══ */
+.txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:10px;font-weight:700;cursor:help;flex:none;margin-left:5px;vertical-align:middle}
+.txq .txq-tip{display:none;position:absolute;top:22px;right:-8px;z-index:50;width:266px;padding:10px 12px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.42);
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0;text-align:left}
+.txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
+
+/* ═══ motion ═══ */
+@keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes txBreathe{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes txGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .eh,.tile,.card,.rrc,.fc{animation:none}
+  .pb-fill,.slad .sl .track i,.tug .tw .bar i,.eh-asof .dot,.stdot{animation:none}
+  *{transition:none!important}
+}
 </style>
 </head>
 <body>
 
 <nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
+  {% include "_navlinks.html.j2" %}
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -140,179 +300,286 @@
   </div>
 </nav>
 
-{# ==================== per-fund flow table (accumulation / trims) ==================== #}
-{% macro flowrow(r) -%}
-      <tr>
-        <td class="l"><b>{{ r.etf }}</b> <span class="muted">{{ r.etf_name }}{% if r.category %} · {{ td(r.category) }}{% endif %}</span></td>
-        <td class="l">
-          <span class="stock-cell">{{ logo(r.ticker) }}<span class="stk-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a><span class="name muted">{{ r.name }}</span></span></span>
-        </td>
-        <td class="l muted">{{ td(r.sector) if r.sector else "—" }}</td>
-        <td class="r num muted">{% if r.weight_pct is not none %}{{ "%.2f" | format(r.weight_pct) }}%{% else %}—{% endif %}</td>
-        <td class="r num {{ 'pos' if r.conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(r.conviction_pp) }}pp</b>{% if r.is_new %} <span class="tag tag-active" title="brand-new position — the fund just initiated a stake">{{ t('NEW', '新建') }}</span>{% elif r.is_exit %} <span class="tag tag-passive" title="fully exited — the fund sold out of this position entirely">{{ t('EXITED', '清仓') }}</span>{% endif %}</td>
-        <td class="r num muted">{% if r.is_new %}{{ t('initiated', '新建仓') }}{% elif r.is_exit %}{{ t('sold out', '已清仓') }}{% elif r.active_chg_pct is not none %}{{ "%+.0f" | format(r.active_chg_pct) }}%{% else %}—{% endif %}</td>
-        <td class="l">{{ spark(r.weight_series) }}</td>
-        <td class="l">{% if r.is_active %}<span class="tag tag-active">{{ t('manager conviction', '经理人信念') }}</span>{% else %}<span class="tag tag-passive">{{ t('curated basket', '精选篮子') }}</span>{% endif %}</td>
-        <td class="l">{% if r.ladder %}<span class="state st-{{ r.ladder.state | replace(' ', '_') }}">{{ td(r.ladder.label) }}</span>{% if r.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}{% if r.vol and r.vol.surging %} <span title="volume {{ r.vol.ratio }}× recent avg">📊</span>{% endif %}</td>
-        <td class="l muted">{{ r.window }}</td>
-      </tr>
-{%- endmacro %}
-{% macro flowhead() -%}
-      <tr>
-        <th class="l">{{ t('fund', '基金') }}</th>
-        <th class="l">{{ t('stock', '个股') }}</th>
-        <th class="l">{{ t('sector', '板块') }}</th>
-        <th class="r">{{ t('weight', '权重') }}</th>
-        <th class="r">{{ t('conviction Δwt', '信念权重Δ') }}{{ help("Conviction = the percentage POINTS of the fund's weight that the manager actively committed to this name, after stripping out price moves and fund in/outflows. We rank on this, NOT raw % change, so a 0.1%→0.2% double (big % but trivial size) never outranks a real add to an already-meaningful position. Positive = accumulating.", "信念 = 在剔除价格变动与基金申赎后，经理人主动投入该股的权重百分点。我们据此排序，而非原始百分比变化，因此 0.1%→0.2% 的翻倍（百分比大但仓位微不足道）绝不会盖过对已具规模仓位的真实增持。正值=增持。") }}</th>
-        <th class="r">{{ t('share Δ', '份额Δ') }}</th>
-        <th class="l">{{ t('trend', '走势') }}{{ help("Tiny sparkline of this name's fund-weight over the recent daily snapshots (oldest → newest), min–max normalized. Green if the latest weight is at or above where it started, red if below. Shows the SHAPE of the move, not the level.", "该股在近期每日快照中基金权重的迷你走势图（由旧到新），已做最小–最大归一化。若最新权重不低于起点则为绿色，低于则为红色。展示的是动作的形态而非绝对水平。") }}</th>
-        <th class="l">{{ t('type', '类型') }}</th>
-        <th class="l">{{ t('technical', '技术面') }}</th>
-        <th class="l">{{ t('window', '窗口') }}</th>
-      </tr>
-{%- endmacro %}
+<div class="wrap">
 
-{# ==================== intro ==================== #}
-  <div class="panel hero">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+{# ═══════════════ HERO ═══════════════ #}
+  <header class="eh">
+    <div class="eh-brand">
       <h1>🐳 {{ t('Real fund moves', '基金真实动作') }}</h1>
-      <span class="muted">{{ t('where thematic & active managers are putting real conviction', '主题与主动经理人真正下注之处') }}</span>
+      <span class="tag">{{ t('where thematic & active managers are building conviction', '主题与主动经理人积累信念之处') }}</span>
     </div>
-    <p class="muted" style="margin:10px 0 0">{{ t(
-      "For each fund we diff its daily holdings and strip out mechanical creation/redemption flow AND the price move, leaving the manager's actual conviction per name — measured in percentage POINTS of fund weight committed, not raw share %. We rank accumulation by that conviction, so a real add to a meaningful position beats a tiny position doubling. Cash, FX and money-market lines are excluded.",
-      "对每只基金，我们比对其每日持仓，剔除机械性的申购／赎回资金流以及价格变动，留下经理人对每只个股的真实信念——以投入的基金权重百分点衡量，而非原始份额百分比。我们按该信念对增持排序，因此对有意义仓位的真实增持会胜过微小仓位的翻倍。现金、外汇与货币市场科目已排除。") }}
-      {{ help("Universe = curated THEMATIC / industry funds (SPDR sector, Global X) plus ACTIVELY managed funds (ARK). Broad-index trackers (SPY/QQQ) are deliberately excluded — they just mirror the whole market, so their 'moves' are reconstitution noise, not a curated read. The 'type' tag tells you whether a move is a discretionary manager's conviction or a curated index basket. Where a holding has price history, its cycle state shows (✅ = accumulation that also has a forming buy setup). Needs ≥2 daily snapshots to appear.",
-      "范围 = 精选的主题／行业基金（SPDR 板块、Global X）加上主动管理基金（ARK）。宽基指数基金（SPY/QQQ）被刻意排除——它们只是镜像整个市场，其“动作”是再平衡噪音而非精选解读。“类型”标签会告诉你某动作是主动经理人的信念还是精选指数篮子。若持仓有价格历史，会显示其周期状态（✅=增持同时出现正在形成的买入形态）。需要≥2个每日快照才会显示。") }}
-    </p>
-    <p class="muted" style="margin:8px 0 0;font-size:12.5px">{{ t(
-      "The board now spans roughly 50 curated / actively-managed funds across SPDR, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill — plus a labelled third-party feed that reaches otherwise-walled funds (e.g. WGMI).",
-      "本看板现覆盖约 50 只精选／主动管理基金，横跨 SPDR、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill——外加一路带标注的第三方数据源，触达那些原本被封锁的基金（例如 WGMI）。") }}</p>
-  </div>
+    {% if board and board.verdict %}
+    <div class="eh-verdict">{{ b(board.verdict) }}</div>
+    {% endif %}
+    <div class="eh-asof"><span class="dot"></span>
+      {% if board and board.coverage %}{{ t('Tracking', '追踪') }} <b>{{ board.coverage.funds }}</b>&nbsp;{{ t('curated & active funds', '精选与主动基金') }} · {% endif %}
+      {{ t('updated each filing cycle', '每个申报周期更新') }} · {{ generated_utc }} UTC
+      {{ help("Universe = curated THEMATIC / industry funds (SPDR sector, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, Invesco, Roundhill) plus ACTIVELY managed funds (ARK). Broad-index trackers (SPY/QQQ) are excluded — their moves are reconstitution noise, not a curated read. We diff each fund's daily holdings, strip out mechanical creation/redemption flow AND the price move, and keep the manager's actual conviction per name, measured in percentage POINTS of fund weight committed. Cash & money-market lines are excluded. Lagged filing data — context, never a buy list.",
+      "范围 = 精选主题／行业基金（SPDR 板块、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、Invesco、Roundhill）加主动管理基金（ARK）。宽基指数基金（SPY/QQQ）已排除——其动作是再平衡噪音而非精选解读。我们比对每只基金的每日持仓，剔除机械性申购／赎回资金流及价格变动，留下经理人对每只个股的真实信念，以投入的基金权重百分点衡量。现金与货币市场科目已排除。此为滞后的申报数据——仅供参考，非买入清单。") }}
+    </div>
 
-{# ==================== NEW headline — cross-fund consensus ==================== #}
-  <div class="panel">
-    <h2>{{ t('⭐ Favored stocks — cross-fund consensus', '⭐ 被青睐个股 — 跨基金共识') }}{{ help(
-      "Cross-fund consensus rolls every tracked fund's per-name conviction together, so you see which stocks the managers collectively favor — not one fund's isolated bet. 'Funds in' counts how many are accumulating (▲) vs trimming (▼) the name; a stock accumulated by many funds at once is a far stronger read than a single large add. 'Contested' means both camps are meaningful at the same time.",
-      "跨基金共识把每只被追踪基金对个股的信念汇总起来，让你看到经理人集体青睐哪些股票——而非某一只基金的孤立下注。“参与基金”统计有多少只在增持（▲）对多少只在减持（▼）；被多只基金同时增持的个股，其信号远强于单只基金的大额买入。“分歧”表示增减两派同时具备分量。") }}</h2>
-    {% if favored %}
-    <table>
-      <tr>
-        <th class="l">{{ t('stock', '个股') }}</th>
-        <th class="l">{{ t('sector', '板块') }}</th>
-        <th class="l">{{ t('funds in', '参与基金') }}</th>
-        <th class="r">{{ t('net conviction', '净信念') }}{{ help(
-          "Net conviction = the sum of every fund's conviction (in weight percentage POINTS) on this name — accumulation adds, trimming subtracts. Positive & broad = collectively accumulated; negative = collectively distributed. It nets opposing bets against each other, so a hotly contested name lands near zero even when gross activity is high.",
-          "净信念 = 所有基金对该股信念（以权重百分点计）之和——增持为正、减持为负。为正且分布广=被集体增持；为负=被集体派发。它让对立的下注相互抵消，因此争议激烈的个股即便总活动量很大，其净值也会接近于零。") }}</th>
-        <th class="l">{{ t('breadth detail', '广度明细') }}{{ help(
-          "The top funds behind this name, each with its own conviction in weight points (e.g. BUG +5.3 · CIBR +2.1). Tells you WHOSE conviction is driving the consensus, not just that a consensus exists.",
-          "推动该股的主要基金，各自附带其权重百分点信念（例如 BUG +5.3 · CIBR +2.1）。它告诉你是谁的信念在驱动共识，而不只是存在共识这一事实。") }}</th>
-        <th class="l">{{ t('technical', '技术面') }}</th>
-        <th class="l">{{ t('new / exit', '新建／清仓') }}</th>
-      </tr>
-      {% for c in favored %}
-      <tr>
-        <td class="l">
-          <span class="stock-cell">{{ logo(c.ticker) }}<span class="stk-txt"><a href="stock.html#{{ c.ticker }}"><b>{{ c.ticker }}</b></a><span class="name muted">{{ c.name }}</span></span></span>
-        </td>
-        <td class="l muted">{{ td(c.sector) if c.sector else "—" }}</td>
-        <td class="l">
-          {% if c.n_accum %}<span class="chip chip-accum" title="funds accumulating">{{ c.n_accum }} ▲</span>{% endif %}
-          {% if c.n_trim %}<span class="chip chip-trim" title="funds trimming">{{ c.n_trim }} ▼</span>{% endif %}
-          {% if c.contested %}<span class="tag tag-contested">{{ t('contested', '分歧') }}</span>{% endif %}
-        </td>
-        <td class="r num {{ 'pos' if c.net_conviction_pp >= 0 else 'neg' }}"><b>{{ "%+.2f" | format(c.net_conviction_pp) }}pp</b></td>
-        <td class="l brk">
-          {% for f in c.funds[:3] %}<b>{{ f.fund }}</b> <b class="{{ 'pos' if f.conviction_pp >= 0 else 'neg' }}">{% if f.conviction_pp is not none %}{{ "%+.1f" | format(f.conviction_pp) }}{% else %}—{% endif %}</b>{% if not loop.last %} · {% endif %}{% endfor %}
-        </td>
-        <td class="l">{% if c.ladder %}<span class="state st-{{ c.ladder.state | replace(' ', '_') }}">{{ td(c.ladder.label) }}</span>{% if c.confirmed %} ✅{% endif %}{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td class="l muted">{% if c.n_new %}<span class="tag tag-active">{{ c.n_new }} {{ t('NEW', '新建') }}</span> {% endif %}{% if c.n_exit %}<span class="tag tag-passive">{{ c.n_exit }} {{ t('EXIT', '清仓') }}</span>{% endif %}{% if not c.n_new and not c.n_exit %}—{% endif %}</td>
-      </tr>
+    {% if board and board.tiles %}
+    <div class="eh-tiles">
+      {% for tl in board.tiles %}
+      <div class="tile t-{{ tl.tone }}">
+        <div class="tk">{{ b(tl.k) }}</div>
+        <div class="tv">{{ tl.v }}</div>
+        <div class="tm">{{ b(tl.m) }}</div>
+        {% if tl.stance %}<div class="tstance">{{ stance(tl.stance) }}</div>{% endif %}
+      </div>
       {% endfor %}
-    </table>
-    {% else %}
-    <p class="muted">{{ t('Building — cross-fund consensus appears once at least two funds have overlapping conviction on the same name.', '构建中 — 当至少两只基金对同一个股产生重叠信念后，跨基金共识即会显示。') }}</p>
+    </div>
     {% endif %}
-  </div>
+  </header>
 
-{# ==================== per-fund Accumulating ==================== #}
-  <div class="panel">
-    <h2>{{ t('🟢 Accumulating — strongest conviction first', '🟢 增持中 — 信念最强者优先') }}</h2>
-    {% if accumulation %}
-    <table>
-      {{ flowhead() }}
-      {% for r in accumulation %}{{ flowrow(r) }}{% endfor %}
-    </table>
+{# ═══════════════ CONSENSUS BOARD (signature) ═══════════════ #}
+  <section class="sec" style="--sc:var(--ch-b)">
+    <div class="sec-head"><span class="sh-dot"></span>
+      <h2>{{ t('The consensus board', '共识看板') }}</h2></div>
+    <p class="sec-sub">{{ t('Stocks the most funds are accumulating at once — a name many managers back together is a far stronger read than one fund’s bet. Sorted by how broad the agreement is, then how much conviction sits behind it.', '被最多基金同时增持的个股——多位经理人共同押注，其信号远强于单只基金的下注。先按共识广度排序，再看背后的信念规模。') }}</p>
+    {% if favored %}
+    <div class="card" style="padding:16px 20px">
+      <div class="cb-head">
+        <span>#</span>
+        <span>{{ t('stock', '个股') }}</span>
+        <span>{{ t('funds in', '参与基金') }}</span>
+        <span>{{ t('net conviction', '净信念') }}</span>
+        <span>{{ t('what to do', '如何应对') }}</span>
+      </div>
+      {% for c in favored %}
+      {% set net = c.net_conviction_pp or 0 %}
+      <div class="cb-row">
+        <div class="cb-rank">{{ loop.index }}</div>
+        <div class="stock-cell">{{ logo(c.ticker) }}
+          <span class="st-txt"><a href="stock.html#{{ c.ticker }}"><b>{{ c.ticker }}</b></a>
+            <span class="nm">{{ clean_name(c.name) }}</span>
+            {% if c.sector %}<span class="themetag">{{ td(c.sector) }}</span>{% endif %}
+          </span>
+        </div>
+        <div class="cb-breadth">{{ breadth(c.n_accum or 0, c.n_trim or 0) }}
+          {% if c.funds %}<div class="cb-who"><span class="who-src">{{ t('who', '谁') }}</span>
+            <div class="who-pop">{% for f in c.funds[:6] %}<div class="wl"><b>{{ f.fund }}</b><span class="wv {{ 'u' if (f.conviction_pp or 0) >= 0 else 'd' }}">{% if f.conviction_pp is not none %}{{ "%+.1f" | format(f.conviction_pp) }}pp{% else %}—{% endif %}</span></div>{% endfor %}</div>
+          </div>{% endif %}
+        </div>
+        <div class="cb-pres">
+          <div class="cb-net"><span class="v {{ 'u' if net >= 0 else 'd' }}">{{ "%+.1f" | format(net) }}<span class="faint" style="font-weight:600">pp</span></span></div>
+          {{ presbar(net, board.scale.consensus_pp if board and board.scale else 1) }}
+          <div class="cb-flags">
+            {% if c.n_new %}<span class="mini new">{{ c.n_new }} {{ t('NEW', '新建') }}</span>{% endif %}
+            {% if c.n_exit %}<span class="mini exit">{{ c.n_exit }} {{ t('EXIT', '清仓') }}</span>{% endif %}
+            {% if c.contested %}<span class="mini contested">{{ t('SPLIT', '分歧') }}</span>{% endif %}
+            {% if c.is_active_any %}<span class="mini active">{{ t('ACTIVE MGR', '主动') }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="cb-stance-cell">{{ stance(c.stance) }}</div>
+      </div>
+      {% endfor %}
+    </div>
     {% else %}
-    <p class="muted">{{ t('Building — the collector writes one full-holdings snapshot per fund per day; conviction-ranked decisions appear once each fund has at least two snapshots.', '构建中 — 采集器每天为每只基金写入一份完整持仓快照；当每只基金至少有两个快照后，按信念排序的决策即会显示。') }}</p>
+    <div class="card"><p class="muted" style="margin:0">{{ t('Building — cross-fund consensus appears once at least two funds hold overlapping conviction on the same name.', '构建中 — 当至少两只基金对同一个股产生重叠信念后，跨基金共识即会显示。') }}</p></div>
     {% endif %}
-  </div>
+  </section>
 
-{# ==================== Trimming (collapsed) ==================== #}
-  {% if trims %}
-  <div class="panel">
-    <details>
-      <summary><b>{{ t('🔴 Trimming', '🔴 减持中') }}</b> <span class="muted">{{ t('— positions managers are actively cutting (secondary signal)', '— 经理人正在主动削减的仓位（次要信号）') }}</span></summary>
-      <table style="margin-top:10px">
-        {{ flowhead() }}
-        {% for r in trims %}{{ flowrow(r) }}{% endfor %}
-      </table>
-    </details>
-  </div>
+{# ═══════════════ FRESH CONVICTION ═══════════════ #}
+  {% if board and board.fresh %}
+  <section class="sec" style="--sc:var(--lift)">
+    <div class="sec-head"><span class="sh-dot"></span>
+      <h2>{{ t('Fresh conviction', '全新建仓') }}</h2></div>
+    <p class="sec-sub">{{ t('Brand-new positions managers just opened this cycle — a manager starting a fresh stake is a stronger tell than adding to an old one.', '经理人本轮刚刚开立的全新仓位——开一笔新仓比加码旧仓更能说明问题。') }}</p>
+    <div class="fc-grid">
+      {% for g in board.fresh %}
+      <div class="fc" style="animation-delay:{{ (loop.index0 * 0.04) | round(2) }}s">
+        <div class="fc-top">{{ logo(g.ticker) }}
+          <span class="st-txt"><a href="stock.html#{{ g.ticker }}"><b>{{ g.ticker }}</b></a>
+            <span class="nm">{{ clean_name(g.name) }}</span></span>
+        </div>
+        <div class="fc-mid">
+          <span class="fund-n"><b>{{ g.n_funds }}</b> {{ t('fund', '只基金') if g.n_funds == 1 else t('funds', '只基金') }} {{ t('opened it', '建仓') }}</span>
+          <span class="fc-conv">+{{ "%.1f" | format(g.conviction_pp) }}pp</span>
+        </div>
+        <div class="fc-funds">
+          {% for f in g.funds[:5] %}<span class="fchip {{ 'act' if f.is_active }}">{{ f.fund }}</span>{% endfor %}
+        </div>
+        <div class="fc-foot">{{ stance(g.stance) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
   {% endif %}
 
-{# ==================== NEW coverage — tracked funds & freshness ==================== #}
-  <div class="panel">
-    <details>
-      <summary><b>{{ t('📡 Coverage — tracked funds & freshness', '📡 覆盖范围 — 已追踪基金与新鲜度') }}</b>{{ help(
-        "Freshness = how recently we last got a clean holdings snapshot for each fund. A fund whose feed has gone quiet stops contributing to the board, so this panel is the honest audit trail: green = fresh (≤3 days), amber = aging (≤10 days), red = stale (>10 days or unknown). 'No data yet' means we're tracking the fund but haven't captured a usable snapshot. Rows tagged '3rd-party' come via a labelled outside feed rather than the sponsor's own file.",
-        "新鲜度 = 我们最近一次为每只基金取得干净持仓快照的时间。数据源一旦静默，该基金便停止贡献看板，因此本面板是诚实的审计轨迹：绿=新鲜（≤3天），琥珀=渐旧（≤10天），红=陈旧（>10天或未知）。“暂无数据”表示我们在追踪该基金但尚未捕获可用快照。标注“第三方”的行来自带标注的外部数据源，而非发行方自有文件。") }}
-        <span class="muted"> — {{ t('any stale feed surfaces here', '任何陈旧数据源都会在此暴露') }}</span></summary>
-      {% if coverage %}
-      <table style="margin-top:10px">
+{# ═══════════════ MARKET BACKDROP (rotation) ═══════════════ #}
+  {% if board and board.rotation %}
+  {% set ro = board.rotation %}
+  <section class="sec" style="--sc:var(--ch-a)">
+    <div class="sec-head"><span class="sh-dot"></span>
+      <h2>{{ t('The market they’re buying into', '他们正买入的市场') }}</h2></div>
+    <p class="sec-sub">{{ t('The rotation backdrop for every move above — accumulation into a supportive tape confirms; against it, be more skeptical. Descriptive momentum context, never a buy list.', '上述每一笔动作的轮动背景——顺势增持是确认，逆势增持则需更谨慎。描述性动量背景，非买入清单。') }}</p>
+    <div class="rr">
+      {# risk #}
+      <div class="rrc c-risk">
+        <div class="rr-eyebrow">{{ t('Risk backdrop', '风险环境') }}</div>
+        <div class="rr-state">{{ b(ro.risk.label) }}</div>
+        <div class="rr-read">{{ b(ro.risk.read) }}</div>
+        <div class="rr-legs">
+          {% for lg in ro.risk.legs %}
+          <span class="leg {{ 'u' if (lg.dir or 0) > 0 else 'd' if (lg.dir or 0) < 0 else '' }}">
+            <span class="ar">{{ '▲' if (lg.dir or 0) > 0 else '▼' if (lg.dir or 0) < 0 else '·' }}</span>{{ b(lg.label) }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {# sector leadership #}
+      <div class="rrc c-sect">
+        <div class="rr-eyebrow">{{ t('Sector leadership', '板块领导力') }}</div>
+        <div class="rr-state" style="font-size:16px">{{ t('60-day momentum', '60日动量') }}{{ help('Trailing 60-session price momentum for each of the 11 GICS sector SPDRs, ranked. Positive = the sector has been leading; the bar grows from the centre. A sector leading here is a tailwind for funds accumulating names inside it.', '11 个 GICS 板块 SPDR 的过去 60 个交易日价格动量排名。正值=该板块一直领先；柱状从中心生长。领先的板块对增持其成分股的基金构成顺风。') }}</div>
+        <div class="slad">
+          {% set mx = ro.sector.mom_max or 1 %}
+          {% for r in ro.sector.rows %}
+          {% set m = r.mom60 or 0 %}
+          <div class="sl">
+            <span class="rk">{{ r.rank }}</span>
+            <span class="nm">{{ b(r.label) }}</span>
+            <span class="track"><i class="{{ 'u' if m >= 0 else 'd' }}" style="width:{{ "%.0f" | format((((m if m >= 0 else -m) / mx) * 50) if mx else 0) }}%"></i></span>
+            <span class="mv {{ 'u' if m >= 0 else 'd' }}">{{ "%+.1f" | format(m) }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {# style tug of war #}
+      <div class="rrc c-style">
+        <div class="rr-eyebrow">{{ t('Style rotation', '风格轮动') }}</div>
+        <div class="rr-state" style="font-size:16px">{{ t('who’s leading', '谁在领先') }}{{ help('Trailing ratio momentum between paired style ETFs (e.g. IWM/SPY = small vs large). The bar leans toward whichever side is leading over the last ~20 sessions. Tells you the style regime the fund moves are happening inside.', '成对风格 ETF 之间的比值动量（如 IWM/SPY = 小盘对大盘）。柱状偏向过去约 20 个交易日领先的一侧。它告诉你基金动作所处的风格环境。') }}</div>
+        <div class="tug">
+          {% for s in ro.style %}
+          {% set tl = s.tilt or 0 %}{% set c20 = s.chg20 or 0 %}
+          <div class="tw {{ 'up' if tl > 0 else 'dn' if tl < 0 else '' }}">
+            <div class="lab"><span class="nm">{{ b(s.label) }}</span><span class="ld">{{ b(s.lead) }}</span></div>
+            <div class="bar"><span class="mid"></span><i class="{{ 'u' if c20 >= 0 else 'd' }}" style="width:{{ "%.0f" | format([((c20 if c20 >= 0 else -c20) * 8), 50] | min) }}%"></i></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <p class="faint" style="font-size:11.5px;margin:11px 2px 0">{{ b({'en': (pulse.disclaimer_en if pulse else ''), 'zh': (pulse.disclaimer_zh if pulse else '')}) }}</p>
+  </section>
+  {% endif %}
+
+{# ═══════════════ BROWSE BY FUND — accumulation ═══════════════ #}
+  <section class="sec" style="--sc:var(--accent)">
+    <div class="sec-head"><span class="sh-dot"></span>
+      <h2>{{ t('Every add, by fund', '逐基金增持明细') }}</h2></div>
+    <p class="sec-sub">{{ t('The individual buys behind the board — each fund’s strongest add this cycle, highest conviction first. Conviction is the weight the manager actively committed, after stripping price and flows.', '看板背后的单笔买入——每只基金本轮最强增持，信念最高者优先。信念=剔除价格与资金流后经理人主动投入的权重。') }}</p>
+    {% if accumulation %}
+    <div class="card" style="padding:8px 14px">
+      <div class="atbl-wrap">
+      <table class="atbl">
+        <thead><tr>
+          <th>{{ t('stock', '个股') }}</th>
+          <th>{{ t('fund · theme', '基金 · 主题') }}</th>
+          <th class="r">{{ t('conviction', '信念') }}{{ help("The percentage POINTS of the fund's weight the manager actively committed to this name, after stripping out price moves and creation/redemption flow. We rank on this, not raw % change — a real add to a meaningful position beats a tiny position doubling.", '经理人在剔除价格变动与申购／赎回资金流后，主动投入该股的权重百分点。我们据此排序，而非原始百分比变化——对有意义仓位的真实增持胜过微小仓位的翻倍。') }}</th>
+          <th class="hide-sm">{{ t('trend', '走势') }}</th>
+          <th>{{ t('what to do', '如何应对') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in accumulation %}
+        {% set cp = r.conviction_pp or 0 %}
         <tr>
-          <th class="l">{{ t('fund', '基金') }}</th>
-          <th class="l">{{ t('name', '名称') }}</th>
-          <th class="l">{{ t('sponsor', '发行方') }}</th>
-          <th class="l">{{ t('theme', '主题') }}</th>
-          <th class="r">{{ t('snapshots', '快照数') }}</th>
-          <th class="l">{{ t('latest as-of', '最新截至') }}</th>
-          <th class="l">{{ t('freshness', '新鲜度') }}</th>
-        </tr>
-        {% for c in coverage %}
-        <tr>
-          <td class="l"><b>{{ c.fund }}</b>{% if c.unofficial %} <span class="tag tag-3p">{{ t('3rd-party', '第三方') }}</span>{% endif %}</td>
-          <td class="l muted">{{ c.fund_name }}</td>
-          <td class="l muted">{{ c.sponsor if c.sponsor else "—" }}</td>
-          <td class="l">{% if c.is_active %}<span class="tag tag-active">{{ t('active', '主动') }}</span>{% elif c.category %}<span class="muted">{{ td(c.category) }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
-          <td class="r num muted">{{ c.n_snapshots }}</td>
-          <td class="l muted">{{ c.latest_asof if c.latest_asof else "—" }}</td>
-          <td class="l">
-            {% if c.n_snapshots == 0 %}
-              <span class="fdot none"></span><span class="muted">{{ t('no data yet', '暂无数据') }}</span>
-            {% elif c.stale_days is not none and c.stale_days <= 3 %}
-              <span class="fdot fresh"></span><span class="muted">{{ t('fresh', '新鲜') }}</span>
-            {% elif c.stale_days is not none and c.stale_days <= 10 %}
-              <span class="fdot aging"></span><span class="muted">{{ t('aging', '渐旧') }}</span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}
-            {% else %}
-              <span class="fdot stale"></span><span class="neg"><b>{{ t('stale', '陈旧') }}</b></span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}
-            {% endif %}
+          <td>
+            <div class="stock-cell">{{ logo(r.ticker) }}
+              <span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a>
+                <span class="nm">{{ clean_name(r.name) }}</span></span>
+            </div>
           </td>
+          <td class="fundcell"><b>{{ r.etf }}</b>{% if r.is_active %} <span class="mini active">{{ t('ACTIVE', '主动') }}</span>{% endif %}<br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
+          <td class="r">
+            <span class="conv {{ 'u' if cp >= 0 else 'd' }}">{{ "%+.2f" | format(cp) }}pp</span>
+            {% if r.is_new %} <span class="mini new">{{ t('NEW', '新建') }}</span>{% endif %}
+          </td>
+          <td class="hide-sm">{{ spark(r.weight_series) }}</td>
+          <td>{{ stance(r.stance) }}</td>
         </tr>
         {% endfor %}
+        </tbody>
       </table>
-      {% else %}
-      <p class="muted" style="margin-top:10px">{{ t('No funds registered in the coverage directory yet.', '覆盖目录中尚未登记任何基金。') }}</p>
-      {% endif %}
-    </details>
-  </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="card"><p class="muted" style="margin:0">{{ t('Building — the collector writes one full-holdings snapshot per fund per day; conviction-ranked adds appear once each fund has at least two snapshots.', '构建中 — 采集器每天为每只基金写入一份完整持仓快照；当每只基金至少有两个快照后，按信念排序的增持即会显示。') }}</p></div>
+    {% endif %}
+  </section>
 
-{# ==================== coverage caveat + generated ==================== #}
-  <div class="panel">
-    <p class="muted" style="font-size:12px;margin:0">{{ t(
-      "Coverage: SPDR / State Street, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill are verified daily holdings feeds (with shares). iShares and Schwab are blocked by anti-bot / consent walls at source but are reachable through the labelled third-party feed; Vanguard publishes no free daily feed, so those funds are absent unless the third-party feed carries them. A fund missing here failed today's fetch and is skipped, never crashing the page. See LIMITATIONS.md.",
-      "覆盖范围：SPDR／道富、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill 为已验证的每日持仓数据（含份额）。iShares 与嘉信在源头被反爬／同意墙屏蔽，但可通过带标注的第三方数据源触达；Vanguard 无免费每日数据，故除非第三方数据源覆盖，否则这些基金缺失。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。详见 LIMITATIONS.md。") }}
-      {{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>
-  </div>
+{# ═══════════════ SHELF — trims + coverage ═══════════════ #}
+  <section class="sec shelf" style="--accent:var(--drag)">
+    {% if trims %}
+    <details>
+      <summary><span class="sh-ic">🔻</span>{{ t('Being trimmed', '正在减持') }} <span class="sh-sub">— {{ t('positions managers are actively cutting (secondary signal)', '经理人正在主动削减的仓位（次要信号）') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="atbl-wrap">
+        <table class="atbl">
+          <thead><tr>
+            <th>{{ t('stock', '个股') }}</th><th>{{ t('fund · theme', '基金 · 主题') }}</th>
+            <th class="r">{{ t('conviction cut', '信念削减') }}</th><th class="hide-sm">{{ t('trend', '走势') }}</th><th>{{ t('what to do', '如何应对') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in trims %}
+          {% set cp = r.conviction_pp or 0 %}
+          <tr>
+            <td><div class="stock-cell">{{ logo(r.ticker) }}<span class="st-txt"><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a><span class="nm">{{ clean_name(r.name) }}</span></span></div></td>
+            <td class="fundcell"><b>{{ r.etf }}</b><br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
+            <td class="r"><span class="conv d">{{ "%+.2f" | format(cp) }}pp</span>{% if r.is_exit %} <span class="mini exit">{{ t('EXITED', '清仓') }}</span>{% endif %}</td>
+            <td class="hide-sm">{{ spark(r.weight_series) }}</td>
+            <td>{{ stance(r.stance) }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    <details>
+      <summary><span class="sh-ic">📡</span>{{ t('Coverage & freshness', '覆盖范围与新鲜度') }} <span class="sh-sub">— {{ t('every tracked fund; any stale feed surfaces here', '所有已追踪基金；任何陈旧数据源都会在此暴露') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        {% if coverage %}
+        <div class="atbl-wrap">
+        <table class="atbl">
+          <thead><tr>
+            <th>{{ t('fund', '基金') }}</th><th class="hide-sm">{{ t('name', '名称') }}</th>
+            <th>{{ t('theme', '主题') }}</th><th class="r">{{ t('snapshots', '快照') }}</th>
+            <th class="hide-sm">{{ t('latest', '最新') }}</th><th>{{ t('freshness', '新鲜度') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for c in coverage %}
+          <tr>
+            <td><b>{{ c.fund }}</b>{% if c.unofficial %} <span class="tag3p">{{ t('3rd-party', '第三方') }}</span>{% endif %}</td>
+            <td class="hide-sm muted">{{ c.fund_name }}</td>
+            <td>{% if c.is_active %}<span class="mini active">{{ t('active', '主动') }}</span>{% elif c.category %}<span class="themetag">{{ td(c.category) }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
+            <td class="r muted">{{ c.n_snapshots }}</td>
+            <td class="hide-sm muted">{{ c.latest_asof if c.latest_asof else '—' }}</td>
+            <td>
+              {% if c.n_snapshots == 0 %}<span class="fdot none"></span><span class="muted">{{ t('no data yet', '暂无数据') }}</span>
+              {% elif c.stale_days is not none and c.stale_days <= 3 %}<span class="fdot fresh"></span><span class="muted">{{ t('fresh', '新鲜') }}</span>
+              {% elif c.stale_days is not none and c.stale_days <= 10 %}<span class="fdot aging"></span><span class="muted">{{ t('aging', '渐旧') }}{% if c.stale_days %} · {{ c.stale_days }}{{ t('d', '天') }}{% endif %}</span>
+              {% else %}<span class="fdot stale"></span><span class="neg"><b>{{ t('stale', '陈旧') }}</b></span>{% if c.stale_days is not none %} <span class="muted">· {{ c.stale_days }}{{ t('d', '天') }}</span>{% endif %}{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        {% else %}<p class="muted" style="margin:0">{{ t('No funds registered in the coverage directory yet.', '覆盖目录中尚未登记任何基金。') }}</p>{% endif %}
+      </div>
+    </details>
+  </section>
+
+{# ═══════════════ disclosure ═══════════════ #}
+  <p class="disc">{{ t(
+    "How to read this: fund managers accumulating a name is DISPLAY context on a lagged filing cadence — where curated & active money is going, not a timed buy signal. The stance answers “so what do I do?” in plain words; the honest default is “watch — don’t chase” until a name has both broad backing and a forming setup.",
+    "如何解读：基金经理人增持某只个股属于滞后申报节奏下的展示性背景——反映精选与主动资金的去向，而非择时买入信号。“如何应对”以平实用语回答“那我该怎么做”；在个股同时具备广泛支持与正在形成的形态之前，诚实的默认立场是“观望——勿追”。") }}
+    {{ t("Coverage: SPDR, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, ARK, Invesco and Roundhill are verified daily holdings feeds (with shares). iShares and Schwab are blocked at source but reachable via a labelled third-party feed; Vanguard publishes no free daily feed. A fund missing here failed today’s fetch and is skipped, never crashing the page.",
+    "覆盖范围：SPDR、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、ARK、Invesco 与 Roundhill 为已验证的每日持仓数据（含份额）。iShares 与嘉信在源头被屏蔽，但可通过带标注的第三方数据源触达；Vanguard 无免费每日数据。此处缺失的基金为今日抓取失败并被跳过，绝不会使页面崩溃。") }}</p>
+
+</div>
 
 <script src="theme.js"></script>
 <footer class="site-footer">

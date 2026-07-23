@@ -33,7 +33,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="assets/css/b9fef18f.css?v=b9fef18f">
 <link rel="stylesheet" href="assets/css/4e16fcd2.css?v=4e16fcd2">
-</head>
+<style>/* nav-gap hotfix: body top padding — templates carry the real fix; next full render supersedes this inline rule */body{padding-top:18px}</style></head>
 <body>
 
 
@@ -43,7 +43,7 @@
 
     <div class="nav-links">
     
-    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -93,7 +93,7 @@
             <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
             <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
             <a href="movers.html">📈 <span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
             <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
             <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
             <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
@@ -246,12 +246,12 @@
         </div>
       </div>
     </div>
+      
+      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=e1a3ca0d" defer></script>
-  
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -289,8 +289,8 @@
       <a class="mm-card" href="strategy_mm_conservative.html" style="--accent:#1FA971;--pos:0.16">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">🛟</span><span class="mm-prof"><span class="l-en">Conservative</span><span class="l-zh">保守</span></span></div>
-        <div class="mm-cagr">7.88%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">60/40 (SPY/IEF)</span><span class="l-zh">60/40（SPY/IEF）</span> 8.33% · <b>1.5× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">7.87%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">60/40 (SPY/IEF)</span><span class="l-zh">60/40（SPY/IEF）</span> 8.32% · <b>1.5× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
           <div><span class="mm-k">Sharpe</span><span class="mm-v">1.12</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.76</span></div>
@@ -303,8 +303,8 @@
       <a class="mm-card" href="strategy_mm_moderate.html" style="--accent:#285fff;--pos:0.5">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">⚖️</span><span class="mm-prof"><span class="l-en">Moderate</span><span class="l-zh">均衡</span></span></div>
-        <div class="mm-cagr">11.41%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.78% · <b>1.7× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">11.39%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.77% · <b>1.7× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
           <div><span class="mm-k">Sharpe</span><span class="mm-v">1.06</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.62</span></div>
@@ -317,8 +317,8 @@
       <a class="mm-card" href="strategy_mm_aggressive.html" style="--accent:#a855f7;--pos:0.9">
         <span class="mm-glow"></span>
         <div class="mm-top"><span class="mm-ico">🚀</span><span class="mm-prof"><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
-        <div class="mm-cagr">17.17%<small>CAGR</small></div>
-        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.78% · <b>1.6× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-cagr">17.13%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.77% · <b>1.6× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
         <div class="mm-meter"></div>
         <div class="mm-mets">
           <div><span class="mm-k">Sharpe</span><span class="mm-v">0.99</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.62</span></div>
@@ -344,7 +344,7 @@
       </div>
       <p><span class="l-en">Stay-in / step-out: the broad US index vs T-bills on a 0–100 macro risk score.</span><span class="l-zh">进出场：美国大盘指数与短期国债之间，按 0–100 宏观风险分数切换。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">12.49%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">12.49%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.87</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-36.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">33.5y</span></div>
@@ -363,10 +363,10 @@
       </div>
       <p><span class="l-en">Harvest the high-yield carry; rotate to Treasuries before the default cycle claws it back.</span><span class="l-zh">收割高收益债票息；在违约周期吞噬之前轮动至国债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">6.8%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 8.58%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">2.86</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 2.35</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">6.76%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 8.53%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">2.85</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 2.34</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-2.4%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -3.8%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">7.02%</span><span class="m-sub">3.1y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">7.06%</span><span class="m-sub">3.1y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">100% HY credit · 0% Treasuries</span><span class="l-zh">100% 高收益债 · 0% 国债</span></span>
@@ -382,10 +382,10 @@
       </div>
       <p><span class="l-en">Own long Treasuries when they&#39;re cheap and trending; step to T-bills before the rate shock.</span><span class="l-zh">当长期国债便宜且趋势向上时持有；在利率冲击前退守短债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">3.48%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 3.58%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">3.47%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 3.57%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.48</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.32</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-18.1%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -48.4%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">4.64%</span><span class="m-sub">24.0y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">4.66%</span><span class="m-sub">24.0y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">66% long Tsy · 34% T-bills</span><span class="l-zh">66% 长债 · 34% 短债</span></span>
@@ -401,10 +401,10 @@
       </div>
       <p><span class="l-en">Ride the Nasdaq up-trend; step to T-bills when momentum rolls over and vol spikes.</span><span class="l-zh">顺纳指上行趋势持有；动量反转、波动飙升时退守短债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">12.06%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.78%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.76</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.52</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">12.04%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.76%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.76</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.51</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-35.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -83.0%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.66%</span><span class="m-sub">27.4y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.67%</span><span class="m-sub">27.4y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">66% Nasdaq 100 · 34% T-bills</span><span class="l-zh">66% 纳指100 · 34% 短期国债</span></span>
@@ -420,7 +420,7 @@
       </div>
       <p><span class="l-en">Time-series momentum on small caps — out of the asset through the long down-legs.</span><span class="l-zh">小盘股时间序列动量 —— 在长期下行段离场。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">5.06%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 8.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">5.02%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 8.76%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.42</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-34.9%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -58.6%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.2%</span><span class="m-sub">26.2y</span></div>
@@ -439,7 +439,7 @@
       </div>
       <p><span class="l-en">The most cyclical equity sleeve — ride the boom, sidestep the bust with trend + vol.</span><span class="l-zh">最具周期性的股票板块 —— 用趋势+波动顺周期持有、规避崩跌。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">12.77%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.61%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">12.78%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.63%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.72</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.46</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-32.5%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -85.9%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.6%</span><span class="m-sub">26.1y</span></div>
@@ -458,7 +458,7 @@
       </div>
       <p><span class="l-en">Antonacci absolute momentum: hold the S&amp;P only while it out-earns T-bills.</span><span class="l-zh">Antonacci 绝对动量：仅当标普跑赢短债时持有。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">9.13%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">9.13%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.76</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-30.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">33.5y</span></div>
@@ -477,8 +477,8 @@
       </div>
       <p><span class="l-en">The textbook 50/200-day cross — a deliberately simple, widely-watched baseline.</span><span class="l-zh">教科书式 50/200 日均线交叉 —— 刻意保留的简单、广为人知的基准。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">10.27%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.78</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">10.27%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.77</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-33.7%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">33.5y</span></div>
       </div>
@@ -496,7 +496,7 @@
       </div>
       <p><span class="l-en">Moreira-Muir: cut equity into high-volatility regimes, add it back into calm.</span><span class="l-zh">Moreira-Muir：高波动时降仓，平静时加仓。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">5.87%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">5.87%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.74</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-32.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.93%</span><span class="m-sub">33.5y</span></div>
@@ -515,7 +515,7 @@
       </div>
       <p><span class="l-en">De-risk when the VIX curve inverts (near-term fear &gt; 3-month) — the fast stress tell.</span><span class="l-zh">当 VIX 曲线倒挂（近月恐慌 &gt; 三月）时降险 —— 快速的压力信号。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">8.22%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">8.22%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.77</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-28.9%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">33.5y</span></div>
@@ -534,7 +534,7 @@
       </div>
       <p><span class="l-en">Follow the Fed tide: lighten up when net liquidity (balance sheet − RRP) is draining.</span><span class="l-zh">跟随美联储潮汐：当净流动性（资产负债表 − 逆回购）收缩时减仓。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">8.48%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">8.48%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.57</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-55.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.13%</span><span class="m-sub">33.5y</span></div>
@@ -553,7 +553,7 @@
       </div>
       <p><span class="l-en">Inversion warns; the re-steepening out of inversion has led every modern recession.</span><span class="l-zh">倒挂预警；从倒挂走向陡峭领先了每一次现代衰退。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">8.49%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">8.49%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.59</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-54.1%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.93%</span><span class="m-sub">33.5y</span></div>
@@ -572,7 +572,7 @@
       </div>
       <p><span class="l-en">The labor market turns before earnings: de-risk on the Sahm trigger + rising jobless claims.</span><span class="l-zh">就业先于盈利转向：Sahm 触发 + 初请上行时降险。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">10.13%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">10.13%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.8</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-33.7%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.13%</span><span class="m-sub">33.5y</span></div>
@@ -591,7 +591,7 @@
       </div>
       <p><span class="l-en">Credit leads equity — let widening high-yield spreads pull the stock weight down first.</span><span class="l-zh">信用领先股票 —— 让走阔的高收益利差先把股票仓位拉低。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">9.01%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">9.01%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.88</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-19.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.13%</span><span class="m-sub">33.5y</span></div>
@@ -610,7 +610,7 @@
       </div>
       <p><span class="l-en">Step out only when the Chicago Fed NFCI is both tight AND tightening — the stress regime.</span><span class="l-zh">仅当芝加哥联储 NFCI 既紧又在收紧时离场 —— 压力区间。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">11.27%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.8%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">11.26%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 10.79%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.74</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.65</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-48.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">33.5y</span></div>
@@ -629,10 +629,10 @@
       </div>
       <p><span class="l-en">Barroso-Santa-Clara: own the momentum factor but scale by its own volatility — momentum crashes are a vol event.</span><span class="l-zh">Barroso-Santa-Clara：持有动量因子，但按其自身波动缩放 —— 动量崩溃本质是波动事件。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">9.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 16.06%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v lose">0.84</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.85</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">9.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 16.05%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.84</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.84</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-14.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -34.1%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.83%</span><span class="m-sub">13.3y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.84%</span><span class="m-sub">13.3y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% Momentum factor · 67% T-bills</span><span class="l-zh">33% 动量因子 · 67% 短期国债</span></span>
@@ -648,10 +648,10 @@
       </div>
       <p><span class="l-en">Hold the low-vol anomaly almost always; only step aside in a genuine market volatility panic.</span><span class="l-zh">几乎始终持有低波动异象；仅在真正的市场波动恐慌时退避。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">5.96%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.53%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">5.95%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.51%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.93</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.88</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-9.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -33.1%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">3.09%</span><span class="m-sub">14.8y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">3.1%</span><span class="m-sub">14.8y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% Min-vol equity · 67% T-bills</span><span class="l-zh">33% 最小波动股票 · 67% 短期国债</span></span>
@@ -667,7 +667,7 @@
       </div>
       <p><span class="l-en">Quality compounds through slowdowns — pair its trend with the macro recession gauge.</span><span class="l-zh">质量在放缓中复利 —— 将其趋势与宏观衰退计配对。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">10.63%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 13.57%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">10.6%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 13.54%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.75</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.83</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-33.2%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -34.1%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.3%</span><span class="m-sub">13.0y</span></div>
@@ -686,7 +686,7 @@
       </div>
       <p><span class="l-en">Own the equal-weight S&amp;P on trend; trim when breadth narrows (RSP losing to cap-weight).</span><span class="l-zh">按趋势持有等权标普；当广度收窄（等权跑输市值权重）时减仓。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">10.42%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.25%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">10.42%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.24%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.92</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.64</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-19.9%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -59.9%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.5%</span><span class="m-sub">23.2y</span></div>
@@ -705,10 +705,10 @@
       </div>
       <p><span class="l-en">Gold&#39;s two enemies are rising real yields and a strong dollar — own it when both are calm.</span><span class="l-zh">黄金的两大敌人是实际收益率上行与强美元 —— 二者平静时持有。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">6.85%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.0%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">6.87%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 11.04%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.62</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.68</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-33.0%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -44.4%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.5%</span><span class="m-sub">25.9y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.51%</span><span class="m-sub">25.9y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% Gold · 67% T-bills</span><span class="l-zh">33% 黄金 · 67% 短期国债</span></span>
@@ -724,10 +724,10 @@
       </div>
       <p><span class="l-en">Classic managed-futures trend on Brent — commodities trend strongly and crash hard.</span><span class="l-zh">布伦特原油的经典管理期货趋势 —— 商品趋势强、崩跌也猛。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">3.37%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 1.0%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.27</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.22</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">3.45%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 1.23%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.27</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.23</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-44.4%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -86.8%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.5%</span><span class="m-sub">19.0y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.51%</span><span class="m-sub">19.0y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% Brent crude · 67% T-bills</span><span class="l-zh">33% 布伦特原油 · 67% 短期国债</span></span>
@@ -743,7 +743,7 @@
       </div>
       <p><span class="l-en">Dr. Copper as a growth gauge — own it on trend, stand aside when industrial growth rolls over.</span><span class="l-zh">‘铜博士’作为增长晴雨表 —— 顺趋势持有，工业增长回落时退避。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">7.43%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 8.02%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">7.41%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 7.99%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.58</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.42</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-32.9%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -69.4%</span></div>
         <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">1.27%</span><span class="m-sub">25.9y</span></div>
@@ -762,10 +762,10 @@
       </div>
       <p><span class="l-en">Trend-follow Bitcoin to keep the upside while cutting the repeated -80% drawdowns.</span><span class="l-zh">趋势跟随比特币，保留上行同时削减反复出现的 -80% 回撤。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">53.34%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 52.25%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v win">53.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 52.15%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v win">0.97</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.8</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-61.9%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -83.4%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.5%</span><span class="m-sub">11.8y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">2.51%</span><span class="m-sub">11.8y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% Bitcoin · 67% T-bills</span><span class="l-zh">33% 比特币 · 67% 短期国债</span></span>
@@ -781,10 +781,10 @@
       </div>
       <p><span class="l-en">Time-series momentum on ETH — out through the long crypto-winter down-legs.</span><span class="l-zh">以太坊时间序列动量 —— 在漫长加密寒冬的下行段离场。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">18.64%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 22.85%</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">18.63%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 22.9%</span></div>
         <div><span class="m-k">Sharpe</span><span class="m-v lose">0.49</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.56</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-77.4%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -94.0%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">3.73%</span><span class="m-sub">8.7y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">3.74%</span><span class="m-sub">8.7y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">0% Ethereum · 100% T-bills</span><span class="l-zh">0% 以太坊 · 100% 短期国债</span></span>
@@ -800,10 +800,10 @@
       </div>
       <p><span class="l-en">Harvest the investment-grade spread; rotate to Treasuries when the Baa−Aaa quality spread widens.</span><span class="l-zh">收割投资级利差；当 Baa−Aaa 质量利差走阔时轮动至国债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">3.69%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 4.54%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.77</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.58</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">3.68%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 4.54%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.77</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.57</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-18.3%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -25.0%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">5.53%</span><span class="m-sub">24.0y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">5.57%</span><span class="m-sub">24.0y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">100% IG credit · 0% Treasuries</span><span class="l-zh">100% 投资级 · 0% 国债</span></span>
@@ -819,10 +819,10 @@
       </div>
       <p><span class="l-en">Earn the EM spread; the dollar is the wrecking ball — de-risk to Treasuries when it surges.</span><span class="l-zh">赚取新兴市场利差；美元是破坏球 —— 其飙升时退守国债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">2.71%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 4.61%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.66</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">2.71%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 4.59%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.65</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.47</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-12.7%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -34.7%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">5.48%</span><span class="m-sub">18.6y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">5.53%</span><span class="m-sub">18.6y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% EM debt · 67% Treasuries</span><span class="l-zh">33% 新兴债 · 67% 国债</span></span>
@@ -838,10 +838,10 @@
       </div>
       <p><span class="l-en">Own intermediate Treasuries as the crisis hedge; step to bills when the 10y yield is trending up.</span><span class="l-zh">持有中期国债作为危机对冲；当 10 年期收益率上行趋势时退守短债。</span></p>
       <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">2.94%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 3.54%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">0.65</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.55</span></div>
+        <div><span class="m-k">CAGR</span><span class="m-v lose">2.94%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 3.53%</span></div>
+        <div><span class="m-k">Sharpe</span><span class="m-v win">0.65</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.54</span></div>
         <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-8.1%</span><span class="m-sub"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -23.9%</span></div>
-        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">4.02%</span><span class="m-sub">24.0y</span></div>
+        <div><span class="m-k"><span class="l-en">Income</span><span class="l-zh">票息</span></span><span class="m-v">4.03%</span><span class="m-sub">24.0y</span></div>
       </div>
       <div class="scard-foot">
         <span class="stance"><span class="l-en">33% 7-10y Tsy · 67% T-bills</span><span class="l-zh">33% 中期国债 · 67% 短债</span></span>
@@ -852,9 +852,9 @@
   </div>
 
   <div class="foot">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-22 09:36 UTC<br>
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-23 11:38 UTC<br>
     <span class="made">© 2026 Mastermind Inc</span>
   </div>
 </div>
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js?v=d4dfefdc" defer></script>
 </body></html>

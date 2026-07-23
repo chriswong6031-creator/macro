@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Research Reports — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a1aa8c55">
-<link rel="stylesheet" href="assets/css/dc790e30.css?v=dc790e30">
+<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="assets/css/e6f46a69.css?v=e6f46a69">
 
 
 
@@ -37,7 +37,7 @@
 
     <div class="nav-links">
     
-    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -87,7 +87,7 @@
             <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
             <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
             <a href="movers.html">📈 <span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
-            <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+            <a href="flow_desk.html">🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
             <a href="intraday_flow.html">📊 <span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
             <a href="flow_leaders.html">🏆 <span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
             <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
@@ -240,12 +240,12 @@
         </div>
       </div>
     </div>
+      
+      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
   <script src="live.js?v=e1a3ca0d" defer></script>
-  
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -268,149 +268,284 @@
 </nav>
 
 
-<section class="rep-hero">
-  <p class="eyebrow">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></p>
-  <h1><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></h1>
-  <p class="lede"><span class="l-en">In-depth, source-grounded reports on the market events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, and read in either language.</span><span class="l-zh">围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。</span></p>
-</section>
+<div class="rc-aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
 
-<div class="controls">
-  <div class="search-box">
-    <span class="mag">🔎</span>
-    <input id="repSearch" type="text" autocomplete="off"
-      placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
-  </div>
-  <label class="sortsel"><span class="l-en">Sort</span><span class="l-zh">排序</span>
-    <select id="repSort">
-      <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
-      <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
-    </select>
-  </label>
-  <span class="rescount" id="repCount"></span>
-  <div class="tagbar" id="tagBar">
-    <span class="chip on" data-tag="all"><span class="l-en">All</span><span class="l-zh">全部</span></span>
-    <span class="chip tag-ai" data-tag="ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-equities" data-tag="equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro" data-tag="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-event" data-tag="event"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span></span><span class="chip tag-energy" data-tag="energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="chip tag-china" data-tag="china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-crypto" data-tag="crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-fed" data-tag="fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-credit" data-tag="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span><span class="chip tag-rates" data-tag="rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
-  </div>
-</div>
+<div class="rc-shell">
 
-<div class="report-list" id="reportList">
+  <header class="rc-mast">
+    <p class="rc-eyebrow"><span class="l-en">Research Desk</span><span class="l-zh">研究台</span></p>
+    <h1 class="rc-serif-on"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></h1>
+    <p class="rc-lede"><span class="l-en">In-depth, source-grounded reads on the events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, in either language.</span><span class="l-zh">围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。</span></p>
+    
+    <div class="rc-deskstat">
+      <span><b>6</b> <span class="l-en">reports</span><span class="l-zh">篇报告</span></span>
+      <span class="sep">·</span>
+      <span><b>10</b> <span class="l-en">topics covered</span><span class="l-zh">个覆盖主题</span></span>
+      <span class="sep">·</span>
+      <span>~<b>140</b> <span class="l-en">min of reading</span><span class="l-zh">分钟阅读</span></span>
+    </div>
+    
+  </header>
+
   
-  <a class="report-row feat" href="report_haven_audition.html"
-     data-date="2026-07-11"
-     data-tags="ai equities macro event"
-     data-search="the haven audition every correction has two havens: the consensus shelter the crowd already owns, and the asymmetric one that proof builds mid-storm — the role google, then the most-hated megacap, played in q4 2025 while the freshly-crowned defensive at its all-time high drew down double digits funding it. we measure the template from the price store, grade meta&#39;s six-lever audition for the role — two levers already printing, a disclosure window that opens july 29 — and score the full cast: meta, nvidia, apple, tesla, and the dark horses. plus the washington question: an administration literally long the ai trade, down to equity stakes and a move against chinese models — a tailwind, not a selector. 避险选角 每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 meta 的六杠杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：meta、nvidia、apple、tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 ai 交易的政府——直至持有股权、直至对中国模型出手——它是顺风，不是选角人。">
-    <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
-    <div class="rr-date"><span class="mo">JUL</span><span class="day">11</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The Haven Audition</span><span class="l-zh">避险选角</span></div>
-      <div class="rr-dek"><span class="l-en">Every correction has two havens: the consensus shelter the crowd already owns, and the asymmetric one that proof builds mid-storm — the role Google, then the most-hated megacap, played in Q4 2025 while the freshly-crowned defensive at its all-time high drew down double digits funding it. We measure the template from the price store, grade Meta&#39;s six-lever audition for the role — two levers already printing, a disclosure window that opens July 29 — and score the full cast: Meta, Nvidia, Apple, Tesla, and the dark horses. Plus the Washington question: an administration literally long the AI trade, down to equity stakes and a move against Chinese models — a tailwind, not a selector.</span><span class="l-zh">每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 Meta 的六杠杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：Meta、Nvidia、Apple、Tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 AI 交易的政府——直至持有股权、直至对中国模型出手——它是顺风，不是选角人。</span></div>
-      <div class="rr-tags">
+  <section class="rc-hero">
+    
+    <article class="rc-feat rc-glass">
+      <span class="rc-feat-kicker">
+        <span class="rc-kick-dot"></span><span class="l-en">Latest briefing</span><span class="l-zh">最新简报</span>
+        <time>· JUL 11, 2026</time>
+      </span>
+      <h2 class="rc-feat-title rc-serif-on"><a href="report_haven_audition.html"><span class="l-en">The Haven Audition</span><span class="l-zh">避险选角</span></a></h2>
+      <p class="rc-feat-dek"><span class="l-en">Every correction has two havens: the consensus shelter the crowd already owns, and the asymmetric one that proof builds mid-storm — the role Google, then the most-hated megacap, played in Q4 2025 while the freshly-crowned defensive at its all-time high drew down double digits funding it. We measure the template from the price store, grade Meta&#39;s six-lever audition for the role — two levers already printing, a disclosure window that opens July 29 — and score the full cast: Meta, Nvidia, Apple, Tesla, and the dark horses. Plus the Washington question: an administration literally long the AI trade, down to equity stakes and a move against Chinese models — a tailwind, not a selector.</span><span class="l-zh">每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 Meta 的六杠杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：Meta、Nvidia、Apple、Tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 AI 交易的政府——直至持有股权、直至对中国模型出手——它是顺风，不是选角人。</span></p>
+      <div class="rc-feat-tags">
         <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-event"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span></span>
       </div>
-    </div>
-    <div class="rr-aside">
-      <span>⏱ 26 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
-    </div>
-  </a>
-  
-  <a class="report-row " href="report_relapse_jul8.html"
-     data-date="2026-07-08"
-     data-tags="equities energy china macro crypto"
-     data-search="the relapse a tactical companion to the second act. the iran war restarted six weeks early, the disinflation glide path took a torpedo, and hong kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. we re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the china platform leg with the 1260h caveat, act ii power into weakness, the first mag-7 trough tranche, gold, bitcoin, and copper — while memory-chip strength stays something you sell. 复燃 《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260h 警示的中国平台、趁弱建仓的第二幕电力、mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。">
-    
-    <div class="rr-date"><span class="mo">JUL</span><span class="day">8</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The Relapse</span><span class="l-zh">复燃</span></div>
-      <div class="rr-dek"><span class="l-en">A tactical companion to The Second Act. The Iran war restarted six weeks early, the disinflation glide path took a torpedo, and Hong Kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. We re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the China platform leg with the 1260H caveat, Act II power into weakness, the first Mag-7 trough tranche, gold, Bitcoin, and copper — while memory-chip strength stays something you sell.</span><span class="l-zh">《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260H 警示的中国平台、趁弱建仓的第二幕电力、Mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。</span></div>
-      <div class="rr-tags">
-        <span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span>
+      <div class="rc-feat-foot">
+        <a class="rc-read gbtn gbtn-cta" href="report_haven_audition.html"><span class="l-en">Read the report</span><span class="l-zh">阅读报告</span> <span aria-hidden="true">→</span></a>
+        <span class="rc-min">⏱ 26 <span class="l-en">min read</span><span class="l-zh">分钟</span></span>
       </div>
-    </div>
-    <div class="rr-aside">
-      <span>⏱ 18 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
-    </div>
-  </a>
-  
-  <a class="report-row " href="report_second_act.html"
-     data-date="2026-07-02"
-     data-tags="ai macro equities crypto china"
-     data-search="the second act the ai boom isn&#39;t ending — it&#39;s changing hands. chips and memory had their run; the money now flows to power, cooling, optical networking, robots, and the payment rails underneath. a month-by-month map from july 2026 to december 2027: what to own, when to buy it, what the mag 7 are really worth at their cash-flow low, and exactly what would prove us wrong. the best buying window on the map: october 2026. 第二幕 ai 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图：该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。全图最佳买入窗口：2026年10月。">
+    </article>
     
-    <div class="rr-date"><span class="mo">JUL</span><span class="day">2</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The Second Act</span><span class="l-zh">第二幕</span></div>
-      <div class="rr-dek"><span class="l-en">The AI boom isn&#39;t ending — it&#39;s changing hands. Chips and memory had their run; the money now flows to power, cooling, optical networking, robots, and the payment rails underneath. A month-by-month map from July 2026 to December 2027: what to own, when to buy it, what the Mag 7 are really worth at their cash-flow low, and exactly what would prove us wrong. The best buying window on the map: October 2026.</span><span class="l-zh">AI 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图：该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。全图最佳买入窗口：2026年10月。</span></div>
-      <div class="rr-tags">
-        <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span>
-      </div>
-    </div>
-    <div class="rr-aside">
-      <span>⏱ 45 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
-    </div>
-  </a>
-  
-  <a class="report-row " href="report_ai_master_plan.html"
-     data-date="2026-07-01"
-     data-tags="ai macro fed china credit"
-     data-search="the ai master plan strip the white house ai action plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the united states — a physical-stock strategy that is bubble-dependent by design. a full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway that maps how the market is front-running the administration’s schedule: distribution now, a midterm-year low, and the blow-off deferred to 2027. ai 总体规划 剥开白宫《ai 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附一条预测路径，剖析市场如何抢跑政府的时间表：当下派发、中期选举年的低点，以及被推迟至 2027 年的“blow-off 冲顶”。">
+
     
-    <div class="rr-date"><span class="mo">JUL</span><span class="day">1</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The AI Master Plan</span><span class="l-zh">AI 总体规划</span></div>
-      <div class="rr-dek"><span class="l-en">Strip the White House AI Action Plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the United States — a physical-stock strategy that is bubble-dependent by design. A full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway that maps how the market is front-running the administration’s schedule: distribution now, a midterm-year low, and the blow-off deferred to 2027.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附一条预测路径，剖析市场如何抢跑政府的时间表：当下派发、中期选举年的低点，以及被推迟至 2027 年的“blow-off 冲顶”。</span></div>
-      <div class="rr-tags">
-        <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+    <aside class="rc-desk rc-glass" aria-label="Coverage">
+      <div class="rc-desk-h">
+        <span class="lab"><span class="l-en">The Desk</span><span class="l-zh">研究台</span></span>
+        <span class="hint"><span class="l-en">tap to filter</span><span class="l-zh">点按筛选</span></span>
       </div>
-    </div>
-    <div class="rr-aside">
-      <span>⏱ 30 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
-    </div>
-  </a>
-  
-  <a class="report-row " href="report_bessent_jun24.html"
-     data-date="2026-06-24"
-     data-tags="fed rates crypto macro"
-     data-search="the bessent bridge one week after the warsh shock, the hawkish reset has done the fed&#39;s tightening for it — gold under $4,000, the dollar at a 13-month high, and the ai-and-semis leadership that led all year finally cracked. then the treasury secretary said the quiet part out loud: you can have a strong dollar while the fed cuts. a decode of the staged sequence — setup, not destination — and where the debasement trade bottoms. 贝森特之桥 沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、今年全程领涨的ai与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。">
+      <p class="rc-desk-sub"><span class="l-en">What this archive covers</span><span class="l-zh">本档案的覆盖领域</span></p>
+      <div class="rc-cov" id="covBars">
+        
+        
+        <button type="button" class="rc-cov-row" data-tag="macro" aria-pressed="false"
+          aria-label="Macro — 6 reports">
+          <span class="rc-cov-name"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:100%"></span></span>
+          <span class="rc-cov-count">6</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="equities" aria-pressed="false"
+          aria-label="Equities — 4 reports">
+          <span class="rc-cov-name"><span class="l-en">Equities</span><span class="l-zh">股票</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:66%"></span></span>
+          <span class="rc-cov-count">4</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="ai" aria-pressed="false"
+          aria-label="AI — 3 reports">
+          <span class="rc-cov-name"><span class="l-en">AI</span><span class="l-zh">AI</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:50%"></span></span>
+          <span class="rc-cov-count">3</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="china" aria-pressed="false"
+          aria-label="China — 3 reports">
+          <span class="rc-cov-name"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:50%"></span></span>
+          <span class="rc-cov-count">3</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="crypto" aria-pressed="false"
+          aria-label="Crypto — 3 reports">
+          <span class="rc-cov-name"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:50%"></span></span>
+          <span class="rc-cov-count">3</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="fed" aria-pressed="false"
+          aria-label="Fed — 3 reports">
+          <span class="rc-cov-name"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:50%"></span></span>
+          <span class="rc-cov-count">3</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="rates" aria-pressed="false"
+          aria-label="Rates — 2 reports">
+          <span class="rc-cov-name"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:33%"></span></span>
+          <span class="rc-cov-count">2</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="credit" aria-pressed="false"
+          aria-label="Credit — 1 reports">
+          <span class="rc-cov-name"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:16%"></span></span>
+          <span class="rc-cov-count">1</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="energy" aria-pressed="false"
+          aria-label="Energy — 1 reports">
+          <span class="rc-cov-name"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:16%"></span></span>
+          <span class="rc-cov-count">1</span>
+        </button>
+        
+        <button type="button" class="rc-cov-row" data-tag="event" aria-pressed="false"
+          aria-label="Midterms — 1 reports">
+          <span class="rc-cov-name"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span></span>
+          <span class="rc-cov-track"><span class="rc-cov-fill" style="width:16%"></span></span>
+          <span class="rc-cov-count">1</span>
+        </button>
+        
+      </div>
+      <div class="rc-cov-foot"><span class="l-en">Every report is read-only analysis — not investment advice.</span><span class="l-zh">所有报告仅为分析，不构成投资建议。</span></div>
+    </aside>
     
-    <div class="rr-date"><span class="mo">JUN</span><span class="day">24</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The Bessent Bridge</span><span class="l-zh">贝森特之桥</span></div>
-      <div class="rr-dek"><span class="l-en">One week after the Warsh Shock, the hawkish reset has done the Fed&#39;s tightening for it — gold under $4,000, the dollar at a 13-month high, and the AI-and-semis leadership that led all year finally cracked. Then the Treasury Secretary said the quiet part out loud: you can have a strong dollar while the Fed cuts. A decode of the staged sequence — setup, not destination — and where the debasement trade bottoms.</span><span class="l-zh">沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、今年全程领涨的AI与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。</span></div>
-      <div class="rr-tags">
-        <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+  </section>
+
+  <div class="rc-controls rc-glass">
+    <div class="rc-controls-top">
+      <div class="rc-search">
+        <span class="mag" aria-hidden="true">🔎</span>
+        <input id="repSearch" type="text" autocomplete="off"
+          placeholder="Search reports…" data-ph-en="Search reports…" data-ph-zh="搜索报告…" aria-label="Search reports">
+        <kbd>/</kbd>
       </div>
+      <label class="rc-sort"><span class="l-en">Sort</span><span class="l-zh">排序</span>
+        <select id="repSort">
+          <option value="new" data-en="Newest first" data-zh="最新优先">Newest first</option>
+          <option value="old" data-en="Oldest first" data-zh="最早优先">Oldest first</option>
+        </select>
+      </label>
+      <span class="rc-count" id="repCount"></span>
+      <button type="button" class="rc-clear" id="repClear">✕ <span class="l-en">Clear</span><span class="l-zh">清除</span></button>
     </div>
-    <div class="rr-aside">
-      <span>⏱ 12 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
+    <div class="rc-tagbar" id="tagBar" role="group" aria-label="Filter by topic">
+      <span class="chip on" data-tag="all" tabindex="0" role="button"><span class="l-en">All</span><span class="l-zh">全部</span></span>
+      <span class="chip tag-macro" data-tag="macro" tabindex="0" role="button"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <span class="n">6</span></span><span class="chip tag-equities" data-tag="equities" tabindex="0" role="button"><span class="l-en">Equities</span><span class="l-zh">股票</span> <span class="n">4</span></span><span class="chip tag-ai" data-tag="ai" tabindex="0" role="button"><span class="l-en">AI</span><span class="l-zh">AI</span> <span class="n">3</span></span><span class="chip tag-china" data-tag="china" tabindex="0" role="button"><span class="l-en">China</span><span class="l-zh">中国</span> <span class="n">3</span></span><span class="chip tag-crypto" data-tag="crypto" tabindex="0" role="button"><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="n">3</span></span><span class="chip tag-fed" data-tag="fed" tabindex="0" role="button"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <span class="n">3</span></span><span class="chip tag-rates" data-tag="rates" tabindex="0" role="button"><span class="l-en">Rates</span><span class="l-zh">利率</span> <span class="n">2</span></span><span class="chip tag-credit" data-tag="credit" tabindex="0" role="button"><span class="l-en">Credit</span><span class="l-zh">信用</span> <span class="n">1</span></span><span class="chip tag-energy" data-tag="energy" tabindex="0" role="button"><span class="l-en">Energy</span><span class="l-zh">能源</span> <span class="n">1</span></span><span class="chip tag-event" data-tag="event" tabindex="0" role="button"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span> <span class="n">1</span></span>
     </div>
-  </a>
-  
-  <a class="report-row " href="report_warsh_fomc.html"
-     data-date="2026-06-17"
-     data-tags="fed rates equities macro"
-     data-search="the warsh shock kevin warsh&#39;s first fomc as fed chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next. 沃什冲击 凯文·沃什出任美联储主席后的首次 fomc —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。">
+  </div>
+
+  <div class="rc-arch-h">
+    <span class="lab"><span class="l-en">The Archive</span><span class="l-zh">全部档案</span></span>
+    <span class="rule"></span>
+  </div>
+
+  <div class="rc-tl" id="reportList">
     
-    <div class="rr-date"><span class="mo">JUN</span><span class="day">17</span><span class="yr">2026</span></div>
-    <div class="rr-main">
-      <div class="rr-title"><span class="l-en">The Warsh Shock</span><span class="l-zh">沃什冲击</span></div>
-      <div class="rr-dek"><span class="l-en">Kevin Warsh&#39;s first FOMC as Fed Chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next.</span><span class="l-zh">凯文·沃什出任美联储主席后的首次 FOMC —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。</span></div>
-      <div class="rr-tags">
-        <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+    <div class="rc-node" data-date="2026-07-11"
+         data-tags="ai equities macro event"
+         data-search="the haven audition every correction has two havens: the consensus shelter the crowd already owns, and the asymmetric one that proof builds mid-storm — the role google, then the most-hated megacap, played in q4 2025 while the freshly-crowned defensive at its all-time high drew down double digits funding it. we measure the template from the price store, grade meta&#39;s six-lever audition for the role — two levers already printing, a disclosure window that opens july 29 — and score the full cast: meta, nvidia, apple, tesla, and the dark horses. plus the washington question: an administration literally long the ai trade, down to equity stakes and a move against chinese models — a tailwind, not a selector. 避险选角 每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 meta 的六杠杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：meta、nvidia、apple、tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 ai 交易的政府——直至持有股权、直至对中国模型出手——它是顺风，不是选角人。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUL</span><span class="day">11</span><span class="yr">2026</span>
       </div>
+      <a class="rc-card" href="report_haven_audition.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The Haven Audition</span><span class="l-zh">避险选角</span></div>
+        <div class="rc-card-dek"><span class="l-en">Every correction has two havens: the consensus shelter the crowd already owns, and the asymmetric one that proof builds mid-storm — the role Google, then the most-hated megacap, played in Q4 2025 while the freshly-crowned defensive at its all-time high drew down double digits funding it. We measure the template from the price store, grade Meta&#39;s six-lever audition for the role — two levers already printing, a disclosure window that opens July 29 — and score the full cast: Meta, Nvidia, Apple, Tesla, and the dark horses. Plus the Washington question: an administration literally long the AI trade, down to equity stakes and a move against Chinese models — a tailwind, not a selector.</span><span class="l-zh">每一轮调整都有两种避风港：人群早已持有的共识庇护所，与证据在风暴中途现造的不对称避风港——后者正是 2025 年四季度谷歌扮演的角色：当时它是最被憎恨的巨头，而刚加冕、正处历史高点的防御标的反而以两位数回撤为其供血。我们用本站价格库度量这一模板，为 Meta 的六杠杆试镜评级——两条杠杆已在打印收入、披露窗口 7月29日 开启——并为全体候选人打分：Meta、Nvidia、Apple、Tesla 与几匹黑马。外加华盛顿之问：一个真金白银做多 AI 交易的政府——直至持有股权、直至对中国模型出手——它是顺风，不是选角人。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-event"><span class="l-en">Midterms</span><span class="l-zh">中期选举</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 26 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
     </div>
-    <div class="rr-aside">
-      <span>⏱ 9 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
-      <span class="rr-arrow">→</span>
+    
+    <div class="rc-node" data-date="2026-07-08"
+         data-tags="equities energy china macro crypto"
+         data-search="the relapse a tactical companion to the second act. the iran war restarted six weeks early, the disinflation glide path took a torpedo, and hong kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. we re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the china platform leg with the 1260h caveat, act ii power into weakness, the first mag-7 trough tranche, gold, bitcoin, and copper — while memory-chip strength stays something you sell. 复燃 《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260h 警示的中国平台、趁弱建仓的第二幕电力、mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUL</span><span class="day">8</span><span class="yr">2026</span>
+      </div>
+      <a class="rc-card" href="report_relapse_jul8.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The Relapse</span><span class="l-zh">复燃</span></div>
+        <div class="rc-card-dek"><span class="l-en">A tactical companion to The Second Act. The Iran war restarted six weeks early, the disinflation glide path took a torpedo, and Hong Kong ripped 3% into a global risk-off tape — none of it breaks the 18-month map; it bends the schedule. We re-mark our own odds in public, then convert the week&#39;s tape into a ranked seven-idea buy list with entry timing, sizing, and the exact tripwire that proves each wrong: energy that now pays carry, the China platform leg with the 1260H caveat, Act II power into weakness, the first Mag-7 trough tranche, gold, Bitcoin, and copper — while memory-chip strength stays something you sell.</span><span class="l-zh">《第二幕》的战术姊妹篇。伊朗战争提前六周复燃、反通胀滑翔路径中了一枚鱼雷，而恒指却顶着全球避险盘面大涨 3%——这一切都没有推翻 18 个月的路线图，只是弯曲了时间表。本文先公开重估我们自己的概率，再把本周盘面转译为一张排序的七点买入清单，附入场时点、仓位与每个观点被证伪的确切绊线：现在开始付息的能源、附 1260H 警示的中国平台、趁弱建仓的第二幕电力、Mag-7 第一批低谷仓、黄金、比特币与铜——而存储芯片的强势，仍然只能用来卖出。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 18 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
     </div>
-  </a>
-  
+    
+    <div class="rc-node" data-date="2026-07-02"
+         data-tags="ai macro equities crypto china"
+         data-search="the second act the ai boom isn&#39;t ending — it&#39;s changing hands. chips and memory had their run; the money now flows to power, cooling, optical networking, robots, and the payment rails underneath. a month-by-month map from july 2026 to december 2027: what to own, when to buy it, what the mag 7 are really worth at their cash-flow low, and exactly what would prove us wrong. the best buying window on the map: october 2026. 第二幕 ai 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图：该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。全图最佳买入窗口：2026年10月。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUL</span><span class="day">2</span><span class="yr">2026</span>
+      </div>
+      <a class="rc-card" href="report_second_act.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The Second Act</span><span class="l-zh">第二幕</span></div>
+        <div class="rc-card-dek"><span class="l-en">The AI boom isn&#39;t ending — it&#39;s changing hands. Chips and memory had their run; the money now flows to power, cooling, optical networking, robots, and the payment rails underneath. A month-by-month map from July 2026 to December 2027: what to own, when to buy it, what the Mag 7 are really worth at their cash-flow low, and exactly what would prove us wrong. The best buying window on the map: October 2026.</span><span class="l-zh">AI 热潮没有结束 —— 而是在换手。芯片与存储已经跑完了自己的一程；资金正流向电力、散热、光模块、机器人，以及底层的支付轨道。这是一份 2026年7月 → 2027年12月 的逐月路线图：该持有什么、何时买入、七巨头在现金流低谷处的真实价值，以及什么情况会证明我们错了。全图最佳买入窗口：2026年10月。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 45 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+    
+    <div class="rc-node" data-date="2026-07-01"
+         data-tags="ai macro fed china credit"
+         data-search="the ai master plan strip the white house ai action plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the united states — a physical-stock strategy that is bubble-dependent by design. a full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway that maps how the market is front-running the administration’s schedule: distribution now, a midterm-year low, and the blow-off deferred to 2027. ai 总体规划 剥开白宫《ai 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附一条预测路径，剖析市场如何抢跑政府的时间表：当下派发、中期选举年的低点，以及被推迟至 2027 年的“blow-off 冲顶”。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUL</span><span class="day">1</span><span class="yr">2026</span>
+      </div>
+      <a class="rc-card" href="report_ai_master_plan.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The AI Master Plan</span><span class="l-zh">AI 总体规划</span></div>
+        <div class="rc-card-dek"><span class="l-en">Strip the White House AI Action Plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the United States — a physical-stock strategy that is bubble-dependent by design. A full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway that maps how the market is front-running the administration’s schedule: distribution now, a midterm-year low, and the blow-off deferred to 2027.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附一条预测路径，剖析市场如何抢跑政府的时间表：当下派发、中期选举年的低点，以及被推迟至 2027 年的“blow-off 冲顶”。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 30 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+    
+    <div class="rc-node" data-date="2026-06-24"
+         data-tags="fed rates crypto macro"
+         data-search="the bessent bridge one week after the warsh shock, the hawkish reset has done the fed&#39;s tightening for it — gold under $4,000, the dollar at a 13-month high, and the ai-and-semis leadership that led all year finally cracked. then the treasury secretary said the quiet part out loud: you can have a strong dollar while the fed cuts. a decode of the staged sequence — setup, not destination — and where the debasement trade bottoms. 贝森特之桥 沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、今年全程领涨的ai与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUN</span><span class="day">24</span><span class="yr">2026</span>
+      </div>
+      <a class="rc-card" href="report_bessent_jun24.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The Bessent Bridge</span><span class="l-zh">贝森特之桥</span></div>
+        <div class="rc-card-dek"><span class="l-en">One week after the Warsh Shock, the hawkish reset has done the Fed&#39;s tightening for it — gold under $4,000, the dollar at a 13-month high, and the AI-and-semis leadership that led all year finally cracked. Then the Treasury Secretary said the quiet part out loud: you can have a strong dollar while the Fed cuts. A decode of the staged sequence — setup, not destination — and where the debasement trade bottoms.</span><span class="l-zh">沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、今年全程领涨的AI与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-crypto"><span class="l-en">Crypto</span><span class="l-zh">加密</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 12 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+    
+    <div class="rc-node" data-date="2026-06-17"
+         data-tags="fed rates equities macro"
+         data-search="the warsh shock kevin warsh&#39;s first fomc as fed chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next. 沃什冲击 凯文·沃什出任美联储主席后的首次 fomc —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。">
+      <div class="rc-rail">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="mo">JUN</span><span class="day">17</span><span class="yr">2026</span>
+      </div>
+      <a class="rc-card" href="report_warsh_fomc.html">
+        <div class="rc-card-title rc-serif-on"><span class="l-en">The Warsh Shock</span><span class="l-zh">沃什冲击</span></div>
+        <div class="rc-card-dek"><span class="l-en">Kevin Warsh&#39;s first FOMC as Fed Chair — the hawkish dot-plot turn, the press conference that removed forward guidance, the cross-asset reaction, and what it means for markets next.</span><span class="l-zh">凯文·沃什出任美联储主席后的首次 FOMC —— 鹰派点阵图的转向、取消前瞻指引的发布会、跨资产反应，以及对后市的意义。</span></div>
+        <div class="rc-card-foot">
+          <div class="rc-card-tags">
+            <span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-rates"><span class="l-en">Rates</span><span class="l-zh">利率</span></span><span class="chip tag-equities"><span class="l-en">Equities</span><span class="l-zh">股票</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+          </div>
+          <span class="rc-card-min">⏱ 9 <span class="l-en">min</span><span class="l-zh">分钟</span> <span class="arw" aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>
+    
+  </div>
+
+  <div class="rc-empty rc-glass" id="noResults">
+    <div class="big"><span class="l-en">Nothing matches yet</span><span class="l-zh">暂无匹配结果</span></div>
+    <p><span class="l-en">No reports fit that search or topic. Try a broader term, or clear the filters.</span><span class="l-zh">没有符合该搜索或主题的报告。可尝试更宽泛的关键词，或清除筛选。</span></p>
+    <button type="button" class="gbtn" id="repClear2"><span class="l-en">Clear filters</span><span class="l-zh">清除筛选</span></button>
+  </div>
+
 </div>
-<div class="noresults" id="noResults"><span class="l-en">No reports match your filters.</span><span class="l-zh">没有符合筛选条件的报告。</span></div>
 
 
 <footer class="rfoot">
@@ -421,60 +556,96 @@
 (function(){
   var list=document.getElementById('reportList');
   if(!list) return;
-  var rows=[].slice.call(list.querySelectorAll('.report-row'));
+  var nodes=[].slice.call(list.querySelectorAll('.rc-node'));
   var search=document.getElementById('repSearch');
   var sortSel=document.getElementById('repSort');
   var tagBar=document.getElementById('tagBar');
+  var cov=document.getElementById('covBars');
   var count=document.getElementById('repCount');
   var none=document.getElementById('noResults');
+  var clearBtns=[document.getElementById('repClear'),document.getElementById('repClear2')].filter(Boolean);
   var activeTag='all', q='';
 
   function isZh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
   function langSync(){ // keep non-span UI (placeholder, <option>s) in sync with language
     var zh=isZh();
-    search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
-    [].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
+    if(search) search.placeholder=zh?(search.getAttribute('data-ph-zh')||''):(search.getAttribute('data-ph-en')||'');
+    if(sortSel)[].forEach.call(sortSel.options,function(o){ o.textContent=zh?(o.getAttribute('data-zh')||o.textContent):(o.getAttribute('data-en')||o.textContent); });
   }
+
+  function syncTagUI(){
+    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){
+      x.classList.toggle('on',(x.getAttribute('data-tag')||'all')===activeTag);
+    });
+    if(cov)[].forEach.call(cov.querySelectorAll('.rc-cov-row'),function(x){
+      x.setAttribute('aria-pressed',(x.getAttribute('data-tag')===activeTag)?'true':'false');
+    });
+    var dirty=(activeTag!=='all'||!!q);
+    clearBtns.forEach(function(b){ b.classList.toggle('on',dirty); });
+  }
+
   function apply(){
     var shown=0;
-    rows.forEach(function(r){
-      var tags=(r.getAttribute('data-tags')||'');
-      var hay=(r.getAttribute('data-search')||'');
+    nodes.forEach(function(n){
+      var tags=(n.getAttribute('data-tags')||'');
+      var hay=(n.getAttribute('data-search')||'');
       var okTag=activeTag==='all'||tags.split(' ').indexOf(activeTag)>=0;
       var okQ=!q||hay.indexOf(q)>=0;
       var show=okTag&&okQ;
-      r.style.display=show?'':'none';
+      n.classList.toggle('hide',!show);
       if(show) shown++;
     });
-    // featured badge only meaningful in default (newest, no filter) view
-    var pristine=(activeTag==='all'&&!q&&sortSel.value==='new');
-    rows.forEach(function(r){ var b=r.querySelector('.feat-badge'); if(b) b.style.display=pristine?'':'none';
-      r.classList.toggle('feat', pristine && r===rows[0] && r.style.display!=='none'); });
-    none.style.display=shown?'none':'block';
+    none.classList.toggle('on',shown===0);
     if(count) count.textContent=isZh()?(shown+' 篇报告'):(shown+(shown===1?' report':' reports'));
+    syncTagUI();
   }
-  function sortRows(){
-    var mode=sortSel.value;
-    var ordered=rows.slice().sort(function(a,b){
+
+  function sortNodes(){
+    var mode=sortSel?sortSel.value:'new';
+    nodes.slice().sort(function(a,b){
       var da=a.getAttribute('data-date'), db=b.getAttribute('data-date');
       return mode==='old' ? (da<db?-1:da>db?1:0) : (da>db?-1:da<db?1:0);
-    });
-    ordered.forEach(function(r){ list.appendChild(r); });
+    }).forEach(function(n){ list.appendChild(n); });
   }
-  search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
-  sortSel.addEventListener('change',function(){ sortRows(); apply(); });
+
+  function setTag(tag){ activeTag=tag||'all'; apply(); }
+  function reset(){ activeTag='all'; q=''; if(search) search.value=''; apply(); }
+
+  if(search) search.addEventListener('input',function(){ q=this.value.trim().toLowerCase(); apply(); });
+  if(sortSel) sortSel.addEventListener('change',function(){ sortNodes(); apply(); });
+
   tagBar.addEventListener('click',function(e){
     var c=e.target.closest('.chip'); if(!c) return;
-    activeTag=c.getAttribute('data-tag')||'all';
-    [].forEach.call(tagBar.querySelectorAll('.chip'),function(x){ x.classList.toggle('on',x===c); });
-    apply();
+    setTag(c.getAttribute('data-tag'));
   });
+  tagBar.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    var c=e.target.closest('.chip'); if(!c) return;
+    e.preventDefault(); setTag(c.getAttribute('data-tag'));
+  });
+  if(cov) cov.addEventListener('click',function(e){
+    var r=e.target.closest('.rc-cov-row'); if(!r) return;
+    var tag=r.getAttribute('data-tag');
+    setTag(activeTag===tag?'all':tag); // second tap on the same topic clears it
+  });
+  clearBtns.forEach(function(b){ b.addEventListener('click',reset); });
+
+  // "/" focuses search (unless already typing in a field)
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='/'||e.metaKey||e.ctrlKey||e.altKey) return;
+    var el=document.activeElement, tag=el&&el.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(el&&el.isContentEditable)) return;
+    e.preventDefault(); if(search) search.focus();
+  });
+
   // re-sync non-span UI + count when the global language toggle flips
   document.addEventListener('click',function(e){ if(e.target.closest('.lang-toggle')) setTimeout(function(){ langSync(); apply(); },0); });
+
   langSync(); apply();
 })();
 </script>
 
-<script src="theme.js?v=195f6d56" defer></script>
+<script src="theme.js?v=d4dfefdc" defer></script>
 </body>
 </html>

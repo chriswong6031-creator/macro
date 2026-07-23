@@ -7,6 +7,9 @@
   toc, related, cta.
 =============================================================================#}
 {% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('risk-reward', 'crown') }}{% endblock %}
 
 {% block calc_form %}
 <p class="cc-lede">{{ t('Enter your entry, stop, and target. Add your win rate to see whether the math works in your favour over time.',

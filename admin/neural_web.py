@@ -223,7 +223,9 @@ def _section_engine_health() -> dict:
                 "as_of": nw_health.get("as_of"),
                 "cortex_source": (nw_health.get("cortex") or {}).get("cortex_source"),
                 "summary_counts": nw_health.get("summary_counts"),
-                "lobes": nw_health.get("lobes", []),
+                # NOTE: per-lobe `lobes` block (~69KB) intentionally dropped — no
+                # client code renders nw_health.lobes; only the cheap scalars
+                # above/below are read. Per-lobe detail lives at /api/neural_web/lobes.
                 "cortex": nw_health.get("cortex"),
                 "workflow_conformance_misses": nw_health.get("workflow_conformance_misses", []),
             },
@@ -1065,19 +1067,49 @@ def _derive_lobe_status(
     return status, age_hours, sla_met
 
 
-def _count_recent_actions(lobe_id: str, owner_program: str, gov_tail: list | None = None) -> int:
+def _reflex_firings_dir(lobe_id: str, art: dict | None = None) -> Path | None:
+    """Resolve the on-disk firings directory for a reflex lobe (fail-open).
+
+    Reflex firings are stored under data/reflexes/<dir>/firings.jsonl where <dir>
+    is frequently NOT the lobe id (e.g. lobe 'cortex-attention-firings' stores under
+    'cortex_attention', 'reflex-firings-regime-selfheal' under 'regime_stale_selfheal').
+    The authoritative location is the artifact's `path` field — prefer its PARENT dir
+    when it points under data/reflexes/. Fall back to the old lobe_id guess (hyphens,
+    then underscores) only when `art` carries no usable reflexes path.
+    Returns the directory whose firings.jsonl exists, else None.
+    """
+    # 1. Artifact path is authoritative when it lives under data/reflexes/.
+    art_path = (art or {}).get("path") or ""
+    if isinstance(art_path, str) and "<" not in art_path:
+        # Normalize separators; match a data/reflexes/ prefix.
+        norm = art_path.replace("\\", "/")
+        if norm.startswith("data/reflexes/") or "/data/reflexes/" in norm:
+            parent = (_ROOT / art_path).parent
+            if (parent / "firings.jsonl").exists():
+                return parent
+    # 2. Fallback: derive from lobe id (hyphens first, then underscores).
+    reflex_dir = _DATA_REFLEXES / lobe_id
+    if not reflex_dir.exists():
+        reflex_dir = _DATA_REFLEXES / lobe_id.replace("-", "_")
+    if (reflex_dir / "firings.jsonl").exists():
+        return reflex_dir
+    return None
+
+
+def _count_recent_actions(
+    lobe_id: str, owner_program: str, art: dict | None = None, gov_tail: list | None = None
+) -> int:
     """Count recent actions attributable to this lobe (quick scan, fail-open).
 
     gov_tail: pre-read governance tail (pass from lobes_panel to avoid 111 reads/request).
     When None, the tail is read from disk (single-lobe callers like lobe_detail).
-    Reflex dirs on disk use underscores; lobe ids use hyphens — try both.
+    art: the artifact record — its `path` field carries the true firings location for
+    reflex lobes whose on-disk dir differs from the lobe id (see _reflex_firings_dir).
     """
     count = 0
-    # Reflex firings: try hyphens first, then underscores
-    reflex_dir = _DATA_REFLEXES / lobe_id
-    if not reflex_dir.exists():
-        reflex_dir = _DATA_REFLEXES / lobe_id.replace("-", "_")
-    if reflex_dir.exists():
+    # Reflex firings: resolve dir from the artifact path (falls back to lobe id).
+    reflex_dir = _reflex_firings_dir(lobe_id, art)
+    if reflex_dir is not None:
         firings = _tail_jsonl(reflex_dir / "firings.jsonl", 10)
         count += len(firings)
     # Governance events mentioning this lobe id or producer
@@ -1109,7 +1141,7 @@ def _build_lobe_summary(
     row_count = health_lobe.get("row_count") if health_lobe else None
     byte_size = health_lobe.get("byte_size") if health_lobe else None
 
-    n_recent = _count_recent_actions(lobe_id, owner, gov_tail=gov_tail)
+    n_recent = _count_recent_actions(lobe_id, owner, art=art, gov_tail=gov_tail)
     p_short, _p_full, desc_status = _plain_desc(lobe_id, art.get("notes"))
 
     return {
@@ -1260,8 +1292,15 @@ def lobes_panel() -> dict:
         "desc_health": desc_health,
         "graph": graph_info,
         "groups": groups,
+        # The UI renders only `groups` (per-group nested lobes), NOT this flat copy
+        # (~72KB). It's kept solely because the test suite uses it as the canonical lobe
+        # enumeration; removing it + migrating those tests to flatten `groups` is a
+        # separate follow-up. The heavier nw_health.lobes block (~64KB) IS dropped above.
         "lobes": lobes_flat,
         "independence": independence,
+        # Cortex (AI review lobe) run status, so the Observatory hero can flag a degraded
+        # run (e.g. fell back to a weaker model) that would otherwise be invisible here.
+        "cortex": ((nw_health or {}).get("cortex") or {}).get("run_status"),
         # W-AI: Master Brain pin (additive — groups/lobes contract unchanged)
         "orchestrator_hero": _orchestrator_hero(),
     }
@@ -1382,11 +1421,11 @@ def lobe_detail(lobe_id: str) -> dict:
     recent_actions: list[dict] = []
 
     # 1. Reflex firings if this lobe corresponds to a reflex data dir.
-    # On-disk dirs use underscores; lobe ids use hyphens — try both.
-    reflex_dir = _DATA_REFLEXES / lobe_id
-    if not reflex_dir.exists():
-        reflex_dir = _DATA_REFLEXES / lobe_id.replace("-", "_")
-    if reflex_dir.exists():
+    # The on-disk dir often differs from the lobe id; resolve it from the artifact
+    # path (falls back to the lobe-id guess). See _reflex_firings_dir.
+    reflex_dir = _reflex_firings_dir(lobe_id, art)
+    if reflex_dir is not None:
+        firings_src = str((reflex_dir / "firings.jsonl").relative_to(_ROOT))
         for f in _tail_jsonl(reflex_dir / "firings.jsonl", 15):
             ts = f.get("ts") or f.get("timestamp") or f.get("fired_at") or ""
             summary = f.get("trigger_key") or f.get("action") or f.get("scope_key") or str(f)[:80]
@@ -1394,7 +1433,7 @@ def lobe_detail(lobe_id: str) -> dict:
                 "ts": ts,
                 "kind": "reflex_firing",
                 "summary": str(summary)[:120],
-                "source": f"data/reflexes/{lobe_id}/firings.jsonl",
+                "source": firings_src,
             })
 
     # 2. Governance events mentioning this lobe

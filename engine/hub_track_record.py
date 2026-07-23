@@ -74,8 +74,10 @@ def _load(root: Path) -> list[dict]:
 # snapshot accrual
 # --------------------------------------------------------------------------- #
 def snapshot(track_rows: list | None, today: date | str | None = None,
-             root: Path | None = None) -> int:
-    """Append today's per-name signal readings. Idempotent by (date, ticker). Never raises."""
+             root: Path | None = None, regime: str | None = None) -> int:
+    """Append today's per-name signal readings. Idempotent by (date, ticker). Never raises.
+    ``regime`` (the day's macro quadrant, e.g. Q1-Q4) is stamped on each row so a signal that
+    only leads in one regime can be measured per-regime and cannot hide behind a blended IC."""
     try:
         root = Path(root) if root else config.ROOT
         today_str = today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())
@@ -91,6 +93,8 @@ def snapshot(track_rows: list | None, today: date | str | None = None,
                 row["engine_version"] = r.get("engine_version")
             if r.get("source"):                # discovery feed (insider_cluster/activist/…) → per-source IC
                 row["source"] = r.get("source")
+            if regime:                         # macro quadrant of the snapshot day → by_regime IC
+                row["regime"] = regime
             new.append(row)
             existing.add(f"{today_str}|{t}")
         if not new:
@@ -232,6 +236,30 @@ def _by_source(rows: list) -> dict:
     return out
 
 
+def _by_regime(rows: list) -> dict:
+    """Forward performance + opportunity-IC per macro regime (quad Q1-Q4). A signal that only
+    leads in one quadrant can't hide behind a blended IC — and, symmetrically, the governor must
+    not DEMOTE a signal on evidence drawn from a single regime. This is the per-regime readout the
+    regime-aware gate reads once each quadrant has enough matured obs. Only rows carrying a
+    ``regime`` stamp participate (older, un-stamped rows are excluded until the stamp accrues)."""
+    by: dict[str, list] = {}
+    for r in rows:
+        rg = r.get("regime")
+        if rg:
+            by.setdefault(rg, []).append(r)
+    out: dict[str, dict] = {}
+    for rg, rs in by.items():
+        n = len(rs)
+        mean = sum(r["fwd"] for r in rs) / n if n else 0.0
+        dir_rs = [r for r in rs if r.get("lean")]          # directional rows only (exclude lean 0)
+        hit = (sum(1 for r in dir_rs if r["fwd"] * (1 if r["lean"] > 0 else -1) > 0) / len(dir_rs)
+               ) if dir_rs else None
+        out[rg] = {"n": n, "mean_fwd_rel": round(mean, 4),
+                   "hit_rate": round(hit, 3) if hit is not None else None,
+                   "opportunity_ic": _pooled_ic(*_signed(rs, "opp"))}
+    return out
+
+
 def compute(today: date | str | None = None, root: Path | None = None,
             horizons=_HORIZONS, *, rows: list | None = None, fwd_rel_fn=None,
             bench: str = _BENCH) -> dict:
@@ -258,6 +286,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
                 "edge_ic_pooled": _pooled_ic(*_signed(mat, "edge")),
                 "by_stage": _by_stage(mat),
                 "by_source": _by_source(mat),     # per discovery-feed forward performance (promotion evidence)
+                "by_regime": _by_regime(mat),     # per-quad IC — the regime-aware gate's readout
             }
             out_h[str(h)] = entry
             # lead-time = the horizon whose per-date HAC IC is significant AND largest (never a

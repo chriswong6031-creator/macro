@@ -2772,6 +2772,17 @@ def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: 
     return prompt
 
 
+def _doctrine_block_for(page: str, message: str) -> str:
+    """CMX W4: technician doctrine, terminal chart sessions only. Never raises."""
+    if page != "terminal":
+        return ""
+    try:
+        from engine.neuralweb import doctrine as _doctrine_mod  # noqa: PLC0415
+        return _doctrine_mod.prompt_block(_doctrine_mod.route(message))
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _grounding_digest(root: Path) -> str:
     """A compact plain-text snapshot of the current calibrated dashboard state, prepended to
     the user's turn so the model always answers from REAL data — not memory — even when a
@@ -2884,6 +2895,17 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
         _TIER_CACHE[user_id] = (result, now + ttl)
 
     return result
+
+
+def invalidate_tier(user_id: str) -> None:
+    """Drop a user's cached tier so the next _resolve_tier re-reads Supabase.
+
+    Called by app/billing.py right after a Stripe webhook mutates public.user_entitlements,
+    so a purchase / upgrade / cancel / chargeback takes effect within one request instead of
+    lingering for up to one cache TTL (masterplan §3.2 negative-propagation is first-class).
+    """
+    with _TIER_CACHE_LOCK:
+        _TIER_CACHE.pop(user_id, None)
 
 
 # Make urllib.parse available (used in _resolve_tier)
@@ -3269,6 +3291,78 @@ def _sb_get(path: str) -> list | None:
         return None
 
 
+def _sb_patch(path: str, payload: dict) -> list | None:
+    """PATCH a Supabase PostgREST resource with service-role key.
+
+    Returns the list of representation rows actually updated (``[]`` when the
+    filter matched nothing — e.g. a not-owned/absent row), or ``None`` when the
+    store is unconfigured or the request errors. Never raises (sibling of
+    :func:`_sb_post`/:func:`_sb_get`)."""
+    supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if not supabase_url or not service_key:
+        return None
+    try:
+        url = f"{supabase_url}/rest/v1/{path}"
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            method="PATCH",
+            headers={
+                "apikey": service_key,
+                "Authorization": f"Bearer {service_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
+    except Exception as exc:  # noqa: BLE001
+        log.debug("brain_gateway: Supabase PATCH %s failed (%s)", path, exc)
+        return None
+
+
+def _sb_delete(path: str) -> list | None:
+    """DELETE a Supabase PostgREST resource with service-role key.
+
+    Returns the list of representation rows actually deleted (``[]`` when the
+    filter matched nothing), or ``None`` when the store is unconfigured or the
+    request errors. Never raises (sibling of :func:`_sb_post`/:func:`_sb_get`)."""
+    supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    if not supabase_url or not service_key:
+        return None
+    try:
+        url = f"{supabase_url}/rest/v1/{path}"
+        req = urllib.request.Request(
+            url,
+            method="DELETE",
+            headers={
+                "apikey": service_key,
+                "Authorization": f"Bearer {service_key}",
+                "Accept": "application/json",
+                "Prefer": "return=representation",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = resp.read()
+            return json.loads(body) if body else []
+    except Exception as exc:  # noqa: BLE001
+        log.debug("brain_gateway: Supabase DELETE %s failed (%s)", path, exc)
+        return None
+
+
+_THREAD_ID_RE = re.compile(r"\A[0-9a-fA-F-]{8,64}\Z")
+
+
+def _valid_thread_id(thread_id: str | None) -> bool:
+    """True iff thread_id is a sane UUID-ish token safe to interpolate into a
+    PostgREST filter. Rejects empty, over-long, and anything carrying URL/PostgREST
+    metacharacters (``,`` ``.`` ``(`` ``)`` ``&`` ``=`` ``/`` whitespace, …) so a
+    hostile id can never smuggle an extra filter clause past the ownership guard."""
+    return bool(thread_id) and bool(_THREAD_ID_RE.match(thread_id))
+
+
 def _title_from(msg: str, limit: int = 60) -> str:
     """Derive a short, human sidebar title from the first user message.
 
@@ -3615,6 +3709,7 @@ def _run_brain_loop(
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
 
     # Build the user content with optional context hint
     user_content = message
@@ -3830,6 +3925,7 @@ def _run_brain_loop_stream(
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
 
     user_content = message
     hints = []
@@ -4232,6 +4328,14 @@ _LEAK_SENTINELS = (
     "CONTRAST — never write the left",
     "End EVERY answer with a [NEXT] block",
 )
+
+# CMX W4: extend with the technician-doctrine sentinels so a leaked doctrine
+# block (terminal chart sessions) is caught by the same output guard.
+try:
+    from engine.neuralweb import doctrine as _doctrine  # noqa: PLC0415
+    _LEAK_SENTINELS = _LEAK_SENTINELS + _doctrine.LEAK_SENTINELS
+except Exception:  # noqa: BLE001
+    pass
 
 
 def _screen_client_history(items: list[dict]) -> list[dict]:
@@ -4844,6 +4948,59 @@ def get_thread(thread_id: str, user_id: str) -> dict | None:
     )
     messages = msg_rows or []
     return {"thread": thread, "messages": messages}
+
+
+def _norm_thread_title(title: str) -> str:
+    """Normalize a user-supplied thread title: strip, collapse internal whitespace,
+    and clamp to 80 characters. Returns '' when empty after strip (the caller treats
+    that as invalid)."""
+    return " ".join((title or "").split()).strip()[:80]
+
+
+def rename_thread(thread_id: str, user_id: str, title: str) -> bool:
+    """Rename a thread owned by user_id. Returns True iff exactly the owner's row was
+    updated.
+
+    The ``user_id=eq`` filter IS the ownership check — PostgREST updates 0 rows when the
+    thread is absent or belongs to someone else, which we report as False. Title is
+    stripped, whitespace-collapsed, and clamped to 80 chars; an empty title (after strip)
+    is rejected without touching the store. Never raises (store errors → False)."""
+    if not _valid_thread_id(thread_id) or not user_id:
+        return False
+    clean = _norm_thread_title(title)
+    if not clean:
+        return False
+    rows = _sb_patch(
+        f"brain_threads?id=eq.{urllib.parse.quote(thread_id)}"
+        f"&user_id=eq.{urllib.parse.quote(user_id)}",
+        {"title": clean},
+    )
+    return bool(rows)  # None (store down) or [] (not owner/absent) → False
+
+
+def delete_thread(thread_id: str, user_id: str) -> bool:
+    """Delete a thread owned by user_id together with its messages. Returns True iff the
+    owner's thread row was deleted.
+
+    Ownership is verified first (GET filtered by id + user_id); a miss returns False
+    without deleting anything. The thread's ``brain_messages`` rows are deleted BEFORE the
+    ``brain_threads`` row so a partial failure never leaves orphaned messages. Never raises
+    (store errors → False)."""
+    if not _valid_thread_id(thread_id) or not user_id:
+        return False
+    owned = _sb_get(
+        f"brain_threads?id=eq.{urllib.parse.quote(thread_id)}"
+        f"&user_id=eq.{urllib.parse.quote(user_id)}&select=id&limit=1"
+    )
+    if not owned:
+        return False  # None (store down) or [] (not owner/absent)
+    # Messages first — no orphans if the thread delete then fails.
+    _sb_delete(f"brain_messages?thread_id=eq.{urllib.parse.quote(thread_id)}")
+    rows = _sb_delete(
+        f"brain_threads?id=eq.{urllib.parse.quote(thread_id)}"
+        f"&user_id=eq.{urllib.parse.quote(user_id)}"
+    )
+    return bool(rows)  # True only when the thread row was actually deleted
 
 
 # ---------------------------------------------------------------------------

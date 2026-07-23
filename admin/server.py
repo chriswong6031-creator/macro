@@ -45,6 +45,24 @@ _CTYPES = {".html": "text/html; charset=utf-8",
            ".css": "text/css; charset=utf-8",
            ".js": "application/javascript; charset=utf-8"}
 
+# Content-Security-Policy for the console document + every API response. default-src
+# 'none' is the floor. script-src/style-src keep 'unsafe-inline' because the hand-rolled
+# SPA renders ~31 inline on*= handlers + inline style attributes (refactoring those to
+# delegated listeners is the follow-up that lets us drop 'unsafe-inline' from script-src);
+# https://unpkg.com is the Leaflet map on Analytics -> Map. The real teeth even with
+# inline scripts allowed: connect-src 'self' stops an injected script exfiltrating to an
+# external origin, and object-src/base-uri/form-action shut the classic XSS pivots.
+_CSP = ("default-src 'none'; "
+        "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "base-uri 'none'; "
+        "form-action 'self'; "
+        "object-src 'none'; "
+        "frame-ancestors 'none'")
+
 
 def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
     """Parse an integer query parameter, returning *default* on error and clamping to [lo, hi]."""
@@ -220,7 +238,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", _CSP)
         for c in (cookies or []):
             self.send_header("Set-Cookie", c)
         self.end_headers()
@@ -238,7 +256,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
-        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("Content-Security-Policy", _CSP)
         self.end_headers()
         self.wfile.write(body)
 
@@ -275,26 +293,34 @@ class Handler(BaseHTTPRequestHandler):
         return auth.valid_session(self._cookie_val(auth.SESSION_COOKIE))
 
     def _client_id(self) -> str:
-        """Real client IP for per-client login throttling. Behind Caddy the TCP peer
-        is always loopback, so trust X-Forwarded-For (first hop) in deployed mode."""
+        """Real client IP for per-client login throttling. SECURITY: the admin host is
+        grey-cloud / direct-to-origin (see app/deploy/Caddyfile), so the HTTP client is
+        the open internet and any forwarding header it sends is untrusted. Caddy injects
+        the verified TCP peer as X-Admin-Client-IP (header_up replaces a spoofed one) —
+        trust that first. Fall back to the LAST X-Forwarded-For hop, which is the element
+        Caddy appends (the real peer); the FIRST hop is attacker-controlled and must
+        never be trusted — reading it let a brute-force client rotate the header per
+        request to land every guess in a fresh lockout bucket and defeat the throttle."""
         if settings.deployed():
-            xff = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
-            if xff:
-                return xff
+            trusted = (self.headers.get("X-Admin-Client-IP") or "").strip()
+            if trusted:
+                return trusted[:64]
+            hops = [h.strip() for h in (self.headers.get("X-Forwarded-For") or "").split(",") if h.strip()]
+            if hops:
+                return hops[-1][:64]
         try:
             return self.client_address[0]
         except Exception:  # noqa: BLE001
             return "-"
 
     def _real_client_ip(self) -> str:
-        """The visitor IP as the SITE gate would see it — mirrors app/main.py
-        _mm_client_ip: prefer the CDN real-client headers, then fall back to
-        _client_id(). Used for the site-access gate's self-lockout allow-list so the
-        IP we auto-allow matches the IP the gate actually evaluates on the site."""
-        for k in ("EO-Connecting-IP", "CF-Connecting-IP", "True-Client-IP"):
-            v = (self.headers.get(k) or "").strip()
-            if v:
-                return v.split(",")[0].strip()[:64]
+        """The visitor IP for the site-access gate's self-lockout allow-list. SECURITY:
+        the admin host is NOT behind the site's CDN, so the CDN real-client headers
+        (EO-/CF-Connecting-IP, True-Client-IP) are never set by our infra here — an
+        inbound one is attacker-supplied and must not be honoured (it would let a caller
+        poison the gate's auto-allow list). Use the verified IP from _client_id(); the
+        operator's public IP is the same whether they reach the admin host directly or
+        the CDN-fronted site, so the auto-allowed IP still matches what the gate sees."""
         return self._client_id()
 
     def _secure_cookie(self) -> bool:
@@ -382,16 +408,31 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "authentication required"}, 401)
 
             if path == "/api/summary":
+                # Each component is isolated so one failing sub-call degrades ONE landing
+                # tile instead of 500-ing the whole page. health + cost are PROJECTED to the
+                # few fields the landing tiles read — the Health/AI-Cost tabs fetch the full
+                # /api/health and /api/cost respectively (this dropped the payload ~104KB->~12KB).
+                def _safe(fn):
+                    try:
+                        return fn()
+                    except Exception as exc:  # noqa: BLE001
+                        return {"error": str(exc)}
+                _health = _safe(health.summary)
+                _cost = _safe(ai_cost.estimate)
+                if isinstance(_health, dict) and "error" not in _health:
+                    _health = {k: v for k, v in _health.items() if k not in ("source_rows", "markets")}
+                if isinstance(_cost, dict) and "error" not in _cost:
+                    _cost = {k: _cost.get(k) for k in ("monthly_usd", "effective_daily_usd")}
                 return self._json({
-                    "meta": _repo_summary(),
-                    "flags": flags.snapshot(),
-                    "brief": brief.panel(),
-                    "health": health.summary(),
-                    "cost": ai_cost.estimate(),
-                    "git": gitops.status(),
-                    "system": system.snapshot(),
-                    "services": services.status(),
-                    "experiments": experiments.alert_summary(),
+                    "meta": _safe(_repo_summary),
+                    "flags": _safe(flags.snapshot),
+                    "brief": _safe(brief.panel),
+                    "health": _health,
+                    "cost": _cost,
+                    "git": _safe(gitops.status),
+                    "system": _safe(system.snapshot),
+                    "services": _safe(services.status),
+                    "experiments": _safe(experiments.alert_summary),
                 })
             if path == "/api/flags":
                 return self._json(flags.snapshot())
@@ -453,6 +494,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.department(dept_id=dept_id))
             if path == "/api/marketing/outbox":
                 return self._json(marketing.outbox())
+            if path == "/api/marketing/publish":
+                return self._json(marketing.publisher())
             if path == "/api/marketing/outbox/media":
                 from .paths import ROOT as _REPO_ROOT  # noqa: PLC0415
                 req_path = (q.get("path") or [""])[0]
@@ -559,6 +602,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users/recent":
                 limit = _int_param(q, "limit", 30, 1, 1000)
                 return self._json(users.recent(limit=limit))
+            if path == "/api/users/subscribers":
+                limit = _int_param(q, "limit", 200, 1, 500)
+                return self._json(users.subscribers(limit=limit))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())
@@ -732,6 +778,17 @@ class Handler(BaseHTTPRequestHandler):
                 if not ok:
                     return self._json({"ok": False, "error": "unknown item id or write failed"}, 400)
                 return self._json({"ok": True, "id": item_id, "decision": decision})
+
+            # Publisher DRY-RUN: compute the "would post" report in-process. This
+            # NEVER touches the network and NEVER writes the ledger (dry_run_report
+            # calls no transition() / _append_activity()). An optional "account"
+            # narrows the report to one desk. Safe with no confirm gate — it has
+            # no side effects.
+            if path == "/api/marketing/publish/dryrun":
+                account = b.get("account") or None
+                if account is not None and not isinstance(account, str):
+                    return self._json({"ok": False, "error": "account must be a string"}, 400)
+                return self._json(marketing.publisher_dryrun(account=account))
 
             if path == "/api/orchestrator/chat":
                 return self._json(orchestrator_chat.chat(b.get("message", ""),

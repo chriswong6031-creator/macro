@@ -18,6 +18,14 @@ EnvironmentFile=-/etc/macro-api.env
 #   Absent => country detection falls back to CDN header only; gate still works.
 #   Download: MAXMIND_LICENSE_KEY=<key> bash /opt/macro/app/deploy/geoip-setup.sh
 # SITE_GATE_PAGE=site/coming-soon.html               # coming-soon HTML (relative to MACRO_REPO)
+# ── Billing spine env (MNZ W2 — app/billing.py; all go in /etc/macro-api.env, NEVER git) ─────
+# STRIPE_SECRET_KEY=sk_test_...      # server-side Stripe key; routes 503 cleanly when unset
+# STRIPE_WEBHOOK_SECRET=whsec_...    # from the Stripe Dashboard webhook endpoint; required for /api/billing/webhook
+# SUPABASE_SERVICE_ROLE_KEY=...      # already used by analytics/brain — the webhook writes user_entitlements with it
+# MM_SITE_BASE=https://mastermind-x.com   # where hosted Checkout/Portal return (apex, not www)
+# STRIPE_AUTOMATIC_TAX=1             # Stripe Tax on (default); set 0 until the account's Tax origin is configured
+# NOTE: the publishable key is NOT needed — the hosted-Checkout redirect flow never loads Stripe.js in the browser.
+# Full setup: docs/ops/stripe-setup.md
 ExecStart=/opt/macro-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=2

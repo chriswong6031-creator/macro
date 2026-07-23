@@ -147,31 +147,36 @@ def test_canada_stocks_template_renders():
     assert "2026-08-24" in html                          # honest first-read date on the accruing card
     assert 'class="watch-strip"' in html and "CLS.TO" in html   # strong-but-blocked watch strip
     assert "Weakest screen (laggards)" in html and "WSP.TO" in html  # laggard/avoid strip
-    assert "ev-insider" in html                          # insider why-now chip
-    assert "ev-earn" in html and "reports in" in html    # earnings-catalyst chip (days_to present)
-    assert "ent-pullback" in html                        # entry-window card accent
+    # ── Prophet-card redesign (2026-07-21): the at-rest evidence chips are DEMOTED, not
+    #    deleted — insider/earnings honesty now lives in the verb-chip tooltip + ⚠N popover,
+    #    the entry-window accent is the card's verb hue, and pullback-zone detail moved to
+    #    canada_stock.html. Asserts pin the new homes. ──
+    assert "insider buying" in html                      # insider why-now → verb-chip tooltip
+    assert "Reports in " in html                         # earnings-catalyst → ⚠N popover row
+    assert 'class="pvcard pv-' in html                   # verb-hue card accent (prophet card)
     assert "Read the Canada AI brief" not in html        # AI-brief doorway presence-guarded (no CA brief)
     # ── CA2 fix: gate-tier visibility + confluence stat + sector banner + close-only ports ──
     assert "Confluence:" in html                          # desk-header confluence stat
     assert "no fresh entry trigger" in html               # zero-cross tape reads honestly (0 of N)
-    assert "gate-none" in html and "no confluence cross" in html  # tier badge honest RAN-no-cross state
+    assert "No fresh entry cross today" in html           # honest no-cross state → ⚠N popover row
     assert "sec-conc" in html and "picks are" in html     # sector-concentration banner (>60%)
     assert "Materials" in html                            # the concentrated sector is named
-    assert "basing" in html                               # HOLD port chip (basing-state note)
-    assert "nbe-pull" in html                             # pullback-zone range enriches the entry window
+    assert 'class="pv-stl"' in html and "Bottoming" in html  # lifecycle tracker (basing → stage slot)
     assert len(html) > 8000
 
 
 def test_canada_stocks_shows_real_tier_badge_when_cross_fires():
-    """When a board name has a FRESH confluence cross, the card must render its T1..T4 tier
-    badge (not the 'no confluence' state) — the gate-tier passthrough the CA2 fix restores."""
+    """When a board name has a FRESH confluence cross, the card must surface its T1..T4 tier
+    (not the 'no confluence' state) — the gate-tier passthrough the CA2 fix restores.
+    Prophet-card redesign (2026-07-21): the tier badge's home is now the verb-chip tooltip
+    ('T2 fresh cross'), and the honest no-cross state is a ⚠N popover row."""
     vm = _vm()
     vm["setups"]["buy"][0]["signal"] = {"eligible": True, "tier": "T2", "sub": "master",
                                         "reason": "held take", "tier_cascade": "T2"}
     vm["setups"]["confluence"] = {"crosses": 1, "board": 1}
     html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
-    assert "gate-tier" in html and ">🎯 T2" in html       # real tier badge on the card
-    assert "no confluence cross" not in html              # not the RAN-no-cross state
+    assert "T2 fresh cross" in html                       # real tier surfaced on the card (tooltip)
+    assert "No fresh entry cross today" not in html       # not the RAN-no-cross state
     assert "buyable cross" in html                        # confluence stat present
 
 

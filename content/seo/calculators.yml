@@ -44,3 +44,128 @@
   blurb: "Required gain and recovery time from any drawdown percentage."
   cluster: risk-management
   related_lesson: risk/risk-reward-expectancy
+
+- slug: retirement
+  title: "Retirement Calculator"
+  description: "Project your retirement nest egg from current savings, monthly contributions and expected return — see how much is growth versus what you put in."
+  blurb: "Nest egg from savings, monthly adds and expected return."
+  cluster: growth-math
+
+- slug: roi
+  title: "ROI Calculator"
+  description: "Return on investment: compute ROI percent, net dollar profit, and the annualized return per year from what you invested and its final value."
+  blurb: "ROI percent, dollar profit, and annualized return from cost and final value."
+  cluster: trade-analysis
+
+- slug: dividend
+  title: "Dividend Calculator"
+  description: "Turn an investment amount, share price and dividend per share into yearly and monthly income, plus an optional reinvestment growth projection."
+  blurb: "Yearly and monthly dividend income, plus a reinvestment growth projection."
+  cluster: income
+
+- slug: dollar-cost-averaging
+  title: "Dollar-Cost Averaging (DCA) Calculator"
+  description: "Project a dollar-cost averaging plan: enter a fixed contribution, cadence, years and expected return to see the final value, total invested and gain."
+  blurb: "Project a DCA plan's end value from a fixed contribution, cadence and return."
+  cluster: growth-math
+
+- slug: rule-of-72
+  title: "Rule of 72 Calculator"
+  description: "See how long money takes to double at a given annual return, or the return needed to double in a set time — Rule of 72 estimate plus the exact math."
+  blurb: "Years to double from a return, or the return to double in N years — plus exact math."
+  cluster: growth-math
+
+- slug: percentage-gain-loss
+  title: "Percentage Gain/Loss Calculator"
+  description: "Percent gain or loss between two prices, the dollar profit or loss on your shares, and the gain needed to climb back to break-even."
+  blurb: "Percent change between two prices, plus dollar P/L and break-even recovery."
+  cluster: trade-analysis
+  related_lesson: risk/risk-reward-expectancy
+
+- slug: savings-goal
+  title: "Savings Goal Calculator"
+  description: "Reach a savings target: enter a goal, current balance and expected return to get the monthly amount to save, or how long a fixed deposit takes."
+  blurb: "Monthly amount to hit a savings goal by a date, or the time a fixed deposit takes."
+  cluster: growth-math
+
+- slug: inflation
+  title: "Inflation & Purchasing Power Calculator"
+  description: "See what money is worth over time: enter an amount, an annual inflation rate and years to get future cost, purchasing power and total erosion."
+  blurb: "Future cost and lost purchasing power from an amount, inflation rate and years."
+  cluster: growth-math
+
+- slug: net-worth
+  title: "Net Worth Calculator"
+  description: "Add up your assets, subtract your liabilities, and see your net worth, total assets, total liabilities, and debt-to-asset ratio in one place."
+  blurb: "Net worth, assets, liabilities and debt-to-asset ratio from what you own and owe."
+  cluster: planning
+
+- slug: options-profit
+  title: "Options Profit Calculator"
+  description: "Calculate single-leg call or put profit and loss at expiration: P/L, break-even price, max profit, max loss and return on premium per contract."
+  blurb: "Single-leg call or put P/L, break-even and max loss at expiration."
+  cluster: options
+
+- slug: stock-average
+  title: "Stock Average (Average Down) Calculator"
+  description: "Average down across up to five buys: enter shares and price for each lot to get your share-weighted cost basis and break-even price."
+  blurb: "Blend up to 5 buys into one average cost and break-even."
+  cluster: trade-analysis
+
+- slug: margin
+  title: "Margin & Buying Power Calculator"
+  description: "Reg-T margin and buying power calculator: enter equity and margin rules to see your leverage, max shares, and the price that triggers a margin call."
+  blurb: "Turn account equity into buying power, leverage, and a margin-call price."
+  cluster: risk-management
+  related_lesson: risk/position-sizing
+
+- slug: forex-pip-value
+  title: "Forex Pip Value Calculator"
+  description: "Value one pip of any forex pair: pip value in your account currency, the quote currency, and per 0.1 lot, from position size and rate."
+  blurb: "Pip value from position size, pip size and quote-to-account rate."
+  cluster: forex
+
+- slug: short-selling
+  title: "Short Selling Profit Calculator"
+  description: "Calculate short selling profit or loss including the borrow fee. Enter your short entry, cover price, shares, fee rate and days held to net it out."
+  blurb: "Short-sale profit or loss, net of the stock borrow fee."
+  cluster: trade-analysis
+
+- slug: covered-call
+  title: "Covered Call Return Calculator"
+  description: "Covered call return calculator: enter cost basis, strike, and premium to get your static income return, return if called, and break-even price."
+  blurb: "Income if flat vs. return if called, break-even, and annualized — per 100 shares."
+  cluster: options
+
+- slug: stop-loss-take-profit
+  title: "Stop-Loss & Take-Profit Calculator"
+  description: "Turn a percent or R distance into exact stop-loss and take-profit prices for a long or short, with the reward-to-risk ratio and dollars at stake."
+  blurb: "Exact stop & target prices from entry, % distances and side — plus reward:risk."
+  cluster: risk-management
+  related_lesson: risk/risk-reward-expectancy
+
+- slug: kelly-criterion
+  title: "Kelly Criterion Calculator"
+  description: "Find the Kelly criterion fraction from your win rate and win/loss ratio: the optimal share of capital to stake, plus the safer half-Kelly."
+  blurb: "Optimal capital fraction to stake from win rate and win/loss ratio."
+  cluster: risk-management
+  related_lesson: risk/position-sizing
+
+- slug: sharpe-ratio
+  title: "Sharpe Ratio Calculator"
+  description: "Compute the Sharpe ratio from portfolio return, the risk-free rate, and volatility. See the excess return per unit of risk, with optional annualizing."
+  blurb: "Excess return per unit of risk, from return, risk-free rate and volatility."
+  cluster: portfolio
+
+- slug: portfolio-rebalancing
+  title: "Portfolio Rebalancing Calculator"
+  description: "Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual."
+  blurb: "Buys and sells to pull your holdings back to their target weights."
+  cluster: portfolio
+
+- slug: risk-of-ruin
+  title: "Risk of Ruin Calculator"
+  description: "Estimate the probability a fixed-fractional trading strategy blows past a ruin threshold, from your win rate, payoff ratio and risk per trade."
+  blurb: "Odds a fixed-fractional plan blows past a ruin threshold, from win rate and risk."
+  cluster: risk-management
+  related_lesson: risk/position-sizing

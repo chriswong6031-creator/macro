@@ -53,8 +53,11 @@ AHEAD_MONTHS = 2       # upcoming / expected-to-price window
 
 # SPACs/blank-checks distort IPO base rates (they price at $10, "pop" rarely) so we
 # FLAG (never drop) them; the page can separate operating-company IPOs from SPACs.
-_SPAC_RE = re.compile(r"acquisition corp|acquisition compan|blank check|"
-                      r"acquisition holding|capital acquisition", re.I)
+# The name patterns only ADD coverage on top of the $10-unit-ticker fallback in
+# _is_spac; a real operating co (biotech etc.) with none of these tokens stays clear.
+_SPAC_RE = re.compile(r"acquisition corp|acquisition compan|acquisition co\b|"
+                      r"acquisition holdings?|blank check|capital acquisition|"
+                      r"capital investment corp| / CI\b", re.I)
 
 
 def _cache_path():

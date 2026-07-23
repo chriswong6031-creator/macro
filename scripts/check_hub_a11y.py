@@ -5,8 +5,10 @@ Detects five classes of accessibility regressions introduced (or silently
 reintroduced) by the hub UX program.  All checks are pure-Python / stdlib:
 html.parser + re + open(); NO browser, NO external deps — safe for ubuntu CI.
 
-Pages in scope: site/index.html and any other committed page that embeds the
-globe deck (detected by presence of the CSS class `gd-stage`).
+Pages in scope: any committed page that embeds the globe deck (detected by
+presence of the CSS class `gd-stage`) — i.e. the signed-in hub at
+site/start.html (this was index.html until 2026-07-22, when the root became
+the static marketing landing page).
 
 Checks
 ------

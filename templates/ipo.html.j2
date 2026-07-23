@@ -1,6 +1,12 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{# Tier-2 help affordance: a "?" that reveals a bilingual plain-language receipt on
+   hover/focus. Mechanics, stats and citations live here — NEVER on the glance tier,
+   and NEVER in a title= attribute (translated-title CI guard). #}
+{% macro qtip(en, zh='') -%}
+<span class="qtip" tabindex="0" role="note">?<span class="qtip-body"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,43 +14,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>IPO Radar — context, not a crystal ball</title>
-{% set seo_title = "IPO Radar — Mastermind" %}{% set seo_desc = "IPO context and radar for new listings — what the tape says about recent debuts and where each deal stands in the cycle. Not a crystal ball." %}{% set seo_path = "ipo.html" %}
+{% set seo_title = "IPO Radar — Mastermind" %}{% set seo_desc = "IPO context and radar for new listings — is the issuance window open, should you chase, and what to avoid. Lock-up cliffs, aftermarket reality-check, issuance froth. Not a buy signal." %}{% set seo_path = "ipo.html" %}
 {% include "_seo_head.html.j2" %}
-{% include '_plotly_head.html.j2' %}
 {% include "_interfonts.html.j2" %}
+<link rel="stylesheet" href="illus.css">
 <style>
 :root{
-  /* Inter loads via the _interfonts @font-face partial; the token mirrors
-     theme.css --font-ui (this standalone page does not link theme.css). */
+  /* Inter loads via _interfonts; token mirrors theme.css --font-ui (standalone page). */
   --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans CJK SC", sans-serif;
-  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
-  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --red:{{C.red}}; --amber:{{C.amber}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}}; --green:#1FA971;
+  /* --faint raised to meet WCAG AA (the old C.faint failed contrast; it carries
+     null-disclosure text that the doctrine requires to be readable). */
+  --faint:#6b7280;
+  /* IPO identity — a distinct indigo→violet accent (macro=blue, transmission=rates/infl/usd) */
+  --acc:#6366f1; --acc2:#a855f7;
 }
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;
+  --muted:#8b93a1;--faint:#9199a6;--red:#e06464;--acc:#8b8ff8;--acc2:#c084fc;}
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
-/* One-row section menu (re-fix on current main): full-bleed the sticky bar to the
-   same ~1500 rail the macro family uses on >=701px, so the 8-dropdown menu fits one
-   row. The page body keeps its 1180 rail; the <=700px hamburger is untouched. */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:8px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:saturate(160%) blur(12px);backdrop-filter:saturate(160%) blur(12px);z-index:20}
 @media (min-width:701px){
   .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
     padding-left:max(40px,calc((100vw - 1500px)/2));
     padding-right:max(40px,calc((100vw - 1500px)/2));}
 }
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd{position:relative;display:inline-flex}
@@ -58,9 +63,9 @@ a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
-.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--acc);color:var(--acc)}
 .lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
-.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--acc);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
 html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
 .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
 html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
@@ -68,262 +73,450 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
 .theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
-.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
 .theme-switch .knob::before{content:"☀️"}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464}
 html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
 html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
 html[data-theme="dark"] .lang-toggle{background:#222732}
 html[data-theme="dark"] .theme-switch{background:#222732}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
 html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
-html[data-theme="dark"] .gtable td.cur{background:#1b2740}
-html[data-theme="dark"] .score .s>div{background:var(--grid)}
-html[data-theme="dark"] .tag{background:#2a2410;color:#e8c15a}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1fr 1fr}
-.cols-3{grid-template-columns:repeat(3,1fr)}
-.cols-4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:900px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px}
-.card h3{margin:0 0 14px;font-size:18px;font-weight:700;color:var(--ink)}
-.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
-.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px}
-.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
-.dialwrap{display:flex;align-items:center;gap:18px;margin-top:2px}
-.dialnum{font-size:48px;font-weight:800;line-height:1;letter-spacing:-.02em}
-.pill{display:inline-block;padding:5px 12px;border-radius:9px;font-weight:700;font-size:13px;color:#fff}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.chip{display:inline-block;padding:5px 11px;border-radius:9px;font-weight:700;font-size:12.5px;border:1px solid var(--grid)}
-.score .s{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
-.score .v{font-size:21px;font-weight:800;color:var(--ink)}
-.scoretile{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;text-align:center}
-.scoretile .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.03em}
-.scoretile .v{font-size:26px;font-weight:800;color:var(--ink);margin-top:4px;line-height:1}
-.scoretile .d{font-size:12px;color:var(--muted);margin-top:4px}
-.legtbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
-.legtbl td,.legtbl th{padding:8px 8px;border-bottom:1px solid var(--grid);text-align:right}
-.legtbl td.l,.legtbl th.l{text-align:left}
-.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
-.tbl td,.tbl th{padding:8px 10px;border-bottom:1px solid var(--grid);text-align:left}
-.tbl th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+
+/* ---------- hero ---------- */
+.hero{padding:22px 0 4px;animation:ipoUp .5s cubic-bezier(.2,.7,.3,1) both}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:25px;color:var(--ink);letter-spacing:-.02em}
+.brand .radar{width:26px;height:26px;flex:none;filter:drop-shadow(0 2px 7px color-mix(in srgb,var(--acc) 45%,transparent))}
+.brand .gn{background:linear-gradient(95deg,var(--acc),var(--acc2) 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-eyebrow{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:14px 0 0}
+.verdict{font-size:clamp(21px,3.1vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.3;margin:6px 0 10px;max-width:920px}
+.verdict .hl{color:var(--acc)}
+.hero-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:4px}
+.asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.asof .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:ipoBreathe 2.8s ease-in-out infinite}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12px;font-weight:600;color:var(--muted)}
+.stance{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-size:13px;font-weight:800;letter-spacing:.01em;
+  background:color-mix(in srgb,var(--acc) 13%,var(--card));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 34%,var(--grid))}
+.stance.warn{background:color-mix(in srgb,var(--amber) 15%,var(--card));color:var(--amber);border-color:color-mix(in srgb,var(--amber) 38%,var(--grid))}
+.stance.red{background:color-mix(in srgb,var(--red) 14%,var(--card));color:var(--red);border-color:color-mix(in srgb,var(--red) 36%,var(--grid))}
+.stance.good{background:color-mix(in srgb,var(--green) 14%,var(--card));color:var(--green);border-color:color-mix(in srgb,var(--green) 36%,var(--grid))}
+
+/* ---------- what changed ---------- */
+.changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 2px}
+.changes .cx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.cx-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--grid);background:var(--card);font-size:12.5px;font-weight:600;color:var(--ink)}
+.cx-chip .dot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--muted)}
+.cx-chip.up .dot{background:var(--green)}.cx-chip.down .dot{background:var(--red)}.cx-chip.flat .dot{background:var(--amber)}
+.cx-chip.calm{color:var(--muted);font-weight:500}
+
+/* ---------- section chrome ---------- */
+.sec{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin:34px 2px 4px}
+.sec .sec-hint{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 2px 14px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:22px}
+.grid{display:grid;gap:16px}.cols-2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.cols-2{grid-template-columns:1fr}}
+
+/* ---------- AVOID panel — the honest deliverable ---------- */
+.avoid{margin-top:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--amber) 7%,var(--card)),var(--card) 62%);
+  border:1px solid color-mix(in srgb,var(--amber) 30%,var(--grid));border-radius:18px;padding:20px 22px;position:relative;overflow:hidden}
+.avoid::before{content:'';position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(var(--amber),var(--red))}
+.avoid h3{margin:0 0 3px;font-size:15px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:9px}
+.avoid .ah-sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.avoid-list{display:grid;gap:10px}
+.avoid-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--card) 82%,transparent);border:1px solid var(--grid);border-left:3px solid var(--amber)}
+.avoid-item.red{border-left-color:var(--red)}.avoid-item.calm{border-left-color:var(--green)}
+.avoid-item .ai-ic{font-size:18px;line-height:1.3;flex:none}
+.avoid-item .ai-t{font-size:14px;font-weight:700;color:var(--ink)}
+.avoid-item .ai-d{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
+
+/* ---------- signature triad ---------- */
+.triad{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+@media(max-width:900px){.triad{grid-template-columns:1fr}}
+.tcard{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px 20px 16px;overflow:hidden;
+  transition:transform .18s ease,box-shadow .2s ease,border-color .2s ease;animation:ipoUp .5s cubic-bezier(.2,.7,.3,1) both}
+.tcard:nth-child(2){animation-delay:.05s}.tcard:nth-child(3){animation-delay:.1s}
+.tcard:hover{transform:translateY(-2px);box-shadow:0 12px 30px -16px rgba(9,17,40,.3)}
+.tcard::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--tcc,var(--acc))}
+.tcard.good{--tcc:var(--green)}.tcard.warn{--tcc:var(--amber)}.tcard.red{--tcc:var(--red)}.tcard.acc{--tcc:var(--acc)}
+.tc-eyebrow{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--tcc,var(--acc))}
+.tc-state{font-size:27px;font-weight:800;letter-spacing:-.028em;color:var(--ink);line-height:1.12;margin:9px 0 2px}
+.tc-sub{font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.45;min-height:34px}
+.tc-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 2px}
+.tcm .tcm-v{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.1}
+.tcm .tcm-l{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.25}
+.tc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--grid)}
+.dotbar{display:inline-flex;gap:4px;margin:10px 0 2px}
+.dotbar i{width:9px;height:9px;border-radius:50%;background:var(--grid);display:inline-block}
+.dotbar i.on{background:var(--green)}.dotbar i.warn{background:var(--amber)}
+/* arc gauge (froth) */
+.arc{display:block;width:130px;height:70px;margin:6px auto 0}
+.arc path{fill:none;stroke-linecap:round}
+.arc .arc-bg{stroke:var(--grid);stroke-width:9}
+.arc .arc-fill{stroke:var(--tcc,var(--acc));stroke-width:9;transition:stroke-dasharray .6s ease}
+.arc .arc-tick{stroke:var(--ink);stroke-width:2.4;opacity:.55}
+.arc-cap{text-align:center;font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ---------- lock-up cliff ---------- */
+.cliff-lead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:14px}
+.cliff-next{font-size:15px;font-weight:700;color:var(--ink)}
+.cliff-next b{color:var(--amber)}
+.cliff-meta{font-size:12.5px;color:var(--muted)}
+.timeline{position:relative;height:118px;margin:6px 4px 2px;border-radius:12px}
+.tl-axis{position:absolute;left:0;right:0;top:64px;height:2px;background:var(--grid)}
+.tl-today{position:absolute;top:20px;bottom:20px;width:2px;background:color-mix(in srgb,var(--acc) 70%,transparent);z-index:2}
+.tl-today .tl-lbl{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--acc);white-space:nowrap}
+.tl-mark{position:absolute;top:64px;transform:translate(-50%,-50%);border-radius:50%;background:var(--muted);border:1.5px solid var(--card);cursor:help;z-index:3;transition:transform .15s}
+.tl-mark:hover,.tl-mark:focus{transform:translate(-50%,-50%) scale(1.35);z-index:6;outline:none}
+.tl-mark.sm{width:9px;height:9px}.tl-mark.md{width:14px;height:14px}.tl-mark.lg{width:20px;height:20px}
+.tl-mark.approaching{background:var(--amber)}.tl-mark.just-expired{background:var(--red)}.tl-mark.locked{background:var(--muted)}
+.tl-mark .tl-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:10;width:186px;padding:9px 11px;border-radius:11px;background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.4);font-size:11.5px;font-weight:500;color:var(--text);line-height:1.5;text-align:left;white-space:normal}
+.tl-mark:hover .tl-tip,.tl-mark:focus .tl-tip{display:block}
+.tl-mark .tl-tip b{color:var(--ink)}
+.tl-scale{position:absolute;left:0;right:0;top:78px;display:flex;justify-content:space-between;font-size:10px;color:var(--faint)}
+.tl-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.tl-legend .k{display:inline-flex;align-items:center;gap:5px}
+.tl-legend .k i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* ---------- aftermarket chart ---------- */
+.after-chart{margin:4px 0 6px}
+.after-chart figure{margin:0}
+
+/* ---------- deal cards (upcoming) ---------- */
+.dealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.deal{border:1px solid var(--grid);border-radius:14px;padding:14px 15px;background:var(--card)}
+.deal .d-tkr{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.deal .d-co{font-size:12.5px;color:var(--muted);margin:1px 0 9px;line-height:1.35;min-height:34px}
+.deal .d-row{display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0;border-top:1px dashed var(--grid)}
+.deal .d-row .k{color:var(--muted)}.deal .d-row .v{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.spac{display:inline-block;background:color-mix(in srgb,var(--acc2) 16%,var(--card));color:var(--acc2);border-radius:6px;padding:1px 6px;font-size:10px;font-weight:800;margin-left:6px;vertical-align:middle}
+
+/* ---------- tables (a11y: thead/tbody/scope + overflow scroll from first paint) ---------- */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:2px -4px 0;padding:0 4px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+.tbl th,.tbl td{padding:9px 10px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
+.tbl thead th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;position:sticky;top:0;background:var(--card)}
 .tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
-.spac{display:inline-block;background:#efe6ff;color:#6b3fb5;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle}
-html[data-theme="dark"] .spac{background:#2c2348;color:#c4a8ff}
-.note{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
-.note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
+.tbl tbody tr:hover{background:color-mix(in srgb,var(--acc) 5%,transparent)}
+.chip{display:inline-block;padding:3px 10px;border-radius:8px;font-weight:700;font-size:11.5px;border:1px solid var(--grid);white-space:nowrap}
+.legtbl{width:100%;border-collapse:collapse;font-size:13px}
+.legtbl th,.legtbl td{padding:8px;border-bottom:1px solid var(--grid);text-align:right}
+.legtbl td.l,.legtbl th.l{text-align:left}
+.legtbl thead th{color:var(--muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+.empty{padding:16px 4px;color:var(--muted);font-size:13px}
+.mini{font-size:12px;color:var(--faint);margin-top:10px;line-height:1.6}
+.xlink{font-size:12px;font-weight:600;color:var(--acc)}.xlink:hover{text-decoration:underline}
+
+/* ---------- study shelf (progressive disclosure) ---------- */
+.shelf{margin-top:14px}
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--acc) 5%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--acc) 11%,var(--card))}
+.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--faint);white-space:nowrap}
+.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--faint);transition:transform .25s;margin-left:6px}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
+.sh-body h4{margin:16px 0 4px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.note{border-left:3px solid var(--acc);padding:8px 0 8px 14px;margin:10px 0;color:var(--text);font-size:13px;line-height:1.55}
+.note.warn{border-color:var(--amber)}.note.red{border-color:var(--red)}
+
+/* ---------- ? tip ---------- */
+.qtip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:11px;font-weight:800;cursor:help;flex:none;vertical-align:middle;margin-left:5px}
+.qtip:hover,.qtip:focus{border-color:var(--acc);color:var(--acc);outline:none}
+.qtip .qtip-body{display:none;position:absolute;top:23px;right:-6px;z-index:40;width:262px;padding:11px 13px;border-radius:12px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.4);
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.55;text-transform:none;letter-spacing:0;text-align:left}
+.qtip:hover .qtip-body,.qtip:focus .qtip-body{display:block}
+
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+
+@keyframes ipoUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes ipoBreathe{0%,100%{opacity:.55;transform:scale(.86)}50%{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.hero,.tcard,.asof .dot{animation:none}}
 </style>
 </head>
 <body>
+{# plain-word maps owned by the template (decoupled from the build view-models) so
+   the glance tier never shows a raw engine slug like "constructive" / "OPEN". #}
+{% set BANDW = {'OPEN':('Open','开启'),'SHUT':('Shut','关闭'),'MIXED':('Mixed','混合'),'unknown':('Unknown','未知')} %}
+{% set STATEW = {'constructive':'Supportive','neutral':'Neutral','cautious':'Cautious','hostile':'Stressed'} %}
+{% include "_site_nav.html.j2" %}
 <div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
+
+  <!-- ============ HERO — glance verdict ============ -->
+  <div class="hero">
+    <div class="brand">
+      <svg class="radar" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc2)"/></linearGradient></defs>
+        <circle cx="16" cy="16" r="13" fill="none" stroke="url(#rg)" stroke-width="1.4" opacity=".5"/>
+        <circle cx="16" cy="16" r="7.5" fill="none" stroke="url(#rg)" stroke-width="1.4" opacity=".7"/>
+        <path d="M16,16 L16,3 A13,13 0 0 1 28,13 Z" fill="url(#rg)" opacity=".28"/>
+        <circle cx="16" cy="16" r="2.2" fill="url(#rg)"/>
+      </svg>
+      <span class="gn">IPO {{ t('Radar','雷达') }}</span>
     </div>
-  </div>
-
-  <div class="section-title">{{ t('IPO Radar · context, not a crystal ball','新股雷达 · 背景，而非水晶球') }}</div>
-  <div class="h1">{{ t('Is the IPO window open — and is it worth chasing?','新股窗口是否开启 —— 值得追吗？') }}</div>
-  <div class="sub" style="margin-bottom:6px">{{ t('As of','截至') }} {{ as_of }}</div>
-  <div class="tag">{{ t('Display-only · avoidance + context, never a buy signal','仅供参考 · 规避与背景，绝非买入信号') }}</div>
-
-  <!-- ===== the honest disclaimer, up top ===== -->
-  <div class="note r" style="margin-top:14px">{{ t(
-    'The day-1 IPO “pop” is genuinely predictable — but it is measured from the rationed OFFER price, and the opening trade already prices it in (Ritter–Welch). Without an offer-price allocation (which retail and small funds structurally cannot get), it is NOT capturable. Held from the first close, IPOs underperform (Ritter: median 3-year return ≈ −26%). So this page does not predict pops. It reads whether the issuance window is open and shows what buying new issues in the secondary market has actually returned — an avoidance + context tool.',
-    '新股上市首日的“爆涨”确实可预测 —— 但它是相对被配售的发行价计量的，而开盘价已将其计入（Ritter–Welch）。没有发行价配售（散户与小型基金在结构上拿不到），这部分收益无法捕获。若从首日收盘买入并持有，新股长期跑输（Ritter：3 年中位回报约 −26%）。因此本页不预测爆涨，而是判断发行窗口是否开启，并展示在二级市场买入新股的真实回报 —— 一个规避与背景工具。') }}</div>
-
-  <!-- ===== window band + aftermarket verdict ===== -->
-  <div class="grid cols-2" style="margin-top:14px">
-    <div class="card">
-      <h3>{{ t('Is the issuance window open?','发行窗口是否开启？') }}</h3>
-      <div class="dialwrap">
-        <div class="dialnum" style="color:{{ window.color }}">{{ t(window.band, window.band_zh) }}</div>
-        <div>
-          <div class="sub">{{ window.constructive }}/{{ window.n_legs }} {{ t('risk-appetite legs constructive','风险偏好分项为偏好') }}{% if window.hostile %} · {{ window.hostile }} {{ t('cautious/hostile','谨慎/不利') }}{% endif %}</div>
-          <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Coincident read — it describes whether the window is open NOW; it does not forecast it, and it is never scored.','同步读数 —— 它描述窗口当前是否开启，并不预测，且从不计分。') }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <h3>{{ t('Reality check: “buy new IPOs” in the aftermarket','现实检验：在二级市场“买新股”') }}</h3>
-      {% if aftermarket.verdict %}
-      <div class="dialwrap">
-        <div class="dialnum" style="font-size:34px;color:{{ aftermarket.verdict_color }}">{{ aftermarket.ipo_5y }}</div>
-        <div>
-          <span class="pill" style="background:{{ aftermarket.verdict_color }}">{{ t('IPO ETF','新股ETF') }} {{ t(aftermarket.verdict, aftermarket.verdict_zh) }} {{ t('the S&P','标普') }}</span>
-          <div class="sub" style="margin-top:8px">{{ t('Renaissance IPO ETF, 5-yr annualised','复兴新股ETF，5年年化') }}: <b style="color:var(--ink)">{{ aftermarket.ipo_5y }}</b> {{ t('vs S&P','对比标普') }} <b style="color:var(--ink)">{{ aftermarket.spy_5y }}</b>{% if aftermarket.gap_5y %} ({{ aftermarket.gap_5y }} pp/yr){% endif %}</div>
-        </div>
-      </div>
-      {% else %}<div class="sub">{{ t('Aftermarket series unavailable.','二级市场序列暂不可用。') }}</div>{% endif %}
-    </div>
-  </div>
-
-  <!-- ===== window legs ===== -->
-  <div class="section-title">{{ t('What the window read is made of','窗口读数的构成') }}</div>
-  <div class="card">
-    <table class="legtbl">
-      <tr><th class="l">{{ t('Risk-appetite leg','风险偏好分项') }}</th><th>{{ t('Reading','读数') }}</th><th>{{ t('State','状态') }}</th></tr>
-      {% for lg in window.legs %}
-      <tr>
-        <td class="l">{{ t(lg.label, lg.label_zh) }}<div class="sub faint" style="font-size:11.5px">{{ t(lg.note, lg.note_zh) }}</div></td>
-        <td><b>{{ lg.value_disp }}</b></td>
-        <td><span class="chip" style="border-color:{{ lg.color }};color:{{ lg.color }}">{{ t(lg.state, lg.state_zh) }}</span></td>
-      </tr>
-      {% endfor %}
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Legs reuse existing market reads (the validated macro de-risk score, VIX, HY-vs-IG credit, small-cap & high-beta leadership, the IPO ETF trend). The window is a description of risk appetite, not a forecast of it — and nothing here feeds any score or allocation.','各分项复用既有市场读数（已验证的宏观降险评分、VIX、高收益对投资级信用、小盘与高贝塔领先、新股ETF趋势）。窗口是对风险偏好的描述而非预测 —— 且此处任何内容都不进入任何评分或仓位。') }}</div>
-  </div>
-
-  <!-- ===== aftermarket chart + table ===== -->
-  <div class="section-title">{{ t('The aftermarket trade · IPO & IPOX vs the S&P (5y, rebased)','二级市场交易 · 新股与IPOX对比标普（5年，归一）') }}</div>
-  <div class="card">
-    {% if chart_aftermarket %}{{ chart_aftermarket|safe }}{% endif %}
-    <table class="legtbl" style="margin-top:12px">
-      <tr><th class="l">{{ t('Basket','篮子') }}</th><th>1Y</th><th>3Y</th><th>5Y</th></tr>
-      {% for r in aftermarket.rows %}
-      <tr{% if r.is_ipo %} style="font-weight:700"{% endif %}><td class="l">{{ r.label }} <span class="faint">({{ r.ticker }})</span></td><td>{{ r.c1 }}</td><td>{{ r.c3 }}</td><td>{{ r.c5 }}</td></tr>
-      {% endfor %}
-    </table>
-    <div class="note b" style="margin-top:10px">{{ t('This is the crux: the day-1 pop accrues to offer-price allocants, not to anyone buying in the open market. A mechanical “own recent IPOs” basket (the Renaissance IPO ETF) has trailed the S&P over five years; the quality-tilted IPOX (FPX) does better but is a large-cap/quality factor tilt, not underpricing capture. The honest edge in IPOs is discipline about what to AVOID.','这是关键：首日爆涨归于发行价配售者，而非任何在公开市场买入的人。机械式“持有近期新股”篮子（复兴新股ETF）五年来跑输标普；偏质量的 IPOX（FPX）表现较好，但那是大盘/质量因子倾斜，并非对低定价的捕获。新股中诚实的优势在于对“应当规避什么”的纪律。') }}</div>
-  </div>
-
-  <!-- ===== lock-up expiry overhang (the most watchable leg) ===== -->
-  {% if lockups %}
-  <div class="section-title">{{ t('Lock-up expiry overhang · the most watchable leg','禁售期到期压力 · 最值得关注的一环') }}</div>
-  <div class="card">
-    <div class="sub" style="margin-bottom:8px">{{ t("When a fresh IPO's ~180-day lock-up expires, insider / VC / PE supply hits a thin float — a documented one-sided overhang (Field & Hanka: ~−1.5% / −3% VC-backed 3-day drift, ~+40% volume). The date is deterministic and free from the prospectus. Honest framing: this is an AVOID / don't-add-into-the-cliff flag, NOT a tradeable short — borrow is scarce and the drift is small net of cost.","当新股约180天的禁售期到期时，内部人／风投／私募的供给会冲击稀薄的流通盘 —— 有据可查的单边压力（Field & Hanka：约 −1.5%／风投支持 −3% 的三日漂移，成交量约 +40%）。该日期可从招股书免费且确定地获得。诚实说明：这是“临近解禁回避／勿加仓”的提示，而非可交易做空 —— 借券稀缺，且扣成本后漂移很小。") }}</div>
-    {% if lockup_phase0 and lockup_phase0.stat and lockup_phase0.stat.n %}
-    <div class="note b">{{ t('Phase-0 event study','Phase-0 事件研究') }} ({{ lockup_phase0.n_names }} {{ t('recent IPOs','近期新股') }}, {{ lockup_phase0.as_of }}): {{ t('the [-1,+3]-day abnormal return vs the S&P averaged','解禁日 [-1,+3] 相对标普的超额收益平均为') }} {{ '%+.1f'|format(lockup_phase0.stat.mean_pct) }}% ({{ lockup_phase0.stat.pct_negative }}% {{ t('negative','为负') }}, t={{ lockup_phase0.stat.t }}) — {{ t('no measurable, tradeable edge on our (survivorship-biased) sample. This is a deterministic supply-event calendar, NOT a forecast — and it is never scored.','在我们（含幸存者偏差的）样本上没有可测量、可交易的优势。这是一个确定的供给事件日历，而非预测 —— 且从不计分。') }}</div>
+    <div class="hero-eyebrow">{{ t('New listings · is the window open, should you chase, what to avoid','新股 · 窗口是否开启、是否该追、应规避什么') }}</div>
+    {% if hero %}
+    <div class="verdict">{{ t(hero.line_en, hero.line_zh) }}</div>
+    {% else %}
+    <div class="verdict">{{ t('The famous IPO “pop” goes to the banks’ clients, not to you — bought in the open market, new listings have lagged the S&P.','新股首日“爆涨”归于投行客户，而非你 —— 在二级市场买入，新股长期跑输标普。') }}</div>
     {% endif %}
-    {% if lockup_summary %}
-    <div class="chips" style="margin-bottom:8px">
-      <span class="chip" style="border-color:var(--amber);color:var(--amber)">{{ lockup_summary.approaching }} {{ t('approaching (≤45d)','临近（≤45天）') }}</span>
-      <span class="chip" style="border-color:var(--red);color:var(--red)">{{ lockup_summary.just_expired }} {{ t('overhang active (≤30d)','解禁压力中（≤30天）') }}</span>
-      {% if lockup_summary.confirmed %}<span class="chip">{{ lockup_summary.confirmed }} {{ t('prospectus-confirmed','招股书已确认') }}</span>{% endif %}
+    <div class="hero-row">
+      {% if hero and hero.stance_en %}<span class="stance warn">{{ t(hero.stance_en, hero.stance_zh) }}</span>{% endif %}
+      <span class="asof"><span class="dot"></span>{{ t('As of','截至') }} {{ as_of }}</span>
+      <span class="tag">{{ t('Context, not a buy signal','背景，而非买入信号') }}</span>
     </div>
-    {% endif %}
-    <table class="tbl">
-      <tr><th>{{ t('Lock-up expiry','禁售期到期') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Priced','定价') }}</th><th class="n">{{ t('Lock-up','禁售') }}</th><th>{{ t('Status','状态') }}</th></tr>
-      {% for r in lockups %}
-      <tr>
-        <td>{{ r.expiry_date }}<span class="sub"> · {{ t(r.days_en, r.days_zh) }}</span></td>
-        <td><b>{{ r.ticker }}</b></td>
-        <td>{{ r.company }}</td>
-        <td class="n faint">{{ r.priced_date }}</td>
-        <td class="n">{{ r.lockup_days }}d{% if not r.confirmed %}<span class="sub faint"> {{ t('est','估') }}</span>{% endif %}</td>
-        <td><span class="chip" style="border-color:{{ r.color }};color:{{ r.color }}">{{ t(r.status_en, r.status_zh) }}</span></td>
-      </tr>
+  </div>
+
+  <!-- ============ WHAT CHANGED ============ -->
+  {% if changed and changed.has_prior and changed['items'] %}
+  <div class="changes">
+    <span class="cx-eyebrow">{{ t('What changed','最新变化') }}</span>
+    {% for c in changed['items'] %}
+    <span class="cx-chip {{ c.tone }}"><span class="dot"></span>{{ t(c.en, c.zh) }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ============ AVOID panel — the honest deliverable ============ -->
+  {% if avoid and avoid['items'] %}
+  <div class="avoid">
+    <h3>⚠ {{ t('What to avoid right now','当前应规避') }}</h3>
+    <div class="ah-sub">{{ t('The honest edge in IPOs is discipline about what NOT to buy. Assembled from the calendar — display-only, never a trade.','新股中诚实的优势在于「不买什么」的纪律。取自日历 —— 仅供展示，非交易。') }}</div>
+    <div class="avoid-list">
+      {% for it in avoid['items'] %}
+      <div class="avoid-item {{ it.tone }}">
+        <span class="ai-ic">{{ it.icon }}</span>
+        <div><div class="ai-t">{{ t(it.title_en, it.title_zh) }}</div><div class="ai-d">{{ t(it.detail_en, it.detail_zh) }}</div></div>
+      </div>
       {% endfor %}
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t("Operating companies only (SPACs excluded — different mechanics). Lock-up length is parsed from the final S-1/424B prospectus where confirmed, else the 180-day market standard ('est'). Display-only, never scored — there is no validated forecast here, only a deterministic supply-event calendar.","仅营运公司（剔除 SPAC —— 机制不同）。禁售期长度在已确认处取自最终 S-1／424B 招股书，否则取 180 天市场标准（“估”）。仅供展示，从不计分 —— 此处没有经验证的预测，只有一个确定的供给事件日历。") }}</div>
+    </div>
   </div>
   {% endif %}
 
-  <!-- ===== issuance pipeline ===== -->
-  {% if pipeline.available %}
-  <div class="section-title">{{ t('Issuance pipeline · how busy & how frothy','发行管道 · 繁忙度与泡沫度') }}</div>
-  <div class="grid cols-4">
-    <div class="scoretile"><div class="k">{{ t('Priced · 30d','定价 · 30天') }}</div><div class="v">{{ pipeline.priced_30d }}</div><div class="d">{{ t('new deals priced','新交易定价') }}</div></div>
-    <div class="scoretile"><div class="k">{{ t('Priced · 90d','定价 · 90天') }}</div><div class="v">{{ pipeline.priced_90d }}</div><div class="d">{{ t('pace','节奏') }}: {{ t(pipeline.pace, pipeline.pace_zh) }}</div></div>
-    <div class="scoretile"><div class="k">{{ t('SPAC share · 90d','SPAC占比 · 90天') }}</div><div class="v"{% if pipeline.spac_pct_90d and pipeline.spac_pct_90d >= 40 %} style="color:var(--amber)"{% endif %}>{{ pipeline.spac_pct_90d if pipeline.spac_pct_90d is not none else '—' }}%</div><div class="d">{{ pipeline.spac_90d }}/{{ pipeline.priced_90d }} {{ t('blank-checks','空白支票') }}</div></div>
-    <div class="scoretile"><div class="k">{{ t('Upcoming / Filed','即将 / 已申报') }}</div><div class="v">{{ pipeline.upcoming_n }} / {{ pipeline.filed_n }}</div><div class="d">{{ t('expected · on file (S-1)','预期 · 在档（S-1）') }}</div></div>
-  </div>
-  <div class="chips">
-    <span class="chip">{{ t('Withdrawn · 90d','撤回 · 90天') }}: <b>{{ pipeline.withdrawn_90d }}</b></span>
-    <span class="chip">{{ t('Median operating-co deal · 90d','营运公司交易中位 · 90天') }}: <b>{{ pipeline.median_op_size_disp }}</b></span>
-    {% if pipeline.froth %}<span class="chip" style="border-color:var(--amber);color:var(--amber)">⚠ {{ t('elevated SPAC share','SPAC占比偏高') }}</span>{% endif %}
-  </div>
-  {% endif %}
+  <!-- ============ SIGNATURE TRIAD — window · reality-check · froth ============ -->
+  <div class="triad">
+    <!-- 1) window -->
+    <div class="tcard {{ 'good' if window.band=='OPEN' else 'red' if window.band=='SHUT' else 'warn' }}">
+      <div class="tc-eyebrow">{{ t('Issuance window','发行窗口') }}{{ qtip('Coincident risk-appetite read across up to six market legs (macro de-risk, VIX, HY-vs-IG credit, small-caps, high-beta, the IPO ETF trend). It describes whether issuers can sell deals NOW — it does not forecast, and it is never scored.','跨最多六个市场分项的同步风险偏好读数（宏观降险、VIX、高收益对投资级信用、小盘、高贝塔、新股ETF趋势）。描述当前发行环境，并不预测，且从不计分。') }}</div>
+      {% set bw = BANDW.get(window.band, (window.band, window.band)) %}<div class="tc-state">{{ t(bw[0], bw[1]) }}</div>
+      <div class="tc-sub">{% if window.band=='OPEN' %}{{ t('Risk appetite is on — issuers can price deals.','风险偏好在线 —— 发行方能顺利定价。') }}{% elif window.band=='SHUT' %}{{ t('Risk-off — the window for new deals is shut.','风险规避 —— 新交易窗口关闭。') }}{% else %}{{ t('Mixed signals — the window is neither open nor shut.','信号混杂 —— 窗口半开半合。') }}{% endif %}</div>
+      <div class="dotbar" aria-hidden="true">
+        {% for i in range(window.n_expected or 6) %}<i class="{{ 'on' if i < window.constructive else ('warn' if i < (window.constructive + window.hostile) else '') }}"></i>{% endfor %}
+      </div>
+      <div class="tc-sub" style="min-height:0;margin-top:2px">{{ window.constructive }}/{{ window.n_legs }} {{ t('legs supportive','分项偏好') }}{% if window.low_confidence %} · <span style="color:var(--amber)">{{ t('partial read','部分读数') }}</span>{% endif %}</div>
+      <div class="tc-foot">
+        <span class="stance {{ 'warn' if window.band!='SHUT' else 'red' }}">{{ t(window.stance_en or 'Watch — don’t chase', window.stance_zh or '观望，别追') }}</span>
+        <a class="xlink" href="transmission.html">{{ t('Drivers →','驱动 →') }}</a>
+      </div>
+    </div>
 
-  <!-- ===== recently priced ===== -->
-  {% if recent %}
-  <div class="section-title">{{ t('Recently priced · last 120 days','近期定价 · 最近120天') }}</div>
+    <!-- 2) aftermarket reality check -->
+    <div class="tcard {{ 'red' if aftermarket.verdict=='trails' else 'good' if aftermarket.verdict=='beats' else 'warn' }}">
+      <div class="tc-eyebrow">{{ t('Reality check','现实检验') }}{{ qtip('“Buy recent IPOs in the open market” = the Renaissance IPO ETF vs the S&P, 5-year annualised total return. The day-1 pop accrues to offer-price allocation, which retail cannot get — so the honest anchor is how the aftermarket basket actually did.','“在二级市场买近期新股” = 复兴新股ETF对比标普，5年年化总回报。首日爆涨归于发行价配售（散户拿不到）—— 故诚实的锚点是二级市场篮子的真实表现。') }}</div>
+      <div class="tc-state" style="color:{% if aftermarket.verdict=='trails' %}var(--red){% elif aftermarket.verdict=='beats' %}var(--green){% else %}var(--amber){% endif %}">{% if aftermarket.verdict %}{{ t(aftermarket.verdict|capitalize, aftermarket.verdict_zh) }}{% else %}—{% endif %}</div>
+      <div class="tc-sub">{{ t('“Own recent IPOs” has lagged simply owning the S&P.','“持有近期新股”跑输了单纯持有标普。') }}</div>
+      <div class="tc-metrics">
+        <div class="tcm"><div class="tcm-v" style="color:var(--red)">{{ aftermarket.ipo_5y }}</div><div class="tcm-l">{{ t('IPO ETF 5y/yr','新股ETF 5年/年') }}</div></div>
+        <div class="tcm"><div class="tcm-v" style="color:var(--green)">{{ aftermarket.spy_5y }}</div><div class="tcm-l">{{ t('S&P 5y/yr','标普 5年/年') }}</div></div>
+        <div class="tcm"><div class="tcm-v">{% if aftermarket.gap_5y %}{{ aftermarket.gap_5y }}{% else %}—{% endif %}</div><div class="tcm-l">{{ t('gap pp/yr','差距 个百分点/年') }}</div></div>
+      </div>
+      <div class="tc-foot">
+        <span class="stance {{ 'red' if aftermarket.verdict=='trails' else 'warn' }}">{{ t(aftermarket.stance_en or 'Don’t chase the basket', aftermarket.stance_zh or '别追新股篮子') }}</span>
+        <a class="xlink" href="baskets.html">{{ t('Rotation →','轮动 →') }}</a>
+      </div>
+    </div>
+
+    <!-- 3) issuance froth -->
+    <div class="tcard {{ 'warn' if pipeline.froth_flags and 'spac' in pipeline.froth_flags else 'acc' }}">
+      <div class="tc-eyebrow">{{ t('Issuance froth','发行热度') }}{{ qtip('How busy and how speculative the new-issue tape is: deals priced in 90 days, the blank-check (SPAC) share, and the share of filed deals later pulled. A high SPAC share + a busy pace = a frothy, promotional tape to stand aside from.','新股发行的繁忙度与投机度：90天定价交易数、空白支票（SPAC）占比、以及已申报后撤回的比例。高SPAC占比＋繁忙节奏＝泡沫化、炒作型盘面，应靠边站。') }}</div>
+      <div class="tc-state">{% if pipeline.available %}{{ t(pipeline.pace|capitalize, pipeline.pace_zh) }}{% else %}—{% endif %}</div>
+      {% if pipeline.available and pipeline.spac_pct_90d is not none %}
+      <svg class="arc" viewBox="0 0 130 74" aria-hidden="true">
+        <path class="arc-bg" d="M12,66 A53,53 0 0 1 118,66" pathLength="100"/>
+        <path class="arc-fill" d="M12,66 A53,53 0 0 1 118,66" pathLength="100" stroke-dasharray="{{ pipeline.spac_pct_90d }} 100"/>
+        <path class="arc-tick" d="M12,66 A53,53 0 0 1 118,66" pathLength="100" stroke-dasharray="1.3 100" stroke-dashoffset="-40"/>
+      </svg>
+      <div class="arc-cap"><b style="color:var(--ink)">{{ pipeline.spac_pct_90d }}%</b> {{ t('blank-check share · frothy above the 40% tick','空白支票占比 · 超过40%刻度为泡沫') }}</div>
+      {% endif %}
+      <div class="tc-foot">
+        <span class="stance {{ 'warn' if pipeline.froth_flags and 'spac' in pipeline.froth_flags else 'acc' }}">{{ t(pipeline.stance_en or 'Normal issuance', pipeline.stance_zh or '发行正常') }}</span>
+        <span class="asof" style="font-size:11px">{{ pipeline.priced_90d }} {{ t('priced · 90d','定价 · 90天') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LOCK-UP CLIFF — the most actionable leg ============ -->
+  {% if lockup_timeline and lockup_timeline.markers %}
+  <div class="sec">{{ t('Lock-up cliff','解禁悬崖') }} <span class="sec-hint">{{ t('the one thing worth watching','唯一值得关注的一环') }}</span></div>
+  <div class="sec-sub">{{ t('~180 days after listing, insider / VC / PE shares un-lock into a thin float — a documented one-sided supply push. The date is free and deterministic. It is a “don’t add into the cliff” flag, not a short.','上市约180天后，内部人／风投／私募股份解禁冲击稀薄流通盘 —— 有据可查的单边供给压力。日期免费且确定。这是“临近解禁勿加仓”的提示，而非做空。') }}</div>
   <div class="card">
-    <table class="tbl">
-      <tr><th>{{ t('Priced','定价日') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Offer','发行价') }}</th><th class="n">{{ t('Size','规模') }}</th><th>{{ t('Demand (vs range)','需求（对比区间）') }}</th><th class="n">{{ t('vs offer','对比发行') }}</th></tr>
-      {% for r in recent %}
-      <tr>
-        <td class="faint">{{ r.date }}<span class="sub"> · d+{{ r.days_since }}</span></td>
-        <td><b>{{ r.ticker }}</b></td>
-        <td>{{ r.company }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</td>
-        <td class="n">{{ r.offer_price }}</td>
-        <td class="n">{{ r.size }}</td>
-        <td>{% if r.has_rev %}<span class="chip" style="border-color:{{ r.rev_col }};color:{{ r.rev_col }};font-size:11.5px;padding:3px 8px">{{ t(r.rev_en, r.rev_zh) }}{{ r.rev_pct }}</span>{% else %}<span class="faint">—</span>{% endif %}</td>
-        <td class="n" style="color:{{ r.since_color }}">{{ r.since_offer }}</td>
-      </tr>
+    <div class="cliff-lead">
+      {% if lockup_timeline.next %}{% set nd = lockup_timeline.next.days_to %}<div class="cliff-next">{{ t('Next un-lock','下一解禁') }}: <b>{{ lockup_timeline.next.ticker }}</b> · {{ lockup_timeline.next.date }}{% if lockup_timeline.next.size_disp %} · {{ lockup_timeline.next.size_disp }}{% endif %} <span class="cliff-meta">({% if nd == 0 %}{{ t('today','今天') }}{% elif nd is not none and nd > 0 %}{{ t('in ' ~ nd ~ 'd','' ~ nd ~ '天后') }}{% elif nd is not none %}{{ t((-nd) ~ 'd ago','' ~ (-nd) ~ '天前') }}{% endif %})</span></div>{% endif %}
+      <div class="cliff-meta">{{ lockup_timeline.approaching }} {{ t('approaching ≤45d','临近 ≤45天') }} · {{ lockup_timeline.just_expired }} {{ t('just un-locked','刚解禁') }}</div>
+    </div>
+    <div class="timeline">
+      <div class="tl-axis"></div>
+      <div class="tl-today" style="left:20%"><span class="tl-lbl">{{ t('TODAY','今天') }}</span></div>
+      {% for m in lockup_timeline.markers %}
+      <div class="tl-mark {{ m.size_bucket }} {{ m.status }}" tabindex="0" style="left:{{ (m.pos_frac*100)|round(1) }}%">
+        <span class="tl-tip"><b>{{ m.ticker }}</b> · {{ m.company }}<br>{{ t('un-locks','解禁') }} {{ m.expiry_date }}{% if m.size_disp %} · {{ m.size_disp }}{% endif %}<br>{{ t('lock-up','禁售') }} {{ m.lockup_days or 180 }}d{% if not m.confirmed %} <span style="color:var(--faint)">({{ t('est','估') }})</span>{% endif %}</span>
+      </div>
       {% endfor %}
-    </table>
-    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('“vs offer” shows only where we already hold the price series — most fresh IPOs are outside our coverage universe, so it is usually blank by design (we do not chase per-name quotes for a context page). SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Post-listing quality/factor coverage (accruals, profitability, valuation-vs-comps) only switches on after a name has its first annual report (~12 months) or joins an index — so fresh IPOs sit in a deliberate coverage hole rather than getting a fabricated quality score.','“对比发行”仅在我们已持有该价格序列时显示 —— 多数新上市公司不在我们的覆盖范围内，故通常按设计留空（背景页不逐一抓取报价）。SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。上市后的质量/因子覆盖（应计、盈利能力、相对估值）只有在公司发布首份年报（约12个月）或被纳入指数后才会启用 —— 因此新上市公司处于刻意的覆盖空窗，而非被赋予虚构的质量评分。') }}</div>
-    <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('“Demand (vs range)” = the final offer price vs the marketed range (partial-adjustment, Hanley) — the single strongest day-1 predictor, but it is finalised the night before trading and is not capturable without an allocation, so it is context, never a buy signal. It accrues forward as deals move from the upcoming calendar to priced.','“需求（对比区间）” = 最终发行价相对营销区间（部分调整，Hanley）—— 单日最强的预测因子，但在交易前夜才敲定，且没有配售便无法捕获，故为背景而非买入信号。它随着交易从“即将”日历转为“已定价”而向前累积。') }}</div>
+      <div class="tl-scale"><span>{{ t('30d ago','30天前') }}</span><span>{{ t('+45d','+45天') }}</span><span>{{ t('+120d','+120天') }}</span></div>
+    </div>
+    <div class="tl-legend">
+      <span class="k"><i style="background:var(--red)"></i>{{ t('just un-locked (supply live)','刚解禁（供给中）') }}</span>
+      <span class="k"><i style="background:var(--amber)"></i>{{ t('approaching (≤45d)','临近（≤45天）') }}</span>
+      <span class="k"><i style="background:var(--muted)"></i>{{ t('still locked','仍锁定') }}</span>
+      <span class="k" style="margin-left:auto">{{ t('dot size = deal size','点大小＝交易规模') }}</span>
+    </div>
+    <div class="note warn">{{ t('Don’t add into the cliff. This is a supply-date calendar, not a forecast — history shows no reliable tradeable edge here.','临近解禁勿加仓。这是供给日历，而非预测 —— 历史上此处没有可靠、可交易的优势。') }}{{ qtip(lockup_receipt_en or 'Field & Hanka document a small one-sided drift (~−1.5%, ~−3% for VC-backed names) with ~+40% volume around unlock. Our own event study of recent unlocks finds no measurable, tradeable edge on a small, survivorship-biased sample. Lock-up length is prospectus-confirmed where available, else the 180-day market standard.', lockup_receipt_zh or 'Field & Hanka 记录到解禁前后约 −1.5%（风投支持约 −3%）的小幅单边漂移，成交量约 +40%。我们对近期解禁的事件研究在小样本（含幸存者偏差）上未发现可测量、可交易的优势。禁售期长度在可得时取自招股书，否则取 180 天市场标准。') }}</div>
   </div>
   {% endif %}
 
-  <!-- ===== upcoming ===== -->
+  <!-- ============ AFTERMARKET chart ============ -->
+  <div class="sec">{{ t('The aftermarket trade','二级市场交易') }} <span class="sec-hint">{{ t('IPO & IPOX vs the S&P · 5y, rebased','新股与IPOX对比标普 · 5年，归一') }}</span></div>
+  <div class="card">
+    {% if chart_aftermarket %}<div class="after-chart">{{ chart_aftermarket|safe }}</div>{% endif %}
+    <div class="tbl-wrap">
+      <table class="legtbl">
+        <thead><tr><th class="l" scope="col">{{ t('Basket','篮子') }}</th><th scope="col">1Y</th><th scope="col">3Y</th><th scope="col">5Y</th></tr></thead>
+        <tbody>
+        {% for r in aftermarket.rows %}
+        <tr{% if r.is_ipo %} style="font-weight:700"{% endif %}><td class="l" scope="row">{{ r.label }} <span class="faint" style="color:var(--faint)">({{ r.ticker }})</span></td><td>{{ r.c1 }}</td><td>{{ r.c3 }}</td><td>{{ r.c5 }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mini">{{ t('The day-1 pop accrues to offer-price allocation, not to open-market buyers. A mechanical “own recent IPOs” basket (Renaissance IPO ETF) has trailed the S&P over five years; the quality-tilted IPOX (FPX) does better, but that is a large-cap / quality tilt, not underpricing capture.','首日爆涨归于发行价配售，而非公开市场买家。机械式“持有近期新股”篮子（复兴新股ETF）五年跑输标普；偏质量的 IPOX（FPX）表现较好，但那是大盘/质量倾斜，并非对低定价的捕获。') }}</div>
+  </div>
+
+  <!-- ============ UPCOMING deals (cards) ============ -->
+  <div class="sec">{{ t('Expected to price soon','预计即将定价') }}{% if upcoming %} <span class="sec-hint">{{ upcoming|length }} {{ t('on the calendar','在日历上') }}</span>{% endif %}</div>
   {% if upcoming %}
-  <div class="section-title">{{ t('Expected to price soon','预计即将定价') }}</div>
-  <div class="card">
-    <table class="tbl">
-      <tr><th>{{ t('Expected','预期日') }}</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Company','公司') }}</th><th class="n">{{ t('Range','区间') }}</th><th class="n">{{ t('Size','规模') }}</th></tr>
-      {% for r in upcoming %}
-      <tr>
-        <td class="faint">{{ r.date }}</td>
-        <td><b>{{ r.ticker }}</b></td>
-        <td>{{ r.company }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</td>
-        <td class="n">{{ r.range }}</td>
-        <td class="n">{{ r.size }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-  {% endif %}
-
-  <!-- ===== Hong Kong IPO backdrop (Phase 3) ===== -->
-  {% if hk and hk.available %}
-  <div class="section-title">{{ t('Hong Kong IPO backdrop · the more retail-tradeable market','香港新股背景 · 更适合散户参与的市场') }}</div>
-  <div class="card">
-    <div class="dialwrap" style="margin-bottom:8px">
-      <div class="dialnum" style="font-size:30px;color:{{ hk.color }}">{{ t(hk.verdict, hk.verdict_zh) }}</div>
-      <div class="sub">{{ t('Liquidity-backdrop read','流动性背景读数') }}{% if hk.as_of %} · {{ t('as of','截至') }} {{ hk.as_of }}{% endif %}</div>
+  <div class="dealgrid">
+    {% for r in upcoming %}
+    <div class="deal">
+      <div class="d-tkr">{{ r.ticker }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</div>
+      <div class="d-co">{{ r.company }}</div>
+      <div class="d-row"><span class="k">{{ t('Expected','预期') }}</span><span class="v">{{ r.date }}</span></div>
+      <div class="d-row"><span class="k">{{ t('Range','区间') }}</span><span class="v">{{ r.range }}</span></div>
+      <div class="d-row"><span class="k">{{ t('Size','规模') }}</span><span class="v">{{ r.size }}</span></div>
     </div>
-    <table class="legtbl">
-      <tr><th class="l">{{ t('Backdrop leg','背景分项') }}</th><th>{{ t('Reading','读数') }}</th><th>{{ t('State','状态') }}</th></tr>
-      {% for l in hk.legs %}
-      <tr>
-        <td class="l">{{ t(l.label, l.label_zh) }}<div class="sub faint" style="font-size:11.5px">{{ l.note }}</div></td>
-        <td><b>{{ t(l.value, l.value_zh) }}</b></td>
-        <td><span class="chip" style="border-color:{{ l.color }};color:{{ l.color }}">{{ t(l.state, l.state_zh) }}</span></td>
-      </tr>
-      {% endfor %}
-    </table>
-    <div class="note b" style="margin-top:10px">{{ t(hk.note, hk.note_zh) }}</div>
+    {% endfor %}
   </div>
+  {% else %}
+  <div class="empty">{{ t('No new deals on the near-term calendar right now — the pipeline is quiet.','近期日历上暂无新交易 —— 发行管道清淡。') }}</div>
   {% endif %}
 
-  <!-- ===== methodology / why-not-scored ===== -->
-  <div class="section-title">{{ t('Why this is context, not a prediction — and US vs Hong Kong','为何这是背景而非预测 —— 以及美国 vs 香港') }}</div>
-  <div class="card">
-    <div class="sub" style="color:var(--text);margin-bottom:8px">{{ t(
-      'The pre-pricing public-data edge on day-1 underpricing is real and replicated out-of-sample (Huang–Jiang–Li–Wu; Çolak–Fu–Hasan find XGBoost predicts the direction well) — its strongest input is the bookbuilding price revision, finalised the night before trading. But it is an allocation good we cannot capture, so we never turn it into a score or a buy signal here.',
-      '发行前公开数据对首日低定价的预测优势是真实且经样本外复现的（Huang–Jiang–Li–Wu；Çolak–Fu–Hasan 发现 XGBoost 能较好预测方向）—— 其最强输入是簿记建档中的定价修正，在交易前夜才敲定。但这是我们无法捕获的配售品，因此本页绝不将其转化为评分或买入信号。') }}</div>
-    <div class="sub" style="color:var(--text)">{{ t(
-      'Hong Kong is structurally more retail-tradeable (a mandatory public-offer tranche with a clawback, a published over-subscription multiple, and a grey market that trades the night before listing) — but the keyless data for those signals is currently broken/blocked, so an HK leg is deferred. The next, more capturable leg is the 180-day LOCKUP-EXPIRY overhang: a deterministic, free-from-the-prospectus date with documented one-sided supply pressure — an avoid/de-risk-into-the-cliff flag rather than a tradeable short.',
-      '香港在结构上对散户更可交易（强制公开发售部分与回拨机制、公开的超额认购倍数，以及上市前夜交易的暗盘）—— 但这些信号的免密钥数据目前失效/受阻，故香港分项暂缓。下一个更可捕获的分项是 180 天禁售期到期的供给压制：一个确定的、可从招股书免费获取的日期，且有据可查的单边供给压力 —— 属于“临近解禁回避/降险”的提示，而非可交易的做空。') }}</div>
+  <!-- ============ STUDY SHELVES — progressive disclosure ============ -->
+  <div class="sec">{{ t('The detail','细节') }} <span class="sec-hint">{{ t('open a shelf for the full tape','展开查看完整数据') }}</span></div>
+  <div class="shelf">
+
+    <!-- window legs -->
+    <details>
+      <summary><span class="sh-ic">🧭</span>{{ t('What the window read is made of','窗口读数的构成') }}<span class="sh-hint">{{ window.constructive }}/{{ window.n_legs }} {{ t('supportive','偏好') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="tbl-wrap">
+          <table class="legtbl">
+            <thead><tr><th class="l" scope="col">{{ t('Risk-appetite leg','风险偏好分项') }}</th><th scope="col">{{ t('Reading','读数') }}</th><th scope="col">{{ t('State','状态') }}</th></tr></thead>
+            <tbody>
+            {% for lg in window.legs %}
+            <tr>
+              <td class="l" scope="row">{{ t(lg.label, lg.label_zh) }}<div style="color:var(--faint);font-size:11.5px">{{ t(lg.note, lg.note_zh) }}</div></td>
+              <td><b style="color:var(--ink)">{{ lg.value_disp }}</b></td>
+              <td><span class="chip" style="border-color:{{ lg.color }};color:{{ lg.color }}">{{ t(STATEW.get(lg.state, lg.state), lg.state_zh) }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="mini">{{ t('Legs reuse existing market reads — the macro de-risk score (from the main dashboard, not rebuilt here), VIX, HY-vs-IG credit, small-cap & high-beta leadership, the IPO-ETF trend. A description of risk appetite, not a forecast — and nothing here feeds any score or allocation.','各分项复用既有市场读数 —— 宏观降险评分（取自主看板，非在此新建）、VIX、高收益对投资级信用、小盘与高贝塔领先、新股ETF趋势。是对风险偏好的描述而非预测 —— 且此处任何内容都不进入任何评分或仓位。') }}</div>
+      </div>
+    </details>
+
+    <!-- recently priced -->
+    {% if recent %}
+    <details>
+      <summary><span class="sh-ic">🧾</span>{{ t('Recently priced','近期定价') }}<span class="sh-hint">{{ t('last 120 days','最近120天') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th scope="col">{{ t('Priced','定价日') }}</th><th scope="col">{{ t('Ticker','代码') }}</th><th scope="col">{{ t('Company','公司') }}</th><th class="n" scope="col">{{ t('Offer','发行价') }}</th><th class="n" scope="col">{{ t('Size','规模') }}</th>{% if rev_show %}<th scope="col">{{ t('Demand (vs range)','需求（对比区间）') }}{{ qtip('Partial-adjustment demand proxy: the final offer price vs the marketed prospectus range. Pricing above the range = strong book demand (the single strongest day-1 pop predictor in the literature); below = weak. DISPLAY-ONLY, never scored — it is finalised the night before trading and the pop accrues to allocation, so it is context, not a buy signal.','部分调整需求代理：最终发行价对比招股书营销区间。定价高于区间＝认购需求强劲（文献中首日涨幅最强的单一预测因子）；低于区间＝需求疲弱。仅供展示，从不计分 —— 它在交易前一晚才确定，涨幅归于配售，故为背景而非买入信号。') }}</th>{% endif %}</tr></thead>
+            <tbody>
+            {% for r in recent %}
+            <tr>
+              <td style="color:var(--faint)">{{ r.date }}<span style="color:var(--faint)"> · d+{{ r.days_since }}</span></td>
+              <td><b style="color:var(--ink)">{{ r.ticker }}</b></td>
+              <td>{{ r.company }}{% if r.is_spac %}<span class="spac">SPAC</span>{% endif %}</td>
+              <td class="n">{{ r.offer_price }}</td>
+              <td class="n">{{ r.size }}</td>
+              {% if rev_show %}<td><span style="color:{{ r.rev_col }}">{{ t(r.rev_en, r.rev_zh) }}{{ r.rev_pct }}</span></td>{% endif %}
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if rev_show %}
+        <div class="mini">{{ t('“Demand (vs range)” is the final offer price vs the marketed prospectus range — pricing above the range signals strong book demand (the strongest day-1 pop predictor in the literature), below signals weak. Covers','“需求（对比区间）”为最终发行价对比招股书营销区间 —— 定价高于区间＝认购需求强劲（文献中首日涨幅最强的预测因子），低于＝疲弱。覆盖') }} {{ rev_coverage }}/{{ rev_total }} {{ t('recent deals · display-only, never scored.','近期交易 · 仅供展示，从不计分。') }}</div>
+        {% elif rev_total %}
+        <div class="mini" style="opacity:.85">{{ t('“Demand vs range” (final offer price vs the marketed prospectus range) is the strongest day-1 pop predictor in the literature, but a marketed range accrues only for deals captured before they price — covers','“需求对比区间”（最终发行价对比招股书营销区间）是文献中首日涨幅最强的预测因子，但营销区间仅对定价前已捕获的交易累积 —— 目前覆盖') }} {{ rev_coverage }}/{{ rev_total }} {{ t('recent deals so far, so the column is held back until coverage builds. Display-only, never scored.','近期交易，故在覆盖累积前暂不显示该列。仅供展示，从不计分。') }}</div>
+        {% endif %}
+        <div class="mini">{{ t('SPACs are flagged, never dropped: they price at $10, rarely pop, and distort IPO base rates. Per-name price return vs the offer is shown only where we already hold the series — most fresh IPOs are outside our coverage, so we don’t fabricate it.','SPAC 被标记而非剔除：它们以 $10 定价、极少爆涨，会扭曲新股基准比率。相对发行价的个股回报仅在我们已持有序列时显示 —— 多数新上市公司不在覆盖范围内，故不会虚构。') }}</div>
+      </div>
+    </details>
+    {% endif %}
+
+    <!-- hong kong -->
+    {% if hk and hk.available %}
+    <details>
+      <summary><span class="sh-ic">🇭🇰</span>{{ t('Hong Kong issuance backdrop','香港发行背景') }}<span class="sh-hint">{{ t(hk.verdict, hk.verdict_zh) }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <div class="sec-sub" style="margin:10px 0">{{ t('Liquidity backdrop only. HK is structurally more retail-tradeable (a public-offer tranche with clawback, a published subscription multiple, a grey market) — but those deal-level demand feeds are keyless and currently blocked, so we show the liquidity that drives HK’s hot windows, not a deal signal. Never scored.','仅为流动性背景。香港在结构上更适合散户参与（公开发售部分＋回拨机制、公开的超额认购倍数、暗盘）—— 但这些交易级需求数据无密钥且目前受阻，故此处展示驱动香港热窗的流动性，而非交易信号。从不计分。') }}</div>
+        {% if hk.missing_note_en %}<div class="note warn">{{ t(hk.missing_note_en, hk.missing_note_zh) }}</div>{% endif %}
+        <div class="tbl-wrap">
+          <table class="legtbl">
+            <thead><tr><th class="l" scope="col">{{ t('Backdrop leg','背景分项') }}</th><th scope="col">{{ t('Reading','读数') }}</th><th scope="col">{{ t('State','状态') }}</th></tr></thead>
+            <tbody>
+            {% for l in hk.legs %}
+            <tr>
+              <td class="l" scope="row">{{ t(l.label, l.label_zh) }}<div style="color:var(--faint);font-size:11.5px">{{ t(l.note, l.note_zh) }}</div></td>
+              <td><b style="color:var(--ink)">{{ t(l.value, l.value_zh) }}</b></td>
+              <td><span class="chip" style="border-color:{{ l.color }};color:{{ l.color }}">{{ t(STATEW.get(l.state, l.state), l.state_zh) }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    <!-- methodology (Tier-3 home for the academic depth) -->
+    <details>
+      <summary><span class="sh-ic">📚</span>{{ t('Why this is context, not a prediction','为何这是背景而非预测') }}<span class="sh-hint">{{ t('methodology','方法') }}</span><span class="sh-caret">▶</span></summary>
+      <div class="sh-body">
+        <h4>{{ t('The honest thesis','诚实的论点') }}</h4>
+        <div class="mini" style="font-size:13px;color:var(--text)">{{ t(
+          'The day-1 IPO “pop” is genuinely predictable out-of-sample (Huang–Jiang–Li–Wu; Çolak–Fu–Hasan) — its strongest input is the bookbuilding price revision, finalised the night before trading. But it is measured from the rationed offer price and the opening trade already prices it in (Ritter–Welch), so without an offer-price allocation (which retail and small funds structurally cannot get) it is NOT capturable. Held from the first close, IPOs underperform (Ritter: median 3-year return ≈ −26%). So this page never predicts pops — it reads whether the window is open and shows what buying new issues in the secondary market has actually returned.',
+          '新股首日“爆涨”在样本外确实可预测（Huang–Jiang–Li–Wu；Çolak–Fu–Hasan）—— 其最强输入是簿记建档中的定价修正，在交易前夜才敲定。但它是相对被配售的发行价计量的，开盘价已将其计入（Ritter–Welch），因此没有发行价配售（散户与小型基金结构上拿不到）便无法捕获。若从首日收盘持有，新股长期跑输（Ritter：3 年中位回报约 −26%）。故本页从不预测爆涨 —— 它判断窗口是否开启，并展示在二级市场买入新股的真实回报。') }}</div>
+        <h4>{{ t('US vs Hong Kong','美国 vs 香港') }}</h4>
+        <div class="mini" style="font-size:13px;color:var(--text)">{{ t(
+          'Hong Kong is structurally more retail-tradeable — a mandatory public-offer tranche with a clawback, a published over-subscription multiple, and a grey market that trades the night before listing. But the keyless data for those deal-level demand signals is currently broken/blocked, so the HK shelf shows the liquidity backdrop (southbound flow, HIBOR, the HKD peg, HK risk appetite) rather than a deal signal.',
+          '香港在结构上更适合散户参与 —— 强制公开发售部分与回拨机制、公开的超额认购倍数，以及上市前夜交易的暗盘。但这些交易级需求信号的免密钥数据目前失效/受阻，故香港栏目展示流动性背景（南向资金、HIBOR、港元联系汇率、香港风险偏好），而非交易信号。') }}</div>
+      </div>
+    </details>
   </div>
 
   <div class="foot">
-    {{ t('Display-only, never scored. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) & First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking & Finance 2025), Ritter-Welch (2002). Not investment advice. Built',
-    '仅供展示，从不计分。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)。非投资建议。生成于') }} {{ built }}.
+    {{ t('Display-only, never scored — an avoidance + context tool, not a buy signal. Deal calendar: Nasdaq public JSON (community-sourced, not official; the predictive demand signals — over-subscription, book demand, allocation — live in paid feeds and are not here). Aftermarket: Renaissance IPO ETF (IPO) & First Trust IPOX-100 (FPX) vs SPY, total-return adjusted closes. Evidence: Ritter (Univ. of Florida IPO data), Huang-Jiang-Li-Wu (SSRN 4012288), Çolak-Fu-Hasan (J. Banking & Finance 2025), Ritter-Welch (2002), Field & Hanka (2001). Not investment advice. Built',
+    '仅供展示，从不计分 —— 一个规避与背景工具，而非买入信号。交易日历：纳斯达克公开 JSON（社区来源，非官方；具预测性的需求信号 —— 超额认购、簿记需求、配售 —— 存在于付费数据源，此处没有）。二级市场：复兴新股ETF (IPO) 与 First Trust IPOX-100 (FPX) 对比 SPY，总回报调整收盘价。证据：Ritter（佛罗里达大学新股数据）、Huang-Jiang-Li-Wu (SSRN 4012288)、Çolak-Fu-Hasan（《银行与金融杂志》2025）、Ritter-Welch (2002)、Field & Hanka (2001)。非投资建议。生成于') }} {{ built }}.
   </div>
 </div>
+{% include "_vector_polish.html.j2" %}
+<script defer src="illus.js"></script>
 <script src="theme.js"></script>
 </body></html>

@@ -50,7 +50,10 @@ def _render_w1c(setups: dict) -> str:
     snippet = snippet.replace(
         '{% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}', ""
     )
-    full = macros + snippet
+    # Prophet-card partial (2026-07-21 redesign): the shelf cards render via
+    # {{ pv.pv_card(...) }}; the real template imports it at file top (outside this
+    # snippet), so mirror the import here and register the partial with the loader.
+    full = '{% import "_prophet_card.html.j2" as pv %}\n' + macros + snippet
 
     SECZH = {
         "Technology": "科技",
@@ -58,7 +61,13 @@ def _render_w1c(setups: dict) -> str:
         "Industrials": "工业",
     }
 
-    env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
+    env = Environment(
+        loader=DictLoader({
+            "blk": full,
+            "_prophet_card.html.j2": (ROOT / "templates" / "_prophet_card.html.j2").read_text(),
+        }),
+        autoescape=False,
+    )
     env.globals["SECZH"] = SECZH
     return env.get_template("blk").render(setups=setups)
 

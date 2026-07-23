@@ -105,10 +105,20 @@ def _apply_hk_universe(df: pd.DataFrame) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 
 def _col(df: pd.DataFrame, col: str, idx) -> object:
-    """Safe column access; returns None if column missing or value NaN."""
+    """Safe column access; returns None if column missing or value NaN.
+
+    Container values (e.g. confluence_signals lists) skip the NaN test —
+    pd.isna() on them is elementwise and has no scalar truth value.  ndarray
+    (parquet round-trip of a list column) is returned as a plain list so the
+    value stays JSON-serializable downstream.
+    """
     if col not in df.columns:
         return None
     v = df.at[idx, col]
+    if isinstance(v, np.ndarray):
+        return v.tolist()
+    if isinstance(v, (list, dict, tuple, set)):
+        return v
     return None if pd.isna(v) else v
 
 

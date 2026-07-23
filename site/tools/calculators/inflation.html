@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inflation &amp; Purchasing Power Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="See what money is worth over time: enter an amount, an annual inflation rate and years to get future cost, purchasing power and total erosion.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/inflation.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Inflation &amp; Purchasing Power Calculator">
+<meta property="og:description" content="See what money is worth over time: enter an amount, an annual inflation rate and years to get future cost, purchasing power and total erosion.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/inflation.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Inflation &amp; Purchasing Power Calculator">
+<meta name="twitter:description" content="See what money is worth over time: enter an amount, an annual inflation rate and years to get future cost, purchasing power and total erosion.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Inflation \u0026 Purchasing Power Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Inflation &amp; Purchasing Power Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Inflation &amp; Purchasing Power Calculator</h1>
+  <p class="est-dek">See what money is worth over time: enter an amount, an annual inflation rate and years to get future cost, purchasing power and total erosion.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 34 h48"/><path class="egl-still" d="M8 34 v-4 M56 34 v-3"/><circle class="egl-draw" cx="16" cy="21" r="9"/><path class="egl-draw" d="M16 16 v10 M13 19 h6"/><circle class="egl-draw2" cx="35" cy="24" r="6"/><circle class="egl-down" cx="52" cy="27" r="3.4"/><path class="egl-mark" d="M27 12 C 38 12, 46 16, 51 22"/><path class="egl-mark" d="M51 22 l0.6 -4 M51 22 l-4 -0.6"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter an amount, an annual inflation rate and a number of years. You get what that same basket will cost later, and what today’s money will actually be worth once prices have climbed.</span><span class="l-zh">填入一笔金额、年通胀率和年数，即可得到——同样一篮子商品未来的价格，以及在物价上涨之后，今天这笔钱实际还值多少。</span></p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l"><span class="l-en">Amount today ($)</span><span class="l-zh">今日金额（$）</span></span>
+    <input id="amount" inputmode="decimal" autocomplete="off" placeholder="1,000"></label>
+  <label class="ci"><span class="ci-l"><span class="l-en">Annual inflation rate (%)</span><span class="l-zh">年通胀率（%）</span> <span class="hint"><span class="l-en">per year</span><span class="l-zh">每年</span></span></span>
+    <input id="rate" inputmode="decimal" autocomplete="off" placeholder="3"></label>
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">Years</span><span class="l-zh">年数</span></span>
+    <input id="years" inputmode="decimal" autocomplete="off" placeholder="10"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit"><span class="l-en">future cost</span><span class="l-zh">未来成本</span></span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Fill in all three fields to see how prices and purchasing power move.</span><span class="l-zh">填入三个字段，即可看到价格与购买力的变化。</span></p>
+  <dl class="co-rows">
+    <div><dt><span class="l-en">Purchasing power</span><span class="l-zh">购买力</span></dt><dd id="out-power">—</dd></div>
+    <div><dt><span class="l-en">Value lost</span><span class="l-zh">损失价值</span></dt><dd id="out-lost">—</dd></div>
+    <div><dt><span class="l-en">Erosion</span><span class="l-zh">侵蚀比例</span></dt><dd id="out-erosion">—</dd></div>
+    <div><dt><span class="l-en">Total price rise</span><span class="l-zh">价格总涨幅</span></dt><dd id="out-rise">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Money loses value when prices rise. Multiply an amount by <strong>(1 + inflation)</strong> for each year and you get the <strong>future cost</strong> — what the same basket of goods will run later. Divide instead and you get <strong>purchasing power</strong> — what today’s amount will actually buy after prices have climbed. Same rate, opposite directions.</span><span class="l-zh">当物价上涨时，货币会贬值。把一笔金额按每年 <strong>(1 + 通胀率)</strong> 连乘，得到的是<strong>未来成本</strong>——同样一篮子商品日后要花的钱。反过来相除，得到的是<strong>购买力</strong>——在物价上涨之后，今天这笔钱实际能买到的东西。同一个利率，方向相反。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Future cost</strong> = Amount × (1 + i ÷ 100)<sup>n</sup></span><span class="l-zh"><strong>未来成本</strong> = 金额 × (1 + i ÷ 100)<sup>n</sup></span><br>
+<span class="l-en"><strong>Purchasing power</strong> = Amount ÷ (1 + i ÷ 100)<sup>n</sup></span><span class="l-zh"><strong>购买力</strong> = 金额 ÷ (1 + i ÷ 100)<sup>n</sup></span><br>
+<span class="l-en"><strong>Erosion</strong> = 100 × ( 1 − 1 ÷ (1 + i ÷ 100)<sup>n</sup> )</span><span class="l-zh"><strong>侵蚀比例</strong> = 100 × ( 1 − 1 ÷ (1 + i ÷ 100)<sup>n</sup> )</span>
+<br><span class="l-en">where i = annual inflation %, n = years</span><span class="l-zh">其中 i = 年通胀率 %，n = 年数</span>
+</div>
+<p><span class="l-en">Notice that erosion is never quite as large as the price rise. If prices climb 34%, purchasing power does not fall 34% — it falls to 1 ÷ 1.34, a loss closer to 25%. The two percentages describe the same gap seen from opposite ends, and the smaller one is always the drop in what your money buys.</span><span class="l-zh">请注意，侵蚀比例永远不会和价格涨幅一样大。如果物价上涨 34%，购买力并不会下降 34%——而是降到 1 ÷ 1.34，损失更接近 25%。这两个百分比从相反的两端描述同一段差距，而其中较小的那个，始终是你的钱所能购买之物的下降幅度。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a basket costs <span class="num">$1,000</span> today, inflation runs <span class="num">3%</span> a year, and we look <span class="num">10</span> years ahead.</span><span class="l-zh">假设一篮子商品今天价值 <span class="num">$1,000</span>，通胀率为每年 <span class="num">3%</span>，我们展望 <span class="num">10</span> 年之后。</span></p>
+<ul>
+<li><span class="l-en">Growth factor = <span class="num">(1.03)<sup>10</sup> = 1.3439</span></span><span class="l-zh">增长系数 = <span class="num">(1.03)<sup>10</sup> = 1.3439</span></span></li>
+<li><span class="l-en">Future cost = <span class="num">1,000 × 1.3439 = $1,343.92</span></span><span class="l-zh">未来成本 = <span class="num">1,000 × 1.3439 = $1,343.92</span></span></li>
+<li><span class="l-en">Purchasing power = <span class="num">1,000 ÷ 1.3439 = $744.09</span></span><span class="l-zh">购买力 = <span class="num">1,000 ÷ 1.3439 = $744.09</span></span></li>
+<li><span class="l-en">Erosion = <span class="num">100 × (1 − 744.09 ÷ 1,000) ≈ 25.6%</span> — prices rose 34%, buying power fell 25.6%.</span><span class="l-zh">侵蚀比例 = <span class="num">100 × (1 − 744.09 ÷ 1,000) ≈ 25.6%</span>——物价上涨 34%，购买力下降 25.6%。</span></li>
+</ul>
+</div>
+<p><span class="l-en">So $1,000 stuffed in a drawer for a decade would still read “$1,000”, but it would stretch like $744 does now. The dollar figure never changed; what it commands did. That silent gap is what inflation actually costs.</span><span class="l-zh">所以，把 $1,000 塞进抽屉存放十年，上面依然写着「$1,000」，但它的购买力只相当于今天的 $744。数字从未改变，改变的是它能买到什么。这段无声的差距，正是通胀真正的代价。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Subtracting the rate instead of compounding it</span><span class="l-zh">用减法代替连乘</span></span>
+<p><span class="l-en">A frequent shortcut is to take “3% a year for 10 years” and subtract 30% of purchasing power. But inflation compounds — each year’s rise stacks on a base already lifted by the year before — so the price rise is 34%, not 30%. And because purchasing power is the <em>reciprocal</em>, the drop is 25.6%, not 30% either. Over long horizons or high rates the gap between the quick subtraction and the real math grows wide enough to change a plan.</span><span class="l-zh">一个常见的捷径是把「每年 3%、共 10 年」直接减去 30% 的购买力。但通胀是连乘的——每一年的上涨都叠加在前一年已经抬高的基础之上——所以价格涨幅是 34%，而非 30%。又因为购买力是其<em>倒数</em>，下降幅度是 25.6%，同样不是 30%。在较长的时间跨度或较高的利率下，这种快速减法与真实计算之间的差距会大到足以改变一个计划。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">This tool assumes one steady rate every year, which real inflation never obeys. A few honest limits:</span><span class="l-zh">本工具假设每年都是一个稳定的利率，而真实的通胀从不遵守这一点。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>A single average rate.</strong> Real inflation swings year to year. Use a long-run average as a rough guide, not a forecast of any single future year.</span><span class="l-zh"><strong>单一平均利率。</strong>真实通胀逐年波动。请把长期平均值当作粗略参照，而非对某一具体未来年份的预测。</span></li>
+<li><span class="l-en"><strong>Your basket isn’t the index.</strong> Headline inflation is an average across many goods. Rent, tuition and healthcare can run far hotter than the number, so your personal erosion may differ.</span><span class="l-zh"><strong>你的篮子不是指数。</strong>公布的通胀是许多商品的平均值。房租、学费和医疗的涨幅可能远高于这个数字，因此你个人感受到的侵蚀可能不同。</span></li>
+<li><span class="l-en"><strong>It ignores what the money earns.</strong> This is purchasing power on idle cash. Money invested at a return above inflation grows in real terms — the erosion here is the hurdle a return has to clear, not a verdict on saving.</span><span class="l-zh"><strong>它忽略了资金的收益。</strong>这里算的是闲置现金的购买力。以高于通胀的回报进行投资的资金，其实际价值是增长的——此处的侵蚀是回报必须跨越的门槛，而非对储蓄的评判。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Inflation doesn’t shrink the number on the bill — it shrinks what the number can buy. Judge cash by its purchasing power, not its face value.</span><span class="l-zh">通胀不会缩小账单上的数字——它缩小的是这个数字能买到什么。衡量现金要看它的购买力，而非它的面值。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">See how a return can outrun inflation with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/compounding.html"><span class="l-en">compounding calculator</span><span class="l-zh">复利计算器</span></a><span class="l-en">, or turn two values into a growth rate with the <a href="</span><span class="l-zh">看看回报如何跑赢通胀，或用 <a href="</span>../../tools/calculators/cagr.html"><span class="l-en">CAGR calculator</span><span class="l-zh">年化增长率计算器</span></a><span class="l-en">.</span><span class="l-zh">把两个数值换算成增长率。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/compounding.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Compound Interest Calculator</span></a><a class="est-relcard" href="../../tools/calculators/cagr.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">CAGR Calculator</span></a><a class="est-relcard" href="../../tools/calculators/retirement.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Retirement Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (spec math — do not re-derive) ────────────────────────────
+  // inputs: {A amount, i annualInflation%, n years}. Returns an outputs object,
+  // or {ok:false, msg} for invalid input. Never returns NaN/Infinity.
+  function compute(inp){
+    var A=inp.A, i=inp.i, n=inp.n;
+    if(!(A>0)) return {ok:false, msg:"Enter an amount above zero."};
+    if(i===undefined || i===null || !isFinite(i)) return {ok:false, msg:"Enter an annual inflation rate."};
+    if(!(n>0)) return {ok:false, msg:"Enter a number of years above zero."};
+    if(i <= -100) return {ok:false, msg:"An inflation rate of −100% or lower would erase all prices — enter a rate above −100%."};
+    var factor = Math.pow(1 + i/100, n);
+    if(!isFinite(factor) || factor <= 0) return {ok:false, msg:"That combination is too extreme to compute — try a smaller rate or fewer years."};
+    var futureCost = A * factor;
+    var power = A / factor;
+    var lost = A - power;
+    var erosionPct = 100 * (1 - 1/factor);   // = 100·(1 − power/A)
+    var risePct = 100 * (factor - 1);
+    return {
+      ok:true, futureCost:futureCost, power:power, lost:lost,
+      erosionPct:erosionPct, risePct:risePct, deflation: i < 0
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    { in:{A:1000, i:3,  n:10}, want:{futureCost:1343.92, power:744.09, erosionPct:25.6} },
+    { in:{A:10000, i:0, n:20}, want:{futureCost:10000,   power:10000,  erosionPct:0} }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in), w = ex.want, k;
+      if(!got.ok){ console.error("inflation self-check "+i+": compute failed", got); return; }
+      for(k in w){ if(Math.abs(got[k] - w[k]) > 0.1){
+        console.error("inflation self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { amount:$("amount"), rate:$("rate"), years:$("years") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outPower=$("out-power"), outLost=$("out-lost"), outErosion=$("out-erosion"), outRise=$("out-rise"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function pct(n){ return n.toFixed(1) + "%"; }   // one decimal, matches the prose
+    function dash(){ outMain.textContent="—";
+      [outPower,outLost,outErosion,outRise].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var last=null;
+    function render(){
+      var inp={ A:numFrom(els.amount), i:numFrom(els.rate), n:numFrom(els.years) };
+      var res=compute(inp); last=res;
+      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      outMain.textContent  = money(res.futureCost);
+      outPower.textContent = money(res.power);
+      outLost.textContent  = money(res.lost);
+      outErosion.textContent = pct(res.erosionPct);
+      outRise.textContent  = pct(res.risePct);
+      outErosion.className = res.erosionPct > 0 ? "neg" : (res.erosionPct < 0 ? "pos" : "");
+      // Law 3: plain-word interpretation under the number
+      var plain;
+      if(res.deflation){
+        plain = "With prices falling, this basket would cost " + money(res.futureCost) +
+          " later — and " + money(inp.A) + " held as cash would then buy what " + money(res.power) +
+          " buys today, a gain of " + pct(-res.erosionPct) + " in purchasing power.";
+        outPlain.className="co-plain";
+      } else if(res.erosionPct === 0){
+        plain = "At 0% inflation nothing changes — the same basket still costs " + money(res.futureCost) +
+          ", and " + money(inp.A) + " keeps its full purchasing power.";
+        outPlain.className="co-plain";
+      } else {
+        plain = "This basket costs " + money(res.futureCost) + " after " + inp.n + " year" +
+          (inp.n===1?"":"s") + ". The " + money(inp.A) + " you hold as cash would then buy only what " +
+          money(res.power) + " buys today — about " + pct(res.erosionPct) + " of its purchasing power gone.";
+        outPlain.className="co-plain warn";
+      }
+      outPlain.textContent = plain;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Inflation: future cost " + money(last.futureCost) +
+        " · purchasing power " + money(last.power) +
+        " · " + pct(last.erosionPct) + " erosion — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    ["amount","rate","years"].forEach(function(id){
+      els[id].addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

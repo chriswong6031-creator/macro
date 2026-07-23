@@ -516,7 +516,12 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            # rename/rename on content-hashed site/assets/css/* is deterministic across
+            # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
+            # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
+            # both sides' hashed files (next externalize_css prunes the orphan) and
+            # finishes the rebase; anything else is left for the abort+retry below.
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
               python -m scripts.check_template_site_sync --fix || true
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete"
@@ -529,7 +534,8 @@ jobs:
             git rebase --abort 2>/dev/null || true
             echo "closingbell push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
           done
-          echo "::warning::could not push closingbell rendered site after 5 attempts — nightly will re-land it"
+          echo "::error title=closingbell rendered site NOT pushed::5 rebase/push attempts failed — main does not carry this render (the Pages artifact still deploys it; the nightly re-lands main). With rename/rename now autoresolved, repeated hits mean a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ⚠️ closingbell rendered site NOT pushed after 5 attempts (artifact still deploys; nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
 
       # ── strip heavy per-ticker stores from the Pages artifact (served from R2) ───────
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)

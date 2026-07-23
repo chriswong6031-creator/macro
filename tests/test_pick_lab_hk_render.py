@@ -696,8 +696,11 @@ def test_hk_velocity_desk_lane_present():
     assert "hk-velocity-desk" in HK_SRC or "hk_1d_velocity_desk" in HK_SRC, (
         "1D Velocity Desk panel missing from hk.html.j2"
     )
-    assert "1D Velocity Desk" in HK_SRC or "1日速度台" in HK_SRC, (
-        "1D Velocity Desk bilingual heading missing from hk.html.j2"
+    # Tier-1 heading renamed to plain words in the 2026-07-23 hk_stocks revamp
+    # ("Fast movers — 1-day momentum" / 快速异动); the panel id + vm key are the
+    # stable contract, the visible heading is the doctrine-compliant name.
+    assert "Fast movers" in HK_SRC or "快速异动" in HK_SRC, (
+        "1D Velocity Desk bilingual heading (Fast movers / 快速异动) missing from hk.html.j2"
     )
 
 

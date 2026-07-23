@@ -21,3 +21,7 @@ maxminddb>=1.4
 # gracefully unavailable rather than crashing the API process).
 pandas>=2.2
 pyarrow>=16
+# Billing spine (MNZ W2): app/billing.py — Stripe Checkout + webhook + portal +
+# reconciler. Needs the Entitlements API (GA), so pin >=11. Imported lazily inside
+# app/billing.py so the API process still starts if the dep is briefly absent.
+stripe>=11,<13

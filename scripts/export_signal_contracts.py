@@ -258,10 +258,10 @@ ARTIFACT_MANIFEST = [
      "note": "Prophet China board; CN calendar has more holidays → wider cadence"},
     {"artifact": "site/factordata/canada_standouts.json",
      "kind": "board",
-     "schema_version": "1.0.0",
+     "schema_version": "1.1.0",
      "schema_fields": [
          "as_of", "branch", "buy", "confluence", "dispersion_regime", "eligible",
-         "laggards", "rank_basis", "universe",
+         "laggards", "rank_basis", "sector_concentration", "universe",
      ],
      "schema_item_fields": [
          "align_tier", "alpha", "alpha_entry", "board_pos", "conviction", "dir",

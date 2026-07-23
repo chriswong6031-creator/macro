@@ -10,7 +10,7 @@
     {
       "name": "repo-root",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-c", "import os,http.server,socketserver;socketserver.TCPServer(('',int(os.environ.get('PORT') or 8899)),http.server.SimpleHTTPRequestHandler).serve_forever()"],
+      "runtimeArgs": ["-c", "import os,http.server;http.server.ThreadingHTTPServer(('',int(os.environ.get('PORT') or 8899)),http.server.SimpleHTTPRequestHandler).serve_forever()"],
       "port": 8899,
       "autoPort": true
     },

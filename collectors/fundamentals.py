@@ -33,6 +33,8 @@ class FundamentalsAdapter(Adapter):
         self.sectors = config.load()["yahoo"]["tickers"]["sectors"]
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        if not self.cfg.get("enabled", True):
+            return {}
         rows = []
         today = pd.Timestamp(date.today())
         for t in self.sectors:

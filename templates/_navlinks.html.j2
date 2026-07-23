@@ -26,11 +26,13 @@
 {% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
     <div class="nav-links">
     {# Brand mark — the crafted Mastermind “M” logomark (gradient tile + ascending
-       market-peak M), first item in the menu, links Home. Icon-only (styled by
+       market-peak M), first item in the menu, links Home. Since 2026-07-22 the
+       signed-in home is start.html (index.html is the anonymous marketing
+       landing), so the brand routes app users there. Icon-only (styled by
        .site-nav .nav-brand in theme.css). Kept in sync with the landing-hub lockup
        in scripts/build_vector.py (_BRAND_MARK_SVG). Plain-text aria-label only — the
        bilingual t() macro emits <span> HTML that would corrupt the attribute. #}
-    <a class="nav-brand" href="{{ NP }}index.html" aria-label="MASTERMIND — Home">
+    <a class="nav-brand" href="{{ NP }}start.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -84,7 +86,7 @@
             <a href="{{ NP }}gex.html">🧲 {{ t('Options Desk', '期权台') }}<span class="d">{{ t('GEX · walls · vol surface', 'GEX · 墙 · 波动率曲面') }}</span></a>
             {% if options_screener_enabled is not defined or options_screener_enabled %}<a href="{{ NP }}options_screener.html">📊 {{ t('Options Screener', '期权筛选台') }}<span class="d">{{ t('IV · IV-rank · GEX tier · flow · max-pain · 350+ names', 'IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的') }}</span></a>{% endif %}
             <a href="{{ NP }}movers.html">📈 {{ t('Daily Movers', '每日异动') }}<span class="d">{{ t('Free · biggest gainers & losers today · themes moving together', '免费 · 今日涨跌最大 · 联动主题') }}</span></a>
-            {% if flow_desk_enabled is not defined or flow_desk_enabled %}<a href="{{ NP }}flow_desk.html">🌊 {{ t('Group Flow Heatmap', '板块资金流热力图') }}<span class="d">{{ t('Market tide · sector premium z · top movers · ETF proxy', '资金潮汐 · 板块权利金Z · 净额排行 · ETF代理') }}</span></a>{% endif %}
+            {% if flow_desk_enabled is not defined or flow_desk_enabled %}<a href="{{ NP }}flow_desk.html">🌊 {{ t('US Options Flow', '美股期权资金流') }}<span class="d">{{ t('Market tide · where the money went · biggest bets', '资金潮汐 · 资金流向 · 最大押注') }}</span></a>{% endif %}
             {% if intraday_flow_enabled is not defined or intraday_flow_enabled %}<a href="{{ NP }}intraday_flow.html">📊 {{ t('Intraday Flow Tracker', '盘中资金流追踪') }}<span class="d">{{ t('Volume durability · RVOL · VWAP · ~options flow · K/7 confluence', '量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚') }}</span></a>{% endif %}
             {% if flow_leaders_enabled is not defined or flow_leaders_enabled %}<a href="{{ NP }}flow_leaders.html">🏆 {{ t('Flow Leaders', '资金领袖') }}<span class="d">{{ t('Recurring net-impact leaders · washout turns · K/N confluence', '持续净额领头 · 洗盘转机 · K/N汇聚') }}</span></a>{% endif %}
             {% if darkpool_enabled is not defined or darkpool_enabled %}<a href="{{ NP }}darkpool.html">🌑 {{ t('Dark Pool Desk', '场外暗池台') }}<span class="d">{{ t('Off-exchange volume · short ratio · ATS venues', '场外成交量 · 融券比率 · ATS场所') }}</span></a>{% endif %}
@@ -310,6 +312,8 @@
         </div>
       </div>
     </div>
+      {# Plans / pricing — a single destination, so a leaf link (no dropdown). #}
+      <a class="nav-link nav-link-plans" href="{{ NP }}plans.html">✨ {{ t('Plans', '定价') }}</a>
   </div>
   {# Live-price layer (progressive enhancement). Wired here ONCE — this partial is
      the single nav include every built page reaches — so live.js patches any
@@ -317,9 +321,3 @@
      when neither a Worker URL nor a snapshot URL is configured. #}
   <script src="{{ NP }}live_config.js"></script>
   <script src="{{ NP }}live.js"></script>
-  {# CLS guard pair: theme.css (+ the _vector_polish port) pre-collapses .nav-links
-     below 1260px at parse, so the menu never renders expanded and then vanishes
-     when theme.js's hamburger sheet lands (~2s on phones — a 0.30 layout shift,
-     2026-07-21 audit). With JS off the hamburger never arrives — this noscript
-     restores the always-expanded fallback (every link stays reachable). #}
-  <noscript><style>.site-nav .nav-links{display:flex !important}</style></noscript>

@@ -94,7 +94,7 @@ _SAMPLE_ACCOUNTS = [
 _MINIMAL_CFG = {
     "desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS},
     "links": {
-        "base_url": "https://mastermind-x.com/",
+        "base_url": "https://www.mastermind-x.com/",
         "utm_source": "x",
         "short_links": True,
     },
@@ -111,7 +111,7 @@ def test_canonical_link_format():
     # Exact string equality for known input
     url = canonical_link("flagship", "signal", "post-123")
     assert url == (
-        "https://mastermind-x.com/"
+        "https://www.mastermind-x.com/"
         "?utm_source=x"
         "&utm_medium=flagship"
         "&utm_campaign=signal"
@@ -186,7 +186,7 @@ def test_tag_text_rewrites_untagged():
     from engine.marketing.links import tag_text
 
     canonical = (
-        "https://mastermind-x.com/"
+        "https://www.mastermind-x.com/"
         "?utm_source=x&utm_medium=flagship&utm_campaign=signal&utm_content=p1"
     )
 
@@ -267,7 +267,7 @@ def test_attach_links_every_item():
             ],
         },
     ]
-    cfg = {"links": {"base_url": "https://mastermind-x.com/", "utm_source": "x", "short_links": True}}
+    cfg = {"links": {"base_url": "https://www.mastermind-x.com/", "utm_source": "x", "short_links": True}}
 
     summary = attach_links(account_rows, cfg=cfg)
 
@@ -282,14 +282,14 @@ def test_attach_links_every_item():
         # link is the canonical link for this item
         expected = canonical_link(
             item["account"], item["type"], item["id"],
-            base_url="https://mastermind-x.com/", utm_source="x",
+            base_url="https://www.mastermind-x.com/", utm_source="x",
         )
         assert item["link"] == expected, (
             f"item {item['id']} link mismatch: {item['link']} != {expected}"
         )
         assert is_tagged_canonical(item["link"]), f"item {item['id']} link not tagged canonical"
         assert item["short_code"] == short_code(item["id"]), "short_code mismatch"
-        assert item["short_link"] == short_link(item["id"], base_url="https://mastermind-x.com/")
+        assert item["short_link"] == short_link(item["id"], base_url="https://www.mastermind-x.com/")
 
     # Summary counts
     assert summary["posts_linked"] == 6
@@ -484,9 +484,10 @@ def test_short_links_disabled(tmp_path):
 def test_overflow_falls_back_to_short_link():
     from engine.marketing.links import attach_links
 
-    # Body sized so it passes 275 with the bare domain but not with the ~100-char
-    # canonical link; the ~40-char short link fits again.
-    filler = "x" * 230
+    # Body sized (for the www canonical host) so it passes 275 with the bare
+    # domain but not with the ~112-char canonical link; the ~43-char short link
+    # fits again.
+    filler = "x" * 220
     body = f"{filler} mastermind-x.com"
     rows = [{"id": "flagship", "queue": [
         {"id": "post-flagship-001", "type": "signal", "account": "flagship",

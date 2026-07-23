@@ -1,0 +1,316 @@
+{#=============================================================================
+  calculators/risk_of_ruin.html.j2 — Risk of Ruin calculator
+  Clones the flagship position_size.html.j2 structure exactly (CONTRACT §6 DOM +
+  §8 explainer order). simulate() is PURE and DETERMINISTIC: a fixed-seed
+  mulberry32 LCG drives a Monte-Carlo of M=10000 fixed-fractional accounts, so
+  the readout is stable and the §6 WORKED_EXAMPLES self-check is reproducible.
+  No Math.random anywhere. The heavy Monte-Carlo runs in an inline Blob Web
+  Worker (built from the same simulate() source) so the UI never blocks; a
+  synchronous fallback covers browsers/CSP where Workers are unavailable, and
+  the self-check is deferred to idle. Never renders NaN/Infinity; empty/invalid
+  → plain sentence in .co-plain and "—" in the numbers. Inputs accept commas.
+=============================================================================#}
+{% extends "seo_calculator_base.html.j2" %}
+{% import "_estate_glyphs.html.j2" as glyphs %}
+
+{% block calc_glyph %}{{ glyphs.glyph('risk-of-ruin', 'crown') }}{% endblock %}
+
+{% block calc_form %}
+<p class="cc-lede">{{ t('Enter your win rate, payoff ratio and the fraction of equity you risk per trade. A fixed seed runs 10,000 hypothetical accounts to estimate how often that plan drops past your ruin threshold.',
+   '填入胜率、盈亏比与每笔交易承担的资金比例。程序以固定随机种子模拟 10,000 个假想账户，估算该策略跌破你设定的爆仓线的频率。') }}</p>
+
+<div class="calc-in">
+  <label class="ci"><span class="ci-l">{{ t('Win rate (%)', '胜率（%）') }}</span>
+    <input id="winrate" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci"><span class="ci-l">{{ t('Payoff ratio', '盈亏比') }} <span class="hint">{{ t('avg win ÷ avg loss (R)', '平均盈利 ÷ 平均亏损（R）') }}</span></span>
+    <input id="payoff" inputmode="decimal" autocomplete="off" placeholder="1.5"></label>
+  <label class="ci"><span class="ci-l">{{ t('Risk per trade (%)', '每笔风险（%）') }} <span class="hint">{{ t('of current equity', '占当前资金') }}</span></span>
+    <input id="riskpct" inputmode="decimal" autocomplete="off" placeholder="2"></label>
+  <label class="ci"><span class="ci-l">{{ t('Ruin threshold (%)', '爆仓线（%）') }} <span class="hint">{{ t('drawdown from start', '距起点回撤') }}</span></span>
+    <input id="ruindd" inputmode="decimal" autocomplete="off" placeholder="50"></label>
+  <label class="ci ci-wide"><span class="ci-l">{{ t('Trades to simulate', '模拟交易笔数') }} <span class="hint">{{ t('length of each run · max 1,000', '每次模拟的长度 · 上限 1,000') }}</span></span>
+    <input id="trades" inputmode="decimal" autocomplete="off" placeholder="500"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span><span class="co-unit">{{ t('risk of ruin', '爆仓概率') }}</span></div>
+  <p class="co-plain" id="out-plain">{{ t('Fill in win rate, payoff and risk to estimate the odds.', '填入胜率、盈亏比与风险即可估算爆仓概率。') }}</p>
+  <dl class="co-rows">
+    <div><dt>{{ t('Expectancy / trade', '每笔期望') }}</dt><dd id="out-exp">—</dd></div>
+    <div><dt>{{ t('Ruin threshold', '爆仓线') }}</dt><dd id="out-dd">—</dd></div>
+    <div><dt>{{ t('Accounts simulated', '模拟账户数') }}</dt><dd id="out-m">—</dd></div>
+    <div><dt>{{ t('Trades per run', '每次笔数') }}</dt><dd id="out-n">—</dd></div>
+  </dl>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button">{{ t('Copy result', '复制结果') }}</button>
+  <span class="copied" id="copied" role="status">{{ t('Copied', '已复制') }}</span>
+</div>
+{% endblock %}
+
+{% block article_body %}
+<p>{{ t('<strong>Risk of ruin</strong> is the probability that a fixed-fractional strategy — one that risks a set percent of current equity on each trade — drops past a drawdown you define as ruin before its edge can compound. It depends on three things: how often you win, how much a win pays relative to a loss, and how much you stake each time. The first two set your <em>edge</em>; the third decides whether that edge survives its own volatility.',
+   '<strong>爆仓概率</strong>是指一个固定比例策略（即每笔交易都按当前资金的固定百分比下注）在其优势还来不及复利之前，就跌破你所定义的爆仓回撤的概率。它取决于三点：赢的频率、一次盈利相对一次亏损的倍数，以及每次下注的大小。前两者决定你的<em>优势</em>，第三者则决定这份优势能否熬过它自身的波动。') }}</p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span>{{ t('How it is estimated', '如何估算') }}</h2>
+<div class="formula">
+{{ t('Each trade: <strong>win</strong> (prob W) → equity × (1 + r·b);  <strong>loss</strong> → equity × (1 − r)', '每笔交易：<strong>盈</strong>（概率 W）→ 资金 × (1 + r·b)；<strong>亏</strong> → 资金 × (1 − r)') }}<br>
+{{ t('<strong>Ruined</strong> if equity ever ≤ 1 − dd  (starting equity = 1)', '若资金曾 ≤ 1 − dd 则<strong>爆仓</strong>（起始资金 = 1）') }}<br>
+{{ t('<strong>Risk of ruin</strong> = ruined accounts ÷ 10,000 × 100%', '<strong>爆仓概率</strong> = 爆仓账户数 ÷ 10,000 × 100%') }}<br>
+{{ t('<strong>Expectancy (R)</strong> = W·b − (1 − W)', '<strong>每笔期望（R）</strong> = W·b − (1 − W)') }}
+</div>
+<p>{{ t('There is no tidy closed form for a compounding, fixed-fractional account, so this runs a <em>Monte-Carlo</em>: 10,000 simulated accounts, each trading the plan for the number of trades you set, counting how many ever cross the ruin line. A fixed random seed makes the answer reproducible — the same inputs always return the same number, so you can compare plans honestly rather than chase a shifting figure.',
+   '对于一个复利的固定比例账户，并没有简洁的闭式解，因此这里采用<em>蒙特卡洛</em>模拟：10,000 个模拟账户，每个都按你设定的笔数交易该策略，统计有多少个曾越过爆仓线。固定的随机种子让结果可复现——相同输入始终返回相同数字，你可以据此诚实地比较不同方案，而非追逐一个飘忽的数值。') }}</p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span>{{ t('A worked example', '一个算例') }}</h2>
+<div class="worked">
+<span class="co-h">{{ t('Worked example', '算例') }}</span>
+<p>{{ t('Suppose a trader wins <span class="num">50%</span> of the time at a <span class="num">1 : 1</span> payoff and risks <span class="num">2%</span> of equity per trade, calling a <span class="num">50%</span> drawdown ruin, over <span class="num">500</span> trades.',
+   '假设一位交易者胜率为 <span class="num">50%</span>、盈亏比为 <span class="num">1 : 1</span>，每笔风险为资金的 <span class="num">2%</span>，将 <span class="num">50%</span> 回撤视为爆仓，共交易 <span class="num">500</span> 笔。') }}</p>
+<ul>
+<li>{{ t('Expectancy = <span class="num">0.5 × 1 − 0.5 = 0.00 R</span> — a coin flip, no edge.', '期望 = <span class="num">0.5 × 1 − 0.5 = 0.00 R</span>——一枚硬币，毫无优势。') }}</li>
+<li>{{ t('With no edge, ruin is driven purely by the size of the swings. The simulation returns roughly <span class="num">16%</span> risk of ruin at this stake.', '在没有优势时，爆仓完全由波动幅度决定。在此下注比例下，模拟返回约 <span class="num">16%</span> 的爆仓概率。') }}</li>
+<li>{{ t('Cut the stake to <span class="num">1%</span> and the same edgeless plan falls to a low single-digit chance of ruin — the payoff never changed, only the bet size.', '将下注比例降到 <span class="num">1%</span>，同样毫无优势的策略，其爆仓概率便降至低个位数——盈亏比从未改变，改变的只是下注大小。') }}</li>
+</ul>
+</div>
+<p>{{ t('That is the whole lesson in one line: a <em>break-even</em> strategy can still ruin you if you bet too much, and it can survive almost indefinitely if you bet a little. Position size, not the payoff, is doing the heavy lifting.',
+   '这就是全部道理，浓缩成一句：一个<em>不赚不赔</em>的策略，若下注过重，仍可能让你爆仓；若下注轻微，则几乎能无限期存活。真正起决定作用的是仓位大小，而非盈亏比。') }}</p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span>{{ t('The common trap', '常见陷阱') }}</h2>
+<div class="callout warn">
+<span class="co-h">{{ t('A positive edge feels like a safety net', '正期望让人误以为有安全网') }}</span>
+<p>{{ t('It is tempting to think a positive expectancy makes ruin impossible. It does not. An edge that pays off <em>on average</em> still arrives as a jagged string of wins and losses, and a long-enough cold streak at a large stake can carry equity below the ruin line before the average ever asserts itself. Doubling your risk per trade does not double your return — it multiplies the depth of your drawdowns and can push a perfectly profitable plan into the ruin zone.',
+   '人们很容易以为正期望就能杜绝爆仓。并非如此。一份<em>平均</em>盈利的优势，实际是以盈亏交错的锯齿状序列到来的；足够长的连亏叠加较大的下注，可能在平均值显现之前就把资金拖到爆仓线以下。把每笔风险翻倍并不会让收益翻倍——它会成倍加深你的回撤，足以把一个本该盈利的策略推入爆仓区间。') }}</p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span>{{ t('Where this breaks', '它的局限') }}</h2>
+<p>{{ t('This is a clean model of one idealized plan. Real trading is messier, and the estimate should be read with a few honest limits in mind:',
+   '这是对一个理想化策略的简洁建模。真实交易要复杂得多，读取这个估算时应记住几点诚实的局限：') }}</p>
+<ul>
+<li>{{ t('<strong>Every trade is treated as independent and identical.</strong> Real win rates and payoffs drift with the regime; a plan that worked in a trend can bleed in a chop. The model assumes the odds you type stay fixed forever.',
+   '<strong>每笔交易都被视为独立且相同。</strong>真实的胜率与盈亏比会随市场环境漂移；在趋势中奏效的策略，在震荡里可能持续失血。模型假设你输入的赔率永远固定不变。') }}</li>
+<li>{{ t('<strong>Wins and losses are fixed at exactly b and 1.</strong> Actual outcomes scatter — a rare outsized loss (a gap through your stop) is not captured, so true ruin risk can be higher than the clean figure.',
+   '<strong>盈亏被固定为恰好 b 和 1。</strong>真实结果是分散的——一次罕见的巨亏（跳空穿过止损）并未被纳入，因此真实的爆仓风险可能高于这个干净的数字。') }}</li>
+<li>{{ t('<strong>Ruin is a threshold you chose.</strong> Crossing a 50% drawdown on paper is not a margin call, and stopping short of it is not safety. Treat the percent as a planning line, not a verdict.',
+   '<strong>爆仓线是你自己选定的。</strong>纸面上跌破 50% 回撤并不等于被强平，而没跌到它也不等于安全。请把这个百分比当作一条规划线，而非最终裁决。') }}</li>
+</ul>
+
+<div class="callout key">
+<span class="co-h">{{ t('The one line to remember', '记住这一句') }}</span>
+<p>{{ t('Your edge decides whether you win in the long run; your bet size decides whether you are still around to see it. Smaller risk per trade slashes the odds of ruin far faster than it dents your returns.',
+   '你的优势决定长期能否盈利；你的下注大小决定你是否还活着看到那一天。降低每笔风险，削减爆仓概率的速度，远快于它对收益的损耗。') }}</p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground the bet-size half in the lesson on <a href="', '在这节课中夯实下注大小这一半 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn your win rate and payoff into an edge with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '将你的胜率与盈亏比换算成优势。') }}</p>
+{% endblock %}
+
+{% block calc_script %}
+<script>
+(function(){
+  "use strict";
+
+  // ── deterministic PRNG: mulberry32 with a HARD-CODED seed (no Math.random) ──
+  // Declared standalone so it can be stringified into the Web Worker below.
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // ── pure Monte-Carlo core — no closures, everything via params ─────────────
+  // Runs the M×N fixed-fractional simulation, returns risk-of-ruin percent. The
+  // SAME source is stringified into a Worker (below) AND called directly on the
+  // main thread for the self-check + as a fallback, so results are identical.
+  function simulate(p){
+    var rand = mulberry32(p.seed), ruined = 0;
+    for(var acc=0; acc<p.M; acc++){
+      var eq = 1.0, dead = false;
+      for(var t=0; t<p.N; t++){
+        eq *= (rand() < p.winP) ? p.up : p.down;
+        if(eq <= p.floorEq){ dead = true; break; }
+      }
+      if(dead) ruined++;
+    }
+    return 100 * ruined / p.M;
+  }
+
+  var SEED = 0x9E3779B9;   // golden-ratio constant, fixed for reproducibility
+  var M = 10000;           // simulated accounts
+  var N_CAP = 1000;        // trades per run — bounded so even a huge N can't spin forever
+
+  // ── validate + normalize inputs (cheap; always on the main thread) ─────────
+  // inputs: {W winRate%, b payoff, r risk%, dd ruin drawdown%, N trades}.
+  // Returns {ok:false,msg} or {ok:true, sim, expR, dd, N, M, capped, positiveEdge}.
+  function params(inp){
+    var W=inp.W, b=inp.b, r=inp.r, dd=inp.dd, N=inp.N;
+    if(!(W>=0 && W<=100)) return {ok:false, msg:"Enter a win rate between 0 and 100 percent."};
+    if(!(b>0))            return {ok:false, msg:"Enter a payoff ratio above zero (average win ÷ average loss)."};
+    if(!(r>0))            return {ok:false, msg:"Enter the percent of equity you risk per trade."};
+    if(!(r<100))          return {ok:false, msg:"Risk per trade must be under 100% — a full-equity loss ruins you in one trade."};
+    if(!(dd>0 && dd<100)) return {ok:false, msg:"Enter a ruin threshold between 0 and 100 percent of drawdown."};
+    if(!(N>=1))           return {ok:false, msg:"Enter how many trades to simulate."};
+    N = Math.floor(N);
+    var capped = N > N_CAP; if(capped) N = N_CAP;
+    var expR = (W/100)*b - (1 - W/100);
+    return { ok:true,
+      sim:{ winP:W/100, up:1+(r/100)*b, down:1-r/100, floorEq:1-dd/100, N:N, M:M, seed:SEED },
+      expR:expR, dd:dd, N:N, M:M, capped:capped, positiveEdge: expR>0 };
+  }
+
+  // synchronous compute (validate + simulate) — self-check + no-worker fallback
+  function compute(inp){
+    var p = params(inp);
+    if(!p.ok) return p;
+    p.ruinPct = simulate(p.sim);
+    return p;
+  }
+
+  // ── §6 self-check: exact edge cases (W=100→0, W=0→100) that need no MC luck,
+  //    plus a bounded assertion for the middle case. console.error on drift.
+  //    Deferred to idle so this heavy pass never blocks first paint. ──
+  var WORKED_EXAMPLES = [
+    { in:{W:100, b:1,   r:2, dd:50, N:500}, want:{ruinPct:0} },
+    { in:{W:0,   b:1,   r:2, dd:50, N:500}, want:{ruinPct:100} },
+    { in:{W:50,  b:1,   r:2, dd:50, N:500}, bound:{min:1, max:99} }
+  ];
+  function runSelfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, i){
+      var got = compute(ex.in);
+      if(!got.ok){ console.error("risk-of-ruin self-check "+i+": compute failed", got); return; }
+      if(ex.want){
+        for(var k in ex.want){ if(Math.abs(got[k] - ex.want[k]) > 0.001){
+          console.error("risk-of-ruin self-check "+i+" mismatch on "+k+": got "+got[k]+" want "+ex.want[k]); } }
+      }
+      if(ex.bound){
+        if(!(got.ruinPct >= ex.bound.min && got.ruinPct <= ex.bound.max)){
+          console.error("risk-of-ruin self-check "+i+" ruinPct out of bound: got "+got.ruinPct+
+            " want ["+ex.bound.min+","+ex.bound.max+"]"); }
+      }
+    });
+  }
+  if(window.requestIdleCallback) window.requestIdleCallback(runSelfCheck);
+  else setTimeout(runSelfCheck, 300);
+
+  // ── build a Web Worker from the pure MC source so the sim runs OFF the main
+  //    thread — the UI never blocks, even for the largest run. Returns null if
+  //    Workers/Blob are unavailable or blocked (CSP); caller falls back to sync. ─
+  function makeWorker(){
+    try{
+      if(!(window.Worker && window.Blob && window.URL && window.URL.createObjectURL)) return null;
+      var src = mulberry32.toString() + "\n" + simulate.toString() + "\n" +
+        "self.onmessage=function(e){var d=e.data; self.postMessage({id:d.id, ruinPct:simulate(d.sim)});};";
+      var url = window.URL.createObjectURL(new Blob([src], {type:"application/javascript"}));
+      return new Worker(url);
+    }catch(_){ return null; }
+  }
+
+  // ── DOM wiring (all reads/writes here; compute/simulate stay pure) ─────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var els = { winrate:$("winrate"), payoff:$("payoff"), riskpct:$("riskpct"),
+                ruindd:$("ruindd"), trades:$("trades") };
+    var outMain=$("out-main"), outPlain=$("out-plain"),
+        outExp=$("out-exp"), outDd=$("out-dd"), outM=$("out-m"), outN=$("out-n"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function pct(n, dp){ return n.toFixed(dp==null ? (n>=10?1:2) : dp) + "%"; }
+    function dash(){ outMain.textContent="—"; outMain.style.opacity="";
+      [outExp,outDd,outM,outN].forEach(function(e){e.textContent="—"; e.className="";}); }
+
+    var worker = makeWorker(), useWorker = !!worker;
+    var last=null, pending=null, seq=0, busyTimer=null;
+
+    // paint the instant (non-simulated) fields; the ruin % arrives separately
+    function paintFrame(p){
+      outExp.textContent = (p.expR>=0?"+":"") + p.expR.toFixed(2) + " R";
+      outExp.className   = p.expR>0 ? "pos" : (p.expR<0 ? "neg" : "");
+      outDd.textContent  = p.dd.toFixed(p.dd%1?1:0) + "%";
+      outM.textContent   = p.M.toLocaleString("en-US");
+      outN.textContent   = p.N.toLocaleString("en-US");
+      pending = p;
+    }
+
+    // apply the simulated risk-of-ruin once it comes back (worker or sync)
+    function applyRuin(ruinPct){
+      if(!pending) return;
+      pending.ruinPct = ruinPct; last = pending;
+      if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
+      outMain.textContent = pct(ruinPct); outMain.style.opacity="";
+      var band;
+      if(ruinPct < 1)       band = "very low — this plan almost always survives the run";
+      else if(ruinPct < 5)  band = "low, but not zero";
+      else if(ruinPct < 20) band = "meaningful — a real minority of accounts blow up";
+      else if(ruinPct < 50) band = "high — a large share of accounts hit ruin";
+      else                  band = "severe — most accounts do not survive";
+      var edge = pending.expR>0 ? "a positive edge" : (pending.expR<0 ? "a negative edge" : "no edge (break-even)");
+      var plain = "About " + pct(ruinPct) + " of 10,000 simulated accounts crossed the " +
+        pending.dd.toFixed(pending.dd%1?1:0) + "% ruin line — " + band + ". With " + edge +
+        ", the outcome is shaped mostly by how much you risk per trade.";
+      if(pending.capped){ plain += " Simulation capped at 1,000 trades."; }
+      outPlain.className = ruinPct>=20 ? "co-plain warn" : "co-plain";
+      outPlain.textContent = plain;
+    }
+
+    function render(){
+      seq++;                                    // invalidate any in-flight worker result
+      var mySeq = seq;
+      var inp={ W:numFrom(els.winrate), b:numFrom(els.payoff), r:numFrom(els.riskpct),
+                dd:numFrom(els.ruindd), N:numFrom(els.trades) };
+      // sensible defaults for the two "run length" fields when left blank
+      if(isNaN(inp.dd) && (els.ruindd.value||"").trim()==="") inp.dd = 50;
+      if(isNaN(inp.N)  && (els.trades.value||"").trim()==="")  inp.N  = 500;
+      var p=params(inp);
+      if(!p.ok){
+        if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
+        dash(); pending=null; last=null;
+        outPlain.textContent=p.msg; outPlain.className="co-plain"; return;
+      }
+      paintFrame(p);
+      if(useWorker){
+        // subtle "recomputing" cue only if the sim takes a beat (avoids flicker
+        // on short runs); the worker keeps the UI fully responsive meanwhile
+        if(busyTimer) clearTimeout(busyTimer);
+        busyTimer = setTimeout(function(){ if(seq===mySeq) outMain.style.opacity="0.5"; }, 200);
+        worker.postMessage({ id:mySeq, sim:p.sim });
+      } else {
+        applyRuin(simulate(p.sim));             // fallback: synchronous
+      }
+    }
+
+    if(worker){
+      worker.onmessage = function(e){ var d=e.data; if(d.id!==seq) return; applyRuin(d.ruinPct); };
+      worker.onerror = function(){                // CSP/exec failure → drop to sync
+        useWorker=false; try{worker.terminate();}catch(_){}
+        if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; } render(); };
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      return "Risk of ruin: " + pct(last.ruinPct) + " (over " + last.N.toLocaleString("en-US") +
+        " trades, " + last.dd.toFixed(last.dd%1?1:0) + "% ruin line) · expectancy " +
+        (last.expR>=0?"+":"") + last.expR.toFixed(2) + " R — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    // debounce input; the sim itself runs in the worker so typing stays smooth
+    var renderTimer=null;
+    function scheduleRender(){ if(renderTimer) clearTimeout(renderTimer); renderTimer=setTimeout(render, 150); }
+    ["winrate","payoff","riskpct","ruindd","trades"].forEach(function(id){
+      els[id].addEventListener("input", scheduleRender);
+    });
+    render();
+  });
+})();
+</script>
+{% endblock %}

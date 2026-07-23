@@ -1,0 +1,460 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="../../data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Rebalancing Calculator — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<link rel="canonical" href="https://www.mastermind-x.com/tools/calculators/portfolio-rebalancing.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Portfolio Rebalancing Calculator">
+<meta property="og:description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<meta property="og:url" content="https://www.mastermind-x.com/tools/calculators/portfolio-rebalancing.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Portfolio Rebalancing Calculator">
+<meta name="twitter:description" content="Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><link rel="stylesheet" href="../../theme.css?v=24ca655a"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Tools","item":"https://www.mastermind-x.com/tools/index.html"},{"@type":"ListItem","position":3,"name":"Portfolio Rebalancing Calculator"}]}</script>
+
+<link rel="stylesheet" href="../../assets/css/513ed0a3.css?v=513ed0a3">
+
+</head>
+<body class="estate est-calc">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html" aria-current="page"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../tools/index.html">Tools</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      Portfolio Rebalancing Calculator
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="cx-head est-head" style="max-width:1120px;">
+  <span class="est-kicker"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span>
+  <h1 class="est-title">Portfolio Rebalancing Calculator</h1>
+  <p class="est-dek">Work out the exact dollar buys and sells that pull your holdings back to their target weights, with optional new cash. Free, bilingual.</p>
+</header>
+
+<div class="cx-shell">
+  <div class="cx-main">
+    
+
+    <section class="calc-card" id="calc" aria-label="Calculator">
+      <div class="cc-crown">
+        <span class="cc-eyebrow"><span class="l-en">Live calculator</span><span class="l-zh">实时计算</span></span>
+        <span class="cc-glyph"><svg class="egl egl-crown" viewBox="0 0 64 40" preserveAspectRatio="xMidYMid meet"
+       fill="none" aria-hidden="true" focusable="false"><path class="egl-still" d="M8 32 h48"/>
+  <path class="egl-still" d="M8 16 h48" stroke-dasharray="3 3"/>
+  <rect class="egl-fill" x="13" y="9" width="8" height="23" rx="1"/>
+  <path class="egl-down" d="M17 9 v-3 M15.5 8 l1.5 -2 l1.5 2"/>
+  <rect class="egl-draw-fill" x="28" y="16" width="8" height="16" rx="1"/>
+  <rect class="egl-draw" x="43" y="24" width="8" height="8" rx="1"/>
+  <path class="egl-up" d="M47 24 v-3 M45.5 22 l1.5 -2 l1.5 2"/>
+  <path class="egl-mark" d="M6 16 h4 M54 16 h4"/></svg></span>
+      </div>
+      
+<p class="cc-lede"><span class="l-en">Enter what each holding is worth today and the weight you want it to carry. Add any new cash you’re putting in. You get the exact dollar buys and sells that pull the portfolio back to your targets.</span><span class="l-zh">填入每个持仓当前的价值和你希望它占的比重，再加上你打算投入的新增现金，即可得到——把组合拉回目标权重所需的——每笔确切的买入与卖出金额。</span></p>
+
+<div class="calc-in prc-in">
+  <div class="ci ci-wide prc-head" aria-hidden="true">
+    <span class="prc-hcol"><span class="l-en">Holding</span><span class="l-zh">持仓</span></span>
+    <span class="prc-hcol"><span class="l-en">Current value ($)</span><span class="l-zh">当前价值（$）</span></span>
+    <span class="prc-hcol"><span class="l-en">Target weight (%)</span><span class="l-zh">目标权重（%）</span></span>
+  </div>
+
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="0" autocomplete="off" placeholder="A">
+    <input class="prc-val"  data-i="0" inputmode="decimal" autocomplete="off" placeholder="6,000">
+    <input class="prc-tgt"  data-i="0" inputmode="decimal" autocomplete="off" placeholder="50">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="1" autocomplete="off" placeholder="B">
+    <input class="prc-val"  data-i="1" inputmode="decimal" autocomplete="off" placeholder="4,000">
+    <input class="prc-tgt"  data-i="1" inputmode="decimal" autocomplete="off" placeholder="50">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="2" autocomplete="off" placeholder="C (optional)">
+    <input class="prc-val"  data-i="2" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="2" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="3" autocomplete="off" placeholder="D (optional)">
+    <input class="prc-val"  data-i="3" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="3" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+  <div class="ci ci-wide prc-row">
+    <input class="prc-name" data-i="4" autocomplete="off" placeholder="E (optional)">
+    <input class="prc-val"  data-i="4" inputmode="decimal" autocomplete="off" placeholder="">
+    <input class="prc-tgt"  data-i="4" inputmode="decimal" autocomplete="off" placeholder="">
+  </div>
+
+  <label class="ci ci-wide"><span class="ci-l"><span class="l-en">New cash to add ($)</span><span class="l-zh">新增现金（$）</span> <span class="hint"><span class="l-en">optional</span><span class="l-zh">可选</span></span></span>
+    <input id="newcash" inputmode="decimal" autocomplete="off" placeholder="0"></label>
+</div>
+
+<div class="calc-out" aria-live="polite">
+  <div class="co-main"><span id="out-main">—</span></div>
+  <p class="co-plain" id="out-plain"><span class="l-en">Enter at least two holdings with a value and a target weight.</span><span class="l-zh">至少填入两个持仓的价值和目标权重。</span></p>
+  <dl class="co-rows" id="out-list"></dl>
+  <div class="prc-foot" id="out-foot" hidden>
+    <div><span class="prc-flabel"><span class="l-en">Portfolio total</span><span class="l-zh">组合总值</span></span><span class="prc-fval" id="out-total">—</span></div>
+    <div><span class="prc-flabel"><span class="l-en">Total to trade</span><span class="l-zh">需交易总额</span></span><span class="prc-fval" id="out-turnover">—</span></div>
+  </div>
+</div>
+
+<div class="calc-actions">
+  <button class="gbtn" id="copy-result" type="button"><span class="l-en">Copy result</span><span class="l-zh">复制结果</span></button>
+  <span class="copied" id="copied" role="status"><span class="l-en">Copied</span><span class="l-zh">已复制</span></span>
+</div>
+
+<link rel="stylesheet" href="../../assets/css/2f22a3ae.css?v=2f22a3ae">
+
+    </section>
+
+    <div class="cx-explainer est-prose">
+      
+<p><span class="l-en">Rebalancing trades are the gap between what each holding is worth <strong>now</strong> and what it <strong>should</strong> be worth at your target weight. Add up every holding (plus any new cash), multiply that total by each target weight to get a dollar goal, and the difference from today’s value is your buy or sell. Positions that have run ahead get trimmed; positions that have lagged get topped up.</span><span class="l-zh">再平衡交易，就是每个持仓<strong>现在</strong>的价值与它按目标权重<strong>应有</strong>价值之间的差额。把所有持仓（加上新增现金）相加得到总值，用总值乘以每个目标权重得到金额目标，与今天价值的差就是该买还是该卖。涨过头的持仓被减仓，落后的持仓被补仓。</span></p>
+
+<h2 id="formula"><span class="est-h2-mark">01</span><span class="l-en">The formula</span><span class="l-zh">公式</span></h2>
+<div class="formula">
+<span class="l-en"><strong>Total</strong> = Σ current values + new cash</span><span class="l-zh"><strong>总值</strong> = Σ 当前价值 + 新增现金</span><br>
+<span class="l-en"><strong>Target value</strong> = Total × Target% ÷ 100</span><span class="l-zh"><strong>目标价值</strong> = 总值 × 目标% ÷ 100</span><br>
+<span class="l-en"><strong>Action</strong> = Target value − Current value</span><span class="l-zh"><strong>操作金额</strong> = 目标价值 − 当前价值</span><br>
+<span class="l-en">Positive = buy · Negative = sell</span><span class="l-zh">正值 = 买入 · 负值 = 卖出</span><br>
+<span class="l-en"><strong>Drift</strong> = Current% − Target%</span><span class="l-zh"><strong>偏移</strong> = 当前% − 目标%</span>
+</div>
+<p><span class="l-en">Drift is how far a holding has wandered from its target weight — the number that tells you <em>why</em> a trade is needed. A holding at 60% of the book against a 50% target has drifted +10 points; the sell brings it home. Target weights should add up to 100%; if they don’t, the tool flags it rather than quietly assuming the rest is cash.</span><span class="l-zh">偏移衡量一个持仓离目标权重漂移了多远——它告诉你<em>为什么</em>需要这笔交易。一个占组合 60%、目标为 50% 的持仓，偏移了 +10 个百分点；卖出把它拉回原位。目标权重应加总为 100%；若不满足，工具会提示，而不会默默假设其余是现金。</span></p>
+
+<h2 id="worked"><span class="est-h2-mark">02</span><span class="l-en">A worked example</span><span class="l-zh">一个算例</span></h2>
+<div class="worked">
+<span class="co-h"><span class="l-en">Worked example</span><span class="l-zh">算例</span></span>
+<p><span class="l-en">Suppose a trader holds <span class="num">$6,000</span> of A and <span class="num">$4,000</span> of B, and wants each at <span class="num">50%</span>. No new cash is added.</span><span class="l-zh">假设一位交易者持有 <span class="num">$6,000</span> 的 A 和 <span class="num">$4,000</span> 的 B，希望两者各占 <span class="num">50%</span>，且不投入新增现金。</span></p>
+<ul>
+<li><span class="l-en">Total = <span class="num">6,000 + 4,000 = $10,000</span></span><span class="l-zh">总值 = <span class="num">6,000 + 4,000 = $10,000</span></span></li>
+<li><span class="l-en">A target value = <span class="num">10,000 × 50 ÷ 100 = $5,000</span>; action = <span class="num">5,000 − 6,000 = −$1,000</span> → sell $1,000</span><span class="l-zh">A 目标价值 = <span class="num">10,000 × 50 ÷ 100 = $5,000</span>；操作 = <span class="num">5,000 − 6,000 = −$1,000</span> → 卖出 $1,000</span></li>
+<li><span class="l-en">B target value = <span class="num">$5,000</span>; action = <span class="num">5,000 − 4,000 = +$1,000</span> → buy $1,000</span><span class="l-zh">B 目标价值 = <span class="num">$5,000</span>；操作 = <span class="num">5,000 − 4,000 = +$1,000</span> → 买入 $1,000</span></li>
+<li><span class="l-en">A had drifted to <span class="num">60%</span> (+10), B to <span class="num">40%</span> (−10). Selling $1,000 of A and buying $1,000 of B lands both at 50/50.</span><span class="l-zh">A 已漂移至 <span class="num">60%</span>（+10），B 至 <span class="num">40%</span>（−10）。卖出 $1,000 的 A、买入 $1,000 的 B，两者回到 50/50。</span></li>
+</ul>
+</div>
+<p><span class="l-en">Notice the trades net to zero here because no cash was added — every dollar sold funds a dollar bought. When you add new cash, the tool can often reach the targets by buying only, with no sells at all: fresh money flows first to the most underweight holdings.</span><span class="l-zh">注意这里的买卖净额为零，因为没有投入现金——每卖出一元都用于买入一元。当你投入新增现金时，工具往往可以只靠买入达到目标、完全无需卖出：新钱会优先流向最被低配的持仓。</span></p>
+
+<h2 id="trap"><span class="est-h2-mark">03</span><span class="l-en">The common trap</span><span class="l-zh">常见陷阱</span></h2>
+<div class="callout warn">
+<span class="co-h"><span class="l-en">Rebalancing too often, and ignoring the cost</span><span class="l-zh">再平衡过于频繁，且忽视成本</span></span>
+<p><span class="l-en">Every rebalance is a real transaction — it can trigger commissions, bid-ask spreads, and, in a taxable account, capital-gains tax on the winners you trim. Chasing an exact target after every small wiggle can quietly cost more than the drift it corrects. Many long-term portfolios rebalance on a schedule (say, once or twice a year) or only when a holding drifts past a set band (for example ±5 points), not on every fluctuation. This tool shows the trades; whether the drift is worth acting on is a separate judgment about cost and taxes.</span><span class="l-zh">每一次再平衡都是一笔真实交易——可能产生佣金、买卖价差，在应税账户中还会对减仓的盈利部分征收资本利得税。每有小幅波动就去追求精确目标，其代价可能悄然超过它所纠正的偏移。许多长期组合按固定周期再平衡（比如每年一到两次），或只在持仓偏移超出设定区间（例如 ±5 个百分点）时才动手，而非每次波动都调整。本工具展示交易金额；这点偏移是否值得动手，是关于成本与税务的另一重判断。</span></p>
+</div>
+
+<h2 id="limits"><span class="est-h2-mark">04</span><span class="l-en">Where this breaks</span><span class="l-zh">它的局限</span></h2>
+<p><span class="l-en">The math splits a total cleanly into target slices. It does not know the frictions of moving real money. A few honest limits:</span><span class="l-zh">这套算法能把一个总值干净地切成目标份额，但它并不了解真实资金流动中的摩擦。几点诚实的局限：</span></p>
+<ul>
+<li><span class="l-en"><strong>Whole shares and lot sizes.</strong> A $1,000 buy of a $340 stock isn’t exactly three shares. Real orders round to whole shares (or fixed lots), so you’ll land near the target dollar amount, not precisely on it.</span><span class="l-zh"><strong>整股与最小交易单位。</strong>用 $1,000 买一只 $340 的股票并不正好是三股。真实下单要取整到整股（或固定手数），因此你只能落在接近目标的金额附近，而非精确命中。</span></li>
+<li><span class="l-en"><strong>Taxes and costs aren’t modeled.</strong> The action amounts are pre-tax and pre-fee. In a taxable account, selling a winner to rebalance can realize a gain; weigh that before trimming.</span><span class="l-zh"><strong>未计入税费。</strong>操作金额是税前、费前的。在应税账户中，为再平衡而卖出盈利持仓可能实现应税收益；减仓前请权衡这一点。</span></li>
+<li><span class="l-en"><strong>Target weights, not a view.</strong> This tool executes the weights you type — it takes no position on <em>whether</em> those weights are wise. Deciding the target allocation is the harder, prior question.</span><span class="l-zh"><strong>只是目标权重，而非观点。</strong>本工具执行你填入的权重——它不评判这些权重<em>是否</em>明智。决定目标配置本身，是更难、更靠前的一步。</span></li>
+</ul>
+
+<div class="callout key">
+<span class="co-h"><span class="l-en">The one line to remember</span><span class="l-zh">记住这一句</span></span>
+<p><span class="l-en">Rebalancing sells what has grown and buys what has lagged — a discipline, not a forecast. The trades are simple; the judgment is when they’re worth the cost.</span><span class="l-zh">再平衡卖出涨多的、买入落后的——这是一种纪律，而非预测。交易本身很简单；难的是判断何时值得为之付出成本。</span></p>
+</div>
+
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;"><span class="l-en">Size each new buy with the <a href="</span><span class="l-zh">用 <a href="</span>../../tools/calculators/position-size.html"><span class="l-en">position size calculator</span><span class="l-zh">仓位计算器</span></a><span class="l-en">, or read the lesson on <a href="</span><span class="l-zh">为每笔新买入定仓，或阅读关于 <a href="</span>../../learn/risk/position-sizing.html"><span class="l-en">position sizing</span><span class="l-zh">仓位管理</span></a><span class="l-en">.</span><span class="l-zh"> 的课程。</span></p>
+
+    </div>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        <a class="est-relcard" href="../../tools/calculators/sharpe-ratio.html"><span class="rc-kind"><span class="l-en">Calculator</span><span class="l-zh">计算器</span></span><span class="rc-title">Sharpe Ratio Calculator</span></a>
+        
+        
+        <a class="est-relcard" href="../../tools/spreadsheets/trading-journal.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">Free trading journal spreadsheet</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    
+  </div>
+
+  
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+(function(){
+  "use strict";
+
+  // ── pure compute (CONTRACT §7-style — do not re-derive) ────────────────────
+  // inputs: { holdings:[{name, value, target}], newCash }.
+  // total = Σvalue + newCash; per holding target$ = total*target/100;
+  // action = target$ - value (>0 buy, <0 sell); currentPct = 100*value/Σvalue;
+  // drift = currentPct - target. Returns outputs object or {ok:false,msg}.
+  // Never returns NaN/Infinity.
+  function compute(inp){
+    var raw = (inp.holdings || []).filter(function(h){ return h && (h.value>0) && (h.target>0); });
+    if(raw.length < 2) return {ok:false, msg:"Enter at least two holdings, each with a value and a target weight."};
+    var newCash = (inp.newCash>0) ? inp.newCash : 0;
+    var sumVal = 0, sumTgt = 0, i;
+    for(i=0;i<raw.length;i++){ sumVal += raw[i].value; sumTgt += raw[i].target; }
+    if(!(sumVal>0)) return {ok:false, msg:"Enter a current value above zero for at least two holdings."};
+    var total = sumVal + newCash;
+    var rows = [], turnover = 0;
+    for(i=0;i<raw.length;i++){
+      var h = raw[i];
+      var targetVal = total * h.target / 100;
+      var action = targetVal - h.value;           // >0 buy, <0 sell
+      var currentPct = 100 * h.value / sumVal;
+      var drift = currentPct - h.target;
+      turnover += Math.abs(action);
+      rows.push({
+        name: h.name || ("#" + (i+1)),
+        value: h.value, target: h.target,
+        targetVal: targetVal, action: action,
+        side: action > 0.005 ? "buy" : (action < -0.005 ? "sell" : "hold"),
+        currentPct: currentPct, drift: drift
+      });
+    }
+    var targetsOff = Math.abs(sumTgt - 100) > 0.5;
+    return {
+      ok:true, rows:rows, total:total, sumVal:sumVal, newCash:newCash,
+      sumTargets:sumTgt, targetsOff:targetsOff, turnover:turnover
+    };
+  }
+
+  // ── §6 self-check: run the canonical fixtures on load, console.error on drift ─
+  var WORKED_EXAMPLES = [
+    // A $6,000 t50, B $4,000 t50, no cash → sell $1,000 A, buy $1,000 B; total 10,000
+    { in:{ holdings:[{name:"A",value:6000,target:50},{name:"B",value:4000,target:50}], newCash:0 },
+      want:{ total:10000, action0:-1000, action1:1000, turnover:2000 } },
+    // add $2,000 cash → total 12,000, each target 6,000; A buy 0, B buy 2,000
+    { in:{ holdings:[{name:"A",value:6000,target:50},{name:"B",value:4000,target:50}], newCash:2000 },
+      want:{ total:12000, action0:0, action1:2000, turnover:2000 } }
+  ];
+  (function selfCheck(){
+    WORKED_EXAMPLES.forEach(function(ex, idx){
+      var got = compute(ex.in), w = ex.want;
+      if(!got.ok){ console.error("portfolio-rebalancing self-check "+idx+": compute failed", got); return; }
+      var checks = {
+        total: got.total, action0: got.rows[0].action, action1: got.rows[1].action, turnover: got.turnover
+      };
+      for(var k in w){ if(Math.abs(checks[k] - w[k]) > 0.5){
+        console.error("portfolio-rebalancing self-check "+idx+" mismatch on "+k+": got "+checks[k]+" want "+w[k]); } }
+    });
+  })();
+
+  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  document.addEventListener("DOMContentLoaded", function(){
+    var $ = function(id){ return document.getElementById(id); };
+    var names = [].slice.call(document.querySelectorAll(".prc-name"));
+    var vals  = [].slice.call(document.querySelectorAll(".prc-val"));
+    var tgts  = [].slice.call(document.querySelectorAll(".prc-tgt"));
+    var cashEl = $("newcash");
+    var outMain=$("out-main"), outPlain=$("out-plain"), outList=$("out-list"),
+        outFoot=$("out-foot"), outTotal=$("out-total"), outTurn=$("out-turnover"),
+        copyBtn=$("copy-result"), copied=$("copied");
+
+    function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
+    function money0(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+    function money2(n){ return "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function readHoldings(){
+      var out=[];
+      for(var i=0;i<vals.length;i++){
+        out.push({ name:(names[i] && names[i].value ? names[i].value.trim() : ""),
+                   value:numFrom(vals[i]), target:numFrom(tgts[i]) });
+      }
+      return out;
+    }
+
+    var last=null;
+    function render(){
+      var inp={ holdings:readHoldings(), newCash:numFrom(cashEl) };
+      var res=compute(inp); last=res;
+      if(!res.ok){
+        outMain.textContent="—";
+        outPlain.textContent=res.msg; outPlain.className="co-plain";
+        outList.innerHTML=""; outFoot.hidden=true;
+        return;
+      }
+
+      // per-holding rows
+      outList.innerHTML="";
+      res.rows.forEach(function(r){
+        var div=document.createElement("div");
+        var dt=document.createElement("dt");
+        dt.textContent=r.name;
+        var dd=document.createElement("dd");
+        if(r.side==="hold"){ dd.textContent="Hold"; }
+        else {
+          dd.textContent=(r.side==="buy"?"Buy ":"Sell ")+money0(Math.abs(r.action));
+          dd.className=r.side;
+        }
+        var sub=document.createElement("span");
+        sub.className="prc-sub";
+        var driftTxt=(r.drift>=0?"+":"")+r.drift.toFixed(r.drift===0?0:1);
+        sub.textContent=" · "+r.currentPct.toFixed(0)+"% now vs "+r.target.toFixed(r.target%1?1:0)+"% target ("+driftTxt+")";
+        dd.appendChild(sub);
+        div.appendChild(dt); div.appendChild(dd);
+        outList.appendChild(div);
+      });
+
+      // headline sentence in #out-main (this calc's co-main is a sentence)
+      var moves = res.rows.filter(function(r){ return r.side!=="hold"; })
+        .sort(function(a,b){ return Math.abs(b.action)-Math.abs(a.action); });
+      var lead;
+      if(!moves.length){
+        lead = "Already on target — no trades needed.";
+      } else {
+        var parts = moves.slice(0,3).map(function(r){
+          return (r.side==="buy"?"buy ":"sell ")+money0(Math.abs(r.action))+" "+r.name;
+        });
+        lead = parts.join(", ");
+        if(moves.length>3) lead += ", …";
+        lead = lead.charAt(0).toUpperCase()+lead.slice(1);
+        lead += ".";
+      }
+      outMain.textContent = lead;
+
+      // Law 3: plain-word interpretation
+      var plain;
+      if(!moves.length){
+        plain = "Every holding already sits at its target weight, so nothing needs to be traded.";
+      } else {
+        plain = "These trades move each holding to its target weight, turning over "
+          + money0(res.turnover) + " across the portfolio.";
+        if(res.newCash>0) plain += " Your new cash is put to work first.";
+      }
+      if(res.targetsOff){
+        plain = "Heads up: your target weights add to " + res.sumTargets.toFixed(res.sumTargets%1?1:0)
+          + "%, not 100% — the rest is treated as staying uninvested. " + plain;
+        outPlain.className="co-plain warn";
+      } else {
+        outPlain.className="co-plain";
+      }
+      outPlain.textContent = plain;
+
+      outTotal.textContent = money2(res.total);
+      outTurn.textContent  = money2(res.turnover);
+      outFoot.hidden=false;
+    }
+
+    function copyLine(){
+      if(!last || !last.ok) return "";
+      var moves=last.rows.filter(function(r){return r.side!=="hold";})
+        .sort(function(a,b){return Math.abs(b.action)-Math.abs(a.action);});
+      if(!moves.length) return "Portfolio rebalancing: already on target — no trades needed. — mastermind-x.com";
+      var parts=moves.map(function(r){
+        return (r.side==="buy"?"Buy ":"Sell ")+money0(Math.abs(r.action))+" "+r.name;
+      });
+      return "Rebalance: " + parts.join(" · ")
+        + " · turnover " + money0(last.turnover)
+        + " (total " + money0(last.total) + ") — mastermind-x.com";
+    }
+    copyBtn.addEventListener("click", function(){
+      var line=copyLine(); if(!line) return;
+      var done=function(){ copied.classList.add("show"); setTimeout(function(){copied.classList.remove("show");},1600); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(line).then(done,done); }
+      else { var ta=document.createElement("textarea"); ta.value=line; document.body.appendChild(ta); ta.select();
+        try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
+    });
+
+    names.concat(vals).concat(tgts).concat([cashEl]).forEach(function(el){
+      el.addEventListener("input", render);
+    });
+    render();
+  });
+})();
+</script>
+
+
+
+<script src="../../theme.js?v=62a16bd4" defer></script>
+</body>
+</html>

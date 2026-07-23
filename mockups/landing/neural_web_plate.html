@@ -1,0 +1,138 @@
+<!-- Neural Web plate — archived from the landing AI section (operator call, 2026-07-22).
+     Self-contained: CSS in <style>, markup in a page, JS after. Kept for a rainy day. -->
+<style>
+:root{--plate:#0b1120;--r-lg:16px;--sh-plate:0 24px 60px -20px rgba(18,26,45,.34);--muted:#5d6b7e;--faint:#8a95a4}
+.web-plate{background:var(--plate);border-radius:var(--r-lg);box-shadow:var(--sh-plate);padding:10px;position:relative}
+.web-plate svg{width:100%;height:auto;display:block;border-radius:10px}
+.web-cap{margin:12px 4px 4px;font-size:12.5px;color:var(--muted);text-align:center}
+/* living synapses: opacity-only flicker on select edges (compositable) */
+@keyframes synFlash{0%,100%{opacity:.18}50%{opacity:.6}}
+.web-plate .syn-f{animation:synFlash 3s ease-in-out infinite}
+.web-plate .syn-f:nth-of-type(7){animation-duration:2.6s;animation-delay:-1.4s}
+.web-plate .syn-f:nth-of-type(8){animation-duration:3.4s;animation-delay:-2.1s}
+.web-plate .syn-f:nth-of-type(10){animation-duration:4.4s;animation-delay:-.6s}
+.web-plate .syn-f:nth-of-type(12){animation-duration:3.8s;animation-delay:-3s}
+.web-plate .syn-f.contra{animation-duration:2.9s;animation-delay:-1.1s}
+@keyframes nwHaloBreathe{0%,100%{opacity:.5}50%{opacity:.85}}
+.web-plate .nw-halo{animation:nwHaloBreathe 4s ease-in-out infinite;transform-origin:280px 200px}
+</style>
+
+      <div class="rv" style="--d:.12s">
+        <div class="web-plate">
+          <svg viewBox="0 0 560 400" role="img" aria-label="The Neural Web: signal engines, desks and regimes drawn as an interconnected graph.">
+            <defs>
+              <radialGradient id="coreG" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#cfd9ff"/><stop offset="100%" stop-color="#cfd9ff" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+            </defs>
+            <rect width="560" height="400" fill="#0b1120"/>
+            <g opacity=".35" filter="url(#soft)">
+              <circle cx="150" cy="120" r="60" fill="#2f63c4" opacity=".25"/>
+              <circle cx="430" cy="110" r="55" fill="#b07d05" opacity=".22"/>
+              <circle cx="120" cy="300" r="55" fill="#7c6cff" opacity=".22"/>
+              <circle cx="440" cy="300" r="60" fill="#1f8b41" opacity=".2"/>
+            </g>
+            <!-- MAIN curved edges (ids used by the living-pulse IIFE) -->
+            <g fill="none" stroke-width="1.1">
+              <path id="nw-e0" d="M280 200 C 230 170, 190 150, 150 120" stroke="#5b79b8" opacity=".55"/>
+              <path id="nw-e1" d="M280 200 C 330 170, 380 140, 430 110" stroke="#a58a3d" opacity=".5"/>
+              <path id="nw-e2" d="M280 200 C 230 235, 175 270, 120 300" stroke="#8b7ce0" opacity=".5"/>
+              <path id="nw-e3" d="M280 200 C 335 235, 390 270, 440 300" stroke="#4f9c6b" opacity=".55"/>
+              <path id="nw-e4" d="M280 200 C 300 150, 310 115, 320 88" stroke="#7d8fb5" opacity=".45"/>
+              <path id="nw-e5" d="M280 200 C 320 260, 330 290, 330 322" stroke="#7d8fb5" opacity=".4"/>
+              <path class="syn-f" d="M150 120 C 200 90, 260 80, 320 88" stroke="#5b79b8" opacity=".35"/>
+              <path class="syn-f" d="M430 110 C 400 160, 390 200, 380 250" stroke="#a58a3d" opacity=".35"/>
+              <path d="M120 300 C 190 320, 260 330, 330 322" stroke="#8b7ce0" opacity=".35"/>
+              <path class="syn-f" d="M440 300 C 420 250, 410 210, 400 160" stroke="#4f9c6b" opacity=".3"/>
+              <path d="M150 120 C 140 190, 130 250, 120 300" stroke="#6b7da5" opacity=".25"/>
+              <path class="syn-f" d="M320 88 C 370 95, 405 100, 430 110" stroke="#6b7da5" opacity=".3"/>
+              <path class="syn-f contra" d="M280 200 C 250 260, 200 290, 170 340" stroke="#c14b4b" opacity=".5" stroke-dasharray="4 4"/>
+            </g>
+            <!-- minor connective edges: satellites → hubs + cross-cluster links -->
+            <g fill="none" stroke-width=".7">
+              <path d="M150 120 C 175 108, 185 102, 196 98" stroke="#4f7ede" opacity=".22"/>
+              <path d="M150 120 C 138 138, 128 150, 118 160" stroke="#4f7ede" opacity=".2"/>
+              <path d="M430 110 C 448 124, 460 136, 470 146" stroke="#d8a33e" opacity=".22"/>
+              <path d="M430 110 C 414 98, 402 90, 392 84" stroke="#d8a33e" opacity=".2"/>
+              <path d="M120 300 C 104 284, 94 270, 86 258" stroke="#9d8dff" opacity=".22"/>
+              <path d="M120 300 C 140 316, 156 328, 168 338" stroke="#9d8dff" opacity=".2"/>
+              <path d="M440 300 C 458 284, 470 272, 478 262" stroke="#3fae6d" opacity=".22"/>
+              <path d="M440 300 C 424 316, 408 328, 396 336" stroke="#3fae6d" opacity=".2"/>
+              <path d="M196 98 C 240 70, 300 66, 344 60" stroke="#6b7da5" opacity=".16"/>
+              <path d="M470 146 C 494 190, 500 250, 478 296" stroke="#7d8fb5" opacity=".16"/>
+            </g>
+            <!-- far satellite nodes near the edges -->
+            <g>
+              <circle cx="344" cy="58" r="2.4" fill="#8fa8e8" opacity=".6"/>
+              <circle cx="514" cy="196" r="2.6" fill="#d8a33e" opacity=".55"/>
+              <circle cx="46" cy="212" r="2.4" fill="#9d8dff" opacity=".55"/>
+              <circle cx="246" cy="366" r="2.2" fill="#3fae6d" opacity=".55"/>
+            </g>
+            <!-- minor nodes clustered around the four hubs -->
+            <g>
+              <circle cx="178" cy="146" r="2.2" fill="#4f7ede" opacity=".7"/><circle cx="132" cy="98" r="1.8" fill="#4f7ede" opacity=".6"/>
+              <circle cx="210" cy="132" r="2" fill="#4f7ede" opacity=".62"/><circle cx="116" cy="132" r="1.7" fill="#4f7ede" opacity=".55"/>
+              <circle cx="452" cy="92" r="2.2" fill="#d8a33e" opacity=".7"/><circle cx="412" cy="140" r="1.9" fill="#d8a33e" opacity=".6"/>
+              <circle cx="466" cy="118" r="1.7" fill="#d8a33e" opacity=".55"/><circle cx="404" cy="104" r="2" fill="#d8a33e" opacity=".6"/>
+              <circle cx="98" cy="322" r="2.2" fill="#9d8dff" opacity=".7"/><circle cx="148" cy="276" r="1.9" fill="#9d8dff" opacity=".6"/>
+              <circle cx="142" cy="316" r="1.7" fill="#9d8dff" opacity=".55"/><circle cx="104" cy="278" r="2" fill="#9d8dff" opacity=".6"/>
+              <circle cx="462" cy="326" r="2.2" fill="#3fae6d" opacity=".7"/><circle cx="418" cy="272" r="1.9" fill="#3fae6d" opacity=".6"/>
+              <circle cx="424" cy="322" r="1.7" fill="#3fae6d" opacity=".55"/><circle cx="466" cy="286" r="2" fill="#3fae6d" opacity=".6"/>
+            </g>
+            <g>
+              <circle class="nw-halo" cx="280" cy="200" r="40" fill="url(#coreG)"/>
+              <circle cx="280" cy="200" r="26" fill="url(#coreG)"/>
+              <circle cx="280" cy="200" r="9" fill="#ffffff"/>
+              <circle cx="150" cy="120" r="7" fill="#4f7ede"/><circle cx="196" cy="98" r="4.5" fill="#4f7ede"/><circle cx="118" cy="160" r="4.5" fill="#4f7ede"/>
+              <circle cx="320" cy="88" r="6" fill="#8fa8e8"/>
+              <circle cx="430" cy="110" r="7" fill="#d8a33e"/><circle cx="470" cy="146" r="4.5" fill="#d8a33e"/><circle cx="392" cy="84" r="4.5" fill="#d8a33e"/>
+              <circle cx="120" cy="300" r="7" fill="#9d8dff"/><circle cx="86" cy="258" r="4.5" fill="#9d8dff"/><circle cx="168" cy="338" r="4.5" fill="#9d8dff"/>
+              <circle cx="440" cy="300" r="7" fill="#3fae6d"/><circle cx="478" cy="262" r="4.5" fill="#3fae6d"/><circle cx="396" cy="336" r="4.5" fill="#3fae6d"/>
+              <circle cx="330" cy="322" r="6" fill="#5eead4"/>
+              <circle cx="380" cy="250" r="5" fill="#e0b151"/>
+              <circle cx="170" cy="340" r="5" fill="#e06464"/>
+            </g>
+            <g font-family="Archivo, sans-serif" font-size="9.5" font-weight="600" fill="#aeb9d0" letter-spacing=".08em">
+              <text x="280" y="242" text-anchor="middle" fill="#e8edf8" font-size="10.5" data-zh="神经网络">NEURAL WEB</text>
+              <text x="150" y="104" text-anchor="middle" data-zh="美股看板">US BOARD</text>
+              <text x="320" y="74" text-anchor="middle" data-zh="宏观格局">MACRO REGIME</text>
+              <text x="430" y="94" text-anchor="middle" data-zh="中国及国际">CHINA &amp; INTL</text>
+              <text x="120" y="284" text-anchor="middle" data-zh="期权流">OPTIONS FLOW</text>
+              <text x="86" y="244" text-anchor="middle" data-zh="国会">CONGRESS</text>
+              <text x="440" y="284" text-anchor="middle" data-zh="风险雷达">RISK RADAR</text>
+              <text x="478" y="248" text-anchor="middle" data-zh="比特币周期">BTC CYCLE</text>
+              <text x="330" y="342" text-anchor="middle" data-zh="Prophet">PROPHET</text>
+              <text x="170" y="358" text-anchor="middle" fill="#e08b8b" data-zh="相互矛盾">CONTRADICTS</text>
+            </g>
+          </svg>
+        </div>
+        <p class="web-cap" data-zh="神经网络——每个信号在抵达你之前，都先在这张图上互相校验。<span style='color:var(--faint)'>（示意图）</span>">The Neural Web — every signal is cross-checked against the graph before it reaches you. <span style="color:var(--faint)">(illustrative view)</span></p>
+      </div>
+
+<script>
+const CALM=false, STILL=false;
+/* — Neural Web living light: SMIL pulse dots travelling the six main edges —
+   Skipped entirely under CALM / .still so captures stay static (CSS flicker /
+   halo breathe are opacity-only and already killed by the global .still rule). */
+(function(){
+  if (CALM || STILL) return;
+  const plate = document.querySelector('.web-plate svg'); if (!plate) return;
+  const NSx='http://www.w3.org/2000/svg', XL='http://www.w3.org/1999/xlink';
+  const HUB=['#4f7ede','#8fa8e8','#d8a33e','#9d8dff','#3fae6d','#5eead4'];
+  const DUR=[3.8,7,4.6,6.2,5.4,4.2], REV=[false,false,true,false,true,false];
+  const g=document.createElementNS(NSx,'g');
+  for(let i=0;i<6;i++){
+    const path=plate.querySelector('#nw-e'+i); if(!path) continue;
+    const dot=document.createElementNS(NSx,'circle');
+    dot.setAttribute('r','2'); dot.setAttribute('fill',HUB[i]); dot.setAttribute('opacity','.9');
+    const am=document.createElementNS(NSx,'animateMotion');
+    am.setAttribute('dur',DUR[i]+'s'); am.setAttribute('repeatCount','indefinite');
+    am.setAttribute('begin',(i*0.6)+'s'); am.setAttribute('calcMode','linear');
+    if(REV[i]){ am.setAttribute('keyPoints','1;0'); am.setAttribute('keyTimes','0;1'); }
+    const mp=document.createElementNS(NSx,'mpath'); mp.setAttributeNS(XL,'href','#nw-e'+i);
+    am.appendChild(mp); dot.appendChild(am); g.appendChild(dot);
+  }
+  plate.appendChild(g);
+})();
+</script>

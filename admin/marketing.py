@@ -25,6 +25,7 @@ _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
 _STATE_REL    = Path("data/neuralweb/marketing_state.json")
+_GROWTH_EVENTS_REL = Path("data/marketing/growth_events.jsonl")
 _CONTENT_REL  = Path("data/marketing/content_plan.json")
 _LAB_REL      = Path("data/marketing/lab_rollup.json")
 _SENTINEL_REL = Path("data/marketing/sentinel_report.json")
@@ -61,6 +62,24 @@ _CONTENT_ACCRUING_NOTE = (
     "content_plan.json not yet written — "
     "accruing after first nightly governor run."
 )
+# Content Studio payload was ~363KB, most of it internal underscore-prefixed
+# post keys the browser render never reads (the full Prophet ``_plan`` alone is
+# ~80KB across the queue).  We strip underscore keys per post before shipping,
+# keeping only the small flags the render surfaces as plain-word badges
+# (``_live_gate_fail`` → "signal demoted", ``_copy_violations`` → caution chip).
+_CONTENT_POST_KEEP = frozenset({"_live_gate_fail", "_copy_violations"})
+
+
+def _strip_post_internals(post: dict) -> dict:
+    """Drop internal underscore-prefixed keys from a queue post, keeping the
+    small whitelist the Content Studio render reads.  Non-dict rows pass
+    through untouched (fail-soft)."""
+    if not isinstance(post, dict):
+        return post
+    return {
+        k: v for k, v in post.items()
+        if not k.startswith("_") or k in _CONTENT_POST_KEEP
+    }
 _LAB_WAITING_NOTE = (
     "No live posts yet — the Lab starts measuring once Broadcast goes live (W1). "
     "The hypotheses below are seeded and waiting for evidence."
@@ -304,11 +323,33 @@ def lobes(root=None) -> dict:
             for d in depts
         ]
         pipeline = s.get("pipeline") or {}
+        growth_events = pipeline.get("growth_events")
+        # BUG-FIX: the state file's baked-in `observed` count includes shadow
+        # seed rows (event_id "seed-…", mode "shadow"), overstating real
+        # observations. Recompute from the raw spine so a seeded-but-live-empty
+        # page reads honestly, and surface the seed count separately.
+        if isinstance(growth_events, dict):
+            rows = _read_jsonl(repo / _GROWTH_EVENTS_REL)
+            observed = len([
+                r for r in rows
+                if r.get("mode") != "shadow"
+                and not str(r.get("event_id", "")).startswith("seed-")
+            ])
+            seeded = len(rows) - observed
+            growth_events = {
+                **growth_events,
+                "observed": observed,
+                "seeded": seeded,
+                "seed_note": (
+                    "Seeded, awaiting real events." if observed == 0 and seeded > 0
+                    else None
+                ),
+            }
         return {
             "ok": True,
             "engines_by_department": engines_by_dept,
             "provenance": s.get("provenance"),
-            "growth_events": pipeline.get("growth_events"),
+            "growth_events": growth_events,
             "as_of": s.get("as_of"),
         }
     except Exception as exc:  # noqa: BLE001
@@ -335,10 +376,23 @@ def content(root=None) -> dict:
                 "distinctness": None,
                 "summary": None,
             }
+        # Strip internal underscore-prefixed keys from every queued post before
+        # shipping to the browser — the render reads none of the big ones (the
+        # full Prophet ``_plan`` was ~80KB across the queue).  Small whitelisted
+        # flags survive (see _CONTENT_POST_KEEP).
+        accounts = []
+        for acct in (cp.get("accounts") or []):
+            if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
+                acct = {
+                    **acct,
+                    "queue": [_strip_post_internals(p) for p in acct["queue"]],
+                }
+            accounts.append(acct)
+
         return {
             "ok": True,
             "content_types": cp.get("content_types") or [],
-            "accounts": cp.get("accounts") or [],
+            "accounts": accounts,
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
@@ -559,6 +613,9 @@ def allies_kit(root=None, target_id=None) -> dict:
         return {"ok": True, "target_id": tid, "markdown": p.read_text(encoding="utf-8")}
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.allies_kit failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
 def _opportunity_pipeline(root: Path) -> dict | None:
     """Pull the scored opportunity-queue block out of marketing state.
 
@@ -873,7 +930,9 @@ _OUTBOX_EMPTY_NOTE = (
 )
 
 _TERMINAL_STATUSES = frozenset({"posted", "failed", "quarantined"})
-_STATUS_KEYS = ("queued", "approved", "held", "posted", "failed", "quarantined")
+# "posting" = W1 publisher in-flight marker (approved→posting before the network
+# call); surfaced so a crashed/stuck post is visible on the panel, not dropped.
+_STATUS_KEYS = ("queued", "approved", "held", "posting", "posted", "failed", "quarantined")
 
 
 def _zero_counts() -> dict:
@@ -1082,6 +1141,177 @@ def _build_decision_log(all_decisions: list, ledger: list, id_meta: dict,
     # Newest first; rows with no timestamp sort last (empty string).
     events.sort(key=lambda e: (e.get("at") or ""), reverse=True)
     return events[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Publisher panel (D02 W1) — the live-publish control plane
+# ---------------------------------------------------------------------------
+
+_PUBLISHER_EMPTY_NOTE = (
+    "Nothing has moved through the publisher yet. Items reach it once the "
+    "outbox has APPROVED, DUE posts; the runner posts them when armed "
+    "(MARKETING_PUBLISH_ENABLED=1 + --live). Dark until then."
+)
+
+# Recent posted-items window surfaced with their receipts.
+_PUBLISHER_RECENT_N = 10
+
+
+def publisher(root=None) -> dict:
+    """Publisher control-plane panel — the live-publish half of the desk network.
+
+    Reads data/marketing/outbox/{items,status_ledger,activity}.jsonl via the
+    engine.marketing.outbox public API (fail-soft) and config/marketing.yml for
+    the publish block. NEVER echoes the Buffer token — only its presence as a
+    boolean (env BUFFER_TOKEN).
+
+    Returns:
+      status_counts   — items by status (queued/approved/posting/posted/failed/
+                        quarantined) across all accounts.
+      recent_posted   — up to _PUBLISHER_RECENT_N most-recent `posted` items with
+                        their receipt external_id/url, newest first.
+      stuck_posting   — items left in `posting` (in-flight marker from a crashed
+                        run) — surfaced PROMINENTLY; each needs a human look.
+      quarantined     — quarantined items with the reason recorded on the
+                        transition that quarantined them.
+      activity        — the last few publisher_* activity rows (run tallies).
+      config          — backend, cap, channel-id-set?, auto_approve, links_allowed,
+                        require_approval, and token_present (bool only).
+
+    Fail-soft: ok:True with empty sections + note on a cold outbox; ok:False only
+    on an unexpected exception.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        import os  # noqa: PLC0415
+
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        sentinel = _ob.sentinel_contract(cfg)
+        cap = sentinel["effective_cap"]
+        pub_cfg = (cfg.get("publish") or {}) if isinstance(cfg, dict) else {}
+        channels = pub_cfg.get("channels") or {}
+        links_allowed = pub_cfg.get("links_allowed") or {}
+        # A channel is "set" when its id is a non-empty string.
+        channel_set = {
+            str(acct): bool(str(cid or "").strip())
+            for acct, cid in channels.items()
+        }
+
+        def _parse_bool(v, default=False):
+            if isinstance(v, bool):
+                return v
+            if v is None:
+                return default
+            return str(v).strip().lower() in {"1", "true", "yes"}
+
+        config = {
+            "backend": str(pub_cfg.get("backend") or "buffer"),
+            "cap": cap,
+            "require_approval": _parse_bool(pub_cfg.get("require_approval"), True),
+            "auto_approve": _parse_bool(pub_cfg.get("auto_approve"), False),
+            "channels_set": channel_set,
+            "any_channel_set": any(channel_set.values()),
+            "links_allowed": {str(a): _parse_bool(v) for a, v in links_allowed.items()},
+            # Token presence ONLY — the value is NEVER surfaced.
+            "token_present": bool(os.environ.get("BUFFER_TOKEN", "").strip()),
+        }
+
+        state = _ob.fold_state(repo)
+        items = state["items"]
+        statuses = state["status"]
+        last = state["last"]
+        order = state["order"]
+
+        # Empty state — cold outbox.
+        if not order:
+            return {
+                "ok": True,
+                "note": _PUBLISHER_EMPTY_NOTE,
+                "as_of": None,
+                "config": config,
+                "status_counts": {k: 0 for k in _STATUS_KEYS if k != "held"},
+                "recent_posted": [],
+                "stuck_posting": [],
+                "quarantined": [],
+                "activity": [],
+            }
+
+        # Status counts (folded status; 'held' is an outbox overlay, not a
+        # publisher state, so it is excluded here).
+        status_counts = {k: 0 for k in _STATUS_KEYS if k != "held"}
+        for iid in order:
+            s = statuses.get(iid, items[iid].get("status", "queued"))
+            if s in status_counts:
+                status_counts[s] += 1
+
+        def _row(iid: str) -> dict:
+            it = items.get(iid, {})
+            lr = last.get(iid) or {}
+            rec = lr.get("receipt")
+            rec = rec if isinstance(rec, dict) else None
+            return {
+                "id": iid,
+                "account": it.get("account", ""),
+                "kind": it.get("kind"),
+                "text": it.get("text"),
+                "at": lr.get("at"),
+                "note": lr.get("note"),
+                "external_id": (rec or {}).get("external_id"),
+                "external_url": (rec or {}).get("external_url"),
+                "backend": (rec or {}).get("backend"),
+            }
+
+        posted = [_row(i) for i in order if statuses.get(i) == "posted"]
+        posted.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+        recent_posted = posted[:_PUBLISHER_RECENT_N]
+
+        stuck_posting = [_row(i) for i in order if statuses.get(i) == "posting"]
+        stuck_posting.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+
+        quarantined = [_row(i) for i in order if statuses.get(i) == "quarantined"]
+        quarantined.sort(key=lambda r: (r.get("at") or ""), reverse=True)
+
+        # Publisher activity rows only (publisher_live / publisher_dry_run),
+        # newest first. Read a wider window then filter to keep the last few.
+        activity = [
+            a for a in reversed(_ob.read_activity(repo, n=40))
+            if str(a.get("lane", "")).startswith("publisher")
+        ][:8]
+
+        as_of_vals = [items[i].get("as_of") for i in order if items[i].get("as_of")]
+        max_as_of = max(as_of_vals) if as_of_vals else None
+
+        return {
+            "ok": True,
+            "as_of": max_as_of,
+            "config": config,
+            "status_counts": status_counts,
+            "recent_posted": recent_posted,
+            "stuck_posting": stuck_posting,
+            "quarantined": quarantined,
+            "activity": activity,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.publisher failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def publisher_dryrun(root=None, account=None) -> dict:
+    """Run the publisher in DRY-RUN and return the "would post" report.
+
+    Thin wrapper over scripts.marketing_publisher.dry_run_report — an in-process
+    entrypoint that makes NO network call and NO ledger write (it never invokes
+    transition() or _append_activity()). Fail-soft: any error → ok:False.
+    """
+    repo = Path(root) if root is not None else _ROOT
+    try:
+        from scripts.marketing_publisher import dry_run_report  # noqa: PLC0415
+        acct = account if (account and str(account).strip()) else None
+        return dry_run_report(root=repo, account=acct)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.publisher_dryrun failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
 
 
 def decide_outbox(item_id: str, decision: str, note: str | None = None, root=None) -> bool:

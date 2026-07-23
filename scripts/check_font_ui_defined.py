@@ -118,8 +118,13 @@ _LINK_TAG_RE = re.compile(r"<link\b[^>]*>", re.IGNORECASE)
 _REL_STYLESHEET_RE = re.compile(r"""\brel\s*=\s*["']stylesheet["']""", re.IGNORECASE)
 # href VALUE whose final path segment is theme.css (optionally ?query) —
 # matches href="theme.css" and href="../theme.css", not href="dark_theme.css".
+# The boundary before "theme.css" is a path "/" OR whitespace: a Jinja-prefixed
+# href like href="{{ rel }}theme.css" (rel = asset-root prefix, resolves to
+# "../" etc. at render) is stripped to href=" theme.css" by strip_jinja(), so
+# the leading space stands in for the slash — else a base template that links
+# theme.css this way (seo_base.html.j2) false-fails despite fonts working.
 _HREF_THEME_RE = re.compile(
-    r"""\bhref\s*=\s*["'](?:[^"']*/)?theme\.css(?:\?[^"']*)?["']""", re.IGNORECASE
+    r"""\bhref\s*=\s*["'](?:[^"']*[/\s])?theme\.css(?:\?[^"']*)?["']""", re.IGNORECASE
 )
 
 

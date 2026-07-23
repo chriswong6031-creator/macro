@@ -8,10 +8,21 @@ History (the exact failure mode this file pins):
   PR #1193 (f6de54afb1, an unrelated qledger/near-miss change ~90 min later)
   silently deleted all three blocks, starving both consumers for a day.
 
+  2026-07-22 (fe7a7426c49, prophet card v1 — operator-ratified 2026-07-21):
+  the multi-chip standout card was retired wholesale, and the per-card
+  .nb-pulse-heat chip (the n.get('sector_pulse') reader) went with it — an
+  INTENTIONAL design removal, not the #1193 silent-starvation mode. The
+  surviving dashboard consumer of engine.sector_pulse is the SECTOR HEAT
+  STRIP (#sector-heat, stocks mode), fed by build_site._sector_heat_view();
+  the stockdata rec injection still feeds the Terminal SectorPulseChip.
+  (The wide-board row injection now has no template consumer — retained as
+  harmless row data; drop it producer-side only with a matching update here.)
+
 These tests pin the producer wiring at the source (AST) level and the
 template-consumer contract, so a future refactor of build_stock_library.py
-cannot drop the injection without a test naming exactly what went missing.
-All tests are hermetic — no build run, no network, no site/ output needed.
+or build_site.py cannot drop the wiring without a test naming exactly what
+went missing. All tests are hermetic — no build run, no network, no site/
+output needed.
 """
 from __future__ import annotations
 
@@ -101,62 +112,121 @@ class TestBuilderProducerWiring:
         )
 
 
+_BUILD_SITE = _REPO / "scripts" / "build_site.py"
+
+# The sector-heat strip's unique extraction landmark (guard line of the panel).
+_STRIP_LANDMARK = "{% if mode == 'stocks' and sector_heat %}"
+
+
 class TestDashboardConsumerContract:
-    """templates/dashboard.html.j2 must still read the key the builder writes."""
+    """templates/dashboard.html.j2 must still surface engine.sector_pulse output.
 
-    def test_template_reads_sector_pulse(self):
+    The per-card .nb-pulse-heat chip (n.get('sector_pulse')) was retired
+    INTENTIONALLY by prophet card v1 (fe7a7426c49, operator-ratified
+    2026-07-21) along with the whole multi-chip standout card. The surviving
+    dashboard consumer is the SECTOR HEAT STRIP (#sector-heat, stocks mode):
+    build_site._sector_heat_view() → engine.sector_pulse.build_pulse('us')
+    → the sector_heat template var. These tests pin that strip so IT cannot
+    starve silently the way the chip's predecessor did in #1193.
+    """
+
+    def test_template_reads_sector_heat(self):
         src = _TEMPLATE.read_text(encoding="utf-8")
-        assert "n.get('sector_pulse')" in src, (
-            "dashboard.html.j2 no longer reads n.get('sector_pulse') — the heat-chip "
-            "consumer was dropped (producer/consumer contract broken)"
+        assert 'id="sector-heat"' in src and "sh-chip" in src, (
+            "dashboard.html.j2 lost the sector-heat strip (#sector-heat / .sh-chip) — "
+            "the last dashboard consumer of engine.sector_pulse (producer/consumer "
+            "contract broken; see module docstring for the chip-retirement history)"
         )
-        assert "nb-pulse-heat" in src, "dashboard.html.j2 lost the .nb-pulse-heat chip markup"
+        assert src.count(_STRIP_LANDMARK) == 1, (
+            f"sector-heat strip guard line {_STRIP_LANDMARK!r} is no longer unique/present "
+            "in dashboard.html.j2 — update _STRIP_LANDMARK if the guard was rephrased"
+        )
 
-    def _chip_block(self) -> str:
-        """Extract the REAL chip block from the template (set _sph … matching endif).
+    def test_build_site_wires_sector_heat_view(self):
+        """build_site.py keeps _sector_heat_view() AND binds it into the template ctx.
 
-        Balances if/endif depth per line — the chip <span> carries an INLINE
-        {% if %}…{% endif %} inside its tooltip attribute, so "first endif" is wrong.
+        The view returns None-never-raises, so dropping either the engine import
+        or the ctx binding hides the strip forever with zero errors — exactly
+        the starvation mode this file exists to catch.
+        """
+        tree = ast.parse(_BUILD_SITE.read_text(encoding="utf-8"))
+        view = next(
+            (n for n in ast.walk(tree)
+             if isinstance(n, ast.FunctionDef) and n.name == "_sector_heat_view"),
+            None,
+        )
+        assert view is not None, (
+            "build_site.py lost _sector_heat_view() — the sector-heat strip producer"
+        )
+        imports = {
+            a.name
+            for n in ast.walk(view)
+            if isinstance(n, ast.ImportFrom) and n.module == "engine.sector_pulse"
+            for a in n.names
+        }
+        assert "build_pulse" in imports, (
+            "_sector_heat_view() no longer imports build_pulse from engine.sector_pulse"
+        )
+        calls = [
+            n for n in ast.walk(tree)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+            and n.func.id == "_sector_heat_view"
+        ]
+        assert calls, (
+            "build_site.py never calls _sector_heat_view() — the sector_heat ctx "
+            "binding was dropped; the strip renders hidden with zero errors"
+        )
+
+    def _strip_block(self) -> str:
+        """Extract the REAL strip block from the template (guard {% if %} … matching endif).
+
+        Balances if/endif depth per line — chip rows carry INLINE
+        {% if %}…{% endif %} pairs (rank badge, as_of stamp), so "first endif" is wrong.
         """
         lines = _TEMPLATE.read_text(encoding="utf-8").splitlines()
-        start = next(i for i, ln in enumerate(lines) if "n.get('sector_pulse')" in ln)
+        start = next(i for i, ln in enumerate(lines) if _STRIP_LANDMARK in ln)
         depth = 0
         for i in range(start, len(lines)):
             depth += lines[i].count("{% if ") - lines[i].count("{% endif %}")
             if depth == 0 and i > start:
                 return "\n".join(lines[start:i + 1])
-        pytest.fail("Unbalanced chip block in dashboard.html.j2")
+        pytest.fail("Unbalanced sector-heat strip block in dashboard.html.j2")
 
-    def _render(self, pulse: dict | None) -> str:
+    def _render(self, heat: dict | None, mode: str = "stocks") -> str:
         import jinja2
         env = jinja2.Environment(undefined=jinja2.Undefined, autoescape=False)
-        tpl = env.from_string(self._chip_block())
-        n = {"sector_pulse": pulse} if pulse is not None else {}
-        return tpl.render(n=n)
+        tpl = env.from_string(self._strip_block())
+        return tpl.render(mode=mode, sector_heat=heat, help=lambda *a, **k: "")
 
-    # A block shaped EXACTLY like the builder's injection output.
-    _BLOCK = {
-        "as_of": "2026-07-02", "theme_id": "us_sector_tech",
-        "theme_name": "Technology", "theme_name_zh": "科技",
-        "heat": "heating", "label": "dominant", "reco": "accumulate",
-        "rank": 3, "n_themes": 46, "rank_delta_5d": 2,
-        "theme_ids": ["us_sector_tech"],
+    # A payload shaped EXACTLY like _sector_heat_view()'s output.
+    _HEAT = {
+        "as_of": "2026-07-02",
+        "heating": [
+            {"id": "us_sector_tech", "name": "Technology", "name_zh": "科技",
+             "heat": "heating", "rank": 3, "rank_delta_5d": 2,
+             "label": "dominant", "reco": "accumulate"},
+        ],
+        "cooling": [
+            {"id": "us_sector_energy", "name": "Energy", "name_zh": "能源",
+             "heat": "cooling", "rank": 41, "rank_delta_5d": -6,
+             "label": "fading", "reco": "reduce"},
+        ],
     }
 
-    def test_chip_renders_for_heating_theme(self):
-        out = self._render(self._BLOCK)
-        assert "nb-pulse-heat" in out and "ph-heating" in out
+    def test_strip_renders_heating_and_cooling(self):
+        out = self._render(self._HEAT)
+        assert "sh-heat" in out and "▲" in out
+        assert "sh-cool" in out and "▽" in out
         assert "Technology" in out and "科技" in out
-        assert "▲" in out
+        assert "baskets.html#theme-us_sector_tech" in out
+        assert "#3" in out and "#41" in out
 
-    def test_chip_renders_cooling_arrow(self):
-        out = self._render({**self._BLOCK, "heat": "cooling"})
-        assert "ph-cooling" in out and "▽" in out
-
-    def test_chip_suppressed_when_idle(self):
-        out = self._render({**self._BLOCK, "heat": "idle"})
-        assert "nb-pulse-heat" not in out
-
-    def test_chip_suppressed_when_absent(self):
+    def test_strip_suppressed_when_pulse_unavailable(self):
         out = self._render(None)
-        assert "nb-pulse-heat" not in out
+        assert "sh-chip" not in out and "sector-heat" not in out
+
+    def test_strip_suppressed_in_macro_mode(self):
+        # Macro mode surfaces sector heat inside the MARKETS tray instead;
+        # the standalone strip is stocks-mode only.
+        out = self._render(self._HEAT, mode="macro")
+        assert "sh-chip" not in out

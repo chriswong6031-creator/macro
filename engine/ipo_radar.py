@@ -142,8 +142,14 @@ def window_context(risk_score: float | None = None) -> dict:
     else:
         band = "MIXED"
 
+    # coverage disclosure — the full leg set is macro/vix/credit/smallcap/spec/ipo_etf;
+    # a partial read (<5 firing) is flagged so the page can say "N of M inputs".
+    n_expected = 6
+    low_confidence = n < 5
+
     return {
         "band": band, "constructive": cons, "hostile": host, "n_legs": n,
+        "n_expected": n_expected, "low_confidence": low_confidence,
         "legs": legs,
         "note": ("Coincident risk-appetite read — it describes whether the issuance "
                  "window is open NOW; it does not forecast it, and it is never scored."),
@@ -188,6 +194,13 @@ def _load() -> pd.DataFrame:
         return load_calendar()
     except Exception:  # noqa: BLE001
         return pd.DataFrame()
+
+
+def _spac_flag(v) -> bool:
+    """NaN-safe SPAC read for a single row (bool(nan) is truthy, which would mis-flag)."""
+    if v is None or (isinstance(v, float) and v != v):   # None or NaN
+        return False
+    return bool(v)
 
 
 def _size_band(v: float | None) -> str | None:
@@ -243,6 +256,25 @@ def price_revision(offer, mlo, mhi) -> dict | None:
             "low": round(mlo, 2), "high": round(mhi, 2), "mid": round(mid, 2)}
 
 
+# Coverage gate for the display-only "Demand (vs range)" column. The marketed range is
+# the strongest day-1 predictor in the literature, but it accrues only for deals we
+# observe BEFORE they price — Nasdaq's free feed carries a range while a deal is
+# upcoming/filed and drops it to a single price once priced, so a marketed range exists
+# only where the pre-pricing range was captured and carried forward. Most historical
+# priced rows therefore have none, and the column stays hidden until enough recent deals
+# carry a revision. > (not >=) so the column needs to genuinely *exceed* the floor.
+REV_MIN_COVERAGE = 10
+
+
+def revision_gate(recent: list[dict], min_coverage: int = REV_MIN_COVERAGE) -> dict:
+    """How many recent deals carry a partial-adjustment revision, and whether that is
+    enough to surface the column. Display-only, never scored — a null here NEVER blocks
+    anything; it just gates a context column and prints an honest N-of-M disclosure."""
+    total = len(recent)
+    coverage = sum(1 for r in recent if r.get("revision"))
+    return {"coverage": coverage, "total": total, "show": coverage > min_coverage}
+
+
 def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
                     limit: int = 30) -> list[dict]:
     cal = _load() if cal is None else cal
@@ -252,7 +284,8 @@ def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
     if p.empty:
         return []
     p["_dsl"] = p["priced_date"].map(_days_since)
-    p = p[p["_dsl"].notna() & (p["_dsl"] <= days)]
+    # 0 <= dsl <= days: reject future-dated priced_date (a bad feed row) as well as stale
+    p = p[p["_dsl"].notna() & (p["_dsl"] >= 0) & (p["_dsl"] <= days)]
     p = p.sort_values("priced_date", ascending=False)
     rows = []
     for _, r in p.head(limit).iterrows():
@@ -262,7 +295,7 @@ def recent_listings(cal: pd.DataFrame | None = None, days: int = 120,
             "exchange": r.get("exchange"), "offer_price": offer,
             "size_usd": r.get("offer_value_usd"), "size_band": _size_band(r.get("offer_value_usd")),
             "priced_date": r.get("priced_date"), "days_since": int(r["_dsl"]),
-            "is_spac": bool(r.get("is_spac")),
+            "is_spac": _spac_flag(r.get("is_spac")),
             "since_offer": _since_offer(r.get("ticker"), offer),
             "revision": price_revision(offer, r.get("marketed_low"), r.get("marketed_high")),
         })
@@ -284,7 +317,7 @@ def upcoming_listings(cal: pd.DataFrame | None = None, limit: int = 15) -> list[
             "exchange": r.get("exchange"),
             "range_low": r.get("range_low"), "range_high": r.get("range_high"),
             "size_usd": r.get("offer_value_usd"), "size_band": _size_band(r.get("offer_value_usd")),
-            "expected_date": r.get("expected_date"), "is_spac": bool(r.get("is_spac")),
+            "expected_date": r.get("expected_date"), "is_spac": _spac_flag(r.get("is_spac")),
         })
     return rows
 
@@ -295,10 +328,12 @@ def pipeline_stats(cal: pd.DataFrame | None = None) -> dict:
         return {"available": False}
     priced = cal[cal["status"] == "priced"].copy()
     priced["_dsl"] = priced["priced_date"].map(_days_since)
-    p30 = priced[priced["_dsl"].notna() & (priced["_dsl"] <= 30)]
-    p90 = priced[priced["_dsl"].notna() & (priced["_dsl"] <= 90)]
-    op90 = p90[~p90["is_spac"].astype(bool)]
-    spac90 = int(p90["is_spac"].astype(bool).sum())
+    # 0 <= dsl <= N: a future-dated priced_date is a bad feed row, not a listing
+    p30 = priced[priced["_dsl"].notna() & (priced["_dsl"] >= 0) & (priced["_dsl"] <= 30)]
+    p90 = priced[priced["_dsl"].notna() & (priced["_dsl"] >= 0) & (priced["_dsl"] <= 90)]
+    is_spac90 = p90["is_spac"].fillna(False).astype(bool)   # NaN → not-SPAC
+    op90 = p90[~is_spac90]
+    spac90 = int(is_spac90.sum())
     wd = cal[cal["status"] == "withdrawn"].copy()
     wd["_dsw"] = wd["withdraw_date"].map(_days_since)
     upcoming_n = int((cal["status"] == "upcoming").sum())
@@ -307,16 +342,29 @@ def pipeline_stats(cal: pd.DataFrame | None = None) -> dict:
                 if "offer_value_usd" in op90 and op90["offer_value_usd"].notna().any() else None)
     n90 = len(p90)
     spac_pct = round(spac90 / n90 * 100) if n90 else None
+    withdrawn90 = int((wd["_dsw"].notna() & (wd["_dsw"] >= 0) & (wd["_dsw"] <= 90)).sum())
+    # withdrawal rate over the same 90d window (pulled / (pulled + priced)); None if no denom
+    wr_denom = withdrawn90 + n90
+    withdraw_rate = round(withdrawn90 / wr_denom * 100) if wr_denom else None
     # descriptive pace/froth tags (no base-rate edge claimed)
     pace = ("busy" if n90 >= 45 else "normal" if n90 >= 15 else "quiet")
     froth = ("elevated SPAC share" if (spac_pct or 0) >= 40 else None)
+    # machine-key froth flags (template renders plain words; scalar `froth` kept for back-compat)
+    froth_flags: list[str] = []
+    if (spac_pct or 0) >= 40:
+        froth_flags.append("spac")
+    if (withdraw_rate or 0) >= 20:
+        froth_flags.append("pulled")
+    if n90 >= 45:
+        froth_flags.append("pace")
     return {
         "available": True,
         "priced_30d": len(p30), "priced_90d": n90,
         "operating_90d": len(op90), "spac_90d": spac90, "spac_pct_90d": spac_pct,
-        "withdrawn_90d": int((wd["_dsw"].notna() & (wd["_dsw"] <= 90)).sum()),
+        "withdrawn_90d": withdrawn90, "withdraw_rate_90d": withdraw_rate,
         "upcoming_n": upcoming_n, "filed_n": filed_n,
-        "median_op_size_90d": med_size, "pace": pace, "froth": froth,
+        "median_op_size_90d": med_size, "pace": pace,
+        "froth": froth, "froth_flags": froth_flags,
     }
 
 

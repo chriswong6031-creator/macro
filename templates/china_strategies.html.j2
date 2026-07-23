@@ -21,7 +21,7 @@
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
@@ -141,20 +141,8 @@ html[data-lang="zh"] .mm-meter{background:linear-gradient(90deg,var(--red),#e0a1
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
+{% include "_site_nav.html.j2" %}
 <div class="wrap">
-  <div class="topbar">
-      {% include "_navlinks.html.j2" %}
-    <div class="nav-ctrls">
-      <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-      <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <span class="pill"></span>
-        <span class="opt en-opt" data-l="en">EN</span>
-        <span class="opt zh-opt" data-l="zh">中文</span>
-      </div>
-    </div>
-  </div>
 
   <div class="h1">🎛️ {{ t('China Strategy Scorecards','中国策略记分卡') }}</div>
   <div class="intro">{{ t('Onshore China strategies with live stance, backtest and rule-book on each card.','中国境内策略卡片：实时立场、回测与规则手册。') }}</div>

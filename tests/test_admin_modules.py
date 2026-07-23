@@ -60,17 +60,16 @@ def test_gitops_status_shape():
         assert k in s
 
 
-def test_ai_cost_estimate_has_measured_key():
-    """estimate() must return a 'measured' key; fail-soft None is accepted."""
+def test_ai_cost_estimate_has_unified_key():
+    """estimate() returns the 'unified' per-lobe cost block the AI Cost page renders; the
+    legacy duplicate 'measured' block was removed (dead payload, never read by any client)."""
     c = ai_cost.estimate()
-    assert "measured" in c
-    # measured is None (no ledger) or a dict with the expected keys
-    m = c["measured"]
-    if m is not None:
-        assert isinstance(m, dict)
-        for k in ("summary", "budget_ledger", "mastermind", "codex", "recent_cycles"):
-            assert k in m, f"measured missing key: {k}"
-        assert isinstance(m["recent_cycles"], list)
+    assert "measured" not in c          # legacy dead block removed
+    assert "unified" in c
+    u = c["unified"]
+    if u is not None:                    # fail-soft None accepted (no ledger yet)
+        assert isinstance(u, dict)
+        assert "lobes" in u or "totals" in u
 
 
 def test_ai_cost_estimate_old_keys_intact():
@@ -176,7 +175,7 @@ def test_cost_route_returns_json(tmp_path):
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/cost", timeout=10) as r:
             d = json.loads(r.read())
         assert isinstance(d, dict)
-        for k in ("components", "monthly_usd", "savings_by_interval", "assumptions", "measured"):
+        for k in ("components", "monthly_usd", "savings_by_interval", "assumptions", "unified"):
             assert k in d, f"/api/cost response missing key: {k}"
     finally:
         httpd.shutdown()

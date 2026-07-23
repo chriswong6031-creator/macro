@@ -67,6 +67,15 @@ DIRECT_FEEDS: list[tuple[str, str, str]] = [
     ("https://www.cnbc.com/id/20910258/device/rss/rss.html", "cnbc.com", "macro"),
     ("https://moxie.foxbusiness.com/google-publisher/economy.xml", "foxbusiness.com", "macro"),
     ("https://www.theguardian.com/business/economics/rss", "theguardian.com", "macro"),
+    # --- 2026 revamp: added corporate/market breadth. Any feed that 404s, moves,
+    # or rate-limits is silently skipped by _fetch (degrade-safe); the downstream
+    # theme / quality / clickbait gates keep only the on-topic, reputable items. ---
+    ("https://finance.yahoo.com/news/rssindex", "finance.yahoo.com", "market"),
+    ("https://seekingalpha.com/market_currents.xml", "seekingalpha.com", "market"),
+    ("https://www.nasdaq.com/feed/rssoutbound?category=Markets", "nasdaq.com", "market"),
+    ("http://feeds.marketwatch.com/marketwatch/marketpulse/", "marketwatch.com", "market"),
+    ("https://www.cnbc.com/id/100727362/device/rss/rss.html", "cnbc.com", "market"),
+    ("https://www.cnbc.com/id/10000664/device/rss/rss.html", "cnbc.com", "macro"),
 ]
 
 # Google-News topic queries per scope — the primary WIRE channel (Reuters / AP / WSJ /

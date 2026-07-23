@@ -173,6 +173,15 @@ def test_theme_link_query_string_matches():
     assert links_theme_css('<link rel="stylesheet" href="theme.css?v=4">')
 
 
+def test_theme_link_jinja_prefixed_href_matches():
+    # href="{{ rel }}theme.css" (rel = asset-root prefix) is stripped to
+    # href=" theme.css" before the link scan; the leading space (the stripped
+    # {{ rel }}, which resolves to "../" at render) must still read as a
+    # theme.css link. Regression: seo_base.html.j2 linked theme.css this way
+    # and the guard false-flagged it as unfonted (the lane rotted red on main).
+    assert links_theme_css(strip_jinja('<link rel="stylesheet" href="{{ rel }}theme.css">'))
+
+
 def test_theme_link_attr_order_reversed_matches():
     assert links_theme_css('<link href="theme.css" rel="stylesheet">')
 
@@ -243,6 +252,18 @@ def test_undefined_token_is_a_violation(tmp_path):
 
 def test_theme_css_link_passes(tmp_path):
     _write(tmp_path, "linked.html.j2", _template(_THEME_LINK, _BODY_FONT_FAMILY))
+    violations, warnings = run_checks(str(tmp_path))
+    assert violations == []
+    assert warnings == []
+
+
+def test_theme_css_link_via_jinja_prefix_passes(tmp_path):
+    # seo_base.html.j2 shape: theme.css linked through a {{ rel }} asset-root
+    # prefix (resolves to ../ at render). The guard must accept it, not force a
+    # redundant local --font-ui definition. This is the exact template that
+    # rotted the font-ui lane red on main while ci.yml ran PR-only.
+    link = '<link rel="stylesheet" href="{{ rel }}theme.css">'
+    _write(tmp_path, "jinja_linked.html.j2", _template(link, _BODY_FONT_FAMILY))
     violations, warnings = run_checks(str(tmp_path))
     assert violations == []
     assert warnings == []

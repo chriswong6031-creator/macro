@@ -98,10 +98,10 @@ def test_a_canvas_with_tabindex_in_hidden_is_flagged():
 
 
 def test_a_real_site_passes(tmp_path):
-    """The committed site/index.html must not have any aria-hidden focusable traps."""
-    site = Path(__file__).resolve().parent.parent / "site" / "index.html"
+    """The committed site/start.html (the signed-in hub; index.html is the static landing since 2026-07-22) must not have any aria-hidden focusable traps."""
+    site = Path(__file__).resolve().parent.parent / "site" / "start.html"
     if not site.is_file():
-        pytest.skip("site/index.html not present")
+        pytest.skip("site/start.html not present")
     html = site.read_text(encoding="utf-8", errors="replace")
     violations = check_a_aria_hidden(html)
     assert violations == [], f"Unexpected aria-hidden focusable traps: {violations}"
@@ -145,9 +145,9 @@ def test_b_valid_lang_and_data_lang_passes():
 
 
 def test_b_real_site_passes(tmp_path):
-    site = Path(__file__).resolve().parent.parent / "site" / "index.html"
+    site = Path(__file__).resolve().parent.parent / "site" / "start.html"
     if not site.is_file():
-        pytest.skip("site/index.html not present")
+        pytest.skip("site/start.html not present")
     html = site.read_text(encoding="utf-8", errors="replace")
     assert check_b_lang_boot(html) == []
 
@@ -180,9 +180,9 @@ def test_c_rule_with_high_pct_is_flagged():
 
 
 def test_c_real_site_passes():
-    site = Path(__file__).resolve().parent.parent / "site" / "index.html"
+    site = Path(__file__).resolve().parent.parent / "site" / "start.html"
     if not site.is_file():
-        pytest.skip("site/index.html not present")
+        pytest.skip("site/start.html not present")
     html = site.read_text(encoding="utf-8", errors="replace")
     assert check_c_pill_contrast(html) == []
 
@@ -223,9 +223,9 @@ def test_d_viewport_fit_and_safe_area_passes():
 
 
 def test_d_real_site_passes():
-    site = Path(__file__).resolve().parent.parent / "site" / "index.html"
+    site = Path(__file__).resolve().parent.parent / "site" / "start.html"
     if not site.is_file():
-        pytest.skip("site/index.html not present")
+        pytest.skip("site/start.html not present")
     html = site.read_text(encoding="utf-8", errors="replace")
     assert check_d_viewport_safe_area(html) == []
 

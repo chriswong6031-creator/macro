@@ -308,7 +308,7 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
     headline = f"🧾 {cashtag}{q_label} earnings: {verdict}."
 
     body_parts = [
-        f"EPS ${eps_a_str} vs ${eps_e_str} est — {surp_str}.",
+        f"EPS ${eps_a_str} vs ${eps_e_str} est ({surp_str}).",
     ]
     if rev_a_str and rev_e_str:
         rev_line = f"Rev ${rev_a_str} vs ${rev_e_str} est"

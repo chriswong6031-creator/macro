@@ -1,0 +1,124 @@
+name: marketing-publish
+# ─────────────────────────────────────────────────────────────────────────────
+# D02 W1 — scheduled LIVE social publisher. DARK BY DEFAULT.
+#
+# Runs on ubuntu-latest (NOT the self-hosted macstudio): this must stay OFF the
+# nightly render path. It posts APPROVED, DUE outbox items to X via Buffer using
+# scripts.marketing_publisher.
+#
+# WHY IT IS SAFE / DARK: the runner self-downgrades to DRY-RUN unless the global
+# kill-switch is set (engine.marketing.sentinel.publish_enabled() reads env
+# MARKETING_PUBLISH_ENABLED ∈ {1,true,yes}). With the secret unset the run posts
+# NOTHING and the ledger does not change, so the commit-back step is a clean
+# no-op. `--live` is passed unconditionally BECAUSE that downgrade guard makes it
+# harmless until the operator opts in (scripts/marketing_publisher.py:
+# `live = bool(args.live) and kill_on`).
+#
+# HOW TO ARM IT (operator, see docs/marketing_publisher_runbook.md):
+#   1. Repo secret  BUFFER_TOKEN            = a Buffer personal API token
+#   2. Repo secret  MARKETING_PUBLISH_ENABLED = 1   (the kill-switch; unset to disarm)
+#   3. config/marketing.yml  publish.channels.flagship = the Buffer channel id
+#      (discover it: BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels)
+# Unset MARKETING_PUBLISH_ENABLED at any time to instantly revert every path to
+# dry-run — that is the kill switch / rollback.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # Weekday posting slots matching the outbox AM / PM / EOD queue times.
+    # Deliberately clear of the 22:30 UTC nightly (daily.yml) window to reduce
+    # ledger-commit races on data/marketing/outbox/*.jsonl.
+    - cron: "0 14 * * 1-5"    # AM slot  (14:00 UTC)
+    - cron: "30 17 * * 1-5"   # PM slot  (17:30 UTC)
+    - cron: "15 20 * * 1-5"   # EOD slot (20:15 UTC)
+  workflow_dispatch:          # manual runs (still dark unless the secret is set)
+
+permissions:
+  contents: write             # commit changed outbox ledgers back to main
+
+concurrency:
+  # Never let two publisher runs overlap (double-post guard is also in the
+  # runner, but non-overlapping runs keep the ledger writes serialized too).
+  group: marketing-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
+    timeout-minutes: 15
+    env:
+      BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
+      MARKETING_PUBLISH_ENABLED: ${{ secrets.MARKETING_PUBLISH_ENABLED }}
+    steps:
+      - name: checkout (full history + write token)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # The runner + its engine import chain is stdlib-only except pyyaml
+        # (config/marketing.yml load). Nothing else is needed for the publish path.
+        run: pip install --quiet pyyaml
+
+      - name: humanizing jitter
+        # Spread posts off perfectly round cron times (Actions cron is already
+        # best-effort ~0-15m late; this adds up to 10 more minutes of scatter so
+        # the account never posts on the exact same wall-clock minute).
+        run: sleep $((RANDOM % 600))
+
+      - name: run publisher (dark until the kill-switch secret is set)
+        run: |
+          # --live is safe here: with MARKETING_PUBLISH_ENABLED unset the runner
+          # runs DRY-RUN, posts nothing, and writes no status transitions.
+          python -m scripts.marketing_publisher --live
+
+      - name: commit changed outbox ledgers (no-op when nothing changed)
+        # Only persist ledger state when ARMED. While dark (kill-switch unset) the
+        # dry-run writes a throwaway activity row we must NOT commit to main — else
+        # every scheduled dark run would spam main with no-op commits.
+        if: always() && env.MARKETING_PUBLISH_ENABLED != ''
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY the outbox ledger dir — never touch other paths. A dry-run
+          # (dark mode) still appends a publisher_dry_run activity row, which is a
+          # legitimate audit trail; a live run additionally advances statuses.
+          git add data/marketing/outbox 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "marketing-publish: no ledger changes to commit"
+            exit 0
+          fi
+
+          git commit -m "marketing-publish: outbox run $(date -u +%FT%H:%MZ) [skip ci]"
+
+          # Retry-rebase push loop to tolerate races with the nightly/other lanes
+          # (mirrors seo-director.yml push mechanics). --autostash parks nothing
+          # here since everything is already committed above.
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            # Drop any untracked file that shadows an origin/main path (a mid-run
+            # commit could TRACK a path we wrote as an untracked side-effect,
+            # which would make the rebase checkout refuse). Everything we publish
+            # is already committed, so such a path is a throwaway local write.
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-publish: pushed ledger on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-publish: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+
+          echo "::warning::marketing-publish: could not push ledger after 5 attempts (non-fatal)"
+          exit 0
