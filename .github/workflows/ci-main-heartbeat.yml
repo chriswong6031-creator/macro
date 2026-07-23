@@ -1,0 +1,229 @@
+name: ci-main-heartbeat
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY THIS EXISTS — the ci.yml main-blind-spot (2026-07-23).
+#
+# ci.yml triggers on `pull_request` + `workflow_dispatch` ONLY — no `push:` and no
+# `schedule:`. So its ~50 guard jobs (nav-gap, font-ui, contract-drift,
+# template-site-sync, the engine-render-guards batch, dag-conformance, …) NEVER run
+# against a commit that is already on main. A guard can therefore go red ON MAIN and
+# nothing re-checks it: a nightly `[skip ci]` bot re-bake trips nav-gap/font-ui, or a
+# PR merges while its path-filter didn't re-run a sibling test. The rot only surfaces
+# later, as a red X on the next UNRELATED PR that happens to touch a matching path.
+#
+# The metabolism MAIN-RED SENTINEL (scripts/metabolism_immune.py, cron 15 */2 * * *)
+# reads /repos/…/commits/<main_sha>/check-runs to find red checks on main — but it is
+# STRUCTURALLY BLIND here: check-runs only exist for workflows that actually ran on the
+# commit, and ci.yml never runs on main → zero ci.yml check-runs on main → sentinel
+# sees green. (2026-07-23: 5 lanes had rotted red on main invisibly.)
+#
+# This heartbeat closes the gap. On a `schedule`, GitHub runs it against the default
+# branch HEAD (= origin/main), producing check-runs ON the main commit that the immune
+# sentinel CAN see — turning "surfaces on an unrelated PR someday" into a direct red
+# signal within hours. It runs ONLY pure, cheap guard scripts (seconds-to-minutes); it
+# is deliberately OFF the ~67-min nightly render budget and shares no code with it.
+#
+# SCOPE — this re-runs a curated subset of ci.yml's PURE guards (no network, no engine
+# render, no deploy). Job names + steps mirror ci.yml exactly, so "green here" means the
+# same thing as "green on the PR gate". It is NOT a substitute for ci.yml on PRs.
+#
+# FALSE-RED DISCIPLINE — the sentinel flags any check-run whose conclusion is
+# failure / timed_out / cancelled / action_required. A CANCELLED or TIMED-OUT job would
+# therefore page the operator with a FALSE red. So: `cancel-in-progress: false` (never
+# cancel a heartbeat), and generous per-job `timeout-minutes` (never trip a timeout on
+# the normal ~4-min engine batch). The 6-hourly cadence dwarfs the ~5-min runtime, so
+# overlap is effectively impossible.
+#
+# CADENCE — every 6h (a few times daily). Detection latency ≈ heartbeat interval + the
+# 2h sentinel interval (~6-8h worst case). Tighten to `*/4` or `*/3` if desired; the
+# only cost knob that matters is the engine-render-guards batch (~4 min, GitHub-hosted).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    # 00:17, 06:17, 12:17, 18:17 UTC. Off the top-of-hour to avoid GitHub's scheduled-run
+    # queue lag, and off the immune lane's :15 so its read lands just after a fresh stamp.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+# Read-only. The check-run pass/fail IS the signal (the immune sentinel reads it via the
+# GitHub API); this lane never commits, pushes, opens PRs, or needs a secret.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-main-heartbeat
+  # NEVER cancel: a cancelled run concludes "cancelled", which the immune sentinel reads
+  # as a RED required check — a false alarm. Let any in-flight run finish.
+  cancel-in-progress: false
+
+jobs:
+  # ── pure static guards (mirror ci.yml: nav-gap) ────────────────────────────
+  nav-gap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: nav menu must keep a top gap (committed site/)
+        run: python3 scripts/check_nav_gap.py site
+
+  # ── font-ui definition guard (mirror ci.yml: font-ui-defined) ──────────────
+  font-ui-defined:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: font-ui definition guard (body-level var(--font-ui) coverage)
+        run: python -m scripts.check_font_ui_defined templates
+      - name: font-ui guard unit tests (violating + passing fixtures per check)
+        run: python -m pytest tests/test_check_font_ui_defined.py -q
+
+  # ── contract drift guard (mirror ci.yml: contract-drift) ───────────────────
+  contract-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: contract drift check (hard-fail — ratchet flipped 2026-07-14)
+        run: python scripts/check_contract_drift.py
+      - name: contract drift unit tests
+        run: python -m pytest tests/test_contract_drift.py -q
+
+  # ── template↔site + interfonts sync (mirror ci.yml: template-site-sync) ────
+  template-site-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: install minimal deps (theme.js bake reads config.yml)
+        run: pip install pyyaml
+      - name: template-site-sync selftest (gate fires on synthetic divergence)
+        run: python3 scripts/check_template_site_sync.py --selftest
+      - name: site copies of template assets must byte-match templates/
+        run: python3 scripts/check_template_site_sync.py
+      - name: interfonts-sync selftest (gate fires on synthetic drift)
+        run: python3 scripts/check_interfonts_sync.py --selftest
+      - name: _interfonts partial @font-face blocks must match templates/theme.css
+        run: python3 scripts/check_interfonts_sync.py
+
+  # ── workflow-yaml parse guard (mirror ci.yml: workflow-yaml) ───────────────
+  workflow-yaml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pyyaml
+      - name: check_workflow_yaml selftest
+        run: python scripts/check_workflow_yaml.py --selftest
+      - name: "all workflow files must parse with on:/jobs: blocks"
+        run: python scripts/check_workflow_yaml.py .github/workflows
+
+  # ── DAG conformance (mirror ci.yml: dag-conformance) ───────────────────────
+  dag-conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: DAG conformance check (hard — exits 1 on undeclared lane drift)
+        run: python scripts/check_dag_conformance.py --verbose
+      - name: DAG conformance selftest + live conformance tests
+        run: python -m pytest tests/test_dag_conformance.py -q
+
+  # ── engine + render-guard contract batch (mirror ci.yml: engine-render-guards)
+  # The rot-prone one: the 2026-07-02 sweep exists because these test files silently
+  # broke on main when ci.yml only ran a targeted subset. ~4 min, GitHub-hosted.
+  engine-render-guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
+        run: >
+          python -m pytest
+          tests/test_canada_build.py tests/test_commodity_signals.py
+          tests/test_commodity_index.py
+          tests/test_commodity_confluence.py
+          tests/test_commodity_cycle_state.py
+          tests/test_fear_euphoria.py tests/test_froth_fragility.py
+          tests/test_vol_velocity.py tests/test_fear_greed_honesty.py
+          tests/test_archive_context_snapshots.py
+          tests/test_ai_breadth_split.py
+          tests/test_vsb_surface.py
+          tests/test_missing_tape.py tests/test_price_basis_flip.py
+          tests/test_risk_lead_lag.py tests/test_anticipation.py
+          tests/test_risk_radar_market_catalysts.py tests/test_risk_radar_recovery.py
+          tests/test_risk_radar_scorecard.py
+          tests/test_vsb_radar_alert.py
+          tests/test_risk_radar_intl_profiles.py
+          tests/test_risk_state_live_copy_sync.py
+          tests/test_build_china_risk_state.py
+          tests/test_canon.py tests/test_whitehouse_w5.py
+          tests/test_winner_autopsy.py tests/test_admin_long_hold.py
+          tests/test_falsifier_packet.py
+          tests/test_board_ledger.py tests/test_grade_us_board.py
+          tests/test_board_ledger_lane_gates.py
+          tests/test_prophet_governor.py
+          tests/test_pick_autopsy_selection.py
+          tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
+          tests/test_news_page_render.py tests/test_china_lens_hub.py
+          tests/test_news_rank_aging.py
+          tests/test_build_netliq_daily.py
+          tests/test_ignition_radar.py
+          tests/test_mag7_regime.py
+          tests/test_theme_scoring_leadership_split.py
+          tests/test_ignition_persistence.py
+          tests/test_mag7_panel.py
+          tests/test_leadership_board.py
+          tests/test_stance_matrix.py
+          tests/test_theme_scoring_conflicted.py
+          tests/test_basket_score_rollover_w4.py
+          tests/test_index_momentum.py
+          tests/test_cohort_flow_chips.py
+          tests/test_statement_tape.py
+          tests/test_backfill_options_flow.py
+          tests/test_rlt_sector_stance_enrich.py
+          tests/test_t0_indicator.py
+          tests/test_intraday_flow.py
+          tests/test_intraday_flow_stance.py
+          tests/test_standout_audit.py
+          tests/test_track_record_page.py
+          tests/test_altdata_hygiene.py
+          tests/test_china_news_engine.py
+          tests/test_china_library_limited.py
+          tests/test_china_standouts_serialization.py
+          tests/test_hk_library_limited.py
+          tests/test_canada_library_limited.py
+          tests/test_intl_library_limited.py
+          tests/test_aibrief_page.py
+          tests/test_aibrief_w4_panels.py
+          tests/test_sa_w5_v2_grader_hook.py
+          tests/test_w8b_macro_prior_entries.py
+          tests/test_rr_scorecard_card.py
+          tests/test_engine_run_no_regress.py
+          tests/test_cycles.py
+          tests/test_opex_risk.py -q
+      - name: statement-tape schema guard (FL-E / FC-R9)
+        run: python -m scripts.check_statement_tape
