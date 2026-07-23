@@ -25,13 +25,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from lib import illus  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_bonds")
@@ -43,15 +43,6 @@ C = {
     "amber": "#F5AD42", "green": "#1a7f43", "grid": "#EAECF0", "card": "#FFFFFF",
     "bg": "#F7F8FA", "gold": "#C8A53B", "teal": "#1F8A70",
 }
-PLOT = dict(
-    template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    font={"size": 11, "color": C["text"], "family": "Inter, sans-serif"},
-    margin={"l": 48, "r": 52, "t": 10, "b": 28},
-    legend={"orientation": "h", "y": 1.16, "x": 0},
-    xaxis={"gridcolor": C["grid"], "zeroline": False},
-    yaxis={"gridcolor": C["grid"], "zeroline": False},
-)
-
 # band -> display color (shared across pillars)
 HEALTH_COLOR = {"healthy": C["green"], "mixed": C["amber"], "stressed": C["red"]}
 PHASE = {"recession": ("Recession", "衰退", C["red"]), "early": ("Early-cycle recovery", "周期早段复苏", C["green"]),
@@ -92,13 +83,8 @@ def _load_calibration() -> dict:
 
 
 # --------------------------------------------------------------------------- #
-# plotly helpers (mirror build_forex.py)
+# helpers
 # --------------------------------------------------------------------------- #
-def _html(fig: go.Figure) -> str:
-    return fig.to_html(full_html=False, include_plotlyjs=False,
-                       config={"displayModeBar": False, "responsive": True})
-
-
 def _r(v, n=2):
     return round(float(v), n) if v is not None and pd.notna(v) else None
 
@@ -110,277 +96,206 @@ def _tail_years(df: pd.DataFrame, years: float) -> pd.DataFrame:
     return df.loc[df.index >= cutoff]
 
 
-def _plot_idx(index, daily_days=400, weekly_days=1825, weekly_step=7, monthly_step=30):
-    if len(index) == 0:
-        return index
-    end = index.max()
-    d0, w0 = end - pd.Timedelta(days=daily_days), end - pd.Timedelta(days=weekly_days)
-    daily = index[index >= d0]
-    weekly = index[(index < d0) & (index >= w0)][::weekly_step]
-    monthly = index[index < w0][::monthly_step]
-    return monthly.union(weekly).union(daily)
-
-
-def _plot_y(s: pd.Series, n: int):
-    if n <= 0:
-        return [None if pd.isna(v) else int(round(float(v))) for v in s]
-    return [None if pd.isna(v) else round(float(v), n) for v in s]
-
-
 def _dx(index):
     return [t.strftime("%Y-%m-%d") for t in index]
 
 
-def _line(fig, idx, s, name, color, width=1.7, dash=None, axis="y", n=2, fill=None, fillcolor=None):
-    pidx = _plot_idx(idx)
-    line = {"color": color, "width": width}
-    if dash:
-        line["dash"] = dash
-    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(s.reindex(pidx), n), name=name,
-                             line=line, yaxis=axis, fill=fill, fillcolor=fillcolor))
+def _col(df, name):
+    """A column from a frame, or None when absent (never raises)."""
+    if df is None or name not in getattr(df, "columns", []):
+        return None
+    return df[name]
 
 
 # --------------------------------------------------------------------------- #
-# charts
+# ilx / Signal-Ink charts — SSR-SVG + CSS animation, the house display format.
+# Every illustrative chart on this page routes through lib.illus (no Plotly on
+# dashboards — docs/ILLUSTRATIONS.md / the Design Doctrine). Bad/short data never
+# raises: the series builders return None/"" and illus renders an honest null.
 # --------------------------------------------------------------------------- #
-def chart_health(fr: pd.DataFrame, years=8) -> str:
-    d = _tail_years(fr, years)
-    bcfg = config.load()["bonds"]["health"]
-    fig = go.Figure()
-    # healthy / stressed reference bands
-    fig.add_hrect(y0=bcfg["healthy_score"], y1=100, fillcolor="rgba(26,127,67,0.06)", line_width=0)
-    fig.add_hrect(y0=0, y1=bcfg["stressed_score"], fillcolor="rgba(211,11,11,0.06)", line_width=0)
-    _line(fig, d.index, d["health_score"], "Bond health", C["ink"], width=2, n=1)
-    fig.update_layout(**{**PLOT, "height": 250, "yaxis": {"range": [0, 100], "gridcolor": C["grid"],
-                                                          "title": "health (0–100)"}})
-    return _html(fig)
+def _ser(s, years=None, n=2):
+    """pd.Series -> ilx {dates, vals} (None if empty). Optional trailing-years slice."""
+    if s is None:
+        return None
+    s = s.dropna()
+    if years is not None and not s.empty:
+        s = s.loc[s.index >= (s.index.max() - pd.Timedelta(days=int(365 * years)))]
+    if s.empty:
+        return None
+    return {"dates": _dx(s.index), "vals": [round(float(v), n) for v in s]}
 
 
-def chart_curve_now(f: pd.DataFrame) -> str:
-    """Term structure today vs ~3mo and ~1y ago — how the curve shifted."""
-    tenors = [("us3m", 0.25), ("us6m", 0.5), ("us1y", 1), ("us2y", 2), ("us3y", 3),
-              ("us5y", 5), ("us7y", 7), ("us10y", 10), ("us30y", 30)]
-    fig = go.Figure()
-    snaps = [(-1, "Today", C["blue"], 2.2), (-64, "~3mo ago", C["faint"], 1.4),
-             (-252, "~1y ago", C["amber"], 1.4)]
-    xs = [t[1] for t in tenors]
-    xlabels = ["3m", "6m", "1y", "2y", "3y", "5y", "7y", "10y", "30y"]
-    for off, name, color, w in snaps:
+def _mser(label_en, label_zh, color, s, years=None, n=2):
+    """A named, colored series dict for illus(kind='multi'). None when empty."""
+    d = _ser(s, years=years, n=n)
+    if d is None:
+        return None
+    d.update(label_en=label_en, label_zh=label_zh, color=color)
+    return d
+
+
+def _ilx(series, accent, *, kind="line", height=190, baseline=None, reference=None,
+         unit_en="", unit_zh=None, bands=None, value_fmt="{:,.2f}", aria_en=""):
+    """Bridge a {dates, vals} dict to an ilx fragment; '' when the series is empty."""
+    if not series or (kind != "multi" and not series.get("dates")):
+        return ""
+    return illus.illus(series, kind=kind, accent=accent, height=height, baseline=baseline,
+                       reference=reference, unit_en=unit_en, unit_zh=unit_zh, bands=bands,
+                       value_fmt=value_fmt, aria_en=aria_en or f"{kind} chart")
+
+
+def _multi(series_list, *, height=190, baseline=None, value_fmt="{:,.2f}", aria_en=""):
+    """Bridge a list of _mser dicts to an ilx multi fragment; '' when < 2 valid series."""
+    valid = [s for s in series_list if s]
+    if len(valid) < 2:
+        return ""
+    return illus.illus(valid, kind="multi", height=height, baseline=baseline,
+                       value_fmt=value_fmt, aria_en=aria_en or "comparison chart")
+
+
+def _band(hi, lo, tint_var, pct, label_en, label_zh, pos):
+    """A soft zone-band tint (display-tier context) for illus(bands=...)."""
+    return {"hi": hi, "lo": lo,
+            "tint": f"color-mix(in srgb, var(--{tint_var}) {pct}%, transparent)",
+            "label_en": label_en, "label_zh": label_zh, "pos": pos}
+
+
+def chart_health(fr, years=8):
+    """Bond Health Score history (0-100) — area with healthy / stressed zone tints."""
+    s = _ser(_col(fr, "health_score"), years=years, n=1)
+    bands = [_band(100, 66, "green", 13, "Healthy", "健康", "top"),
+             _band(34, 0, "red", 11, "Stressed", "承压", "bottom")]
+    return _ilx(s, "var(--teal)", kind="area", height=200, bands=bands,
+                value_fmt="{:,.0f}", aria_en="Bond health score history")
+
+
+def chart_curve_now(f):
+    """THE signature: the US Treasury yield curve, today vs ~3 months and ~1 year ago.
+    ilx plots by index with the tenor labels as the corner captions, so the shape reads
+    as a real term structure (3m -> 30y)."""
+    tenors = [("us3m", "3m"), ("us6m", "6m"), ("us1y", "1y"), ("us2y", "2y"),
+              ("us3y", "3y"), ("us5y", "5y"), ("us7y", "7y"), ("us10y", "10y"),
+              ("us30y", "30y")]
+    labels = [t[1] for t in tenors]
+
+    def snap(off, le, lz, color):
         try:
             row = f.iloc[off]
-        except (IndexError, KeyError):
-            continue
-        ys = [row.get(c) for c, _ in tenors]
-        if all(v is None or pd.isna(v) for v in ys):
-            continue
-        fig.add_trace(go.Scatter(x=xs, y=[None if pd.isna(v) else round(float(v), 2) for v in ys],
-                                 name=name, mode="lines+markers",
-                                 line={"color": color, "width": w}, marker={"size": 5}))
-    fig.update_layout(**{**PLOT, "height": 260,
-                         "xaxis": {"tickvals": xs, "ticktext": xlabels, "title": "maturity",
-                                   "gridcolor": C["grid"], "type": "log"},
-                         "yaxis": {"title": "yield %", "gridcolor": C["grid"]}})
-    return _html(fig)
+        except Exception:  # noqa: BLE001
+            return None
+        vals = [(None if (c not in f.columns or pd.isna(row.get(c))) else round(float(row[c]), 2))
+                for c, _ in tenors]
+        if sum(v is not None for v in vals) < 4:
+            return None
+        return {"label_en": le, "label_zh": lz, "color": color, "dates": labels, "vals": vals}
+
+    series = [s for s in (snap(-1, "Today", "当前", "var(--warn)"),
+                          snap(-64, "3 mo ago", "3月前", "var(--info)"),
+                          snap(-252, "1 yr ago", "1年前", "var(--muted)")) if s]
+    return _multi(series, height=230, value_fmt="{:,.2f}",
+                  aria_en="US Treasury yield curve now versus three months and one year ago")
 
 
-def chart_policy_path(fp: dict, horizons=(1, 3, 6, 12)) -> str:
-    """Market-implied policy path (ZQ/SR3 futures) vs the FOMC dot-plot, on a shared
-    months-ahead axis. Display-only — the implied line is a price, the dots a forecast."""
+def chart_spreads(fr, years=12):
+    """Curve slope over time (10y-3m, 2s10s, term-premium-adjusted); zero = flat."""
+    return _multi([
+        _mser("10y-3m", "10年-3月", "var(--info)", _col(fr, "spread_10y3m"), years),
+        _mser("2s10s", "2年/10年", "var(--warn)", _col(fr, "spread_2s10s"), years),
+        _mser("TP-adjusted", "期限溢价调整", "var(--muted)", _col(fr, "curve_tp_adj"), years),
+    ], height=190, baseline=0, value_fmt="{:+,.2f}",
+       aria_en="Yield curve slope measures over time")
+
+
+def chart_credit(fr, years=12):
+    """Credit spreads over time — high-yield OAS and investment-grade OAS."""
+    return _multi([
+        _mser("HY OAS", "高收益", "var(--warn)", _col(fr, "hy_oas"), years),
+        _mser("IG OAS", "投资级", "var(--info)", _col(fr, "ig_oas"), years),
+    ], height=190, value_fmt="{:,.2f}",
+       aria_en="High-yield and investment-grade credit spreads")
+
+
+def chart_real(fr, years=12):
+    """The discount rate — real 10y, breakeven inflation, term premium; zero reference."""
+    return _multi([
+        _mser("Real 10y", "10年实际", "var(--info)", _col(fr, "us10y_real"), years),
+        _mser("Breakeven", "盈亏平衡", "var(--orange)", _col(fr, "breakeven_10y"), years),
+        _mser("Term premium", "期限溢价", "var(--muted)", _col(fr, "term_premium_10y"), years),
+    ], height=190, baseline=0, value_fmt="{:+,.2f}",
+       aria_en="Real yield, breakeven inflation and term premium")
+
+
+def chart_move(fr, years=12):
+    """Rates volatility (MOVE) over time — calm / crisis zone tints."""
+    s = _ser(_col(fr, "move"), years=years, n=0)
+    bands = [_band(None, 120, "red", 10, "Crisis", "危机", "top"),
+             _band(80, 0, "green", 10, "Calm", "平静", "bottom")]
+    return _ilx(s, "var(--warn)", kind="line", height=180, bands=bands,
+                value_fmt="{:,.0f}", aria_en="MOVE rates volatility index")
+
+
+def chart_corr(fr, years=12):
+    """Stock-bond 63-day correlation — diversifying (below 0) vs hedge-weak (above 0)."""
+    s = _ser(_col(fr, "stock_bond_corr"), years=years, n=2)
+    bands = [_band(1, 0.2, "red", 9, "Hedge weak", "对冲减弱", "top"),
+             _band(-0.1, -1, "green", 9, "Diversifying", "分散化", "bottom")]
+    return _ilx(s, "var(--info)", kind="line", height=180, reference=0, bands=bands,
+                value_fmt="{:+,.2f}", aria_en="Stock-bond 63-day correlation")
+
+
+def chart_sovereign(fr, years=14):
+    """Euro-area fragmentation and the JGB 2s10s curve; zero reference."""
+    return _multi([
+        _mser("Euro fragmentation", "欧元分化", "var(--warn)", _col(fr, "euro_frag"), years),
+        _mser("JGB 2s10s", "日债2/10", "var(--info)", _col(fr, "jgb_2s10s"), years),
+    ], height=180, baseline=0, value_fmt="{:+,.2f}",
+       aria_en="Euro-area fragmentation and the Japanese government bond curve")
+
+
+def chart_intl_yields(f, years=6):
+    """Global 10-year sovereign yields — US, Bund, JGB."""
+    try:
+        from engine import intl_bonds
+        hist = intl_bonds.history(f)
+    except Exception:  # noqa: BLE001
+        return ""
+    picks = [("US", "US 10y", "美债10年", "var(--warn)"),
+             ("DE", "Bund", "德债", "var(--info)"),
+             ("JP", "JGB", "日债", "var(--muted)")]
+    series = [_mser(le, lz, color, hist.get(code), years=years) for code, le, lz, color in picks]
+    return _multi(series, height=190, value_fmt="{:,.2f}",
+                  aria_en="Global ten-year sovereign yields")
+
+
+def chart_tp_decomp(f, years=9):
+    """10y yield decomposed — nominal = real + breakeven."""
+    return _multi([
+        _mser("Nominal 10y", "名义10年", "var(--warn)", _col(f, "us10y"), years),
+        _mser("Real 10y", "实际10年", "var(--info)", _col(f, "us10y_real"), years),
+        _mser("Breakeven", "盈亏平衡", "var(--orange)", _col(f, "breakeven_10y"), years),
+    ], height=200, value_fmt="{:,.2f}",
+       aria_en="Ten-year yield decomposed into real yield and breakeven inflation")
+
+
+def chart_policy_path(fp):
+    """Market-implied policy-rate path (now -> 12 months) as a small line."""
     if not fp:
         return ""
-    asof = pd.Timestamp(fp.get("asof"))
-    fig = go.Figure()
-    pol = fp.get("policy_rate") if fp.get("policy_rate") is not None else fp.get("target_mid")
-    # market-implied path: now (0m) + each available horizon
     imp = fp.get("implied") or {}
-    xs, ys = [], []
-    if pol is not None:
-        xs.append(0); ys.append(round(float(pol), 3))
-    for h in horizons:
-        v = imp.get(f"m{h}")
-        if v is not None:
-            xs.append(h); ys.append(round(float(v), 3))
-    if len(xs) >= 2:
-        fig.add_trace(go.Scatter(x=xs, y=ys, name="Market-implied (ZQ/SR3)", mode="lines+markers",
-                                 line={"color": C["blue"], "width": 2.2}, marker={"size": 6}))
-    # SOFR cross-check path (faint)
-    sp = fp.get("sofr_path") or {}
-    sx = [h for h in horizons if sp.get(f"m{h}") is not None]
-    if len(sx) >= 2:
-        fig.add_trace(go.Scatter(x=sx, y=[round(float(sp[f"m{h}"]), 3) for h in sx],
-                                 name="SOFR-implied (SR3)", mode="lines",
-                                 line={"color": C["faint"], "width": 1.3, "dash": "dot"}))
-    # FOMC dot-plot medians placed at their year-end horizon
-    dx, dy, dtxt = [], [], []
-    for d in (fp.get("dots") or []):
-        months = (int(d["year"]) - asof.year) * 12 + (12 - asof.month)
-        if months >= 1:
-            dx.append(months); dy.append(round(float(d["median"]), 3)); dtxt.append(str(d["year"]))
-    if dx:
-        fig.add_trace(go.Scatter(x=dx, y=dy, name="FOMC median dot", mode="markers+text",
-                                 text=dtxt, textposition="top center",
-                                 marker={"size": 11, "symbol": "diamond", "color": C["amber"]}))
-    fig.update_layout(**{**PLOT, "height": 280,
-                         "xaxis": {"title": "months ahead", "gridcolor": C["grid"], "zeroline": False},
-                         "yaxis": {"title": "policy rate %", "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_spreads(fr: pd.DataFrame, years=12) -> str:
-    d = _tail_years(fr, years)
-    fig = go.Figure()
-    fig.add_hline(y=0, line={"color": C["red"], "width": 1, "dash": "dot"})
-    for col, name, color in (("spread_10y3m", "10y−3m (NY Fed)", C["blue"]),
-                             ("spread_2s10s", "2s10s", C["indigo"]),
-                             ("curve_tp_adj", "TP-adjusted 2s10s", C["teal"])):
-        if col in d:
-            _line(fig, d.index, d[col], name, color, n=2)
-    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "slope (pp)", "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_credit(fr: pd.DataFrame, years=12) -> str:
-    d = _tail_years(fr, years)
-    cfg = config.load()["bonds"]["credit"]
-    fig = go.Figure()
-    for lvl, lbl, col in ((cfg["hy_elevated"], "elevated", C["amber"]),
-                          (cfg["hy_distress"], "distress", C["red"])):
-        fig.add_hline(y=lvl, line={"color": col, "width": 1, "dash": "dash"},
-                      annotation_text=lbl, annotation_font_size=9)
-    if "hy_oas" in d:
-        _line(fig, d.index, d["hy_oas"], "HY OAS", C["red"], n=2)
-    if "ig_oas" in d:
-        _line(fig, d.index, d["ig_oas"], "IG OAS", C["blue"], axis="y2", n=2)
-    fig.update_layout(**{**PLOT, "height": 280,
-                         "yaxis": {"title": "HY OAS %", "gridcolor": C["grid"]},
-                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False, "title": "IG OAS %"}})
-    return _html(fig)
-
-
-def chart_real(fr: pd.DataFrame, years=12) -> str:
-    d = _tail_years(fr, years)
-    fig = go.Figure()
-    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
-    for col, name, color in (("us10y_real", "10y real (TIPS)", C["blue"]),
-                             ("breakeven_10y", "10y breakeven", C["green"]),
-                             ("term_premium_10y", "term premium", C["amber"])):
-        if col in d:
-            _line(fig, d.index, d[col], name, color, n=2)
-    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "%", "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_move(fr: pd.DataFrame, years=12) -> str:
-    d = _tail_years(fr, years)
-    cfg = config.load()["bonds"]["rates_vol"]
-    fig = go.Figure()
-    for lvl, lbl, col in ((cfg["move_calm"], "calm", C["green"]),
-                          (cfg["move_elevated"], "elevated", C["amber"]),
-                          (cfg["move_crisis"], "crisis", C["red"])):
-        fig.add_hline(y=lvl, line={"color": col, "width": 1, "dash": "dash"},
-                      annotation_text=lbl, annotation_font_size=9)
-    if "move" in d:
-        _line(fig, d.index, d["move"], "MOVE", C["ink"], n=0)
-    fig.update_layout(**{**PLOT, "height": 270, "yaxis": {"title": "MOVE", "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_corr(fr: pd.DataFrame, years=12) -> str:
-    d = _tail_years(fr, years)
-    cc = config.load()["engine"]["conditions"]["corr"]
-    fig = go.Figure()
-    fig.add_hrect(y0=cc["high"], y1=1, fillcolor="rgba(211,11,11,0.06)", line_width=0)
-    fig.add_hrect(y0=-1, y1=cc["low"], fillcolor="rgba(26,127,67,0.06)", line_width=0)
-    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
-    if "stock_bond_corr" in d:
-        _line(fig, d.index, d["stock_bond_corr"], "63d stock-bond corr", C["indigo"], n=3)
-    fig.update_layout(**{**PLOT, "height": 250, "yaxis": {"range": [-1, 1], "title": "correlation",
-                                                          "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_sovereign(fr: pd.DataFrame, years=14) -> str:
-    d = _tail_years(fr, years)
-    cfg = config.load()["bonds"]["sovereign"]
-    fig = go.Figure()
-    for lvl, lbl, col in ((cfg["frag_elevated"], "elevated", C["amber"]), (cfg["frag_stress"], "stress", C["red"])):
-        fig.add_hline(y=lvl, line={"color": col, "width": 1, "dash": "dash"}, annotation_text=lbl, annotation_font_size=9)
-    if "euro_frag" in d:
-        _line(fig, d.index, d["euro_frag"], "Euro frag (all−AAA 10y)", C["red"], n=2)
-    if "jgb_2s10s" in d:
-        _line(fig, d.index, d["jgb_2s10s"], "JGB 2s10s", C["indigo"], axis="y2", n=2)
-    fig.update_layout(**{**PLOT, "height": 270,
-                         "yaxis": {"title": "euro frag (pp)", "gridcolor": C["grid"]},
-                         "yaxis2": {"overlaying": "y", "side": "right", "showgrid": False, "title": "JGB 2s10s (pp)"}})
-    return _html(fig)
-
-
-_INTL_COLOR = {"US": C["blue"], "DE": C["amber"], "JP": C["red"], "GB": C["teal"],
-               "CA": C["indigo"], "AU": C["gold"], "CH": C["muted"]}
-_INTL_NAME = {"US": "US", "DE": "Bund", "JP": "JGB", "GB": "UK", "CA": "Canada",
-              "AU": "Australia", "CH": "Switzerland"}
-
-
-def chart_intl_yields(f: pd.DataFrame, years=6) -> str:
-    """Global sovereign 10y yields — the world's cost of capital, side by side."""
-    from engine import intl_bonds
-    hist = intl_bonds.history(f)
-    if not hist:
+    pts = [("now", fp.get("policy_rate")), ("1m", imp.get("m1")), ("3m", imp.get("m3")),
+           ("6m", imp.get("m6")), ("12m", imp.get("m12"))]
+    pts = [(lbl, v) for lbl, v in pts if v is not None]
+    if len(pts) < 4:
         return ""
-    fig = go.Figure()
-    for code in ("US", "DE", "JP", "GB", "CA", "AU", "CH"):
-        s = hist.get(code)
-        if s is None:
-            continue
-        d = _tail_years(s.to_frame("y"), years)["y"]
-        _line(fig, d.index, d, _INTL_NAME.get(code, code), _INTL_COLOR.get(code, C["muted"]), n=2)
-    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "10y yield %", "gridcolor": C["grid"]}})
-    return _html(fig)
+    series = {"dates": [p[0] for p in pts], "vals": [round(float(p[1]), 2) for p in pts]}
+    return _ilx(series, "var(--info)", kind="line", height=170, unit_en="%",
+                value_fmt="{:,.2f}", aria_en="Market-implied policy rate path")
 
 
-def chart_tp_decomp(f: pd.DataFrame, years=9) -> str:
-    """The 10y nominal yield decomposed: real (TIPS) + breakeven inflation = nominal,
-    with the ACM term premium overlaid — the cleanest 'why are long yields here?' read."""
-    cols = {c: f[c] for c in ("us10y", "us10y_real", "breakeven_10y", "term_premium_10y") if c in f}
-    if "us10y_real" not in cols or "breakeven_10y" not in cols:
-        return ""
-    d = _tail_years(pd.DataFrame(cols).dropna(how="all"), years)
-    pidx = _plot_idx(d.index)
-    fig = go.Figure()
-    # stacked area: real (base) + breakeven (on top) = nominal
-    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(d["us10y_real"].reindex(pidx), 2), name="Real 10y (TIPS)",
-                             mode="lines", line={"color": C["blue"], "width": 1.2}, stackgroup="one",
-                             fillcolor="rgba(40,95,255,0.18)"))
-    fig.add_trace(go.Scatter(x=_dx(pidx), y=_plot_y(d["breakeven_10y"].reindex(pidx), 2), name="Breakeven inflation",
-                             mode="lines", line={"color": C["green"], "width": 1.2}, stackgroup="one",
-                             fillcolor="rgba(26,127,67,0.16)"))
-    if "us10y" in d:
-        _line(fig, d.index, d["us10y"], "Nominal 10y", C["ink"], width=1.8, n=2)
-    if "term_premium_10y" in d:
-        _line(fig, d.index, d["term_premium_10y"], "Term premium", C["amber"], width=1.4, dash="dot", n=2)
-    fig.add_hline(y=0, line={"color": C["faint"], "width": 1, "dash": "dot"})
-    fig.update_layout(**{**PLOT, "height": 280, "yaxis": {"title": "yield %", "gridcolor": C["grid"]}})
-    return _html(fig)
-
-
-def chart_xasset_betas(xasset: dict | None) -> str:
-    """Horizontal 'tornado' of each asset's weekly co-movement (corr) with its primary
-    bond driver — comparable across drivers, signed, the at-a-glance transmission map."""
-    if not xasset or not xasset.get("assets"):
-        return ""
-    rows = sorted(xasset["assets"], key=lambda a: (a.get("corr") or 0))
-    names = [f"{a['en']}" for a in rows]
-    corrs = [a.get("corr") or 0 for a in rows]
-    # neutral semantics: the SIGN is a structural relationship, not good/bad
-    colors = [C["amber"] if c < 0 else C["blue"] for c in corrs]
-    fig = go.Figure(go.Bar(x=corrs, y=names, orientation="h", marker_color=colors,
-                           text=[a.get("beta_disp", "") for a in rows], textposition="auto",
-                           textfont={"size": 9}))
-    fig.add_vline(x=0, line={"color": C["faint"], "width": 1})
-    fig.update_layout(**{**PLOT, "height": 360, "margin": {"l": 110, "r": 30, "t": 10, "b": 28},
-                         "xaxis": {"title": "weekly co-movement (corr)", "gridcolor": C["grid"], "range": [-0.8, 0.8]},
-                         "yaxis": {"gridcolor": C["grid"]}})
-    return _html(fig)
+def chart_xasset_betas(xasset):
+    """Superseded by the in-template transmission bars (.xa-row). Kept as a no-op so the
+    build loop and the template's `{% if charts.xasset_betas %}` guard stay stable."""
+    return ""
 
 
 # --------------------------------------------------------------------------- #
@@ -1193,6 +1108,118 @@ def _group_timeline(events: list[dict]) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# glance strip + key-levels (the user-first layer — plain state + meaning, Tier 1)
+# --------------------------------------------------------------------------- #
+def _sev(good=False, warn=False, bad=False):
+    return "gl-bad" if bad else ("gl-warn" if warn else ("gl-good" if good else "gl-mid"))
+
+
+def _glance(vm: dict) -> list[dict]:
+    """Every bond pillar at a glance: pillar · plain state · one-line meaning · severity.
+    Plain words only (Design Doctrine Law 2); the precise stats live in the sections."""
+    cu, cr, rl, st, cx = (vm.get(k) or {} for k in ("curve", "credit", "real", "stress", "cross"))
+    g: list[dict] = []
+
+    prob = cu.get("nyfed_prob")
+    if cu.get("tp_adj_inverted") or cu.get("inverted"):
+        c_state = ("Inverted", "倒挂")
+    elif (cu.get("spread_2s10s") or 0) >= 1.0:
+        c_state = ("Steep", "陡峭")
+    elif (cu.get("spread_2s10s") or 0) <= 0.15:
+        c_state = ("Flat", "平坦")
+    else:
+        c_state = ("Normal", "正常")
+    g.append({"name_en": "Curve", "name_zh": "曲线", "href": "#curve",
+              "state_en": c_state[0], "state_zh": c_state[1],
+              "mean_en": (f"recession odds ~{prob:.0f}%" if prob is not None else "growth signal"),
+              "mean_zh": (f"衰退概率约{prob:.0f}%" if prob is not None else "增长信号"),
+              "sev": _sev(good=(prob is not None and prob < 20), warn=(prob or 0) >= 30,
+                          bad=(prob or 0) >= 50 or cu.get("tp_adj_inverted"))})
+
+    cb = (cr.get("band_en") or "").lower()
+    g.append({"name_en": "Credit", "name_zh": "信用", "href": "#credit",
+              "state_en": cr.get("band_en") or "—", "state_zh": cr.get("band_zh") or "—",
+              "mean_en": {"tight": "risk appetite calm", "normal": "spreads unremarkable",
+                          "elevated": "spreads widening", "distress": "stress building",
+                          "crisis": "credit in stress"}.get(cb, "risk appetite"),
+              "mean_zh": {"tight": "风险偏好平静", "normal": "利差平稳", "elevated": "利差走阔",
+                          "distress": "压力累积", "crisis": "信用承压"}.get(cb, "风险偏好"),
+              "sev": _sev(good=cb in ("tight", "normal"), warn=cb == "elevated",
+                          bad=cb in ("distress", "crisis"))})
+
+    r10 = rl.get("real_10y")
+    g.append({"name_en": "Real rates", "name_zh": "实际利率", "href": "#real",
+              "state_en": (f"{r10:+.2f}%" if r10 is not None else "—"),
+              "state_zh": (f"{r10:+.2f}%" if r10 is not None else "—"),
+              "mean_en": ("heavy on valuations" if (r10 or 0) >= 2.2 else "mild drag on valuations"),
+              "mean_zh": ("压制估值" if (r10 or 0) >= 2.2 else "对估值轻微拖累"),
+              "sev": _sev(good=(r10 is not None and r10 < 1.5), warn=(r10 or 0) >= 2.2,
+                          bad=(r10 or 0) >= 2.8)})
+
+    sb = (st.get("band_en") or "").lower()
+    g.append({"name_en": "Rates vol", "name_zh": "利率波动", "href": "#stress",
+              "state_en": (f"MOVE {st['move']}" if st.get("move") is not None else (st.get("band_en") or "—")),
+              "state_zh": (f"MOVE {st['move']}" if st.get("move") is not None else (st.get("band_zh") or "—")),
+              "mean_en": {"calm": "rates market calm", "normal": "rates market steady",
+                          "elevated": "rates jumpy", "crisis": "rates market in stress"}.get(sb, "rates volatility"),
+              "mean_zh": {"calm": "利率市场平静", "normal": "利率市场平稳", "elevated": "利率波动加剧",
+                          "crisis": "利率市场承压"}.get(sb, "利率波动"),
+              "sev": _sev(good=sb in ("calm", "normal"), warn=sb == "elevated", bad=sb == "crisis")})
+
+    f_bad, f_warn = st.get("repo_stress"), st.get("reserve_scarcity")
+    g.append({"name_en": "Funding", "name_zh": "资金面", "href": "#stress",
+              "state_en": ("Stressed" if f_bad else ("Tightening" if f_warn else "Ample")),
+              "state_zh": ("承压" if f_bad else ("趋紧" if f_warn else "充裕")),
+              "mean_en": ("funding plumbing strained" if f_bad else ("reserves thinning" if f_warn else "cash plentiful")),
+              "mean_zh": ("资金管道紧张" if f_bad else ("准备金趋紧" if f_warn else "现金充裕")),
+              "sev": _sev(good=not (f_bad or f_warn), warn=f_warn, bad=f_bad)})
+
+    corr = cx.get("corr")
+    h_good = corr is not None and corr < -0.1
+    h_bad = corr is not None and corr > 0.2
+    g.append({"name_en": "Stock-bond hedge", "name_zh": "股债对冲", "href": "#stress",
+              "state_en": ("Working" if h_good else ("Failing" if h_bad else "Patchy")),
+              "state_zh": ("有效" if h_good else ("失效" if h_bad else "不稳")),
+              "mean_en": ("bonds cushion stocks" if h_good else ("bonds not hedging" if h_bad else "hedge unreliable")),
+              "mean_zh": ("债券对冲股票" if h_good else ("债券不对冲" if h_bad else "对冲不可靠")),
+              "sev": _sev(good=h_good, bad=h_bad)})
+    return g
+
+
+def _key_levels(f: pd.DataFrame, vm: dict) -> list[dict]:
+    """The numbers people come for — one compact strip. Each = label · value · 3-month move."""
+    def last(col):
+        try:
+            s = f[col].dropna()
+            return (float(s.iloc[-1]), (float(s.iloc[-1]) - float(s.iloc[-64])) if len(s) > 64 else None)
+        except Exception:  # noqa: BLE001
+            return (None, None)
+
+    def tile(lab_en, lab_zh, col, unit="%", bp=False):
+        v, chg = last(col)
+        if v is None:
+            return {"lab_en": lab_en, "lab_zh": lab_zh, "val": "—", "unit": "", "sub": ""}
+        sub = ""
+        if chg is not None:
+            sub = (f"{chg * 100:+.0f}bp/3m" if bp else f"{chg:+.2f}/3m")
+        return {"lab_en": lab_en, "lab_zh": lab_zh, "val": f"{v:,.2f}", "unit": unit, "sub": sub}
+
+    rows = [
+        tile("10-year", "10年期", "us10y", bp=True),
+        tile("2-year", "2年期", "us2y", bp=True),
+        tile("30-year", "30年期", "us30y", bp=True),
+        tile("Real 10y", "10年实际", "us10y_real", bp=True),
+        tile("10y breakeven", "10年盈亏平衡", "breakeven_10y", bp=True),
+        tile("High-yield spread", "高收益利差", "hy_oas", bp=True),
+    ]
+    mv, mchg = last("move")
+    rows.append({"lab_en": "MOVE (rates vol)", "lab_zh": "MOVE 利率波动", "unit": "",
+                 "val": (f"{mv:,.0f}" if mv is not None else "—"),
+                 "sub": (f"{mchg:+.0f}/3m" if mchg is not None else "")})
+    return rows
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -1360,7 +1387,7 @@ def main() -> int:
         fed_path=fed_path, treasury_supply=treasury_supply, usd_link=usd_link,
         intl=intl, compass=compass, xasset=xasset, xasset_vm=_xasset_vm(xasset),
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent),
-        cc_vm=cc_vm)
+        cc_vm=cc_vm, glance=_glance(vm), key_levels=_key_levels(f, vm))
     site = config.ROOT / config.load()["storage"]["site_dir"]
     write_page(site / "bonds.html", html)
     log.info("wrote %s/bonds.html (%d KB)", site, len(html) // 1024)
