@@ -23,10 +23,10 @@ mode** first; live-mode is gated by **W-LEGAL** (business entity, tax registrati
 
 | lookup_key | product | price |
 |---|---|---|
-| `insider_monthly` | Insider | $59 / month |
-| `insider_annual`  | Insider | $588 / year |
-| `pro_monthly`     | Pro     | $89 / month |
-| `pro_annual`      | Pro     | $828 / year |
+| `insider_monthly` | Insider | $69 / month |
+| `insider_annual`  | Insider | $588 / year ($49/mo equivalent) |
+| `pro_monthly`     | Pro     | $99 / month |
+| `pro_annual`      | Pro     | $828 / year ($69/mo equivalent) |
 
 Features `site_full`, `terminal_live_options`, `chat_opus` are created and attached to the products.
 Application code addresses prices by **lookup_key**, so the same code works against the live objects
