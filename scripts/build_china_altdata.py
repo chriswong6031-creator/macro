@@ -27,7 +27,7 @@ from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
-ASSETS = ("theme.css", "theme.js")
+ASSETS = ("theme.css", "theme.js", "illus.css", "illus.js")
 
 # ---------------------------------------------------------------------------- #
 # Participation "tape" regime → plain-word label + stance + gauge position.
@@ -136,6 +136,28 @@ def _narr_rows(narr: dict, top_n: int = 12) -> list[dict]:
     return baskets[:top_n]
 
 
+def _tape_spark() -> str:
+    """Trading-intensity trajectory (turnover z vs 20-day normal) as an ilx waterline.
+    Reads the upstream tape.parquet (cheap; no recompute); '' on any miss — never raises."""
+    try:
+        import pandas as pd
+        from lib import illus
+        p = config.data_dir() / "china_participation" / "tape.parquet"
+        if not p.exists():
+            return ""
+        s = pd.read_parquet(p)["turnover_z20"].dropna().tail(90)
+        if len(s) < 8:
+            return ""
+        dates = [str(d)[:10] for d in s.index]
+        vals = [round(float(v), 2) for v in s.values]
+        return illus.illus({"dates": dates, "vals": vals}, kind="baseline", baseline=0.0,
+                           accent="var(--info)", height=58, value_fmt="{:+.1f}",
+                           aria_en="Trading intensity vs 20-day normal",
+                           aria_zh="成交强度相对20日常态")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def build() -> dict | None:
     from engine import china_altdata as ad
     from engine import china_extras as ce
@@ -181,8 +203,8 @@ def build() -> dict | None:
     html = env.get_template("china_altdata.html.j2").render(
         ad=bt, lab=scorecard, mm=mm, crowd_labels=crowd_labels, broker_gold=broker_gold,
         guidance=guidance, guidance_labels=guidance_labels,
-        tape=tape, special=special, narr=narr, narr_asof=(narr_raw or {}).get("as_of"),
-        zt=zt, zt_breadth=zt_breadth)
+        tape=tape, tape_spark=_tape_spark(), special=special, narr=narr,
+        narr_asof=(narr_raw or {}).get("as_of"), zt=zt, zt_breadth=zt_breadth)
     write_page(site / "china_altdata.html", html)
     for a in ASSETS:
         src = config.ROOT / "templates" / a
