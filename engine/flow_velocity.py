@@ -379,6 +379,111 @@ def _seats_by_ticker() -> dict[str, dict]:
     return out
 
 
+# ── descriptive glance layer (DISPLAY-TIER — never a scored signal) ───────────
+# These turn the SAME velocity / acceleration / seat fields the board already shows into
+# the "laid-out answer" the dashboard leads with, so a user gets the story without hunting
+# through the table: how broad the flow is, where it's rotating, where momentum is TURNING,
+# and where fast money meets the institutional tape. Every read is descriptive context —
+# no numeric score is manufactured, confluence stays a render-time CLASS (agree/diverge),
+# and stances stay watch-family ([[signal-contract-gate]], honesty gate above).
+_VIN, _VOUT = 0.5, -0.5   # the same ±0.5σ inflow / outflow cutoffs the UI's vstate uses
+
+
+def flow_breadth(kmap: dict | None, sectors: dict | None = None) -> dict:
+    """How broad the flow is: counts of names & sectors net-inflowing vs outflowing, plus a
+    −100..+100 SECTOR 'tilt' for the hero gauge — a breadth read (share of sectors drawing
+    money), labeled as such, not a signal. None-safe: empty inputs give a balanced zero."""
+    recs = list((kmap or {}).values())
+    n_in = sum(1 for r in recs if (r.get("vel") or 0) >= _VIN)
+    n_out = sum(1 for r in recs if (r.get("vel") or 0) <= _VOUT)
+    srows = [r for r in ((sectors or {}).get("rows") or []) if r.get("vel") is not None]
+    s_in = sum(1 for r in srows if r["vel"] >= _VIN)
+    s_out = sum(1 for r in srows if r["vel"] <= _VOUT)
+    n_sec = len(srows)
+    tilt = round(100.0 * (s_in - s_out) / n_sec) if n_sec else 0
+    if tilt >= 25:
+        state, state_zh = "broad inflow", "普遍流入"
+    elif tilt <= -25:
+        state, state_zh = "broad outflow", "普遍流出"
+    else:
+        state, state_zh = "mixed", "分化"
+    return {"names_in": n_in, "names_out": n_out, "n_names": len(recs),
+            "sectors_in": s_in, "sectors_out": s_out, "n_sectors": n_sec,
+            "tilt": int(tilt), "state": state, "state_zh": state_zh}
+
+
+def momentum(kmap: dict | None, top: int = 6) -> dict | None:
+    """Where flow momentum is TURNING — the actionable name-level reads:
+      accel_in : fast money still SPEEDING UP     (vel≥+.5 & accel>0)  — strongest push
+      cooling  : strong inflow now FADING          (vel≥+.5 & accel<0)  — possible exhaustion
+      easing   : heavy outflow now EASING          (vel≤−.5 & accel>0)  — possible bottoming
+    Descriptive, watch-family; None when nothing qualifies."""
+    recs = [r for r in (kmap or {}).values()
+            if r.get("vel") is not None and r.get("accel") is not None]
+    accel_in = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] > 0),
+                      key=lambda r: -r["accel"])[:top]
+    cooling = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] < 0),
+                     key=lambda r: r["accel"])[:top]
+    easing = sorted((r for r in recs if r["vel"] <= _VOUT and r["accel"] > 0),
+                    key=lambda r: -r["accel"])[:top]
+    if not (accel_in or cooling or easing):
+        return None
+    return {"accel_in": accel_in, "cooling": cooling, "easing": easing}
+
+
+def confluence(kmap: dict | None, seats: dict | None, top: int = 12) -> dict | None:
+    """Names where fast-money flow meets the Dragon-Tiger institutional tape — a render-time
+    CLASS, never a score. agree = flow and the institutional seat point the SAME way
+    (strongest positioning context); diverge = they clash (caution). Ranked by |velocity|."""
+    seats = seats or {}
+    agree, diverge = [], []
+    for tk, r in (kmap or {}).items():
+        s = seats.get(tk)
+        v = r.get("vel")
+        if not s or v is None:
+            continue
+        rec = {k: r.get(k) for k in ("ticker", "name", "vel", "accel", "state", "state_zh")}
+        rec.update(seat_dir=s["dir"], seat_yi=s["inst_net_yi"],
+                   n_buy=s["n_buy"], n_sell=s["n_sell"])
+        if (v >= _VIN and s["dir"] == "buy") or (v <= _VOUT and s["dir"] == "sell"):
+            rec["cls"] = "agree"
+            agree.append(rec)
+        elif (v >= _VIN and s["dir"] == "sell") or (v <= _VOUT and s["dir"] == "buy"):
+            rec["cls"] = "diverge"
+            diverge.append(rec)
+    if not (agree or diverge):
+        return None
+    agree.sort(key=lambda r: -abs(r["vel"]))
+    diverge.sort(key=lambda r: -abs(r["vel"]))
+    return {"agree": agree[:top], "diverge": diverge[:top],
+            "n_agree": len(agree), "n_diverge": len(diverge)}
+
+
+def market_pulse(kmap: dict | None, sectors: dict | None,
+                 aggregate: list | None, conf: dict | None) -> dict:
+    """The glance payload the dashboard leads with: breadth + tilt, the single dominant
+    rotation (fastest-in / fastest-out sector), the live southbound state, and the
+    flow×institution tally — all descriptive. Replaces the old fragile render-time
+    namespace loop (which only saw the visible member rows) with a full-universe read."""
+    br = flow_breadth(kmap, sectors)
+    srows = [r for r in ((sectors or {}).get("rows") or []) if r.get("vel") is not None]
+    din = max(srows, key=lambda r: r["vel"], default=None)
+    dout = min(srows, key=lambda r: r["vel"], default=None)
+    lite = lambda r: ({k: r.get(k) for k in ("id", "name", "name_zh", "vel", "accel",
+                                             "state", "state_zh")} if r else None)
+    sb = next((c for c in (aggregate or [])
+               if c.get("key") == "southbound" and c.get("live")), None)
+    return {
+        "breadth": br,
+        "dominant_in": lite(din) if din and din["vel"] >= _VIN else None,
+        "dominant_out": lite(dout) if dout and dout["vel"] <= _VOUT else None,
+        "sb": ({"vel": sb.get("vel_primary"), "state": sb.get("state"),
+                "state_zh": sb.get("state_zh")} if sb else None),
+        "inst": {"agree": (conf or {}).get("n_agree", 0),
+                 "diverge": (conf or {}).get("n_diverge", 0)},
+    }
+
+
 def snapshot() -> dict | None:
     """Assemble the whole flow-velocity desk. Each panel is independently None-safe; the desk
     renders as long as ANY content panel resolves. The per-name kinetics is computed ONCE and
@@ -401,6 +506,11 @@ def snapshot() -> dict | None:
     sb_vel = next((c.get("vel_primary") for c in (aggregate or [])
                    if c.get("key") == "southbound"), None)
     panels["sb_vel_primary"] = sb_vel
+    # descriptive glance layer (display-tier) — the "laid-out answer" the dashboard leads with
+    conf = confluence(kmap, seats_by_ticker)
+    panels["confluence"] = conf
+    panels["momentum"] = momentum(kmap)
+    panels["pulse"] = market_pulse(kmap, panels["ashare_sectors"], aggregate, conf)
     asof = None
     for k in ("ashare_names", "ashare_sectors"):
         if panels.get(k):
