@@ -64,6 +64,7 @@
 {#-- Type is the house UI stack (Inter, self-hosted via theme.css) + a terminal
     mono for numerals. No web-font request — the estate now speaks the macro
     terminal language, not the old Newsreader serif. --#}
+{% include "_interfonts.html.j2" %}
 <link rel="stylesheet" href="{{ rel }}theme.css">
 
 {#-- BreadcrumbList JSON-LD (every page) --#}
@@ -82,6 +83,19 @@
    swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
    spent only on signal.
    ══════════════════════════════════════════════════════════════════════════ */
+/* --font-ui local definition (#2647 tripwire pattern, commodities.html.j2
+   precedent): theme.css defines the same token, but its href here is
+   Jinja-prefixed ({{ rel }}) so the guard cannot see the link — and a local
+   definition keeps the estate off Times even if theme.css ever fails to load.
+   Value mirrors theme.css verbatim. The _interfonts.html.j2 include (head)
+   completes the #2647 pattern; note its page-relative fonts/ URLs don't
+   resolve at estate depths — inert, because theme.css re-declares the same
+   Inter faces later (last-defined face wins) with stylesheet-relative URLs. */
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+}
 *{box-sizing:border-box;}
 body.estate{
   /* deepened terminal canvas — richer "screen" black, scoped to the estate */
