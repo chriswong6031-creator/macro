@@ -1223,6 +1223,16 @@ def macro_headlines(today: date | None = None) -> dict | None:
     kept = _attach_translations(filter_headlines(official + news_rss + raw, cfg,
                                                  _rejected=_rejected), cfg)
 
+    # NEWS-AGE: drop items too old to DISPLAY as news for their tier (this is what
+    # kills the 30-45d official stragglers that made the board read stale). Applied
+    # HERE, at display assembly, so filter_headlines stays a pure, time-independent
+    # filter. The FETCH window (official_window_days) and the event ledger are
+    # untouched — items are still ingested for accrual. Fail-open on bad dates.
+    _age_now = datetime.now(timezone.utc)
+    kept = [h for h in kept
+            if _nc.display_age_ok(h.get("seendate", ""), h.get("source_tier", ""),
+                                  cfg, _age_now)]
+
     # W2: qbus read-back — ONE load per build, then backfill novelty_z + echo on
     # every KEPT headline (display-only; never changes keep/drop). Strictly fail-open.
     try:
@@ -1231,6 +1241,18 @@ def macro_headlines(today: date | None = None) -> dict | None:
         if _qbus_df is not None and len(_qbus_df) > 0 and kept:
             _attach_qbus_readback(kept, today or date.today(), _qbus_df)
     except Exception:  # noqa: BLE001 — always display-only, never raises
+        pass
+
+    # RANK: attach the unified display rank (importance × novelty × echo × event ×
+    # recency-decay × reach × optional external-AI importance) now that novelty_z
+    # and echo are populated, and order the display feed by it. Display order ONLY
+    # — never a score/signal. Fail-open (raw order kept on any error).
+    try:
+        _rank_now = datetime.now(timezone.utc)
+        for _h in kept:
+            _h["rank_score"] = _nc.rank_score(_h, _rank_now)
+        kept.sort(key=lambda h: h.get("rank_score", 0.0), reverse=True)
+    except Exception:  # noqa: BLE001 — display order only, never raises
         pass
 
     synth = _synthesis(kept)

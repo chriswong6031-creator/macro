@@ -131,8 +131,19 @@ def _enrich(sections: list[list[dict]]) -> str:
             if "llm_importance" not in h and rep.get("llm_importance") is not None:
                 h["llm_importance"] = rep["llm_importance"]
                 h["llm_tone"] = rep.get("llm_tone")
+    # Attach the unified display rank to every item across every section (macro
+    # items already carry it from macro_headlines; financial/china items get it
+    # here off their `quality`/importance + tickers + recency), then order each
+    # section by it. Display order ONLY — never a score. Preserve any existing.
+    _rank_now = datetime.now(timezone.utc)
     for sec in sections:
-        sec.sort(key=_blend_key, reverse=True)
+        for h in sec:
+            if h.get("rank_score") is None:
+                try:
+                    h["rank_score"] = nc.rank_score(h, _rank_now)
+                except Exception:  # noqa: BLE001 — display order only, never raises
+                    h["rank_score"] = 0.0
+        sec.sort(key=lambda h: h.get("rank_score", 0.0), reverse=True)
     try:
         return news_llm.provider_label()
     except Exception:  # noqa: BLE001
@@ -176,6 +187,24 @@ def build(write: bool = True) -> dict:
             rss_rejected = list(_rss_col)
     except Exception as e:  # noqa: BLE001
         log.error("financial_news failed: %s", e)
+
+    # ---- optional AI-native feed (key-gated) --------------------------------
+    # Merge a precomputed AI-sentiment/importance stream into the market pool. With
+    # no key it returns [] and the feed is byte-identical to the keyless build; when
+    # lit, its ai_* fields flow into the deterministic display ranker. Never fatal.
+    try:
+        from engine import news_ai_feed as _aif
+        if fin is not None and _aif.enabled():
+            _ai_items = _aif.fetch()
+            if _ai_items:
+                fin.setdefault("market", []).extend(_ai_items)
+                fin["providers"] = {**(fin.get("providers") or {}), "ai_feed": True}
+                _fc = fin.get("counts") or {}
+                _fc["ai_feed"] = len(_ai_items)
+                fin["counts"] = _fc
+                log.info("news_ai_feed: merged %d items into market pool", len(_ai_items))
+    except Exception as e:  # noqa: BLE001 — optional; never blocks the build
+        log.warning("news_ai_feed merge failed (%s)", e)
     vm["fin"] = fin
 
     # ---- china (macro / markets / tech / politics) --------------------------
