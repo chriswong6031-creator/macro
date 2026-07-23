@@ -2511,7 +2511,9 @@ jobs:
           python-version: "3.12"
       - name: install deps
         # Pure stdlib engine (sqlite3 + subprocess) + jinja2 for the W3 page build.
-        run: pip install pytest jinja2
+        # pyyaml: build_research_vault imports lib.config (yaml) at module level
+        # since #3315 — the lane was red on every PR until it was added here.
+        run: pip install pytest jinja2 pyyaml
       - name: research vault ingestion-spine + page unit tests
         run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
 
