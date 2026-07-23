@@ -266,78 +266,80 @@ class TestGICSAliases:
 
 
 class TestTemplateChipPresence:
-    """Template-level guards: sector_stance chip uses l-en/l-zh, no title= CJK."""
+    """Template guards for the sector-stance disclosure (RLT-R6), post prophet card v1.
 
-    def test_chip_class_present_in_template(self):
+    fe7a7426c49 (operator-ratified redesign, 2026-07-22) retired the standalone
+    .nb-sec-stance chip; the ratified home is now a row in the prophet card's
+    ⚠N flags popover. Pinned here: the dashboard still folds sector_stance into
+    the flag rows (cautionary stances only), the single-stock-vs-sector
+    disagreement copy survives in BOTH languages, and the popover renders rows
+    through the bilingual l-en/l-zh idiom with no title= attribute (CJK law).
+    """
+
+    def _template(self) -> str:
         tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
         if not tmpl.exists():
             pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        assert "nb-sec-stance" in content, "RLT-R6 sector-stance chip CSS class missing"
+        return tmpl.read_text()
 
-    def test_chip_uses_len_lzh_spans(self):
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        # The Jinja chip rendering block must use l-en/l-zh spans (bilingual law).
-        # Search for the Jinja conditional block specifically.
-        assert "sector_stance" in content, "sector_stance field reference missing"
-        # Find the Jinja 'if n.get(\"sector_stance\")' block
+    def test_stance_folded_into_flag_rows(self):
+        """dashboard.html.j2 must fold sector_stance into the pv_card flag rows."""
+        content = self._template()
         idx = content.find("if n.get('sector_stance')")
         assert idx != -1, "sector_stance Jinja if-block missing from template"
         block = content[idx:idx + 700]
-        assert "l-en" in block, "sector_stance chip missing l-en span"
-        assert "l-zh" in block, "sector_stance chip missing l-zh span"
-
-    def test_chip_no_title_attribute_with_zh(self):
-        """CJK must not appear in title= attributes (CI-enforced law)."""
-        import re
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        # Scan the nb-sec-stance block for title= attributes
-        idx = content.find("nb-sec-stance")
-        if idx == -1:
-            pytest.skip("chip not yet in template")
-        block = content[idx:idx + 800]
-        # title= must not appear inside this block
-        assert "title=" not in block, "sector_stance chip must not use title= (CJK law)"
-
-    def test_help_tip_uses_scroll_safe_idiom(self):
-        """The ? tip must use .help::before (scroll-safe) idiom, not ::after."""
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        # The .help::before hover-bridge rule must be present (established by #2337)
-        assert ".help:hover::before" in content, "scroll-safe .help::before bridge missing"
+        assert "_fl.rows" in block, (
+            "sector_stance no longer folds into the prophet-card flag rows — "
+            "the demoted RLT-R6 home was dropped"
+        )
+        assert "'Reduce','Cautious'" in block.replace(", ", ","), (
+            "stance flag row must stay scoped to the cautionary stances "
+            "(Reduce/Cautious) — a sector in Accumulate/Neutral is not a caution"
+        )
 
     def test_disagreement_tip_text_en_present(self):
-        """The EN disagreement tip text must appear in the template."""
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        assert "single-stock bottoming trigger" in content, (
-            "EN disagreement tip text missing from template"
+        """The EN disagreement copy (single-stock trigger vs sector call) must survive."""
+        content = self._template()
+        assert "single-stock trigger, not a sector call" in content, (
+            "EN disagreement copy missing from template (ratified prophet-card wording)"
         )
 
     def test_disagreement_tip_text_zh_present(self):
-        """The ZH disagreement tip text must appear in the template."""
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        assert "个股筑底触发信号" in content, (
-            "ZH disagreement tip text missing from template"
+        """The ZH disagreement copy must survive."""
+        content = self._template()
+        assert "个股信号，非板块判断" in content, (
+            "ZH disagreement copy missing from template (ratified prophet-card wording)"
         )
 
-    def test_cautionary_chip_class_present(self):
-        """The ss-caution modifier class must be in the template."""
-        tmpl = pathlib.Path(__file__).resolve().parent.parent / "templates" / "dashboard.html.j2"
-        if not tmpl.exists():
-            pytest.skip("template not found — running outside full repo")
-        content = tmpl.read_text()
-        assert "ss-caution" in content, "RLT-R6 ss-caution modifier missing from template"
+    def test_flags_popover_renders_bilingual_rows_no_title(self):
+        """The ⚠N popover renders stance rows via l-en/l-zh spans, never title=."""
+        import jinja2
+        repo = pathlib.Path(__file__).resolve().parent.parent
+        if not (repo / "templates" / "_prophet_card.html.j2").exists():
+            pytest.skip("prophet card template not found — running outside full repo")
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(repo / "templates")),
+            undefined=jinja2.Undefined, autoescape=False,
+        )
+        tpl = env.from_string(
+            '{% import "_prophet_card.html.j2" as pv %}{{ pv.pv_card(cx) }}'
+        )
+        out = tpl.render(cx={
+            "href": "stock.html#JPM", "tk": "JPM", "mkt": "us", "verb": "near",
+            "flags": [(
+                "Sector stance: Cautious — single-stock trigger, not a sector call",
+                "板块态度：谨慎 — 个股信号，非板块判断",
+            )],
+        })
+        assert "pv-cau-row" in out, "flags popover row markup missing"
+        assert 'class="l-en"' in out and 'class="l-zh"' in out, (
+            "popover rows must render through the bilingual l-en/l-zh idiom"
+        )
+        assert "个股信号，非板块判断" in out
+        assert "title=" not in out, "prophet card must not use title= (CJK title= law)"
+
+    def test_help_tip_uses_scroll_safe_idiom(self):
+        """The ? tip must use .help::before (scroll-safe) idiom, not ::after."""
+        content = self._template()
+        # The .help::before hover-bridge rule must be present (established by #2337)
+        assert ".help:hover::before" in content, "scroll-safe .help::before bridge missing"
