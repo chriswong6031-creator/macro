@@ -155,7 +155,7 @@ html.still{scroll-behavior:auto}
 @keyframes ping{0%{transform:scale(.5);opacity:1}70%,100%{transform:scale(1.7);opacity:0}}
 
 /* ---- the pyramid: five uniform desk cards, centre-forward ---- */
-.pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(30px,4.5vh,50px) auto 0;height:448px}
+.pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(8px,1.4vh,16px) auto 0;height:448px}
 .pyr::before{content:"";position:absolute;inset:-10% -4% -4%;pointer-events:none;
   background:
     radial-gradient(42% 40% at 50% 40%,rgba(40,95,255,.07),transparent 70%),
@@ -560,7 +560,8 @@ html.still{scroll-behavior:auto}
 .toggle button[aria-pressed="false"] .save{color:var(--q-green)}
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
 .tier{border:1px solid var(--hair-2);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh-card);padding:24px;display:flex;flex-direction:column}
-.tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative}
+.tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative;background:linear-gradient(150deg,rgba(15,157,143,.055),rgba(40,95,255,.06) 55%,rgba(120,98,224,.05)),#fff}
+.tiers .tier:last-child{background:linear-gradient(150deg,rgba(120,98,224,.07),rgba(193,47,120,.045) 55%,rgba(176,125,5,.065)),#fff}
 .tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:4px 11px;border-radius:99px}
 .tier h3{margin:0;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
@@ -599,13 +600,14 @@ tr.t-ins td:first-child,tr.t-pro td:first-child{position:sticky;left:0}
 .mx .tipbox.up{top:auto;bottom:calc(100% - 4px);transform:translateY(-3px)}
 .mx td.feat:hover .tipbox,.mx td.feat:focus-within .tipbox{opacity:1;visibility:visible;transform:none;transition:opacity .18s,transform .18s}
 /* tier chip on the aurora row labels */
-.mx .feat .mchip{display:inline-block;position:relative;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:5px;padding:2px 6px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
-.mx .feat .mchip::after{content:"";position:absolute;inset:-4px -6px;border-radius:9px;z-index:-1;filter:blur(7px);opacity:0;animation:chipGlow 3.4s ease-in-out infinite}
-.mx .feat .mchip.ins::after{background:linear-gradient(90deg,rgba(15,157,143,.5),rgba(40,95,255,.45));animation-duration:5.2s}
-.mx .feat .mchip.pro::after{background:linear-gradient(90deg,rgba(120,98,224,.6),rgba(176,125,5,.55))}
-@keyframes chipGlow{0%,100%{opacity:0}50%{opacity:.7}}
-.mx .feat .mchip.ins{color:#0d7f74;background:linear-gradient(90deg,rgba(15,157,143,.14),rgba(40,95,255,.14))}
-.mx .feat .mchip.pro{color:#6a48d7;background:linear-gradient(90deg,rgba(120,98,224,.16),rgba(176,125,5,.16))}
+.mx .feat .mchip{display:inline-block;position:relative;overflow:hidden;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
+.mx .feat .mchip.ins{background:linear-gradient(90deg,#e7f3f1,#e9eefc) padding-box,linear-gradient(90deg,rgba(15,157,143,.6),rgba(40,95,255,.55)) border-box}
+.mx .feat .mchip.pro{background:linear-gradient(90deg,#f0eafb,#f6efdf) padding-box,linear-gradient(90deg,rgba(120,98,224,.65),rgba(176,125,5,.55)) border-box}
+.mx .feat .mchip::after{content:"";position:absolute;top:-45%;bottom:-45%;left:0;width:9px;background:rgba(255,255,255,.8);transform:translateX(-18px) rotate(18deg);animation:chipGlint 5.2s ease-in-out infinite}
+.mx .feat .mchip.pro::after{animation-duration:3.8s}
+@keyframes chipGlint{0%,62%{transform:translateX(-18px) rotate(18deg)}82%,100%{transform:translateX(84px) rotate(18deg)}}
+.mx .feat .mchip.ins{color:#0d7f74}
+.mx .feat .mchip.pro{color:#6a48d7}
 
 /* ============ FINAL + FOOTER ============ */
 .final{text-align:center}
