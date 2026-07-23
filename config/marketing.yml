@@ -160,7 +160,7 @@ publish:
   # discover the X channel id with:
   #   BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels
   channels:
-    flagship: ""
+    flagship: "6a61f3d5e2638b94d7bd6c9b"  # @mastermindx001 (twitter)
 
   # Per-account link policy at POST time. flagship = true: the operator wants
   # links to their own site (mastermind-x.com). This is the publisher-tier gate;
