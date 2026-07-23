@@ -13,7 +13,11 @@
   if (window.__rvApp) return; window.__rvApp = true;
 
   /* ── config ── */
-  var API = (window.MM_API || 'https://app.mastermind-x.com').replace(/\/$/, '');
+  // Same-origin API base. This page ships from www/apex mastermind-x.com, whose
+  // Caddy proxies /api/* -> macro-api (:8000). The global window.MM_API points at
+  // app.* (the Next.js Terminal), which has NO /api/research/* route (404) — so
+  // research calls must stay same-origin. Override via window.RV_API if ever split.
+  var API = (window.RV_API || '').replace(/\/$/, '');
   var PDFJS_SRC = 'vendor/pdfjs/pdf.min.mjs';
   var PDFJS_WORKER = 'vendor/pdfjs/pdf.worker.min.mjs';
   var LS_STATE = 'rv_docstate_v1';   // { id: {saved, read_at, last_page} }
