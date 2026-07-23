@@ -220,3 +220,30 @@ Each wave = its own branch off fresh `origin/main` → PR → same-day squash-me
 4. **Tiers:** paid gating activates when Stripe #3178 (`user_entitlements`) lands; before that
    the vault correctly blocks all view/download as `free`.
 5. **NW lobe (W4)** needs a `max_active_nonscored_lobes` cap raise (roster full).
+
+## 14. W6 — Research-Paper Alpha program (CHARTERED 2026-07-23, not started)
+
+Operator intent (2026-07-23): MarketDesk history reaches back to **February 2026**; the
+archive backfill captures everything (PDFs + MarketDesk summaries + Marker markdown)
+precisely so a longitudinal study becomes possible. Charter, to be masterplanned in its
+own W0 when opened:
+
+- **Corpus:** every archived paper Feb-2026→now (PDF in the vault bucket; Marker markdown
+  on the extractor host; sidecars carry institution/desk/date/top-pick).
+- **Extraction layer:** a local LLM on the operator's PC (Qwen-class or stronger) reads each
+  paper's markdown against a FROZEN prompt schema and emits per-paper systematized fields:
+  recommendation level, sentiment by topic, macro outlook, conviction language, named
+  tickers/sectors, key numbers. Extractions are **offline research features, versioned with
+  the prompt hash** — data for studies, NEVER wired as live signals (house law: LLMs may
+  not originate signals/scores/escalations; A7 ORIGINATE ban).
+- **Study families (each needs its own prereg before any authority claim):**
+  (a) paper sentiment / recommendation levels vs subsequent market & sector price paths —
+  including the contrarian construction (do aggregate sell-side sentiment extremes mark
+  tops/bottoms?); (b) per-institution track records by topic/desk (who is actually good at
+  what); (c) keyword/theme lead-lag vs realized moves; (d) factor drift Feb→now.
+- **Epistemics (binding):** everything ships display-tier freely (e.g. an institution
+  scorecard page); ANY promotion to rank/size/gate authority passes the gauntlet with
+  pre-registered gates; nulls printed. Short history = ONE regime slice — expect small-N
+  ceilings; never era-pool a longer archive later without an era split.
+- **Dependencies:** backfill complete; Marker markdown coverage; PC LLM runner + frozen
+  prompt schema; a paper→price join layer (tickers/sectors to returns at t+N).

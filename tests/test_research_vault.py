@@ -596,19 +596,26 @@ def test_ingest_checkpoint_survives_mid_run_kill(tmp_path, canned_pdftotext, mon
     with pytest.raises(KeyboardInterrupt):
         ingest_mod.run(store, tmp_path / "run1" / "c.sqlite", checkpoint_every=1)
 
-    # Checkpoint #1 landed: the store catalog + corpus already hold early work.
+    # Checkpoint #1 landed: store catalog+corpus hold doc 1, and ONLY doc 1 is
+    # receipted (receipts flush strictly AFTER their batch's publish — the
+    # invariant is receipted => present in a published catalog+corpus).
     assert catalog_mod.load(store)["count"] >= 1
     assert store.exists(ingest_mod.CORPUS_KEY)
+    receipts = store.list_prefix("research_inbox/_processed/")
+    assert len(receipts) == 1
 
-    # Recovery: a plain re-run (fresh runner path) converges to all 3.
+    # Recovery: a plain re-run (fresh runner path) re-ingests the unreceipted
+    # docs and converges — catalog AND searchable corpus both reach all 3.
     monkeypatch.setattr(ingest_mod, "publish_corpus", real_publish)
-    ingest_mod.run(store, tmp_path / "run2" / "c.sqlite", checkpoint_every=1)
+    s2 = ingest_mod.run(store, tmp_path / "run2" / "c.sqlite", checkpoint_every=1)
+    assert s2["ingested"] == 2 and s2["skipped"] == 1
     assert catalog_mod.load(store)["count"] == 3
     pulled = tmp_path / "pulled.sqlite"
     pulled.write_bytes(store.get_bytes(ingest_mod.CORPUS_KEY))
     conn = corpus_mod.open_db(pulled)
     assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 3
     conn.close()
+    assert len(store.list_prefix("research_inbox/_processed/")) == 3
 
 
 def test_corpus_body_capped(tmp_path):
