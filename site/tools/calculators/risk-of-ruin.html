@@ -250,7 +250,7 @@
   "use strict";
 
   // ── deterministic PRNG: mulberry32 with a HARD-CODED seed (no Math.random) ──
-  // Fixed seed ⇒ the Monte-Carlo is reproducible; same inputs ⇒ same number.
+  // Declared standalone so it can be stringified into the Web Worker below.
   function mulberry32(a){
     return function(){
       a |= 0; a = a + 0x6D2B79F5 | 0;
@@ -259,13 +259,32 @@
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
-  var SEED = 0x9E3779B9;   // golden-ratio constant, fixed for stability
-  var M = 10000;           // simulated accounts
 
-  // ── pure compute ───────────────────────────────────────────────────────────
+  // ── pure Monte-Carlo core — no closures, everything via params ─────────────
+  // Runs the M×N fixed-fractional simulation, returns risk-of-ruin percent. The
+  // SAME source is stringified into a Worker (below) AND called directly on the
+  // main thread for the self-check + as a fallback, so results are identical.
+  function simulate(p){
+    var rand = mulberry32(p.seed), ruined = 0;
+    for(var acc=0; acc<p.M; acc++){
+      var eq = 1.0, dead = false;
+      for(var t=0; t<p.N; t++){
+        eq *= (rand() < p.winP) ? p.up : p.down;
+        if(eq <= p.floorEq){ dead = true; break; }
+      }
+      if(dead) ruined++;
+    }
+    return 100 * ruined / p.M;
+  }
+
+  var SEED = 0x9E3779B9;   // golden-ratio constant, fixed for reproducibility
+  var M = 10000;           // simulated accounts
+  var N_CAP = 1000;        // trades per run — bounded so even a huge N can't spin forever
+
+  // ── validate + normalize inputs (cheap; always on the main thread) ─────────
   // inputs: {W winRate%, b payoff, r risk%, dd ruin drawdown%, N trades}.
-  // Returns outputs object, or {ok:false, msg}. Never returns NaN/Infinity.
-  function compute(inp){
+  // Returns {ok:false,msg} or {ok:true, sim, expR, dd, N, M, capped, positiveEdge}.
+  function params(inp){
     var W=inp.W, b=inp.b, r=inp.r, dd=inp.dd, N=inp.N;
     if(!(W>=0 && W<=100)) return {ok:false, msg:"Enter a win rate between 0 and 100 percent."};
     if(!(b>0))            return {ok:false, msg:"Enter a payoff ratio above zero (average win ÷ average loss)."};
@@ -274,35 +293,30 @@
     if(!(dd>0 && dd<100)) return {ok:false, msg:"Enter a ruin threshold between 0 and 100 percent of drawdown."};
     if(!(N>=1))           return {ok:false, msg:"Enter how many trades to simulate."};
     N = Math.floor(N);
-    // M*N iterations run synchronously on every keystroke; an unbounded N (a
-    // user can type 10,000,000) would freeze the tab. 1,000 trades is ample for
-    // a fixed-fractional ruin estimate — clamp and flag it.
-    var capped = N > 1000; if(capped) N = 1000;
-
-    var winP = W/100, up = 1 + (r/100)*b, down = 1 - r/100, floorEq = 1 - dd/100;
-    var rand = mulberry32(SEED), ruined = 0;
-    for(var acc=0; acc<M; acc++){
-      var eq = 1.0, dead = false;
-      for(var t=0; t<N; t++){
-        eq *= (rand() < winP) ? up : down;
-        if(eq <= floorEq){ dead = true; break; }
-      }
-      if(dead) ruined++;
-    }
-    var ruinPct = 100 * ruined / M;
+    var capped = N > N_CAP; if(capped) N = N_CAP;
     var expR = (W/100)*b - (1 - W/100);
-    return { ok:true, ruinPct:ruinPct, expR:expR, dd:dd, M:M, N:N, capped:capped,
-             positiveEdge: expR > 0 };
+    return { ok:true,
+      sim:{ winP:W/100, up:1+(r/100)*b, down:1-r/100, floorEq:1-dd/100, N:N, M:M, seed:SEED },
+      expR:expR, dd:dd, N:N, M:M, capped:capped, positiveEdge: expR>0 };
+  }
+
+  // synchronous compute (validate + simulate) — self-check + no-worker fallback
+  function compute(inp){
+    var p = params(inp);
+    if(!p.ok) return p;
+    p.ruinPct = simulate(p.sim);
+    return p;
   }
 
   // ── §6 self-check: exact edge cases (W=100→0, W=0→100) that need no MC luck,
-  //    plus a bounded assertion for the middle case. console.error on drift. ──
+  //    plus a bounded assertion for the middle case. console.error on drift.
+  //    Deferred to idle so this heavy pass never blocks first paint. ──
   var WORKED_EXAMPLES = [
     { in:{W:100, b:1,   r:2, dd:50, N:500}, want:{ruinPct:0} },
     { in:{W:0,   b:1,   r:2, dd:50, N:500}, want:{ruinPct:100} },
     { in:{W:50,  b:1,   r:2, dd:50, N:500}, bound:{min:1, max:99} }
   ];
-  (function selfCheck(){
+  function runSelfCheck(){
     WORKED_EXAMPLES.forEach(function(ex, i){
       var got = compute(ex.in);
       if(!got.ok){ console.error("risk-of-ruin self-check "+i+": compute failed", got); return; }
@@ -316,9 +330,24 @@
             " want ["+ex.bound.min+","+ex.bound.max+"]"); }
       }
     });
-  })();
+  }
+  if(window.requestIdleCallback) window.requestIdleCallback(runSelfCheck);
+  else setTimeout(runSelfCheck, 300);
 
-  // ── DOM wiring (all reads/writes here; compute stays pure) ─────────────────
+  // ── build a Web Worker from the pure MC source so the sim runs OFF the main
+  //    thread — the UI never blocks, even for the largest run. Returns null if
+  //    Workers/Blob are unavailable or blocked (CSP); caller falls back to sync. ─
+  function makeWorker(){
+    try{
+      if(!(window.Worker && window.Blob && window.URL && window.URL.createObjectURL)) return null;
+      var src = mulberry32.toString() + "\n" + simulate.toString() + "\n" +
+        "self.onmessage=function(e){var d=e.data; self.postMessage({id:d.id, ruinPct:simulate(d.sim)});};";
+      var url = window.URL.createObjectURL(new Blob([src], {type:"application/javascript"}));
+      return new Worker(url);
+    }catch(_){ return null; }
+  }
+
+  // ── DOM wiring (all reads/writes here; compute/simulate stay pure) ─────────
   document.addEventListener("DOMContentLoaded", function(){
     var $ = function(id){ return document.getElementById(id); };
     var els = { winrate:$("winrate"), payoff:$("payoff"), riskpct:$("riskpct"),
@@ -329,41 +358,74 @@
 
     function numFrom(el){ var v=parseFloat((el.value||"").replace(/,/g,"").trim()); return isFinite(v)?v:NaN; }
     function pct(n, dp){ return n.toFixed(dp==null ? (n>=10?1:2) : dp) + "%"; }
-    function dash(){ outMain.textContent="—";
+    function dash(){ outMain.textContent="—"; outMain.style.opacity="";
       [outExp,outDd,outM,outN].forEach(function(e){e.textContent="—"; e.className="";}); }
 
-    var last=null;
+    var worker = makeWorker(), useWorker = !!worker;
+    var last=null, pending=null, seq=0, busyTimer=null;
+
+    // paint the instant (non-simulated) fields; the ruin % arrives separately
+    function paintFrame(p){
+      outExp.textContent = (p.expR>=0?"+":"") + p.expR.toFixed(2) + " R";
+      outExp.className   = p.expR>0 ? "pos" : (p.expR<0 ? "neg" : "");
+      outDd.textContent  = p.dd.toFixed(p.dd%1?1:0) + "%";
+      outM.textContent   = p.M.toLocaleString("en-US");
+      outN.textContent   = p.N.toLocaleString("en-US");
+      pending = p;
+    }
+
+    // apply the simulated risk-of-ruin once it comes back (worker or sync)
+    function applyRuin(ruinPct){
+      if(!pending) return;
+      pending.ruinPct = ruinPct; last = pending;
+      if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
+      outMain.textContent = pct(ruinPct); outMain.style.opacity="";
+      var band;
+      if(ruinPct < 1)       band = "very low — this plan almost always survives the run";
+      else if(ruinPct < 5)  band = "low, but not zero";
+      else if(ruinPct < 20) band = "meaningful — a real minority of accounts blow up";
+      else if(ruinPct < 50) band = "high — a large share of accounts hit ruin";
+      else                  band = "severe — most accounts do not survive";
+      var edge = pending.expR>0 ? "a positive edge" : (pending.expR<0 ? "a negative edge" : "no edge (break-even)");
+      var plain = "About " + pct(ruinPct) + " of 10,000 simulated accounts crossed the " +
+        pending.dd.toFixed(pending.dd%1?1:0) + "% ruin line — " + band + ". With " + edge +
+        ", the outcome is shaped mostly by how much you risk per trade.";
+      if(pending.capped){ plain += " Simulation capped at 1,000 trades."; }
+      outPlain.className = ruinPct>=20 ? "co-plain warn" : "co-plain";
+      outPlain.textContent = plain;
+    }
+
     function render(){
+      seq++;                                    // invalidate any in-flight worker result
+      var mySeq = seq;
       var inp={ W:numFrom(els.winrate), b:numFrom(els.payoff), r:numFrom(els.riskpct),
                 dd:numFrom(els.ruindd), N:numFrom(els.trades) };
       // sensible defaults for the two "run length" fields when left blank
       if(isNaN(inp.dd) && (els.ruindd.value||"").trim()==="") inp.dd = 50;
       if(isNaN(inp.N)  && (els.trades.value||"").trim()==="")  inp.N  = 500;
-      var res=compute(inp); last=res;
-      if(!res.ok){ dash(); outPlain.textContent=res.msg; outPlain.className="co-plain"; return; }
+      var p=params(inp);
+      if(!p.ok){
+        if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; }
+        dash(); pending=null; last=null;
+        outPlain.textContent=p.msg; outPlain.className="co-plain"; return;
+      }
+      paintFrame(p);
+      if(useWorker){
+        // subtle "recomputing" cue only if the sim takes a beat (avoids flicker
+        // on short runs); the worker keeps the UI fully responsive meanwhile
+        if(busyTimer) clearTimeout(busyTimer);
+        busyTimer = setTimeout(function(){ if(seq===mySeq) outMain.style.opacity="0.5"; }, 200);
+        worker.postMessage({ id:mySeq, sim:p.sim });
+      } else {
+        applyRuin(simulate(p.sim));             // fallback: synchronous
+      }
+    }
 
-      outMain.textContent = pct(res.ruinPct);
-      outExp.textContent  = (res.expR>=0?"+":"") + res.expR.toFixed(2) + " R";
-      outExp.className    = res.expR>0 ? "pos" : (res.expR<0 ? "neg" : "");
-      outDd.textContent   = res.dd.toFixed(res.dd%1?1:0) + "%";
-      outM.textContent    = res.M.toLocaleString("en-US");
-      outN.textContent    = res.N.toLocaleString("en-US");
-
-      // Law 3: plain-word interpretation under the number
-      var band;
-      if(res.ruinPct < 1)       band = "very low — this plan almost always survives the run";
-      else if(res.ruinPct < 5)  band = "low, but not zero";
-      else if(res.ruinPct < 20) band = "meaningful — a real minority of accounts blow up";
-      else if(res.ruinPct < 50) band = "high — a large share of accounts hit ruin";
-      else                      band = "severe — most accounts do not survive";
-      var edge = res.expR>0 ? "a positive edge" : (res.expR<0 ? "a negative edge" : "no edge (break-even)");
-      var plain = "About " + pct(res.ruinPct) + " of 10,000 simulated accounts crossed the " +
-        res.dd.toFixed(res.dd%1?1:0) + "% ruin line — " + band + ". With " + edge +
-        ", the outcome is shaped mostly by how much you risk per trade.";
-      if(res.capped){ plain += " Simulation capped at 1,000 trades."; }
-      if(res.ruinPct >= 20){ outPlain.className="co-plain warn"; }
-      else { outPlain.className="co-plain"; }
-      outPlain.textContent = plain;
+    if(worker){
+      worker.onmessage = function(e){ var d=e.data; if(d.id!==seq) return; applyRuin(d.ruinPct); };
+      worker.onerror = function(){                // CSP/exec failure → drop to sync
+        useWorker=false; try{worker.terminate();}catch(_){}
+        if(busyTimer){ clearTimeout(busyTimer); busyTimer=null; } render(); };
     }
 
     function copyLine(){
@@ -380,8 +442,7 @@
         try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done(); }
     });
 
-    // debounce: the Monte-Carlo is heavy, so coalesce rapid keystrokes rather
-    // than re-run 10,000 accounts on every input event
+    // debounce input; the sim itself runs in the worker so typing stays smooth
     var renderTimer=null;
     function scheduleRender(){ if(renderTimer) clearTimeout(renderTimer); renderTimer=setTimeout(render, 150); }
     ["winrate","payoff","riskpct","ruindd","trades"].forEach(function(id){
