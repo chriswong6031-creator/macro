@@ -503,6 +503,7 @@ lanes:
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_reports
+            - scripts.build_research_vault
             - scripts.build_cycle
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
