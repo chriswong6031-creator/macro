@@ -289,3 +289,160 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 @media (prefers-reduced-motion: reduce) {
   .section-lazy { transition:none; }
 }
+
+/* ═══════════════════ NEURAL WEB · MX5 DESIGN LAYER ═══════════════════
+   Ports the macro.html (mx5, Fable) visual language onto the Neural Web:
+   glass cards, ambient aurora, a living-brain hero, sticky chapter tabs,
+   and a mono "telemetry" type system grounded in the subject — a machine
+   that thinks. Every motion respects prefers-reduced-motion. */
+.page-committee{
+  --lobe-core:#e2e8f0; --lobe-us:#4da3ff; --lobe-cn:#f0883e;
+  --lobe-sig:#a78bfa; --lobe-macro:#2dd4bf;
+  --nw-ink:#eaf0fb;
+  --nw-mono:var(--font-mono, ui-monospace,SFMono-Regular,Menlo,monospace);
+  --nw-hair:color-mix(in srgb,var(--line) 72%,transparent);
+  --nw-glass-brd:color-mix(in srgb,var(--line) 90%,transparent);
+}
+html{ scroll-behavior:smooth; }
+/* #cm_content is switched to flex by showContent(); order:* on each section
+   drives the reading order without moving any DOM node (JS + tests untouched). */
+.page-committee #cm_content{ flex-direction:column; }
+.page-committee .nw-hero .plain-eng{ background:color-mix(in srgb,#0a1122 58%,transparent);
+  border-left-color:var(--lobe-us); color:#c9d3e4; }
+.page-committee .nw-hero .plain-eng strong{ color:#dbe4f4; }
+
+/* Ambient aurora — quotes the synapse lobe palette (the map is this page's
+   signature, so the atmosphere echoes it, not macro's green/indigo). */
+.nw-aurora{ position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(38% 32% at 12% 6%, color-mix(in srgb,var(--lobe-us) 16%,transparent), transparent 70%),
+    radial-gradient(34% 30% at 90% 4%, color-mix(in srgb,var(--lobe-macro) 12%,transparent), transparent 70%),
+    radial-gradient(48% 44% at 84% 98%, color-mix(in srgb,var(--lobe-sig) 15%,transparent), transparent 72%),
+    radial-gradient(40% 40% at 4% 96%, color-mix(in srgb,var(--lobe-cn) 8%,transparent), transparent 72%);
+  animation:nwAuroraDrift 36s ease-in-out infinite alternate; }
+@keyframes nwAuroraDrift{ from{transform:translate3d(0,0,0) scale(1);} to{transform:translate3d(0,-2.2%,0) scale(1.06);} }
+:root[data-theme="light"] .nw-aurora{ opacity:.5; }
+
+/* Sticky chapter tabs — a floating segmented control: "jump to what you want".
+   The site-nav is in-flow and scrolls away, so this pins near the top. */
+.nw-subnav{ position:sticky; top:10px; z-index:60; margin:2px 0 22px; padding:6px;
+  display:flex; background:color-mix(in srgb,var(--bg) 80%,transparent);
+  border:1px solid var(--nw-hair); border-radius:999px;
+  backdrop-filter:blur(14px) saturate(1.3); box-shadow:0 12px 32px -20px rgba(0,0,0,.7); }
+.nw-subnav-inner{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; width:100%; }
+.nw-subnav-inner::-webkit-scrollbar{ display:none; }
+.nw-tab{ flex:none; display:inline-flex; align-items:center; gap:7px; padding:7px 14px;
+  border-radius:999px; font:600 12px/1 var(--font-ui); color:var(--muted);
+  border:1px solid transparent; cursor:pointer; white-space:nowrap; text-decoration:none;
+  transition:color .16s,background .16s,border-color .16s; }
+.nw-tab:hover{ color:var(--text); background:color-mix(in srgb,var(--link) 9%,transparent); }
+.nw-tab.is-active{ color:var(--nw-ink); background:color-mix(in srgb,var(--link) 15%,var(--panel2));
+  border-color:color-mix(in srgb,var(--link) 32%,var(--line)); }
+.nw-tab .tdot{ width:6px; height:6px; border-radius:50%; background:var(--accent,currentColor); opacity:.85; flex:none; }
+
+/* Section band headers — telemetry eyebrow + a confident title. */
+.nw-band{ margin:44px 2px 6px; scroll-margin-top:78px; }
+.nw-eyebrow{ font:600 10.5px/1 var(--nw-mono); letter-spacing:.18em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--link) 72%,var(--muted)); display:inline-flex; align-items:center; gap:9px; }
+.nw-eyebrow::before{ content:""; width:20px; height:1px; background:currentColor; opacity:.55; }
+.nw-band-title{ font:800 21px/1.12 var(--font-ui); letter-spacing:-.02em;
+  color:var(--text); text-transform:none; margin:9px 0 0; }
+.nw-band-sub{ font-size:13px; color:var(--muted); margin:3px 0 0; max-width:660px; }
+
+/* Glass cards — restyle every panel + Today's Read into frosted mx5 cards. */
+.page-committee .panel,
+.page-committee .tr-card{ position:relative; scroll-margin-top:78px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 90%,transparent),color-mix(in srgb,var(--panel2) 94%,transparent));
+  border:1px solid var(--nw-glass-brd); border-radius:16px;
+  box-shadow:0 1px 0 color-mix(in srgb,#fff 4%,transparent) inset, 0 20px 44px -30px rgba(0,0,0,.65);
+  backdrop-filter:blur(6px); padding:18px 20px; margin-bottom:16px;
+  transition:border-color .25s,transform .25s,box-shadow .25s; }
+.page-committee .panel::before{ content:""; position:absolute; left:18px; right:18px; top:0; height:1px;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--accent,var(--link)) 55%,transparent),transparent);
+  opacity:.6; }
+.page-committee .panel:hover{ border-color:color-mix(in srgb,var(--accent,var(--link)) 28%,var(--nw-glass-brd));
+  box-shadow:0 1px 0 color-mix(in srgb,#fff 5%,transparent) inset, 0 26px 52px -28px rgba(0,0,0,.72); }
+.page-committee [data-lobe="us"]{ --accent:var(--lobe-us); }
+.page-committee [data-lobe="cn"]{ --accent:var(--lobe-cn); }
+.page-committee [data-lobe="sig"]{ --accent:var(--lobe-sig); }
+.page-committee [data-lobe="macro"]{ --accent:var(--lobe-macro); }
+.page-committee .panel-head h1{ font:800 17px/1.2 var(--font-ui); letter-spacing:-.01em; }
+
+/* Living-brain hero. */
+.page-committee .nw-hero{ position:relative; overflow:hidden; border-radius:20px;
+  padding:clamp(24px,4vw,38px) clamp(20px,3.5vw,32px) 24px; margin-bottom:16px;
+  border:1px solid color-mix(in srgb,var(--lobe-us) 24%,var(--line)); color:#e7ecf6;
+  background:
+    radial-gradient(120% 130% at 50% 34%, transparent 52%, rgba(2,3,12,.55)),
+    radial-gradient(1.5px 1.5px at 18% 26%, rgba(232,240,255,.75), transparent 50%),
+    radial-gradient(1.2px 1.2px at 68% 16%, rgba(214,228,255,.5), transparent 50%),
+    radial-gradient(1px 1px at 86% 62%, rgba(200,216,255,.42), transparent 50%),
+    radial-gradient(1px 1px at 40% 78%, rgba(190,206,255,.35), transparent 50%),
+    radial-gradient(52% 62% at 14% 8%, color-mix(in srgb,var(--lobe-us) 22%,transparent), transparent 60%),
+    radial-gradient(54% 64% at 90% 92%, color-mix(in srgb,var(--lobe-sig) 20%,transparent), transparent 62%),
+    linear-gradient(180deg,#050818,#02030c 58%,#05060f); }
+.nw-hero-eyebrow{ font:600 10.5px/1 var(--nw-mono); letter-spacing:.2em; text-transform:uppercase;
+  color:color-mix(in srgb,var(--lobe-us) 78%,#cdd7ea); display:flex; align-items:center; gap:10px;
+  flex-wrap:wrap; margin-bottom:16px; }
+.nw-hero-eyebrow .live{ display:inline-flex; align-items:center; gap:6px; color:#c7d2e6; }
+.nw-hero-eyebrow .live i{ width:7px; height:7px; border-radius:50%; background:var(--up); font-style:normal;
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 70%,transparent); animation:nwPulse 2.6s ease-out infinite; }
+.page-committee .nw-hero-headline{ font:900 clamp(30px,5.6vw,54px)/1.01 var(--font-ui); letter-spacing:-.03em;
+  margin:0 0 8px; background:linear-gradient(100deg,var(--lobe-us),var(--lobe-sig) 50%,var(--lobe-macro));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.page-committee .nw-hero-tagline{ font-size:clamp(15px,1.7vw,17px); color:#aeb9cc; font-style:normal;
+  margin:0 0 18px; max-width:620px; }
+.nw-hero-stance{ display:flex; align-items:center; gap:11px; padding:10px 15px; border-radius:12px;
+  background:color-mix(in srgb,#0a1122 66%,transparent); border:1px solid color-mix(in srgb,var(--lobe-us) 24%,transparent);
+  font-size:13.5px; line-height:1.5; color:#d3dbea; max-width:660px; margin-bottom:22px; }
+.nw-hero-stance .tag{ font:700 10px/1 var(--nw-mono); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--lobe-macro); border:1px solid color-mix(in srgb,var(--lobe-macro) 42%,transparent);
+  padding:4px 8px; border-radius:6px; flex:none; }
+.page-committee .nw-stat-chips{ gap:10px; }
+.page-committee .nw-chip{ background:color-mix(in srgb,#0a1122 52%,transparent);
+  border:1px solid color-mix(in srgb,var(--lobe-us) 20%,transparent); border-radius:12px;
+  padding:9px 14px; backdrop-filter:blur(3px); }
+.page-committee .nw-chip-val{ font-family:var(--nw-mono); font-weight:800; color:#eaf0fb; }
+.page-committee .nw-chip-label{ font-family:var(--nw-mono); letter-spacing:.07em; text-transform:uppercase;
+  font-size:10px; color:#93a0b6; }
+.page-committee .nw-chip-ok{ border-color:color-mix(in srgb,var(--up) 38%,transparent); }
+.page-committee .nw-chip-ok .nw-chip-val{ color:var(--up); }
+.page-committee .nw-chip-offline{ border-color:color-mix(in srgb,var(--warn) 42%,transparent); }
+.page-committee .nw-chip-offline .nw-chip-val{ color:var(--warn); }
+.nw-hero .mp-strip{ margin-top:20px; padding-top:16px;
+  border-top:1px solid color-mix(in srgb,var(--lobe-us) 16%,transparent); }
+.nw-hero .mp-chip{ background:color-mix(in srgb,#0a1122 55%,transparent);
+  border-color:color-mix(in srgb,var(--lobe-us) 20%,transparent); color:#d7deec; }
+.nw-about{ margin-top:18px; font-size:13px; color:#9fabc0; }
+.nw-about > summary{ cursor:pointer; color:#c2ccdd; font-weight:600; list-style:none;
+  display:inline-flex; align-items:center; gap:7px; }
+.nw-about > summary::-webkit-details-marker{ display:none; }
+.nw-about > summary::before{ content:"＋"; font-family:var(--nw-mono); color:var(--lobe-us); }
+.nw-about[open] > summary::before{ content:"－"; }
+.nw-about p{ margin:9px 0 0; line-height:1.7; max-width:760px; }
+
+/* Scroll reveal (upgrades the existing lazy reveal). */
+.page-committee .section-lazy{ opacity:0; transform:translateY(18px);
+  transition:opacity .55s cubic-bezier(.2,.7,.2,1),transform .55s cubic-bezier(.2,.7,.2,1); }
+.page-committee .section-lazy.visible{ opacity:1; transform:none; }
+
+/* Hero boot + pulse. */
+@keyframes nwBoot{ from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;} }
+@keyframes nwPulse{ 0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--up) 62%,transparent);} 70%{box-shadow:0 0 0 8px transparent;} 100%{box-shadow:0 0 0 0 transparent;} }
+.nw-hero .nw-hero-eyebrow{ animation:nwBoot .6s .04s both; }
+.page-committee .nw-hero-headline{ animation:nwBoot .6s .12s both; }
+.page-committee .nw-hero-tagline{ animation:nwBoot .6s .2s both; }
+.nw-hero-stance{ animation:nwBoot .6s .28s both; }
+.page-committee .nw-hero .nw-stat-chips{ animation:nwBoot .6s .36s both; }
+
+@media (max-width:719px){
+  .page-committee .panel,.page-committee .tr-card{ border-radius:14px; padding:15px 15px; }
+  .nw-band{ margin-top:34px; }
+}
+@media (prefers-reduced-motion:reduce){
+  html{ scroll-behavior:auto; }
+  .nw-aurora{ animation:none; }
+  .nw-hero-eyebrow .live i{ animation:none; }
+  .page-committee .nw-hero *{ animation:none !important; }
+  .page-committee .section-lazy{ transition:none; }
+}
