@@ -1599,8 +1599,6 @@
     themeDark:  ['Dark', '深色'],
     language:   ['Language', '语言'],
     langNote:   ['Applies to every page.', '应用于所有页面。'],
-    liveP:      ['Live prices', '实时报价'],
-    livePNote:  ['Streaming quotes on boards that support them.', '支持的看板将实时刷新报价。'],
     // sync section
     syncOn:     ['Sync is on', '同步已开启'],
     syncOff:    ['Sync is off', '同步未开启'],
@@ -1827,7 +1825,6 @@
     _renderSDPrefs();
     _renderSDSync(state, u);
     _sdSyncThemeSeg();
-    _sdSyncLiveRow();
     // if the current section is now invalid (account tab hidden), route to prefs
     if (_sdSect === 'account' && !_authEnabled) _sdShow('prefs');
   }
@@ -1977,7 +1974,6 @@
   function _renderSDPrefs() {
     var host = document.getElementById('sd-sect-prefs');
     if (!host) return;
-    var showLive = (typeof window.LiveQuotes !== 'undefined');
     host.innerHTML = _sdHead('prefsTitle', 'prefsSub') + '<div class="sd-body">' +
       '<div class="sd-group" style="margin-top:4px">' +
         // appearance
@@ -2000,13 +1996,6 @@
             '<button type="button" class="sd-seg-b" data-sd-lang="en">EN</button>' +
             '<button type="button" class="sd-seg-b" data-sd-lang="zh">中文</button>' +
           '</span>' +
-        '</div></div>' +
-        // live prices (hidden unless LiveQuotes present)
-        '<div class="sd-row" id="sd-live-row"' + (showLive ? '' : ' style="display:none"') + '><div class="sd-row-line">' +
-          '<span class="sd-row-main">' +
-            '<span class="sd-row-lbl">' + _sdBl('liveP') + '</span>' +
-            '<span class="sd-row-desc">' + _sdBl('livePNote') + '</span></span>' +
-          '<button type="button" class="sd-toggle" id="sd-live-toggle" role="switch" aria-checked="true" aria-label="' + _escHtml(_sdL('liveP')) + '"><span class="knob"></span></button>' +
         '</div></div>' +
       '</div>' +
     '</div>';
@@ -2204,19 +2193,6 @@
     host.querySelectorAll('[data-sd-lang]').forEach(function (b) {
       b.addEventListener('click', function () { setLang(b.getAttribute('data-sd-lang')); });
     });
-    var lt = host.querySelector('#sd-live-toggle');
-    if (lt) lt.addEventListener('click', function () {
-      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
-      if (off) {
-        try { localStorage.removeItem('liveOff'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
-      } else {
-        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
-      }
-      _sdSyncLiveRow();
-    });
-    _sdSyncLiveRow();
   }
   function _wireSDSync(host) { _sdWireCta(host); }
 
@@ -2237,16 +2213,9 @@
       b.classList.toggle('active', b.getAttribute('data-sd-lang') === curLang());
     });
   }
-  // live-prices row: re-check availability + aria-checked from localStorage
-  function _sdSyncLiveRow() {
-    if (!_sdOverlay) return;
-    var row = _sdOverlay.querySelector('#sd-live-row'), t = _sdOverlay.querySelector('#sd-live-toggle');
-    if (row) row.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
-    if (t) {
-      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
-      t.setAttribute('aria-checked', off ? 'false' : 'true');
-    }
-  }
+
+  // Live prices are always on now (the toggle was removed); heal any stored pause.
+  try { localStorage.removeItem('liveOff'); } catch (e) {}
 
   /* ---- open / close ------------------------------------------------------- */
   function _openSDash(section) {
@@ -2370,9 +2339,7 @@
     themeAuto:  ['Auto', '自动'],
     themeDark:  ['Dark', '深色'],
     fxOn:    ['On', '开'],
-    fxOff:   ['Off', '关'],
-    // Feature 7: live prices
-    liveP:   ['Live prices', '实时报价']
+    fxOff:   ['Off', '关']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -2553,12 +2520,6 @@
           '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span></span>' +
           '<span class="sr-ctrl" id="set-lang-slot"></span>' +
         '</div>' +
-        // Live prices row (hidden until LiveQuotes is available)
-        '<div class="settings-row" id="set-live-row" style="display:none">' +
-          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span></span>' +
-          '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-live-toggle" role="switch" aria-checked="true"><span class="set-toggle-knob"></span></button></span>' +
-        '</div>' +
       '</div>' +
       '<div class="settings-sec" id="set-acct-sec">' +
         '<div class="settings-sec-t"><span data-set="account"></span></div>' +
@@ -2728,31 +2689,6 @@
     // keep the segment in sync when themechange fires (e.g. from legacy toggleTheme)
     document.addEventListener('themechange', function () { _syncThemeSegNow(); });
 
-    // ---- Feature 7: wire the Live-prices toggle (hub-optional) ---------------
-    var _liveRow = pop.querySelector('#set-live-row'), _liveToggle = pop.querySelector('#set-live-toggle');
-    function _updateLiveRow() {
-      if (!_liveRow) return;
-      _liveRow.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
-    }
-    // Check after DOM ready (LiveQuotes may not be set yet at initSettings time)
-    document.addEventListener('DOMContentLoaded', function () { _updateLiveRow(); });
-    _updateLiveRow();
-    // Initial state from localStorage (liveOff='1' = paused)
-    function _liveOff() { try { return localStorage.getItem('liveOff') === '1'; } catch (e) { return false; } }
-    function _setLiveAria() {
-      if (_liveToggle) _liveToggle.setAttribute('aria-checked', _liveOff() ? 'false' : 'true');
-    }
-    _setLiveAria();
-    if (_liveToggle) _liveToggle.addEventListener('click', function () {
-      if (_liveOff()) {
-        try { localStorage.removeItem('liveOff'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
-      } else {
-        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
-      }
-      _setLiveAria();
-    });
 
     // ---- Feature 9: sign-in link wiring (hub-only, hub-signin element) -------
     function _initHubSignin() {
