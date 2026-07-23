@@ -626,6 +626,15 @@ jobs:
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             if git pull --rebase --autostash -X theirs origin main; then
+              # post-rebase template↔site re-sync (ui.template_site_sync): externalize_css
+              # above lifts the plain-copy landing/chat pages' inline <style> to hashed files,
+              # diverging site/index.html + site/chat.html from their templates — and this lane
+              # (unlike render.yml/engine-render.yml/daily.yml) had no --fix, so it shipped the
+              # divergence and reddened the sync gate on main (2026-07-23, commit 4b356dd6b1a).
+              # -X theirs can also resurrect checkout-time copies over a reword that merged
+              # mid-render. templates/ is now fresh post-rebase main — re-copy the plain-copy
+              # page assets; the render-heal commit below folds the delta.
+              python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): this lane re-renders the
               # CN/HK dashboards, so -X theirs racing another render can stitch a hybrid
               # Market State board (see the 2026-07-07 macro.html incident, commit

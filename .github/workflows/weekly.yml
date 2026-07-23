@@ -185,6 +185,12 @@ jobs:
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
           python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
+          # template↔site re-sync (ui.template_site_sync): externalize_css above lifts the
+          # plain-copy landing/chat pages' inline <style> to hashed files, diverging
+          # site/index.html + site/chat.html from their templates. This lane's push loop is
+          # minimal (no post-rebase --fix like render.yml/asia-close.yml), so heal here —
+          # BEFORE `git add site/` below — so weekly never commits/ships the divergence.
+          python -m scripts.check_template_site_sync --fix || true
       - name: commit weekly outputs
         run: |
           git config user.name "dashboard-bot"
