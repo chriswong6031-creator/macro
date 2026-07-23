@@ -274,6 +274,23 @@ ARTIFACT_MANIFEST = [
      "as_of_field": "as_of",
      "consumers": ["bot:canada_book"],
      "note": "Prophet Canada board"},
+    {"artifact": "site/data/portfolio_ctx.json",
+     "kind": "context",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "asof", "built", "coverage", "gate_go", "regime", "schema", "sectors",
+         "tickers", "v",
+     ],
+     # W0 stub is NOT nightly-wired yet (that lands in W1 → daily.yml). Set high so the
+     # committed stub cannot rot CI red before W1; tighten to 2 when nightly-wired (W1).
+     "expected_max_age_td": 30,
+     "as_of_field": "asof",
+     "consumers": ["terminal:portfolio"],
+     "note": ("Portfolio-Aware Intelligence per-ticker context (charter: "
+              "research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §2). Re-expresses "
+              "existing nightly reads keyed by ticker; the terminal Portfolio page "
+              "composes each user's brief on demand off the render path. W0 = 3-ticker "
+              "stub; W1 wires the full-universe nightly bake.")},
     {"artifact": "site/regime_timeline.json",
      "kind": "regime",
      "schema_version": "1.0.0",
