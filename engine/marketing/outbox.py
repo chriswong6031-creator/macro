@@ -867,7 +867,8 @@ def emit_from_content_plan(
                         source["ticker"] = qi.get("ticker")
                     plan_block = qi.get("_plan")
                     if isinstance(plan_block, dict):
-                        source["signal_id"] = plan_block.get("id")
+                        if plan_block.get("id") is not None:
+                            source["signal_id"] = plan_block.get("id")
                         for _sk, _pk in (("direction", "direction"),
                                          ("entry", "entry"),
                                          ("invalidation", "invalidation")):
