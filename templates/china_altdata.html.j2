@@ -31,7 +31,10 @@
 {% set seo_desc = "China A-share alternative data: who controls the tape, where independent smart-money feeds agree, limit-up momentum, narrative rotation and event catalysts." %}
 {% set seo_path = "china_altdata.html" %}
 {%- include "_seo_head.html.j2" %}
+<link rel="stylesheet" href="illus.css">
 {%- endblock %}
+
+{% block body_scripts %}<script src="illus.js" defer></script>{% endblock %}
 
 {% block base_css %}
   /* ---- China desk signature accents (brand, NOT direction — never ZH-swapped) ---- */
@@ -68,6 +71,12 @@
   .cad-tape-read .word .g-word{ color:var(--g,var(--text)); }
   .cad-tape-read .stance-line{ font-size:14px; line-height:1.5; color:var(--text); margin:7px 0 10px; max-width:56ch; }
   .cad-metrows{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+
+  /* ---- hero trajectory sparkline (ilx waterline) ---- */
+  .cad-spark{ margin:16px 0 2px; }
+  .cad-spark-lab{ font-size:11.5px; color:var(--muted); margin:0 0 3px; display:flex; gap:8px; align-items:baseline; }
+  .cad-spark-lab b{ color:var(--text); font-weight:600; font-size:12px; }
+  .cad-spark .ilx{ margin:0; }
 
   /* ---- stance pill (Law 1 — every panel answers "so what do I do") ---- */
   .cad-stance{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
@@ -216,6 +225,15 @@
           {% if tape.date %}<span class="cad-asof">· {{ t('tape','盘面') }} {{ tape.date }}</span>{% endif %}
         </div>
       </div>
+    </div>
+    {% endif %}
+
+    {% if tape_spark %}
+    <div class="cad-spark">
+      <div class="cad-spark-lab"><b>{{ t('Trading intensity','成交强度') }}</b>
+        <span data-tip-en="Turnover z-score vs the trailing 20-day normal. Above the waterline = busier than usual; below = quiet — the tape's participation rhythm."
+              data-tip-zh="成交额相对过去20日常态的z值。水位线以上＝比平常活跃；以下＝清淡——盘面参与节奏。">{{ t('vs 20-day normal ›','相对20日常态 ›') }}</span></div>
+      {{ tape_spark|safe }}
     </div>
     {% endif %}
 
