@@ -600,12 +600,9 @@ tr.t-ins td:first-child,tr.t-pro td:first-child{position:sticky;left:0}
 .mx .tipbox.up{top:auto;bottom:calc(100% - 4px);transform:translateY(-3px)}
 .mx td.feat:hover .tipbox,.mx td.feat:focus-within .tipbox{opacity:1;visibility:visible;transform:none;transition:opacity .18s,transform .18s}
 /* tier chip on the aurora row labels */
-.mx .feat .mchip{display:inline-block;position:relative;overflow:hidden;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
+.mx .feat .mchip{display:inline-block;font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;margin:0 0 0 8px;vertical-align:1px;white-space:nowrap}
 .mx .feat .mchip.ins{background:linear-gradient(90deg,#e7f3f1,#e9eefc) padding-box,linear-gradient(90deg,rgba(15,157,143,.6),rgba(40,95,255,.55)) border-box}
 .mx .feat .mchip.pro{background:linear-gradient(90deg,#f0eafb,#f6efdf) padding-box,linear-gradient(90deg,rgba(120,98,224,.65),rgba(176,125,5,.55)) border-box}
-.mx .feat .mchip::after{content:"";position:absolute;top:-45%;bottom:-45%;left:0;width:9px;background:rgba(255,255,255,.8);transform:translateX(-18px) rotate(18deg);animation:chipGlint 5.2s ease-in-out infinite}
-.mx .feat .mchip.pro::after{animation-duration:3.8s}
-@keyframes chipGlint{0%,62%{transform:translateX(-18px) rotate(18deg)}82%,100%{transform:translateX(84px) rotate(18deg)}}
 .mx .feat .mchip.ins{color:#0d7f74}
 .mx .feat .mchip.pro{color:#6a48d7}
 
