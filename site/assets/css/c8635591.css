@@ -1,6 +1,6 @@
 
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:13px/1.5 var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif); margin:0; padding:8px 0 0; }
+  body { background:var(--bg); color:var(--text); font:13px/1.5 var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif); margin:0; padding:18px 0 0; }
   /* premium page wash — soft, static (no repaint churn), theme-var driven so it flips with dark/light/zh */
   body.page-radar::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
     background:

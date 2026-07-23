@@ -1,10 +1,5 @@
 
 :root{
-  /* Inter loads via the _interfonts @font-face partial; the token mirrors
-     theme.css --font-ui (this standalone page does not link theme.css). */
-  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans CJK SC", sans-serif;
   --blue:#285FFF; --indigo:#4559DC; --r2:#B8C6FA; --r3:#8FA5F6; --ink:#0B1733;
   --text:#344054; --muted:#6F6F6F; --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42;
   --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA; --green:#1FA971;
@@ -13,24 +8,10 @@
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{margin:0;padding-top:18px;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
-/* One-row section menu (re-fix on current main): full-bleed the sticky bar to the
-   same ~1500 rail the macro family uses on >=701px, so the 8-dropdown menu fits one
-   row. The page body keeps its 1180 rail; the <=700px hamburger is untouched. */
-@media (min-width:701px){
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
 .nav-dd{position:relative;display:inline-flex}
@@ -112,19 +93,3 @@ html[data-theme="dark"] .tag.exp{background:#3a1d2b;color:#f08bb4}
 .note{border-left:3px solid var(--amber);padding:6px 0 6px 14px;margin:8px 0;color:var(--text);font-size:13.5px}
 .note.r{border-color:var(--red)} .note.b{border-color:var(--blue)}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
-.lev{font-size:54px;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--ink)}
-.oostbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
-.oostbl td,.oostbl th{padding:8px 10px;border-bottom:1px solid var(--grid);text-align:right}
-.oostbl td.l,.oostbl th.l{text-align:left}
-.badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700}
-.badge.ok{background:#dff5ea;color:#1FA971}.badge.no{background:#fde7ef;color:#a01457}
-html[data-theme="dark"] .badge.ok{background:#16321f;color:#48d39a}html[data-theme="dark"] .badge.no{background:#3a1d2b;color:#f08bb4}
-.allocrow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
-.allocrow .nm{width:140px;color:var(--text)}.allocrow .br{flex:1;height:16px;border-radius:5px;background:var(--bg);overflow:hidden}
-html[data-theme="dark"] .allocrow .br{background:var(--grid)}
-.allocrow .fill{display:block;height:100%;min-width:2px;background:linear-gradient(90deg,#4a86ff,var(--blue))}
-.allocrow .pc{width:54px;text-align:right;font-weight:700;color:var(--ink)}
-.factbar{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.factchip{font-size:12px;padding:5px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
-html[data-theme="dark"] .factchip{background:var(--grid)}
-.factchip b{color:var(--ink)}
