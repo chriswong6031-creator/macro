@@ -1438,6 +1438,16 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
+          push retry loop (post-rebase, pre-push) — re-copies plain-copy landing/chat page
+          assets from post-rebase templates/ so `git pull --rebase -X theirs` can never
+          resurrect the divergence externalize_css opened. Step added by #3285 without a
+          matching dag.yml entry (the daily/engine-render/render declarations predate it,
+          #2984); declared here to close the dag-conformance red it left on main.
       - id: publish_r2_asia
         module: scripts.publish_r2
         note: non-fatal; uploads CN/HK OHLC + stockdata to R2
@@ -1841,6 +1851,16 @@ lanes:
         module: scripts.externalize_css
       - id: optimize_assets
         module: scripts.optimize_assets
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal — externalize_css above lifts
+          the plain-copy landing/chat pages' inline <style> to hashed files, diverging
+          site/index.html + site/chat.html from templates/; --fix re-copies BEFORE the commit
+          step's `git add site/` so weekly never ships the divergence. Step added by #3285
+          without a matching dag.yml entry; declared here to close the dag-conformance red it
+          left on main.
 
   # ── sentinel.yml / flash-crash ──────────────────────────────────────────
   - workflow: .github/workflows/sentinel.yml
