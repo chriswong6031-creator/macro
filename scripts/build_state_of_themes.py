@@ -340,6 +340,12 @@ _DIV_LABELS = {
 
 _LANE_ORDER = ["working", "early", "caution", "review", "quiet"]
 
+# Side-artifact contract: the tiny theme→lane map that build_portfolio_ctx joins.
+# Written from the SAME composed ctx the page renders from (single source of truth,
+# no re-derivation) so a theme's lane on the Portfolio brief and on this page can
+# never disagree. Lane values are exactly the 5-lane vocabulary in _LANE_ORDER.
+THEME_LANES_SCHEMA = "theme_lanes.v1"
+
 _LANE_META: dict[str, dict[str, str]] = {
     "working": {
         "key": "working",
@@ -1353,17 +1359,58 @@ def compose(root: Path) -> dict[str, Any]:
     }
 
 
-def render(root: Path) -> str:
-    """Render the template with live data. Returns HTML string."""
+def render(root: Path, ctx: dict[str, Any] | None = None) -> str:
+    """Render the template with live data. Returns HTML string.
+
+    `ctx` may be supplied by a caller that already composed it (so compose()
+    runs once and the page + the theme_lanes side-artifact share one source of
+    truth); when None we compose here for backward-compatible callers/tests.
+    """
     templates_dir = root / "templates"
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(str(templates_dir)),
         autoescape=True,
         undefined=jinja2.Undefined,
     )
-    ctx = compose(root)
+    if ctx is None:
+        ctx = compose(root)
     tpl = env.get_template("state_of_themes.html.j2")
     return tpl.render(**ctx)
+
+
+def write_theme_lanes(ctx: dict[str, Any], root: Path) -> Path | None:
+    """Write the theme_lanes.v1 side-artifact from an already-composed ctx.
+
+    {"schema","asof","lanes":{theme_id: lane}} → site/basketdata/theme_lanes.json.
+    Uses the SAME lane already computed for each theme on the page (ctx["themes"]),
+    so it never re-derives a lane and cannot drift from the rendered board. Every
+    lane value is one of _LANE_ORDER. Never raises — a failure here must not break
+    the page render (the artifact is fail-open on the consumer side). Returns the
+    written path, or None on failure.
+    """
+    try:
+        lanes: dict[str, str] = {}
+        for th in ctx.get("themes", []) or []:
+            tid = th.get("theme_id")
+            lane = th.get("lane")
+            if tid and lane in _LANE_ORDER:
+                lanes[str(tid)] = lane
+        payload = {
+            "schema": THEME_LANES_SCHEMA,
+            "asof": ctx.get("as_of", "—"),
+            "lanes": lanes,
+        }
+        out = root / "site" / "basketdata" / "theme_lanes.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            json.dumps(payload, separators=(",", ":"), ensure_ascii=False),
+            encoding="utf-8",
+        )
+        log.info("wrote %s (%d theme lanes)", out, len(lanes))
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.warning("theme_lanes side-write failed (%s); skipped", exc)
+        return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1375,10 +1422,15 @@ def main(argv: list[str] | None = None) -> int:
     out_path = root / "site" / "state_of_themes.html"
 
     try:
-        html = render(root)
+        # Compose ONCE; render the page and write the theme_lanes side-artifact
+        # from the same ctx (single source of truth — the page's lanes and the
+        # Portfolio brief's lanes are the identical computed value).
+        ctx = compose(root)
+        html = render(root, ctx)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(html, encoding="utf-8")
         log.info("wrote %s", out_path)
+        write_theme_lanes(ctx, root)  # never raises; page already written
         return 0
     except Exception as exc:  # noqa: BLE001
         log.error("render failed: %s", exc, exc_info=True)

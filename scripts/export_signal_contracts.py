@@ -281,16 +281,17 @@ ARTIFACT_MANIFEST = [
          "asof", "built", "coverage", "gate_go", "regime", "schema", "sectors",
          "tickers", "v",
      ],
-     # W0 stub is NOT nightly-wired yet (that lands in W1 → daily.yml). Set high so the
-     # committed stub cannot rot CI red before W1; tighten to 2 when nightly-wired (W1).
-     "expected_max_age_td": 30,
+     # W1: nightly-wired (daily.yml engine job, serial step after build_sector_central).
+     # 2 trading days = one nightly + a weekend/holiday cushion (same bar as the other
+     # daily-baked context artifacts).
+     "expected_max_age_td": 2,
      "as_of_field": "asof",
      "consumers": ["terminal:portfolio"],
      "note": ("Portfolio-Aware Intelligence per-ticker context (charter: "
               "research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §2). Re-expresses "
               "existing nightly reads keyed by ticker; the terminal Portfolio page "
-              "composes each user's brief on demand off the render path. W0 = 3-ticker "
-              "stub; W1 wires the full-universe nightly bake.")},
+              "composes each user's brief on demand off the render path. W1 = "
+              "full-universe nightly bake (daily.yml, after build_sector_central).")},
     {"artifact": "site/regime_timeline.json",
      "kind": "regime",
      "schema_version": "1.0.0",

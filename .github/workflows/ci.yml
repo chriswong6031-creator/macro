@@ -322,10 +322,14 @@ on:
       - "scripts/export_signal_contracts.py"
       - "site/factordata/contracts/artifact_manifest.json"
       - "tests/test_contract_drift.py"
-      # Portfolio-Aware Intelligence W0: portfolio_ctx.v1 bake + tests (see the
+      # Portfolio-Aware Intelligence W0/W1: portfolio_ctx.v1 bake + tests (see the
       # portfolio-ctx job). Whitelisted so the bake's unit suite runs on any change.
+      # W1 also guards the theme_lanes.v1 side-write in build_state_of_themes (the
+      # Portfolio brief joins it) + the page-byte-identity invariant.
       - "scripts/build_portfolio_ctx.py"
       - "tests/test_build_portfolio_ctx.py"
+      - "scripts/build_state_of_themes.py"
+      - "tests/test_state_of_themes.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
       - "scripts/research_factory*.py"
       - "scripts/*research_factory*.py"
@@ -2526,6 +2530,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow
+        run: pip install pytest pandas pyarrow jinja2
       - name: portfolio-ctx unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py -q
+      - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
+        # The theme_lanes.v1 side-artifact + the page-byte-identity invariant that keep
+        # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
+        # jinja-based subset (no node / no heavy repo state) is selected here.
+        run: python -m pytest tests/test_state_of_themes.py -q -k "theme_lanes or byte_identical"

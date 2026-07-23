@@ -301,12 +301,12 @@
     "tickers",
     "v"
    ],
-   "expected_max_age_td": 30,
+   "expected_max_age_td": 2,
    "as_of_field": "asof",
    "consumers": [
     "terminal:portfolio"
    ],
-   "note": "Portfolio-Aware Intelligence per-ticker context (charter: research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md \u00a72). Re-expresses existing nightly reads keyed by ticker; the terminal Portfolio page composes each user's brief on demand off the render path. W0 = 3-ticker stub; W1 wires the full-universe nightly bake."
+   "note": "Portfolio-Aware Intelligence per-ticker context (charter: research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md \u00a72). Re-expresses existing nightly reads keyed by ticker; the terminal Portfolio page composes each user's brief on demand off the render path. W1 = full-universe nightly bake (daily.yml, after build_sector_central)."
   },
   {
    "artifact": "site/regime_timeline.json",

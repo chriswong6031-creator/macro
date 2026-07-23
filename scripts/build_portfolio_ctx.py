@@ -14,19 +14,26 @@ block (or a per-desk sub-block) is OMITTED ENTIRELY when the desk has no data fo
 (absence = "no desk coverage yet" on the terminal side); we never emit a null-filled
 or zero-filled placeholder, and never fabricate a value.
 
-W0 scope: the bake reads only committed source artifacts (READS ONLY — no engine
-module that could advance a ledger), stubs to 3 tickers, and is NOT yet wired into
-the nightly (that is W1, which flips the default to the full universe and adds the
-daily.yml step). Congress rows are read from a parquet.
+W1 scope: the bake reads only committed source artifacts (READS ONLY — no engine
+module that could advance a ledger) and is nightly-wired (daily.yml, after
+build_sector_central). With no --tickers the universe is the full holdings-eligible
+set = union of validated ticker keys across the loaded sources (screener ∪
+smartmoney ∪ insider ∪ by_ticker ∪ membership ∪ standouts ∪ congress-in-window);
+--tickers stays a dev/stub flag. Congress rows are read from a parquet and indexed
+in ONE pass (W0's per-ticker rescan was quadratic on the real universe). Theme lanes
+join from the theme_lanes.v1 side-artifact; Yahoo sector names are unified to the
+GICS-family names sector_central uses via a static rename table.
 
 Usage:
-    python -m scripts.build_portfolio_ctx --tickers NVDA,AAPL,XOM
+    python -m scripts.build_portfolio_ctx                     # full universe (nightly)
+    python -m scripts.build_portfolio_ctx --tickers NVDA,AAPL,XOM   # dev/stub subset
     python -m scripts.build_portfolio_ctx --out site/data/portfolio_ctx.json
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -37,19 +44,83 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "portfolio_ctx.v1"
 SCHEMA_V = 1
 
-# W0 stub universe — W1 flips the default to the full holdings-eligible universe.
+# W0 stub universe — kept as the --tickers dev/stub fallback. W1 default (no
+# --tickers) is the full holdings-eligible universe = union of the loaded sources.
 STUB_TICKERS = ["NVDA", "AAPL", "XOM"]
 
-# Reuse the deterministic glance-tier lane classifier shipped in the state_of_themes
-# revamp (#3250) — do NOT reimplement. Its inputs (stage_key / any_fired / raw_legs /
-# div_quadrant) are theme-forensics structures assembled inside build_state_of_themes;
-# they are NOT present on the compact baskets.json theme records, so for W0 every
-# theme's lane is null (honest "not derivable from this artifact"). The import keeps
-# the single source of truth and lets W1 wire real inputs without a vocabulary fork.
-try:
-    from scripts.build_state_of_themes import _classify_lane  # noqa: F401
-except Exception:  # noqa: BLE001 — never let an import failure break the bake
-    _classify_lane = None  # type: ignore[assignment]
+# ── ticker hygiene ───────────────────────────────────────────────────────────
+# Replicated from engine.altdata_models._valid_ticker (the #3211 hygiene gate) —
+# copied here rather than imported because importing altdata_models pulls
+# `import pandas` at its module top, which would break this bake's deliberately
+# pandas-free unit-test path (congress parquet is the ONLY pandas dependency and
+# it lives behind a local import in load_congress). Same regex/junk intent; if the
+# upstream gate changes, mirror it here. This is display-tier string hygiene — it
+# drops foreign/placeholder codes from the universe, not a new classification.
+_TICKER_JUNK = {"NA", "N/A", "N.A.", "NAN", "NONE", "NULL", "TBD", "TBA", "NOTAV",
+                "UNKNOWN", "PRIVATE", "VARIOUS", "MULTIPLE", "-", "—", "?"}
+# US-equity ticker shape: a letter, then alnum, with an optional .-/-suffixed
+# share class (BRK.B / BRK-B). Rejects "N/A" (slash), spaces, commas, empties.
+_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9]{0,8}([.\-][A-Z0-9]{1,3})?$")
+
+
+def _valid_ticker(v) -> str | None:
+    """A canonical uppercase ticker, or None. Rejects placeholder junk and
+    shape-invalid strings (mirrors engine.altdata_models._valid_ticker)."""
+    if v is None:
+        return None
+    s = str(v).strip()
+    if not s:
+        return None
+    u = s.upper()
+    if u in _TICKER_JUNK or not _TICKER_RE.match(u):
+        return None
+    return u
+
+
+# ── sector-name unification (Yahoo → the GICS-family names sector_central uses) ──
+# W0 discovery: subsector_confluence tags sectors with Yahoo names ("Technology",
+# "Financial", "Healthcare", …) while sector_central emits the GICS-family names
+# ("Technology", "Financials", "Health Care", …). This is a DETERMINISTIC RENAME of
+# the SAME reads — not a new classification — so the two sources land under one key
+# and the `sectors` block is keyed by GICS-family names only. A source name with no
+# table entry keeps its verbatim name as key (never dropped, never guessed); value
+# strings are always passed through verbatim.
+#
+# NOTE (deviation from the W1 brief's proposed table, verified against the live
+# artifacts): the join target for Yahoo "Technology" is "Technology", NOT
+# "Information Technology". sector_central.json calls the sector "Technology"
+# verbatim and joins DIRECTLY (its name becomes the key unchanged); mapping the
+# subsector side to "Information Technology" would split the same sector across two
+# keys — the exact fragmentation this table exists to fix. Every other row matches
+# the brief. (Verified name sets: subsector = Yahoo; sector_central = "Technology"
+# + GICS for the rest; the strict-GICS "Information Technology" only appears on the
+# per-ticker `sector` field, which is a different field and left untouched.)
+_YAHOO_TO_GICS_SECTOR = {
+    "Technology": "Technology",              # sector_central's own name (identity)
+    "Financial": "Financials",
+    "Healthcare": "Health Care",
+    "Consumer Cyclical": "Consumer Discretionary",
+    "Consumer Defensive": "Consumer Staples",
+    "Basic Materials": "Materials",
+    # identity rows (already GICS-family in both sources)
+    "Energy": "Energy",
+    "Utilities": "Utilities",
+    "Industrials": "Industrials",
+    "Real Estate": "Real Estate",
+    "Communication Services": "Communication Services",
+}
+
+
+def _gics_sector_name(name: str) -> str:
+    """Rename a Yahoo sector name to the GICS-family key; unknown → verbatim."""
+    return _YAHOO_TO_GICS_SECTOR.get(name, name)
+
+
+# Theme lanes: W0 imported build_state_of_themes._classify_lane but the classifier's
+# forensic inputs are not on the compact artifact, so W0 shipped lane=null. W1 instead
+# reads the theme_lanes.v1 side-artifact that build_state_of_themes now writes from the
+# SAME ctx it renders the page from (single source of truth) and joins lane by theme id
+# in _themes_block — no classifier import, no re-derivation, no pandas/jinja pull.
 
 
 # ── source loaders (every one fail-open: missing/corrupt → empty, never raises) ──
@@ -187,6 +258,18 @@ def load_membership(root: Path) -> dict:
     return out
 
 
+def load_theme_lanes(root: Path) -> dict:
+    """site/basketdata/theme_lanes.json → {theme_id: lane}. Fail-open to {}.
+
+    The theme_lanes.v1 side-artifact written by build_state_of_themes (the SAME
+    lane computed for the State-of-Themes page). Missing/corrupt → {} so a theme's
+    lane is simply omitted (W0 behavior: lane null) rather than fabricated.
+    """
+    d = _read_json(root / "site" / "basketdata" / "theme_lanes.json")
+    lanes = d.get("lanes") if isinstance(d, dict) else None
+    return lanes if isinstance(lanes, dict) else {}
+
+
 def load_congress(root: Path) -> "object | None":
     """data/quiver/congress.parquet → a DataFrame (or None if pandas/parquet unavailable).
 
@@ -219,6 +302,7 @@ def load_sources(root: Path) -> dict:
         "smartmoney": load_smartmoney(root),
         "baskets": load_baskets(root),
         "membership": load_membership(root),
+        "theme_lanes": load_theme_lanes(root),
         "congress": load_congress(root),
     }
 
@@ -237,16 +321,19 @@ def _regime_block(risk_state: dict) -> dict | None:
 
 
 def _sectors_block(subsector: dict, sector_central: dict) -> dict:
-    """Sector-level context keyed by the source's own sector name (verbatim).
+    """Sector-level context keyed by GICS-family names only (deterministic rename).
 
-    `class` from subsector_confluence; conviction labels + rotation state from
-    sector_central. The two sources use different sector taxonomies; we merge only
-    on an exact name match and omit any field its source did not supply. Never
-    fabricates — a sector with only a class and no central match gets just `class`.
+    `class` from subsector_confluence (Yahoo sector names → GICS via the static
+    _YAHOO_TO_GICS_SECTOR table); conviction labels + rotation state from
+    sector_central (GICS-family names, joined directly). This is a deterministic
+    rename of the SAME reads — NOT a new classification — so both sources land under
+    one key. A source name with no table entry keeps its verbatim name (never
+    dropped, never guessed); value strings are always passed through verbatim.
     """
     out: dict[str, dict] = {}
 
-    # subsector_confluence: sector `class` (name lives in `sector`/`label`, not `name`).
+    # subsector_confluence: sector `class` (name lives in `sector`/`label`, not
+    # `name`); rename Yahoo → GICS so it merges with the sector_central rows.
     secs = subsector.get("sectors") if isinstance(subsector, dict) else None
     if isinstance(secs, list):
         for s in secs:
@@ -255,9 +342,10 @@ def _sectors_block(subsector: dict, sector_central: dict) -> dict:
             name = s.get("sector") or s.get("label")
             cls = s.get("class")
             if name and cls is not None:
-                out.setdefault(str(name), {})["class"] = cls
+                out.setdefault(_gics_sector_name(str(name)), {})["class"] = cls
 
     # sector_central: conviction label_en/label_zh + rotation.state_plain_en.
+    # Its names are already GICS-family — join directly (verbatim key).
     csecs = sector_central.get("sectors") if isinstance(sector_central, dict) else None
     if isinstance(csecs, list):
         for s in csecs:
@@ -291,16 +379,20 @@ def _ticker_sector(ticker: str, standouts_index: dict, screener_row: dict | None
     return None
 
 
-def _themes_block(ticker: str, membership: dict, baskets: dict) -> list[dict] | None:
+def _themes_block(ticker: str, membership: dict, baskets: dict,
+                  theme_lanes: dict) -> list[dict] | None:
     """Ticker → its live basket ids, joined to theme meta (name/name_zh/rank/reco/lane).
 
-    Verbatim meta from baskets.json; lane from _classify_lane iff its inputs exist
-    (they do not on the compact artifact → null). A theme with no meta still lists its
-    id (honest: the ticker is a member; we just have no meta join for it).
+    Verbatim meta from baskets.json; lane joined by theme id from theme_lanes.json
+    (the theme_lanes.v1 side-artifact written by build_state_of_themes — the SAME
+    lane shown on the State-of-Themes page). Fail-open: a theme with no lane entry
+    gets lane=None (W0 behavior — honest "no lane read for this theme"). A theme with
+    no meta still lists its id (the ticker is a member; we just have no meta join).
     """
     ids = membership.get(ticker)
     if not ids:
         return None
+    lanes = theme_lanes if isinstance(theme_lanes, dict) else {}
     themes: list[dict] = []
     for bid in ids:
         meta = baskets.get(bid)
@@ -310,9 +402,10 @@ def _themes_block(ticker: str, membership: dict, baskets: dict) -> list[dict] | 
                              ("reco", "reco"), ("rank", "rank")):
                 if meta.get(src) is not None:
                     entry[dst] = meta[src]
-        # lane: _classify_lane's inputs are not present on baskets.json theme records
-        # (they are theme-forensics structures inside build_state_of_themes) → null.
-        entry["lane"] = None
+        # lane: joined by theme id from the theme_lanes.v1 side-artifact; missing →
+        # None (fail-open, no fabrication). Never re-derives the lane here.
+        lane = lanes.get(bid)
+        entry["lane"] = lane if isinstance(lane, str) else None
         themes.append(entry)
     return themes or None
 
@@ -423,25 +516,33 @@ def _congress_chamber(house: str) -> str | None:
     return None
 
 
-def _congress_block(ticker: str, congress_rows, asof: str) -> list[dict] | None:
-    """Congress disclosures for a ticker: ReportDate within 90 days of asof, cap 5, desc.
+def _build_congress_index(congress_rows, asof: str) -> dict[str, list[dict]]:
+    """ONE pass over the congress rows → {TICKER: [normalized disclosure, …]}.
 
-    `congress_rows` is any iterable of row-dicts (columns Ticker/Transaction/House/
-    Party/TransactionDate/ReportDate/Amount). The 90-day window is relative to the
-    passed `asof` (not wall-clock) so the artifact is deterministic under test.
+    W1 performance: the W0 `_congress_block` re-scanned the whole rows iterable per
+    ticker (~99k rows × ~2,700 tickers = quadratic → blows the <30s budget). This
+    builds the ticker→rows index in a single pass with the same deterministic
+    semantics: ReportDate within 90 days of `asof` (relative to the passed asof, not
+    wall-clock), same side/chamber/party/amount mapping, NaN amounts coerced to null.
+    Per-ticker sort+cap happens in _congress_block on the small per-ticker list.
+
+    Rows outside the window are dropped here (not indexed), so the index holds only
+    in-window disclosures. Empty/None input → {}.
     """
+    index: dict[str, list[dict]] = {}
     if congress_rows is None:
-        return None
+        return index
     try:
-        cutoff = (datetime.strptime(asof, "%Y-%m-%d").date() - timedelta(days=90)).isoformat()
+        cutoff = (datetime.strptime(asof, "%Y-%m-%d").date()
+                  - timedelta(days=90)).isoformat()
     except Exception:  # noqa: BLE001
-        return None
+        return index
 
-    matched: list[dict] = []
     for row in congress_rows:
         if not isinstance(row, dict):
             continue
-        if str(row.get("Ticker") or "").strip().upper() != ticker:
+        tk = _valid_ticker(row.get("Ticker"))
+        if tk is None:
             continue
         report = row.get("ReportDate")
         report_s = str(report)[:10] if report is not None else None
@@ -458,7 +559,7 @@ def _congress_block(ticker: str, congress_rows, asof: str) -> list[dict] | None:
         except (TypeError, ValueError):
             amount_mid = None
         tx = row.get("TransactionDate")
-        matched.append({
+        index.setdefault(tk, []).append({
             "side": _congress_side(str(row.get("Transaction") or "")),
             "chamber": _congress_chamber(str(row.get("House") or "")),
             "party": (str(party)[0] if party else None),
@@ -466,12 +567,21 @@ def _congress_block(ticker: str, congress_rows, asof: str) -> list[dict] | None:
             "filed": report_s,
             "amount_mid": amount_mid,
         })
+    return index
 
+
+def _congress_block(ticker: str, congress_index: dict) -> list[dict] | None:
+    """Congress disclosures for a ticker from the prebuilt index: cap 5, filed desc.
+
+    The window filter already happened in _build_congress_index; this just sorts the
+    ticker's small in-window list (most-recent disclosure first) and caps at 5.
+    """
+    matched = congress_index.get(ticker) if isinstance(congress_index, dict) else None
     if not matched:
         return None
     # Sort by filed date descending (most-recent disclosure first), then cap.
-    matched.sort(key=lambda r: r["filed"], reverse=True)
-    return matched[:5]
+    ordered = sorted(matched, key=lambda r: r["filed"], reverse=True)
+    return ordered[:5]
 
 
 def _congress_iter(congress):
@@ -488,8 +598,44 @@ def _congress_iter(congress):
 
 # ── pure core ────────────────────────────────────────────────────────────────
 
+def _universe_union(sources: dict, standouts_index: dict,
+                    congress_index: dict) -> list[str]:
+    """Full holdings-eligible universe = union of validated ticker keys across the
+    loaded sources: screener ∪ smartmoney ∪ insider ∪ by_ticker ∪ membership ∪
+    standouts boards ∪ congress tickers (already window-filtered in the index).
+
+    Every candidate passes the _valid_ticker hygiene gate (upper + shape/junk
+    filter) so foreign/placeholder codes never enter the universe. The
+    zero-coverage drop rule in build_ctx still removes any name that, despite being
+    a key here, ends up with no desk block. Returns a sorted list (deterministic).
+    """
+    uni: set[str] = set()
+    # Already-keyed-by-upper-ticker maps: screener / insider / smartmoney(by_ticker) /
+    # by_ticker / membership. Re-validate each key (they came from raw feeds).
+    for src_key in ("screener", "insider", "smartmoney", "by_ticker", "membership"):
+        m = sources.get(src_key)
+        if isinstance(m, dict):
+            for k in m:
+                tk = _valid_ticker(k)
+                if tk is not None:
+                    uni.add(tk)
+    # standouts board rows (already indexed by upper ticker in build_ctx)
+    for k in standouts_index:
+        tk = _valid_ticker(k)
+        if tk is not None:
+            uni.add(tk)
+    # congress: index keys are validated tickers with in-window rows
+    for k in congress_index:
+        uni.add(k)  # already _valid_ticker in _build_congress_index
+    return sorted(uni)
+
+
 def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     """Assemble the portfolio_ctx.v1 payload from already-loaded sources. Pure, no I/O.
+
+    When `tickers` is None (the W1 nightly default) the universe is the union of
+    validated ticker keys across every loaded source (see _universe_union). Pass an
+    explicit list (the --tickers dev/stub flag) to bake a fixed subset.
 
     A per-ticker sub-block is omitted when its desk has no data. A ticker with zero
     coverage anywhere is omitted from `tickers`. Every stance string is verbatim from
@@ -506,7 +652,12 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     smartmoney = sources.get("smartmoney") or {}
     baskets = sources.get("baskets") or {}
     membership = sources.get("membership") or {}
+    theme_lanes = sources.get("theme_lanes") or {}
     congress_rows = _congress_iter(sources.get("congress"))
+
+    # ONE pass over the congress rows → window-filtered ticker→rows index (W1 perf:
+    # replaces the W0 per-ticker full scan that went quadratic on the real universe).
+    congress_index = _build_congress_index(congress_rows, asof)
 
     # Index standouts board rows by ticker once (sector lookup + reused by _entry_block).
     standouts_index: dict[str, dict] = {}
@@ -522,7 +673,14 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     regime = _regime_block(risk_state)
     sectors = _sectors_block(subsector, sector_central)
 
-    tick_list = [str(t).strip().upper() for t in (tickers or STUB_TICKERS)]
+    # W1 default: no explicit tickers → full holdings-eligible universe (union of
+    # sources). An explicit list stays the dev/stub path. Both are uppercased +
+    # hygiene-gated so junk codes never enter.
+    if tickers is None:
+        tick_list = _universe_union(sources, standouts_index, congress_index)
+    else:
+        tick_list = [tk for tk in (_valid_ticker(t) for t in tickers)
+                     if tk is not None]
     ticker_out: dict[str, dict] = {}
     cov = {"tickers": 0, "stage": 0, "themes": 0, "earnings": 0,
            "insider": 0, "congress": 0, "f13": 0, "entry": 0}
@@ -535,7 +693,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
         if sector is not None:
             block["sector"] = sector
 
-        themes = _themes_block(t, membership, baskets)
+        themes = _themes_block(t, membership, baskets, theme_lanes)
         if themes is not None:
             block["themes"] = themes
             cov["themes"] += 1
@@ -560,7 +718,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
             block["insider"] = ins
             cov["insider"] += 1
 
-        cong = _congress_block(t, congress_rows, asof)
+        cong = _congress_block(t, congress_index)
         if cong is not None:
             block["congress"] = cong
             cov["congress"] += 1
@@ -600,8 +758,8 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tickers", default=None,
-                    help="comma list e.g. NVDA,AAPL,XOM (W0 stub default: "
-                         f"{','.join(STUB_TICKERS)}; W1 flips to full universe)")
+                    help="comma list e.g. NVDA,AAPL,XOM (dev/stub subset). Omit for "
+                         "the full holdings-eligible universe = union of the sources.")
     ap.add_argument("--out", default="site/data/portfolio_ctx.json",
                     help="output path (default: site/data/portfolio_ctx.json)")
     ap.add_argument("--asof", default=None,

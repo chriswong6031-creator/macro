@@ -14,6 +14,15 @@ Covered (spec §Tests):
 7. No-NaN: json.dumps(allow_nan=False) succeeds on a full payload.
 8. Determinism: same inputs + same asof → byte-identical output.
 + integration smoke: main() against real files → parses + schema key correct.
+
+W1 additions (spec §7):
+9.  Universe union: each source contributes tickers when --tickers omitted.
+10. Ticker hygiene: junk / foreign-shape codes dropped from the universe.
+11. Congress single-pass index: same window/cap/order/side semantics as W0.
+12. Sector rename table: Yahoo class lands under GICS key; unknown → verbatim; no value rewrite.
+13. Theme-lane join: present → lane string; missing side-artifact → W0 null behavior.
+14. Full-universe determinism (no --tickers).
+15. Integration: real files → ≥500 tickers, elapsed < 30s.
 """
 from __future__ import annotations
 
@@ -26,7 +35,15 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from scripts.build_portfolio_ctx import build_ctx, main  # noqa: E402
+from scripts.build_portfolio_ctx import (  # noqa: E402
+    build_ctx,
+    main,
+    _valid_ticker,
+    _build_congress_index,
+    _congress_block,
+    _gics_sector_name,
+    _YAHOO_TO_GICS_SECTOR,
+)
 
 
 ASOF = "2026-07-23"
@@ -350,3 +367,257 @@ def test_integration_smoke_real_files(tmp_path):
                                         "insider", "congress", "f13", "entry"}
     # the artifact must serialize without NaN
     json.dumps(payload, allow_nan=False)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# W1 — full-universe union, hygiene, single-pass congress, sector rename, lanes
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── 9. universe union: each source contributes tickers (no --tickers) ────────
+
+def test_universe_union_each_source_contributes():
+    """With tickers=None the universe = union of validated ticker keys across the
+    loaded sources; every desk that carries a distinct ticker gets it included."""
+    src = {
+        # each source carries a DISTINCT ticker so we can assert per-source contribution
+        "screener": {"SCRN": {"ticker": "SCRN", "region": "USA", "source": "live",
+                              "stage": 1, "stage_label": "1 Base"}},
+        "insider": {"INSD": {"buyers": 1, "sellers": 0}},
+        "smartmoney": {"SMRT": {"n_holders": 2, "n_buying": 1}},
+        "by_ticker": {"ERNS": {"next_earnings": "2026-09-01", "days_to_earnings": 40}},
+        "membership": {"MEMB": ["thm1"]},
+        "baskets": {"thm1": {"id": "thm1", "name": "Theme One"}},
+        "us_standouts": {"buy": [{"ticker": "BORD", "sector": "Energy",
+                                  "entry_signal": {"status": "buy_now"}}]},
+        "congress": [
+            {"Ticker": "CNGR", "Transaction": "Purchase", "House": "Senate",
+             "Party": "R", "TransactionDate": "2026-07-01", "ReportDate": "2026-07-22",
+             "Amount": 1000.0},
+        ],
+    }
+    p = build_ctx(src, None, ASOF)
+    got = set(p["tickers"])
+    # each source contributed its unique ticker (all have desk coverage)
+    for tk in ("SCRN", "INSD", "SMRT", "ERNS", "MEMB", "BORD", "CNGR"):
+        assert tk in got, f"{tk} missing — its source did not contribute to the union"
+
+
+def test_universe_union_stub_only_when_tickers_given():
+    """An explicit --tickers list overrides the union (dev/stub path)."""
+    src = _full_sources()
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert set(p["tickers"]) == {"NVDA"}
+
+
+# ── 10. ticker hygiene: junk / foreign-shape codes dropped ───────────────────
+
+def test_valid_ticker_gate():
+    assert _valid_ticker("nvda") == "NVDA"          # uppercased
+    assert _valid_ticker("BRK.B") == "BRK.B"        # dotted share class ok
+    assert _valid_ticker("BRK-B") == "BRK-B"        # dashed share class ok
+    assert _valid_ticker("N/A") is None             # placeholder junk (slash)
+    assert _valid_ticker("NAN") is None             # junk word
+    assert _valid_ticker("") is None
+    assert _valid_ticker(None) is None
+    assert _valid_ticker("123") is None             # must start with a letter
+    assert _valid_ticker("TOOLONGTICKER") is None   # > shape length
+    assert _valid_ticker("A B") is None             # space
+
+
+def test_universe_hygiene_drops_junk():
+    """Junk keys in a source map never enter the universe."""
+    src = {
+        "insider": {"AAA": {"buyers": 1}, "N/A": {"buyers": 9}, "": {"buyers": 9},
+                    "123": {"buyers": 9}},
+    }
+    p = build_ctx(src, None, ASOF)
+    assert "AAA" in p["tickers"]
+    for junk in ("N/A", "", "123"):
+        assert junk not in p["tickers"]
+
+
+# ── 11. congress single-pass index correctness ───────────────────────────────
+
+def _congress_rows_sample():
+    return [
+        {"Ticker": "NVDA", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-07-01", "ReportDate": "2026-07-22", "Amount": 1000.0},
+        {"Ticker": "NVDA", "Transaction": "Sale (Partial)", "House": "Representatives",
+         "Party": "D", "TransactionDate": "2026-06-30", "ReportDate": "2026-07-10",
+         "Amount": 5000.0},
+        {"Ticker": "NVDA", "Transaction": "Exchange", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-06-01", "ReportDate": "2026-06-05", "Amount": None},
+        # AAPL row so the index proves it groups by ticker
+        {"Ticker": "AAPL", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-07-01", "ReportDate": "2026-07-20", "Amount": 42.0},
+        # out of window (filed >90d before asof)
+        {"Ticker": "NVDA", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-01-01", "ReportDate": "2026-04-01", "Amount": 1.0},
+        # future disclosure (filed after asof)
+        {"Ticker": "NVDA", "Transaction": "Sale", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-07-25", "ReportDate": "2026-07-30", "Amount": 1.0},
+        # junk ticker — must be dropped by the index hygiene gate
+        {"Ticker": "N/A", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-07-01", "ReportDate": "2026-07-15", "Amount": 1.0},
+    ]
+
+
+def test_congress_index_groups_and_windows():
+    idx = _build_congress_index(_congress_rows_sample(), ASOF)
+    assert set(idx) == {"NVDA", "AAPL"}          # junk + no other tickers
+    assert len(idx["NVDA"]) == 3                 # 2 out-of-window rows dropped
+    assert len(idx["AAPL"]) == 1
+
+
+def test_congress_block_from_index_matches_w0_semantics():
+    """Same window/cap/order/side result via the single-pass index as W0's rescan."""
+    idx = _build_congress_index(_congress_rows_sample(), ASOF)
+    cong = _congress_block("NVDA", idx)
+    # sorted by filed desc, cap 5
+    assert [c["filed"] for c in cong] == ["2026-07-22", "2026-07-10", "2026-06-05"]
+    sides = {c["filed"]: c["side"] for c in cong}
+    assert sides["2026-07-22"] == "buy"
+    assert sides["2026-07-10"] == "sell"          # "Sale (Partial)"
+    assert sides["2026-06-05"] == "other"         # "Exchange"
+    exch = next(c for c in cong if c["filed"] == "2026-06-05")
+    assert exch["amount_mid"] is None and exch["chamber"] == "senate"
+
+
+def test_congress_index_cap_five():
+    rows = [
+        {"Ticker": "NVDA", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-07-0%d" % (i % 9 + 1),
+         "ReportDate": "2026-07-%02d" % (10 + i), "Amount": float(i)}
+        for i in range(8)
+    ]
+    idx = _build_congress_index(rows, ASOF)
+    assert len(_congress_block("NVDA", idx)) == 5
+
+
+def test_congress_index_window_relative_to_asof():
+    rows = [
+        {"Ticker": "NVDA", "Transaction": "Purchase", "House": "Senate", "Party": "R",
+         "TransactionDate": "2026-05-01", "ReportDate": "2026-05-02", "Amount": 1.0},
+    ]
+    # asof far in the future → out of window
+    assert _build_congress_index(rows, "2026-09-01").get("NVDA") is None
+    # asof near the report date → in window
+    assert len(_build_congress_index(rows, "2026-05-20")["NVDA"]) == 1
+
+
+# ── 12. sector rename table ───────────────────────────────────────────────────
+
+def test_gics_rename_table_maps_and_falls_through():
+    # Yahoo → GICS-family (the join key). Technology → Technology (identity, matches
+    # sector_central) NOT "Information Technology".
+    assert _gics_sector_name("Technology") == "Technology"
+    assert _gics_sector_name("Financial") == "Financials"
+    assert _gics_sector_name("Healthcare") == "Health Care"
+    assert _gics_sector_name("Consumer Cyclical") == "Consumer Discretionary"
+    assert _gics_sector_name("Consumer Defensive") == "Consumer Staples"
+    assert _gics_sector_name("Basic Materials") == "Materials"
+    # identity rows
+    for s in ("Energy", "Utilities", "Industrials", "Real Estate",
+              "Communication Services"):
+        assert _gics_sector_name(s) == s
+    # unknown name kept verbatim (never dropped, never guessed)
+    assert _gics_sector_name("Weird Custom Sector") == "Weird Custom Sector"
+    # table has no value that would split Technology across two keys
+    assert "Information Technology" not in _YAHOO_TO_GICS_SECTOR.values()
+
+
+def test_sector_block_yahoo_and_central_merge_under_one_gics_key():
+    """subsector (Yahoo 'Technology' class) + sector_central ('Technology') land under
+    ONE key 'Technology'; values pass through verbatim (no rewriting)."""
+    src = {
+        "subsector": {"sectors": [
+            {"kind": "sector", "sector": "Technology", "label": "Technology",
+             "class": "tailwind"},
+            {"kind": "sector", "sector": "Financial", "label": "Financial",
+             "class": "entry_now"},
+        ]},
+        "sector_central": {"sectors": [
+            {"name": "Technology",
+             "conviction": {"label_en": "Accumulate", "label_zh": "积极配置"},
+             "rotation": {"state_plain_en": "trend running"}},
+        ]},
+    }
+    p = build_ctx(src, ["NVDA"], ASOF)
+    sec = p["sectors"]
+    # single unified Technology key with BOTH class (from Yahoo) + central fields
+    assert sec["Technology"] == {"class": "tailwind", "conviction_en": "Accumulate",
+                                 "conviction_zh": "积极配置",
+                                 "rotation_state": "trend running"}
+    # Yahoo "Financial" renamed to GICS "Financials" key; value verbatim
+    assert "Financials" in sec and sec["Financials"]["class"] == "entry_now"
+    assert "Financial" not in sec           # the Yahoo name never survives as a key
+    # no "Information Technology" split key
+    assert "Information Technology" not in sec
+
+
+def test_sector_block_unknown_name_kept_verbatim():
+    src = {"subsector": {"sectors": [
+        {"kind": "sector", "sector": "Frontier Widgets", "label": "Frontier Widgets",
+         "class": "tailwind"}]}}
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert p["sectors"]["Frontier Widgets"] == {"class": "tailwind"}
+
+
+# ── 13. theme-lane join ───────────────────────────────────────────────────────
+
+def test_theme_lane_join_present():
+    """theme_lanes present → the lane string is joined by theme id."""
+    src = _full_sources()
+    src["theme_lanes"] = {"ai_soft": "working"}
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["themes"][0]["lane"] == "working"
+
+
+def test_theme_lane_join_missing_is_null():
+    """No theme_lanes source (fail-open) → lane is None (W0 behavior)."""
+    src = _full_sources()          # _full_sources has NO theme_lanes key
+    p = build_ctx(src, ["NVDA"], ASOF)
+    assert p["tickers"]["NVDA"]["themes"][0]["lane"] is None
+    # a theme id absent from a present map is also None (not fabricated)
+    src["theme_lanes"] = {"other_theme": "caution"}
+    p2 = build_ctx(src, ["NVDA"], ASOF)
+    assert p2["tickers"]["NVDA"]["themes"][0]["lane"] is None
+
+
+# ── 14. full-universe determinism ────────────────────────────────────────────
+
+def test_full_universe_determinism():
+    src = _full_sources()
+    a = build_ctx(src, None, ASOF)
+    b = build_ctx(_full_sources(), None, ASOF)
+    a.pop("built"); b.pop("built")
+    assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+
+
+# ── 15. integration: real files, ≥500 tickers, < 30s ─────────────────────────
+
+def test_integration_full_universe_real_files(tmp_path):
+    """main() with NO --tickers against the real committed sources → the full
+    universe bakes in well under the 30s render budget with ≥500 tickers."""
+    import time
+    required = [
+        ROOT / "site" / "factordata" / "us_standouts.json",
+        ROOT / "site" / "stagedata" / "screener.json",
+    ]
+    if not all(p.exists() for p in required):
+        pytest.skip("committed source(s) absent in this environment")
+
+    out = tmp_path / "portfolio_ctx.json"
+    t0 = time.perf_counter()
+    rc = main(["--asof", ASOF, "--out", str(out), "--root", str(ROOT)])
+    elapsed = time.perf_counter() - t0
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["schema"] == "portfolio_ctx.v1"
+    n = len(payload["tickers"])
+    assert n >= 500, f"full universe should be ≥500 tickers, got {n}"
+    assert elapsed < 30.0, f"bake must be < 30s (render budget), took {elapsed:.1f}s"
+    json.dumps(payload, allow_nan=False)  # no NaN
+    # sectors are keyed by GICS-family names only (no Yahoo residue)
+    assert "Financial" not in payload["sectors"]
+    assert "Information Technology" not in payload["sectors"]
