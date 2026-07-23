@@ -22,6 +22,11 @@
   --c-capitulation: #8b93a1;
   --c-grinding: #a07070;
 }
+/* zh 红涨绿跌 (operator ruling 2026-07-21): the local :root --up/--down are overridden
+   by theme.css html[data-lang="zh"] (higher specificity 0,1,0 > 0,0,1), so token-based
+   classes flip automatically. However --c-liquidity (#45b873 = bullish) and --c-euphoria
+   (#e06464 = bearish/top) are not theme-token aliases — add explicit zh redefinitions. */
+html[data-lang="zh"]{--c-liquidity:#e06464;--c-euphoria:#45b873}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 

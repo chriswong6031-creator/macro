@@ -1,0 +1,42 @@
+{
+  "schema": "signal_governor.v1",
+  "as_of": "2026-07-23",
+  "generated_at": "2026-07-23T10:09:17.356948+00:00",
+  "region": "cn",
+  "gate": {
+    "min_n": 150,
+    "t_sig": 2.0,
+    "ic_dead": -0.03,
+    "trust_floor": 0.25,
+    "method": "rigorous daily-HAC signed IC (Newey-West lag=horizon), never pooled Spearman"
+  },
+  "trust": {
+    "radar": 1.0,
+    "hub": 1.0
+  },
+  "signals": {
+    "radar": {
+      "signal": "radar",
+      "n_matured": 15,
+      "ic": null,
+      "t_hac": null,
+      "horizon": null,
+      "demoted": false,
+      "trust": 1.0,
+      "reason": "measuring: no VALID-HAC horizon yet \u2014 best is 5d with 0 daily ICs (need \u22656 for a non-degenerate lag-5 HAC) \u2014 trust 1.0 (shadow)"
+    },
+    "hub": {
+      "signal": "hub",
+      "n_matured": 120,
+      "ic": null,
+      "t_hac": null,
+      "horizon": null,
+      "demoted": false,
+      "trust": 1.0,
+      "reason": "measuring: no VALID-HAC horizon yet \u2014 best is 5d with 7 daily ICs (need \u22656 for a non-degenerate lag-5 HAC) \u2014 trust 1.0 (shadow)"
+    }
+  },
+  "n_demoted": 0,
+  "note": "No signal has cleared the de-escalation gate yet \u2014 all trust 1.0 (shadow/measuring).",
+  "disclaimer": "De-escalation-only signal governor. A signal is demoted ONLY once its matured, overlap-robust track record proves it mis-firing; trust never exceeds 1.0 and never sizes a position. Absent \u21d2 hub is ungoverned."
+}
