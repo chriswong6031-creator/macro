@@ -1,7 +1,7 @@
 {
   "schema": "live.overlay.v2",
-  "built": "2026-07-23 20:10:12 UTC",
-  "quote_ts_max": "2026-07-23T20:10:10+00:00",
+  "built": "2026-07-23 21:33:43 UTC",
+  "quote_ts_max": "2026-07-23T21:33:41+00:00",
   "stale_after_min": 20.0,
   "max_chg_pct": 35.0,
   "delayed_min": 15,
@@ -17,116 +17,101 @@
     "us": {
       "region": "us",
       "open": false,
-      "local_time": "2026-07-23 16:10 EDT"
+      "local_time": "2026-07-23 17:33 EDT"
     },
     "cn": {
       "region": "cn",
       "open": false,
-      "local_time": "2026-07-24 04:10 CST"
+      "local_time": "2026-07-24 05:33 CST"
     },
     "hk": {
       "region": "hk",
       "open": false,
-      "local_time": "2026-07-24 04:10 HKT"
+      "local_time": "2026-07-24 05:33 HKT"
     },
     "ca": {
       "region": "ca",
       "open": false,
-      "local_time": "2026-07-23 16:10 EDT"
+      "local_time": "2026-07-23 17:33 EDT"
     },
     "jp": {
       "region": "jp",
       "open": false,
-      "local_time": "2026-07-24 05:10 JST"
+      "local_time": "2026-07-24 06:33 JST"
     },
     "kr": {
       "region": "kr",
       "open": false,
-      "local_time": "2026-07-24 05:10 KST"
+      "local_time": "2026-07-24 06:33 KST"
     },
     "tw": {
       "region": "tw",
       "open": false,
-      "local_time": "2026-07-24 04:10 CST"
+      "local_time": "2026-07-24 05:33 CST"
     },
     "gb": {
       "region": "gb",
       "open": false,
-      "local_time": "2026-07-23 21:10 BST"
+      "local_time": "2026-07-23 22:33 BST"
     },
     "eu": {
       "region": "eu",
       "open": false,
-      "local_time": "2026-07-23 22:10 CEST"
+      "local_time": "2026-07-23 23:33 CEST"
     }
   },
   "market": {
     "SPY": {
-      "price": 738.3,
-      "chg_pct": -1.22,
-      "stale": false,
+      "price": 738.18,
+      "chg_pct": null,
+      "stale": true,
       "source": "yahoo"
     },
     "QQQ": {
       "price": 691.96,
-      "chg_pct": -1.9,
-      "stale": false,
+      "chg_pct": null,
+      "stale": true,
       "source": "yahoo"
     },
     "VIX": {
-      "price": 19.34,
-      "chg_pct": 16.23,
-      "stale": false,
+      "price": 18.7,
+      "chg_pct": null,
+      "stale": true,
       "source": "yahoo",
       "band": "normal"
     }
   },
   "n": 9,
-  "n_fresh": 9,
+  "n_fresh": 1,
   "n_quotes": 20,
   "tickers": {
     "SPY": {
       "ticker": "SPY",
       "region": "us",
       "session_open": false,
-      "price": 738.3,
+      "price": 738.18,
       "source": "yahoo",
       "quote_ts": "2026-07-23T20:00:00+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 747.41,
-      "chg_pct": -1.22,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
-        "price": 738.3,
+        "price": 738.18,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -0.8,
         "pct_vs_200dma": 6.0,
         "rsi14": 45.0,
         "macd_pos": false,
-        "off_52w_high_pct": -2.5
+        "off_52w_high_pct": -2.6
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -1.22,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 52.0,
-        "rsi_to": 45.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "QQQ": {
@@ -137,15 +122,10 @@
       "source": "yahoo",
       "quote_ts": "2026-07-23T20:00:01+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 705.35,
-      "chg_pct": -1.9,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
         "price": 691.96,
         "above50": false,
@@ -157,20 +137,10 @@
         "off_52w_high_pct": -7.2
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -1.9,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 47.0,
-        "rsi_to": 42.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "IEF": {
@@ -181,15 +151,10 @@
       "source": "yahoo",
       "quote_ts": "2026-07-23T20:00:01+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 93.1,
-      "chg_pct": -0.27,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
         "price": 92.85,
         "above50": false,
@@ -201,20 +166,10 @@
         "off_52w_high_pct": -4.0
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -0.27,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 39.0,
-        "rsi_to": 36.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "TLT": {
@@ -225,15 +180,10 @@
       "source": "yahoo",
       "quote_ts": "2026-07-23T20:00:01+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 83.44,
-      "chg_pct": -0.32,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
         "price": 83.17,
         "above50": false,
@@ -245,87 +195,55 @@
         "off_52w_high_pct": -7.0
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -0.32,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 34.0,
-        "rsi_to": 32.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "LQD": {
       "ticker": "LQD",
       "region": "us",
       "session_open": false,
-      "price": 106.25,
+      "price": 106.26,
       "source": "yahoo",
-      "quote_ts": "2026-07-23T19:59:59+00:00",
+      "quote_ts": "2026-07-23T20:00:00+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 106.67,
-      "chg_pct": -0.39,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
-        "price": 106.25,
+        "price": 106.26,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -1.7,
-        "pct_vs_200dma": -2.0,
+        "pct_vs_200dma": -1.9,
         "rsi14": 30.0,
         "macd_pos": false,
         "off_52w_high_pct": -3.4
       },
       "divergence": {
-        "flag": "rsi_cross",
-        "severity": "watch",
-        "detail": "RSI crossed 30 (34->30)",
-        "chg_pct": -0.39,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [
-          "RSI crossed 30 (34->30)"
-        ],
-        "rsi_from": 34.0,
-        "rsi_to": 30.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "HYG": {
       "ticker": "HYG",
       "region": "us",
       "session_open": false,
-      "price": 79.24,
+      "price": 79.23,
       "source": "yahoo",
-      "quote_ts": "2026-07-23T19:59:59+00:00",
+      "quote_ts": "2026-07-23T20:00:00+00:00",
       "price_basis": "regular",
-      "delay_min": 10.2,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.2,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 79.52,
-      "chg_pct": -0.35,
+      "stale": true,
+      "age_min": 93.7,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
-        "price": 79.24,
+        "price": 79.23,
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -0.4,
@@ -335,41 +253,26 @@
         "off_52w_high_pct": -0.8
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -0.35,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 46.0,
-        "rsi_to": 39.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "GC=F": {
       "ticker": "GC=F",
       "region": "us",
       "session_open": false,
-      "price": 4052.4,
+      "price": 4052.3,
       "source": "yahoo",
-      "quote_ts": "2026-07-23T20:00:11+00:00",
+      "quote_ts": "2026-07-23T20:59:57+00:00",
       "price_basis": "regular",
-      "delay_min": 10.0,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.0,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 4123.2,
-      "chg_pct": -1.72,
+      "stale": true,
+      "age_min": 33.8,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
-        "price": 4052.4,
+        "price": 4052.3,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -4.0,
@@ -379,98 +282,73 @@
         "off_52w_high_pct": -23.8
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -1.72,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 51.0,
-        "rsi_to": 45.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "HG=F": {
       "ticker": "HG=F",
       "region": "us",
       "session_open": false,
-      "price": 6.322,
+      "price": 6.34,
       "source": "yahoo",
-      "quote_ts": "2026-07-23T20:00:09+00:00",
+      "quote_ts": "2026-07-23T20:59:57+00:00",
       "price_basis": "regular",
-      "delay_min": 10.1,
-      "currency": "USD",
-      "stale": false,
-      "age_min": 10.1,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
-      "baseline_stale": false,
-      "prev_close": 6.48,
-      "chg_pct": -2.44,
+      "stale": true,
+      "age_min": 33.8,
+      "stale_reason": "market closed",
+      "baseline_asof": "2026-07-23",
       "tech": {
-        "price": 6.32,
+        "price": 6.34,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 0.3,
-        "pct_vs_200dma": 9.3,
-        "rsi14": 52.0,
+        "pct_vs_50dma": 0.6,
+        "pct_vs_200dma": 9.6,
+        "rsi14": 53.0,
         "macd_pos": true,
-        "off_52w_high_pct": -4.9
+        "off_52w_high_pct": -4.7
       },
       "divergence": {
-        "flag": "within_band",
-        "severity": "none",
-        "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -2.44,
-        "band": [
-          null,
-          null
-        ],
-        "band_source": null,
-        "horizon": "1d",
-        "extreme": false,
-        "crossings": [],
-        "rsi_from": 61.0,
-        "rsi_to": 52.0
+        "flag": "no_quote",
+        "severity": "info",
+        "detail": "stale/no quote \u2014 using nightly baseline",
+        "chg_pct": null
       }
     },
     "BTC-USD": {
       "ticker": "BTC-USD",
       "region": "us",
       "session_open": false,
-      "price": 64979.26,
+      "price": 65044.05,
       "source": "yahoo",
-      "quote_ts": "2026-07-23T20:10:10+00:00",
+      "quote_ts": "2026-07-23T21:33:41+00:00",
       "price_basis": "regular",
       "delay_min": 0.1,
       "currency": "USD",
       "stale": false,
       "age_min": 0.1,
-      "baseline_asof": "2026-07-22",
-      "baseline_age_days": 1,
+      "baseline_asof": "2026-07-23",
+      "baseline_age_days": 0,
       "baseline_stale": false,
-      "prev_close": 65940.57,
-      "chg_pct": -1.46,
+      "prev_close": 65045.73,
+      "chg_pct": -0.0,
       "tech": {
-        "price": 64979.26,
+        "price": 65044.05,
         "above50": true,
         "above200": false,
-        "pct_vs_50dma": 3.0,
+        "pct_vs_50dma": 3.1,
         "pct_vs_200dma": -10.4,
         "rsi14": 54.0,
         "macd_pos": true,
-        "off_52w_high_pct": -33.0
+        "off_52w_high_pct": -32.9
       },
       "divergence": {
         "flag": "within_band",
         "severity": "none",
         "detail": "live move inside the nightly 1-day band",
-        "chg_pct": -1.46,
+        "chg_pct": -0.0,
         "band": [
           null,
           null
@@ -479,7 +357,7 @@
         "horizon": "1d",
         "extreme": false,
         "crossings": [],
-        "rsi_from": 59.0,
+        "rsi_from": 54.0,
         "rsi_to": 54.0
       }
     }
@@ -498,36 +376,36 @@
               "label_en": "S&P 500",
               "label_zh": "\u6807\u666e500",
               "weight": 12.4,
-              "live_price": 738.3,
-              "chg_pct": -1.22,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "QQQ",
               "label_en": "Nasdaq 100",
               "label_zh": "\u7eb3\u6307100",
               "weight": 12.4,
-              "live_price": 691.96,
-              "chg_pct": -1.9,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HYG",
               "label_en": "High-yield credit",
               "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
               "weight": 12.4,
-              "live_price": 79.24,
-              "chg_pct": -0.35,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
               "weight": 12.3,
-              "live_price": 6.322,
-              "chg_pct": -2.64,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         },
@@ -541,36 +419,36 @@
               "label_en": "S&P 500",
               "label_zh": "\u6807\u666e500",
               "weight": 24.6,
-              "live_price": 738.3,
-              "chg_pct": -1.22,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HYG",
               "label_en": "High-yield credit",
               "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
               "weight": 24.6,
-              "live_price": 79.24,
-              "chg_pct": -0.35,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "QQQ",
               "label_en": "Nasdaq 100",
               "label_zh": "\u7eb3\u6307100",
               "weight": 20.6,
-              "live_price": 691.96,
-              "chg_pct": -1.9,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
               "weight": 18.3,
-              "live_price": 6.322,
-              "chg_pct": -2.64,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         },
@@ -584,36 +462,36 @@
               "label_en": "S&P 500",
               "label_zh": "\u6807\u666e500",
               "weight": 55.5,
-              "live_price": 738.3,
-              "chg_pct": -1.22,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HYG",
               "label_en": "High-yield credit",
               "label_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528",
               "weight": 55.5,
-              "live_price": 79.24,
-              "chg_pct": -0.35,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "QQQ",
               "label_en": "Nasdaq 100",
               "label_zh": "\u7eb3\u6307100",
               "weight": 33.7,
-              "live_price": 691.96,
-              "chg_pct": -1.9,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             },
             {
               "asset": "HG=F",
               "label_en": "Copper",
               "label_zh": "\u94dc",
               "weight": 30.0,
-              "live_price": 6.322,
-              "chg_pct": -2.64,
-              "stale": false
+              "live_price": null,
+              "chg_pct": null,
+              "stale": true
             }
           ]
         }
