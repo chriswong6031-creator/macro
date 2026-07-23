@@ -255,13 +255,19 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash -X theirs origin main && git push; then
+            # rename/rename on content-hashed site/assets/css/* is deterministic across
+            # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
+            # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
+            # both sides' hashed files (next externalize_css prunes the orphan) and
+            # finishes the rebase; anything else is left for the abort+retry below.
+            if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && git push; then
               echo "pushed weekly outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
             echo "weekly push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
-          echo "::warning::could not push weekly outputs after 5 attempts (non-fatal — site still deploys via artifact)"
+          echo "::error title=weekly outputs NOT pushed::5 rebase/push attempts failed — the weekly data/ outputs exist only on this runner and are lost at the next checkout (the site still deploys via artifact). See scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ weekly outputs NOT pushed after 5 attempts — weekly data day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
