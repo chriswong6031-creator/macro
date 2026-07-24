@@ -6,6 +6,9 @@ runs the management confidence engine for every active plan, and writes:
     site/prophet/index.json          — all active plans + states inline
     site/prophet/plans/<ID>.json     — per-plan artifact
     site/prophet/states/<ID>.json    — per-state artifact
+    site/prophet/showcase.json       — slim public landing-teaser slice of the
+                                       nightly board (templates/index.html
+                                       #f-prophet; also --showcase-only)
     data/prophet/ledger.jsonl        — forward outcome ledger (INITIALIZED here;
                                        nightly is the SOLE future advancer)
 
@@ -146,6 +149,185 @@ def _read_json(path: Path) -> dict | None:
         except Exception as e:
             log.warning("build_prophet: failed to read %s: %s", path, e)
     return None
+
+
+# ---------------------------------------------------------------------------
+# Landing showcase slice — public teaser payload for the marketing landing
+# (templates/index.html #f-prophet). A slim, curated cut of the nightly board:
+# us_standouts.json is ~1MB and carries internal fields, so the landing fetches
+# this instead. Card derivation MIRRORS the pv_card cx construction in
+# templates/dashboard.html.j2 (verb / stage / zone_kind / flags) — keep the two
+# in sync when the board mapping changes.
+# ---------------------------------------------------------------------------
+
+SHOWCASE_PATH = SITE_PROPHET / "showcase.json"
+SHOWCASE_LIMIT = 12
+
+# EN → ZH sector names, byte-matched to the rendered board (site/us_stocks.html
+# pv-ind l-zh spans) so the landing teaser and the board never disagree.
+_SECTOR_ZH = {
+    "Communication Services": "通信服务",
+    "Consumer Discretionary": "可选消费",
+    "Consumer Staples": "必需消费",
+    "Energy": "能源",
+    "Financials": "金融",
+    "Health Care": "医疗保健",
+    "Industrials": "工业",
+    "Information Technology": "信息技术",
+    "Materials": "原材料",
+    "Real Estate": "房地产",
+    "Utilities": "公用事业",
+}
+
+_STAGE_BY_LANE = {"bottoming": 1, "recovery": 2, "continuation": 3, "trend": 4}
+
+
+def derive_showcase_card(row: dict) -> dict | None:
+    """One landing card from one us_standouts.buy row (None = not showable).
+
+    Mirrors templates/dashboard.html.j2 pv_card derivation exactly.
+    """
+    tk = row.get("ticker")
+    price = row.get("price")
+    spark = row.get("spark_svg")
+    if not tk or price is None or not spark:
+        return None
+
+    es = row.get("entry_signal") or {}
+    c = row.get("conviction") or {}
+    st = es.get("status")
+
+    if st in ("buy_now", "partial"):
+        verb = "buy"
+    elif st in ("buy_soon", "await_confluence"):
+        verb = "near"
+    elif st in ("hold", "topping"):
+        verb = "hold"
+    elif st in ("exit", "avoid"):
+        verb = "avoid"
+    elif st:
+        verb = "wait"
+    else:
+        d = row.get("dir")
+        verb = "near" if d == "up" else ("avoid" if d == "down" else "wait")
+
+    stage = _STAGE_BY_LANE.get(row.get("lane") or "", 0)
+
+    # ── caution flags (same folds as the board card) ─────────────────────────
+    flags: list[list[str]] = []
+    cautions = c.get("cautions") or []
+    cautions_zh = c.get("cautions_zh") or []
+    for i, cau in enumerate(cautions):
+        if cau == "accounting watch":
+            continue
+        zh = cautions_zh[i] if i < len(cautions_zh) else cau
+        flags.append([cau, zh])
+    vs = c.get("vol_squeeze") or {}
+    vs_fired = vs.get("state") in ("FIRED_UP", "EXPANSION")
+    entry_ok = st not in ("extended", "topping", "exit", "avoid", "blocked")
+    if (vs_fired or row.get("alpha_entry") == "extended") and entry_ok:
+        flags.append(["Already moving — don't chase above the zone",
+                      "已在异动 — 勿在买区上方追高"])
+    ext_z = row.get("ext_z")
+    if ext_z is not None and ext_z > 2.0:
+        flags.append([f"Extended {ext_z:.1f}σ over trend — chase risk",
+                      f"高于趋势{ext_z:.1f}σ — 追高风险"])
+    if row.get("antichase_shadow_blocked"):
+        flags.append(["Anti-chase watch — parabolic tail", "反追涨观察 — 抛物线尾部"])
+    esoon = row.get("earnings_soon") or {}
+    if esoon.get("days_to") is not None:
+        flags.append([esoon.get("chip_en") or f"Earnings in {esoon['days_to']}d",
+                      esoon.get("chip_zh") or f"财报还有{esoon['days_to']}天"])
+    if row.get("sector_stance") in ("Reduce", "Cautious"):
+        flags.append([
+            f"Sector stance: {row['sector_stance']} — single-stock trigger, not a sector call",
+            f"板块态度：{row.get('sector_stance_zh') or row['sector_stance']} — 个股信号，非板块判断",
+        ])
+    if (row.get("hold") or {}).get("state") == "broken":
+        flags.append(["Base broken — thesis void level hit", "筑底破位 — 失效价已触发"])
+
+    # ── zone footer ──────────────────────────────────────────────────────────
+    bz = es.get("buy_zone") or {}
+    if bz.get("high") is not None:
+        zone_kind = ("readd" if verb == "hold"
+                     else "active" if verb in ("buy", "near") else "muted")
+        zone_lo = f"${bz['low']:.2f}" if bz.get("low") is not None else None
+        zone_hi = f"${bz['high']:.2f}"
+    else:
+        zone_kind = "confirm" if verb in ("wait", "near") else "none"
+        zone_lo = zone_hi = None
+
+    edge = c.get("score_edge")
+    sec = row.get("sector") or ""
+    return {
+        "tk": tk,
+        "name": row.get("name") or tk,
+        "sec": sec,
+        "sec_zh": _SECTOR_ZH.get(sec, sec),
+        "price_txt": f"${price:.2f}",
+        "verb": verb,
+        "edge": int(edge) if edge is not None else None,
+        "stage": stage,
+        "zone_kind": zone_kind,
+        "zone_lo": zone_lo,
+        "zone_hi": zone_hi,
+        "date": (row.get("signal") or {}).get("asof"),
+        "flags": flags,
+        "triage": bool(edge is not None and edge >= 80 and st in ("buy_now", "partial")),
+        "spark": spark,
+    }
+
+
+def build_showcase_payload(standouts: dict, limit: int = SHOWCASE_LIMIT) -> dict:
+    """Curate the landing slice: board order, with vocabulary breadth.
+
+    Takes the first `limit` showable cards in producer (confluence-rank) order,
+    then — honesty by construction — if the slice contains no wait or no hold
+    card, swaps the deepest slot(s) for the first such card found further down
+    the board, so the teaser never shows an all-green wall the board itself
+    doesn't have.
+    """
+    cards = [c for c in (derive_showcase_card(r) for r in standouts.get("buy") or [])
+             if c is not None]
+    picked = cards[:limit]
+    rest = cards[limit:]
+    slot = len(picked) - 1  # each swap takes its own tail slot
+    for want in ("wait", "hold"):
+        if any(c["verb"] == want for c in picked):
+            continue
+        sub = next((c for c in rest if c["verb"] == want), None)
+        if sub is not None and slot >= 0:
+            picked[slot] = sub
+            slot -= 1
+            rest = [c for c in rest if c is not sub]
+    return {
+        "schema": "prophet.showcase/v1",
+        "as_of": standouts.get("as_of"),
+        "authority_tier": "display",
+        "count": len(picked),
+        "note": (
+            "DISPLAY-ONLY landing teaser — a slim slice of the nightly Prophet"
+            " board (us_standouts.json). No signal originates here; nightly is"
+            " the sole refresher."
+        ),
+        "cards": picked,
+    }
+
+
+def write_showcase(standouts_path: Path = STANDOUTS_PATH,
+                   out_path: Path = SHOWCASE_PATH) -> dict | None:
+    """Read standouts → write the landing showcase payload. Fail-soft."""
+    try:
+        with standouts_path.open(encoding="utf-8") as f:
+            standouts = json.load(f)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_prophet: showcase skipped — standouts unreadable: %s", e)
+        return None
+    payload = build_showcase_payload(standouts)
+    _write_json(out_path, payload)
+    log.info("build_prophet: wrote showcase.json (%d cards, as_of=%s)",
+             payload["count"], payload["as_of"])
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -499,7 +681,18 @@ def main() -> None:
         action="store_true",
         help="Also upload site/prophet/index.json to R2.",
     )
+    parser.add_argument(
+        "--showcase-only",
+        action="store_true",
+        help="Only (re)write site/prophet/showcase.json from us_standouts.json "
+             "— no origination, no management, NO ledger touch. Safe to run "
+             "locally at any time.",
+    )
     args = parser.parse_args()
+
+    if args.showcase_only:
+        write_showcase()
+        return None
 
     asof: str = args.date
     log.info("build_prophet: starting — asof=%s publish=%s", asof, args.publish)
@@ -665,6 +858,12 @@ def main() -> None:
     }
     _write_json(INDEX_PATH, index)
     log.info("build_prophet: wrote index.json (%d active plans)", len(active_entries))
+
+    # ── 4b. Landing showcase slice (public teaser for templates/index.html) ──
+    try:
+        write_showcase()
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_prophet: showcase write failed (non-fatal): %s", e)
 
     # ── 5. R2 publish ─────────────────────────────────────────────────────────
     if args.publish:
