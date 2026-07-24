@@ -250,6 +250,26 @@ def _cap(block: dict, key: str, default: int) -> int:
         return default
 
 
+def _cap_unlimited(block: dict, key: str, default: int) -> int | None:
+    """Like _cap, but ``-1`` (or the string ``"unlimited"``) means NO limit —
+    returns None, which the cadence-cap checks read as "do not bound".
+
+    Used for the caps the autonomous-posting policy lifts: daily posts and daily
+    media (operator 2026-07-24 — unlimited volume, paced instead by the post-time
+    10-minute floor + the 2-week link gate). ``null`` is NOT the sentinel: _get
+    collapses a present-null back to the default, so unlimited must be an explicit
+    ``-1``. A missing key still falls back to the (bounded, safe) default.
+    """
+    raw = _get(block, key, default)
+    if isinstance(raw, str) and raw.strip().lower() == "unlimited":
+        return None
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return None if val < 0 else val
+
+
 def load_exceptions(root: Path | str | None = None) -> dict[str, dict]:
     """Load sentinel_exceptions.jsonl → {item_id: row}. Missing file = empty.
 
@@ -462,12 +482,12 @@ def gate_plan(
 
     # --- knobs ---------------------------------------------------------------
     near_dup_thresh = float(_get(sc, "near_dup_jaccard", _DEFAULT_NEAR_DUP_JACCARD))
-    max_posts_day = _cap(sc, "max_posts_per_account_per_day", _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY)
+    max_posts_day = _cap_unlimited(sc, "max_posts_per_account_per_day", _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY)
     max_same_cashtag = _cap(sc, "max_same_cashtag_per_account_per_day", _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY)
     max_replies_day = _cap(sc, "max_replies_per_account_per_day", _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY)
     max_receipt_age = _cap(sc, "max_receipt_age_days", _DEFAULT_MAX_RECEIPT_AGE_DAYS)
     links_allowed = bool(_get(sc, "links_allowed", _DEFAULT_LINKS_ALLOWED))
-    max_media_posts_day = _cap(sc, "max_media_posts_per_account_per_day", _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY)
+    max_media_posts_day = _cap_unlimited(sc, "max_media_posts_per_account_per_day", _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY)
     max_cashtags_per_post = _cap(sc, "max_cashtags_per_post", _DEFAULT_MAX_CASHTAGS_PER_POST)
     lexicon_phrases = list(_get(sc, "lexicon_phrases", _DEFAULT_LEXICON_PHRASES))
     lexicon_patterns = list(_get(sc, "lexicon_patterns", _DEFAULT_LEXICON_PATTERNS))
@@ -671,13 +691,13 @@ def gate_plan(
         # Decide every cap first; commit counters only if the item survives —
         # a killed item must never waste a slot a clean sibling needed.
         reason: str | None = None
-        if has_media and media_by_account[dk] >= max_media_posts_day:
+        if has_media and max_media_posts_day is not None and media_by_account[dk] >= max_media_posts_day:
             reason = "media_cap_daily"
             media_cap_hits += 1
         elif is_reply and replies_by_account[dk] >= max_replies_day:
             reason = "reply_cap_daily"
             cadence_stats["reply_cap_hits"] += 1
-        elif posts_by_account[dk] >= max_posts_day:
+        elif max_posts_day is not None and posts_by_account[dk] >= max_posts_day:
             reason = "cadence_cap_daily"
             cadence_stats["cadence_cap_daily_hits"] += 1
         elif cashtag and cashtag_by_account[dk][cashtag] >= max_same_cashtag:

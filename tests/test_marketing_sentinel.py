@@ -1313,12 +1313,16 @@ class TestM3ConfigDriftGuard:
 
         assert sc["near_dup_jaccard"] == _DEFAULT_NEAR_DUP_JACCARD, \
             f"near_dup_jaccard drift: yaml={sc['near_dup_jaccard']} code={_DEFAULT_NEAR_DUP_JACCARD}"
-        assert sc["max_posts_per_account_per_day"] == _DEFAULT_MAX_POSTS_PER_ACCOUNT_PER_DAY
+        # Daily post + media caps INTENTIONALLY diverge from the safe code
+        # defaults: the operator lifted them to unlimited (autonomous cadence,
+        # 2026-07-24). -1 is the sentinel _cap_unlimited decodes to "no limit";
+        # the code defaults stay bounded (2 / 1) as the missing-key fallback.
+        assert sc["max_posts_per_account_per_day"] == -1
+        assert sc["max_media_posts_per_account_per_day"] == -1
         assert sc["max_same_cashtag_per_account_per_day"] == _DEFAULT_MAX_SAME_CASHTAG_PER_ACCOUNT_PER_DAY
         assert sc["max_replies_per_account_per_day"] == _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY
         assert sc["max_receipt_age_days"] == _DEFAULT_MAX_RECEIPT_AGE_DAYS
         assert sc["links_allowed"] == _DEFAULT_LINKS_ALLOWED
-        assert sc["max_media_posts_per_account_per_day"] == _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY
         assert sc["max_cashtags_per_post"] == _DEFAULT_MAX_CASHTAGS_PER_POST
 
     def test_lexicon_lists_match_in_code_defaults(self):
@@ -1655,6 +1659,46 @@ class TestPerDayCap:
         assert report["counts"]["passed"] == 4
         assert not [q for q in report["quarantined"]
                     if "cadence_cap_daily" in q["reasons"]]
+
+    def test_unlimited_cap_never_quarantines_for_cadence(self):
+        """max_posts_per_account_per_day = -1 (unlimited) → NO cadence_cap_daily,
+        no matter how many post to one account/day. The autonomous-cadence policy
+        (operator 2026-07-24): volume is paced by the post-time 10-minute floor,
+        not a daily ceiling. Mirrors test_two_per_day_across_seven_days, which
+        under a cap of 2 quarantines 7 of the 21 — here all 21 clear."""
+        items = []
+        n = 0
+        for d in range(1, 8):
+            for suffix in ("AM", "PM", "EOD"):
+                items.append(_item(
+                    f"i{n}", "flagship",
+                    headline=f"Headline {n}", body="Size appropriately.",
+                    cashtag=f"${chr(65 + n)}{n}", ticker=f"T{n}",
+                    slot=f"D{d}-{suffix}",
+                ))
+                n += 1
+        plan = _plan({"flagship": items})
+
+        annotated, report = gate_plan(plan, _cfg(max_posts=-1, max_cashtag=99))
+
+        assert report["counts"]["passed"] == 21
+        assert not [q for q in report["quarantined"]
+                    if "cadence_cap_daily" in q["reasons"]]
+
+
+def test_cap_unlimited_decodes_no_limit_sentinels():
+    """_cap_unlimited: -1 / "unlimited" → None (no bound); everything else is a
+    normal bounded cap. The null gotcha is pinned deliberately: a present-null
+    collapses to the (bounded) default via _get, so null is NOT how you express
+    unlimited — the -1 sentinel is."""
+    from engine.marketing.sentinel import _cap_unlimited
+    assert _cap_unlimited({"k": -1}, "k", 2) is None            # -1 → unlimited
+    assert _cap_unlimited({"k": "unlimited"}, "k", 2) is None   # string sentinel
+    assert _cap_unlimited({"k": 5}, "k", 2) == 5                # explicit bound honoured
+    assert _cap_unlimited({"k": 0}, "k", 2) == 0               # 0 = block all (≠ unlimited)
+    assert _cap_unlimited({}, "k", 2) == 2                      # missing key → default
+    assert _cap_unlimited({"k": None}, "k", 2) == 2            # null collapses to default (NOT unlimited)
+    assert _cap_unlimited({"k": "junk"}, "k", 2) == 2         # unparseable → default
 
 
 # ─────────────────────────────────────────────────────────────────────────────
