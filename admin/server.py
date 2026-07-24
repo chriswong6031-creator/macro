@@ -32,6 +32,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
                marketing,
+               mastermind_logs,
                mastermind_proxy,
                metabolism_history,
                metabolism_panel,
@@ -72,6 +73,28 @@ def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
     except (ValueError, TypeError):
         return default
     return max(lo, min(hi, v))
+
+
+def _mm_log_filters(q: dict) -> dict:
+    """Build the mastermind_logs filter dict from a parsed query string.
+
+    Recognised params: surface, lane, model, mode, graded (yes|no|all),
+    thumb (up|down|all), starred (1), error (1), search (substring), since (ISO/date).
+    """
+    def one(key: str) -> str:
+        return (q.get(key) or [""])[0].strip()
+    return {
+        "surface": one("surface") or "all",
+        "lane": one("lane") or "all",
+        "model": one("model"),
+        "mode": one("mode"),
+        "graded": one("graded") or "all",
+        "thumb": one("thumb") or "all",
+        "starred": one("starred") in ("1", "true", "yes", "on"),
+        "error": one("error") in ("1", "true", "yes", "on"),
+        "q": one("search"),
+        "since": one("since"),
+    }
 
 
 def _sanitize_target_id(raw) -> str | None:
@@ -531,6 +554,14 @@ class Handler(BaseHTTPRequestHandler):
                 if not tid:
                     return self._json({"ok": False, "error": "invalid target_id"}, 400)
                 return self._json(marketing.allies_kit(target_id=tid))
+            # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
+            # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
+            if path == "/api/mastermind_ai/response_logs":
+                limit = _int_param(q, "limit", 100, 1, 500)
+                return self._json(mastermind_logs.logs(limit=limit, filters=_mm_log_filters(q)))
+            if path == "/api/mastermind_ai/response_logs/export":
+                fmt = (q.get("fmt") or ["jsonl"])[0]
+                return self._json(mastermind_logs.export(filters=_mm_log_filters(q), fmt=fmt))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -846,6 +877,16 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/api/orchestrator/wake":
                 return self._json(orchestrator_chat.wake())
+
+            # W-AI: Mastermind AI response log — pull new rows from R2, and write
+            # operator eval verdicts (grade/thumb/star/tags/note) to the local sidecar.
+            if path == "/api/mastermind_ai/response_logs/refresh":
+                return self._json(mastermind_logs.refresh())
+            if path == "/api/mastermind_ai/response_logs/rate":
+                ok_v, err_msg, cleaned = mastermind_logs.validate_rate_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "error": err_msg}, 400)
+                return self._json(mastermind_logs.rate(cleaned, evaluator="operator"))
 
             if path in mastermind_proxy.POST_PATHS:
                 payload, code = mastermind_proxy.forward_post(path, b)

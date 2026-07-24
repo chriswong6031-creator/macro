@@ -141,6 +141,7 @@ const ICONS = {
   codex:         NAV_ICO('<path d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/>'),
   orchestrator:  NAV_ICO('<circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6"/>'),
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
+  mastermind_logs: NAV_ICO('<path d="M4 5.5h16M4 12h16M4 18.5h10"/><circle cx="18.5" cy="18" r="3"/><path d="M18.5 16.6v1.4l1 .8"/>'),
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
   revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
@@ -162,7 +163,7 @@ const ICONS = {
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -7970,6 +7971,248 @@ function alertsCalCard(cal) {
     <div class="sub muted" style="margin-bottom:6px">Which alert rules earned predictive authority (backtested hit-rate vs base rate). Calibration generated ${ageTxt}${stale ? " — overdue for a refresh" : ""}. <b>${cal.n_earned != null ? cal.n_earned : "?"} of ${cal.n_total}</b> rules earned an edge.</div>
     <table><thead><tr><th>Rule</th><th class="r">Horizon</th><th class="r">Hit</th><th class="r">Uplift</th><th class="r">q-FDR</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
+/* ---- AI Response Logs (Mastermind AI eval corpus) ----------------------- */
+/* Every user-facing answer from BOTH surfaces (Macro brain + Terminal copilot)
+   is ingested from R2 into data/mastermind/response_log.jsonl and shown here for
+   batch evaluation. Grades/tags live in a separate local sidecar overlaid by id. */
+const MML = { filters: {}, rows: [], open: null };
+
+function mmlSurfacePill(s) {
+  const map = { macro: ["macro", "s-ok"], terminal: ["terminal", "s-warn"] };
+  const [txt, cls] = map[s] || [s || "?", "s-mut"];
+  return `<span class="statpill ${cls}">${esc(txt)}</span>`;
+}
+function mmlEvalBadges(ev) {
+  if (!ev) return "";
+  const out = [];
+  if (ev.grade != null) out.push(`<span class="statpill ${ev.grade >= 4 ? "s-ok" : ev.grade <= 2 ? "s-bad" : "s-warn"}" title="grade">★${ev.grade}</span>`);
+  if (ev.thumb === "up") out.push(`<span class="statpill s-ok" title="thumbs up">👍</span>`);
+  if (ev.thumb === "down") out.push(`<span class="statpill s-bad" title="thumbs down">👎</span>`);
+  if (ev.star) out.push(`<span class="statpill s-warn" title="flagged">⚑</span>`);
+  (ev.tags || []).forEach(t => out.push(`<span class="statpill s-mut">${esc(t)}</span>`));
+  return out.join(" ");
+}
+
+RENDER.mastermind_logs = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  await mmlLoad();
+};
+
+async function mmlLoad() {
+  const v = $("#view");
+  const qs = new URLSearchParams();
+  qs.set("limit", "300");
+  const f = MML.filters;
+  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => {
+    if (f[k] && f[k] !== "all") qs.set(k, f[k]);
+  });
+  if (f.starred) qs.set("starred", "1");
+  if (f.error) qs.set("error", "1");
+  const d = await api("/api/mastermind_ai/response_logs?" + qs.toString());
+  if (CURRENT !== "mastermind_logs") return;
+  if (!d || d.error) {
+    v.innerHTML = `<div class="banner show" style="position:static;display:block">Could not read the response log${d && d.error ? ": " + esc(d.error) : ""}.</div>`;
+    return;
+  }
+  MML.rows = d.rows || [];
+  const st = d.stats || {};
+  const bySurf = Object.entries(st.by_surface || {}).map(([k, n]) => `${esc(k)} ${n}`).join(" · ") || "none yet";
+  const heroHtml = `<div class="mb-hero">
+    <div class="mb-hero-top">
+      <span class="mb-hero-kicker">Mastermind AI</span>
+      <span class="mb-hero-name">Response logs — evaluation corpus</span>
+      <span class="spacer"></span>
+      <button class="btn" id="mmlRefresh" title="Pull new rows from R2 (both surfaces write there)">⟳ Refresh from R2</button>
+      <button class="btn" id="mmlExportJ" title="Download current filter as JSONL">⭳ JSONL</button>
+      <button class="btn" id="mmlExportC" title="Download current filter as CSV">⭳ CSV</button>
+    </div>
+    <div class="sub" style="margin-top:6px">Every answer the Mastermind assistant gives — across the Macro Dashboard chat and the Terminal copilot — logged for batch evaluation, training-set curation, and context/skill improvement. Grade and tag responses inline; verdicts save to a local sidecar.</div>
+    <div class="mb-hero-chips">
+      <span class="statpill s-mut" title="rows in the local ledger">${st.total || 0} logged</span>
+      <span class="statpill s-mut">${bySurf}</span>
+      <span class="statpill ${st.graded ? "s-ok" : "s-mut"}">${st.graded || 0} graded</span>
+      <span class="statpill s-ok">👍 ${st.thumbs_up || 0}</span>
+      <span class="statpill s-bad">👎 ${st.thumbs_down || 0}</span>
+      ${st.errors ? `<span class="statpill s-bad">${st.errors} errored</span>` : ""}
+      ${d.read_capped ? `<span class="statpill s-warn" title="showing the most recent window">window capped</span>` : ""}
+    </div>
+  </div>`;
+
+  const filterHtml = `<div class="section" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <select id="mmlSurface" class="btn">${["all", "macro", "terminal"].map(o => `<option value="${o}"${f.surface === o ? " selected" : ""}>${o === "all" ? "all surfaces" : o}</option>`).join("")}</select>
+    <select id="mmlLane" class="btn">${["all", "fast", "pro"].map(o => `<option value="${o}"${f.lane === o ? " selected" : ""}>${o === "all" ? "all lanes" : o}</option>`).join("")}</select>
+    <select id="mmlGraded" class="btn">${[["all", "graded + not"], ["no", "ungraded only"], ["yes", "graded only"]].map(([o, t]) => `<option value="${o}"${f.graded === o ? " selected" : ""}>${t}</option>`).join("")}</select>
+    <select id="mmlThumb" class="btn">${[["all", "any 👍/👎"], ["up", "👍 up"], ["down", "👎 down"]].map(([o, t]) => `<option value="${o}"${f.thumb === o ? " selected" : ""}>${t}</option>`).join("")}</select>
+    <input id="mmlModel" class="btn" style="width:120px" placeholder="model…" value="${esc(f.model || "")}">
+    <input id="mmlSearch" class="btn" style="width:180px" placeholder="search text…" value="${esc(f.search || "")}">
+    <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlStar"${f.starred ? " checked" : ""}> flagged</label>
+    <label class="sub" style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="mmlErr"${f.error ? " checked" : ""}> errors</label>
+    <button class="btn primary" id="mmlApply">Apply</button>
+    <span class="sub muted">${d.matched || 0} match</span>
+  </div>`;
+
+  const rowsHtml = MML.rows.length ? MML.rows.map(mmlRowHtml).join("") : `<tr><td colspan="6" class="sub muted" style="padding:18px">No responses logged yet. Once the brain chat or Terminal copilot answers a user (and R2 is configured), hit “Refresh from R2”.</td></tr>`;
+  const tableHtml = `<table style="margin-top:12px"><thead><tr>
+    <th style="width:130px">When</th><th style="width:90px">Surface</th><th>Question → answer</th>
+    <th style="width:120px">Model</th><th class="r" style="width:70px">Tokens</th><th style="width:130px">Eval</th>
+  </tr></thead><tbody>${rowsHtml}</tbody></table>`;
+
+  v.innerHTML = heroHtml + filterHtml + tableHtml;
+  mmlWire();
+}
+
+function mmlRowHtml(r) {
+  const ev = r.eval || {};
+  const when = r.ts ? esc(String(r.ts).replace("T", " ").replace("+00:00", "").slice(0, 16)) : "—";
+  const qSnip = esc(orchTrunc(r.question || "", 90));
+  const aSnip = esc(orchTrunc((r.answer || "").replace(/\s+/g, " "), 140));
+  const tok = (r.input_tokens || 0) + (r.output_tokens || 0);
+  const lane = r.lane ? `<span class="sub muted"> · ${esc(r.lane)}</span>` : "";
+  const errDot = (r.flags && r.flags.error) ? ` <span class="statpill s-bad" title="errored/degraded">!</span>` : "";
+  return `<tr class="mml-row" data-id="${esc(r.id)}" style="cursor:pointer">
+    <td class="sub mono">${when}</td>
+    <td>${mmlSurfacePill(r.surface)}</td>
+    <td><div><b>${qSnip || "<span class='muted'>(no question)</span>"}</b>${errDot}</div><div class="sub muted">${aSnip}</div>${mmlEvalBadges(ev)}</td>
+    <td class="sub mono">${esc(orchTrunc(r.model || "?", 16))}${lane}</td>
+    <td class="r mono sub">${tok || "—"}</td>
+    <td>${mmlEvalBadges(ev) || '<span class="sub muted">ungraded</span>'}</td>
+  </tr>
+  <tr class="mml-detail" data-for="${esc(r.id)}" style="display:none"><td colspan="6" style="background:rgba(255,255,255,.02)"></td></tr>`;
+}
+
+function mmlDetailHtml(r) {
+  const ev = r.eval || {};
+  const ctx = r.context && Object.keys(r.context).length ? Object.entries(r.context).map(([k, v]) => `${esc(k)}=${esc(String(v))}`).join(" · ") : "";
+  const meta = [
+    r.provider && `provider ${esc(r.provider)}`,
+    r.mode && `mode ${esc(r.mode)}`,
+    r.latency_ms != null && `${r.latency_ms} ms`,
+    `in ${r.input_tokens || 0} / out ${r.output_tokens || 0} tok`,
+    r.user_ref && `user ${esc(r.user_ref)}`,
+    r.thread_id && `thread ${esc(orchTrunc(r.thread_id, 12))}`,
+    ctx && `ctx ${ctx}`,
+  ].filter(Boolean).join(" · ");
+  const grades = [1, 2, 3, 4, 5].map(n => `<button class="btn mml-grade${ev.grade === n ? " primary" : ""}" data-g="${n}">${n}</button>`).join("");
+  const tags = (ev.tags || []).join(", ");
+  return `<div style="padding:12px 6px;display:grid;gap:10px">
+    <div class="sub muted">${meta}</div>
+    <div><div class="sub" style="font-weight:700;margin-bottom:3px">Question</div><div style="white-space:pre-wrap">${esc(r.question || "")}</div></div>
+    <div><div class="sub" style="font-weight:700;margin-bottom:3px">Answer</div><div style="white-space:pre-wrap">${esc(r.answer || "")}</div></div>
+    <div class="section" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid rgba(255,255,255,.08);padding-top:10px">
+      <span class="sub" style="font-weight:700">Grade</span>
+      <div style="display:flex;gap:4px">${grades}</div>
+      <button class="btn mml-thumb${ev.thumb === "up" ? " primary" : ""}" data-t="up">👍</button>
+      <button class="btn mml-thumb${ev.thumb === "down" ? " primary" : ""}" data-t="down">👎</button>
+      <button class="btn mml-flag${ev.star ? " primary" : ""}">⚑ flag</button>
+      <input class="btn mml-tags" style="width:200px" placeholder="tags, comma-separated" value="${esc(tags)}">
+      <input class="btn mml-note" style="width:240px" placeholder="note…" value="${esc(ev.note || "")}">
+      <button class="btn primary mml-save">Save verdict</button>
+    </div>
+  </div>`;
+}
+
+function mmlWire() {
+  const on = (id, ev, fn) => { const el = $("#" + id); if (el) el.addEventListener(ev, fn); };
+  on("mmlRefresh", "click", async (e) => {
+    e.target.disabled = true; e.target.textContent = "⟳ pulling…";
+    const r = await post("/api/mastermind_ai/response_logs/refresh", {});
+    if (r && r.ok) toast(`Ingested ${r.ingested} new response${r.ingested === 1 ? "" : "s"}`);
+    else toast((r && r.note) || "Refresh failed (R2 creds?)", true);
+    await mmlLoad();
+  });
+  on("mmlExportJ", "click", () => mmlExport("jsonl"));
+  on("mmlExportC", "click", () => mmlExport("csv"));
+  on("mmlApply", "click", mmlApplyFilters);
+  on("mmlSearch", "keydown", (e) => { if (e.key === "Enter") mmlApplyFilters(); });
+  on("mmlModel", "keydown", (e) => { if (e.key === "Enter") mmlApplyFilters(); });
+
+  document.querySelectorAll(".mml-row").forEach(tr => {
+    tr.addEventListener("click", () => mmlToggle(tr.getAttribute("data-id")));
+  });
+}
+
+function mmlApplyFilters() {
+  MML.filters = {
+    surface: $("#mmlSurface").value,
+    lane: $("#mmlLane").value,
+    graded: $("#mmlGraded").value,
+    thumb: $("#mmlThumb").value,
+    model: $("#mmlModel").value.trim(),
+    search: $("#mmlSearch").value.trim(),
+    starred: $("#mmlStar").checked,
+    error: $("#mmlErr").checked,
+  };
+  mmlLoad();
+}
+
+function mmlToggle(id) {
+  const detail = document.querySelector(`.mml-detail[data-for="${CSS.escape(id)}"]`);
+  if (!detail) return;
+  const cell = detail.querySelector("td");
+  if (detail.style.display === "none") {
+    const r = MML.rows.find(x => x.id === id);
+    if (r) cell.innerHTML = mmlDetailHtml(r);
+    detail.style.display = "";
+    mmlWireDetail(id, cell);
+  } else {
+    detail.style.display = "none";
+  }
+}
+
+/* Local, unsaved verdict state per open row until "Save verdict" is pressed. */
+function mmlWireDetail(id, cell) {
+  const r = MML.rows.find(x => x.id === id);
+  if (!r) return;
+  const draft = Object.assign({ grade: null, thumb: null, star: false, tags: [], note: "" }, r.eval || {});
+  cell.querySelectorAll(".mml-grade").forEach(b => b.addEventListener("click", () => {
+    const g = parseInt(b.getAttribute("data-g"), 10);
+    draft.grade = draft.grade === g ? null : g;
+    cell.querySelectorAll(".mml-grade").forEach(x => x.classList.toggle("primary", parseInt(x.getAttribute("data-g"), 10) === draft.grade));
+  }));
+  cell.querySelectorAll(".mml-thumb").forEach(b => b.addEventListener("click", () => {
+    const t = b.getAttribute("data-t");
+    draft.thumb = draft.thumb === t ? null : t;
+    cell.querySelectorAll(".mml-thumb").forEach(x => x.classList.toggle("primary", x.getAttribute("data-t") === draft.thumb));
+  }));
+  const flagBtn = cell.querySelector(".mml-flag");
+  flagBtn.addEventListener("click", () => { draft.star = !draft.star; flagBtn.classList.toggle("primary", draft.star); });
+  cell.querySelector(".mml-save").addEventListener("click", async (e) => {
+    draft.tags = cell.querySelector(".mml-tags").value.split(",").map(s => s.trim()).filter(Boolean);
+    draft.note = cell.querySelector(".mml-note").value;
+    e.target.disabled = true; e.target.textContent = "saving…";
+    const res = await post("/api/mastermind_ai/response_logs/rate", { id, ...draft });
+    if (res && res.ok) {
+      r.eval = res.eval;                 /* reflect saved verdict without a full reload */
+      toast("Verdict saved");
+      const badgeCell = document.querySelector(`.mml-row[data-id="${CSS.escape(id)}"] td:last-child`);
+      if (badgeCell) badgeCell.innerHTML = mmlEvalBadges(res.eval) || '<span class="sub muted">ungraded</span>';
+      e.target.disabled = false; e.target.textContent = "Save verdict";
+    } else {
+      toast((res && res.error) || "Save failed", true);
+      e.target.disabled = false; e.target.textContent = "Save verdict";
+    }
+  });
+}
+
+async function mmlExport(fmt) {
+  const qs = new URLSearchParams();
+  qs.set("fmt", fmt);
+  const f = MML.filters;
+  ["surface", "lane", "model", "graded", "thumb", "search", "since"].forEach(k => { if (f[k] && f[k] !== "all") qs.set(k, f[k]); });
+  if (f.starred) qs.set("starred", "1");
+  if (f.error) qs.set("error", "1");
+  const d = await api("/api/mastermind_ai/response_logs/export?" + qs.toString());
+  if (!d || !d.ok) { toast((d && d.error) || "Export failed", true); return; }
+  const blob = new Blob([d.content || ""], { type: d.mime || "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = d.filename || `mastermind_responses.${fmt}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(`Exported ${d.count || 0} row${d.count === 1 ? "" : "s"}`);
+}
+
 RENDER.alerts = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="sub" style="margin-bottom:12px">Recent alerts from the live site feed. Log your action against any alert — Acted, Dismissed, Overrode, or Snoozed — to build the operator capture ledger (L4 instrumentation). All writes go through /api/actions behind auth.</div>
