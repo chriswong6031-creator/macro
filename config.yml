@@ -593,6 +593,14 @@ live:
   # Empty string = no Worker; live.js then falls back to the static snapshot below.
   # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
   quotes_worker_url: ""
+  # Live Tape (Phase 1, research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md): when true
+  # (default) the browser opens the same-origin /ws/tape websocket (app/tape.py,
+  # served by macro-api behind Caddy) for the six macro.html futures/index/yield
+  # tiles. It is a pure ENHANCEMENT over the 60s poller — set false to fall back to
+  # polling only (ops kill switch; live.js re-reads this from live_config.js on the
+  # next build, no page code change needed). The relay itself connects to the
+  # keyless Yahoo streamer upstream + a REST poll fallback; no API keys involved.
+  ws_tape_enabled: true
   # SAME-ORIGIN live path (China-safe): live.js fetches quotes.json relative to the
   # page, so it comes from the serving origin — NOT raw.githubusercontent.com, which
   # is blocked in mainland China. The VPS must write this file (have the macro-live

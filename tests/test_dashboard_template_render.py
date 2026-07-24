@@ -287,6 +287,81 @@ def test_both_modes_render_with_no_standouts():
 
 
 # --------------------------------------------------------------------------- #
+# Live Tape strip (Phase 1 — research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md)
+# --------------------------------------------------------------------------- #
+# The macro.html MARKETS strip is a SIX-instrument futures tape:
+#   ES=F, NQ=F, YM=F, RTY=F, ^TNX (10Y yield, data-fmt=tnx), DX-Y.NYB (DXY).
+# The old SPY/QQQ/DJI/RUT spot tiles were removed FROM THE STRIP (the deep-dive
+# dialog dlg-markets still carries the cash indices — that is the whole point of
+# the "strip only" scope, and the presence check below guards the dialog stays).
+# Absence assertions target ELEMENT markup (`mx5-mkt-tile ... data-sym="X"`), not
+# bare class tokens (CSS rules always ship), per the harness note.
+
+_TAPE_SYMS = ["ES=F", "NQ=F", "YM=F", "RTY=F", "^TNX", "DX-Y.NYB"]
+
+
+def test_macro_strip_has_six_tape_tiles_in_order():
+    """EXACTLY the six tape instruments, in D1 order, each as a live-patch tile
+    (nb-px + data-sym + data-mkt=us). Order is pinned because the strip reads
+    left-to-right as a macro tape (index futures -> yield -> dollar)."""
+    html = _render("macro")
+    # Each price tile exists with the live-patch contract intact.
+    positions = []
+    for sym in _TAPE_SYMS:
+        needle = f'<div class="mx5-mkt-price nb-px" data-sym="{sym}" data-mkt="us"'
+        idx = html.find(needle)
+        assert idx != -1, f"tape price tile for {sym} missing from the strip"
+        positions.append(idx)
+    # Strictly increasing => the six render in the specified order.
+    assert positions == sorted(positions), f"tape tiles out of order: {positions}"
+
+
+def test_macro_strip_tnx_display_transform_wired():
+    """^TNX price AND delta carry data-fmt="tnx" so live.js divides the yield×10
+    quote by 10 (%) and renders the delta in bps. Both nodes must be tagged."""
+    html = _render("macro")
+    assert '<div class="mx5-mkt-price nb-px" data-sym="^TNX" data-mkt="us" data-fmt="tnx"' in html
+    assert 'nb-chg" data-sym="^TNX" data-mkt="us" data-fmt="tnx"' in html
+
+
+def test_macro_strip_labels_bilingual():
+    """The six tiles carry their EN + ZH labels (bilingual UI law)."""
+    html = _render("macro")
+    for en, zh in [("S&amp;P fut", "标普期货"), ("Nasdaq fut", "纳指期货"),
+                   ("Dow fut", "道指期货"), ("Russell fut", "罗素期货"),
+                   ("10Y yield", "十年期收益率"), ("Dollar DXY", "美元指数")]:
+        assert en in html, f"EN label {en!r} missing"
+        assert zh in html, f"ZH label {zh!r} missing"
+
+
+def test_macro_strip_spot_tiles_removed():
+    """SPY/QQQ/DJI/RUT are GONE from the strip. Guard the exact strip-tile
+    markup shape (mx5-mkt-tile price node), NOT bare symbols — the deep-dive
+    dialog legitimately keeps ^DJI/^RUT/SPY/QQQ in mx5-dlg-idx-* nodes."""
+    html = _render("macro")
+    for spot in ["SPY", "QQQ", "^DJI", "^RUT", "DJI", "RUT"]:
+        strip_tile = f'<div class="mx5-mkt-price nb-px" data-sym="{spot}" data-mkt="us"'
+        assert strip_tile not in html, f"spot tile {spot} still in the strip"
+
+
+def test_deep_dive_dialog_still_has_cash_indices():
+    """Scope guard: only the STRIP changed. The dlg-markets deep-dive still
+    carries the cash-index cards (mx5-dlg-idx-*) — if this ever goes empty the
+    strip change over-reached into the dialog."""
+    env = _env()
+    vm = _base_vm()
+    # Give the dialog a cash-index row to render (the strip is static regardless).
+    # Keys mirror the dlg-markets card census (dd/above50/above200/rsi) — rsi is
+    # accessed via `is not none`, which raises on a MISSING key, so it is set
+    # explicitly (the harness's documented Undefined gotcha).
+    vm["index_health"] = [{"ticker": "SPY", "price": 550.0, "chg": 0.3,
+                           "dd": -1.2, "above50": True, "above200": True,
+                           "rsi": 55.0, "label": "S&P 500"}]
+    html = env.get_template("dashboard.html.j2").render(**vm, mode="macro")
+    assert 'class="mx5-dlg-idx-px nb-px" data-sym="SPY"' in html
+
+
+# --------------------------------------------------------------------------- #
 # ⚡ Prophet × Top-setups presentation merge (2026-07-24 masterplan:
 # research/PROPHET_TOPSETUPS_PRESENTATION_MERGE_MASTERPLAN.md).
 # Contract under test: membership in the top_setups artifact IS the trigger gate
