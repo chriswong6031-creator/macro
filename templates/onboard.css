@@ -95,51 +95,41 @@
 .obm-pane-h{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.06;font-size:clamp(1.5rem,2.4vw,1.95rem);color:var(--ink);margin:0}
 .obm-pane-sub{color:var(--muted);font-size:14px;line-height:1.55;margin:12px 0 0}
 
-/* live account-assembly card (fills in as the user progresses) */
-.obm-assembly{
-  margin-top:20px;background:#fff;border:1px solid var(--hair);border-left:3px solid var(--blue);
-  border-radius:12px;box-shadow:var(--sh-card);padding:14px 15px;max-width:290px;
-}
-.obm-asm-row{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12.5px;color:var(--ink-soft);min-width:0}
-.obm-asm-row+.obm-asm-row{border-top:1px solid var(--hair)}
-.obm-asm-k{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);flex:none;width:52px}
-.obm-asm-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--ink)}
-.obm-asm-v.obm-dim{color:var(--faint);font-weight:500}
-.obm-asm-chips{display:flex;flex-wrap:wrap;gap:4px}
-.obm-asm-chip{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.04em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2px 7px}
-.obm-asm-trial{margin-left:auto;flex:none;font-family:'Archivo',sans-serif;font-weight:800;font-size:8.5px;letter-spacing:.08em;color:var(--q-green);background:var(--green-wash);border:1px solid rgba(31,139,65,.35);border-radius:99px;padding:2px 8px}
-
-/* device-framed light dashboard mini-replica, bleeding off bottom-right */
-.obm-device{
-  position:relative;margin:22px 0 -30px -6px;align-self:stretch;
-  width:118%;max-width:none;border-radius:var(--r-lg) 0 0 0;
-  border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-plate);
-  overflow:hidden;flex:1;min-height:180px;
-}
-.obm-dev-bar{display:flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-bottom:1px solid var(--hair);background:#fbfcfd}
-.obm-dev-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#3f82f6,#7c5cff);flex:none}
-.obm-dev-nav{display:flex;gap:8px;margin-left:4px}
-.obm-dev-nav i{display:block;height:4px;width:22px;border-radius:2px;background:var(--hair-2)}
-.obm-dev-nav i:first-child{width:30px;background:#cdd6e4}
-.obm-dev-body{padding:11px 11px 0}
-.obm-dev-regime{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.obm-dev-tile{border:1px solid var(--hair);border-radius:8px;background:var(--panel-2);padding:8px 9px}
-.obm-dev-tile{border-left:3px solid var(--q-green)}
-.obm-dev-tile:nth-child(2){border-left-color:var(--q-gold)}
-.obm-dev-tile:nth-child(3){border-left-color:var(--blue)}
-.obm-dev-tile .b{display:block;height:3px;border-radius:2px;background:var(--hair-2)}
-.obm-dev-tile .b.w1{width:60%}
-.obm-dev-tile .b.w2{width:80%;margin-top:6px;height:5px;background:#cdd6e4}
-.obm-dev-chart{position:relative;margin-top:10px;height:96px;border:1px solid var(--hair);border-radius:8px;background:
-  linear-gradient(var(--hair) 1px,transparent 1px) 0 0/100% 24px,
-  linear-gradient(90deg,var(--hair) 1px,transparent 1px) 0 0/40px 100%;background-color:#fff;overflow:hidden}
-.obm-dev-chart svg{position:absolute;inset:0;width:100%;height:100%}
-.obm-dev-rows{margin-top:9px;display:flex;flex-direction:column;gap:7px;padding-bottom:11px}
-.obm-dev-r{display:grid;grid-template-columns:16px 1fr 40px;align-items:center;gap:8px}
-.obm-dev-r .d{width:9px;height:9px;border-radius:3px;background:var(--blue-wash);border:1px solid var(--hair-2)}
-.obm-dev-r .l{height:4px;border-radius:2px;background:var(--hair-2)}
-.obm-dev-r .l.w1{width:70%}.obm-dev-r .l.w2{width:55%}.obm-dev-r .l.w3{width:82%}.obm-dev-r .l.w4{width:48%}
-.obm-dev-r .n{height:4px;border-radius:2px;background:#cdd6e4}
+/* ── the desk — a miniature Mastermind chart card that materializes as the
+   user moves through the wizard. Nameplate ← typed first name; ticker + watch
+   chips ← market picks; capability rows ← the chosen plan. Nothing echoes a
+   form field back; the pane shows the product coming online for THEM. ── */
+.obm-desk{margin-top:22px;background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:var(--sh-lift);max-width:312px;overflow:hidden}
+.obm-desk-plate{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--hair);background:#fbfcfe;min-width:0}
+.obm-desk-ava{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;color:#fff;background:linear-gradient(135deg,#3f82f6,#6366f1);box-shadow:0 3px 8px -3px rgba(40,95,255,.55)}
+.obm-desk-name{font-family:'Archivo',sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.14em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.obm-desk-trial{margin-left:auto;flex:none;font-family:'Archivo',sans-serif;font-weight:800;font-size:8.5px;letter-spacing:.08em;color:var(--q-green);background:var(--green-wash);border:1px solid rgba(31,139,65,.35);border-radius:99px;padding:2px 8px}
+.obm-desk-chart{position:relative;height:124px;background:#fff}
+.obm-desk-chart svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.obm-desk-tkr{position:absolute;top:8px;left:10px;z-index:1;display:flex;align-items:center;gap:6px}
+.obm-desk-tkr b{font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;letter-spacing:.02em;color:var(--ink)}
+.obm-desk-tf{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--faint);border:1px solid var(--hair-2);border-radius:5px;padding:1px 5px;background:#fff}
+.obm-desk-zone{position:absolute;right:10px;bottom:14px;z-index:1;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue-ink);opacity:.75}
+/* the line draws itself in (pathLength=1 → one normalized dashoffset sweep) */
+.obm-desk-line{stroke-dasharray:1;stroke-dashoffset:0}
+.obm-draw .obm-desk-line{animation:obmDeskDraw .9s cubic-bezier(.3,.6,.2,1) both}
+.obm-draw .obm-desk-area{animation:obmDeskFade .5s ease .55s both}
+@keyframes obmDeskDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes obmDeskFade{from{opacity:0}to{opacity:1}}
+.obm-desk-ring{opacity:.5;transform-origin:292px 27px;animation:obmDeskPulse 2.4s ease-out infinite}
+@keyframes obmDeskPulse{0%{transform:scale(1);opacity:.5}70%{transform:scale(3.1);opacity:0}100%{transform:scale(3.1);opacity:0}}
+.obm-desk-chips{display:flex;flex-wrap:wrap;gap:5px;padding:10px 12px 0}
+.obm-desk-chip{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.04em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2.5px 8px}
+.obm-desk-caps{display:flex;flex-direction:column;padding:8px 6px 10px}
+.obm-desk-cap{display:flex;align-items:center;gap:8px;padding:5.5px 6px;border-radius:8px;font-size:12px;color:var(--ink-soft)}
+.obm-desk-cap.obm-off{color:var(--faint)}
+.obm-desk-ci{flex:none;width:16px;height:16px;display:grid;place-items:center}
+.obm-desk-ck{width:13px;height:13px;stroke:var(--blue);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.obm-desk-lk{width:12px;height:12px;color:var(--faint)}
+.obm-desk-dot2{width:5px;height:5px;border-radius:50%;background:var(--hair-2);display:block}
+.obm-desk-cl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.obm-desk-cap.obm-off .obm-desk-cl{font-weight:500}
+.obm-desk-tag{flex:none;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.1em;color:#7862e0;background:rgba(120,98,224,.10);border-radius:5px;padding:2px 6px}
 
 /* ══════════════════════ RIGHT — form pane ══════════════════════════════════ */
 .obm-form-pane{position:relative;display:flex;flex-direction:column;min-width:0;background:var(--panel)}
@@ -384,7 +374,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
   .obm-pane::before{-webkit-mask-image:none;mask-image:none;opacity:.7}
   .obm-pane-copy{margin:0;flex:1;max-width:none}
   .obm-pane-h{font-size:1.05rem;line-height:1.15}
-  .obm-pane-sub,.obm-assembly,.obm-device{display:none}
+  .obm-pane-sub,.obm-desk{display:none}
   .obm-steps{padding-top:16px}
   .obm-body{padding:18px 20px 8px}
   .obm-foot{padding:12px 20px calc(12px + env(safe-area-inset-bottom))}
@@ -401,6 +391,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 
 @media (prefers-reduced-motion:reduce){
   .obm-scrim,.obm-sheet,.obm-fade,.obm-close,.obm-btn,.obm-btn-out,.obm-chip,.obm-plan,.obm-thumb,.obm-quiet,.obm-dots i{transition:opacity .12s ease !important;animation:none !important;transform:none !important}
+  .obm-draw .obm-desk-line,.obm-draw .obm-desk-area,.obm-desk-ring{animation:none !important}
   .obm-scrim.obm-open .obm-sheet{transform:none}
   .obm-spin{animation:obm-spin .7s linear infinite !important}
 }

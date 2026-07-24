@@ -67,13 +67,14 @@
     paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
     paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
 
-    // assembly card
-    asmName:   ["Name", "姓名"],
-    asmEmail:  ["Email", "邮箱"],
-    asmMarkets:["Markets", "市场"],
-    asmPlan:   ["Plan", "方案"],
-    asmPending:["—", "—"],
-    asmTrial:  ["TRIAL", "试用"],
+    // desk pane (the materializing mini-desk in the left rail)
+    asmTrial:  ["7-DAY TRIAL", "7天试用"],
+    deskYour:  ["YOUR DESK", "你的工作台"],
+    deskTf:    ["DAILY", "日线"],
+    deskZone:  ["ENTRY ZONE", "入场区间"],
+    capRead:   ["Daily read · 6 signals a day", "每日研判 · 每天 6 条信号"],
+    capFlow:   ["Intraday options flow", "日内期权流"],
+    capAI:     ["Pro AI research dives", "Pro AI 深度研究"],
 
     // stepper
     stAccount: ["Account", "账户"],
@@ -320,7 +321,30 @@
   function svgCheck(cls) { return '<svg class="' + (cls || "") + '" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>'; }
   var GLYPH = '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="obmTile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/><stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient><linearGradient id="obmSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient><radialGradient id="obmGlow" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient><linearGradient id="obmInk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient></defs><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmTile)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmGlow)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmSheen)"/><rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3"><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#obmInk)"/></g></svg>';
   var GOOGLE = '<svg viewBox="0 0 18 18" width="16" height="16" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
-  var DEVICE = '<div class="obm-dev-bar"><span class="obm-dev-dot"></span><span class="obm-dev-nav"><i></i><i></i><i></i></span></div><div class="obm-dev-body"><div class="obm-dev-regime"><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div></div><div class="obm-dev-chart"><svg viewBox="0 0 300 96" preserveAspectRatio="none"><defs><linearGradient id="obmLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#285fff"/><stop offset="1" stop-color="#7862e0"/></linearGradient><linearGradient id="obmArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#285fff" stop-opacity=".16"/><stop offset="1" stop-color="#285fff" stop-opacity="0"/></linearGradient></defs><path d="M0 74 L40 66 L80 70 L120 50 L160 56 L200 34 L240 40 L300 20 L300 96 L0 96 Z" fill="url(#obmArea)"/><path d="M0 74 L40 66 L80 70 L120 50 L160 56 L200 34 L240 40 L300 20" fill="none" stroke="url(#obmLine)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="obm-dev-rows"><div class="obm-dev-r"><span class="d"></span><span class="l w1"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w3"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w2"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w4"></span><span class="n"></span></div></div></div>';
+  var LOCK = '<svg class="obm-desk-lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  // The desk pane's annotated mini-chart: an uptrend that pulls back INTO the
+  // buy-zone band and resumes — the product's own entry story, not a skeleton.
+  // pathLength=1 lets CSS draw the line with a single dashoffset animation.
+  var DESK_CHART =
+    '<svg viewBox="0 0 300 124" preserveAspectRatio="none" aria-hidden="true">' +
+    '<defs>' +
+    '<linearGradient id="obmDL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#285fff"/><stop offset="1" stop-color="#7862e0"/></linearGradient>' +
+    '<linearGradient id="obmDA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#285fff" stop-opacity=".14"/><stop offset="1" stop-color="#285fff" stop-opacity="0"/></linearGradient>' +
+    '</defs>' +
+    '<g stroke="rgba(28,36,48,.06)" stroke-width="1"><path d="M0 33H300"/><path d="M0 64H300"/><path d="M0 95H300"/></g>' +
+    '<rect x="0" y="78" width="300" height="26" fill="rgba(40,95,255,.07)"/>' +
+    '<path d="M0 78H300" stroke="rgba(40,95,255,.30)" stroke-width="1" stroke-dasharray="3 4" fill="none"/>' +
+    '<path d="M0 104H300" stroke="rgba(40,95,255,.30)" stroke-width="1" stroke-dasharray="3 4" fill="none"/>' +
+    '<path class="obm-desk-area" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27 L292 124 L8 124 Z" fill="url(#obmDA)"/>' +
+    '<path class="obm-desk-line" pathLength="1" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27" fill="none" stroke="url(#obmDL)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle class="obm-desk-pt" cx="292" cy="27" r="3.2" fill="#285fff"/>' +
+    '<circle class="obm-desk-ring" cx="292" cy="27" r="3.2" fill="none" stroke="#285fff" stroke-width="1.4"/>' +
+    '</svg>';
+  var DESK =
+    '<div class="obm-desk-plate"><span class="obm-desk-ava" data-desk="ava">M</span><span class="obm-desk-name" data-desk="name"></span><span class="obm-desk-trial" data-desk="trial" hidden></span></div>' +
+    '<div class="obm-desk-chart"><div class="obm-desk-tkr"><b data-desk="tkr">SPY</b><span class="obm-desk-tf" data-k="deskTf"></span></div>' + DESK_CHART + '<span class="obm-desk-zone" data-k="deskZone"></span></div>' +
+    '<div class="obm-desk-chips" data-desk="mkts"></div>' +
+    '<div class="obm-desk-caps" data-desk="caps"></div>';
 
   // ── build the sheet DOM once ──────────────────────────────────────────────
   function build() {
@@ -341,14 +365,9 @@
     var paneCopy = h("div", "obm-pane-copy");
     var paneH = h("h2", "obm-pane-h"); var paneS = h("p", "obm-pane-sub");
     paneCopy.appendChild(paneH); paneCopy.appendChild(paneS);
-    var asm = h("div", "obm-assembly");
-    asm.innerHTML =
-      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmName"></span><span class="obm-asm-v obm-dim" data-asm="name"></span></div>' +
-      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmEmail"></span><span class="obm-asm-v obm-dim" data-asm="email"></span></div>' +
-      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmMarkets"></span><span class="obm-asm-chips" data-asm="markets"></span></div>' +
-      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmPlan"></span><span class="obm-asm-v obm-dim" data-asm="plan"></span><span class="obm-asm-trial" data-asm="trial" hidden></span></div>';
-    var device = h("div", "obm-device"); device.innerHTML = DEVICE;
-    pane.appendChild(brand); pane.appendChild(paneCopy); pane.appendChild(asm); pane.appendChild(device);
+    var asm = h("div", "obm-desk");
+    asm.innerHTML = DESK;
+    pane.appendChild(brand); pane.appendChild(paneCopy); pane.appendChild(asm);
 
     // ── RIGHT form pane ──
     var formPane = h("div", "obm-form-pane");
@@ -389,6 +408,8 @@
     var keyed = el.sheet.querySelectorAll("[data-k]");
     for (var j = 0; j < keyed.length; j++) keyed[j].innerHTML = tx(keyed[j].getAttribute("data-k"));
     el.sheet.setAttribute("aria-label", tx("dialogLbl"));
+    // the desk nameplate builds its possessive per-language in code, not via [data-k]
+    renderAssembly();
   }
 
   // helper: create a node whose text is a LEX key, re-applied on lang change
@@ -437,38 +458,80 @@
     var m = (S.mode === "upgrade") ? ["paneBillH", "paneBillS"] : (map[S.step] || map[1]);
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
     el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
-    // the assembly card (name/email/markets/plan) is wizard-only; hide it in upgrade mode
-    if (el.asm) el.asm.style.display = (S.mode === "upgrade") ? "none" : "";
     renderAssembly();
   }
+  // The desk pane — a miniature Mastermind desk that materializes as the user
+  // progresses. Nothing here echoes form fields back; every element is a piece
+  // of the product responding to a choice the user actually made:
+  //   nameplate  ← the typed first name (default "YOUR DESK")
+  //   chart+chips← the market picks (first pick drives the chart's ticker)
+  //   cap rows   ← the chosen plan (lock/check; untouched plan = neutral list)
+  // Upgrade mode shows the SAME desk read off /api/me — locked rows are exactly
+  // what the upgrade buys.
+  var MKD = {
+    us:     { t: "NVDA",    c: ["NVDA", "SPY", "TSLA"] },
+    cn:     { t: "600519",  c: ["600519", "300750", "BABA"] },
+    hk:     { t: "0700.HK", c: ["0700", "9988", "3690"] },
+    ca:     { t: "SHOP.TO", c: ["SHOP", "RY", "ENB"] },
+    global: { t: "SPY",     c: ["SPY", "ASML", "0700"] }
+  };
   function renderAssembly() {
+    if (!el.asm) return;
     var q = function (s) { return el.asm.querySelector(s); };
-    var nm = (S.firstName + " " + S.lastName).trim();
-    var vName = q('[data-asm="name"]'); vName.textContent = nm || tx("asmPending"); vName.classList.toggle("obm-dim", !nm);
-    var vEmail = q('[data-asm="email"]'); vEmail.textContent = S.email || tx("asmPending"); vEmail.classList.toggle("obm-dim", !S.email);
-    var mk = q('[data-asm="markets"]'); mk.innerHTML = "";
-    var MKN = { us: "mktUs", cn: "mktCn", hk: "mktHk", ca: "mktCa", global: "mktGlobal" };
-    if (S.prefs.market_focus.length) {
-      S.prefs.market_focus.forEach(function (k) { var c = h("span", "obm-asm-chip"); c.textContent = tx(MKN[k] || k); mk.appendChild(c); });
-    } else { var d = h("span", "obm-asm-v obm-dim"); d.textContent = tx("asmPending"); mk.appendChild(d); }
-    var vPlan = q('[data-asm="plan"]');
-    var trial = q('[data-asm="trial"]');
-    if (!S.planTouched) {
-      // The plan row stays pending until the user actually reaches the plan step —
-      // the preselected default is not THEIR choice yet (honesty: the card only
-      // ever shows what the user has actually done).
-      vPlan.textContent = tx("asmPending"); vPlan.classList.add("obm-dim");
-      trial.hidden = true;
-    } else if (S.plan === "free") {
-      vPlan.textContent = tx("planFree"); vPlan.classList.remove("obm-dim");
-      trial.hidden = true;
-    } else {
-      vPlan.textContent = tx(S.plan === "pro" ? "planPro" : "planInsider") + " · $" + perMonth(S.plan, S.period) + tx("perMo"); vPlan.classList.remove("obm-dim");
-      trial.hidden = false; trial.setAttribute("data-k", "asmTrial"); trial.textContent = tx("asmTrial");
-    }
-    // keep keyed labels fresh
+    var zh = lang() === "zh";
+    // nameplate — becomes THEIRS the moment they type a first name
+    var first = (S.mode === "upgrade") ? (fullNameFromMeta().split(" ")[0] || "") : S.firstName.trim();
+    var plate = q('[data-desk="name"]');
+    if (first) {
+      var up = first.toUpperCase();
+      plate.textContent = zh ? up + " 的工作台" : up + (/S$/.test(up) ? "’ DESK" : "’S DESK");
+    } else { plate.textContent = tx("deskYour"); }
+    q('[data-desk="ava"]').textContent = first ? first.charAt(0).toUpperCase() : "M";
+    // chart ticker + watch chips follow the market picks
+    var picks = S.prefs.market_focus;
+    var tkr = q('[data-desk="tkr"]');
+    var newT = (picks.length ? (MKD[picks[0]] || MKD.us) : MKD.global).t;
+    if (tkr.textContent !== newT) { tkr.textContent = newT; redrawDesk(); }
+    var chips = [];
+    (picks.length ? picks : ["global"]).forEach(function (k) {
+      (MKD[k] || MKD.us).c.forEach(function (t) { if (chips.indexOf(t) === -1) chips.push(t); });
+    });
+    var mk = q('[data-desk="mkts"]'); mk.innerHTML = "";
+    chips.slice(0, 4).forEach(function (t) { var c = h("span", "obm-desk-chip"); c.textContent = t; mk.appendChild(c); });
+    // capability rows — neutral until the user actually reaches the plan step
+    // (the preselected default is not THEIR choice yet; honesty law unchanged)
+    var tier = null;
+    if (S.mode === "upgrade") tier = (S.me && S.me.tier) || "free";
+    else if (S.planTouched) tier = S.plan;
+    var RANK = { free: 0, insider: 1, pro: 2, unlimited: 2 };
+    var caps = q('[data-desk="caps"]'); caps.innerHTML = "";
+    [["capRead", 0], ["capFlow", 1], ["capAI", 2]].forEach(function (cp) {
+      var row = h("div", "obm-desk-cap");
+      var have = tier == null ? null : (RANK[tier] != null ? RANK[tier] : 0);
+      var ic = h("span", "obm-desk-ci");
+      if (have == null) ic.innerHTML = '<i class="obm-desk-dot2"></i>';
+      else if (have >= cp[1]) { row.classList.add("obm-on"); ic.innerHTML = svgCheck("obm-desk-ck"); }
+      else { row.classList.add("obm-off"); ic.innerHTML = LOCK; }
+      row.appendChild(ic);
+      row.appendChild(T("span", "obm-desk-cl", cp[0]));
+      if (have != null && have < cp[1]) { var tag = h("span", "obm-desk-tag"); tag.textContent = cp[1] === 2 ? "PRO" : "INSIDER"; row.appendChild(tag); }
+      caps.appendChild(row);
+    });
+    // trial chip on the plate once a paid plan is the user's actual choice
+    var trial = q('[data-desk="trial"]');
+    var paidChosen = S.mode !== "upgrade" && S.planTouched && (S.plan === "insider" || S.plan === "pro");
+    trial.hidden = !paidChosen;
+    if (paidChosen) trial.textContent = tx("asmTrial");
+    // keep keyed labels (timeframe/zone chips) fresh
     var keys = el.asm.querySelectorAll("[data-k]");
     for (var i = 0; i < keys.length; i++) keys[i].innerHTML = tx(keys[i].getAttribute("data-k"));
+  }
+  // restart the chart's draw-in (used on open + when the ticker swaps)
+  function redrawDesk() {
+    if (!el.asm) return;
+    el.asm.classList.remove("obm-draw");
+    void el.asm.offsetWidth;
+    el.asm.classList.add("obm-draw");
   }
 
   // ══════════════════════════ router ═════════════════════════════════════════
@@ -1396,6 +1459,7 @@
     requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
     document.documentElement.style.overflow = "hidden";
     render();
+    redrawDesk();
     stashSave();
   }
   // The registration wall 302s guests to /?signin=1&ret=<path>; after a
