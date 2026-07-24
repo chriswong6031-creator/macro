@@ -67,7 +67,9 @@
     var gold = d.filter(function (m) { return m.quad === 'q1'; });
     var mover = chg.slice().sort(function (a, b) { return Math.abs(b.index_chg_pct) - Math.abs(a.index_chg_pct); })[0] || us;
     var uc = (us && us.index_chg_pct) || 0;
-    var risky = /elevat|stress|stagfl|risk|caution|fragile/i.test((us && us.risk_text_en) || '');
+    // NB: the calm q1 risk_text is "calm — low macro stress" — do NOT match bare "stress"
+    // (it flagged every calm day risky). Key off the genuinely-elevated words only.
+    var risky = /elevat|stagfl|scare|fragile|panic|high —/i.test((us && us.risk_text_en) || '');
     var mood;
     if ((us && us.quad === 'q4') || (risky && uc < -0.8) || down >= chg.length * 0.72) mood = 'off';
     else if ((us && us.quad === 'q3') || risky || uc < -0.4) mood = 'careful';
@@ -94,10 +96,13 @@
   if (C) {
     var pct = Math.abs(C.uc).toFixed(1);
     var mpct = Math.abs(C.mover.index_chg_pct || 0).toFixed(1);
+    var rd = C.us.rdir;
+    var twEn = C.us.rtoward_en || (rd === 'improving' ? 'firmer ground' : 'a worse spot');
+    var twZh = C.us.rtoward_zh || (rd === 'improving' ? '更稳的位置' : '更差的位置');
     EN = { PCT: pct, DOWN: C.down, UP: C.up, TOTAL: C.total, MOVER: cname(C.mover, 1), MOVERPCT: mpct,
-      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? 'up' : 'down', STAG: C.stag.length ? cname(firstNonUS(C.stag), 1) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 1) : '', REGIME: regimeName(C.us, 1), ASOF: asof(1), V: visit };
+      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? 'up' : 'down', STAG: C.stag.length ? cname(firstNonUS(C.stag), 1) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 1) : '', REGIME: regimeName(C.us, 1), TOWARD: twEn, ASOF: asof(1), V: visit };
     ZH = { PCT: pct, DOWN: C.down, UP: C.up, TOTAL: C.total, MOVER: cname(C.mover, 0), MOVERPCT: mpct,
-      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? '涨' : '跌', STAG: C.stag.length ? cname(firstNonUS(C.stag), 0) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 0) : '', REGIME: regimeName(C.us, 0), ASOF: asof(0), V: visit };
+      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? '涨' : '跌', STAG: C.stag.length ? cname(firstNonUS(C.stag), 0) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 0) : '', REGIME: regimeName(C.us, 0), TOWARD: twZh, ASOF: asof(0), V: visit };
   }
   function fill(s, map) { return s.replace(/\{(\w+)\}/g, function (_, k) { return map[k] != null ? map[k] : ''; }); }
 
@@ -155,20 +160,30 @@
       ['Not much doing today. Coiled, not dead.', '今天没什么大动静。是在盘,不是死。'],
       ["Sideways and patient. The market's holding its breath.", '横着,耐着。市场在屏着呼吸。']
     ] };
-  var REGIME = { q1: [
-      ["We're in that Goldilocks pocket — growth without the heat. Enjoy it.", '我们在那个金发女孩的甜区——有增长,不发烫。好好享受。'],
-      ["Backdrop's Goldilocks. The regime's kind, even when the day isn't.", '背景是金发女孩。就算今天不友好,大局是友好的。'],
-      ["Zoom out and it's still Goldilocks. Today's just noise on a good trend.", '拉远看,还是金发女孩。今天不过是好趋势上的噪音。']
-    ], q2: [
-      ["Reflation's running — growth and prices both up. Ride it, mind the exits.", '再通胀在跑——增长和物价一起上。可以骑,但盯紧出口。'],
-      ["The reflation trade's alive. Fun while it lasts; watch the door.", '再通胀这波还活着。热闹归热闹,门口看好。']
-    ], q3: [
-      ["Stagflation's the backdrop — growth soft, prices sticky. The annoying quadrant.", '背景是滞胀——增长疲,物价黏。最烦人的那个象限。'],
-      ["We're in the stagflation box. Not where fortunes get made.", '我们在滞胀这个格子里。不是造富的地方。']
-    ], q4: [
-      ["Cold quadrant — growth and inflation both fading. Cash isn't a bad look.", '最冷的象限——增长和通胀一起退。拿点现金不丢人。'],
-      ["We're in the deflationary corner. Defense wins here.", '我们在通缩的角落里。这里,防守赢。']
-    ] };
+  // Regime beats are DIRECTION-first, never label-first: the same quad means opposite
+  // things depending on whether we're firming into it or rolling out of it — and the
+  // confirmed label LAGS the score, so a deteriorating "Goldilocks" is the trap. {REGIME}
+  // = current quad, {TOWARD} = where the trajectory is dragging it (from #globe-data rdir).
+  var REGD = [   // DETERIORATING — the label still says {REGIME}, but the trend is down
+      ["We're still calling it {REGIME} — but it's rolling over. The label lags; the trend's the tell, and it's dragging toward {TOWARD}.", '还挂着{REGIME}的牌子——但它在翻。标签滞后,趋势才是真相,而它正被拖向{TOWARD}。'],
+      ["Careful with the {REGIME} tag today — the score's deteriorating, edging toward {TOWARD}. Same word, opposite trade from a month ago.", '今天别太信{REGIME}这个标签——分数在恶化,正滑向{TOWARD}。同一个词,和一个月前反着做。'],
+      ["{REGIME} on paper, but it's aging out — momentum's rolling toward {TOWARD}. I'd lean defensive early, not late.", '纸面上是{REGIME},但在老化——动能正倒向{TOWARD}。我会早点偏防守,别等晚了。'],
+      ["The backdrop still reads {REGIME}, but it's cracking — {TOWARD} is pulling. Trust the change of rate, not the last print.", '背景还写着{REGIME},但在裂——{TOWARD}在拉。信变化率,别信最后一个读数。']
+    ];
+  var REGI = [   // IMPROVING — still {REGIME} on the print, but turning UP toward {TOWARD}
+      ["Still {REGIME} on the label, but it's turning up — the score's climbing toward {TOWARD}. Early, but the direction's finally right.", '标签还是{REGIME},但在往上翻——分数正爬向{TOWARD}。早,但方向终于对了。'],
+      ["{REGIME}'s the print, but the trend's improving — headed for {TOWARD}. This is the good kind of change: bad-to-better.", '读数是{REGIME},但趋势在改善——奔着{TOWARD}去。这是好的那种变化:由坏转好。'],
+      ["Don't over-read the {REGIME} tag — it's thawing, momentum's toward {TOWARD}. Getting less bad is how bottoms start.", '别太当真{REGIME}这个标签——在解冻,动能朝着{TOWARD}。越来越不差,正是底部的开始。']
+    ];
+  var REGSG = [  // STABLE + good quad — genuinely holding
+      ["Clean {REGIME}, and it's holding — growth without the heat. Enjoy it while the trend cooperates.", '干净的{REGIME},而且守得住——有增长不发烫。趋势配合的时候,好好享受。'],
+      ["{REGIME}, steady — no cracks in the score yet. Rare, so don't waste it.", '{REGIME},很稳——分数还没裂。难得,别浪费。'],
+      ["Backdrop's {REGIME} and it isn't going anywhere. The regime's your friend here.", '背景是{REGIME},而且稳着。这里,大局是你的朋友。']
+    ];
+  var REGSB = [  // STABLE + bad quad — stuck, no thaw
+      ["Still stuck in {REGIME}, and it's not letting up. Nothing to force here.", '还困在{REGIME}里,而且没松口。这里没什么可硬来的。'],
+      ["{REGIME}, and flat — no thaw in the score yet. Patience beats hope.", '{REGIME},而且平——分数还没解冻。耐心胜过指望。']
+    ];
   var RISK = { calm: [
       ["Risk board's quiet. Stress readings low — rare, clean water.", '风险盘面很安静。压力读数低——难得的干净水域。'],
       ["Nothing's flashing red on the risk side. I'll take it.", '风险这边没有红灯在闪。我认。'],
@@ -259,6 +274,16 @@
   lines.push({ big: true, s: greetingLine() });                       // the name (large)
 
   if (C) {
+    // The regime TREND biases the day's advice, symmetrically — the whole point of this:
+    //  • a good regime DETERIORATING is a slow headwind → one notch more cautious even on a
+    //    green tape (don't let a lagging "Goldilocks" talk you into risk while it rolls over);
+    //  • a bad regime IMPROVING toward a better quad is a tailwind → ease one notch (bad-to-
+    //    better is when you lean in early). Direction, not just the last print.
+    if (C.us.rdir === 'deteriorating' && (quad === 'q1' || quad === 'q2')) {
+      C.mood = { on: 'good', good: 'mixed', mixed: 'careful', careful: 'off', off: 'off' }[C.mood] || C.mood;
+    } else if (C.us.rdir === 'improving' && C.us.rtoward_en) {
+      C.mood = { off: 'careful', careful: 'mixed', mixed: 'good', good: 'good', on: 'on' }[C.mood] || C.mood;
+    }
     // opener / recall
     if (visit >= 3) lines.push({ s: draw('v3', VISIT3) });
     else if (visit === 2) lines.push({ s: draw('v2', VISIT2) });
@@ -269,13 +294,16 @@
     var budget = visit >= 3 ? 0 : 1;
     if (budget) {
       var mids = [];
-      if (REGIME[quad]) mids.push(['regime.' + quad, REGIME[quad]]);
+      var rdir = C.us.rdir || 'stable', goodQ = (quad === 'q1' || quad === 'q2'), turning = (rdir === 'deteriorating' || rdir === 'improving');
+      var rgm = rdir === 'deteriorating' ? ['regime.det', REGD] : rdir === 'improving' ? ['regime.imp', REGI] : goodQ ? ['regime.sg', REGSG] : ['regime.sb', REGSB];
+      if (turning) mids.push(rgm);   // a regime that's TURNING is the headline — surface it first
       mids.push(['region', REGION]);
       mids.push(['risk.' + (C.risky ? 'hot' : 'calm'), RISK[C.risky ? 'hot' : 'calm']]);
       var bk = C.down >= C.total * 0.6 ? 'down' : C.up >= C.total * 0.6 ? 'up' : 'split';
       mids.push(['breadth.' + bk, BREADTH[bk]]);
       if (C.mover && Math.abs(C.mover.index_chg_pct || 0) >= 0.8) mids.push(['mover', MOVER]);
       mids.push(['meta', META]);
+      if (!turning) mids.push(rgm);   // a stable regime is just part of the rotation
       // prefer a topic not used as a middle beat yet today (rotate subjects across visits)
       mids.sort(function (a, b) { return (MEM.mids.indexOf(a[0].split('.')[0]) >= 0 ? 1 : 0) - (MEM.mids.indexOf(b[0].split('.')[0]) >= 0 ? 1 : 0); });
       var beat = mids[0];
