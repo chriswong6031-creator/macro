@@ -23,6 +23,12 @@
    fields live. Callers pass a single `cx` dict:
      href tk sym mkt price_txt name name_zh sec sec_zh flag verb tip_en tip_zh edge
      edge_tip_en edge_tip_zh stage spark zone_kind zone_lo zone_hi date flags triage
+     trigger — OPTIONAL {kind: 'fired'|'imminent', tip_en, tip_zh}: the fresh
+       entry-trigger chip (presentation merge of the Top-setups board, 2026-07-24
+       masterplan). Absent key → no chip, layout unchanged; the verb stays the
+       card's ruling stance (a Wait card with ⚡ = fired trigger, extended price).
+       'imminent' renders dashed (pending semantics). Like every element, the chip
+       follows the card hue --pvh (one-hue law).
    Live-price contract preserved: the price pill keeps class "nb-px" + data-sym/data-mkt
    (templates/live.js binds .nb-px[data-sym]). #}
 {% macro t(en, zh='') -%}<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>{%- endmacro %}
@@ -74,6 +80,8 @@
 .pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
+.pv-trg{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 9%,var(--panel));color:var(--pvh);border:1px solid color-mix(in srgb,var(--pvh) 45%,transparent)}
+.pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
 .pv-cau{position:relative;display:inline-flex}
 .pv-cau-btn{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;line-height:1.35;padding:2px 7px;border-radius:999px;cursor:pointer;background:color-mix(in srgb,var(--warn) 14%,var(--panel));color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);font-family:inherit}
 .pv-cau-pop{display:none;position:absolute;top:calc(100% + 5px);left:0;z-index:30;min-width:190px;max-width:250px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 9px;box-shadow:var(--popover-shadow);white-space:normal}
@@ -90,6 +98,13 @@
   .pvcard .pv-chart svg,.pvcard .pv-nochart{height:58px}
   .pv-stl span{font-size:9px}
   .pv-zn{font-size:10px}
+  /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
+     teaches "marked ⚡"); !important outranks the html[data-lang] l-en/l-zh
+     visibility rules, which otherwise win at any width. Overlay wraps neatly
+     when verb+⚡+⚠N exceed the row instead of colliding with the price pill. */
+  .pv-trg .l-en,.pv-trg .l-zh{display:none!important}
+  .pv-trg{padding:2px 5px;gap:0}
+  .pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
 }
 </style>
 {% endmacro %}
@@ -105,6 +120,9 @@
     {% if cx.get('spark') %}{{ cx.spark|safe }}{% else %}<div class="pv-nochart"></div>{% endif %}
     <span class="pv-ov pv-ovl">
       <span class="pv-chip"{% if cx.get('tip_en') %} data-tip-en="{{ cx.tip_en|e }}" data-tip-zh="{{ (cx.get('tip_zh') or cx.tip_en)|e }}"{% endif %}>{{ t(_VEN[_verb], _VZH[_verb]) }}</span>
+      {%- if cx.get('trigger') %}{% set _tg = cx.trigger %}
+      <span class="pv-trg{% if _tg.kind == 'imminent' %} pv-trg-soon{% endif %}"{% if _tg.get('tip_en') %} data-tip-en="{{ _tg.tip_en|e }}" data-tip-zh="{{ (_tg.get('tip_zh') or _tg.tip_en)|e }}"{% endif %}>⚡ {% if _tg.kind == 'imminent' %}{{ t('Imminent','即将触发') }}{% else %}{{ t('Triggered','已触发') }}{% endif %}</span>
+      {%- endif %}
       {%- if cx.get('flags') %}
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes ({{ cx.flags|length }})" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ {{ cx.flags|length }}</button><span class="pv-cau-pop" role="tooltip">{% for _f in cx.flags %}<span class="pv-cau-row">{{ t(_f[0], _f[1]) }}</span>{% endfor %}</span></span>
       {%- endif %}
