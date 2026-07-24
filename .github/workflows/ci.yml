@@ -709,6 +709,13 @@ on:
       - "tests/test_marketing_sentinel.py"
       - "data/marketing/opportunities.jsonl"
       - "data/marketing/claims.jsonl"
+      # content-studio + admin marketing-panel suites — co-run in the
+      # marketing-engine job (added 2026-07-23; never whitelisted anywhere →
+      # test-whitelist-rot). Trigger on the admin panel + config that drive them.
+      - "tests/test_marketing_content.py"
+      - "tests/test_admin_marketing.py"
+      - "admin/marketing.py"
+      - "config/marketing.yml"
   workflow_dispatch:
 
 permissions:
@@ -2576,6 +2583,11 @@ jobs:
     # live radar-* rows into opportunities.jsonl (a forward ledger, not a
     # shadow-only seed). Deps: stdlib + pytest + pyyaml only — no pandas/numpy,
     # verified against a minimal-import env.
+    #
+    # Co-run (same minimal deps, never whitelisted anywhere → rotting red on main
+    # per the test-whitelist-rot failure mode): the Sentinel gate suite, the
+    # content-studio suite, and the admin marketing-panel suite (the panels are
+    # tested as plain dict-returning functions, no fastapi/httpx needed).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2587,9 +2599,11 @@ jobs:
       - name: marketing engine unit tests
         # test_marketing_sentinel is co-run (2026-07-23): the Sentinel W1 gate suite
         # was never whitelisted and rotted red on main via a local-vs-UTC clock
-        # fixture bomb. Both files are stdlib-only — verified against a minimal
-        # pytest+pyyaml env.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py -q
+        # fixture bomb. test_marketing_content + test_admin_marketing are likewise
+        # co-run (never whitelisted → test-whitelist-rot; the admin panels are
+        # plain dict-returning functions, no fastapi/httpx). All stdlib-only —
+        # verified against a minimal pytest+pyyaml env.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
 
   portfolio-ctx:
     # Portfolio-Aware Intelligence W0 (charter:

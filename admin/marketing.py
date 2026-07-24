@@ -16,10 +16,25 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+
+def _is_stale(as_of: str | None) -> bool:
+    """True when the plan's as_of is more than one day behind today (UTC).
+
+    Fail-soft: an absent or unparseable as_of is treated as NOT stale (no false
+    "stale" banner on a plan we simply can't date)."""
+    if not as_of:
+        return False
+    try:
+        d = datetime.strptime(str(as_of)[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return False
+    return d < (datetime.now(timezone.utc).date() - timedelta(days=1))
 
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
@@ -376,16 +391,33 @@ def content(root=None) -> dict:
                 "distinctness": None,
                 "summary": None,
             }
+        plan_as_of = cp.get("as_of")
+
+        # slot_datetime resolves a plan slot to its real advisory post time (the
+        # D2..D7 slots used to all read day-1). Fail-soft: if the helper can't be
+        # imported, posts simply carry no display_time.
+        try:
+            from engine.marketing.outbox import slot_datetime as _slot_dt
+        except Exception:  # noqa: BLE001
+            _slot_dt = None
+
+        def _stamp(post: dict) -> dict:
+            p = _strip_post_internals(post)
+            if _slot_dt is not None and isinstance(p, dict):
+                p = {**p, "display_time": _slot_dt(plan_as_of or "", str(p.get("slot") or ""))}
+            return p
+
         # Strip internal underscore-prefixed keys from every queued post before
         # shipping to the browser — the render reads none of the big ones (the
         # full Prophet ``_plan`` was ~80KB across the queue).  Small whitelisted
-        # flags survive (see _CONTENT_POST_KEEP).
+        # flags survive (see _CONTENT_POST_KEEP).  Each post also gets a
+        # display_time (its real advisory post datetime) for the UI.
         accounts = []
         for acct in (cp.get("accounts") or []):
             if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
                 acct = {
                     **acct,
-                    "queue": [_strip_post_internals(p) for p in acct["queue"]],
+                    "queue": [_stamp(p) for p in acct["queue"]],
                 }
             accounts.append(acct)
 
@@ -396,7 +428,12 @@ def content(root=None) -> dict:
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
-            "as_of": cp.get("as_of"),
+            "as_of": plan_as_of,
+            "produced_at": cp.get("produced_at"),
+            # A plan is stale once its as_of falls more than a day behind today —
+            # the UI banners this so an operator never mistakes a stalled nightly
+            # plan for fresh content.
+            "stale": _is_stale(plan_as_of),
             "source": cp.get("source"),
         }
     except Exception as exc:  # noqa: BLE001

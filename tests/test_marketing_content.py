@@ -1054,3 +1054,49 @@ def test_polarity_filter_empty_prefers_neutral_over_bearish():
     # Only aligned fact is the neutral one; the -1 must never lead a bull post.
     assert ids[0] == "in_value_area", f"bull post led with a bearish fact: {ids}"
     assert "poc_level" not in ids, f"bull post reinstated a structured -1 fact: {ids}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# F3d: content_plan generates queues ONLY for effective-enabled accounts, but
+# still LISTS disabled accounts (status "planned", empty queue) so the admin
+# shows them — killing the ~85-item nightly Sentinel noise at the source.
+# ═══════════════════════════════════════════════════════════════════════════
+
+def test_content_plan_skips_disabled_accounts_but_lists_them():
+    from engine.marketing.content_studio import content_plan
+    accounts = [
+        {"id": "flagship", "kind": "branded", "beat": "What changed",
+         "voice": "authoritative desk", "enabled": True,
+         "tilt": {"signal": 0.4, "chart": 0.1, "mover": 0.1, "theme_list": 0.1,
+                  "receipt": 0.1, "event": 0.05, "education": 0.05, "macro": 0.05,
+                  "watchlist": 0.05}},
+        {"id": "receipts", "kind": "branded", "beat": "Receipt",
+         "voice": "dry, receipts-forward", "enabled": False,
+         "tilt": {"signal": 0.4, "chart": 0.1, "mover": 0.1, "theme_list": 0.1,
+                  "receipt": 0.1, "event": 0.05, "education": 0.05, "macro": 0.05,
+                  "watchlist": 0.05}},
+    ]
+    cfg = {"desk_network": {"stage": "A", "accounts": accounts}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
+
+    rows = {a["id"]: a for a in plan["accounts"]}
+    # Both accounts appear...
+    assert set(rows) == {"flagship", "receipts"}
+    # ...but only the enabled one has a generated queue.
+    assert len(rows["flagship"]["queue"]) > 0
+    assert rows["receipts"]["queue"] == []
+    assert rows["receipts"]["status"] == "planned"
+
+    # No queued post anywhere belongs to the disabled account → no Sentinel load.
+    for acct in plan["accounts"]:
+        for post in acct["queue"]:
+            assert post.get("account") != "receipts"
+
+
+def test_content_plan_all_enabled_by_default():
+    """Without any enabled key, every account generates a queue (backward-compat)."""
+    from engine.marketing.content_studio import content_plan
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
+    for acct in plan["accounts"]:
+        assert len(acct["queue"]) > 0, f"{acct['id']} got no queue"

@@ -1213,3 +1213,35 @@ def test_emit_stamps_tape_claim_source(tmp_path):
     assert mover_item is not None
     assert mover_item["source"]["ticker"] == "ISRG"
     assert mover_item["source"]["baseline_pct"] == -14.2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F6: slot_datetime — real per-day advisory times (D2..D7 no longer read day-1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSlotDatetime:
+    def test_d1_is_as_of_day(self):
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-20", "D1-AM") == "2026-07-20T14:00:00Z"
+        assert slot_datetime("2026-07-20", "D1-PM") == "2026-07-20T17:30:00Z"
+        assert slot_datetime("2026-07-20", "D1-EOD") == "2026-07-20T20:15:00Z"
+
+    def test_later_days_offset_by_n_minus_one(self):
+        from engine.marketing.outbox import slot_datetime
+        # THE BUG: D3-AM used to map to as_of T14:00 (day-1). Now +2 days.
+        assert slot_datetime("2026-07-20", "D3-AM") == "2026-07-22T14:00:00Z"
+        assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
+
+    def test_immediate_and_unparseable_return_none(self):
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-20", "MOVER-01") is None
+        assert slot_datetime("2026-07-20", "THEME-02") is None
+        assert slot_datetime("2026-07-20", "CONF-01") is None
+        assert slot_datetime("2026-07-20", "immediate") is None
+        assert slot_datetime("2026-07-20", "D1-XX") is None   # unknown time suffix
+        assert slot_datetime("not-a-date", "D1-AM") is None   # bad as_of
+
+    def test_scheduled_at_wrapper_preserves_immediate_contract(self):
+        from engine.marketing.outbox import _scheduled_at_for_slot
+        assert _scheduled_at_for_slot("D2-PM", "2026-07-20") == "2026-07-21T17:30:00Z"
+        assert _scheduled_at_for_slot("MOVER-01", "2026-07-20") == "immediate"

@@ -36,7 +36,7 @@ import os
 import re
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -752,16 +752,48 @@ _SLOT_SUFFIX_TIMES = {
 }
 
 
-def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
-    """Map slot suffix to an advisory scheduled_at time.
+def slot_datetime(as_of: str, slot: str) -> str | None:
+    """Resolve a plan slot to its advisory absolute ISO datetime (UTC), or None.
 
-    Advisory times; W1 actuator applies jitter/spacing before actual posting.
+    A day slot is ``D<n>-<AM|PM|EOD>``: day n runs on ``as_of + (n-1) days`` (D1
+    is as_of itself), at the suffix's time. Returns None for immediate/publish-
+    time slots (MOVER-/THEME-/CONF-, or any non-``D<n>`` prefix), an unknown time
+    suffix, or an unparseable as_of — the admin renders "immediate"/blank for None.
+
+    Advisory only; the W1 actuator applies jitter/spacing before actual posting.
+
+    Prior bug: every ``D<n>-AM`` mapped to ``as_of T14:00Z`` regardless of n, so
+    D2..D7 items all showed day-1's date. This offsets by (n-1) days.
     """
-    suffix = slot.rsplit("-", 1)[-1] if "-" in slot else ""
-    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix)
-    if time_suffix:
-        return f"{as_of}{time_suffix}"
-    return "immediate"
+    if "-" not in slot:
+        return None
+    prefix, suffix = slot.split("-", 1)
+    # suffix may itself contain a "-" for exotic labels; the time key is the LAST
+    # segment (matches the historical rsplit behaviour).
+    suffix_key = suffix.rsplit("-", 1)[-1]
+    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix_key)
+    if time_suffix is None:
+        return None
+    if not (len(prefix) >= 2 and prefix[0] == "D" and prefix[1:].isdigit()):
+        return None  # non-day slot with a time suffix — treat as immediate
+    day_n = int(prefix[1:])
+    try:
+        base = datetime.strptime(as_of[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+    offset_days = max(day_n - 1, 0)
+    date_str = (base + timedelta(days=offset_days)).strftime("%Y-%m-%d")
+    return f"{date_str}{time_suffix}"
+
+
+def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
+    """Map a slot to an advisory scheduled_at time, or "immediate".
+
+    Thin wrapper over slot_datetime() that preserves the enqueue contract: a
+    resolvable day slot returns its absolute ISO datetime; everything else
+    (publish-time slots, unparseable inputs) returns the "immediate" sentinel.
+    """
+    return slot_datetime(as_of, slot) or "immediate"
 
 
 def emit_from_content_plan(
