@@ -67,6 +67,11 @@ _ALLIES_REL   = Path("data/marketing/allies_targets.jsonl")
 _KITS_REL     = Path("data/marketing/allies_kits")
 _CONFIG_REL   = Path("config/marketing.yml")
 
+# Per-post metrics ledger (scripts/marketing_metrics_poll.py, append-only). One
+# row per (remote_id, poll date); the LATEST row per remote_id is joined into
+# the publisher's recent-posted table by external_id.
+_POST_METRICS_REL = Path("data/marketing/post_metrics.jsonl")
+
 # N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
 # than this many posts is display-only — never allowed to crown a winner.
 _LAB_N_FLOOR = 20
@@ -1399,6 +1404,34 @@ _PUBLISHER_EMPTY_NOTE = (
 )
 
 # Recent posted-items window surfaced with their receipts.
+def _latest_metrics_by_remote_id(repo: Path) -> dict[str, dict]:
+    """Fold post_metrics.jsonl to the LATEST row per remote_id (Buffer post id).
+
+    Append-only ledger: each poll appends a dated row; the newest (by polled_at,
+    then file order as tiebreak) is the current analytics view. Fail-soft — an
+    absent/unreadable ledger yields {} so the join is a silent no-op. Returns
+    {remote_id: {metrics: {...}, external_url: str|None}} for the console join.
+    """
+    out: dict[str, dict] = {}
+    best_ts: dict[str, str] = {}
+    for row in _read_jsonl(repo / _POST_METRICS_REL):
+        rid = str(row.get("remote_id") or "").strip()
+        if not rid:
+            continue
+        ts = str(row.get("polled_at") or "")
+        # Newest wins; equal/earlier polled_at from a later file line also wins
+        # (>=) so a same-timestamp re-poll's last row is the one shown.
+        if rid in best_ts and ts < best_ts[rid]:
+            continue
+        best_ts[rid] = ts
+        metrics = row.get("metrics")
+        out[rid] = {
+            "metrics": metrics if isinstance(metrics, dict) else {},
+            "external_url": row.get("external_url") or None,
+        }
+    return out
+
+
 _PUBLISHER_RECENT_N = 10
 
 
@@ -1490,22 +1523,35 @@ def publisher(root=None) -> dict:
             if s in status_counts:
                 status_counts[s] += 1
 
+        # Latest per-post analytics (impressions/likes/… + x.com permalink),
+        # keyed by Buffer post id == the receipt's external_id. Fail-soft {}.
+        metrics_by_rid = _latest_metrics_by_remote_id(repo)
+
         def _row(iid: str) -> dict:
             it = items.get(iid, {})
             lr = last.get(iid) or {}
             rec = lr.get("receipt")
             rec = rec if isinstance(rec, dict) else None
-            return {
+            external_id = (rec or {}).get("external_id")
+            external_url = (rec or {}).get("external_url")
+            # Join fetched metrics + backfill the permalink (createPost never
+            # returns one; the poller's post() query does). Front-end renders
+            # `metrics`/`external_url` only when present, so absent = unchanged.
+            met = metrics_by_rid.get(str(external_id or "").strip()) if external_id else None
+            row = {
                 "id": iid,
                 "account": it.get("account", ""),
                 "kind": it.get("kind"),
                 "text": it.get("text"),
                 "at": lr.get("at"),
                 "note": lr.get("note"),
-                "external_id": (rec or {}).get("external_id"),
-                "external_url": (rec or {}).get("external_url"),
+                "external_id": external_id,
+                "external_url": external_url or (met or {}).get("external_url"),
                 "backend": (rec or {}).get("backend"),
             }
+            if met and met.get("metrics"):
+                row["metrics"] = met["metrics"]
+            return row
 
         posted = [_row(i) for i in order if statuses.get(i) == "posted"]
         posted.sort(key=lambda r: (r.get("at") or ""), reverse=True)

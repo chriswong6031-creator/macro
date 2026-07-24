@@ -142,6 +142,35 @@ def _links_allowed_for(pub_cfg: dict, account: str) -> bool:
     return str(v).strip().lower() in {"1", "true", "yes"}
 
 
+def _media_enabled_cfg(pub_cfg: dict) -> bool:
+    """publish.media_enabled — the top-level chart-image attach gate (default OFF)."""
+    v = pub_cfg.get("media_enabled", False)
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in {"1", "true", "yes"}
+
+
+def _media_paths_for(it: dict, pub_cfg: dict) -> list[str]:
+    """Public media URLs to attach to a post (PNG on X; Buffer needs a hosted URL).
+
+    Prefers the chart's public https media_url (stamped at plan-build time when
+    publish.media_enabled AND R2 creds existed). The local .svg/.png `path` is a
+    repo file Buffer cannot fetch — _build_assets() skips non-http paths anyway —
+    so we never pass it. Returns [] (text-only) when the gate is off or no post
+    carries a public URL: the graceful, always-correct fallback.
+    """
+    if not _media_enabled_cfg(pub_cfg):
+        return []
+    urls: list[str] = []
+    for m in it.get("media") or []:
+        if not isinstance(m, dict):
+            continue
+        u = str(m.get("media_url") or "").strip()
+        if u.lower().startswith(("http://", "https://")):
+            urls.append(u)
+    return urls
+
+
 def _auto_approve_cfg(pub_cfg: dict) -> bool:
     """publish.auto_approve, parsed strictly (a quoted "false" must not enable)."""
     v = pub_cfg.get("auto_approve", False)
@@ -602,7 +631,9 @@ def main(argv: list[str] | None = None) -> int:
                                        root=root, note="expired_no_channel")
             continue
 
-        media_paths = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
+        # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
+        # build-time R2 upload produced one; else [] → text-only (graceful).
+        media_paths = _media_paths_for(it, pub_cfg)
 
         # -- DRY-RUN: print, never touch the network or the ledger -----------
         if not live:

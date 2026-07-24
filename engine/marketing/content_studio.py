@@ -680,6 +680,79 @@ def content_mix(items: list[ContentItem]) -> dict[str, int]:
     return counts
 
 
+def _media_enabled(cfg: dict | None) -> bool:
+    """publish.media_enabled gate (default OFF when absent — conservative)."""
+    return bool(((cfg or {}).get("publish", {}) or {}).get("media_enabled", False))
+
+
+def _attach_chart_media(
+    fc: dict,
+    *,
+    closes: list[float],
+    dates: list[str],
+    marker_index: int,
+    as_of: str,
+    root: str | Path | None,
+    cfg: dict | None,
+    subtitle: str | None = None,
+) -> None:
+    """Render a PNG variant of a single-name signal chart and stamp it on `fc`.
+
+    Gated by publish.media_enabled. Renders the PNG from the SAME closes the SVG
+    uses (X rejects SVG), writes it to
+    data/marketing/outbox/media/<as_of>/<chart_id>.png, and — if R2 creds exist —
+    uploads it to the public data plane. Mutates `fc` in place, adding:
+      media_png_path : repo-relative local PNG path (always, when rendered)
+      media_url      : public https URL (when R2 creds present) else None
+
+    Fully fail-soft: any render/write/upload error leaves `fc` SVG-only (no
+    media_* keys) and never raises — the post degrades to text-or-SVG. No-op
+    when the gate is off, when there is no chart_id, or when closes are too thin.
+    """
+    if not _media_enabled(cfg):
+        return
+    chart_id = fc.get("id")
+    if not chart_id or not closes or len(closes) < 2:
+        return
+    try:
+        from engine.marketing.chart_render import render_signal_chart_png  # noqa: PLC0415
+        png = render_signal_chart_png(
+            fc.get("ticker") or "", dates or [], closes,
+            marker_index=marker_index, subtitle=subtitle)
+        if not png:
+            return
+        repo_root = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
+        media_dir = repo_root / "data" / "marketing" / "outbox" / "media" / str(as_of)
+        rel_path = f"data/marketing/outbox/media/{as_of}/{chart_id}.png"
+        try:
+            media_dir.mkdir(parents=True, exist_ok=True)
+            png_path = media_dir / f"{chart_id}.png"
+            # Deterministic bytes → idempotent; overwrite is safe.
+            tmp = png_path.with_suffix(".png.tmp")
+            tmp.write_bytes(png)
+            tmp.replace(png_path)
+            fc["media_png_path"] = rel_path
+        except Exception as exc:  # noqa: BLE001
+            import logging  # noqa: PLC0415
+            logging.getLogger(__name__).warning(
+                "content_studio: chart PNG write failed for %s: %s", chart_id, exc)
+            return
+        # Best-effort public upload (creds absent → None; post stays text-only).
+        try:
+            from engine.marketing.media_publish import publish_chart_png, chart_key  # noqa: PLC0415
+            url = publish_chart_png(png, chart_key(str(as_of), str(chart_id)))
+            fc["media_url"] = url  # explicit None documents "rendered but not hosted"
+        except Exception as exc:  # noqa: BLE001
+            import logging  # noqa: PLC0415
+            logging.getLogger(__name__).warning(
+                "content_studio: chart PNG upload failed for %s: %s", chart_id, exc)
+            fc["media_url"] = None
+    except Exception as exc:  # noqa: BLE001
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio: chart PNG render failed for %s: %s", fc.get("id"), exc)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # content_plan — the full §2.3 artifact
 # ─────────────────────────────────────────────────────────────────────────────
@@ -936,7 +1009,7 @@ def content_plan(
                     if item_dict2["ticker"] == ticker and item_dict2["type"] == "signal":
                         item_dict2["chart_id"] = chart_id
 
-                featured_charts.append({
+                _fc = {
                     "id": chart_id,
                     "ticker": ticker,
                     "account": acct_id,
@@ -947,7 +1020,12 @@ def content_plan(
                     "svg": svg,
                     "headline": headline,
                     "body": body,
-                })
+                }
+                # PNG variant for X (gated by publish.media_enabled; SVG can't post).
+                _attach_chart_media(
+                    _fc, closes=closes, dates=dates, marker_index=marker_index,
+                    as_of=today, root=root, cfg=cfg, subtitle=f"{cashtag} · signal")
+                featured_charts.append(_fc)
 
                 seen_tickers.add(ticker)
                 chart_id_counter += 1
@@ -1104,7 +1182,7 @@ def content_plan(
                         )
 
                         conf_item.chart_id = chart_id
-                        featured_charts.append({
+                        _conf_fc = {
                             "id": chart_id,
                             "ticker": conf_ticker,
                             "account": conf_account_id,
@@ -1117,7 +1195,12 @@ def content_plan(
                             "body": body,
                             "source": "confluence",
                             "combo_id": sig["combo_id"],
-                        })
+                        }
+                        _attach_chart_media(
+                            _conf_fc, closes=ohlcv_c, dates=ohlcv_dates,
+                            marker_index=conf_marker, as_of=today, root=root, cfg=cfg,
+                            subtitle=f"{cashtag} · confluence")
+                        featured_charts.append(_conf_fc)
                         chart_id_counter += 1
                         conf_charts_added += 1
                         prophet_chart_tickers.add(conf_ticker)
@@ -1418,7 +1501,7 @@ def content_plan(
                             subtitle=f"${_mv_ticker} · mover",
                         )
                     _mv_item["chart_id"] = chart_id
-                    featured_charts.append({
+                    _mv_fc = {
                         "id": chart_id,
                         "ticker": _mv_ticker,
                         "account": _mv_item["account"],
@@ -1430,7 +1513,12 @@ def content_plan(
                         "headline": _mv_item["headline"],
                         "body": _mv_item["body"],
                         "source": "mover",
-                    })
+                    }
+                    _attach_chart_media(
+                        _mv_fc, closes=_mv_cls, dates=_mv_dates,
+                        marker_index=len(_mv_cls) - 1, as_of=today, root=root, cfg=cfg,
+                        subtitle=f"${_mv_ticker} · mover")
+                    featured_charts.append(_mv_fc)
                     chart_id_counter += 1
 
     except Exception:  # noqa: BLE001

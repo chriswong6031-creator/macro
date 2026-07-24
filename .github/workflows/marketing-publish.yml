@@ -96,6 +96,15 @@ jobs:
           # runs DRY-RUN, posts nothing, and writes no status transitions.
           python -m scripts.marketing_publisher --live
 
+      - name: poll post metrics (dark until BUFFER_TOKEN is set)
+        # Reads back per-post analytics (impressions/likes/reposts/… + the x.com
+        # permalink) for items posted in the last 7 days and appends them to
+        # data/marketing/post_metrics.jsonl. Metrics refresh ~daily, so this runs
+        # every slot to keep the console current. Fully independent of the
+        # kill-switch: with BUFFER_TOKEN unset it prints one line and exits 0
+        # (no network, no write) — so it is harmless while the publisher is dark.
+        run: python -m scripts.marketing_metrics_poll
+
       - name: commit changed outbox ledgers (no-op when nothing changed)
         # Only persist ledger state when ARMED. While dark (kill-switch unset) the
         # dry-run writes a throwaway activity row we must NOT commit to main — else
@@ -106,13 +115,16 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Stage ONLY the outbox ledger dir + the publications ledger — never
-          # touch other paths. A dry-run (dark mode) still appends a
-          # publisher_dry_run activity row, which is a legitimate audit trail; a
-          # live run additionally advances statuses AND appends posted receipts to
-          # publications.jsonl (the Channels page reader).
+          # Stage ONLY the marketing ledgers — never touch other paths. A dry-run
+          # (dark mode) still appends a publisher_dry_run activity row, which is a
+          # legitimate audit trail; a live run additionally advances statuses AND
+          # appends posted receipts to publications.jsonl (the Channels page
+          # reader). post_metrics.jsonl (one level up from outbox/) is the metrics
+          # poller's append-only ledger — staged alongside so a fetched analytics
+          # row lands on main with the same commit. Absent (poller dark) → no-op.
           git add data/marketing/outbox 2>/dev/null || true
           git add data/marketing/publications.jsonl 2>/dev/null || true
+          git add data/marketing/post_metrics.jsonl 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "marketing-publish: no ledger changes to commit"

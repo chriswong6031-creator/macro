@@ -908,12 +908,23 @@ def emit_from_content_plan(
                                     "outbox.emit_from_content_plan: media write failed for %r: %s",
                                     chart_id, exc)
 
-                            media.append({
+                            media_entry: dict[str, Any] = {
                                 "kind": "chart_svg",
                                 "path": svg_rel_path,
                                 "chart_id": chart_id,
                                 "ticker": qi.get("ticker") or fc.get("ticker") or "",
-                            })
+                            }
+                            # Copy through the PNG variant rendered at plan-build
+                            # time (content_studio._attach_chart_media): media_url
+                            # is the public https URL the publisher attaches to the
+                            # post; media_png_path is the repo-relative local PNG.
+                            # Absent when publish.media_enabled is off or no chart
+                            # closes existed — the post then stays text/SVG-only.
+                            if fc.get("media_url"):
+                                media_entry["media_url"] = fc.get("media_url")
+                            if fc.get("media_png_path"):
+                                media_entry["media_png_path"] = fc.get("media_png_path")
+                            media.append(media_entry)
 
                     scheduled_at = _scheduled_at_for_slot(slot, as_of)
 
@@ -921,6 +932,14 @@ def emit_from_content_plan(
                         "plan_item_id": qi.get("id"),
                         "chart_id": chart_id,
                     }
+                    # Surface the chart PNG on source too (the publisher reads
+                    # source.media_url to attach without unpacking the media list).
+                    if chart_id and chart_id in featured_charts:
+                        _fc = featured_charts[chart_id]
+                        if _fc.get("media_url"):
+                            source["media_url"] = _fc.get("media_url")
+                        if _fc.get("media_png_path"):
+                            source["media_png_path"] = _fc.get("media_png_path")
                     # Structured tape-claim stamp for the publisher's post-time
                     # live gate (engine/marketing/live_verify.py): the ticker the
                     # copy is about, the thesis direction and levels, and any

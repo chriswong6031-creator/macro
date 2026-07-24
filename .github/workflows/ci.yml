@@ -716,6 +716,15 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
+      # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
+      # content_studio renders the PNG at plan-build time. engine/marketing/**
+      # covers the engine changes; the poller script + its tests are explicit.
+      - "scripts/marketing_metrics_poll.py"
+      - "tests/test_marketing_metrics_poll.py"
+      - "tests/test_marketing_chart_png.py"
+      - "tests/test_marketing_media_publish.py"
+      - "tests/test_share_cards.py"
   workflow_dispatch:
 
 permissions:
@@ -2573,7 +2582,26 @@ jobs:
         # test_marketing_live_verify is co-run: the post-time tape gate ships
         # inside the publisher loop (pandas-free here — its earnings guard is
         # fail-soft and the one pandas-dependent test importorskips).
-        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py -q
+        # test_marketing_metrics_poll: the per-post metrics poller + admin join +
+        # publisher media-attach gate — stdlib+pyyaml only (Buffer transport mocked).
+        run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_metrics_poll.py -q
+
+  marketing-media-pipeline:
+    # D02 chart-image pipeline: the PNG signal-chart renderer (determinism +
+    # magic bytes + no-indicator-words) and the R2 media publisher (fail-soft,
+    # S3 stubbed). Separate job because these need Pillow (PNG raster) — the
+    # other marketing jobs are stdlib+pyyaml. test_share_cards is co-run here
+    # (also Pillow, previously un-whitelisted). ZERO live network / no R2 creds.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml pillow
+      - name: chart PNG + media publish + share cards unit tests
+        run: python -m pytest tests/test_marketing_chart_png.py tests/test_marketing_media_publish.py tests/test_share_cards.py -q
 
   marketing-engine:
     # Marketing lobe engine unit suite (state, departments, authority ladder,

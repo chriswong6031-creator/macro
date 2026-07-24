@@ -103,6 +103,28 @@ mutation CreatePost($input: CreatePostInput!) {
 }
 """.strip()
 
+# Read back one post's analytics + its public permalink. The `post(input:{id})`
+# query returns the x.com permalink (externalLink) — which createPost's payload
+# does NOT expose — plus a normalized metrics list (impressions/reactions/…,
+# refreshed ~daily by Buffer). metricsUpdatedAt is the last-refresh timestamp;
+# a freshly-posted item may have an empty metrics list until Buffer's first pull.
+# (Confirmed 2026-07-23 from developers.buffer.com analytics guide.)
+_POST_METRICS_QUERY = """
+query PostMetrics($input: PostInput!) {
+  post(input: $input) {
+    id
+    externalLink
+    metricsUpdatedAt
+    metrics {
+      type
+      name
+      value
+      unit
+    }
+  }
+}
+""".strip()
+
 # X (Twitter) counts every URL as a fixed-length t.co link regardless of the
 # real URL length. 23 is the long-standing t.co reserved length.
 _URL_WEIGHT = 23
@@ -133,6 +155,89 @@ class Receipt:
     error: str | None
     backend: str
     at: str
+
+
+@dataclass
+class MetricsResult:
+    """The outcome of one post-analytics read (BufferPublisher.fetch_post_metrics).
+
+    ok            True only when the backend returned a post object for the id.
+    external_url  the post's public permalink (Buffer `externalLink`) — the
+                  x.com URL createPost never returns — or None.
+    metrics       normalized name→value map (impressions/likes/reposts/comments/
+                  clicks/engagement_rate when present). EMPTY {} is an honest
+                  outcome: Buffer had not yet refreshed analytics for the post.
+    raw           the untouched Buffer metrics list ([{type,name,value,unit}]),
+                  preserved so no signal is lost to the normalization.
+    metrics_updated_at  Buffer's last-refresh timestamp (metricsUpdatedAt), or None.
+    error         human-readable failure string — None on success.
+    backend       backend name, e.g. "buffer".
+    at            iso8601 UTC timestamp of the read attempt.
+    """
+    ok: bool
+    external_url: str | None
+    metrics: dict[str, Any]
+    raw: list[dict]
+    metrics_updated_at: str | None
+    error: str | None
+    backend: str
+    at: str
+
+
+# Buffer's normalized metric `type`/`name` tokens → our stable console keys.
+# Buffer labels vary by service; match on lowercased type first, then name.
+# Anything unmapped still survives in MetricsResult.raw (nothing is dropped).
+_METRIC_KEY_ALIASES: dict[str, str] = {
+    "impressions": "impressions",
+    "impression": "impressions",
+    "reach": "impressions",
+    "likes": "likes",
+    "like": "likes",
+    "favorites": "likes",
+    "reactions": "likes",
+    "reaction": "likes",
+    "reposts": "reposts",
+    "repost": "reposts",
+    "retweets": "reposts",
+    "retweet": "reposts",
+    "shares": "reposts",
+    "share": "reposts",
+    "comments": "comments",
+    "comment": "comments",
+    "replies": "comments",
+    "reply": "comments",
+    "clicks": "clicks",
+    "click": "clicks",
+    "urlclicks": "clicks",
+    "engagementrate": "engagement_rate",
+    "engagement_rate": "engagement_rate",
+}
+
+
+def _normalize_metrics(raw: list[dict]) -> dict[str, Any]:
+    """Map Buffer's [{type,name,value,unit}] list to stable console keys.
+
+    Pure. Matches on the lowercased `type` then `name` against
+    _METRIC_KEY_ALIASES. Unmapped entries are simply not surfaced under a
+    console key (they remain in the caller's `raw`). Non-numeric values are
+    skipped. Later duplicates win (Buffer never sends dupes, but be total).
+    """
+    out: dict[str, Any] = {}
+    for m in raw or []:
+        if not isinstance(m, dict):
+            continue
+        token = str(m.get("type") or "").strip().lower().replace(" ", "")
+        key = _METRIC_KEY_ALIASES.get(token)
+        if key is None:
+            name_tok = str(m.get("name") or "").strip().lower().replace(" ", "")
+            key = _METRIC_KEY_ALIASES.get(name_tok)
+        if key is None:
+            continue
+        val = m.get("value")
+        if isinstance(val, bool) or not isinstance(val, (int, float)):
+            continue
+        out[key] = val
+    return out
 
 
 def _iso_now(now: datetime | None = None) -> str:
@@ -366,6 +471,60 @@ class BufferPublisher:
         except Exception as exc:  # noqa: BLE001
             log.warning("BufferPublisher.list_channels failed: %s", exc)
             return []
+
+    def fetch_post_metrics(self, post_id: str, *, now: datetime | None = None) -> MetricsResult:
+        """Read one post's analytics + public permalink by Buffer post id.
+
+        Uses the SAME transport/auth/timeout plumbing as publish() — the
+        `post(input:{id})` query returns the x.com permalink (externalLink,
+        absent from createPost) and a normalized metrics list Buffer refreshes
+        ~daily. An empty metrics list is HONEST, not an error: a freshly-posted
+        item has no analytics until Buffer's first pull.
+
+        Fail-soft: returns MetricsResult(ok=False, error=...) on any
+        transport/GraphQL/parse failure (never raises). An empty/missing
+        post object (deleted or not-yet-indexed) is ok=False with a clear error.
+        """
+        at = _iso_now(now)
+        pid = str(post_id or "").strip()
+        if not pid:
+            return MetricsResult(False, None, {}, [], None, "empty_post_id", self.backend, at)
+        try:
+            resp = self._transport({
+                "query": _POST_METRICS_QUERY,
+                "variables": {"input": {"id": pid}},
+            })
+            err = self._graphql_errors(resp)
+            if err:
+                return MetricsResult(False, None, {}, [], None,
+                                     f"graphql_error: {err}", self.backend, at)
+            post = ((resp.get("data") or {}).get("post")) or {}
+            if not isinstance(post, dict) or not post:
+                return MetricsResult(False, None, {}, [], None,
+                                     "no_post_returned", self.backend, at)
+            raw = post.get("metrics")
+            raw_list = [m for m in raw if isinstance(m, dict)] if isinstance(raw, list) else []
+            ext = post.get("externalLink")
+            ext_url = str(ext).strip() if ext else None
+            updated = post.get("metricsUpdatedAt")
+            updated_s = str(updated).strip() if updated else None
+            return MetricsResult(
+                True, ext_url or None, _normalize_metrics(raw_list), raw_list,
+                updated_s or None, None, self.backend, at)
+        except HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read(_MAX_RESPONSE_BYTES).decode("utf-8", "replace")[:300]
+            except Exception:  # noqa: BLE001
+                pass
+            return MetricsResult(False, None, {}, [], None,
+                                 f"http_error {exc.code}: {detail}", self.backend, at)
+        except URLError as exc:
+            return MetricsResult(False, None, {}, [], None,
+                                 f"network_error: {exc.reason}", self.backend, at)
+        except Exception as exc:  # noqa: BLE001
+            return MetricsResult(False, None, {}, [], None,
+                                 f"error: {exc}", self.backend, at)
 
     def publish(
         self,
