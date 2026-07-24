@@ -112,6 +112,19 @@ def _fmt_date(d: str) -> str:
         return _e(d)
 
 
+def _fmt_datetime(pub: str) -> str:
+    """'Jul 24, 2026 · 10:08 UTC' — the desk's source publish time (published_at),
+    shown in UTC. Mirrors the client's ``fmtWhen`` exactly so the SSR baseline and
+    the hydrated card read identically. Degrades to date-only when no time is present."""
+    date = (pub or "").split("T")[0]
+    base = _fmt_date(date)
+    if pub and "T" in pub:
+        hm = pub.split("T")[1][:5]
+        if len(hm) == 5 and hm[2] == ":":
+            return f"{base} · {_e(hm)} UTC"
+    return base
+
+
 def _logo_for(inst: str) -> str:
     inst = (inst or "").strip()
     if not inst or inst == "Unknown":
@@ -120,6 +133,16 @@ def _logo_for(inst: str) -> str:
     if len(parts) == 1:
         return parts[0][:2].upper()
     return (parts[0][0] + parts[1][0]).upper()
+
+
+def _title_link(x: dict) -> str:
+    """Report title linked to its research/<slug>.html landing page when a slug is
+    present (crawlable internal link + shareable permalink); plain text otherwise."""
+    title = _e(x.get("title"))
+    slug = (x.get("slug") or "").strip()
+    if not slug:
+        return title
+    return f'<a class="rep-titlelink" href="research/{_e(slug)}.html">{title}</a>'
 
 
 def _ssr_card(x: dict) -> str:
@@ -134,7 +157,6 @@ def _ssr_card(x: dict) -> str:
     desk = x.get("desk") or ""
     top = bool(x.get("top_pick"))
     needs = bool(x.get("needs_metadata"))
-    date = (x.get("published_at") or "").split("T")[0]
     pts = x.get("summary_points") or []
     tags = x.get("tags") or []
 
@@ -156,9 +178,9 @@ def _ssr_card(x: dict) -> str:
         f'<span class="rep-inst">{_e(inst)}</span>{desk_bits}'
         f'<span class="stamp {stamp_cls}"><span class="dt"></span>{stamp}</span>{pin}'
         f'</div>'
-        f'<h3>{_e(x.get("title"))}</h3>{pts_html}'
+        f'<h3>{_title_link(x)}</h3>{pts_html}'
         f'<div class="rep-foot"><div class="rep-meta">'
-        f'<span class="rep-date">{cal}{_fmt_date(date)}</span>'
+        f'<span class="rep-date">{cal}{_fmt_datetime(x.get("published_at"))}</span>'
         f'<span class="rep-tags">{tags_html}</span></div></div>'
         f'</article>'
     )
@@ -171,7 +193,7 @@ def _ssr_feed(catalog: dict) -> str:
     return "".join(_ssr_card(x) for x in items)
 
 
-def render() -> str:
+def render(catalog: dict | None = None) -> str:
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=True,
@@ -179,7 +201,8 @@ def render() -> str:
         lstrip_blocks=True,
     )
     tmpl = env.get_template("research_vault.html.j2")
-    catalog = _public_catalog(load_catalog())
+    if catalog is None:
+        catalog = _public_catalog(load_catalog())
     # Bake as a JSON island. ensure_ascii=False keeps CJK readable; </script> is
     # escaped so a title/summary containing it can't break out of the island.
     catalog_json = json.dumps(catalog, ensure_ascii=False).replace("</", "<\\/")
@@ -188,11 +211,30 @@ def render() -> str:
 
 
 def build() -> Path:
-    page = render()
+    catalog = _public_catalog(load_catalog())
+    # Inject the per-report slug so the SSR cards + JS island can link straight to
+    # the matching research/<slug>.html landing page (shared slug logic with
+    # build_research_pages — strong internal linking for the SEO play).
+    try:
+        from scripts import build_research_pages as _rp
+        _smap = _rp.slug_map(catalog["items"])
+        for _it in catalog["items"]:
+            _it["slug"] = _smap.get(_it.get("id"), "")
+    except Exception:  # noqa: BLE001 — links degrade to none; pages still build below
+        for _it in catalog["items"]:
+            _it.setdefault("slug", "")
+    page = render(catalog)
     out = config.ROOT / "site" / "research_vault.html"
     write_page(out, page)
     n = page.count('class="rep glass')  # SSR cards (0 when empty → empty state)
     log.info("built %s (%d report cards baked)", out, n)
+    # Programmatic SEO: one indexable landing page per report (+ crawl hub +
+    # sitemap). Rides this nightly vault build; never fatal to it.
+    try:
+        from scripts import build_research_pages
+        build_research_pages.build(catalog)
+    except Exception as exc:  # noqa: BLE001 — SEO pages must not break the vault build
+        log.warning("research report pages build failed (non-fatal): %s", exc)
     return out
 
 

@@ -58,6 +58,19 @@
   var LANE = 'latest';
   var FILT = { inst: '', side: '', theme: '', q: '' };
   var SEARCH_HITS = null;    // set of ids from the live search API, or null (no server search)
+  // Teaser gate: reading the full PDFs is Pro-only; non-Pro see the latest few
+  // summaries and an upgrade wall over the rest. Summaries are public (the catalog
+  // API is unauth), so this is a MARKETING wall, not security — it fails OPEN to
+  // the full list while the tier is unresolved (null). PDF viewing is server-gated.
+  var USER_TIER = null;      // 'anon' | 'free' | 'insider' | 'pro' | null (unresolved)
+  function feedUnlocked() { return USER_TIER === null || USER_TIER === 'pro'; }
+  // Non-Pro summary allowance: Insider reads the latest 3, Free/anon the latest 1.
+  function teaseCount() { return USER_TIER === 'insider' ? 3 : 1; }
+  // Top Picks is a Pro-only lane; a resolved non-Pro tier is sent to the upgrade panel.
+  function picksLocked() { return USER_TIER !== null && USER_TIER !== 'pro'; }
+  // Pager: reveal the (already-loaded) feed a page at a time. shownN resets
+  // whenever the result set — lane + filters + search — changes (see renderFeed).
+  var PAGE_SIZE = 18, shownN = 18, _feedSig = '';
 
   function normItem(x) {
     x = x || {};
@@ -70,6 +83,7 @@
       desk: x.desk || '',
       side: (x.side || 'independent').toLowerCase(),
       date: date,
+      at: pub,
       month: date.slice(0, 7),
       pages: x.pages || 0,
       top: !!x.top_pick,
@@ -77,7 +91,8 @@
       title: x.title || '',
       points: Array.isArray(x.summary_points) ? x.summary_points : [],
       tags: Array.isArray(x.tags) ? x.tags : [],
-      tickers: Array.isArray(x.tickers) ? x.tickers : []
+      tickers: Array.isArray(x.tickers) ? x.tickers : [],
+      slug: x.slug || ''        // research/<slug>.html SEO landing page
     };
   }
   function logoFor(inst) {
@@ -102,6 +117,20 @@
     if (p.length < 3) return d;
     if (zh()) return p[0] + '年' + (+p[1]) + '月' + (+p[2]) + '日';
     return _MON[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0];
+  }
+  // Publish time from published_at (the desk's source time), shown in UTC and
+  // labeled — identical in SSR and hydrated views, and consistent with the UTC
+  // date the tree / "this week" already use. A split US+China audience has no one
+  // local tz, so UTC is the neutral, unambiguous default (no per-tz date drift).
+  function fmtWhen(iso, dateOnly) {
+    var hasT = iso && iso.indexOf('T') > -1;
+    var d = (hasT ? iso.split('T')[0] : '') || dateOnly || '';
+    var t = '';
+    if (hasT) {
+      var hm = iso.split('T')[1].slice(0, 5);
+      if (/^\d\d:\d\d$/.test(hm)) t = ' · ' + hm + ' UTC';
+    }
+    return fmtDate(d) + t;
   }
 
   /* ── ticker dossier deep-link: the site routes tickers to the Terminal.
@@ -130,8 +159,7 @@
     $('fig-desks').textContent = deskN;
     $('fig-theme').textContent = topTheme || T('—', '—');
     $('fig-total').textContent = ITEMS.length;
-    $('beam-n').textContent = deskN;
-    buildBeam(deskN);
+    buildWeb();
 
     // verdict lead line
     var picks = ITEMS.filter(function (x) { return x.top; }).length;
@@ -141,23 +169,146 @@
     }
   }
 
-  /* signature beam: N desk nodes along the quadratic arc (P0 18,118 · P1 150,6 · P2 282,118) */
-  function buildBeam(N) {
-    var g = $('rvNodes'); if (!g) return;
-    N = Math.max(1, Math.min(N || 0, 14));
-    var html = '';
-    for (var i = 0; i < N; i++) {
-      var t = (i + 0.5) / N;
-      var x = (1 - t) * (1 - t) * 18 + 2 * (1 - t) * t * 150 + t * t * 282;
-      var y = (1 - t) * (1 - t) * 118 + 2 * (1 - t) * t * 6 + t * t * 118;
-      var mid = (i === Math.floor(N / 2));
-      var r = mid ? 5.5 : 4, glowR = mid ? 16 : 11;
-      html += '<g' + (mid ? ' class="pulse"' : '') + ' style="animation-delay:' + (i * 0.32).toFixed(2) + 's">'
-        + '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + glowR + '" fill="url(#rvNodeGlow)"/>'
-        + '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" fill="var(--rv)" stroke="var(--bg)" stroke-width="1.5"/>'
-        + '</g>';
+  /* ═══════════ signature: THE DESK CONSTELLATION (neural web of desks) ═══════════
+     One node per institution in the vault, placed on a golden-angle (phyllotaxis)
+     spiral so the web stays even and un-crowded from a handful of desks to 40+.
+     Nearest-desk strands weave the web; a spotlight cycles the roster one name at a
+     time (held while a node is hovered); a signal mote glides between desks on each
+     tick. Purely descriptive — who publishes into the vault, never a market call. */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var WEB = { timer: null, cur: -1, hover: false, reduce: false, nodes: [], threads: [], pos: [] };
+
+  function deskMono(name) {
+    var parts = String(name || '').replace(/[.,]/g, ' ').split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+  }
+
+  function buildWeb() {
+    var gNodes = $('rvwNodes'), gThreads = $('rvwThreads'), gMotes = $('rvwMotes');
+    if (!gNodes || !gThreads) return;
+
+    // roster: institutions by report count, most-published first (→ nearer centre)
+    var counts = {};
+    ITEMS.forEach(function (x) { var n = x.inst; if (n && n !== 'Unknown') counts[n] = (counts[n] || 0) + 1; });
+    var roster = Object.keys(counts).map(function (n) { return { name: n, count: counts[n] }; })
+      .sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    var N = roster.length;
+    if ($('web-n')) $('web-n').textContent = N;
+
+    if (WEB.timer) { clearInterval(WEB.timer); WEB.timer = null; }
+    WEB.cur = -1; WEB.hover = false;
+    WEB.reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    if (!N) {  // honest empty state — one quiet, unlit core (no fake desks)
+      gThreads.innerHTML = ''; if (gMotes) gMotes.innerHTML = '';
+      gNodes.innerHTML = '<circle cx="170" cy="95" r="4" fill="var(--rv)" opacity="0.32"/>';
+      if ($('web-sname')) $('web-sname').textContent = T('Coming online…', '正在接入…');
+      WEB.nodes = []; return;
     }
-    g.innerHTML = html;
+
+    // golden-angle spiral inside an ellipse (viewBox 340×190)
+    var CX = 170, CY = 95, RX = 142, RY = 76, GOLD = 2.399963229728653;
+    var pos = roster.map(function (d, i) {
+      var t = Math.sqrt((i + 0.5) / N), a = i * GOLD;
+      return { x: CX + Math.cos(a) * t * RX, y: CY + Math.sin(a) * t * RY,
+               r: Math.max(3, Math.min(6.5, 3 + Math.sqrt(d.count))), name: d.name, count: d.count };
+    });
+
+    // strands: each desk → its K nearest desks — a peer-to-peer web (no star hub),
+    // denser for a small roster so a handful of desks still reads as a web.
+    var strands = [], seen = {}, K = N <= 12 ? 3 : 2;
+    pos.forEach(function (p, i) {
+      var near = pos.map(function (q, j) { return { j: j, dd: (q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) }; })
+        .filter(function (o) { return o.j !== i; }).sort(function (a, b) { return a.dd - b.dd; });
+      for (var m = 0; m < Math.min(K, near.length); m++) {
+        var a = Math.min(i, near[m].j), b = Math.max(i, near[m].j), key = a + '_' + b;
+        if (!seen[key]) { seen[key] = 1; strands.push([a, b]); }
+      }
+    });
+
+    var reduce = WEB.reduce, en = reduce ? '' : ' enter';
+    var th = '';
+    strands.forEach(function (s, idx) {
+      var a = pos[s[0]], b = pos[s[1]];
+      th += '<line class="thread web' + en + '" data-a="' + s[0] + '" data-b="' + s[1]
+        + '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1)
+        + '" stroke-width="1" style="animation-delay:' + (idx * 0.025).toFixed(2) + 's"/>';
+    });
+    gThreads.innerHTML = th;
+
+    // nodes: glow + dot + (on-spotlight) monogram, with an accessible <title>
+    var nn = '';
+    pos.forEach(function (p, i) {
+      nn += '<g class="rv-web-node' + en + '" data-i="' + i + '" style="animation-delay:' + (i * 0.045).toFixed(2) + 's">'
+        + '<title>' + esc(p.name) + (p.count ? ' · ' + p.count + (p.count === 1 ? ' report' : ' reports') : '') + '</title>'
+        + '<circle class="glow" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + (p.r * 3).toFixed(1) + '"/>'
+        + '<circle class="dot" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + p.r.toFixed(1) + '"/>'
+        + '<text class="mono" x="' + p.x.toFixed(1) + '" y="' + p.y.toFixed(1) + '" dy="0.34em" font-size="'
+        + (p.r * 1.18).toFixed(1) + '">' + esc(deskMono(p.name)) + '</text>'
+        + '</g>';
+    });
+    gNodes.innerHTML = nn;
+    if (gMotes) gMotes.innerHTML = '';
+
+    WEB.pos = pos;
+    WEB.nodes = Array.prototype.slice.call(gNodes.querySelectorAll('.rv-web-node'));
+    WEB.threads = Array.prototype.slice.call(gThreads.querySelectorAll('.thread'));
+
+    // hover holds a desk lit + names it; leaving resumes the cycle
+    WEB.nodes.forEach(function (g, i) {
+      g.addEventListener('mouseenter', function () { WEB.hover = true; lightDesk(i); });
+      g.addEventListener('mouseleave', function () { WEB.hover = false; });
+    });
+
+    lightDesk(0);
+    if (!reduce && N > 1) {
+      WEB.timer = setInterval(function () {
+        if (WEB.hover || (document.hidden)) return;
+        lightDesk((WEB.cur + 1) % WEB.nodes.length);
+      }, 2600);
+    }
+  }
+
+  function lightDesk(i) {
+    if (i < 0 || i >= WEB.nodes.length || i === WEB.cur) return;
+    WEB.cur = i;
+    WEB.nodes.forEach(function (g, j) { g.classList.toggle('on', j === i); });
+    WEB.threads.forEach(function (t) {
+      var lit = t.getAttribute('data-a') == i || t.getAttribute('data-b') == i;
+      t.classList.toggle('lit', lit);
+    });
+    var sn = $('web-sname'), p = WEB.pos[i];
+    if (sn && p) {
+      sn.classList.add('swap');
+      setTimeout(function () { if (WEB.cur === i) { sn.textContent = p.name; sn.classList.remove('swap'); } }, 175);
+    }
+    if (!WEB.reduce) fireMote(i);
+  }
+
+  /* a signal mote gliding from desk i to a neighbouring desk (SMIL animateMotion) */
+  function fireMote(i) {
+    var host = $('rvwMotes'); if (!host || !WEB.pos[i]) return;
+    var strand = null;
+    for (var k = 0; k < WEB.threads.length; k++) {
+      var t = WEB.threads[k];
+      if (t.classList.contains('web') && (t.getAttribute('data-a') == i || t.getAttribute('data-b') == i)) { strand = t; break; }
+    }
+    if (!strand) return;
+    var p = WEB.pos[i];
+    var x1 = +strand.getAttribute('x1'), y1 = +strand.getAttribute('y1');
+    var x2 = +strand.getAttribute('x2'), y2 = +strand.getAttribute('y2');
+    var fromA = Math.abs(x1 - p.x) < 0.7 && Math.abs(y1 - p.y) < 0.7;
+    var sx = fromA ? x1 : x2, sy = fromA ? y1 : y2, ex = fromA ? x2 : x1, ey = fromA ? y2 : y1;
+    var m = document.createElementNS(SVGNS, 'circle');
+    m.setAttribute('class', 'mote'); m.setAttribute('r', '2.1');
+    var mo = document.createElementNS(SVGNS, 'animateMotion');
+    mo.setAttribute('dur', '0.95s'); mo.setAttribute('fill', 'freeze'); mo.setAttribute('calcMode', 'spline');
+    mo.setAttribute('keyTimes', '0;1'); mo.setAttribute('keySplines', '0.4 0 0.2 1');
+    mo.setAttribute('path', 'M' + sx.toFixed(1) + ',' + sy.toFixed(1) + ' L' + ex.toFixed(1) + ',' + ey.toFixed(1));
+    m.appendChild(mo); host.appendChild(m);
+    setTimeout(function () { if (m.parentNode) m.parentNode.removeChild(m); }, 1000);
   }
 
   /* ═══════════ browse tree: year → month → day → institution ═══════════ */
@@ -274,25 +425,86 @@
   function renderFeed() {
     var rows = ITEMS.filter(matchItem);
     var feed = $('feed');
+    var picksGate = LANE === 'picks' && picksLocked();
+    var pt = doc.querySelector('.rv-lane[data-lane="picks"]');
+    if (pt) pt.classList.toggle('locked', picksLocked());   // small lock glyph on the tab
+    // reset the pager whenever the result set (lane + filters + search) changes
+    var sig = LANE + '|' + FILT.inst + '|' + FILT.side + '|' + FILT.theme + '|' + FILT.q;
+    if (sig !== _feedSig) { _feedSig = sig; shownN = PAGE_SIZE; }
     if (!ITEMS.length) {
       feed.innerHTML = emptyState(
         T('Institutional research is being onboarded', '机构研报正在接入'),
         T('New buy-side and sell-side desk reports arrive hourly — check back shortly.', '买方与卖方研究每小时更新 —— 请稍后再来查看。'));
+    } else if (picksGate) {
+      feed.innerHTML = picksUpgradePanel();          // Top Picks is Pro-only
     } else if (!rows.length) {
       var savedLane = LANE === 'saved';
       feed.innerHTML = emptyState(
         savedLane ? T('Nothing saved yet', '还没有收藏') : T('No reports match', '没有匹配的研报'),
         savedLane ? T('Tap the bookmark on any report to keep it here for later.', '点击任意报告上的书签，即可收藏到此处。')
           : T('Try clearing a filter or widening your search.', '试试清除筛选或放宽搜索条件。'));
+    } else if (feedUnlocked()) {
+      // Pro/unresolved: paged — show the first shownN, then a "Show more" button
+      var pg = rows.slice(0, shownN).map(cardHTML).join('');
+      if (rows.length > shownN) pg += moreButton(rows.length - shownN);
+      feed.innerHTML = pg;
     } else {
-      feed.innerHTML = rows.map(cardHTML).join('');
+      // non-Pro: the latest N summaries readable (Insider 3 / Free 1), then a wall
+      var n = teaseCount();
+      var html = rows.slice(0, n).map(cardHTML).join('');
+      var locked = rows.slice(n);
+      if (locked.length) html += lockedTeaser(locked);
+      feed.innerHTML = html;
     }
-    $('cnt-n').textContent = rows.length;
-    $('cnt-t').textContent = ITEMS.filter(laneMatch).length;
+    $('cnt-n').textContent = picksGate ? 0 : (feedUnlocked() ? Math.min(shownN, rows.length) : Math.min(teaseCount(), rows.length));
+    $('cnt-t').textContent = rows.length;   // filtered total, so "showing X of Y" tracks the pager
     renderActiveChips();
   }
   function emptyState(h, p) {
     return '<div class="rv-empty glass">' + BOOK_SVG + '<h3>' + esc(h) + '</h3><p>' + esc(p) + '</p></div>';
+  }
+  // The non-Pro upgrade wall: a few blurred ghost cards behind a glass upgrade
+  // card. Ghosts are decorative (aria-hidden, no data-id) so the feed click
+  // handler can never open them, and pointer-events are killed in CSS.
+  function lockedTeaser(locked) {
+    var ghosts = locked.slice(0, 3).map(function (x) {
+      var pts = (x.points || []).slice(0, 2).map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('');
+      return '<article class="rep glass" aria-hidden="true">'
+        + '<div class="rep-top"><span class="rep-logo">' + esc(x.logo) + '</span>'
+        + '<span class="rep-inst">' + esc(x.inst) + '</span>'
+        + (x.desk ? '<span class="rep-sep">·</span><span class="rep-desk">' + esc(x.desk) + '</span>' : '')
+        + '</div><h3>' + esc(x.title) + '</h3><ul class="rep-points">' + pts + '</ul></article>';
+    }).join('');
+    var n = locked.length;
+    var head = zh() ? ('还有 ' + n + ' 篇机构研报') : (n + ' more institutional report' + (n === 1 ? '' : 's'));
+    var body = USER_TIER === 'insider'
+      ? T('You’re reading the latest three. Upgrade to Pro to open every desk and read the full PDFs.',
+          '你正在阅读最新三篇。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。')
+      : T('You’re reading the latest report. Upgrade to Pro to open every desk and read the full PDFs.',
+          '你正在阅读最新一篇。升级 Pro 即可查看全部机构研报并阅读 PDF 全文。');
+    return '<div class="rv-lockwrap">'
+      + '<div class="rv-lockghosts">' + ghosts + '</div>'
+      + '<div class="rv-lockover glass">' + LOCK_SVG
+      + '<h3>' + esc(head) + '</h3><p>' + esc(body) + '</p>'
+      + '<a class="btn upgrade" href="plans.html">' + T('Upgrade to Pro', '升级 Pro') + '</a>'
+      + '</div></div>';
+  }
+  // Top Picks lane for non-Pro: a full-panel upgrade prompt (no summaries shown).
+  function picksUpgradePanel() {
+    var head = T('Top Picks is a Pro feature', '精选研报为 Pro 专享');
+    var body = T('Each week our desk highlights the strongest research. Upgrade to Pro to read every Top Pick and open the full PDFs.',
+                 '我们每周精选论证最扎实的研报。升级 Pro 即可阅读全部精选并查看 PDF 全文。');
+    return '<div class="rv-empty rv-gate glass">' + STAR_SVG
+      + '<h3>' + esc(head) + '</h3><p>' + esc(body) + '</p>'
+      + '<a class="btn upgrade" href="plans.html" style="margin-top:16px">' + T('Upgrade to Pro', '升级 Pro') + '</a>'
+      + '</div>';
+  }
+  // "Show more" pager button; `remaining` is how many rows are still hidden.
+  function moreButton(remaining) {
+    var next = Math.min(remaining, PAGE_SIZE);
+    return '<button class="rv-more" data-act="more">' + CHEV_SVG
+      + '<span>' + T('Show ' + next + ' more', '再看 ' + next + ' 篇') + '</span>'
+      + '<span class="rv-more-rem">' + T(remaining + ' left', '剩 ' + remaining) + '</span></button>';
   }
   function cardHTML(x) {
     var pts = x.points, hasPts = pts.length > 0;
@@ -321,10 +533,12 @@
         + '<span class="stamp ' + stampClass(x.side) + '"><span class="dt"></span>' + stampLabel(x.side) + '</span>' + pinBadge
         + '<button class="rep-savebtn' + (saved ? ' on' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="' + T('Save report', '收藏报告') + '" data-act="save">' + BOOK_SVG + '</button>'
       + '</div>'
-      + '<h3>' + esc(x.title) + '</h3>'
+      + '<h3>' + (x.slug
+          ? '<a class="rep-titlelink" href="research/' + esc(x.slug) + '.html" data-act="view">' + esc(x.title) + '</a>'
+          : esc(x.title)) + '</h3>'
       + ptsHtml + moreBtn
       + '<div class="rep-foot"><div class="rep-meta">'
-        + '<span class="rep-date">' + CAL_SVG + esc(fmtDate(x.date)) + '</span>'
+        + '<span class="rep-date">' + CAL_SVG + esc(fmtWhen(x.at, x.date)) + '</span>'
         + '<span class="rep-tags">' + x.tags.map(function (t) { return '<span class="rep-tag">' + esc(t) + '</span>'; }).join('') + tickerHtml + '</span></div>'
         + '<div class="rep-acts">'
           + '<button class="btn ghost" data-act="view">' + VIEW_SVG + T('View', '查看') + '</button>'
@@ -403,6 +617,18 @@
   }
   function isSignedIn() { return !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }
 
+  // Resolve the viewer's tier (drives the feed teaser). Called when the session
+  // resolves/changes via MDXAuth.onChange, so it never races auth-not-ready. Fails
+  // OPEN to the full list on any error (summaries are public regardless).
+  function setUserTier(t) { t = (t || 'free'); if (t === USER_TIER) return; USER_TIER = t; renderFeed(); }
+  function resolveTier() {
+    if (!isSignedIn()) { setUserTier('anon'); return; }
+    withAuth().then(function (h) { return fetch(API + '/api/research/quota', { headers: h, credentials: 'include' }); })
+      .then(function (r) { return (r && r.ok) ? r.json() : null; })
+      .then(function (q) { setUserTier(q && q.tier ? String(q.tier).toLowerCase() : 'free'); })
+      .catch(function () { setUserTier('free'); });
+  }
+
   function openViewer(id) {
     var x = ITEMS.find(function (i) { return i.id === id; }); if (!x) return;
     V.item = x; V.zoom = 1.0; V.invert = false;
@@ -453,9 +679,9 @@
       p = T('Viewing institutional research is for signed-in subscribers.', '查看机构研报为登录订阅用户专享。');
       cta = '<button class="btn primary" data-gate="signin">' + T('Sign in', '登录') + '</button>';
     } else if (kind === 'paid_required') {
-      icon = STAR_SVG; h = T('Upgrade to read', '升级后阅读');
-      p = T('This document is available on a paid plan. Highlighted research, never a trade call.', '该文档为付费订阅内容。精选研究，非交易建议。');
-      cta = '<a class="btn upgrade" href="plans.html">' + T('See plans', '查看方案') + '</a>';
+      icon = STAR_SVG; h = T('Read the full report with Pro', '升级 Pro 阅读全文');
+      p = T('Opening the full PDF is a Pro feature — Insider and free plans read the latest summaries.', '阅读 PDF 全文为 Pro 专享 —— Insider 与免费用户可阅读最新摘要。');
+      cta = '<a class="btn upgrade" href="plans.html">' + T('Upgrade to Pro', '升级 Pro') + '</a>';
     } else if (kind === 'quota') {
       icon = LOCK_SVG; h = T('Daily limit reached', '今日已达上限');
       p = T('You have reached today’s access limit — it resets at 00:00 UTC.', '你已达今日访问上限 —— 00:00 UTC 重置。');
@@ -702,6 +928,8 @@
     });
     // feed (event-delegated)
     $('feed').addEventListener('click', function (e) {
+      var showMore = e.target.closest('[data-act="more"]');
+      if (showMore) { shownN += PAGE_SIZE; renderFeed(); return; }   // reveal the next page
       var art = e.target.closest('.rep'); if (!art) return;
       var id = art.getAttribute('data-id');
       var more = e.target.closest('[data-act="morepts"]'); if (more) { art.classList.toggle('open-pts'); return; }
@@ -712,7 +940,13 @@
         if (LANE === 'saved') renderFeed();
         return;
       }
-      if (e.target.closest('[data-act="view"]')) openViewer(id);
+      var viewEl = e.target.closest('[data-act="view"]');
+      if (viewEl) {
+        // the title is a real <a href="research/<slug>.html"> for SEO/crawlers/
+        // right-click; for a left-click with JS we open the in-app viewer instead.
+        if (viewEl.tagName === 'A') e.preventDefault();
+        openViewer(id);
+      }
     });
     // drawer
     $('browse-btn').addEventListener('click', openDrawer);
@@ -738,8 +972,9 @@
     // language switch (theme.js flips [data-lang]; observe it)
     var mo = new MutationObserver(function () { onLangChange(); });
     mo.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-lang'] });
-    // re-render feed on auth resolve so quota/gate reflect the real session
+    // re-render feed on auth resolve so the teaser + quota/gate reflect the real session
     if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(function () {
+      resolveTier();   // sets USER_TIER → re-renders the feed (teaser for non-Pro)
       if ($('overlay').classList.contains('open')) { refreshQuota(); if (!V.pdf) loadDocument(V.item); }
     });
   }
@@ -773,11 +1008,24 @@
     })(n);
   }
 
+  /* deep link from a report landing page: research_vault.html?doc=<id> opens that
+     report's viewer (Pro → PDF, non-Pro → the upgrade gate). This is the SEO
+     funnel's landing → conversion hop. */
+  function openDeepLink() {
+    try {
+      var m = /[?&]doc=([^&]+)/.exec(location.search);
+      if (!m) return;
+      var id = decodeURIComponent(m[1]);
+      if (ITEMS.some(function (x) { return x.id === id; })) openViewer(id);
+    } catch (e) {}
+  }
+
   /* ═══════════ boot ═══════════ */
   function boot() {
     wire();
     hydrateFromBake();   // instant paint from the SSR snapshot
     refreshFromApi();    // then hourly-fresh live catalog
+    openDeepLink();      // ?doc=<id> from an SEO report page → open that report
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

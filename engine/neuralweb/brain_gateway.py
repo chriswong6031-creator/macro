@@ -4832,6 +4832,8 @@ def chat_stream(
     terminal_data_dir = Path(os.environ.get("TERMINAL_DATA_DIR", str(_TERMINAL_DATA_DIR)))
     terminal_hub_url = os.environ.get("TERMINAL_HUB_URL", _TERMINAL_HUB_URL)
 
+    _t0 = time.time()  # response-log latency clock (whole-turn, request→done)
+
     # 1. Sanitize (fix #3: brain uses 2000-char bound, NOT ask_brain's 500-char cap)
     clean_msg, err = _sanitize_brain_message(message, max_len=2000)
     if err:
@@ -4878,6 +4880,11 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'screened', 'thread_id': screened_tid, 'quota': quota_info})}\n\n"
         yield f"data: {json.dumps({'type': 'delta', 'text': _screen})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': False, 'screened': True, 'is_context_only': True})}\n\n"
+        _log_brain_response(
+            question=clean_msg, answer=_screen, model="screened", lane=lane, mode=mode,
+            thread_id=screened_tid, user_id=user_id, user_email=user_email, is_guest=is_guest,
+            latency_ms=int((time.time() - _t0) * 1000), context=context,
+            flags={"screened": True})
         return
 
     # 3. Providers
@@ -4994,6 +5001,44 @@ def chat_stream(
 
     # Fix #2: accumulate towards the monthly token ceiling backstop
     _record_token_usage(user_id, lane, in_tok, out_tok)
+
+    # 9. Response log (evaluation/training corpus) — best-effort, off the wire.
+    #    The answer already reached the client (delta/done yielded above); this
+    #    fire-and-forget write mirrors the cost-record step and never blocks.
+    _log_brain_response(
+        question=clean_msg,
+        answer=(answer_out[0] if answer_out else ""),
+        model=model, lane=lane, mode=mode,
+        thread_id=effective_thread_id, user_id=user_id, user_email=user_email,
+        is_guest=is_guest, latency_ms=int((time.time() - _t0) * 1000),
+        input_tokens=in_tok, output_tokens=out_tok, context=context,
+    )
+
+
+def _log_brain_response(**kwargs) -> None:
+    """Emit one mastermind.response_log.v1 row for a brain turn.
+
+    BOTH user-facing surfaces reach this same gateway: the Macro Dashboard chat
+    widget and the charting-app Terminal both run mm_brain.js against
+    /api/brain/stream. mm_brain.js stamps context.page ('terminal' when anchored
+    top in the Terminal, 'dashboard'/other on Macro), so we derive `surface` from
+    it — one instrumentation point covers "across Terminal and Macro Dashboard".
+
+    Fully isolated + best-effort: an import error, missing R2 creds, or write
+    failure must NEVER disturb the chat path (which already completed)."""
+    try:
+        from lib import mastermind_response_log as _mm  # noqa: PLC0415
+        if not _mm.enabled():
+            return
+        # Drop empty answers (degraded/no-content turns aren't "responses").
+        if not (kwargs.get("answer") or "").strip():
+            return
+        ctx = kwargs.get("context")
+        page = str((ctx or {}).get("page") or "").lower() if isinstance(ctx, dict) else ""
+        surface = "terminal" if page == "terminal" else "macro"
+        _mm.log_response_async(surface=surface, **kwargs)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------

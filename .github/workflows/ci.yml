@@ -65,6 +65,12 @@ on:
       # Research Vault (RV W3) page + viewer: page test + template.
       - "tests/test_research_vault_page.py"
       - "templates/research_vault.html.j2"
+      # Research Vault SEO landing pages (programmatic SEO): per-report page
+      # generator + its templates + test.
+      - "scripts/build_research_pages.py"
+      - "templates/research_report.html.j2"
+      - "templates/research_index.html.j2"
+      - "tests/test_research_pages.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -188,6 +194,9 @@ on:
       # M7C-R2/R3: Mag-7 Regime Context Organ (engine/mag7_regime.py).
       - "engine/mag7_regime.py"
       - "tests/test_mag7_regime.py"
+      # MWR-W0: Mag-7 washout re-entry gate (background-only; prereg-gated resurface).
+      - "engine/mag7_washout.py"
+      - "tests/test_mag7_washout.py"
       - "tests/test_ignition_persistence.py"
       # Mag 7 panel: template partial + build_site loader.
       - "templates/_mag7_panel.html.j2"
@@ -323,6 +332,10 @@ on:
       - "tests/test_admin_orchestrator.py"
       - "tests/test_admin_prophet.py"
       - "admin/prophet.py"
+      # Mastermind AI response log (both surfaces → R2 → admin eval view).
+      - "admin/mastermind_logs.py"
+      - "tests/test_mastermind_response_log.py"
+      - "tests/test_admin_mastermind_logs.py"
       - "tests/test_macro_snapshot.py"
       - "tests/test_macro_context_authority.py"
       - "tests/test_law_dates.py"
@@ -1080,6 +1093,7 @@ jobs:
           tests/test_news_rank_aging.py
           tests/test_build_netliq_daily.py
           tests/test_ignition_radar.py
+          tests/test_mag7_washout.py
           tests/test_mag7_regime.py
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
@@ -1255,7 +1269,7 @@ jobs:
       - name: install deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_brain_doctrine.py -q
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py -q
 
   cn-standout-audit:
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
@@ -2567,7 +2581,7 @@ jobs:
         # since #3315 — the lane was red on every PR until it was added here.
         run: pip install pytest jinja2 pyyaml
       - name: research vault ingestion-spine + page unit tests
-        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
+        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 
   research-vault-api:
     # RV W2 serving API + download gate (SECURITY-CRITICAL): the app/research.py

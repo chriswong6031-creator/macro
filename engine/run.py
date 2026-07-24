@@ -744,6 +744,18 @@ def run(force: bool = False) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mag7-regime failed: %s", e)
         latest["mag7_regime"] = None
+    # Mag-7 washout re-entry gate (engine/mag7_washout.py, MWR-W0): BACKGROUND-ONLY
+    # context organ — 2W Stoch-RSI + member breadth + RSI-MACD trigger ladder on the
+    # EW basket. NO template consumes it (DO_NOT_REBUILD §2: a Mag-7 leadership
+    # surface may return only via prereg + gauntlet; this accrues that gate's track
+    # record). Writes data/mag7_washout/latest.json + triggers.jsonl (nightly-only
+    # advancer). Prereg: research/MAG7_WASHOUT_REENTRY_PREREG.md. Never fatal.
+    try:
+        from engine import mag7_washout as _m7w
+        latest["mag7_washout"] = _m7w.snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("mag7-washout failed: %s", e)
+        latest["mag7_washout"] = None
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn

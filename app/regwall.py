@@ -42,7 +42,27 @@ router = APIRouter()
 # Public funnel — everything else *.html is gated. Kept in code (not config):
 # the list is the PRODUCT boundary, and moving a page across it should be a
 # reviewed change, not an ops edit.
+#
+# EXACT public pages (the marketing funnel).
 PUBLIC_PATHS = {"/", "/index.html", "/plans.html"}
+# Public PREFIXES — whole trees that stay FREE + crawlable (operator order
+# 2026-07-24). A registration wall that carries no crawler exception 302s
+# Googlebot (which never has a session) off every page, so the SEO estate must
+# sit OUTSIDE the wall. These are mirrored EXACTLY by the Caddyfile @reg_html /
+# @reg_html_err `not path` exclusions (app/deploy/Caddyfile) — the edge is the
+# real enforcer, so the two lists MUST stay identical. Every entry is a live
+# sitemap.xml prefix:
+#   /stocks/  ~1.6k per-ticker SEO dossiers    /learn/  learning center
+#   /tools/   tools hub + calculators + sheets  /blog/   blog + feed
+PUBLIC_PREFIXES = ("/stocks/", "/tools/", "/learn/", "/blog/")
+
+
+def _is_public(path: str) -> bool:
+    """True for the marketing funnel + the free/SEO trees — never gated."""
+    if not path:
+        return False
+    p = path.split("?", 1)[0].split("#", 1)[0]
+    return p in PUBLIC_PATHS or p.startswith(PUBLIC_PREFIXES)
 
 
 def _enabled() -> bool:
@@ -64,7 +84,7 @@ def _safe_ret(raw: str | None) -> str:
 
 def _deny(ret: str) -> Response:
     loc = "/?signin=1"
-    if ret and ret not in PUBLIC_PATHS:
+    if ret and not _is_public(ret):
         loc += "&ret=" + urllib.parse.quote(ret, safe="/")
     return Response(
         status_code=302,
@@ -86,6 +106,12 @@ def regwall_check(request: Request) -> Response:
         ret = _safe_ret(request.headers.get("x-original-uri"))
         if not _enabled():
             return Response(status_code=204, headers={"X-Regwall": "off"})
+        # Free/SEO trees + the funnel are PUBLIC: allow without a session so
+        # search engines and signed-out guests read them. Caddy normally never
+        # routes these here (they're excluded from @reg_html) — this is
+        # defense-in-depth and keeps the two public lists provably mirrored.
+        if _is_public(ret):
+            return Response(status_code=204, headers={"X-Regwall": "public", "Cache-Control": "no-store"})
         # Late imports keep startup order irrelevant; failure → deny (fail-closed).
         from app.main import _mm_supabase_access_token, _mm_verify_uid_cached  # noqa: PLC0415
 

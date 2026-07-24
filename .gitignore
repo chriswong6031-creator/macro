@@ -467,3 +467,10 @@ data/stage_analysis/forward_ledger.jsonl
 # ledger is a FORWARD LEDGER — nightly is the SOLE grade advancer (house law), never
 # commit from a worktree. summary.json is a small display artifact and IS committed.
 data/prophet_stage_shadow/ledger.jsonl
+
+# Mastermind AI response log — ingested corpus of every user-facing answer (Macro
+# brain + Terminal copilot) + the operator's eval sidecar. Holds USER QUESTIONS AND
+# ANSWERS: admin-local ONLY, never committed. The admin panel ingests it from R2 (the
+# data plane) on demand via admin/mastermind_logs.refresh(); nothing in git reads it.
+data/mastermind/response_log.jsonl
+data/mastermind/response_eval.jsonl

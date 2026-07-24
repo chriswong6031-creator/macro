@@ -9,10 +9,10 @@
   "direction": "oil spiking \u2014 energy leads, breakevens up",
   "direction_zh": "\u6cb9\u4ef7\u98d9\u5347 \u2014 \u80fd\u6e90\u9886\u6da8\u3001\u76c8\u4e8f\u5e73\u8861\u4e0a\u884c",
   "dir_sign": 1,
-  "confidence": "high",
-  "confidence_zh": "\u9ad8",
-  "strength": 1.88,
-  "dominance_ratio": 1.86,
+  "confidence": "medium",
+  "confidence_zh": "\u4e2d",
+  "strength": 1.9,
+  "dominance_ratio": 1.43,
   "agreement": 1.0,
   "runner_up": "fed_repricing",
   "runner_up_label": "Fed repricing",
@@ -49,8 +49,8 @@
       "label": "Oil shock",
       "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
       "family": "inflation",
-      "projection": 1.88,
-      "strength": 1.88,
+      "projection": 1.9,
+      "strength": 1.9,
       "direction": "oil spiking \u2014 energy leads, breakevens up"
     },
     {
@@ -58,36 +58,45 @@
       "label": "Fed repricing",
       "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
       "family": "rates",
-      "projection": 1.01,
-      "strength": 1.01,
+      "projection": 1.33,
+      "strength": 1.33,
       "direction": "hawkish repricing \u2014 cuts priced out, front-end up"
-    },
-    {
-      "driver": "crypto_liquidity",
-      "label": "Crypto liquidity",
-      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
-      "family": "crypto",
-      "projection": 0.38,
-      "strength": 0.38,
-      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
     },
     {
       "driver": "liquidity_impulse",
       "label": "Liquidity impulse",
       "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
       "family": "liquidity",
-      "projection": 0.3,
-      "strength": 0.3,
+      "projection": 0.46,
+      "strength": 0.46,
       "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
     },
     {
-      "driver": "china_stimulus",
-      "label": "China stimulus",
-      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
-      "family": "china",
-      "projection": 0.13,
-      "strength": 0.13,
-      "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
+      "driver": "crypto_liquidity",
+      "label": "Crypto liquidity",
+      "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
+      "family": "crypto",
+      "projection": 0.39,
+      "strength": 0.39,
+      "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
+    },
+    {
+      "driver": "real_rate_shock",
+      "label": "Real-rate shock",
+      "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
+      "family": "rates",
+      "projection": 0.23,
+      "strength": 0.23,
+      "direction": "real yields rising \u2014 restrictive, gold & duration hit"
+    },
+    {
+      "driver": "credit_stress",
+      "label": "Credit stress",
+      "label_zh": "\u4fe1\u7528\u538b\u529b",
+      "family": "credit",
+      "projection": -0.14,
+      "strength": 0.14,
+      "direction": "credit spreads compressing \u2014 risk-on"
     },
     {
       "driver": "ai_semis",
@@ -99,30 +108,21 @@
       "direction": "AI/semis leadership \u2014 narrow tech-led tape"
     },
     {
-      "driver": "real_rate_shock",
-      "label": "Real-rate shock",
-      "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
-      "family": "rates",
+      "driver": "china_stimulus",
+      "label": "China stimulus",
+      "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
+      "family": "china",
       "projection": 0.12,
       "strength": 0.12,
-      "direction": "real yields rising \u2014 restrictive, gold & duration hit"
-    },
-    {
-      "driver": "credit_stress",
-      "label": "Credit stress",
-      "label_zh": "\u4fe1\u7528\u538b\u529b",
-      "family": "credit",
-      "projection": -0.11,
-      "strength": 0.11,
-      "direction": "credit spreads compressing \u2014 risk-on"
+      "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
     },
     {
       "driver": "usd_shock",
       "label": "USD shock",
       "label_zh": "\u7f8e\u5143\u51b2\u51fb",
       "family": "fx",
-      "projection": 0.02,
-      "strength": 0.02,
+      "projection": 0.03,
+      "strength": 0.03,
       "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
     }
   ],

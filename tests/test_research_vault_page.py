@@ -92,7 +92,8 @@ def test_hero_and_this_week_figs(page_seeded):
     assert 'id="fig-desks"' in page_seeded                # Desks publishing
     assert 'id="fig-theme"' in page_seeded                # Most-covered theme
     assert 'id="fig-total"' in page_seeded                # In the vault
-    assert 'id="rvNodes"' in page_seeded                  # the publishing-beam signature
+    assert 'id="rvwNodes"' in page_seeded                 # the Desk Constellation signature (neural web)
+    assert 'id="web-sname"' in page_seeded                # rotating spotlight name readout
 
 
 def test_three_lane_tabs(page_seeded):
@@ -161,9 +162,10 @@ def test_bilingual_spans_balanced(page_seeded):
 def test_not_investment_advice_and_framing(page_seeded):
     assert "Not investment advice" in page_seeded
     assert "非投资建议" in page_seeded
-    # Top Picks framed as highlighted research, never a trade call
+    # Top Picks framed as highlighted research, never a trade call. (The hero's
+    # own "not a trade recommendation" stance was retired — the not-advice guarantee
+    # lives in the legal footer + the Top Picks framing, not a hero disclaimer.)
     assert "never a trade call" in page_seeded
-    assert "not a trade recommendation" in page_seeded
     # watermark microcopy
     assert "not for redistribution" in page_seeded
     assert "Watermarked with your account" in page_seeded

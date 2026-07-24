@@ -1539,7 +1539,7 @@ html[data-lang="zh"] .band h2{letter-spacing:0}
 .card:hover,.card:focus-within{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 48%,var(--line));
  box-shadow:0 16px 36px -16px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
 .card:hover.acc::before,.card:focus-within.acc::before{transform:scaleX(1)} .card:hover.acc::after{opacity:1}
-.card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.card-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;margin-bottom:9px}
 .ico{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:9px;
  background:color-mix(in srgb,var(--accent) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
  transition:transform .18s cubic-bezier(.2,.7,.3,1)}
@@ -1966,6 +1966,14 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .regime-changed .l-zh{display:none}
 html[data-lang="zh"] .regime-changed .l-en{display:none}
 html[data-lang="zh"] .regime-changed .l-zh{display:inline}
+/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
+   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
+.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
+.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
+.regime-drift .l-zh{display:none}
+html[data-lang="zh"] .regime-drift .l-en{display:none}
+html[data-lang="zh"] .regime-drift .l-zh{display:inline}
 
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
@@ -1973,6 +1981,34 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 .ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
+
+/* ===== personal welcome — a typed greeting stands in for the wordmark on entry,
+   then cross-dissolves into the brand lockup. Decorative (aria-hidden); the brand
+   + tagline stay the accessible content. The hero-stack overlaps greeting + brand
+   in ONE grid cell so the crossfade never shifts layout. ===== */
+.hub-hero-stack{display:grid}
+.hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
+.hub-brand{transition:opacity .85s ease,transform .85s ease}
+.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(88px,12vw,124px);
+ opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .8s ease,transform .8s ease}
+.h.greet-run .hub-greet{opacity:1;transform:none}
+.h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
+.hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
+ font-size:clamp(27px,4.6vw,47px);
+ background:linear-gradient(176deg,var(--text) 20%,color-mix(in srgb,var(--text) 55%,var(--accent,var(--info))));
+ -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 32px var(--bg))}
+.hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
+ background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
+ animation:greetCaret 1.05s steps(1) infinite}
+.greet-tx{transition:opacity .34s ease}
+/* conversation mode: the market read wraps in a smaller, lighter voice than the
+   big name greeting; the caret becomes an inline blink at the end of the text. */
+.hub-greet.convo .greet-tx{font-size:clamp(19px,2.7vw,29px);font-weight:600;letter-spacing:0;line-height:1.34;max-width:min(30ch,86vw);text-wrap:balance}
+.hub-greet.convo .greet-caret{display:none}
+.hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:3px;transform:translateY(3px);border-radius:1px;background:var(--accent,var(--info));animation:greetCaret 1.05s steps(1) infinite}
+@keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
 </style>"""
 
 # Critical a11y CSS that must ship INLINE in the hub page itself (start.html
@@ -2067,6 +2103,67 @@ def _g_regime_json(name):
         return {}
 
 
+# ── regime DYNAMICS — never emit a regime label without its trajectory ─────────
+# A label ("Goldilocks") means opposite things by direction: firming INTO it (good)
+# vs rolling OUT of it (bad); the confirmed quad also LAGS (hysteresis) the raw
+# coordinates, so the disagreement IS the drift signal. The engine already knows —
+# transition_state + the growth/inflation history — so we carry direction + phase +
+# drift-target alongside the label. Reads the committed *_regime_timeline.json.
+_RTL = {"US": "regime_timeline.json", "CN": "china_regime_timeline.json",
+        "HK": "hk_regime_timeline.json", "CA": "canada_regime_timeline.json"}
+_RQRANK = {"Q1": 3, "Q2": 2, "Q4": 1, "Q3": 0}   # risk-quality: Goldilocks>Reflation>Growth-scare>Stagflation
+_RQNAME = {"Q1": ("Goldilocks", "理想增长"), "Q2": ("Reflation", "再通胀"),
+           "Q3": ("Stagflation", "滞胀"), "Q4": ("Growth-scare", "增长恐慌")}
+
+
+def _regime_dynamics(cc: str, d: dict) -> dict:
+    """Direction (improving/stable/deteriorating) + phase (fresh/stable/aging/turning) +
+    drift-target quad, from the growth/inflation TRAJECTORY. Empty (null) when we have no
+    history for a market — honest, not guessed."""
+    empty = {"rdir": None, "rphase": None, "rtoward_en": None, "rtoward_zh": None, "rflip": None}
+    fn = _RTL.get(cc)
+    if not fn:
+        return empty
+    try:
+        tl = json.loads((config.site_dir() / fn).read_text())
+        g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
+    except Exception:  # noqa: BLE001
+        return empty
+    if len(g) < 30 or len(i) < 30:
+        return empty
+    N = min(20, len(g) - 1)                       # ~1 month of trading days
+    g_now, i_now = g[-1], i[-1]
+    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
+    ts = (tr[-1] if tr else "STABLE") or "STABLE"
+    quad = (d.get("quad") or "").upper()
+    rank = _RQRANK.get(quad, 2)
+    moving = ts in ("WEAKENING", "TRANSITIONING", "NEW_REGIME")
+    DEAD = 0.12
+    if dQ >= DEAD:
+        rdir = "improving"
+    elif dQ <= -DEAD:
+        rdir = "deteriorating"
+    elif moving:
+        rdir = "deteriorating" if rank >= 2 else "improving"   # leaving a good quad = bad; a bad one = good
+    else:
+        rdir = "stable"
+    rphase = {"STABLE": "stable", "WEAKENING": "aging", "TRANSITIONING": "turning",
+              "NEW_REGIME": "fresh"}.get(ts, "stable")
+    rtoward_en = rtoward_zh = None
+    if rdir != "stable":
+        gp = (g_now + dg) > 0.05                   # projected growth / inflation signs
+        ip = (i_now + di) > 0.05
+        tq = {(True, False): "Q1", (True, True): "Q2",
+              (False, True): "Q3", (False, False): "Q4"}[(gp, ip)]
+        if tq != quad:                             # drifting toward a DIFFERENT quad
+            rtoward_en, rtoward_zh = _RQNAME[tq]
+    flip = d.get("flip_condition") or {}
+    m = flip.get("margin")
+    rflip = round(m, 2) if isinstance(m, (int, float)) else None
+    return {"rdir": rdir, "rphase": rphase, "rtoward_en": rtoward_en, "rtoward_zh": rtoward_zh, "rflip": rflip}
+
+
 def _globe_markets() -> list:
     """Assemble the 9-market globe blob (US/CA/CN/HK + JP/KR/TW/GB/EZ) from the regime
     JSONs + intl/latest.json. Numbers are real; recession/drawdown null-safe."""
@@ -2125,6 +2222,7 @@ def _globe_markets() -> list:
             "index_sym": m["yahoo"], "index_price": price, "index_chg_pct": chg,
             "tz": m["tz"], "open": m["open"], "close": m["close"], "lunch": m["lunch"], "href": m["href"],
         })
+        rows[-1].update(_regime_dynamics(cc, home.get(cc) or {}))   # + rdir/rphase/rtoward/rflip
     for r in rows:
         r["agrees_with"] = [o["cc"] for o in rows if o["cc"] != r["cc"] and o["quad"] == r["quad"]]
     return rows
@@ -2194,11 +2292,22 @@ def _g_markets(blob, us_n, cn_n, hk_n,
             '<span class="l-zh">已切换</span>'
             '</span>'
         ) if cc in _regime_changed else ""
+        # regime TRAJECTORY badge — the label is never shown without its direction; a
+        # deteriorating "Goldilocks" and a firming one are opposite trades. From rdir.
+        _rd = m.get("rdir")
+        if _rd == "deteriorating":
+            drift_badge = ('<span class="regime-drift det">↘ '
+                           + _bi(m.get("rtoward_en") or "cooling", m.get("rtoward_zh") or "转弱") + '</span>')
+        elif _rd == "improving":
+            drift_badge = ('<span class="regime-drift imp">↗ '
+                           + _bi(m.get("rtoward_en") or "firming", m.get("rtoward_zh") or "转强") + '</span>')
+        else:
+            drift_badge = ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
                      '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
-                     + changed_badge + '</div>'
+                     + changed_badge + drift_badge + '</div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
             '<div class="nav mk reveal">' + "".join(cards) + '</div>')
@@ -2583,6 +2692,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             + _seo +
             _jsonld +
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
+            # resolve the viewer's HOME [lon,lat] from the browser timezone so the
+            # deferred globe opens centred on their country — window.__mmHome. Falls
+            # back to a UTC-offset longitude (15°/hr) + locale-guessed latitude.
+            '<script>window.__mmHome=(function(){try{var tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"",M={"America/New_York":[-74,40.7],"America/Detroit":[-83,42.3],"America/Toronto":[-79.4,43.7],"America/Montreal":[-73.6,45.5],"America/Halifax":[-63.6,44.6],"America/Chicago":[-87.6,41.9],"America/Winnipeg":[-97.1,49.9],"America/Denver":[-105,39.7],"America/Edmonton":[-113.5,53.5],"America/Phoenix":[-112.1,33.4],"America/Los_Angeles":[-118.2,34.1],"America/Vancouver":[-123.1,49.3],"America/Mexico_City":[-99.1,19.4],"America/Sao_Paulo":[-46.6,-23.5],"America/Bogota":[-74.1,4.7],"Europe/London":[-0.1,51.5],"Europe/Dublin":[-6.3,53.3],"Europe/Lisbon":[-9.1,38.7],"Europe/Madrid":[-3.7,40.4],"Europe/Paris":[2.3,48.9],"Europe/Brussels":[4.4,50.8],"Europe/Amsterdam":[4.9,52.4],"Europe/Zurich":[8.5,47.4],"Europe/Berlin":[13.4,52.5],"Europe/Rome":[12.5,41.9],"Europe/Vienna":[16.4,48.2],"Europe/Stockholm":[18.1,59.3],"Europe/Warsaw":[21,52.2],"Europe/Athens":[23.7,38],"Europe/Istanbul":[29,41],"Europe/Moscow":[37.6,55.8],"Asia/Jerusalem":[35.2,31.8],"Asia/Dubai":[55.3,25.2],"Asia/Karachi":[67,24.9],"Asia/Kolkata":[77.2,28.6],"Asia/Dhaka":[90.4,23.8],"Asia/Bangkok":[100.5,13.8],"Asia/Jakarta":[106.8,-6.2],"Asia/Singapore":[103.8,1.35],"Asia/Kuala_Lumpur":[101.7,3.1],"Asia/Manila":[121,14.6],"Asia/Shanghai":[116.4,39.9],"Asia/Chongqing":[106.5,29.6],"Asia/Urumqi":[87.6,43.8],"Asia/Hong_Kong":[114.2,22.3],"Asia/Taipei":[121.5,25],"Asia/Seoul":[127,37.6],"Asia/Tokyo":[139.7,35.7],"Australia/Perth":[115.9,-31.9],"Australia/Sydney":[151.2,-33.9],"Australia/Melbourne":[145,-37.8],"Australia/Brisbane":[153,-27.5],"Pacific/Auckland":[174.8,-36.9],"Africa/Johannesburg":[28,-26.2],"Africa/Cairo":[31.2,30],"Africa/Lagos":[3.4,6.5]};if(M[tz])return M[tz];var off=-(new Date().getTimezoneOffset())/60,lon=Math.max(-179,Math.min(179,off*15)),lang=(navigator.language||"").toLowerCase(),lat=/^(zh|ja|ko)/.test(lang)?32:(/^(en-gb|de|fr|nl|sv|pl|it|es|nb|da|fi|cs|ru|uk)/.test(lang)?50:38);return[lon,lat];}catch(e){return null;}})();</script>\n'
             '<link rel="stylesheet" href="theme.css">\n'
             + _GLOBE_HUB_CSS + _HUB_CRITICAL_CSS + "</head><body>")
 
@@ -2618,10 +2731,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
         + _bi('Live · <span class="hub-clock" data-loc="en">—</span>',
               '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
-        + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
+        + '</span>'
+        # hero stack: the personal typed greeting overlays the brand lockup in one
+        # grid cell, then cross-dissolves into it (hub-greet.js). Brand is the
+        # accessible content; the greeting is decorative (aria-hidden).
+        + '<div class="hub-hero-stack">'
+        + '<div class="hub-greet" aria-hidden="true"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
+        + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, disciplined engine.",
-                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></header>'
+                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></div></div></header>'
         + globe_deck
         + '<div class="hub-views" id="hub-views" data-view="mk">'
         + _HUB_SEG_HTML
@@ -2648,6 +2767,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         'function tick(){var d=new Date();for(var i=0;i<els.length;i++){var l=els[i].getAttribute("data-loc")||undefined;'
         'try{els[i].textContent=d.toLocaleString(l,opt);}catch(e){els[i].textContent=d.toLocaleString(undefined,opt);}}}'
         'tick();setInterval(tick,1000);})();</script>'
+        # personal welcome — name greeting + a short market-aware read (real #globe-data,
+        # no LLM), paced with pauses, then a slow dissolve to the brand. Engine + topic/
+        # phrasing rotation + same-day visit recall live in hub-welcome.js.
+        '<script defer src="hub-welcome.js"></script>'
         # hub-views segmented toggle + scroll CTA
         '<script>(function(){'
         'var hv=document.getElementById("hub-views");if(!hv)return;'
