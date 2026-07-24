@@ -4448,6 +4448,8 @@ def main() -> int:
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "illus.css", "illus.js",
                   "account.js",
+                  # landing onboarding sheet (paired templates/ -> site/ byte copy)
+                  "onboard.js", "onboard.css",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",

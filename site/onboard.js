@@ -1,0 +1,1129 @@
+/* ============================================================================
+   MASTERMIND LANDING — onboarding sheet controller
+   ----------------------------------------------------------------------------
+   A self-contained IIFE. When any Start free / trial / Log in CTA on the landing
+   is clicked, this opens a large floating sheet IN PLACE over the page:
+     1 Account · 2 Preferences · 3 Plan · 4 Billing (paid only) · 5 Done
+   built in the LANDING's design language (see onboard.css). The CTA <a> hrefs to
+   app.mastermind-x.com/terminal?sign… remain the no-JS fallback; this script
+   INTERCEPTS those clicks on THIS page and opens the local sheet instead.
+
+   Dependencies (all lazy / optional):
+     • window.MDXAuth (theme.js) — Supabase auth broker. If absent (index.html
+       does not load theme.js by default), we lazy-load theme.js same-origin so
+       the sheet still works. Auth degrades to an honest disabled state if
+       Supabase is not configured (window.SUPABASE_CFG null on a local build).
+     • window.LANG (index.html inline) — EN⇄中文 applier. We subscribe to it and
+       mirror the same __en-innerHTML swap over our own subtree.
+     • Stripe.js — injected on demand at the billing step only.
+     • billing via (window.MM_API||'') + /api/billing/*  (mirrors account.js).
+
+   Paired asset: templates/onboard.js MUST byte-match site/onboard.js
+   (scripts/check_template_site_sync).
+   ========================================================================== */
+(function () {
+  "use strict";
+  if (window.__mmOnboard) return;            // idempotent (defer + possible double-include)
+  window.__mmOnboard = true;
+
+  // ── constants ──────────────────────────────────────────────────────────────
+  var STEP_ACCOUNT = 1, STEP_PREFS = 2, STEP_PLAN = 3, STEP_BILLING = 4, STEP_DONE = 5;
+  var SS_STASH = "mm.onboardLanding";        // per-tab wizard stash (this surface)
+  var LS_PENDING_PREFS = "mm.pendingPrefs";  // SAME key the Terminal applies on first sign-in
+  var LS_ONBOARD_RESUME = "mm.onboardResume";// Google-OAuth round-trip stash (matches terminal oauth.ts)
+  var STRIPE_JS = "https://js.stripe.com/v3";
+  var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
+  var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
+  var TRIAL_DAYS = 7;
+
+  // Raw cents — the ONLY hand-entered plan numbers (mirror config/plans.yml /
+  // terminal plans.ts). Every displayed figure is DERIVED from these.
+  var CENTS = {
+    insider: { monthly: 6900, annual: 58800 },
+    pro:     { monthly: 9900, annual: 82800 }
+  };
+  function perMonth(key, period) { var c = CENTS[key]; return Math.round(period === "annual" ? c.annual / 12 / 100 : c.monthly / 100); }
+  function monthlyPrice(key) { return Math.round(CENTS[key].monthly / 100); }
+  function annualBilled(key) { return Math.round(CENTS[key].annual / 100); }
+  function savePct(key) { var c = CENTS[key]; return Math.round(((c.monthly - c.annual / 12) / c.monthly) * 100); }
+  function bestSavePct() { return Math.max(savePct("insider"), savePct("pro")); }
+  function firstInvoiceTotal(key, period) { return period === "annual" ? annualBilled(key) : monthlyPrice(key); }
+  function proWedge() { return perMonth("pro", "annual") - perMonth("insider", "annual"); }
+
+  // ── bilingual: [en, zh] tuples. `zh` may contain inline HTML (matches the
+  //    landing's data-zh contract, which swaps innerHTML). ──────────────────────
+  var LEX = {
+    // pane (left) — step-adaptive headline + subline
+    paneAccountH:  ["Your desk is one step away.", "你的台席，仅一步之遥。"],
+    paneAccountS:  ["Create your account to unlock every dashboard, signal and the Terminal — free.", "创建账户，解锁全部看板、信号与 Terminal——免费。"],
+    panePrefsH:    ["Make it read the way you think.", "让它按你的思路来解读。"],
+    panePrefsS:    ["Pick your markets and theme. Everything here is optional — change it any time.", "选择你的市场与主题。此处全部可选，随时可改。"],
+    planePlanH:    ["Free to read. Cheap to go deep.", "免费阅读。深度也不贵。"],
+    planePlanS:    ["Start free forever, or add the analyst and the desks. Every paid plan is a 7-day free trial.", "永久免费开始，或加上分析师与各台席。所有付费方案均含 7 天免费试用。"],
+    paneBillH:     ["7 days free. Cancel in one click.", "7 天免费。一键取消。"],
+    paneBillS:     ["Your card starts the trial. We tell you exactly when the first charge lands — and cancelling before then costs nothing.", "绑卡即开启试用。我们会明确告知首次扣款时间——在此之前取消，分文不收。"],
+    paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
+    paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
+
+    // assembly card
+    asmName:   ["Name", "姓名"],
+    asmEmail:  ["Email", "邮箱"],
+    asmMarkets:["Markets", "市场"],
+    asmPlan:   ["Plan", "方案"],
+    asmPending:["—", "—"],
+    asmTrial:  ["TRIAL", "试用"],
+
+    // stepper
+    stAccount: ["Account", "账户"],
+    stPrefs:   ["Preferences", "偏好"],
+    stPlan:    ["Plan", "方案"],
+    stBilling: ["Billing", "结算"],
+    stDone:    ["Done", "完成"],
+
+    // step 1 — account
+    accountTitle: ["Create your account", "创建账户"],
+    accountSub:   ["First name feeds your greetings and briefs everywhere later.", "名字之后会用于各处的问候与简报。"],
+    signinTitle:  ["Welcome back", "欢迎回来"],
+    signinSub:    ["Sign in to your Mastermind desk.", "登录你的 Mastermind 台席。"],
+    firstName:    ["First name", "名"],
+    lastName:     ["Last name", "姓"],
+    email:        ["Email", "邮箱"],
+    password:     ["Password", "密码"],
+    pwHintShort:  ["At least 8 characters.", "至少 8 个字符。"],
+    pwHintOk:     ["Looks good.", "看起来不错。"],
+    createAccount:["Create account", "创建账户"],
+    signin:       ["Sign in", "登录"],
+    busy:         ["Working…", "处理中…"],
+    or:           ["or", "或"],
+    continueGoogle:["Continue with Google", "使用 Google 继续"],
+    appleSoon:    ["Apple — coming soon", "Apple — 即将支持"],
+    toSignin:     ["Already have an account? Sign in", "已有账户？登录"],
+    toSignup:     ["New to Mastermind? Create an account", "初次使用？创建账户"],
+    terms:        ["By continuing you agree to our Terms and Privacy Policy.", "继续即表示你同意我们的服务条款与隐私政策。"],
+
+    // step 2 — preferences
+    prefsTitle:   ["Set up your desk", "配置你的台席"],
+    prefsSub:     ["Tune the read to your markets and taste. All optional.", "按你的市场与偏好调校解读。全部可选。"],
+    marketFocus:  ["Market focus", "市场重点"],
+    mktUs:        ["United States", "美国"],
+    mktCn:        ["China", "中国"],
+    mktHk:        ["Hong Kong", "香港"],
+    mktCa:        ["Canada", "加拿大"],
+    mktGlobal:    ["Global", "全球"],
+    theme:        ["Theme", "主题"],
+    themeLight:   ["Light", "浅色"],
+    themeDark:    ["Dark", "深色"],
+    themeAuto:    ["Auto", "自动"],
+    themeCaption: ["Auto follows your system — and switches to dark after sunset.", "自动跟随系统——并在日落后切换为深色。"],
+    trade:        ["What you trade", "你交易什么"],
+    tradeStocks:  ["Stocks", "股票"],
+    tradeOptions: ["Options", "期权"],
+    tradeCrypto:  ["Crypto", "加密货币"],
+    skipForNow:   ["Skip for now", "暂时跳过"],
+    continue:     ["Continue", "继续"],
+
+    // step 3 — plan
+    planTitle:    ["Choose your plan", "选择你的方案"],
+    planSub:      ["Free forever, or start a 7-day trial of a paid plan.", "永久免费，或开启付费方案的 7 天试用。"],
+    togAnnual:    ["Annual <span class=\"obm-save\">SAVE UP TO " + bestSavePct() + "%</span>", "按年 <span class=\"obm-save\">最高省 " + bestSavePct() + "%</span>"],
+    togMonthly:   ["Monthly", "按月"],
+    planFree:     ["Free", "免费"],
+    planInsider:  ["Insider", "Insider"],
+    planPro:      ["Pro", "Pro"],
+    whoFree:      ["The daily read, six signals, the Terminal — forever.", "每日研判、六条信号、Terminal——永久免费。"],
+    whoInsider:   ["The working desk, with the analyst on call.", "随叫随到的分析师，配上完整的工作台席。"],
+    whoPro:       ["For the ones who ask harder questions.", "为那些提出更难问题的人准备。"],
+    perMoAnnual:  ["/mo billed annually", "/月 · 按年结算"],
+    perMo:        ["/mo", "/月"],
+    free0:        ["$0", "$0"],
+    ribbon:       ["MOST POPULAR", "最受欢迎"],
+    // summaries
+    sumGetFree:   ["What you get", "你将获得"],
+    sumMissFree:  ["What you're missing", "你还缺少"],
+    sumPlusInsider:["Everything in Free, plus", "免费版全部功能，另加"],
+    sumPlusPro:   ["Everything in Insider, plus", "Insider 全部功能，另加"],
+    getFree1:     ["The daily read + <b>every macro dashboard</b>", "每日研判 + <b>全部宏观看板</b>"],
+    getFree2:     ["<b>6 buy signals a day</b> with a public track record", "<b>每天 6 条买入信号</b>，战绩公开可查"],
+    getFree3:     ["The full Terminal — live charts, no install", "完整 Terminal——实时图表，无需安装"],
+    missIns1:     ["Unlimited Flash AI + 20 Pro AI dives a month", "无限量 Flash AI + 每月 20 次 Pro AI 深度分析"],
+    missIns2:     ["Intraday options flow, Insider & Congress desks", "日内期权流、内部人与国会台席"],
+    missPro1:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
+    plusIns1:     ["<b>Unlimited Flash AI</b>, 20 Pro AI dives a month", "<b>无限量 Flash AI</b>、每月 20 次 Pro AI 深度分析"],
+    plusIns2:     ["<b>Intraday options flow</b> — sweeps and blocks as they print", "<b>日内期权流</b>——扫单与大宗成交实时打印"],
+    plusIns3:     ["Insider/Congress & 13F desks, transcripts, daily briefs", "内部人/国会与 13F 台席、电话会记录、每日简报"],
+    plusPro1:     ["<b>50 Pro AI dives a month</b>", "<b>每月 50 次 Pro AI 深度分析</b>"],
+    plusPro2:     ["Mastermind + institutional research reports", "Mastermind + 机构研究报告"],
+    plusPro3:     ["Mastermind Bot Portfolios", "Mastermind 机器人组合"],
+    proFine:      ["Institutional research library: JPM · Citi · Morgan Stanley · UBS · Goldman Sachs · BofA.", "机构研究库：摩根大通 · 花旗 · 摩根士丹利 · 瑞银 · 高盛 · 美银。"],
+    wedge:        ["<b>+$" + proWedge() + "/mo</b> on annual gets you everything in Pro.", "按年再加 <b>$" + proWedge() + "/月</b> 即可获得 Pro 全部功能。"],
+    switchPro:    ["Switch to Pro", "切换到 Pro"],
+    mcpSoon:      ["MCP", "MCP"],
+    mcpSoonTag:   ["COMING SOON", "即将推出"],
+    compareAll:   ["Compare every feature →", "逐项对比 →"],
+    contFree:     ["Continue with Free", "免费开始"],
+    contBilling:  ["Continue to billing", "去结算"],
+
+    // step 4 — billing
+    billTitle:    ["Add your card", "添加银行卡"],
+    billSub:      ["Your 7-day trial starts now. Cancel any time before it ends and you pay nothing.", "7 天试用现在开始。在结束前随时取消，分文不收。"],
+    billPerMo:    ["/mo", "/月"],
+    billBilledAnnually:["Billed $__T__ per year after the trial.", "试用结束后每年扣款 $__T__。"],
+    billBilledMonthly: ["Billed monthly after the trial.", "试用结束后按月扣款。"],
+    billTrialLine:["<b>7-day free trial</b> — your first charge of $__T__ lands on __D__.", "<b>7 天免费试用</b>——首次扣款 $__T__ 将于 __D__ 进行。"],
+    billCancelLine:["Cancel before then and you pay nothing.", "在此之前取消，分文不收。"],
+    billLoading:  ["Securely loading checkout…", "正在安全加载结算…"],
+    billErr:      ["Something went wrong loading checkout. Please try again.", "加载结算时出错，请重试。"],
+    billRetry:    ["Try again", "重试"],
+    billAlready:  ["You already have an active plan", "你已有一个生效中的方案"],
+    billAlreadySub:["Your subscription is live — no need to add a card again.", "你的订阅已生效——无需再次绑卡。"],
+    billAlreadyGo:["Continue", "继续"],
+    billSignin:   ["Please sign in to continue to billing.", "请先登录以继续结算。"],
+    billNotConfigured:["Billing isn't configured on this environment yet.", "此环境尚未配置结算。"],
+    billPlansLink:["See plans & pricing", "查看方案与定价"],
+    billSubmit:   ["Start 7-day trial", "开始 7 天试用"],
+    billSubmitBusy:["Starting your trial…", "正在开启试用…"],
+    billOrFree:   ["or continue with Free", "或改用免费版"],
+    billConfirmFirst:["Confirm your email first, then add your card to start the trial. We've sent a confirmation link.", "请先确认邮箱，再绑卡开启试用。确认链接已发送。"],
+    billConfirmGo:["Continue", "继续"],
+
+    // step 5 — done
+    doneTitle:    ["You're in.", "你已加入。"],
+    doneTitleNamed:["You're in, __N__.", "你已加入，__N__。"],
+    doneConfirm:  ["Check __E__ to confirm your email and finish setting up.", "查收 __E__ 以确认邮箱并完成设置。"],
+    doneTrial:    ["Your __T__ trial is live — first charge on __D__.", "你的 __T__ 试用已生效——首次扣款为 __D__。"],
+    doneReady:    ["Your dashboards, signals and the Terminal are ready.", "你的看板、信号与 Terminal 已就绪。"],
+    openDashboard:["Open the dashboard", "打开仪表盘"],
+    openTerminal: ["Open the Terminal →", "打开 Terminal →"],
+
+    goBack:       ["Go back", "返回"],
+    closeLbl:     ["Close", "关闭"],
+    dialogLbl:    ["Onboarding", "引导"]
+  };
+
+  function lang() { try { return (window.LANG && window.LANG.cur && window.LANG.cur() === "zh") ? "zh" : (document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"); } catch (e) { return "en"; } }
+  function tx(key) { var e = LEX[key]; if (!e) return key; return lang() === "zh" ? e[1] : e[0]; }
+
+  // ── state ────────────────────────────────────────────────────────────────
+  var S = {
+    open: false, mode: "signup", step: STEP_ACCOUNT,
+    firstName: "", lastName: "", email: "", password: "",
+    prefs: { market_focus: [], trade_types: [], theme_pref: "auto" },
+    plan: "pro", period: "annual",
+    confirmPending: false, trialActive: false, trialEnd: null
+  };
+
+  // ── stash (per-tab, password never persisted) ──────────────────────────────
+  function stashSave() {
+    try {
+      sessionStorage.setItem(SS_STASH, JSON.stringify({
+        open: S.open, mode: S.mode, step: S.step,
+        firstName: S.firstName, lastName: S.lastName, email: S.email,
+        prefs: S.prefs, plan: S.plan, period: S.period,
+        confirmPending: S.confirmPending, trialActive: S.trialActive, trialEnd: S.trialEnd,
+        planTouched: S.planTouched
+      }));
+    } catch (e) { /* storage blocked */ }
+  }
+  function stashClear() { try { sessionStorage.removeItem(SS_STASH); } catch (e) {} }
+  function stashLoad() {
+    var raw = null; try { raw = sessionStorage.getItem(SS_STASH); } catch (e) {}
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+
+  // ── Supabase broker (via MDXAuth; lazy-load theme.js if the page lacks it) ──
+  var _themeLoad = null;
+  function ensureAuthBroker() {
+    if (window.MDXAuth) return Promise.resolve(window.MDXAuth);
+    if (_themeLoad) return _themeLoad;
+    _themeLoad = new Promise(function (resolve) {
+      var s = document.createElement("script");
+      s.src = "theme.js"; s.defer = true;
+      s.onload = function () { resolve(window.MDXAuth || null); };
+      s.onerror = function () { resolve(null); };
+      (document.head || document.documentElement).appendChild(s);
+    });
+    return _themeLoad;
+  }
+  function sbClient() {
+    return ensureAuthBroker().then(function (auth) {
+      if (auth && typeof auth.client === "function") return auth.client();
+      return null;
+    });
+  }
+  function authEnabled() { return !!(window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()); }
+  function apiBase() { return (window.MM_API || "").replace(/\/+$/, ""); }
+
+  // ── DOM refs (built lazily on first open) ──────────────────────────────────
+  var el = {};   // { scrim, sheet, steps, body, foot, ... }
+  var built = false;
+
+  function h(tag, cls, attrs) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (attrs) for (var k in attrs) if (attrs.hasOwnProperty(k)) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+  // icons
+  function svgCheck(cls) { return '<svg class="' + (cls || "") + '" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>'; }
+  var GLYPH = '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="obmTile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/><stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient><linearGradient id="obmSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient><radialGradient id="obmGlow" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient><linearGradient id="obmInk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient></defs><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmTile)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmGlow)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmSheen)"/><rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3"><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#obmInk)"/></g></svg>';
+  var GOOGLE = '<svg viewBox="0 0 18 18" width="16" height="16" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
+  var DEVICE = '<div class="obm-dev-bar"><span class="obm-dev-dot"></span><span class="obm-dev-nav"><i></i><i></i><i></i></span></div><div class="obm-dev-body"><div class="obm-dev-regime"><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div><div class="obm-dev-tile"><span class="b w1"></span><span class="b w2"></span></div></div><div class="obm-dev-chart"><svg viewBox="0 0 300 96" preserveAspectRatio="none"><defs><linearGradient id="obmLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#285fff"/><stop offset="1" stop-color="#7862e0"/></linearGradient><linearGradient id="obmArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#285fff" stop-opacity=".16"/><stop offset="1" stop-color="#285fff" stop-opacity="0"/></linearGradient></defs><path d="M0 74 L40 66 L80 70 L120 50 L160 56 L200 34 L240 40 L300 20 L300 96 L0 96 Z" fill="url(#obmArea)"/><path d="M0 74 L40 66 L80 70 L120 50 L160 56 L200 34 L240 40 L300 20" fill="none" stroke="url(#obmLine)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="obm-dev-rows"><div class="obm-dev-r"><span class="d"></span><span class="l w1"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w3"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w2"></span><span class="n"></span></div><div class="obm-dev-r"><span class="d"></span><span class="l w4"></span><span class="n"></span></div></div></div>';
+
+  // ── build the sheet DOM once ──────────────────────────────────────────────
+  function build() {
+    if (built) return;
+    built = true;
+
+    var scrim = h("div", "obm-scrim");
+    var sheet = h("div", "obm-sheet obm-root", { role: "dialog", "aria-modal": "true", "aria-label": tx("dialogLbl") });
+
+    // close
+    var close = h("button", "obm-close", { type: "button", "aria-label": tx("closeLbl") });
+    close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    close.addEventListener("click", requestClose);
+
+    // ── LEFT pane ──
+    var pane = h("div", "obm-pane");
+    var brand = h("div", "obm-brand"); brand.innerHTML = GLYPH + '<span>MASTERMIND</span>';
+    var paneCopy = h("div", "obm-pane-copy");
+    var paneH = h("h2", "obm-pane-h"); var paneS = h("p", "obm-pane-sub");
+    paneCopy.appendChild(paneH); paneCopy.appendChild(paneS);
+    var asm = h("div", "obm-assembly");
+    asm.innerHTML =
+      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmName"></span><span class="obm-asm-v obm-dim" data-asm="name"></span></div>' +
+      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmEmail"></span><span class="obm-asm-v obm-dim" data-asm="email"></span></div>' +
+      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmMarkets"></span><span class="obm-asm-chips" data-asm="markets"></span></div>' +
+      '<div class="obm-asm-row"><span class="obm-asm-k" data-k="asmPlan"></span><span class="obm-asm-v obm-dim" data-asm="plan"></span><span class="obm-asm-trial" data-asm="trial" hidden></span></div>';
+    var device = h("div", "obm-device"); device.innerHTML = DEVICE;
+    pane.appendChild(brand); pane.appendChild(paneCopy); pane.appendChild(asm); pane.appendChild(device);
+
+    // ── RIGHT form pane ──
+    var formPane = h("div", "obm-form-pane");
+    var steps = h("div", "obm-steps");
+    var body = h("div", "obm-body");
+    var foot = h("div", "obm-foot");
+    formPane.appendChild(steps); formPane.appendChild(body); formPane.appendChild(foot);
+
+    sheet.appendChild(close); sheet.appendChild(pane); sheet.appendChild(formPane);
+    scrim.appendChild(sheet);
+    document.body.appendChild(scrim);
+
+    // scrim click closes (but not clicks inside the sheet)
+    scrim.addEventListener("mousedown", function (e) { if (e.target === scrim) requestClose(); });
+
+    el = { scrim: scrim, sheet: sheet, pane: pane, paneH: paneH, paneS: paneS, asm: asm, steps: steps, body: body, foot: foot };
+
+    // subscribe to language changes → re-apply our subtree
+    if (window.LANG && typeof window.LANG.onChange === "function") window.LANG.onChange(applyLang);
+    // also observe html[data-lang] directly (robust if LANG isn't present yet)
+    try {
+      new MutationObserver(function () { applyLang(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });
+    } catch (e) {}
+  }
+
+  // ── bilingual applier over OUR subtree (mirrors the landing's __en swap) ────
+  function applyLang() {
+    if (!el.sheet) return;
+    var zh = lang() === "zh";
+    // static [data-obm-zh] nodes (innerHTML swap, caching the English original once)
+    var nodes = el.sheet.querySelectorAll("[data-obm-zh]");
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.__en == null) n.__en = n.innerHTML;
+      n.innerHTML = zh ? n.getAttribute("data-obm-zh") : n.__en;
+    }
+    // keyed nodes ([data-k]) — label from LEX by key
+    var keyed = el.sheet.querySelectorAll("[data-k]");
+    for (var j = 0; j < keyed.length; j++) keyed[j].innerHTML = tx(keyed[j].getAttribute("data-k"));
+    el.sheet.setAttribute("aria-label", tx("dialogLbl"));
+  }
+
+  // helper: create a node whose text is a LEX key, re-applied on lang change
+  function T(tag, cls, key, attrs) { var n = h(tag, cls, attrs); n.setAttribute("data-k", key); n.innerHTML = tx(key); return n; }
+
+  // ══════════════════════════ stepper ════════════════════════════════════════
+  function paidSelected() { return S.plan === "insider" || S.plan === "pro"; }
+  function renderSteps() {
+    var defs = [
+      { n: STEP_ACCOUNT, key: "stAccount" },
+      { n: STEP_PREFS, key: "stPrefs" },
+      { n: STEP_PLAN, key: "stPlan" },
+      { n: STEP_BILLING, key: "stBilling", paidOnly: true },
+      { n: STEP_DONE, key: "stDone" }
+    ];
+    el.steps.innerHTML = "";
+    var shown = defs.filter(function (d) { return !(d.paidOnly && !paidSelected()); });
+    shown.forEach(function (d, idx) {
+      var s = h("div", "obm-step");
+      if (d.n === S.step) s.classList.add("obm-cur");
+      else if (isStepDone(d.n)) s.classList.add("obm-done");
+      var num = ("0" + d.n).slice(-2);
+      s.innerHTML = '<span class="obm-step-n">' + svgCheck("obm-step-ck") + '<span class="obm-step-num">' + num + '</span></span>';
+      // hide the number when done-check shows
+      var nEl = s.querySelector(".obm-step-n");
+      if (s.classList.contains("obm-done")) { var numSpan = nEl.querySelector(".obm-step-num"); if (numSpan) numSpan.style.display = "none"; }
+      var lbl = T("span", "obm-step-lbl", d.key); s.appendChild(lbl);
+      el.steps.appendChild(s);
+      if (idx < shown.length - 1) el.steps.appendChild(h("span", "obm-step-sep"));
+    });
+  }
+  function isStepDone(n) {
+    // signin mode has no stepper progression; treat all as neutral
+    if (S.mode === "signin") return false;
+    if (S.step === STEP_DONE) return n < STEP_DONE;
+    return n < S.step;
+  }
+
+  // ══════════════════════════ left-pane content ══════════════════════════════
+  function renderPane() {
+    var map = {
+      1: ["paneAccountH", "paneAccountS"], 2: ["panePrefsH", "panePrefsS"],
+      3: ["planePlanH", "planePlanS"], 4: ["paneBillH", "paneBillS"], 5: ["paneDoneH", "paneDoneS"]
+    };
+    var m = map[S.step] || map[1];
+    el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
+    el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
+    renderAssembly();
+  }
+  function renderAssembly() {
+    var q = function (s) { return el.asm.querySelector(s); };
+    var nm = (S.firstName + " " + S.lastName).trim();
+    var vName = q('[data-asm="name"]'); vName.textContent = nm || tx("asmPending"); vName.classList.toggle("obm-dim", !nm);
+    var vEmail = q('[data-asm="email"]'); vEmail.textContent = S.email || tx("asmPending"); vEmail.classList.toggle("obm-dim", !S.email);
+    var mk = q('[data-asm="markets"]'); mk.innerHTML = "";
+    var MKN = { us: "mktUs", cn: "mktCn", hk: "mktHk", ca: "mktCa", global: "mktGlobal" };
+    if (S.prefs.market_focus.length) {
+      S.prefs.market_focus.forEach(function (k) { var c = h("span", "obm-asm-chip"); c.textContent = tx(MKN[k] || k); mk.appendChild(c); });
+    } else { var d = h("span", "obm-asm-v obm-dim"); d.textContent = tx("asmPending"); mk.appendChild(d); }
+    var vPlan = q('[data-asm="plan"]');
+    var trial = q('[data-asm="trial"]');
+    if (!S.planTouched) {
+      // The plan row stays pending until the user actually reaches the plan step —
+      // the preselected default is not THEIR choice yet (honesty: the card only
+      // ever shows what the user has actually done).
+      vPlan.textContent = tx("asmPending"); vPlan.classList.add("obm-dim");
+      trial.hidden = true;
+    } else if (S.plan === "free") {
+      vPlan.textContent = tx("planFree"); vPlan.classList.remove("obm-dim");
+      trial.hidden = true;
+    } else {
+      vPlan.textContent = tx(S.plan === "pro" ? "planPro" : "planInsider") + " · $" + perMonth(S.plan, S.period) + tx("perMo"); vPlan.classList.remove("obm-dim");
+      trial.hidden = false; trial.setAttribute("data-k", "asmTrial"); trial.textContent = tx("asmTrial");
+    }
+    // keep keyed labels fresh
+    var keys = el.asm.querySelectorAll("[data-k]");
+    for (var i = 0; i < keys.length; i++) keys[i].innerHTML = tx(keys[i].getAttribute("data-k"));
+  }
+
+  // ══════════════════════════ router ═════════════════════════════════════════
+  function go(step) { S.step = step; if (step >= STEP_PLAN && S.mode === "signup") S.planTouched = true; render(); stashSave(); }
+  function render() {
+    if (!el.sheet) return;
+    renderSteps();
+    // signin is a compact one-step variant — the multi-step stepper doesn't apply
+    el.steps.style.display = (S.mode === "signin") ? "none" : "";
+    renderPane();
+    el.body.innerHTML = "";
+    el.foot.innerHTML = "";
+    var view;
+    if (S.mode === "signin") view = viewAccount();       // signin lives on step 1 only
+    else if (S.step === STEP_ACCOUNT) view = viewAccount();
+    else if (S.step === STEP_PREFS) view = viewPrefs();
+    else if (S.step === STEP_PLAN) view = viewPlan();
+    else if (S.step === STEP_BILLING) view = viewBilling();
+    else view = viewDone();
+    el.body.appendChild(view);
+    applyLang();
+    // focus the heading (a11y)
+    var head = el.body.querySelector("[data-ob-heading]");
+    if (head) { try { head.focus(); } catch (e) {} }
+  }
+
+  // ── footer builders ──
+  function footNav(opts) {
+    // opts: { back:bool, primaryKey, onPrimary, secondaryKey, onSecondary, dots:bool, primaryOut:bool, primaryDisabled }
+    var back = h("button", "obm-back", { type: "button" });
+    back.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span data-k="goBack">' + tx("goBack") + '</span>';
+    back.addEventListener("click", opts.onBack || function () {});
+    if (opts.back) el.foot.appendChild(back);
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    if (opts.dots) el.foot.appendChild(dotsFor());
+    if (opts.primaryKey) {
+      var b = T("button", opts.primaryOut ? "obm-btn-out" : "obm-btn", opts.primaryKey, { type: "button" });
+      if (opts.primaryDisabled) b.disabled = true;
+      b.addEventListener("click", opts.onPrimary);
+      el.foot.appendChild(b);
+    }
+  }
+  function dotsFor() {
+    var wrap = h("div", "obm-dots");
+    var order = paidSelected() ? [1, 2, 3, 4, 5] : [1, 2, 3, 5];
+    order.forEach(function (n) { var i = h("i"); if (n === S.step) i.classList.add("obm-on"); wrap.appendChild(i); });
+    return wrap;
+  }
+
+  // ══════════════════════════ STEP 1 — ACCOUNT ══════════════════════════════
+  function viewAccount() {
+    var signin = S.mode === "signin";
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", signin ? "signinTitle" : "accountTitle"); head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    var sub = T("p", "obm-sub", signin ? "signinSub" : "accountSub");
+    root.appendChild(head); root.appendChild(sub);
+
+    var form = h("form", "obm-form");
+    if (!signin) {
+      var row = h("div", "obm-row2");
+      row.appendChild(field("firstName", "ob-fn", "text", S.firstName, "Jordan", "given-name", function (v) { S.firstName = v; renderAssembly(); }));
+      row.appendChild(field("lastName", "ob-ln", "text", S.lastName, "Wei", "family-name", function (v) { S.lastName = v; renderAssembly(); }));
+      form.appendChild(row);
+    }
+    form.appendChild(field("email", "ob-email", "email", S.email, "you@example.com", "email", function (v) { S.email = v; renderAssembly(); }, true));
+    var pwWrap = field("password", "ob-pw", "password", S.password, "••••••••", signin ? "current-password" : "new-password", function (v) { S.password = v; refreshPwHint(); }, true, 8);
+    form.appendChild(pwWrap);
+    if (!signin) { var hint = h("p", "obm-hint", { "data-obm-hint": "" }); hint.style.display = "none"; form.appendChild(hint); }
+
+    var errBox = h("div", "obm-err"); errBox.style.display = "none"; errBox.setAttribute("data-obm-err", ""); form.appendChild(errBox);
+
+    var submit = T("button", "obm-btn", signin ? "signin" : "createAccount", { type: "submit" });
+    submit.style.marginTop = "16px"; submit.setAttribute("data-obm-submit", "");
+    form.appendChild(submit);
+    form.addEventListener("submit", onAccountSubmit);
+    root.appendChild(form);
+
+    // divider + Google + Apple
+    var or = h("div", "obm-or"); or.setAttribute("data-k", "or"); or.innerHTML = tx("or"); root.appendChild(or);
+    var g = T("button", "obm-btn-out", "continueGoogle", { type: "button" }); g.innerHTML = GOOGLE + '<span data-k="continueGoogle">' + tx("continueGoogle") + '</span>';
+    g.addEventListener("click", onGoogle); root.appendChild(g);
+    if (!signin) {
+      var apple = T("button", "obm-btn-out", "appleSoon", { type: "button", disabled: "", "aria-disabled": "true" });
+      apple.style.marginTop = "10px"; apple.style.cursor = "default"; root.appendChild(apple);
+    }
+    // mode switch
+    var sw = T("button", "obm-link obm-brand-link", signin ? "toSignup" : "toSignin", { type: "button" });
+    sw.style.marginTop = "16px"; sw.style.display = "block";
+    sw.addEventListener("click", function () { S.mode = signin ? "signup" : "signin"; S.step = STEP_ACCOUNT; render(); stashSave(); });
+    root.appendChild(sw);
+    if (!signin) root.appendChild(T("p", "obm-terms", "terms"));
+
+    // no footer on account step (actions are inline)
+    return root;
+  }
+  function field(labelKey, id, type, val, ph, ac, onInput, required, minLen) {
+    var wrap = h("div", "obm-field-wrap");
+    var lbl = T("label", "", labelKey, { "for": id });
+    var inp = h("input", "obm-field", { id: id, type: type, autocomplete: ac, placeholder: ph });
+    if (required) inp.required = true;
+    if (minLen) inp.minLength = minLen;
+    inp.value = val || "";
+    inp.addEventListener("input", function () { onInput(inp.value); });
+    wrap.appendChild(lbl); wrap.appendChild(inp);
+    return wrap;
+  }
+  function pwHintKey() { if (!S.password) return null; return S.password.length < 8 ? "pwHintShort" : "pwHintOk"; }
+  function refreshPwHint() {
+    var hint = el.body.querySelector("[data-obm-hint]"); if (!hint) return;
+    var k = pwHintKey();
+    if (!k) { hint.style.display = "none"; return; }
+    hint.style.display = ""; hint.className = "obm-hint" + (k === "pwHintOk" ? " obm-ok" : "");
+    hint.setAttribute("data-k", k); hint.innerHTML = tx(k);
+  }
+  function showErr(msg) { var e = el.body.querySelector("[data-obm-err]"); if (!e) return; if (!msg) { e.style.display = "none"; return; } e.style.display = ""; e.textContent = msg; }
+  function setSubmitBusy(busy) {
+    var b = el.body.querySelector("[data-obm-submit]"); if (!b) return;
+    b.disabled = busy;
+    if (busy) b.textContent = tx("busy"); else { b.setAttribute("data-k", S.mode === "signin" ? "signin" : "createAccount"); b.innerHTML = tx(S.mode === "signin" ? "signin" : "createAccount"); }
+  }
+
+  function onAccountSubmit(e) {
+    e.preventDefault();
+    showErr("");
+    if (!authEnabled() && !window.MDXAuth) {
+      // auth broker not yet resolved — try to resolve, else show honest error
+    }
+    setSubmitBusy(true);
+    sbClient().then(function (sb) {
+      if (!sb) { setSubmitBusy(false); showErr(tx("billNotConfigured")); return; }
+      if (S.mode === "signin") {
+        sb.auth.signInWithPassword({ email: S.email, password: S.password }).then(function (r) {
+          if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
+          // success — close the sheet; the page's signed-in chrome updates via MDXAuth.onChange
+          S.password = ""; stashClear(); closeSheet();
+        });
+        return;
+      }
+      // signup — stash first/last in user_metadata (mirror of terminal StepAccount)
+      sb.auth.signUp({ email: S.email, password: S.password, options: { data: { first_name: S.firstName, last_name: S.lastName } } })
+        .then(function (r) {
+          if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
+          S.password = "";
+          if (r.data && r.data.session == null) {
+            // email-confirmation ON — no session. Advance to prefs, flag pending.
+            S.confirmPending = true;
+          }
+          setSubmitBusy(false);
+          go(STEP_PREFS);
+        });
+    });
+  }
+
+  function onGoogle() {
+    showErr("");
+    // stash wizard state for the OAuth round-trip (matches terminal oauth.ts shape)
+    try {
+      localStorage.setItem(LS_ONBOARD_RESUME, JSON.stringify({
+        step: STEP_PREFS, firstName: S.firstName, lastName: S.lastName,
+        plan: S.plan, period: S.period, prefs: S.prefs
+      }));
+    } catch (e) {}
+    stashSave();
+    sbClient().then(function (sb) {
+      if (!sb) { showErr(tx("billNotConfigured")); return; }
+      var redirectTo = location.origin + location.pathname + "?onboard=resume";
+      sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo } })
+        .then(function (r) { if (r && r.error) showErr(r.error.message); });
+    });
+  }
+
+  // ══════════════════════════ STEP 2 — PREFERENCES ═══════════════════════════
+  function viewPrefs() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", "prefsTitle"); head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+    root.appendChild(T("p", "obm-sub", "prefsSub"));
+
+    // market chips
+    root.appendChild(T("div", "obm-section-lbl", "marketFocus"));
+    var mkWrap = h("div", "obm-chips", { role: "group" });
+    [["us", "mktUs"], ["cn", "mktCn"], ["hk", "mktHk"], ["ca", "mktCa"], ["global", "mktGlobal"]].forEach(function (m) {
+      mkWrap.appendChild(chip(m[0], m[1], S.prefs.market_focus, function () { toggleArr(S.prefs.market_focus, m[0]); render(); }));
+    });
+    root.appendChild(mkWrap);
+
+    // theme thumbnails (REAL — writes localStorage theme immediately)
+    root.appendChild(T("div", "obm-section-lbl", "theme"));
+    var thWrap = h("div", "obm-thumbs", { role: "group" });
+    [["light", "themeLight"], ["dark", "themeDark"], ["auto", "themeAuto"]].forEach(function (th) {
+      thWrap.appendChild(thumb(th[0], th[1]));
+    });
+    root.appendChild(thWrap);
+    root.appendChild(T("p", "obm-caption", "themeCaption"));
+
+    // trade chips
+    root.appendChild(T("div", "obm-section-lbl", "trade"));
+    var trWrap = h("div", "obm-chips", { role: "group" });
+    [["stocks", "tradeStocks"], ["options", "tradeOptions"], ["crypto", "tradeCrypto"]].forEach(function (tr) {
+      trWrap.appendChild(chip(tr[0], tr[1], S.prefs.trade_types, function () { toggleArr(S.prefs.trade_types, tr[0]); render(); }));
+    });
+    root.appendChild(trWrap);
+
+    footNav({ secondaryKey: null, primaryKey: "continue", onPrimary: onPrefsContinue, dots: true });
+    // add the full-width quiet Skip at the left of the footer
+    var skip = T("button", "obm-quiet", "skipForNow", { type: "button" });
+    skip.style.width = "auto"; skip.addEventListener("click", onPrefsContinue);
+    el.foot.insertBefore(skip, el.foot.firstChild);
+    return root;
+  }
+  function chip(key, lblKey, arr, onClick) {
+    var on = arr.indexOf(key) !== -1;
+    var b = h("button", "obm-chip" + (on ? " obm-on" : ""), { type: "button", "aria-pressed": on ? "true" : "false" });
+    b.innerHTML = (on ? svgCheck("obm-chip-ck") : "") + '<span data-k="' + lblKey + '">' + tx(lblKey) + '</span>';
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function thumb(key, lblKey) {
+    var on = S.prefs.theme_pref === key;
+    var b = h("button", "obm-thumb" + (on ? " obm-on" : ""), { type: "button", "aria-pressed": on ? "true" : "false" });
+    b.innerHTML =
+      '<span class="obm-thumb-prev obm-' + key + '"><i></i><i></i></span>' +
+      '<span class="obm-thumb-foot"><span class="obm-thumb-nm" data-k="' + lblKey + '">' + tx(lblKey) + '</span>' +
+      '<span class="obm-radio">' + svgCheck("") + '</span></span>';
+    b.addEventListener("click", function () { S.prefs.theme_pref = key; applyThemeChoice(key); render(); });
+    return b;
+  }
+  function toggleArr(arr, k) { var i = arr.indexOf(k); if (i === -1) arr.push(k); else arr.splice(i, 1); }
+  // REAL theme write — matches the site's theme boot contract (localStorage theme + themeAuto)
+  function applyThemeChoice(pref) {
+    try {
+      if (pref === "auto") {
+        var hh = new Date().getHours(); var tod = (hh >= 7 && hh < 19) ? "light" : "dark";
+        localStorage.setItem("themeAuto", "1"); localStorage.setItem("theme", tod);
+        document.documentElement.setAttribute("data-theme", tod);
+      } else {
+        localStorage.removeItem("themeAuto"); localStorage.setItem("theme", pref);
+        document.documentElement.setAttribute("data-theme", pref);
+      }
+    } catch (e) {}
+  }
+  function onPrefsContinue() {
+    persistPrefs();
+    go(STEP_PLAN);
+  }
+  function persistPrefs() {
+    var payload = {
+      first_name: S.firstName, last_name: S.lastName,
+      market_focus: S.prefs.market_focus, trade_types: S.prefs.trade_types,
+      theme_pref: S.prefs.theme_pref, onboarded_at: new Date().toISOString()
+    };
+    if (S.confirmPending) {
+      // no session yet — stash to the SAME key the Terminal applies on first sign-in
+      try { localStorage.setItem(LS_PENDING_PREFS, JSON.stringify(payload)); } catch (e) {}
+      return;
+    }
+    sbClient().then(function (sb) {
+      if (!sb) return;
+      sb.auth.getSession().then(function (r) {
+        var sess = r && r.data && r.data.session;
+        if (sess) { sb.auth.updateUser({ data: payload }).then(null, function () {}); }
+        else { try { localStorage.setItem(LS_PENDING_PREFS, JSON.stringify(payload)); } catch (e) {} }
+      });
+    });
+  }
+
+  // ══════════════════════════ STEP 3 — PLAN ══════════════════════════════════
+  function viewPlan() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", "planTitle"); head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+    root.appendChild(T("p", "obm-sub", "planSub"));
+
+    // period toggle
+    var tog = h("div", "obm-toggle", { role: "group" });
+    var bA = h("button", "", { type: "button", "aria-pressed": S.period === "annual" ? "true" : "false" }); bA.setAttribute("data-obm-zh", LEX.togAnnual[1]); bA.innerHTML = LEX.togAnnual[0];
+    var bM = T("button", "", "togMonthly", { type: "button", "aria-pressed": S.period === "monthly" ? "true" : "false" });
+    bA.addEventListener("click", function () { S.period = "annual"; render(); stashSave(); });
+    bM.addEventListener("click", function () { S.period = "monthly"; render(); stashSave(); });
+    tog.appendChild(bA); tog.appendChild(bM);
+    root.appendChild(tog);
+
+    // plan cards
+    var plans = h("div", "obm-plans");
+    plans.appendChild(planCard("free"));
+    plans.appendChild(planCard("insider"));
+    plans.appendChild(planCard("pro"));
+    root.appendChild(plans);
+
+    // summary switcher
+    root.appendChild(planSummary());
+
+    // compare link
+    var cmp = T("button", "obm-link obm-brand-link obm-compare", "compareAll", { type: "button" });
+    cmp.addEventListener("click", function () { closeSheet(); setTimeout(function () { location.hash = "#pricing"; }, 60); });
+    root.appendChild(cmp);
+
+    // footer: back + primary (Free → done, paid → billing)
+    footNav({
+      back: true, onBack: function () { go(STEP_PREFS); },
+      primaryKey: S.plan === "free" ? "contFree" : "contBilling",
+      onPrimary: onPlanContinue, dots: true
+    });
+    return root;
+  }
+  function planCard(key) {
+    var on = S.plan === key, hot = key === "pro";
+    var card = h("button", "obm-plan" + (on ? " obm-on" : "") + (hot ? " obm-hot" : ""), { type: "button", "aria-pressed": on ? "true" : "false" });
+    var left = h("div", "obm-plan-l");
+    var nm = h("div", "obm-plan-nm");
+    nm.innerHTML = '<span data-k="' + (key === "free" ? "planFree" : key === "pro" ? "planPro" : "planInsider") + '">' + tx(key === "free" ? "planFree" : key === "pro" ? "planPro" : "planInsider") + '</span>';
+    var who = T("div", "obm-plan-who", key === "free" ? "whoFree" : key === "pro" ? "whoPro" : "whoInsider");
+    left.appendChild(nm); left.appendChild(who);
+    var right = h("div", "obm-plan-r");
+    var price = h("div", "obm-plan-price");
+    if (key === "free") {
+      price.innerHTML = '$0';
+    } else {
+      var annual = S.period === "annual";
+      var mo = perMonth(key, S.period);
+      var was = annual ? ('<span class="obm-was">$' + monthlyPrice(key) + '</span>') : "";
+      var perK = annual ? "perMoAnnual" : "perMo";
+      price.innerHTML = was + '$' + mo + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
+    }
+    var radio = h("span", "obm-radio"); radio.innerHTML = svgCheck("");
+    right.appendChild(price); right.appendChild(radio);
+    card.appendChild(left); card.appendChild(right);
+    if (hot) { var rb = h("span", "obm-ribbon", { "data-k": "ribbon" }); rb.textContent = tx("ribbon"); card.appendChild(rb); }
+    card.addEventListener("click", function () { S.plan = key; render(); stashSave(); });
+    return card;
+  }
+  function planSummary() {
+    var box = h("div", "obm-summary");
+    function list(items) { var ul = h("ul", "obm-sum-list"); items.forEach(function (k) { var li = h("li"); li.setAttribute("data-obm-zh", LEX[k][1]); li.innerHTML = LEX[k][0]; ul.appendChild(li); }); return ul; }
+    if (S.plan === "free") {
+      box.appendChild(hd("sumGetFree"));
+      box.appendChild(list(["getFree1", "getFree2", "getFree3"]));
+      var miss = h("div", "obm-sum-miss");
+      miss.appendChild(hdm("sumMissFree"));
+      [["missIns1", "obm-ins", "planInsider"], ["missIns2", "obm-ins", "planInsider"], ["missPro1", "obm-pro", "planPro"]].forEach(function (m) {
+        var r = h("div", "obm-sum-mrow");
+        var chip = h("span", "obm-mchip " + m[1], { "data-k": m[2] }); chip.textContent = tx(m[2]);
+        var tspan = h("span"); tspan.setAttribute("data-obm-zh", LEX[m[0]][1]); tspan.innerHTML = LEX[m[0]][0];
+        r.appendChild(chip); r.appendChild(tspan); miss.appendChild(r);
+      });
+      box.appendChild(miss);
+    } else if (S.plan === "insider") {
+      box.appendChild(hd("sumPlusInsider"));
+      box.appendChild(list(["plusIns1", "plusIns2", "plusIns3"]));
+      var wedge = h("div", "obm-wedge");
+      var wtxt = h("span"); wtxt.setAttribute("data-obm-zh", LEX.wedge[1]); wtxt.innerHTML = LEX.wedge[0];
+      var wcta = T("button", "obm-link obm-brand-link obm-wedge-cta", "switchPro", { type: "button" });
+      wcta.addEventListener("click", function () { S.plan = "pro"; render(); stashSave(); });
+      wedge.appendChild(wtxt); wedge.appendChild(wcta);
+      box.appendChild(wedge);
+    } else {
+      box.appendChild(hd("sumPlusPro"));
+      box.appendChild(list(["plusPro1", "plusPro2", "plusPro3"]));
+      box.appendChild(T("p", "obm-fineprint", "proFine"));
+      var soon = h("div", "obm-sum-mrow"); soon.style.marginTop = "8px";
+      var mc = h("span", "obm-mchip obm-soon", { "data-k": "mcpSoonTag" }); mc.textContent = tx("mcpSoonTag");
+      var ms = T("span", "", "mcpSoon"); ms.style.fontWeight = "600"; ms.style.color = "var(--ink-soft)";
+      soon.appendChild(ms); soon.appendChild(mc);
+      box.appendChild(soon);
+    }
+    return box;
+    function hd(k) { var p = T("p", "obm-sum-hd", k); return p; }
+    function hdm(k) { var p = T("p", "obm-sum-mhd", k); return p; }
+  }
+  function onPlanContinue() {
+    if (S.plan === "free") { S.trialActive = false; S.trialEnd = null; go(STEP_DONE); }
+    else go(STEP_BILLING);
+  }
+
+  // ══════════════════════════ STEP 4 — BILLING ═══════════════════════════════
+  var _stripe = null, _elements = null;
+  function viewBilling() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", "billTitle"); head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+
+    // confirm-email-first blocker (rare: confirmation ON + paid, no session)
+    if (S.confirmPending) {
+      var blk = h("div", "obm-bill-state");
+      blk.appendChild(T("p", "obm-bill-state-msg", "billConfirmFirst"));
+      var cg = T("button", "obm-btn", "billConfirmGo", { type: "button" }); cg.style.width = "auto"; cg.style.margin = "0 auto";
+      cg.addEventListener("click", function () { go(STEP_DONE); });
+      blk.appendChild(cg);
+      root.appendChild(blk);
+      footNav({ back: true, onBack: function () { go(STEP_PLAN); }, dots: true });
+      return root;
+    }
+
+    root.appendChild(T("p", "obm-sub", "billSub"));
+    root.appendChild(orderCard());
+    var host = h("div", "", { "data-obm-billhost": "" });
+    root.appendChild(host);
+    footNav({ back: true, onBack: function () { go(STEP_PLAN); }, dots: true });
+
+    // kick off async init
+    initBilling(host);
+    return root;
+  }
+  function orderCard() {
+    var tier = S.plan, annual = S.period === "annual";
+    var hue = tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
+    var mo = perMonth(tier, S.period), total = firstInvoiceTotal(tier, S.period);
+    var date = fmtDate(trialChargeDate());
+    var card = h("div", "obm-order"); card.style.setProperty("--obm-accent", hue);
+    var billed = annual ? LEX.billBilledAnnually : LEX.billBilledMonthly;
+    var billedEn = billed[0].replace("__T__", String(annualBilled(tier)));
+    var billedZh = billed[1].replace("__T__", String(annualBilled(tier)));
+    var trialEn = LEX.billTrialLine[0].replace("__T__", String(total)).replace("__D__", date);
+    var trialZh = LEX.billTrialLine[1].replace("__T__", String(total)).replace("__D__", date);
+    card.innerHTML =
+      '<div class="obm-order-hd"><span class="obm-order-dot"></span>' +
+      '<span class="obm-order-nm" data-k="' + (tier === "pro" ? "planPro" : "planInsider") + '">' + tx(tier === "pro" ? "planPro" : "planInsider") + '</span>' +
+      '<span class="obm-order-price">$' + mo + '<span class="obm-order-per" data-k="billPerMo">' + tx("billPerMo") + '</span></span></div>' +
+      '<div class="obm-order-billed" data-obm-zh="' + esc(billedZh) + '">' + billedEn + '</div>' +
+      '<div class="obm-order-truth">' +
+      '<p class="obm-order-trial" data-obm-zh="' + esc(trialZh) + '">' + trialEn + '</p>' +
+      '<p class="obm-order-cancel" data-k="billCancelLine">' + tx("billCancelLine") + '</p></div>';
+    return card;
+  }
+  function trialChargeDate() { var d = new Date(); d.setDate(d.getDate() + TRIAL_DAYS); return d; }
+  function fmtDate(d) { try { return d.toLocaleDateString(lang() === "zh" ? "zh-CN" : "en-US", { month: "long", day: "numeric" }); } catch (e) { return d.toDateString(); } }
+
+  function billState(host, html) { host.innerHTML = '<div class="obm-bill-state">' + html + '</div>'; applyLang(); }
+  function initBilling(host) {
+    host.innerHTML = '<div class="obm-bill-skel" aria-live="polite" aria-busy="true"><span class="obm-spin"></span><span class="obm-bill-skel-lbl" data-k="billLoading">' + tx("billLoading") + '</span></div>';
+    var tier = S.plan, period = S.period;
+    var token = null;
+    getAccessToken().then(function (t) {
+      token = t;
+      return fetch(apiBase() + "/api/billing/config", { cache: "no-store", credentials: "include" });
+    }).then(function (cfgRes) {
+      if (cfgRes.status === 503) { return billNotConfigured(host); }
+      if (!cfgRes.ok) { return billError(host); }
+      return cfgRes.json().catch(function () { return {}; }).then(function (cfg) {
+        var pk = cfg && typeof cfg.publishable_key === "string" ? cfg.publishable_key : "";
+        if (!pk) { return billNotConfigured(host); }
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = "Bearer " + token;
+        return fetch(apiBase() + "/api/billing/subscribe/init", {
+          method: "POST", credentials: "include", headers: headers,
+          body: JSON.stringify({ tier: tier, interval: period })
+        }).then(function (initRes) {
+          if (initRes.status === 409) { return billAlready(host); }
+          if (initRes.status === 401) { return billState(host, '<p class="obm-bill-state-msg" data-k="billSignin">' + tx("billSignin") + '</p>'); }
+          if (!initRes.ok) { return billError(host); }
+          return initRes.json().catch(function () { return {}; }).then(function (data) {
+            var cs = data && typeof data.client_secret === "string" ? data.client_secret : "";
+            if (!cs) { return billError(host); }
+            return loadStripe(pk).then(function (stripe) {
+              if (!stripe) { return billError(host); }
+              mountPaymentForm(host, stripe, cs, tier, period);
+            });
+          });
+        });
+      });
+    }).catch(function () { billError(host); });
+  }
+  function billError(host) {
+    billState(host, '<p class="obm-bill-state-msg" data-k="billErr">' + tx("billErr") + '</p><button type="button" class="obm-btn" data-obm-retry style="width:auto;margin:0 auto"><span data-k="billRetry">' + tx("billRetry") + '</span></button><button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="billOrFree">' + tx("billOrFree") + '</span></button>');
+    var r = host.querySelector("[data-obm-retry]"); if (r) r.addEventListener("click", function () { initBilling(host); });
+    var f = host.querySelector("[data-obm-payfree]"); if (f) f.addEventListener("click", function () { S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE); });
+  }
+  function billNotConfigured(host) {
+    billState(host, '<p class="obm-bill-state-msg" data-k="billNotConfigured">' + tx("billNotConfigured") + '</p><a class="obm-link obm-brand-link" href="' + PLANS_HTML + '" target="_blank" rel="noopener noreferrer"><span data-k="billPlansLink">' + tx("billPlansLink") + '</span> →</a>');
+  }
+  function billAlready(host) {
+    billState(host, '<div class="obm-bill-state-hd" data-k="billAlready">' + tx("billAlready") + '</div><p class="obm-bill-state-msg" data-k="billAlreadySub">' + tx("billAlreadySub") + '</p><button type="button" class="obm-btn" data-obm-already style="width:auto;margin:0 auto"><span data-k="billAlreadyGo">' + tx("billAlreadyGo") + '</span></button>');
+    var b = host.querySelector("[data-obm-already]"); if (b) b.addEventListener("click", function () { S.trialActive = false; go(STEP_DONE); });
+  }
+  function getAccessToken() {
+    return sbClient().then(function (sb) {
+      if (!sb) return null;
+      return sb.auth.getSession().then(function (r) { var s = r && r.data && r.data.session; return s ? s.access_token : null; }).catch(function () { return null; });
+    }).catch(function () { return null; });
+  }
+  function loadStripe(pk) {
+    return injectStripeJs().then(function () {
+      if (!window.Stripe) return null;
+      return window.Stripe(pk);
+    });
+  }
+  var _stripeJs = null;
+  function injectStripeJs() {
+    if (window.Stripe) return Promise.resolve();
+    if (_stripeJs) return _stripeJs;
+    _stripeJs = new Promise(function (resolve) {
+      var s = document.createElement("script"); s.src = STRIPE_JS; s.async = true;
+      s.onload = resolve; s.onerror = function () { resolve(); };
+      (document.head || document.documentElement).appendChild(s);
+    });
+    return _stripeJs;
+  }
+  function mountPaymentForm(host, stripe, clientSecret, tier, period) {
+    var appearance = {
+      theme: "stripe",
+      variables: { colorPrimary: "#285fff", colorText: "#1c2430", colorBackground: "#ffffff", borderRadius: "10px", fontFamily: "Inter, system-ui, sans-serif" }
+    };
+    var elements = stripe.elements({ clientSecret: clientSecret, appearance: appearance });
+    _stripe = stripe; _elements = elements;
+    host.innerHTML =
+      '<form class="obm-bill-form" data-obm-payform>' +
+      '<div class="obm-bill-el" data-obm-payel></div>' +
+      '<div class="obm-err" data-obm-payerr style="display:none"></div>' +
+      '<button type="submit" class="obm-btn" data-obm-paysubmit disabled style="margin-top:14px"><span data-k="billSubmit">' + tx("billSubmit") + '</span></button>' +
+      '<button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="billOrFree">' + tx("billOrFree") + '</span></button>' +
+      '</form>';
+    var payEl = elements.create("payment");
+    payEl.mount(host.querySelector("[data-obm-payel]"));
+    var submitBtn = host.querySelector("[data-obm-paysubmit]");
+    payEl.on("ready", function () { submitBtn.disabled = false; });
+    host.querySelector("[data-obm-payfree]").addEventListener("click", function () { S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE); });
+    host.querySelector("[data-obm-payform]").addEventListener("submit", function (e) {
+      e.preventDefault(); onPaySubmit(host, tier, period);
+    });
+  }
+  function onPaySubmit(host, tier, period) {
+    if (!_stripe || !_elements) return;
+    var submitBtn = host.querySelector("[data-obm-paysubmit]");
+    var errBox = host.querySelector("[data-obm-payerr]");
+    function setPayErr(m) { if (!errBox) return; if (!m) { errBox.style.display = "none"; return; } errBox.style.display = ""; errBox.textContent = m; }
+    submitBtn.disabled = true; submitBtn.textContent = tx("billSubmitBusy"); setPayErr("");
+    _stripe.confirmSetup({ elements: _elements, redirect: "if_required" }).then(function (res) {
+      if (res.error) {
+        // Stripe's own message (declines etc.) — do NOT translate
+        setPayErr(res.error.message || tx("billErr"));
+        submitBtn.disabled = false; submitBtn.setAttribute("data-k", "billSubmit"); submitBtn.innerHTML = tx("billSubmit");
+        return;
+      }
+      var si = res.setupIntent;
+      if (!si || !si.id) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); return; }
+      getAccessToken().then(function (token) {
+        var headers = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = "Bearer " + token;
+        return fetch(apiBase() + "/api/billing/subscribe/complete", {
+          method: "POST", credentials: "include", headers: headers,
+          body: JSON.stringify({ setup_intent_id: si.id, tier: tier, interval: period })
+        });
+      }).then(function (r) {
+        if (!r.ok) { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); return; }
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          S.trialActive = true;
+          S.trialEnd = (data && typeof data.trial_end === "number") ? data.trial_end : null;
+          go(STEP_DONE);
+        });
+      }).catch(function () { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); });
+    });
+  }
+
+  // ══════════════════════════ STEP 5 — DONE ══════════════════════════════════
+  function viewDone() {
+    var root = h("div", "obm-fade");
+    var wrap = h("div", "obm-done");
+    var mark = h("div", "obm-done-mark"); mark.innerHTML = svgCheck("");
+    var name = (S.firstName || (fullNameFromMeta().split(" ")[0]) || "").trim();
+    var head = h("h1", "obm-h1", { "data-ob-heading": "", tabindex: "-1" }); head.style.margin = "0";
+    head.textContent = name ? tx("doneTitleNamed").replace("__N__", name) : tx("doneTitle");
+    var bodyBox = h("div", "obm-done-body");
+    if (S.confirmPending) { var l1 = h("p", "obm-done-line"); l1.innerHTML = escLine(LEX.doneConfirm, { "__E__": esc(S.email || (lang() === "zh" ? "你的邮箱" : "your inbox")) }); bodyBox.appendChild(l1); }
+    if (S.trialActive) {
+      var tierNm = tx(S.plan === "pro" ? "planPro" : "planInsider");
+      var l2 = h("p", "obm-done-line");
+      l2.innerHTML = escLine(LEX.doneTrial, { "__T__": esc(tierNm), "__D__": esc(fmtDate(doneTrialDate())) });
+      bodyBox.appendChild(l2);
+    }
+    if (!S.confirmPending && !S.trialActive) { bodyBox.appendChild(T("p", "obm-done-line", "doneReady")); }
+    wrap.appendChild(mark); wrap.appendChild(head); wrap.appendChild(bodyBox);
+    root.appendChild(wrap);
+
+    // footer: primary "Open the dashboard" (closes) + quiet "Open the Terminal →"
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    var term = T("button", "obm-quiet", "openTerminal", { type: "button" }); term.style.width = "auto";
+    term.addEventListener("click", function () { window.open(TERMINAL_URL, "_blank", "noopener"); });
+    el.foot.appendChild(term);
+    var dash = T("button", "obm-btn", "openDashboard", { type: "button" });
+    dash.addEventListener("click", function () { stashClear(); closeSheet(); });
+    el.foot.appendChild(dash);
+    return root;
+  }
+  function doneTrialDate() { if (S.trialEnd != null) return new Date(S.trialEnd * 1000); return trialChargeDate(); }
+  function fullNameFromMeta() { try { var u = window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user(); return (u && u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || ""; } catch (e) { return ""; } }
+  function escLine(tuple, subs) { var en = tuple[0], zh = tuple[1]; var s = lang() === "zh" ? zh : en; for (var k in subs) if (subs.hasOwnProperty(k)) s = s.split(k).join(subs[k]); return s; }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  // ══════════════════════════ open / close ═══════════════════════════════════
+  var _lastFocus = null;
+  function openSheet(mode, opts) {
+    build();
+    S.mode = mode || "signup";
+    if (opts && opts.plan && (opts.plan === "free" || opts.plan === "insider" || opts.plan === "pro")) S.plan = opts.plan;
+    if (opts && opts.period && (opts.period === "monthly" || opts.period === "annual")) S.period = opts.period;
+    if (opts && opts.resume) S.step = STEP_PREFS;
+    if (S.mode === "signin") S.step = STEP_ACCOUNT;
+    S.open = true;
+    _lastFocus = document.activeElement;
+    el.scrim.style.display = "flex";
+    // next frame → transition in
+    requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
+    document.documentElement.style.overflow = "hidden";
+    render();
+    stashSave();
+  }
+  function closeSheet() {
+    if (!el.scrim) return;
+    S.open = false;
+    el.scrim.classList.remove("obm-open");
+    document.documentElement.style.overflow = "";
+    // keep stash unless cleared by Done; hide after transition
+    setTimeout(function () { if (!S.open) el.scrim.style.display = "none"; }, 220);
+    if (_lastFocus && _lastFocus.focus) { try { _lastFocus.focus(); } catch (e) {} }
+    stashSave();
+  }
+  function requestClose() { closeSheet(); }
+
+  // ESC + focus trap
+  document.addEventListener("keydown", function (e) {
+    if (!S.open || !el.sheet) return;
+    if (e.key === "Escape") { e.preventDefault(); requestClose(); return; }
+    if (e.key === "Tab") trapTab(e);
+  });
+  function trapTab(e) {
+    var f = el.sheet.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])');
+    var list = []; for (var i = 0; i < f.length; i++) if (f[i].offsetParent !== null || f[i] === document.activeElement) list.push(f[i]);
+    if (!list.length) return;
+    var first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  // ══════════════════════════ CTA interception ═══════════════════════════════
+  // Parse ?signin/?signup/?plan/?period from an href or a query string.
+  function parseIntent(qs) {
+    var sp;
+    try { sp = new URLSearchParams(qs); } catch (e) { sp = null; }
+    if (!sp) return null;
+    var wantSignup = sp.has("signup") || sp.has("onboard") || sp.has("plan");
+    var wantSignin = sp.has("signin");
+    if (!wantSignup && !wantSignin) return null;
+    var plan = sp.get("plan"), period = sp.get("period");
+    return {
+      mode: (wantSignin && !wantSignup) ? "signin" : "signup",
+      plan: (plan === "insider" || plan === "pro" || plan === "free") ? plan : null,
+      period: (period === "monthly" || period === "annual") ? period : null,
+      resume: sp.get("onboard") === "resume"
+    };
+  }
+  // delegated listener: intercept CTA <a> to app.mastermind-x.com/terminal?sign…
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest ? e.target.closest('a[href*="app.mastermind-x.com/terminal?sign"]') : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    var qIdx = href.indexOf("?");
+    var intent = qIdx === -1 ? null : parseIntent(href.slice(qIdx + 1));
+    if (!intent) return;                       // not an onboarding link → let it navigate
+    e.preventDefault();
+    openSheet(intent.mode, { plan: intent.plan, period: intent.period, resume: intent.resume });
+  }, true);
+
+  // ══════════════════════════ on-load: deep links + resume ═══════════════════
+  function bootDeepLinks() {
+    var intent = parseIntent(window.location.search.replace(/^\?/, ""));
+    var resumeStash = null;
+    if (intent && intent.resume) {
+      // Google OAuth return — restore the wizard stash written before redirect
+      try { var raw = localStorage.getItem(LS_ONBOARD_RESUME); if (raw) resumeStash = JSON.parse(raw); } catch (e) {}
+      try { localStorage.removeItem(LS_ONBOARD_RESUME); } catch (e) {}
+    }
+    if (intent) {
+      // hydrate from resume stash first (name/prefs/plan), then open
+      if (resumeStash) {
+        S.firstName = resumeStash.firstName || S.firstName;
+        S.lastName = resumeStash.lastName || S.lastName;
+        if (resumeStash.plan) S.plan = resumeStash.plan;
+        if (resumeStash.period) S.period = resumeStash.period;
+        if (resumeStash.prefs) S.prefs = resumeStash.prefs;
+      }
+      openSheet(intent.mode, { plan: intent.plan || S.plan, period: intent.period || S.period, resume: intent.resume });
+      stripOnboardParams();
+      return;
+    }
+    // no deep link → restore a mid-flow per-tab stash if one exists (reload resilience)
+    var st = stashLoad();
+    if (st && st.open) {
+      S.mode = st.mode || "signup"; S.step = st.step || STEP_ACCOUNT;
+      S.firstName = st.firstName || ""; S.lastName = st.lastName || ""; S.email = st.email || "";
+      S.prefs = st.prefs || S.prefs; S.plan = st.plan || S.plan; S.period = st.period || S.period;
+      S.confirmPending = !!st.confirmPending; S.trialActive = !!st.trialActive; S.trialEnd = (typeof st.trialEnd === "number") ? st.trialEnd : null;
+      S.planTouched = !!st.planTouched || (st.step || 1) >= 3;  // stale stashes: reached-plan implies touched
+      openSheet(S.mode, {});
+    }
+  }
+  function stripOnboardParams() {
+    try {
+      var sp = new URLSearchParams(window.location.search);
+      var changed = false;
+      ["signup", "signin", "onboard", "plan", "period"].forEach(function (k) { if (sp.has(k)) { sp.delete(k); changed = true; } });
+      if (!changed) return;
+      var qs = sp.toString();
+      var url = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+      window.history.replaceState(null, "", url);
+    } catch (e) {}
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootDeepLinks);
+  else bootDeepLinks();
+
+  // expose a tiny API (parity with MDXAuth.open) for other scripts/tests
+  window.MMOnboard = { open: openSheet, close: closeSheet };
+})();
