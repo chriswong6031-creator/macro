@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<!-- WRI W2 design mockup — Watchlist Risk Intelligence surface.
+     MOCKUP ONLY: numbers are hardcoded production-shaped fakes; the W3 build wires
+     risk_core.js math into this exact markup/CSS. Loads site theme.css for tokens;
+     self-contained fallbacks included. Spec of record: research/WRI_W2_DESIGN_SPEC.md -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WRI mockup — Watchlist &amp; Portfolio</title>
+<link rel="stylesheet" href="../../site/theme.css">
+<style>
+  /* ---------- fallback tokens (when theme.css absent) ---------- */
+  :root { --bg:#0b0f14; --panel:#121821; --panel2:#0e141c; --line:#22303f;
+          --text:#dbe4ee; --muted:#7f93a8; --link:#5aa9ff; --up:#22c07a;
+          --down:#ef5350; --info:#58a6ff; --warn:#e2b93b; }
+  [data-theme="light"] { --bg:#f6f8fa; --panel:#ffffff; --panel2:#eef2f6;
+          --line:#d7dee6; --text:#17222e; --muted:#5c6f82; }
+  html[data-lang="zh"] .l-en { display:none; } html[data-lang="zh"] .l-zh { display:inline; }
+  html:not([data-lang="zh"]) .l-zh { display:none; }
+
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); margin:0; padding:18px;
+         font:14px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1100px)/2)); } }
+  h1 { font-size:20px; margin:0; }
+  .muted { color:var(--muted); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:14px 16px; margin-bottom:14px; }
+
+  /* ================= WRI token system ================= */
+  .wri, .wri-rail {
+    /* risk-state ramp — deliberately NOT --up/--down (those flip meaning in zh views) */
+    --wri-ok:   #3fb98d;
+    --wri-tilt: #d9a13c;
+    --wri-conc: #e2703a;
+    --wri-one:  #e05252;
+    /* factor hues — one per bet family, stable across themes */
+    --f-mkt:#8fa4b8; --f-growth:#9a7bff; --f-size:#4fc3d9; --f-rates:#5f8dff;
+    --f-usd:#7fae72; --f-oil:#d9903c; --f-china:#e0645c; --f-btc:#f0a13c;
+    --f-gold:#d4b23c; --f-idio:#66788c;
+    --wri-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .wri .num, .wri-rail .num { font-family:var(--wri-mono); font-variant-numeric:tabular-nums; }
+
+  /* ================= L3 regime rail ================= */
+  .wri-rail { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:8px 14px; margin-bottom:14px; border-radius:10px;
+    background:color-mix(in srgb, var(--wri-tilt) 7%, var(--panel));
+    border:1px solid color-mix(in srgb, var(--wri-tilt) 28%, var(--line));
+    font-size:12.5px; }
+  .wri-rail .dot { width:8px; height:8px; border-radius:50%; background:var(--wri-tilt);
+    box-shadow:0 0 8px color-mix(in srgb, var(--wri-tilt) 70%, transparent); flex:none; }
+  .wri-rail b { font-weight:700; }
+  .wri-rail .sep { color:var(--muted); }
+  .wri-rail a { color:var(--link); text-decoration:none; margin-left:auto; font-size:12px; }
+
+  /* ================= L2 hero — Book Risk ================= */
+  .wri-hero { padding:18px 20px 16px; }
+  .wri-eyebrow { display:flex; align-items:center; gap:8px; font-family:var(--wri-mono);
+    font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    margin-bottom:10px; }
+  .wri-eyebrow .asof { margin-left:auto; letter-spacing:.02em; }
+  .wri-verdict { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .wri-verdict h2 { font-size:26px; line-height:1.15; margin:0; font-weight:800;
+    letter-spacing:-.014em; }
+  .wri-state { flex:none; align-self:center; font-size:11px; font-weight:800; letter-spacing:.08em;
+    padding:3px 10px; border-radius:9px; text-transform:uppercase;
+    color:var(--wri-conc);
+    background:color-mix(in srgb, var(--wri-conc) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--wri-conc) 40%, transparent); }
+  .wri-so { margin:7px 0 0; font-size:13.5px; line-height:1.55; max-width:760px; }
+  .wri-so b { font-weight:700; }
+
+  /* ---- lens toggle (calm / selloff) ---- */
+  .wri-lens { display:flex; align-items:center; gap:8px; margin:14px 0 4px; }
+  .wri-lens .seg { display:inline-flex; background:var(--panel2); border:1px solid var(--line);
+    border-radius:9px; padding:2px; }
+  .wri-lens button { border:0; background:transparent; color:var(--muted); cursor:pointer;
+    font:inherit; font-size:12px; font-weight:700; padding:4px 12px; border-radius:7px; }
+  .wri-lens button[aria-pressed="true"] { background:var(--panel); color:var(--text);
+    box-shadow:0 1px 6px rgba(0,0,0,.25); }
+  .wri-lens .hint { font-size:11.5px; color:var(--muted); }
+
+  /* ---- braid signature ---- */
+  .wri-braid { position:relative; margin:6px 0 2px; }
+  .wri-braid svg { display:block; width:100%; height:auto; }
+  .wri-braid .thread { fill:none; stroke-linecap:round; opacity:.9;
+    transition:d .5s ease, stroke .3s, stroke-width .3s; }
+  .wri-braid text { font-family:var(--wri-mono); }
+  .wri-braid .tick { font-size:10.5px; fill:var(--muted); }
+  .wri-braid .tick.neg { fill:var(--wri-ok); }
+  .wri-strandbar { transition:x .5s ease, width .5s ease; rx:3; }
+  .wri-strandlab { font-size:11px; font-weight:700; }
+  .wri-strandshare { font-size:10.5px; fill:var(--muted); }
+  @media (prefers-reduced-motion:no-preference){
+    .wri-braid .thread { stroke-dasharray:340; stroke-dashoffset:340;
+      animation:wri-draw .7s ease forwards; }
+    @keyframes wri-draw { to { stroke-dashoffset:0; } }
+  }
+
+  /* ---- hero sub-cards ---- */
+  .wri-sub { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:10px; margin-top:14px; }
+  .wri-card2 { background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:11px 13px; }
+  .wri-card2 h3 { margin:0 0 8px; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); font-weight:700; display:flex; gap:6px; align-items:center; }
+  .wri-card2 h3 .q { margin-left:auto; cursor:help; color:var(--muted); font-size:11px;
+    border:1px solid var(--line); border-radius:50%; width:15px; height:15px; line-height:13px;
+    text-align:center; flex:none; }
+  .wri-frow { display:grid; grid-template-columns:96px 1fr 40px; gap:8px; align-items:center;
+    font-size:12.5px; padding:2.5px 0; }
+  .wri-frow .lab { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wri-track { height:8px; border-radius:5px; background:color-mix(in srgb,var(--line) 55%,transparent);
+    overflow:hidden; }
+  .wri-track i { display:block; height:100%; border-radius:5px; }
+  .wri-frow .pct { text-align:right; font-weight:700; }
+  .wri-twins { display:flex; flex-direction:column; gap:7px; }
+  .wri-twin { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:12.5px; }
+  .wri-twin .tk { font-family:var(--wri-mono); font-weight:700; font-size:12px;
+    padding:1.5px 7px; border-radius:6px; background:color-mix(in srgb,var(--f-growth) 14%,transparent);
+    border:1px solid color-mix(in srgb,var(--f-growth) 38%,transparent); }
+  .wri-twin .lnk { color:var(--muted); font-size:11px; }
+  .wri-twin.stress .tk { background:color-mix(in srgb,var(--wri-one) 12%,transparent);
+    border-color:color-mix(in srgb,var(--wri-one) 36%,transparent); }
+  .wri-twin .why { flex-basis:100%; font-size:11.5px; color:var(--muted); }
+  .wri-crow { display:grid; grid-template-columns:52px 1fr 44px; gap:8px; align-items:center;
+    font-size:12.5px; padding:2.5px 0; }
+  .wri-crow .tk { font-family:var(--wri-mono); font-weight:700; }
+  .wri-crow .pct { text-align:right; font-weight:700; }
+  .wri-crow.neg .pct { color:var(--wri-ok); }
+  .wri-foot { margin-top:12px; font-size:11.5px; color:var(--muted); }
+  .wri-foot .q { cursor:help; text-decoration:underline dotted; }
+
+  /* abstain / empty hero states */
+  .wri-abstain { display:none; font-size:13px; padding:8px 0 2px; }
+
+  /* ================= L1 — watchlist cards ================= */
+  .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:12px; }
+  .wl-card { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:12px 14px; border-left:3px solid transparent; }
+  .wl-top { display:flex; align-items:center; gap:8px; }
+  .wl-name { font-size:15px; flex:1; } .wl-name b { font-weight:800; }
+  .state { display:inline-block; padding:2px 10px; border-radius:11px; font-weight:700;
+           font-size:12px; border:1px solid transparent;
+           color:var(--wri-ok); background:color-mix(in srgb,var(--wri-ok) 13%,transparent); }
+  .state.caution { color:var(--wri-tilt); background:color-mix(in srgb,var(--wri-tilt) 13%,transparent); }
+  .wl-sig { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:7px; font-size:12px; }
+  /* lane chips — quiet, max 3 at rest */
+  .wri-lanes { display:flex; gap:6px; flex-wrap:wrap; margin-top:9px; }
+  .wri-chip { font-size:11px; font-weight:600; padding:2px 8px; border-radius:7px;
+    border:1px solid color-mix(in srgb,var(--wri-tilt) 38%,transparent);
+    color:color-mix(in srgb,var(--wri-tilt) 82%,var(--text));
+    background:color-mix(in srgb,var(--wri-tilt) 9%,transparent); }
+  .wri-chip.hot { border-color:color-mix(in srgb,var(--wri-one) 40%,transparent);
+    color:color-mix(in srgb,var(--wri-one) 85%,var(--text));
+    background:color-mix(in srgb,var(--wri-one) 10%,transparent); }
+  .wri-chip.info { border-color:var(--line); color:var(--muted); background:transparent; }
+  .wri-role { font-size:11px; font-weight:800; letter-spacing:.05em; padding:2px 9px;
+    border-radius:7px; margin-left:auto; color:var(--wri-conc);
+    background:color-mix(in srgb,var(--wri-conc) 13%,transparent);
+    border:1px solid color-mix(in srgb,var(--wri-conc) 40%,transparent); }
+  .wri-more { font-size:11px; color:var(--link); cursor:pointer; border:0; background:none;
+    padding:2px 4px; font-weight:600; }
+  /* drawer */
+  .wri-drawer { display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .wri-drawer.open { display:block; }
+  .wri-lrow { display:flex; gap:8px; align-items:baseline; font-size:12.5px; padding:3px 0; }
+  .wri-lrow .ln { flex:none; width:118px; color:var(--muted); font-size:11.5px; }
+  .wri-lrow .st { flex:none; font-weight:700; font-size:11px; letter-spacing:.04em; }
+  .wri-lrow .st.ok { color:var(--wri-ok); } .wri-lrow .st.watch { color:var(--wri-tilt); }
+  .wri-lrow .st.elev { color:var(--wri-one); } .wri-lrow .st.na { color:var(--muted); }
+  .wri-lrow .rs { color:var(--text); }
+  .wri-drawer .asof { font-size:11px; color:var(--muted); margin-top:6px; }
+
+  /* ================= portfolio table additions ================= */
+  .ts table { border-collapse:collapse; width:100%; min-width:640px; }
+  .ts th { font-size:11.5px; font-weight:700; color:var(--muted); text-align:right;
+    padding:5px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .ts th:first-child, .ts th:nth-child(2) { text-align:left; }
+  .ts td { padding:7px 10px; border-bottom:1px solid var(--line); font-size:13px; }
+  .ts td.tabnum { text-align:right; font-family:var(--wri-mono); font-variant-numeric:tabular-nums; }
+  .ts td:first-child { font-weight:700; }
+  .wri-rsbar { display:inline-block; vertical-align:middle; width:44px; height:7px; border-radius:4px;
+    background:color-mix(in srgb,var(--line) 55%,transparent); overflow:hidden; margin-left:7px; }
+  .wri-rsbar i { display:block; height:100%; background:var(--f-growth); }
+  .lang-fab { position:fixed; right:16px; bottom:16px; z-index:99; display:flex; gap:6px; }
+  .lang-fab button { background:var(--panel); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:6px 10px; cursor:pointer; font:inherit; font-size:12px; }
+  @media (max-width:560px){
+    .wri-verdict h2 { font-size:21px; }
+    .wri-braid { display:none; }               /* braid → bucket list on phones */
+    .wri-buckets { display:flex !important; }
+  }
+  .wri-buckets { display:none; flex-direction:column; gap:8px; margin:8px 0 2px; }
+  .wri-bucket { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .wri-bucket .swatch { width:10px; height:10px; border-radius:3px; flex:none; }
+  .wri-bucket .tks { font-family:var(--wri-mono); font-size:11.5px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- page header (existing, restyled lightly) -->
+<div class="panel">
+  <h1><span class="l-en">Watchlist &amp; Portfolio</span><span class="l-zh">自选与持仓</span></h1>
+  <p class="muted" style="margin:8px 0 0; font-size:13px">
+    <span class="l-en">Your list and holdings with tonight's signals — and what your book really is.</span>
+    <span class="l-zh">你的自选与持仓，附今晚信号——以及你的组合到底押了什么。</span>
+  </p>
+</div>
+
+<!-- ============ L3 · regime rail ============ -->
+<div class="wri-rail">
+  <span class="dot"></span>
+  <b><span class="l-en">Growth scare — market on caution</span><span class="l-zh">增长担忧——市场处于谨慎状态</span></b>
+  <span class="sep">·</span>
+  <span><span class="l-en">your book moves about <b class="num">1.3×</b> the market</span>
+        <span class="l-zh">你的组合波动约为大盘的 <b class="num">1.3×</b></span></span>
+  <a href="../../site/macro.html"><span class="l-en">market state →</span><span class="l-zh">市场状态 →</span></a>
+</div>
+
+<!-- ============ L2 · Book Risk hero ============ -->
+<div class="panel wri wri-hero">
+  <div class="wri-eyebrow">
+    <span><span class="l-en">BOOK RISK</span><span class="l-zh">组合风险</span></span>
+    <span class="asof"><span class="l-en">as of 07-24 close</span><span class="l-zh">截至 07-24 收盘</span></span>
+  </div>
+
+  <div class="wri-verdict">
+    <h2><span class="l-en">Your 8 names move as <span class="num">2</span> bets</span>
+        <span class="l-zh">你的 8 只持仓实际上是 <span class="num">2</span> 项押注</span></h2>
+    <span class="wri-state"><span class="l-en">Mostly one bet</span><span class="l-zh">高度集中</span></span>
+  </div>
+  <p class="wri-so">
+    <span class="l-en"><b>Growth/Tech drives 64%</b> of your swings — if that one trade turns, most of
+    this book turns with it. Gold and Treasuries are the only pieces moving on their own.</span>
+    <span class="l-zh"><b>成长/科技驱动你 64% 的波动</b>——这笔交易一转向，组合大部分随之转向。
+    只有黄金与美债在独立行走。</span>
+  </p>
+
+  <div class="wri-lens">
+    <div class="seg" role="group" aria-label="lens">
+      <button id="lensCalm" aria-pressed="false" onclick="setLens('calm')">
+        <span class="l-en">All days</span><span class="l-zh">全部交易日</span></button>
+      <button id="lensStress" aria-pressed="true" onclick="setLens('stress')">
+        <span class="l-en">In selloffs</span><span class="l-zh">跌市中</span></button>
+    </div>
+    <span class="hint" id="lensHint">
+      <span class="l-en">on bad market days, MSFT joins the tech cluster</span>
+      <span class="l-zh">大盘下跌日，MSFT 也并入科技集群</span></span>
+  </div>
+
+  <!-- signature: the bets braid -->
+  <div class="wri-braid" role="img"
+       aria-label="8 holdings merge into 2 main bets: Growth/Tech 64%, plus independent gold, treasury and bank positions">
+    <svg viewBox="0 0 1000 208" xmlns="http://www.w3.org/2000/svg" id="braidSvg">
+      <!-- top: one tick per holding -->
+      <g id="ticks"></g>
+      <!-- threads -->
+      <g id="threads"></g>
+      <!-- bottom: strand bars + labels -->
+      <g id="strands"></g>
+    </svg>
+  </div>
+  <!-- phone fallback: bucket list -->
+  <div class="wri-buckets" id="buckets"></div>
+
+  <div class="wri-sub">
+    <div class="wri-card2">
+      <h3><span class="l-en">What drives your swings</span><span class="l-zh">波动的来源</span>
+        <span class="q" title="Share of your book's day-to-day variance attributed to each factor, from a 9-factor model of daily moves. Measurement, not a forecast.">?</span></h3>
+      <div class="wri-frow"><span class="lab"><span class="l-en">Growth / Tech</span><span class="l-zh">成长/科技</span></span>
+        <span class="wri-track"><i style="width:64%; background:var(--f-growth)"></i></span><span class="pct num">64%</span></div>
+      <div class="wri-frow"><span class="lab"><span class="l-en">Market</span><span class="l-zh">大盘</span></span>
+        <span class="wri-track"><i style="width:14%; background:var(--f-mkt)"></i></span><span class="pct num">14%</span></div>
+      <div class="wri-frow"><span class="lab"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
+        <span class="wri-track"><i style="width:8%; background:var(--f-gold)"></i></span><span class="pct num">8%</span></div>
+      <div class="wri-frow"><span class="lab"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+        <span class="wri-track"><i style="width:5%; background:var(--f-rates)"></i></span><span class="pct num">5%</span></div>
+      <div class="wri-frow"><span class="lab"><span class="l-en">Stock-specific</span><span class="l-zh">个股特有</span></span>
+        <span class="wri-track"><i style="width:9%; background:var(--f-idio)"></i></span><span class="pct num">9%</span></div>
+      <div class="muted" style="font-size:11.5px; margin-top:7px">
+        <span class="l-en">effective bets ≈ <b class="num">2.1</b> of 8 names</span>
+        <span class="l-zh">有效押注数 ≈ <b class="num">2.1</b>（共 8 只）</span></div>
+    </div>
+
+    <div class="wri-card2">
+      <h3><span class="l-en">Move as one</span><span class="l-zh">同涨同跌</span>
+        <span class="q" title="Pairs whose modeled correlation is 0.70 or higher under the selected lens. 'Selloffs only' pairs decouple on calm days but move together on bad market days.">?</span></h3>
+      <div class="wri-twins">
+        <div class="wri-twin">
+          <span class="tk">NVDA</span><span class="tk">AMD</span><span class="tk">AVGO</span>
+          <span class="lnk">corr ≥ .85</span>
+        </div>
+        <div class="wri-twin stress" id="twinStress">
+          <span class="tk">MSFT</span><span class="lnk">
+            <span class="l-en">joins in selloffs</span><span class="l-zh">跌市中并入</span></span>
+          <span class="why"><span class="l-en">holds up on calm days, falls with tech on bad ones</span>
+            <span class="l-zh">平日独立，大跌日与科技股同跌</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wri-card2">
+      <h3><span class="l-en">Biggest single risks</span><span class="l-zh">最大单一风险</span>
+        <span class="q" title="Each position's contribution to the book's overall volatility (weight × co-movement). A small position in a volatile, correlated name can out-risk a large quiet one. Negative = moves against the rest of the book.">?</span></h3>
+      <div class="wri-crow"><span class="tk">NVDA</span>
+        <span class="wri-track"><i style="width:31%; background:var(--f-growth)"></i></span><span class="pct num">31%</span></div>
+      <div class="wri-crow"><span class="tk">AVGO</span>
+        <span class="wri-track"><i style="width:22%; background:var(--f-growth)"></i></span><span class="pct num">22%</span></div>
+      <div class="wri-crow"><span class="tk">AMD</span>
+        <span class="wri-track"><i style="width:18%; background:var(--f-growth)"></i></span><span class="pct num">18%</span></div>
+      <div class="wri-crow neg"><span class="tk">TLT</span>
+        <span class="wri-track"><i style="width:6%; background:var(--wri-ok)"></i></span><span class="pct num">−6%</span></div>
+      <div class="muted" style="font-size:11.5px; margin-top:7px">
+        <span class="l-en">TLT leans against the rest of the book</span>
+        <span class="l-zh">TLT 与组合其余部分反向而行</span></div>
+    </div>
+  </div>
+
+  <div class="wri-foot">
+    <span class="l-en">Measurement from a 9-factor model of daily moves — not a forecast.
+      1 name (GC=F) isn't modeled and sits outside these numbers.
+      <span class="q" title="Betas fit on 252 trading days; selloff lens re-estimates factor co-movement on the worst quarter of market days over 3 years; stock-specific risk estimated on all days. Full method on the stock pages.">method</span></span>
+    <span class="l-zh">基于 9 因子日度模型的测量——并非预测。1 只（GC=F）未纳入模型，不在上述数字内。
+      <span class="q" title="Beta 基于 252 个交易日拟合；跌市视角在三年内最差四分位的大盘交易日上重估因子联动；个股特有风险按全部交易日估计。">方法</span></span>
+  </div>
+</div>
+
+<!-- ============ L1 · cards with lane chips ============ -->
+<h2 style="font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 0 9px">
+  <span class="l-en">Watchlist</span><span class="l-zh">自选</span></h2>
+<div class="wl-grid">
+
+  <div class="wl-card wri" style="border-left-color:var(--wri-conc)">
+    <div class="wl-top">
+      <span class="wl-name"><b>NVDA</b> <span class="muted" style="font-size:12.5px">NVIDIA</span></span>
+      <span class="wri-role"><span class="l-en">Take-profit review</span><span class="l-zh">止盈复查</span></span>
+    </div>
+    <div class="wl-sig">
+      <span class="state caution"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+      <span class="muted num">$197.58</span>
+    </div>
+    <div class="wri-lanes">
+      <span class="wri-chip hot"><span class="l-en">Earnings in 5d</span><span class="l-zh">财报 5天内</span></span>
+      <span class="wri-chip"><span class="l-en">Stretched</span><span class="l-zh">过度拉伸</span></span>
+      <span class="wri-chip"><span class="l-en">31% of book risk</span><span class="l-zh">占组合风险31%</span></span>
+      <button class="wri-more" onclick="this.closest('.wl-card').querySelector('.wri-drawer').classList.toggle('open')">
+        <span class="l-en">details</span><span class="l-zh">详情</span></button>
+    </div>
+    <div class="wri-drawer open">
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Price &amp; trend</span><span class="l-zh">价格与趋势</span></span>
+        <span class="st ok">OK</span>
+        <span class="rs"><span class="l-en">above the 200-day, 16% off its high</span><span class="l-zh">位于200日线上方，距高点16%</span></span></div>
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Stretch</span><span class="l-zh">拉伸度</span></span>
+        <span class="st watch"><span class="l-en">WATCH</span><span class="l-zh">关注</span></span>
+        <span class="rs"><span class="l-en">ran hard; entries here have chased before</span><span class="l-zh">涨势过快；此位追入历史上多为追高</span></span></div>
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Events</span><span class="l-zh">事件</span></span>
+        <span class="st elev"><span class="l-en">EARNINGS 5D</span><span class="l-zh">财报5天</span></span>
+        <span class="rs"><span class="l-en">reports Aug 27 after close</span><span class="l-zh">8月27日盘后发布</span></span></div>
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Estimates</span><span class="l-zh">盈利预期</span></span>
+        <span class="st ok">OK</span>
+        <span class="rs"><span class="l-en">analysts still raising numbers (40 of 42 up)</span><span class="l-zh">分析师仍在上调（42位中40位）</span></span></div>
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Balance sheet</span><span class="l-zh">资产负债</span></span>
+        <span class="st ok">OK</span>
+        <span class="rs"><span class="l-en">little debt, strong cash generation</span><span class="l-zh">负债很低，现金流强劲</span></span></div>
+      <div class="wri-lrow"><span class="ln"><span class="l-en">Who's selling</span><span class="l-zh">谁在卖出</span></span>
+        <span class="st ok">OK</span>
+        <span class="rs"><span class="l-en">shorts near lows; no insider cluster</span><span class="l-zh">空头接近低位；无内部人集中卖出</span></span></div>
+      <div class="asof"><span class="l-en">signals as of 07-24 close</span><span class="l-zh">信号截至 07-24 收盘</span></div>
+    </div>
+  </div>
+
+  <div class="wl-card wri">
+    <div class="wl-top">
+      <span class="wl-name"><b>AMD</b> <span class="muted" style="font-size:12.5px">Advanced Micro</span></span>
+    </div>
+    <div class="wl-sig">
+      <span class="state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      <span class="muted num">$188.40</span>
+    </div>
+    <div class="wri-lanes">
+      <span class="wri-chip"><span class="l-en">Insiders selling</span><span class="l-zh">内部人卖出</span></span>
+      <span class="wri-chip info"><span class="l-en">moves with NVDA</span><span class="l-zh">与NVDA同步</span></span>
+      <button class="wri-more" onclick="this.closest('.wl-card').querySelector('.wri-drawer').classList.toggle('open')">
+        <span class="l-en">details</span><span class="l-zh">详情</span></button>
+    </div>
+    <div class="wri-drawer"></div>
+  </div>
+
+  <div class="wl-card wri">
+    <div class="wl-top">
+      <span class="wl-name"><b>GC=F</b> <span class="muted" style="font-size:12.5px">Gold futures</span></span>
+    </div>
+    <div class="wl-sig">
+      <span class="state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      <span class="muted num">$3,412</span>
+    </div>
+    <div class="wri-lanes">
+      <span class="wri-chip info"><span class="l-en">price signals only — not in the risk model</span>
+        <span class="l-zh">仅价格信号——未纳入风险模型</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ portfolio table with risk column ============ -->
+<div class="panel wri" style="margin-top:16px">
+  <h2 style="font-size:15px; margin:0 0 10px"><span class="l-en">Portfolio</span><span class="l-zh">持仓</span></h2>
+  <div class="ts" style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+        <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+        <th style="text-align:right"><span class="l-en">Value</span><span class="l-zh">市值</span></th>
+        <th style="text-align:right"><span class="l-en">Since entry</span><span class="l-zh">入场以来</span></th>
+        <th style="text-align:right"><span class="l-en">Share of book risk</span><span class="l-zh">组合风险占比</span></th>
+        <th><span class="l-en">Risk read</span><span class="l-zh">风险状态</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>NVDA</td><td><span class="state caution" style="font-size:11px"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td>
+          <td class="tabnum">$48,200</td><td class="tabnum" style="color:var(--wri-ok)">+62%</td>
+          <td class="tabnum">31%<span class="wri-rsbar"><i style="width:100%"></i></span></td>
+          <td><span class="wri-role" style="margin:0"><span class="l-en">Take-profit review</span><span class="l-zh">止盈复查</span></span></td></tr>
+        <tr><td>AVGO</td><td><span class="state" style="font-size:11px"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td>
+          <td class="tabnum">$31,900</td><td class="tabnum" style="color:var(--wri-ok)">+28%</td>
+          <td class="tabnum">22%<span class="wri-rsbar"><i style="width:71%"></i></span></td>
+          <td class="muted" style="font-size:12px">—</td></tr>
+        <tr><td>TLT</td><td><span class="state" style="font-size:11px"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span></td>
+          <td class="tabnum">$12,400</td><td class="tabnum" style="color:var(--wri-one)">−4%</td>
+          <td class="tabnum" style="color:var(--wri-ok)">−6%<span class="wri-rsbar"><i style="width:19%; background:var(--wri-ok)"></i></span></td>
+          <td class="muted" style="font-size:12px"><span class="l-en">offsets the book</span><span class="l-zh">对冲组合</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="lang-fab">
+  <button onclick="document.documentElement.setAttribute('data-lang','')">EN</button>
+  <button onclick="document.documentElement.setAttribute('data-lang','zh')">中文</button>
+  <button onclick="var h=document.documentElement;h.setAttribute('data-theme',h.getAttribute('data-theme')==='light'?'':'light')">◐</button>
+</div>
+
+<script>
+/* ---- braid mock data ---- */
+var NAMES = [
+  {t:'NVDA', share:.31, cl:{calm:'growth', stress:'growth'}},
+  {t:'AMD',  share:.18, cl:{calm:'growth', stress:'growth'}},
+  {t:'AVGO', share:.22, cl:{calm:'growth', stress:'growth'}},
+  {t:'MSFT', share:.11, cl:{calm:'msft',   stress:'growth'}},   // stress-joiner
+  {t:'JPM',  share:.08, cl:{calm:'jpm',    stress:'jpm'}},
+  {t:'XOM',  share:.07, cl:{calm:'xom',    stress:'xom'}},
+  {t:'GLD',  share:.09, cl:{calm:'gld',    stress:'gld'}},
+  {t:'TLT',  share:-.06, cl:{calm:'tlt',   stress:'tlt'}}
+];
+var CLUSTERS = {
+  growth:{en:'Growth/Tech bet', zh:'成长/科技押注', hue:'var(--f-growth)'},
+  msft:  {en:'MSFT', zh:'MSFT', hue:'var(--f-mkt)'},
+  jpm:   {en:'JPM',  zh:'JPM',  hue:'var(--f-mkt)'},
+  xom:   {en:'XOM',  zh:'XOM',  hue:'var(--f-oil)'},
+  gld:   {en:'Gold', zh:'黄金', hue:'var(--f-gold)'},
+  tlt:   {en:'Treasuries ⇄', zh:'美债 ⇄', hue:'var(--f-rates)'}
+};
+var W=1000, TOP=26, BOT=168, LABY=186, SHY=200;
+function zh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
+
+function layout(lens){
+  var n=NAMES.length, xs={}, i;
+  for(i=0;i<n;i++) xs[NAMES[i].t]=60+(W-120)*i/(n-1);
+  // cluster order: preserve first-appearance order
+  var order=[], seen={};
+  NAMES.forEach(function(m){ var c=m.cl[lens]; if(!seen[c]){seen[c]=1; order.push(c);} });
+  var shares={}; order.forEach(function(c){ shares[c]=0; });
+  NAMES.forEach(function(m){ shares[m.cl[lens]] += Math.abs(m.share); });
+  var total=0; order.forEach(function(c){ total+=shares[c]; });
+  var gap=30, usable=W-120-gap*(order.length-1), cx={}, x=60;
+  order.forEach(function(c){
+    var w=Math.max(56, usable*shares[c]/total);
+    cx[c]={x:x, w:w, mid:x+w/2}; x+=w+gap;
+  });
+  return {xs:xs, cx:cx, order:order, shares:shares};
+}
+function render(lens){
+  var L=layout(lens), svg=document.getElementById('braidSvg');
+  var ticks='', threads='', strands='';
+  NAMES.forEach(function(m,i){
+    var x=L.xs[m.t], c=L.cx[m.cl[lens]], hue=CLUSTERS[m.cl[lens]].hue;
+    var wpx=Math.max(2, Math.min(15, 34*Math.sqrt(Math.abs(m.share))));
+    var neg=m.share<0;
+    ticks+='<text class="tick'+(neg?' neg':'')+'" x="'+x+'" y="14" text-anchor="middle">'+m.t+(neg?' ⇄':'')+'</text>';
+    threads+='<path class="thread" style="animation-delay:'+(i*55)+'ms" stroke="'+hue+'" stroke-width="'+wpx+'" '+
+      (neg?'stroke-dasharray="7 5" ':'')+
+      'd="M'+x+','+TOP+' C'+x+','+((TOP+BOT)/2)+' '+c.mid+','+((TOP+BOT)/2)+' '+c.mid+','+BOT+'" />';
+  });
+  // labels only — the braid is the picture; every number lives in the sub-cards
+  L.order.forEach(function(cKey, j){
+    var c=L.cx[cKey], meta=CLUSTERS[cKey];
+    var y = (c.w < 96 && j % 2) ? LABY + 13 : LABY;   // stagger narrow neighbours
+    strands+='<rect class="wri-strandbar" x="'+c.x+'" y="'+(BOT+2)+'" width="'+c.w+'" height="7" fill="'+meta.hue+'"/>'+
+      '<text class="wri-strandlab" x="'+c.mid+'" y="'+y+'" text-anchor="middle" fill="var(--text)">'+
+        (zh()?meta.zh:meta.en)+'</text>';
+  });
+  svg.querySelector('#ticks').innerHTML=ticks;
+  svg.querySelector('#threads').innerHTML=threads;
+  svg.querySelector('#strands').innerHTML=strands;
+  // phone buckets
+  var b='';
+  L.order.forEach(function(cKey){
+    var meta=CLUSTERS[cKey], lab=zh()?meta.zh:meta.en;
+    var tks=NAMES.filter(function(m){return m.cl[lens]===cKey;}).map(function(m){return m.t;}).join(' · ');
+    b+='<div class="wri-bucket"><span class="swatch" style="background:'+meta.hue+'"></span>'+
+       '<b>'+lab+'</b>'+(tks===lab.replace(' ⇄','')?'':' <span class="tks">'+tks+'</span>')+'</div>';
+  });
+  document.getElementById('buckets').innerHTML=b;
+}
+function setLens(l){
+  document.getElementById('lensCalm').setAttribute('aria-pressed', l==='calm');
+  document.getElementById('lensStress').setAttribute('aria-pressed', l==='stress');
+  document.getElementById('twinStress').style.opacity = l==='stress' ? 1 : .45;
+  render(l);
+}
+render('stress');
+new MutationObserver(function(){ render(document.getElementById('lensStress').getAttribute('aria-pressed')==='true'?'stress':'calm'); })
+  .observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
+</script>
+</body>
+</html>
