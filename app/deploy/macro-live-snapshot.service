@@ -1,0 +1,22 @@
+[Unit]
+Description=Mastermind macro full live quote snapshot and basket lane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.vps_live_orchestrator --lane snapshot
+TimeoutStartSec=420
+Nice=8
+CPUWeight=30
+CPUQuota=90%
+MemoryHigh=700M
+MemoryMax=1G
+IOWeight=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

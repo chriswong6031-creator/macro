@@ -76,6 +76,10 @@ if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
 
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
+# VPS live artifacts live outside the git work-tree so a frequent
+# ``git reset --hard``/site rsync can never roll them back or expose an
+# in-progress write. Local/test installs transparently fall back to SITE/live.
+LIVE = Path(os.environ.get("MACRO_LIVE_DIR", "/var/lib/macro-live/public/live"))
 # The Terminal's data manifest (refreshed by the daily terminal-data cron) — read-only
 # freshness check for /api/status.
 TERMINAL_MANIFEST = Path(
@@ -395,10 +399,16 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
 @app.get("/api/overlay")
 def overlay():
     """The intraday live overlay the nightly/fast loop emits (read-through)."""
-    f = SITE / "live" / "overlay.json"
+    f = _live_artifact("overlay.json")
     if not f.exists():
         raise HTTPException(503, "overlay not built yet")
     return JSONResponse(json.loads(f.read_text()))
+
+
+def _live_artifact(name: str) -> Path:
+    """Prefer the VPS-owned store, with a development/back-compat fallback."""
+    primary = LIVE / name
+    return primary if primary.exists() else SITE / "live" / name
 
 
 @app.get("/api/status")
@@ -430,19 +440,42 @@ def status() -> dict:
         ctime = None
     checks["site"] = {"commit": _commit(), "commit_time": ctime}
 
-    # overlay — the 5-min live engine-scoring loop
-    ov = SITE / "live" / "overlay.json"
-    if ov.exists():
-        try:
-            d = json.loads(ov.read_text())
-            checks["overlay"] = {
-                "built": d.get("built"), "n": d.get("n"),
-                "fresh": d.get("n_fresh"), "age_min": age_min(ov),
-            }
-        except Exception as e:  # noqa: BLE001
-            checks["overlay"] = {"error": str(e)}
-    else:
-        checks["overlay"] = {"status": "missing"}
+    # VPS-owned live lanes. The external store is primary; local/test installs
+    # continue to read the historical SITE/live location.
+    for key, filename in (
+        ("overlay", "overlay.json"),
+        ("risk_state", "risk_state.json"),
+        ("china_risk_state", "china_risk_state.json"),
+        ("quotes", "quotes.json"),
+        ("basket_pulse", "basket_pulse.json"),
+        ("flow_pulse", "flow_pulse.json"),
+        ("release_publications", "release_publications.json"),
+        ("orchestrator", "orchestrator_status.json"),
+    ):
+        artifact = _live_artifact(filename)
+        if artifact.exists():
+            try:
+                data = json.loads(artifact.read_text())
+                checks[key] = {
+                    "schema": data.get("schema"),
+                    "built": data.get("built") or data.get("updated_at") or data.get("as_of"),
+                    "age_min": age_min(artifact),
+                }
+                if key == "overlay":
+                    checks[key].update({"n": data.get("n"), "fresh": data.get("n_fresh")})
+                elif key == "release_publications":
+                    checks[key].update(
+                        {
+                            "due": len(data.get("due") or []),
+                            "published": len(data.get("publications") or []),
+                        }
+                    )
+                elif key == "orchestrator":
+                    checks[key]["lanes"] = sorted((data.get("lanes") or {}).keys())
+            except Exception as e:  # noqa: BLE001
+                checks[key] = {"error": str(e), "age_min": age_min(artifact)}
+        else:
+            checks[key] = {"status": "missing"}
 
     # terminal_data — the daily Terminal-data refresh loop
     if TERMINAL_MANIFEST.exists():

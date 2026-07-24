@@ -51,6 +51,21 @@ ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
 Caddyfile, opens the firewall, starts Caddy, and adds a nightly `macro-update` cron that
 `git pull`s the freshly-built site (~23:30 UTC weekdays, after the daily build lands).
 
+### Install the live plane
+
+After the base site/API is provisioned:
+
+```bash
+ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 \
+  'bash /opt/macro/app/deploy/live-setup.sh'
+```
+
+This installs three resource-bounded systemd lanes and publishes their browser
+artifacts under `/var/lib/macro-live/public`. See
+[`docs/VPS_LIVE_ORCHESTRATION.md`](../../docs/VPS_LIVE_ORCHESTRATION.md) for
+ownership, capacity, validation, and cutover details. Do not set the repository
+variable `VPS_LIVE_PRIMARY=true` until the timers have passed a full-session soak.
+
 ## Step 4 — verify
 
 ```bash
@@ -65,8 +80,9 @@ curl -sI https://mastermind-x.com/ | head -10        # expect 200 + x-robots-tag
 | File | Role |
 |---|---|
 | `setup.sh` | idempotent provisioning (run as root on the droplet) |
-| `Caddyfile` | serves `/opt/macro/site` with self-signed TLS + `noindex` |
+| `Caddyfile` | serves `/opt/macro/site.served` plus the external live plane |
 | `update.sh` | `git pull` + Caddy reload (installed as `/usr/local/bin/macro-update`, cron'd) |
+| `live-setup.sh` | installs the fast, full-snapshot, and intraday-bar systemd lanes |
 
 ## Notes / gotchas
 

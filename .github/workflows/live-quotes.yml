@@ -31,6 +31,9 @@ concurrency:
 
 jobs:
   snapshot:
+    # Scheduled fallback is disabled only after the VPS passes its production
+    # soak and VPS_LIVE_PRIMARY=true is set. Manual recovery always remains.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true' }}
     runs-on: ubuntu-latest
     # Cap raised 800 → 2200 (2026-07-09) → 3000 (2026-07-12, HK basket pulse:
     # the membership leg joins every US+HK basket member; production universe

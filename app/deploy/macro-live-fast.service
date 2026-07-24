@@ -1,0 +1,22 @@
+[Unit]
+Description=Mastermind macro one-minute live/release lane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.vps_live_orchestrator --lane fast
+TimeoutStartSec=150
+Nice=3
+CPUWeight=70
+CPUQuota=180%
+MemoryHigh=1G
+MemoryMax=1536M
+IOWeight=60
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -99,6 +99,22 @@ if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
+# Live-plane systemd definitions are installed by live-setup.sh. Once that setup
+# has happened, keep unit/resource/timer changes tracking main automatically.
+# Python task code needs no restart because every lane is a fresh oneshot process.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   echo "$CHANGED" | grep -qE '^app/deploy/macro-live-(fast|snapshot|bars)\.(service|timer)$'; then
+	for UNIT in \
+		macro-live-fast.service macro-live-fast.timer \
+		macro-live-snapshot.service macro-live-snapshot.timer \
+		macro-live-bars.service macro-live-bars.timer
+	do
+		install -m 0644 "$APP_DIR/app/deploy/$UNIT" "/etc/systemd/system/$UNIT"
+	done
+	systemctl daemon-reload
+	systemctl restart macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer
+fi
+
 # admin console: restart ONLY when its own code changed, so the deployed panel at
 # admin.mastermind-x.com tracks main automatically (config/secrets live in the
 # untouched /etc/macro-admin.env, so a restart never loses them). "Its own code"

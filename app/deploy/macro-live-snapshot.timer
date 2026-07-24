@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the Mastermind full quote/basket lane every five minutes
+
+[Timer]
+OnBootSec=2m40s
+OnUnitActiveSec=5m
+AccuracySec=1s
+RandomizedDelaySec=8s
+Persistent=false
+Unit=macro-live-snapshot.service
+
+[Install]
+WantedBy=timers.target

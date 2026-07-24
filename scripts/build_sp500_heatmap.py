@@ -377,7 +377,7 @@ def refresh_caps(constituents: pd.DataFrame, *, force: bool = False) -> None:
 
 
 def build(site: Path | None = None, *, live: bool = True,
-          generated_utc: str | None = None) -> dict:
+          generated_utc: str | None = None, out_path: Path | None = None) -> dict:
     """Assemble + write the heatmap JSON. Returns the payload."""
     site = site or (config.ROOT / config.load()["storage"]["site_dir"])
     constituents = _load_constituents()
@@ -424,9 +424,8 @@ def build(site: Path | None = None, *, live: bool = True,
     # the cn/hk/ca heatmaps in engine/market_heatmap.py.
     payload["stock_url"] = "https://app.mastermind-x.com/terminal?symbol="
 
-    outdir = site / "marketdata"
-    outdir.mkdir(parents=True, exist_ok=True)
-    out = outdir / "sp500_heatmap.json"
+    out = Path(out_path) if out_path is not None else site / "marketdata" / "sp500_heatmap.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, separators=(",", ":"), ensure_ascii=False))
     log.info("wrote %s — %d tiles, %d/%d timeframes live, size=%s, src=%s",
              out, payload["n_tiles"],
@@ -447,13 +446,18 @@ def main(argv: list[str] | None = None) -> int:
                          "(the nightly pre-render step)")
     ap.add_argument("--force", action="store_true",
                     help="refresh the cap cache even when it is fresh")
+    ap.add_argument(
+        "--out",
+        default=None,
+        help="override output JSON path (VPS publishes this atomically outside the git tree)",
+    )
     args = ap.parse_args(argv)
 
     if args.refresh_caps or args.refresh_caps_only:
         refresh_caps(_load_constituents(), force=args.force)
         if args.refresh_caps_only:
             return 0
-    build(live=not args.no_live)
+    build(live=not args.no_live, out_path=Path(args.out) if args.out else None)
     return 0
 
 

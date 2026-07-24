@@ -1,52 +1,88 @@
 #!/usr/bin/env bash
-# Live ENGINE SCORING on the VPS — the intraday fast-loop.
-# Builds a LIGHT engine venv (NOT the full collector stack) and a cron that runs, every 5 min
-# (Asia-open -> US-close, weekdays), BOTH:
-#   - scripts.build_live_overlay -> gitignored /opt/macro/site/live/overlay.json (per-ticker)
-#   - scripts.build_risk_state   -> gitignored /opt/macro/site/live/risk_state.json (market-level)
+# Install the VPS-owned live plane.
 #
-# overlay.json: per-ticker FAST LEAVES (RSI / MACD / MA-distance / %-off-52w-high) recomputed on a
-# LIVE price spliced onto the nightly close series, plus a divergence flag vs the nightly cone.
-# risk_state.json: the MARKET-LEVEL radar-aware Market State verdict — recomputes ONLY the
-# price-driven legs (tape, vol, the radar's equity/vol/credit-proxy legs + the SPY<200dma context
-# gate) on live prices, carrying the slow legs (HY OAS / NFCI / breadth / macro) forward stamped
-# with their own as-of. The slow brain (regime/quad/conviction/GTAA) stays nightly by design.
-# Fail-safe: when a market is closed (or a feed is down) legs are marked `stale` and consumers
-# fall back to the nightly baseline — both files still emit, never crash.
+# Architecture:
+#   macro-live-fast     every ~60s: official release watcher, display quotes,
+#                       staggered overlay/risk/China state, 10-min heatmap
+#   macro-live-snapshot every ~5m:  full-universe quote snapshot + US/HK baskets
+#   macro-live-bars     hourly RTH: external intraday cache + flow pulse
 #
-# Both files are GITIGNORED, so the 3-min macro-update `git reset --hard` never clobbers them.
-#
-# REAL-TIME US: drop `POLYGON_API_KEY=...` into /etc/macro-live.env (chmod 600, NOT committed)
-# and the next run uses Polygon real-time; otherwise it serves keyless Yahoo (~15-min delayed).
+# All browser artifacts are atomically published to /var/lib/macro-live/public,
+# outside /opt/macro and /opt/macro/site.served. Canonical history, forward ledgers,
+# calibration and full renders remain on the nightly Mac/PC workflows.
 set -euo pipefail
 
 APP_DIR="/opt/macro"
 VENV="$APP_DIR/.venv"
+BASE_DIR="/var/lib/macro-live"
+PUBLIC_DIR="$BASE_DIR/public"
+LIVE_DIR="$PUBLIC_DIR/live"
 log() { echo "[live-setup] $*"; }
 
-log "[1/4] light engine venv (pandas/pyarrow/numpy/requests/pyyaml — not the full stack)"
+if [ "$(id -u)" -ne 0 ]; then
+  echo "live-setup must run as root" >&2
+  exit 1
+fi
+
+log "[1/6] runtime + live directories"
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -y python3-venv >/dev/null 2>&1 || true
+apt-get install -y python3-venv rsync >/dev/null 2>&1 || true
 test -d "$VENV" || python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
-"$VENV/bin/pip" install -q pandas pyarrow numpy requests pyyaml
+"$VENV/bin/pip" install -q pandas pyarrow numpy requests pyyaml jinja2
+install -d -m 0755 \
+  "$PUBLIC_DIR" "$LIVE_DIR" "$PUBLIC_DIR/marketdata" \
+  "$BASE_DIR/state" "$BASE_DIR/data" "$APP_DIR/site/live"
 
-log "[2/4] runner wrapper (sources optional /etc/macro-live.env for POLYGON_API_KEY)"
-cat > /usr/local/bin/macro-live <<EOF
-#!/usr/bin/env bash
-set -a; [ -f /etc/macro-live.env ] && . /etc/macro-live.env; set +a
-cd "$APP_DIR" || exit 1
-# per-ticker overlay, then the market-level risk-state; one failing must not block the other
-"$VENV/bin/python" -m scripts.build_live_overlay || true
-exec "$VENV/bin/python" -m scripts.build_risk_state
-EOF
-chmod +x /usr/local/bin/macro-live
+log "[2/6] environment"
+if [ ! -e /etc/macro-live.env ]; then
+  install -m 0600 /dev/null /etc/macro-live.env
+fi
+chmod 0600 /etc/macro-live.env
+if ! grep -q '^MACRO_LIVE_DIR=' /etc/macro-live.env; then
+  {
+    echo "MACRO_LIVE_DIR=$LIVE_DIR"
+    echo "MACRO_LIVE_STATE_DIR=$BASE_DIR/state"
+    echo "MACRO_LIVE_DATA_DIR=$BASE_DIR/data"
+  } >> /etc/macro-live.env
+fi
 
-log "[3/4] smoke test"
-if macro-live > /tmp/live.log 2>&1; then tail -1 /tmp/live.log; else log "smoke test FAILED:"; tail -6 /tmp/live.log; fi
+log "[3/6] systemd services + timers"
+for unit in \
+  macro-live-fast.service macro-live-fast.timer \
+  macro-live-snapshot.service macro-live-snapshot.timer \
+  macro-live-bars.service macro-live-bars.timer
+do
+  install -m 0644 "$APP_DIR/app/deploy/$unit" "/etc/systemd/system/$unit"
+done
+systemctl daemon-reload
 
-log "[4/4] cron: fast-loop every 5 min (1-21 UTC weekdays — Asia open through US close)"
-{ crontab -l 2>/dev/null | grep -v "macro-live\|build_live_overlay" || true ; \
-  echo "*/5 1-21 * * 1-5 /usr/local/bin/macro-live >> /var/log/live-overlay.log 2>&1" ; } | crontab -
+log "[4/6] remove legacy cron writer"
+tmp_cron=$(mktemp)
+crontab -l 2>/dev/null | grep -v "macro-live\\|build_live_overlay" > "$tmp_cron" || true
+crontab "$tmp_cron"
+rm -f "$tmp_cron"
 
-log "DONE — /api/overlay serves the overlay; crontab:"; crontab -l | grep macro-live
+log "[5/6] smoke test publication + fast lane"
+set +e
+systemctl start macro-live-fast.service
+smoke_rc=$?
+set -e
+if [ "$smoke_rc" -ne 0 ]; then
+  log "smoke test failed; recent service log:"
+  journalctl -u macro-live-fast.service -n 30 --no-pager
+  exit "$smoke_rc"
+fi
+test -s "$LIVE_DIR/orchestrator_status.json"
+
+log "[6/6] enable timers"
+systemctl enable --now \
+  macro-live-fast.timer \
+  macro-live-snapshot.timer \
+  macro-live-bars.timer >/dev/null
+
+log "DONE — live plane installed"
+systemctl list-timers \
+  macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer \
+  --no-pager
+log "After production freshness is verified, set GitHub repository variable VPS_LIVE_PRIMARY=true."

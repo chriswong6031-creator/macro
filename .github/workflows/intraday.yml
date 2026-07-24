@@ -29,6 +29,9 @@ concurrency:
 
 jobs:
   bars:
+    # VPS bars use /var/lib/macro-live/data/intraday and never mutate repo data.
+    # Manual dispatch remains available if the VPS lane is unhealthy.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true' }}
     runs-on: [self-hosted, macstudio-light]   # light runner — hourly ~2.5m bar accrual must not queue behind the heavy pool
     timeout-minutes: 20
     steps:
