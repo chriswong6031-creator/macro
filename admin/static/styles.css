@@ -4400,6 +4400,16 @@ tr.lab-cell-floor td { opacity: .72; }
 /* countdown chip */
 .golive-cd { font-family: var(--mono); font-size: 13px; color: var(--accent-cyan); font-weight: 600; }
 .golive-cd-sub { font-size: 11px; color: var(--faint); margin-top: 2px; }
+/* token paste-box (BUFFER_TOKEN row) */
+.golive-tokbox { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.golive-tokinput {
+  flex: 1 1 200px; min-width: 160px;
+  font-family: var(--mono); font-size: 12.5px;
+  padding: 6px 9px; border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface2); color: var(--text);
+}
+.golive-tokinput:focus { outline: none; border-color: var(--accent); }
+.golive-tokinput::placeholder { color: var(--faint); }
 
 /* ---- Account panel (Channels & Desks) ----------------------------------- */
 .acct-panel {

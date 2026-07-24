@@ -7,20 +7,26 @@ name: marketing-publish
 # scripts.marketing_publisher.
 #
 # WHY IT IS SAFE / DARK: the runner self-downgrades to DRY-RUN unless the global
-# kill-switch is set (engine.marketing.sentinel.publish_enabled() reads env
-# MARKETING_PUBLISH_ENABLED ∈ {1,true,yes}). With the secret unset the run posts
-# NOTHING and the ledger does not change, so the commit-back step is a clean
-# no-op. `--live` is passed unconditionally BECAUSE that downgrade guard makes it
-# harmless until the operator opts in (scripts/marketing_publisher.py:
-# `live = bool(args.live) and kill_on`).
+# kill-switch is on (engine.marketing.sentinel.publish_enabled() reads env
+# MARKETING_PUBLISH_ENABLED ∈ {1,true,yes}). The kill-switch is a repo VARIABLE
+# (vars.MARKETING_PUBLISH_ENABLED) — the single source of truth; `1` = armed,
+# `0`/absent = dark. With it off the run posts NOTHING and the ledger does not
+# change, so the commit-back step is a clean no-op. `--live` is passed
+# unconditionally BECAUSE that downgrade guard makes it harmless until the
+# operator opts in (scripts/marketing_publisher.py: `live = bool(args.live) and
+# kill_on`).
 #
-# HOW TO ARM IT (operator, see docs/marketing_publisher_runbook.md):
-#   1. Repo secret  BUFFER_TOKEN            = a Buffer personal API token
-#   2. Repo secret  MARKETING_PUBLISH_ENABLED = 1   (the kill-switch; unset to disarm)
+# HOW TO ARM IT (operator — one click in the admin Publisher panel; the panel
+# writes the variable for you, see docs/marketing_publisher_runbook.md §6):
+#   1. Repo secret    BUFFER_TOKEN              = a Buffer personal API token
+#      (the panel's token paste-box sets this via `gh secret set BUFFER_TOKEN`)
+#   2. Repo VARIABLE  MARKETING_PUBLISH_ENABLED = 1   (the kill-switch; the panel
+#      ARM toggle sets it — `0` or absent to disarm). This is a VARIABLE, not a
+#      secret; any lingering old SECRET of the same name is IGNORED by this run.
 #   3. config/marketing.yml  publish.channels.flagship = the Buffer channel id
 #      (discover it: BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels)
-# Unset MARKETING_PUBLISH_ENABLED at any time to instantly revert every path to
-# dry-run — that is the kill switch / rollback.
+# Set MARKETING_PUBLISH_ENABLED to 0 (or the panel DISARM) at any time to
+# instantly revert every path to dry-run — that is the kill switch / rollback.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -47,7 +53,11 @@ jobs:
     timeout-minutes: 15
     env:
       BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
-      MARKETING_PUBLISH_ENABLED: ${{ secrets.MARKETING_PUBLISH_ENABLED }}
+      # Kill-switch: a repo VARIABLE (single source of truth), NOT a secret. The
+      # admin Publisher panel's ARM/DISARM toggle writes it. `1` = armed; `0` or
+      # absent = dark. No secrets.* fallback on purpose — a lingering old secret
+      # of this name must NOT keep the publisher live after the toggle is off.
+      MARKETING_PUBLISH_ENABLED: ${{ vars.MARKETING_PUBLISH_ENABLED }}
     steps:
       - name: checkout (full history + write token)
         uses: actions/checkout@v4
@@ -106,10 +116,13 @@ jobs:
         run: python -m scripts.marketing_metrics_poll
 
       - name: commit changed outbox ledgers (no-op when nothing changed)
-        # Only persist ledger state when ARMED. While dark (kill-switch unset) the
-        # dry-run writes a throwaway activity row we must NOT commit to main — else
-        # every scheduled dark run would spam main with no-op commits.
-        if: always() && env.MARKETING_PUBLISH_ENABLED != ''
+        # Only persist ledger state when ARMED. While dark the dry-run writes a
+        # throwaway activity row we must NOT commit to main — else every dark run
+        # would spam main with no-op commits. The kill-switch is now a repo
+        # VARIABLE whose disarmed value is the literal "0" (non-empty), so this
+        # guard tests `== '1'` (armed), NOT `!= ''` — otherwise a disarmed "0"
+        # would wrongly commit the dry-run's audit row.
+        if: always() && env.MARKETING_PUBLISH_ENABLED == '1'
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"

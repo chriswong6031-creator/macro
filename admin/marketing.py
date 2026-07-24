@@ -280,6 +280,222 @@ def _next_publish_slot_utc(now=None) -> str | None:
         return None
 
 
+# ---------------------------------------------------------------------------
+# Publisher ARM state — the kill-switch is now a GitHub repo VARIABLE
+# (MARKETING_PUBLISH_ENABLED: "1" = armed, "0"/absent = dark), the single source
+# of truth the marketing-publish.yml workflow reads. The admin process env is
+# NOT that source (it is never set on the operator's Mac), so the panel must read
+# the API truth here and only fall back to the local env when the API is
+# unreachable. Fail-soft: any error degrades to enabled:null with an honest note.
+# ---------------------------------------------------------------------------
+
+_ARM_VARIABLE = "MARKETING_PUBLISH_ENABLED"
+
+
+def _env_kill_on() -> bool:
+    """Local-env reading of the kill-switch (the OLD display source, kept only as
+    a last-resort fallback when the GitHub API is unreachable)."""
+    import os  # noqa: PLC0415
+    return str(os.environ.get(_ARM_VARIABLE, "")).strip().lower() in {"1", "true", "yes"}
+
+
+def arm_state() -> dict:
+    """Read the publisher kill-switch from the GitHub repo VARIABLE (API truth).
+
+    Returns a dict the panel renders directly:
+      {enabled: bool|None, source: str, error: str|None, note: str}
+
+    - enabled True  when the variable value is in {"1","true","yes"}
+    - enabled False when the variable exists with any other value (e.g. "0")
+    - enabled None  when the variable is not set yet (404) OR the API is
+      unreachable (no token / requests missing / owner-repo undetected). The two
+      are distinguished by `error`: None → "not set yet = dark"; a message →
+      state genuinely unknown and we fell back to the local env read.
+
+    source is "github_variable" on an API read, "local_env (fallback)" when the
+    API is unreachable and we report the process-env reading instead. Never
+    raises; never contains any secret.
+    """
+    try:
+        from . import github_api  # noqa: PLC0415
+        avail = github_api.available()
+        # API reachable only when the lib + owner/repo + a token are all present.
+        if not (avail.get("ok") and avail.get("has_token")):
+            # Cannot read the variable — fall back to the local env reading, but
+            # label the state as unknown-from-API so the UI is honest.
+            return {
+                "enabled": _env_kill_on() or None,
+                "source": "local_env (fallback)",
+                "error": "GitHub API unavailable (no token/lib) — arm state unknown; "
+                         "the runner follows the repo variable regardless.",
+                "note": "state unknown — showing local env reading only",
+            }
+        val = github_api.get_repo_variable(_ARM_VARIABLE)
+        if val is None:
+            # 404 (variable never created) OR a transient non-200. get_repo_variable
+            # collapses both to None; treat as dark with an honest note. This is
+            # the common first-run state.
+            return {
+                "enabled": None,
+                "source": "github_variable",
+                "error": None,
+                "note": "variable not set yet = dark",
+            }
+        enabled = str(val).strip().lower() in {"1", "true", "yes"}
+        return {
+            "enabled": enabled,
+            "source": "github_variable",
+            "error": None,
+            "note": "armed — posting at the next slot" if enabled
+                    else "disarmed — dry-run only",
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "enabled": None,
+            "source": "local_env (fallback)",
+            "error": f"arm-state read failed: {exc}",
+            "note": "state unknown",
+        }
+
+
+def arm_publisher(enabled) -> dict:
+    """Arm/disarm the live publisher by writing the MARKETING_PUBLISH_ENABLED repo
+    VARIABLE ("1" armed / "0" dark). Mirrors the SEO-director toggle plumbing.
+
+    Fail-soft: returns {ok, enabled, note} on success; {ok:False, error, note} with
+    an honest message when the GitHub token/API is unavailable or the write fails.
+    Never raises. The workflow env resolves this variable at run start, so the
+    change takes effect from the NEXT scheduled slot.
+    """
+    try:
+        en = bool(enabled)
+        from . import github_api  # noqa: PLC0415
+        if not github_api.token():
+            return {
+                "ok": False,
+                "enabled": None,
+                "error": "No GitHub token configured. Set GH_TOKEN in "
+                         "/etc/macro-admin.env (needs Variables read/write) to arm "
+                         "or disarm the publisher — or edit the "
+                         "MARKETING_PUBLISH_ENABLED repo variable by hand.",
+                "note": "GitHub token required",
+            }
+        new_value = "1" if en else "0"
+        ok = github_api.set_repo_variable(_ARM_VARIABLE, new_value)
+        if not ok:
+            err = getattr(github_api, "_last_set_variable_error", None) or (
+                "Failed to update MARKETING_PUBLISH_ENABLED — check that GH_TOKEN "
+                "has Variables write permission.")
+            return {"ok": False, "enabled": None, "error": err,
+                    "note": "variable write failed"}
+        return {
+            "ok": True,
+            "enabled": en,
+            "variable_value": new_value,
+            "note": "Publisher ARMED — approved, due items post at the next slot."
+                    if en else
+                    "Publisher DISARMED — every path reverts to dry-run.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.arm_publisher failed: %s", exc)
+        return {"ok": False, "enabled": None, "error": str(exc),
+                "note": "arm write failed"}
+
+
+# Cap on the accepted Buffer token length. A Buffer personal token is short
+# (~40 chars); this is a sanity bound against a paste of the wrong thing, not a
+# format check. The value is treated as radioactive: stdin-only, never argv,
+# never logged, never echoed back.
+_MAX_TOKEN_LEN = 500
+
+
+def set_buffer_token(token) -> dict:
+    """Set the BUFFER_TOKEN repo SECRET by shelling to `gh secret set BUFFER_TOKEN`,
+    passing the token on STDIN (never argv, never logged, never returned).
+
+    `gh` is authenticated on the operator's local Mac; this is a local-only path
+    (the deployed VPS has no `gh` login), so it REFUSES in deployed mode with an
+    honest fallback instruction. Returns {ok, note} ONLY — the token value never
+    appears in the response. Refuses empty/whitespace tokens.
+
+    Fail-soft: a missing/unauthenticated `gh` returns ok:False with the manual
+    GitHub-UI fallback. Never raises. Never persists the token anywhere except
+    the `gh secret set` call's stdin.
+    """
+    try:
+        # radioactive: strip + cap, then discard the local name ASAP.
+        tok = str(token or "").strip()
+        if not tok:
+            return {"ok": False, "error": "token is empty — paste the Buffer "
+                                          "personal API token, then Save."}
+        if len(tok) > _MAX_TOKEN_LEN:
+            return {"ok": False, "error": f"token too long (> {_MAX_TOKEN_LEN} "
+                                          "chars) — check you pasted only the token."}
+
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return {
+                "ok": False,
+                "error": "Setting the Buffer token from the panel is disabled in "
+                         "deployed mode (it shells out to a locally-authenticated "
+                         "`gh`). Set it at GitHub → Settings → Secrets and "
+                         "variables → Actions → BUFFER_TOKEN.",
+            }
+
+        import subprocess  # noqa: PLC0415
+        from .paths import ROOT  # noqa: PLC0415
+        try:
+            proc = subprocess.run(
+                ["gh", "secret", "set", "BUFFER_TOKEN"],
+                input=tok,               # STDIN — never argv, never logged
+                capture_output=True, text=True, timeout=30, cwd=str(ROOT),
+            )
+        except FileNotFoundError:
+            return {
+                "ok": False,
+                "error": "`gh` (GitHub CLI) is not installed on the admin host. "
+                         "Install it and run `gh auth login`, or set BUFFER_TOKEN "
+                         "at GitHub → Settings → Secrets and variables → Actions.",
+            }
+        except Exception as sexc:  # noqa: BLE001
+            # Do NOT include the token or the subprocess input in any message.
+            return {"ok": False, "error": f"`gh secret set` failed to run: {sexc}"}
+        finally:
+            # Best-effort scrub of the local reference (Python strings are
+            # immutable, so this only drops the name — the real guarantee is that
+            # `tok` never leaves this function except via `gh`'s stdin).
+            tok = ""
+
+        if proc.returncode != 0:
+            # gh writes auth/permission errors to stderr; surface a trimmed,
+            # token-free tail so the operator can act (gh never echoes the value).
+            stderr = (proc.stderr or "").strip()[-300:]
+            return {
+                "ok": False,
+                "error": "Could not set the secret via `gh` "
+                         + (f"({stderr}). " if stderr else ". ")
+                         + "Check `gh auth status`, or set BUFFER_TOKEN at "
+                           "GitHub → Settings → Secrets and variables → Actions.",
+            }
+
+        out = {"ok": True, "note": "Token saved to repo secrets (BUFFER_TOKEN)."}
+        # Truthful present-check, best-effort: a `gh secret list` grep. Never
+        # fails the request on its own (fail-soft) and never reads the value.
+        try:
+            lst = subprocess.run(
+                ["gh", "secret", "list"],
+                capture_output=True, text=True, timeout=15, cwd=str(ROOT),
+            )
+            if lst.returncode == 0:
+                out["token_present"] = "BUFFER_TOKEN" in (lst.stdout or "")
+        except Exception:  # noqa: BLE001
+            pass
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.set_buffer_token failed: %s", exc)
+        return {"ok": False, "error": "token save failed (unexpected error)"}
+
+
 def _pipeline_block(repo: Path) -> dict:
     """Five-stage pipeline snapshot for the CMO Office hero: Plan → Gate →
     Outbox → Publisher → Posted. Every field is fail-soft: a missing file
@@ -368,13 +584,19 @@ def _pipeline_block(repo: Path) -> dict:
         channels_cfg = pub_cfg.get("channels") or {}
         any_channel = any(str(cid or "").strip() for cid in channels_cfg.values())
         token_present = bool(os.environ.get("BUFFER_TOKEN", "").strip())
-        kill = str(os.environ.get("MARKETING_PUBLISH_ENABLED", "")).strip().lower() in {"1", "true", "yes"}
+        # Kill-switch = the GitHub repo VARIABLE (API truth), NOT the admin process
+        # env (which is never set on the operator's Mac). arm_state() falls back to
+        # the local env read only when the API is unreachable. `armed` requires the
+        # kill-switch ON — treat unknown (None) as NOT armed for this glance.
+        armv = arm_state()
+        kill = armv.get("enabled") is True
         out["publisher"] = {
             "present": True,
             "armed": bool(token_present and any_channel and kill),
             "token_present": token_present,
             "any_channel_set": any_channel,
             "kill_switch": kill,
+            "arm_state": armv,
             "next_slot_utc": _next_publish_slot_utc(),
             "slots_utc": list(_PUBLISH_SLOTS_UTC),
         }
@@ -1495,6 +1717,12 @@ def publisher(root=None) -> dict:
             "token_present": bool(os.environ.get("BUFFER_TOKEN", "").strip()),
         }
 
+        # Kill-switch ARM state read from the GitHub repo VARIABLE (API truth),
+        # env fallback when unreachable. The panel's armed/dark pill + ARM toggle
+        # render from this, NOT from the admin process env (which is never set on
+        # the operator's Mac — the pre-existing "always shows shadow" display bug).
+        arm = arm_state()
+
         state = _ob.fold_state(repo)
         items = state["items"]
         statuses = state["status"]
@@ -1508,6 +1736,7 @@ def publisher(root=None) -> dict:
                 "note": _PUBLISHER_EMPTY_NOTE,
                 "as_of": None,
                 "config": config,
+                "arm_state": arm,
                 "status_counts": {k: 0 for k in _STATUS_KEYS if k != "held"},
                 "recent_posted": [],
                 "stuck_posting": [],
@@ -1577,6 +1806,7 @@ def publisher(root=None) -> dict:
             "ok": True,
             "as_of": max_as_of,
             "config": config,
+            "arm_state": arm,
             "status_counts": status_counts,
             "recent_posted": recent_posted,
             "stuck_posting": stuck_posting,
