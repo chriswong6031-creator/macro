@@ -158,6 +158,22 @@ ledger (house ledger law).
   FAILs, or any single adverse < −25% (the 2022-03 class) → construction returns here
   for redesign, not to a surface.
 
+**Adjudication log — 2026-07-24 (operator activation motion).** The operator moved to
+activate Use-B on census evidence ("statistical significance and reliability (ex-2022)").
+§4's jointly-adjudicated-census clause was invoked: ruler pre-stated in
+`scripts/research/mwr_phase1_adjudication.py`, results in
+`reports/mwr_phase1_adjudication.md`. **VERDICT: FAIL against the pre-stated bar.**
+The decisive number: the all-days baseline GOOD-rate is **69%** — in a 12-year secular
+Mag-7 uptrend, a random entry was "good" (fwd63>0, adverse>−10%) two times in three, so
+the signal's 10/13 has p=0.367 against spacing-matched random days. Primary
+median-fwd63 (+14.7% vs +9.5% baseline) reaches p=0.048 raw but **0.238 after the ×5
+construction-selection haircut**; the anchor-B twin of the same construction shows
+p=0.314 (anchor-phase fragility). Era-split and LOCO are stable-positive, so a modest
+real edge is NOT excluded — but the census cannot ratify it. Forward gauntlet stands.
+"Ex-2022" conditioning remains unlawful without a pre-registered conditioner (§2).
+Any operator override from here requires an explicit `DO_NOT_REBUILD` §2 amendment made
+against these recorded numbers, eyes open.
+
 ## §5. Non-goals
 
 No auto-alerts, no page panel, no stance copy, no feed into rank/size/gate anywhere.
