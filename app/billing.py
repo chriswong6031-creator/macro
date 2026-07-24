@@ -311,7 +311,7 @@ def _persist_customer(user_id: str, customer_id: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Tier-cache invalidation bridge (into brain_gateway, same process)
+# Entitlement-cache invalidation bridges (same process)
 # --------------------------------------------------------------------------- #
 def _invalidate(user_id: str) -> None:
     try:
@@ -319,6 +319,14 @@ def _invalidate(user_id: str) -> None:
         invalidate_tier(user_id)
     except Exception as exc:  # noqa: BLE001
         log.debug("billing: tier cache invalidate skipped (%s)", exc)
+    try:
+        # The static-site paywall caches the full feature verdict separately
+        # from brain_gateway's tier-only cache. Every purchase, cancellation,
+        # dunning transition, comp edit, and chargeback must evict both.
+        from app.paywall import invalidate_entitlement  # noqa: PLC0415
+        invalidate_entitlement(user_id)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("billing: paywall cache invalidate skipped (%s)", exc)
 
 
 # --------------------------------------------------------------------------- #
