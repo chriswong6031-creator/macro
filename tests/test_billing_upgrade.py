@@ -13,16 +13,19 @@ The Subscription.modify kwargs are asserted LITERALLY (billing-truth law, master
 the proration semantics the operator asked for — item id swap to the Pro price,
 always_invoice, error_if_incomplete — are enforced HERE, not in the sheet.
 
+The upgrade matrix (insider/pro × monthly/annual, never a downgrade, never a no-op) is enforced by
+the pure helper billing._upgrade_allowed; its per-lane truth table is unit-tested in
+tests/test_billing_upgrade_matrix.py. The endpoint tests here cover the wiring: the matrix gate
+runs before Stripe, the target tier+interval reach modify, and the response carries them.
+
 Coverage:
   401 — unauthenticated (TestClient).
-  400 — unknown interval override; bad target (only 'pro' upgrades exist — enforced by the
-        endpoint hardcoding the target, so an explicit non-pro request is impossible; we
-        instead assert an unknown interval is the only 400 the body can trigger).
+  400 — unknown interval override; unknown tier override.
   404 — no customer for the user; customer but no live subscription.
-  409 — the live subscription is already Pro.
+  409 — an out-of-matrix move (already on the top plan; a downgrade attempt) — never touches Stripe.
   happy — active Insider -> modify kwargs asserted literally (item id, Pro price,
           always_invoice, error_if_incomplete, mm_user_id) + entitlement upserted to Pro +
-          cache invalidated + prorated:true + invoice_total_cents surfaced.
+          cache invalidated + prorated:true + invoice_total_cents surfaced + tier/interval echoed.
   trialing — trial preserved (status stays trialing), prorated:false / trialing:true.
   decline — CardError from error_if_incomplete -> 402 carrying Stripe's message.
 
@@ -147,14 +150,36 @@ def test_upgrade_404_no_live_subscription(monkeypatch):
     assert "modify" not in fake.calls
 
 
-def test_upgrade_409_already_pro(monkeypatch):
+def test_upgrade_409_noop_already_on_target(monkeypatch):
+    # pro·monthly with the default target (pro, current cadence) is a no-op -> 409 naming the plan.
     fake = _FakeStripe(subs=[_sub("active", "pro_monthly", sub_id="sub_pro")])
     monkeypatch.setattr(billing, "_stripe", lambda: fake)
     monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
     with pytest.raises(HTTPException) as ei:
         billing.upgrade(billing.UpgradeRequest(interval=None), user=USER)
-    assert ei.value.status_code == 409 and ei.value.detail == "already pro"
-    assert "modify" not in fake.calls  # never touch Stripe.modify for an already-Pro sub
+    assert ei.value.status_code == 409 and ei.value.detail == "already on pro monthly"
+    assert "modify" not in fake.calls  # never touch Stripe.modify for an out-of-matrix move
+
+
+def test_upgrade_409_downgrade_refused(monkeypatch):
+    # pro·annual asking for insider·monthly steps down on BOTH axes -> 409, no Stripe call.
+    fake = _FakeStripe(subs=[_sub("active", "pro_annual", sub_id="sub_pro", interval="year")])
+    monkeypatch.setattr(billing, "_stripe", lambda: fake)
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
+    with pytest.raises(HTTPException) as ei:
+        billing.upgrade(billing.UpgradeRequest(tier="insider", interval="monthly"), user=USER)
+    assert ei.value.status_code == 409
+    assert "downgrade" in ei.value.detail.lower()
+    assert "modify" not in fake.calls
+
+
+def test_upgrade_400_unknown_tier(monkeypatch):
+    monkeypatch.setattr(billing, "_stripe", lambda: pytest.fail("must reject before Stripe"))
+    monkeypatch.setattr(billing, "_existing_customer",
+                        lambda uid: pytest.fail("must reject before customer lookup"))
+    with pytest.raises(HTTPException) as ei:
+        billing.upgrade(billing.UpgradeRequest(tier="enterprise"), user=USER)
+    assert ei.value.status_code == 400
 
 
 # --------------------------------------------------------------------------- #
@@ -186,6 +211,7 @@ def test_upgrade_active_insider_to_pro_prorates_and_syncs(monkeypatch):
     # response contract
     assert out["status"] == "ok"
     assert out["tier"] == "pro"
+    assert out["interval"] == "monthly"  # kept the current cadence, echoed back
     assert out["prorated"] is True
     assert out["trialing"] is False
     assert out["invoice_total_cents"] == 1234
@@ -209,6 +235,42 @@ def test_upgrade_interval_override_switches_cadence(monkeypatch):
 
     billing.upgrade(billing.UpgradeRequest(interval="annual"), user=USER)
     assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_annual"}]
+
+
+def test_upgrade_insider_monthly_to_insider_annual(monkeypatch):
+    # Same-tier interval bump (insider·m -> insider·a) — the pre-matrix endpoint blocked this as a
+    # same-tier no-op; the matrix allows it (annual outranks monthly). tier defaults to 'pro' back-
+    # compat, so this lane MUST pass tier='insider' explicitly.
+    fake = _FakeStripe(subs=[_sub("active", "insider_monthly")])
+    monkeypatch.setattr(billing, "_stripe", lambda: fake)
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
+    monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "insider", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda *a: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
+
+    out = billing.upgrade(billing.UpgradeRequest(tier="insider", interval="annual"), user=USER)
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_insider_annual"}]
+    assert out["tier"] == "insider" and out["interval"] == "annual"
+
+
+def test_upgrade_insider_monthly_to_pro_annual(monkeypatch):
+    # Diagonal jump (insider·m -> pro·a): both tier AND interval override, both step up.
+    fake = _FakeStripe(subs=[_sub("active", "insider_monthly")])
+    monkeypatch.setattr(billing, "_stripe", lambda: fake)
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: "cus_1")
+    monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda *a: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda *a: None)
+
+    out = billing.upgrade(billing.UpgradeRequest(tier="pro", interval="annual"), user=USER)
+    assert fake.calls["modify"]["items"] == [{"id": "si_ins", "price": "price_pro_annual"}]
+    assert out["tier"] == "pro" and out["interval"] == "annual"
 
 
 # --------------------------------------------------------------------------- #

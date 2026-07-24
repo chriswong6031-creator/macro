@@ -111,6 +111,50 @@ def _tier_features(tier: str) -> list[str]:
     return []
 
 
+# monthly bills sooner than annual, so annual outranks monthly on the interval axis.
+_INTERVAL_RANK = {"monthly": 0, "annual": 1}
+
+
+def _upgrade_allowed(cur_tier: str, cur_interval: str, tgt_tier: str, tgt_interval: str) -> bool:
+    """Whether (cur_tier, cur_interval) -> (tgt_tier, tgt_interval) is a legal upgrade.
+
+    The matrix law (operator order): a move is allowed iff it never steps DOWN on either axis and
+    is not a no-op — the target tier ranks at or above the current tier (via _tier_rank, so the
+    ordering stays config-driven), the target interval ranks at or above the current interval
+    (monthly < annual), AND the pair actually changes. This is exactly the five reachable moves:
+    insider·m -> {insider·a, pro·m, pro·a}, pro·m -> pro·a, insider·a -> pro·a. Everything else —
+    any tier downgrade, any annual->monthly, and pro·annual (already at the top) — is refused.
+    Unknown tiers/intervals rank -1 and can only ever satisfy the >= against themselves, which the
+    no-op clause then rejects, so a garbage pair fails closed.
+    """
+    rank = _tier_rank()
+
+    def tr(t: str) -> int:
+        return rank.index(t) if t in rank else -1
+
+    def ir(i: str) -> int:
+        return _INTERVAL_RANK.get(i, -1)
+
+    return (
+        tr(tgt_tier) >= tr(cur_tier)
+        and ir(tgt_interval) >= ir(cur_interval)
+        and (tgt_tier, tgt_interval) != (cur_tier, cur_interval)
+    )
+
+
+def _upgrade_denial(cur_tier: str, cur_interval: str, tgt_tier: str, tgt_interval: str) -> str:
+    """The honest 409 detail for an illegal move (caller has already checked _upgrade_allowed is False).
+
+    Names WHY the move is refused, not a generic "already pro": a no-op (target == current) says
+    exactly which plan the user is already on (so pro·annual, the top, reads "already on pro annual");
+    a tier or interval step-down says downgrades aren't handled here and points at the portal.
+    """
+    if (tgt_tier, tgt_interval) == (cur_tier, cur_interval):
+        return f"already on {cur_tier} {cur_interval}"
+    return ("downgrades are not supported here — manage a downgrade or cancellation in the "
+            f"customer portal (current plan: {cur_tier} {cur_interval})")
+
+
 # --------------------------------------------------------------------------- #
 # Stripe client (lazy — keeps the API process importable without the dep/key)
 # --------------------------------------------------------------------------- #
@@ -193,33 +237,37 @@ def _user_for_customer(customer_id: str) -> str | None:
 
 
 def read_entitlement(user_id: str) -> dict:
-    """Full entitlement row for a user: {tier, features, status, current_period_end, source}.
+    """Full entitlement row for a user: {tier, features, status, current_period_end, source, interval}.
 
     Fail-safe to the free default (table/key absent, network error → free). Used by
     /api/me and /api/account for plan display + client-side Pro gating. `source`
     ('stripe'|'substack'|'comp') lets the client distinguish a comp/lifetime grant
     (source='comp' with a null current_period_end) from a canceled Stripe row.
     """
-    default = {"tier": "free", "features": [], "status": "none", "current_period_end": None, "source": "stripe"}
+    default = {"tier": "free", "features": [], "status": "none", "current_period_end": None,
+               "source": "stripe", "interval": None}
     if not user_id or not SUPABASE_SERVICE_ROLE_KEY:
         return default
     try:
         rows = _pg(
             "GET",
             f"user_entitlements?user_id=eq.{urllib.parse.quote(user_id)}"
-            "&select=tier,features,status,current_period_end,source",
+            "&select=tier,features,status,current_period_end,source,plan_interval",
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("billing: read_entitlement failed for %s (%s)", user_id, exc)
         return default
     if rows:
         r = rows[0]
+        # `interval` surfaces the billing cadence ('monthly'|'annual') for plan display; None for
+        # free/comp rows with no cadence. Flows into /api/me (spreads this dict) and /api/account.
         return {
             "tier": r.get("tier") or "free",
             "features": r.get("features") or [],
             "status": r.get("status") or "none",
             "current_period_end": r.get("current_period_end"),
             "source": r.get("source") or "stripe",
+            "interval": r.get("plan_interval"),
         }
     return default
 
@@ -232,6 +280,9 @@ def _upsert_entitlement(user_id: str, customer_id: str | None, ent: dict) -> Non
         "status": ent["status"],
         "current_period_end": ent["current_period_end"],
         "source": ent.get("source", "stripe"),
+        # Tolerant: admin/entitlements.py comp callers pass dicts without a cadence -> None (null),
+        # which is correct — a comp has no billing interval.
+        "plan_interval": ent.get("plan_interval"),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     if customer_id:
@@ -327,8 +378,9 @@ def _sub_tier(sub: Any) -> str | None:
 def _entitlement_from_state(subs: list[dict], entitlement_keys: list[str]) -> dict:
     """Pure reducer: (subscriptions, active-entitlement lookup_keys) -> entitlement row fields.
 
-    subs items: {"status": str, "current_period_end": int|None, "tier": str|None}.
-    Kept side-effect-free so it can be unit-tested without any network.
+    subs items: {"status": str, "current_period_end": int|None, "tier": str|None, "interval": str|None}.
+    Kept side-effect-free so it can be unit-tested without any network. `plan_interval` mirrors the
+    chosen sub's cadence ('monthly'|'annual'); None whenever there is no entitling sub (free row).
     """
     rank = _tier_rank()
 
@@ -342,7 +394,8 @@ def _entitlement_from_state(subs: list[dict], entitlement_keys: list[str]) -> di
         status = best["status"]
         cpe = best.get("current_period_end")
         features = list(entitlement_keys) if entitlement_keys else _tier_features(tier)
-        return {"tier": tier, "status": status, "current_period_end": _iso(cpe), "features": features}
+        return {"tier": tier, "status": status, "current_period_end": _iso(cpe),
+                "features": features, "plan_interval": best.get("interval")}
 
     # No entitling subscription → free. DELIBERATE, fail-closed: a `past_due` sub (soft decline in
     # Stripe's dunning window) is not in the entitled set above, so it lands here and loses access
@@ -355,9 +408,11 @@ def _entitlement_from_state(subs: list[dict], entitlement_keys: list[str]) -> di
         if status in ("active", "trialing"):  # entitled-but-no-tier (shouldn't happen) → treat as none
             status = "none"
         cpe = latest.get("current_period_end")
-        return {"tier": "free", "status": status, "current_period_end": _iso(cpe), "features": []}
+        return {"tier": "free", "status": status, "current_period_end": _iso(cpe),
+                "features": [], "plan_interval": None}
 
-    return {"tier": "free", "status": "none", "current_period_end": None, "features": []}
+    return {"tier": "free", "status": "none", "current_period_end": None,
+            "features": [], "plan_interval": None}
 
 
 def _compute_entitlement(customer_id: str) -> dict:
@@ -365,7 +420,8 @@ def _compute_entitlement(customer_id: str) -> dict:
     stripe = _stripe()
     raw_subs = stripe.Subscription.list(customer=customer_id, status="all", limit=20).data
     subs = [
-        {"status": s.status, "current_period_end": _sub_period_end(s), "tier": _sub_tier(s)}
+        {"status": s.status, "current_period_end": _sub_period_end(s),
+         "tier": _sub_tier(s), "interval": _sub_interval(s)}
         for s in raw_subs
     ]
     keys: list[str] = []
@@ -708,32 +764,49 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
 
 
 class UpgradeRequest(BaseModel):
+    tier: str | None = Field(
+        None, description="'insider' | 'pro' — target tier; defaults to 'pro' (settings-dashboard back-compat)")
     interval: str | None = Field(
         None, description="'monthly' | 'annual' — defaults to the current subscription's cadence")
 
 
 @router.post("/api/billing/upgrade")
 def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
-    """Upgrade the caller's live subscription to Pro, charging the prorated difference NOW.
+    """Upgrade the caller's live subscription along the tier×interval matrix, charging the prorated
+    difference NOW. We modify the existing subscription in place (never create a second one), swapping
+    its price for the target price.
 
-    The only upgrade that exists is → tier 'pro' (Insider → Pro). We modify the existing
-    subscription in place (never create a second one), swapping its price for the Pro price at the
-    same cadence the user is already on — unless the body overrides `interval`.
+    Matrix law (operator order — never a downgrade, never a no-op):
+
+        current \\ target   insider·m  insider·a  pro·m  pro·a
+        insider·monthly        —         yes      yes    yes
+        insider·annual         no        —        no     yes
+        pro·monthly            no        no       —      yes
+        pro·annual             no        no       no     —
+
+    i.e. the target tier may not rank below the current tier, the target interval may not step from
+    annual back to monthly, and the pair must actually change. `tier` defaults to 'pro' (the
+    settings-dashboard caller sends only `interval`); `interval` defaults to the current cadence.
+    Both are validated to their enums (400); an out-of-matrix move is refused with a specific 409.
 
     Proration law (the operator's ask — "pro-rated rate using their leftover time, by the difference
-    in cost"): `proration_behavior='always_invoice'` credits the unused time on the old (Insider) price
-    and charges the new (Pro) price pro-rata for the remainder of the current period, invoicing that
-    net difference immediately. `payment_behavior='error_if_incomplete'` makes a card decline fail the
+    in cost"): `proration_behavior='always_invoice'` credits the unused time on the old price and
+    charges the new price pro-rata for the remainder of the current period, invoicing that net
+    difference immediately. `payment_behavior='error_if_incomplete'` makes a card decline fail the
     call (→ 402) instead of leaving a half-switched subscription in an incomplete state.
 
     TRIALING subs are honest by construction: Stripe swaps the price but does NOT prorate during a
     trial (there is nothing to prorate — no money has changed hands), and trial_end is untouched. The
-    user simply starts Pro billing when the trial ends. We surface that as trialing:true / prorated:false.
+    user simply starts the new-plan billing when the trial ends. We surface that as trialing:true /
+    prorated:false.
 
     Same-module authority (like /subscribe/complete + _handle_event): on success we recompute → upsert
-    → invalidate so /api/me reflects Pro immediately; the webhook remains the convergent source of truth.
+    → invalidate so /api/me reflects the new plan immediately; the webhook remains the convergent
+    source of truth. The response carries the TARGET tier + interval.
     """
-    target_tier = "pro"
+    target_tier = (body.tier or "pro").strip().lower()
+    if target_tier not in ("insider", "pro"):
+        raise HTTPException(400, f"unknown tier '{target_tier}'")
     interval_override = (body.interval or "").strip().lower() or None
     if interval_override and interval_override not in ("monthly", "annual"):
         raise HTTPException(400, f"unknown interval '{interval_override}'")
@@ -755,15 +828,19 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     if sub is None:
         raise HTTPException(404, "no subscription")
 
-    if _sub_tier(sub) == target_tier:
-        raise HTTPException(409, "already pro")
+    # Current = (tier, cadence); target defaults each axis to the current one. Matrix-gate BEFORE
+    # touching Stripe so an illegal move never modifies the subscription.
+    cur_tier = _sub_tier(sub) or "free"
+    cur_interval = _sub_interval(sub) or "monthly"
+    interval = interval_override or cur_interval
+    if not _upgrade_allowed(cur_tier, cur_interval, target_tier, interval):
+        raise HTTPException(409, _upgrade_denial(cur_tier, cur_interval, target_tier, interval))
 
     sub_id = _sub_id(sub)
     item_id = _first_item_id(sub)
     if not sub_id or not item_id:
         raise HTTPException(502, "upgrade failed: subscription has no modifiable item")
 
-    interval = interval_override or _sub_interval(sub) or "monthly"
     target_lookup_key = _tier_to_lookup_key(target_tier, interval)
     if not target_lookup_key:
         raise HTTPException(400, f"no price for {target_tier}/{interval}")
@@ -807,6 +884,7 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     return {
         "status": "ok",
         "tier": target_tier,
+        "interval": interval,
         "prorated": prorated,
         "trialing": is_trialing,
         "invoice_total_cents": invoice_total_cents,

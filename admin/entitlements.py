@@ -232,13 +232,16 @@ def _live_stripe_state(customer_id: str | None) -> dict:
 
 
 def _write_comp(user_id: str, tier: str, status: str, current_period_end: str | None,
-                *, operator: str, note: str) -> dict:
+                *, operator: str, note: str, plan_interval: str | None = None) -> dict:
     """Write a comp entitlement row through the billing spine, then bust the tier cache.
 
     Passes customer_id=None to _upsert_entitlement so the merge-duplicates upsert leaves any
     existing stripe_customer_id in place (billing._upsert_entitlement only sets that column
     when truthy) — we never fabricate or drop the Stripe mapping from a comp; force-comp
     cancels the sub explicitly instead.
+
+    `plan_interval` records the pass cadence ('monthly'|'annual') for plan display; None for a
+    lifetime pass, a comp tier-change, or a downgrade — none of those carry a billing interval.
     """
     b = _billing()
     features = list(b._tier_features(tier)) if tier != "free" else []
@@ -248,6 +251,7 @@ def _write_comp(user_id: str, tier: str, status: str, current_period_end: str | 
         "status": status,
         "current_period_end": current_period_end,
         "source": "comp",
+        "plan_interval": plan_interval,
     }
     b._upsert_entitlement(user_id, None, ent)
     b._invalidate(user_id)
@@ -418,8 +422,10 @@ def act(body: dict, *, operator: str = "admin") -> tuple[dict, int]:
             if err:
                 return err, 409
             cpe = _iso_in(_PASS_DAYS[kind])  # None for lifetime
+            pass_interval = kind if kind in ("monthly", "annual") else None  # lifetime -> no cadence
             return _write_comp(user_id, tier, "active", cpe, operator=operator,
-                               note=note or f"{kind} pass ({tier})"), 200
+                               note=note or f"{kind} pass ({tier})",
+                               plan_interval=pass_interval), 200
 
         # ---- extend_trial / reset_trial ------------------------------------------------
         if action in ("extend_trial", "reset_trial"):

@@ -535,6 +535,9 @@ def account(user: dict = Depends(require_user)) -> dict:
         "status": ent["status"],
         "features": ent["features"],
         "current_period_end": ent["current_period_end"],
+        # Billing cadence for the plan card ('monthly'|'annual'); None for free/comp. read_entitlement
+        # returns it, but this handler rebuilds the payload explicitly, so it must be listed here.
+        "interval": ent.get("interval"),
         "plans_url": "/plans.html",
     }
 
