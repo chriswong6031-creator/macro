@@ -16,6 +16,17 @@
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">
+{# Preload the embedded cycle map's critical path (core data + engine + orchestrator) so the
+   three download in PARALLEL from HTML-parse time instead of the old 3-hop load-event waterfall.
+   Prefetch the after-first-paint chunks (series + narr + dna). optimize_assets stamps ?v=<hash>
+   onto these hrefs post-render → immutable edge cache + the injected scripts reuse this response
+   (sector_cycles.js vUrl() resolves the bare name to the stamped href). #}
+<link rel="preload" href="sector_cycles_data.js" as="script">
+<link rel="preload" href="mm_charts.js" as="script">
+<link rel="preload" href="sector_cycles.js" as="script">
+<link rel="prefetch" href="sector_cycles_series_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_dna_data.js" as="script">
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.55 Inter, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
@@ -81,6 +92,9 @@
   .mini-cyc { margin: 7px 0 5px; position: relative; }
   .mini-cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 2px; letter-spacing: .02em; }
   .mini-cyc svg { display: block; width: 100%; height: 52px; }
+  /* empty basket slots reserve a rendered .mini-cyc's height (cap ~14px + svg 52px) so the card
+     doesn't reflow when the series arrays hydrate and the sparkline fills in (sc:cycles-data). */
+  .mini-cyc-slot { margin: 7px 0 5px; min-height: 66px; }
   .mc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
   .mc-read { position: absolute; font-size: 8px; font-variant-numeric: tabular-nums; pointer-events: none; transform: translateY(-50%); white-space: nowrap; }
   .mc-x { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); opacity: 0.5; pointer-events: none; display: none; }
@@ -624,24 +638,24 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
-{# the embedded cycle-map overlay — sector_cycles_data.js (core) is loaded first async=false,
-   then mm_charts.js and sector_cycles.js, so the board renders instantly on DOMContentLoaded.
-   The heavier narr+dna chunks (~2.2MB) are NOT loaded up front — SC_LAZY_EXTRAS defers them so
-   sector_cycles.js injects them on the first sector focus, keeping this page's initial load light. #}
+{# the embedded cycle-map overlay — the three critical files are appended in ONE pass with
+   async=false: order-preserving execution, but the browser downloads them in PARALLEL (killing
+   the old load-event 3-hop waterfall), and each reuses its <link rel=preload> response. The heavy
+   per-entity SERIES arrays load after first paint (SC_SERIES_DATA → sector_cycles.js); narr+dna
+   stay deferred to first focus (SC_LAZY_EXTRAS). vUrl reuses the optimizer's ?v= immutable URL. #}
 <script>
 (function(){
-  window.SC_LAZY_EXTRAS=true;  // defer the ~2.2MB narr+dna to first sector focus (see sector_cycles.js)
+  window.SC_LAZY_EXTRAS=true;  // defer narr+dna to first sector focus (see sector_cycles.js)
   window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];
-  var files=['sector_cycles_data.js','mm_charts.js?v=4','sector_cycles.js'];
+  window.SC_SERIES_DATA='sector_cycles_series_data.js';  // heavy arrays, hydrated after first paint
+  function vUrl(name){try{var l=document.querySelector('link[rel="preload"][href^="'+name+'"],link[rel="prefetch"][href^="'+name+'"]');if(l){var h=l.getAttribute('href');if(h)return h;}}catch(e){}return name;}
+  var files=['sector_cycles_data.js','mm_charts.js','sector_cycles.js'];
   var head=document.head;
-  function loadNext(i){
-    if(i>=files.length) return;
-    var s=document.createElement('script'); s.async=false; s.src=files[i];
+  files.forEach(function(f,i){
+    var s=document.createElement('script'); s.async=false; s.src=vUrl(f);
     if(i===0) s.addEventListener('load',function(){ document.dispatchEvent(new CustomEvent('sc:cycles-data')); });
-    s.addEventListener('load',function(){ loadNext(i+1); });
     head.appendChild(s);
-  }
-  loadNext(0);
+  });
 })();
 </script>
 {# the embedded heatmap scorecard — heatmap.js boot() auto-mounts on #heatmap-scorecard and

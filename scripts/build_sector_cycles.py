@@ -105,12 +105,21 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("sector_cycles: TTL enrichment skipped: %s", e)
 
-    # data JS split into three files for lazy loading:
-    #   sector_cycles_data.js      -> SECTOR_CYCLES (core, loaded at boot)
-    #   sector_cycles_narr_data.js -> SECTOR_NARR (lazy, only needed in focus panels)
-    #   sector_cycles_dna_data.js  -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    # data JS split for lazy loading:
+    #   sector_cycles_data.js        -> SECTOR_CYCLES (CORE — light, loaded at boot)
+    #   sector_cycles_series_data.js -> SECTOR_CYCLES_SERIES (heavy per-entity arrays,
+    #                                   hydrated AFTER first paint by sector_cycles.js)
+    #   sector_cycles_narr_data.js   -> SECTOR_NARR (lazy, only needed in focus panels)
+    #   sector_cycles_dna_data.js    -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    # The CORE keeps sectors' osc+turns (default sectors-osc first paint) but strips
+    # price everywhere and osc/turns from baskets/nasdaq/russell — see split_cycles_payload.
+    from scripts._cycles_payload import split_cycles_payload
+    core, series = split_cycles_payload(data)   # does not mutate `data` (features json stays full)
     (site / "sector_cycles_data.js").write_text(
-        "window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":")) + ";\n",
+        "window.SECTOR_CYCLES=" + json.dumps(core, separators=(",", ":")) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_series_data.js").write_text(
+        "window.SECTOR_CYCLES_SERIES=" + json.dumps(series, separators=(",", ":")) + ";\n",
         encoding="utf-8")
     (site / "sector_cycles_narr_data.js").write_text(
         "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n",

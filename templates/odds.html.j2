@@ -234,6 +234,8 @@
 {% endblock %}
 
 {% block body_scripts %}
-<script src="mm_charts.js?v=4"></script>
+{# ?v=4 pin dropped so optimize_assets stamps a real content-hash (a stale ?v=4 pins the edge
+   `immutable` cache to a fixed URL forever — mm_charts.js updates never invalidate it). #}
+<script src="mm_charts.js"></script>
 <script src="odds.js?v=2"></script>
 {% endblock %}

@@ -309,7 +309,7 @@
   var WIN_Y = META.window_years || Math.round(META.xDomain[1] - META.xDomain[0]);
   var curView = DEFAULT_VIEW.slice();
   function priceAnchorFactor(s) {
-    var pts = s.price, a = pts.length ? pts[0].v : 100;
+    var pts = s.price || [], a = pts.length ? pts[0].v : 100;  // null pre-hydration -> factor 1
     for (var i = 0; i < pts.length; i++) { if (pts[i].x <= curView[0]) a = pts[i].v; else break; }
     return a > 0 ? 100 / a : 1;
   }
@@ -318,6 +318,7 @@
     var lo = Infinity, hi = -Infinity, x0 = curView[0], x1 = curView[1];
     ALL.forEach(function (s) {
       if (chartHidden[s.id]) return;
+      if (!s.price) return;                            // series not hydrated yet -> skip
       var f = priceAnchorFactor(s);
       s.price.forEach(function (p) {
         if (p.x < x0 - 0.02 || p.x > x1 + 0.02) return;
@@ -356,7 +357,7 @@
   function seriesFor(s) {
     var osc = state.mode === "osc";
     var f = osc ? 1 : priceAnchorFactor(s);
-    var pts = osc ? s.osc : s.price;
+    var pts = (osc ? s.osc : s.price) || [];   // series not hydrated yet -> draw an empty line
     var hist = pts.map(function (p) { return { x: p.x, y: yval(osc ? p.v : p.v * f) }; });
     var markers = (s.turns || []).filter(function (t) { return !t.provisional; }).map(function (t) {
       var yv = osc ? (t.osc != null ? t.osc : 50) : yval(t.rebased * f);
@@ -914,7 +915,7 @@
   /* ---- scorecards -------------------------------------------------------- */
   var sparks = {};
   function sparkSpec(s) {
-    var pts = state.mode === "osc" ? s.osc : s.price;
+    var pts = (state.mode === "osc" ? s.osc : s.price) || [];   // series not hydrated -> empty spark
     var hist = pts.map(function (p) { return { x: p.x, y: yval(p.v) }; });
     var lastY = hist.length ? hist[hist.length - 1].y : 0;
     var yd = state.mode === "osc" ? [0, 100]
@@ -1886,6 +1887,21 @@
   // leg narratives, analyst note, and DNA card become visible.
   // buildDefaultPanel() and mountCards() do NOT consume NARR or SECTOR_DNA, so
   // they need no refresh here.
+  // Resolve a bare data-file name to the optimizer-stamped, immutable-cacheable URL a host
+  // page declared via <link rel="preload"/"prefetch" href="<name>?v=<hash>">. Injecting THAT
+  // exact href (a) reuses the already-warmed preload/prefetch response and (b) hits the edge's
+  // `immutable` cache (unversioned URLs are only cached 5min — the multi-MB re-fetch this whole
+  // change exists to kill). Falls back to the bare name when no link tag is present (old baked
+  // HTML during the merge->nightly window, or file:// preview) so behaviour is unchanged there.
+  function vUrl(name) {
+    try {
+      var link = document.querySelector(
+        'link[rel="preload"][href^="' + name + '"],link[rel="prefetch"][href^="' + name + '"]');
+      if (link) { var h = link.getAttribute("href"); if (h) return h; }
+    } catch (e) { /* bad selector / no DOM -> bare name */ }
+    return name;
+  }
+
   var _extrasInjected = false;
   function hydrateExtras() {
     NARR = window.SECTOR_NARR || {};
@@ -1912,7 +1928,7 @@
         var url = remaining.shift();
         var s = document.createElement('script');
         s.async = false;
-        s.src = url;
+        s.src = vUrl(url);   // reuse the optimizer-stamped ?v= / prefetched response
         s.onload = next;
         s.onerror = next;   // best-effort: hydrate whatever arrived
         document.head.appendChild(s);
@@ -1924,6 +1940,53 @@
     } else {
       setTimeout(injectAll, 250);
     }
+  }
+
+  /* ---- lazy SERIES loader (the heavy per-entity price/osc/turns[/fx] arrays) --------
+     The CORE payload (window.SECTOR_CYCLES) ships the light meta + cards + sectors' osc so
+     the default sectors-oscillator view paints immediately. The heavy arrays live in a second
+     file the host page names via window.SC_SERIES_DATA; we inject it AFTER first-paint work and
+     merge it in place, so switching to a basket family / price mode / a basket focus renders once
+     it lands (typically <1s). Pre-hydration those views draw nothing (guarded), never throw.
+     No-ops (backward-compat) when SC_SERIES_DATA is unset or the arrays are already present
+     (the pre-split monolith still ships everything inline). */
+  var _seriesInjected = false;
+  function hydrateSeries() {
+    var series = window.SECTOR_CYCLES_SERIES;
+    if (!series) return;
+    // Merge in place onto the SAME entity objects DATA/ALL/byId reference — sector_central's
+    // inline mini-cyc board holds references into window.SECTOR_CYCLES and must see the arrays
+    // appear. No deepStrip here: series are numeric arrays + date strings only (no equal-weight
+    // suffixes), verified against the emitted payload.
+    Object.keys(series).forEach(function (id) {
+      if (byId[id]) { Object.assign(byId[id], series[id]); }
+    });
+    // Re-render whatever the heavy arrays now unlock: a non-sectors family (its chart+cards were
+    // empty), or price mode (all families' price arrays were absent). mountCards()+rebuildHero()
+    // is the same idempotent redraw path rerender()/loadRotation() use.
+    if (isBasketLike() || state.mode === "price") {
+      mountCards();
+      if (heroChart) rebuildHero(false);
+    }
+    // refresh the open focus panel if it names a now-hydrated entity (leg timeline / FX card)
+    if (state.focus && series[state.focus]) { renderPanel(state.focus); }
+    document.dispatchEvent(new CustomEvent('sc:cycles-data'));   // sector_central mini-cyc board listens
+    document.dispatchEvent(new CustomEvent('sc:series-ready'));
+  }
+  window.SectorCyclesHydrateSeries = hydrateSeries;
+
+  function _scheduleSeries() {
+    var name = window.SC_SERIES_DATA;
+    if (!name || typeof name !== 'string') return;                 // host page didn't split -> no-op
+    if (window.SECTOR_CYCLES_SERIES !== undefined) { hydrateSeries(); return; }  // already present
+    if (_seriesInjected) return;
+    _seriesInjected = true;
+    var s = document.createElement('script');
+    s.async = false;
+    s.src = vUrl(name);       // reuse the preloaded/prefetched, ?v=-stamped, immutable-cached URL
+    s.onload = hydrateSeries;
+    s.onerror = function () { /* tolerated: the pre-hydration guards keep the page usable */ };
+    document.head.appendChild(s);
   }
 
   /* ---- boot -------------------------------------------------------------- */
@@ -1952,6 +2015,7 @@
     }, 350);
     else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
     if (!window.SC_LAZY_EXTRAS) _scheduleExtras();  // eager unless the host page defers to first focus
+    _scheduleSeries();   // hydrate the heavy per-entity arrays after first paint (no-op if unsplit)
     loadRotation();
   }
   // Rotation Command RC-R3: fetch the two rotation artifacts, index them by lowercase

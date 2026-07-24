@@ -128,12 +128,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector_cycles_china: sleeve chip failed (%s)", e)
 
-    # data JS split into three files for lazy loading:
-    #   sector_cycles_china_data.js      -> SECTOR_CYCLES (core, loaded at boot)
-    #   sector_cycles_china_narr_data.js -> SECTOR_NARR (lazy, only needed in focus panels)
-    #   sector_cycles_china_dna_data.js  -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    # data JS split for lazy loading:
+    #   sector_cycles_china_data.js        -> SECTOR_CYCLES (CORE — light, loaded at boot)
+    #   sector_cycles_china_series_data.js -> SECTOR_CYCLES_SERIES (heavy per-entity arrays,
+    #                                         hydrated AFTER first paint by sector_cycles.js)
+    #   sector_cycles_china_narr_data.js   -> SECTOR_NARR (lazy, only needed in focus panels)
+    #   sector_cycles_china_dna_data.js    -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    from scripts._cycles_payload import split_cycles_payload
+    core, series = split_cycles_payload(data)   # does not mutate `data` (raw model stays full)
     (site / "sector_cycles_china_data.js").write_text(
-        "window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        "window.SECTOR_CYCLES=" + json.dumps(core, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "sector_cycles_china_series_data.js").write_text(
+        "window.SECTOR_CYCLES_SERIES=" + json.dumps(series, separators=(",", ":"), ensure_ascii=False) + ";\n",
         encoding="utf-8")
     (site / "sector_cycles_china_narr_data.js").write_text(
         "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n",
