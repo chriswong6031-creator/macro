@@ -65,6 +65,12 @@ on:
       # Research Vault (RV W3) page + viewer: page test + template.
       - "tests/test_research_vault_page.py"
       - "templates/research_vault.html.j2"
+      # Research Vault SEO landing pages (programmatic SEO): per-report page
+      # generator + its templates + test.
+      - "scripts/build_research_pages.py"
+      - "templates/research_report.html.j2"
+      - "templates/research_index.html.j2"
+      - "tests/test_research_pages.py"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
       - "research/signal_engine/SCHEMA.json"
@@ -2571,7 +2577,7 @@ jobs:
         # since #3315 — the lane was red on every PR until it was added here.
         run: pip install pytest jinja2 pyyaml
       - name: research vault ingestion-spine + page unit tests
-        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py -q
+        run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 
   research-vault-api:
     # RV W2 serving API + download gate (SECURITY-CRITICAL): the app/research.py
