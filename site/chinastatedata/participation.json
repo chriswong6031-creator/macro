@@ -1,33 +1,33 @@
 {
-  "date": "2026-07-22",
+  "date": "2026-07-23",
   "authority": {
     "tier": "context_only"
   },
-  "turnover_z20": -0.8776651599925556,
-  "turnover_z60": -1.1321018998788128,
-  "margin_balance": 27197.75188543,
-  "margin_chg_5d": -5.808517346183595,
-  "margin_to_mcap": 2.770924,
-  "southbound_net": 7516.97,
-  "southbound_z": 0.6035932243161907,
-  "etf_share_chg": -0.7502435297739161,
+  "turnover_z20": -1.7578146203436669,
+  "turnover_z60": -2.3637853289800996,
+  "margin_balance": 27103.12723434,
+  "margin_chg_5d": -5.172676690700806,
+  "margin_to_mcap": 2.74678,
+  "southbound_net": -4226.12,
+  "southbound_z": -0.7714925150607255,
+  "etf_share_chg": -0.4951196852889461,
   "zt_breadth": null,
   "failed_seal_ratio": null,
-  "qvix": 20.21,
-  "qvix_z": -0.01973110657681049,
-  "broker_rs": 0.07657440292531453,
+  "qvix": 19.78,
+  "qvix_z": -0.2611576010188368,
+  "broker_rs": 0.10311374223239451,
   "regime": "forced_deleveraging",
   "who_controls": "mixed",
   "risk": "fire_sale",
   "evidence": [
-    "turnover_z20=-0.88",
-    "fin_pct_float=2.77%",
-    "broker_rs=0.0766 (positive, sector leading)",
-    "qvix_z=-0.02 (inverted-semantics: high=stress)"
+    "turnover_z20=-1.76",
+    "fin_pct_float=2.75%",
+    "broker_rs=0.1031 (positive, sector leading)",
+    "qvix_z=-0.26 (inverted-semantics: high=stress)"
   ],
   "contradictions": [],
   "data_gaps": [
-    "zt_breadth:null on 2026-07-22",
+    "zt_breadth:null on 2026-07-23",
     "northbound:DEAD post-2024-08-16 SLF-050"
   ],
   "backfill": false

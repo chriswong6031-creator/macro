@@ -32,7 +32,7 @@ prophet:
   autopsy_cap_per_cycle: 12
   # PR-R8: Fable deliberation grant for Prophet/standout-audit lanes.
   # Set false to force all lanes back to claude-opus-4-8.
-  fable_enabled: true
+  fable_enabled: false
   # Daily deliberation token budget. When today's usage (by_model for the
   # deliberation model prefix) reaches this cap, all lanes fall back to
   # claude-opus-4-8 for the rest of the day.
@@ -3016,8 +3016,8 @@ notify:
 orchestrator:
   review_every_n_runs: 5      # every N pipeline runs, write a roll-up review + progress assessment
   site_rows: 60               # run-log entries kept in the published site artifact
-  ingest_bot_feedback: true   # read site/mastermind/nw_feedback.json (v3 dialogue) in the build
-  brief_attention_nudges: true  # surface pending bot nudges/directives in daily_brief operator_attention
+  ingest_bot_feedback: false   # read site/mastermind/nw_feedback.json (v3 dialogue) in the build
+  brief_attention_nudges: false  # surface pending bot nudges/directives in daily_brief operator_attention
 
 # Neural Web W6a — Push spine (engine/alert_triage.py:push_priority_alerts).
 # CONFIG-GATED OFF by default.  Enabling this is an operator + Article-2 event:

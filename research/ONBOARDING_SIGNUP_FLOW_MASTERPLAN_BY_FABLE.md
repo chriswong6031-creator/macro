@@ -15,6 +15,25 @@ repo's `CLAUDE.md`/`AGENTS.md`/`DESIGN_OBSERVATORY.md`.
 
 ---
 
+## 0. SURFACE RULING (CORRECTED 2026-07-23 — operator escalation; BINDING, read before anything else)
+
+The original charter set "build home = mastermind-terminal" because the auth/account plumbing lives there.
+That was plumbing-first and WRONG about the surface. **The sign-up/onboarding sheet's primary surface is the
+LANDING** — www.mastermind-x.com (macro repo: `templates/index.html ↔ site/index.html`, plus `start.html`).
+The operator's directive — one floating, movable container, never a dedicated page — means the sheet opens
+IN PLACE over the landing when any Start free / trial / Log in CTA is clicked. Navigating the visitor to
+app.mastermind-x.com to sign up is exactly the dedicated-page experience he rejected.
+
+- **Primary build surface:** landing-native sheet in the macro repo, in the LANDING's design language (light
+  Swiss / the pyramid-hero idiom — NOT chart-app idiom). Supabase JS handles auth client-side on the static
+  page; billing uses the macro-api Stripe endpoints already merged (#3328, #3330).
+- **Terminal app = secondary surface:** it reuses the flow for in-app log-in and upgrades. Work already built
+  there is salvage material, not the destination.
+- **Reference images:** committed under macro `mockups/refs/onboarding/` — the landing owns the look.
+
+Standing lesson (also in CLAUDE.md §Spawn-handoff law): **the build surface follows the FUNNEL, not the
+plumbing.** Where the machinery lives never decides where the user experience lives.
+
 ## 1. What exists today (verified 2026-07-23)
 
 - **Terminal auth:** `terminal/components/AuthSheet.tsx` (sheet-style auth, includes a **WeChat login button —

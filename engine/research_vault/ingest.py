@@ -262,8 +262,15 @@ def _restore_corpus(store, corpus_path: str | Path) -> str:
 # batch run
 # ---------------------------------------------------------------------------
 
+# Publish catalog+corpus every N ingested docs so a killed run (e.g. the GHA
+# 15-min timeout mid-backfill) loses at most the last partial batch — receipts
+# are written per item, so WITHOUT checkpoints the receipted-but-unpublished
+# items would be skipped by every later run yet never appear in catalog/corpus.
+CHECKPOINT_EVERY = 100
+
+
 def run(store, corpus_path: str | Path, now: datetime | None = None,
-        dry_run: bool = False) -> dict:
+        dry_run: bool = False, checkpoint_every: int = CHECKPOINT_EVERY) -> dict:
     """Run one ingestion pass. Idempotent + never-raise-per-item.
 
     Restores the canonical corpus from the store (source of truth), lists new
@@ -299,6 +306,7 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         return summary
 
     conn = corpus_mod.open_db(corpus_path)
+    pending_receipts: list = []  # (key, body) — flushed only after a publish
     try:
         cat = catalog_mod.load(store)
         done_pdf_keys = _already_processed_pdf_keys(store)
@@ -317,7 +325,13 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
             item_id = item["id"]
             catalog_mod.upsert_item(cat, item)
 
-            # Receipt marks the source consumed (idempotency). Real runs only.
+            # Receipt is only ACCUMULATED here — it is flushed to the store AFTER
+            # its batch's catalog+corpus publish succeeds (checkpoint or final).
+            # INVARIANT: a receipted doc is always present in a published
+            # catalog+corpus. A kill between publishes loses only unflushed
+            # receipts, so those docs simply re-ingest next run (every step is
+            # idempotent: same vault key, catalog upsert by id, corpus
+            # delete-then-insert).
             if not dry_run:
                 receipt = {
                     "id": item_id,
@@ -328,16 +342,27 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                     "institution": item.get("institution"),
                     "top_pick": bool(item.get("top_pick")),
                 }
-                store.put_bytes(
+                pending_receipts.append((
                     _receipt_key(item_id),
                     (json.dumps(receipt, ensure_ascii=False) + "\n").encode("utf-8"),
-                    "application/json",
-                )
+                ))
             done_pdf_keys.add(pdf_key)
 
             summary["ingested"] += 1
             if item.get("needs_metadata"):
                 summary["needs_metadata"] += 1
+
+            # Mid-run checkpoint (real runs only): publish catalog + corpus, then
+            # flush this batch's receipts. Publish failure keeps the receipts
+            # pending (the docs retry at the next checkpoint / next run).
+            if (not dry_run and checkpoint_every > 0
+                    and summary["ingested"] % checkpoint_every == 0):
+                catalog_mod.write(store, cat, now=now)
+                conn.commit()
+                if publish_corpus(store, corpus_path):
+                    _flush_receipts(store, pending_receipts)
+                log.info("research_vault: checkpoint at %d ingested",
+                         summary["ingested"])
 
         # Catalog: serialize always (for the repo snapshot); write to the store
         # only on a real run.
@@ -345,15 +370,32 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
             summary["catalog_bytes"] = catalog_mod.serialize(cat, now=now)
         else:
             summary["catalog_bytes"] = catalog_mod.write(store, cat, now=now)
+            conn.commit()
     finally:
         conn.close()
 
-    # Publish the now-complete single-file corpus back to the store (real runs
-    # only), after the connection is closed so there is no open journal.
+    # Final publish (real runs only), after the connection is closed. Receipts
+    # for the last partial batch flush only on success — on failure they stay
+    # unwritten and the batch re-ingests cleanly next run.
     if not dry_run:
         summary["corpus_published"] = publish_corpus(store, corpus_path)
+        if summary["corpus_published"]:
+            _flush_receipts(store, pending_receipts)
+        if pending_receipts:
+            log.error("::error::research_vault: %d receipts unflushed (corpus "
+                      "publish failed) — the docs will re-ingest next run",
+                      len(pending_receipts))
+            summary["receipts_unflushed"] = len(pending_receipts)
 
     return summary
+
+
+def _flush_receipts(store, pending: list) -> None:
+    """Write+drain accumulated receipts (called only after a successful publish)."""
+    while pending:
+        key, body = pending[0]
+        store.put_bytes(key, body, "application/json")
+        pending.pop(0)
 
 
 def publish_corpus(store, corpus_path: str | Path) -> bool:

@@ -101,11 +101,28 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("country_cycles: TTL enrichment skipped: %s", e)
 
-    # data JS (loaded directly by the page — no fetch, works on file:// + preview)
-    payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n")
-    (site / "country_cycles_data.js").write_text(payload, encoding="utf-8")
+    # data JS split for lazy loading (previously ONE file bundling all three globals —
+    # 2.7MB in the critical path). Now:
+    #   country_cycles_data.js        -> SECTOR_CYCLES (CORE — light, loaded at boot)
+    #   country_cycles_series_data.js -> SECTOR_CYCLES_SERIES (price for all; osc/turns for
+    #                                    baskets; fx + usd_record for the 24 countries —
+    #                                    hydrated AFTER first paint by sector_cycles.js)
+    #   country_cycles_narr_data.js   -> SECTOR_NARR (lazy, only needed in focus panels)
+    #   country_cycles_dna_data.js    -> SECTOR_DNA  (lazy, only needed in dnaHTML())
+    from scripts._cycles_payload import split_cycles_payload
+    core, series = split_cycles_payload(data)   # does not mutate `data` (features json stays full)
+    (site / "country_cycles_data.js").write_text(
+        "window.SECTOR_CYCLES=" + json.dumps(core, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "country_cycles_series_data.js").write_text(
+        "window.SECTOR_CYCLES_SERIES=" + json.dumps(series, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "country_cycles_narr_data.js").write_text(
+        "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
+    (site / "country_cycles_dna_data.js").write_text(
+        "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n",
+        encoding="utf-8")
 
     # also publish the raw model for external consumers / debugging
     fdir = site / "countrycyclesdata"

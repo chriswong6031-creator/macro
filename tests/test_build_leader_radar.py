@@ -1819,6 +1819,48 @@ class TestChangedTodayNearTrigger:
         assert "MSFT" in fire_tickers
         assert "NVDA" in fire_tickers
 
+    def test_changed_today_carries_entry_read(self):
+        """LRV-O9: entered + fired items carry the row's entry_read verdict so the
+        Tonight's-focus cards can lead with the entry-quality stance (an extended
+        fire must render 'don't chase', not a celebration)."""
+        from scripts.build_leader_radar import _build_changed_today
+        from engine.leader_lifecycle import STATE_CATALYST_WINDOW, STATE_NONE
+
+        today = date(2026, 7, 16)
+        prev_date = date(2026, 7, 15)
+        state_df = pd.DataFrame({
+            "date": pd.to_datetime([prev_date]),
+            "ticker": ["TRV"],
+            "confirmed_state": [STATE_NONE],
+        })
+        eread = {"key": "extended", "caveats": ["earnings_window"],
+                 "basis": ["extension_extreme"], "extension_pct_50d": 17.4}
+        rows = [{"ticker": "TRV", "state": STATE_CATALYST_WINDOW, "entry_read": eread}]
+        result = _build_changed_today(
+            rows, state_df, today,
+            fire_precipice_set={"TRV"}, fire_onset_set=set(),
+        )
+        fired = [f for f in result["fired"] if f["ticker"] == "TRV"][0]
+        assert fired["entry_read"] == eread
+        assert fired["state"] == STATE_CATALYST_WINDOW
+        # TRV fired, so it is NOT duplicated in entered by the template; the
+        # entered item (state transition) still carries the read for non-fire moves.
+        entered = [e for e in result["entered"] if e["ticker"] == "TRV"][0]
+        assert entered["entry_read"] == eread
+
+    def test_changed_today_entry_read_absent_is_none(self):
+        """Rows without entry_read (legacy/synthetic) yield entry_read=None, not a crash."""
+        from scripts.build_leader_radar import _build_changed_today
+
+        today = date(2026, 7, 16)
+        result = _build_changed_today(
+            [], pd.DataFrame(), today,
+            fire_precipice_set={"MSFT"}, fire_onset_set=set(),
+        )
+        fired = [f for f in result["fired"] if f["ticker"] == "MSFT"][0]
+        assert fired["entry_read"] is None
+        assert fired["state"] is None
+
     def test_near_trigger_qa_k_n_minus_1(self):
         """QA row with k == n-1 appears in near_trigger."""
         from scripts.build_leader_radar import _build_near_trigger

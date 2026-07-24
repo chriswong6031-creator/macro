@@ -857,7 +857,10 @@ class TestRealArtifactSmoke:
         summary = build_summary(root=_REPO_ROOT)
         assert "schema" in summary
         assert summary["schema"] == SCHEMA
-        assert summary["state"] in ("present", "stale", "absent")
+        # 'disabled' when config.yml orchestrator.ingest_bot_feedback=false
+        # (operator-flipped 2026-07-24 d867e6549f3); it is a documented state
+        # of build_summary, so the smoke test must accept it.
+        assert summary["state"] in ("present", "stale", "absent", "disabled")
         # Authority must always be all-false regardless of source state
         auth = summary["authority"]
         for key in (

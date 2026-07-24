@@ -96,8 +96,108 @@
 	# test — the earlier `handle` + `handle_response @blocked` shape shipped inert
 	# (the gate was never consulted). See app/deploy/SITE_GATE.md.
 
+	# --- REGISTRATION WALL (operator lockdown 2026-07-24) -----------------------
+	# Every .html page EXCEPT the public funnel (/ + index.html + plans.html) now
+	# requires a signed-in account (any tier). The public set now ALSO includes the free/SEO trees
+	# (/stocks/ /tools/ /learn/ /blog/), mirrored EXACTLY in app/regwall.py
+	# PUBLIC_PREFIXES; keep the two lists identical. Two sequential gate stages inside
+	# one route: the fail-open IP gate (unchanged semantics), then the FAIL-CLOSED
+	# registration check (/api/regwall/check — 204 allow, 302 → landing+sheet on
+	# no session). Gated content is `private, no-store`: it must NEVER enter the
+	# shared edge cache, or one registered visitor's fetch would serve guests.
+	# The matching handle_errors branch below REDIRECTS on upstream failure —
+	# gated pages have no fail-open path anywhere.
+	@reg_html {
+		path *.html
+		not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/*
+	}
+
+	handle @reg_html {
+		route {
+			# Stage 1 — IP/country gate (same fail-open contract as @gate_html).
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/gate/check
+				@allow status 2xx
+				handle_response @allow {
+				}
+			}
+			# Stage 2 — registration wall (fail-closed). The original path rides
+			# X-Original-Uri so the 302 can carry ret= back through sign-in.
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/regwall/check
+				header_up X-Original-Uri {http.request.uri}
+				@rallow status 2xx
+				handle_response @rallow {
+				}
+				# Non-2xx (302 deny): copy_response streams the redirect + its
+				# no-store headers to the visitor and STOPS.
+			}
+			# Reached ONLY when BOTH stages allow — registered visitor. Private:
+			# the shared edge must never cache a gated page.
+			header Cache-Control "private, no-store"
+			file_server {
+				index index.html
+			}
+		}
+	}
+
+	# --- REGWALL stage 2b: paid JSON payloads (2026-07-24) ----------------------
+	# The lockdown above gates only *.html — the paid signal payloads under
+	# /factordata/ + /labdata/ (us/china/hk/canada standouts + setups, track
+	# ledgers, pick labs, smart-money desks) stayed publicly fetchable as raw
+	# JSON (~1MB of live buy rows at /factordata/us_standouts.json). Gate them
+	# with the SAME two-stage route as @reg_html. Registered visitors fetch
+	# these from gated dashboard pages WITH their session cookie, so the wall
+	# is invisible to them; anonymous fetches get the 302 to the landing.
+	# REGWALL_ENABLED=0 (the regwall kill switch) opens these again too —
+	# same /api/regwall/check endpoint.
+	#
+	# CARVE-OUTS (must stay anonymous-fetchable; keep this list mirrored with
+	# @factordata_public below AND tests/test_regwall_json_gate.py):
+	#   /factordata/tech_lab.json + /factordata/tech_events/* — pulled with no
+	#   credentials by the Terminal ingest (charting-app ingest/pull_macro_intel.py).
+	# NEVER gate /live/*, /prophet/showcase.json, or the */index.json search
+	# indexes — the landing + public pages fetch those cookie-less.
+	@reg_json {
+		path /factordata/* /labdata/*
+		not path /factordata/tech_lab.json /factordata/tech_events/*
+	}
+
+	handle @reg_json {
+		route {
+			# Stage 1 — IP/country gate (fail-open, same contract as @reg_html).
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/gate/check
+				@allow status 2xx
+				handle_response @allow {
+				}
+			}
+			# Stage 2 — registration wall (fail-closed). No X-Original-Uri on
+			# purpose: a deny should redirect to a bare /?signin=1, not carry a
+			# ret= back to a raw JSON file.
+			reverse_proxy 127.0.0.1:8000 {
+				method GET
+				rewrite /api/regwall/check
+				@rallow status 2xx
+				handle_response @rallow {
+				}
+			}
+			# Both stages allowed — registered visitor. private/no-store: one
+			# visitor's allow must NEVER prime the shared edge cache for guests.
+			# @static below is ALSO carved to skip these paths — an outer
+			# `header` clobbers this one (see the NOTE above @static).
+			header Cache-Control "private, no-store"
+			file_server
+		}
+	}
+
 	@gate_html {
-		# Match the root and .html paths; exclude /api/* (already proxied above).
+		# The PUBLIC funnel (the landing root/index + plans) — IP gate only.
+		# Everything else *.html was captured by @reg_html above (first matching
+		# handle wins), so this now matches just the public allowlist.
 		path / *.html
 		not path /api/*
 	}
@@ -130,10 +230,23 @@
 	}
 
 	handle_errors {
-		# FAIL-OPEN: if the gate upstream (macro-api) is DOWN, the reverse_proxy
-		# above errors; serve the requested static HTML with a forced 200 instead
-		# of a 502 white-page (which EdgeOne could surface as its own error page).
-		# Scoped to gated HTML paths; every other error keeps Caddy's default
+		# GATED pages fail CLOSED: if macro-api is down, redirect to the landing
+		# (which fail-opens below and carries the sign-in sheet) — NEVER serve a
+		# gated file on error. Must precede the fail-open branch: first matching
+		# handle wins.
+		@reg_html_err {
+			path *.html
+			not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/*
+		}
+		handle @reg_html_err {
+			header Cache-Control "no-store"
+			redir * /?signin=1 302
+		}
+
+		# FAIL-OPEN (public funnel only): if the gate upstream (macro-api) is
+		# DOWN, the reverse_proxy above errors; serve the requested static HTML
+		# with a forced 200 instead of a 502 white-page (which EdgeOne could
+		# surface as its own error page). Every other error keeps Caddy's default
 		# handling, and a genuinely missing file still yields its natural 404.
 		@gate_html_err {
 			path / *.html
@@ -145,6 +258,19 @@
 				status 200
 				index index.html
 			}
+		}
+
+		# GATED JSON fails CLOSED too: if macro-api is down, never serve the
+		# payload. A plain 403 (not a redirect — consumers are fetch()/curl,
+		# not navigations). Note: a genuinely missing gated JSON also lands
+		# here on its 404 and returns 403 — fine, existence isn't leaked.
+		@reg_json_err {
+			path /factordata/* /labdata/*
+			not path /factordata/tech_lab.json /factordata/tech_events/*
+		}
+		handle @reg_json_err {
+			header Cache-Control "no-store"
+			respond "registration required" 403
 		}
 	}
 
@@ -165,13 +291,27 @@
 	# (on the allow path only), so a blocked visitor's coming-soon page keeps its
 	# Cache-Control: no-store instead of being clobbered to a cacheable 60s. Do not
 	# re-add a blanket `header @html Cache-Control` here — it would re-cache blocks.
+	#
+	# NOTE: the gated JSON under /factordata/ + /labdata/ is EXCLUDED from @static
+	# below — this outer `header` would clobber the gate's `private, no-store` and
+	# could cache a 302 deny at the edge (locking registered users out / leaking a
+	# stale allow to guests). See @reg_json above.
 	@static {
 		path /vendor/* *.js *.css *.json *.svg *.png *.jpg *.jpeg *.ico *.webp *.woff *.woff2
 		not path /api/*
 		not path /plotly-2.32.0.min.js
+		not path /factordata/* /labdata/*
 		not query v=*
 	}
 	header @static Cache-Control "public, max-age=300, must-revalidate"
+	# The @reg_json carve-outs fell out of @static with the blanket
+	# /factordata/ exclusion above but must stay publicly cacheable — the
+	# Terminal ingest polls them. Keep this list IDENTICAL to @reg_json's
+	# `not path` (tests/test_regwall_json_gate.py enforces the mirror).
+	@factordata_public {
+		path /factordata/tech_lab.json /factordata/tech_events/*
+	}
+	header @factordata_public Cache-Control "public, max-age=300, must-revalidate"
 
 	# Content-hashed assets (?v=<hash>) are safe to cache forever, for the same
 	# reason as the pinned vendor bundle below: the hash is derived from the file

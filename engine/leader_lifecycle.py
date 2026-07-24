@@ -609,6 +609,14 @@ def parabolic_flag(close: pd.Series) -> bool | None:
     never fires due to the 4x amplification of the 13w rate; annualized-vs-annualized
     is the operationally meaningful signal for acceleration detection).
 
+    SIGN GUARD (correctness fix 2026-07-23, LRV-O5 idiom — guard around the frozen
+    rule, no constant change): both window returns must be POSITIVE. The unguarded
+    ratio test is vacuously true whenever ret_13w < 0 (any bounce beats 8× a negative
+    number), so the flag fired on post-crash dead-cat bounces — the exact SUPPRESSED/
+    QA turnaround class this desk tracks (ADBE/CRM/CVX 2026-07-23 all flagged
+    "parabolic" mid-drawdown) — while a genuine blow-off needs an uptrend to blow off
+    from. Operator complaint 2026-07-23; masterplan §8 log.
+
     Resamples to weekly (W-FRI). Tri-state: None when insufficient data.
     """
     if close is None or len(close) < 70:
@@ -622,6 +630,9 @@ def parabolic_flag(close: pd.Series) -> bool | None:
     ret_13w = float(weekly.iloc[-1] / weekly.iloc[-14] - 1.0)
     if not np.isfinite(ret_13w):
         return None
+    # Sign guard: a blow-off is acceleration WITHIN an uptrend, not a bounce off a low.
+    if ret_4w <= 0.0 or ret_13w <= 0.0:
+        return False
     # Annualized 4w rate = ret_4w * (52/4) = ret_4w * 13
     # Annualized 13w rate = ret_13w * (52/13) = ret_13w * 4
     # Condition: 4w_ann > 2 * 13w_ann → ret_4w * 13 > 2 * ret_13w * 4 → 13*ret_4w > 8*ret_13w
@@ -838,6 +849,121 @@ def rs_line_gap_pct(rs: pd.Series, lookback: int = RS_LINE_GAP_HIGH_LOOKBACK) ->
         return None
     gap = float((float(rs_high) - float(rs_now)) / float(rs_high) * 100.0)
     return max(0.0, gap)  # clip to 0 at high (float precision guard)
+
+
+# ── Entry read — display-tier stance synthesis (LRV-O9, 2026-07-23) ──────────
+# Provenance: operator complaint 2026-07-23 ("radar tells us to buy TRV after it
+# went parabolic and ADBE a falling knife"). The engine already computed every
+# ingredient of the honest answer (crowding/exit-lens chips, SUPPRESSED-context
+# trend chips, Cremers earnings de-escalation) but no layer synthesized them into
+# a per-name entry-quality read; the page presented every escalation identically.
+#
+# DISPLAY-ONLY FENCE (LRV-R3 idiom): entry_read output must NEVER enter any
+# K-of-N set, state condition, fire rule, or rows[] sort key. It re-expresses
+# already-computed chips into a categorical stance for display grouping only.
+# No new thresholds, no score, no probability, no direction claim (NW-U29).
+
+ENTRY_READ_IN_MOTION = "in_motion"          # BREAKAWAY / LEADERSHIP — move underway
+ENTRY_READ_PROTECT = "protect"              # CROWDED — exit-side lens
+ENTRY_READ_FAILED = "failed"                # FAILED break
+ENTRY_READ_TURNAROUND = "turnaround_watch"  # staged, but long-term downtrend intact
+ENTRY_READ_EXTENDED = "extended"            # staged/fired, but already stretched — late
+ENTRY_READ_STAGED = "staged"                # CATALYST_WINDOW, clean — the desk's product
+ENTRY_READ_BUILDING = "building"            # QUIET_ACCUMULATION, clean
+ENTRY_READ_DORMANT = "dormant"              # SUPPRESSED, clean
+ENTRY_READ_NONE = "none"
+
+# Caveat keys (appended, never replace the verdict)
+ENTRY_CAVEAT_EARNINGS = "earnings_window"   # Cremers: post/pre-earnings gap unreliable
+ENTRY_CAVEAT_EXTENDED = "extended"          # turnaround name ALSO stretched (bear-rally class)
+
+
+def entry_read(
+    state: str,
+    evidence: dict[str, bool | None],
+    de_escalations: dict[str, bool | None] | None = None,
+    extension_pct_50d: float | None = None,
+) -> dict:
+    """Synthesize the display-tier entry-quality read for one name.
+
+    Deterministic re-expression of ALREADY-COMPUTED chips (tri-state honest:
+    only ``is True`` triggers; null never counts) with fixed precedence:
+
+    1. State class first: BREAKAWAY/LEADERSHIP → in_motion; CROWDED → protect;
+       FAILED → failed.
+    2. For staged states (CW / QA / SUPPRESSED):
+       a. ``turnaround_watch`` when the long-term downtrend is intact —
+          below_200dma_12m True, OR (rs_slope_negative_3m True AND
+          drawdown_25pct True). Structural read outranks tactical: a name both
+          in a downtrend AND stretched is the bear-rally class → turnaround
+          verdict + 'extended' caveat.
+       b. ``extended`` when the exit-side lens flags stretch —
+          extension_extreme / monthly_rsi_80 any True. An early-entry desk
+          that just watched a name run is LATE, not early. ``parabolic`` is
+          deliberately EXCLUDED from this set: outside its chartered CROWDED
+          context the acceleration test (4w-ann > 2× 13w-ann) fires trivially
+          off a flat base — i.e. on the fresh-ignition class this desk exists
+          to surface (CVX 2026-07-23, +5.9% vs 50d, flagged "parabolic" on a
+          two-week pop off a flat 13w) — which is not a stretch read.
+       c. otherwise the clean staged read for the state.
+    3. Caveat ``earnings_window`` whenever the Cremers de-escalation chip is True.
+
+    Returns {"key": str, "caveats": list[str], "basis": list[str],
+    "extension_pct_50d": float|None}. ``basis`` lists the already-True chips
+    that drove a turnaround/extended verdict (fixed order) so the display can
+    name the actual driver instead of guessing.
+    """
+    de_escalations = de_escalations or {}
+    caveats: list[str] = []
+    basis: list[str] = []
+    if de_escalations.get("earnings_within_14d") is True:
+        caveats.append(ENTRY_CAVEAT_EARNINGS)
+
+    _down_chips = [
+        k for k in ("below_200dma_12m", "rs_slope_negative_3m", "drawdown_25pct")
+        if evidence.get(k) is True
+    ]
+    _stretch_chips = [
+        k for k in ("extension_extreme", "monthly_rsi_80")
+        if evidence.get(k) is True
+    ]
+
+    if state in (STATE_BREAKAWAY, STATE_LEADERSHIP):
+        key = ENTRY_READ_IN_MOTION
+    elif state == STATE_CROWDED:
+        key = ENTRY_READ_PROTECT
+    elif state == STATE_FAILED:
+        key = ENTRY_READ_FAILED
+    elif state in (STATE_CATALYST_WINDOW, STATE_QUIET_ACCUMULATION, STATE_SUPPRESSED):
+        downtrend = (
+            evidence.get("below_200dma_12m") is True
+            or (
+                evidence.get("rs_slope_negative_3m") is True
+                and evidence.get("drawdown_25pct") is True
+            )
+        )
+        stretched = bool(_stretch_chips)
+        if downtrend:
+            key = ENTRY_READ_TURNAROUND
+            basis = _down_chips
+            if stretched:
+                caveats.append(ENTRY_CAVEAT_EXTENDED)
+        elif stretched:
+            key = ENTRY_READ_EXTENDED
+            basis = _stretch_chips
+        elif state == STATE_CATALYST_WINDOW:
+            key = ENTRY_READ_STAGED
+        elif state == STATE_QUIET_ACCUMULATION:
+            key = ENTRY_READ_BUILDING
+        else:
+            key = ENTRY_READ_DORMANT
+    else:
+        key = ENTRY_READ_NONE
+
+    ext_out: float | None = None
+    if extension_pct_50d is not None and np.isfinite(float(extension_pct_50d)):
+        ext_out = float(round(float(extension_pct_50d), 1))
+    return {"key": key, "caveats": caveats, "basis": basis, "extension_pct_50d": ext_out}
 
 
 # ── K-true / n-avail per-state chip counter (LRV-R2) ─────────────────────────

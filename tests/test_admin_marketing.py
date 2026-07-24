@@ -817,6 +817,36 @@ class TestContentPanel:
         assert r["content_types"] == []
         assert r["accounts"] == []
 
+    # ── F7: payload timestamps for the admin (display_time / produced_at / stale) ──
+
+    def test_content_posts_carry_display_time(self, seeded_content_root):
+        """Each post gets display_time = slot_datetime(as_of, slot). The fixture
+        as_of is 2026-07-18, so D1 slots are that day and D2 is the next."""
+        r = marketing.content(seeded_content_root)
+        by_slot = {p["slot"]: p
+                   for a in r["accounts"] for p in a["queue"] if p.get("slot")}
+        assert by_slot["D1-AM"]["display_time"] == "2026-07-18T14:00:00Z"
+        assert by_slot["D1-PM"]["display_time"] == "2026-07-18T17:30:00Z"
+        assert by_slot["D2-AM"]["display_time"] == "2026-07-19T14:00:00Z"  # +1 day
+
+    def test_content_top_level_produced_and_stale(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        # Fixture as_of 2026-07-18 is well over a day old → stale.
+        assert r["as_of"] == "2026-07-18"
+        assert r["produced_at"] == "2026-07-18T00:00:00Z"
+        assert r["stale"] is True
+
+    def test_content_fresh_plan_not_stale(self, tmp_path):
+        """A plan whose as_of is today (UTC) is NOT stale."""
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        plan = {**MINIMAL_CONTENT_PLAN, "as_of": today}
+        cdir = tmp_path / "data" / "marketing"
+        cdir.mkdir(parents=True)
+        (cdir / "content_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+        r = marketing.content(tmp_path)
+        assert r["stale"] is False
+
 
 # ---------------------------------------------------------------------------
 # Tests — department() panel (round 2)
@@ -1474,3 +1504,496 @@ class TestOutboxActivityPayload:
         it = r["accounts"][0]["items"][0]
         assert it["attempts"] == 1
         assert it["status"] == "failed"
+
+
+# ---------------------------------------------------------------------------
+# Operator console additions (PR 2/3) — pipeline block, sentinel/allow,
+# accounts/toggle, sentinel `passed` pass-through
+# ---------------------------------------------------------------------------
+
+class TestPipelineBlock:
+    def test_overview_pipeline_present_on_empty_root(self, empty_root):
+        r = marketing.overview(empty_root)
+        assert r["ok"] is True
+        assert "pipeline" in r, "overview must always carry a pipeline block"
+        pl = r["pipeline"]
+        # every stage present as a dict, fail-soft (not None) on a bare root
+        for stage in ("plan", "gate", "outbox", "publisher", "receipts"):
+            assert stage in pl, f"pipeline missing {stage}"
+        assert pl["plan"]["present"] is False
+        assert pl["gate"]["present"] is False
+        assert pl["outbox"]["present"] is False
+        # publisher stage is computable from config/env even with no files
+        assert pl["publisher"]["armed"] is False
+        assert isinstance(pl["publisher"]["slots_utc"], list)
+
+    def test_overview_pipeline_reads_content_plan(self, seeded_content_root):
+        r = marketing.overview(seeded_content_root)
+        pl = r["pipeline"]
+        assert pl["plan"]["present"] is True
+        assert pl["plan"]["items"] == 3          # summary.total_posts in fixture
+        # 2026-07-18 as_of is before "today" → stale by the date-compare fallback
+        assert pl["plan"]["stale"] is True
+
+    def test_pipeline_next_slot_is_iso_or_none(self, empty_root):
+        pl = marketing.overview(empty_root)["pipeline"]
+        nxt = pl["publisher"]["next_slot_utc"]
+        # either a Z-suffixed ISO string or None — never a bare magic string
+        assert nxt is None or (isinstance(nxt, str) and nxt.endswith("Z"))
+
+
+class TestSentinelAllow:
+    def test_appends_valid_exception_row(self, tmp_path):
+        r = marketing.sentinel_allow("ob-2026-07-24-abc123", "dup was my own post", root=tmp_path)
+        assert r["ok"] is True
+        p = tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl"
+        assert p.exists()
+        rows = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["item_id"] == "ob-2026-07-24-abc123"
+        assert row["allow"] is True
+        assert row["reason"] == "dup was my own post"
+        assert row["actor"] == "operator"
+        assert "at" in row and row["at"].endswith("Z")
+
+    def test_appends_are_additive(self, tmp_path):
+        marketing.sentinel_allow("ob-1", "reason one", root=tmp_path)
+        marketing.sentinel_allow("ob-2", "reason two", root=tmp_path)
+        p = tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl"
+        rows = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+        assert [r["item_id"] for r in rows] == ["ob-1", "ob-2"]
+
+    def test_rejects_empty_reason(self, tmp_path):
+        r = marketing.sentinel_allow("ob-x", "   ", root=tmp_path)
+        assert r["ok"] is False
+        assert "reason" in r["error"].lower()
+        # nothing written
+        assert not (tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl").exists()
+
+    def test_rejects_empty_item_id(self, tmp_path):
+        r = marketing.sentinel_allow("", "a reason", root=tmp_path)
+        assert r["ok"] is False
+        assert "item_id" in r["error"].lower()
+
+
+class TestAccountsToggle:
+    def test_merge_writes_overrides_atomically(self, tmp_path):
+        r1 = marketing.accounts_toggle("flagship", False, note="pausing", root=tmp_path, push=False)
+        assert r1["ok"] is True
+        assert r1["pushed"] is False
+        p = tmp_path / "data" / "marketing" / "account_overrides.json"
+        obj = json.loads(p.read_text())
+        assert obj["flagship"]["enabled"] is False
+        assert obj["flagship"]["note"] == "pausing"
+        assert obj["flagship"]["at"].endswith("Z")
+        # a second toggle MERGES (does not clobber the first)
+        marketing.accounts_toggle("research_a", True, root=tmp_path, push=False)
+        obj2 = json.loads(p.read_text())
+        assert set(obj2.keys()) == {"flagship", "research_a"}
+        assert obj2["research_a"]["enabled"] is True
+        # no stray temp file left behind
+        assert not (p.with_suffix(p.suffix + ".tmp")).exists()
+
+    def test_toggle_flip_updates_same_key(self, tmp_path):
+        marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        marketing.accounts_toggle("flagship", True, root=tmp_path, push=False)
+        obj = json.loads((tmp_path / "data" / "marketing" / "account_overrides.json").read_text())
+        assert obj["flagship"]["enabled"] is True
+
+    def test_rejects_empty_account_id(self, tmp_path):
+        r = marketing.accounts_toggle("  ", True, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "account_id" in r["error"].lower()
+
+    def test_rejects_unknown_account_when_config_present(self, tmp_path):
+        cfg = tmp_path / "config"
+        cfg.mkdir(parents=True)
+        (cfg / "marketing.yml").write_text(
+            "desk_network:\n  accounts:\n    - id: flagship\n    - id: research_a\n",
+            encoding="utf-8")
+        r = marketing.accounts_toggle("not_a_desk", True, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "unknown account" in r["error"]
+        # known id still accepted against the same config
+        r2 = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r2["ok"] is True
+
+    def test_refused_in_deployed_mode(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "deployed" in r["error"].lower()
+        assert not (tmp_path / "data" / "marketing" / "account_overrides.json").exists()
+
+    def test_note_and_reason_length_capped(self, tmp_path):
+        marketing.accounts_toggle("flagship", True, note="n" * 2000,
+                                  root=tmp_path, push=False)
+        obj = json.loads((tmp_path / "data" / "marketing"
+                          / "account_overrides.json").read_text())
+        assert len(obj["flagship"]["note"]) == 500
+        r = marketing.sentinel_allow("post-x-001", "r" * 2000, root=tmp_path)
+        assert r["ok"] is True
+        row = json.loads((tmp_path / "data" / "marketing"
+                          / "sentinel_exceptions.jsonl").read_text().splitlines()[-1])
+        assert len(row["reason"]) == 500
+
+    def test_honest_pushed_false_when_git_push_refused(self, tmp_path, monkeypatch):
+        """When the git commit+push step reports pushed:false (e.g. off a main
+        tracking branch), the override is still saved and the result is honest."""
+        from admin import gitops
+
+        def fake_commit_paths(paths, message="", push=False, confirm=False):
+            # mimic gitops refusing to push from a feature branch
+            return {"ok": True, "committed": True, "pushed": False,
+                    "warning": "committed locally; refused to push (not on a main tracking branch)"}
+
+        monkeypatch.setattr(gitops, "commit_paths", fake_commit_paths)
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=True)
+        assert r["ok"] is True
+        assert r["pushed"] is False
+        assert "not yet" in r["note"].lower() or "will not reach" in r["note"].lower()
+        # the local write still happened
+        p = tmp_path / "data" / "marketing" / "account_overrides.json"
+        assert json.loads(p.read_text())["flagship"]["enabled"] is False
+
+    def test_channels_passes_through_overrides(self, tmp_path):
+        """channels() surfaces the override file so the UI toggle reflects state."""
+        # seed state so channels() reaches the populated branch
+        nw = tmp_path / "data" / "neuralweb"
+        nw.mkdir(parents=True)
+        (nw / "marketing_state.json").write_text(
+            json.dumps(MINIMAL_STATE, ensure_ascii=False), encoding="utf-8")
+        marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        ch = marketing.channels(tmp_path)
+        assert ch["ok"] is True
+        assert "overrides" in ch
+        assert ch["overrides"]["flagship"]["enabled"] is False
+        assert "channels_set" in ch
+
+
+class TestGitopsCommitPaths:
+    def test_refuses_non_allowlisted_path(self):
+        from admin import gitops
+        r = gitops.commit_paths(["site/evil.html"], confirm=True)
+        assert r["ok"] is False
+        assert "allowlist" in r["error"].lower()
+
+    def test_requires_confirm(self):
+        from admin import gitops
+        r = gitops.commit_paths(["config.yml"])
+        assert r["ok"] is False
+        assert "confirm" in r["error"].lower()
+
+    def test_allowlisted_path_accepted(self, monkeypatch):
+        """An allowlisted path passes the guard (no real git side-effect: the
+        _git call is stubbed to report a clean tree → no-op)."""
+        from admin import gitops
+        monkeypatch.setattr(gitops, "_git", lambda *a, **k: (0, "", ""))
+        r = gitops.commit_paths(["config.yml"], confirm=True)
+        assert r["ok"] is True
+        # clean tree → nothing to commit, but the path was accepted (not refused)
+        assert "allowlist" not in str(r.get("error", "")).lower()
+        assert r.get("committed") in (False, None)
+
+
+class TestSentinelPassedPassthrough:
+    _SENTINEL_WITH_PASSED = {
+        "schema_version": 1,
+        "as_of": "2026-07-24",
+        "produced_at": "2026-07-24T04:00:00Z",
+        "plan_status": "pass",
+        "publish_enabled": False,
+        "auditor_strict": True,
+        "counts": {"items": 21, "passed": 12, "quarantined_policy": 2,
+                   "quarantined_overflow": 7},
+        "reasons_histogram": {"cadence_cap_daily": 7, "near_dup": 2},
+        "passed": [
+            {"id": "ob-2026-07-24-a", "account": "flagship", "type": "signal",
+             "cashtag": "$TNDM", "headline": "Tandem momentum", "slot": "D1-AM",
+             "display_time": "9:30 AM ET"},
+            {"id": "ob-2026-07-24-b", "account": "research_a", "type": "education",
+             "cashtag": None, "headline": "MACD without jargon", "slot": "D1-PM"},
+        ],
+        "quarantined": [
+            {"id": "ob-q1", "class": "overflow", "account": "flagship"},
+            {"id": "ob-q2", "account": "flagship", "reasons": ["near_dup:ob-x"]},
+        ],
+        "checks": {},
+        "notes": [],
+    }
+
+    def _seed(self, tmp_path):
+        d = tmp_path / "data" / "marketing"
+        d.mkdir(parents=True)
+        (d / "sentinel_report.json").write_text(
+            json.dumps(self._SENTINEL_WITH_PASSED, ensure_ascii=False), encoding="utf-8")
+        return tmp_path
+
+    def test_passes_through_passed_list_when_present(self, tmp_path):
+        self._seed(tmp_path)
+        r = marketing.sentinel(tmp_path)
+        assert r["ok"] is True
+        assert isinstance(r["passed"], list)
+        assert len(r["passed"]) == 2
+        assert r["passed"][0]["cashtag"] == "$TNDM"
+        assert r["passed"][0]["display_time"] == "9:30 AM ET"
+
+    def test_passed_is_none_when_absent(self, tmp_path):
+        # the older MINIMAL fixture has no `passed` — must not raise, must be None
+        d = tmp_path / "data" / "marketing"
+        d.mkdir(parents=True)
+        (d / "sentinel_report.json").write_text(
+            json.dumps({"plan_status": "pass", "publish_enabled": False,
+                        "counts": {"items": 5}, "reasons_histogram": {},
+                        "quarantined": []}, ensure_ascii=False), encoding="utf-8")
+        r = marketing.sentinel(tmp_path)
+        assert r["ok"] is True
+        assert r["passed"] is None
+
+
+# ---------------------------------------------------------------------------
+# Publisher ARM toggle + Buffer token paste-box (kill-switch → repo VARIABLE).
+# The kill-switch moved from a repo SECRET to a repo VARIABLE; arming/disarming
+# writes MARKETING_PUBLISH_ENABLED = "1"/"0" via github_api; the Buffer token is
+# set via `gh secret set BUFFER_TOKEN` on stdin and is NEVER echoed back.
+# github_api + subprocess are stubbed — no network, no real `gh`.
+# ---------------------------------------------------------------------------
+
+class TestArmPublisher:
+    def test_arm_sets_variable_to_1(self, monkeypatch):
+        from admin import github_api
+        calls = {}
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+
+        def fake_set(name, value):
+            calls["name"] = name
+            calls["value"] = value
+            return True
+
+        monkeypatch.setattr(github_api, "set_repo_variable", fake_set)
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is True
+        assert r["enabled"] is True
+        assert calls == {"name": "MARKETING_PUBLISH_ENABLED", "value": "1"}
+        assert r["variable_value"] == "1"
+
+    def test_disarm_sets_variable_to_0(self, monkeypatch):
+        from admin import github_api
+        calls = {}
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+        monkeypatch.setattr(github_api, "set_repo_variable",
+                            lambda n, v: calls.update(name=n, value=v) or True)
+        r = marketing.arm_publisher(False)
+        assert r["ok"] is True
+        assert r["enabled"] is False
+        assert calls["value"] == "0"
+
+    def test_arm_fail_soft_without_token(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "token", lambda: None)
+        # set_repo_variable must not even be reached; make it explode if it is
+        monkeypatch.setattr(github_api, "set_repo_variable",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not write")))
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is False
+        assert r["enabled"] is None
+        assert "token" in r["error"].lower()
+
+    def test_arm_fail_soft_when_write_fails(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+        monkeypatch.setattr(github_api, "set_repo_variable", lambda n, v: False)
+        monkeypatch.setattr(github_api, "_last_set_variable_error",
+                            "HTTP 403 — no Variables write", raising=False)
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is False
+        assert "403" in r["error"] or "Variables" in r["error"]
+
+
+class TestArmState:
+    def test_reads_variable_true_as_armed(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "1")
+        s = marketing.arm_state()
+        assert s["enabled"] is True
+        assert s["source"] == "github_variable"
+        assert s["error"] is None
+
+    def test_reads_variable_zero_as_disarmed(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "0")
+        s = marketing.arm_state()
+        assert s["enabled"] is False
+        assert s["source"] == "github_variable"
+
+    def test_variable_not_set_404_is_null_dark(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        # get_repo_variable returns None for a 404 (variable never created)
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: None)
+        s = marketing.arm_state()
+        assert s["enabled"] is None
+        assert s["error"] is None
+        assert "not set" in s["note"].lower()
+
+    def test_api_unreachable_falls_back_to_env(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": False, "has_token": False})
+        # env armed → fallback reports enabled True, but flags the source + error
+        monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+        s = marketing.arm_state()
+        assert s["source"].startswith("local_env")
+        assert s["error"] is not None
+        assert s["enabled"] is True
+
+    def test_never_raises_on_api_exception(self, monkeypatch):
+        from admin import github_api
+
+        def boom():
+            raise RuntimeError("network down")
+
+        monkeypatch.setattr(github_api, "available", boom)
+        s = marketing.arm_state()
+        assert s["enabled"] is None
+        assert s["error"] is not None   # honest, not a crash
+
+
+class TestSetBufferToken:
+    def _stub_gh_ok(self, monkeypatch, captured):
+        """Stub subprocess.run so `gh secret set` succeeds and the token is
+        captured from STDIN (never argv)."""
+        import subprocess
+
+        class _Res:
+            def __init__(self, rc=0, stdout="", stderr=""):
+                self.returncode = rc
+                self.stdout = stdout
+                self.stderr = stderr
+
+        def fake_run(argv, **kw):
+            captured.setdefault("argv", []).append(list(argv))
+            if argv[:3] == ["gh", "secret", "set"]:
+                # the token MUST arrive on stdin (`input=`), NEVER in argv
+                captured["stdin"] = kw.get("input")
+                return _Res(0)
+            if argv[:3] == ["gh", "secret", "list"]:
+                return _Res(0, stdout="BUFFER_TOKEN\tUpdated 2026-07-23\n")
+            return _Res(0)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+    def test_sets_secret_via_stdin_not_argv(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        captured = {}
+        self._stub_gh_ok(monkeypatch, captured)
+        secret = "buffer_tok_ABC123_secret"
+        r = marketing.set_buffer_token(secret)
+        assert r["ok"] is True
+        # token arrived on stdin
+        assert captured["stdin"] == secret
+        # token NEVER in any argv
+        for argv in captured["argv"]:
+            assert secret not in argv
+            assert not any(secret in str(a) for a in argv)
+        # token NEVER in the response
+        assert secret not in json.dumps(r)
+        # present-check reported truthfully
+        assert r.get("token_present") is True
+
+    def test_refuses_empty_token(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+        # subprocess must not be called at all for an empty token
+        monkeypatch.setattr(subprocess, "run",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not shell out")))
+        r = marketing.set_buffer_token("   ")
+        assert r["ok"] is False
+        assert "empty" in r["error"].lower()
+
+    def test_refused_in_deployed_mode(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: True)
+        import subprocess
+        monkeypatch.setattr(subprocess, "run",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("no gh in deployed mode")))
+        r = marketing.set_buffer_token("buffer_tok_XYZ")
+        assert r["ok"] is False
+        assert "deployed" in r["error"].lower()
+        # honest fallback instruction present, token absent
+        assert "Secrets" in r["error"]
+        assert "buffer_tok_XYZ" not in json.dumps(r)
+
+    def test_gh_missing_returns_honest_fallback(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+
+        def raise_fnf(*a, **k):
+            raise FileNotFoundError("gh not found")
+
+        monkeypatch.setattr(subprocess, "run", raise_fnf)
+        r = marketing.set_buffer_token("buffer_tok_QQQ")
+        assert r["ok"] is False
+        assert "gh" in r["error"].lower()
+        assert "buffer_tok_QQQ" not in json.dumps(r)
+
+    def test_gh_nonzero_surfaces_stderr_without_token(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+
+        class _Res:
+            returncode = 1
+            stdout = ""
+            stderr = "error: not authenticated; run gh auth login"
+
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _Res())
+        r = marketing.set_buffer_token("buffer_tok_SEKRIT")
+        assert r["ok"] is False
+        assert "auth" in r["error"].lower()
+        assert "buffer_tok_SEKRIT" not in json.dumps(r)
+
+
+class TestPublisherArmStatePayload:
+    def test_publisher_payload_carries_arm_state(self, monkeypatch, tmp_path):
+        # API stubbed unreachable → arm_state falls back but publisher() still
+        # returns ok:True with an arm_state block (fail-soft).
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": False, "has_token": False})
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        assert "arm_state" in r
+        assert r["arm_state"]["enabled"] in (True, False, None)
+        assert "source" in r["arm_state"]
+
+    def test_publisher_arm_state_survives_api_error(self, monkeypatch, tmp_path):
+        from admin import github_api
+
+        def boom():
+            raise RuntimeError("api exploded")
+
+        monkeypatch.setattr(github_api, "available", boom)
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        assert r["arm_state"]["enabled"] is None
+        assert r["arm_state"]["error"] is not None
+
+    def test_pipeline_publisher_armed_uses_api_truth(self, monkeypatch, tmp_path):
+        # variable "1" → pipeline publisher.kill_switch True and arm_state present
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "1")
+        pl = marketing.overview(tmp_path)["pipeline"]
+        assert pl["publisher"]["kill_switch"] is True
+        assert pl["publisher"]["arm_state"]["enabled"] is True

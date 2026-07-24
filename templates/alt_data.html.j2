@@ -39,7 +39,7 @@
 {%- endblock %}
 
 {% block base_css %}
-  .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
+  .sid { --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "DejaVu Sans Mono", monospace); max-width:1180px; margin:0 auto; }
   .sid-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
   .sid h1 { font-size:clamp(26px,4vw,38px); margin:.28em 0 .15em; letter-spacing:-.01em; }
   .sid-sub { color:var(--muted); max-width:760px; font-size:14px; line-height:1.55; }

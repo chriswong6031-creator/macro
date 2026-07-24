@@ -6,8 +6,9 @@ ONLY on an allowed download, with a **fail-open-but-LOUD** write (a broken ledge
 must never lock out a paying subscriber — availability wins over a perfect cap,
 exactly as the brain gateway reasons at its ``_write_quota``).
 
-Limits (masterplan §2): ``free``/unknown = 0 (view+download blocked) · ``insider``
-= 5/day · ``pro`` = 20/day. Period = UTC calendar day (``YYYY-MM-DD``).
+Limits: ``free``/``insider``/unknown = 0 (viewing + downloading are PRO-only;
+insider is a browse-and-teaser tier) · ``pro`` = 10/day. Period = UTC calendar day
+(``YYYY-MM-DD``).
 
 State layout (masterplan §4):
     $MACRO_API_STATE_DIR/research_download_quota/dl_{safe_uid}_{YYYY-MM-DD}.json
@@ -35,8 +36,9 @@ from pathlib import Path
 
 log = logging.getLogger("research_vault.download_quota")
 
-# Daily download allowance per tier (masterplan §2). free/unknown = 0 ⇒ blocked.
-LIMITS: dict[str, int] = {"free": 0, "insider": 5, "pro": 20}
+# Daily download allowance per tier. Reading research is PRO-only, so free AND
+# insider both get 0 (insider is a browse-and-teaser tier); pro = 10/day.
+LIMITS: dict[str, int] = {"free": 0, "insider": 0, "pro": 10}
 
 # State dir mirrors brain_gateway (_STATE_DIR = MACRO_API_STATE_DIR default).
 _STATE_DIR = Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api"))

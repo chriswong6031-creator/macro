@@ -500,6 +500,14 @@ jobs:
           # ONLY site/ — never data/ or reports/. The render may touch data/ as a build
           # side-effect (cache writes, alert appends), but committing none of it keeps the
           # nightly the single source of truth for every forward-accountability ledger.
+          # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
+          # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
+          # assets, and only the post-rebase --fix in the push loop heals the divergence —
+          # a cancellation/failure between this commit and that heal ships it (engine-render
+          # 2026-07-24: run 30057066815 cancelled mid-push-loop landed b6386adb4af, sync gate
+          # red on every PR until #3358). Heal BEFORE staging so the first commit is never
+          # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.check_template_site_sync --fix || true
           git add site/
           # force-add the gitignored-but-tracked-on-main site subtrees (search libraries,
           # chart OHLC, intraday, stock briefs) so the committed-tree deploy ships them —

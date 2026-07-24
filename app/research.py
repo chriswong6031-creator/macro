@@ -8,8 +8,8 @@ Routes
 ------
 GET  /api/research/catalog            unauth  — R2 read-through of catalog.json (60s TTL)
 GET  /api/research/search?q=&…        unauth  — FTS over corpus.sqlite (TTL-cached from R2)
-GET  /api/research/view/{doc_id}      paid    — stream PDF inline (rate-limited, no quota)
-POST /api/research/download/{doc_id}  paid    — watermark + attachment (daily quota 5/20)
+GET  /api/research/view/{doc_id}      PRO     — stream PDF inline (rate-limited, no quota)
+POST /api/research/download/{doc_id}  PRO     — watermark + attachment (daily quota 10/day)
 GET  /api/research/quota              authed  — read-only remaining today
 
 SECURITY INVARIANTS (the red-team probes these — see the block above each guard):
@@ -19,8 +19,9 @@ SECURITY INVARIANTS (the red-team probes these — see the block above each guar
      input never reaches an R2 key. Blocks path traversal / key injection / prefix
      listing.
   2. Entitlement fails CLOSED: any error/absence resolving tier → 'free' → blocked
-     (402). Unknown is NEVER paid. (The download COUNTER fails OPEN per the
-     availability rule in download_quota — that asymmetry is deliberate + correct.)
+     (402). Reading is PRO-only — insider/free/unknown are NEVER granted view (402
+     paid_required); insider is a browse-and-teaser tier. (The download COUNTER
+     fails OPEN per the availability rule in download_quota — deliberate asymmetry.)
   3. Server-authoritative quota: the 402 on exhaustion is returned regardless of
      client state; the counter increments only on a successful allow, before bytes.
   4. No public PDF path: PDFs come from the PRIVATE bucket via server creds; there
@@ -60,7 +61,11 @@ _CORPUS_KEY = "research_vault/corpus.sqlite"          # ingest CORPUS_KEY
 _VAULT_PREFIX = "research_vault/"                      # ingest VAULT_PREFIX
 
 _UPGRADE_URL = "/plans.html"
-_PAID_TIERS = frozenset({"insider", "pro"})
+# Reading research (stream PDF + download) is a PRO-only benefit. Insider is a
+# TEASER tier: it may browse the public catalog and read the latest few summaries
+# (client-side), but the view/download endpoints require PRO — insider/free/unknown
+# all resolve to 402 paid_required here. Fails CLOSED (unknown is never granted).
+_VIEW_TIERS = frozenset({"pro"})
 
 # ── doc_id validation ──────────────────────────────────────────────────────
 # The slug shape produced by sidecar.slug (lowercase alnum + hyphens, first char
@@ -186,56 +191,28 @@ def _catalog_title(doc_id: str) -> str:
 # corpus read-through: download corpus.sqlite from R2 to a temp file, TTL-cached
 # ---------------------------------------------------------------------------
 
-_CORPUS_TTL = 300.0  # seconds — re-download when the cached copy is older
+_CORPUS_TTL = 300.0  # seconds — refresh the local copy when older than this
 _CORPUS_LOCK = threading.Lock()
 _corpus_path: Path | None = None
 _corpus_fetched_at: float = 0.0
+_corpus_refreshing: bool = False  # guarded by _CORPUS_LOCK — one refresher at a time
 
 
-def _corpus_conn():
-    """Open (or refresh) a local sqlite copy of corpus.sqlite and return a conn.
+def _refresh_corpus_from_store() -> Path | None:
+    """Download corpus.sqlite from R2 to the local temp path (SYNCHRONOUS).
 
-    The API is a READ path: it downloads the whole .sqlite from R2 to a temp file
-    with a TTL, then opens it read-only via ``corpus.open_db``. Returns a
-    connection or None (no store / never fetched). Never raises.
+    Returns the local path on success, None on any failure. Never raises. Called
+    inline only when no local copy exists yet; otherwise runs on a background
+    thread so a user's search never pays the multi-MB download (the corpus grows
+    with the archive — a backfilled corpus is far too large to fetch inline).
     """
     global _corpus_path, _corpus_fetched_at
-    now = time.monotonic()
-
-    with _CORPUS_LOCK:
-        fresh = (
-            _corpus_path is not None
-            and _corpus_path.exists()
-            and (now - _corpus_fetched_at) < _CORPUS_TTL
-        )
-        if fresh:
-            try:
-                return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-            except Exception:  # noqa: BLE001 — reopen below on any error
-                pass
-
     store = _build_store()
     if store is None:
-        # No store: reuse a stale copy if we have one, else no corpus.
-        with _CORPUS_LOCK:
-            if _corpus_path is not None and _corpus_path.exists():
-                try:
-                    return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-                except Exception:  # noqa: BLE001
-                    return None
         return None
-
     data = store.get_bytes(_CORPUS_KEY)
     if not data:
-        # Refresh miss: fall back to a prior copy if present.
-        with _CORPUS_LOCK:
-            if _corpus_path is not None and _corpus_path.exists():
-                try:
-                    return corpus_mod.open_db(_corpus_path)  # type: ignore[arg-type]
-                except Exception:  # noqa: BLE001
-                    return None
         return None
-
     try:
         tmp_dir = Path(tempfile.gettempdir()) / "research_vault_corpus"
         tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -245,10 +222,54 @@ def _corpus_conn():
         os.replace(tmp, dst)
         with _CORPUS_LOCK:
             _corpus_path = dst
-            _corpus_fetched_at = now
-        return corpus_mod.open_db(dst)
-    except Exception as exc:  # noqa: BLE001 — write/open failure → degrade
+            _corpus_fetched_at = time.monotonic()
+        return dst
+    except Exception as exc:  # noqa: BLE001 — write failure → degrade
         log.debug("research_vault: corpus refresh failed (%s)", exc)
+        return None
+
+
+def _refresh_corpus_bg() -> None:
+    """Background-thread wrapper: refresh, then clear the in-flight flag."""
+    global _corpus_refreshing
+    try:
+        _refresh_corpus_from_store()
+    finally:
+        with _CORPUS_LOCK:
+            _corpus_refreshing = False
+
+
+def _corpus_conn():
+    """Open the local corpus copy, refreshing it WITHOUT blocking the request.
+
+    Serve-stale-while-revalidate: a present local copy is served immediately;
+    when it is older than the TTL a single background thread re-downloads it
+    (dropped-not-queued if one is already in flight). Only the very first call
+    (no local copy at all) downloads inline. Returns a connection or None.
+    Never raises.
+    """
+    global _corpus_refreshing
+    now = time.monotonic()
+
+    with _CORPUS_LOCK:
+        have_local = _corpus_path is not None and _corpus_path.exists()
+        stale = not have_local or (now - _corpus_fetched_at) >= _CORPUS_TTL
+        path = _corpus_path
+        if have_local and stale and not _corpus_refreshing:
+            _corpus_refreshing = True
+            threading.Thread(target=_refresh_corpus_bg, daemon=True,
+                             name="rv-corpus-refresh").start()
+
+    if not have_local:
+        # First fetch ever on this process: nothing to serve yet — block once.
+        path = _refresh_corpus_from_store()
+        if path is None:
+            return None
+
+    try:
+        return corpus_mod.open_db(path)  # type: ignore[arg-type]
+    except Exception as exc:  # noqa: BLE001 — unreadable local copy → degrade
+        log.debug("research_vault: corpus open failed (%s)", exc)
         return None
 
 
@@ -336,8 +357,9 @@ def _resolve_tier_fallback(user_id: str) -> str:
     return "free"
 
 
-def _is_paid(tier: str) -> bool:
-    return tier in _PAID_TIERS
+def _can_view(tier: str) -> bool:
+    """True only for tiers that may stream/download a research PDF (PRO-only)."""
+    return tier in _VIEW_TIERS
 
 
 def _user_id_of(user: dict) -> str:
@@ -460,11 +482,11 @@ def research_search(
 @router.get("/api/research/view/{doc_id}")
 def research_view(doc_id: str, request: Request,
                   user: dict = Depends(require_user)) -> Response:
-    """Stream a PDF inline to an authenticated PAID user (no quota consumed).
+    """Stream a PDF inline to an authenticated PRO user (no quota consumed).
 
     Gate order (each step is a distinct guard the red-team probes):
       1. auth (require_user) — 401 handled by the dependency.
-      2. tier resolve → non-paid (free/unknown) → 402 paid_required.
+      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
       3. doc_id validate (shape 400 / existence 404) BEFORE any R2 key.
       4. hourly view rate-limit (anti-scrape) → 429 on exceed.
       5. fetch from the PRIVATE bucket; 404 if the object is absent.
@@ -474,9 +496,9 @@ def research_view(doc_id: str, request: Request,
     user_id = _user_id_of(user)
 
     tier = _resolve_tier(user_id)
-    if not _is_paid(tier):
+    if not _can_view(tier):
         return JSONResponse(
-            {"error": "paid_required", "upgrade": _UPGRADE_URL}, status_code=402)
+            {"error": "paid_required", "tier": tier, "upgrade": _UPGRADE_URL}, status_code=402)
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 
@@ -506,11 +528,11 @@ def research_view(doc_id: str, request: Request,
 @router.post("/api/research/download/{doc_id}")
 def research_download(doc_id: str, request: Request,
                       user: dict = Depends(require_user)) -> Response:
-    """Metered, watermarked PDF download for an authenticated PAID user.
+    """Metered, watermarked PDF download for an authenticated PRO user.
 
     Gate order:
       1. auth (require_user).
-      2. tier resolve → non-paid → 402 paid_required.
+      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
       3. doc_id validate (400/404) BEFORE any R2 key.
       4. ``download_quota.check_and_increment`` (day-keyed, 5/20). allowed=False →
          402 quota_exhausted (server-authoritative — increments only on allow, so
@@ -526,9 +548,9 @@ def research_download(doc_id: str, request: Request,
     email = str((user or {}).get("email") or user_id)
 
     tier = _resolve_tier(user_id)
-    if not _is_paid(tier):
+    if not _can_view(tier):
         return JSONResponse(
-            {"error": "paid_required", "upgrade": _UPGRADE_URL}, status_code=402)
+            {"error": "paid_required", "tier": tier, "upgrade": _UPGRADE_URL}, status_code=402)
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 

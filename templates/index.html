@@ -19,21 +19,21 @@
   document.documentElement.setAttribute('data-lang',l);
   document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
 </script>
-<title>Mastermind — Every market. Every signal. One desk.</title>
-<meta name="description" content="Mastermind is the complete market-intelligence suite: live macro regimes, graded stock signals, intraday options flow and an AI analyst — an institution's entire desk, on one screen.">
+<title>Mastermind — Your personal, institutional-grade market intelligence.</title>
+<meta name="description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <link rel="canonical" href="https://www.mastermind-x.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mastermind">
-<meta property="og:title" content="Mastermind — Every market. Every signal. One desk.">
-<meta property="og:description" content="The complete market-intelligence suite: live macro regimes, graded stock signals, intraday options flow and an AI analyst — an institution's entire desk, on one screen.">
+<meta property="og:title" content="Mastermind — Your personal, institutional-grade market intelligence.">
+<meta property="og:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <meta property="og:url" content="https://www.mastermind-x.com/">
 <meta property="og:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Mastermind — Every market. Every signal. One desk. Live scorecards connected to one AI core.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mastermind — Every market. Every signal. One desk.">
-<meta name="twitter:description" content="The complete market-intelligence suite: live macro regimes, graded stock signals, intraday options flow and an AI analyst — an institution's entire desk, on one screen.">
+<meta name="twitter:title" content="Mastermind — Your personal, institutional-grade market intelligence.">
+<meta name="twitter:description" content="Macro regimes, graded stock signals, intraday options flow, deep research and an AI analyst — rebuilt nightly by engines that check each other's work. Free to read.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/assets/landing/og_card.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -42,6 +42,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="onboard.css">
 <style>
 /* ============================================================
    MASTERMIND LANDING — "The Neural Cover"
@@ -74,9 +75,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-u
 html[data-lang="zh"] body{font-family:'Inter','PingFang SC','Hiragino Sans GB','Microsoft YaHei',system-ui,sans-serif}
 html[data-lang="zh"] .display,html[data-lang="zh"] .sec-title,html[data-lang="zh"] .feat-title,html[data-lang="zh"] h1,html[data-lang="zh"] h2{font-family:'Archivo Expanded','Inter','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;letter-spacing:-.01em}
 html[data-lang="zh"] .kicker,html[data-lang="zh"] .live-pill,html[data-lang="zh"] .micro,html[data-lang="zh"] .live-tag,html[data-lang="zh"] .dk,html[data-lang="zh"] .rl,html[data-lang="zh"] .tt{letter-spacing:.06em}
-/* footer language toggle */
-.lang-btn{font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--muted);border:1px solid var(--hair-2);border-radius:8px;padding:5px 12px;background:#fff;transition:color .16s,border-color .16s}
-.lang-btn:hover{color:var(--ink);border-color:var(--faint)}
 img{max-width:100%;display:block}
 a{color:var(--blue);text-decoration:none} a:hover{color:var(--blue-ink)}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
@@ -108,7 +106,8 @@ html.still .cover-in{min-height:0}
 html.still{scroll-behavior:auto}
 
 /* ============ NAV ============ */
-.nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);border-bottom:1px solid var(--hair)}
+.nav{position:sticky;top:0;z-index:90;background:rgba(247,248,250,.85);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);border-bottom:1px solid var(--hair);transition:box-shadow .25s ease,background .25s ease}
+.nav.sc{background:rgba(247,248,250,.95);box-shadow:0 10px 30px -18px rgba(18,26,45,.25)}
 .nav-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);height:62px;display:flex;align-items:center;gap:26px}
 .brand{display:flex;align-items:center;gap:10px;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:15px;color:var(--ink)}
 .brand .m{width:27px;height:27px;border-radius:7px;background:var(--ink);display:grid;place-items:center;color:#fff;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px}
@@ -120,7 +119,7 @@ html.still{scroll-behavior:auto}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.primary:hover{background:var(--blue-ink);color:#fff}
 .btn.sm{padding:8px 15px;font-size:13.5px}
-.gearbtn{width:37px;height:37px;flex:none;border-radius:10px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
+.gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
 .gearbtn:hover{color:var(--ink);transform:translateY(-1px);box-shadow:var(--sh-lift)}
 .gearbtn[aria-expanded="true"]{color:var(--ink);border-color:var(--faint)}
 .gearbtn svg{width:17px;height:17px}
@@ -138,13 +137,32 @@ html.still{scroll-behavior:auto}
 .gp-div{height:1px;background:var(--hair);margin:4px 4px 6px}
 .gp-link{display:block;font-size:13px;color:var(--ink-soft);border-radius:8px;padding:8px 8px;font-weight:500;transition:background .14s,color .14s}
 .gp-link:hover{background:var(--panel-2);color:var(--ink)}
+/* gear ACCOUNT section (mirrors the macro gear's account block, landing light tokens) */
+.gp-acct-t{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--faint);margin:2px 8px 8px}
+.gp-acct-d{font-size:12px;line-height:1.5;color:var(--muted);margin:0 8px 10px}
+.gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;transition:background .14s,color .14s,border-color .14s}
+.gp-abtn.ghost{border:1px solid var(--hair-2);background:#fff;color:var(--ink-soft)}
+.gp-abtn.ghost:hover{background:var(--blue-wash);color:var(--blue-ink);border-color:var(--blue)}
+.gp-abtn.solid{background:var(--blue);border:1px solid var(--blue);color:#fff;box-shadow:var(--sh-card)}
+.gp-abtn.solid:hover{background:var(--blue-ink);border-color:var(--blue-ink)}
+.gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;min-width:0;transition:background .14s}
+.gp-acct-card:hover{background:var(--panel-2)}
+.gp-acct-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#fff;background:var(--blue)}
+.gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.gp-acct-email{font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gp-acct-sub{font-size:11px;color:var(--muted)}
+.gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;border:1px solid var(--hair-2);border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:#fff;transition:background .14s,color .14s,border-color .14s}
+.gp-signout:hover{background:var(--panel-2);color:var(--ink)}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
-.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) 0;display:block}
+.cover-in{max-width:var(--maxw);margin:0 auto;padding:clamp(22px,3vh,36px) var(--gutter) clamp(38px,5vh,64px);display:block}
 .cov-copy{position:relative;z-index:40;text-align:center;max-width:760px;margin:0 auto;padding-bottom:0}
 .cov-copy h1{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:.99;font-size:clamp(2.15rem,3.5vw,3.05rem);margin:16px 0 0}
 .cov-copy h1 .dim{color:var(--faint)}
+@supports (-webkit-background-clip:text){.cov-copy h1 .dim{background:linear-gradient(96deg,#2f6bf0 8%,#7c5cff 52%,#0f9d8f 104%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}}
 .cov-copy .sub{color:var(--muted);font-size:clamp(1rem,1.32vw,1.12rem);line-height:1.64;margin:16px auto 0;max-width:56ch}
 .cov-copy .sub b{color:var(--ink);font-weight:600}
 .cta-row{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap;justify-content:center}
@@ -158,10 +176,12 @@ html.still{scroll-behavior:auto}
 .pyr{position:relative;z-index:10;width:100%;max-width:1280px;margin:clamp(8px,1.4vh,16px) auto 0;height:440px}
 .pyr::before{content:"";position:absolute;inset:-10% -4% -4%;pointer-events:none;
   background:
-    radial-gradient(42% 40% at 50% 40%,rgba(40,95,255,.07),transparent 70%),
+    radial-gradient(44% 42% at 50% 34%,rgba(40,95,255,.10),transparent 70%),
+    radial-gradient(30% 34% at 12% 74%,rgba(124,92,255,.07),transparent 70%),
+    radial-gradient(28% 32% at 88% 70%,rgba(15,157,143,.06),transparent 70%),
     linear-gradient(rgba(28,36,48,.03) 1px,transparent 1px),
     linear-gradient(90deg,rgba(28,36,48,.03) 1px,transparent 1px);
-  background-size:auto,46px 46px,46px 46px;
+  background-size:auto,auto,auto,46px 46px,46px 46px;
   -webkit-mask-image:radial-gradient(88% 82% at 50% 50%,#000 55%,transparent 100%);
   mask-image:radial-gradient(88% 82% at 50% 50%,#000 55%,transparent 100%)}
 .pcard{position:absolute;top:0;width:21.6%;height:376px;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--sh-deep);padding:13px 15px;transform-origin:50% 0}
@@ -258,6 +278,7 @@ html.still{scroll-behavior:auto}
 
 /* ============ FEATURE SECTIONS — the suite, live components ============ */
 .feature{padding-block:clamp(52px,7vw,92px)}
+.feature.flip{background:#fff}
 .feature+.feature{border-top:1px solid var(--hair)}
 .feat-grid{display:grid;grid-template-columns:minmax(320px,.74fr) minmax(0,1.26fr);gap:clamp(28px,4.5vw,64px);align-items:center}
 .feature.flip .feat-grid{grid-template-columns:minmax(0,1.26fr) minmax(320px,.74fr)}
@@ -328,8 +349,8 @@ html.still{scroll-behavior:auto}
 .tt-rng .trk{position:relative;display:block;height:3px;border-radius:2px;background:#242e40;margin-top:6px}
 .tt-rng .trk i{position:absolute;top:50%;left:57%;width:7px;height:7px;border-radius:50%;background:#e6ecf5;border:1.5px solid #0b0e14;transform:translate(-50%,-50%)}
 .tt-rng .mm{display:flex;justify-content:space-between;font-size:8.5px;color:#5c6879;margin-top:4px}
-.tt-del{display:flex;align-items:center;gap:6px;border:1px solid #212a3a;border-radius:99px;padding:4px 9px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.1em;text-transform:uppercase;color:#7a8699;white-space:nowrap}
-.tt-del i{width:5px;height:5px;border-radius:50%;background:#e0b258}
+.tt-del{display:flex;align-items:center;gap:6px;border:1px solid rgba(46,189,133,.3);border-radius:99px;padding:4px 9px;font-family:'Archivo',sans-serif;font-weight:700;font-size:7.6px;letter-spacing:.1em;text-transform:uppercase;color:#3ecf95;background:rgba(46,189,133,.08);white-space:nowrap}
+.tt-del i{width:5px;height:5px;border-radius:50%;background:#2ebd85}
 .tt-ai{margin-left:auto;display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2f6bf0,#4f8bff);border-radius:8px;padding:7px 12px;color:#fff;font-weight:700;font-size:11.5px;white-space:nowrap;box-shadow:0 4px 14px -6px rgba(63,130,246,.5)}
 .tt-av{width:26px;height:26px;flex:none;border-radius:50%;background:#242c3b;color:#9aa6ba;display:grid;place-items:center;font-size:10.5px;font-weight:700}
 .tt-body{display:flex}
@@ -404,6 +425,91 @@ html.still{scroll-behavior:auto}
   .sf-bar{grid-template-columns:auto minmax(0,1fr) auto;gap:10px}
   .sf-l svg,.sf-r{display:none}
   .tt-logo .ln,.tt-ai{display:none}.tt-av{margin-left:auto}
+}
+
+/* — Prophet showcase: the light board-room band after the dark terminal.
+     Real cards from tonight's board (baked #ph-data island → live override
+     from prophet/showcase.json, same nightly emit) deal onto a belt, their
+     charts wipe in, then the belt drifts. One hue per card follows the verb
+     (--ph) — the flagship pv-card anatomy re-set in the landing palette. — */
+.psec{padding:clamp(56px,7.5vw,100px) 0 clamp(46px,6vw,80px);overflow:hidden;border-bottom:1px solid var(--hair)}
+.psec .ph-head{display:grid;grid-template-columns:minmax(280px,.94fr) minmax(0,1.06fr);gap:clamp(24px,5vw,72px);align-items:start}
+.psec .kicker{color:var(--blue);display:block;margin-bottom:12px}
+.psec .sec-title{margin:0}
+.ph-sub{color:var(--muted);font-size:15.5px;line-height:1.66;margin:6px 0 0}
+.ph-sub b{color:var(--ink);font-weight:600}
+.psec .feat-cta{margin-top:14px}
+.ph-tagrow{display:flex;justify-content:center;margin:clamp(26px,3.5vw,40px) 0 18px}
+.ph-tag{display:inline-flex;align-items:center;gap:7px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.12em;color:var(--teal);background:#fff;border:1px solid var(--hair-2);border-radius:99px;padding:5px 13px;box-shadow:var(--sh-card);white-space:nowrap}
+.ph-tag i{width:5px;height:5px;border-radius:50%;background:var(--teal);font-style:normal}
+.ph-belt{position:relative}
+.ph-clip{overflow:hidden;padding:6px 0 14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.ph-track{display:flex;width:max-content;padding-left:clamp(20px,4.5vw,60px)}
+.ph-set{display:flex;gap:14px;padding-right:14px}
+.ph-track.run{animation:phDrift 95s linear infinite}
+.ph-track.ps{animation-play-state:paused}
+/* hover no longer pauses the belt — JS eases playbackRate to .7 instead (seamless) */
+/* loop distance = one measured set width (--phsw, set by the renderer) so the
+   lead-in gutter never causes a seam jump */
+@keyframes phDrift{to{transform:translateX(calc(-1 * var(--phsw, 50%)))}}
+/* deal-in + chart wipe, staggered per card (--i set by the renderer) */
+.ph-belt .phc{opacity:0;transform:translateY(26px) rotate(.5deg)}
+.ph-belt.in .phc{animation:phDeal .6s cubic-bezier(.22,.8,.3,1) forwards;animation-delay:calc(var(--i)*90ms)}
+@keyframes phDeal{to{opacity:1;transform:none}}
+.ph-belt.in .phc-ch svg{clip-path:inset(0 100% 0 0);animation:phWipe .85s ease-out forwards;animation-delay:calc(var(--i)*90ms + .22s)}
+@keyframes phWipe{to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.ph-belt .phc{opacity:1;transform:none}.ph-belt.in .phc-ch svg{clip-path:none}}
+html.still .ph-belt .phc{opacity:1 !important;transform:none !important}
+html.still .ph-belt .phc-ch svg{clip-path:none !important}
+/* — the card: pv-card contract in landing dress. One hue per card. — */
+.phc{position:relative;display:flex;flex-direction:column;width:272px;flex:none;background:var(--panel);border:1px solid var(--hair);border-radius:var(--r);box-shadow:var(--sh-card);color:var(--ink);overflow:hidden;text-decoration:none;transition:transform .18s,box-shadow .18s,border-color .18s}
+.phc:hover{transform:translateY(-3px);box-shadow:var(--sh-lift);color:var(--ink)}
+.phc-buy{--ph:var(--q-green)}.phc-near{--ph:#2ea360}.phc-wait{--ph:var(--q-gold)}.phc-hold{--ph:#5d6b7e}.phc-avoid{--ph:var(--q-red)}
+.phc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;z-index:3;pointer-events:none;background:linear-gradient(90deg,var(--ph),color-mix(in srgb,var(--ph) 10%,transparent) 92%);box-shadow:0 1px 10px color-mix(in srgb,var(--ph) 38%,transparent)}
+.phc-ch{position:relative;background:color-mix(in srgb,var(--ph) 4%,transparent)}
+.phc-ch svg{display:block;width:100%;height:84px}
+/* spark recolor law (matches the board): strokes take the verb hue; filled
+   shapes flip to hue fill; fill-opacity/dasharray attrs survive untouched */
+.phc-ch svg *{stroke:var(--ph) !important}
+.phc-ch svg [fill]:not([fill="none"]){fill:var(--ph) !important;stroke:none !important}
+.phc-ov{position:absolute;top:9px;display:flex;gap:6px;align-items:center;z-index:2}
+.phc-ovl{left:10px;max-width:72%}.phc-ovr{right:10px}
+.phc-chip{font-family:'Archivo',sans-serif;font-weight:800;font-size:10px;letter-spacing:.08em;padding:3px 10px;border-radius:99px;background:color-mix(in srgb,var(--ph) 11%,#fff);color:var(--ph);border:1px solid color-mix(in srgb,var(--ph) 40%,transparent);white-space:nowrap}
+.phc-buy .phc-chip{background:var(--ph);color:#fff;border-color:transparent}
+.phc-px{font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;background:rgba(255,255,255,.9);border:1px solid var(--hair);border-radius:7px;padding:2px 7px;color:var(--ink)}
+.phc-since{font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;background:var(--q-green);color:#fff;border-radius:7px;padding:2px 8px;box-shadow:0 2px 10px rgba(31,139,65,.4)}
+.phc-cau{position:relative;display:inline-flex}
+.phc-cau-b{display:inline-flex;align-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;padding:3px 8px;border-radius:99px;background:var(--gold-wash);color:var(--q-gold);border:1px solid rgba(176,125,5,.35);cursor:default}
+.phc-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:210px;background:#fff;border:1px solid var(--hair-2);border-radius:10px;box-shadow:var(--sh-lift);padding:8px 10px;white-space:normal}
+.phc-cau:hover .phc-pop,.phc-cau:focus-within .phc-pop{display:block}
+.phc-pop span{display:block;font-size:10.5px;line-height:1.45;color:var(--ink-soft);padding:2.5px 0;font-weight:500}
+.phc-pop span+span{border-top:1px solid var(--hair)}
+.phc-bd{padding:9px 12px 10px;display:flex;flex-direction:column;flex:1}
+.phc-hd{display:flex;align-items:baseline;gap:7px;min-width:0}
+.phc-tk{font-family:'Archivo',sans-serif;font-weight:800;font-size:13.5px}
+.phc-nm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.phc-edge{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.07em;color:var(--muted);white-space:nowrap}
+.phc-edge b{font-size:14px;color:var(--ph);margin-left:3px}
+.phc-sec{font-size:10.5px;color:var(--faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phc-stp{display:flex;align-items:center;margin:9px 1px 0}
+.phc-dot{width:7px;height:7px;border-radius:50%;background:var(--hair-2);flex:none}
+.phc-seg{flex:1;height:2px;background:var(--hair-2)}
+.phc-dot.pa,.phc-seg.pa{background:color-mix(in srgb,var(--ph) 45%,var(--hair-2))}
+.phc-dot.on{background:var(--ph);box-shadow:0 0 0 3px color-mix(in srgb,var(--ph) 16%,transparent)}
+.phc-stl{display:flex;justify-content:space-between;margin-top:4px}
+.phc-stl span{font-size:9.5px;color:var(--faint);white-space:nowrap}
+.phc-stl span.on{color:var(--ph);font-weight:700}
+.phc-zn{display:flex;align-items:center;gap:6px;border-top:1px solid var(--hair);background:var(--panel-2);padding:7px 12px 8px;font-size:10.5px;white-space:nowrap;overflow:hidden;margin-top:auto}
+.phc-znl{font-family:'Archivo',sans-serif;font-weight:800;font-size:9px;letter-spacing:.08em;color:var(--ph)}
+.phc-znr{font-weight:700;color:var(--ink)}
+.phc-znm{color:var(--muted);font-weight:600}
+.phc-dt{margin-left:auto;color:var(--faint);font-size:9.5px;flex:none;padding-left:5px}
+.ph-foot{text-align:center;color:var(--muted);font-size:13.5px;margin:6px 0 0}
+.ph-foot b{color:var(--ink);font-weight:600}
+@media (max-width:640px){
+  .psec .ph-head{grid-template-columns:1fr;gap:12px}
+  .phc{width:248px}
+  .phc-ch svg{height:74px}
 }
 
 /* — act-now lanes — */
@@ -563,6 +669,7 @@ html.still{scroll-behavior:auto}
 .tier.hot{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-lift);position:relative;background:linear-gradient(150deg,rgba(15,157,143,.055),rgba(40,95,255,.06) 55%,rgba(120,98,224,.05)),#fff}
 .tiers .tier:last-child{background:linear-gradient(150deg,rgba(120,98,224,.07),rgba(193,47,120,.045) 55%,rgba(176,125,5,.065)),#fff}
 .tier.hot::before{content:"MOST POPULAR";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:4px 11px;border-radius:99px}
+html[data-lang="zh"] .tier.hot::before{content:"最受欢迎";letter-spacing:.08em}
 .tier h3{margin:0;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
 .price{margin-top:12px;font-family:'Archivo Expanded',sans-serif;font-weight:900;font-size:40px;letter-spacing:-.02em}
@@ -607,13 +714,39 @@ tr.t-ins td:first-child,tr.t-pro td:first-child{position:sticky;left:0}
 .mx .feat .mchip.pro{color:#6a48d7}
 
 /* ============ FINAL + FOOTER ============ */
-.final{text-align:center}
-.final h2{font-size:clamp(2rem,4.6vw,3.2rem)}
-.final .sec-sub{margin:14px auto 0}
-footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);font-size:13px;background:#fff}
-.f-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
-.f-links{display:flex;gap:20px;flex-wrap:wrap}
-.f-links a{color:var(--muted)} .f-links a:hover{color:var(--ink)}
+/* ---- closing band: the page ends the way it opened — on the desk ---- */
+.cband{position:relative;background:#04070c;overflow:hidden;text-align:center;padding:clamp(76px,10vw,132px) 0 clamp(60px,7.5vw,96px)}
+.cband::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(48% 44% at 50% 0%,rgba(63,130,246,.17),transparent 72%),
+  radial-gradient(30% 36% at 84% 92%,rgba(124,92,255,.10),transparent 70%),
+  radial-gradient(26% 32% at 12% 86%,rgba(46,189,133,.08),transparent 70%),
+  linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:auto,auto,auto,46px 46px,46px 46px;
+  -webkit-mask-image:radial-gradient(92% 92% at 50% 40%,#000 55%,transparent 100%);
+  mask-image:radial-gradient(92% 92% at 50% 40%,#000 55%,transparent 100%)}
+.cband .wrap{position:relative}
+.cband .kicker{color:#e8c34c}
+.cband h2{font-size:clamp(2rem,4.6vw,3.2rem);color:#fff;margin-bottom:0}
+.cband .sec-sub{margin:14px auto 0;color:#8e99ad}
+.cband .btn:not(.primary){color:#dfe6f2;border-color:#2c3646;background:transparent}
+.cband .btn:not(.primary):hover{border-color:#46536a}
+.trust{display:flex;justify-content:center;flex-wrap:wrap;gap:10px 12px;margin-top:38px}
+.trust span{display:inline-flex;align-items:center;gap:8px;border:1px solid #1d2534;background:rgba(255,255,255,.025);border-radius:99px;padding:8px 16px;font-size:12.5px;color:#a7b1c2}
+.trust i{width:6px;height:6px;border-radius:50%;font-style:normal;flex:none}
+/* ---- footer (dark, flows from the band) ---- */
+footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color:#7a8496;font-size:13px}
+.f-in{max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter)}
+.f-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:30px;flex-wrap:wrap}
+.f-brand .fb-row{display:flex;align-items:center;gap:9px}
+.f-brand .fm{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#3f82f6,#7c5cff);display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:14px;color:#fff}
+.f-brand .fn{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;letter-spacing:.08em;color:#dfe6f2}
+.f-brand .ft{margin:10px 0 0;color:#5f6b7e;font-size:12.5px}
+.f-cols{display:flex;gap:clamp(30px,6vw,84px)}
+.f-col p{margin:0 0 8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:#46536a;text-transform:uppercase}
+.f-col a{display:block;color:#8e99ad;padding:4.5px 0;font-size:13px}
+.f-col a:hover{color:#dfe6f2}
+.f-bot{display:flex;justify-content:space-between;align-items:center;gap:12px 18px;flex-wrap:wrap;border-top:1px solid #10161f;margin-top:36px;padding-top:20px;font-size:12px;color:#8e99ad}
 
 /* ============ RESPONSIVE ============ */
 @media (max-width:1080px){
@@ -647,14 +780,14 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
   <div class="nav-in">
     <a class="brand" href="index.html"><span class="m">M</span> MASTERMIND</a>
     <div class="nav-links">
-      <a href="#f-terminal" data-zh="产品">Product</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
+      <a href="https://app.mastermind-x.com">Terminal</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
     </div>
     <div class="nav-right">
-      <a href="start.html" style="color:var(--muted)" data-zh="登录">Log in</a>
-      <a class="btn primary sm" href="start.html" data-zh="免费开始">Start free</a>
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <span class="gear-wrap">
         <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01A1.7 1.7 0 0 0 10 4.09V4a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01c.26.63.87 1.04 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
           <p class="gp-kicker" data-zh="设置">SETTINGS</p>
@@ -667,9 +800,26 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
           </div>
           <div class="gp-div"></div>
           <a class="gp-link" role="menuitem" href="start.html" data-zh="打开仪表盘">Open the dashboard</a>
-          <a class="gp-link" role="menuitem" href="start.html" data-zh="登录">Log in</a>
-          <a class="gp-link" role="menuitem" href="#pricing" data-zh="定价">Pricing</a>
-          <a class="gp-link" role="menuitem" href="methodology.html" data-zh="方法论">Methodology</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
+            </div>
+          </div>
         </div>
       </span>
     </div>
@@ -685,7 +835,7 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
       <h1 data-zh="你的专属<br>机构级<span class='dim'>市场情报台。</span>">Your personal,<br>institutional-grade<br><span class="dim">market intelligence.</span></h1>
       <p class="sub" data-zh="宏观、信号、期权流与深度研究——每晚由相互校验的引擎重建。<b>就在下方，实时运行。</b>">Macro, signals, options flow and deep research — rebuilt nightly by engines that check each other's work. <b>Live, below.</b></p>
       <div class="cta-row">
-        <a class="btn primary" href="start.html" data-zh="免费开始">Start free</a>
+        <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
         <a class="btn" href="#f-terminal" data-zh="看实时演示">See it live</a>
       </div>
       <p class="micro" data-zh="免费试用 · 机构级市场情报">FREE TRIAL · INSTITUTIONAL MARKET INTELLIGENCE</p>
@@ -834,13 +984,13 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <div class="tapp">
           <div class="tt-top">
             <div class="tt-logo"><span class="lm">M</span><span class="ln"><b>MASTERMIND</b><span>TERMINAL</span></span></div>
-            <div class="tt-sym"><span class="sic">N</span>NVDA <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></div>
+            <div class="tt-sym"><span class="sic">n</span>NVDA <svg width="8" height="5" viewBox="0 0 8 5" fill="none" stroke="#5c6879" stroke-width="1.2"><path d="M1 1l3 3 3-3"/></svg></div>
             <div class="tt-cmp hx3"><svg width="11" height="10" viewBox="0 0 11 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M1 3h7M6 1l2 2-2 2M10 7H3M5 5L3 7l2 2"/></svg>Compare</div>
             <div class="tt-cell"><span class="l">Last price</span><span class="v mo" id="tb-last">211.07</span></div>
             <div class="tt-cell"><span class="l">24H change</span><span class="v mo up" id="tb-chg">+1.82%</span></div>
             <div class="tt-cell hx2"><span class="l">Volume</span><span class="v mo" id="tb-vol">103.1M</span></div>
             <div class="tt-rng hx1"><span class="lb">Day range<em class="mo" id="tb-rngv">211.07</em></span><span class="trk"><i id="tb-rngd"></i></span><span class="mm mo"><span>L 204.95</span><span>214.49 H</span></span></div>
-            <div class="tt-del hx1"><i></i>15-min delayed</div>
+            <div class="tt-del hx1"><i></i>Live</div>
             <div class="tt-ai"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg>Mastermind AI</div>
             <div class="tt-av">U</div>
           </div>
@@ -887,18 +1037,18 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
                 <div class="twl-cols"><span>Symbol</span><span>Last</span><span>Chg%</span></div>
                 <div class="twl-rows">
                   <div class="twl-g">CRYPTO</div>
-                  <div class="twl-r" data-w="0"><span class="sic" style="background:#f7931a">B</span><span class="sy">BTC-USD</span><span class="la mo">65,894.53</span><span class="ch mo dn">−0.92%</span></div>
-                  <div class="twl-r" data-w="1"><span class="sic" style="background:#627eea">E</span><span class="sy">ETH-USD</span><span class="la mo">1,924.59</span><span class="ch mo dn">−0.23%</span></div>
+                  <div class="twl-r" data-w="0"><span class="sic" style="background:#f7931a"><svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round"><path d="M2.3 2.7h2.9a1.5 1.5 0 0 1 0 3h-2.9zM2.3 5.7h3.3a1.5 1.5 0 0 1 0 3H2.3z"/><path d="M3.5 1.3v1.2M5.5 1.3v1.2M3.5 8.9v1.2M5.5 8.9v1.2"/></svg></span><span class="sy">BTC-USD</span><span class="la mo">65,894.53</span><span class="ch mo dn">−0.92%</span></div>
+                  <div class="twl-r" data-w="1"><span class="sic" style="background:#627eea"><svg width="9" height="12" viewBox="0 0 10 14"><path d="M5 1L8.6 7L5 9.4L1.4 7z" fill="#fff" opacity=".95"/><path d="M5 10.6L8.6 8.2L5 13L1.4 8.2z" fill="#fff" opacity=".65"/></svg></span><span class="sy">ETH-USD</span><span class="la mo">1,924.59</span><span class="ch mo dn">−0.23%</span></div>
                   <div class="twl-g">EQUITIES</div>
-                  <div class="twl-r on"><span class="sic" style="background:#76b900;color:#0b0e14">N</span><span class="sy">NVDA</span><span class="la mo up" id="wl-la">211.07</span><span class="ch mo up" id="wl-ch">+1.82%</span></div>
-                  <div class="twl-r" data-w="2"><span class="sic" style="background:#8d97a5;color:#0b0e14">A</span><span class="sy">AAPL</span><span class="la mo">325.49</span><span class="ch mo dn">−0.69%</span></div>
-                  <div class="twl-r" data-w="3"><span class="sic" style="background:#0a84ff">M</span><span class="sy">MSFT</span><span class="la mo">387.50</span><span class="ch mo dn">−2.58%</span></div>
+                  <div class="twl-r on"><span class="sic" style="background:#76b900;color:#0b0e14">n</span><span class="sy">NVDA</span><span class="la mo up" id="wl-la">211.07</span><span class="ch mo up" id="wl-ch">+1.82%</span></div>
+                  <div class="twl-r" data-w="2"><span class="sic" style="background:#333b46"><svg width="10" height="12" viewBox="0 0 12 14" fill="#fff"><path d="M9.6 7.4c0-1.7 1.4-2.5 1.4-2.5S10.2 3.6 8.6 3.6c-1 0-1.6.5-2.1.5-.6 0-1.3-.5-2.2-.5C2.6 3.6 1 5 1 7.5 1 10.2 3 13 4.3 13c.6 0 1-.4 1.9-.4.9 0 1.2.4 1.9.4 1.3 0 3-2.7 3-4.1 0 0-1.5-.6-1.5-1.5z"/><path d="M7.7 2.6c.5-.6.8-1.4.7-2.2-.7.1-1.5.5-2 1.1-.4.5-.8 1.3-.7 2.1.8 0 1.5-.4 2-1z"/></svg></span><span class="sy">AAPL</span><span class="la mo">325.49</span><span class="ch mo dn">−0.69%</span></div>
+                  <div class="twl-r" data-w="3"><span class="sic" style="background:#1d242f"><svg width="9" height="9" viewBox="0 0 9 9"><rect width="4.2" height="4.2" fill="#f25022"/><rect x="4.8" width="4.2" height="4.2" fill="#7fba00"/><rect y="4.8" width="4.2" height="4.2" fill="#00a4ef"/><rect x="4.8" y="4.8" width="4.2" height="4.2" fill="#ffb900"/></svg></span><span class="sy">MSFT</span><span class="la mo">387.50</span><span class="ch mo dn">−2.58%</span></div>
                   <div class="twl-r" data-w="4"><span class="sic" style="background:#3edad8;color:#0b0e14">Q</span><span class="sy">QQQ</span><span class="la mo">705.35</span><span class="ch mo dn">−0.51%</span></div>
                   <div class="twl-sb"></div>
                 </div>
               </div>
               <div class="ttp">
-                <div class="tq-hd"><span class="sic">N</span><span class="nm"><b>NVIDIA Corp</b><span>NVDA · NASDAQ</span></span><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1H10v3.5M10 1L6 5M4.5 10H1V6.5M1 10l4-4"/></svg></div>
+                <div class="tq-hd"><span class="sic">n</span><span class="nm"><b>NVIDIA Corp</b><span>NVDA · NASDAQ</span></span><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 1H10v3.5M10 1L6 5M4.5 10H1V6.5M1 10l4-4"/></svg></div>
                 <div class="tq-px"><span class="big mo" id="qc-px">211.07</span><span class="pc mo" id="qc-ch">+1.82%</span><span class="st"><i></i>LIVE</span></div>
                 <div class="tq-row" style="flex-wrap:wrap">
                   <span class="k"><svg width="11" height="11" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7.5 1.5l1.4 4.6 4.6 1.4-4.6 1.4-1.4 4.6-1.4-4.6-4.6-1.4 4.6-1.4z"/></svg>GOLDEN ORACLE</span>
@@ -938,6 +1088,34 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
       </div>
     </div>
   </div>
+</section>
+
+<!-- Prophet — every stock gets a card, every card gets one word.
+     DELAYED WINNERS teaser (operator order 2026-07-24): winning calls from the
+     board of ~2+ weeks back with their 10-session returns — never the live
+     board. Baked #ph-data island, live-overridden from prophet/showcase.json
+     (same nightly emit — scripts/build_prophet.py, board-ledger sourced). -->
+<section class="psec" id="f-prophet">
+  <div class="wrap">
+    <div class="ph-head">
+      <div class="rv">
+        <span class="kicker" data-zh="先知选股">Prophet stock signals</span>
+        <h2 class="sec-title" data-zh="一股一卡，<br>一卡一词。">One card per stock.<br>One word per card.</h2>
+      </div>
+      <div class="rv" style="--d:.08s">
+        <p class="ph-sub" data-zh="<b>买入 · 临近 · 等待 · 持有 · 回避。</b>0–100 优势评分、四阶段生命周期与精确买区——引擎每晚为每只入选股票重建。当诚实的答案是等待，卡片就写等待。"><b>Buy · Near · Wait · Hold · Avoid.</b> A 0–100 edge grade, a four-stage lifecycle and an exact entry zone — rebuilt nightly for every standout the engines surface. When the honest call is wait, the card says wait.</p>
+        <a class="feat-cta" href="us_stocks.html" data-zh="查看今晚看板 →">See tonight's board →</a>
+      </div>
+    </div>
+  </div>
+  <div class="ph-tagrow rv" style="--d:.12s">
+    <span class="ph-tag"><i></i><span data-zh="真实信号 · 延迟两周">REAL CALLS · 2-WEEK DELAYED</span><span class="tnum" id="ph-asof"></span></span>
+  </div>
+  <div class="ph-belt" id="ph-belt" aria-label="Winning Prophet calls from the board two-plus weeks back, each with its return since">
+    <script type="application/json" id="ph-data">{"schema":"prophet.showcase/v2","kind":"delayed_winners","as_of":"2026-07-06","window_sessions":10,"authority_tier":"display","count":11,"note":"DISPLAY-ONLY, DELAYED. Winning calls from the board of 2026-07-06, graded at 10 sessions from the next session's close after the call (grade_us_board conventions, survivorship-adjusted). Selected because they worked; the live board ships nightly behind registration and includes wins and losses. No signal originates here.","cards":[{"tk":"CNMD","name":"CONMED Corporation","sec":"Health Care","sec_zh":"医疗保健","price_txt":"$35.11","verb":"near","edge":19,"stage":3,"zone_kind":"active","zone_lo":"$33.49","zone_hi":"$35.11","date":"2026-07-02","flags":[["Already moving — don't chase above the zone","已在异动 — 勿在买区上方追高"]],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,30.8 3.8,33.7 7.6,31.8 11.4,23.2 15.2,21.8 19.0,22.6 22.9,15.4 26.7,10.1 30.5,11.3 34.3,17.7 38.1,12.8 41.9,10.3 45.7,15.9 49.5,15.3 53.3,19.4 57.1,15.9 61.0,17.9 64.8,22.4 68.6,25.9 72.4,22.9 76.2,22.4 80.0,26.2 83.8,23.0 87.6,20.2 91.4,16.9 95.2,22.5 99.0,28.9 102.9,25.8 106.7,27.6 110.5,24.3 114.3,27.8 118.1,23.1 121.9,25.0 125.7,21.5 129.5,21.4 133.3,20.6 137.1,25.5 141.0,27.9 144.8,27.7 148.6,27.0 152.4,31.4 156.2,34.7 160.0,38.0 163.8,29.3 167.6,29.2 171.4,32.0 175.2,21.9 179.0,24.4 182.9,32.4 186.7,30.9 190.5,33.4 194.3,31.7 198.1,42.0 201.9,40.0 205.7,40.2 209.5,34.9 213.3,28.2 217.1,31.7 221.0,25.9 224.8,32.4 228.6,39.4 232.4,39.3 236.2,34.8 240.0,29.4 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,30.8 3.8,33.7 7.6,31.8 11.4,23.2 15.2,21.8 19.0,22.6 22.9,15.4 26.7,10.1 30.5,11.3 34.3,17.7 38.1,12.8 41.9,10.3 45.7,15.9 49.5,15.3 53.3,19.4 57.1,15.9 61.0,17.9 64.8,22.4 68.6,25.9 72.4,22.9 76.2,22.4 80.0,26.2 83.8,23.0 87.6,20.2 91.4,16.9 95.2,22.5 99.0,28.9 102.9,25.8 106.7,27.6 110.5,24.3 114.3,27.8 118.1,23.1 121.9,25.0 125.7,21.5 129.5,21.4 133.3,20.6 137.1,25.5 141.0,27.9 144.8,27.7 148.6,27.0 152.4,31.4 156.2,34.7 160.0,38.0 163.8,29.3 167.6,29.2 171.4,32.0 175.2,21.9 179.0,24.4 182.9,32.4 186.7,30.9 190.5,33.4 194.3,31.7 198.1,42.0 201.9,40.0 205.7,40.2 209.5,34.9 213.3,28.2 217.1,31.7 221.0,25.9 224.8,32.4 228.6,39.4 232.4,39.3 236.2,34.8 240.0,29.4\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"29.4\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":22.3},{"tk":"JXN","name":"Jackson Financial, Inc.","sec":"Financials","sec_zh":"金融","price_txt":"$109.36","verb":"near","edge":47,"stage":1,"zone_kind":"active","zone_lo":"$106.90","zone_hi":"$109.40","date":"2026-07-02","flags":[["Already moving — don't chase above the zone","已在异动 — 勿在买区上方追高"]],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,37.3 3.8,32.3 7.6,38.2 11.4,28.3 15.2,38.1 19.0,42.0 22.9,36.1 26.7,34.2 30.5,28.8 34.3,31.8 38.1,23.8 41.9,19.9 45.7,19.2 49.5,18.5 53.3,15.4 57.1,16.0 61.0,13.4 64.8,10.7 68.6,11.3 72.4,10.1 76.2,13.6 80.0,15.4 83.8,26.5 87.6,12.0 91.4,22.9 95.2,16.8 99.0,23.9 102.9,25.2 106.7,27.0 110.5,20.1 114.3,23.5 118.1,21.0 121.9,27.3 125.7,21.1 129.5,27.2 133.3,30.0 137.1,31.7 141.0,36.8 144.8,39.5 148.6,38.6 152.4,35.3 156.2,31.1 160.0,35.8 163.8,32.2 167.6,27.9 171.4,29.2 175.2,28.8 179.0,30.7 182.9,25.1 186.7,24.0 190.5,21.8 194.3,21.5 198.1,24.6 201.9,28.2 205.7,22.4 209.5,21.2 213.3,28.1 217.1,29.1 221.0,28.4 224.8,32.6 228.6,38.3 232.4,33.4 236.2,33.6 240.0,22.4 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,37.3 3.8,32.3 7.6,38.2 11.4,28.3 15.2,38.1 19.0,42.0 22.9,36.1 26.7,34.2 30.5,28.8 34.3,31.8 38.1,23.8 41.9,19.9 45.7,19.2 49.5,18.5 53.3,15.4 57.1,16.0 61.0,13.4 64.8,10.7 68.6,11.3 72.4,10.1 76.2,13.6 80.0,15.4 83.8,26.5 87.6,12.0 91.4,22.9 95.2,16.8 99.0,23.9 102.9,25.2 106.7,27.0 110.5,20.1 114.3,23.5 118.1,21.0 121.9,27.3 125.7,21.1 129.5,27.2 133.3,30.0 137.1,31.7 141.0,36.8 144.8,39.5 148.6,38.6 152.4,35.3 156.2,31.1 160.0,35.8 163.8,32.2 167.6,27.9 171.4,29.2 175.2,28.8 179.0,30.7 182.9,25.1 186.7,24.0 190.5,21.8 194.3,21.5 198.1,24.6 201.9,28.2 205.7,22.4 209.5,21.2 213.3,28.1 217.1,29.1 221.0,28.4 224.8,32.6 228.6,38.3 232.4,33.4 236.2,33.6 240.0,22.4\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"22.4\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":13.7},{"tk":"REZI","name":"Resideo Technologies, Inc.","sec":"Industrials","sec_zh":"工业","price_txt":"$32.09","verb":"near","edge":83,"stage":1,"zone_kind":"active","zone_lo":"$30.76","zone_hi":"$32.09","date":"2026-07-02","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,24.8 3.8,24.3 7.6,24.0 11.4,20.5 15.2,17.9 19.0,18.2 22.9,17.0 26.7,14.7 30.5,13.5 34.3,14.8 38.1,12.5 41.9,13.1 45.7,12.5 49.5,11.8 53.3,11.7 57.1,10.8 61.0,12.0 64.8,11.5 68.6,13.2 72.4,10.1 76.2,12.8 80.0,14.2 83.8,12.3 87.6,10.7 91.4,12.4 95.2,13.6 99.0,18.6 102.9,20.3 106.7,34.7 110.5,34.8 114.3,38.6 118.1,38.8 121.9,42.0 125.7,37.3 129.5,37.1 133.3,37.7 137.1,35.1 141.0,33.6 144.8,32.0 148.6,32.2 152.4,33.5 156.2,32.7 160.0,35.5 163.8,34.5 167.6,32.3 171.4,34.8 175.2,32.9 179.0,34.9 182.9,32.4 186.7,31.3 190.5,31.4 194.3,30.0 198.1,34.1 201.9,30.8 205.7,32.5 209.5,33.8 213.3,30.9 217.1,29.8 221.0,32.9 224.8,34.5 228.6,32.6 232.4,32.5 236.2,33.5 240.0,30.4 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,24.8 3.8,24.3 7.6,24.0 11.4,20.5 15.2,17.9 19.0,18.2 22.9,17.0 26.7,14.7 30.5,13.5 34.3,14.8 38.1,12.5 41.9,13.1 45.7,12.5 49.5,11.8 53.3,11.7 57.1,10.8 61.0,12.0 64.8,11.5 68.6,13.2 72.4,10.1 76.2,12.8 80.0,14.2 83.8,12.3 87.6,10.7 91.4,12.4 95.2,13.6 99.0,18.6 102.9,20.3 106.7,34.7 110.5,34.8 114.3,38.6 118.1,38.8 121.9,42.0 125.7,37.3 129.5,37.1 133.3,37.7 137.1,35.1 141.0,33.6 144.8,32.0 148.6,32.2 152.4,33.5 156.2,32.7 160.0,35.5 163.8,34.5 167.6,32.3 171.4,34.8 175.2,32.9 179.0,34.9 182.9,32.4 186.7,31.3 190.5,31.4 194.3,30.0 198.1,34.1 201.9,30.8 205.7,32.5 209.5,33.8 213.3,30.9 217.1,29.8 221.0,32.9 224.8,34.5 228.6,32.6 232.4,32.5 236.2,33.5 240.0,30.4\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"30.4\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":6.8},{"tk":"FG","name":"F&G Annuities & Life, Inc.","sec":"Financials","sec_zh":"金融","price_txt":"$28.38","verb":"near","edge":55,"stage":3,"zone_kind":"active","zone_lo":"$27.55","zone_hi":"$28.38","date":"2026-07-02","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,30.1 3.8,28.6 7.6,38.7 11.4,36.6 15.2,36.3 19.0,42.0 22.9,33.7 26.7,32.9 30.5,27.7 34.3,28.7 38.1,23.9 41.9,24.2 45.7,23.9 49.5,23.8 53.3,22.3 57.1,18.8 61.0,17.6 64.8,15.1 68.6,16.5 72.4,15.0 76.2,15.2 80.0,16.7 83.8,10.4 87.6,10.1 91.4,24.1 95.2,16.9 99.0,20.2 102.9,18.5 106.7,18.2 110.5,15.2 114.3,18.5 118.1,20.3 121.9,23.9 125.7,20.8 129.5,22.5 133.3,21.4 137.1,21.2 141.0,20.4 144.8,22.5 148.6,21.8 152.4,24.6 156.2,23.2 160.0,32.3 163.8,25.0 167.6,21.2 171.4,22.6 175.2,18.8 179.0,16.4 182.9,16.6 186.7,14.8 190.5,16.2 194.3,23.7 198.1,25.8 201.9,21.7 205.7,22.7 209.5,19.6 213.3,27.9 217.1,27.6 221.0,24.5 224.8,24.6 228.6,27.0 232.4,23.0 236.2,19.1 240.0,16.5 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,30.1 3.8,28.6 7.6,38.7 11.4,36.6 15.2,36.3 19.0,42.0 22.9,33.7 26.7,32.9 30.5,27.7 34.3,28.7 38.1,23.9 41.9,24.2 45.7,23.9 49.5,23.8 53.3,22.3 57.1,18.8 61.0,17.6 64.8,15.1 68.6,16.5 72.4,15.0 76.2,15.2 80.0,16.7 83.8,10.4 87.6,10.1 91.4,24.1 95.2,16.9 99.0,20.2 102.9,18.5 106.7,18.2 110.5,15.2 114.3,18.5 118.1,20.3 121.9,23.9 125.7,20.8 129.5,22.5 133.3,21.4 137.1,21.2 141.0,20.4 144.8,22.5 148.6,21.8 152.4,24.6 156.2,23.2 160.0,32.3 163.8,25.0 167.6,21.2 171.4,22.6 175.2,18.8 179.0,16.4 182.9,16.6 186.7,14.8 190.5,16.2 194.3,23.7 198.1,25.8 201.9,21.7 205.7,22.7 209.5,19.6 213.3,27.9 217.1,27.6 221.0,24.5 224.8,24.6 228.6,27.0 232.4,23.0 236.2,19.1 240.0,16.5\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"16.5\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":4.8},{"tk":"CPAY","name":"Corpay","sec":"Financials","sec_zh":"金融","price_txt":"$356.55","verb":"near","edge":90,"stage":3,"zone_kind":"active","zone_lo":"$346.30","zone_hi":"$356.50","date":"2026-07-06","flags":[["accounting warn","财务质量警示"]],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,42.0 3.8,39.8 7.6,40.6 11.4,37.2 15.2,36.0 19.0,37.7 22.9,32.2 26.7,29.8 30.5,28.2 34.3,24.5 38.1,23.4 41.9,22.2 45.7,25.5 49.5,25.2 53.3,32.9 57.1,33.2 61.0,33.2 64.8,33.8 68.6,35.8 72.4,36.1 76.2,35.7 80.0,34.1 83.8,37.3 87.6,36.5 91.4,36.4 95.2,19.2 99.0,20.2 102.9,21.7 106.7,24.9 110.5,25.8 114.3,26.3 118.1,17.1 121.9,19.5 125.7,16.2 129.5,17.6 133.3,17.4 137.1,16.6 141.0,15.3 144.8,15.4 148.6,11.1 152.4,10.1 156.2,12.0 160.0,15.4 163.8,13.2 167.6,17.6 171.4,16.9 175.2,12.9 179.0,16.9 182.9,16.1 186.7,13.7 190.5,14.9 194.3,11.8 198.1,14.9 201.9,18.6 205.7,17.7 209.5,21.2 213.3,19.0 217.1,27.4 221.0,24.4 224.8,23.1 228.6,24.0 232.4,20.5 236.2,15.3 240.0,13.5 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,42.0 3.8,39.8 7.6,40.6 11.4,37.2 15.2,36.0 19.0,37.7 22.9,32.2 26.7,29.8 30.5,28.2 34.3,24.5 38.1,23.4 41.9,22.2 45.7,25.5 49.5,25.2 53.3,32.9 57.1,33.2 61.0,33.2 64.8,33.8 68.6,35.8 72.4,36.1 76.2,35.7 80.0,34.1 83.8,37.3 87.6,36.5 91.4,36.4 95.2,19.2 99.0,20.2 102.9,21.7 106.7,24.9 110.5,25.8 114.3,26.3 118.1,17.1 121.9,19.5 125.7,16.2 129.5,17.6 133.3,17.4 137.1,16.6 141.0,15.3 144.8,15.4 148.6,11.1 152.4,10.1 156.2,12.0 160.0,15.4 163.8,13.2 167.6,17.6 171.4,16.9 175.2,12.9 179.0,16.9 182.9,16.1 186.7,13.7 190.5,14.9 194.3,11.8 198.1,14.9 201.9,18.6 205.7,17.7 209.5,21.2 213.3,19.0 217.1,27.4 221.0,24.4 224.8,23.1 228.6,24.0 232.4,20.5 236.2,15.3 240.0,13.5\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"13.5\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":2.5},{"tk":"CLH","name":"Clean Harbors","sec":"Industrials","sec_zh":"工业","price_txt":"$294.56","verb":"wait","edge":78,"stage":1,"zone_kind":"muted","zone_lo":"$290.90","zone_hi":"$290.90","date":"2026-07-02","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,24.2 3.8,22.0 7.6,22.6 11.4,19.5 15.2,19.8 19.0,19.8 22.9,18.6 26.7,17.9 30.5,25.1 34.3,24.5 38.1,21.1 41.9,18.6 45.7,17.6 49.5,18.0 53.3,12.9 57.1,14.1 61.0,15.5 64.8,16.4 68.6,16.2 72.4,10.9 76.2,12.0 80.0,12.8 83.8,10.1 87.6,31.9 91.4,36.6 95.2,29.2 99.0,27.2 102.9,24.7 106.7,19.2 110.5,14.6 114.3,18.5 118.1,20.2 121.9,28.5 125.7,29.0 129.5,36.4 133.3,32.7 137.1,33.0 141.0,36.3 144.8,38.0 148.6,37.7 152.4,37.8 156.2,42.0 160.0,33.0 163.8,32.8 167.6,36.0 171.4,40.0 175.2,31.8 179.0,31.3 182.9,32.9 186.7,32.0 190.5,35.2 194.3,29.6 198.1,32.5 201.9,31.3 205.7,30.7 209.5,30.3 213.3,22.7 217.1,22.2 221.0,20.3 224.8,21.8 228.6,22.7 232.4,29.5 236.2,29.1 240.0,26.3 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,24.2 3.8,22.0 7.6,22.6 11.4,19.5 15.2,19.8 19.0,19.8 22.9,18.6 26.7,17.9 30.5,25.1 34.3,24.5 38.1,21.1 41.9,18.6 45.7,17.6 49.5,18.0 53.3,12.9 57.1,14.1 61.0,15.5 64.8,16.4 68.6,16.2 72.4,10.9 76.2,12.0 80.0,12.8 83.8,10.1 87.6,31.9 91.4,36.6 95.2,29.2 99.0,27.2 102.9,24.7 106.7,19.2 110.5,14.6 114.3,18.5 118.1,20.2 121.9,28.5 125.7,29.0 129.5,36.4 133.3,32.7 137.1,33.0 141.0,36.3 144.8,38.0 148.6,37.7 152.4,37.8 156.2,42.0 160.0,33.0 163.8,32.8 167.6,36.0 171.4,40.0 175.2,31.8 179.0,31.3 182.9,32.9 186.7,32.0 190.5,35.2 194.3,29.6 198.1,32.5 201.9,31.3 205.7,30.7 209.5,30.3 213.3,22.7 217.1,22.2 221.0,20.3 224.8,21.8 228.6,22.7 232.4,29.5 236.2,29.1 240.0,26.3\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"26.3\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":2.4},{"tk":"NWSA","name":"News Corp   Class A","sec":"Communications","sec_zh":"Communications","price_txt":"$26.64","verb":"near","edge":88,"stage":3,"zone_kind":"active","zone_lo":"$25.98","zone_hi":"$26.64","date":"2026-06-30","flags":[["Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).","所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。"],["Already moving — don't chase above the zone","已在异动 — 勿在买区上方追高"]],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,38.5 3.8,42.0 7.6,41.2 11.4,41.7 15.2,36.5 19.0,39.9 22.9,41.1 26.7,36.0 30.5,35.0 34.3,31.6 38.1,26.5 41.9,24.0 45.7,24.5 49.5,19.5 53.3,16.9 57.1,20.7 61.0,21.9 64.8,19.6 68.6,22.4 72.4,21.5 76.2,20.6 80.0,21.5 83.8,26.4 87.6,30.4 91.4,21.9 95.2,12.5 99.0,12.8 102.9,12.9 106.7,18.1 110.5,16.8 114.3,21.4 118.1,25.0 121.9,21.1 125.7,21.5 129.5,26.7 133.3,21.2 137.1,25.4 141.0,21.9 144.8,17.3 148.6,18.3 152.4,23.0 156.2,15.2 160.0,19.6 163.8,23.6 167.6,14.8 171.4,10.1 175.2,12.3 179.0,10.7 182.9,13.3 186.7,20.8 190.5,27.7 194.3,27.5 198.1,24.9 201.9,24.4 205.7,32.2 209.5,39.7 213.3,35.5 217.1,32.7 221.0,35.0 224.8,30.7 228.6,32.4 232.4,37.2 236.2,26.6 240.0,17.0 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,38.5 3.8,42.0 7.6,41.2 11.4,41.7 15.2,36.5 19.0,39.9 22.9,41.1 26.7,36.0 30.5,35.0 34.3,31.6 38.1,26.5 41.9,24.0 45.7,24.5 49.5,19.5 53.3,16.9 57.1,20.7 61.0,21.9 64.8,19.6 68.6,22.4 72.4,21.5 76.2,20.6 80.0,21.5 83.8,26.4 87.6,30.4 91.4,21.9 95.2,12.5 99.0,12.8 102.9,12.9 106.7,18.1 110.5,16.8 114.3,21.4 118.1,25.0 121.9,21.1 125.7,21.5 129.5,26.7 133.3,21.2 137.1,25.4 141.0,21.9 144.8,17.3 148.6,18.3 152.4,23.0 156.2,15.2 160.0,19.6 163.8,23.6 167.6,14.8 171.4,10.1 175.2,12.3 179.0,10.7 182.9,13.3 186.7,20.8 190.5,27.7 194.3,27.5 198.1,24.9 201.9,24.4 205.7,32.2 209.5,39.7 213.3,35.5 217.1,32.7 221.0,35.0 224.8,30.7 228.6,32.4 232.4,37.2 236.2,26.6 240.0,17.0\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"17.0\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":2.2},{"tk":"KKR","name":"KKR & Co.","sec":"Financials","sec_zh":"金融","price_txt":"$95.97","verb":"near","edge":32,"stage":3,"zone_kind":"active","zone_lo":"$93.55","zone_hi":"$95.97","date":"2026-07-06","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,38.0 3.8,38.3 7.6,38.9 11.4,32.8 15.2,34.9 19.0,38.0 22.9,24.9 26.7,20.5 30.5,14.0 34.3,17.5 38.1,14.5 41.9,13.9 45.7,12.9 49.5,10.1 53.3,18.2 57.1,17.8 61.0,20.0 64.8,18.7 68.6,22.6 72.4,13.1 76.2,14.3 80.0,15.0 83.8,17.5 87.6,19.8 91.4,20.7 95.2,16.5 99.0,22.4 102.9,22.3 106.7,26.2 110.5,22.1 114.3,26.7 118.1,28.6 121.9,34.4 125.7,31.7 129.5,30.9 133.3,32.3 137.1,30.5 141.0,30.4 144.8,32.3 148.6,28.7 152.4,30.4 156.2,31.5 160.0,39.0 163.8,29.6 167.6,33.5 171.4,33.9 175.2,28.9 179.0,30.4 182.9,29.9 186.7,28.1 190.5,24.6 194.3,22.9 198.1,26.3 201.9,26.6 205.7,26.9 209.5,33.3 213.3,37.1 217.1,34.9 221.0,39.7 224.8,42.0 228.6,36.6 232.4,35.1 236.2,32.7 240.0,28.6 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,38.0 3.8,38.3 7.6,38.9 11.4,32.8 15.2,34.9 19.0,38.0 22.9,24.9 26.7,20.5 30.5,14.0 34.3,17.5 38.1,14.5 41.9,13.9 45.7,12.9 49.5,10.1 53.3,18.2 57.1,17.8 61.0,20.0 64.8,18.7 68.6,22.6 72.4,13.1 76.2,14.3 80.0,15.0 83.8,17.5 87.6,19.8 91.4,20.7 95.2,16.5 99.0,22.4 102.9,22.3 106.7,26.2 110.5,22.1 114.3,26.7 118.1,28.6 121.9,34.4 125.7,31.7 129.5,30.9 133.3,32.3 137.1,30.5 141.0,30.4 144.8,32.3 148.6,28.7 152.4,30.4 156.2,31.5 160.0,39.0 163.8,29.6 167.6,33.5 171.4,33.9 175.2,28.9 179.0,30.4 182.9,29.9 186.7,28.1 190.5,24.6 194.3,22.9 198.1,26.3 201.9,26.6 205.7,26.9 209.5,33.3 213.3,37.1 217.1,34.9 221.0,39.7 224.8,42.0 228.6,36.6 232.4,35.1 236.2,32.7 240.0,28.6\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"28.6\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":2.1},{"tk":"NGVT","name":"Ingevity, Corp.","sec":"Materials","sec_zh":"原材料","price_txt":"$73.86","verb":"wait","edge":71,"stage":1,"zone_kind":"muted","zone_lo":"$72.07","zone_hi":"$72.07","date":"2026-07-02","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,26.9 3.8,28.4 7.6,28.2 11.4,21.2 15.2,17.3 19.0,16.6 22.9,14.8 26.7,13.3 30.5,19.2 34.3,20.3 38.1,16.7 41.9,16.8 45.7,18.7 49.5,18.2 53.3,16.6 57.1,13.7 61.0,13.9 64.8,17.9 68.6,22.0 72.4,14.3 76.2,14.9 80.0,20.2 83.8,12.0 87.6,10.1 91.4,19.5 95.2,15.6 99.0,18.6 102.9,25.8 106.7,26.5 110.5,26.2 114.3,35.6 118.1,38.3 121.9,42.0 125.7,39.3 129.5,41.5 133.3,37.9 137.1,33.3 141.0,32.3 144.8,33.2 148.6,35.0 152.4,38.2 156.2,36.7 160.0,37.2 163.8,39.3 167.6,39.6 171.4,37.3 175.2,32.0 179.0,34.4 182.9,27.3 186.7,24.7 190.5,23.6 194.3,25.2 198.1,25.3 201.9,21.2 205.7,22.8 209.5,23.0 213.3,17.8 217.1,19.3 221.0,11.9 224.8,19.7 228.6,18.0 232.4,23.2 236.2,23.4 240.0,20.0 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,26.9 3.8,28.4 7.6,28.2 11.4,21.2 15.2,17.3 19.0,16.6 22.9,14.8 26.7,13.3 30.5,19.2 34.3,20.3 38.1,16.7 41.9,16.8 45.7,18.7 49.5,18.2 53.3,16.6 57.1,13.7 61.0,13.9 64.8,17.9 68.6,22.0 72.4,14.3 76.2,14.9 80.0,20.2 83.8,12.0 87.6,10.1 91.4,19.5 95.2,15.6 99.0,18.6 102.9,25.8 106.7,26.5 110.5,26.2 114.3,35.6 118.1,38.3 121.9,42.0 125.7,39.3 129.5,41.5 133.3,37.9 137.1,33.3 141.0,32.3 144.8,33.2 148.6,35.0 152.4,38.2 156.2,36.7 160.0,37.2 163.8,39.3 167.6,39.6 171.4,37.3 175.2,32.0 179.0,34.4 182.9,27.3 186.7,24.7 190.5,23.6 194.3,25.2 198.1,25.3 201.9,21.2 205.7,22.8 209.5,23.0 213.3,17.8 217.1,19.3 221.0,11.9 224.8,19.7 228.6,18.0 232.4,23.2 236.2,23.4 240.0,20.0\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"20.0\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":2.0},{"tk":"SBUX","name":"Starbucks Corp","sec":"Consumer Discretionary","sec_zh":"可选消费","price_txt":"$104.27","verb":"buy","edge":89,"stage":3,"zone_kind":"active","zone_lo":"$102.60","zone_hi":"$104.30","date":"2026-07-02","flags":[],"triage":true,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,41.9 3.8,42.0 7.6,33.8 11.4,33.0 15.2,29.2 19.0,29.8 22.9,30.4 26.7,28.7 30.5,26.9 34.3,27.1 38.1,27.1 41.9,24.0 45.7,26.0 49.5,28.1 53.3,24.9 57.1,24.9 61.0,26.5 64.8,27.9 68.6,29.1 72.4,13.7 76.2,14.0 80.0,13.0 83.8,14.7 87.6,14.8 91.4,12.0 95.2,16.0 99.0,14.8 102.9,13.3 106.7,11.7 110.5,12.9 114.3,12.0 118.1,10.1 121.9,10.5 125.7,10.9 129.5,10.7 133.3,15.1 137.1,17.1 141.0,20.2 144.8,19.0 148.6,21.5 152.4,24.5 156.2,29.5 160.0,31.3 163.8,30.6 167.6,33.9 171.4,31.8 175.2,32.6 179.0,27.8 182.9,25.2 186.7,18.6 190.5,17.2 194.3,19.9 198.1,19.7 201.9,23.2 205.7,21.7 209.5,22.6 213.3,20.9 217.1,16.3 221.0,17.0 224.8,14.3 228.6,15.3 232.4,18.8 236.2,16.5 240.0,14.9 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,41.9 3.8,42.0 7.6,33.8 11.4,33.0 15.2,29.2 19.0,29.8 22.9,30.4 26.7,28.7 30.5,26.9 34.3,27.1 38.1,27.1 41.9,24.0 45.7,26.0 49.5,28.1 53.3,24.9 57.1,24.9 61.0,26.5 64.8,27.9 68.6,29.1 72.4,13.7 76.2,14.0 80.0,13.0 83.8,14.7 87.6,14.8 91.4,12.0 95.2,16.0 99.0,14.8 102.9,13.3 106.7,11.7 110.5,12.9 114.3,12.0 118.1,10.1 121.9,10.5 125.7,10.9 129.5,10.7 133.3,15.1 137.1,17.1 141.0,20.2 144.8,19.0 148.6,21.5 152.4,24.5 156.2,29.5 160.0,31.3 163.8,30.6 167.6,33.9 171.4,31.8 175.2,32.6 179.0,27.8 182.9,25.2 186.7,18.6 190.5,17.2 194.3,19.9 198.1,19.7 201.9,23.2 205.7,21.7 209.5,22.6 213.3,20.9 217.1,16.3 221.0,17.0 224.8,14.3 228.6,15.3 232.4,18.8 236.2,16.5 240.0,14.9\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"14.9\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":0.8},{"tk":"ARLO","name":"Arlo Technologies","sec":"Information Technology","sec_zh":"信息技术","price_txt":"$13.19","verb":"near","edge":99,"stage":1,"zone_kind":"active","zone_lo":"$12.73","zone_hi":"$13.19","date":"2026-07-02","flags":[],"triage":false,"spark":"<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><polyline points=\"0,42 0.0,23.4 3.8,25.1 7.6,22.1 11.4,28.1 15.2,34.0 19.0,33.3 22.9,26.7 26.7,24.6 30.5,18.1 34.3,14.8 38.1,10.7 41.9,13.1 45.7,15.2 49.5,17.3 53.3,21.8 57.1,17.2 61.0,21.4 64.8,23.7 68.6,23.5 72.4,23.2 76.2,17.1 80.0,15.5 83.8,15.7 87.6,17.5 91.4,13.9 95.2,10.1 99.0,28.2 102.9,35.1 106.7,38.5 110.5,37.8 114.3,42.0 118.1,35.1 121.9,37.0 125.7,34.0 129.5,37.5 133.3,32.8 137.1,29.5 141.0,32.3 144.8,31.7 148.6,30.9 152.4,26.3 156.2,30.6 160.0,35.7 163.8,35.4 167.6,36.8 171.4,38.2 175.2,37.1 179.0,42.0 182.9,37.8 186.7,35.5 190.5,32.3 194.3,31.9 198.1,38.0 201.9,33.9 205.7,32.2 209.5,36.7 213.3,40.9 217.1,41.5 221.0,39.7 224.8,34.0 228.6,29.4 232.4,28.6 236.2,34.8 240.0,32.5 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,23.4 3.8,25.1 7.6,22.1 11.4,28.1 15.2,34.0 19.0,33.3 22.9,26.7 26.7,24.6 30.5,18.1 34.3,14.8 38.1,10.7 41.9,13.1 45.7,15.2 49.5,17.3 53.3,21.8 57.1,17.2 61.0,21.4 64.8,23.7 68.6,23.5 72.4,23.2 76.2,17.1 80.0,15.5 83.8,15.7 87.6,17.5 91.4,13.9 95.2,10.1 99.0,28.2 102.9,35.1 106.7,38.5 110.5,37.8 114.3,42.0 118.1,35.1 121.9,37.0 125.7,34.0 129.5,37.5 133.3,32.8 137.1,29.5 141.0,32.3 144.8,31.7 148.6,30.9 152.4,26.3 156.2,30.6 160.0,35.7 163.8,35.4 167.6,36.8 171.4,38.2 175.2,37.1 179.0,42.0 182.9,37.8 186.7,35.5 190.5,32.3 194.3,31.9 198.1,38.0 201.9,33.9 205.7,32.2 209.5,36.7 213.3,40.9 217.1,41.5 221.0,39.7 224.8,34.0 228.6,29.4 232.4,28.6 236.2,34.8 240.0,32.5\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"32.5\" r=\"2.6\" fill=\"var(--up)\"/></svg>","since_pct":0.5}]}</script>
+    <div class="ph-clip"><div class="ph-track" id="ph-track"></div></div>
+  </div>
+  <p class="ph-foot" data-zh="收益按信号后 <b>10 个交易日</b>计算——没错，我们挑的是跑赢的。完整实时看板（连同不灵的信号）今晚照常重建。">Returns are measured over the <b>10 sessions after each call</b> — and yes, we picked the winners. The live board, wins and losses included, rebuilds tonight.</p>
 </section>
 
 <!-- Theme rotations -->
@@ -1165,23 +1343,23 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
         <p class="who" data-zh="每日研判、六条信号、Terminal——永久免费。">The daily read, six signals, the Terminal — forever.</p>
         <div class="price">$0</div>
         <p class="gist" data-zh="每日研判、<b>全部宏观看板</b>、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。">The daily read, <b>every macro dashboard</b>, <b>6 signals a day</b>, full Terminal. No card.</p>
-        <a class="btn" href="start.html" style="justify-content:center" data-zh="免费开始">Start free</a>
+        <a class="btn js-plan-cta" data-plan="free" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
-      <div class="tier hot rv" style="--d:.1s">
+      <div class="tier rv" style="--d:.1s">
         <h3>Insider</h3>
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$49" data-monthly="$69"><span class="was">$69</span>$49 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 29% · $588/年">SAVE 29% · $588/YR</span>
         <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
-        <a class="btn primary" href="start.html" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
+        <a class="btn js-plan-cta" data-plan="insider" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
-      <div class="tier rv" style="--d:.16s">
+      <div class="tier hot rv" style="--d:.16s">
         <h3>Pro</h3>
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
         <div class="price" data-annual="$69" data-monthly="$99"><span class="was">$99</span>$69 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 30% · $828/年">SAVE 30% · $828/YR</span>
         <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
-        <a class="btn" href="start.html" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
+        <a class="btn primary js-plan-cta" data-plan="pro" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
       </div>
     </div>
 
@@ -1229,24 +1407,50 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
 </section>
 
 <!-- ══════════════ FINAL ══════════════ -->
-<section class="section-pad hair-top final">
+<!-- ══════════════ CLOSING BAND ══════════════ -->
+<section class="cband">
   <div class="wrap rv">
-    <span class="kicker" style="color:var(--blue)" data-zh="今夜收盘后">Tonight, after the close</span>
-    <h2 class="sec-title display" style="margin-top:12px" data-zh="抢先读到明天那一页。">Read tomorrow's page first.</h2>
-    <p class="sec-sub" style="max-width:46ch;margin-inline:auto" data-zh="每次收盘，引擎都会运行——不管你看不看。免费开始——今晚的研判会等着你。">The engines run at every close, whether you're watching or not. Start free — tonight's read will be waiting.</p>
-    <div class="cta-row" style="justify-content:center;margin-top:26px">
-      <a class="btn primary" href="start.html" data-zh="免费开始">Start free</a>
-      <a class="btn" href="start.html" data-zh="探索整套工具">Explore the suite</a>
+    <span class="kicker" data-zh="开始使用">Get started</span>
+    <h2 class="sec-title display" style="margin-top:12px" data-zh="你的台席已就绪。">Your desk is ready.</h2>
+    <p class="sec-sub" style="max-width:46ch;margin-inline:auto" data-zh="仪表盘、信号与 Terminal 现在就在运行。免费开始，几秒上手。">Dashboards, signals and the Terminal are live right now. Start free — you're in within seconds.</p>
+    <div class="cta-row" style="justify-content:center;margin-top:28px">
+      <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <a class="btn" href="https://app.mastermind-x.com" data-zh="打开 Terminal">Open the Terminal</a>
+    </div>
+    <div class="trust">
+      <span data-zh="<i style='background:#2ebd85'></i>免费套餐，无需绑卡"><i style="background:#2ebd85"></i>Free plan — no card required</span>
+      <span data-zh="<i style='background:#3f82f6'></i>无需安装，浏览器即用"><i style="background:#3f82f6"></i>Nothing to install</span>
+      <span data-zh="<i style='background:#e8c34c'></i>随时取消"><i style="background:#e8c34c"></i>Cancel anytime</span>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="f-in">
-    <span data-zh="© Mastermind · mastermind-x.com — 引擎决策，AI 解释。">© Mastermind · mastermind-x.com — engines decide, AI explains.</span>
-    <div class="f-links">
-      <a href="methodology.html" data-zh="方法论">Methodology</a><a href="tools/index.html" data-zh="工具">Tools</a><a href="learn/index.html" data-zh="学习">Learn</a><a href="blog/index.html" data-zh="博客">Blog</a><a href="start.html" data-zh="打开应用">Open the app</a>
-      <button class="lang-btn" id="lang-btn" type="button" aria-label="Switch language">中文</button>
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <p class="ft" data-zh="机构级市场情报。">Institutional-grade market intelligence.</p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p data-zh="产品">Product</p>
+          <a href="https://app.mastermind-x.com">Terminal</a>
+          <a href="start.html" data-zh="仪表盘">Dashboards</a>
+          <a href="#ai">Mastermind AI</a>
+          <a href="#pricing" data-zh="定价">Pricing</a>
+        </div>
+        <div class="f-col">
+          <p data-zh="资源">Resources</p>
+          <a href="methodology.html" data-zh="方法论">Methodology</a>
+          <a href="tools/index.html" data-zh="工具">Tools</a>
+          <a href="learn/index.html" data-zh="学习">Learn</a>
+          <a href="blog/index.html" data-zh="博客">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Mastermind · mastermind-x.com</span>
     </div>
   </div>
 </footer>
@@ -1254,6 +1458,13 @@ footer{border-top:1px solid var(--hair);padding:40px 0 56px;color:var(--faint);f
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
+
+/* nav: elevate once the page starts scrolling */
+(function(){ const nav=document.querySelector('.nav'); if(!nav) return;
+  let raf=false;
+  const upd=()=>{ nav.classList.toggle('sc', scrollY>10); raf=false; };
+  addEventListener('scroll',()=>{ if(!raf){ raf=true; requestAnimationFrame(upd); } },{passive:true}); upd();
+})();
 
 /* ───── i18n: EN ⇄ 中文 — mirrors the site-wide localStorage['lang'] contract
    (data-lang on <html>, label shows the OTHER language, fires 'langchange').
@@ -1268,15 +1479,11 @@ const LANG = (() => {
       if (el.__en == null) el.__en = el.innerHTML;          // capture the English original once
       el.innerHTML = (l === 'zh') ? el.getAttribute('data-zh') : el.__en;
     });
-    const lb = document.getElementById('lang-btn');
-    if (lb) lb.textContent = (l === 'zh') ? 'EN' : '中文';   // advertise what a click switches to
     try { localStorage.setItem('lang', l); } catch(e){}
     subs.forEach(fn => { try { fn(l); } catch(e){} });
   }
   return { cur, apply, toggle(){ apply(cur() === 'zh' ? 'en' : 'zh'); }, onChange(fn){ subs.push(fn); } };
 })();
-const _lb = document.getElementById('lang-btn');
-if (_lb) _lb.addEventListener('click', () => LANG.toggle());
 
 /* ───── nav settings popover ───── */
 (function(){
@@ -1663,11 +1870,11 @@ const STILL = document.documentElement.classList.contains('still');
 (function(){
   const wrap=document.getElementById('lanes'); if(!wrap) return;
   const TH={'Big Pharma':'大型药企','Insurance':'保险','Payments':'支付','AI Software':'AI软件',
-    'Industrials':'工业','US Energy':'美国能源','Mag 7':'七巨头',
+    'Industrials':'工业','US Energy':'美国能源',
     'Defensives':'防御板块','Regional Banks':'区域银行','Cybersecurity':'网络安全',
     'GLP-1 & Obesity':'GLP-1减重','Non-AI Software':'非AI软件'};
   const disp=n=>LANG.cur()==='zh'?(TH[n]||n):n;
-  const SEED={buy:['Big Pharma|69','US Energy|71','Insurance|67'],alm:['AI Software|62','Mag 7|54','Industrials|58'],
+  const SEED={buy:['Big Pharma|69','US Energy|71','Insurance|67'],alm:['AI Software|62','Industrials|58'],
     tp:['Defensives|57','Regional Banks|60','Payments|64'],
     sa:['Cybersecurity|72','GLP-1 & Obesity|61','Non-AI Software|60']};
   for(const k in SEED) SEED[k].forEach(s=>{ const [n,sc]=s.split('|');
@@ -1836,8 +2043,8 @@ const STILL = document.documentElement.classList.contains('still');
     const Ll=[221.09,214.26,210.97,204.33,206.0,199.34,199.92,199.54,203.44,208.34,207.29,203.08,206.5,207.72,200.0,196.58,192.13,191.22,189.8,195.11,193.45,192.35,193.99,191.14,195.06,198.96,201.92,203.0,203.8,206.04,205.85,197.97,202.28,204.01];
     const C=[222.56,214.5,218.66,205.1,208.64,208.19,200.42,204.87,205.19,212.45,207.41,204.65,210.69,208.65,200.04,199.0,195.74,192.53,194.97,200.09,197.58,194.83,195.55,196.93,204.12,202.78,210.96,203.53,211.8,212.5,207.4,202.81,203.28,207.29];
     const V=[193.4,160.9,169.0,219.7,138.4,181.0,161.7,158.6,112.0,149.9,125.7,128.4,241.3,122.0,153.5,151.8,149.6,179.3,148.8,166.5,146.1,142.1,109.0,124.2,147.4,132.0,148.4,121.4,124.4,124.8,123.0,144.3,88.7,108.2];
-    const N=C.length, W=Math.max(280,(host.clientWidth||thread.clientWidth||300)-18), H=176;
-    const AX=44, X0=4, X1=W-AX, CT=8, CB=128, VT=134, VB=160;
+    const N=C.length, W=Math.max(280,(host.clientWidth||thread.clientWidth||300)-18), H=218;
+    const AX=44, X0=4, X1=W-AX, CT=8, CB=166, VT=174, VB=204;
     const NSx='http://www.w3.org/2000/svg';
     const mk=(t,at,pr)=>{ const e=document.createElementNS(NSx,t); for(const k in at) e.setAttribute(k,at[k]); (pr||svg).appendChild(e); return e; };
     const svg=document.createElementNS(NSx,'svg');
@@ -1914,7 +2121,7 @@ const STILL = document.documentElement.classList.contains('still');
     setPlaceholder();
   }
   // scripted run — readable pacing throughout
-  const TYPE=82, WORD=105, GAP=1050, THINK=1650;
+  const TYPE=56, WORD=74, GAP=950, THINK=1500;
   function typeQ(q,next){
     clearField(); field.classList.remove('ph');
     const caret=el('span','caret'); field.appendChild(caret);
@@ -1988,6 +2195,97 @@ const STILL = document.documentElement.classList.contains('still');
   if(sec) cio.observe(sec); else boot();
 })();
 
+/* — Prophet showcase: DELAYED winning calls from the board ledger (never
+     the live board — operator order 2026-07-24). Renders the baked
+     #ph-data island, deals the cards in on reveal, then drifts the belt.
+     Live override: prophet/showcase.json (same nightly emit) replaces the
+     baked slice when its as_of is newer — data, not motion, so it also runs
+     under ?still & reduced-motion. Fail-silent like the quote override. — */
+(function(){
+  const belt=document.getElementById('ph-belt'), track=document.getElementById('ph-track'),
+        asofEl=document.getElementById('ph-asof');
+  if(!belt||!track) return;
+  let data=null;
+  try{ data=JSON.parse(document.getElementById('ph-data').textContent); }catch(e){}
+  if(!data||!Array.isArray(data.cards)||!data.cards.length) return;
+  const V={buy:['Buy','买入'],near:['Near','临近'],wait:['Wait','等待'],hold:['Hold','持有'],avoid:['Avoid','回避']};
+  const ST=[['Bottoming','筑底'],['Turning','转向'],['Ready','就绪'],['Trend','趋势']];
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const zh=()=>LANG.cur()==='zh';
+  const fd=d=>!d||d.length<10?'':(zh()?d.slice(5,10):MN[+d.slice(5,7)-1]+' '+(+d.slice(8,10)));
+  function cardHTML(c,i){
+    const z=zh(), verb=V[c.verb]?c.verb:'wait';
+    let flags='';
+    if(c.flags&&c.flags.length){
+      flags='<span class="phc-cau"><button class="phc-cau-b" type="button" aria-label="Caution notes ('+c.flags.length+')" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ '+c.flags.length+'</button><span class="phc-pop" role="tooltip">'
+        +c.flags.map(f=>'<span>'+esc(z?f[1]||f[0]:f[0])+'</span>').join('')+'</span></span>';
+    }
+    let stp='',stl='';
+    for(let s=1;s<=4;s++){
+      if(s>1) stp+='<span class="phc-seg'+(c.stage>=s?' pa':'')+'"></span>';
+      stp+='<span class="phc-dot'+(c.stage===s?' on':(c.stage>s?' pa':''))+'"></span>';
+      stl+='<span'+(c.stage===s?' class="on"':'')+'>'+(z?ST[s-1][1]:ST[s-1][0])+'</span>';
+    }
+    const rng=(c.zone_lo?esc(c.zone_lo):'')+(c.zone_hi&&c.zone_hi!==c.zone_lo?(c.zone_lo?'–':'')+esc(c.zone_hi):'');
+    let zn;
+    if(c.zone_kind==='active') zn='<span class="phc-znl">'+(z?'买区':'ZONE')+'</span><span class="phc-znr tnum">'+rng+'</span>';
+    else if(c.zone_kind==='muted') zn='<span class="phc-znl">'+(z?'买区':'ZONE')+'</span><span class="phc-znm tnum">'+rng+'</span>';
+    else if(c.zone_kind==='readd') zn='<span class="phc-znl">'+(z?'回补':'RE-ADD')+'</span><span class="phc-znm tnum">'+rng+'</span>';
+    else if(c.zone_kind==='confirm') zn='<span class="phc-znm">'+(z?'买区待确认后生成':'Zone sets on confirmation')+'</span>';
+    else zn='<span class="phc-znm">'+(z?'无买区 — 观望':'No zone — stand aside')+'</span>';
+    const dt=fd(c.date);
+    return '<a class="phc phc-'+verb+'" style="--i:'+i+'" href="us_stocks.html">'
+      +'<span class="phc-ch">'+(c.spark||'')
+      +'<span class="phc-ov phc-ovl"><span class="phc-chip">'+(z?V[verb][1]:V[verb][0].toUpperCase())+'</span>'+flags+'</span>'
+      +'<span class="phc-ov phc-ovr">'+(typeof c.since_pct==='number'?'<span class="phc-since tnum">'+(c.since_pct>=0?'+':'\u2212')+Math.abs(c.since_pct).toFixed(1)+'%</span>':'<span class="phc-px tnum">'+esc(c.price_txt||'')+'</span>')+'</span></span>'
+      +'<span class="phc-bd">'
+      +'<span class="phc-hd"><span class="phc-tk">'+esc(c.tk)+'</span><span class="phc-nm">'+esc(c.name)+'</span>'
+      +'<span class="phc-edge">'+(z?'优势':'EDGE')+'<b class="tnum">'+(c.edge==null?'—':c.edge)+'</b></span></span>'
+      +'<span class="phc-sec">'+esc(z?(c.sec_zh||c.sec):c.sec)+'</span>'
+      +'<span class="phc-stp">'+stp+'</span><span class="phc-stl">'+stl+'</span></span>'
+      +'<span class="phc-zn">'+zn+(dt?'<span class="phc-dt tnum">'+dt+'</span>':'')+'</span></a>';
+  }
+  let ro=null;
+  function render(){
+    const inner=data.cards.map(cardHTML).join('');
+    track.innerHTML='<div class="ph-set">'+inner+'</div><div class="ph-set" aria-hidden="true">'+inner+'</div>';
+    if(asofEl){ const d=data.as_of||'';
+      asofEl.textContent=d.length>=10?(zh()?' · '+(+d.slice(5,7))+'月'+(+d.slice(8,10))+'日看板':' · BOARD OF '+fd(d).toUpperCase()):''; }
+    /* loop distance = one set width (card width changes at the 640px breakpoint,
+       so keep it measured — resize events don't always fire in emulation) */
+    const set=track.querySelector('.ph-set');
+    const measure=()=>track.style.setProperty('--phsw', set.offsetWidth+'px');
+    measure();
+    if(window.ResizeObserver){ if(ro) ro.disconnect(); ro=new ResizeObserver(measure); ro.observe(set); }
+  }
+  render();
+  LANG.onChange(render);
+  if(CALM||STILL){ belt.classList.add('in'); }
+  else{
+    const bio=new IntersectionObserver(es=>es.forEach(e=>{
+      if(e.isIntersecting&&!belt.classList.contains('in')){
+        belt.classList.add('in');
+        setTimeout(()=>track.classList.add('run'), data.cards.length*90+950);
+      }
+      track.classList.toggle('ps',!e.isIntersecting);
+    }),{threshold:.12});
+    bio.observe(belt);
+    /* hover: keep the belt drifting, just a touch slower — WAAPI playbackRate is
+       seamless (a CSS duration change mid-flight would jump the position) */
+    if (matchMedia('(hover: hover)').matches){
+      const clip=belt.querySelector('.ph-clip');
+      const rate=r=>{ if(track.getAnimations) track.getAnimations().forEach(a=>{ if(a.updatePlaybackRate) a.updatePlaybackRate(r); else a.playbackRate=r; }); };
+      if(clip){ clip.addEventListener('mouseenter',()=>rate(.7)); clip.addEventListener('mouseleave',()=>rate(1)); }
+    }
+  }
+  function go(){ fetch('prophet/showcase.json',{cache:'no-store'})
+    .then(r=>r.ok?r.json():null)
+    .then(d=>{ if(d&&d.schema==='prophet.showcase/v2'&&Array.isArray(d.cards)&&d.cards.length&&d.as_of!==data.as_of){ data=d; render(); } })
+    .catch(()=>{}); }
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
+})();
+
 /* ───── apply the boot language once, now that every component has registered ─────
    (head script already set data-lang from localStorage['lang'] / the browser). */
 LANG.apply(LANG.cur());
@@ -2043,5 +2341,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
+<script src="onboard.js" defer></script>
 </body>
 </html>

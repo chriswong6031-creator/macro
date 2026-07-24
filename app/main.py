@@ -535,6 +535,9 @@ def account(user: dict = Depends(require_user)) -> dict:
         "status": ent["status"],
         "features": ent["features"],
         "current_period_end": ent["current_period_end"],
+        # Billing cadence for the plan card ('monthly'|'annual'); None for free/comp. read_entitlement
+        # returns it, but this handler rebuilds the payload explicitly, so it must be listed here.
+        "interval": ent.get("interval"),
         "plans_url": "/plans.html",
     }
 
@@ -1063,6 +1066,137 @@ def brain_thread_delete(thread_id: str, user: dict = Depends(require_user)):
 
 
 # ---------------------------------------------------------------------------
+# /api/portfolio/brief — Pro-only personalized daily brief (Portfolio-Aware W1)
+# ---------------------------------------------------------------------------
+# The deterministic composer (engine/portfolio_brief.compose_brief) joins the signed-in
+# user's holdings against the nightly portfolio_ctx.v1 artifact and renders a bilingual
+# descriptive brief. Charter: research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §1/§2/§4.
+# Homes served: this endpoint (terminal Portfolio page consumes it via its proxy) + the
+# Brain tool get_portfolio_brief (engine/neuralweb/brain_gateway.py). Display-tier only,
+# never prescriptive; no per-user compute runs in the nightly.
+
+_PORTFOLIO_CACHE: dict[tuple[str, float], tuple[dict, float]] = {}  # (uid,mtime) → (resp, exp)
+_PORTFOLIO_CACHE_TTL = 300.0  # seconds
+_PORTFOLIO_CTX_PATH = "site/data/portfolio_ctx.json"
+
+
+def _portfolio_resolve_tier(uid: str) -> dict:
+    """Resolve {tier, status} for a user, reusing the brain gateway's PostgREST resolver.
+
+    The gateway already runs in-process; its _resolve_tier reads user_entitlements with
+    the service-role key and fail-safes to free. Any import/lookup error → free (deny)."""
+    try:
+        from engine.neuralweb.brain_gateway import _resolve_tier  # noqa: PLC0415
+        ent = _resolve_tier(uid, root=REPO)
+        return {"tier": ent.get("tier") or "free", "status": ent.get("status") or "active"}
+    except Exception:  # noqa: BLE001
+        return {"tier": "free", "status": "active"}
+
+
+def _portfolio_load_holdings(uid: str) -> list[dict]:
+    """Load the user's holdings as compose_brief rows: {ticker, shares, entry_price}.
+
+    Positions mode first: open portfolio_positions (status=open) → shares + entry_price
+    (exactly like brain_gateway._tool_get_watchlist). When there are no open positions,
+    fall back to the watchlist symbols (equal-weight; shares/entry_price None). Reads via
+    the gateway's service-role _sb_get; any error → empty list (→ empty-book brief)."""
+    try:
+        from engine.neuralweb.brain_gateway import _sb_get  # noqa: PLC0415
+        import urllib.parse as _up  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return []
+    quid = _up.quote(str(uid))
+
+    rows: list[dict] = []
+    pos_rows = _sb_get(
+        f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
+        f"&select=ticker,shares,entry_price")
+    if pos_rows:
+        for r in pos_rows:
+            if isinstance(r, dict) and r.get("ticker"):
+                rows.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
+                             "entry_price": r.get("entry_price")})
+    if rows:
+        return rows
+
+    # Equal-weight fallback: watchlists → watchlist_symbols.
+    lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
+    list_ids = [str(r.get("id")) for r in (lists or [])
+                if isinstance(r, dict) and r.get("id") is not None]
+    if list_ids:
+        id_filter = ",".join(list_ids)
+        sym_rows = _sb_get(
+            f"watchlist_symbols?watchlist_id=in.({id_filter})"
+            f"&select=symbol,position&order=position")
+        seen: set = set()
+        for r in (sym_rows or []):
+            s = r.get("symbol") if isinstance(r, dict) else None
+            if s and s not in seen:
+                seen.add(s)
+                rows.append({"ticker": s, "shares": None, "entry_price": None})
+    return rows
+
+
+@app.get("/api/portfolio/brief")
+def portfolio_brief(response: Response, user: dict = Depends(require_user)):
+    """Pro-only personalized daily portfolio brief (portfolio_brief.v1).
+
+    401 (require_user) → not signed in. 403 {error:pro_required,tier} → not Pro.
+    503 {error:ctx_unavailable} → the nightly ctx artifact is missing/corrupt.
+    Cache: in-process per (uid, ctx-file-mtime), TTL 300s; Cache-Control private,no-store.
+    """
+    from datetime import date as _date  # noqa: PLC0415
+    response.headers["Cache-Control"] = "private, no-store"
+
+    uid = user.get("id") or user.get("email") or ""
+
+    # Pro gate. status active/trialing counts as entitled (mirrors _get_allowance).
+    ent = _portfolio_resolve_tier(uid)
+    tier = ent.get("tier") or "free"
+    status = ent.get("status") or "active"
+    entitled = tier in ("pro", "unlimited") and status in ("active", "trialing")
+    if not entitled:
+        raise HTTPException(403, detail={"error": "pro_required", "tier": tier})
+
+    # ctx artifact from disk (same idiom the gateway uses for site/ artifacts).
+    ctx_path = REPO / _PORTFOLIO_CTX_PATH
+    try:
+        mtime = ctx_path.stat().st_mtime
+    except OSError:
+        raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
+
+    # Per-(uid, mtime) response cache with TTL.
+    now = time.monotonic()
+    ckey = (uid, mtime)
+    hit = _PORTFOLIO_CACHE.get(ckey)
+    if hit and hit[1] > now:
+        return hit[0]
+
+    try:
+        ctx = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(ctx, dict):
+            raise ValueError("ctx not an object")
+    except Exception:  # noqa: BLE001
+        raise HTTPException(503, detail={"error": "ctx_unavailable"}) from None
+
+    holdings = _portfolio_load_holdings(uid)
+
+    try:
+        from engine.portfolio_brief import compose_brief  # noqa: PLC0415
+    except ImportError as exc:
+        raise HTTPException(503, f"portfolio_brief module unavailable: {exc}") from exc
+
+    today = _date.today().isoformat()
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    brief = compose_brief(ctx, holdings, today, generated_at)
+
+    if len(_PORTFOLIO_CACHE) > 5000:
+        _PORTFOLIO_CACHE.clear()
+    _PORTFOLIO_CACHE[ckey] = (brief, now + _PORTFOLIO_CACHE_TTL)
+    return brief
+
+
+# ---------------------------------------------------------------------------
 # /api/flow/* — live options-flow feed (unauthenticated read-through of R2)
 # ---------------------------------------------------------------------------
 
@@ -1268,3 +1402,17 @@ try:
 except Exception as _billing_exc:  # noqa: BLE001 — never let a billing wiring error crash the whole API
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("billing router not mounted: %r", _billing_exc)
+
+# ---------------------------------------------------------------------------
+# Registration wall (app/regwall.py): /api/regwall/check — Caddy's second gate
+# stage for all non-public HTML (operator lockdown 2026-07-24). NOTE the
+# asymmetry with the blocks above: if THIS router fails to mount, gated pages
+# fail CLOSED at the Caddy layer (non-2xx sub-request → redirect to the
+# landing), so a wiring error here can never silently open the wall.
+# ---------------------------------------------------------------------------
+try:
+    from app.regwall import router as regwall_router  # noqa: E402
+    app.include_router(regwall_router)
+except Exception as _regwall_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("regwall router not mounted (wall fails CLOSED at Caddy): %r", _regwall_exc)

@@ -1566,12 +1566,16 @@ class TestReceiptsContext:
 
     def test_receipts_context_age_from_newest_signal(self, tmp_path):
         """Age = days since the NEWEST _signal_date across plans."""
-        from datetime import date, timedelta
+        from datetime import datetime, timedelta, timezone
         from engine.marketing.sentinel import receipts_context
         idx_dir = tmp_path / "site" / "prophet"
         idx_dir.mkdir(parents=True)
-        newest = (date.today() - timedelta(days=2)).isoformat()
-        older = (date.today() - timedelta(days=30)).isoformat()
+        # Same clock as receipts_context (UTC). Local date.today() goes red every
+        # evening 5pm–midnight PDT when local/UTC dates differ (and in local-ahead
+        # zones the newest row would land future-dated and be skipped as corrupt).
+        today = datetime.now(timezone.utc).date()
+        newest = (today - timedelta(days=2)).isoformat()
+        older = (today - timedelta(days=30)).isoformat()
         idx_dir.joinpath("index.json").write_text(json.dumps({"plans": [
             {"_signal_date": older}, {"_signal_date": newest}, {"_signal_date": ""},
         ]}), encoding="utf-8")
@@ -1595,3 +1599,137 @@ class TestErrorReport:
         assert error_report()["publish_enabled"] is False
         monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
         assert error_report()["publish_enabled"] is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F1: per-day cap keyed on (account, day), not plan-wide
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPerDayCap:
+    """The daily cap must apply PER DAY, not once across the whole 7-day plan.
+
+    The bug: max_posts_per_account_per_day=2 was keyed on account alone, so a
+    21-item 7-day plan (3/day) passed only 2 total and quarantined 19 as
+    cadence_cap_daily. Correct: 2/day × 7 days = 14 pass, 7 quarantined.
+    """
+
+    def test_two_per_day_across_seven_days(self):
+        # 21 items: 3 per day (AM/PM/EOD) across D1..D7, each a distinct cashtag
+        # so the same-cashtag cap can't interfere with the cadence cap under test.
+        items = []
+        n = 0
+        for d in range(1, 8):
+            for suffix in ("AM", "PM", "EOD"):
+                items.append(_item(
+                    f"i{n}", "flagship",
+                    headline=f"Headline {n}", body="Size appropriately.",
+                    cashtag=f"${chr(65 + n)}{n}", ticker=f"T{n}",
+                    slot=f"D{d}-{suffix}",
+                ))
+                n += 1
+        plan = _plan({"flagship": items})
+
+        annotated, report = gate_plan(plan, _cfg(max_posts=2, max_cashtag=99))
+
+        assert report["counts"]["passed"] == 14
+        cadence_q = [q for q in report["quarantined"]
+                     if "cadence_cap_daily" in q["reasons"]]
+        assert len(cadence_q) == 7
+        # The two that survive each day are that day's first two (queue order).
+        passed_ids = {e["id"] for e in report["passed"]}
+        assert "i0" in passed_ids and "i1" in passed_ids  # D1-AM, D1-PM
+        assert "i2" not in passed_ids                      # D1-EOD → over cap
+
+    def test_publish_time_families_bucket_separately(self):
+        # MOVER / THEME / CONF are their own per-day buckets — a full D1 does not
+        # eat into the mover budget.
+        items = [
+            _item("d1a", "flagship", slot="D1-AM", cashtag="$A", ticker="A"),
+            _item("d1p", "flagship", slot="D1-PM", cashtag="$B", ticker="B"),
+            _item("mv1", "flagship", slot="MOVER-01", cashtag="$C", ticker="C"),
+            _item("mv2", "flagship", slot="MOVER-02", cashtag="$D", ticker="D"),
+        ]
+        plan = _plan({"flagship": items})
+        annotated, report = gate_plan(plan, _cfg(max_posts=2, max_cashtag=99))
+        # D1 full (2) + MOVER full (2) = all 4 pass; no cadence cap.
+        assert report["counts"]["passed"] == 4
+        assert not [q for q in report["quarantined"]
+                    if "cadence_cap_daily" in q["reasons"]]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F2: report carries a `passed` list (operator can see what cleared)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPassedList:
+    def test_report_has_passed_entries_with_fields(self):
+        items = [
+            _item("p1", "flagship", slot="D1-AM", cashtag="$A", ticker="A",
+                  headline="Clean one"),
+            _item("p2", "flagship", slot="D1-PM", cashtag="$B", ticker="B",
+                  headline="Clean two"),
+        ]
+        plan = _plan({"flagship": items})
+        annotated, report = gate_plan(plan, _cfg(max_posts=99, max_cashtag=99))
+
+        assert "passed" in report
+        assert isinstance(report["passed"], list)
+        assert len(report["passed"]) == report["counts"]["passed"] == 2
+        entry = next(e for e in report["passed"] if e["id"] == "p1")
+        # Same field set the operator sees on quarantined rows.
+        assert set(entry) >= {"id", "account", "slot", "type", "cashtag", "headline"}
+        assert entry["account"] == "flagship"
+        assert entry["slot"] == "D1-AM"
+        assert entry["headline"] == "Clean one"
+
+    def test_passed_list_matches_count_with_some_quarantined(self):
+        # cap=1/day → of two D1 items, one passes, one is quarantined.
+        items = [
+            _item("a", "flagship", slot="D1-AM", cashtag="$A", ticker="A"),
+            _item("b", "flagship", slot="D1-PM", cashtag="$B", ticker="B"),
+        ]
+        plan = _plan({"flagship": items})
+        annotated, report = gate_plan(plan, _cfg(max_posts=1, max_cashtag=99))
+        assert len(report["passed"]) == report["counts"]["passed"] == 1
+        assert report["passed"][0]["id"] == "a"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F1 unit: the day-bucket derivation itself
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSlotDayBucket:
+    def test_day_slots_bucket_by_day_number(self):
+        from engine.marketing.sentinel import _slot_day_bucket
+        assert _slot_day_bucket("D1-AM") == "D1"
+        assert _slot_day_bucket("D7-EOD") == "D7"
+
+    def test_publish_time_families(self):
+        from engine.marketing.sentinel import _slot_day_bucket
+        assert _slot_day_bucket("MOVER-01") == "MOVER"
+        assert _slot_day_bucket("THEME-02") == "THEME"
+        assert _slot_day_bucket("CONF-01") == "CONF"
+
+    def test_unrecognized_and_empty_share_one_bucket(self):
+        from engine.marketing.sentinel import _slot_day_bucket
+        assert _slot_day_bucket("s1") == ""
+        assert _slot_day_bucket("") == ""
+        assert _slot_day_bucket("random") == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F3e: accounts disabled via the effective model show as OFF in the report
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestEffectiveDisabledAccounts:
+    def test_enabled_false_account_is_reported_disabled(self):
+        cfg = _cfg()
+        # theme_desk not enabled via the new model (no literal `disabled: true`).
+        for acc in cfg["desk_network"]["accounts"]:
+            if acc["id"] == "theme_desk":
+                acc["enabled"] = False
+        plan = _plan({"flagship": [_item("i0", "flagship", slot="D1-AM")]})
+        annotated, report = gate_plan(plan, cfg)
+        off = report["checks"]["kill_switch"]["accounts_disabled"]
+        assert "theme_desk" in off
+        assert "flagship" not in off

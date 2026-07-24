@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-07-22",
+ "as_of": "2026-07-23",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -15,7 +15,7 @@
   "n_matured": 0,
   "n_beat": 0,
   "n_lag": 0,
-  "n_suspended": 72,
+  "n_suspended": 54,
   "hit_matured": null,
   "wilson_lo_pct": null,
   "wilson_hi_pct": null,
@@ -24,8 +24,8 @@
  "rows": [
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-21",
    "e": null,
@@ -62,8 +62,8 @@
   },
   {
    "t": "SAP.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SAPUTO INC.",
+   "sec": "Consumer Staples",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -157,8 +157,8 @@
   },
   {
    "t": "LUG.TO",
-   "nm": "LUNDIN GOLD INC",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -708,8 +708,8 @@
   },
   {
    "t": "SAP.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "SAPUTO INC.",
+   "sec": "Consumer Staples",
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -1063,9 +1063,7 @@
    "m": false,
    "rk": 1,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "MG.TO",
@@ -1082,9 +1080,7 @@
    "m": false,
    "rk": 2,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TKO.TO",
@@ -1101,9 +1097,7 @@
    "m": false,
    "rk": 3,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "KEY.TO",
@@ -1120,14 +1114,12 @@
    "m": false,
    "rk": 4,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "NWC.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "THE NORTH WEST COMPANY INC",
+   "sec": "Consumer Staples",
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -1139,14 +1131,12 @@
    "m": false,
    "rk": 5,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ATS.TO",
-   "nm": "ATS CORPORATION",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -1158,9 +1148,7 @@
    "m": false,
    "rk": 6,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BTO.TO",
@@ -1177,9 +1165,7 @@
    "m": false,
    "rk": 7,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BHC.TO",
@@ -1196,9 +1182,7 @@
    "m": false,
    "rk": 8,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ONEX.TO",
@@ -1215,9 +1199,7 @@
    "m": false,
    "rk": 9,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BIR.TO",
@@ -1234,9 +1216,7 @@
    "m": false,
    "rk": 10,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "CLS.TO",
@@ -1253,9 +1233,7 @@
    "m": false,
    "rk": 11,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TVE.TO",
@@ -1272,9 +1250,7 @@
    "m": false,
    "rk": 12,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "VNP.TO",
@@ -1291,9 +1267,7 @@
    "m": false,
    "rk": 13,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "TIH.TO",
@@ -1310,9 +1284,7 @@
    "m": false,
    "rk": 14,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "EFX.TO",
@@ -1329,9 +1301,7 @@
    "m": false,
    "rk": 15,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "FCR-UN.TO",
@@ -1348,9 +1318,7 @@
    "m": false,
    "rk": 16,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "ATZ.TO",
@@ -1367,9 +1335,7 @@
    "m": false,
    "rk": 17,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "HPS-A.TO",
@@ -1386,9 +1352,7 @@
    "m": false,
    "rk": 18,
    "tr": null,
-   "fl": [
-    "susp"
-   ]
+   "fl": []
   },
   {
    "t": "BIR.TO",
@@ -1494,8 +1458,8 @@
   },
   {
    "t": "LUG.TO",
-   "nm": "LUNDIN GOLD INC",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-13",
    "e": null,
@@ -1749,8 +1713,8 @@
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-10",
    "e": null,
@@ -2531,8 +2495,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-06",
    "e": null,
@@ -2837,8 +2801,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-03",
    "e": null,
@@ -3007,8 +2971,8 @@
   },
   {
    "t": "NGEX.TO",
-   "nm": "NGEX MINERALS LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-06-30",
    "e": null,
@@ -3024,8 +2988,8 @@
   },
   {
    "t": "DSV.TO",
-   "nm": "DISCOVERY MINING LTD",
-   "sec": "Materials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-06-30",
    "e": null,
@@ -3177,8 +3141,8 @@
   },
   {
    "t": "FTT.TO",
-   "nm": "FINNING INTL",
-   "sec": "Industrials",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-06-30",
    "e": null,
@@ -3249,7 +3213,7 @@
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 72,
+   "n_suspended": 54,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }

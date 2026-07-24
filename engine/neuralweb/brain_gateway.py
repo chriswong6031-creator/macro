@@ -255,6 +255,9 @@ _BRAIN_TOOLS = frozenset({
     "get_movers",
     "get_house_view",
     "get_watchlist",
+    # Portfolio-Aware Intelligence W1 — the signed-in user's own book, read through the
+    # desks' current reads (Pro-only, descriptive-only).
+    "get_portfolio_brief",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -293,6 +296,8 @@ _BRAIN_ONLY_TOOLS = frozenset({
     "get_movers",
     "get_house_view",
     "get_watchlist",
+    # Portfolio-Aware Intelligence W1
+    "get_portfolio_brief",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -934,6 +939,19 @@ def _brain_tool_schemas() -> list[dict]:
                 "NAMED board states (on the buy board / on watch / lagging) and plain-word stage. "
                 "Call when the user asks about 'my watchlist', 'my positions', or 'my portfolio'. "
                 "No arguments — the user is resolved from the session. Never blends a fused risk score."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "get_portfolio_brief",
+            "description": (
+                "The signed-in user's OWN book (holdings/watchlist) read through the desks' "
+                "current reads — sector exposure, rotation-board placement, Weinstein stage "
+                "tally, the daily regime read, the earnings clock, and filings touches on their "
+                "names. DESCRIPTIVE ONLY — reports exposures, counts, dates, and the desk's "
+                "general stance words applied to their book; NEVER a recommendation, target, or "
+                "'buy/sell X' instruction. Pro-only: a non-Pro user gets a pro_required result "
+                "to explain, not a brief. No arguments — the user is resolved from the session."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
@@ -1991,6 +2009,74 @@ def _tool_get_watchlist(params: dict, root: Path, user_id: str = "") -> dict:
     }
 
 
+def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> dict:
+    """The signed-in user's own book, read through the desks' CURRENT reads.
+
+    Portfolio-Aware Intelligence W1 (charter §1 V1). Loads the user's holdings the same
+    way as get_watchlist (open portfolio_positions → positions mode; else the watchlist
+    symbols → equal mode) and joins them against the nightly portfolio_ctx.v1 artifact
+    via the pure composer engine.portfolio_brief.compose_brief. DESCRIPTIVE ONLY — no
+    recommendations, no imperatives; every stance word is the desk's own, applied to the
+    book. Pro-only, mirroring GET /api/portfolio/brief: a non-Pro user gets
+    {"error":"pro_required","tier":…} as the tool result so the model can explain the
+    gate instead of fabricating a brief. The advice filter needs no changes — the
+    composer passes it untouched by construction (tests assert this)."""
+    if not user_id:
+        return {"available": False, "note": "no user_id — sign in to see your book"}
+
+    # Pro gate (active/trialing entitled) — reuse the in-process tier resolver.
+    ent = _resolve_tier(user_id, root=root)
+    tier = ent.get("tier") or "free"
+    status = ent.get("status") or "active"
+    if not (tier in ("pro", "unlimited") and status in ("active", "trialing")):
+        return {"error": "pro_required", "tier": tier,
+                "note": ("The portfolio brief is a Pro capability. This user is on the "
+                         f"'{tier}' tier — explain the Pro gate; do not compose a brief.")}
+
+    # Holdings: open positions first (positions mode), else watchlist symbols (equal).
+    import urllib.parse as _up  # noqa: PLC0415
+    quid = _up.quote(str(user_id))
+    holdings: list[dict] = []
+    pos_rows = _sb_get(
+        f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
+        f"&select=ticker,shares,entry_price")
+    if pos_rows:
+        for r in pos_rows:
+            if isinstance(r, dict) and r.get("ticker"):
+                holdings.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
+                                 "entry_price": r.get("entry_price")})
+    if not holdings:
+        lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
+        list_ids = [str(r.get("id")) for r in (lists or [])
+                    if isinstance(r, dict) and r.get("id") is not None]
+        if list_ids:
+            sym_rows = _sb_get(
+                f"watchlist_symbols?watchlist_id=in.({','.join(list_ids)})"
+                f"&select=symbol,position&order=position")
+            seen: set = set()
+            for r in (sym_rows or []):
+                s = r.get("symbol") if isinstance(r, dict) else None
+                if s and s not in seen:
+                    seen.add(s)
+                    holdings.append({"ticker": s, "shares": None, "entry_price": None})
+
+    # ctx artifact from disk (same idiom as the other file-backed reads).
+    ctx_path = root / "site" / "data" / "portfolio_ctx.json"
+    try:
+        ctx = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(ctx, dict):
+            raise ValueError("ctx not an object")
+    except Exception:  # noqa: BLE001
+        return {"error": "ctx_unavailable",
+                "note": "the nightly portfolio context artifact is missing tonight"}
+
+    from datetime import date as _date, datetime as _dt, timezone as _tz  # noqa: PLC0415
+    from engine.portfolio_brief import compose_brief  # noqa: PLC0415
+    today = _date.today().isoformat()
+    generated_at = _dt.now(_tz.utc).replace(microsecond=0).isoformat()
+    return compose_brief(ctx, holdings, today, generated_at)
+
+
 def _tool_set_chart_symbol(params: dict) -> dict:
     """CLIENT-EXECUTED: emit set_symbol command. Server performs no action."""
     symbol = _safe_symbol(params.get("symbol") or "")
@@ -2675,6 +2761,8 @@ def _dispatch_brain_tool(
             return _tool_get_house_view(tool_params, root)
         if tool_name == "get_watchlist":
             return _tool_get_watchlist(tool_params, root, user_id=user_id)
+        if tool_name == "get_portfolio_brief":
+            return _tool_get_portfolio_brief(tool_params, root, user_id=user_id)
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -4744,6 +4832,8 @@ def chat_stream(
     terminal_data_dir = Path(os.environ.get("TERMINAL_DATA_DIR", str(_TERMINAL_DATA_DIR)))
     terminal_hub_url = os.environ.get("TERMINAL_HUB_URL", _TERMINAL_HUB_URL)
 
+    _t0 = time.time()  # response-log latency clock (whole-turn, request→done)
+
     # 1. Sanitize (fix #3: brain uses 2000-char bound, NOT ask_brain's 500-char cap)
     clean_msg, err = _sanitize_brain_message(message, max_len=2000)
     if err:
@@ -4790,6 +4880,11 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'meta', 'lane': lane, 'model': 'screened', 'thread_id': screened_tid, 'quota': quota_info})}\n\n"
         yield f"data: {json.dumps({'type': 'delta', 'text': _screen})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': False, 'screened': True, 'is_context_only': True})}\n\n"
+        _log_brain_response(
+            question=clean_msg, answer=_screen, model="screened", lane=lane, mode=mode,
+            thread_id=screened_tid, user_id=user_id, user_email=user_email, is_guest=is_guest,
+            latency_ms=int((time.time() - _t0) * 1000), context=context,
+            flags={"screened": True})
         return
 
     # 3. Providers
@@ -4906,6 +5001,44 @@ def chat_stream(
 
     # Fix #2: accumulate towards the monthly token ceiling backstop
     _record_token_usage(user_id, lane, in_tok, out_tok)
+
+    # 9. Response log (evaluation/training corpus) — best-effort, off the wire.
+    #    The answer already reached the client (delta/done yielded above); this
+    #    fire-and-forget write mirrors the cost-record step and never blocks.
+    _log_brain_response(
+        question=clean_msg,
+        answer=(answer_out[0] if answer_out else ""),
+        model=model, lane=lane, mode=mode,
+        thread_id=effective_thread_id, user_id=user_id, user_email=user_email,
+        is_guest=is_guest, latency_ms=int((time.time() - _t0) * 1000),
+        input_tokens=in_tok, output_tokens=out_tok, context=context,
+    )
+
+
+def _log_brain_response(**kwargs) -> None:
+    """Emit one mastermind.response_log.v1 row for a brain turn.
+
+    BOTH user-facing surfaces reach this same gateway: the Macro Dashboard chat
+    widget and the charting-app Terminal both run mm_brain.js against
+    /api/brain/stream. mm_brain.js stamps context.page ('terminal' when anchored
+    top in the Terminal, 'dashboard'/other on Macro), so we derive `surface` from
+    it — one instrumentation point covers "across Terminal and Macro Dashboard".
+
+    Fully isolated + best-effort: an import error, missing R2 creds, or write
+    failure must NEVER disturb the chat path (which already completed)."""
+    try:
+        from lib import mastermind_response_log as _mm  # noqa: PLC0415
+        if not _mm.enabled():
+            return
+        # Drop empty answers (degraded/no-content turns aren't "responses").
+        if not (kwargs.get("answer") or "").strip():
+            return
+        ctx = kwargs.get("context")
+        page = str((ctx or {}).get("page") or "").lower() if isinstance(ctx, dict) else ""
+        surface = "terminal" if page == "terminal" else "macro"
+        _mm.log_response_async(surface=surface, **kwargs)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------

@@ -430,8 +430,26 @@ data/earnings_calls/backfill_analysis.parquet
 # Nightly is the sole advancer of forward ledgers; the daemon is an intraday lane.
 data/marketing/fastlane_seen.jsonl
 data/marketing/fastlane_quarantine.jsonl
-data/marketing/outbox/
 data/marketing/fastlane_heartbeat.txt
+# The outbox itself IS committed since W1 (#3288 nightly emit + marketing-publish
+# ledger commit-back both `git add data/marketing/outbox` — a blanket ignore here
+# silently no-ops both and the queue evaporates on the next runner clean).
+# Only the transient advisory lock stays local.
+data/marketing/outbox/.lock
+# D02 chart-image pipeline: chart *PNGs* are R2-DELIVERED BY DESIGN. The PNG's sole
+# delivery plane is its public R2 URL (media_url on the item); the local file is a
+# throwaway render input, never a delivery artifact. The recursive `git add
+# data/marketing/outbox` in daily.yml + marketing-publish.yml would otherwise commit
+# ~0.6–1.8 MB of binaries per night forever. So ignore ONLY the PNGs — the .svg
+# chart snapshots STAY COMMITTED (the admin console previews render from SVG).
+# LOUDNESS (see #3326 postmortem: a stale ignore once silently no-oped a needed
+# git add): this pattern is deliberately PNG-scoped — it must NOT swallow .svg or
+# the JSON queue. Verify with `git check-ignore data/marketing/outbox/media/X/Y.png`
+# (ignored) vs `.../Y.svg` (NOT ignored) after any edit here.
+data/marketing/outbox/media/**/*.png
+# Publish-workflow-local fetch of the live-data branch quotes (tape gate input);
+# ephemeral per-run, never committed.
+data/marketing/live_quotes_snapshot.json
 # D05 breaking-feed local-only poller state (seen ledger + ETag state);
 # the nightly blanket "git add data/" must never stage these.
 data/marketing/breaking/
@@ -449,3 +467,10 @@ data/stage_analysis/forward_ledger.jsonl
 # ledger is a FORWARD LEDGER — nightly is the SOLE grade advancer (house law), never
 # commit from a worktree. summary.json is a small display artifact and IS committed.
 data/prophet_stage_shadow/ledger.jsonl
+
+# Mastermind AI response log — ingested corpus of every user-facing answer (Macro
+# brain + Terminal copilot) + the operator's eval sidecar. Holds USER QUESTIONS AND
+# ANSWERS: admin-local ONLY, never committed. The admin panel ingests it from R2 (the
+# data plane) on demand via admin/mastermind_logs.refresh(); nothing in git reads it.
+data/mastermind/response_log.jsonl
+data/mastermind/response_eval.jsonl

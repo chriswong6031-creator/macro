@@ -16,12 +16,46 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
 
+
+def _is_stale(as_of: str | None) -> bool:
+    """True when the plan's as_of is more than one day behind today (UTC).
+
+    Fail-soft: an absent or unparseable as_of is treated as NOT stale (no false
+    "stale" banner on a plan we simply can't date)."""
+    if not as_of:
+        return False
+    try:
+        d = datetime.strptime(str(as_of)[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return False
+    return d < (datetime.now(timezone.utc).date() - timedelta(days=1))
+
 _HERE = Path(__file__).resolve().parent
+
+
+def _default_root() -> Path:
+    """Repo root for panel reads when no explicit ``root=`` is passed.
+
+    Resolves through admin.paths.ROOT so a seeded dev/demo run
+    (MACRO_ADMIN_ROOT=<tmp> python -m admin) points every panel at the fixture
+    tree without threading a root through the server. Fail-soft to the package
+    grandparent if paths can't be imported.
+    """
+    try:
+        from .paths import ROOT  # noqa: PLC0415
+        return ROOT
+    except Exception:  # noqa: BLE001
+        return _HERE.parent
+
+
+# Module-level default kept for back-compat; call sites use _default_root() so the
+# MACRO_ADMIN_ROOT override is honoured even when this module was imported early.
 _ROOT = _HERE.parent
 
 _STATE_REL    = Path("data/neuralweb/marketing_state.json")
@@ -33,12 +67,27 @@ _ALLIES_REL   = Path("data/marketing/allies_targets.jsonl")
 _KITS_REL     = Path("data/marketing/allies_kits")
 _CONFIG_REL   = Path("config/marketing.yml")
 
+# Per-post metrics ledger (scripts/marketing_metrics_poll.py, append-only). One
+# row per (remote_id, poll date); the LATEST row per remote_id is joined into
+# the publisher's recent-posted table by external_id.
+_POST_METRICS_REL = Path("data/marketing/post_metrics.jsonl")
+
 # N-floor (docket D03 §Traps + small-N humility): a reach cell backed by fewer
 # than this many posts is display-only — never allowed to crown a winner.
 _LAB_N_FLOOR = 20
 
 _RADAR_REL = Path("data/marketing/radar_report.json")
 _TIERS_REL = Path("data/marketing/cashtag_tiers.json")
+
+# Operator-written control files (this admin owns these two writes).
+#  - sentinel_exceptions.jsonl: append-only "allow this held post at the next gate"
+#  - account_overrides.json: per-account on/off + note the engine merges next run
+_SENTINEL_EXC_REL   = Path("data/marketing/sentinel_exceptions.jsonl")
+_ACCT_OVERRIDES_REL = Path("data/marketing/account_overrides.json")
+
+# The three fixed publish slots (UTC, weekdays). Surfaced on the pipeline block +
+# Publisher countdown so "next slot" is one honest source, not a magic string.
+_PUBLISH_SLOTS_UTC = ("14:00", "17:30", "20:15")
 
 # Beacon SEO control plane (data/marketing/seo/, built by a parallel engine lane).
 _SEO_AUDIT_REL       = Path("data/marketing/seo/seo_audit.json")
@@ -163,8 +212,12 @@ def _state(root: Path) -> dict | None:
 def overview(root=None) -> dict:
     """CMO office view: lobe lifecycle, mandate, north-star, CMO portfolio,
     opportunity queue depth, self-improvement loop, guardrail checklist."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
+        # The pipeline block is the operator's "what's happening tonight" hero —
+        # computed from whatever files exist, fail-soft to nulls. It is always
+        # present (even on day 0) so the CMO Office can lead with it.
+        pipeline = _pipeline_block(repo)
         s = _state(repo)
         if s is None:
             return {
@@ -175,6 +228,7 @@ def overview(root=None) -> dict:
                 "cmo": None,
                 "authority_level": None,
                 "mandate": None,
+                "pipeline": pipeline,
             }
         return {
             "ok": True,
@@ -186,15 +240,396 @@ def overview(root=None) -> dict:
             "as_of": s.get("as_of"),
             "waves": s.get("waves"),
             "notes": s.get("notes"),
+            "pipeline": pipeline,
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.overview failed: %s", exc)
         return {"ok": False, "error": str(exc)}
 
 
+# ---------------------------------------------------------------------------
+# Pipeline-tonight block (CMO Office hero) — computed from existing files
+# ---------------------------------------------------------------------------
+
+def _next_publish_slot_utc(now=None) -> str | None:
+    """Next weekday publish slot as an ISO-8601 UTC string.
+
+    Walks the three fixed daily slots (14:00 / 17:30 / 20:15 UTC); if all of
+    today's have passed (or it's the weekend) rolls to the next weekday's first
+    slot. Returns None only if the datetime math fails (never raises).
+    """
+    try:
+        from datetime import datetime, timedelta, timezone  # noqa: PLC0415
+        now = now or datetime.now(timezone.utc)
+        slots = []
+        for hhmm in _PUBLISH_SLOTS_UTC:
+            hh, mm = (int(x) for x in hhmm.split(":"))
+            slots.append((hh, mm))
+        # scan today then up to 7 following days for the first weekday slot > now
+        for day_offset in range(0, 8):
+            day = (now + timedelta(days=day_offset)).date()
+            # Mon..Fri == 0..4
+            if day.weekday() >= 5:
+                continue
+            for hh, mm in slots:
+                cand = datetime(day.year, day.month, day.day, hh, mm, tzinfo=timezone.utc)
+                if cand > now:
+                    return cand.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Publisher ARM state — the kill-switch is now a GitHub repo VARIABLE
+# (MARKETING_PUBLISH_ENABLED: "1" = armed, "0"/absent = dark), the single source
+# of truth the marketing-publish.yml workflow reads. The admin process env is
+# NOT that source (it is never set on the operator's Mac), so the panel must read
+# the API truth here and only fall back to the local env when the API is
+# unreachable. Fail-soft: any error degrades to enabled:null with an honest note.
+# ---------------------------------------------------------------------------
+
+_ARM_VARIABLE = "MARKETING_PUBLISH_ENABLED"
+
+
+def _env_kill_on() -> bool:
+    """Local-env reading of the kill-switch (the OLD display source, kept only as
+    a last-resort fallback when the GitHub API is unreachable)."""
+    import os  # noqa: PLC0415
+    return str(os.environ.get(_ARM_VARIABLE, "")).strip().lower() in {"1", "true", "yes"}
+
+
+def arm_state() -> dict:
+    """Read the publisher kill-switch from the GitHub repo VARIABLE (API truth).
+
+    Returns a dict the panel renders directly:
+      {enabled: bool|None, source: str, error: str|None, note: str}
+
+    - enabled True  when the variable value is in {"1","true","yes"}
+    - enabled False when the variable exists with any other value (e.g. "0")
+    - enabled None  when the variable is not set yet (404) OR the API is
+      unreachable (no token / requests missing / owner-repo undetected). The two
+      are distinguished by `error`: None → "not set yet = dark"; a message →
+      state genuinely unknown and we fell back to the local env read.
+
+    source is "github_variable" on an API read, "local_env (fallback)" when the
+    API is unreachable and we report the process-env reading instead. Never
+    raises; never contains any secret.
+    """
+    try:
+        from . import github_api  # noqa: PLC0415
+        avail = github_api.available()
+        # API reachable only when the lib + owner/repo + a token are all present.
+        if not (avail.get("ok") and avail.get("has_token")):
+            # Cannot read the variable — fall back to the local env reading, but
+            # label the state as unknown-from-API so the UI is honest.
+            return {
+                "enabled": _env_kill_on() or None,
+                "source": "local_env (fallback)",
+                "error": "GitHub API unavailable (no token/lib) — arm state unknown; "
+                         "the runner follows the repo variable regardless.",
+                "note": "state unknown — showing local env reading only",
+            }
+        val = github_api.get_repo_variable(_ARM_VARIABLE)
+        if val is None:
+            # 404 (variable never created) OR a transient non-200. get_repo_variable
+            # collapses both to None; treat as dark with an honest note. This is
+            # the common first-run state.
+            return {
+                "enabled": None,
+                "source": "github_variable",
+                "error": None,
+                "note": "variable not set yet = dark",
+            }
+        enabled = str(val).strip().lower() in {"1", "true", "yes"}
+        return {
+            "enabled": enabled,
+            "source": "github_variable",
+            "error": None,
+            "note": "armed — posting at the next slot" if enabled
+                    else "disarmed — dry-run only",
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "enabled": None,
+            "source": "local_env (fallback)",
+            "error": f"arm-state read failed: {exc}",
+            "note": "state unknown",
+        }
+
+
+def arm_publisher(enabled) -> dict:
+    """Arm/disarm the live publisher by writing the MARKETING_PUBLISH_ENABLED repo
+    VARIABLE ("1" armed / "0" dark). Mirrors the SEO-director toggle plumbing.
+
+    Fail-soft: returns {ok, enabled, note} on success; {ok:False, error, note} with
+    an honest message when the GitHub token/API is unavailable or the write fails.
+    Never raises. The workflow env resolves this variable at run start, so the
+    change takes effect from the NEXT scheduled slot.
+    """
+    try:
+        en = bool(enabled)
+        from . import github_api  # noqa: PLC0415
+        if not github_api.token():
+            return {
+                "ok": False,
+                "enabled": None,
+                "error": "No GitHub token configured. Set GH_TOKEN in "
+                         "/etc/macro-admin.env (needs Variables read/write) to arm "
+                         "or disarm the publisher — or edit the "
+                         "MARKETING_PUBLISH_ENABLED repo variable by hand.",
+                "note": "GitHub token required",
+            }
+        new_value = "1" if en else "0"
+        ok = github_api.set_repo_variable(_ARM_VARIABLE, new_value)
+        if not ok:
+            err = getattr(github_api, "_last_set_variable_error", None) or (
+                "Failed to update MARKETING_PUBLISH_ENABLED — check that GH_TOKEN "
+                "has Variables write permission.")
+            return {"ok": False, "enabled": None, "error": err,
+                    "note": "variable write failed"}
+        return {
+            "ok": True,
+            "enabled": en,
+            "variable_value": new_value,
+            "note": "Publisher ARMED — approved, due items post at the next slot."
+                    if en else
+                    "Publisher DISARMED — every path reverts to dry-run.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.arm_publisher failed: %s", exc)
+        return {"ok": False, "enabled": None, "error": str(exc),
+                "note": "arm write failed"}
+
+
+# Cap on the accepted Buffer token length. A Buffer personal token is short
+# (~40 chars); this is a sanity bound against a paste of the wrong thing, not a
+# format check. The value is treated as radioactive: stdin-only, never argv,
+# never logged, never echoed back.
+_MAX_TOKEN_LEN = 500
+
+
+def set_buffer_token(token) -> dict:
+    """Set the BUFFER_TOKEN repo SECRET by shelling to `gh secret set BUFFER_TOKEN`,
+    passing the token on STDIN (never argv, never logged, never returned).
+
+    `gh` is authenticated on the operator's local Mac; this is a local-only path
+    (the deployed VPS has no `gh` login), so it REFUSES in deployed mode with an
+    honest fallback instruction. Returns {ok, note} ONLY — the token value never
+    appears in the response. Refuses empty/whitespace tokens.
+
+    Fail-soft: a missing/unauthenticated `gh` returns ok:False with the manual
+    GitHub-UI fallback. Never raises. Never persists the token anywhere except
+    the `gh secret set` call's stdin.
+    """
+    try:
+        # radioactive: strip + cap, then discard the local name ASAP.
+        tok = str(token or "").strip()
+        if not tok:
+            return {"ok": False, "error": "token is empty — paste the Buffer "
+                                          "personal API token, then Save."}
+        if len(tok) > _MAX_TOKEN_LEN:
+            return {"ok": False, "error": f"token too long (> {_MAX_TOKEN_LEN} "
+                                          "chars) — check you pasted only the token."}
+
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return {
+                "ok": False,
+                "error": "Setting the Buffer token from the panel is disabled in "
+                         "deployed mode (it shells out to a locally-authenticated "
+                         "`gh`). Set it at GitHub → Settings → Secrets and "
+                         "variables → Actions → BUFFER_TOKEN.",
+            }
+
+        import subprocess  # noqa: PLC0415
+        from .paths import ROOT  # noqa: PLC0415
+        try:
+            proc = subprocess.run(
+                ["gh", "secret", "set", "BUFFER_TOKEN"],
+                input=tok,               # STDIN — never argv, never logged
+                capture_output=True, text=True, timeout=30, cwd=str(ROOT),
+            )
+        except FileNotFoundError:
+            return {
+                "ok": False,
+                "error": "`gh` (GitHub CLI) is not installed on the admin host. "
+                         "Install it and run `gh auth login`, or set BUFFER_TOKEN "
+                         "at GitHub → Settings → Secrets and variables → Actions.",
+            }
+        except Exception as sexc:  # noqa: BLE001
+            # Do NOT include the token or the subprocess input in any message.
+            return {"ok": False, "error": f"`gh secret set` failed to run: {sexc}"}
+        finally:
+            # Best-effort scrub of the local reference (Python strings are
+            # immutable, so this only drops the name — the real guarantee is that
+            # `tok` never leaves this function except via `gh`'s stdin).
+            tok = ""
+
+        if proc.returncode != 0:
+            # gh writes auth/permission errors to stderr; surface a trimmed,
+            # token-free tail so the operator can act (gh never echoes the value).
+            stderr = (proc.stderr or "").strip()[-300:]
+            return {
+                "ok": False,
+                "error": "Could not set the secret via `gh` "
+                         + (f"({stderr}). " if stderr else ". ")
+                         + "Check `gh auth status`, or set BUFFER_TOKEN at "
+                           "GitHub → Settings → Secrets and variables → Actions.",
+            }
+
+        out = {"ok": True, "note": "Token saved to repo secrets (BUFFER_TOKEN)."}
+        # Truthful present-check, best-effort: a `gh secret list` grep. Never
+        # fails the request on its own (fail-soft) and never reads the value.
+        try:
+            lst = subprocess.run(
+                ["gh", "secret", "list"],
+                capture_output=True, text=True, timeout=15, cwd=str(ROOT),
+            )
+            if lst.returncode == 0:
+                out["token_present"] = "BUFFER_TOKEN" in (lst.stdout or "")
+        except Exception:  # noqa: BLE001
+            pass
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.set_buffer_token failed: %s", exc)
+        return {"ok": False, "error": "token save failed (unexpected error)"}
+
+
+def _pipeline_block(repo: Path) -> dict:
+    """Five-stage pipeline snapshot for the CMO Office hero: Plan → Gate →
+    Outbox → Publisher → Posted. Every field is fail-soft: a missing file
+    degrades its stage to null + an honest note, never raises.
+    """
+    out: dict[str, Any] = {
+        "plan": None, "gate": None, "outbox": None,
+        "publisher": None, "receipts": None,
+    }
+
+    # --- Plan (content_plan.json) ---
+    try:
+        cp = _read_json(repo / _CONTENT_REL)
+        if cp is None:
+            out["plan"] = {"present": False, "as_of": None, "produced_at": None,
+                           "items": None, "stale": None}
+        else:
+            n_items = 0
+            for acct in (cp.get("accounts") or []):
+                if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
+                    n_items += len(acct["queue"])
+            out["plan"] = {
+                "present": True,
+                "as_of": cp.get("as_of"),
+                "produced_at": cp.get("produced_at"),
+                "items": (cp.get("summary") or {}).get("total_posts", n_items),
+                # Prefer the engine's own freshness flag when the sibling adds it;
+                # otherwise fall back to a date compare against today (UTC).
+                "stale": _plan_is_stale(cp),
+            }
+    except Exception:  # noqa: BLE001
+        out["plan"] = {"present": False, "as_of": None, "produced_at": None,
+                       "items": None, "stale": None}
+
+    # --- Gate + Outbox + Receipts, computed from sentinel + outbox fold ---
+    try:
+        rpt = _read_json(repo / _SENTINEL_REL)
+        if rpt is None:
+            out["gate"] = {"present": False, "passed": None,
+                           "held_policy": None, "trimmed": None}
+        else:
+            counts = rpt.get("counts") or {}
+            q = rpt.get("quarantined") or []
+            policy_q = [x for x in q if x.get("class") != "overflow"]
+            over_q = [x for x in q if x.get("class") == "overflow"]
+            out["gate"] = {
+                "present": True,
+                "passed": counts.get("passed", (counts.get("items") or 0)
+                          - len(policy_q) - len(over_q) if counts else None),
+                "held_policy": counts.get("quarantined_policy", len(policy_q)),
+                "trimmed": counts.get("quarantined_overflow", len(over_q)),
+            }
+    except Exception:  # noqa: BLE001
+        out["gate"] = {"present": False, "passed": None,
+                       "held_policy": None, "trimmed": None}
+
+    try:
+        ob = outbox(repo)
+        if ob.get("note") and not (ob.get("accounts") or []):
+            # outbox dir has never existed → honest "first fill" stage
+            out["outbox"] = {"present": False, "queued": None, "approved": None,
+                             "posted_today": None}
+            out["receipts"] = {"present": False, "total_posted": None}
+        else:
+            summ = ob.get("summary") or {}
+            # posted "today": count posted history rows dated as of the max plan day;
+            # simplest honest proxy = total posted in the summary.
+            out["outbox"] = {
+                "present": True,
+                "queued": summ.get("queued", 0),
+                "approved": summ.get("approved", 0),
+                "posted_today": summ.get("posted", 0),
+            }
+            out["receipts"] = {"present": True,
+                               "total_posted": summ.get("posted", 0)}
+    except Exception:  # noqa: BLE001
+        out["outbox"] = {"present": False, "queued": None, "approved": None,
+                         "posted_today": None}
+        out["receipts"] = {"present": False, "total_posted": None}
+
+    # --- Publisher (armed? next slot? kill switch?) ---
+    try:
+        import os  # noqa: PLC0415
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        pub_cfg = (cfg.get("publish") or {}) if isinstance(cfg, dict) else {}
+        channels_cfg = pub_cfg.get("channels") or {}
+        any_channel = any(str(cid or "").strip() for cid in channels_cfg.values())
+        token_present = bool(os.environ.get("BUFFER_TOKEN", "").strip())
+        # Kill-switch = the GitHub repo VARIABLE (API truth), NOT the admin process
+        # env (which is never set on the operator's Mac). arm_state() falls back to
+        # the local env read only when the API is unreachable. `armed` requires the
+        # kill-switch ON — treat unknown (None) as NOT armed for this glance.
+        armv = arm_state()
+        kill = armv.get("enabled") is True
+        out["publisher"] = {
+            "present": True,
+            "armed": bool(token_present and any_channel and kill),
+            "token_present": token_present,
+            "any_channel_set": any_channel,
+            "kill_switch": kill,
+            "arm_state": armv,
+            "next_slot_utc": _next_publish_slot_utc(),
+            "slots_utc": list(_PUBLISH_SLOTS_UTC),
+        }
+    except Exception:  # noqa: BLE001
+        out["publisher"] = {"present": False, "armed": False, "next_slot_utc": None,
+                            "kill_switch": None, "slots_utc": list(_PUBLISH_SLOTS_UTC)}
+
+    return out
+
+
+def _plan_is_stale(cp: dict) -> bool | None:
+    """Is the content plan stale? Prefers the engine's own ``stale`` flag (added
+    by the sibling correctness PR); otherwise compares as_of to today (UTC).
+    Returns None when neither signal is available."""
+    if not isinstance(cp, dict):
+        return None
+    if isinstance(cp.get("stale"), bool):
+        return cp["stale"]
+    as_of = cp.get("as_of")
+    if not as_of:
+        return None
+    try:
+        from datetime import date, datetime, timezone  # noqa: PLC0415
+        d = datetime.strptime(str(as_of)[:10], "%Y-%m-%d").date()
+        today = datetime.now(timezone.utc).date()
+        return d < today
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def departments(root=None) -> dict:
     """Department portfolio: one record per department + authority ladder."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -218,7 +653,7 @@ def departments(root=None) -> dict:
 def channels(root=None) -> dict:
     """Desk network: accounts, distinctness, actuation path; publication ledger;
     corrections count."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -230,11 +665,21 @@ def channels(root=None) -> dict:
                 "corrections": None,
             }
         pipeline = s.get("pipeline") or {}
+        # Publisher channel-id presence per account (drives the "channel wired ✓"
+        # pill) + the operator override file so the On/Off toggle reflects reality.
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        pub_cfg = (cfg.get("publish") or {}) if isinstance(cfg, dict) else {}
+        channels_cfg = pub_cfg.get("channels") or {}
+        channel_set = {str(a): bool(str(cid or "").strip())
+                       for a, cid in channels_cfg.items()}
+        overrides = _read_json(repo / _ACCT_OVERRIDES_REL) or {}
         return {
             "ok": True,
             "desk_network": s.get("desk_network"),
             "publications": pipeline.get("publications"),
             "corrections": (pipeline.get("publications") or {}).get("corrections"),
+            "channels_set": channel_set,
+            "overrides": overrides if isinstance(overrides, dict) else {},
             "as_of": s.get("as_of"),
         }
     except Exception as exc:  # noqa: BLE001
@@ -244,7 +689,7 @@ def channels(root=None) -> dict:
 
 def campaigns(root=None) -> dict:
     """Opportunity bus + campaigns table + pipeline summary."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -270,7 +715,7 @@ def campaigns(root=None) -> dict:
 
 def experiments(root=None) -> dict:
     """Experiment registry + trial-variant selector + north-star window."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -299,7 +744,7 @@ def experiments(root=None) -> dict:
 
 def lobes(root=None) -> dict:
     """Engines-by-department; provenance modes + claims summary; growth-event spine."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -363,7 +808,7 @@ def content(root=None) -> dict:
     Returns {ok, content_types, accounts, featured_charts, distinctness, summary}.
     Fail-soft with honest note when the file is absent (accruing state).
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         cp = _read_json(repo / _CONTENT_REL)
         if cp is None:
@@ -376,16 +821,33 @@ def content(root=None) -> dict:
                 "distinctness": None,
                 "summary": None,
             }
+        plan_as_of = cp.get("as_of")
+
+        # slot_datetime resolves a plan slot to its real advisory post time (the
+        # D2..D7 slots used to all read day-1). Fail-soft: if the helper can't be
+        # imported, posts simply carry no display_time.
+        try:
+            from engine.marketing.outbox import slot_datetime as _slot_dt
+        except Exception:  # noqa: BLE001
+            _slot_dt = None
+
+        def _stamp(post: dict) -> dict:
+            p = _strip_post_internals(post)
+            if _slot_dt is not None and isinstance(p, dict):
+                p = {**p, "display_time": _slot_dt(plan_as_of or "", str(p.get("slot") or ""))}
+            return p
+
         # Strip internal underscore-prefixed keys from every queued post before
         # shipping to the browser — the render reads none of the big ones (the
         # full Prophet ``_plan`` was ~80KB across the queue).  Small whitelisted
-        # flags survive (see _CONTENT_POST_KEEP).
+        # flags survive (see _CONTENT_POST_KEEP).  Each post also gets a
+        # display_time (its real advisory post datetime) for the UI.
         accounts = []
         for acct in (cp.get("accounts") or []):
             if isinstance(acct, dict) and isinstance(acct.get("queue"), list):
                 acct = {
                     **acct,
-                    "queue": [_strip_post_internals(p) for p in acct["queue"]],
+                    "queue": [_stamp(p) for p in acct["queue"]],
                 }
             accounts.append(acct)
 
@@ -396,7 +858,12 @@ def content(root=None) -> dict:
             "featured_charts": cp.get("featured_charts") or [],
             "distinctness": cp.get("distinctness"),
             "summary": cp.get("summary"),
-            "as_of": cp.get("as_of"),
+            "as_of": plan_as_of,
+            "produced_at": cp.get("produced_at"),
+            # A plan is stale once its as_of falls more than a day behind today —
+            # the UI banners this so an operator never mistakes a stalled nightly
+            # plan for fresh content.
+            "stale": _is_stale(plan_as_of),
             "source": cp.get("source"),
         }
     except Exception as exc:  # noqa: BLE001
@@ -420,7 +887,7 @@ def lab(root=None) -> dict:
     never visually crown a winner under the floor.  We tag rather than drop —
     small-sample cells stay visible, greyed and labelled.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         rollup = _read_json(repo / _LAB_REL)
 
@@ -512,7 +979,7 @@ def allies(root=None) -> dict:
     """
     from . import allies_store  # noqa: PLC0415 — lazy to keep import graph flat
 
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         targets = _read_jsonl(repo / _ALLIES_REL)
         if not targets:
@@ -596,7 +1063,7 @@ def allies_kit(root=None, target_id=None) -> dict:
     this function additionally refuses anything with a path separator or "..".
     Fail-soft: unknown/absent kit → ok:True with markdown="" and a note.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     tid = str(target_id or "")
     # Belt-and-braces: never trust a raw id for a filesystem read.
     if (not tid) or ("/" in tid) or ("\\" in tid) or (".." in tid):
@@ -645,7 +1112,7 @@ def radar(root=None) -> dict:
     Response keys: ok, available, note?, as_of, produced_at, feeds, posted_recent,
     surplus, queue, tiers_summary, cadence, opportunities, universe_n.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         report = _read_json(repo / _RADAR_REL)
         tiers  = _read_json(repo / _TIERS_REL)
@@ -701,7 +1168,7 @@ def department(root=None, dept_id=None) -> dict:
     authority, model mix, wave, retirement test.
     Fail-soft: returns ok:True with note if state absent or dept not found.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         s = _state(repo)
         if s is None:
@@ -741,7 +1208,7 @@ def sentinel(root=None) -> dict:
     Fail-soft: returns ok:True with honest note when the file is absent.
     JSON only — no HTML/design surface.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         rpt = _read_json(repo / _SENTINEL_REL)
         if rpt is None:
@@ -772,6 +1239,11 @@ def sentinel(root=None) -> dict:
             "produced_at": rpt.get("produced_at"),
             "counts": rpt.get("counts"),
             "top_reasons": [{"reason": r, "count": c} for r, c in top_reasons],
+            # The cleared-to-post list (account, type, cashtag, headline, slot,
+            # display_time). Added by the sibling engine PR — passed through when
+            # present so the render can list the posts, not just a count. None when
+            # tonight's report predates the engine fix (render shows the count).
+            "passed": rpt.get("passed"),
             "quarantined": quarantined,
             "policy_quarantined": policy_q,
             "overflow_quarantined": overflow_q,
@@ -841,7 +1313,7 @@ def seo(root=None) -> dict:
     crawl_infra, issues, work_orders, scorecard, history, director,
     search_console.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         audit     = _read_json(repo / _SEO_AUDIT_REL)
         orders    = _read_json(repo / _SEO_ORDERS_REL)
@@ -900,7 +1372,7 @@ def seo(root=None) -> dict:
 
 def settings(root=None) -> dict:
     """Echo of config/marketing.yml top-level knobs. Read-only."""
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         cfg = _read_yaml(repo / _CONFIG_REL)
         s_block = cfg.get("settings") or {}
@@ -948,7 +1420,7 @@ def outbox(root=None) -> dict:
 
     Frozen payload contract: see D02 W0 Lane B spec.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
 
@@ -1154,6 +1626,34 @@ _PUBLISHER_EMPTY_NOTE = (
 )
 
 # Recent posted-items window surfaced with their receipts.
+def _latest_metrics_by_remote_id(repo: Path) -> dict[str, dict]:
+    """Fold post_metrics.jsonl to the LATEST row per remote_id (Buffer post id).
+
+    Append-only ledger: each poll appends a dated row; the newest (by polled_at,
+    then file order as tiebreak) is the current analytics view. Fail-soft — an
+    absent/unreadable ledger yields {} so the join is a silent no-op. Returns
+    {remote_id: {metrics: {...}, external_url: str|None}} for the console join.
+    """
+    out: dict[str, dict] = {}
+    best_ts: dict[str, str] = {}
+    for row in _read_jsonl(repo / _POST_METRICS_REL):
+        rid = str(row.get("remote_id") or "").strip()
+        if not rid:
+            continue
+        ts = str(row.get("polled_at") or "")
+        # Newest wins; equal/earlier polled_at from a later file line also wins
+        # (>=) so a same-timestamp re-poll's last row is the one shown.
+        if rid in best_ts and ts < best_ts[rid]:
+            continue
+        best_ts[rid] = ts
+        metrics = row.get("metrics")
+        out[rid] = {
+            "metrics": metrics if isinstance(metrics, dict) else {},
+            "external_url": row.get("external_url") or None,
+        }
+    return out
+
+
 _PUBLISHER_RECENT_N = 10
 
 
@@ -1181,7 +1681,7 @@ def publisher(root=None) -> dict:
     Fail-soft: ok:True with empty sections + note on a cold outbox; ok:False only
     on an unexpected exception.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
         import os  # noqa: PLC0415
@@ -1217,6 +1717,12 @@ def publisher(root=None) -> dict:
             "token_present": bool(os.environ.get("BUFFER_TOKEN", "").strip()),
         }
 
+        # Kill-switch ARM state read from the GitHub repo VARIABLE (API truth),
+        # env fallback when unreachable. The panel's armed/dark pill + ARM toggle
+        # render from this, NOT from the admin process env (which is never set on
+        # the operator's Mac — the pre-existing "always shows shadow" display bug).
+        arm = arm_state()
+
         state = _ob.fold_state(repo)
         items = state["items"]
         statuses = state["status"]
@@ -1230,6 +1736,7 @@ def publisher(root=None) -> dict:
                 "note": _PUBLISHER_EMPTY_NOTE,
                 "as_of": None,
                 "config": config,
+                "arm_state": arm,
                 "status_counts": {k: 0 for k in _STATUS_KEYS if k != "held"},
                 "recent_posted": [],
                 "stuck_posting": [],
@@ -1245,22 +1752,35 @@ def publisher(root=None) -> dict:
             if s in status_counts:
                 status_counts[s] += 1
 
+        # Latest per-post analytics (impressions/likes/… + x.com permalink),
+        # keyed by Buffer post id == the receipt's external_id. Fail-soft {}.
+        metrics_by_rid = _latest_metrics_by_remote_id(repo)
+
         def _row(iid: str) -> dict:
             it = items.get(iid, {})
             lr = last.get(iid) or {}
             rec = lr.get("receipt")
             rec = rec if isinstance(rec, dict) else None
-            return {
+            external_id = (rec or {}).get("external_id")
+            external_url = (rec or {}).get("external_url")
+            # Join fetched metrics + backfill the permalink (createPost never
+            # returns one; the poller's post() query does). Front-end renders
+            # `metrics`/`external_url` only when present, so absent = unchanged.
+            met = metrics_by_rid.get(str(external_id or "").strip()) if external_id else None
+            row = {
                 "id": iid,
                 "account": it.get("account", ""),
                 "kind": it.get("kind"),
                 "text": it.get("text"),
                 "at": lr.get("at"),
                 "note": lr.get("note"),
-                "external_id": (rec or {}).get("external_id"),
-                "external_url": (rec or {}).get("external_url"),
+                "external_id": external_id,
+                "external_url": external_url or (met or {}).get("external_url"),
                 "backend": (rec or {}).get("backend"),
             }
+            if met and met.get("metrics"):
+                row["metrics"] = met["metrics"]
+            return row
 
         posted = [_row(i) for i in order if statuses.get(i) == "posted"]
         posted.sort(key=lambda r: (r.get("at") or ""), reverse=True)
@@ -1286,6 +1806,7 @@ def publisher(root=None) -> dict:
             "ok": True,
             "as_of": max_as_of,
             "config": config,
+            "arm_state": arm,
             "status_counts": status_counts,
             "recent_posted": recent_posted,
             "stuck_posting": stuck_posting,
@@ -1304,7 +1825,7 @@ def publisher_dryrun(root=None, account=None) -> dict:
     entrypoint that makes NO network call and NO ledger write (it never invokes
     transition() or _append_activity()). Fail-soft: any error → ok:False.
     """
-    repo = Path(root) if root is not None else _ROOT
+    repo = Path(root) if root is not None else _default_root()
     try:
         from scripts.marketing_publisher import dry_run_report  # noqa: PLC0415
         acct = account if (account and str(account).strip()) else None
@@ -1322,7 +1843,7 @@ def decide_outbox(item_id: str, decision: str, note: str | None = None, root=Non
     """
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
-        repo = Path(root) if root is not None else _ROOT
+        repo = Path(root) if root is not None else _default_root()
         return _ob.record_decision(item_id, decision, actor="admin", root=repo, note=note)
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.decide_outbox failed: %s", exc)
@@ -1340,7 +1861,7 @@ def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
     results: dict[str, bool] = {}
     try:
         from engine.marketing import outbox as _ob  # noqa: PLC0415
-        repo = Path(root) if root is not None else _ROOT
+        repo = Path(root) if root is not None else _default_root()
         for item_id in item_ids:
             if not isinstance(item_id, str) or not item_id:
                 continue
@@ -1349,3 +1870,133 @@ def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing.decide_outbox_batch failed: %s", exc)
     return {"decided": sum(1 for v in results.values() if v), "results": results}
+
+
+# ---------------------------------------------------------------------------
+# Operator write actions (this admin owns exactly two writes into data/marketing)
+# ---------------------------------------------------------------------------
+
+def sentinel_allow(item_id, reason, root=None) -> dict:
+    """Record an operator exception: "let this held post through at the next gate".
+
+    Appends one row to data/marketing/sentinel_exceptions.jsonl. The gate reads
+    the file on its next nightly run — this write does NOT publish anything; it
+    changes what the *next* gate will pass. Fail-soft: returns {"ok": False,
+    "error": ...} on bad input or a write failure, never raises.
+    """
+    try:
+        # ledger rows are unbounded-append; cap operator input so one paste
+        # can't balloon the file
+        iid = str(item_id or "").strip()[:200]
+        rsn = str(reason or "").strip()[:500]
+        if not iid:
+            return {"ok": False, "error": "item_id required"}
+        if not rsn:
+            return {"ok": False, "error": "reason required — say why this post is safe to allow"}
+        from datetime import datetime, timezone  # noqa: PLC0415
+        repo = Path(root) if root is not None else _default_root()
+        path = repo / _SENTINEL_EXC_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+        row = {
+            "item_id": iid,
+            "allow": True,
+            "reason": rsn,
+            "actor": "operator",
+            "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        return {
+            "ok": True,
+            "item_id": iid,
+            "note": "Exception recorded. It takes effect at the next nightly gate — "
+                    "nothing posts now.",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.sentinel_allow failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def accounts_toggle(account_id, enabled, note=None, root=None,
+                    push: bool = True) -> dict:
+    """Turn a desk account on/off via the operator override file, then try to
+    commit+push that one file so the nightly runner picks it up.
+
+    Read-modify-write of data/marketing/account_overrides.json (atomic replace),
+    shape ``{"<account_id>": {"enabled": bool, "note": str, "at": iso}}``. Then
+    best-effort git commit+push of *only* that file (via admin.gitops). If push
+    fails the override is still saved locally and the return carries
+    ``pushed: False`` + an honest note. Fail-soft: never raises.
+    """
+    try:
+        aid = str(account_id or "").strip()[:100]
+        if not aid:
+            return {"ok": False, "error": "account_id required"}
+        # mirror the server route's deployed refusal so a future caller can't
+        # reach the auto-push path from a deployed box
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return {"ok": False, "error": "account toggles are disabled in deployed mode"}
+        en = bool(enabled)
+        from datetime import datetime, timezone  # noqa: PLC0415
+        repo = Path(root) if root is not None else _default_root()
+        # only accept ids that exist in config; fail-open when config is unreadable
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        known = [str(a.get("id") or "").strip()
+                 for a in ((cfg.get("desk_network") or {}).get("accounts") or [])
+                 if isinstance(a, dict)] if isinstance(cfg, dict) else []
+        if known and aid not in known:
+            return {"ok": False, "error": f"unknown account '{aid}'"}
+        path = repo / _ACCT_OVERRIDES_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # read-modify-write
+        current = _read_json(path)
+        if not isinstance(current, dict):
+            current = {}
+        current[aid] = {
+            "enabled": en,
+            "note": str(note or "").strip()[:500],
+            "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        # atomic replace: write a temp sibling then os.replace
+        import os  # noqa: PLC0415
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n",
+                       encoding="utf-8")
+        os.replace(str(tmp), str(path))
+
+        result = {"ok": True, "account_id": aid, "enabled": en,
+                  "overrides": current}
+
+        # Best-effort commit+push of just this file so it reaches the runner.
+        if push:
+            try:
+                from . import gitops  # noqa: PLC0415
+                rel = str(_ACCT_OVERRIDES_REL).replace("\\", "/")
+                git_res = gitops.commit_paths(
+                    [rel],
+                    message=f"admin: account override {aid} enabled={en}",
+                    push=True, confirm=True)
+                result["pushed"] = bool(git_res.get("pushed"))
+                result["git"] = git_res
+                if not git_res.get("pushed"):
+                    result["note"] = (
+                        "Override saved locally. It will not reach the nightly runner "
+                        "until this file is pushed to main — "
+                        + str(git_res.get("warning") or git_res.get("error") or
+                              "push not available from this checkout") + ".")
+                else:
+                    result["note"] = ("Override saved and pushed. The next nightly plan "
+                                      f"will treat {aid} as {'on' if en else 'off'}.")
+            except Exception as gexc:  # noqa: BLE001
+                result["pushed"] = False
+                result["note"] = ("Override saved locally; the commit/push step failed "
+                                  f"({gexc}). It will not reach the runner until pushed.")
+        else:
+            result["pushed"] = False
+            result["note"] = "Override saved locally (push skipped)."
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.accounts_toggle failed: %s", exc)
+        return {"ok": False, "error": str(exc)}

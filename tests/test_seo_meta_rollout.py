@@ -43,7 +43,7 @@ _EXCLUDED_TEMPLATES = {
     "_base_effect_strip.html.j2", "_baskets_desk.html.j2",
     "_cmd_hero.css.j2", "_desk_grader_panel.html.j2",
     "_forming_narratives.html.j2", "_ignition_radar_card.css.j2",
-    "_ignition_radar_card.html.j2", "_leadership_board.html.j2",
+    "_ignition_radar_card.html.j2",
     "_mag7_panel.css.j2", "_mag7_panel.html.j2",
     "_market_state_board.html.j2", "_market_state.css.j2",
     "_radar_panel.html.j2", "_regime_prob_panel.html.j2",
@@ -52,6 +52,10 @@ _EXCLUDED_TEMPLATES = {
     "_sig_badge.html.j2", "_stock_decision.css.j2",
     "_theme_addons.html.j2", "_track_record_dlg.html.j2",
     "_vector_polish.html.j2",
+    # Research Vault programmatic-SEO shells (#3392): bespoke <head> with dynamic
+    # per-report canonical/OG/JSON-LD — deliberately NOT on the shared _seo_head
+    # partial (the partial can't express per-report canonicals + Article JSON-LD).
+    "research_index.html.j2", "research_report.html.j2",
     # Per-stock / per-sector detail shells (ticker SEO pages — separate program):
     "ticker.html.j2", "ticker_index.html.j2", "stock.html.j2",
     "sector.html.j2", "hk_sector.html.j2", "canada_sector.html.j2",
@@ -72,6 +76,16 @@ _EXCLUDED_TEMPLATES = {
     "report_ai_master_plan.html.j2", "report_bessent_jun24.html.j2",
     "report_haven_audition.html.j2", "report_relapse_jul8.html.j2",
     "report_second_act.html.j2", "report_warsh_fomc.html.j2",
+    # SEO estate family (site/tools/, site/learn/, site/blog/): these pages live
+    # in SUBDIRECTORIES, and _seo_head.html.j2 is root-relative by contract
+    # ("all pages that include this live at the site root" — canonical + favicon
+    # paths). seo_base.html.j2 ships its own subdir-safe mirror of the same head
+    # (meta description, page.canonical, OG/Twitter cards) and every seo_* child
+    # inherits it via {% extends "seo_base.html.j2" %} — adding _seo_head here
+    # would emit duplicate meta tags.
+    "seo_base.html.j2", "seo_article.html.j2", "seo_blog_index.html.j2",
+    "seo_calculator_base.html.j2", "seo_learn_index.html.j2",
+    "seo_tools_index.html.j2",
 }
 
 # Templates that inject SEO via Jinja block inheritance (head_extra in report_base chain):
@@ -346,12 +360,42 @@ class TestRenderSmoke:
         from jinja2 import Environment, FileSystemLoader, Undefined
 
         class SilentUndefined(Undefined):
+            # The Signal-Ink bonds revamp (#3278) does arithmetic and min/max
+            # on optional viewmodel numbers (the health-gauge score guards
+            # `is not none` but a fixture Undefined is not None), so the smoke
+            # fixture must degrade to neutral values on comparisons, casts and
+            # math instead of raising UndefinedError.
             def __str__(self) -> str:
                 return ""
             def __call__(self, *a, **kw):  # type: ignore[override]
                 return SilentUndefined()
             def __getattr__(self, name: str) -> "SilentUndefined":  # type: ignore[override]
                 return SilentUndefined()
+            def __getitem__(self, key):  # type: ignore[override]
+                return SilentUndefined()
+            def __iter__(self):
+                return iter(())
+            def __len__(self) -> int:
+                return 0
+            def __contains__(self, item) -> bool:
+                return False
+            def __float__(self) -> float:
+                return 0.0
+            def __int__(self) -> int:
+                return 0
+            def __index__(self) -> int:
+                return 0
+            def __round__(self, *a):
+                return 0
+            def __lt__(self, other) -> bool:  # type: ignore[assignment]
+                return False
+            __le__ = __gt__ = __ge__ = __lt__  # type: ignore[assignment]
+            def _op(self, *a, **kw):
+                return SilentUndefined()
+            __add__ = __radd__ = __sub__ = __rsub__ = _op  # type: ignore[assignment]
+            __mul__ = __rmul__ = __truediv__ = __rtruediv__ = _op  # type: ignore[assignment]
+            __floordiv__ = __rfloordiv__ = __mod__ = __rmod__ = _op  # type: ignore[assignment]
+            __pow__ = __rpow__ = __neg__ = __pos__ = _op  # type: ignore[assignment]
 
         env = Environment(
             loader=FileSystemLoader(str(TMPL)),
@@ -379,20 +423,29 @@ class TestRenderSmoke:
 # ---------------------------------------------------------------------------
 
 class TestTemplateSiteSyncUnaffected:
-    """Confirm that no plain-copy template/site pair was broken.
-    We only edited .j2 files (exempt from sync check) plus site/learn.html
-    (which has no template/ pair)."""
+    """The SEO rollout edits .j2 sources only. Plain (non-.j2) .html page
+    templates bypass _seo_head entirely, so the durable invariant here is
+    structural: no NEW plain .html page template may appear without
+    consciously joining the template↔site pairing system (and this list).
 
-    def test_no_non_j2_template_touched(self) -> None:
-        """The only non-.j2 file in templates/ is chat.html — we did not touch it."""
-        non_j2 = [p for p in TMPL.iterdir()
-                  if p.is_file() and not p.suffix == ".j2"
-                  and p.name != ".DS_Store"]
-        # Verify chat.html exists and is still the plain-copy pair
-        chat_tmpl = TMPL / "chat.html"
-        chat_site = SITE / "chat.html"
-        if chat_tmpl.exists() and chat_site.exists():
-            assert chat_tmpl.read_bytes() == chat_site.read_bytes(), (
-                "templates/chat.html and site/chat.html are out of sync — "
-                "did something accidentally edit chat.html?"
+    Byte-equality of each pair is owned by the ci.yml ui.template_site_sync
+    PR gate (scripts/check_template_site_sync.py), which checks the whole
+    tree on every PR. Asserting equality here re-tested global repo state
+    and went red on unrelated nightly render drift (2026-07-23:
+    templates/chat.html vs site/chat.html drifted on main, healed by #3358)."""
+
+    _KNOWN_PLAIN_HTML = {"chat.html", "index.html"}
+
+    def test_plain_html_templates_are_known_paired_set(self) -> None:
+        html_files = sorted(p.name for p in TMPL.iterdir()
+                            if p.is_file() and p.suffix == ".html")
+        assert set(html_files) == self._KNOWN_PLAIN_HTML, (
+            f"templates/ plain .html set changed: {html_files} — new page "
+            "templates must be .j2 (covered by this rollout's checks) or be "
+            "added to the template↔site pairing system and this known set."
+        )
+        for name in sorted(self._KNOWN_PLAIN_HTML):
+            assert (SITE / name).exists(), (
+                f"site/{name} missing — templates/{name} must keep its "
+                "plain-copy site pair (scripts/check_template_site_sync.py)"
             )

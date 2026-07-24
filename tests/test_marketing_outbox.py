@@ -434,6 +434,56 @@ def test_ledger_only_grows(tmp_path):
         )
 
 
+def test_transition_now_param_stamps_ledger_at(tmp_path):
+    """transition(now=...) stamps the row's `at` from the injected clock."""
+    from engine.marketing.outbox import make_item, enqueue, transition, read_ledger
+
+    item = _make_minimal_item(tmp_path)
+    enqueue(item, root=tmp_path)
+    assert transition(item["id"], "approved", actor="test", root=tmp_path,
+                      now=_FIXED_NOW)
+    row = read_ledger(root=tmp_path)[-1]
+    assert row["at"] == "2026-07-19T12:00:00Z"
+
+
+def test_posted_today_by_account_counts_ledger_date_not_as_of(tmp_path):
+    """The daily-cap counter keys on the LAST ledger row's date, not as_of.
+
+    A nightly item (as_of = generation day, yesterday) posted today COUNTS;
+    an item posted yesterday does NOT (whatever its as_of); posting (in-flight)
+    holds a slot; queued/approved never count.
+    """
+    from datetime import datetime, timezone as _tz
+    from engine.marketing.outbox import (
+        make_item, enqueue, transition, fold_state, posted_today_by_account
+    )
+    today = _AS_OF                                             # 2026-07-19
+    yesterday_now = datetime(2026, 7, 18, 22, 0, 0, tzinfo=_tz.utc)
+
+    def _seed(text: str, *, as_of: str, to: list[str], at: datetime) -> str:
+        it = make_item(account="flagship", kind="signal", text=text,
+                       as_of=as_of, provenance="content_studio", now=_FIXED_NOW)
+        enqueue(it, root=tmp_path, max_per_account_day=99)
+        for status in to:
+            assert transition(it["id"], status, actor="t", root=tmp_path, now=at)
+        return it["id"]
+
+    # Nightly item posted TODAY → counts (the undercount bug this pins).
+    _seed("Nightly, posted today.", as_of="2026-07-18",
+          to=["approved", "posted"], at=_FIXED_NOW)
+    # Posted YESTERDAY (as_of today!) → does not count.
+    _seed("Posted yesterday.", as_of=today,
+          to=["approved", "posted"], at=yesterday_now)
+    # In-flight TODAY → holds a slot.
+    _seed("In flight today.", as_of=today,
+          to=["approved", "posting"], at=_FIXED_NOW)
+    # Approved today, never posted → no slot.
+    _seed("Approved only.", as_of=today, to=["approved"], at=_FIXED_NOW)
+
+    counts = posted_today_by_account(fold_state(tmp_path), today)
+    assert counts == {"flagship": 2}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. Decisions
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1117,3 +1167,81 @@ def test_sentinel_contract_string_false_stays_false():
     assert c["links_allowed"] is False
     c2 = sentinel_contract({"sentinel": {"links_allowed": "true"}})
     assert c2["links_allowed"] is True
+
+
+def test_emit_stamps_tape_claim_source(tmp_path):
+    """The publisher's live tape gate needs structured claim data on each item:
+    ticker, thesis direction/entry/invalidation from the attached _plan, and a
+    baseline_pct for same-day move claims. emit stamps them into item.source."""
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    assert sig["type"] == "signal"
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL",
+                    "entry": 950.0, "invalidation": 899.0}
+    # A mover-shaped D1 item with baseline data.
+    plan["accounts"][0]["queue"].append({
+        "id": "post-flagship-006",
+        "type": "mover",
+        "account": "flagship",
+        "cashtag": "$ISRG",
+        "ticker": "ISRG",
+        "headline": "$ISRG -14.2% today",
+        "body": "Biggest drop in the index. Watching, not chasing.",
+        "provenance": "movers_desk",
+        "chart_id": None,
+        "slot": "D1-EOD",
+        "status": "drafted",
+        "_mover_data": {"ticker": "ISRG", "pct": -14.2},
+    })
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    items = {i["source"].get("plan_item_id"): i for i in read_items(tmp_path)
+             if i.get("source")}
+
+    sig_item = items.get(sig["id"])
+    assert sig_item is not None
+    src = sig_item["source"]
+    assert src["ticker"] == sig["ticker"]
+    assert src["direction"] == "BULL"
+    assert src["entry"] == 950.0
+    assert src["invalidation"] == 899.0
+    assert src["signal_id"] == "prophet-NVDA-1"
+
+    mover_item = items.get("post-flagship-006")
+    assert mover_item is not None
+    assert mover_item["source"]["ticker"] == "ISRG"
+    assert mover_item["source"]["baseline_pct"] == -14.2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# F6: slot_datetime — real per-day advisory times (D2..D7 no longer read day-1)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSlotDatetime:
+    def test_d1_is_as_of_day(self):
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-20", "D1-AM") == "2026-07-20T14:00:00Z"
+        assert slot_datetime("2026-07-20", "D1-PM") == "2026-07-20T17:30:00Z"
+        assert slot_datetime("2026-07-20", "D1-EOD") == "2026-07-20T20:15:00Z"
+
+    def test_later_days_offset_by_n_minus_one(self):
+        from engine.marketing.outbox import slot_datetime
+        # THE BUG: D3-AM used to map to as_of T14:00 (day-1). Now +2 days.
+        assert slot_datetime("2026-07-20", "D3-AM") == "2026-07-22T14:00:00Z"
+        assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
+
+    def test_immediate_and_unparseable_return_none(self):
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-20", "MOVER-01") is None
+        assert slot_datetime("2026-07-20", "THEME-02") is None
+        assert slot_datetime("2026-07-20", "CONF-01") is None
+        assert slot_datetime("2026-07-20", "immediate") is None
+        assert slot_datetime("2026-07-20", "D1-XX") is None   # unknown time suffix
+        assert slot_datetime("not-a-date", "D1-AM") is None   # bad as_of
+
+    def test_scheduled_at_wrapper_preserves_immediate_contract(self):
+        from engine.marketing.outbox import _scheduled_at_for_slot
+        assert _scheduled_at_for_slot("D2-PM", "2026-07-20") == "2026-07-21T17:30:00Z"
+        assert _scheduled_at_for_slot("MOVER-01", "2026-07-20") == "immediate"

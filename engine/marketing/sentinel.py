@@ -165,6 +165,30 @@ def _repo_root(root: Path | str | None = None) -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 
+# Recognized publish-time slot families — each is its own per-day cap bucket.
+_SLOT_PUBLISH_FAMILIES: frozenset[str] = frozenset({"MOVER", "THEME", "CONF"})
+
+
+def _slot_day_bucket(slot: str) -> str:
+    """The per-day cap bucket for a slot label.
+
+    A nightly plan slot is ``D<n>-<AM|PM|EOD>`` — day n is its own bucket (``D3``),
+    so a 2-a-day cap applies within each day, not across the 7-day plan (the bug
+    that quarantined ~85 of 111 items). A publish-time slot (``MOVER-01`` /
+    ``THEME-02`` / ``CONF-01``) buckets by its family. Anything else — an absent
+    or unrecognized slot label — shares a single ``""`` bucket per account (so a
+    plan with ad-hoc, undated slots still caps per account, plan-wide).
+    """
+    if not slot:
+        return ""
+    prefix = slot.split("-", 1)[0]
+    if len(prefix) >= 2 and prefix[0] == "D" and prefix[1:].isdigit():
+        return prefix  # D1..D7 — the day
+    if prefix in _SLOT_PUBLISH_FAMILIES:
+        return prefix
+    return ""
+
+
 def _write_json_atomic(path: Path, obj: dict) -> None:
     """Atomic write via temp file in the same directory (same pattern as governor)."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -373,6 +397,7 @@ def gate_plan(
     receipts_age_days: int | float | None = None,
     graded_window: list[dict] | None = None,
     exceptions: dict[str, dict] | None = None,
+    root: str | None = None,
 ) -> tuple[dict, dict]:
     """Pure gate: returns (annotated_plan, report).
 
@@ -412,12 +437,20 @@ def gate_plan(
 
     as_of = plan.get("as_of", "")
 
-    # Disabled account ids from desk_network (per-account kill-switch)
-    desk_net = (cfg.get("desk_network") or {}) if isinstance(cfg, dict) else {}
+    # Disabled account ids from desk_network. An account is "off" for the gate
+    # when it is not effective-enabled — which covers the legacy per-account
+    # kill-switch (disabled: true), the new liveness model (enabled: false on
+    # desks with no real X account yet), AND an operator override that flips one
+    # off (data/marketing/account_overrides.json). This is what makes the admin
+    # "accounts switched off" cell show the planned desks as OFF rather than "all
+    # live"; content_studio already skips generating their queues, so in the
+    # normal path there are no items here to quarantine — this stays as a
+    # defensive backstop.
+    from engine.marketing.accounts import effective_accounts as _eff_accounts
     disabled_accounts: list[str] = [
         str(acc.get("id", ""))
-        for acc in (desk_net.get("accounts") or [])
-        if acc.get("disabled")
+        for acc in _eff_accounts(cfg if isinstance(cfg, dict) else {}, root)
+        if not acc.get("enabled")
     ]
 
     # Flat item list: (account_id, item_dict, account_index, queue_index)
@@ -603,11 +636,18 @@ def gate_plan(
     # STEP 5: Caps — check-then-commit over alive items, in queue order
     # =========================================================================
 
-    posts_by_account: dict[str, int] = defaultdict(int)
-    cashtag_by_account: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    # The *_per_day caps are PER (account, day) — the plan spans 7 days (slots
+    # D1-AM..D7-EOD) plus non-day publish-time slots (MOVER-/THEME-/CONF-). Keying
+    # these counters on account alone applied a 2-a-day cap across the whole 7-day
+    # plan, falsely quarantining ~85 of 111 items nightly as cadence_cap_daily.
+    # The day bucket is _slot_day_bucket(slot): the D<n> day for a D-slot, the
+    # publish-time family (MOVER/THEME/CONF) as its own bucket, and "" for any
+    # unrecognized/absent slot (those share one bucket per account).
+    posts_by_account: dict[tuple[str, str], int] = defaultdict(int)
+    cashtag_by_account: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
     slot_by_account: dict[str, set[str]] = defaultdict(set)
-    replies_by_account: dict[str, int] = defaultdict(int)
-    media_by_account: dict[str, int] = defaultdict(int)
+    replies_by_account: dict[tuple[str, str], int] = defaultdict(int)
+    media_by_account: dict[tuple[str, str], int] = defaultdict(int)
 
     cadence_stats: dict[str, int] = {
         "cadence_cap_daily_hits": 0,
@@ -626,20 +666,21 @@ def gate_plan(
         slot = str(item.get("slot") or "").strip()
         is_reply = item.get("type") == "reply"
         has_media = bool(item.get("chart_id"))
+        dk = (acc_id, _slot_day_bucket(slot))  # per-(account, day) cap key
 
         # Decide every cap first; commit counters only if the item survives —
         # a killed item must never waste a slot a clean sibling needed.
         reason: str | None = None
-        if has_media and media_by_account[acc_id] >= max_media_posts_day:
+        if has_media and media_by_account[dk] >= max_media_posts_day:
             reason = "media_cap_daily"
             media_cap_hits += 1
-        elif is_reply and replies_by_account[acc_id] >= max_replies_day:
+        elif is_reply and replies_by_account[dk] >= max_replies_day:
             reason = "reply_cap_daily"
             cadence_stats["reply_cap_hits"] += 1
-        elif posts_by_account[acc_id] >= max_posts_day:
+        elif posts_by_account[dk] >= max_posts_day:
             reason = "cadence_cap_daily"
             cadence_stats["cadence_cap_daily_hits"] += 1
-        elif cashtag and cashtag_by_account[acc_id][cashtag] >= max_same_cashtag:
+        elif cashtag and cashtag_by_account[dk][cashtag] >= max_same_cashtag:
             reason = f"cashtag_cap:{cashtag}"
             cadence_stats["cashtag_cap_hits"] += 1
         elif slot and slot in slot_by_account[acc_id]:
@@ -651,12 +692,12 @@ def gate_plan(
             continue
 
         if has_media:
-            media_by_account[acc_id] += 1
+            media_by_account[dk] += 1
         if is_reply:
-            replies_by_account[acc_id] += 1
-        posts_by_account[acc_id] += 1
+            replies_by_account[dk] += 1
+        posts_by_account[dk] += 1
         if cashtag:
-            cashtag_by_account[acc_id][cashtag] += 1
+            cashtag_by_account[dk][cashtag] += 1
         if slot:
             slot_by_account[acc_id].add(slot)
 
@@ -707,11 +748,28 @@ def gate_plan(
 
     reasons_histogram: dict[str, int] = defaultdict(int)
     quarantined_entries: list[dict] = []
+    passed_entries: list[dict] = []
     passed_count = 0
     quarantined_count = 0
     quarantined_policy = 0
     quarantined_overflow = 0
     warnings_items_count = 0  # number of ITEMS carrying warnings (not violation strings)
+
+    def _passed(item: dict, acc_id: str, warnings: list[str] | None = None) -> None:
+        # Same field set the operator sees for quarantined rows, so the admin can
+        # render a "12 cleared" list next to the quarantine list (report emitted
+        # only a passed COUNT before — nothing to enumerate).
+        entry = {
+            "id": item.get("id", ""),
+            "account": acc_id,
+            "slot": item.get("slot", ""),
+            "type": item.get("type", ""),
+            "cashtag": item.get("cashtag", ""),
+            "headline": (item.get("headline") or "")[:120],
+        }
+        if warnings:
+            entry["warnings"] = warnings
+        passed_entries.append(entry)
 
     def _quarantine(item: dict, acc_id: str, reasons: list[str]) -> None:
         nonlocal quarantined_count, quarantined_policy, quarantined_overflow
@@ -744,6 +802,7 @@ def gate_plan(
         if not item_violations:
             item["sentinel_ok"] = True
             passed_count += 1
+            _passed(item, acc_id)
             continue
 
         if strict or plan_refused:
@@ -762,6 +821,7 @@ def gate_plan(
             item["sentinel_warnings"] = soft
             passed_count += 1
             warnings_items_count += 1
+            _passed(item, acc_id, warnings=soft)
             for r in soft:
                 reasons_histogram[r.split(":", 1)[0] + "_warning"] += 1
 
@@ -791,6 +851,7 @@ def gate_plan(
         },
         "reasons_histogram": dict(reasons_histogram),
         "quarantined": quarantined_entries,
+        "passed": passed_entries,
         "checks": {
             "near_dup": {
                 "pairs_checked": near_dup_pairs_checked,
@@ -874,6 +935,7 @@ def run_gate(
             receipts_age_days=receipts_age_days,
             graded_window=graded_window,
             exceptions=load_exceptions(r),
+            root=str(r),
         )
     except Exception as exc:  # noqa: BLE001
         write_report(r, error_report(as_of=plan.get("as_of", ""), exc=exc))

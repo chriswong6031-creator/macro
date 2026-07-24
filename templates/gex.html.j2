@@ -2,7 +2,7 @@
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
 {% macro help(en, zh='') -%}
-<span class="help" tabindex="0">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+<span class="help" tabindex="0" role="button" aria-label="What is this?">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
@@ -16,18 +16,20 @@
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ============================================================================
-     OPTIONS DESK — "The Gravity Map" design system.
-     Built on theme.css tokens (Inter + --up/--down/--info/--orange, dark/light,
-     zh red-green swap). The page's identity accent (--rg) is the dealer REGIME:
-     calm cools it green, jumpy warms it red, mixed stays neutral. Motion is
-     concentrated in the hero + the Levels Map signature; reduced-motion kills it.
+     OPTIONS DESK — remaster. Built on theme.css tokens (Inter, --up/--down/
+     --info/--orange, dark/light, zh red-green swap).
+     · The workspace carries the regime accent (--rg): green calm / red jumpy.
+     · Signature: the horizontal price ladder (walls, flip, magnet, expected
+       range on one axis, low→high like a chart).
+     · ALL "?" tips render through ONE floating, viewport-clamped popover
+       (#gx-htip) — cards never clip them. No overflow:hidden on cards.
+     · body top padding 18px = nav-gap law.
      ============================================================================ */
   *{box-sizing:border-box}
   body{background:var(--bg);color:var(--text);font-family:var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,sans-serif);
-    font-size:15px;line-height:1.5;margin:0;padding-top:18px;-webkit-font-smoothing:antialiased}
+    font-size:15px;line-height:1.5;margin:0;padding:18px 0 0;-webkit-font-smoothing:antialiased}
   a{text-decoration:none;color:inherit}
   .wrap{max-width:1200px;margin:0 auto;padding:0 20px 64px}
-  @media(min-width:1100px){.wrap{padding:0 max(20px,calc((100vw - 1240px)/2)) 64px}}
   :focus-visible{outline:2px solid var(--info);outline-offset:2px;border-radius:6px}
   h1,h2,h3{margin:0}
   .muted{color:var(--muted)} .sm{font-size:12.5px} .xs{font-size:11px}
@@ -35,199 +37,209 @@
   .tabnum{font-variant-numeric:tabular-nums}
   [data-lang="en"] .l-zh,[data-lang="zh"] .l-en{display:none}
 
-  /* ---- shared card chrome (airy, 16px radius, optional top accent) ---- */
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;position:relative;overflow:hidden}
-  .card.accent::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--rg,var(--info))}
-  .anim{animation:gxUp .5s cubic-bezier(.2,.7,.3,1) both}
-  .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}
+  /* ---- cards: airy, 16px radius, NO overflow clipping ---- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px;position:relative;margin:0 0 14px}
+  .cardhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .kick{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .anim{animation:gxUp .45s cubic-bezier(.2,.7,.3,1) both}
+  .d1{animation-delay:.05s}.d2{animation-delay:.09s}.d3{animation-delay:.13s}.d4{animation-delay:.17s}
 
-  /* ---- eyebrow section labels ---- */
-  .eyebrow{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:.11em;
-    text-transform:uppercase;color:var(--muted);margin:30px 2px 12px}
-  .eyebrow .dot{width:7px;height:7px;border-radius:2px;background:var(--rg,var(--muted));flex:none}
-  .eyebrow .hint{margin-left:auto;font-size:10.5px;font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--muted)}
-
-  /* ---- help "?" — CSS-only bilingual popover (Tier-2 mechanics home) ---- */
-  .help{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+  /* ---- "?" help: the inline .tip is NEVER shown in place — gex.js clones it
+         into the floating #gx-htip popover (viewport-clamped, never clipped) ---- */
+  .help{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
     border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;flex:none}
   .help:hover,.help:focus{color:var(--text);border-color:var(--muted);outline:none}
-  .help .tip{display:none;position:absolute;top:150%;right:-8px;z-index:60;width:270px;padding:11px 13px;border-radius:11px;
-    background:var(--panel);border:1px solid var(--line);box-shadow:var(--popover-shadow);
-    font-size:12px;font-weight:400;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0;cursor:auto}
-  .help:hover .tip,.help:focus .tip{display:block}
-  .help:hover::before{content:'';position:absolute;top:100%;left:-24px;right:-24px;height:12px}
+  .help .tip{display:none}
+  .help-pop{position:fixed;z-index:95;max-width:330px;background:var(--panel);border:1px solid var(--line);border-radius:11px;
+    padding:11px 13px;font-size:12.5px;line-height:1.55;color:var(--text);box-shadow:var(--popover-shadow);display:none}
+  .help-pop b{font-weight:700}
 
-  /* ============================ TOP ZONE ============================ */
-  .desk-top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 24px;padding:26px 0 4px}
-  .desk-brand{font-weight:800;font-size:27px;letter-spacing:-.02em;color:var(--text);display:flex;align-items:center;gap:9px}
-  .desk-brand .gn{background:linear-gradient(94deg,var(--up),var(--info) 52%,var(--down));-webkit-background-clip:text;background-clip:text;color:transparent}
-  .desk-sub{font-size:13.5px;color:var(--muted);margin-top:3px;max-width:560px}
-  .desk-search{position:relative;flex:1 1 320px;max-width:440px;margin-left:auto}
-  .desk-search .mag{position:absolute;left:15px;top:50%;transform:translateY(-50%);opacity:.55;font-size:15px}
-  .desk-search input{width:100%;padding:13px 14px 13px 42px;border:1px solid var(--line);border-radius:13px;
-    background:var(--panel);color:var(--text);font:inherit;font-size:15px;transition:border-color .15s,box-shadow .2s}
-  .desk-search input:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 16%,transparent)}
-  .gx-sugg{position:absolute;top:110%;left:0;right:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;
-    box-shadow:var(--popover-shadow);z-index:50;max-height:360px;overflow:auto;display:none;padding:5px}
-  .gx-sugg.on{display:block}
-  .gx-sugg .row{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;cursor:pointer;border-radius:9px;align-items:center}
-  .gx-sugg .row:hover,.gx-sugg .row.hl{background:var(--panel2)}
-  .gx-sugg .row b{font-weight:700} .gx-sugg .row .g{color:var(--muted);font-size:11.5px}
+  /* ============================ PAGE HEADER ============================ */
+  .pg{padding:8px 0 16px}
+  .pg h1{font-size:22px;font-weight:800;letter-spacing:-.01em}
+  .pg-sub{font-size:13.5px;color:var(--muted);margin:4px 0 0;max-width:720px}
 
-  /* ---- market weather strip (the one VALIDATED read) ---- */
-  .wx{margin-top:16px;border:1px solid var(--line);border-radius:16px;background:var(--panel);overflow:hidden;position:relative}
-  .wx::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--up)}
-  .wx-inner{padding:16px 20px}
-  .wx-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-  .wx-eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .wx-scored{font-size:10.5px;font-weight:800;letter-spacing:.03em;color:var(--up);border:1px solid color-mix(in srgb,var(--up) 45%,var(--line));
-    border-radius:999px;padding:2px 10px;white-space:nowrap}
-  .wx-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:10px}
-  .wx-icon{font-size:26px;line-height:1}
-  .wx-verdict{font-size:19px;font-weight:800;letter-spacing:-.01em}
-  .wx-calm .wx-verdict,.wx-up .wx-verdict{color:var(--up)}
-  .wx-jumpy .wx-verdict{color:var(--down)} .wx-warn .wx-verdict{color:var(--orange)}
-  .wx-gauge{flex:1 1 170px;min-width:140px;max-width:300px}
-  .wx-gauge .track{position:relative;height:7px;border-radius:5px;background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up));border:1px solid var(--line)}
+  /* ---- Market Weather: slim, clearly WHOLE-MARKET strip ---- */
+  .wx{padding:15px 20px}
+  .wx-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:8px}
+  .wx-ic{font-size:21px;line-height:1}
+  .wx-v{font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .wx-calm .wx-v,.wx-up .wx-v{color:var(--up)}
+  .wx-jumpy .wx-v{color:var(--down)} .wx-warn .wx-v{color:var(--orange)}
+  .wx-gauge{flex:0 1 180px;min-width:130px}
+  .wx-gauge .track{position:relative;display:block;height:7px;border-radius:5px;background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up));border:1px solid var(--line)}
   .wx-gauge .mk{position:absolute;top:-4px;width:3px;height:13px;background:var(--text);transform:translateX(-50%);border-radius:2px}
-  .wx-gauge .lbls{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:5px}
-  .wx-sub{font-size:13.5px;line-height:1.55;margin-top:11px}
+  .wx-gauge .lbls{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:4px}
+  .wx-stat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px 10px;font-size:12px}
+  .wx-stat .k{color:var(--muted);font-size:9.5px;display:block;text-transform:uppercase;letter-spacing:.04em}
+  .wx-stat .v{font-weight:700;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .wx-sub{font-size:13px;line-height:1.55;margin-top:9px;max-width:900px}
+  .wx-more{margin-top:8px}
+  .wx-more summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:6px}
+  .wx-more summary::-webkit-details-marker{display:none}
+  .wx-more summary::after{content:"▸";font-size:10px;transition:transform .2s}
+  .wx-more[open] summary::after{transform:rotate(90deg)}
+  .wx-more summary:hover{color:var(--text)}
   .wx-bullets{margin:9px 0 0;padding:0;list-style:none;display:grid;gap:6px}
-  .wx-bullets li{font-size:12.5px;line-height:1.5;padding-left:17px;position:relative}
+  .wx-bullets li{font-size:12.5px;line-height:1.5;padding-left:16px;position:relative}
   .wx-bullets li::before{content:"▸";position:absolute;left:2px;color:var(--muted)}
-  .wx-stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-  .wx-stat{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:12px}
-  .wx-stat .k{color:var(--muted);font-size:10px;display:block;text-transform:uppercase;letter-spacing:.04em}
-  .wx-stat .v{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
-  .wx-foot{font-size:11px;color:var(--muted);margin-top:11px;line-height:1.5}
+  .wx-foot{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5}
+  .wx-scored{font-size:10.5px;font-weight:800;letter-spacing:.03em;color:var(--up);border:1px solid color-mix(in srgb,var(--up) 45%,var(--line));
+    border-radius:999px;padding:2px 10px;white-space:nowrap;margin-left:auto}
 
   /* ---- primer ---- */
-  .primer{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
-  .primer summary{cursor:pointer;padding:14px 20px;font-weight:700;font-size:13.5px;list-style:none;display:flex;align-items:center;gap:10px}
+  .primer{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin:0 0 14px}
+  .primer summary{cursor:pointer;padding:13px 20px;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:10px}
   .primer summary::-webkit-details-marker{display:none}
   .primer summary .ic{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--panel2);flex:none}
   .primer summary .caret{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .25s}
   .primer[open] summary .caret{transform:rotate(90deg)}
-  .primer .body{padding:2px 22px 20px;border-top:1px solid var(--line)}
-  .primer .body p{margin:14px 0 4px;font-weight:600;line-height:1.55}
+  .primer .body{padding:2px 22px 18px;border-top:1px solid var(--line)}
+  .primer .body p{margin:13px 0 4px;font-weight:600;line-height:1.55;font-size:13.5px}
   .primer .body ul{margin:6px 0 0;padding-left:20px}
-  .primer .body li{margin:8px 0;font-size:13px;line-height:1.6}
+  .primer .body li{margin:7px 0;font-size:13px;line-height:1.6}
   .primer .body li b{color:var(--text)}
 
-  /* ============================ HERO ============================ */
-  .gx-calm{--rg:var(--up)} .gx-jumpy{--rg:var(--down)} .gx-mixed{--rg:var(--info)}
-  .hero{margin-top:20px;padding:22px 24px}
-  .hero-glow{position:absolute;inset:0;pointer-events:none;opacity:.5;
-    background:radial-gradient(120% 80% at 88% -10%,color-mix(in srgb,var(--rg) 15%,transparent),transparent 60%)}
-  .hero-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;position:relative}
-  .hero-id .sym{font-size:34px;font-weight:900;letter-spacing:-.02em;line-height:1}
-  .hero-id .nm{color:var(--muted);font-size:14px;margin-left:9px;font-weight:500}
-  .hero-id .grp{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;font-weight:700}
-  .hero-spot{text-align:right}
-  .hero-spot .v{font-size:31px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
-  .hero-spot .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;display:block;margin-bottom:3px}
-  .hero-verdict{position:relative;margin:20px 0 0;display:flex;align-items:flex-start;gap:13px}
-  .hero-vicon{font-size:30px;line-height:1.05;flex:none}
-  .hero-vtext .state{font-size:clamp(21px,3vw,27px);font-weight:800;letter-spacing:-.02em;line-height:1.15;color:var(--rg)}
-  .hero-vtext .say{font-size:14px;line-height:1.55;color:var(--text);margin-top:6px;max-width:680px}
-  .hero-vtext .say b{font-weight:700}
-  .hero-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-top:18px;position:relative}
-  .stance{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap;
-    background:color-mix(in srgb,var(--rg) 12%,var(--panel));color:var(--rg);border:1px solid color-mix(in srgb,var(--rg) 32%,var(--line))}
+  /* ============================ WORKSPACE ============================ */
+  /* toolbar + detail are one fused unit, so it's obvious the search drives
+     the panel below it. The regime accent (--rg) lives on the toolbar. */
+  .ws{--rg:var(--info)}
+  .ws.gx-calm{--rg:var(--up)} .ws.gx-jumpy{--rg:var(--down)} .ws.gx-mixed{--rg:var(--info)}
+  .ws-bar{position:relative;background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;
+    padding:13px 18px 12px;display:flex;flex-wrap:wrap;gap:9px 12px;align-items:center}
+  .ws-bar::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;border-radius:16px 16px 0 0;background:var(--rg)}
+  .ws-search{position:relative;flex:1 1 250px;max-width:400px}
+  .ws-search .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.55;font-size:14px}
+  .ws-search input{width:100%;padding:10px 13px 10px 38px;border:1px solid var(--line);border-radius:11px;
+    background:var(--panel2);color:var(--text);font:inherit;font-size:14px;transition:border-color .15s,box-shadow .2s}
+  .ws-search input:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 16%,transparent)}
+  .gx-sugg{position:absolute;top:112%;left:0;right:0;min-width:300px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--popover-shadow);z-index:50;max-height:340px;overflow:auto;display:none;padding:5px}
+  .gx-sugg.on{display:block}
+  .gx-sugg .row{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;cursor:pointer;border-radius:8px;align-items:center}
+  .gx-sugg .row:hover,.gx-sugg .row.hl{background:var(--panel2)}
+  .gx-sugg .row b{font-weight:700} .gx-sugg .row .g{color:var(--muted);font-size:11.5px}
+  .ws-quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .qchip{padding:6px 12px;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    border-radius:999px;cursor:pointer;font-family:inherit;transition:color .12s,border-color .12s}
+  .qchip:hover{color:var(--text);border-color:var(--muted)}
+  .qchip.on{color:var(--rg);border-color:color-mix(in srgb,var(--rg) 45%,var(--line));background:color-mix(in srgb,var(--rg) 8%,var(--panel2))}
+  .ws-hint{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+  @media(max-width:700px){.ws-hint{display:none}}
+  #gx-detail>.card:first-child{border-top-left-radius:0;border-top-right-radius:0}
+  .gx-loading{color:var(--muted);padding:46px 6px;text-align:center}
+
+  /* ---- hero ---- */
+  .hero-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px 16px}
+  .hid .sym{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1.05}
+  .hid .nm{color:var(--muted);font-size:14px;margin-left:8px;font-weight:500}
+  .hid .tag{display:block;font-size:11px;color:var(--muted);margin-top:5px;font-weight:600;letter-spacing:.02em}
+  .hspot{text-align:right}
+  .hspot .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;display:block;margin-bottom:2px}
+  .hspot .v{font-size:28px;font-weight:800;line-height:1}
+  .hv{display:flex;align-items:flex-start;gap:12px;margin-top:18px}
+  .hv-ic{font-size:26px;line-height:1.15;flex:none}
+  .hv-h{font-size:clamp(19px,2.6vw,24px);font-weight:800;letter-spacing:-.015em;line-height:1.2;color:var(--rg)}
+  .hv-s{font-size:14px;line-height:1.55;color:var(--text);margin-top:5px;max-width:700px}
+  .hv-s b{font-weight:700}
+  .hchips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+  .stance{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;
+    background:color-mix(in srgb,var(--rg) 11%,var(--panel));color:var(--rg);border:1px solid color-mix(in srgb,var(--rg) 32%,var(--line))}
   .stance .bd{width:7px;height:7px;border-radius:50%;background:currentColor;animation:gxBreathe 2.6s ease-in-out infinite;flex:none}
-  .range-chip{display:inline-flex;align-items:baseline;gap:8px;padding:7px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);
-    font-size:13px;font-variant-numeric:tabular-nums}
-  .range-chip .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
-  .range-chip b{font-weight:800}
-  .changed-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);
-    font-size:12px;font-weight:600}
-  .changed-chip .bd{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:gxBreathe 2.2s ease-in-out infinite;flex:none}
-  .hero-asof{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);margin-left:auto}
-  .hero-asof .bd{width:6px;height:6px;border-radius:50%;background:var(--up);animation:gxBreathe 2.8s ease-in-out infinite}
-  .single-warn{margin-top:14px;font-size:12px;line-height:1.5;color:var(--muted);border-left:3px solid var(--orange);
-    background:color-mix(in srgb,var(--orange) 7%,transparent);border-radius:0 9px 9px 0;padding:9px 13px;position:relative}
-  .single-warn b{color:var(--text)}
+  .hchip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:10px;background:var(--panel2);
+    border:1px solid var(--line);font-size:12.5px}
+  .hchip .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .hchip b{font-weight:800}
+  .hchip.warn{color:var(--orange);border-color:color-mix(in srgb,var(--orange) 42%,var(--line));background:color-mix(in srgb,var(--orange) 7%,var(--panel2))}
+  .hasof{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .hasof .bd{width:6px;height:6px;border-radius:50%;background:var(--up);animation:gxBreathe 2.8s ease-in-out infinite}
 
-  /* ============================ LEVELS MAP (signature) ============================ */
-  .lmap-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
-  .lmap-title{font-size:13px;font-weight:800;letter-spacing:.01em}
-  .lmap{display:grid;grid-template-columns:190px 1fr;gap:22px;margin-top:16px}
-  @media(max-width:720px){.lmap{grid-template-columns:1fr;gap:16px}}
-  /* the vertical gravity rail */
-  .lmap-rail{position:relative;min-height:300px}
-  .lmap-rail svg{width:100%;height:100%;display:block;overflow:visible}
-  /* the level cards beside the rail */
-  .lmap-levels{display:flex;flex-direction:column;gap:9px;min-width:0}
-  .lvl{border:1px solid var(--line);border-left-width:3px;border-radius:0 11px 11px 0;padding:10px 13px;background:var(--panel2);
-    animation:gxUp .45s cubic-bezier(.2,.7,.3,1) both}
-  .lvl.cw{border-left-color:var(--up)} .lvl.pw{border-left-color:var(--down)}
-  .lvl.flip{border-left-color:var(--info)} .lvl.mp{border-left-color:var(--orange)} .lvl.spot{border-left-color:var(--text)}
-  .lvl-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-  .lvl-tag{font-size:12.5px;font-weight:700}
-  .lvl-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;margin-left:auto}
-  .lvl-dist{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-  .lvl-str{display:inline-flex;gap:2px;vertical-align:middle;margin-left:2px}
-  .lvl-str i{width:6px;height:10px;border-radius:2px;background:var(--line);display:inline-block}
-  .lvl-say{font-size:12px;color:var(--muted);line-height:1.5;margin-top:5px}
-  .lvl-say b{color:var(--text);font-weight:600}
-  .lmap-foot{font-size:11px;color:var(--muted);line-height:1.5;margin-top:14px}
+  /* ============================ PRICE LADDER (signature) ============================ */
+  .lad{margin-top:14px}
+  .lad svg{width:100%;height:auto;display:block;overflow:visible}
+  .lad-key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:10.5px;color:var(--muted);margin-top:6px}
+  .lad-key i{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .lrows{margin-top:14px;border-top:1px solid var(--line)}
+  .lrow{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;gap:3px 10px;align-items:baseline;
+    padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+  .lrow:last-child{border-bottom:none}
+  .ldot{width:10px;height:10px;border-radius:3px;align-self:center}
+  .lrow.cw .ldot{background:var(--up)} .lrow.pw .ldot{background:var(--down)}
+  .lrow.flip .ldot{background:var(--info)} .lrow.mp .ldot{background:var(--orange)}
+  .lname{font-size:13px;font-weight:700;min-width:0}
+  .lstr{display:inline-flex;gap:2px;margin-left:8px;vertical-align:middle}
+  .lstr i{width:6px;height:10px;border-radius:2px;background:var(--line);display:inline-block}
+  .ldist{font-size:11.5px;color:var(--muted)}
+  .lprice{font-size:15px;font-weight:800;text-align:right}
+  .lwhy{grid-column:2/-1;font-size:12px;color:var(--muted);line-height:1.55}
+  .lwhy b{color:var(--text);font-weight:600}
+  .lad-foot{font-size:11px;color:var(--muted);line-height:1.5;margin-top:12px}
+  .lad-foot b{color:var(--text);font-weight:600}
+  .lad-empty{font-size:13px;color:var(--muted);margin:10px 0 0}
+  .vh-pill{font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:6px;border:1px solid var(--line);white-space:nowrap;margin-left:auto}
+  .vh-pill.up{color:var(--up)} .vh-pill.down{color:var(--down)} .vh-pill.neu{color:var(--info)}
+  .vh-pill.vol{color:var(--orange)} .vh-pill.na{color:var(--muted)}
 
-  /* ============================ THREE READS RAIL ============================ */
-  .reads{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:860px){.reads{grid-template-columns:1fr}}
-  .read{padding:18px}
-  .read-eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10.5px;font-weight:800;
-    letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
-  .read-state{font-size:22px;font-weight:800;letter-spacing:-.015em;line-height:1.15;margin:9px 0 2px}
-  .read-state.up{color:var(--up)} .read-state.down{color:var(--down)} .read-state.warn{color:var(--orange)} .read-state.info{color:var(--info)}
-  .read-sub{font-size:12.5px;color:var(--muted);line-height:1.5}
-  .read-metric{display:flex;align-items:baseline;gap:6px;margin-top:12px;font-variant-numeric:tabular-nums}
-  .read-metric .big{font-size:19px;font-weight:800} .read-metric .unit{font-size:11px;color:var(--muted)}
-  .read-spark{margin-top:10px;height:38px}
-  .read-legs{margin-top:12px;display:flex;flex-direction:column;gap:9px}
-  .leg{display:grid;grid-template-columns:22px 1fr;gap:4px 10px;align-items:start}
-  .leg-ar{font-size:15px;font-weight:800;text-align:center;line-height:1.4}
+  /* ============================ THREE READS ============================ */
+  .reads{display:grid;grid-template-columns:1fr;gap:14px;margin:0 0 14px}
+  @media(min-width:980px){.reads{grid-template-columns:repeat(3,1fr)}}
+  .reads>.card{margin:0;min-width:0}
+  .rhead{font-size:21px;font-weight:800;letter-spacing:-.015em;line-height:1.15;margin:9px 0 3px}
+  .rhead.up{color:var(--up)} .rhead.down{color:var(--down)} .rhead.warn{color:var(--orange)} .rhead.info{color:var(--info)}
+  .rsub{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .rmet{display:flex;align-items:baseline;gap:8px;margin-top:13px}
+  .rmet b{font-size:20px;font-weight:800}
+  .rmet .u{font-size:11px;color:var(--muted);line-height:1.3}
+  .rgs{display:flex;gap:2px;margin-top:13px}
+  .rgs i{flex:1 1 0;max-width:12px;height:16px;border-radius:2px}
+  .rgs-cap{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:10.5px;color:var(--muted);margin-top:6px;align-items:center}
+  .rgs-cap i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+  .rspark{margin-top:12px}
+  .mets{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+  .met{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 11px;min-width:84px}
+  .met .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700;display:block}
+  .met .v{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:1px}
+  .ivr-building{display:inline-block;font-size:10px;background:var(--panel2);border:1px dashed var(--orange);border-radius:6px;
+    padding:1px 7px;color:var(--orange);vertical-align:middle;margin-left:6px}
+  .ivr-chip{display:inline-block;font-size:10px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:middle;
+    border:1px solid var(--line)}
+  .leg{padding:9px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+  .leg:first-of-type{border-top:none}
+  .legs{margin-top:11px}
+  .leg-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .leg-ar{font-size:14px;font-weight:800;line-height:1;flex:none}
   .leg-ar.up{color:var(--up)} .leg-ar.down{color:var(--down)} .leg-ar.pin{color:var(--orange)} .leg-ar.flat{color:var(--muted)}
-  .leg-sig{font-size:12.5px;font-weight:700}
-  .leg-why{font-size:11.5px;color:var(--muted);line-height:1.45;grid-column:2}
+  .leg-n{font-size:12.5px;font-weight:700}
   .leg-hz{font-size:10px;font-weight:700;color:var(--info);border:1px solid color-mix(in srgb,var(--info) 35%,var(--line));
-    border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap;vertical-align:middle}
-  .read-foot{font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:12px}
-  .vh-band{position:relative;height:46px;margin:14px 4px 4px}
-  .vh-band .track{position:absolute;left:0;right:0;top:20px;height:7px;border-radius:5px;background:var(--panel2);border:1px solid var(--line)}
-  .vh-band .fill{position:absolute;top:0;bottom:0;border-radius:5px;opacity:.45;background:var(--info)}
-  .vh-band .mk{position:absolute;top:12px;width:2px;height:23px;transform:translateX(-50%)}
-  .vh-band .mk.lo{background:var(--down)} .vh-band .mk.hi{background:var(--up)}
-  .vh-band .mk.spot{background:var(--text);top:6px;height:35px}
-  .vh-band .cap{position:absolute;font-size:10px;color:var(--muted);top:30px;transform:translateX(-50%);white-space:nowrap;text-align:center}
-  .vh-band .cap.spot{top:-6px;color:var(--text);font-weight:700}
-  .vh-band .cap .v{display:block;font-weight:700;color:var(--text);font-size:10.5px}
+    border-radius:999px;padding:1px 8px}
+  .leg-w{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:3px}
+  .rfoot{font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.5}
 
   /* ============================ FLOW ============================ */
   .fl-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
   .fl-tag{font-size:13px;font-weight:800;display:flex;align-items:center;gap:7px}
-  .fl-verdict{font-size:13.5px;font-weight:600}
+  .fl-verdict{font-size:13px;font-weight:600}
   .fl.s-pos .fl-verdict{color:var(--up)} .fl.s-neg .fl-verdict{color:var(--down)}
-  .fl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .fl-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
   .fl-chip{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px}
-  .fl-chip .k{color:var(--muted);font-size:10px;display:block;text-transform:uppercase;letter-spacing:.04em}
-  .fl-chip .v{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .fl-chip .k{color:var(--muted);font-size:9.5px;display:block;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  .fl-chip .v{font-weight:800;font-size:13.5px;font-variant-numeric:tabular-nums}
   .fl-chip.pos .v{color:var(--up)} .fl-chip.neg .v{color:var(--down)}
   .fl-chip.soft{border-style:dashed;opacity:.8} .fl-chip.soft .v{color:var(--muted);font-weight:700}
-  .fl-sec{margin-top:14px;border-top:1px solid var(--line);padding-top:11px}
-  .fl-h{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .fl-sec{margin-top:13px;border-top:1px solid var(--line);padding-top:11px}
+  .fl-h{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
   .fl-sec ul{margin:7px 0 0;padding-left:18px} .fl-sec li{font-size:12px;line-height:1.55;margin:3px 0;font-variant-numeric:tabular-nums}
   .fl-foot{font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.5}
   .fl-accruing{opacity:.85}
   .fl-accruing-msg{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:8px}
-  .ivr-building{display:inline-block;font-size:10.5px;background:var(--panel2);border:1px dashed var(--orange);border-radius:6px;
-    padding:1px 7px;color:var(--orange);vertical-align:middle}
 
-  /* ============================ STUDY SHELF ============================ */
-  .shelf details{border:1px solid var(--line);border-radius:14px;margin-bottom:11px;overflow:hidden;background:var(--panel)}
-  .shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:700}
+  /* ============================ RAW-STRUCTURE SHELF ============================ */
+  .shelf{margin:0 0 14px}
+  .shelf-cap{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:4px 2px 10px}
+  .shelf details{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:var(--panel)}
+  .shelf summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:700}
   .shelf summary::-webkit-details-marker{display:none}
-  .shelf summary:hover{background:color-mix(in srgb,var(--info) 5%,var(--panel))}
+  .shelf summary:hover{background:color-mix(in srgb,var(--info) 5%,var(--panel));border-radius:14px}
   .shelf summary .sh-ic{flex:none;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;
     font-size:14px;background:var(--panel2)}
   .shelf summary .sh-hint{margin-left:auto;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
@@ -262,14 +274,14 @@
   .greek .k{font-size:11px;color:var(--muted)} .greek .v{font-size:15px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
 
   /* ============================ BOARD ============================ */
-  .gx-board-cta{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;max-width:560px;margin:8px auto;padding:20px 28px;
+  .gx-board-cta{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;max-width:560px;margin:8px auto;padding:18px 28px;
     border:1px dashed var(--line);border-radius:16px;background:var(--panel);color:var(--text);cursor:pointer;text-align:center;font:inherit;
-    transition:transform .16s,border-color .16s,box-shadow .2s,background .16s}
+    transition:transform .16s,border-color .16s,box-shadow .2s}
   .gx-board-cta:hover{transform:translateY(-2px);border-color:var(--info);border-style:solid;
     box-shadow:0 14px 34px -16px color-mix(in srgb,var(--info) 55%,transparent)}
-  .gx-board-cta .big{font-size:16px;font-weight:800}
+  .gx-board-cta .big{font-size:15px;font-weight:800}
   .gx-board-cta .sub{font-size:12px;color:var(--muted)}
-  #gx-boardwrap{position:relative;margin:8px 0}
+  #gx-boardwrap{position:relative;margin:20px 0 8px}
   #gx-boardwrap.collapsed #gx-board-inner{display:none}
   #gx-boardwrap:not(.collapsed) #gx-board-expand{display:none}
   #gx-board-inner{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:22px 18px;animation:gxUp .3s ease}
@@ -298,32 +310,24 @@
   .reg-na{color:var(--muted)}
   .board .symk{font-weight:700} .board .symn{color:var(--muted);font-size:11px;margin-left:5px}
   .board .thinmk{color:var(--orange);margin-left:5px;cursor:help}
-  .vh-pill{font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:6px;border:1px solid var(--line);white-space:nowrap}
-  .vh-pill.up{color:var(--up)} .vh-pill.down{color:var(--down)} .vh-pill.neu{color:var(--info)}
-  .vh-pill.vol{color:var(--orange)} .vh-pill.na{color:var(--muted)}
   .bhelp{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);
     color:var(--muted);font-size:9px;font-weight:700;cursor:help;margin-left:5px;vertical-align:middle}
   .bhelp:hover,.bhelp:focus{color:var(--text);border-color:var(--text);outline:none}
 
-  /* ---- floating tips ---- */
+  /* ---- floating tooltip (charts) ---- */
   .floaty-tip{position:fixed;pointer-events:none;z-index:90;background:var(--panel);border:1px solid var(--line);border-radius:8px;
     padding:7px 10px;font-size:11.5px;box-shadow:var(--popover-shadow);display:none;white-space:nowrap}
-  .help-pop{position:fixed;z-index:95;max-width:300px;background:var(--panel);border:1px solid var(--line);border-radius:9px;
-    padding:10px 12px;font-size:12px;line-height:1.5;color:var(--text);box-shadow:var(--popover-shadow);display:none}
-  .help-pop b{font-weight:700}
-  .gx-loading{color:var(--muted);padding:48px 6px;text-align:center}
 
   /* ============================ MOTION ============================ */
-  @keyframes gxUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  @keyframes gxBreathe{0%,100%{opacity:.4;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
-  @keyframes gxGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-  @keyframes gxDraw{to{stroke-dashoffset:0}}
-  @keyframes gxFlow{to{stroke-dashoffset:0}}
+  @keyframes gxUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes gxBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+  @keyframes gxHalo{0%,100%{opacity:.09}50%{opacity:.2}}
+  @keyframes gxDash{to{stroke-dashoffset:-18}}
+  .lad-halo{animation:gxHalo 3.2s ease-in-out infinite}
+  .lad-flip{animation:gxDash 2.8s linear infinite}
   @media (prefers-reduced-motion:reduce){
-    .anim,.lvl,#gx-board-inner{animation:none}
-    .stance .bd,.hero-asof .bd,.changed-chip .bd,.lmap-halo{animation:none!important}
-    .lmap-pulse{display:none!important}
-    .lmap-axis{stroke-dashoffset:0!important;animation:none!important}
+    .anim,#gx-board-inner{animation:none}
+    .stance .bd,.hasof .bd,.lad-halo,.lad-flip{animation:none!important}
     *{transition:none!important}
   }
 </style>
@@ -354,53 +358,57 @@
 
 <div class="wrap">
 
-  <!-- ===================== TOP ZONE: title + search ===================== -->
-  <header class="desk-top">
-    <div>
-      <div class="desk-brand">🧲 <span class="gn">{{ t('Options Desk', '期权台') }}</span></div>
-      <p class="desk-sub">{{ t('Where option dealers pin the price and where moves accelerate — a map of the walls, the flip and the vol regime for any name.', '期权做市商在何处磁吸价格、又在何处放大走势 — 任意标的的墙、翻转与波动率体制地图。') }}
-        {{ help('Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional certainty. Long gamma → dealers fade moves (price pins, lower vol); short gamma → dealers chase (moves amplify). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, fragile for single names. Walls / flip / max-pain are levels to watch, never targets; every trigger is a daily CLOSE beyond a level.',
-        '每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向定论。多头Gamma → 做市商抑制走势（磁吸、波动更低）；空头Gamma → 做市商追逐（放大）。做市商"多头看涨/空头看跌"符号为不可观测的假设 — 对指数稳健，对个股脆弱。墙/翻转/最大痛点仅供观察、绝非目标价；每个触发均为日线收盘越过某价位。') }}
-      </p>
-    </div>
-    <div class="desk-search">
-      <span class="mag">🔎</span>
-      <input id="gx-q" type="text" autocomplete="off" placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
-      <div class="gx-sugg" id="gx-sugg"></div>
-    </div>
+  <!-- ===================== PAGE HEADER ===================== -->
+  <header class="pg">
+    <h1>🧲 {{ t('Options Desk', '期权台') }}</h1>
+    <p class="pg-sub">{{ t("Where option dealers' hedging pins the price — and where it lets moves run. Look up any name below.", "期权做市商的对冲在哪里钉住价格、又在哪里放任波动。可在下方查询任意标的。") }}
+      {{ help('Built from daily, delayed Cboe option chains — NOT live intraday flow. This is a volatility-regime and levels map (where dealer hedging concentrates), not a buy list and not a direction call. The dealer long-call/short-put sign is an assumption: solid for indices and big ETFs, shaky for single stocks. Walls, flip and max-pain are levels to watch, never price targets; every trigger on this page means a full daily CLOSE beyond a level.',
+      '基于每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向判断。做市商"多头看涨/空头看跌"符号是一种假设：对指数与大型ETF稳健，对个股不稳。墙/翻转/最大痛点仅供观察、绝非目标价；本页所有触发均指日线收盘越过某价位。') }}
+    </p>
   </header>
 
-  <!-- Market Weather: the one VALIDATED read (engine/vol_regime; fetched from vol/regime.json) -->
-  <div class="wx" id="gx-weather" hidden>
-    <div class="wx-inner">
-      <div class="wx-top">
-        <span class="wx-eyebrow">🌦️ {{ t('Market Weather — index vol regime', '市场天气 — 指数波动率体制') }}</span>
-        {{ help('The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope + bond-vol (MOVE) + the vol-risk-premium, built from 1990+ history. On 33 years it predicts forward realized vol (HAC t ≈ −10) and, as a long/flat overlay, lifts Sharpe 0.65→0.84 and cuts drawdown. No dealer-sign assumption. It drives a SUBTRACT-ONLY risk/sizing nudge — a regime read, never an intraday timer.', '本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。33年中可预测前瞻已实现波动率(HAC t≈−10)，作为多/空仓叠加层将夏普从0.65提升至0.84并降低回撤。无做市商符号假设。它驱动仅做减法的风险/仓位微调 — 体制读数，绝非盘中择时。') }}
-        <span class="wx-scored" id="wx-scored" hidden>✓ {{ t('validated', '已验证') }}</span>
-      </div>
-      <div id="gx-weather-body"></div>
+  <!-- ===================== MARKET WEATHER (whole market; engine/vol_regime) ===================== -->
+  <section class="wx card" id="gx-weather" hidden>
+    <div class="cardhead">
+      <span class="kick">🌦️ {{ t('Market weather — the whole market, not one name', '市场天气 — 整体市场，非单一标的') }}</span>
+      {{ help('The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope, bond volatility (MOVE) and the vol-risk premium, built on 1990+ history. It predicts forward realized volatility and, used as a sizing overlay, improves risk-adjusted returns in backtests. No dealer-sign assumption. It drives a subtract-only sizing nudge — a market-wide regime read, never an intraday timer.',
+      '本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M 期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。可预测前瞻已实现波动率，作为仓位叠加层在回测中改善风险调整后收益。无做市商符号假设。它只做减法的仓位微调 — 市场整体体制读数，绝非盘中择时。') }}
+      <span class="wx-scored" id="wx-scored" hidden>✓ {{ t('validated', '已验证') }}</span>
     </div>
-  </div>
+    <div id="gx-weather-body"></div>
+  </section>
 
+  <!-- ===================== PRIMER ===================== -->
   <details class="primer">
     <summary><span class="ic">📘</span>{{ t('New to options? Read this first.', '不熟悉期权？先读这里。') }}<span class="caret">▸</span></summary>
     <div class="body">
-      <p>{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels, not a buy/sell signal and not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图，并非买卖信号、也非目标价。") }}</p>
+      <p>{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels — not a buy/sell signal, not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图 — 并非买卖信号、也非目标价。") }}</p>
       <ul>
-        <li>{{ t("Dealers are the banks that sell most options. To stay market-neutral, they constantly buy and sell the stock to offset what they've sold — and that hedging quietly pushes the price around.", "做市商是卖出大部分期权的银行。为保持市场中性，它们不断买卖股票以对冲卖出的部分 — 这种对冲会悄悄地推动价格。") }}</li>
-        <li>{{ t("Sometimes their hedging calms the market, sometimes it makes it jumpy. When dealers lean against moves, price tends to stick in a range. When they pile into moves, trends and air-pockets run bigger. This is about how volatile, not which direction.", "它们的对冲有时让市场平静、有时让市场跳动。当做市商逆势，价格倾向停在区间；当它们顺势，趋势与急跌都会更大。这关乎波动多大，而非方向。") }}</li>
-        <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above acts like a ceiling, a put wall below like a floor. We score each Strong → Faint so you see which are firm. They're where price tends to stall, not targets.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。我们为每面墙评分（强 → 微弱），以便看清哪些坚固。价格倾向在此停滞，而非以其为目标。") }}</li>
-        <li>{{ t("“The flip” is the line between calm and jumpy. Above it the market is usually calmer; below it, jumpier. It's a regime boundary you watch like a thermostat — not a support or resistance level.", "“翻转”是平静与跳动的分界。其上通常更平静，其下更跳动。它是像恒温器一样观察的体制边界 — 而非支撑或阻力位。") }}</li>
-        <li>{{ t("How to use it: pick a ticker, read the one-line verdict, check the levels map and the three reads, then watch the daily-close triggers. The dealer math is solid for big indices/ETFs but shaky for single stocks — treat single-name levels as loose context.", "用法：选一个代码，读一行结论，查看价位地图与三项读数，再关注日线收盘触发。做市商推算对大型指数/ETF稳健，对个股不稳 — 个股价位仅作宽松背景。") }}</li>
+        <li>{{ t("<b>Dealers</b> are the banks that sell most options. To stay neutral they constantly buy and sell the stock against what they've sold — and that hedging quietly pushes the price around.", "<b>做市商</b>是卖出大部分期权的银行。为保持中性，它们不断反向买卖股票 — 这种对冲会悄悄推动价格。")|safe }}</li>
+        <li>{{ t("Sometimes their hedging <b>calms</b> the market, sometimes it makes it <b>jumpy</b>. Leaning against moves keeps price in a range; piling into moves makes trends and air-pockets bigger. It's about how volatile — not which direction.", "对冲有时让市场<b>平静</b>、有时让市场<b>跳动</b>。逆势对冲使价格停在区间；顺势对冲使趋势与急跌更大。这关乎波动多大 — 而非方向。")|safe }}</li>
+        <li>{{ t("<b>Walls</b> are the prices where that hedging is heaviest — a call wall above acts like a ceiling, a put wall below like a floor. Each is scored Strong → Faint. Price tends to stall there; it doesn't aim there.", "<b>墙</b>是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。每面墙有强弱评分。价格倾向在此停滞，而非以此为目标。")|safe }}</li>
+        <li>{{ t("<b>The flip</b> is the line between the calm and jumpy regimes — watch it like a thermostat, not like support/resistance.", "<b>翻转</b>是平静与跳动体制的分界 — 像恒温器一样观察它，而非支撑/阻力。")|safe }}</li>
+        <li>{{ t("How to use it: pick a name, read the one-line verdict, look at the ladder, then watch the <b>daily-close</b> triggers. The math is solid for indices and big ETFs, loose for single stocks.", "用法：选一个标的，读一行结论，看价位图，再关注<b>日线收盘</b>触发。对指数与大型ETF稳健，对个股宽松。")|safe }}</li>
       </ul>
     </div>
   </details>
 
-  <!-- ===================== PER-TICKER DETAIL (rendered by gex.js) ===================== -->
-  <div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+  <!-- ===================== TICKER WORKSPACE (toolbar + detail, fused) ===================== -->
+  <section class="ws" id="gx-ws">
+    <div class="ws-bar">
+      <div class="ws-search">
+        <span class="mag">🔎</span>
+        <input id="gx-q" type="text" autocomplete="off" aria-label="Look up a ticker"
+          placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
+        <div class="gx-sugg" id="gx-sugg"></div>
+      </div>
+      <div class="ws-quick" id="gx-quick"></div>
+      <span class="ws-hint">{{ t('press / to search · full board below ↓', '按 / 搜索 · 完整看板见下方 ↓') }}</span>
+    </div>
+    <div id="gx-detail"><div class="card gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+  </section>
 
-  <!-- ===================== BOARD (every name — opt-in) ===================== -->
-  <div class="eyebrow"><span class="dot"></span>{{ t('Every name', '所有标的') }}<span class="hint" id="gx-board-hint"></span></div>
+  <!-- ===================== BOARD (every name) ===================== -->
   <section id="gx-boardwrap" class="collapsed">
     <button id="gx-board-expand" class="gx-board-cta" type="button">
       <span class="big">📋 {{ t('Open the full board', '打开完整看板') }}</span>
@@ -448,7 +456,7 @@
 <div class="floaty-tip" id="gx-tip"></div>
 <div class="help-pop" id="gx-htip"></div>
 <script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}"; window.GEX_COVERAGE = {{ coverage_json|safe }};</script>
-<script src="gex.js"></script>
+<script src="gex.js?v={{ built|replace(' ','')|replace(':','')|replace('UTC','') }}"></script>
 <script src="theme.js"></script>
 </body>
 </html>

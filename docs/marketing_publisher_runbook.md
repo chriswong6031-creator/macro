@@ -62,14 +62,26 @@ ledger writes. You can also click **Run dry-run** on the admin Publisher panel.
 
 ## 6. Arm live
 
-Two secrets arm it. In the GitHub repo settings (**Settings → Secrets and
-variables → Actions**):
+Going live is **two clicks in the admin Publisher panel** (Marketing → Publisher
+→ Go-live checklist) — no GitHub UI steps:
 
-- `BUFFER_TOKEN` = the token from step 1
-- `MARKETING_PUBLISH_ENABLED` = `1`
+1. **Paste the Buffer token** into the token row's paste-box and click **Save
+   token**. The panel writes it straight to the `BUFFER_TOKEN` repo secret (it
+   shells out to `gh secret set BUFFER_TOKEN`, passing the value on stdin — the
+   token is never shown, logged, or committed). `gh` must be installed and
+   authenticated on the admin host (this is a local-only action; see the
+   fallback below if you run the admin deployed).
+2. **Click Arm** on the ARM/DISARM toggle. This sets the `MARKETING_PUBLISH_ENABLED`
+   repo **variable** to `1` (via the GitHub API). That variable is the single
+   source of truth the workflow reads — `1` = armed, `0`/absent = dark.
 
 The scheduled workflow (`marketing-publish.yml`, weekday 14:00 / 17:30 / 20:15
-UTC) then posts. To run once locally instead:
+UTC) then posts approved, due items at the next slot.
+
+**Manual / fallback (no panel):** set the repo **variable** by hand at
+**Settings → Secrets and variables → Actions → Variables tab** →
+`MARKETING_PUBLISH_ENABLED` = `1`, and set the `BUFFER_TOKEN` **secret** on the
+Secrets tab (or `gh secret set BUFFER_TOKEN`). To run once locally instead:
 
 ```
 MARKETING_PUBLISH_ENABLED=1 BUFFER_TOKEN=<token> \
@@ -77,17 +89,30 @@ MARKETING_PUBLISH_ENABLED=1 BUFFER_TOKEN=<token> \
 ```
 
 The runner only posts when **both** the `--live` flag AND
-`MARKETING_PUBLISH_ENABLED` are set — the flag alone downgrades to dry-run
-(`scripts/marketing_publisher.py`: `live = bool(args.live) and kill_on`). That is
-why the workflow can pass `--live` unconditionally and stay dark until you set
-the secret.
+`MARKETING_PUBLISH_ENABLED` (in `{1,true,yes}`) are set — the flag alone
+downgrades to dry-run (`scripts/marketing_publisher.py`:
+`live = bool(args.live) and kill_on`). That is why the workflow can pass `--live`
+unconditionally and stay dark until you arm it.
+
+> **Note — the kill-switch moved from a SECRET to a VARIABLE.** The workflow
+> reads `vars.MARKETING_PUBLISH_ENABLED`, with **no fallback to the old secret**.
+> Any lingering repo *secret* named `MARKETING_PUBLISH_ENABLED` is now **ignored**
+> by the publisher — delete it to avoid confusion. Only the *variable* controls
+> arming. (One source of truth: a stale secret must never keep the publisher live
+> after you disarm.)
 
 ## 7. KILL SWITCH / rollback
 
-**Unset `MARKETING_PUBLISH_ENABLED`** (delete the repo secret, or unset the env
-var locally). Every path — workflow, local runner, admin dry-run — instantly
-reverts to dry-run and posts nothing. No code change, no deploy. This is the
-first thing to reach for if anything looks wrong.
+**Click Disarm** in the admin Publisher panel — it sets the
+`MARKETING_PUBLISH_ENABLED` repo **variable** to `0`. Every path — workflow,
+local runner, admin dry-run — instantly reverts to dry-run and posts nothing.
+No code change, no deploy. This is the first thing to reach for if anything looks
+wrong.
+
+Manual fallback: set the `MARKETING_PUBLISH_ENABLED` **variable** to `0` (or
+delete it) at **Settings → Secrets and variables → Actions → Variables**, or
+unset the env var locally. (It is a variable now, not a secret — see the note in
+§6.)
 
 ## 8. Raise the daily cap for warm-up
 
@@ -114,6 +139,30 @@ In dry-run it only reports what it *would* approve; it mutates nothing. Keep it
 **off** during the aged-account warm-up and turn it on only once you trust the
 pipeline.
 
+### 9b. Scoped exception: publish-time mover/theme posts
+
+`publish.auto_approve_kinds: [mover, theme_list]` (default ON in config) is a
+NARROW carve-out from `require_approval`: it auto-approves **only** items the
+publisher itself generated seconds earlier at the posting slot
+(`engine/marketing/publish_time_content.py`, provenance
+`publisher_live_movers`). These are descriptive live-tape posts — "$X -8% today"
+/ "Theme Tape" member lists — with **no entry advice**, rendered from the same
+v3 template banks, capped by every Sentinel limit, and re-verified against the
+live tape by the post-time gate before sending. There is no operator in the loop
+for them BY DESIGN: a human approving a "+7% right now" claim an hour later
+defeats the freshness that makes the post honest.
+
+Nightly/operator-authored items of **every** kind (including nightly `mover`
+drafts) still require approval — the carve-out keys on the publish-time
+provenance, not just the kind.
+
+Levers:
+- `publish.publish_time_movers.enabled: false` — stop generating them at all.
+- `publish.auto_approve_kinds: []` — keep generating, but they queue for manual
+  approval like everything else (they will usually be stale by the time a human
+  gets there; expect the tape gate to quarantine some at the next slot).
+- The global kill switch (§7) stops everything, as always.
+
 ## 10. COMPLIANCE
 
 - Buffer posts via X's **official OAuth** — approved automation, not scraping.
@@ -124,6 +173,87 @@ pipeline.
   this — do not defeat them.
 - New accounts posting links, or the same link twice, is a documented X
   suspension trip; `sentinel.links_allowed` is false until the ramp allows it.
+
+## 11. Post metrics (analytics read-back)
+
+Posts are fire-and-forget by default — Buffer's `createPost` returns only a post
+id, no permalink and no analytics. `scripts/marketing_metrics_poll.py` closes the
+loop: it reads back per-post impressions/likes/reposts/comments/clicks/engagement
+rate **and the public x.com permalink** (`externalLink`, which `createPost` never
+returns) via Buffer's `post(input:{id})` query, and appends them to
+`data/marketing/post_metrics.jsonl`.
+
+- **When it runs:** automatically, right after the publish step in
+  `marketing-publish.yml`, every posting slot (metrics refresh ~daily, so
+  re-polling keeps the console current). It also runs standalone:
+  `BUFFER_TOKEN=… python -m scripts.marketing_metrics_poll` (add `--dry-run` to
+  list what it would poll without any network call).
+- **What it needs:** only `BUFFER_TOKEN`. It is **independent of the publish
+  kill-switch** — with `BUFFER_TOKEN` unset it prints one line and exits 0 (no
+  network, no write), so it is harmless while the publisher is dark. (Note: the
+  workflow commits `post_metrics.jsonl` back only when `MARKETING_PUBLISH_ENABLED`
+  is set — the same "don't spam main with dark-run commits" gate as the outbox
+  ledger. If you set only `BUFFER_TOKEN`, metrics are fetched locally each run but
+  not committed until the publisher is armed.)
+- **What it polls:** every item posted in the last 7 days — from
+  `status_ledger.jsonl` (`posted` rows, keyed by the receipt's `external_id`) and
+  from `publications.jsonl` (`remote_id`), deduped by id.
+- **Follower counts are NOT available** from Buffer's API and are intentionally
+  not collected (a masterplan tracks the paid X-API option).
+- **Where it shows up:** Admin → Marketing → Publisher joins the latest metrics
+  row per post into the recent-posted table (`metrics` + `external_url`).
+- **Row shape** (`data/marketing/post_metrics.jsonl`, append-only, one row per
+  poll): `{remote_id, account, external_url, metrics:{impressions, likes,
+  reposts, comments, clicks, engagement_rate}, metrics_raw:[…], metrics_updated_at,
+  polled_at, ok, note?}`. An item Buffer has not yet refreshed produces an honest
+  row with `metrics: {}` and a `metrics_empty` note — never a fabricated zero.
+
+## 12. Images on posts
+
+By default posts are text-only. When enabled, each single-name signal card also
+posts as a **PNG chart** (price line, BUY marker, min/max/last, MASTERMIND brand
+mark). X rejects SVG, so a PNG is required — and Buffer hosts no uploads, so the
+PNG must sit at a public https URL.
+
+**How it works (where each step happens):**
+
+1. **Render (nightly, on the Mac):** `content_studio` renders the PNG at
+   content-plan build time — where the price closes are in scope — via
+   `chart_render.render_signal_chart_png`, and writes it to
+   `data/marketing/outbox/media/<as_of>/<chart_id>.png`.
+2. **Upload (nightly, on the Mac):** if R2 creds are present,
+   `media_publish.publish_chart_png` uploads that PNG to the **existing public R2
+   data plane** (`config.yml r2_data_plane.public_base`, the same
+   `pub-…​.r2.dev` bucket every `build_*` script reads) under
+   `marketing/charts/<as_of>/<chart_id>.png`, and stamps the public URL onto the
+   outbox item (`media_url`). No R2 creds → the PNG stays local, `media_url` is
+   null, and the post degrades to text-only.
+3. **Attach (post time, GitHub Actions):** the publisher passes `media_url` to
+   Buffer as a post asset. No public URL on the item → text-only.
+
+**The local PNG is ephemeral, R2 is the hosting plane.** The file at
+`data/marketing/outbox/media/<as_of>/<chart_id>.png` is a throwaway render input,
+not a delivery artifact — the post attaches the R2 public URL (`media_url`), never
+the local file. Local chart PNGs are therefore **git-ignored by design**
+(`.gitignore` → `data/marketing/outbox/media/**/*.png`); only the `.svg` chart
+snapshots stay committed (the admin console previews render from SVG). Do not "fix"
+a missing PNG in git — it was never meant to be there. If a post is text-only,
+check the R2 upload (creds on the Mac, `media_url` on the item), not the repo.
+
+**Kill switch / gate:** `config/marketing.yml publish.media_enabled` (top-level).
+`false` → never render, never upload, never attach. The Sentinel
+`max_media_posts_per_account_per_day` cap still governs how many chart items may
+post per account per day.
+
+**What the operator must provide for public images:** the same R2 env the
+oracle/data lanes use — `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+`R2_BUCKET` — **on the nightly Mac** (that is where the plan is built and the
+upload happens). These are not needed in the GitHub Actions publisher: by post
+time the public URL is already on the item. Without them, everything works
+text-only. (The bucket already serves its objects publicly at
+`r2_data_plane.public_base`; no new bucket and no ACL change is introduced — but
+if you would rather not expose chart images on that domain, leave
+`publish.media_enabled: false` and the whole path stays dark.)
 
 ---
 

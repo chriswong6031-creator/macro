@@ -28,16 +28,18 @@ from urllib.parse import parse_qs, urlparse
 from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brain_guest, brief, causal_lab,
                codex_panel,
                config_store,
-               content, context_lobe, experiments,
+               content, context_lobe, entitlements, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
                marketing,
+               mastermind_logs,
                mastermind_proxy,
                metabolism_history,
                metabolism_panel,
                neural_web,
                orchestrator_chat,
                prophet,
+               revenue,
                services, settings, site_gate, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
@@ -71,6 +73,28 @@ def _int_param(q: dict, key: str, default: int, lo: int, hi: int) -> int:
     except (ValueError, TypeError):
         return default
     return max(lo, min(hi, v))
+
+
+def _mm_log_filters(q: dict) -> dict:
+    """Build the mastermind_logs filter dict from a parsed query string.
+
+    Recognised params: surface, lane, model, mode, graded (yes|no|all),
+    thumb (up|down|all), starred (1), error (1), search (substring), since (ISO/date).
+    """
+    def one(key: str) -> str:
+        return (q.get(key) or [""])[0].strip()
+    return {
+        "surface": one("surface") or "all",
+        "lane": one("lane") or "all",
+        "model": one("model"),
+        "mode": one("mode"),
+        "graded": one("graded") or "all",
+        "thumb": one("thumb") or "all",
+        "starred": one("starred") in ("1", "true", "yes", "on"),
+        "error": one("error") in ("1", "true", "yes", "on"),
+        "q": one("search"),
+        "since": one("since"),
+    }
 
 
 def _sanitize_target_id(raw) -> str | None:
@@ -530,6 +554,14 @@ class Handler(BaseHTTPRequestHandler):
                 if not tid:
                     return self._json({"ok": False, "error": "invalid target_id"}, 400)
                 return self._json(marketing.allies_kit(target_id=tid))
+            # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
+            # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
+            if path == "/api/mastermind_ai/response_logs":
+                limit = _int_param(q, "limit", 100, 1, 500)
+                return self._json(mastermind_logs.logs(limit=limit, filters=_mm_log_filters(q)))
+            if path == "/api/mastermind_ai/response_logs/export":
+                fmt = (q.get("fmt") or ["jsonl"])[0]
+                return self._json(mastermind_logs.export(filters=_mm_log_filters(q), fmt=fmt))
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
@@ -605,6 +637,23 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users/subscribers":
                 limit = _int_param(q, "limit", 200, 1, 500)
                 return self._json(users.subscribers(limit=limit))
+            # entitlements roster (MNZ W2): auth.users(name,email) ⋈ user_entitlements,
+            # filterable by tier/status, searchable, paged. Read via the same Management-API
+            # PAT path as /api/users; writes are the POST /api/entitlements/action twin.
+            if path == "/api/entitlements":
+                return self._json(entitlements.list_users(
+                    tier=(q.get("tier") or [None])[0],
+                    status=(q.get("status") or [None])[0],
+                    search=(q.get("search") or q.get("q") or [None])[0],
+                    page=_int_param(q, "page", 1, 1, 100_000),
+                    page_size=_int_param(q, "page_size", 50, 1, 200)))
+            # revenue analytics (billing/revenue suite): MRR/ARR, sub counts, real collected
+            # cash, forward projections, and comp give-away counts — computed live from Stripe
+            # (Subscription/Invoice + the entitlements comp read), ~60s in-process cache. ?force=1
+            # busts the cache for a fresh pull. Stripe unconfigured → {ok:false} (honest empty state).
+            if path == "/api/revenue":
+                force = (q.get("force") or ["0"])[0] in ("1", "true", "yes")
+                return self._json(revenue.summary(force=force))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())
@@ -790,12 +839,54 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": "account must be a string"}, 400)
                 return self._json(marketing.publisher_dryrun(account=account))
 
+            # Sentinel: record an operator exception for one held post. Writes an
+            # append-only row that the NEXT nightly gate reads — nothing posts now.
+            if path == "/api/marketing/sentinel/allow":
+                item_id = b.get("item_id")
+                reason = b.get("reason")
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "item_id required"}, 400)
+                if not isinstance(reason, str) or not reason.strip():
+                    return self._json({"ok": False,
+                                       "error": "reason required — say why this post is safe to allow"}, 400)
+                res = marketing.sentinel_allow(item_id, reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # Desk on/off: merge-write the override file, then try to commit+push it.
+            # Refused in deployed mode (same as /api/git/commit — the VPS admin has
+            # no working tree to commit from; the file must land via a local push).
+            if path == "/api/marketing/accounts/toggle":
+                if settings.deployed():
+                    return self._json({"ok": False, "error":
+                                       "not available in deployed mode — the override file is "
+                                       "committed from a local checkout, not the VPS"}, 400)
+                account_id = b.get("account_id")
+                if not isinstance(account_id, str) or not account_id.strip():
+                    return self._json({"ok": False, "error": "account_id required"}, 400)
+                if "enabled" not in b or not isinstance(b.get("enabled"), bool):
+                    return self._json({"ok": False, "error": "enabled must be a boolean"}, 400)
+                note = b.get("note")
+                if note is not None and not isinstance(note, str):
+                    return self._json({"ok": False, "error": "note must be a string"}, 400)
+                res = marketing.accounts_toggle(account_id, b.get("enabled"), note=note)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             if path == "/api/orchestrator/chat":
                 return self._json(orchestrator_chat.chat(b.get("message", ""),
                                                          history=b.get("history")))
 
             if path == "/api/orchestrator/wake":
                 return self._json(orchestrator_chat.wake())
+
+            # W-AI: Mastermind AI response log — pull new rows from R2, and write
+            # operator eval verdicts (grade/thumb/star/tags/note) to the local sidecar.
+            if path == "/api/mastermind_ai/response_logs/refresh":
+                return self._json(mastermind_logs.refresh())
+            if path == "/api/mastermind_ai/response_logs/rate":
+                ok_v, err_msg, cleaned = mastermind_logs.validate_rate_body(b)
+                if not ok_v:
+                    return self._json({"ok": False, "error": err_msg}, 400)
+                return self._json(mastermind_logs.rate(cleaned, evaluator="operator"))
 
             if path in mastermind_proxy.POST_PATHS:
                 payload, code = mastermind_proxy.forward_post(path, b)
@@ -840,6 +931,14 @@ class Handler(BaseHTTPRequestHandler):
                     alert_emit_ts=alert_emit_ts,
                 )
                 return self._json({"ok": True, "row": row})
+
+            # Operator entitlement mutation (MNZ W2 + MNZ-R3): manual tier change, trial
+            # extend/reset, free passes, remove-comp. Single-operator console → the audit
+            # actor is the constant "operator" (no user DB; matches actions/allies ledgers).
+            # Comp-over-live-Stripe is refused unless force+cancel_stripe (see entitlements.py).
+            if path == "/api/entitlements/action":
+                payload, code = entitlements.act(b, operator="operator")
+                return self._json(payload, code)
 
             # Allies (MKT-D11): record an operator status transition. This is a
             # decision-recording write — it NEVER contacts anyone. The transition
@@ -1050,6 +1149,31 @@ class Handler(BaseHTTPRequestHandler):
                                        "error": "Failed to update SEO_DIRECTOR_ENABLED — check that "
                                                 "GH_TOKEN has Variables write permission."}, 500)
                 return self._json({"ok": True, "enabled": enabled, "variable_value": new_value})
+
+            # Publisher ARM/DISARM: write the MARKETING_PUBLISH_ENABLED repo VARIABLE
+            # ("1" armed / "0" dark) — the single source of truth the
+            # marketing-publish.yml workflow reads. Mirrors the SEO toggle above;
+            # marketing.arm_publisher() is the fail-soft plumbing. Works deployed
+            # (github_api uses a PAT, no local shell needed).
+            if path == "/api/marketing/publish/arm":
+                if "enabled" not in b or not isinstance(b.get("enabled"), bool):
+                    return self._json({"ok": False, "error": "enabled must be a boolean"}, 400)
+                res = marketing.arm_publisher(b.get("enabled"))
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # Buffer token paste-box: set the BUFFER_TOKEN repo SECRET via
+            # `gh secret set` (stdin — the token is NEVER in argv, logs, or the
+            # response). Local-only (gh login lives on the operator's Mac): refused
+            # in deployed mode inside marketing.set_buffer_token() with an honest
+            # GitHub-UI fallback. The response carries only {ok, note[, token_present]}.
+            if path == "/api/marketing/publish/token":
+                tok = b.get("token")
+                if not isinstance(tok, str) or not tok.strip():
+                    return self._json({"ok": False,
+                                       "error": "token required — paste the Buffer personal "
+                                                "API token, then Save."}, 400)
+                res = marketing.set_buffer_token(tok)
+                return self._json(res, 200 if res.get("ok") else 400)
 
             if path == "/api/codex/run":
                 if not b.get("confirm"):

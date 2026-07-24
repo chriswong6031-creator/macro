@@ -201,6 +201,7 @@
         <div class="nav-mega-feat">
           <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
           <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
@@ -250,12 +251,10 @@
         </div>
       </div>
     </div>
-      
-      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=e1a3ca0d" defer></script>
+  <script src="live.js?v=5cbadd26" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -378,7 +377,7 @@
              data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
           <span class="kpi-label"><span class="l-en">Regime HMM</span><span class="l-zh">象限HMM</span></span>
-          <span class="kpi-val c-info">P(Q2) 0.84</span>
+          <span class="kpi-val c-info">P(Q2) 0.85</span>
           <span class="kpi-sub l-en">hazard 0.42 &middot; ~2.4mo dwell &middot; 3mo in</span>
           <span class="kpi-sub l-zh">风险0.42 &middot; 预期停留~2.4月 &middot; 已3月</span>
         </div>
@@ -393,7 +392,7 @@
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Transitions 14d</span><span class="l-zh">14日转换</span></span>
-          <span class="kpi-val c-warn">50</span>
+          <span class="kpi-val c-warn">43</span>
           <span class="kpi-sub">0 <span class="l-en">today</span><span class="l-zh">今日</span></span>
         </div>
         
@@ -602,7 +601,7 @@
     <!-- Track record (forward-ledger scorecard) — display-only context accrual.
          Guards with .get() so missing keys never crash; absent scorecard = no output. -->
     <div class="trk-line">
-      <span class="l-en">Graded calls accruing — check back once alerts mature (~21 trading days)</span><span class="l-zh">评分记录积累中 — 约21个交易日后可查看</span>
+      <span class="l-en">Monitoring paused — ledger stale</span><span class="l-zh">监控暂停 — 账本数据陈旧</span>
     </div>
     
   </div>
@@ -966,7 +965,7 @@
         <div class="domain-name">
           <span class="domain-name-en"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           
-          <span class="domain-asof stale-ok"
+          <span class="domain-asof stale-warn"
                 data-tip-en="Source as-of 2026-07-22"
                 data-tip-zh="数据截至 2026-07-22">2026-07-22</span>
           
@@ -1198,8 +1197,8 @@
           <span class="domain-name-en"><span class="l-en">International Risk</span><span class="l-zh">国际风险</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-24"
-                data-tip-zh="数据截至 2026-07-24">2026-07-24</span>
+                data-tip-en="Source as-of 2026-07-25"
+                data-tip-zh="数据截至 2026-07-25">2026-07-25</span>
           
         </div>
         
@@ -2113,20 +2112,20 @@
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Implied Cuts (6m)</span><span class="l-zh">隐含降息(6月)</span></span>
-            <span class="stat-val">-1</span>
+            <span class="stat-val">-2</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">Market vs Fed</span><span class="l-zh">市场vs美联储</span></span>
-            <span class="stat-val">+14bp</span>
+            <span class="stat-val">+18bp</span>
           </div>
           
           
           <div class="stat-item">
             <span class="stat-key"><span class="l-en">2s10s Spread</span><span class="l-zh">2s10s利差</span></span>
             <div>
-              <span class="stat-val">37bp</span>
+              <span class="stat-val">36bp</span>
               
               <div class="stat-pctile">p65</div>
               
@@ -2294,14 +2293,14 @@
         <div class="liq-row" style="margin-top:10px">
           <div class="liq-stat">
             <div class="liq-stat-k">OFR FSI</div>
-            <div class="liq-stat-v c-up">-2.313</div>
+            <div class="liq-stat-v c-up">-2.558</div>
             <div class="liq-stat-sub"><span class="l-en">low stress</span><span class="l-zh">低压力</span></div>
           </div>
           
           <div style="padding:10px 0">
             <div class="spark-lbl"><span class="l-en">90d OFR FSI</span><span class="l-zh">90日OFR FSI</span></div>
             <svg width="100" height="28" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
-              <polyline points="0.0,15.3 1.6,14.3 3.1,12.0 4.7,9.3 6.3,7.4 7.9,8.3 9.4,9.7 11.0,5.0 12.6,5.4 14.2,1.0 15.7,5.6 17.3,15.0 18.9,9.3 20.4,15.0 22.0,11.7 23.6,9.4 25.2,17.0 26.7,18.5 28.3,19.9 29.9,19.8 31.5,22.3 33.0,23.4 34.6,23.4 36.2,25.0 37.8,22.3 39.3,22.6 40.9,23.0 42.5,23.2 44.0,22.3 45.6,22.5 47.2,21.5 48.8,21.5 50.3,22.8 51.9,20.1 53.5,19.3 55.1,20.1 56.6,22.1 58.2,23.5 59.8,24.3 61.3,25.1 62.9,24.6 64.5,25.1 66.1,26.3 67.6,24.3 69.2,23.5 70.8,23.4 72.4,24.2 73.9,26.1 75.5,26.4 77.1,26.3 78.7,26.9 80.2,27.2 81.8,28.7 83.4,31.0 84.9,28.6 86.5,27.7 88.1,28.4 89.7,28.2 91.2,26.2 92.8,25.2 94.4,24.7 96.0,21.0 97.5,21.8 99.1,24.5 100.7,27.4 102.2,28.8 103.8,28.9 105.4,28.8 107.0,28.0 108.5,28.6 110.1,25.8 111.7,23.2 113.3,26.3 114.8,25.4 116.4,23.3 118.0,25.5 119.6,27.0 121.1,29.8 122.7,28.2 124.3,27.8 125.8,29.7 127.4,22.6 129.0,24.4 130.6,26.6 132.1,25.5 133.7,26.1 135.3,27.6 136.9,26.8 138.4,24.7 140.0,24.7" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              <polyline points="0.0,14.3 1.6,12.0 3.1,9.3 4.7,7.4 6.3,8.3 7.9,9.7 9.4,5.0 11.0,5.4 12.6,1.0 14.2,5.6 15.7,15.0 17.3,9.3 18.9,15.0 20.4,11.7 22.0,9.4 23.6,17.0 25.2,18.5 26.7,19.9 28.3,19.8 29.9,22.3 31.5,23.4 33.0,23.4 34.6,25.0 36.2,22.3 37.8,22.6 39.3,23.0 40.9,23.2 42.5,22.3 44.0,22.5 45.6,21.5 47.2,21.5 48.8,22.8 50.3,20.1 51.9,19.3 53.5,20.1 55.1,22.1 56.6,23.5 58.2,24.3 59.8,25.1 61.3,24.6 62.9,25.1 64.5,26.3 66.1,24.3 67.6,23.5 69.2,23.4 70.8,24.2 72.4,26.1 73.9,26.4 75.5,26.3 77.1,26.9 78.7,27.2 80.2,28.7 81.8,31.0 83.4,28.6 84.9,27.7 86.5,28.4 88.1,28.2 89.7,26.2 91.2,25.2 92.8,24.7 94.4,21.0 96.0,21.8 97.5,24.5 99.1,27.4 100.7,28.8 102.2,28.9 103.8,28.8 105.4,28.0 107.0,28.6 108.5,25.8 110.1,23.2 111.7,26.3 113.3,25.4 114.8,23.3 116.4,25.5 118.0,27.0 119.6,29.8 121.1,28.2 122.7,27.8 124.3,29.7 125.8,22.6 127.4,24.4 129.0,26.6 130.6,25.5 132.1,26.1 133.7,27.6 135.3,26.8 136.9,24.7 138.4,24.7 140.0,27.1" fill="none" stroke="var(--up)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
             </svg>
           </div>
           
@@ -3011,7 +3010,7 @@
       &nbsp;·&nbsp;
       <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-22
       &nbsp;·&nbsp;
-      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 50
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 43
       &nbsp;·&nbsp;
       <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
       &nbsp;·&nbsp;
@@ -3022,7 +3021,7 @@
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-23 17:15 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-24 18:03 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -3032,6 +3031,6 @@
   <span><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
 </footer>
 
-<script src="theme.js?v=e573de07" defer></script>
+<script src="theme.js?v=16dc65dc" defer></script>
 </body>
 </html>
