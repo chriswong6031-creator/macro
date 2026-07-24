@@ -432,6 +432,7 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 .phc-chip{font-family:'Archivo',sans-serif;font-weight:800;font-size:10px;letter-spacing:.08em;padding:3px 10px;border-radius:99px;background:color-mix(in srgb,var(--ph) 11%,#fff);color:var(--ph);border:1px solid color-mix(in srgb,var(--ph) 40%,transparent);white-space:nowrap}
 .phc-buy .phc-chip{background:var(--ph);color:#fff;border-color:transparent}
 .phc-px{font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;background:rgba(255,255,255,.9);border:1px solid var(--hair);border-radius:7px;padding:2px 7px;color:var(--ink)}
+.phc-since{font-family:'Archivo',sans-serif;font-weight:800;font-size:12.5px;background:var(--q-green);color:#fff;border-radius:7px;padding:2px 8px;box-shadow:0 2px 10px rgba(31,139,65,.4)}
 .phc-cau{position:relative;display:inline-flex}
 .phc-cau-b{display:inline-flex;align-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;padding:3px 8px;border-radius:99px;background:var(--gold-wash);color:var(--q-gold);border:1px solid rgba(176,125,5,.35);cursor:default}
 .phc-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:210px;background:#fff;border:1px solid var(--hair-2);border-radius:10px;box-shadow:var(--sh-lift);padding:8px 10px;white-space:normal}
