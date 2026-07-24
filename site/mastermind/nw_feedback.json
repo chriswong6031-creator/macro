@@ -1,11 +1,11 @@
 {
   "schema": "mastermind_nw_feedback.v3",
-  "generated_at": "2026-07-23T22:25:00Z",
+  "generated_at": "2026-07-24T12:25:02Z",
   "window_days": 14,
   "thesis_counts": {
-    "open": 26,
-    "closed_or_rebuilt": 55,
-    "total": 81
+    "open": 30,
+    "closed_or_rebuilt": 66,
+    "total": 96
   },
   "run_counts": {
     "publish_macro_snapshot": {
@@ -13,8 +13,33 @@
       "error": 0,
       "other": 0
     },
+    "portfolio_risk_compose": {
+      "ok": 145,
+      "error": 0,
+      "other": 0
+    },
     "macro_refresh": {
       "ok": 108,
+      "error": 0,
+      "other": 0
+    },
+    "derisk_us_intraday": {
+      "ok": 127,
+      "error": 0,
+      "other": 0
+    },
+    "watch_asia_overnight": {
+      "ok": 28,
+      "error": 0,
+      "other": 0
+    },
+    "settle_pending": {
+      "ok": 10,
+      "error": 0,
+      "other": 0
+    },
+    "portfolio_risk_daily": {
+      "ok": 10,
       "error": 0,
       "other": 0
     },
@@ -48,8 +73,28 @@
       "error": 0,
       "other": 0
     },
-    "watch_asia_overnight": {
-      "ok": 28,
+    "daily_loop": {
+      "ok": 3,
+      "error": 0,
+      "other": 6
+    },
+    "cio_weekly": {
+      "ok": 2,
+      "error": 0,
+      "other": 0
+    },
+    "improvement_agenda_weekly": {
+      "ok": 2,
+      "error": 0,
+      "other": 0
+    },
+    "vps_state_sync": {
+      "ok": 1062,
+      "error": 13,
+      "other": 0
+    },
+    "prewarm_marks": {
+      "ok": 4636,
       "error": 0,
       "other": 0
     },
@@ -63,11 +108,6 @@
       "error": 0,
       "other": 0
     },
-    "daily_loop": {
-      "ok": 4,
-      "error": 0,
-      "other": 5
-    },
     "china_daily": {
       "ok": 10,
       "error": 0,
@@ -75,46 +115,6 @@
     },
     "hk_daily": {
       "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "portfolio_risk_compose": {
-      "ok": 145,
-      "error": 0,
-      "other": 0
-    },
-    "derisk_us_intraday": {
-      "ok": 127,
-      "error": 0,
-      "other": 0
-    },
-    "settle_pending": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "portfolio_risk_daily": {
-      "ok": 10,
-      "error": 0,
-      "other": 0
-    },
-    "cio_weekly": {
-      "ok": 2,
-      "error": 0,
-      "other": 0
-    },
-    "improvement_agenda_weekly": {
-      "ok": 2,
-      "error": 0,
-      "other": 0
-    },
-    "vps_state_sync": {
-      "ok": 1006,
-      "error": 13,
-      "other": 0
-    },
-    "prewarm_marks": {
-      "ok": 4366,
       "error": 0,
       "other": 0
     }
@@ -132,8 +132,8 @@
         },
         "total": 5
       },
-      "rejected_decision_count": 154,
-      "lock_conflict_count": 15,
+      "rejected_decision_count": 150,
+      "lock_conflict_count": 17,
       "stale_freeze_count": 5
     },
     {
@@ -220,22 +220,22 @@
       {
         "book_id": "autonomous",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 13
       },
       {
         "book_id": "china",
         "packet_accepted": 0,
-        "packet_rejected": 8
+        "packet_rejected": 7
       },
       {
         "book_id": "etf",
         "packet_accepted": 0,
-        "packet_rejected": 10
+        "packet_rejected": 13
       },
       {
         "book_id": "flagship_judgment",
         "packet_accepted": 0,
-        "packet_rejected": 7
+        "packet_rejected": 8
       },
       {
         "book_id": "heavyweight",
@@ -245,12 +245,12 @@
       {
         "book_id": "hk",
         "packet_accepted": 0,
-        "packet_rejected": 8
+        "packet_rejected": 7
       }
     ],
     "rejection_error_classes": {
-      "expected_failure_mode": 48,
-      "falsifiers": 48
+      "expected_failure_mode": 53,
+      "falsifiers": 53
     }
   },
   "outcome_mix": {
@@ -260,10 +260,10 @@
   },
   "context_audit": {
     "state": "ok",
-    "n_present": 18,
+    "n_present": 20,
     "n_stale": 0,
     "n_absent": 0,
-    "n_runs_total": 18,
+    "n_runs_total": 20,
     "context_seen_rate": 1.0
   },
   "metric_families": {

@@ -1,40 +1,6 @@
 {
-  "as_of": "2026-07-23",
+  "as_of": "2026-07-24",
   "days": {
-    "2026-06-24": {
-      "autonomous": {
-        "cache_read_tokens": 0,
-        "calls": 0,
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "seats": {},
-        "usd": 1.927254
-      },
-      "china": {
-        "cache_read_tokens": 0,
-        "calls": 0,
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "seats": {},
-        "usd": 2.631404
-      },
-      "heavyweight": {
-        "cache_read_tokens": 0,
-        "calls": 0,
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "seats": {},
-        "usd": 0.759039
-      },
-      "hk": {
-        "cache_read_tokens": 0,
-        "calls": 0,
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "seats": {},
-        "usd": 2.010426
-      }
-    },
     "2026-06-25": {
       "autonomous": {
         "cache_read_tokens": 0,
@@ -1069,85 +1035,293 @@
       }
     },
     "2026-07-23": {
+      "autonomous": {
+        "cache_read_tokens": 417304,
+        "calls": 3,
+        "input_tokens": 34209,
+        "keys": {},
+        "output_tokens": 23754,
+        "seats": {
+          "autonomous_brain": {
+            "calls": 3,
+            "input_tokens": 34209,
+            "output_tokens": 23754,
+            "usd": 3.426323
+          }
+        },
+        "usd": 3.426323
+      },
+      "etf": {
+        "cache_read_tokens": 311077,
+        "calls": 3,
+        "input_tokens": 34064,
+        "keys": {},
+        "output_tokens": 24385,
+        "seats": {
+          "etf_brain": {
+            "calls": 3,
+            "input_tokens": 34064,
+            "output_tokens": 24385,
+            "usd": 3.31722
+          }
+        },
+        "usd": 3.31722
+      },
       "flagship": {
-        "cache_read_tokens": 386656,
-        "calls": 16,
-        "input_tokens": 144145,
+        "cache_read_tokens": 860777,
+        "calls": 35,
+        "input_tokens": 332369,
         "keys": {
           "claude_code_oauth_4": {
-            "calls": 4,
-            "input_tokens": 44192,
-            "output_tokens": 14595,
-            "usd": 1.218519
+            "calls": 9,
+            "input_tokens": 99486,
+            "output_tokens": 35329,
+            "usd": 2.765011
           },
           "claude_code_oauth_5": {
-            "calls": 4,
-            "input_tokens": 33182,
-            "output_tokens": 11563,
-            "usd": 1.229011
+            "calls": 9,
+            "input_tokens": 88458,
+            "output_tokens": 27803,
+            "usd": 2.515732
+          },
+          "claude_code_oauth_6": {
+            "calls": 7,
+            "input_tokens": 66308,
+            "output_tokens": 20997,
+            "usd": 2.068712
+          },
+          "claude_code_oauth_7": {
+            "calls": 8,
+            "input_tokens": 55282,
+            "output_tokens": 19518,
+            "usd": 2.456274
+          }
+        },
+        "output_tokens": 125322,
+        "seats": {
+          "deep": {
+            "calls": 33,
+            "input_tokens": 309534,
+            "output_tokens": 103647,
+            "usd": 9.805729
+          },
+          "flagship_pm": {
+            "calls": 2,
+            "input_tokens": 22835,
+            "output_tokens": 21675,
+            "usd": 2.181576
+          }
+        },
+        "usd": 11.987303
+      },
+      "heavyweight": {
+        "cache_read_tokens": 94102,
+        "calls": 1,
+        "input_tokens": 11568,
+        "keys": {},
+        "output_tokens": 10119,
+        "seats": {
+          "heavyweight_brain": {
+            "calls": 1,
+            "input_tokens": 11568,
+            "output_tokens": 10119,
+            "usd": 1.422158
+          }
+        },
+        "usd": 1.422158
+      }
+    },
+    "2026-07-24": {
+      "autonomous": {
+        "cache_read_tokens": 126717,
+        "calls": 1,
+        "input_tokens": 11360,
+        "keys": {},
+        "output_tokens": 9550,
+        "seats": {
+          "autonomous_brain": {
+            "calls": 1,
+            "input_tokens": 11360,
+            "output_tokens": 9550,
+            "usd": 1.161293
+          }
+        },
+        "usd": 1.161293
+      },
+      "china": {
+        "cache_read_tokens": 149219,
+        "calls": 1,
+        "input_tokens": 11442,
+        "keys": {},
+        "output_tokens": 9387,
+        "seats": {
+          "china_brain": {
+            "calls": 1,
+            "input_tokens": 11442,
+            "output_tokens": 9387,
+            "usd": 1.241067
+          }
+        },
+        "usd": 1.241067
+      },
+      "etf": {
+        "cache_read_tokens": 137853,
+        "calls": 1,
+        "input_tokens": 11503,
+        "keys": {},
+        "output_tokens": 8211,
+        "seats": {
+          "etf_brain": {
+            "calls": 1,
+            "input_tokens": 11503,
+            "output_tokens": 8211,
+            "usd": 1.141671
+          }
+        },
+        "usd": 1.141671
+      },
+      "flagship": {
+        "cache_read_tokens": 412496,
+        "calls": 18,
+        "input_tokens": 177140,
+        "keys": {
+          "claude_code_oauth_3": {
+            "calls": 7,
+            "input_tokens": 66344,
+            "output_tokens": 20644,
+            "usd": 2.016178
+          },
+          "claude_code_oauth_4": {
+            "calls": 3,
+            "input_tokens": 22098,
+            "output_tokens": 9258,
+            "usd": 0.997336
+          },
+          "claude_code_oauth_5": {
+            "calls": 2,
+            "input_tokens": 22114,
+            "output_tokens": 7096,
+            "usd": 0.525302
           },
           "claude_code_oauth_6": {
             "calls": 3,
-            "input_tokens": 33162,
-            "output_tokens": 11767,
-            "usd": 1.012256
+            "input_tokens": 33144,
+            "output_tokens": 9932,
+            "usd": 0.77302
           },
           "claude_code_oauth_7": {
-            "calls": 4,
-            "input_tokens": 22118,
-            "output_tokens": 9113,
-            "usd": 1.268744
+            "calls": 2,
+            "input_tokens": 22096,
+            "output_tokens": 7221,
+            "usd": 0.68902
           }
         },
-        "output_tokens": 57471,
+        "output_tokens": 64507,
         "seats": {
           "deep": {
-            "calls": 15,
-            "input_tokens": 132654,
-            "output_tokens": 47038,
-            "usd": 4.72853
+            "calls": 17,
+            "input_tokens": 165796,
+            "output_tokens": 54151,
+            "usd": 5.000856
           },
           "flagship_pm": {
             "calls": 1,
-            "input_tokens": 11491,
-            "output_tokens": 10433,
-            "usd": 1.159041
+            "input_tokens": 11344,
+            "output_tokens": 10356,
+            "usd": 1.295883
           }
         },
-        "usd": 5.88757
+        "usd": 6.296739
+      },
+      "hk": {
+        "cache_read_tokens": 174633,
+        "calls": 1,
+        "input_tokens": 11297,
+        "keys": {},
+        "output_tokens": 8781,
+        "seats": {
+          "hk_brain": {
+            "calls": 1,
+            "input_tokens": 11297,
+            "output_tokens": 8781,
+            "usd": 0.893814
+          }
+        },
+        "usd": 0.893814
+      },
+      "system": {
+        "cache_read_tokens": 81030,
+        "calls": 11,
+        "input_tokens": 110,
+        "keys": {
+          "claude_code_oauth_4": {
+            "calls": 4,
+            "input_tokens": 40,
+            "output_tokens": 48739,
+            "usd": 0.376475
+          },
+          "claude_code_oauth_5": {
+            "calls": 3,
+            "input_tokens": 30,
+            "output_tokens": 26218,
+            "usd": 0.235225
+          },
+          "claude_code_oauth_6": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 17089,
+            "usd": 0.163376
+          },
+          "claude_code_oauth_7": {
+            "calls": 2,
+            "input_tokens": 20,
+            "output_tokens": 12859,
+            "usd": 0.168155
+          }
+        },
+        "output_tokens": 104905,
+        "seats": {
+          "scout": {
+            "calls": 11,
+            "input_tokens": 110,
+            "output_tokens": 104905,
+            "usd": 0.943234
+          }
+        },
+        "usd": 0.943234
       }
     }
   },
   "schema": "mastermind.cost_summary.v1",
   "totals_30d": {
     "by_book": {
-      "autonomous": 34.552083,
-      "china": 38.744716,
-      "etf": 6.198606,
-      "flagship": 46.721487,
-      "heavyweight": 15.038392,
-      "hk": 28.160288,
-      "system": 5.331323
+      "autonomous": 37.212445,
+      "china": 37.354379,
+      "etf": 10.657497,
+      "flagship": 59.117959,
+      "heavyweight": 15.701511,
+      "hk": 27.043676,
+      "system": 6.274557
     },
     "by_key": {
-      "claude_code_oauth_3": 2.499203,
-      "claude_code_oauth_4": 4.227041,
-      "claude_code_oauth_5": 4.288979,
-      "claude_code_oauth_6": 4.008135,
-      "claude_code_oauth_7": 3.886682
+      "claude_code_oauth_3": 4.515381,
+      "claude_code_oauth_4": 7.147344,
+      "claude_code_oauth_5": 6.336227,
+      "claude_code_oauth_6": 6.000987,
+      "claude_code_oauth_7": 5.931387
     },
     "by_seat": {
-      "autonomous_brain": 7.2158,
-      "china_brain": 7.092498,
-      "deep": 13.578712,
-      "etf_brain": 6.198606,
-      "flagship_pm": 3.101095,
-      "heavyweight_brain": 3.912202,
-      "hk_brain": 6.874899,
-      "scout": 5.331323
+      "autonomous_brain": 11.803416,
+      "china_brain": 8.333565,
+      "deep": 23.656767,
+      "etf_brain": 10.657497,
+      "flagship_pm": 5.419513,
+      "heavyweight_brain": 5.33436,
+      "hk_brain": 7.768713,
+      "scout": 6.274557
     },
-    "input_tokens": 561379,
-    "output_tokens": 960174,
-    "usd": 174.7469
+    "input_tokens": 1052296,
+    "output_tokens": 1291624,
+    "usd": 193.362
   }
 }
