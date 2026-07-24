@@ -1609,8 +1609,10 @@ def sentinel_allow(item_id, reason, root=None) -> dict:
     "error": ...} on bad input or a write failure, never raises.
     """
     try:
-        iid = str(item_id or "").strip()
-        rsn = str(reason or "").strip()
+        # ledger rows are unbounded-append; cap operator input so one paste
+        # can't balloon the file
+        iid = str(item_id or "").strip()[:200]
+        rsn = str(reason or "").strip()[:500]
         if not iid:
             return {"ok": False, "error": "item_id required"}
         if not rsn:
@@ -1651,12 +1653,24 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
     ``pushed: False`` + an honest note. Fail-soft: never raises.
     """
     try:
-        aid = str(account_id or "").strip()
+        aid = str(account_id or "").strip()[:100]
         if not aid:
             return {"ok": False, "error": "account_id required"}
+        # mirror the server route's deployed refusal so a future caller can't
+        # reach the auto-push path from a deployed box
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return {"ok": False, "error": "account toggles are disabled in deployed mode"}
         en = bool(enabled)
         from datetime import datetime, timezone  # noqa: PLC0415
         repo = Path(root) if root is not None else _default_root()
+        # only accept ids that exist in config; fail-open when config is unreadable
+        cfg = _read_yaml(repo / _CONFIG_REL)
+        known = [str(a.get("id") or "").strip()
+                 for a in ((cfg.get("desk_network") or {}).get("accounts") or [])
+                 if isinstance(a, dict)] if isinstance(cfg, dict) else []
+        if known and aid not in known:
+            return {"ok": False, "error": f"unknown account '{aid}'"}
         path = repo / _ACCT_OVERRIDES_REL
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -1666,7 +1680,7 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
             current = {}
         current[aid] = {
             "enabled": en,
-            "note": str(note or "").strip(),
+            "note": str(note or "").strip()[:500],
             "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         # atomic replace: write a temp sibling then os.replace

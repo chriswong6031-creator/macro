@@ -1606,6 +1606,38 @@ class TestAccountsToggle:
         assert r["ok"] is False
         assert "account_id" in r["error"].lower()
 
+    def test_rejects_unknown_account_when_config_present(self, tmp_path):
+        cfg = tmp_path / "config"
+        cfg.mkdir(parents=True)
+        (cfg / "marketing.yml").write_text(
+            "desk_network:\n  accounts:\n    - id: flagship\n    - id: research_a\n",
+            encoding="utf-8")
+        r = marketing.accounts_toggle("not_a_desk", True, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "unknown account" in r["error"]
+        # known id still accepted against the same config
+        r2 = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r2["ok"] is True
+
+    def test_refused_in_deployed_mode(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "deployed" in r["error"].lower()
+        assert not (tmp_path / "data" / "marketing" / "account_overrides.json").exists()
+
+    def test_note_and_reason_length_capped(self, tmp_path):
+        marketing.accounts_toggle("flagship", True, note="n" * 2000,
+                                  root=tmp_path, push=False)
+        obj = json.loads((tmp_path / "data" / "marketing"
+                          / "account_overrides.json").read_text())
+        assert len(obj["flagship"]["note"]) == 500
+        r = marketing.sentinel_allow("post-x-001", "r" * 2000, root=tmp_path)
+        assert r["ok"] is True
+        row = json.loads((tmp_path / "data" / "marketing"
+                          / "sentinel_exceptions.jsonl").read_text().splitlines()[-1])
+        assert len(row["reason"]) == 500
+
     def test_honest_pushed_false_when_git_push_refused(self, tmp_path, monkeypatch):
         """When the git commit+push step reports pushed:false (e.g. off a main
         tracking branch), the override is still saved and the result is honest."""
