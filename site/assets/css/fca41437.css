@@ -87,7 +87,7 @@ html[data-lang="zh"] .band h2{letter-spacing:0}
 .card:hover,.card:focus-within{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 48%,var(--line));
  box-shadow:0 16px 36px -16px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
 .card:hover.acc::before,.card:focus-within.acc::before{transform:scaleX(1)} .card:hover.acc::after{opacity:1}
-.card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.card-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;margin-bottom:9px}
 .ico{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:9px;
  background:color-mix(in srgb,var(--accent) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
  transition:transform .18s cubic-bezier(.2,.7,.3,1)}
@@ -514,6 +514,14 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .regime-changed .l-zh{display:none}
 html[data-lang="zh"] .regime-changed .l-en{display:none}
 html[data-lang="zh"] .regime-changed .l-zh{display:inline}
+/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
+   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
+.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
+.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
+.regime-drift .l-zh{display:none}
+html[data-lang="zh"] .regime-drift .l-en{display:none}
+html[data-lang="zh"] .regime-drift .l-zh{display:inline}
 
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
@@ -528,9 +536,9 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
    in ONE grid cell so the crossfade never shifts layout. ===== */
 .hub-hero-stack{display:grid}
 .hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
-.hub-brand{transition:opacity .55s ease,transform .55s ease}
-.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(52px,7vw,74px);
- opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .5s ease,transform .5s ease}
+.hub-brand{transition:opacity .85s ease,transform .85s ease}
+.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(88px,12vw,124px);
+ opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .8s ease,transform .8s ease}
 .h.greet-run .hub-greet{opacity:1;transform:none}
 .h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
 .hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
@@ -541,5 +549,11 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 .hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
  background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
  animation:greetCaret 1.05s steps(1) infinite}
+.greet-tx{transition:opacity .34s ease}
+/* conversation mode: the market read wraps in a smaller, lighter voice than the
+   big name greeting; the caret becomes an inline blink at the end of the text. */
+.hub-greet.convo .greet-tx{font-size:clamp(19px,2.7vw,29px);font-weight:600;letter-spacing:0;line-height:1.34;max-width:min(30ch,86vw);text-wrap:balance}
+.hub-greet.convo .greet-caret{display:none}
+.hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:3px;transform:translateY(3px);border-radius:1px;background:var(--accent,var(--info));animation:greetCaret 1.05s steps(1) infinite}
 @keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
