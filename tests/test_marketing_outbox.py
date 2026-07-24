@@ -434,6 +434,56 @@ def test_ledger_only_grows(tmp_path):
         )
 
 
+def test_transition_now_param_stamps_ledger_at(tmp_path):
+    """transition(now=...) stamps the row's `at` from the injected clock."""
+    from engine.marketing.outbox import make_item, enqueue, transition, read_ledger
+
+    item = _make_minimal_item(tmp_path)
+    enqueue(item, root=tmp_path)
+    assert transition(item["id"], "approved", actor="test", root=tmp_path,
+                      now=_FIXED_NOW)
+    row = read_ledger(root=tmp_path)[-1]
+    assert row["at"] == "2026-07-19T12:00:00Z"
+
+
+def test_posted_today_by_account_counts_ledger_date_not_as_of(tmp_path):
+    """The daily-cap counter keys on the LAST ledger row's date, not as_of.
+
+    A nightly item (as_of = generation day, yesterday) posted today COUNTS;
+    an item posted yesterday does NOT (whatever its as_of); posting (in-flight)
+    holds a slot; queued/approved never count.
+    """
+    from datetime import datetime, timezone as _tz
+    from engine.marketing.outbox import (
+        make_item, enqueue, transition, fold_state, posted_today_by_account
+    )
+    today = _AS_OF                                             # 2026-07-19
+    yesterday_now = datetime(2026, 7, 18, 22, 0, 0, tzinfo=_tz.utc)
+
+    def _seed(text: str, *, as_of: str, to: list[str], at: datetime) -> str:
+        it = make_item(account="flagship", kind="signal", text=text,
+                       as_of=as_of, provenance="content_studio", now=_FIXED_NOW)
+        enqueue(it, root=tmp_path, max_per_account_day=99)
+        for status in to:
+            assert transition(it["id"], status, actor="t", root=tmp_path, now=at)
+        return it["id"]
+
+    # Nightly item posted TODAY → counts (the undercount bug this pins).
+    _seed("Nightly, posted today.", as_of="2026-07-18",
+          to=["approved", "posted"], at=_FIXED_NOW)
+    # Posted YESTERDAY (as_of today!) → does not count.
+    _seed("Posted yesterday.", as_of=today,
+          to=["approved", "posted"], at=yesterday_now)
+    # In-flight TODAY → holds a slot.
+    _seed("In flight today.", as_of=today,
+          to=["approved", "posting"], at=_FIXED_NOW)
+    # Approved today, never posted → no slot.
+    _seed("Approved only.", as_of=today, to=["approved"], at=_FIXED_NOW)
+
+    counts = posted_today_by_account(fold_state(tmp_path), today)
+    assert counts == {"flagship": 2}
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. Decisions
 # ─────────────────────────────────────────────────────────────────────────────

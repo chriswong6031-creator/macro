@@ -264,15 +264,16 @@ def test_account_at_ledger_daily_cap_gets_nothing(tmp_path):
     _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
 
     # Seed two posted items today (as_of yesterday to prove ledger-based counting,
-    # not as_of-based). Transition them to posted so the last ledger `at` is today.
+    # not as_of-based). Transition them to posted so the last ledger `at` is today
+    # — stamped from the test clock, or the fixture breaks past UTC midnight.
     for n in range(2):
         it = outbox.make_item(account="flagship", kind="signal",
                               text=f"Posted item {n} yesterday's plan.",
                               as_of="2026-07-22", provenance="content_studio", now=NOW)
         outbox.enqueue(it, root=tmp_path, max_per_account_day=99)
-        outbox.transition(it["id"], "approved", actor="t", root=tmp_path)
-        outbox.transition(it["id"], "posting", actor="t", root=tmp_path)
-        outbox.transition(it["id"], "posted", actor="t", root=tmp_path)
+        outbox.transition(it["id"], "approved", actor="t", root=tmp_path, now=NOW)
+        outbox.transition(it["id"], "posting", actor="t", root=tmp_path, now=NOW)
+        outbox.transition(it["id"], "posted", actor="t", root=tmp_path, now=NOW)
 
     rep = _gen(tmp_path, only_flagship, cap=2)
     assert rep["generated"] == []
