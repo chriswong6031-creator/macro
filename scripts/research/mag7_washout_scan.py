@@ -25,7 +25,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from engine.mag7_washout import (  # single source of truth (MWR-W0 engine)
-    M7, ew_basket, stoch_rsi, rsi_macd, cross_up)
+    M7, ew_basket, stoch_rsi, rsi_macd, cross_up, three_day_bars, two_week_bars)
 
 OHLCV = ROOT / "data" / "baskets" / "ohlcv"
 
@@ -100,6 +100,49 @@ def main():
     for name, (bars, kind) in fams.items():
         rows = scan(bars, daily, kind)
         L.append(f"\n## {name} — {len(rows)} signals\n\n" + md_table(rows))
+
+    # ── MWR phase-0b: per-member census (operator ask 2026-07-24) ────────────
+    # Same constructions, each member graded on ITS OWN tape — locates where the
+    # basket signal actually lives and which names are a different beast.
+    L.append("\n# Per-member census — same constructions, each name on its own tape\n")
+    L.append("GOOD lens (descriptive, prereg §2): fwd63 > 0 AND adverse > \u221210%.\n")
+    summ, detail, member_k = [], [], {}
+    for t in M7:
+        px = pd.read_parquet(OHLCV / f"{t}.parquet")["close"]
+        bars = two_week_bars(px)
+        k_m, _d_m = stoch_rsi(bars)
+        member_k[t] = k_m
+        rows = scan(bars, px, "stoch")
+        s3_rows = scan(three_day_bars(px), px, "macd")
+        good = [r for r in rows if r.get("fwd63", -99) > 0 and r.get("adverse", -99) > -10]
+        med = (pd.Series([r["fwd63"] for r in rows if "fwd63" in r]).median()
+               if rows else float("nan"))
+        summ.append({"sym": t, "s1_n": len(rows), "s1_good": len(good),
+                     "s1_good_rate": f"{len(good)}/{len(rows)}" if rows else "0/0",
+                     "s1_median_fwd63": round(float(med), 1) if rows else "",
+                     "s1_worst_adverse": min((r.get("adverse", 0) for r in rows),
+                                             default=""),
+                     "s3_n": len(s3_rows)})
+        detail.append((t, rows))
+    L.append(md_table(summ))
+    for t, rows in detail:
+        L.append(f"\n## {t} \u00b7 S1 2W Stoch-RSI cross <20 (anchor A) \u2014 "
+                 f"{len(rows)} signals\n\n" + md_table(rows))
+    # attribution: which members were washed (prior-bar K<20) at each basket signal
+    L.append("\n## Basket-signal attribution \u2014 members washed (prior-bar K<20) "
+             "at each basket S1-A signal\n")
+    k_b, d_b = stoch_rsi(two_a)
+    sig_b = cross_up(k_b, d_b) & (k_b.shift() < 20)
+    att = []
+    for tdate in two_a.index[sig_b.fillna(False)]:
+        washed = []
+        for t in M7:
+            v = member_k[t].shift().reindex([tdate]).iloc[0]
+            if pd.notna(v) and float(v) < 20:
+                washed.append(t)
+        att.append({"date": str(tdate.date()), "n_washed": len(washed),
+                    "washed": " ".join(washed) or "\u2014"})
+    L.append(md_table(att))
 
     # current state (the "are we washed out NOW" read)
     L.append("\n## Current state (as of last store close)\n")

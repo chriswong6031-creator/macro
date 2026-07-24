@@ -45,6 +45,10 @@ registry kills (§6) — the constructions are distinguished there explicitly.
   (operator's heterogeneity point: TSLA ≠ AAPL — a 1-2 name drag is not a cohort event).
 - **States**: idle → washed_out (2W K<20 or breadth ≥4/7) → triggered (cross while
   armed). Triggers append once to `data/mag7_washout/triggers.jsonl` (nightly-only).
+- **Member-level series**: same parameters on each member's own closes — census and
+  attribution context ONLY (§2b); no per-name signal claim exists in this prereg.
+- **Registration**: both artifacts are on the signal bus (`config/synapse.yml`
+  owner_program `mag7-washout`, tier `display`, no site consumers by ruling).
 
 ## §2. Phase-0 census results (descriptive, not a gauntlet pass)
 
@@ -64,6 +68,41 @@ overfit-on-the-overfit. Candidate conditioners for a phase-1 study (each needs i
 prereg discipline, multiplicity-counted): drawdown-from-ATH depth at signal; the house
 risk band; weekly+monthly structure per postmortem rule R2 (note: the 2022 cluster IS
 R2's evidence from the long side — these may unify into one higher-timeframe law).
+
+## §2b. Per-member census (phase-0b, operator ask 2026-07-24 — "which stocks does it
+work on, which are noise / a different beast")
+
+Same S1 construction, each member on its own tape, 2015→2026 (report has full tables):
+
+| series | n | good (fwd63>0 & adverse>−10%) | median fwd63 | worst adverse |
+|---|---|---|---|---|
+| **EW basket** | **13** | **10 (77%)** | **+15.7%** | **−27.2%** |
+| AAPL | 19 | 11 (58%) | +9.3% | −28.7% |
+| MSFT | 16 | 9 (56%) | +7.8% | −24.4% |
+| NVDA | 19 | 7 (**37%**) | +8.0% | −35.2% |
+| AMZN | 18 | 11 (61%) | +9.4% | −26.2% |
+| GOOGL | 16 | 10 (63%) | +9.3% | −24.5% |
+| TSLA | 18 | 11 (61%) | +13.1% | −37.6% |
+| META | 15 | 8 (53%) | +8.4% | **−47.1%** |
+
+Findings (descriptive; no per-name authority is created here):
+1. **The basket beats every member on every column** — fewer signals (13 vs 15-19),
+   higher good-rate (77% vs 37-63%), double the median payoff. The cohort aggregation
+   IS the signal: the EW basket only washes out when selling is synchronized, which
+   filters the idiosyncratic single-name flushes that dominate member-level series.
+   Basket-primary stands; member series are context/attribution, not signals.
+2. **NVDA is the different beast** (37% good — a momentum name whose washouts tend to
+   CONTINUE; buying NVDA weakness on this tool alone was a coin flip with a −35% tail).
+   **META carries the catastrophe tail** (−47.1% = the 2022 structural repricing —
+   washout oscillators cannot see fundamental regime breaks). TSLA — contrary to the
+   heterogeneity intuition — is one of the BEST per-name fits (61%, highest median
+   +13.1%: high-beta mean-reverter). Any NVDA/META-specific entry tool is a different
+   mechanism and requires its own prereg; nothing here transfers.
+3. **Attribution:** the strongest basket signals came with full-cohort washes
+   (2025-04-25 and 2026-04-10 = 7/7 members; 2019-01 = 6/7) — but the 2022 failures
+   ALSO ran 5-7/7. Breadth therefore CANNOT be the 2022-class conditioner (§2's open
+   question stands as a regime question, not a breadth question). Breadth ≥4/7 is
+   retained ONLY as an alternative arming condition, never as a quality filter.
 
 ## §3. What accrues now (display-tier, freely)
 
