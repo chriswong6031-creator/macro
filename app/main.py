@@ -1416,3 +1416,18 @@ try:
 except Exception as _regwall_exc:  # noqa: BLE001
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("regwall router not mounted (wall fails CLOSED at Caddy): %r", _regwall_exc)
+
+# ---------------------------------------------------------------------------
+# Live Tape relay (app/tape.py): GET /ws/tape — server-fanout websocket for the
+# six-instrument macro.html futures tape (research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md
+# Phase 1). One upstream connection (keyless Yahoo streamer) fans out to all
+# browsers; a dead-upstream REST poll fallback keeps the socket serving. Wrapped
+# so a wiring error can never crash the API — the page just degrades to live.js
+# polling (worker/snapshot -> baked), which is the whole fallback ladder's point.
+# ---------------------------------------------------------------------------
+try:
+    from app.tape import register_tape  # noqa: E402
+    register_tape(app)
+except Exception as _tape_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("tape relay not mounted (page degrades to polling): %r", _tape_exc)

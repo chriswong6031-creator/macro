@@ -43,6 +43,18 @@
   var OVERLAY = "live/overlay.json";
   var inflight = false, lastTs = 0, pendingRefresh = false;
   var _paused = false, _timer = null;
+  // ── Live Tape (/ws/tape) state ──
+  // TAPE_SYMS: the six instruments the server relay fans out; the ws only opens
+  // if the page actually carries one of these tiles. _wsSock: the socket (or
+  // null). _wsLast[sym] = wall-clock (ms) we last applied a ws tick for `sym` —
+  // used to make a ws quote win over the poller while the socket is live-feeding.
+  var TAPE_SYMS = { "ES=F": 1, "NQ=F": 1, "YM=F": 1, "RTY=F": 1, "^TNX": 1, "DX-Y.NYB": 1 };
+  var _wsSock = null, _wsLast = {}, _wsRetry = 0, _wsTimer = null, _wsClosed = false;
+  var WS_FRESH_MS = 30000;   // a ws tick shields a symbol from the poller this long
+  // Ops kill switch (config.yml live.ws_tape_enabled -> LIVE_WS_TAPE). Defaults
+  // ON when the flag is absent (older live_config.js) so the tape works the moment
+  // the relay is deployed, without a page rebuild.
+  var WS_TAPE = (window.LIVE_WS_TAPE !== false);
 
   function nodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym]")); }
   function chgNodes() { return [].slice.call(document.querySelectorAll(".nb-chg[data-sym]")); }
@@ -68,7 +80,33 @@
     var lim = (mkt === "crypto") ? (window.LIVE_CRYPTO_STALE_MIN || 65) : STALE_MIN;
     return ageMin > lim;
   }
-  function paintChg(el, chg, stale) {
+  // ^TNX transform (Live Tape): Yahoo quotes the 10-year yield as yield×10
+  // (42.5 => 4.25%). Price tiles with data-fmt="tnx" show price/10 + "%"; the
+  // delta is shown in basis points (bps = price-delta × 10) rather than percent,
+  // which is how rate moves are read. bpsDelta needs the absolute price delta;
+  // prevClose (raw yield×10) is threaded through the reading for that.
+  function isTnx(el) { return (el.getAttribute("data-fmt") || "") === "tnx"; }
+  function fmtTnxPrice(price) { return (Number(price) / 10).toFixed(2) + "%"; }
+  function tnxBps(price, prevClose) {
+    // (rawPrice - rawPrev) is a change in yield×10; ÷10 => yield points; ×100
+    // => bps.  Net: (rawPrice - rawPrev) × 10.
+    if (prevClose == null) return null;
+    return (Number(price) - Number(prevClose)) * 10;
+  }
+  function paintChg(el, chg, stale, reading) {
+    // data-fmt="tnx": render the delta in bps (from the absolute price delta),
+    // not percent. Falls back to percent if prevClose is unavailable.
+    if (isTnx(el) && reading && reading.price != null) {
+      var bps = tnxBps(reading.price, reading.prevClose);
+      if (bps != null) {
+        var upB = bps >= 0;
+        el.textContent = (upB ? "+" : "") + Number(bps).toFixed(0) + " bps";
+        el.classList.remove("up", "down", "dn", "stale");
+        el.classList.add(upB ? "up" : "down");
+        if (stale) el.classList.add("stale");
+        return;
+      }
+    }
     var up = chg >= 0;
     el.textContent = (up ? "+" : "") + Number(chg).toFixed(2) + "%";
     // "dn" is the render-time twin of "down" on mx5 tiles — drop it too, or a tile
@@ -137,6 +175,65 @@
     chip.title = dvg.detail || "";
   }
 
+  // ── Shared per-node patch (used by BOTH the poller and the /ws/tape socket) ──
+  // reading = { price, src, stale, ageMin, chg, prevClose, basis } — a normalised
+  // per-symbol quote. Keeping ONE patch path means the websocket tape and the
+  // 60s poller paint tiles identically (spec §3: refactor, don't duplicate).
+  function patchPriceNode(el, r, sessions) {
+    if (r.price == null) return;
+    var sym = rawSym(el);
+    var mkt = el.getAttribute("data-mkt") || "us";
+    // data-fmt="tnx": ^TNX quotes yield×10 -> show yield% (price/10).
+    // data-bare: panel opts out of the "$" prefix (macro MARKETS tiles mix ETF
+    // quotes with index levels — a $ on half the row reads as an error).
+    el.textContent = isTnx(el)
+      ? fmtTnxPrice(r.price)
+      : (el.hasAttribute("data-bare")
+          ? fmtPrice(r.price, mkt).replace(/^\$/, "")
+          : fmtPrice(r.price, mkt));
+    var sess = sessions && sessions[regionOf(sym)];
+    var closed = sess && sess.open === false;
+    var stale = isStale(mkt, r.ageMin, r.stale);
+    // when fresh: "delayed" (amber, no pulse) on a delayed plan, else "live"
+    // (green pulse). A websocket TRADE tick (basis "quote", DELAYED_MIN 0 path)
+    // earns the live pulse; a "poll"-basis reading stays delayed/stale honest.
+    var live = r.basis === "quote";
+    var state = stale ? (closed ? "closed" : "stale")
+                      : (live && DELAYED_MIN === 0 ? "1"
+                         : (DELAYED_MIN > 0 ? "delayed" : "1"));
+    el.setAttribute("data-live", state);
+    var word = state === "closed" ? "market closed"
+             : state === "stale" ? "stale"
+             : state === "delayed" ? ("≥" + DELAYED_MIN + "-min delayed") : "live";
+    el.title = word + " · " + (r.src || "?") +
+      (r.ageMin != null ? " · " + Number(r.ageMin).toFixed(0) + "m ago" : "");
+  }
+  function patchChgNode(el, r) {
+    var mkt = el.getAttribute("data-mkt") || "us";
+    if (r.chg == null && !(isTnx(el) && r.price != null)) return;
+    paintChg(el, r.chg, isStale(mkt, r.ageMin, r.stale), r);
+  }
+  // Patch every .nb-px / .nb-chg node bound to `sym` from one reading. Returns
+  // true if it touched anything (so the ws layer knows a tape symbol landed).
+  function patchSymbol(sym, r, sessions, ovT) {
+    var touched = false;
+    nodes().forEach(function (el) {
+      if (rawSym(el) !== sym) return;
+      patchPriceNode(el, r, sessions);
+      touched = true;
+      // divergence chip (only when fresh + not baseline-stale): the nightly
+      // invalidation signal, surfaced to the human watching the same card.
+      var ov = ovT && ovT[sym];
+      if (ov && ov.divergence && !ov.stale && !ov.baseline_stale) setChip(el, ov.divergence);
+    });
+    chgNodes().forEach(function (el) {
+      if (rawSym(el) !== sym) return;
+      patchChgNode(el, r);
+      touched = true;
+    });
+    return touched;
+  }
+
   function apply(quotes, overlay) {
     var sessions = (overlay && overlay.sessions) || {};
     var ovT = (overlay && overlay.tickers) || {};
@@ -146,55 +243,35 @@
     // quote (Worker or snapshot) over a fresh overlay price.
     function pick(sym) {
       var q = quotes[sym], ov = ovT[sym];
-      var r = { price: null, src: null, stale: true, ageMin: null, chg: null };
+      var r = { price: null, src: null, stale: true, ageMin: null, chg: null, prevClose: null, basis: null };
       if (q && q.price != null) {
-        r.price = q.price; r.src = q.source;
+        r.price = q.price; r.src = q.source; r.basis = "poll";
         var prev = (q.prevClose != null) ? q.prevClose : null;
+        r.prevClose = prev;
         r.chg = (q.changePct != null) ? q.changePct : (prev ? (q.price / prev - 1) * 100 : null);
         // never report an age below the vendor delay floor (a delayed quote IS old)
         r.ageMin = Math.max(DELAYED_MIN, Math.max(0, (serverNow - (q.ts || serverNow)) / 60000));
         r.stale = r.ageMin > STALE_MIN;
       } else if (ov && ov.price != null) {
-        r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale;
+        r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale; r.basis = "poll";
+        r.prevClose = (ov.prev_close != null) ? ov.prev_close : null;
         r.ageMin = (ov.age_min != null) ? Math.max(DELAYED_MIN, ov.age_min) : ov.age_min;
         r.chg = (ov.chg_pct != null) ? ov.chg_pct : null;
       }
       return r;
     }
 
-    nodes().forEach(function (el) {
+    // Union of every symbol on the page (price OR chg node) — patch each once
+    // through the shared path.
+    var seen = {};
+    symNodes().forEach(function (el) {
       var sym = rawSym(el);
-      var mkt = el.getAttribute("data-mkt") || "us";
-      var p = pick(sym);
-      if (p.price != null) {
-        // data-bare: panel opts out of the "$" prefix (e.g. macro MARKETS tiles mix
-        // ETF quotes with index levels — a $ on half the row reads as an error).
-        el.textContent = el.hasAttribute("data-bare")
-          ? fmtPrice(p.price, mkt).replace(/^\$/, "")
-          : fmtPrice(p.price, mkt);
-        var sess = sessions[regionOf(sym)];
-        var closed = sess && sess.open === false;
-        var stale = isStale(mkt, p.ageMin, p.stale);
-        // when fresh: "delayed" (amber, no pulse) on a delayed plan, else "live" (green pulse)
-        var state = stale ? (closed ? "closed" : "stale") : (DELAYED_MIN > 0 ? "delayed" : "1");
-        el.setAttribute("data-live", state);
-        var word = state === "closed" ? "market closed"
-                 : state === "stale" ? "stale"
-                 : state === "delayed" ? ("≥" + DELAYED_MIN + "-min delayed") : "live";
-        el.title = word + " · " + (p.src || "?") +
-          (p.ageMin != null ? " · " + Number(p.ageMin).toFixed(0) + "m ago" : "");
-      }
-      // divergence chip (only when fresh + not baseline-stale): the nightly
-      // invalidation signal, surfaced to the human watching the same card.
-      var ov = ovT[sym];
-      if (ov && ov.divergence && !ov.stale && !ov.baseline_stale) setChip(el, ov.divergence);
-    });
-
-    // % change chips (index / futures / FX / crypto strips): green up, red down, muted stale.
-    chgNodes().forEach(function (el) {
-      var mkt = el.getAttribute("data-mkt") || "us";
-      var p = pick(rawSym(el));
-      if (p.chg != null) paintChg(el, p.chg, isStale(mkt, p.ageMin, p.stale));
+      if (!sym || seen[sym]) return;
+      seen[sym] = 1;
+      var r = pick(sym);
+      // Freshness guard: don't let a poll reading overwrite a strictly-fresher
+      // websocket tick already on this symbol.
+      if (r.price != null && !_wsFresher(sym, serverNow)) patchSymbol(sym, r, sessions, ovT);
     });
   }
 
@@ -257,6 +334,90 @@
       .forEach(function (el) { el.textContent = lab; el.title = lab; });
   }
 
+  // ── Live Tape websocket (same-origin /ws/tape) ────────────────────────────
+  // A server-fanout socket that ticks the six macro futures/index/yield tiles
+  // sub-5s. It is a pure ENHANCEMENT over the poller: the poll path already
+  // covers these tiles, so on ANY error/close we simply stop and let polling
+  // carry the page (spec §3). A ws tick wins over a subsequent poll for the same
+  // symbol for WS_FRESH_MS (freshness guard) so the fresher number stays put.
+  function _wsFresher(sym, now) {
+    var t = _wsLast[sym];
+    return t != null && (now - t) < WS_FRESH_MS;
+  }
+  function _pageHasTapeSym() {
+    var found = false;
+    symNodes().forEach(function (el) { if (TAPE_SYMS[rawSym(el)]) found = true; });
+    return found;
+  }
+  function _applyWsQuote(q) {
+    // q = {sym, price, chgPct, ts, basis}. Build a reading and patch via the
+    // SHARED path. Drop an out-of-order frame ONLY within the same basis (a late
+    // "quote" can't clobber a fresher "quote"); a "poll" fallback refreshes even
+    // with an older data ts (its quote_ts may be 15 min old) — mirrors the relay
+    // guard, or a dead upstream would freeze the tile on an ever-staler number.
+    if (!q || !q.sym || q.price == null) return;
+    if (!TAPE_SYMS[q.sym]) return;
+    var basis = q.basis || "quote";
+    var prevTs = _wsLast[q.sym + "|ts"] || 0;
+    var prevBasis = _wsLast[q.sym + "|basis"];
+    if (q.ts && basis === prevBasis && q.ts < prevTs) return;   // same-basis out-of-order — drop
+    var now = Date.now();
+    _wsLast[q.sym] = now;
+    if (q.ts) _wsLast[q.sym + "|ts"] = q.ts;
+    _wsLast[q.sym + "|basis"] = basis;
+    var ageMin = q.ts ? Math.max(0, (now - q.ts) / 60000) : 0;
+    // A "poll"-basis relay reading is honestly downgraded (never the live pulse);
+    // a "quote"-basis tick is a real trade print. ageMin drives the stale chip.
+    var r = {
+      price: q.price, src: "ws:" + (q.basis || "quote"),
+      stale: ageMin > STALE_MIN, ageMin: ageMin,
+      chg: (q.chgPct != null) ? q.chgPct : null,
+      prevClose: (q.prevClose != null) ? q.prevClose : null,
+      basis: q.basis || "quote"
+    };
+    patchSymbol(q.sym, r, null, null);
+  }
+  function _tapeWsUrl() {
+    try {
+      var proto = (location.protocol === "https:") ? "wss:" : "ws:";
+      return proto + "//" + location.host + "/ws/tape";
+    } catch (e) { return null; }
+  }
+  function startTape() {
+    if (!WS_TAPE) return;                              // ops kill switch -> poll only
+    if (_wsClosed || _wsSock) return;                  // one socket per page
+    if (!("WebSocket" in window)) return;              // ancient browser -> poll only
+    if (!_pageHasTapeSym()) return;                    // no tape tile here -> skip
+    var url = _tapeWsUrl();
+    if (!url) return;
+    var sock;
+    try { sock = new WebSocket(url); }
+    catch (e) { return; }                              // blocked/refused -> poll covers it
+    _wsSock = sock;
+    sock.onmessage = function (ev) {
+      var msg;
+      try { msg = JSON.parse(ev.data); } catch (e) { return; }
+      if (!msg || msg.type === "heartbeat") return;    // 20s server keepalive
+      if (document.hidden) return;                     // don't paint a hidden tab
+      _applyWsQuote(msg);
+    };
+    sock.onopen = function () { _wsRetry = 0; };
+    sock.onclose = function () { _wsSock = null; _scheduleWsReconnect(); };
+    sock.onerror = function () { try { sock.close(); } catch (e) {} };  // -> onclose -> reconnect
+  }
+  function _scheduleWsReconnect() {
+    if (_wsClosed || _paused) return;                  // paused/torn-down -> stay on poller
+    if (_wsTimer) clearTimeout(_wsTimer);
+    // exponential backoff (1s..30s); the poller keeps the tiles live meanwhile.
+    var delay = Math.min(30000, 1000 * Math.pow(2, _wsRetry++));
+    _wsTimer = setTimeout(function () { if (!document.hidden) startTape(); }, delay);
+  }
+  function stopTape() {
+    _wsClosed = true;
+    if (_wsTimer) { clearTimeout(_wsTimer); _wsTimer = null; }
+    if (_wsSock) { try { _wsSock.close(); } catch (e) {} _wsSock = null; }
+  }
+
   function _startTimer() {
     if (_timer) clearInterval(_timer);
     _timer = setInterval(tick, POLL);
@@ -279,11 +440,14 @@
       pause: function () {
         _paused = true;
         if (_timer) { clearInterval(_timer); _timer = null; }
+        stopTape();                                          // drop the tape socket too
       },
       resume: function () {
         _paused = false;
+        _wsClosed = false;
         _startTimer();
         tick();                                              // immediate tick on resume
+        startTape();
       }
     };
     // Live prices are always on (the settings toggle was removed); clear any
@@ -292,9 +456,10 @@
     if (!_paused) {
       tick();
       _startTimer();
+      startTape();                                           // open /ws/tape if a tape tile is present
     }
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && !_paused) tick();
+      if (!document.hidden && !_paused) { tick(); if (!_wsSock) { _wsClosed = false; startTape(); } }
     });
   }
   if (document.readyState !== "loading") start();

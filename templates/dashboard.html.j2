@@ -9899,77 +9899,57 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   {# 3. MARKETS row + tray #}
   <div class="sx" id="sx-markets-v2" style="--isle-color:var(--isle-markets)">
-    {# v5 face — MARKETS (S2: four glass tiles with price/delta/sparkline; data-bare ids preserved) #}
-    {% set _ix_names = {'SPY': 'US Equities', 'QQQ': 'Nasdaq', 'DJI': 'Dow Jones', '_DJI': 'Dow Jones', 'RUT': 'Small Cap', '_RUT': 'Small Cap'} %}
-    {% set _ix_names_zh = {'SPY': '美股', 'QQQ': '纳指', 'DJI': '道琼斯', 'RUT': '小盘股'} %}
-    {# Live-feed symbol per tile: the DJI/RUT store keys are NOT valid Yahoo symbols, so
-       live.js's direct quotes[sym] lookup could never patch those two tiles (feed carries
-       ^DJI/^RUT). data-sym gets the feed key; the visible ticker label keeps the store key. #}
-    {% set _ix_live = {'DJI': '^DJI', 'RUT': '^RUT'} %}
+    {# v5 face — MARKETS: the LIVE TAPE (Phase 1, research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md).
+       Six macro-transmission instruments — index FUTURES (24h overnight read) + the
+       10-year yield + the dollar — that tick over the /ws/tape server-fanout websocket
+       (fallback ladder: ws -> live.js polling -> baked numbers). The old mixed spot/futures
+       strip (SPY/QQQ/DJI/RUT + ES=F/NQ=F) was replaced here per the operator ruling; the
+       spot-index deep-dive dialog (dlg-markets, below) still carries the cash indices.
+       No sparklines — the established futures-tile precedent (no nightly per-name store).
+       data-bare opts out of the "$" prefix so a futures level / index level / yield reads
+       correctly. #}
     <div class="sxg-face mx5-card-face" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Markets" onclick="mx5OpenDlg('dlg-markets')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();mx5OpenDlg('dlg-markets');}">
       {# Eyebrow hidden in v5 card face — card-title removed (1.1); aria-label carries accessible name #}
       <div class="mx5-mkt-grid">
-        {% for ix in index_health[:4] %}
-        {% set _ixsym = ix.ticker | replace('_','') %}
-        {% set _ixchg = ix.chg if (ix.chg is defined and ix.chg is not none) else none %}
-        {% set _ixdir = ('up' if _ixchg > 0 else ('dn' if _ixchg < 0 else '')) if _ixchg is not none else '' %}
-        {# idx_spark: list of closes for this ticker; graceful if absent #}
-        {% set _ixspk = (idx_spark.get(_ixsym) or idx_spark.get('^' ~ _ixsym) or []) if (idx_spark is defined and idx_spark) else [] %}
-        {% set _ixlive = _ix_live.get(_ixsym, _ixsym) %}
-        <div class="mx5-mkt-tile {{ _ixdir }}" data-sym="{{ _ixlive }}" data-mkt="us">
-          <div class="mx5-mkt-ticker">{{ _ixsym }}</div>
-          <div class="mx5-mkt-sub"><span class="l-en">{{ _ix_names.get(ix.ticker, _ixsym) }}</span><span class="l-zh">{{ _ix_names_zh.get(_ixsym, _ixsym) }}</span></div>
-          <div class="mx5-mkt-price nb-px" data-sym="{{ _ixlive }}" data-mkt="us" data-bare>{{ '{:,.2f}'.format(ix.price) }}</div>
-          <div class="mx5-mkt-delta {{ _ixdir }} nb-chg" data-sym="{{ _ixlive }}" data-mkt="us">{% if _ixchg is not none %}{{ '%+.2f'|format(_ixchg) }}%{% else %}—{% endif %}</div>
-          {# Sparkline — Jinja static SVG from idx_spark; absent = no spark box #}
-          {% if _ixspk and _ixspk | length >= 3 %}
-          {% set _spk_n = _ixspk | length %}
-          {% set _spk_min = _ixspk | min %}
-          {% set _spk_max = _ixspk | max %}
-          {% set _spk_range = (_spk_max - _spk_min) if (_spk_max - _spk_min) > 0 else 1 %}
-          {# Compute polyline points: x=i/(n-1)*120, y=32*(1-(v-min)/range) #}
-          {% set _spk_pts = [] %}
-          {% for v in _ixspk %}
-            {% set _sx = (loop.index0 / (_spk_n - 1) * 120) | round(1) %}
-            {% set _sy = (32 * (1 - (v - _spk_min) / _spk_range)) | round(1) %}
-            {% if _spk_pts.append(_sx ~ ',' ~ _sy) %}{% endif %}
-          {% endfor %}
-          {% set _spk_color = '#22d97a' if _ixdir == 'up' else ('#ef4444' if _ixdir == 'dn' else 'rgba(255,255,255,.38)') %}
-          <div class="mx5-spark mx5-spark-{{ _ixdir }}">
-            <svg viewBox="0 0 120 34" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="spkGrad_{{ _ixsym }}" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="{{ _spk_color }}" stop-opacity=".12"/>
-                  <stop offset="100%" stop-color="{{ _spk_color }}" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path class="mx5-spark-area"
-                d="M{{ _spk_pts | join(' L') }} L120,34 L0,34 Z"
-                fill="url(#spkGrad_{{ _ixsym }})" stroke="none"/>
-              <polyline class="mx5-spark-line"
-                points="{{ _spk_pts | join(' ') }}"
-                fill="none" stroke="{{ _spk_color }}" stroke-width="1.5" opacity=".75"/>
-            </svg>
-          </div>
-          {% endif %}
-        </div>
-        {% endfor %}
-        {# Futures tiles — ES=F and NQ=F; live.js patches price/delta; no sparkline (no
-           nightly store for futures). Tiles are display-only context; data-bare opts out
-           of the "$" prefix so the level reads as a futures contract level, not an ETF
-           price. Both symbols are in build_live_quotes CORE_SYMBOLS (US_FUTURES) so they
-           are always covered by the snapshot regardless of site data-sym scraping. #}
         <div class="mx5-mkt-tile" data-sym="ES=F" data-mkt="us">
           <div class="mx5-mkt-ticker">ES</div>
-          <div class="mx5-mkt-sub"><span class="l-en">S&amp;P Futures</span><span class="l-zh">标普期货</span></div>
+          <div class="mx5-mkt-sub"><span class="l-en">S&amp;P fut</span><span class="l-zh">标普期货</span></div>
           <div class="mx5-mkt-price nb-px" data-sym="ES=F" data-mkt="us" data-bare>—</div>
           <div class="mx5-mkt-delta nb-chg" data-sym="ES=F" data-mkt="us">—</div>
         </div>
         <div class="mx5-mkt-tile" data-sym="NQ=F" data-mkt="us">
           <div class="mx5-mkt-ticker">NQ</div>
-          <div class="mx5-mkt-sub"><span class="l-en">Nasdaq Futures</span><span class="l-zh">纳指期货</span></div>
+          <div class="mx5-mkt-sub"><span class="l-en">Nasdaq fut</span><span class="l-zh">纳指期货</span></div>
           <div class="mx5-mkt-price nb-px" data-sym="NQ=F" data-mkt="us" data-bare>—</div>
           <div class="mx5-mkt-delta nb-chg" data-sym="NQ=F" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-mkt-tile" data-sym="YM=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">YM</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Dow fut</span><span class="l-zh">道指期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="YM=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="YM=F" data-mkt="us">—</div>
+        </div>
+        <div class="mx5-mkt-tile" data-sym="RTY=F" data-mkt="us">
+          <div class="mx5-mkt-ticker">RTY</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Russell fut</span><span class="l-zh">罗素期货</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="RTY=F" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="RTY=F" data-mkt="us">—</div>
+        </div>
+        {# ^TNX — Yahoo streams the 10-year yield as yield×10 (42.5 => 4.25%); the
+           data-fmt="tnx" price tile divides by 10 + suffixes "%", and its delta renders
+           in basis points (live.js). ^TNX only trades cash hours, so off-hours the tile
+           keeps its stale/baked stamping — never a faked overnight live number. #}
+        <div class="mx5-mkt-tile" data-sym="^TNX" data-mkt="us">
+          <div class="mx5-mkt-ticker">10Y</div>
+          <div class="mx5-mkt-sub"><span class="l-en">10Y yield</span><span class="l-zh">十年期收益率</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="^TNX" data-mkt="us" data-fmt="tnx" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="^TNX" data-mkt="us" data-fmt="tnx">—</div>
+        </div>
+        <div class="mx5-mkt-tile" data-sym="DX-Y.NYB" data-mkt="us">
+          <div class="mx5-mkt-ticker">DXY</div>
+          <div class="mx5-mkt-sub"><span class="l-en">Dollar DXY</span><span class="l-zh">美元指数</span></div>
+          <div class="mx5-mkt-price nb-px" data-sym="DX-Y.NYB" data-mkt="us" data-bare>—</div>
+          <div class="mx5-mkt-delta nb-chg" data-sym="DX-Y.NYB" data-mkt="us">—</div>
         </div>
       </div>
     </div>

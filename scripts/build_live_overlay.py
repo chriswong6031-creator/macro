@@ -226,6 +226,11 @@ def write_live_config(site_dir) -> None:
           f"window.LIVE_DELAYED_MIN={int(cfg.get('delayed_min', 0))};"
           f"window.LIVE_FEED_LABEL={json.dumps(str(cfg.get('feed_label', '') or ''))};"
           f"window.LIVE_FEED_LABEL_ZH={json.dumps(str(cfg.get('feed_label_zh', '') or ''))};"
+          # Live Tape (Phase 1): when true (default), live.js opens the same-origin
+          # /ws/tape websocket for the six macro futures/index/yield tiles. An ops
+          # kill switch — set live.ws_tape_enabled: false to fall back to polling
+          # only, no deploy of the page needed.
+          f"window.LIVE_WS_TAPE={json.dumps(bool(cfg.get('ws_tape_enabled', True)))};"
           f"window.LIVE_ENABLED={json.dumps(bool(cfg.get('enabled', True)))};\n")
     (site_dir / "live_config.js").write_text(js)
 
