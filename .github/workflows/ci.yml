@@ -266,11 +266,12 @@ on:
       # headline crash or schema drift fails RED before merging.
       - "scripts/build_intel_hub.py"
       - "tests/test_china_lens_hub.py"
-      # china.html.j2 Prophet-board render guards: the W1-C three-shelf + anv2 board test
-      # and the board-track-record test render against templates/china.html.j2 (already in
-      # templates/**), but the test-only files need explicit paths so a test-only re-pin
-      # still re-runs the rot-sweep step that carries them.
+      # china.html.j2 Prophet-board render guards: the W1-C three-shelf + anv2 board test,
+      # the W0.9 standout-header copy test, and the board-track-record test render against
+      # templates/china.html.j2 (already in templates/**), but the test-only files need
+      # explicit paths so a test-only re-pin still re-runs the rot-sweep step that carries them.
       - "tests/test_china_stocks_w1c_render.py"
+      - "tests/test_china_stocks_copy_w09.py"
       - "tests/test_china_board_track_render.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
@@ -1134,6 +1135,7 @@ jobs:
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
+          tests/test_china_stocks_copy_w09.py
           tests/test_china_board_track_render.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
