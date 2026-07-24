@@ -1,16 +1,16 @@
 {
-  "date": "2026-07-23",
-  "generated_utc": "2026-07-24 20:37",
+  "date": "2026-07-24",
+  "generated_utc": "2026-07-24 21:21",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.7774403193735,
-        "mom6": 0.3367657042248595,
-        "trend": 0.5879627170896109,
-        "diffusion": 75.0,
+        "index": 94.814152236159,
+        "mom6": 0.3734776210103661,
+        "trend": 0.5984518361711841,
+        "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
         "spark_mom6": [
@@ -385,7 +385,7 @@
           0.69,
           1.04,
           0.55,
-          0.34
+          0.37
         ],
         "spark_trend": [
           -2.0,
@@ -1133,7 +1133,7 @@
           94.61,
           94.88,
           94.69,
-          94.78
+          94.81
         ]
       },
       "coincident": {
@@ -4020,8 +4020,8 @@
   "conditions": {
     "financial_conditions": {
       "nfci": -0.552,
-      "nfci_pctile": 0.07182539682539682,
-      "nfci_change_13w": -0.07200000000000006,
+      "nfci_pctile": 0.07142857142857142,
+      "nfci_change_13w": -0.06300000000000006,
       "state": "loose",
       "trend": "loosening",
       "subindices": {
@@ -4032,9 +4032,9 @@
       "stlfsi": -0.7011
     },
     "systemic_stress": {
-      "ofr_fsi": -2.313,
-      "ofr_fsi_pctile": 0.15396825396825398,
-      "ofr_fsi_change_13w": -0.167,
+      "ofr_fsi": -2.558,
+      "ofr_fsi_pctile": 0.07103174603174603,
+      "ofr_fsi_change_13w": -0.5,
       "state": "calm",
       "trend": "easing",
       "functional": {
@@ -4052,21 +4052,21 @@
       "leading_driver": null,
       "leading_driver_key": null,
       "a2p2_spread_bps": 33.0,
-      "a2p2_spread_pctile": 0.6217105263157895,
-      "cp_bill_spread_bps": -6.0,
-      "cp_bill_spread_pctile": 0.06350053361792957,
+      "a2p2_spread_pctile": 0.6211622807017544,
+      "cp_bill_spread_bps": -7.0,
+      "cp_bill_spread_pctile": 0.059231590181430094,
       "cp_stress": "normal",
       "lead_lag": "coincident",
       "evidence": "OFR Financial Stress Index: a daily 33-variable global stress gauge with functional (credit / equity valuation / safe assets / funding / volatility) and regional (US / other-advanced / EM) decomposition. A coincident gauge \u2014 it names the stress CHANNEL when markets move as one; display + an optional risk-OFF gate, never cross-sectional alpha."
     },
     "recession": {
-      "score": 4.6581821291065655,
+      "score": 4.655762462052753,
       "label": "low",
       "components": {
         "prob": 0.54,
         "ebp_prob": 11.35401674500448,
         "curve": 0.0,
-        "ebp_level": 19.166666666666668,
+        "ebp_level": 19.1468253968254,
         "claims": 0.0
       },
       "curve_raw": 0.36,
@@ -4082,13 +4082,13 @@
       "gdpnow": 1.6817
     },
     "labor_nowcast": {
-      "initial_claims_4wk": 214250.0,
-      "continued_claims": 1805000.0,
-      "claims_yoy_pct": -3.054298642533937,
-      "claims_z": -0.7360855851339776,
+      "initial_claims_4wk": 207500.0,
+      "continued_claims": 1796000.0,
+      "claims_yoy_pct": -6.108597285067874,
+      "claims_z": -1.4269523775735755,
       "claims_trend": "falling",
       "indeed_postings": 101.54,
-      "indeed_chg_3m_pct": -1.1583763262922209,
+      "indeed_chg_3m_pct": -0.9752291788570289,
       "indeed_trend": "falling",
       "withheld_tax_yoy_pct": 3.190480624105696,
       "income_trend": "rising",
@@ -4103,26 +4103,26 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 7.328228488375924,
-      "vrp_pctile": 0.7261904761904762,
+      "vrp": 7.21249772407595,
+      "vrp_pctile": 0.7182539682539683,
       "vrp_state": "rich (vol overpriced)",
-      "realized_vol": 11.37177227456353,
-      "vix_term": 0.9077670105171757,
+      "realized_vol": 11.367502199630104,
+      "vix_term": 0.9058995473604146,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
-      "skew": 151.66,
-      "skew_pctile": 0.6726190476190477,
-      "stock_bond_corr": 0.5193615215617099,
+      "skew": 150.19,
+      "skew_pctile": 0.626984126984127,
+      "stock_bond_corr": 0.5203597993872237,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.49967715654339584,
+      "roro": 0.5383246888468396,
       "roro_state": "risk-on",
-      "vol_target_scalar": 1.0552444869865796,
+      "vol_target_scalar": 1.0556408777638484,
       "news_sentiment": 0.010867821983993053,
-      "news_sentiment_z": 0.5894916821915522,
+      "news_sentiment_z": 0.5900793207434646,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
-      "score": 14.533306873056823,
+      "score": 14.51250165365789,
       "band": "low",
       "dd10_prob_pct": 10,
       "base_rate_pct": 19,
@@ -4159,14 +4159,14 @@
       "strong": false,
       "state": "calm",
       "vix_low": false,
-      "vix_pctile": 0.6527777777777778,
+      "vix_pctile": 0.6349206349206349,
       "contango": true,
-      "vix_term": 0.9077670105171757,
+      "vix_term": 0.9058995473604146,
       "breadth_div": false,
-      "spy_high_prox": 0.9743429714624811,
-      "breadth_above200_pctile": 0.6676587301587301,
+      "spy_high_prox": 0.9753329159690343,
+      "breadth_above200_pctile": 0.6180555555555556,
       "credit_widen": false,
-      "hy_oas_chg_21d_bp": -7.0,
+      "hy_oas_chg_21d_bp": -10.0,
       "lead_lag": "leading",
       "breadth_div_caution": false,
       "caution": false,
@@ -4174,7 +4174,7 @@
       "caution_reason_zh": null
     },
     "style_tilt": {
-      "yield_chg_1m_bp": 22.0,
+      "yield_chg_1m_bp": 27.0,
       "tilt": "value",
       "driver": "10y yield direction",
       "measured": "rising 10y -> value (+0.84%/63d, t=+3.0, all 4 sub-periods); Q1->value, Q4->growth"
@@ -4223,25 +4223,25 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 89,
+    "fe_score": 88,
     "band": "Greed",
-    "roro": 0.49967715654339584,
+    "roro": 0.5383246888468396,
     "roro_state": "risk-on",
     "legs": [
       {
         "key": "vix",
         "name_en": "VIX",
         "name_zh": "\u6ce2\u52a8\u7387 VIX",
-        "value": -0.17,
-        "pct": 35,
+        "value": -0.132,
+        "pct": 36,
         "lean": "risk-off"
       },
       {
         "key": "hy_oas",
         "name_en": "HY credit spread",
         "name_zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee",
-        "value": 1.253,
-        "pct": 77,
+        "value": 1.243,
+        "pct": 76,
         "lean": "risk-on"
       },
       {
@@ -4256,15 +4256,15 @@
         "key": "vix_term",
         "name_en": "VIX term structure",
         "name_zh": "VIX \u671f\u9650\u7ed3\u6784",
-        "value": -0.516,
-        "pct": 33,
+        "value": -0.482,
+        "pct": 34,
         "lean": "risk-off"
       },
       {
         "key": "nfci",
         "name_en": "Financial conditions (NFCI)",
         "name_zh": "\u91d1\u878d\u6761\u4ef6 NFCI",
-        "value": 1.507,
+        "value": 1.495,
         "pct": 81,
         "lean": "risk-on"
       },
@@ -4272,7 +4272,7 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.384,
+        "value": 2.352,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -4280,8 +4280,8 @@
         "key": "dxy",
         "name_en": "Dollar (20d %\u0394)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09",
-        "value": 0.168,
-        "pct": 58,
+        "value": 0.091,
+        "pct": 56,
         "lean": "risk-on"
       }
     ],
@@ -6067,7 +6067,7 @@
     },
     "doctrine": "Event-window calendar seasonality \u2014 thin, widely-known calendar tilts measured on price history. Context only, never a buy/sell. Pre-FOMC drift expected DEAD post-2016 (house ruling)."
   },
-  "growth_score": 0.0,
+  "growth_score": 0.133,
   "inflation_score": 0.84,
   "components_confirming": [
     "<span class=\"l-en\">growth \u00b7 copper vs gold</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u94dc\u5bf9\u9ec4\u91d1</span>",
@@ -6085,84 +6085,83 @@
   "components_contradicting": [
     "<span class=\"l-en\">growth \u00b7 consumer confidence trade</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u6d88\u8d39\u4fe1\u5fc3\u4ea4\u6613</span>",
     "<span class=\"l-en\">growth \u00b7 small caps</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5c0f\u76d8\u80a1</span>",
-    "<span class=\"l-en\">growth \u00b7 cyclical sectors</span><span class=\"l-zh\">\u589e\u957f \u00b7 \u5468\u671f\u6027\u677f\u5757</span>",
     "<span class=\"l-en\">inflation \u00b7 sticky_cpi_direction</span><span class=\"l-zh\">\u901a\u80c0 \u00b7 sticky_cpi_direction</span>"
   ],
   "commodities": [
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4052.0,
+      "price": 4055.7,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -4.0,
-      "pct_vs_200dma": -9.6,
-      "rsi14": 45.0,
+      "pct_vs_50dma": -3.7,
+      "pct_vs_200dma": -9.5,
+      "rsi14": 46.0,
       "macd_pos": true,
-      "off_52w_high_pct": -23.8,
+      "off_52w_high_pct": -23.7,
       "season_this": "Jul: +1.0% avg, up 58% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -10.3
+      "mom_60d_pct": -11.0
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 92.07,
+      "price": 90.47,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 12.3,
-      "pct_vs_200dma": 22.0,
-      "rsi14": 73.0,
+      "pct_vs_50dma": 10.8,
+      "pct_vs_200dma": 19.6,
+      "rsi14": 69.0,
       "macd_pos": true,
-      "off_52w_high_pct": -18.5,
-      "season_this": "Jul: +2.0% avg, up 69% of years (n=26)",
-      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +2.0%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -13.5
+      "off_52w_high_pct": -19.9,
+      "season_this": "Jul: +1.9% avg, up 69% of years (n=26)",
+      "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.9%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+      "mom_60d_pct": -11.5
     },
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.33,
+      "price": 6.34,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 0.5,
+      "pct_vs_50dma": 0.6,
       "pct_vs_200dma": 9.5,
       "rsi14": 53.0,
       "macd_pos": true,
-      "off_52w_high_pct": -4.8,
+      "off_52w_high_pct": -4.7,
       "season_this": "Jul: +1.5% avg, up 62% of years (n=26)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 9.3
+      "mom_60d_pct": 6.7
     },
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 101.44,
+      "price": 101.46,
       "above50": true,
       "above200": true,
       "pct_vs_50dma": 1.1,
-      "pct_vs_200dma": 2.3,
-      "rsi14": 62.0,
-      "macd_pos": false,
-      "off_52w_high_pct": -0.2,
+      "pct_vs_200dma": 2.4,
+      "rsi14": 63.0,
+      "macd_pos": true,
+      "off_52w_high_pct": -0.1,
       "season_this": "Jul: -0.2% avg, up 50% of years (n=56)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 -0.2%\uff0c50% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-      "mom_60d_pct": 3.3
+      "mom_60d_pct": 3.0
     }
   ],
   "vix": {
-    "last": 18.700000762939453,
-    "chg": 2.0600013732910156,
-    "pct": 12.379816399347465,
+    "last": 18.579999923706055,
+    "chg": -0.12000083923339844,
+    "pct": -0.6417156916443623,
     "hi": 19.489999771118164,
     "lo": 15.029999732971191,
-    "prev": 16.639999389648438,
+    "prev": 18.700000762939453,
     "days": 30,
     "regime": "<span class=\"l-en\">normal</span><span class=\"l-zh\">\u6b63\u5e38</span>",
     "tone": "muted",
-    "ratio": 0.9077670105171757,
+    "ratio": 0.9058995473604146,
     "rword": "<span class=\"l-en\">contango</span><span class=\"l-zh\">\u6b63\u5411</span>",
-    "pctile": 56.28014258754456
+    "pctile": 55.44606352867177
   },
   "positioning": [
     {
@@ -6230,12 +6229,12 @@
     },
     {
       "name": "<span class=\"l-en\">Fear gauge</span><span class=\"l-zh\">\u6050\u614c\u6307\u6807</span>",
-      "pct": 56.125574272588054,
+      "pct": 55.02392344497608,
       "label": "<span class=\"l-en\">normal</span><span class=\"l-zh\">\u6b63\u5e38</span>",
       "verdict": "<span class=\"l-en\">nothing notable</span><span class=\"l-zh\">\u65e0\u663e\u8457</span>",
       "left": "<span class=\"l-en\">calm</span><span class=\"l-zh\">\u5e73\u9759</span>",
       "right": "<span class=\"l-en\">panic</span><span class=\"l-zh\">\u6050\u614c</span>",
-      "tip": "<span class=\"l-en\">VIX (30-day expected volatility) \u00f7 VIX3M (3-month). Below ~0.9 = calm; near/above 1.0 = the market fears the immediate future more than the distant one \u2014 the classic stress signature. Today: 0.908, 56th percentile since 2006.</span><span class=\"l-zh\">VIX\uff0830\u5929\u9884\u671f\u6ce2\u52a8\u7387\uff09\u00f7 VIX3M\uff083\u4e2a\u6708\uff09\u3002\u4f4e\u4e8e\u7ea60.9 = \u5e73\u9759\uff1b\u63a5\u8fd1/\u9ad8\u4e8e1.0 = \u5e02\u573a\u5bf9\u8fd1\u671f\u7684\u6050\u60e7\u8d85\u8fc7\u5bf9\u8fdc\u671f \u2014 \u7ecf\u5178\u7684\u538b\u529b\u7279\u5f81\u3002\u4eca\u65e5\uff1a0.908\uff0c2006\u5e74\u4ee5\u6765\u7b2c 56 \u767e\u5206\u4f4d\u3002</span>"
+      "tip": "<span class=\"l-en\">VIX (30-day expected volatility) \u00f7 VIX3M (3-month). Below ~0.9 = calm; near/above 1.0 = the market fears the immediate future more than the distant one \u2014 the classic stress signature. Today: 0.906, 55th percentile since 2006.</span><span class=\"l-zh\">VIX\uff0830\u5929\u9884\u671f\u6ce2\u52a8\u7387\uff09\u00f7 VIX3M\uff083\u4e2a\u6708\uff09\u3002\u4f4e\u4e8e\u7ea60.9 = \u5e73\u9759\uff1b\u63a5\u8fd1/\u9ad8\u4e8e1.0 = \u5e02\u573a\u5bf9\u8fd1\u671f\u7684\u6050\u60e7\u8d85\u8fc7\u5bf9\u8fdc\u671f \u2014 \u7ecf\u5178\u7684\u538b\u529b\u7279\u5f81\u3002\u4eca\u65e5\uff1a0.906\uff0c2006\u5e74\u4ee5\u6765\u7b2c 55 \u767e\u5206\u4f4d\u3002</span>"
     }
   ],
   "market_state_color": "yellow",

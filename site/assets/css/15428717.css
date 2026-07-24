@@ -4,7 +4,7 @@
   body.page-intraday-flow {
     /* deeper canvas + strict mono/type scale, macro parity */
     --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
-    --num:"SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --num:var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     --fs-display:44px; --fs-num-xl:38px; --fs-h1:27px; --fs-num-lg:22px;
     --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
     --hair:color-mix(in srgb, var(--line) 70%, transparent);

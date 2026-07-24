@@ -2,23 +2,32 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-23",
-  "generated_utc": "2026-07-24T19:34:39Z",
+  "generated_utc": "2026-07-24T21:50:46Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 3,
-    "n_eff": 1.8,
+    "n": 4,
+    "n_eff": 3.12,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 3 candidates \u2248 1.8 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 4 candidates \u2248 3.12 independent bets."
   },
   "same_thesis_groups": [],
-  "earnings_coverage_frac": 1.0,
+  "earnings_coverage_frac": 0.75,
   "by_ticker": {
     "HWM": {
-      "verdict": "new",
-      "max_similarity": 0.0,
+      "verdict": "duplicate",
+      "max_similarity": 0.7507,
       "basis": "membership+high-tier-factor",
       "nearest": [
+        {
+          "ticker": "SFBS",
+          "combined": 0.7507,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7507,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
         {
           "ticker": "INSW",
           "combined": 0.0,
@@ -29,11 +38,11 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "LPG",
+          "ticker": "HALO",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         }
@@ -44,25 +53,14 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer INSW at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 INSW\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+      "why_en": "Same bet as SFBS \u2014 shared factor profile (similarity 75%).",
+      "why_zh": "\u4e0e SFBS \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 75%\uff09\u3002"
     },
     "INSW": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
+      "verdict": "new",
+      "max_similarity": 0.0,
       "basis": "membership-only:r2=0.06<0.2",
       "nearest": [
-        {
-          "ticker": "LPG",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.06<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": true
-        },
         {
           "ticker": "HWM",
           "combined": 0.0,
@@ -71,55 +69,122 @@
           "factor_basis": "beta-read-thin:r2=0.06<0.2",
           "shared_groups": [],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "SFBS",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.06<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "HALO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.06<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-05",
         "same_week_peers": [
-          "LPG"
+          "HALO"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as LPG \u2014 Energy (similarity 100%).",
-      "why_zh": "\u4e0e LPG \u62bc\u6ce8\u76f8\u540c \u2014 Energy\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer HWM at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HWM\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
-    "LPG": {
+    "SFBS": {
       "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.14<0.2",
+      "max_similarity": 0.7507,
+      "basis": "membership+high-tier-factor",
       "nearest": [
         {
+          "ticker": "HWM",
+          "combined": 0.7507,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7507,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
           "ticker": "INSW",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.06<0.2",
-          "shared_groups": [
-            "sector:Energy"
-          ],
-          "same_earnings_week": true
+          "shared_groups": [],
+          "same_earnings_week": null
         },
+        {
+          "ticker": "HALO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as HWM \u2014 shared factor profile (similarity 75%).",
+      "why_zh": "\u4e0e HWM \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 75%\uff09\u3002"
+    },
+    "HALO": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.11<0.2",
+      "nearest": [
         {
           "ticker": "HWM",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "INSW",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.06<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "SFBS",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         }
       ],
       "earnings_leg": {
-        "next_date": "2026-08-07",
+        "next_date": "2026-08-04",
         "same_week_peers": [
           "INSW"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as INSW \u2014 Energy (similarity 100%).",
-      "why_zh": "\u4e0e INSW \u62bc\u6ce8\u76f8\u540c \u2014 Energy\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer HWM at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HWM\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     }
   },
   "pair_basis": {
@@ -130,21 +195,40 @@
       "factor_basis": "beta-read-thin:r2=0.06<0.2",
       "shared_groups": []
     },
-    "HWM__LPG": {
+    "HWM__SFBS": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7507,
+      "combined": 0.7507,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "HWM__HALO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
       "shared_groups": []
     },
-    "INSW__LPG": {
-      "membership_jaccard": 1.0,
+    "INSW__SFBS": {
+      "membership_jaccard": 0.0,
       "factor_cosine": null,
-      "combined": 1.0,
+      "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.06<0.2",
-      "shared_groups": [
-        "sector:Energy"
-      ]
+      "shared_groups": []
+    },
+    "INSW__HALO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.06<0.2",
+      "shared_groups": []
+    },
+    "SFBS__HALO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
     }
   },
   "verdicts": {
@@ -155,7 +239,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 1.8,
+    "entry_open": 3.1,
     "setting_up": null
   },
   "source_passport": {

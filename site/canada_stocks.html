@@ -26,7 +26,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="theme.css?v=eeb9bebc">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
 <link rel="stylesheet" href="assets/css/2f2f7224.css?v=2f2f7224">
 </head>
@@ -272,7 +272,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-23 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-24 21:52 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-23 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-24 22:43 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
@@ -510,6 +510,7 @@
 
   // ── open / close ──────────────────────────────────────────────────────────
   function open(){
+    document.dispatchEvent(new CustomEvent('prophet:dialog-open', {detail:{id:dlg.id}}));
     scrollY = window.scrollY || 0;
     dlg.classList.add('trd-open');
     document.documentElement.classList.add('trd-lock');
@@ -525,10 +526,14 @@
     btn.setAttribute('aria-expanded','false'); btn.classList.remove('trd-is-open');
     var done = function(){
       dlg.classList.remove('trd-open','trd-closing');
-      document.documentElement.classList.remove('trd-lock');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollY);
-      btn.focus();
+      // A sibling Prophet dashboard may have opened while this one animated out.
+      // Keep the shared scroll lock and focus inside that still-open dialog.
+      if(!document.querySelector('.trd-dlg.trd-open')){
+        document.documentElement.classList.remove('trd-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+        btn.focus();
+      }
       panel.removeEventListener('transitionend', done);
     };
     if(reduce){ done(); } else { var t=setTimeout(done, 260); panel.addEventListener('transitionend', function h(){ clearTimeout(t); done(); }, {once:true}); }
@@ -536,6 +541,9 @@
   btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
   dlg.querySelectorAll('[data-trd-close]').forEach(function(el){ el.addEventListener('click', close); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  document.addEventListener('prophet:dialog-open', function(e){
+    if(e.detail && e.detail.id !== dlg.id && dlg.classList.contains('trd-open')) close();
+  });
   // focus trap (lightweight)
   dlg.addEventListener('keydown', function(e){
     if(e.key !== 'Tab') return;
@@ -770,7 +778,7 @@
   <div id="stocktable-wrap"></div>
   
   
-<link rel="stylesheet" href="assets/css/b3ee0cbc.css?v=b3ee0cbc">
+<link rel="stylesheet" href="assets/css/93de4274.css?v=93de4274">
 
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
