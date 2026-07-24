@@ -1539,7 +1539,7 @@ html[data-lang="zh"] .band h2{letter-spacing:0}
 .card:hover,.card:focus-within{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 48%,var(--line));
  box-shadow:0 16px 36px -16px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
 .card:hover.acc::before,.card:focus-within.acc::before{transform:scaleX(1)} .card:hover.acc::after{opacity:1}
-.card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.card-top{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;margin-bottom:9px}
 .ico{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:9px;
  background:color-mix(in srgb,var(--accent) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
  transition:transform .18s cubic-bezier(.2,.7,.3,1)}
@@ -1966,6 +1966,14 @@ html[data-lang="zh"] .hub-seg .l-zh{display:inline}
 .regime-changed .l-zh{display:none}
 html[data-lang="zh"] .regime-changed .l-en{display:none}
 html[data-lang="zh"] .regime-changed .l-zh{display:inline}
+/* regime TRAJECTORY badge — direction alongside the label; colours DON'T flip in zh
+   (amber=deteriorating, accent=improving), the ↘/↗ carries the meaning. */
+.regime-drift{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:middle;white-space:nowrap;border:1px solid transparent}
+.regime-drift.det{color:var(--warn);background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.regime-drift.imp{color:var(--accent,var(--info));background:color-mix(in srgb,var(--accent,var(--info)) 12%,transparent);border-color:color-mix(in srgb,var(--accent,var(--info)) 30%,transparent)}
+.regime-drift .l-zh{display:none}
+html[data-lang="zh"] .regime-drift .l-en{display:none}
+html[data-lang="zh"] .regime-drift .l-zh{display:inline}
 
 /* ===== standout ticker chips in stock splitbtn em ===== */
 .sb-tickers{display:inline;font-family:var(--font-mono);font-size:10.5px;opacity:.8;letter-spacing:.01em}
@@ -2095,6 +2103,67 @@ def _g_regime_json(name):
         return {}
 
 
+# ── regime DYNAMICS — never emit a regime label without its trajectory ─────────
+# A label ("Goldilocks") means opposite things by direction: firming INTO it (good)
+# vs rolling OUT of it (bad); the confirmed quad also LAGS (hysteresis) the raw
+# coordinates, so the disagreement IS the drift signal. The engine already knows —
+# transition_state + the growth/inflation history — so we carry direction + phase +
+# drift-target alongside the label. Reads the committed *_regime_timeline.json.
+_RTL = {"US": "regime_timeline.json", "CN": "china_regime_timeline.json",
+        "HK": "hk_regime_timeline.json", "CA": "canada_regime_timeline.json"}
+_RQRANK = {"Q1": 3, "Q2": 2, "Q4": 1, "Q3": 0}   # risk-quality: Goldilocks>Reflation>Growth-scare>Stagflation
+_RQNAME = {"Q1": ("Goldilocks", "理想增长"), "Q2": ("Reflation", "再通胀"),
+           "Q3": ("Stagflation", "滞胀"), "Q4": ("Growth-scare", "增长恐慌")}
+
+
+def _regime_dynamics(cc: str, d: dict) -> dict:
+    """Direction (improving/stable/deteriorating) + phase (fresh/stable/aging/turning) +
+    drift-target quad, from the growth/inflation TRAJECTORY. Empty (null) when we have no
+    history for a market — honest, not guessed."""
+    empty = {"rdir": None, "rphase": None, "rtoward_en": None, "rtoward_zh": None, "rflip": None}
+    fn = _RTL.get(cc)
+    if not fn:
+        return empty
+    try:
+        tl = json.loads((config.site_dir() / fn).read_text())
+        g, i, tr = tl.get("g") or [], tl.get("i") or [], tl.get("trans") or []
+    except Exception:  # noqa: BLE001
+        return empty
+    if len(g) < 30 or len(i) < 30:
+        return empty
+    N = min(20, len(g) - 1)                       # ~1 month of trading days
+    g_now, i_now = g[-1], i[-1]
+    dg, di = g_now - g[-1 - N], i_now - i[-1 - N]
+    dQ = dg - di                                  # velocity of "quality" (growth↑ / inflation↓ = better)
+    ts = (tr[-1] if tr else "STABLE") or "STABLE"
+    quad = (d.get("quad") or "").upper()
+    rank = _RQRANK.get(quad, 2)
+    moving = ts in ("WEAKENING", "TRANSITIONING", "NEW_REGIME")
+    DEAD = 0.12
+    if dQ >= DEAD:
+        rdir = "improving"
+    elif dQ <= -DEAD:
+        rdir = "deteriorating"
+    elif moving:
+        rdir = "deteriorating" if rank >= 2 else "improving"   # leaving a good quad = bad; a bad one = good
+    else:
+        rdir = "stable"
+    rphase = {"STABLE": "stable", "WEAKENING": "aging", "TRANSITIONING": "turning",
+              "NEW_REGIME": "fresh"}.get(ts, "stable")
+    rtoward_en = rtoward_zh = None
+    if rdir != "stable":
+        gp = (g_now + dg) > 0.05                   # projected growth / inflation signs
+        ip = (i_now + di) > 0.05
+        tq = {(True, False): "Q1", (True, True): "Q2",
+              (False, True): "Q3", (False, False): "Q4"}[(gp, ip)]
+        if tq != quad:                             # drifting toward a DIFFERENT quad
+            rtoward_en, rtoward_zh = _RQNAME[tq]
+    flip = d.get("flip_condition") or {}
+    m = flip.get("margin")
+    rflip = round(m, 2) if isinstance(m, (int, float)) else None
+    return {"rdir": rdir, "rphase": rphase, "rtoward_en": rtoward_en, "rtoward_zh": rtoward_zh, "rflip": rflip}
+
+
 def _globe_markets() -> list:
     """Assemble the 9-market globe blob (US/CA/CN/HK + JP/KR/TW/GB/EZ) from the regime
     JSONs + intl/latest.json. Numbers are real; recession/drawdown null-safe."""
@@ -2153,6 +2222,7 @@ def _globe_markets() -> list:
             "index_sym": m["yahoo"], "index_price": price, "index_chg_pct": chg,
             "tz": m["tz"], "open": m["open"], "close": m["close"], "lunch": m["lunch"], "href": m["href"],
         })
+        rows[-1].update(_regime_dynamics(cc, home.get(cc) or {}))   # + rdir/rphase/rtoward/rflip
     for r in rows:
         r["agrees_with"] = [o["cc"] for o in rows if o["cc"] != r["cc"] and o["quad"] == r["quad"]]
     return rows
@@ -2222,11 +2292,22 @@ def _g_markets(blob, us_n, cn_n, hk_n,
             '<span class="l-zh">已切换</span>'
             '</span>'
         ) if cc in _regime_changed else ""
+        # regime TRAJECTORY badge — the label is never shown without its direction; a
+        # deteriorating "Goldilocks" and a firming one are opposite trades. From rdir.
+        _rd = m.get("rdir")
+        if _rd == "deteriorating":
+            drift_badge = ('<span class="regime-drift det">↘ '
+                           + _bi(m.get("rtoward_en") or "cooling", m.get("rtoward_zh") or "转弱") + '</span>')
+        elif _rd == "improving":
+            drift_badge = ('<span class="regime-drift imp">↗ '
+                           + _bi(m.get("rtoward_en") or "firming", m.get("rtoward_zh") or "转强") + '</span>')
+        else:
+            drift_badge = ""
         cards.append('<div class="glass acc card ' + cls[cc] + '">'
                      '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
                      '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
                      '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span>'
-                     + changed_badge + '</div>'
+                     + changed_badge + drift_badge + '</div>'
                      '<div class="split">' + "".join(btns) + '</div></div>')
     return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
             '<div class="nav mk reveal">' + "".join(cards) + '</div>')
