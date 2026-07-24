@@ -1268,3 +1268,17 @@ try:
 except Exception as _billing_exc:  # noqa: BLE001 — never let a billing wiring error crash the whole API
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("billing router not mounted: %r", _billing_exc)
+
+# ---------------------------------------------------------------------------
+# Registration wall (app/regwall.py): /api/regwall/check — Caddy's second gate
+# stage for all non-public HTML (operator lockdown 2026-07-24). NOTE the
+# asymmetry with the blocks above: if THIS router fails to mount, gated pages
+# fail CLOSED at the Caddy layer (non-2xx sub-request → redirect to the
+# landing), so a wiring error here can never silently open the wall.
+# ---------------------------------------------------------------------------
+try:
+    from app.regwall import router as regwall_router  # noqa: E402
+    app.include_router(regwall_router)
+except Exception as _regwall_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("regwall router not mounted (wall fails CLOSED at Caddy): %r", _regwall_exc)
