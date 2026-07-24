@@ -24,6 +24,12 @@ EnvironmentFile=-/etc/macro-api.env
 # SUPABASE_SERVICE_ROLE_KEY=...      # already used by analytics/brain — the webhook writes user_entitlements with it
 # MM_SITE_BASE=https://mastermind-x.com   # where hosted Checkout/Portal return (apex, not www)
 # STRIPE_AUTOMATIC_TAX=1             # Stripe Tax on (default); set 0 until the account's Tax origin is configured
+# ── Static-site access env ───────────────────────────────────────────────────
+# REGWALL_ENABLED=1                  # default; 0 is emergency registration-wall rollback
+# PAYWALL_ENABLED=0                  # stage safely; set 1 only after docs/ops/site-access.md launch checks
+# PAYWALL_AUTH_CACHE_SECONDS=45      # hard-capped at 60s in code
+# PAYWALL_ENTITLEMENT_CACHE_SECONDS=60
+# PAYWALL_GRACE_SECONDS=86400        # positive-only store-outage grace, hard-capped at 24h
 # NOTE: the publishable key is NOT needed — the hosted-Checkout redirect flow never loads Stripe.js in the browser.
 # Full setup: docs/ops/stripe-setup.md
 ExecStart=/opt/macro-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -33,6 +39,15 @@ RestartSec=2
 # user later). The app only reads /opt/macro and writes nothing.
 NoNewPrivileges=true
 ProtectSystem=full
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

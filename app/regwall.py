@@ -1,14 +1,16 @@
 """app/regwall.py — the registration wall (operator lockdown order, 2026-07-24).
 
-Every macro-dashboard HTML page EXCEPT the public funnel (the landing `/` +
-`/index.html`, `/plans.html`) now requires a signed-in account of AT LEAST the
-free tier. Caddy consults this endpoint (second sub-request stage, after the
-fail-open IP gate) before serving any gated .html file:
+Every macro-dashboard product path EXCEPT the deliberately small public funnel
+and reviewed SEO estate now requires a signed-in account of AT LEAST the free
+tier. That includes HTML, generated JSON, data-bearing JavaScript, images, and
+other static artifacts.
+Caddy consults this endpoint before serving any protected file:
 
     204  → registered visitor (valid Supabase session cookie) — serve the file.
-    302  → no/invalid session — Location: /?signin=1&ret=<original path>; the
-           landing opens the onboarding sheet, and onboard.js returns the
-           visitor to `ret` after sign-in.
+    302  → no/invalid session on a document navigation — Location:
+           /?signin=1&ret=<original path>.
+    401  → no/invalid session on an asset/data request — a small JSON lock
+           response, never a redirect that fetch() could mistake for data.
 
 FAIL-CLOSED (the exact inverse of app/gate.py, per the MNZ-R1 doctrine): any
 exception in this module denies (302 to the landing). The Caddy side mirrors
@@ -29,6 +31,7 @@ sideways at the edge.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import urllib.parse
@@ -57,14 +60,6 @@ PUBLIC_PATHS = {"/", "/index.html", "/plans.html"}
 PUBLIC_PREFIXES = ("/stocks/", "/tools/", "/learn/", "/blog/")
 
 
-def _is_public(path: str) -> bool:
-    """True for the marketing funnel + the free/SEO trees — never gated."""
-    if not path:
-        return False
-    p = path.split("?", 1)[0].split("#", 1)[0]
-    return p in PUBLIC_PATHS or p.startswith(PUBLIC_PREFIXES)
-
-
 def _enabled() -> bool:
     return os.environ.get("REGWALL_ENABLED", "1") not in ("0", "false", "no", "")
 
@@ -82,46 +77,92 @@ def _safe_ret(raw: str | None) -> str:
     return ""
 
 
-def _deny(ret: str) -> Response:
+def _is_public(path: str) -> bool:
+    clean = urllib.parse.urlsplit(path or "").path
+    return clean in PUBLIC_PATHS or any(clean.startswith(prefix) for prefix in PUBLIC_PREFIXES)
+
+
+def _is_document(request: Request, ret: str) -> bool:
+    """True only for a top-level HTML navigation.
+
+    Caddy sends the explicit X-Original-Kind marker.  The conservative suffix
+    fallback keeps direct endpoint tests and older Caddy installs compatible.
+    """
+    # Browser navigations to extensionless directory indexes (for example
+    # /learn/) ride the asset matcher in Caddy, but Sec-Fetch-Dest still names
+    # them correctly. Prefer that signal over the matcher hint.
+    if (request.headers.get("sec-fetch-dest") or "").strip().lower() == "document":
+        return True
+    kind = (request.headers.get("x-original-kind") or "").strip().lower()
+    if kind:
+        return kind == "document"
+    path = urllib.parse.urlsplit(ret).path.lower()
+    return not path or path == "/" or path.endswith(".html")
+
+
+def _deny(ret: str, *, document: bool = True) -> Response:
+    common = {
+        # A cached deny would lock registered users out; a cached allow would
+        # leak content. Nothing from this endpoint is ever cacheable.
+        "Cache-Control": "no-store",
+        "Vary": "Cookie",
+        "X-Regwall": "deny",
+        "X-Robots-Tag": "noindex, noarchive",
+    }
+    if not document:
+        return Response(
+            content=json.dumps(
+                {
+                    "locked": True,
+                    "reason": "authentication_required",
+                    "signin_url": "/?signin=1",
+                },
+                separators=(",", ":"),
+            ),
+            status_code=401,
+            media_type="application/json",
+            headers=common,
+        )
+
     loc = "/?signin=1"
     if ret and not _is_public(ret):
         loc += "&ret=" + urllib.parse.quote(ret, safe="/")
     return Response(
         status_code=302,
-        headers={
-            "Location": loc,
-            # A cached redirect would lock REGISTERED users out; a cached allow
-            # would leak content. Nothing from this endpoint is ever cacheable.
-            "Cache-Control": "no-store",
-            "X-Regwall": "deny",
-        },
+        headers={**common, "Location": loc},
     )
 
 
 @router.get("/api/regwall/check")
 def regwall_check(request: Request) -> Response:
-    """Fail-closed registration check for gated HTML (Caddy sub-request)."""
+    """Fail-closed registration check for protected static content."""
     ret = ""
     try:
         ret = _safe_ret(request.headers.get("x-original-uri"))
-        if not _enabled():
-            return Response(status_code=204, headers={"X-Regwall": "off"})
-        # Free/SEO trees + the funnel are PUBLIC: allow without a session so
-        # search engines and signed-out guests read them. Caddy normally never
-        # routes these here (they're excluded from @reg_html) — this is
-        # defense-in-depth and keeps the two public lists provably mirrored.
+        document = _is_document(request, ret)
         if _is_public(ret):
-            return Response(status_code=204, headers={"X-Regwall": "public", "Cache-Control": "no-store"})
+            return Response(
+                status_code=204,
+                headers={"X-Regwall": "public", "Cache-Control": "no-store"},
+            )
+        if not _enabled():
+            return Response(
+                status_code=204,
+                headers={"X-Regwall": "off", "Cache-Control": "no-store", "Vary": "Cookie"},
+            )
         # Late imports keep startup order irrelevant; failure → deny (fail-closed).
         from app.main import _mm_supabase_access_token, _mm_verify_uid_cached  # noqa: PLC0415
 
         token = _mm_supabase_access_token(request)
         if not token:
-            return _deny(ret)
+            return _deny(ret, document=document)
         uid = _mm_verify_uid_cached(token)
         if not uid:
-            return _deny(ret)
-        return Response(status_code=204, headers={"X-Regwall": "allow", "Cache-Control": "no-store"})
+            return _deny(ret, document=document)
+        return Response(
+            status_code=204,
+            headers={"X-Regwall": "allow", "Cache-Control": "no-store", "Vary": "Cookie"},
+        )
     except Exception as exc:  # noqa: BLE001 — FAIL-CLOSED: any error denies, never serves
         log.warning("regwall: check failed closed (%s)", exc)
-        return _deny(ret)
+        return _deny(ret, document=_is_document(request, ret))
