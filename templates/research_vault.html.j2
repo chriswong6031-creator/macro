@@ -310,6 +310,10 @@ html[data-theme="light"] .rep-pin{ color:var(--rv); }
 .rep-savebtn.on{ color:var(--rv); background:var(--rv-dim); border-color:color-mix(in srgb,var(--rv) 40%,transparent); }
 .rep-savebtn.on svg{ fill:var(--rv); }
 .rep h3{ font-weight:700; font-size:17.5px; line-height:1.28; margin:0 0 10px; letter-spacing:-.012em; color:var(--text); }
+/* title links to its research/<slug>.html SEO page; looks like the heading */
+.rep h3 .rep-titlelink{ color:inherit; text-decoration:none; }
+.rep h3 .rep-titlelink:hover{ color:var(--rv-ink); }
+html[data-theme="light"] .rep h3 .rep-titlelink:hover{ color:var(--rv); }
 .rep-points{ list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
 .rep-points li{ position:relative; padding-left:18px; font-size:13.5px; line-height:1.5; color:color-mix(in srgb,var(--text) 88%,var(--muted)); }
 .rep-points li::before{ content:""; position:absolute; left:2px; top:8px; width:6px; height:6px; border-radius:2px; background:var(--rv); transform:rotate(45deg); }
@@ -689,6 +693,9 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
   <p class="rv-foot">
     <span class="l-en"><b>Not investment advice.</b> The Research Vault hosts third-party institutional research for reference and education. Highlighted reports are chosen for the quality of their argument, not as recommendations to buy or sell. Documents are provided by their authors; ratings and views are the authors', not ours. Access is metered and every download is watermarked — <b>not for redistribution.</b></span>
     <span class="l-zh"><b>非投资建议。</b>研报库仅收录第三方机构研究，供参考与学习之用。精选报告因其论证质量入选，并非买卖建议。文档由作者提供，其中评级与观点均属作者本人，与本平台无关。访问受配额限制，下载均加水印 —— <b>不得转发。</b></span>
+  </p>
+  <p class="rv-foot" style="margin-top:14px">
+    <a href="research/index.html" style="color:var(--rv-ink);text-decoration:none;font-weight:700">{{ t('Browse the full research archive', '浏览完整研报存档') }} →</a>
   </p>
 
 </div>

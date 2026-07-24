@@ -91,7 +91,8 @@
       title: x.title || '',
       points: Array.isArray(x.summary_points) ? x.summary_points : [],
       tags: Array.isArray(x.tags) ? x.tags : [],
-      tickers: Array.isArray(x.tickers) ? x.tickers : []
+      tickers: Array.isArray(x.tickers) ? x.tickers : [],
+      slug: x.slug || ''        // research/<slug>.html SEO landing page
     };
   }
   function logoFor(inst) {
@@ -532,7 +533,9 @@
         + '<span class="stamp ' + stampClass(x.side) + '"><span class="dt"></span>' + stampLabel(x.side) + '</span>' + pinBadge
         + '<button class="rep-savebtn' + (saved ? ' on' : '') + '" aria-pressed="' + (saved ? 'true' : 'false') + '" aria-label="' + T('Save report', '收藏报告') + '" data-act="save">' + BOOK_SVG + '</button>'
       + '</div>'
-      + '<h3>' + esc(x.title) + '</h3>'
+      + '<h3>' + (x.slug
+          ? '<a class="rep-titlelink" href="research/' + esc(x.slug) + '.html" data-act="view">' + esc(x.title) + '</a>'
+          : esc(x.title)) + '</h3>'
       + ptsHtml + moreBtn
       + '<div class="rep-foot"><div class="rep-meta">'
         + '<span class="rep-date">' + CAL_SVG + esc(fmtWhen(x.at, x.date)) + '</span>'
@@ -937,7 +940,13 @@
         if (LANE === 'saved') renderFeed();
         return;
       }
-      if (e.target.closest('[data-act="view"]')) openViewer(id);
+      var viewEl = e.target.closest('[data-act="view"]');
+      if (viewEl) {
+        // the title is a real <a href="research/<slug>.html"> for SEO/crawlers/
+        // right-click; for a left-click with JS we open the in-app viewer instead.
+        if (viewEl.tagName === 'A') e.preventDefault();
+        openViewer(id);
+      }
     });
     // drawer
     $('browse-btn').addEventListener('click', openDrawer);
@@ -999,11 +1008,24 @@
     })(n);
   }
 
+  /* deep link from a report landing page: research_vault.html?doc=<id> opens that
+     report's viewer (Pro → PDF, non-Pro → the upgrade gate). This is the SEO
+     funnel's landing → conversion hop. */
+  function openDeepLink() {
+    try {
+      var m = /[?&]doc=([^&]+)/.exec(location.search);
+      if (!m) return;
+      var id = decodeURIComponent(m[1]);
+      if (ITEMS.some(function (x) { return x.id === id; })) openViewer(id);
+    } catch (e) {}
+  }
+
   /* ═══════════ boot ═══════════ */
   function boot() {
     wire();
     hydrateFromBake();   // instant paint from the SSR snapshot
     refreshFromApi();    // then hourly-fresh live catalog
+    openDeepLink();      // ?doc=<id> from an SEO report page → open that report
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
