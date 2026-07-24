@@ -62,6 +62,10 @@
   .fd-aurora .a3 { width:600px; height:520px; top:38%; left:52%; transform:translate(-50%,-50%);
     background:radial-gradient(ellipse, var(--lean-tint,rgba(52,194,211,.07)) 0%, transparent 72%); }
   .page-flow-desk > *:not(.fd-aurora) { position:relative; z-index:1; }
+  /* The lift above puts the nav at the same z-index:1 as the hero — so the hero,
+     being later in the DOM, painted over the nav's open dropdown menu. Raise the
+     nav one level so its flyouts always clear the page content. */
+  body.page-flow-desk > .site-nav { z-index:2; }
 
   /* ── shared type + helpers ────────────────────────────────────────────────── */
   .page-flow-desk h1 { font-size:20px; margin:0; font-weight:800; letter-spacing:-.01em; }
