@@ -2055,20 +2055,35 @@
     else { btn.disabled = false; if (btn._sdLbl != null) btn.innerHTML = btn._sdLbl; }
   }
   // shared CTA + sign-out wiring across sections.
-  // Sign-in / create-account now route to the Terminal's onboarding sheet — ONE
-  // auth surface product-wide (operator order 2026-07-23). The SSO cookie is
-  // scoped to .mastermind-x.com, so signing in on app.* signs in here too; &ret=
-  // brings the user back to this exact page afterward (Terminal originNav).
-  function _mmAuthUrl(mode) {
-    return 'https://app.mastermind-x.com/terminal?' + (mode === 'signup' ? 'signup=1' : 'signin=1')
-      + '&ret=' + encodeURIComponent(location.href);
+  // Sign-in / create-account open the LANDING-NATIVE onboarding sheet IN PLACE on
+  // whatever www page the user is on (operator escalation 2026-07-23: auth must
+  // exist on mastermind-x.com — never bounce to app.*). onboard.js is lazy-loaded
+  // once and exposes window.MMOnboard; it self-provisions its CSS/fonts. Fallback
+  // (script unreachable): navigate to the landing with the param — index.html
+  // always carries the sheet.
+  function _mmOpenOnboard(mode) {
+    var m = (mode === 'signup') ? 'signup' : 'signin';
+    if (window.MMOnboard && window.MMOnboard.open) { window.MMOnboard.open(m); return; }
+    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    if (window.__mmOnboardLoading) return;    // second click while loading — first one will open
+    window.__mmOnboardLoading = true;
+    var s = document.createElement('script');
+    s.src = pfx + 'onboard.js'; s.defer = true;
+    var fallback = function () { location.href = pfx + 'index.html?' + (m === 'signup' ? 'signup=1' : 'signin=1'); };
+    var t = setTimeout(function () { if (!window.MMOnboard) fallback(); }, 4000);
+    s.onload = function () {
+      clearTimeout(t); window.__mmOnboardLoading = false;
+      if (window.MMOnboard && window.MMOnboard.open) window.MMOnboard.open(m); else fallback();
+    };
+    s.onerror = function () { clearTimeout(t); window.__mmOnboardLoading = false; fallback(); };
+    (document.head || document.documentElement).appendChild(s);
   }
   function _sdWireCta(host) {
     host.querySelectorAll('[data-sd-cta]').forEach(function (b) {
       b.addEventListener('click', function () {
         var mode = b.getAttribute('data-sd-cta');
         _closeSDash();
-        location.href = _mmAuthUrl(mode === 'signup' ? 'signup' : 'signin');
+        _mmOpenOnboard(mode === 'signup' ? 'signup' : 'signin');
       });
     });
     var som = host.querySelector('#sd-signout-m');
@@ -2635,8 +2650,8 @@
     var bSignin = pop.querySelector('#set-signin'), bSignup = pop.querySelector('#set-signup'),
         bSignout = pop.querySelector('#set-signout');
     if (_authEnabled) {
-      if (bSignin) bSignin.addEventListener('click', function () { close(); openAuthModal('signin'); });
-      if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
+      if (bSignin) bSignin.addEventListener('click', function () { close(); _mmOpenOnboard('signin'); });
+      if (bSignup) bSignup.addEventListener('click', function () { close(); _mmOpenOnboard('signup'); });
       if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
 
       /* ---- account management → the full settings dashboard -------------- */
@@ -2720,12 +2735,10 @@
       if (window.MDXAuth && typeof window.MDXAuth.onChange === 'function') {
         window.MDXAuth.onChange(function (user) { _updateSigninLink(user); });
       }
-      // click: open the product-wide auth surface (the Terminal onboarding sheet).
-      // Was: open the settings pane scrolled to the account section — operator-
-      // reported as broken UX ("Sign in opens the gear panel"), 2026-07-23.
+      // click: open the landing-native onboarding sheet IN PLACE (never app.*).
       signinLink.addEventListener('click', function (e) {
         e.preventDefault();
-        location.href = 'https://app.mastermind-x.com/terminal?signin=1&ret=' + encodeURIComponent(location.href);
+        _mmOpenOnboard('signin');
       });
       // initial state
       _updateSigninLink(window.MDXAuth.user ? window.MDXAuth.user() : null);

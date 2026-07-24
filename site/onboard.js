@@ -1003,8 +1003,24 @@
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
   // ══════════════════════════ open / close ═══════════════════════════════════
+  // The sheet is SITE-WIDE: theme.js lazy-loads onboard.js on any www page when an
+  // auth entry is clicked. Such pages have neither onboard.css nor the landing's
+  // display fonts — self-provision both, idempotently, before first build.
+  function _pfx() { return location.pathname.indexOf("/sectors/") > -1 ? "../" : ""; }
+  function ensureAssets() {
+    if (!document.querySelector('link[href*="onboard.css"]')) {
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = _pfx() + "onboard.css";
+      document.head.appendChild(l);
+    }
+    if (!document.querySelector('link[href*="Archivo+Expanded"]')) {
+      var f = document.createElement("link"); f.rel = "stylesheet";
+      f.href = "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap";
+      document.head.appendChild(f);
+    }
+  }
   var _lastFocus = null;
   function openSheet(mode, opts) {
+    ensureAssets();
     build();
     S.mode = mode || "signup";
     if (opts && opts.plan && (opts.plan === "free" || opts.plan === "insider" || opts.plan === "pro")) S.plan = opts.plan;
