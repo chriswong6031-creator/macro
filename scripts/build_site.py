@@ -4243,6 +4243,8 @@ def main() -> int:
                   # landing onboarding sheet (paired templates/ -> site/ byte copy)
                   "onboard.js", "onboard.css",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
+                  # WRI W3: watchlist book-structure math + render layer (paired)
+                  "risk_core.js", "watchlist_risk.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
@@ -5544,10 +5546,29 @@ def main() -> int:
         # each load). Optional Supabase cloud sync is config-gated; blank => local-only.
         wl = config.load().get("watchlist", {})
         if wl.get("enabled", True):
+            # WRI W3 · L3 regime rail input: baked risk_radar state + dominant
+            # label + vol regime (display-only; `latest` was loaded from
+            # data/regime/latest.json at the top of main()). null => rail hidden.
+            # The book-derived half of the rail (market beta) is computed client-side.
+            _wri_regime = None
+            try:
+                _rr = latest.get("risk_radar") or {}
+                _vr = latest.get("vol_regime") or {}
+                if _rr.get("state") or _rr.get("dominant_label_en"):
+                    _wri_regime = {
+                        "state": _rr.get("state"),
+                        "dominant_label_en": _rr.get("dominant_label_en"),
+                        "dominant_label_zh": _rr.get("dominant_label_zh"),
+                        "vol_regime": _vr.get("regime"),
+                        "asof": _rr.get("asof") or latest.get("asof"),
+                    }
+            except Exception as _wrie:  # noqa: BLE001 — additive; rail just stays hidden
+                log.warning("WRI regime rail input skipped (%s)", _wrie)
             write_page(site / "watchlist.html",
                 env.get_template("watchlist.html.j2").render(
                     generated_utc=generated, state_display_json=sd_json,
                     supabase_cfg_json=site_assets.supabase_cfg_json(),
+                    wri_regime_json=_json.dumps(_wri_regime),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
 
