@@ -353,6 +353,18 @@
       "at": "2026-07-23T23:12:01.963633+00:00",
       "activated": false,
       "importance": 45
+    },
+    "https://www.whitehouse.gov/?p=46146": {
+      "id": "wh-2026-07-24-restoring-trust-in-the-smithsonian-institution-e061",
+      "at": "2026-07-24T20:40:56.603011+00:00",
+      "activated": false,
+      "importance": 5
+    },
+    "https://www.whitehouse.gov/?p=46127": {
+      "id": "wh-2026-07-24-fact-sheet-president-donald-j-trump-restores-trust-in-the-smithsonian-institutio",
+      "at": "2026-07-24T20:41:01.618479+00:00",
+      "activated": false,
+      "importance": 10
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."
