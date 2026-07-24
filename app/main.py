@@ -486,6 +486,12 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
         raise HTTPException(502, f"auth check failed: {e}") from None
 
 
+def require_site_full_user(user: dict = Depends(require_user)) -> dict:
+    """Registered user now; site_full user when the paid launch switch is armed."""
+    from app.paywall import enforce_site_full  # noqa: PLC0415
+    return enforce_site_full(user)
+
+
 @app.get("/api/me")
 def me(user: dict = Depends(require_user)) -> dict:
     """Whoami + entitlement + chat budget.
@@ -552,7 +558,7 @@ class AskRequest(BaseModel):
 
 
 @app.post("/api/ask")
-def ask_brain(body: AskRequest, user: dict = Depends(require_user)) -> dict:
+def ask_brain(body: AskRequest, user: dict = Depends(require_site_full_user)) -> dict:
     """Ask the Neural Web brain a question.
 
     Read-only cortex tools; write tools are absent from the schema (Article 1).
@@ -581,7 +587,7 @@ def ask_brain(body: AskRequest, user: dict = Depends(require_user)) -> dict:
 
 
 @app.post("/api/ask/stream")
-def ask_brain_stream(body: AskRequest, user: dict = Depends(require_user)):
+def ask_brain_stream(body: AskRequest, user: dict = Depends(require_site_full_user)):
     """SSE streaming variant of /api/ask.
 
     Tool-calling turns run synchronously; the final synthesis turn is streamed
@@ -1416,3 +1422,16 @@ try:
 except Exception as _regwall_exc:  # noqa: BLE001
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("regwall router not mounted (wall fails CLOSED at Caddy): %r", _regwall_exc)
+
+# ---------------------------------------------------------------------------
+# Paid site wall (app/paywall.py): /api/paywall/check — a distinct fail-closed
+# entitlement stage after registration. PAYWALL_ENABLED=0 keeps it in observe/
+# pass-through mode until the paid-launch prerequisites are verified. If the
+# router cannot mount, Caddy receives a non-2xx and serves no protected file.
+# ---------------------------------------------------------------------------
+try:
+    from app.paywall import router as paywall_router  # noqa: E402
+    app.include_router(paywall_router)
+except Exception as _paywall_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("paywall router not mounted (wall fails CLOSED at Caddy): %r", _paywall_exc)

@@ -71,22 +71,29 @@ def test_ret_sanitization():
     assert r.headers["location"] == "/?signin=1"
 
 
-def test_public_funnel_page_allows():
+def test_public_path_allows_without_session():
     # the marketing funnel is public — allow without a session (never 302 to login)
     r = _check(orig="/index.html")
     assert r.status_code == 204
     assert r.headers["x-regwall"] == "public"
 
 
-def test_public_seo_trees_allow_without_session():
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/stocks/NVDA.html",
+        "/tools/index.html",
+        "/tools/calculators/roi.html",
+        "/learn/technical/index.html",
+        "/blog/win-rate-is-overrated.html",
+    ],
+)
+def test_public_seo_trees_allow_without_session(path):
     # the free/SEO estate must stay crawlable — Googlebot carries no session, so
     # these MUST 204, never 302, or the wall silently kills organic reach.
-    for orig in ("/stocks/NVDA.html", "/tools/index.html",
-                 "/tools/calculators/roi.html", "/learn/technical/index.html",
-                 "/blog/win-rate-is-overrated.html"):
-        r = _check(orig=orig)
-        assert r.status_code == 204, f"{orig} must be public (no session needed)"
-        assert r.headers["x-regwall"] == "public", orig
+    r = _check(orig=path)
+    assert r.status_code == 204, f"{path} must be public (no session needed)"
+    assert r.headers["x-regwall"] == "public", path
 
 
 def test_gated_dashboard_still_denies_with_ret():
@@ -112,3 +119,31 @@ def test_kill_switch(monkeypatch):
 
 def test_deny_helper_percent_encodes():
     assert regwall._deny("/a b.html").headers["Location"] == "/?signin=1&ret=/a%20b.html"
+
+
+def test_asset_denial_is_json_not_redirect():
+    r = client.get(
+        "/api/regwall/check",
+        headers={"X-Original-Uri": "/neuralwebdata/ruling_graph.json",
+                 "X-Original-Kind": "asset"},
+    )
+    assert r.status_code == 401
+    assert r.json() == {
+        "locked": True,
+        "reason": "authentication_required",
+        "signin_url": "/?signin=1",
+    }
+    assert r.headers["cache-control"] == "no-store"
+    assert r.headers["vary"] == "Cookie"
+
+
+def test_asset_valid_session_allows(monkeypatch):
+    monkeypatch.setattr("app.main._mm_supabase_access_token", lambda req: "tok_good")
+    monkeypatch.setattr("app.main._mm_verify_uid_cached", lambda tok: "11111111-1111-1111-1111-111111111111")
+    r = client.get(
+        "/api/regwall/check",
+        headers={"X-Original-Uri": "/oracledata/tm_episodes.json",
+                 "X-Original-Kind": "asset"},
+    )
+    assert r.status_code == 204
+    assert r.headers["x-regwall"] == "allow"

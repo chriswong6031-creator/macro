@@ -499,6 +499,7 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
 
   // ── open / close ──────────────────────────────────────────────────────────
   function open(){
+    document.dispatchEvent(new CustomEvent('prophet:dialog-open', {detail:{id:dlg.id}}));
     scrollY = window.scrollY || 0;
     dlg.classList.add('trd-open');
     document.documentElement.classList.add('trd-lock');
@@ -514,10 +515,14 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
     btn.setAttribute('aria-expanded','false'); btn.classList.remove('trd-is-open');
     var done = function(){
       dlg.classList.remove('trd-open','trd-closing');
-      document.documentElement.classList.remove('trd-lock');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollY);
-      btn.focus();
+      // A sibling Prophet dashboard may have opened while this one animated out.
+      // Keep the shared scroll lock and focus inside that still-open dialog.
+      if(!document.querySelector('.trd-dlg.trd-open')){
+        document.documentElement.classList.remove('trd-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+        btn.focus();
+      }
       panel.removeEventListener('transitionend', done);
     };
     if(reduce){ done(); } else { var t=setTimeout(done, 260); panel.addEventListener('transitionend', function h(){ clearTimeout(t); done(); }, {once:true}); }
@@ -525,6 +530,9 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
   dlg.querySelectorAll('[data-trd-close]').forEach(function(el){ el.addEventListener('click', close); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  document.addEventListener('prophet:dialog-open', function(e){
+    if(e.detail && e.detail.id !== dlg.id && dlg.classList.contains('trd-open')) close();
+  });
   // focus trap (lightweight)
   dlg.addEventListener('keydown', function(e){
     if(e.key !== 'Tab') return;

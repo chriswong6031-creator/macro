@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-24T03:43:10.813914+00:00",
+  "produced_at": "2026-07-24T20:51:42.143694+00:00",
   "as_of": "2026-07-21",
   "status": "warn",
   "phase": "final",
@@ -330,12 +330,6 @@
       "action_type": "ops_fix"
     },
     {
-      "priority": 2,
-      "area": "mastermind_dialogue",
-      "summary": "Mastermind bot dialogue pending: 2 high-severity nudges, 5 operator directives — see admin Observatory Master Brain",
-      "action_type": "follow_up"
-    },
-    {
       "priority": 3,
       "area": "confluence-graph",
       "summary": "lobe confluence-graph has gaps: stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run, stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run",
@@ -410,7 +404,7 @@
   },
   "china_market_state": {
     "available": true,
-    "as_of": "2026-07-23",
+    "as_of": "2026-07-24",
     "phase": "POLICY_PUT",
     "phase_confidence": 0.75,
     "who_controls": "mixed",
@@ -436,7 +430,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-07-23T03:44:29Z",
+    "asof": "2026-07-24T03:41:42Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,

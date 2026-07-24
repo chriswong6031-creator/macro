@@ -4,6 +4,13 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
 # Operator analytics self-exclusion hide-list — holds personal emails / home location.
 # Kept OUT of git (the .example.json template documents the schema). The admin service
 # reads it via ANALYTICS_EXCLUSIONS; recommended location is /var/lib/macro-admin/.

@@ -1,0 +1,77 @@
+# config/site_access.yml — reviewed serving boundary for www.mastermind-x.com.
+#
+# Caddy is DEFAULT-DENY for static content: anything not in `public` is routed
+# through the registration wall, then through app/paywall.py.  The paywall is
+# independently feature-flagged; registration protection is live regardless.
+#
+# Moving a path into `public` is a security-sensitive product change. Keep the
+# matching list in app/deploy/Caddyfile byte-for-byte aligned; the boundary test
+# fails if the two drift.
+schema: site_access.v1
+
+public:
+  exact:
+    - /
+    - /index.html
+    - /plans.html
+    - /favicon.svg
+    - /favicon.ico
+    - /apple-touch-icon.png
+    - /robots.txt
+    - /sitemap.xml
+    - /onboard.css
+    - /onboard.js
+    - /theme.css
+    - /theme.js
+    - /account.js
+    - /supabase.js
+    - /data_base.js
+    - /live.js
+    - /live_config.js
+    - /live/quotes.json
+    - /prophet/showcase.json
+    # Existing Terminal ingest compatibility. Remove after the separate
+    # Terminal session moves these fetches behind authenticated transport.
+    - /factordata/tech_lab.json
+  prefixes:
+    - /assets/css/
+    - /assets/landing/
+    - /factordata/tech_events/
+    # Free SEO estate (active product ruling / PR #3387).
+    - /stocks/
+    - /tools/
+    - /learn/
+    - /blog/
+    - /fonts/
+
+# These remain account-gated, but do not require a paid entitlement when the
+# premium switch is armed. They are the free-tier hook specified by the
+# monetization masterplan. Everything not public/free/deny is Insider+ by
+# default, so a newly generated engine artifact cannot silently become public.
+free_registered:
+  exact:
+    - /macro.html
+    - /news.html
+    - /china_news.html
+    - /methodology.html
+    - /coming-soon.html
+    - /report_bessent_jun24.html
+    - /regime_timeline.json
+  prefixes:
+    - /news/
+    - /chinanews/
+    - /macrodata/
+
+# Build previews and internal QA surfaces are not customer content. They return
+# 404 even to an entitled user and even while PAYWALL_ENABLED=0.
+deny:
+  exact:
+    - /_mockup_ccw_credit_desk.html
+    - /_mockup_research_vault.html
+    - /qa_bottom_sensors.html
+    - /status.html
+  prefixes: []
+
+premium:
+  default_tier: insider
+  required_feature: site_full

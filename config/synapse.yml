@@ -885,6 +885,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
     - engine/run.py
+    - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
       BACKGROUND-ONLY / NOT VALIDATED (MWR-W0). Gate ladder idle→washed_out→
@@ -908,7 +909,10 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+    - engine/mag7_washout_shadow.py
+    - engine/neuralweb/world_state.py
+    - scripts/notify_turn_events.py
     external_consumers: []
     notes: >
       EVENT-SPARSE forward trigger ledger (~2-3 rows/year expected; months of
@@ -916,6 +920,75 @@ artifacts:
       _LEDGER_MANIFEST heartbeat). One row per (tf, bar-date) trigger, dedup on
       append; nightly is the sole advancer. Graded per prereg §4 rules
       (HIT/FAIL/KILL) by scan re-runs, not in-line.
+  mag7-washout-shadow-book:
+    path: data/mag7_washout/shadow_book.jsonl
+    format: jsonl
+    producer: engine/mag7_washout_shadow.py
+    known_extra_writers: []
+    owner_program: mag7-washout
+    cadence: daily-engine
+    storage: git
+    asof_field: entry_date
+    freshness_sla_hours: 30
+    schema: mag7_washout_shadow.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      MWR §7 W1a FORWARD LEDGER — the §4 Use-B evidence vehicle. One row per
+      (tf, trigger_date, instrument ∈ EW+7 members) appended ONLY at 63td
+      maturity; EVENT-SPARSE (rows arrive ~63td after each ~2-3/yr trigger —
+      not in the ledger heartbeat). Frozen ruler in prereg §7; basket rows are
+      the gauntlet rows, member rows diagnostic. PURE MEASUREMENT — never
+      gates/ranks/alters any decision. Nightly is the sole advancer
+      (ledger_lane sentinel).
+  mag7-washout-shadow-state:
+    path: data/mag7_washout/shadow_state.json
+    format: json
+    producer: engine/mag7_washout_shadow.py
+    known_extra_writers: []
+    owner_program: mag7-washout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mag7_washout_shadow.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Open shadow-position mark-to-market + book tally (display context;
+      rewritten each nightly). No consumers yet by design — operator/agent
+      inspection surface until the W2 admin tile ships.
+  mag7-washout-prophet-confluence:
+    path: data/mag7_washout/prophet_confluence.jsonl
+    format: jsonl
+    producer: engine/mag7_washout_shadow.py
+    known_extra_writers: []
+    owner_program: mag7-washout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      MWR §7 W1d sidecar — stamps gate state onto US-board picks with ticker
+      ∈ M7 (dedup as_of/lane/ticker). READ-ONLY wrt Prophet: selection, rank
+      and the board artifacts are untouched; accrues the "Prophet Mag-7 picks
+      vs gate state" natural experiment, graded jointly with board-ledger
+      outcomes only at gauntlet time (§7 amendment fixes that ruler first).
 
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py

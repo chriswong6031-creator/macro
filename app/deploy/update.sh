@@ -64,6 +64,19 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 	caddy validate --config /etc/caddy/Caddyfile && { systemctl reload caddy 2>/dev/null || systemctl restart caddy; }
 fi
 
+# macro-api systemd sandbox: keep the installed unit aligned with the reviewed
+# repo copy. Validate before installation; a broken unit never replaces the
+# running one. The restart decision below includes this path.
+if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
+	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
+		install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
+		systemctl daemon-reload
+		echo "macro-update: macro-api systemd sandbox updated"
+	else
+		echo "macro-update: refusing macro-api unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
 # site/ render commit). "Its own code" includes the engine modules /api/ask and
 # /api/brain import (ask_brain → cortex + llm_auth; brain_gateway → chart_perception
@@ -71,7 +84,10 @@ fi
 # without a restart an engine-side fix never goes live. Doctrine CONTENT
 # (engine/neuralweb/doctrine/*.md) is deliberately NOT here: doctrine.py reloads
 # the .md files on mtime change, so prose-only edits go live without an /api blip.
-if echo "$CHANGED" | grep -qE '^(app/(main\.py|requirements\.txt|__init__\.py)|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
+# Any Python module under app/ is import-cached by uvicorn and therefore needs
+# a restart. The old narrow list omitted routers such as regwall.py/paywall.py:
+# code could deploy while the running API kept the previous access policy.
+if echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 

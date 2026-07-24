@@ -50,10 +50,15 @@ sentinel:
   # Lower = more aggressive blocking; false-positive rewrites are the safe direction.
   near_dup_jaccard: 0.50
 
-  # Base cadence caps (base = weeks_1_2 tier).
-  # W1 has no account-age wiring, so in-force defaults must assume brand-new accounts.
-  # D02 actuator RAISES caps by ramp tier (see ramp: below) — never lowers them.
-  max_posts_per_account_per_day: 2
+  # Base cadence caps.
+  # Daily post volume is UNLIMITED (operator 2026-07-24 — autonomous cadence).
+  # -1 is the "no limit" sentinel decoded by sentinel._cap_unlimited (null does
+  # NOT work: _get collapses a present-null back to the default). Volume is paced
+  # instead by the post-time 10-minute floor (min_minutes_between_any_posts, a
+  # later phase) + the 2-week link gate below. The code default stays 2 as a safe
+  # bounded fallback if this key is ever missing. NOTE: the ramp: table below is
+  # currently decorative — no account-age selector reads it (see MASTERPLAN F1).
+  max_posts_per_account_per_day: -1   # unlimited
   max_same_cashtag_per_account_per_day: 1
   max_replies_per_account_per_day: 0
 
@@ -71,9 +76,13 @@ sentinel:
   # same link twice is a documented suspension trip (D08 R2). Forbidden until week 5.
   links_allowed: false
 
-  # Media cap per account per day — fresh accounts posting all-chart content reads
-  # as a content farm (D08 R4). Ramp 1→2→3; base = weeks_1_2 value.
-  max_media_posts_per_account_per_day: 1
+  # Media cap per account per day — UNLIMITED (-1). Signal posts carry charts, so
+  # a low media cap would quarantine most of them as media_cap_daily once daily
+  # volume is unlimited; the two must move together. Residual: all-chart content
+  # on a cold account can read as a content farm (D08 R4) — the 10-min floor + the
+  # 2-week link gate are the mitigations the operator accepted. Code default stays
+  # 1 as a safe fallback.
+  max_media_posts_per_account_per_day: -1   # unlimited
 
   # Per-post cashtag breadth cap — cashtag piggybacking (many tickers in one post)
   # is an actively-suspended financial-spam vector (D08 R3). Cap distinct $TICKER

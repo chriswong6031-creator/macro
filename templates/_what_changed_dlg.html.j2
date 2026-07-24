@@ -1,0 +1,206 @@
+{# Prophet "What changed today" button + dashboard.
+   Expects _dlt, _NBR_EN and _NBR_ZH from dashboard.html.j2. The Track Record
+   partial is rendered immediately before this one and provides the shared trd-*
+   glass-button, modal-shell and mobile bottom-sheet styles. #}
+{% set _wcd = namespace(entered=0, left=0, shifted=0, reasons=0) %}
+{% for _de in _dlt.entries %}
+  {% if _de.get('entered_board') %}
+    {% set _wcd.entered = _wcd.entered + 1 %}
+  {% elif _de.get('left_board') %}
+    {% set _wcd.left = _wcd.left + 1 %}
+  {% elif _de.prev_verb != _de.cur_verb and (_de.prev_verb or _de.cur_verb) %}
+    {% set _wcd.shifted = _wcd.shifted + 1 %}
+  {% endif %}
+  {% if _de.get('reasons_removed') or _de.get('reasons_added') %}
+    {% set _wcd.reasons = _wcd.reasons + 1 %}
+  {% endif %}
+{% endfor %}
+
+<style>
+.wcd-wrap{--trd-accent:var(--link,#7aa7e0)}
+.wcd-glyph{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;
+  border-radius:50%;font-size:15px;color:var(--trd-accent);
+  background:color-mix(in srgb,var(--trd-accent) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--trd-accent) 34%,var(--trd-brd))}
+.wcd-dlg .trd-panel{width:min(92vw,860px);max-width:860px}
+.wcd-cards{grid-template-columns:repeat(4,minmax(120px,1fr))}
+.wcd-list{display:flex;flex-direction:column;gap:8px}
+.wcd-item{padding:12px 14px;border:1px solid var(--trd-line);border-radius:12px;
+  background:color-mix(in srgb,var(--trd-panel) 54%,transparent)}
+.wcd-item-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.wcd-item .nb-delta-tk{font-size:13px;min-width:0;color:var(--trd-text)}
+.wcd-item .nb-delta-cleared,.wcd-item .nb-delta-added{display:block;line-height:1.45}
+.wcd-empty{padding:22px;text-align:center;color:var(--trd-muted)}
+@media(max-width:700px){
+  .wcd-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wcd-item{padding:10px 11px}
+  .wcd-wrap .trd-stat{white-space:normal}
+}
+</style>
+
+<span class="trd-wrap trd-band-neutral wcd-wrap">
+<button type="button" id="wcd-btn" class="trd-btn"
+        aria-haspopup="dialog" aria-expanded="false" aria-controls="wcd-dlg">
+  <span class="wcd-glyph" aria-hidden="true">✦</span>
+  <span class="trd-stat">
+    <span class="trd-lead">{{ t('What changed today', '今日变化') }}</span>
+    <span class="trd-sep">·</span><b>{{ _dlt.entries | length }}</b>
+  </span>
+  <span class="trd-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 L8 6 L4.5 9.5"/></svg></span>
+</button>
+</span>
+
+<div class="trd-wrap trd-band-neutral wcd-wrap" style="display:contents">
+<div id="wcd-dlg" class="trd-dlg wcd-dlg" role="dialog" aria-modal="true" aria-labelledby="wcd-dlg-title">
+  <div class="trd-backdrop" data-wcd-close></div>
+  <div class="trd-panel">
+    <div class="trd-hd">
+      <div class="trd-hd-txt">
+        <div class="trd-eyebrow"><span class="l-en">Prophet board · daily change log</span><span class="l-zh">先知榜单 · 每日变动记录</span></div>
+        <div class="trd-title" id="wcd-dlg-title">{{ t('What changed today', '今日变化') }}</div>
+        <div class="trd-sub">
+          <span class="l-en">Board additions, removals and reason changes · {{ _dlt.get('prev_as_of','?') }} → {{ _dlt.get('cur_as_of','?') }}</span>
+          <span class="l-zh">榜单新增、移除与原因变化 · {{ _dlt.get('prev_as_of','?') }} → {{ _dlt.get('cur_as_of','?') }}</span>
+        </div>
+      </div>
+      <button type="button" class="trd-close" data-wcd-close aria-label="Close">
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2 L12 12 M12 2 L2 12"/></svg>
+      </button>
+    </div>
+
+    <div class="trd-body">
+      <div class="trd-stg trd-stg-1">
+        <div class="trd-cards wcd-cards">
+          <div class="trd-card">
+            <div class="trd-card-k">{{ t('Total updates', '变动总数') }}</div>
+            <div class="trd-card-v trd-accented">{{ _dlt.entries | length }}</div>
+            <div class="trd-card-m">{{ t('names with a board change', '发生榜单变化的标的') }}</div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k">{{ t('Joined', '新上榜') }}</div>
+            <div class="trd-card-v az-up">{{ _wcd.entered }}</div>
+            <div class="trd-card-m">{{ t('new to the board', '今日新增至榜单') }}</div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k">{{ t('Left', '已离榜') }}</div>
+            <div class="trd-card-v az-dn">{{ _wcd.left }}</div>
+            <div class="trd-card-m">{{ t('removed from the board', '今日从榜单移除') }}</div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k">{{ t('Read changed', '读数变化') }}</div>
+            <div class="trd-card-v">{{ _wcd.shifted + _wcd.reasons }}</div>
+            <div class="trd-card-m">{{ t('verb or reason updates', '动作词或原因变化') }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trd-stg trd-stg-2">
+        <div class="wcd-list" role="list">
+          {% for _de in _dlt.entries %}
+          <div class="wcd-item" role="listitem">
+            <div class="wcd-item-hd">
+              <span class="nb-delta-tk">{{ _de.ticker }}</span>
+              {% if _de.get('entered_board') %}
+                <span class="nb-delta-verb nb-delta-enter">
+                  <span class="l-en">entered board{% if _de.cur_verb %} · {{ _de.cur_verb }}{% endif %}</span>
+                  <span class="l-zh">新上榜{% if _de.cur_verb %} · {{ _de.cur_verb }}{% endif %}</span>
+                </span>
+              {% elif _de.get('left_board') %}
+                <span class="nb-delta-verb nb-delta-leave">
+                  <span class="l-en">left board{% if _de.prev_verb %} · was {{ _de.prev_verb }}{% endif %}</span>
+                  <span class="l-zh">已离榜{% if _de.prev_verb %} · 原为 {{ _de.prev_verb }}{% endif %}</span>
+                </span>
+              {% elif _de.prev_verb != _de.cur_verb and (_de.prev_verb or _de.cur_verb) %}
+                <span class="nb-delta-verb">{{ _de.get('prev_verb','—') }} → {{ _de.get('cur_verb','—') }}</span>
+              {% endif %}
+            </div>
+            {% if _de.get('reasons_removed') %}
+            <span class="nb-delta-cleared">
+              <span class="l-en">cleared: {% for _rc in _de.reasons_removed %}{{ _NBR_EN.get(_rc, _rc) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+              <span class="l-zh">已解除：{% for _rc in _de.reasons_removed %}{{ _NBR_ZH.get(_rc, _rc) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+            </span>
+            {% endif %}
+            {% if _de.get('reasons_added') %}
+            <span class="nb-delta-added">
+              <span class="l-en">added: {% for _ra in _de.reasons_added %}{{ _NBR_EN.get(_ra, _ra) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+              <span class="l-zh">新增：{% for _ra in _de.reasons_added %}{{ _NBR_ZH.get(_ra, _ra) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+            </span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="trd-ft">
+      <div class="trd-ft-note">
+        <span class="l-en">Descriptive change log only — this dashboard does not alter rankings or recommendations.</span>
+        <span class="l-zh">仅为描述性变动记录——此面板不会改变排名或建议。</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('wcd-btn');
+  var dlg = document.getElementById('wcd-dlg');
+  if(!btn || !dlg || dlg.dataset.wcdInit) return;
+  dlg.dataset.wcdInit = '1';
+  var panel = dlg.querySelector('.trd-panel');
+  var closeBtn = dlg.querySelector('.trd-close');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var scrollY = 0;
+
+  function open(){
+    document.dispatchEvent(new CustomEvent('prophet:dialog-open', {detail:{id:dlg.id}}));
+    scrollY = window.scrollY || 0;
+    dlg.classList.add('trd-open');
+    document.documentElement.classList.add('trd-lock');
+    document.body.style.top = (-scrollY) + 'px';
+    btn.setAttribute('aria-expanded','true');
+    btn.classList.add('trd-is-open');
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ dlg.classList.add('trd-in'); }); });
+    (closeBtn || panel).focus();
+  }
+
+  function close(){
+    if(!dlg.classList.contains('trd-open')) return;
+    dlg.classList.add('trd-closing');
+    dlg.classList.remove('trd-in');
+    btn.setAttribute('aria-expanded','false');
+    btn.classList.remove('trd-is-open');
+    var done = function(){
+      dlg.classList.remove('trd-open','trd-closing');
+      if(!document.querySelector('.trd-dlg.trd-open')){
+        document.documentElement.classList.remove('trd-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+        btn.focus();
+      }
+    };
+    if(reduce) done();
+    else {
+      var timer = setTimeout(done, 300);
+      panel.addEventListener('transitionend', function(){ clearTimeout(timer);done(); }, {once:true});
+    }
+  }
+
+  btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
+  dlg.querySelectorAll('[data-wcd-close]').forEach(function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  document.addEventListener('prophet:dialog-open', function(e){
+    if(e.detail && e.detail.id !== dlg.id && dlg.classList.contains('trd-open')) close();
+  });
+  dlg.addEventListener('keydown', function(e){
+    if(e.key !== 'Tab') return;
+    var f = dlg.querySelectorAll('button,a[href],input,select,[tabindex]:not([tabindex="-1"])');
+    f = Array.prototype.filter.call(f, function(x){ return x.offsetParent !== null; });
+    if(!f.length) return;
+    var first = f[0], last = f[f.length-1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault();last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault();first.focus(); }
+  });
+})();
+</script>
