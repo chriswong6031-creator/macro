@@ -1566,12 +1566,16 @@ class TestReceiptsContext:
 
     def test_receipts_context_age_from_newest_signal(self, tmp_path):
         """Age = days since the NEWEST _signal_date across plans."""
-        from datetime import date, timedelta
+        from datetime import datetime, timedelta, timezone
         from engine.marketing.sentinel import receipts_context
         idx_dir = tmp_path / "site" / "prophet"
         idx_dir.mkdir(parents=True)
-        newest = (date.today() - timedelta(days=2)).isoformat()
-        older = (date.today() - timedelta(days=30)).isoformat()
+        # Same clock as receipts_context (UTC). Local date.today() goes red every
+        # evening 5pm–midnight PDT when local/UTC dates differ (and in local-ahead
+        # zones the newest row would land future-dated and be skipped as corrupt).
+        today = datetime.now(timezone.utc).date()
+        newest = (today - timedelta(days=2)).isoformat()
+        older = (today - timedelta(days=30)).isoformat()
         idx_dir.joinpath("index.json").write_text(json.dumps({"plans": [
             {"_signal_date": older}, {"_signal_date": newest}, {"_signal_date": ""},
         ]}), encoding="utf-8")
