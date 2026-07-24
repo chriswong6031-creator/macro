@@ -74,7 +74,7 @@ html.still{scroll-behavior:auto}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.primary:hover{background:var(--blue-ink);color:#fff}
 .btn.sm{padding:8px 15px;font-size:13.5px}
-.gearbtn{width:37px;height:37px;flex:none;border-radius:10px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
+.gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
 .gearbtn:hover{color:var(--ink);transform:translateY(-1px);box-shadow:var(--sh-lift)}
 .gearbtn[aria-expanded="true"]{color:var(--ink);border-color:var(--faint)}
 .gearbtn svg{width:17px;height:17px}
@@ -92,6 +92,24 @@ html.still{scroll-behavior:auto}
 .gp-div{height:1px;background:var(--hair);margin:4px 4px 6px}
 .gp-link{display:block;font-size:13px;color:var(--ink-soft);border-radius:8px;padding:8px 8px;font-weight:500;transition:background .14s,color .14s}
 .gp-link:hover{background:var(--panel-2);color:var(--ink)}
+/* gear ACCOUNT section (mirrors the macro gear's account block, landing light tokens) */
+.gp-acct-t{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--faint);margin:2px 8px 8px}
+.gp-acct-d{font-size:12px;line-height:1.5;color:var(--muted);margin:0 8px 10px}
+.gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;transition:background .14s,color .14s,border-color .14s}
+.gp-abtn.ghost{border:1px solid var(--hair-2);background:#fff;color:var(--ink-soft)}
+.gp-abtn.ghost:hover{background:var(--blue-wash);color:var(--blue-ink);border-color:var(--blue)}
+.gp-abtn.solid{background:var(--blue);border:1px solid var(--blue);color:#fff;box-shadow:var(--sh-card)}
+.gp-abtn.solid:hover{background:var(--blue-ink);border-color:var(--blue-ink)}
+.gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;min-width:0;transition:background .14s}
+.gp-acct-card:hover{background:var(--panel-2)}
+.gp-acct-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#fff;background:var(--blue)}
+.gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.gp-acct-email{font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gp-acct-sub{font-size:11px;color:var(--muted)}
+.gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;border:1px solid var(--hair-2);border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:#fff;transition:background .14s,color .14s,border-color .14s}
+.gp-signout:hover{background:var(--panel-2);color:var(--ink)}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
