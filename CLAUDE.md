@@ -2,6 +2,13 @@
 
 Signal-engine + static-site repo (engines in `engine/`, builders in `scripts/`, rendered site in `site/`, programs/masterplans in `research/`). Nightly pipeline runs on a self-hosted Mac Studio via GitHub Actions; render budget is law (~67 min, 4-core-bound) — heavy compute goes off the render path, artifacts to R2.
 
+## Shared workspace + completion (STANDING)
+
+- The canonical project home is `/Users/chriswong/Documents/Cluade`. Work from a fresh remote-default worktree under this repo's `.claude/worktrees/`; never use `~/.codex/worktrees`, `/private/tmp`, a `codex/` branch, or the occupied primary checkout for project work.
+- Macro Dashboard and `/Users/chriswong/Documents/Cluade/charting-app` are one connected product. Check cross-repo authentication, subscriptions, data contracts, APIs, and deployment effects when relevant.
+- A substantive verified change is not done until **commit → push → PR → CI → same-day squash-merge → live verification**. Do this automatically without asking the operator to finish it. Hold only on an explicit operator request, a genuine non-spurious failing check, or a real deployment blocker.
+- Account-local Claude memory is not automatically shared with Codex or other accounts. Durable operating rules belong in both repository `CLAUDE.md` and `AGENTS.md`; update both when the standard changes.
+
 ## Model routing (STANDING — token economy)
 
 The main session may run a frontier model (Fable/Opus). **Never let fan-outs inherit it.** Workflow `agent()` calls and Agent-tool spawns inherit the session model unless you pass `model:` explicitly — under ultracode that silently burns frontier tokens on mechanical work. Route every spawn:
@@ -30,7 +37,7 @@ A spawned/chipped session starts with ONLY its prompt + the target repo's CLAUDE
 1. **Acceptance gates INLINE in the spawn prompt**, phrased "not done unless": fresh end-to-end happy path with zero manual workarounds (a race you reload around is a bug you own); per-step visual crops vs the reference (light+dark+zh where applicable) posted in the PR body; entry points actually wired. A masterplan pointer is context, not enforcement.
 2. **Reference images = committed files** (`mockups/refs/<program>/`) with paths in the prompt. Never hand off a look in prose — the session cannot see your screenshots.
 3. **Design-spec-first**: flagship user-facing surfaces get exact markup/CSS pinned in the spawned session's main loop (frontend-design skill + target repo design docs) BEFORE builders assemble anything. "Component assembly" on unpinned design = house-idiom drift, even with Opus.
-4. **No self-merge on first pass** of flagship UI — the PR waits, with its visual artifact, for operator/orchestrator review.
+4. **No child-agent self-merge on first pass** of flagship UI — the spawned builder returns its PR + visual artifact to the commissioning main session. The main session reviews it and completes the normal squash-merge/live chain in the same task unless the operator explicitly requests a hold or a genuine check is red.
 5. **Masterplans for user-facing builds carry ACCEPTANCE GATES as §0** at the top of the file, not buried mid-doc.
 6. **Audit the target repo's CLAUDE/AGENTS file before spawning** — if it carries no design/verification laws, fix that first (charting-app `terminal/AGENTS.md` got its laws 2026-07-23).
 7. **The build surface follows the FUNNEL, not the plumbing** — where the auth/billing machinery lives never decides where the user experience lives (onboarding sheet belonged to the landing, not the terminal app).
