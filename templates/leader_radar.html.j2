@@ -97,8 +97,14 @@
   --radius-card: 14px;
   --radius-chip: 6px;
   --transition: 0.18s ease;
-  /* ── mx5 port: mono numerals + deliberate type scale ── */
-  --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  /* ── mx5 port: mono numerals + deliberate type scale ──
+     Alias the house mono token (theme.css --font-mono) so the numeric face
+     matches the rest of the site. Lead the inline fallback with ui-monospace,
+     NOT the literal "SF Mono": Chromium can't resolve "SF Mono" by that family
+     name and falls back to SERIF, which is what broke the gauge numerals.
+     ui-monospace resolves to SF Mono on macOS/iOS and the platform mono
+     elsewhere. */
+  --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace);
   --fs-display: 44px;
   --fs-num-xl:  38px;
   --fs-h1:      27px;
@@ -293,6 +299,25 @@ a{text-decoration:none;color:inherit;}
 /* cooled summary — the de-noised de-escalations */
 .tonight-cooled{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);font-size:0.74rem;color:var(--text-muted);display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
 .tonight-cooled b{color:var(--text-secondary);font-weight:700;}
+/* ── entry-read shelves (LRV-O9): stance-graded overnight moves ── */
+.tn-shelf{margin-bottom:13px;}
+.tn-shelf:last-of-type{margin-bottom:0;}
+.tn-shelf-label{display:flex;align-items:center;gap:7px;font-size:0.62rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+.tn-shelf-label .tns-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.tn-shelf-label .tns-sub{font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-dim);}
+.move-card.is-late{--mv-c:var(--col-crowded);}
+.move-card.is-late .move-badge{color:var(--col-crowded);}
+.move-card.is-late .move-glyph{filter:none;}
+.move-card.is-turn{--mv-c:var(--col-suppressed);}
+.move-card.is-turn .move-tkr{color:var(--text-secondary);}
+.move-card.is-turn .move-badge{color:var(--text-muted);}
+.move-read{font-size:0.68rem;color:var(--text-muted);border-left:1px solid var(--hair-strong);padding-left:9px;white-space:nowrap;}
+.move-read b{color:var(--text-secondary);font-weight:700;}
+.tonight-baserate{margin-top:13px;padding-top:12px;border-top:1px solid var(--hair);font-size:0.7rem;color:var(--text-dim);line-height:1.5;}
+/* lane-card entry flags */
+.entry-flag{display:inline-block;font-size:0.66rem;font-weight:600;padding:3px 9px;border-radius:5px;margin-top:7px;letter-spacing:0.01em;}
+.entry-flag.late{background:color-mix(in srgb,var(--col-crowded) 12%,transparent);color:var(--col-crowded);}
+.entry-flag.turn{background:rgba(255,255,255,0.04);color:var(--text-muted);}
 .cooled-list{font-size:0.68rem;color:var(--text-dim);font-family:var(--num);letter-spacing:.01em;}
 /* ── FIRE RECEIPTS ── */
 .fire-receipts-section{margin-bottom:20px;}
@@ -852,12 +877,22 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   'FAILED': '突破失败',
   'NONE': '无信号',
 } %}
-{# ══════════════ TONIGHT'S FOCUS ══════════════ #}
-{# Split the overnight moves: escalations (advancing) shown loud, cooldowns collapsed. #}
+{# ══════════════ TONIGHT'S FOCUS — stance shelves (LRV-O9) ══════════════ #}
+{# Every overnight move is graded by its entry_read verdict (engine display layer):
+   clean staged names lead; extended movers are flagged "don't chase", not celebrated;
+   downtrend build-attempts are labeled for what they are. #}
 {% set _RANK = {'NONE':0,'FAILED':0,'SUPPRESSED':1,'QUIET_ACCUMULATION':2,'CATALYST_WINDOW':3,'BREAKAWAY':4,'LEADERSHIP':5,'CROWDED':4} %}
 {% set _STATE_COL = {'CATALYST_WINDOW':'var(--col-ignition)','QUIET_ACCUMULATION':'var(--col-quiet)','BREAKAWAY':'var(--col-breakaway)','LEADERSHIP':'var(--col-leading)','SUPPRESSED':'var(--col-suppressed)','CROWDED':'var(--col-crowded)'} %}
 {% set _fired_tkrs = _ct_fired | map(attribute='ticker') | list %}
-{% set nsf = namespace(esc=[], cooled=[], crowded=[]) %}
+{# Bucket by entry_read.key; items with no entry_read (older payloads) fall back to the clean shelf. #}
+{% set nsf = namespace(look=[], late=[], turn=[], cooled=[], crowded=[]) %}
+{% for item in _ct_fired %}
+  {% set _ek = item.entry_read.key if item.entry_read is defined and item.entry_read is not none and item.entry_read.key is defined else 'staged' %}
+  {% set _it = {'ticker': item.ticker, 'state': item.state if item.state is defined and item.state is not none else 'CATALYST_WINDOW', 'prev_state': none, 'entry_read': item.entry_read if item.entry_read is defined else none, 'fired': true} %}
+  {% if _ek == 'extended' %}{% set nsf.late = nsf.late + [_it] %}
+  {% elif _ek == 'turnaround_watch' %}{% set nsf.turn = nsf.turn + [_it] %}
+  {% else %}{% set nsf.look = nsf.look + [_it] %}{% endif %}
+{% endfor %}
 {% for item in _ct_entered %}
   {% set _nr = _RANK[item.state] if item.state in _RANK else 0 %}
   {% set _pr = _RANK[item.prev_state] if (item.prev_state is not none and item.prev_state in _RANK) else -1 %}
@@ -868,49 +903,103 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   {% elif item.state in ('NONE','FAILED') or _nr < _pr %}
     {% set nsf.cooled = nsf.cooled + [item] %}
   {% else %}
-    {% set nsf.esc = nsf.esc + [item] %}
+    {% set _ek = item.entry_read.key if item.entry_read is defined and item.entry_read is not none and item.entry_read.key is defined else 'staged' %}
+    {% set _it = {'ticker': item.ticker, 'state': item.state, 'prev_state': item.prev_state, 'entry_read': item.entry_read if item.entry_read is defined else none, 'fired': false} %}
+    {% if _ek == 'extended' %}{% set nsf.late = nsf.late + [_it] %}
+    {% elif _ek == 'turnaround_watch' %}{% set nsf.turn = nsf.turn + [_it] %}
+    {% else %}{% set nsf.look = nsf.look + [_it] %}{% endif %}
   {% endif %}
 {% endfor %}
 {% set _nt = lr.near_trigger if lr.near_trigger is defined and lr.near_trigger is not none else [] %}
-{% set _n_focus = nsf.esc|length + _ct_fired|length + nsf.crowded|length %}
+{% set _n_focus = nsf.look|length + nsf.late|length + nsf.turn|length + nsf.crowded|length %}
+{# Shared card macros for the three shelves #}
+{% macro _mv_from(item) -%}
+  {% if item.prev_state is not none and item.prev_state and item.prev_state not in ('NONE','') %}<span class="move-from"><span class="l-en">from {{ _STATE_PLAIN_EN[item.prev_state] if item.prev_state in _STATE_PLAIN_EN else item.prev_state }}</span><span class="l-zh">来自{{ _STATE_PLAIN_ZH[item.prev_state] if item.prev_state in _STATE_PLAIN_ZH else item.prev_state }}</span></span>{% endif %}
+{%- endmacro %}
+{% macro _mv_ext(item) -%}
+  {%- set _er = item.entry_read if item.entry_read is defined and item.entry_read is not none else {} -%}
+  {%- set _ep = _er.extension_pct_50d if _er.extension_pct_50d is defined and _er.extension_pct_50d is not none else none -%}
+  {%- set _cv = _er.caveats if _er.caveats is defined and _er.caveats is not none else [] -%}
+  {%- set _bs = _er.basis if _er.basis is defined and _er.basis is not none else [] -%}
+  <span class="move-read">{% if 'extension_extreme' in _bs and _ep is not none and _ep > 0 %}<b>+{{ _ep | round | int }}%</b> {{ t('vs 50-day', '对50日线') }}{% elif 'monthly_rsi_80' in _bs %}{{ t('overheated on the monthly chart', '月线级别已过热') }}{% else %}{{ t('stretched for this name', '相对自身历史已过热') }}{% endif %}{% if 'earnings_window' in _cv %} · {{ t('earnings window', '财报窗口') }}{% endif %}</span>
+{%- endmacro %}
+{% macro _mv_turn(item) -%}
+  {%- set _er = item.entry_read if item.entry_read is defined and item.entry_read is not none else {} -%}
+  {%- set _bs = _er.basis if _er.basis is defined and _er.basis is not none else [] -%}
+  <span class="move-read">{% if 'below_200dma_12m' in _bs %}{{ t('below its 200-day for a year', '低于200日线已一年') }}{% else %}{{ t('still in a deep drawdown', '仍处深度回撤') }}{% endif %}</span>
+{%- endmacro %}
 <section class="tonight-section">
   <div class="section-header">
     <span class="section-title">{{ t("Tonight's focus", '今夜焦点') }}</span>
-    <span class="q-afford" style="margin-left:6px;" data-tip-en="What escalated or fired overnight vs the prior session. Cooldowns are summarised below. Context, not signals — not a buy list." data-tip-zh="对比上一交易日，今夜升级或触发的标的。回落标的汇总于下方。仅供参考，非买入清单。">?</span>
+    <span class="q-afford" style="margin-left:6px;" data-tip-en="Overnight state changes and fires, graded by entry quality from the same evidence chips shown on each card: names still below a year-long 200-day downtrend read 'turnaround attempt'; names stretched vs their 50-day (or flashing other exit-side markers) read 'don't chase'. Context, not signals — not a buy list." data-tip-zh="隔夜状态变化与触发，按入场质量分级（依据卡片上的证据）：仍处于一年以上200日均线下行趋势的标的标注「反转尝试」；相对50日均线过度拉伸（或出现其他出场端信号）的标的标注「勿追」。仅供参考，非买入清单。">?</span>
     <span class="section-rule"></span>
-    <span class="section-note">{{ t('What escalated or fired overnight — context, not signals', '隔夜升级或触发——仅供参考') }}</span>
+    <span class="section-note">{{ t('Overnight moves, graded for entry — late movers get flagged, not celebrated', '隔夜变化按入场质量分级——已错过的标注勿追，不吹捧') }}</span>
   </div>
   <div class="glass tonight-wrap">
   {% if _n_focus > 0 %}
-    <div class="tonight-grid">
-      {# Fires first — highest signal #}
-      {% for item in _ct_fired %}
-      <a class="move-card is-fire" href="us_stocks.html#{{ item.ticker }}">
-        <span class="move-glyph">⚡</span>
-        <span class="move-tkr">{{ item.ticker }}</span>
-        <span class="move-badge">{{ t('Ignition fired', '点火触发') }}</span>
-      </a>
-      {% endfor %}
-      {# Escalations #}
-      {% for item in nsf.esc %}
-      <a class="move-card" href="us_stocks.html#{{ item.ticker }}" style="--mv-c:{{ _STATE_COL[item.state] if item.state in _STATE_COL else 'var(--text-muted)' }};">
-        <span class="move-tkr">{{ item.ticker }}</span>
-        <span class="move-ar">→</span>
-        <span class="move-badge"><span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span><span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else item.state }}</span></span>
-        {% if item.prev_state is not none and item.prev_state and item.prev_state not in ('NONE','') %}
-        <span class="move-from"><span class="l-en">from {{ _STATE_PLAIN_EN[item.prev_state] if item.prev_state in _STATE_PLAIN_EN else item.prev_state }}</span><span class="l-zh">来自{{ _STATE_PLAIN_ZH[item.prev_state] if item.prev_state in _STATE_PLAIN_ZH else item.prev_state }}</span></span>
-        {% endif %}
-      </a>
-      {% endfor %}
+      {# ── Shelf 1: clean staged names — the desk's product ── #}
+      {% if nsf.look | length > 0 %}
+      <div class="tn-shelf">
+        <div class="tn-shelf-label"><span class="tns-dot" style="background:var(--col-ignition);"></span>{{ t('Worth a look', '值得关注') }} <span class="tns-sub">— {{ t('staged, not extended', '蓄势·未过热') }}</span></div>
+        <div class="tonight-grid">
+        {% for item in nsf.look %}
+        <a class="move-card{% if item.fired %} is-fire{% endif %}" href="us_stocks.html#{{ item.ticker }}"{% if not item.fired %} style="--mv-c:{{ _STATE_COL[item.state] if item.state in _STATE_COL else 'var(--text-muted)' }};"{% endif %}>
+          {% if item.fired %}<span class="move-glyph">⚡</span>{% endif %}
+          <span class="move-tkr">{{ item.ticker }}</span>
+          {% if not item.fired %}<span class="move-ar">→</span>{% endif %}
+          <span class="move-badge">{% if item.fired %}{{ t('Ignition fired · get ready', '点火触发·准备就绪') }}{% else %}<span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span><span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else item.state }}</span>{% endif %}</span>
+          {{ _mv_from(item) }}
+        </a>
+        {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {# ── Shelf 2: already moved — the anti-chase read leads ── #}
+      {% if nsf.late | length > 0 %}
+      <div class="tn-shelf">
+        <div class="tn-shelf-label"><span class="tns-dot" style="background:var(--col-crowded);"></span>{{ t("Already moved — don't chase", '已经启动——勿追高') }} <span class="tns-sub">— {{ t('wait for the first base', '等待首个整理平台') }}</span></div>
+        <div class="tonight-grid">
+        {% for item in nsf.late %}
+        <a class="move-card is-late" href="us_stocks.html#{{ item.ticker }}">
+          <span class="move-glyph">⚠</span>
+          <span class="move-tkr">{{ item.ticker }}</span>
+          <span class="move-badge">{% if item.fired %}{{ t('Fired · late', '已触发·偏晚') }}{% else %}<span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span><span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else item.state }}</span>{% endif %}</span>
+          {{ _mv_ext(item) }}
+        </a>
+        {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {# ── Shelf 3: turnaround attempts — downtrend intact ── #}
+      {% if nsf.turn | length > 0 %}
+      <div class="tn-shelf">
+        <div class="tn-shelf-label"><span class="tns-dot" style="background:var(--col-suppressed);"></span>{{ t('Turnaround attempts', '反转尝试') }} <span class="tns-sub">— {{ t('long downtrend still intact — watch only', '长期下行未改——仅观察') }}</span></div>
+        <div class="tonight-grid">
+        {% for item in nsf.turn %}
+        <a class="move-card is-turn" href="us_stocks.html#{{ item.ticker }}">
+          <span class="move-tkr">{{ item.ticker }}</span>
+          <span class="move-ar">→</span>
+          <span class="move-badge"><span class="l-en">{{ _STATE_PLAIN_EN[item.state] if item.state in _STATE_PLAIN_EN else item.state }}</span><span class="l-zh">{{ _STATE_PLAIN_ZH[item.state] if item.state in _STATE_PLAIN_ZH else item.state }}</span></span>
+          {{ _mv_turn(item) }}
+        </a>
+        {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       {# Newly crowded — exit-side warning #}
-      {% for item in nsf.crowded %}
-      <a class="move-card is-crowded" href="us_stocks.html#{{ item.ticker }}">
-        <span class="move-tkr">{{ item.ticker }}</span>
-        <span class="move-ar">→</span>
-        <span class="move-badge">{{ t('Crowded · protect gains', '过度拥挤·保护盈利') }}</span>
-      </a>
-      {% endfor %}
-    </div>
+      {% if nsf.crowded | length > 0 %}
+      <div class="tn-shelf">
+        <div class="tonight-grid">
+        {% for item in nsf.crowded %}
+        <a class="move-card is-crowded" href="us_stocks.html#{{ item.ticker }}">
+          <span class="move-tkr">{{ item.ticker }}</span>
+          <span class="move-ar">→</span>
+          <span class="move-badge">{{ t('Crowded · protect gains', '过度拥挤·保护盈利') }}</span>
+        </a>
+        {% endfor %}
+        </div>
+      </div>
+      {% endif %}
   {% else %}
     <div class="tonight-empty">{{ t('Quiet night — no new escalations or fires.', '平静之夜——无新升级或触发。') }}</div>
   {% endif %}
@@ -941,6 +1030,8 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
       <span class="cooled-list">{% for item in nsf.cooled %}{% if loop.index <= 14 %}{{ item.ticker }}{% if not loop.last and loop.index < 14 %} · {% endif %}{% endif %}{% endfor %}{% if nsf.cooled | length > 14 %} +{{ nsf.cooled | length - 14 }}{% endif %}</span>
     </div>
   {% endif %}
+  {# One merged footnote — the desk's base-rate honesty at glance tier #}
+  <div class="tonight-baserate">{{ t('Even complete setups fail roughly 4 times in 10 — every card here is a watch item, not a trade signal. Outcomes accrue in the fire receipts below.', '即使条件齐备，历史上约四成仍会失败——每张卡片都是观察项，非交易信号。结果记录见下方触发回执。') }}</div>
   </div>
 </section>{# /tonight-section #}
 
@@ -1016,6 +1107,14 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         {% endif %}
         {% if ns2.fire %}
         <div class="fire-badge">&#x26A1; {{ t('Watch window opened', '观察窗口开启') }}</div>
+        {% endif %}
+        {# LRV-O9 entry-quality flag: the exit-side lens applied at the entry lane #}
+        {% set _er_cw = r.entry_read if r.entry_read is defined and r.entry_read is not none else {} %}
+        {% if _er_cw.key is defined and _er_cw.key == 'extended' %}
+        {% set _bs_cw = _er_cw.basis if _er_cw.basis is defined and _er_cw.basis is not none else [] %}
+        <div class="entry-flag late">&#x26A0; {{ t("Already moved — don't chase", '已经启动——勿追高') }}{% if 'extension_extreme' in _bs_cw and _er_cw.extension_pct_50d is defined and _er_cw.extension_pct_50d is not none and _er_cw.extension_pct_50d > 0 %} · +{{ _er_cw.extension_pct_50d | round | int }}% {{ t('vs 50-day', '对50日线') }}{% endif %}</div>
+        {% elif _er_cw.key is defined and _er_cw.key == 'turnaround_watch' %}
+        <div class="entry-flag turn">{{ t('Downtrend intact — turnaround attempt only', '下行趋势未改——仅为反转尝试') }}</div>
         {% endif %}
       </div>
       {% endfor %}
@@ -1122,6 +1221,14 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           {% endif %}
           {% if r.fire_precipice is defined and r.fire_precipice %}
           <div class="fire-badge">&#x26A1; {{ t('Watch window opened', '观察窗口开启') }}</div>
+          {% endif %}
+          {# LRV-O9 entry-quality flag (QA lane) #}
+          {% set _er_qa = r.entry_read if r.entry_read is defined and r.entry_read is not none else {} %}
+          {% if _er_qa.key is defined and _er_qa.key == 'extended' %}
+          {% set _bs_qa = _er_qa.basis if _er_qa.basis is defined and _er_qa.basis is not none else [] %}
+          <div class="entry-flag late">&#x26A0; {{ t("Already moved — don't chase", '已经启动——勿追高') }}{% if 'extension_extreme' in _bs_qa and _er_qa.extension_pct_50d is defined and _er_qa.extension_pct_50d is not none and _er_qa.extension_pct_50d > 0 %} · +{{ _er_qa.extension_pct_50d | round | int }}% {{ t('vs 50-day', '对50日线') }}{% endif %}</div>
+          {% elif _er_qa.key is defined and _er_qa.key == 'turnaround_watch' %}
+          <div class="entry-flag turn">{{ t('Downtrend intact — turnaround attempt only', '下行趋势未改——仅为反转尝试') }}</div>
           {% endif %}
         </div>
         {% set ns_qa_shown.n = ns_qa_shown.n + 1 %}
