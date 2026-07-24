@@ -3745,7 +3745,7 @@ function conPipelineRail(pl) {
   } else {
     stages.push({
       key: "marketing_publish", name: "Publisher", num: "DARK",
-      state: "2 secrets to arm", led: "bad", flow: "block", isWord: true,
+      state: "arm in checklist", led: "bad", flow: "block", isWord: true,
     });
   }
 
@@ -3818,7 +3818,7 @@ function conNeedsYou(pl) {
     cards.push(`<button class="needs-card act" onclick="go('marketing_publish')">
       <span class="needs-ico">${CON_ICONS.bolt}</span>
       <span class="needs-body"><span class="needs-title">Finish the go-live checklist to start posting</span>
-        <span class="needs-sub">The publisher is dark. Two repo secrets and an approvals flow stand between drafts and live posts.</span></span>
+        <span class="needs-sub">The publisher is dark. Paste the Buffer token and Arm it in the checklist, then keep approvals flowing.</span></span>
       <span class="needs-cta">Go-live checklist →</span>
     </button>`);
   }
@@ -5313,10 +5313,12 @@ function pubNextSlotIso(now) {
   return null;
 }
 
-/* Go-Live checklist — the operator's "what stands between me and live posting".
-   Each row is derived from real config/state, with the exact next action in
-   plain words. (Operator instruction 2026-07-23: the existing Buffer token is
-   used as-is — no rotation prompts.) */
+/* Go-Live checklist — the operator's real remaining path to live posting, in
+   order: (1) channel ✓, (2) token paste-box, (3) ARM toggle, (4) approvals,
+   (5) next-slot countdown. Rows 2 and 3 are LIVE controls (paste + Save; ARM /
+   DISARM) — no GitHub-UI steps. Arm state is read from arm_state (API truth).
+   (Operator instruction 2026-07-23: the existing Buffer token is used as-is —
+   no rotation prompts anywhere.) */
 function pubGoLive(d) {
   const cfg = d.config || {};
   const sc = d.status_counts || {};
@@ -5324,48 +5326,83 @@ function pubGoLive(d) {
   const flagshipCh = chSet.flagship === true || cfg.any_channel_set === true;
   const approvedFlowing = (sc.approved || 0) > 0;
   const nextIso = pubNextSlotIso();
+  const as = d.arm_state || {};
+  const armed = as.enabled === true;
+  const armKnown = as.enabled === true || as.enabled === false;
+  const tokenPresent = cfg.token_present === true;
 
-  const rows = [
-    {
-      done: flagshipCh,
-      title: `Buffer channel connected`,
-      do: flagshipCh
+  /* Row 1 — channel connected (static, derived from config). */
+  const row1 = `<div class="golive-row">
+    <span class="golive-mark ${flagshipCh ? "done" : "todo"}">${flagshipCh ? "✓" : "○"}</span>
+    <div class="golive-main">
+      <div class="golive-title">Buffer channel connected</div>
+      <div class="golive-do">${flagshipCh
         ? `Flagship desk <b>@mastermindx001</b> has a Buffer channel id.`
-        : `Connect the flagship Buffer channel and set its id in <span class="k">config/marketing.yml</span> → <span class="k">publish.channels</span>.`,
-    },
-    {
-      done: cfg.token_present === true,
-      title: `<span class="k">BUFFER_TOKEN</span> repo secret`,
-      do: `Add the Buffer personal API token (the existing one) as the <span class="k">BUFFER_TOKEN</span> repo secret. <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`,
-    },
-    {
-      done: false,   /* kill-switch is an env on the runner; we can't read it here → treat as a manual step */
-      title: `<span class="k">MARKETING_PUBLISH_ENABLED=1</span> repo secret`,
-      do: `Set the kill-switch secret to <span class="k">1</span>. Until then the runner stays dry even with a token and channel.`,
-    },
-    {
-      done: approvedFlowing,
-      title: `Approvals flowing`,
-      do: approvedFlowing
-        ? `${sc.approved} approved item${sc.approved === 1 ? "" : "s"} ready for the next slot.`
-        : `Approve drafts in the Outbox. The publisher only posts <b>approved, due</b> items.`,
-      aside: approvedFlowing ? `<span class="golive-count" style="color:var(--ok)">${sc.approved}</span>` : "",
-    },
-  ];
+        : `Connect the flagship Buffer channel and set its id in <span class="k">config/marketing.yml</span> → <span class="k">publish.channels</span>.`}</div>
+    </div>
+    <div class="golive-aside"></div>
+  </div>`;
 
-  const rowsHtml = rows.map(r => {
-    const cls = r.done ? "done" : (r.warn ? "warn" : "todo");
-    const mark = r.done ? "✓" : (r.warn ? "!" : "○");
-    return `<div class="golive-row">
-      <span class="golive-mark ${cls}">${mark}</span>
-      <div class="golive-main">
-        <div class="golive-title">${r.title}</div>
-        <div class="golive-do">${r.do}</div>
+  /* Row 2 — BUFFER_TOKEN paste-box. Password input + Save; on ok the row flips
+     to done. The value is never rendered and the input clears on submit. */
+  const row2 = `<div class="golive-row" id="golive-token-row">
+    <span class="golive-mark ${tokenPresent ? "done" : "todo"}" id="golive-token-mark">${tokenPresent ? "✓" : "○"}</span>
+    <div class="golive-main">
+      <div class="golive-title">Buffer token</div>
+      <div class="golive-do" id="golive-token-do">${tokenPresent
+        ? `Token saved to repo secrets. Paste a new value only to replace it.`
+        : `Paste your Buffer personal API token — it is saved straight to the <span class="k">BUFFER_TOKEN</span> repo secret (stdin only; never shown or logged). <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`}</div>
+      <div class="golive-tokbox">
+        <input type="password" id="pub-token-input" class="golive-tokinput" autocomplete="off"
+               spellcheck="false" placeholder="Buffer API token" aria-label="Buffer API token">
+        <button class="btn sm primary" id="pub-token-save">Save token</button>
       </div>
-      <div class="golive-aside">${r.aside || ""}</div>
-    </div>`;
-  }).join("");
+    </div>
+    <div class="golive-aside"></div>
+  </div>`;
 
+  /* Row 3 — ARM / DISARM toggle. Prominent switch, state from arm_state. */
+  const armMark = armed ? "done" : (armKnown ? "todo" : "warn");
+  const armMarkChar = armed ? "✓" : (armKnown ? "○" : "!");
+  const armTitle = armed
+    ? `<span style="color:var(--ok)">LIVE — posting at the next slot</span>`
+    : (armKnown
+        ? `<span class="k">Dark — dry-run only</span>`
+        : `<span class="warn">Arm state unknown</span>`);
+  let armDo;
+  if (!armKnown) {
+    armDo = `${as.error ? esc(as.error) : "GitHub API unreachable — arm state unknown."} The runner always follows the <span class="k">MARKETING_PUBLISH_ENABLED</span> repo variable.`;
+  } else if (armed) {
+    armDo = `The publisher is armed. Approved, due items post at the next slot. Disarm any time — it is an instant kill switch.`;
+  } else {
+    armDo = `Arm the publisher to start posting approved, due items. It writes the <span class="k">MARKETING_PUBLISH_ENABLED</span> repo variable — one source of truth, instantly reversible.`;
+  }
+  const armBtnLabel = armed ? "Disarm" : "Arm publisher";
+  const armBtnCls = armed ? "btn sm" : "btn sm primary";
+  const row3 = `<div class="golive-row" id="golive-arm-row">
+    <span class="golive-mark ${armMark}" id="golive-arm-mark">${armMarkChar}</span>
+    <div class="golive-main">
+      <div class="golive-title" id="golive-arm-title">${armTitle}</div>
+      <div class="golive-do" id="golive-arm-do">${armDo}</div>
+    </div>
+    <div class="golive-aside">
+      <button class="${armBtnCls}" id="pub-arm-btn">${armBtnLabel}</button>
+    </div>
+  </div>`;
+
+  /* Row 4 — approvals flowing. */
+  const row4 = `<div class="golive-row">
+    <span class="golive-mark ${approvedFlowing ? "done" : "todo"}">${approvedFlowing ? "✓" : "○"}</span>
+    <div class="golive-main">
+      <div class="golive-title">Approvals flowing</div>
+      <div class="golive-do">${approvedFlowing
+        ? `${sc.approved} approved item${sc.approved === 1 ? "" : "s"} ready for the next slot.`
+        : `Approve drafts in the Outbox. The publisher only posts <b>approved, due</b> items.`}</div>
+    </div>
+    <div class="golive-aside">${approvedFlowing ? `<span class="golive-count" style="color:var(--ok)">${sc.approved}</span>` : ""}</div>
+  </div>`;
+
+  /* Row 5 — next posting slot countdown. */
   const cd = nextIso
     ? `<div class="golive-row">
         <span class="golive-mark todo" style="border-style:solid;color:var(--accent-cyan);border-color:var(--accent-cyan)">›</span>
@@ -5382,9 +5419,75 @@ function pubGoLive(d) {
 
   return `<div class="card">
     <div class="section">Go-live checklist <span class="cnt">what stands between drafts and live posts</span></div>
-    <div class="con-lede" style="margin-bottom:10px">Each row is one step to start posting. Nothing posts until all four are done and the kill-switch is on.</div>
-    <div class="golive">${rowsHtml}${cd}</div>
+    <div class="con-lede" style="margin-bottom:10px">Paste your token, then Arm. Nothing posts until the channel, token, and ARM toggle are all set and approvals are flowing.</div>
+    <div class="golive">${row1}${row2}${row3}${row4}${cd}</div>
   </div>`;
+}
+
+/* Save the pasted Buffer token → BUFFER_TOKEN repo secret (server shells to
+   `gh secret set` via stdin). The value is cleared from the input on submit and
+   NEVER rendered back. On ok the token row flips to done. */
+async function pubSaveToken(btn) {
+  const input = document.getElementById("pub-token-input");
+  if (!input) return;
+  const val = (input.value || "").trim();
+  if (!val) { toast("Paste the Buffer token first", true); input.focus(); return; }
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "saving…";
+  let r;
+  try {
+    r = await post("/api/marketing/publish/token", { token: val });
+  } finally {
+    // Radioactive: clear the field regardless of outcome so the token never
+    // lingers in the DOM.
+    input.value = "";
+  }
+  btn.disabled = false; btn.textContent = orig;
+  if (r && r.ok) {
+    toast("Token saved to repo secrets.");
+    const mark = document.getElementById("golive-token-mark");
+    const doEl = document.getElementById("golive-token-do");
+    if (mark) { mark.className = "golive-mark done"; mark.textContent = "✓"; }
+    if (doEl) doEl.innerHTML = "Token saved to repo secrets. Paste a new value only to replace it.";
+  } else {
+    toast((r && r.error) || "Could not save token", true);
+  }
+}
+
+/* Arm / disarm the publisher → MARKETING_PUBLISH_ENABLED repo variable. Confirm
+   dialog both ways; optimistic re-fetch of the panel on success. */
+async function pubArmToggle(btn, currentlyArmed) {
+  const nextArmed = !currentlyArmed;
+  const nextIso = pubNextSlotIso();
+  const when = nextIso ? conCountdown(nextIso) : "the next slot";
+  const msg = nextArmed
+    ? `Arm the publisher? Real posts will go to @mastermindx001 at the next slot (⏱ ${when}). You can disarm instantly.`
+    : `Disarm the publisher? Instant kill switch — every path reverts to dry-run.`;
+  if (!window.confirm(msg)) return;
+  btn.disabled = true; const orig = btn.textContent;
+  btn.textContent = nextArmed ? "arming…" : "disarming…";
+  const r = await post("/api/marketing/publish/arm", { enabled: nextArmed });
+  if (r && r.ok) {
+    toast(nextArmed ? "Publisher ARMED — posts at the next slot." : "Publisher DISARMED — dry-run only.");
+    RENDER.marketing_publish();   // re-fetch API truth
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Arm toggle failed", true);
+  }
+}
+
+/* Attach the paste-box + ARM handlers after the publisher panel is in the DOM. */
+function pubWireGoLive(d) {
+  const saveBtn = document.getElementById("pub-token-save");
+  if (saveBtn) saveBtn.onclick = () => pubSaveToken(saveBtn);
+  const tokInput = document.getElementById("pub-token-input");
+  if (tokInput && saveBtn) {
+    tokInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); pubSaveToken(saveBtn); } });
+  }
+  const armBtn = document.getElementById("pub-arm-btn");
+  if (armBtn) {
+    const armed = (d.arm_state || {}).enabled === true;
+    armBtn.onclick = () => pubArmToggle(armBtn, armed);
+  }
 }
 
 /* Summarise the per-account links_allowed map into one plain label. */
@@ -5406,16 +5509,24 @@ RENDER.marketing_publish = async () => {
 
   const cfg = d.config || {};
   const sc = d.status_counts || {};
-  const armed = cfg.token_present && cfg.any_channel_set;
+  const as = d.arm_state || {};
+  /* Arm-state pill from arm_state (the GitHub repo VARIABLE = API truth), NOT
+     the admin process env. Three honest states: armed / dark / unknown. */
+  const armed = as.enabled === true;
+  const armKnown = as.enabled === true || as.enabled === false;
 
-  /* Header — honest arm-state pill in plain words. Nothing here posts; the
-     workflow/runner does, and only when MARKETING_PUBLISH_ENABLED=1 + --live. */
   const asOfChip = d.as_of ? `<span class="cnt">queue as of ${esc(d.as_of)}</span>` : "";
-  const armPill = armed
-    ? `<span class="obx-shadow-pill" style="color:var(--warn)"><span class="obx-shadow-dot" style="background:var(--warn)"></span>Ready to arm — posts only with the kill-switch on</span>`
-    : `<span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Dark — no token/channel; nothing can post</span>`;
+  const srcNote = as.source === "github_variable" ? "" : ` <span class="cnt">(via ${esc(as.source || "env")})</span>`;
+  let armPill;
+  if (armed) {
+    armPill = `<span class="obx-shadow-pill" style="color:var(--ok)"><span class="obx-shadow-dot" style="background:var(--ok)"></span>LIVE — posting at the next slot</span>`;
+  } else if (armKnown) {
+    armPill = `<span class="obx-shadow-pill"><span class="obx-shadow-dot"></span>Dark — dry-run only</span>`;
+  } else {
+    armPill = `<span class="obx-shadow-pill" style="color:var(--warn)" title="${esc(as.error || "state unknown")}"><span class="obx-shadow-dot" style="background:var(--warn)"></span>Arm state unknown${srcNote}</span>`;
+  }
   const header = `<div class="section">Publisher ${asOfChip}${armPill}</div>
-  <div class="obx-lede">The publisher posts APPROVED, DUE outbox items to X through Buffer. It stays dark until the operator sets <code>MARKETING_PUBLISH_ENABLED=1</code> and a channel id. Run a dry-run below to see exactly what the next live run would post — no network, no writes.</div>`;
+  <div class="obx-lede">The publisher posts APPROVED, DUE outbox items to X through Buffer. Paste the Buffer token and Arm it in the checklist below — one click, no GitHub steps. Run a dry-run to see exactly what the next live run would post — no network, no writes.</div>`;
 
   /* Status strip — one tile per publisher state. */
   const tileDefs = [
@@ -5527,11 +5638,13 @@ RENDER.marketing_publish = async () => {
      so the operator can see exactly what to do to arm). */
   if (d.note && !posted.length && !stuck.length && !quar.length) {
     v.innerHTML = header + goLive + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+    pubWireGoLive(d);
     conStartCountdowns();
     return;
   }
 
   v.innerHTML = header + goLive + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+  pubWireGoLive(d);
   conStartCountdowns();
 };
 

@@ -1750,3 +1750,250 @@ class TestSentinelPassedPassthrough:
         r = marketing.sentinel(tmp_path)
         assert r["ok"] is True
         assert r["passed"] is None
+
+
+# ---------------------------------------------------------------------------
+# Publisher ARM toggle + Buffer token paste-box (kill-switch → repo VARIABLE).
+# The kill-switch moved from a repo SECRET to a repo VARIABLE; arming/disarming
+# writes MARKETING_PUBLISH_ENABLED = "1"/"0" via github_api; the Buffer token is
+# set via `gh secret set BUFFER_TOKEN` on stdin and is NEVER echoed back.
+# github_api + subprocess are stubbed — no network, no real `gh`.
+# ---------------------------------------------------------------------------
+
+class TestArmPublisher:
+    def test_arm_sets_variable_to_1(self, monkeypatch):
+        from admin import github_api
+        calls = {}
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+
+        def fake_set(name, value):
+            calls["name"] = name
+            calls["value"] = value
+            return True
+
+        monkeypatch.setattr(github_api, "set_repo_variable", fake_set)
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is True
+        assert r["enabled"] is True
+        assert calls == {"name": "MARKETING_PUBLISH_ENABLED", "value": "1"}
+        assert r["variable_value"] == "1"
+
+    def test_disarm_sets_variable_to_0(self, monkeypatch):
+        from admin import github_api
+        calls = {}
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+        monkeypatch.setattr(github_api, "set_repo_variable",
+                            lambda n, v: calls.update(name=n, value=v) or True)
+        r = marketing.arm_publisher(False)
+        assert r["ok"] is True
+        assert r["enabled"] is False
+        assert calls["value"] == "0"
+
+    def test_arm_fail_soft_without_token(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "token", lambda: None)
+        # set_repo_variable must not even be reached; make it explode if it is
+        monkeypatch.setattr(github_api, "set_repo_variable",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not write")))
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is False
+        assert r["enabled"] is None
+        assert "token" in r["error"].lower()
+
+    def test_arm_fail_soft_when_write_fails(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "token", lambda: "gh_faketoken")
+        monkeypatch.setattr(github_api, "set_repo_variable", lambda n, v: False)
+        monkeypatch.setattr(github_api, "_last_set_variable_error",
+                            "HTTP 403 — no Variables write", raising=False)
+        r = marketing.arm_publisher(True)
+        assert r["ok"] is False
+        assert "403" in r["error"] or "Variables" in r["error"]
+
+
+class TestArmState:
+    def test_reads_variable_true_as_armed(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "1")
+        s = marketing.arm_state()
+        assert s["enabled"] is True
+        assert s["source"] == "github_variable"
+        assert s["error"] is None
+
+    def test_reads_variable_zero_as_disarmed(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "0")
+        s = marketing.arm_state()
+        assert s["enabled"] is False
+        assert s["source"] == "github_variable"
+
+    def test_variable_not_set_404_is_null_dark(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        # get_repo_variable returns None for a 404 (variable never created)
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: None)
+        s = marketing.arm_state()
+        assert s["enabled"] is None
+        assert s["error"] is None
+        assert "not set" in s["note"].lower()
+
+    def test_api_unreachable_falls_back_to_env(self, monkeypatch):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": False, "has_token": False})
+        # env armed → fallback reports enabled True, but flags the source + error
+        monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+        s = marketing.arm_state()
+        assert s["source"].startswith("local_env")
+        assert s["error"] is not None
+        assert s["enabled"] is True
+
+    def test_never_raises_on_api_exception(self, monkeypatch):
+        from admin import github_api
+
+        def boom():
+            raise RuntimeError("network down")
+
+        monkeypatch.setattr(github_api, "available", boom)
+        s = marketing.arm_state()
+        assert s["enabled"] is None
+        assert s["error"] is not None   # honest, not a crash
+
+
+class TestSetBufferToken:
+    def _stub_gh_ok(self, monkeypatch, captured):
+        """Stub subprocess.run so `gh secret set` succeeds and the token is
+        captured from STDIN (never argv)."""
+        import subprocess
+
+        class _Res:
+            def __init__(self, rc=0, stdout="", stderr=""):
+                self.returncode = rc
+                self.stdout = stdout
+                self.stderr = stderr
+
+        def fake_run(argv, **kw):
+            captured.setdefault("argv", []).append(list(argv))
+            if argv[:3] == ["gh", "secret", "set"]:
+                # the token MUST arrive on stdin (`input=`), NEVER in argv
+                captured["stdin"] = kw.get("input")
+                return _Res(0)
+            if argv[:3] == ["gh", "secret", "list"]:
+                return _Res(0, stdout="BUFFER_TOKEN\tUpdated 2026-07-23\n")
+            return _Res(0)
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+
+    def test_sets_secret_via_stdin_not_argv(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        captured = {}
+        self._stub_gh_ok(monkeypatch, captured)
+        secret = "buffer_tok_ABC123_secret"
+        r = marketing.set_buffer_token(secret)
+        assert r["ok"] is True
+        # token arrived on stdin
+        assert captured["stdin"] == secret
+        # token NEVER in any argv
+        for argv in captured["argv"]:
+            assert secret not in argv
+            assert not any(secret in str(a) for a in argv)
+        # token NEVER in the response
+        assert secret not in json.dumps(r)
+        # present-check reported truthfully
+        assert r.get("token_present") is True
+
+    def test_refuses_empty_token(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+        # subprocess must not be called at all for an empty token
+        monkeypatch.setattr(subprocess, "run",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not shell out")))
+        r = marketing.set_buffer_token("   ")
+        assert r["ok"] is False
+        assert "empty" in r["error"].lower()
+
+    def test_refused_in_deployed_mode(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: True)
+        import subprocess
+        monkeypatch.setattr(subprocess, "run",
+                            lambda *a, **k: (_ for _ in ()).throw(AssertionError("no gh in deployed mode")))
+        r = marketing.set_buffer_token("buffer_tok_XYZ")
+        assert r["ok"] is False
+        assert "deployed" in r["error"].lower()
+        # honest fallback instruction present, token absent
+        assert "Secrets" in r["error"]
+        assert "buffer_tok_XYZ" not in json.dumps(r)
+
+    def test_gh_missing_returns_honest_fallback(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+
+        def raise_fnf(*a, **k):
+            raise FileNotFoundError("gh not found")
+
+        monkeypatch.setattr(subprocess, "run", raise_fnf)
+        r = marketing.set_buffer_token("buffer_tok_QQQ")
+        assert r["ok"] is False
+        assert "gh" in r["error"].lower()
+        assert "buffer_tok_QQQ" not in json.dumps(r)
+
+    def test_gh_nonzero_surfaces_stderr_without_token(self, monkeypatch):
+        from admin import settings
+        monkeypatch.setattr(settings, "deployed", lambda: False)
+        import subprocess
+
+        class _Res:
+            returncode = 1
+            stdout = ""
+            stderr = "error: not authenticated; run gh auth login"
+
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _Res())
+        r = marketing.set_buffer_token("buffer_tok_SEKRIT")
+        assert r["ok"] is False
+        assert "auth" in r["error"].lower()
+        assert "buffer_tok_SEKRIT" not in json.dumps(r)
+
+
+class TestPublisherArmStatePayload:
+    def test_publisher_payload_carries_arm_state(self, monkeypatch, tmp_path):
+        # API stubbed unreachable → arm_state falls back but publisher() still
+        # returns ok:True with an arm_state block (fail-soft).
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": False, "has_token": False})
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        assert "arm_state" in r
+        assert r["arm_state"]["enabled"] in (True, False, None)
+        assert "source" in r["arm_state"]
+
+    def test_publisher_arm_state_survives_api_error(self, monkeypatch, tmp_path):
+        from admin import github_api
+
+        def boom():
+            raise RuntimeError("api exploded")
+
+        monkeypatch.setattr(github_api, "available", boom)
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        assert r["arm_state"]["enabled"] is None
+        assert r["arm_state"]["error"] is not None
+
+    def test_pipeline_publisher_armed_uses_api_truth(self, monkeypatch, tmp_path):
+        # variable "1" → pipeline publisher.kill_switch True and arm_state present
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "1")
+        pl = marketing.overview(tmp_path)["pipeline"]
+        assert pl["publisher"]["kill_switch"] is True
+        assert pl["publisher"]["arm_state"]["enabled"] is True

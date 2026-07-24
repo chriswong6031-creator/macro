@@ -62,14 +62,26 @@ ledger writes. You can also click **Run dry-run** on the admin Publisher panel.
 
 ## 6. Arm live
 
-Two secrets arm it. In the GitHub repo settings (**Settings → Secrets and
-variables → Actions**):
+Going live is **two clicks in the admin Publisher panel** (Marketing → Publisher
+→ Go-live checklist) — no GitHub UI steps:
 
-- `BUFFER_TOKEN` = the token from step 1
-- `MARKETING_PUBLISH_ENABLED` = `1`
+1. **Paste the Buffer token** into the token row's paste-box and click **Save
+   token**. The panel writes it straight to the `BUFFER_TOKEN` repo secret (it
+   shells out to `gh secret set BUFFER_TOKEN`, passing the value on stdin — the
+   token is never shown, logged, or committed). `gh` must be installed and
+   authenticated on the admin host (this is a local-only action; see the
+   fallback below if you run the admin deployed).
+2. **Click Arm** on the ARM/DISARM toggle. This sets the `MARKETING_PUBLISH_ENABLED`
+   repo **variable** to `1` (via the GitHub API). That variable is the single
+   source of truth the workflow reads — `1` = armed, `0`/absent = dark.
 
 The scheduled workflow (`marketing-publish.yml`, weekday 14:00 / 17:30 / 20:15
-UTC) then posts. To run once locally instead:
+UTC) then posts approved, due items at the next slot.
+
+**Manual / fallback (no panel):** set the repo **variable** by hand at
+**Settings → Secrets and variables → Actions → Variables tab** →
+`MARKETING_PUBLISH_ENABLED` = `1`, and set the `BUFFER_TOKEN` **secret** on the
+Secrets tab (or `gh secret set BUFFER_TOKEN`). To run once locally instead:
 
 ```
 MARKETING_PUBLISH_ENABLED=1 BUFFER_TOKEN=<token> \
@@ -77,17 +89,30 @@ MARKETING_PUBLISH_ENABLED=1 BUFFER_TOKEN=<token> \
 ```
 
 The runner only posts when **both** the `--live` flag AND
-`MARKETING_PUBLISH_ENABLED` are set — the flag alone downgrades to dry-run
-(`scripts/marketing_publisher.py`: `live = bool(args.live) and kill_on`). That is
-why the workflow can pass `--live` unconditionally and stay dark until you set
-the secret.
+`MARKETING_PUBLISH_ENABLED` (in `{1,true,yes}`) are set — the flag alone
+downgrades to dry-run (`scripts/marketing_publisher.py`:
+`live = bool(args.live) and kill_on`). That is why the workflow can pass `--live`
+unconditionally and stay dark until you arm it.
+
+> **Note — the kill-switch moved from a SECRET to a VARIABLE.** The workflow
+> reads `vars.MARKETING_PUBLISH_ENABLED`, with **no fallback to the old secret**.
+> Any lingering repo *secret* named `MARKETING_PUBLISH_ENABLED` is now **ignored**
+> by the publisher — delete it to avoid confusion. Only the *variable* controls
+> arming. (One source of truth: a stale secret must never keep the publisher live
+> after you disarm.)
 
 ## 7. KILL SWITCH / rollback
 
-**Unset `MARKETING_PUBLISH_ENABLED`** (delete the repo secret, or unset the env
-var locally). Every path — workflow, local runner, admin dry-run — instantly
-reverts to dry-run and posts nothing. No code change, no deploy. This is the
-first thing to reach for if anything looks wrong.
+**Click Disarm** in the admin Publisher panel — it sets the
+`MARKETING_PUBLISH_ENABLED` repo **variable** to `0`. Every path — workflow,
+local runner, admin dry-run — instantly reverts to dry-run and posts nothing.
+No code change, no deploy. This is the first thing to reach for if anything looks
+wrong.
+
+Manual fallback: set the `MARKETING_PUBLISH_ENABLED` **variable** to `0` (or
+delete it) at **Settings → Secrets and variables → Actions → Variables**, or
+unset the env var locally. (It is a variable now, not a secret — see the note in
+§6.)
 
 ## 8. Raise the daily cap for warm-up
 

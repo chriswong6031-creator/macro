@@ -1109,6 +1109,31 @@ class Handler(BaseHTTPRequestHandler):
                                                 "GH_TOKEN has Variables write permission."}, 500)
                 return self._json({"ok": True, "enabled": enabled, "variable_value": new_value})
 
+            # Publisher ARM/DISARM: write the MARKETING_PUBLISH_ENABLED repo VARIABLE
+            # ("1" armed / "0" dark) — the single source of truth the
+            # marketing-publish.yml workflow reads. Mirrors the SEO toggle above;
+            # marketing.arm_publisher() is the fail-soft plumbing. Works deployed
+            # (github_api uses a PAT, no local shell needed).
+            if path == "/api/marketing/publish/arm":
+                if "enabled" not in b or not isinstance(b.get("enabled"), bool):
+                    return self._json({"ok": False, "error": "enabled must be a boolean"}, 400)
+                res = marketing.arm_publisher(b.get("enabled"))
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # Buffer token paste-box: set the BUFFER_TOKEN repo SECRET via
+            # `gh secret set` (stdin — the token is NEVER in argv, logs, or the
+            # response). Local-only (gh login lives on the operator's Mac): refused
+            # in deployed mode inside marketing.set_buffer_token() with an honest
+            # GitHub-UI fallback. The response carries only {ok, note[, token_present]}.
+            if path == "/api/marketing/publish/token":
+                tok = b.get("token")
+                if not isinstance(tok, str) or not tok.strip():
+                    return self._json({"ok": False,
+                                       "error": "token required — paste the Buffer personal "
+                                                "API token, then Save."}, 400)
+                res = marketing.set_buffer_token(tok)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             if path == "/api/codex/run":
                 if not b.get("confirm"):
                     return self._json({"ok": False, "error": "confirm required"}, 400)
