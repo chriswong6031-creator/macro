@@ -2,31 +2,59 @@
 
 Verifies the ENTRY / RIPENING / RAN partition in templates/china.html.j2 (mode=stocks):
   - BUY-family words (BUY/买入/act now) appear on ENTRY shelf only
-  - No green stage badge on RAN_LATE cards
+  - No green (buy) card banding on RAN_LATE cards
   - Every shelf header has dual-span (l-en + l-zh)
   - Zero non-ASCII attribute delimiters anywhere in the template
   - Jinja parse (the most important gate)
   - Smoke render with synthetic context containing all three arrays
 
 Mirrors the idiom of tests/test_china_stocks_copy_w09.py (the nearest sibling).
+
+Prophet-card redesign (2026-07-21) — what moved, and why this suite was re-pinned:
+  - The ENTRY and RAN/LATE shelf cards no longer use the old nb-card markup. The old
+    per-card stage badges (the green ENTRY badge + the muted RAN badge), the why-ranked
+    chip, and the entry-gauge green-banding classes are all DEAD (they survive only as
+    unreferenced CSS rules; this suite no longer asserts against any of them).
+    Cards now render via {{ pv.pv_card({...}) }} from templates/_prophet_card.html.j2:
+      · ENTRY rows -> verb 'buy'  (class="pvcard pv-buy",  stage 3 -> 'Ready' on)
+      · RAN/LATE   -> verb 'wait' (class="pvcard pv-wait", stage 4 -> 'Trend' on)
+    The verb hue (--pv-buy) keeps Buy green; there is no green banding on a WAIT card
+    by construction, so B1/B2 is now enforced structurally, not by a class suppression.
+  - GOTCHA: the pv_css() <style> block emits the class SELECTORS `.pv-buy`, `.pv-wait`
+    etc. as literal text, so the bare substrings "pv-buy" / "pv-wait" are ALWAYS present
+    in the output. Card-presence / card-absence assertions MUST target the full
+    element-class string 'class="pvcard pv-buy"' / 'class="pvcard pv-wait"'.
+  - why_ranked / tier / sig detail were DELIBERATELY demoted off this surface into the
+    china_lookup analyzer (template comment ~L3206). test_why_ranked_chip_on_entry_cards
+    was DELETED for that reason (2026-07-21) — the data was not lost, it moved a click away.
+  - The i18n global tr() (engine/i18n.tr — canonical-ZH glossary lookup, EN fallback) is
+    injected by the real builders; the harness registers the REAL tr so assertions pin
+    real translation behavior (e.g. tr("BUY ZONE") == "买入区"), never a guess.
 """
 import re
 from pathlib import Path
 
 from jinja2 import DictLoader, Environment
 
+from engine import i18n  # real tr() — light (markupsafe only); builders inject it as a global
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = (ROOT / "templates" / "china.html.j2").read_text()
 
 # ---------------------------------------------------------------------------
 # Helper: extract the W1-C block (balanced Jinja tags) and render it.
-# The block runs from {# ── W1-C: ENTRY SHELF to {# ── BOARD TRACK RECORD.
-# It is self-contained: 74 if/endif + 10 for/endfor pairs — confirmed balanced.
+# The block runs from the W-FCT partition anchor (which hoists the shelf row
+# partition sets — _entry_rows / _ran_late_rows / _rip* / _ran — ABOVE the panel
+# div so the facet bar can count them) to {# ── BOARD TRACK RECORD.  Extracting
+# from the W-FCT anchor (not the later "W1-C: ENTRY SHELF" comment) is load-bearing:
+# without it the partition sets are undefined and every shelf renders empty.  The
+# anchor sits BELOW the <script id="stocktable-data"> JSON block, so extraction
+# from it is clean Jinja.
 # ---------------------------------------------------------------------------
 
 def _render_w1c(setups: dict) -> str:
     """Extract and render the W1-C three-shelf block with synthetic context."""
-    start = SRC.index("{# ── W1-C: ENTRY SHELF")
+    start = SRC.index("{# ── W-FCT: shelf partitions hoisted above the panel")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     snippet = SRC[start:end]
 
@@ -69,6 +97,11 @@ def _render_w1c(setups: dict) -> str:
         autoescape=False,
     )
     env.globals["SECZH"] = SECZH
+    # Real i18n tr() — the extended (W-FCT) snippet calls tr() (limit-state ZH twin);
+    # the builders inject env.globals.update(tr=i18n.tr).  cn_micro_by_ticker is guarded
+    # by a falsy check in the ENTRY loop; {} keeps it explicit rather than Undefined.
+    env.globals["tr"] = i18n.tr
+    env.globals["cn_micro_by_ticker"] = {}
     return env.get_template("blk").render(setups=setups)
 
 
@@ -270,12 +303,15 @@ def test_no_non_ascii_attribute_delimiters():
 
 
 def test_w1c_block_is_balanced():
-    """The W1-C block (entry shelf → board track comment) must have balanced if/for tags.
+    """The W1-C block (W-FCT partition anchor → board track comment) must have balanced
+    if/for tags.
 
     This protects against an edit that breaks the tag balance without breaking the full
-    template parse (a nested snippet can be unbalanced while the parent is not).
+    template parse (a nested snippet can be unbalanced while the parent is not).  Anchored
+    to the same W-FCT start marker the render harness extracts from, so a broken balance
+    here maps directly to a render failure.
     """
-    start = SRC.index("{# ── W1-C: ENTRY SHELF")
+    start = SRC.index("{# ── W-FCT: shelf partitions hoisted above the panel")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     snippet = SRC[start:end]
     ifs_open = len(re.findall(r"\{%-?\s*if\s", snippet))
@@ -290,8 +326,8 @@ def test_shelf_headers_have_dual_spans():
     """The RIPENING and RAN/LATE shelf headers must contain both l-en and l-zh spans.
 
     The ENTRY shelf header was intentionally removed (the ENTRY grid is the default top
-    list — no banner needed), so st-entry no longer appears as a shelf tag. The per-card
-    stg-entry badge still marks each ENTRY card.
+    list — no banner needed), so st-entry no longer appears as a shelf tag. ENTRY cards
+    now render via the Prophet card (verb chip, not a per-card shelf badge — 2026-07-21).
 
     W8-R1 (#2102) replaced the compact st-ripe shelf with the three-zone rip-shelf
     (READY / BASING / FALLING); this test was stale against that merge and now pins
@@ -320,22 +356,42 @@ def test_no_t_call_inside_attributes_in_w1c_section():
     )
 
 
-def test_entry_cards_render_with_stage_badge():
-    """ENTRY cards must include the nb-stage stg-entry badge."""
-    html = _render_w1c(_full_setups())
-    assert "stg-entry" in html, "ENTRY stage badge missing from rendered output"
-    assert "ENTRY" in html, "ENTRY text missing"
+def test_entry_cards_render_with_buy_verb_and_ready_stage():
+    """ENTRY cards render as a Prophet buy card at the 'Ready' lifecycle stage.
 
-
-def test_ran_cards_render_with_stage_badge_and_detail():
-    """RAN_LATE cards must include stage badge (stg-ran) and the detail string."""
+    Re-pinned from the retired green ENTRY nb-card badge (2026-07-21 Prophet redesign):
+    the ENTRY row's entry_signal.status=buy_now maps to verb 'buy' (green pv-buy card)
+    and stage=3, which lights the 'Ready' step of the Bottoming→Turning→Ready→Trend rail.
+    """
     html = _render_w1c(_full_setups())
-    assert "stg-ran" in html, "RAN stage badge missing from rendered output"
-    assert "RAN / LATE" in html, "RAN / LATE text missing"
-    # Rule-2 sublabel must be visible
-    assert "entry passed" in html or "wait for pullback" in html, (
-        "RAN_LATE sublabel not rendered"
+    # Fixture ticker present (content invariant)
+    assert "300725.SZ" in html, "ENTRY fixture ticker missing from rendered output"
+    # buy verb card (full element class — the bare 'pv-buy' substring is always in pv_css)
+    assert 'class="pvcard pv-buy"' in html, "ENTRY card must render as a pv-buy (buy verb) card"
+    # 'Ready' stage lit (stage 3)
+    assert '<span class="on"><span class="l-en">Ready' in html, (
+        "ENTRY card must light the 'Ready' lifecycle stage"
     )
+
+
+def test_ran_cards_render_with_wait_verb_and_shelf_header():
+    """RAN_LATE cards render under the st-ran shelf header as Prophet wait cards.
+
+    Re-pinned from the retired muted RAN nb-card badge (2026-07-21 Prophet redesign): the
+    shelf header still carries the st-ran tag ('RAN / LATE' / '信号已过'), each card renders
+    as verb 'wait' (pv-wait), and the "entry passed" note rides in the zone-note slot.
+    """
+    html = _render_w1c(_full_setups())
+    # Fixture ticker present (content invariant)
+    assert "603129.SS" in html, "RAN_LATE fixture ticker missing from rendered output"
+    # Shelf header tag + bilingual label still live
+    assert "st-ran" in html, "RAN shelf tag class missing from rendered output"
+    assert "RAN / LATE" in html, "RAN / LATE text missing"
+    assert "信号已过" in html, "RAN zh label (信号已过) missing"
+    # wait verb card (full element class — bare 'pv-wait' substring is always in pv_css)
+    assert 'class="pvcard pv-wait"' in html, "RAN_LATE card must render as a pv-wait (wait verb) card"
+    # "Entry passed" note rendered in the zone slot
+    assert "Entry passed" in html, "RAN_LATE 'Entry passed' zone note not rendered"
 
 
 def test_ripening_shelf_renders_compact_cards():
@@ -356,12 +412,21 @@ def test_ran_array_renders_honesty_rows():
 
 
 def test_no_buy_family_words_on_ripening_shelf():
-    """RIPENING and rule-3 RAN cards must NOT use BUY/买入/act now language."""
-    # Only ENTRY rows; no ripening/ran in buy array
+    """RIPENING and rule-3 RAN cards must NOT use BUY/买入/act now language.
+
+    Banned-word list may be EXTENDED, never shrunk. NOTE: this render has no ENTRY nor
+    RAN_LATE buy rows, so the RAN_LATE-shelf tooltip explainer 买入就绪度 (buy-readiness,
+    a legitimate explainer, not a call to buy) is out of scope here by construction.
+    """
+    # Only ripening + rule-3 RAN rows; no ENTRY / RAN_LATE buy rows.
     setups = _full_setups(entry_rows=[], ran_rows_buy=[])
     setups["ripening"] = [_make_ripening_row()]
     setups["ran"] = [_make_ran3_row()]
     html = _render_w1c(setups)
+    # Positive control: the fixtures actually reached the output (guards against a vacuous
+    # pass where the shelves silently rendered nothing and every absence trivially held).
+    assert "688306.SS" in html, "ripening fixture ticker missing (banned-word check is vacuous)"
+    assert "000001.SZ" in html, "rule-3 RAN fixture ticker missing (banned-word check is vacuous)"
     buy_words = ["BUY NOW", "Buy now", "买入区", "act now", "立即买入"]
     for word in buy_words:
         assert word not in html, (
@@ -369,22 +434,39 @@ def test_no_buy_family_words_on_ripening_shelf():
         )
 
 
-def test_no_green_stage_badge_on_ran_cards():
-    """RAN_LATE cards must use stg-ran (muted) badge — not stg-entry (green)."""
-    setups = _full_setups(entry_rows=[], ran_rows_buy=[_make_ran_row()])
-    html = _render_w1c(setups)
-    assert "stg-ran" in html, "stg-ran badge missing"
-    # stg-entry must NOT appear when there are no ENTRY rows
-    assert "stg-entry" not in html, (
-        "stg-entry (green) badge rendered on RAN-only board"
+def test_no_green_buy_card_on_ran_cards():
+    """RAN_LATE cards must render as pv-wait — never the green pv-buy card.
+
+    Re-pinned from the retired green/muted nb-card stage badges (2026-07-21 Prophet
+    redesign).  The full element-class string is asserted because the bare 'pv-buy'/'pv-wait'
+    substrings are ALWAYS present (pv_css() emits them as CSS selectors).
+
+    POSITIVE CONTROL (anti-ghost): an ENTRY-only render DOES contain the pv-buy card
+    element — this proves 'class="pvcard pv-buy"' is the live marker whose ABSENCE the
+    RAN-only render is asserting, not a renamed/dead string that can never appear.
+    """
+    # RAN-only render: wait card present, buy card absent
+    ran_setups = _full_setups(entry_rows=[], ran_rows_buy=[_make_ran_row()])
+    ran_html = _render_w1c(ran_setups)
+    assert "603129.SS" in ran_html, "RAN fixture ticker missing (render is vacuous)"
+    assert 'class="pvcard pv-wait"' in ran_html, "RAN card must render as a pv-wait card"
+    assert 'class="pvcard pv-buy"' not in ran_html, (
+        "green pv-buy card rendered on RAN-only board"
+    )
+    # Positive control: ENTRY-only render DOES contain the pv-buy card element
+    entry_setups = _full_setups(entry_rows=[_make_entry_row()], ran_rows_buy=[])
+    entry_html = _render_w1c(entry_setups)
+    assert 'class="pvcard pv-buy"' in entry_html, (
+        "positive control failed: ENTRY-only render must contain the pv-buy card"
     )
 
 
-def test_why_ranked_chip_on_entry_cards():
-    """ENTRY cards must render the why_ranked chip when the field is present."""
-    html = _render_w1c(_full_setups())
-    assert "T1+washout_2w" in html, "why_ranked chip content missing from ENTRY card"
-    assert "nb-why" in html, "nb-why class missing from ENTRY card"
+# NOTE (2026-07-21 Prophet-card redesign): test_why_ranked_chip_on_entry_cards was
+# DELETED here.  why_ranked (and tier / sig detail) were deliberately demoted OFF this
+# board surface — the template comment at the ENTRY loop (~L3206 of china.html.j2) records
+# it: "Old nbcard retired; disclosures demoted, not deleted: ... tier/sig detail →
+# china_lookup analyzer".  The data was not lost; it moved one click away (china_lookup.html).
+# Re-pinning the test to any substring on this surface would be vacuous, so it is removed.
 
 
 def test_backward_compat_pre_w1_artifact():
@@ -402,9 +484,16 @@ def test_backward_compat_pre_w1_artifact():
 
 
 def test_ripening_shelf_absent_when_array_empty():
-    """RIPENING shelf must NOT render when setups.ripening is empty."""
+    """RIPENING shelf must NOT render when setups.ripening is empty.
+
+    The buy shelves stay populated (entry + ran_late defaults) so the render is non-empty —
+    absence of the ripening shelf is what's under test, not an empty page.
+    """
     setups = _full_setups(ripening=[], ran=[])
     html = _render_w1c(setups)
+    # Positive control: the board still rendered (ENTRY fixture present) — the ripening
+    # absence below is a real absence, not a vacuous empty-render.
+    assert "300725.SZ" in html, "ENTRY fixture ticker missing (render is vacuous)"
     assert "rip-card" not in html, (
         "RIPENING cards rendered despite empty ripening array"
     )
@@ -424,14 +513,19 @@ def test_bilingual_shelf_headers_contain_zh_text():
     assert "信号已过" in html, "RAN zh label (信号已过) missing"
 
 
-def test_entry_shelf_may_reference_cascade():
-    """The cascde (T1-T4) and washout/COILED context chips remain usable in ENTRY cards."""
+def test_entry_shelf_carries_washout_context():
+    """The washout context survives the Prophet redesign, folded into the verb-chip tooltip.
+
+    Re-pinned from the retired nb-washout chip (2026-07-21): when washout_2w=True the ENTRY
+    card appends ' · washed out (2W)' to the verb-chip data-tip (english) and ' · 2周洗盘'
+    (zh).  _make_entry_row sets washout_2w=True, so both twins must be present.
+    """
     html = _render_w1c(_full_setups())
-    # The existing chips (washout, coiled etc) should still be present in the rendered html
-    # because ENTRY cards carry all the existing chip markup intact
-    assert "stg-entry" in html, "ENTRY shelf badge present"
-    # nb-washout would render if washout_2w=True (set in _make_entry_row)
-    assert "nb-washout" in html, "Existing washout chip missing from ENTRY card"
+    assert "300725.SZ" in html, "ENTRY fixture ticker missing (render is vacuous)"
+    assert "washed out (2W)" in html, (
+        "washout context ' · washed out (2W)' missing from ENTRY verb-chip tooltip"
+    )
+    assert "2周洗盘" in html, "washout context zh twin (2周洗盘) missing from ENTRY tooltip"
 
 
 # ---------------------------------------------------------------------------
@@ -464,63 +558,88 @@ def _make_muted_partial_ran_row(ticker="002472.SZ"):
 def test_b1_b2_muted_entry_ran_late_no_green_banding():
     """B1/B2 regression: buy_now+overextended RAN_LATE card must not render green banding.
 
+    Re-pinned to the Prophet redesign (2026-07-21).  Under F6, a muted_entry row keeps the
+    WAIT verb (there is no green pv-buy card by construction) and swaps the verb-chip tooltip
+    headline to 'gauge open — but extended; not actionable' / '量表打开 — 但已延伸；当前不可操作'.
     Verifies:
-      (i)  No nbe-buy_now class in rendered output (no green left-border)
-      (ii) No nbe-dot a3 green dot (the act_level 3 dot becomes a1 in muted path)
-      (iii) No 'Buy now' text
-      (iv) Card still renders with stg-ran badge (present on shelf)
+      (i)   The card renders (fixture ticker present) as pv-wait, never the green pv-buy card
+      (ii)  No 'Buy now' action text leaks onto the honesty shelf
+      (iii) The muted 'not actionable' neutral line (and its zh twin) is present
     """
     setups = _full_setups(
         entry_rows=[], ran_rows_buy=[_make_muted_ran_row()]
     )
     html = _render_w1c(setups)
-    # Green banding must be absent
-    assert "nbe-buy_now" not in html, (
-        "nbe-buy_now class must not appear on muted_entry RAN_LATE card")
+    assert "002896.SZ" in html, "muted RAN fixture ticker missing (render is vacuous)"
+    # Green banding is impossible by construction — verb is WAIT, card is pv-wait
+    assert 'class="pvcard pv-buy"' not in html, (
+        "green pv-buy card must not appear on muted_entry RAN_LATE card")
+    assert 'class="pvcard pv-wait"' in html, (
+        "muted_entry RAN_LATE card must render as a pv-wait card")
     assert "Buy now" not in html, (
         "'Buy now' text must not appear on muted_entry RAN_LATE card")
-    # stg-ran must still appear (the shelf header)
-    assert "stg-ran" in html, "stg-ran badge must still appear on RAN shelf"
-    # The muted neutral line must be present
-    assert "not actionable" in html or "extended" in html, (
-        "Muted neutral line must be present on muted_entry RAN_LATE card")
+    # The muted neutral line must be present (english + zh twin)
+    assert "not actionable" in html, (
+        "Muted neutral line 'not actionable' must be present on muted_entry RAN_LATE card")
+    assert "不可操作" in html, (
+        "Muted neutral line zh twin (不可操作) must be present on muted_entry RAN_LATE card")
 
 
 def test_b2_partial_overextended_ran_late_no_green_banding():
     """B2: partial+overextended RAN_LATE card must not render green banding (partial case).
 
-    The old builder assert only caught buy_now; partial escaped and rendered nbe-partial
-    (green left-border) on the honesty shelf — this test pins that the fix covers partial too.
+    The old builder assert only caught buy_now; partial escaped and rendered the green
+    banding on the honesty shelf.  Re-pinned to the Prophet redesign: a partial+muted row
+    is still a WAIT card (pv-wait), so the green pv-buy card can never appear, and no
+    'Buy now' action text leaks.
     """
     setups = _full_setups(
         entry_rows=[], ran_rows_buy=[_make_muted_partial_ran_row()]
     )
     html = _render_w1c(setups)
-    assert "nbe-partial" not in html, (
-        "nbe-partial class must not appear on muted_entry RAN_LATE card (partial case)")
+    assert "002472.SZ" in html, "muted partial RAN fixture ticker missing (render is vacuous)"
+    assert 'class="pvcard pv-buy"' not in html, (
+        "green pv-buy card must not appear on muted_entry RAN_LATE card (partial case)")
+    assert 'class="pvcard pv-wait"' in html, (
+        "muted_entry partial RAN_LATE card must render as a pv-wait card")
     assert "Buy now" not in html, (
         "'Buy now' text must not appear on muted_entry RAN_LATE card (partial case)")
 
 
-def test_muted_entry_does_not_suppress_non_muted_ran_entry_gauge():
-    """Non-muted RAN_LATE cards (e.g. hold status) still render their entry gauge."""
+def test_muted_entry_does_not_suppress_non_muted_ran_entry_headline():
+    """Non-muted RAN_LATE cards (e.g. hold status) still surface their entry headline.
+
+    Re-pinned from the retired nb-entry gauge (2026-07-21): a non-muted RAN row is NOT
+    swapped to the 'not actionable' line, so its entry_signal.headline ('Hold' / '持有',
+    set in _make_ran_row) rides through into the verb-chip tooltip.  This proves the muted
+    swap is scoped to muted_entry rows and does not blanket-suppress the entry read.
+    """
     row = _make_ran_row()  # muted_entry not set; entry_signal is 'hold'
     assert not row.get("muted_entry"), "Standard RAN row must not have muted_entry"
     setups = _full_setups(entry_rows=[], ran_rows_buy=[row])
     html = _render_w1c(setups)
-    # The hold-status entry gauge should render (not suppressed)
-    assert "nb-entry" in html, (
-        "Standard (non-muted) RAN_LATE card must still render entry gauge"
+    assert "603129.SS" in html, "non-muted RAN fixture ticker missing (render is vacuous)"
+    # The hold-status entry headline (both twins) must ride through, not the muted line
+    assert "Hold" in html, "non-muted RAN card must surface its entry headline ('Hold')"
+    assert "持有" in html, "non-muted RAN card must surface its entry headline zh twin ('持有')"
+    assert "not actionable" not in html, (
+        "the muted 'not actionable' swap must not fire on a non-muted RAN card"
     )
 
 
 def test_entry_stage_card_still_green_after_muted_fix():
-    """The muted_entry fix must not break ENTRY cards — they still render with green banding."""
+    """The muted_entry fix must not break ENTRY cards — they still render the green buy card.
+
+    Re-pinned to the Prophet redesign (2026-07-21): the ENTRY row's buy_now status still
+    maps to the green pv-buy card with the 'Ready' stage lit.
+    """
     setups = _full_setups(entry_rows=[_make_entry_row()], ran_rows_buy=[])
     html = _render_w1c(setups)
-    assert "stg-entry" in html, "ENTRY stage badge must still render"
-    # The ENTRY card renders the standard buy_now gauge (nbe-buy_now or nbe- prefix)
-    assert "nb-entry" in html, "ENTRY card must still render entry gauge"
+    assert "300725.SZ" in html, "ENTRY fixture ticker missing (render is vacuous)"
+    assert 'class="pvcard pv-buy"' in html, "ENTRY card must still render the green pv-buy card"
+    assert '<span class="on"><span class="l-en">Ready' in html, (
+        "ENTRY card must still light the 'Ready' lifecycle stage"
+    )
 
 
 def test_ran_array_launched_chip_renders():
@@ -723,6 +842,9 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
     }
 
     env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
+    # The anv2 board calls tr() for every l-zh fallback (name/kind/reco/tag/phase/
+    # organ_state/reasons).  Register the REAL tr — the builders inject it as a global.
+    env.globals["tr"] = i18n.tr
     return env.get_template("blk").render(
         act_now_v2=act_now_v2,
         mode="stocks",
@@ -734,12 +856,14 @@ def _render_anv2(rows_by_lane: dict, sectors_by_ticker: dict | None = None,
 def test_anv2_row_has_data_rpop_attribute():
     """Every anv2-row must carry data-rpop attribute (PR-4)."""
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     assert "data-rpop" in html, "data-rpop attribute missing from anv2 row"
 
 
 def test_anv2_row_has_rp_src_child():
     """Every anv2-row must contain a .rp-src payload span (PR-4)."""
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     assert 'class="rp-src"' in html, ".rp-src payload span missing from anv2 row"
 
 
@@ -779,6 +903,8 @@ def test_anv2_payload_non_bottoming_row_no_buy_caveat_in_rp_src():
     for a buy-lane row does NOT contain the caveat text directly after 'row-pop-ft'.
     """
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    # Positive control: the fixture row actually rendered (guards against a vacuous pass).
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     # Isolate the rp-src payload block for the buy-lane row.  It appears before
     # the anv2-row-top div and ends at </span> of the .rp-src span.
     rp_start = html.index('class="rp-src"')
@@ -818,6 +944,7 @@ def test_anv2_sector_row_missing_sector_card_graceful():
     """SECTOR row with no matching sectors_by_ticker entry renders without crash."""
     row = _sector_anv2_row()
     html = _render_anv2({"buy_now": [row]}, sectors_by_ticker={})
+    assert "Tech Sector" in html, "fixture row name missing (render is vacuous)"
     assert "data-rpop" in html, "data-rpop missing when sector card absent"
 
 
@@ -834,19 +961,30 @@ def test_anv2_sector_tag_chip_bilingual():
     assert 'class="l-zh">买入区' in chip, "ZH tag twin missing from tag chip"
 
 
-def test_anv2_sector_tag_chip_falls_back_to_en_when_tag_zh_none():
-    """tag_zh=None (older artifact) must fall back to the EN tag in the l-zh span."""
+def test_anv2_sector_tag_chip_falls_back_to_glossary_when_tag_zh_none():
+    """tag_zh=None (older artifact) must fall back to tr(tag) — the canonical-ZH glossary.
+
+    Re-pinned for real-i18n tr behavior (the harness now registers the real engine.i18n.tr,
+    matching the builders).  The template renders {{ t(row.tag, row.tag_zh or tr(row.tag)) }};
+    with tag_zh=None the l-zh span carries tr('BUY ZONE') == '买入区' (glossary hit, LEX), NOT
+    the raw English 'BUY ZONE'.  This is stronger than the old EN-echo pin: it verifies the
+    bilingual board shows the canonical Chinese even when the artifact omits tag_zh.
+    """
+    # Guard: the fallback under test is a real glossary hit, not an EN echo.
+    assert i18n.tr("BUY ZONE") == "买入区", "fixture assumption: tr('BUY ZONE') is a glossary hit"
     row = _sector_anv2_row()
     row["tag_zh"] = None
     html = _render_anv2({"buy_now": [row]})
     start = html.index("anv2-chip-tag")
     chip = html[start:start + 300]  # window covers both nested l-en/l-zh spans
-    assert 'class="l-zh">BUY ZONE' in chip, "l-zh span must fall back to EN tag"
+    assert 'class="l-en">BUY ZONE' in chip, "l-en tag missing from tag chip"
+    assert 'class="l-zh">买入区' in chip, "l-zh span must fall back to tr(tag) glossary term (买入区)"
 
 
 def test_anv2_payload_bilingual_header():
     """Payload header must include both l-en and l-zh spans."""
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     assert 'class="l-en"' in html, "l-en span missing in anv2 payload"
     assert 'class="l-zh"' in html, "l-zh span missing in anv2 payload"
 
@@ -854,6 +992,8 @@ def test_anv2_payload_bilingual_header():
 def test_anv2_payload_no_leadership_word():
     """'Leadership' word must not appear in the anv2 payload (brief spec)."""
     html = _render_anv2({"buy_now": [_full_anv2_row()]})
+    # Positive control: the fixture row rendered (the absence check below is non-vacuous).
+    assert "Growth Theme" in html, "fixture row name missing (render is vacuous)"
     assert "Leadership" not in html, "'Leadership' word found in anv2 payload"
 
 
@@ -861,6 +1001,7 @@ def test_anv2_view_all_button_present_when_items_exceed_4():
     """lst-more button must appear when a lane has more than 4 rows."""
     rows = [_blank_anv2_row(name=f"Row {i}", name_zh=f"行 {i}") for i in range(5)]
     html = _render_anv2({"buy_now": rows})
+    assert "Row 0" in html, "fixture rows missing (render is vacuous)"
     assert "lst-more" in html, "lst-more button missing when > 4 items"
     assert "lst-collapse" in html, "lst-collapse class missing"
 
@@ -869,6 +1010,9 @@ def test_anv2_view_all_button_absent_when_4_or_fewer():
     """lst-more button must NOT appear when a lane has 4 or fewer rows."""
     rows = [_blank_anv2_row(name=f"Row {i}", name_zh=f"行 {i}") for i in range(4)]
     html = _render_anv2({"buy_now": rows})
+    # Positive control: the 4 rows actually rendered (absence of lst-more is non-vacuous).
+    assert "Row 0" in html, "fixture rows missing (render is vacuous)"
+    assert "Row 3" in html, "fixture rows missing (render is vacuous)"
     assert "lst-more" not in html, "lst-more button appeared for <= 4 items"
 
 
@@ -888,7 +1032,8 @@ def test_anv2_sector_card_none_enrichment_fields_render_without_crash():
         {"buy_now": [row]},
         sectors_by_ticker={"600519.SS": sc},
     )
-    # Must render at all (no crash)
+    # Must render at all (no crash) — fixture content present proves the row rendered
+    assert "Tech Sector" in html, "fixture row name missing (render is vacuous)"
     assert "data-rpop" in html, "data-rpop missing when enrichment fields are None"
     assert 'class="rp-src"' in html, ".rp-src missing when enrichment fields are None"
     # None-valued cells must be omitted — labels should NOT appear
@@ -896,3 +1041,34 @@ def test_anv2_sector_card_none_enrichment_fields_render_without_crash():
     assert "60d mom" not in html, "60d mom label rendered despite mom60=None"
     assert "RS percentile" not in html, "RS percentile label rendered despite pctile=None"
     assert "Above 200d" not in html, "Above 200d label rendered despite above200=None"
+
+
+# ---------------------------------------------------------------------------
+# Suite-level anti-vacuity canary
+# ---------------------------------------------------------------------------
+
+
+def test_positive_control_fixture_drives_output():
+    """Suite-level canary: the fixtures must actually reach the rendered output.
+
+    Renders the full three-shelf board with every fixture array populated and asserts all
+    four fixture tickers appear (one per shelf: ENTRY / RAN_LATE / ripening / ran-array).
+    Then renders with every array empty and asserts NONE of them appear.  If the extraction
+    marker drifts, a partition set goes undefined, or a shelf silently stops rendering, one
+    of these two halves goes red — this is the guard against a re-pin that passes vacuously.
+    """
+    tickers = ("300725.SZ", "603129.SS", "688306.SS", "000001.SZ")
+
+    populated = _render_w1c(_full_setups())
+    for tk in tickers:
+        assert tk in populated, (
+            f"populated render is missing fixture ticker {tk!r} — a shelf is not rendering"
+        )
+
+    empty = _render_w1c(
+        _full_setups(entry_rows=[], ran_rows_buy=[], ripening=[], ran=[])
+    )
+    for tk in tickers:
+        assert tk not in empty, (
+            f"empty render still contains fixture ticker {tk!r} — output is not fixture-driven"
+        )
