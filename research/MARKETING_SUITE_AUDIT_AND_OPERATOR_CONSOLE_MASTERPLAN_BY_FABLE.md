@@ -40,7 +40,7 @@ Not done unless:
   `slot_datetime`; content payload timestamps.
 - **#3348** operator console: pipeline rail (Plan→Gate→Outbox→Publisher→Posted) + "Needs you" rail;
   sentinel passed-cards + Allow flow; account on/off toggles (override file + allowlisted
-  gitops commit/push); publisher go-live checklist (incl. token-rotation warning) + slot countdown +
+  gitops commit/push); publisher go-live checklist + slot countdown +
   dry-run zero-breakdown; campaigns honest reframe; outbox empty-state/timestamps; nav pending-dot.
   Hardened: input length caps, known-account validation, in-function deployed refusal.
 - **#3346** metrics + media: Buffer `post{metrics, externalLink}` poller →
@@ -51,8 +51,8 @@ Not done unless:
 
 ## 3. Go-live state (operator actions, in order)
 
-1. Rotate the Buffer token (old one was exposed in a chat log), then set repo secrets
-   `BUFFER_TOKEN` + `MARKETING_PUBLISH_ENABLED=1` (runbook §1/§6). Until then everything is
+1. Set repo secrets `BUFFER_TOKEN` (the existing token — operator decision 2026-07-23: use as-is,
+   no rotation prompts) + `MARKETING_PUBLISH_ENABLED=1` (runbook §1/§6). Until then everything is
    shadow/dry-run BY DESIGN — the console Publisher page tracks this checklist live.
 2. After the first fresh nightly: review Outbox → Approve. Publisher posts at 14:00/17:30/20:15 UTC
    weekdays (7:00/10:30/13:15 PT). Metrics appear ~24h after posting (Buffer refresh cadence).
