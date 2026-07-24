@@ -51,11 +51,14 @@ Not done unless:
 
 ## 3. Go-live state (operator actions, in order)
 
-1. Set repo secrets `BUFFER_TOKEN` (the existing token — operator decision 2026-07-23: use as-is,
-   no rotation prompts) + `MARKETING_PUBLISH_ENABLED=1` (runbook §1/§6). Until then everything is
-   shadow/dry-run BY DESIGN — the console Publisher page tracks this checklist live.
-2. After the first fresh nightly: review Outbox → Approve. Publisher posts at 14:00/17:30/20:15 UTC
-   weekdays (7:00/10:30/13:15 PT). Metrics appear ~24h after posting (Buffer refresh cadence).
+1. In the console Publisher page (#3361): paste the Buffer token (the existing one — operator
+   decision 2026-07-23: use as-is, no rotation prompts) into the token box, then click **Arm**.
+   The kill-switch is the repo VARIABLE `MARKETING_PUBLISH_ENABLED` toggled by that switch (the old
+   SECRET of the same name is ignored); disarm = instant revert to dry-run. Until armed everything
+   is shadow/dry-run BY DESIGN — the checklist tracks state live (runbook §6/§7).
+2. Review Outbox → Approve (first item queued 2026-07-24: flagship $ROST signal w/ chart). Publisher
+   posts at 14:00/17:30/20:15 UTC weekdays (7:00/10:30/13:15 PT). Metrics appear ~24h after posting
+   (Buffer refresh cadence).
 3. Keep `auto_approve: false` during warm-up (runbook §9); the mover/theme publish-time carve-out is
    the only no-human path and is tape-verified at post time.
 
