@@ -9,16 +9,19 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-CONFIG = ROOT / "config.yml"
-DATA = ROOT / "data"
-SITE = ROOT / "site"
-STATIC = Path(__file__).resolve().parent / "static"
+# The package always lives at <repo>/admin/paths.py, so the code repo is the
+# grandparent regardless of any data-root override below.
+_PKG_REPO = Path(__file__).resolve().parent.parent
 
 
-def _load_dotenv() -> None:
-    """Mirror lib/config.py: real env vars always win over the .env file."""
-    p = ROOT / ".env"
+def _load_dotenv(base: Path) -> None:
+    """Mirror lib/config.py: load <base>/.env into os.environ; real env vars win.
+
+    Loaded from the CODE repo (not a data-root override) and BEFORE ROOT is
+    resolved, so MACRO_ADMIN_ROOT / GH_TOKEN / GA4 creds may all live in a local
+    gitignored .env. Never blocks startup on a malformed file.
+    """
+    p = base / ".env"
     if not p.exists():
         return
     try:
@@ -31,4 +34,15 @@ def _load_dotenv() -> None:
         pass
 
 
-_load_dotenv()
+_load_dotenv(_PKG_REPO)
+
+# MACRO_ADMIN_ROOT overrides the data root for a seeded dev/demo run
+# (`MACRO_ADMIN_ROOT=<tmp> python -m admin`, or the same var in a local .env) —
+# the same escape hatch the panel functions honour via their `root=` argument,
+# so a demo never has to touch real data/. Falls back to the code repo.
+_env_root = os.environ.get("MACRO_ADMIN_ROOT", "").strip()
+ROOT = Path(_env_root).resolve() if _env_root else _PKG_REPO
+CONFIG = ROOT / "config.yml"
+DATA = ROOT / "data"
+SITE = ROOT / "site"
+STATIC = Path(__file__).resolve().parent / "static"

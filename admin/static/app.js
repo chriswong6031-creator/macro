@@ -373,6 +373,34 @@ function setActiveNav(id) {
   const nav = $("#sidenav"); if (!nav) return;
   nav.querySelectorAll(".nav-item").forEach(el => el.classList.toggle("active", el.dataset.tab === id));
 }
+
+/* Paint a small pending-count dot on a nav item (or clear it when n<=0). Used to
+   flag the Outbox from anywhere so the operator sees where action is needed. */
+function setNavDot(tabId, n) {
+  const nav = $("#sidenav"); if (!nav) return;
+  const item = nav.querySelector(`.nav-item[data-tab="${tabId}"]`);
+  if (!item) return;
+  let dot = item.querySelector(".nav-dot");
+  if (n > 0) {
+    if (!dot) { dot = h(`<span class="nav-dot"></span>`); item.appendChild(dot); }
+    dot.textContent = n > 99 ? "99+" : String(n);
+    dot.title = `${n} post${n === 1 ? "" : "s"} awaiting your review`;
+  } else if (dot) {
+    dot.remove();
+  }
+}
+
+/* Fetch the outbox pending count (queued awaiting review) and reflect it as the
+   Outbox nav dot. Fail-soft: a bad fetch just leaves the dot as-is. Called on
+   boot; the Outbox render refreshes it after every decision. */
+async function refreshOutboxNavDot() {
+  try {
+    const d = await api("/api/marketing/outbox");
+    if (!d || !d.ok) return;
+    const s = d.summary || {};
+    setNavDot("marketing_outbox", (s.queued || 0) + (s.held || 0));
+  } catch (e) { /* ignore — advisory only */ }
+}
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
@@ -3270,6 +3298,204 @@ function mktTiltBar(tilt, contentTypes) {
   return `<div class="mkt-tilt-bar">${segs}</div>`;
 }
 
+/* ===========================================================================
+   OPERATOR CONSOLE shared bits — pipeline hero, needs-you rail, local-time fmt.
+   These are the "what is happening / what needs me / what do I click" surfaces.
+   =========================================================================== */
+
+/* A small inline icon set (stroke, currentColor) for the needs-you rail. */
+const CON_ICO = (inner) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+const CON_ICONS = {
+  inbox:  CON_ICO('<path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M4 13l2.2-7.4A2 2 0 0 1 8.1 4h7.8a2 2 0 0 1 1.9 1.6L20 13"/><path d="M4 13h4l1.5 2.2h5L16 13h4"/>'),
+  shield: CON_ICO('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4"/>'),
+  bolt:   CON_ICO('<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/>'),
+  check:  CON_ICO('<circle cx="12" cy="12" r="9"/><path d="M8 12l2.5 2.5L16 9"/>'),
+};
+
+/* Format an ISO-UTC timestamp in the operator's LOCAL time, short form. */
+function conLocalTime(iso) {
+  if (!iso) return "—";
+  try {
+    const dt = new Date(iso);
+    if (isNaN(dt)) return esc(String(iso));
+    return dt.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
+  } catch (e) { return esc(String(iso)); }
+}
+/* Compact "in 3h 12m" style countdown from now to an ISO-UTC target. */
+function conCountdown(iso) {
+  if (!iso) return "—";
+  const ms = new Date(iso).getTime() - Date.now();
+  if (isNaN(ms)) return "—";
+  if (ms <= 0) return "due now";
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  const d = Math.floor(h / 24);
+  if (d >= 1) return `in ${d}d ${h % 24}h`;
+  if (h >= 1) return `in ${h}h ${String(m).padStart(2, "0")}m`;
+  return `in ${m}m`;
+}
+
+/* --------------------------------------------------------------------------
+   PIPELINE RAIL — the CMO Office signature. Five connected stage cells
+   (Plan → Gate → Outbox → Publisher → Posted). Each cell carries a live count,
+   a one-word state + LED, and clicks through to its page. The conductor between
+   cells shows flow (gradient + pulse), a blockage (amber dashed), or dark.
+   -------------------------------------------------------------------------- */
+function conPipelineRail(pl) {
+  pl = pl || {};
+  const plan = pl.plan || {}, gate = pl.gate || {}, ob = pl.outbox || {},
+        pub = pl.publisher || {}, rc = pl.receipts || {};
+
+  /* Each stage: {num, dim?, name, state, led, target, flow} where flow is the
+     conductor state to the NEXT stage: "flow" | "block" | "dark". */
+  const stages = [];
+
+  // Plan
+  if (plan.present) {
+    const stale = plan.stale === true;
+    stages.push({
+      key: "marketing_content", name: "Plan",
+      num: plan.items != null ? plan.items : "—",
+      state: stale ? `stale (as of ${(plan.as_of || "").slice(5)})` : "fresh",
+      led: stale ? "warn" : "ok",
+      flow: (plan.items || 0) > 0 ? "flow" : "dark",
+    });
+  } else {
+    stages.push({ key: "marketing_content", name: "Plan", num: "—", dim: true,
+      state: "first fill tonight", led: "mut", flow: "dark" });
+  }
+
+  // Gate
+  if (gate.present) {
+    const held = gate.held_policy || 0;
+    stages.push({
+      key: "marketing_sentinel", name: "Gate",
+      num: gate.passed != null ? gate.passed : "—",
+      state: held ? `${held} held to review` : "cleared, no holds",
+      led: held ? "warn" : "ok",
+      flow: (gate.passed || 0) > 0 ? "flow" : "dark",
+    });
+  } else {
+    stages.push({ key: "marketing_sentinel", name: "Gate", num: "—", dim: true,
+      state: "runs with the plan", led: "mut", flow: "dark" });
+  }
+
+  // Outbox
+  if (ob.present) {
+    const q = ob.queued || 0, ap = ob.approved || 0;
+    stages.push({
+      key: "marketing_outbox", name: "Outbox",
+      num: q + ap,
+      state: q ? `${q} awaiting you` : (ap ? `${ap} cleared` : "empty"),
+      led: q ? "warn" : (ap ? "ok" : "mut"),
+      flow: ap > 0 ? "flow" : (q > 0 ? "block" : "dark"),
+    });
+  } else {
+    stages.push({ key: "marketing_outbox", name: "Outbox", num: "—", dim: true,
+      state: "first fill ~20:45 PT", led: "mut", flow: "dark" });
+  }
+
+  // Publisher
+  if (pub.armed) {
+    stages.push({
+      key: "marketing_publish", name: "Publisher", num: "ARMED",
+      state: pub.next_slot_utc ? `next ${conLocalTime(pub.next_slot_utc)}` : "live",
+      led: "ok", flow: "flow", isWord: true,
+    });
+  } else {
+    stages.push({
+      key: "marketing_publish", name: "Publisher", num: "DARK",
+      state: "2 secrets to arm", led: "bad", flow: "block", isWord: true,
+    });
+  }
+
+  // Posted (terminal — no outgoing conductor)
+  stages.push({
+    key: "marketing_publish", name: "Posted",
+    num: rc.total_posted != null ? rc.total_posted : (rc.present ? 0 : "—"),
+    dim: !(rc.total_posted > 0),
+    state: (rc.total_posted > 0) ? "sent to X" : "nothing yet",
+    led: (rc.total_posted > 0) ? "ok" : "mut",
+    flow: null,
+  });
+
+  const cells = stages.map((s, i) => {
+    const numCls = s.isWord ? "pipe-num" + (s.led === "bad" ? " dim" : "") : ("pipe-num" + (s.dim ? " dim" : ""));
+    const numStyle = s.isWord ? `style="font-size:17px;letter-spacing:.06em;color:${s.led === "ok" ? "var(--ok)" : "var(--bad)"}"` : "";
+    const conn = (s.flow && i < stages.length - 1)
+      ? `<span class="pipe-conn ${s.flow}" style="right:-15px"><span class="pipe-conn-track"></span>${s.flow === "flow" ? '<span class="pipe-conn-pulse"></span>' : ""}</span>`
+      : "";
+    return `<button class="pipe-cell" onclick="go('${s.key}')" aria-label="${esc(s.name)}: ${esc(String(s.num))} — ${esc(s.state)}. Open page.">
+      <span class="pipe-cell-top"><span class="pipe-led ${s.led}"></span><span class="pipe-stage-name">${esc(s.name)}</span></span>
+      <span class="${numCls}" ${numStyle}>${esc(String(s.num))}</span>
+      <span class="pipe-state ${s.led === "warn" ? "warn" : s.led === "bad" ? "bad" : ""}">${esc(s.state)}</span>
+      <span class="pipe-cell-go">open →</span>
+      ${conn}
+    </button>`;
+  }).join("");
+
+  return `<div class="pipe-wrap">
+    <div class="pipe-eyebrow">
+      <span class="pipe-h">Pipeline tonight</span>
+      <span class="pipe-sub">plan → gate → outbox → publisher → posted · click any stage to open it</span>
+    </div>
+    <div class="pipe-rail">${cells}</div>
+  </div>`;
+}
+
+/* --------------------------------------------------------------------------
+   NEEDS-YOU RAIL — the single "what do I do next" answer. Surfaces the pending
+   actions in priority order; when nothing is pending, an honest calm line.
+   -------------------------------------------------------------------------- */
+function conNeedsYou(pl) {
+  pl = pl || {};
+  const ob = pl.outbox || {}, gate = pl.gate || {}, pub = pl.publisher || {};
+  const cards = [];
+
+  const pendingApprovals = ob.present ? (ob.queued || 0) : 0;
+  const held = gate.present ? (gate.held_policy || 0) : 0;
+  const goliveIncomplete = pub.present ? !pub.armed : false;
+
+  if (pendingApprovals > 0) {
+    cards.push(`<button class="needs-card act" onclick="go('marketing_outbox')">
+      <span class="needs-ico">${CON_ICONS.inbox}</span>
+      <span class="needs-body"><span class="needs-title">Approve drafts waiting in the Outbox</span>
+        <span class="needs-sub">Read the exact copy for each post, then approve or hold. Nothing posts until the publisher is armed.</span></span>
+      <span class="needs-n">${pendingApprovals}</span>
+      <span class="needs-cta">Review →</span>
+    </button>`);
+  }
+  if (held > 0) {
+    cards.push(`<button class="needs-card act hot" onclick="go('marketing_sentinel')">
+      <span class="needs-ico">${CON_ICONS.shield}</span>
+      <span class="needs-body"><span class="needs-title">Posts the gate held for a ban-risk read</span>
+        <span class="needs-sub">Near-duplicate text, advice phrasing, or a missing disclosure. Read each, then allow or leave held.</span></span>
+      <span class="needs-n">${held}</span>
+      <span class="needs-cta">Open Sentinel →</span>
+    </button>`);
+  }
+  if (goliveIncomplete) {
+    cards.push(`<button class="needs-card act" onclick="go('marketing_publish')">
+      <span class="needs-ico">${CON_ICONS.bolt}</span>
+      <span class="needs-body"><span class="needs-title">Finish the go-live checklist to start posting</span>
+        <span class="needs-sub">The publisher is dark. Two repo secrets and an approvals flow stand between drafts and live posts.</span></span>
+      <span class="needs-cta">Go-live checklist →</span>
+    </button>`);
+  }
+
+  if (!cards.length) {
+    const nextNightly = "the nightly plan lands ~20:45 PT";
+    cards.push(`<div class="needs-card calm">
+      <span class="needs-ico">${CON_ICONS.check}</span>
+      <span class="needs-body"><span class="needs-title">Nothing needs you right now</span>
+        <span class="needs-sub">The pipeline is quiet. Next: ${esc(nextNightly)} — come back after that to review the day's drafts.</span></span>
+    </div>`);
+  }
+
+  return `<div class="pipe-eyebrow" style="margin-top:2px"><span class="pipe-h">Needs you</span></div>
+    <div class="needs-rail">${cards.join("")}</div>`;
+}
+
 /* ---- CMO OFFICE ----------------------------------------------------------- */
 RENDER.marketing_overview = async () => {
   const v = $("#view");
@@ -3277,8 +3503,17 @@ RENDER.marketing_overview = async () => {
   const d = await api("/api/marketing/overview");
   if (!d || !d.ok) { v.innerHTML = nwEmpty("CMO Office unavailable", (d && d.error) || "panel error"); return; }
 
+  /* The pipeline hero + needs-you rail lead the page — they answer "what's
+     happening / what do I do next" and render even on day 0 (accruing state). */
+  const consoleHero = conPipelineRail(d.pipeline) + conNeedsYou(d.pipeline);
+  conStartCountdowns();
+
   if (d.note && !d.lobe) {
-    v.innerHTML = nwEmpty("Marketing lobe — accruing", d.note); return;
+    v.innerHTML = consoleHero
+      + `<div class="section" style="margin-top:8px">CMO Office</div>`
+      + `<div class="card"><div class="note muted">${esc(d.note)}</div>
+         <div class="note muted">The strategy panels below fill in after the first nightly governor run. The pipeline above is live now.</div></div>`;
+    return;
   }
 
   const lobe   = d.lobe || {};
@@ -3394,8 +3629,25 @@ RENDER.marketing_overview = async () => {
       </p>
     </div>`;
 
-  v.innerHTML = heroHtml + flywheelHtml + allocHtml + selfImpHtml + guardrailHtml + waveHtml + settingsHtml;
+  v.innerHTML = consoleHero + heroHtml + flywheelHtml + allocHtml + selfImpHtml + guardrailHtml + waveHtml + settingsHtml;
+  conStartCountdowns();
 };
+
+/* Tick any live countdowns on the page (publisher next-slot). Cheap: 30s. */
+let CON_CD_TIMER = null;
+function conStartCountdowns() {
+  if (CON_CD_TIMER) { clearInterval(CON_CD_TIMER); CON_CD_TIMER = null; }
+  const tick = () => {
+    let any = false;
+    document.querySelectorAll("[data-cd-target]").forEach(el => {
+      any = true;
+      el.textContent = conCountdown(el.getAttribute("data-cd-target"));
+    });
+    if (!any && CON_CD_TIMER) { clearInterval(CON_CD_TIMER); CON_CD_TIMER = null; }
+  };
+  tick();
+  CON_CD_TIMER = setInterval(tick, 30000);
+}
 
 /* ---- DEPARTMENTS ---------------------------------------------------------- */
 RENDER.marketing_departments = async () => {
@@ -3464,27 +3716,35 @@ RENDER.marketing_campaigns = async () => {
   const cmpgns  = (d.campaigns || {});
   const oppList = opps.newest || [];
   const cmpList = cmpgns.newest || [];
+  const pl      = d.pipeline || {};
 
-  /* 13-step campaign loop strip */
-  const CAMPAIGN_LOOP_STEPS = [
-    "Problem sensing", "Opportunity scoring", "Audience selection", "Promise drafting",
-    "Channel mapping", "Content production", "Distribution scheduling", "Activation",
-    "Signal capture", "Attribution", "Experiment evaluation", "Learning integration",
-    "Opportunity queue update",
-  ];
-  const loopHtml = `<div class="section">13-step campaign loop</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">
-    ${CAMPAIGN_LOOP_STEPS.map((step, i) => `
-      <div style="display:flex;align-items:center;gap:3px">
-        <span style="font-size:10px;color:var(--accent);font-weight:600">${i + 1}</span>
-        <span class="statpill s-mut" style="font-size:10px">${esc(step)}</span>
-        ${i < CAMPAIGN_LOOP_STEPS.length - 1 ? `<span style="color:var(--faint);font-size:10px">›</span>` : ""}
-      </div>`).join("")}
+  /* Honest reframe: the campaign engine is seeded, not yet firing. Say so plainly,
+     then lead the eye to the part that IS live (the radar). No fake controls. */
+  const CMP_FLOW = ["Objective", "Audience", "Channels", "Assets", "Experiment", "Receipts"];
+  const explainHtml = `<div class="section">Campaigns <span class="cnt">campaign engine — seeded, not yet active</span></div>
+    <div class="cmp-explain">
+      <div class="cmp-explain-h">What a campaign will be</div>
+      <p>A campaign is a full plan around one goal: an <b>objective</b>, the <b>audience</b> it targets, the <b>channels</b> (desks) it runs on, the <b>assets</b> it needs, an <b>experiment</b> to measure it, and <b>receipts</b> proving what it did. None are running yet — the ones below are seeded shells.</p>
+      <div class="cmp-flow">${CMP_FLOW.map((s, i) => `<span class="cmp-flow-step">${esc(s)}</span>${i < CMP_FLOW.length - 1 ? '<span class="cmp-flow-arrow">→</span>' : ""}`).join("")}</div>
+      <p style="margin-top:8px">A campaign activates when <b>you charter it</b> and a <b>live funnel</b> exists to feed it — that funnel is a coming lane. Until then this page tracks the raw material: the live opportunity radar below.</p>
     </div>`;
 
-  /* Opportunity bus */
-  const oppHtml = `<div class="section">Opportunity queue
-    <span class="cnt">${Number(opps.open || 0)} open · ${Number(opps.scored || 0)} scored</span></div>`
+  /* Live pipeline stat chips — so the page stops looking dead. Publications /
+     experiments / growth-events counts pulled from the state pipeline block. */
+  const pubBlk = pl.publications || {}, expBlk = pl.experiments || {}, geBlk = pl.growth_events || {};
+  const chipDefs = [
+    ["Publications", (pubBlk.total != null ? pubBlk.total : 0)],
+    ["Experiments running", (expBlk.running != null ? expBlk.running : 0)],
+    ["Growth events observed", (geBlk.observed != null ? geBlk.observed : 0)],
+    ["Opportunities open", Number(opps.open || 0)],
+  ];
+  const chipsHtml = `<div class="cmp-stat-chips">
+    ${chipDefs.map(([l, n]) => `<div class="cmp-stat-chip"><span class="cmp-stat-n">${esc(String(n))}</span><span class="cmp-stat-l">${esc(l)}</span></div>`).join("")}
+  </div>`;
+
+  /* Opportunity radar — the real, nightly part. Retitled so it reads as live. */
+  const oppHtml = `<div class="section">Live opportunity radar <span class="cnt">feeds future campaigns · ${Number(opps.open || 0)} open · ${Number(opps.scored || 0)} scored</span></div>
+    <div class="con-lede" style="margin-bottom:10px">Scored nightly from the intelligence layer — the seed pool a chartered campaign will draw from.</div>`
     + (oppList.length
       ? `<table><thead><tr><th>Problem / desire</th><th>EV</th><th>Score</th><th>Half-life</th><th>Status</th></tr></thead><tbody>
          ${oppList.map(o => `<tr>
@@ -3513,7 +3773,7 @@ RENDER.marketing_campaigns = async () => {
          </tbody></table>`
       : nwEmpty("No campaigns yet", "Campaigns compile after opportunities are scored."));
 
-  v.innerHTML = loopHtml + oppHtml + cmpHtml;
+  v.innerHTML = explainHtml + chipsHtml + oppHtml + cmpHtml;
 };
 
 /* ---- CHANNELS & DESKS ----------------------------------------------------- */
@@ -3563,32 +3823,16 @@ RENDER.marketing_channels = async () => {
     Signal alerts carry cashtags and a buy marker chart; no indicator vocabulary appears in public copy.
   </div>`;
 
-  /* Account cards with tilt bars */
+  /* Real account panels — the operator's per-desk control surface. */
+  const channelSet = d.channels_set || {};
+  const overrides = d.overrides || {};
+  const pubByAcct = {};
+  pubList.forEach(p => { const a = p.account || ""; (pubByAcct[a] = pubByAcct[a] || []).push(p); });
+
   const acctHtml = `<div class="section">Accounts <span class="cnt">${accts.length}</span></div>
     ${mixedTiltNote}
     <div class="grid">
-    ${accts.map(a => {
-      const health = a.health || {};
-      const tilt = a.tilt || {};
-      const mixObs = a.mix_observed || {};
-      const hasTilt = Object.keys(tilt).length > 0;
-      const tiltBar = hasTilt ? mktTiltBar(tilt, []) : "";
-      const mixItems = Object.entries(mixObs).filter(([, v]) => v > 0).map(([k, v]) => `<span class="statpill s-mut" style="font-size:10px">${esc(k)} ${v}</span>`).join(" ");
-      return `<div class="card">
-        <h3>${esc(a.id || "—")}
-          <span class="statpill ${a.kind === "branded" ? "s-ok" : "s-mut"}">${esc(a.kind || "generic")}</span>
-          <span class="statpill ${MKT_STAGE_CLS[a.stage] || "s-mut"}">Stage ${esc(a.stage || "A")}</span>
-        </h3>
-        <div class="kv"><span>Beat</span><b style="max-width:220px">${esc(a.beat || "—")}</b></div>
-        <div class="kv"><span>Voice</span><b>${esc(a.voice || "—")}</b></div>
-        <div class="kv"><span>Status</span><span class="statpill ${a.status === "warming" ? "s-warn" : a.status === "live" ? "s-ok" : "s-mut"}">${esc(a.status || "warming")}</span></div>
-        <div class="kv"><span>Authority</span>${mktAuthPill(a.authority)}</div>
-        ${hasTilt ? `<div style="font-size:11px;color:var(--muted);margin:8px 0 2px;text-transform:uppercase;letter-spacing:.04em">Content tilt</div>${tiltBar}` : ""}
-        ${mixItems ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${mixItems}</div>` : ""}
-        ${health.warnings > 0 ? `<div class="note muted" style="color:var(--warn);margin-top:6px">${Number(health.warnings)} health warning${health.warnings > 1 ? "s" : ""}</div>` : ""}
-        ${health.followers != null ? `<div class="kv"><span>Followers</span><b>${Number(health.followers).toLocaleString()}</b></div>` : ""}
-      </div>`;
-    }).join("")}
+    ${accts.map(a => chanAccountPanel(a, channelSet, overrides, pubByAcct)).join("")}
     </div>`;
 
   /* Publication ledger */
@@ -3606,6 +3850,120 @@ RENDER.marketing_channels = async () => {
 
   v.innerHTML = heroHtml + acctHtml + pubLedgerHtml;
 };
+
+/* Effective status of a desk: an operator override wins over the engine status.
+   Maps to {word, cls} for the status pill. */
+function chanAcctStatus(a, overrides) {
+  const ov = overrides[a.id];
+  if (ov && ov.enabled === false) return { word: "off", cls: "off" };
+  const s = (a.status || "warming").toLowerCase();
+  if (s === "live") return { word: "live", cls: "live" };
+  if (s === "ready" || s === "warming") return { word: s === "warming" ? "ready" : "ready", cls: "ready" };
+  return { word: "planned", cls: "planned" };
+}
+
+/* One real account panel: handle, status, channel-wired, on/off toggle, posted
+   count + last post, recent posts, followers placeholder. No "corpus". */
+function chanAccountPanel(a, channelSet, overrides, pubByAcct) {
+  const id = a.id || "—";
+  const handle = a.handle || null;
+  const st = chanAcctStatus(a, overrides);
+  const wired = channelSet[id] === true;
+  const ov = overrides[id] || null;
+  const on = ov ? ov.enabled !== false : true;   /* default on unless explicitly off */
+  const posts = (pubByAcct[id] || []).slice().sort((x, y) => (y.published_at || "").localeCompare(x.published_at || ""));
+  const lastPost = posts.length ? posts[0] : null;
+
+  const handleHtml = handle
+    ? `<a class="acct-handle" href="https://x.com/${esc(String(handle).replace(/^@/, ""))}" target="_blank" rel="noopener">@${esc(String(handle).replace(/^@/, ""))}</a>`
+    : `<span class="acct-handle none">no handle yet</span>`;
+
+  const wiredHtml = wired
+    ? `<span class="acct-wired yes">✓ channel wired</span>`
+    : `<span class="acct-wired no">✗ no channel</span>`;
+
+  const recent = posts.length
+    ? `<div class="acct-recent">
+        <div class="acct-recent-h">Recent posts</div>
+        ${posts.slice(0, 4).map(p => {
+          const txt = (p.text || p.headline || p.channel || "post").replace(/\s+/g, " ").trim();
+          const ext = p.url && /^https?:\/\//i.test(p.url) ? `<a class="acct-post-ext" href="${esc(p.url)}" target="_blank" rel="noopener">↗</a>` : "";
+          const stTxt = p.status ? `<span class="acct-status ${p.status === "published" ? "live" : "planned"}" style="font-size:9px">${esc(p.status)}</span>` : "";
+          return `<div class="acct-post-row"><span class="acct-post-txt">${esc(txt)}</span>${stTxt}<span class="acct-post-at">${esc((p.published_at || "").slice(0, 10) || "—")}</span>${ext}</div>`;
+        }).join("")}
+      </div>`
+    : `<div class="acct-recent"><div class="acct-recent-h">Recent posts</div><div class="acct-note-line">No posts yet — this desk hasn't published.</div></div>`;
+
+  return `<div class="acct-panel" data-acct-panel="${esc(id)}">
+    <div class="acct-head">
+      <span class="acct-id">${esc(id)}</span>
+      ${handleHtml}
+      <span class="acct-status ${st.cls}">${esc(st.word)}</span>
+      <span class="acct-spacer"></span>
+      <span class="acct-toggle">
+        <span class="acct-toggle-lab">${on ? "on" : "off"}</span>
+        <button class="tgl ${on ? "on" : ""}" role="switch" aria-checked="${on}" aria-label="Turn desk ${esc(id)} ${on ? "off" : "on"}"
+          onclick="chanToggle(this, ${esc(JSON.stringify(id))}, ${on ? "false" : "true"})"></button>
+      </span>
+    </div>
+    <div class="acct-body">
+      <div class="acct-meta-grid">
+        <div><div class="lbl">Beat</div><div class="val">${esc(a.beat || "—")}</div></div>
+        <div><div class="lbl">Voice</div><div class="val">${esc(a.voice || "—")}</div></div>
+        <div><div class="lbl">Posted</div><div class="val">${posts.length}</div></div>
+        <div><div class="lbl">Last post</div><div class="val">${lastPost ? esc((lastPost.published_at || "").slice(0, 10) || "—") : "—"}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">${wiredHtml}
+        <span class="acct-followers-todo">Followers — not tracked yet</span></div>
+      <div class="acct-note-line" data-acct-msg="${esc(id)}"></div>
+      ${recent}
+    </div>
+  </div>`;
+}
+
+/* Toggle a desk on/off: inline confirm when turning ON (it starts drafting),
+   immediate when turning OFF. POSTs the override, reflects pushed honestly. */
+let CHAN_TGL_T = null;
+async function chanToggle(btn, id, nextEnabled) {
+  const panel = btn.closest(".acct-panel");
+  const msg = panel ? panel.querySelector(`[data-acct-msg="${cssEsc(id)}"]`) : null;
+  const setMsg = (cls, txt) => { if (msg) { msg.className = "acct-note-line " + cls; msg.textContent = txt; } };
+
+  /* Turning ON is the consequential direction (starts drafting) → arm a confirm. */
+  if (nextEnabled && btn.dataset.armed !== "1") {
+    btn.dataset.armed = "1";
+    setMsg("warn", "This desk will start drafting content in tonight's plan. Click the switch again to confirm.");
+    clearTimeout(CHAN_TGL_T);
+    CHAN_TGL_T = setTimeout(() => { btn.dataset.armed = "0"; setMsg("", ""); }, 5000);
+    return;
+  }
+  clearTimeout(CHAN_TGL_T);
+  btn.dataset.armed = "0";
+  btn.disabled = true;
+  setMsg("", nextEnabled ? "turning on…" : "turning off…");
+  const r = await post("/api/marketing/accounts/toggle", { account_id: id, enabled: nextEnabled });
+  btn.disabled = false;
+  if (r && r.ok) {
+    /* reflect new state on the switch + label */
+    btn.classList.toggle("on", nextEnabled);
+    btn.setAttribute("aria-checked", String(nextEnabled));
+    btn.setAttribute("onclick", `chanToggle(this, ${JSON.stringify(id)}, ${nextEnabled ? "false" : "true"})`);
+    const lab = btn.parentElement.querySelector(".acct-toggle-lab");
+    if (lab) lab.textContent = nextEnabled ? "on" : "off";
+    /* honest pushed state */
+    const pushed = r.pushed === true;
+    setMsg(pushed ? "saved" : "warn", r.note || (pushed ? "Saved and pushed." : "Saved locally — not yet pushed to the runner."));
+    toast(nextEnabled ? `Desk ${id} on` : `Desk ${id} off`);
+    /* update the status pill */
+    const pill = panel ? panel.querySelector(".acct-status") : null;
+    if (pill && !nextEnabled) { pill.className = "acct-status off"; pill.textContent = "off"; }
+    else if (pill && nextEnabled) { pill.className = "acct-status ready"; pill.textContent = "ready"; }
+  } else {
+    setMsg("warn", (r && r.error) || "toggle failed — try again");
+  }
+}
+/* Minimal CSS.escape shim for attribute selectors on ids we control (a-z0-9_-). */
+function cssEsc(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&"); }
 
 /* ---- EXPERIMENTS ---------------------------------------------------------- */
 RENDER.marketing_experiments = async () => {
@@ -3839,20 +4197,38 @@ RENDER.marketing_content = async () => {
   }
 
   const contentTypes = d.content_types || [];
-  const accounts = d.accounts || [];
+  const allAccounts = d.accounts || [];
   const featuredCharts = d.featured_charts || [];
   const summary = d.summary || {};
   const distinctness = d.distinctness || {};
 
+  /* Split desks that are generating (have a queue) from planned/off desks (empty
+     queue). Non-enabled desks collapse into a muted strip instead of full,
+     empty sections — read defensively so an absent status never breaks. */
+  const accounts = allAccounts.filter(a => (a.queue || []).length > 0);
+  const plannedDesks = allAccounts.filter(a => !(a.queue || []).length);
+
   /* Build featured chart lookup by id */
   const chartById = {};
   featuredCharts.forEach(fc => { chartById[fc.id] = fc; });
+
+  /* Freshness bar — plan date + produced time + fresh/stale pill. When stale,
+     the plain-word note points at the fix that landed today. */
+  const asOf = d.as_of || null;
+  const stale = csPlanStale(d);
+  const producedTxt = d.produced_at ? conLocalTime(d.produced_at) : null;
+  const freshHtml = `<div class="cs-freshbar">
+    <span class="cs-fresh-pill ${stale ? "stale" : "fresh"}">${stale ? "stale" : "fresh"}</span>
+    <span class="cs-fresh-txt">Plan for <b>${esc(asOf || "—")}</b>${producedTxt ? ` · built ${esc(producedTxt)}` : ""}</span>
+    ${stale ? `<span class="cs-fresh-fix">a fix landed 2026-07-23; tonight's run refreshes this</span>` : ""}
+  </div>`;
 
   /* Header stats */
   const headerHtml = `<div class="section">Content Studio
     <span class="cnt">shadow · drafted plan</span>
     <span class="statpill s-mut">not yet posted</span>
   </div>
+  ${freshHtml}
   <div class="metric-tiles-row">
     ${["total_posts", "signal_posts", "charts", "accounts"].map(k => `
       <div class="metric-tile">
@@ -3926,7 +4302,11 @@ RENDER.marketing_content = async () => {
       const typeColor = mktTypeColor(post.type);
       const typeLabel = (contentTypes.find(ct => ct.id === post.type) || {}).name || post.type;
       const chipHtml = `<span class="mkt-type-chip" style="background:${typeColor}22;border-color:${typeColor}44;color:${typeColor}">${esc(typeLabel)}</span>`;
-      const slotBadge = post.slot ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.slot)}</span>` : "";
+      /* Real post time — display_time (added by the sibling engine PR) falls back
+         to the slot code when absent. */
+      const whenTxt = post.display_time || post.slot || "";
+      const whenBadge = whenTxt ? `<span class="cs-post-time">${esc(whenTxt)}</span>` : "";
+      const tickerBadge = (post.ticker && !post.cashtag) ? `<span class="statpill s-mut" style="font-size:10px">${esc(post.ticker)}</span>` : "";
       const statusBadge = `<span class="statpill s-mut" style="font-size:10px">${esc(post.status || "drafted")}</span>`;
 
       let chartEmbed = "";
@@ -3938,7 +4318,7 @@ RENDER.marketing_content = async () => {
 
       return `<div class="mkt-post-card" data-type="${esc(post.type)}" data-acct="${esc(post.account || acct.id)}">
         <div class="mkt-post-card-header">
-          ${chipHtml}${cashtag}${slotBadge}${statusBadge}
+          ${chipHtml}${cashtag}${tickerBadge}${whenBadge}${statusBadge}
           <span class="sub" style="margin-left:auto;font-size:10px;color:var(--faint)">${esc(post.provenance || "")}</span>
         </div>
         ${chartEmbed}
@@ -3954,8 +4334,30 @@ RENDER.marketing_content = async () => {
     </div>`;
   });
 
-  v.innerHTML = headerHtml + filterHtml + acctPills + `<div id="mkt-post-gallery">${acctSections}</div>`;
+  /* Planned desks (empty queue) collapse into one muted strip — not full empty
+     sections. Reads defensively: a desk with no drafts is "not generating". */
+  const plannedHtml = plannedDesks.length
+    ? `<div class="cs-planned-strip">
+        <span class="cs-planned-h">Planned desks (not generating)</span>
+        ${plannedDesks.map(a => `<span class="cs-planned-chip">${esc(a.id || a.name || "desk")}</span>`).join("")}
+      </div>`
+    : "";
+
+  v.innerHTML = headerHtml + filterHtml + acctPills + plannedHtml + `<div id="mkt-post-gallery">${acctSections}</div>`;
 };
+
+/* Is the content plan stale? Prefer the engine's own flag; else compare as_of to
+   today (UTC). Mirrors marketing._plan_is_stale so the pill is honest. */
+function csPlanStale(d) {
+  if (typeof d.stale === "boolean") return d.stale;
+  const asOf = d.as_of;
+  if (!asOf) return false;
+  try {
+    const planDay = String(asOf).slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
+    return planDay < today;
+  } catch (e) { return false; }
+}
 
 /* Content Studio client-side filter helpers */
 function mktFilterPosts(type, btn) {
@@ -4262,11 +4664,21 @@ RENDER.marketing_outbox = async () => {
   </div>
   <div class="obx-lede">The queue below is what each desk account is <b>about to post to X</b>. Read the exact copy, then approve or hold. In this shadow phase nothing leaves the building — approvals are recorded, but no post is sent.</div>`;
 
-  /* Day-0 empty state — sibling-page accruing card, an invitation to act. */
+  /* Day-0 empty state — a friendly explainer that says WHEN drafts arrive and
+     what to do next, with the three posting slots in the operator's local time. */
   if (d.note && !accounts.length) {
-    v.innerHTML = header + obxSentinelCard(sentinel, cap) + `<div class="card">
-      <div class="note muted" style="margin-bottom:8px">${esc(d.note)}</div>
-      <div class="note muted">Items appear here after a nightly governor run with <code>MARKETING_OUTBOX_ENABLED=1</code> emits the desk queue from the day's content plan. Until then there is nothing waiting to post.</div>
+    const slotIso = pubNextSlotIso();
+    const slotChips = PUB_SLOTS_UTC.map(([hh, mm]) => {
+      const iso = new Date(Date.UTC(2026, 0, 1, hh, mm, 0)).toISOString();
+      const lt = new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      return `<span class="obx-empty-slot">${esc(lt)}</span>`;
+    }).join("");
+    v.innerHTML = header + obxSentinelCard(sentinel, cap) + `<div class="obx-empty-rich">
+      <div class="eh">No drafts yet</div>
+      <p>The nightly governor writes drafts here — <b>first fill: tonight ~20:45 PT</b> (a staging bug was fixed 2026-07-23, so this is the first real run). Come back after the nightly, approve what you like; the publisher posts approved items at the next slot.</p>
+      <div class="acct-recent-h">Posting slots (your local time)</div>
+      <div class="obx-empty-slots">${slotChips}</div>
+      ${slotIso ? `<div class="cs-fresh-fix" style="margin-top:8px">Next slot ${esc(conLocalTime(slotIso))} — ${esc(conCountdown(slotIso))}</div>` : ""}
     </div>` + obxActivityStrip(activity);
     return;
   }
@@ -4426,6 +4838,9 @@ async function obxRefreshInPlace() {
      express it — fall back to a full mount so the accruing card renders. */
   if (d.note && !(d.accounts || []).length) { await RENDER.marketing_outbox(); return; }
   obxRenderLive(d);
+  /* keep the nav pending-dot in sync with the just-refreshed queue */
+  const s = d.summary || {};
+  setNavDot("marketing_outbox", (s.queued || 0) + (s.held || 0));
   window.scrollTo({ top: y, behavior: "instant" });
 }
 
@@ -4540,6 +4955,108 @@ function sentVerdict(d) {
   return { live, planMeta };
 }
 
+/* Next weekday publish slot (14:00 / 17:30 / 20:15 UTC) as an ISO string — the
+   client-side twin of marketing._next_publish_slot_utc so the countdown ticks
+   without a round-trip. */
+const PUB_SLOTS_UTC = [[14, 0], [17, 30], [20, 15]];
+function pubNextSlotIso(now) {
+  now = now || new Date();
+  for (let off = 0; off < 8; off++) {
+    const day = new Date(now.getTime() + off * 86400000);
+    const dow = day.getUTCDay();               /* 0=Sun..6=Sat */
+    if (dow === 0 || dow === 6) continue;
+    for (const [hh, mm] of PUB_SLOTS_UTC) {
+      const cand = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), hh, mm, 0));
+      if (cand.getTime() > now.getTime()) return cand.toISOString();
+    }
+  }
+  return null;
+}
+
+/* Go-Live checklist — the operator's "what stands between me and live posting".
+   Each row is derived from real config/state, with the exact next action in
+   plain words. Rotate-the-token warning is loud (it was chat-log-exposed). */
+function pubGoLive(d) {
+  const cfg = d.config || {};
+  const sc = d.status_counts || {};
+  const chSet = cfg.channels_set || {};
+  const flagshipCh = chSet.flagship === true || cfg.any_channel_set === true;
+  const approvedFlowing = (sc.approved || 0) > 0;
+  const nextIso = pubNextSlotIso();
+
+  const rows = [
+    {
+      done: flagshipCh,
+      title: `Buffer channel connected`,
+      do: flagshipCh
+        ? `Flagship desk <b>@mastermindx001</b> has a Buffer channel id.`
+        : `Connect the flagship Buffer channel and set its id in <span class="k">config/marketing.yml</span> → <span class="k">publish.channels</span>.`,
+    },
+    {
+      done: cfg.token_present === true,
+      warn: true,
+      title: `<span class="warn">⚠ rotate the old token first</span> — <span class="k">BUFFER_TOKEN</span> repo secret`,
+      do: `The old Buffer token was exposed in a chat log — <b>rotate it before arming</b>, then add the new value as the <span class="k">BUFFER_TOKEN</span> repo secret. <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`,
+    },
+    {
+      done: false,   /* kill-switch is an env on the runner; we can't read it here → treat as a manual step */
+      title: `<span class="k">MARKETING_PUBLISH_ENABLED=1</span> repo secret`,
+      do: `Set the kill-switch secret to <span class="k">1</span>. Until then the runner stays dry even with a token and channel.`,
+    },
+    {
+      done: approvedFlowing,
+      title: `Approvals flowing`,
+      do: approvedFlowing
+        ? `${sc.approved} approved item${sc.approved === 1 ? "" : "s"} ready for the next slot.`
+        : `Approve drafts in the Outbox. The publisher only posts <b>approved, due</b> items.`,
+      aside: approvedFlowing ? `<span class="golive-count" style="color:var(--ok)">${sc.approved}</span>` : "",
+    },
+  ];
+
+  const rowsHtml = rows.map(r => {
+    const cls = r.done ? "done" : (r.warn ? "warn" : "todo");
+    const mark = r.done ? "✓" : (r.warn ? "!" : "○");
+    return `<div class="golive-row">
+      <span class="golive-mark ${cls}">${mark}</span>
+      <div class="golive-main">
+        <div class="golive-title">${r.title}</div>
+        <div class="golive-do">${r.do}</div>
+      </div>
+      <div class="golive-aside">${r.aside || ""}</div>
+    </div>`;
+  }).join("");
+
+  const cd = nextIso
+    ? `<div class="golive-row">
+        <span class="golive-mark todo" style="border-style:solid;color:var(--accent-cyan);border-color:var(--accent-cyan)">›</span>
+        <div class="golive-main">
+          <div class="golive-title">Next posting slot</div>
+          <div class="golive-do">Approved items go out at the next slot (14:00 / 17:30 / 20:15 UTC, weekdays).</div>
+        </div>
+        <div class="golive-aside">
+          <div class="golive-cd" data-cd-target="${esc(nextIso)}">${esc(conCountdown(nextIso))}</div>
+          <div class="golive-cd-sub">${esc(conLocalTime(nextIso))} your time</div>
+        </div>
+      </div>`
+    : "";
+
+  return `<div class="card">
+    <div class="section">Go-live checklist <span class="cnt">what stands between drafts and live posts</span></div>
+    <div class="con-lede" style="margin-bottom:10px">Each row is one step to start posting. Nothing posts until all four are done and the kill-switch is on.</div>
+    <div class="golive">${rowsHtml}${cd}</div>
+  </div>`;
+}
+
+/* Summarise the per-account links_allowed map into one plain label. */
+function pubLinksLabel(la) {
+  if (!la || typeof la !== "object") return "off";
+  const vals = Object.values(la);
+  if (!vals.length) return "off";
+  if (vals.every(Boolean)) return "allowed";
+  if (vals.every(v => !v)) return "off";
+  return `${vals.filter(Boolean).length} of ${vals.length} desks`;
+}
+
 /* ---- Publisher (D02 W1) — the live-publish control plane ------------------ */
 RENDER.marketing_publish = async () => {
   const v = $("#view");
@@ -4594,6 +5111,7 @@ RENDER.marketing_publish = async () => {
       <div><span class="eyebrow">Require approval</span> <b>${cfg.require_approval ? "yes" : "no"}</b></div>
       <div><span class="eyebrow">Auto-approve</span> <b>${cfg.auto_approve ? "ON" : "off"}</b></div>
       <div><span class="eyebrow">Buffer token</span> <b style="color:${cfg.token_present ? "var(--ok)" : "var(--muted)"}">${cfg.token_present ? "present" : "not set"}</b></div>
+      <div><span class="eyebrow">Links in posts</span> <b>${pubLinksLabel(cfg.links_allowed)}</b></div>
     </div>
     <div class="pub-cfg-channels">${chLine}</div>
   </div>`;
@@ -4663,14 +5181,51 @@ RENDER.marketing_publish = async () => {
       posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}</div>`).join("")}
   </div>` : "";
 
-  /* Cold outbox → honest note (still show config + action so the operator can arm). */
+  const goLive = pubGoLive(d);
+
+  /* Cold outbox → honest note (still show the go-live checklist + config + action
+     so the operator can see exactly what to do to arm). */
   if (d.note && !posted.length && !stuck.length && !quar.length) {
-    v.innerHTML = header + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+    v.innerHTML = header + goLive + tiles + cfgCard + `<div class="card"><div class="note muted">${esc(d.note)}</div></div>` + actionCard;
+    conStartCountdowns();
     return;
   }
 
-  v.innerHTML = header + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+  v.innerHTML = header + goLive + tiles + callout + cfgCard + postedCard + actionCard + actStrip;
+  conStartCountdowns();
 };
+
+/* When a dry-run would post nothing, explain WHY in one plain sentence per
+   reason, from the counts the payload already returns. The operator never has to
+   guess whether the outbox is empty, nothing's approved, approvals aren't due
+   yet, or a channel is missing. */
+function pubZeroWhy(d) {
+  const c = d.counts || {};
+  const approvedDue = c.approved_due || 0;
+  const noChannel = c.skipped_no_channel || 0;
+  const capped = c.skipped_cap || 0;
+  const cfg = (OBX_LAST && OBX_LAST.summary) || null;  /* best-effort outbox snapshot */
+  const rows = [];
+  const line = (state, txt) => rows.push(`<div class="pub-why-row"><span class="dot ${state}"></span><span class="pub-why-txt">${txt}</span></div>`);
+
+  if (approvedDue > 0 && noChannel >= approvedDue) {
+    line("mut", `<b>${approvedDue}</b> approved and due, but the desk has <b>no Buffer channel</b> — set a channel id to post them.`);
+  } else if (approvedDue === 0) {
+    // Distinguish "nothing approved" from "approved but not due" — the report only
+    // counts approved-AND-due, so approvedDue==0 means neither is ready.
+    line("mut", `Nothing is <b>approved and due</b> right now.`);
+    line("mut", `If the outbox is empty, drafts arrive with the nightly (first fill ~20:45 PT).`);
+    line("mut", `If drafts are waiting, approve them in the Outbox — approved posts go out at the next slot, not immediately.`);
+  }
+  if (noChannel > 0 && !(approvedDue > 0 && noChannel >= approvedDue)) {
+    line("mut", `<b>${noChannel}</b> skipped — no channel id for that desk.`);
+  }
+  if (capped > 0) {
+    line("mut", `<b>${capped}</b> held back by the daily cap (expected — the cap protects the account).`);
+  }
+  if (!rows.length) line("mut", `Nothing is approved and due — nothing would post.`);
+  return `<div class="pub-why"><div class="note muted" style="margin-bottom:4px">Why nothing would post:</div>${rows.join("")}</div>`;
+}
 
 /* POST the dry-run and render the "would post" report into #pub-dryrun-out. */
 async function pubRunDryRun(btn) {
@@ -4694,7 +5249,7 @@ async function pubRunDryRun(btn) {
 
   const wpRows = wp.length ? `<table class="tbl pub-tbl"><thead><tr><th>desk</th><th>chars</th><th>sched</th><th>preview</th></tr></thead>
     <tbody>${wp.map(p => `<tr><td>${esc(p.account || "")}</td><td>${p.chars}</td><td class="muted">${esc(p.scheduled_at || "immediate")}</td><td class="pub-text">${esc(p.preview || "")}</td></tr>`).join("")}</tbody></table>`
-    : `<div class="note muted">Nothing is APPROVED and DUE right now — nothing would post.</div>`;
+    : pubZeroWhy(d);
 
   const qRows = q.length ? `<div class="note muted" style="margin-top:8px">Would quarantine:</div>
     ${q.map(x => `<div class="pub-alert-row"><span class="pub-alert-tag bad">${esc((x.reasons || []).join(", "))}</span><code>${esc(x.id)}</code> <span class="muted">${esc(x.account || "")}</span></div>`).join("")}` : "";
@@ -4732,6 +5287,7 @@ RENDER.marketing_sentinel = async () => {
   const checks   = d.checks || {};
   const notes    = d.notes || [];
   const topR     = d.top_reasons || [];
+  const passed   = d.passed || null;
   const { live, planMeta } = sentVerdict(d);
 
   /* ---------- 1 · VERDICT STRIP (the hero) ---------- */
@@ -4817,8 +5373,21 @@ RENDER.marketing_sentinel = async () => {
       <div class="card sent-notes">${notes.map(n => `<div class="sent-note-row">${esc(String(n))}</div>`).join("")}</div>`;
   }
 
+  /* Shadow-mode banner — plain words + a link to the Publisher, so the operator
+     knows the gate reports but nothing posts until the publisher is armed. Only
+     shown while shadow (publish disabled); when live, the loud hero covers it. */
+  const shadowBanner = !live
+    ? `<div class="cs-freshbar" style="border-left:3px solid var(--ok)">
+        <span class="cs-fresh-pill fresh">Shadow mode</span>
+        <span class="cs-fresh-txt">The gate runs and reports, but <b>nothing posts externally</b> until the Publisher is armed.</span>
+        <button class="sent-shadow-link" onclick="go('marketing_publish')" style="margin-left:auto">Open Publisher →</button>
+      </div>`
+    : "";
+
   v.innerHTML = `<div class="section">Sentinel <span class="cnt">gate over ${esc(d.as_of || "—")}</span></div>
     ${hero}
+    ${shadowBanner}
+    ${sentPassedSection(passed, counts)}
     ${policyHtml}
     ${overHtml}
     <div class="section sent-sec-tight">Gate checks</div>
@@ -4828,22 +5397,98 @@ RENDER.marketing_sentinel = async () => {
     ${sentFooter(d)}`;
 };
 
-/* One policy-flag card — a reviewable ban-risk hold. */
+/* One policy-flag card — a reviewable ban-risk hold with a real Allow button.
+   Clicking Allow arms an inline confirm, then POSTs an exception (which the NEXT
+   nightly gate honours). No manual JSON editing. */
 function sentPolicyCard(q) {
   const reasons = (q.reasons || []).map(sentReasonChip).join("");
   const cash = q.cashtag ? `<span class="mkt-cash-chip">${esc(q.cashtag)}</span>` : "";
   const slot = q.slot ? `<span class="statpill s-mut obx-mini">${esc(q.slot)}</span>` : "";
-  return `<div class="sent-flag-card">
+  const id = String(q.id || "");
+  return `<div class="sent-flag-card" data-allow-card="${esc(id)}">
     <div class="sent-flag-top">
       <span class="sent-flag-acct">${esc(q.account || "—")}</span>
       ${sentTypeChip(q.type)}${cash}${slot}
-      <span class="sent-flag-id">${esc(q.id || "")}</span>
+      <span class="sent-flag-id">${esc(id)}</span>
     </div>
     <div class="sent-flag-head">${esc(q.headline || "(no headline)")}</div>
     <div class="sent-flag-reasons">${reasons || '<span class="faint">held — reason not recorded</span>'}</div>
-    <div class="sent-flag-foot">Should this post go anyway? Add
-      <code>{"item_id": "${esc(q.id || "")}", "allow": true, "reason": "…"}</code>
-      to <code>data/marketing/sentinel_exceptions.jsonl</code> and re-run the gate.</div>
+    <div class="sent-flag-foot" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span>Held until you decide — nothing here posts on its own.</span>
+      ${id ? `<button class="sent-allow-btn" data-id="${esc(id)}" onclick="sentAllow(this)">Allow this post</button>
+      <span class="sent-allow-msg"></span>` : ""}
+    </div>
+  </div>`;
+}
+
+/* Allow flow: first click arms ("Confirm — writes an exception"); second click
+   POSTs. The exception takes effect at the NEXT nightly gate (nothing posts now).
+   On success the button becomes a done chip so the state is unmistakable. */
+let SENT_ALLOW_T = null;
+async function sentAllow(btn) {
+  const id = btn.getAttribute("data-id");
+  const foot = btn.closest(".sent-flag-foot");
+  const msg = foot ? foot.querySelector(".sent-allow-msg") : null;
+  if (btn.dataset.armed !== "1") {
+    btn.dataset.armed = "1";
+    btn.classList.add("armed");
+    btn.textContent = "Confirm — writes an exception";
+    if (msg) { msg.className = "sent-allow-msg"; msg.textContent = "Takes effect at the next nightly gate. Click again to confirm."; }
+    clearTimeout(SENT_ALLOW_T);
+    SENT_ALLOW_T = setTimeout(() => {
+      btn.dataset.armed = "0"; btn.classList.remove("armed");
+      btn.textContent = "Allow this post";
+      if (msg) msg.textContent = "";
+    }, 5000);
+    return;
+  }
+  clearTimeout(SENT_ALLOW_T);
+  btn.disabled = true; btn.textContent = "recording…";
+  const reason = `operator allowed from console ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
+  const r = await post("/api/marketing/sentinel/allow", { item_id: id, reason });
+  if (r && r.ok) {
+    const done = h(`<span class="sent-allow-done">exception recorded ✓</span>`);
+    btn.replaceWith(done);
+    if (msg) { msg.className = "sent-allow-msg"; msg.textContent = "It takes effect at the next nightly gate — nothing posted now."; }
+    toast("Exception recorded — applies at the next gate");
+  } else {
+    btn.disabled = false; btn.dataset.armed = "0"; btn.classList.remove("armed");
+    btn.textContent = "Allow this post";
+    if (msg) { msg.className = "sent-allow-msg err"; msg.textContent = (r && r.error) || "failed — try again"; }
+  }
+}
+
+/* Cleared-to-post section — the `passed` list rendered as cards, each with a
+   deep-link chip to approve it in the Outbox. When the report has no `passed`
+   list yet (tonight's run predates the engine fix) shows the count + a one-liner. */
+function sentPassedSection(passed, counts) {
+  const n = (counts && counts.passed != null) ? counts.passed : (passed ? passed.length : null);
+  const head = `<div class="section sent-sec-tight">Cleared to post ${n != null ? `<span class="cnt">${n} post${n === 1 ? "" : "s"}</span>` : ""}</div>`;
+  if (Array.isArray(passed) && passed.length) {
+    const cards = passed.map(p => {
+      const cash = p.cashtag ? `<span class="mkt-cash-chip">${esc(p.cashtag)}</span>` : "";
+      const when = p.display_time || p.slot || "";
+      return `<div class="sent-pass-card">
+        <div class="sent-pass-top">
+          <span class="sent-pass-acct">${esc(p.account || "—")}</span>
+          ${sentTypeChip(p.type)}${cash}
+          ${when ? `<span class="sent-pass-slot">${esc(when)}</span>` : ""}
+        </div>
+        <div class="sent-pass-head">${esc(p.headline || "(no headline)")}</div>
+        <div class="sent-pass-foot">
+          <button class="sent-approve-link" onclick="go('marketing_outbox')">→ approve in Outbox</button>
+        </div>
+      </div>`;
+    }).join("");
+    return head
+      + `<div class="con-lede" style="margin-bottom:10px">These posts passed every ban-risk rule. Approve the ones you want in the Outbox — the publisher posts approved items at the next slot.</div>`
+      + `<div class="sent-passed-grid">${cards}</div>`;
+  }
+  // No list yet — honest count + when it fills in.
+  return head + `<div class="sent-clear-card">
+    <span class="sent-clear-mark" style="color:var(--ok)">✓</span>
+    <div><div class="sent-clear-title">${n != null ? `${n} posts cleared the gate` : "Cleared posts"}</div>
+    <div class="sent-clear-sub">The list of exactly which posts cleared appears with tonight's run. Until then, approve drafts in the Outbox.</div></div>
   </div>`;
 }
 
@@ -4873,7 +5518,7 @@ function sentChecksGrid(checks, topR) {
     "Duplicate posts",
     (nd.hits || 0) > 0 ? "hit" : "ok",
     (nd.hits || 0) > 0 ? `${nd.hits} caught` : "none",
-    `${nd.pairs_checked != null ? nd.pairs_checked.toLocaleString() : "—"} pairs checked${nd.shared_media_hits ? ` · ${nd.shared_media_hits} shared images` : ""}`));
+    `${nd.pairs_checked != null ? nd.pairs_checked.toLocaleString() : "—"} pairs checked${nd.shared_media_hits ? ` · ${nd.shared_media_hits} shared images` : ""} · checked locally with text math — costs zero AI tokens`));
 
   const cad = c.cadence || {};
   const cadHit = (cad.cashtag_cap_hits || 0) + (cad.slot_collision_hits || 0) + (cad.reply_cap_hits || 0);
@@ -5146,12 +5791,20 @@ function obxItemCard(it, acctId) {
     controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">${eff === "approved" ? "Cleared — waiting for the actuator." : "Locked — decision window closed."}</span></div>`;
   }
 
+  /* Provenance chips: when the draft was written (created_at) + which plan day it
+     belongs to (as_of) — a small audit line so the operator knows a draft's age. */
+  const metaChips = [
+    it.created_at ? `<span class="obx-meta-chip" title="drafted">✎ ${obxStamp(it.created_at)}</span>` : "",
+    it.as_of ? `<span class="obx-meta-chip" title="plan day">plan ${esc(String(it.as_of))}</span>` : "",
+  ].join("");
+
   return `<div class="obx-card obx-edge-${eff}${recedeCls}" data-item-card="${esc(it.id)}" data-acct="${esc(it.account || acctId)}" data-kind="${esc(it.kind || "")}">
     <div class="obx-card-top">
       ${kindChip}${prioChip}${slotChip}${schedChip}
       <span class="obx-prov">${esc(it.provenance || "")}</span>
       ${stateChip}
     </div>
+    ${metaChips ? `<div style="display:flex;gap:8px;margin:-2px 0 6px">${metaChips}</div>` : ""}
     <div class="obx-compose">
       <pre class="obx-text">${esc(text)}</pre>
       <div class="obx-meter">
@@ -8164,6 +8817,7 @@ async function boot() {
   startTableObserver();
   await refresh();
   route();
+  refreshOutboxNavDot();   /* advisory pending-count dot on the Outbox nav item */
 }
 (async function init() {
   SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));

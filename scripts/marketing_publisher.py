@@ -18,8 +18,10 @@ Usage:
 
 Guards (ALL must pass or the runner no-ops with a clear log line):
   * kill-switch  sentinel.publish_enabled() is true AND --live was passed
-  * per-account daily cap  outbox.effective_cap(cfg), counting items already
-                           `posted` today (as_of == today)
+  * per-account daily cap  outbox.effective_cap(cfg), counted ledger-based via
+                           outbox.posted_today_by_account (folded status
+                           posted/posting whose last transition landed today —
+                           nightly items post the day AFTER their as_of)
   * per-item     social_publisher.validate_postable() (280 cap, link policy,
                  empty text)
 
@@ -37,6 +39,7 @@ Buffer token from env BUFFER_TOKEN. Structured logging throughout.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import logging
 import os
 import sys
@@ -83,6 +86,53 @@ def _publish_cfg(cfg: dict) -> dict:
 
 def _channel_id_for(pub_cfg: dict, account: str) -> str:
     return str((pub_cfg.get("channels") or {}).get(account, "") or "").strip()
+
+
+_PUBLICATIONS_REL = Path("data/marketing/publications.jsonl")
+
+
+def _publication_row(it: dict, text: str, receipt, *, published_at: str) -> dict:
+    """A PublicationReceipt-shaped row (contracts/marketing_publication_receipt.v1)
+    for one live X post — the Channels page reads publications.jsonl, and until now
+    posted receipts landed ONLY in the outbox status ledger, so that page stayed dead.
+
+    Required schema fields (publication_id, asset_id, channel, account, published_at,
+    campaign_id) are always populated; the rest carry honest live-post defaults.
+    """
+    iid = str(it.get("id", ""))
+    external_id = getattr(receipt, "external_id", None)
+    external_url = getattr(receipt, "external_url", None)
+    return {
+        "publication_id": f"pub-{iid}" if iid else f"pub-{external_id or 'unknown'}",
+        "asset_id": iid,
+        "channel": "x",
+        "account": it.get("account", ""),
+        "remote_id": external_id,
+        "published_at": published_at,
+        "effective_copy_hash": "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        "policy_version": str(it.get("policy_version") or "v1"),
+        "audience": "public",
+        "destination": "x_timeline",
+        # Items don't carry a campaign_id today; fall back to provenance so the
+        # required field is never empty. A later PR threads real campaign ids.
+        "campaign_id": str(it.get("campaign_id") or it.get("provenance") or "publisher_live"),
+        "experiment_cell": it.get("experiment_cell"),
+        "correction_state": "clean",
+        "takedown_method": "unpublish_via_adapter",
+        "mode": "live",
+        "external_url": external_url,
+    }
+
+
+def _append_publication(root: Path | str | None, row: dict) -> None:
+    """Append a publication receipt to publications.jsonl. Fail-soft — a ledger
+    write must never turn a successful post into a crash."""
+    from engine.marketing.ledgers import append_jsonl  # noqa: PLC0415
+    try:
+        append_jsonl(Path(_data_root(root)) / _PUBLICATIONS_REL, row)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publisher: publications.jsonl append failed for %s: %s",
+                    row.get("asset_id", "?"), exc)
 
 
 def _links_allowed_for(pub_cfg: dict, account: str) -> bool:
@@ -356,15 +406,11 @@ def main(argv: list[str] | None = None) -> int:
             "item %s is stuck in 'posting' (in-flight from a prior run) — "
             "reporting, NOT reposting (no-double-post)", iid)
 
-    # ── Per-account cap accounting: count items already posted TODAY ─────────
+    # ── Per-account cap accounting: ledger-based posts-today ─────────────────
+    # NOT as_of-based: nightly items post the day AFTER their as_of, so as_of
+    # counting misses them — see outbox.posted_today_by_account.
     today = now.strftime("%Y-%m-%d")
-    posted_today: dict[str, int] = {}
-    for iid, s in statuses.items():
-        if s == "posted" and iid in items_by_id:
-            it = items_by_id[iid]
-            if it.get("as_of") == today:
-                acct = it.get("account", "")
-                posted_today[acct] = posted_today.get(acct, 0) + 1
+    posted_today: dict[str, int] = _outbox.posted_today_by_account(state, today)
 
     # ── Publish-time mover/theme generation (honest live tape posts) ─────────
     # mover/theme_list posts are generated NIGHTLY but never emitted (a "+7%
@@ -541,6 +587,19 @@ def main(argv: list[str] | None = None) -> int:
             log.warning("item %s (%s) has no configured channel id in "
                         "publish.channels.%s — cannot post", iid, account, account)
             skipped_channel += 1
+            # Approved items on a channel-less account otherwise rot 'approved'
+            # forever (re-skipped every run, never expiring). After 3 days,
+            # quarantine so the queue drains honestly. Only in --live (dry-run
+            # never mutates the ledger).
+            if live:
+                _stamp = str(it.get("as_of") or it.get("created_at") or "")[:10]
+                try:
+                    _age_days = (now.date() - date.fromisoformat(_stamp)).days
+                except (ValueError, TypeError):
+                    _age_days = 0  # unparseable stamp → don't expire (fail-soft)
+                if _age_days > 3:
+                    _outbox.transition(iid, "quarantined", actor="publisher",
+                                       root=root, note="expired_no_channel")
             continue
 
         media_paths = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
@@ -580,6 +639,16 @@ def main(argv: list[str] | None = None) -> int:
                     "external_url": receipt.external_url,
                     "at": receipt.at,
                 },
+            )
+            # ALSO record a publication receipt so the Channels page (reads
+            # publications.jsonl via engine.marketing.state) surfaces the post —
+            # the outbox status ledger alone never reached that reader.
+            _append_publication(
+                root,
+                _publication_row(
+                    it, text, receipt,
+                    published_at=(receipt.at or now.strftime("%Y-%m-%dT%H:%M:%SZ")),
+                ),
             )
             posted_today[account] = posted_today.get(account, 0) + 1
             posted += 1
@@ -689,11 +758,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                  if s == "posting" and i in items_by_id and _acct_ok(items_by_id[i])]
 
         today = now.strftime("%Y-%m-%d")
-        posted_today: dict[str, int] = {}
-        for iid, s in statuses.items():
-            if s == "posted" and iid in items_by_id and items_by_id[iid].get("as_of") == today:
-                acct = items_by_id[iid].get("account", "")
-                posted_today[acct] = posted_today.get(acct, 0) + 1
+        posted_today: dict[str, int] = _outbox.posted_today_by_account(state, today)
 
         # Auto-approve preview (always dry here → never mutates). Honors both the
         # global flag AND the scoped publish.auto_approve_kinds exception, so the

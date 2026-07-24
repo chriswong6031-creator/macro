@@ -408,31 +408,6 @@ def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
 # Ledger-derived today-state (posts-today + existing-today dedupe corpus)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _folded_status(state: dict, iid: str) -> str:
-    return (state.get("status") or {}).get(iid, "queued")
-
-
-def _posted_today_by_account(state: dict, today: str) -> dict[str, int]:
-    """Ledger-based posts-today per account.
-
-    Nightly items carry the GENERATION day's as_of (yesterday), so as_of counting
-    undercounts. Count instead by the last ledger row's `at` date: an item whose
-    folded status is posted/posting AND whose last transition happened today.
-    """
-    items = state.get("items") or {}
-    last = state.get("last") or {}
-    out: dict[str, int] = {}
-    for iid, it in items.items():
-        st = _folded_status(state, iid)
-        if st not in {"posted", "posting"}:
-            continue
-        at = str((last.get(iid) or {}).get("at") or "")
-        if at[:10] == today:
-            acct = it.get("account", "")
-            out[acct] = out.get(acct, 0) + 1
-    return out
-
-
 def _existing_today_items(state: dict, today: str) -> list[dict]:
     """Every item that belongs to 'today' — as_of==today OR created_at date==today.
 
@@ -569,7 +544,7 @@ def generate_slot_items(
 
         # ── Today-state (ledger-based) ──────────────────────────────────────
         today = now.strftime("%Y-%m-%d")
-        posted_today = _posted_today_by_account(state, today)
+        posted_today = outbox.posted_today_by_account(state, today)
         for it in _live_queued_pt_today(state, today):
             acct = it.get("account", "")
             posted_today[acct] = posted_today.get(acct, 0) + 1

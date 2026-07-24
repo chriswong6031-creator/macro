@@ -52,17 +52,26 @@ class DeskAccount:
 # desk_network
 # ─────────────────────────────────────────────────────────────────────────────
 
-def desk_network(cfg: dict | None = None) -> dict[str, Any]:
+def desk_network(cfg: dict | None = None, root: str | None = None) -> dict[str, Any]:
     """Build desk network state from config/marketing.yml ``desk_network`` section.
 
     Returns the state dict used in marketing_state.json §3.
+
+    Each account's ``status`` reflects real liveness (engine.marketing.accounts):
+    ``live`` (enabled + a channel id wired in publish.channels), ``ready``
+    (enabled, no channel yet), ``planned`` (not enabled — a beat with no real X
+    account behind it). Previously every account was hardcoded ``warming``, which
+    made the admin read "all live" when only the flagship has an account.
     """
+    from engine.marketing.accounts import effective_accounts, account_status
+
     dn_cfg = (cfg or {}).get("desk_network", {}) or {}
     stage = dn_cfg.get("stage", "A")
-    raw_accounts = dn_cfg.get("accounts", []) or []
+    channels_cfg = ((cfg or {}).get("publish", {}) or {}).get("channels", {}) or {}
+    eff_accounts = effective_accounts(cfg, root)
 
     accounts: list[DeskAccount] = []
-    for acct in raw_accounts:
+    for acct in eff_accounts:
         accounts.append(DeskAccount(
             id=acct.get("id", ""),
             handle=acct.get("handle", None),
@@ -73,7 +82,7 @@ def desk_network(cfg: dict | None = None) -> dict[str, Any]:
             tilt=dict(acct.get("tilt", {})),
             mix_observed={},
             stage=stage,
-            status="warming",
+            status=account_status(acct, channels_cfg),
             authority="G1",
         ))
 

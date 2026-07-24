@@ -47,12 +47,12 @@
   "flip_condition": {
     "axis": "growth",
     "component": "copper_gold",
-    "z": 0.6,
+    "z": 0.59,
     "threshold": 0.45,
-    "margin": 0.15,
-    "note": "growth axis flips risk: copper_gold slope z=0.6 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.14,
+    "note": "growth axis flips risk: copper_gold slope z=0.59 is the closest supporter to its +/-0.45 cutoff"
   },
-  "flip_margin": 0.15,
+  "flip_margin": 0.14,
   "sector_rs": [
     {
       "ticker": "SMH",
@@ -218,9 +218,9 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.4895826072706235,
+      "rs": 5.489176136178068,
       "mom_20d_pct": 0.87,
-      "mom_60d_pct": -16.03,
+      "mom_60d_pct": -16.04,
       "above_200d_trend": false,
       "pctile_252d": 17.1,
       "rank": 19
@@ -267,7 +267,7 @@
     },
     "copper_gold": {
       "level": 0.0016,
-      "chg_20d_pct": 3.84
+      "chg_20d_pct": 3.77
     }
   },
   "alerts": [
@@ -426,7 +426,7 @@
       "skew_pctile": 0.6726190476190477,
       "stock_bond_corr": 0.5193615215617099,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.49936697436783234,
+      "roro": 0.49967715654339584,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.0552444869865796,
       "news_sentiment": 0.010867821983993053,
@@ -8924,8 +8924,8 @@
     "dir_sign": 1,
     "confidence": "high",
     "confidence_zh": "\u9ad8",
-    "strength": 1.88,
-    "dominance_ratio": 1.86,
+    "strength": 1.86,
+    "dominance_ratio": 1.84,
     "agreement": 1.0,
     "runner_up": "fed_repricing",
     "runner_up_label": "Fed repricing",
@@ -8962,8 +8962,8 @@
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": 1.88,
-        "strength": 1.88,
+        "projection": 1.86,
+        "strength": 1.86,
         "direction": "oil spiking \u2014 energy leads, breakevens up"
       },
       {
@@ -8980,8 +8980,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 0.37,
-        "strength": 0.37,
+        "projection": 0.4,
+        "strength": 0.4,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -8998,8 +8998,8 @@
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
         "family": "china",
-        "projection": 0.13,
-        "strength": 0.13,
+        "projection": 0.12,
+        "strength": 0.12,
         "direction": "China risk-on \u2014 A-shares/HK & copper lead up"
       },
       {
@@ -9276,7 +9276,7 @@
   },
   "fed_path": {
     "asof": "2026-07-23",
-    "built": "2026-07-23T21:22:15.934347+00:00",
+    "built": "2026-07-23T22:59:02.614189+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -9426,7 +9426,7 @@
         "zh": "\u76c8\u4e8f\u5e73\u8861\u5927\u81f4\u5e73\u7a33\u2014\u2014\u65e0\u53ef\u64cd\u4f5c\u53d8\u52a8\u3002"
       },
       "costate": {
-        "oil_chg_20d_pct": 28.4,
+        "oil_chg_20d_pct": 28.0,
         "real10y_chg_20d_bp": 18.0,
         "nom10y_chg_20d_bp": 23.0,
         "hy_oas_z": -0.89,
@@ -17724,55 +17724,55 @@
   },
   "vol_regime": {
     "available": true,
-    "asof": "2026-07-22",
+    "asof": "2026-07-23",
     "regime": "normalizing",
-    "risk_score": 0.179,
+    "risk_score": 0.078,
     "scored_score": null,
     "scored_active": false,
-    "vix": 16.64,
-    "ts_slope": 0.852,
+    "vix": 18.7,
+    "ts_slope": 0.908,
     "ts_slope_state": "contango",
-    "ts9": 0.894,
-    "move": 76.3,
-    "move_pctile": 0.316,
-    "move_vix": 4.586,
-    "vrp": 6.25,
-    "vrp_pctile": 0.479,
-    "vrp_chg_21d": 4.79,
+    "ts9": 0.971,
+    "move": 80.1,
+    "move_pctile": 0.398,
+    "move_vix": 4.282,
+    "vrp": 7.3,
+    "vrp_pctile": 0.606,
+    "vrp_chg_21d": 4.76,
     "vrp_state": "normal",
     "skew": null,
     "skew_cost_pctile": 0.0,
     "insurance_cost": "cheap (convexity on sale)",
     "downside_vrp": null,
-    "vvix": 95.5,
-    "vvix_vix": 5.742,
-    "vvix_pctile": 0.324,
-    "vvix_vix_pctile": 0.567,
-    "vvix_state": "normal",
-    "vol_target_scalar": 0.72,
+    "vvix": null,
+    "vvix_vix": null,
+    "vvix_pctile": 0.0,
+    "vvix_vix_pctile": 0.0,
+    "vvix_state": "complacent (vol-of-vol cheap vs vol \u2014 historically precedes rising vol)",
+    "vol_target_scalar": 0.64,
     "fragility_confluence": 0,
     "flags": [],
     "legs": {
       "ts_slope": {
-        "z": 0.668,
+        "z": -0.094,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "move": {
-        "z": 0.633,
+        "z": 0.424,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "vrp": {
-        "z": 0.041,
+        "z": 0.256,
         "scored": false,
         "sign": null,
         "eligible": true
       },
       "ts9": {
-        "z": 0.299,
+        "z": -0.48,
         "scored": false,
         "sign": null,
         "eligible": false
@@ -17790,7 +17790,7 @@
         "eligible": false
       },
       "vvix": {
-        "z": 0.235,
+        "z": null,
         "scored": false,
         "sign": null,
         "eligible": false
@@ -17810,7 +17810,7 @@
     "state": "caution",
     "label_en": "Caution",
     "label_zh": "\u7559\u610f",
-    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -19.1bn; spot below gamma flip, indexes rolling over / breaking down (67%), vol overpriced (complacent).",
+    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -35.1bn; spot below gamma flip, indexes rolling over / breaking down (83%), vol overpriced (complacent).",
     "headline_zh": "\u7559\u610f\uff1a\u8106\u5f31\u6027\u4e0a\u5347\uff0840/100\uff09\u3002",
     "drivers": [
       {
@@ -17818,15 +17818,15 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -19.1bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -35.1bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       {
         "key": "technical",
-        "intensity": 0.667,
+        "intensity": 0.833,
         "weight": 0.8,
-        "contribution": 0.534,
-        "detail_en": "indexes rolling over / breaking down (67%)",
+        "contribution": 0.666,
+        "detail_en": "indexes rolling over / breaking down (83%)",
         "detail_zh": "\u6307\u6570\u591a\u5468\u671f\u8d70\u5f31/\u7834\u4f4d"
       },
       {
@@ -17892,15 +17892,15 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -19.1bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -35.1bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       "technical": {
         "available": true,
-        "intensity": 0.667,
+        "intensity": 0.833,
         "weight": 0.8,
-        "contribution": 0.534,
-        "detail_en": "indexes rolling over / breaking down (67%)",
+        "contribution": 0.666,
+        "detail_en": "indexes rolling over / breaking down (83%)",
         "detail_zh": "\u6307\u6570\u591a\u5468\u671f\u8d70\u5f31/\u7834\u4f4d"
       },
       "extension": {
@@ -18704,11 +18704,11 @@
       "streak_sessions": 8
     },
     "radar_xref": {
-      "state": "watch",
+      "state": "caution",
       "phase": null
     },
     "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-    "_timing_s": 2.13,
+    "_timing_s": 2.03,
     "forward_log": {
       "market": "us",
       "n_graded": 0,
@@ -18882,7 +18882,7 @@
       }
     ],
     "flow": null,
-    "_timing_s": 0.09
+    "_timing_s": 0.11
   },
   "index_momentum": {
     "organ": "index_momentum.v1",
@@ -20481,13 +20481,13 @@
       ]
     },
     "n_roster": 13,
-    "_timing_s": 1.94
+    "_timing_s": 2.17
   },
   "vol_shock": {
-    "score": 36.8,
-    "score_int": 37,
-    "band": "low",
-    "band_zh": "\u504f\u4f4e",
+    "score": 41.3,
+    "score_int": 41,
+    "band": "elevated",
+    "band_zh": "\u5347\u9ad8",
     "asof": "2026-07-23",
     "n_available": 8,
     "factors": [
@@ -20540,14 +20540,14 @@
         "key": "vix_term",
         "label": "VIX term structure (inversion)",
         "label_zh": "VIX \u671f\u9650\u7ed3\u6784\uff08\u5012\u6302\uff09",
-        "value": 0.852,
+        "value": 0.908,
         "weight": 0.8,
         "available": true,
-        "sub": 1.0,
+        "sub": 29.0,
         "note": "contango \u2014 calm term structure",
         "note_zh": "Contango\u2014\u2014\u671f\u9650\u7ed3\u6784\u5e73\u9759",
         "color": "#5a9bd4",
-        "points": 0.2
+        "points": 4.7
       },
       {
         "key": "vrp_skew",
@@ -23192,7 +23192,7 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4052.3,
+        "price": 4052.0,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -4.0,
@@ -23207,41 +23207,41 @@
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 92.36,
+        "price": 92.07,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 12.7,
-        "pct_vs_200dma": 22.3,
-        "rsi14": 74.0,
+        "pct_vs_50dma": 12.3,
+        "pct_vs_200dma": 22.0,
+        "rsi14": 73.0,
         "macd_pos": true,
-        "off_52w_high_pct": -18.2,
+        "off_52w_high_pct": -18.5,
         "season_this": "Jul: +2.0% avg, up 69% of years (n=26)",
         "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +2.0%\uff0c69% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -13.2
+        "mom_60d_pct": -13.5
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.34,
+        "price": 6.33,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 0.6,
-        "pct_vs_200dma": 9.6,
+        "pct_vs_50dma": 0.5,
+        "pct_vs_200dma": 9.5,
         "rsi14": 53.0,
         "macd_pos": true,
-        "off_52w_high_pct": -4.7,
+        "off_52w_high_pct": -4.8,
         "season_this": "Jul: +1.5% avg, up 62% of years (n=26)",
         "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c62% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 9.4
+        "mom_60d_pct": 9.3
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.45,
+        "price": 101.44,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 1.1,
-        "pct_vs_200dma": 2.4,
+        "pct_vs_200dma": 2.3,
         "rsi14": 62.0,
         "macd_pos": false,
         "off_52w_high_pct": -0.2,
@@ -23323,7 +23323,7 @@
   },
   "freshness": {
     "asof": "2026-07-23",
-    "built_at": "2026-07-23T21:22:25Z",
+    "built_at": "2026-07-23T22:59:12Z",
     "age_days": 0,
     "age_sessions": 0,
     "max_age_sessions": 1,
@@ -23331,7 +23331,7 @@
     "note": "contract asof vs build time; the daily build lands post-close (22:40 UTC) so a consumer reading intraday should expect asof = prior session \u2014 recompute age against built_at at read time."
   },
   "mtf_signals": {
-    "asof": "2026-07-15",
+    "asof": "2026-07-20",
     "tf": "3D",
     "universe": "us_deep",
     "source": "daily_adjusted",
@@ -23383,8 +23383,8 @@
       },
       {
         "ticker": "ABT",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": false,
         "weekly_bull": true,
         "trail_breach": false,
@@ -23399,12 +23399,12 @@
       },
       {
         "ticker": "ADI",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 392.199,
+        "trail_stop": 390.1125,
         "early_now": false,
         "last": {
           "date": "2026-05-21",
@@ -23413,7 +23413,7 @@
       },
       {
         "ticker": "ADM",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -23429,8 +23429,8 @@
       },
       {
         "ticker": "ADP",
-        "asof": "2026-07-15",
-        "state": "long-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -23445,8 +23445,8 @@
       },
       {
         "ticker": "AEE",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -23461,8 +23461,8 @@
       },
       {
         "ticker": "AEP",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": true,
@@ -23475,7 +23475,7 @@
       },
       {
         "ticker": "AMAT",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -23489,7 +23489,7 @@
       },
       {
         "ticker": "AMCR",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -23505,7 +23505,7 @@
       },
       {
         "ticker": "AMD",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -23519,7 +23519,7 @@
       },
       {
         "ticker": "AMGN",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -23535,8 +23535,8 @@
       },
       {
         "ticker": "AMT",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "short-bias",
         "above200": false,
         "weekly_bull": false,
         "trail_breach": true,
@@ -23563,10 +23563,10 @@
       },
       {
         "ticker": "APD",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 294.8479,
         "early_now": false,
@@ -23579,7 +23579,7 @@
       },
       {
         "ticker": "APH",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -23609,24 +23609,22 @@
       },
       {
         "ticker": "AVB",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 189.808,
         "early_now": false,
         "last": {
-          "date": "2026-06-30",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-16",
+          "type": "sell"
         }
       },
       {
         "ticker": "AVGO",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
@@ -23671,7 +23669,7 @@
       },
       {
         "ticker": "BA",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": false,
@@ -23717,7 +23715,7 @@
       },
       {
         "ticker": "BKR",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -23779,9 +23777,9 @@
       },
       {
         "ticker": "BRK-B",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
-        "above200": true,
+        "above200": false,
         "weekly_bull": true,
         "trail_breach": true,
         "trail_stop": 492.3884,
@@ -23793,7 +23791,7 @@
       },
       {
         "ticker": "BX",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": true,
@@ -23837,10 +23835,10 @@
       },
       {
         "ticker": "CAT",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 922.3505,
         "early_now": false,
@@ -23883,7 +23881,7 @@
       },
       {
         "ticker": "CCI",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -23897,7 +23895,7 @@
       },
       {
         "ticker": "CEG",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
@@ -23907,13 +23905,29 @@
         "last": {
           "date": "2026-07-10",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "block",
+          "reason": "counter-trend, no 200-reclaim/hold"
+        }
+      },
+      {
+        "ticker": "CF",
+        "asof": "2026-07-21",
+        "state": "long-bias",
+        "above200": true,
+        "weekly_bull": false,
+        "trail_breach": false,
+        "trail_stop": 117.0011,
+        "early_now": false,
+        "last": {
+          "date": "2026-07-08",
+          "type": "buy",
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
         "ticker": "CHTR",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -23943,23 +23957,21 @@
       },
       {
         "ticker": "CL",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 91.5609,
         "early_now": false,
         "last": {
-          "date": "2026-06-12",
-          "type": "rebuy",
-          "quality": "block",
-          "reason": "failed reclaim-and-hold"
+          "date": "2026-07-21",
+          "type": "sell"
         }
       },
       {
         "ticker": "CMCSA",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
@@ -23989,7 +24001,7 @@
       },
       {
         "ticker": "CNP",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24019,7 +24031,7 @@
       },
       {
         "ticker": "COP",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24029,13 +24041,13 @@
         "last": {
           "date": "2026-07-15",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
         "ticker": "COST",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -24049,7 +24061,7 @@
       },
       {
         "ticker": "CRH",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": true,
@@ -24063,7 +24075,7 @@
       },
       {
         "ticker": "CRWD",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24077,7 +24089,7 @@
       },
       {
         "ticker": "CSCO",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24091,10 +24103,10 @@
       },
       {
         "ticker": "CSX",
-        "asof": "2026-07-15",
-        "state": "long-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 49.038,
         "early_now": false,
@@ -24105,10 +24117,10 @@
       },
       {
         "ticker": "CTVA",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 84.762,
         "early_now": false,
@@ -24153,7 +24165,7 @@
       },
       {
         "ticker": "CVX",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24163,8 +24175,8 @@
         "last": {
           "date": "2026-07-15",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
@@ -24183,7 +24195,7 @@
       },
       {
         "ticker": "DASH",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -24259,10 +24271,10 @@
       },
       {
         "ticker": "DIS",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 97.4227,
         "early_now": false,
@@ -24273,9 +24285,9 @@
       },
       {
         "ticker": "DLR",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
-        "above200": false,
+        "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 179.6805,
@@ -24303,7 +24315,7 @@
       },
       {
         "ticker": "DTE",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24333,22 +24345,24 @@
       },
       {
         "ticker": "DVN",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
         "trail_stop": 43.3344,
         "early_now": false,
         "last": {
-          "date": "2026-04-06",
-          "type": "sell"
+          "date": "2026-07-20",
+          "type": "buy",
+          "quality": "pending",
+          "reason": "pending confirmation"
         }
       },
       {
         "ticker": "EA",
-        "asof": "2026-07-16",
-        "state": "long-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -24363,7 +24377,7 @@
       },
       {
         "ticker": "EBAY",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24377,8 +24391,8 @@
       },
       {
         "ticker": "ECHO",
-        "asof": "2026-07-16",
-        "state": "short-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": false,
         "weekly_bull": false,
         "trail_breach": true,
@@ -24435,7 +24449,7 @@
       },
       {
         "ticker": "ELV",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24459,8 +24473,8 @@
         "last": {
           "date": "2026-07-14",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
@@ -24479,12 +24493,12 @@
       },
       {
         "ticker": "EQR",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 67.9876,
+        "trail_stop": 68.0293,
         "early_now": false,
         "last": {
           "date": "2026-07-10",
@@ -24511,7 +24525,7 @@
       },
       {
         "ticker": "ESS",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24519,10 +24533,8 @@
         "trail_stop": 290.927,
         "early_now": false,
         "last": {
-          "date": "2026-06-29",
-          "type": "rebuy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-07",
+          "type": "sell"
         }
       },
       {
@@ -24549,10 +24561,8 @@
         "trail_stop": 113.8654,
         "early_now": false,
         "last": {
-          "date": "2026-06-23",
-          "type": "buy",
-          "quality": "block",
-          "reason": "failed reclaim-and-hold"
+          "date": "2026-07-17",
+          "type": "sell"
         }
       },
       {
@@ -24565,16 +24575,14 @@
         "trail_stop": 46.4698,
         "early_now": false,
         "last": {
-          "date": "2026-06-09",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-21",
+          "type": "sell"
         }
       },
       {
         "ticker": "EXE",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
         "trail_breach": false,
@@ -24589,7 +24597,7 @@
       },
       {
         "ticker": "EXR",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24621,16 +24629,18 @@
       },
       {
         "ticker": "FANG",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
         "trail_stop": 190.4736,
         "early_now": false,
         "last": {
-          "date": "2026-04-06",
-          "type": "sell"
+          "date": "2026-07-20",
+          "type": "buy",
+          "quality": "pending",
+          "reason": "pending confirmation"
         }
       },
       {
@@ -24649,7 +24659,7 @@
       },
       {
         "ticker": "FOXA",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
@@ -24665,7 +24675,7 @@
       },
       {
         "ticker": "GD",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -24681,23 +24691,21 @@
       },
       {
         "ticker": "GE",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": true,
         "trail_stop": 351.2333,
         "early_now": false,
         "last": {
-          "date": "2026-05-05",
-          "type": "buy",
-          "quality": "block",
-          "reason": "failed reclaim-and-hold"
+          "date": "2026-07-20",
+          "type": "sell"
         }
       },
       {
         "ticker": "GEV",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24757,7 +24765,7 @@
       },
       {
         "ticker": "GOOGL",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24799,7 +24807,7 @@
       },
       {
         "ticker": "HD",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -24813,7 +24821,7 @@
       },
       {
         "ticker": "HLT",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
@@ -24827,18 +24835,16 @@
       },
       {
         "ticker": "HON",
-        "asof": "2026-06-29",
-        "state": "mixed",
+        "asof": "2026-07-15",
+        "state": "short-bias",
         "above200": true,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 232.8996,
+        "trail_stop": 227.8105,
         "early_now": false,
         "last": {
-          "date": "2026-05-21",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-06-29",
+          "type": "sell"
         }
       },
       {
@@ -24859,7 +24865,7 @@
       },
       {
         "ticker": "HSY",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": false,
@@ -24873,7 +24879,7 @@
       },
       {
         "ticker": "HWM",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": true,
@@ -24889,7 +24895,7 @@
       },
       {
         "ticker": "IBM",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": true,
@@ -24919,8 +24925,8 @@
       },
       {
         "ticker": "INTC",
-        "asof": "2026-07-15",
-        "state": "short-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
@@ -24933,7 +24939,7 @@
       },
       {
         "ticker": "IP",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -24949,7 +24955,7 @@
       },
       {
         "ticker": "IRM",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -24993,7 +24999,7 @@
       },
       {
         "ticker": "JNJ",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -25009,8 +25015,8 @@
       },
       {
         "ticker": "JPM",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -25025,7 +25031,7 @@
       },
       {
         "ticker": "KDP",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25039,8 +25045,8 @@
       },
       {
         "ticker": "KIM",
-        "asof": "2026-07-16",
-        "state": "short-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
@@ -25053,10 +25059,10 @@
       },
       {
         "ticker": "KLAC",
-        "asof": "2026-07-15",
-        "state": "short-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 226.2543,
         "early_now": false,
@@ -25067,7 +25073,7 @@
       },
       {
         "ticker": "KMB",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -25099,7 +25105,7 @@
       },
       {
         "ticker": "KO",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25113,7 +25119,7 @@
       },
       {
         "ticker": "KR",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
@@ -25129,7 +25135,7 @@
       },
       {
         "ticker": "KVUE",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -25173,7 +25179,7 @@
       },
       {
         "ticker": "LMT",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -25187,18 +25193,16 @@
       },
       {
         "ticker": "LOW",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": false,
-        "weekly_bull": true,
+        "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 212.3516,
         "early_now": false,
         "last": {
-          "date": "2026-06-11",
-          "type": "buy",
-          "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "date": "2026-07-20",
+          "type": "sell"
         }
       },
       {
@@ -25225,10 +25229,8 @@
         "trail_stop": 178.4141,
         "early_now": false,
         "last": {
-          "date": "2026-06-10",
-          "type": "buy",
-          "quality": "block",
-          "reason": "failed reclaim-and-hold"
+          "date": "2026-07-17",
+          "type": "sell"
         }
       },
       {
@@ -25281,10 +25283,10 @@
       },
       {
         "ticker": "MCK",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
-        "above200": true,
-        "weekly_bull": false,
+        "above200": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 800.2797,
         "early_now": false,
@@ -25297,7 +25299,7 @@
       },
       {
         "ticker": "MDLZ",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -25311,7 +25313,7 @@
       },
       {
         "ticker": "MDT",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -25373,23 +25375,21 @@
       },
       {
         "ticker": "MNST",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 95.5072,
         "early_now": false,
         "last": {
-          "date": "2026-04-23",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-21",
+          "type": "sell"
         }
       },
       {
         "ticker": "MO",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -25397,8 +25397,10 @@
         "trail_stop": 71.9048,
         "early_now": false,
         "last": {
-          "date": "2026-03-16",
-          "type": "sell"
+          "date": "2026-07-20",
+          "type": "buy",
+          "quality": "block",
+          "reason": "veto: bearish divergence"
         }
       },
       {
@@ -25417,7 +25419,7 @@
       },
       {
         "ticker": "MRK",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -25447,7 +25449,7 @@
       },
       {
         "ticker": "MS",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25461,21 +25463,23 @@
       },
       {
         "ticker": "MSFT",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "long-bias",
         "above200": false,
         "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 389.4233,
         "early_now": false,
         "last": {
-          "date": "2026-06-11",
-          "type": "sell"
+          "date": "2026-07-20",
+          "type": "buy",
+          "quality": "pending",
+          "reason": "pending confirmation"
         }
       },
       {
         "ticker": "MU",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -25519,7 +25523,7 @@
       },
       {
         "ticker": "NFLX",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": false,
@@ -25565,7 +25569,7 @@
       },
       {
         "ticker": "NUE",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -25595,8 +25599,8 @@
       },
       {
         "ticker": "NWSA",
-        "asof": "2026-07-16",
-        "state": "long-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -25627,7 +25631,7 @@
       },
       {
         "ticker": "OKE",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -25643,8 +25647,8 @@
       },
       {
         "ticker": "OMC",
-        "asof": "2026-07-15",
-        "state": "long-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -25687,7 +25691,7 @@
       },
       {
         "ticker": "OXY",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -25697,13 +25701,13 @@
         "last": {
           "date": "2026-07-15",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       },
       {
         "ticker": "PANW",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25735,7 +25739,7 @@
       },
       {
         "ticker": "PEG",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": false,
         "weekly_bull": true,
@@ -25827,7 +25831,7 @@
       },
       {
         "ticker": "PKG",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25849,7 +25853,7 @@
         "trail_stop": 143.6213,
         "early_now": false,
         "last": {
-          "date": "2026-07-15",
+          "date": "2026-07-20",
           "type": "buy",
           "quality": "pending",
           "reason": "pending confirmation"
@@ -25873,7 +25877,7 @@
       },
       {
         "ticker": "PM",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25889,7 +25893,7 @@
       },
       {
         "ticker": "PNC",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -25903,7 +25907,7 @@
       },
       {
         "ticker": "PPG",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -25933,7 +25937,7 @@
       },
       {
         "ticker": "PSX",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -25991,21 +25995,23 @@
       },
       {
         "ticker": "ROST",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
         "trail_stop": 228.2321,
         "early_now": false,
         "last": {
-          "date": "2026-01-21",
-          "type": "sell"
+          "date": "2026-07-21",
+          "type": "buy",
+          "quality": "pending",
+          "reason": "pending confirmation"
         }
       },
       {
         "ticker": "RTX",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -26035,7 +26041,7 @@
       },
       {
         "ticker": "SBAC",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -26049,7 +26055,7 @@
       },
       {
         "ticker": "SBUX",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -26081,7 +26087,7 @@
       },
       {
         "ticker": "SHW",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -26097,7 +26103,7 @@
       },
       {
         "ticker": "SLB",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -26111,7 +26117,7 @@
       },
       {
         "ticker": "SNDK",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -26133,14 +26139,14 @@
         "trail_stop": 95.3162,
         "early_now": false,
         "last": {
-          "date": "2026-03-24",
+          "date": "2026-07-20",
           "type": "sell"
         }
       },
       {
         "ticker": "SPG",
-        "asof": "2026-07-16",
-        "state": "short-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
@@ -26162,14 +26168,14 @@
         "early_now": false,
         "last": {
           "date": "2026-07-01",
-          "type": "buy",
+          "type": "rebuy",
           "quality": "block",
-          "reason": "counter-trend, no 200-reclaim/hold"
+          "reason": "failed reclaim-and-hold"
         }
       },
       {
         "ticker": "SRE",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": true,
         "weekly_bull": true,
@@ -26185,7 +26191,7 @@
       },
       {
         "ticker": "STLD",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "mixed",
         "above200": true,
         "weekly_bull": false,
@@ -26221,13 +26227,13 @@
         "trail_stop": 44.0273,
         "early_now": false,
         "last": {
-          "date": "2026-07-15",
+          "date": "2026-07-20",
           "type": "sell"
         }
       },
       {
         "ticker": "SYK",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": true,
@@ -26257,7 +26263,7 @@
       },
       {
         "ticker": "T",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": false,
         "weekly_bull": false,
@@ -26287,8 +26293,8 @@
       },
       {
         "ticker": "TJX",
-        "asof": "2026-07-15",
-        "state": "short-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
@@ -26317,9 +26323,9 @@
       },
       {
         "ticker": "TMO",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
-        "above200": true,
+        "above200": false,
         "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 516.5569,
@@ -26333,10 +26339,10 @@
       },
       {
         "ticker": "TMUS",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": false,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 186.5375,
         "early_now": false,
@@ -26347,7 +26353,7 @@
       },
       {
         "ticker": "TPL",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -26371,8 +26377,10 @@
         "trail_stop": 275.1593,
         "early_now": false,
         "last": {
-          "date": "2026-05-26",
-          "type": "sell"
+          "date": "2026-07-20",
+          "type": "buy",
+          "quality": "pending",
+          "reason": "pending confirmation"
         }
       },
       {
@@ -26391,7 +26399,7 @@
       },
       {
         "ticker": "TT",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -26423,7 +26431,7 @@
       },
       {
         "ticker": "TTWO",
-        "asof": "2026-07-16",
+        "asof": "2026-07-21",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -26431,7 +26439,7 @@
         "trail_stop": 239.8404,
         "early_now": false,
         "last": {
-          "date": "2026-07-16",
+          "date": "2026-07-21",
           "type": "sell"
         }
       },
@@ -26481,10 +26489,10 @@
       },
       {
         "ticker": "UNP",
-        "asof": "2026-07-16",
-        "state": "long-bias",
+        "asof": "2026-07-21",
+        "state": "mixed",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 284.5705,
         "early_now": false,
@@ -26523,12 +26531,12 @@
       },
       {
         "ticker": "VICI",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
-        "trail_breach": false,
-        "trail_stop": 26.6681,
+        "trail_breach": true,
+        "trail_stop": 26.6485,
         "early_now": false,
         "last": {
           "date": "2026-05-29",
@@ -26579,18 +26587,16 @@
       },
       {
         "ticker": "VRTX",
-        "asof": "2026-07-16",
-        "state": "mixed",
+        "asof": "2026-07-21",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": true,
         "trail_stop": 481.1254,
         "early_now": false,
         "last": {
-          "date": "2026-05-11",
-          "type": "buy",
-          "quality": "block",
-          "reason": "failed reclaim-and-hold"
+          "date": "2026-07-21",
+          "type": "sell"
         }
       },
       {
@@ -26611,10 +26617,10 @@
       },
       {
         "ticker": "VTR",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
-        "weekly_bull": false,
+        "weekly_bull": true,
         "trail_breach": false,
         "trail_stop": 92.1377,
         "early_now": false,
@@ -26625,9 +26631,9 @@
       },
       {
         "ticker": "VZ",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
-        "above200": false,
+        "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
         "trail_stop": 43.5644,
@@ -26639,18 +26645,16 @@
       },
       {
         "ticker": "WBD",
-        "asof": "2026-07-16",
-        "state": "long-bias",
-        "above200": true,
+        "asof": "2026-07-21",
+        "state": "short-bias",
+        "above200": false,
         "weekly_bull": false,
         "trail_breach": true,
         "trail_stop": 26.4116,
         "early_now": false,
         "last": {
-          "date": "2026-07-08",
-          "type": "buy",
-          "quality": "take",
-          "reason": "held confirmation"
+          "date": "2026-07-21",
+          "type": "cut"
         }
       },
       {
@@ -26671,7 +26675,7 @@
       },
       {
         "ticker": "WEC",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": true,
@@ -26717,12 +26721,12 @@
       },
       {
         "ticker": "WM",
-        "asof": "2026-07-15",
-        "state": "long-bias",
+        "asof": "2026-07-20",
+        "state": "mixed",
         "above200": true,
         "weekly_bull": true,
         "trail_breach": false,
-        "trail_stop": 229.5942,
+        "trail_stop": 230.3911,
         "early_now": false,
         "last": {
           "date": "2026-06-19",
@@ -26733,8 +26737,8 @@
       },
       {
         "ticker": "WMB",
-        "asof": "2026-07-15",
-        "state": "mixed",
+        "asof": "2026-07-20",
+        "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": false,
@@ -26747,7 +26751,7 @@
       },
       {
         "ticker": "WMT",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "mixed",
         "above200": false,
         "weekly_bull": false,
@@ -26791,7 +26795,7 @@
       },
       {
         "ticker": "XOM",
-        "asof": "2026-07-15",
+        "asof": "2026-07-20",
         "state": "long-bias",
         "above200": true,
         "weekly_bull": false,
@@ -26801,8 +26805,8 @@
         "last": {
           "date": "2026-07-15",
           "type": "buy",
-          "quality": "pending",
-          "reason": "pending confirmation"
+          "quality": "take",
+          "reason": "held confirmation"
         }
       }
     ]
@@ -26844,7 +26848,7 @@
     "favor_entries": true,
     "cap_leadership": false,
     "vol_regime": "normalizing",
-    "vol_ts_slope": 0.852,
+    "vol_ts_slope": 0.908,
     "vol_ts_slope_state": "contango",
     "subsector_rotation_sides": null,
     "donor_unwind_state": null,
@@ -26968,8 +26972,8 @@
         "basis": "MRS",
         "computed": true,
         "risk_on": 0.73,
-        "ms_verdict": "RISK_ON",
-        "radar_state": "watch"
+        "ms_verdict": "MIXED",
+        "radar_state": "caution"
       },
       "fused_gate_shadow": {
         "basis": "fused_risk",

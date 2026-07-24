@@ -224,6 +224,8 @@ desk_network:
       kind: branded
       beat: "What changed and why it matters"
       voice: "authoritative desk"
+      handle: "mastermindx001"   # the one desk with a real X account today
+      enabled: true              # a real account exists → generate + (can) post
       # Per-account kill-switch: uncomment to disable this account's items in the sentinel gate.
       # disabled: true
       # created: YYYY-MM-DD   # fill at account creation — drives ramp tier lookup (D02)
@@ -243,6 +245,7 @@ desk_network:
       kind: branded
       beat: "Visual evidence + public report card"
       voice: "dry, receipts-forward"
+      enabled: false             # no real X account yet → planned (no queue, no posting)
       # Receipts: signals-first; receipt + chart secondary; accountability desk
       tilt:
         signal: 0.38
@@ -259,6 +262,7 @@ desk_network:
       kind: branded
       beat: "Rotating high-attention sector"
       voice: "specialist"
+      enabled: false             # no real X account yet → planned (no queue, no posting)
       # Theme: signals-first; theme_list + mover boost for group reach
       tilt:
         signal: 0.39
@@ -275,6 +279,7 @@ desk_network:
       kind: generic
       beat: "Macro/rates/liquidity explainers"
       voice: "educational"
+      enabled: false             # no real X account yet → planned (no queue, no posting)
       # Research A: signals-first; education secondary; chart-rich explainer desk
       tilt:
         signal: 0.36
@@ -291,6 +296,7 @@ desk_network:
       kind: generic
       beat: "Single-stock why-is-it-moving fast desk"
       voice: "fast, reactive"
+      enabled: false             # no real X account yet → planned (no queue, no posting)
       # Research B: highest signal weight; max mover + theme_list for reach
       tilt:
         signal: 0.42
@@ -307,6 +313,7 @@ desk_network:
       kind: generic
       beat: "Charts + historical analogues"
       voice: "pattern/history"
+      enabled: false             # no real X account yet → planned (no queue, no posting)
       # Research C: signals-first; chart + watchlist secondary; pattern context desk
       tilt:
         signal: 0.37

@@ -708,8 +708,14 @@ def content_plan(
         render_chart_v2,
     )
 
-    dn_cfg = (cfg or {}).get("desk_network", {}) or {}
-    raw_accounts = dn_cfg.get("accounts", []) or []
+    # Iterate the EFFECTIVE account list (engine.marketing.accounts): only
+    # accounts with a real X account behind them (enabled) get a generated queue.
+    # A disabled/planned account still appears in the plan (so the admin lists it,
+    # status "planned") but with an EMPTY queue — no drafted content and, downstream,
+    # no Sentinel load. This kills the ~85-item nightly cadence_cap_daily noise at
+    # the source: the gate was quarantining content for 5 desks that don't exist.
+    from engine.marketing.accounts import effective_accounts as _eff_accounts
+    eff_accounts = _eff_accounts(cfg, root)
 
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = now_str[:10]
@@ -718,11 +724,35 @@ def content_plan(
     all_items: list[ContentItem] = []
     account_rows: list[dict] = []
 
-    for acct_cfg in raw_accounts:
+    for acct_cfg in eff_accounts:
         acct_id = acct_cfg.get("id", "unknown")
         tilt_cfg = acct_cfg.get("tilt", {})
         voice = acct_cfg.get("voice", "authoritative desk")
         kind = acct_cfg.get("kind", "generic")
+
+        # Effective tilt — from config or default (computed for every account so
+        # the admin can show the intended mix even for planned, unqueued desks).
+        eff_tilt = dict(_DEFAULT_TILT)
+        if tilt_cfg:
+            for k in _TYPE_IDS:
+                if k in tilt_cfg:
+                    eff_tilt[k] = float(tilt_cfg[k])
+        total_w = sum(eff_tilt.values()) or 1.0
+        eff_tilt = {k: round(v / total_w, 3) for k, v in eff_tilt.items()}
+
+        # Planned (not enabled): list it, but draft NOTHING for it.
+        if not acct_cfg.get("enabled"):
+            account_rows.append({
+                "id": acct_id,
+                "name": acct_cfg.get("beat", acct_id),
+                "kind": kind,
+                "voice": voice,
+                "tilt": eff_tilt,
+                "mix_observed": {},
+                "queue": [],
+                "status": "planned",
+            })
+            continue
 
         items = plan_account(
             account=acct_cfg,
@@ -735,14 +765,6 @@ def content_plan(
         all_items.extend(items)
 
         mix = content_mix(items)
-        # Effective tilt — from config or default
-        eff_tilt = dict(_DEFAULT_TILT)
-        if tilt_cfg:
-            for k in _TYPE_IDS:
-                if k in tilt_cfg:
-                    eff_tilt[k] = float(tilt_cfg[k])
-        total_w = sum(eff_tilt.values()) or 1.0
-        eff_tilt = {k: round(v / total_w, 3) for k, v in eff_tilt.items()}
 
         account_rows.append({
             "id": acct_id,
@@ -753,6 +775,14 @@ def content_plan(
             "mix_observed": mix,
             "queue": [item.as_dict() for item in items],
         })
+
+    # Reach content (confluence + publish-time mover/theme) may ONLY be assigned
+    # to accounts that will actually post — never to a planned (disabled) desk,
+    # or the Sentinel would carry content for a desk that doesn't exist (F3d). A
+    # planned row keeps its empty queue; enabled_rows drives every reach-item
+    # placement below. Falls back to all rows only if nothing is enabled (so a
+    # fully-planned network still produces a plan rather than crashing).
+    enabled_rows = [r for r in account_rows if r.get("status") != "planned"] or account_rows
 
     # Select featured charts: ≤2 per account, max 6 Prophet + up to 2 confluence = 8 total.
     # Only with closes. Eligibility gate always applies.
@@ -963,12 +993,13 @@ def content_plan(
             # Dedupe tickers already used by Prophet charts
             prophet_chart_tickers = {fc["ticker"] for fc in featured_charts}
 
-            # Use first account's voice for confluence posts (or authoritative desk)
+            # Use the first ENABLED account's voice for confluence posts (a
+            # planned desk must not own reach content — F3d).
             conf_voice = (
-                account_rows[0].get("voice", "authoritative desk")
-                if account_rows else "authoritative desk"
+                enabled_rows[0].get("voice", "authoritative desk")
+                if enabled_rows else "authoritative desk"
             )
-            conf_account_id = account_rows[0].get("id", "confluence") if account_rows else "confluence"
+            conf_account_id = enabled_rows[0].get("id", "confluence") if enabled_rows else "confluence"
 
             conf_item_counter = 1
             for sig in all_fired:
@@ -1091,9 +1122,10 @@ def content_plan(
                         conf_charts_added += 1
                         prophet_chart_tickers.add(conf_ticker)
 
-                # Add to the first account's queue (additive)
-                if account_rows:
-                    account_rows[0]["queue"].append(conf_item.as_dict())
+                # Add to the first ENABLED account's queue (additive) — matches
+                # conf_account_id above; a planned desk never receives it.
+                if enabled_rows:
+                    enabled_rows[0]["queue"].append(conf_item.as_dict())
 
                 all_items.append(conf_item)
                 confluence_posts_added.append({
@@ -1188,7 +1220,7 @@ def content_plan(
                 _mover_item_dict = {
                     "id": f"post-mover-{_mover_item_counter:03d}",
                     "type": "mover",
-                    "account": account_rows[0]["id"] if account_rows else "flagship",
+                    "account": enabled_rows[0]["id"] if enabled_rows else "flagship",
                     "cashtag": f"${_mv_ticker}",
                     "ticker": _mv_ticker,
                     "headline": _mv_headline,
@@ -1222,7 +1254,7 @@ def content_plan(
                 _tl_item_dict = {
                     "id": f"post-theme-{_mover_item_counter:03d}",
                     "type": "theme_list",
-                    "account": account_rows[0]["id"] if account_rows else "flagship",
+                    "account": enabled_rows[0]["id"] if enabled_rows else "flagship",
                     "cashtag": _cashtags[0] if _cashtags else "",
                     "cashtags": _cashtags,
                     "ticker": "",
@@ -1301,8 +1333,10 @@ def content_plan(
             # mover (different cashtags => inherently distinctness-safe, no
             # substantially-similar cross-account risk). Cold-start reach comes
             # from breadth of coverage across the network, not one desk.
-            if account_rows:
-                _n_acct = len(account_rows)
+            if enabled_rows:
+                # Round-robin across ENABLED desks only — a planned desk must
+                # never receive reach content (F3d).
+                _n_acct = len(enabled_rows)
                 # Interleave movers and themes so early desks get a mix.
                 from itertools import zip_longest as _zip_longest  # noqa: PLC0415
                 _reach_items = []
@@ -1312,7 +1346,7 @@ def content_plan(
                     if _m is not None:
                         _reach_items.append(_m)
                 for _idx, _item in enumerate(_reach_items):
-                    _acct = account_rows[_idx % _n_acct]
+                    _acct = enabled_rows[_idx % _n_acct]
                     _item["account"] = _acct.get("id", "flagship")
                     _acct["queue"].append(_item)
 
@@ -1451,9 +1485,11 @@ def content_plan(
             if _pt and _pt not in _plan_by_ticker:
                 _plan_by_ticker[_pt] = _p
 
-        # Build account id → acct_cfg lookup for persona resolution
+        # Build account id → acct_cfg lookup for persona resolution (from the
+        # effective account list — raw_accounts was replaced by eff_accounts when
+        # the enabled/planned split landed).
         _acct_cfg_by_id: dict[str, dict] = {
-            a.get("id", ""): a for a in raw_accounts
+            a.get("id", ""): a for a in eff_accounts
         }
 
         for acct_row in account_rows:
