@@ -790,6 +790,38 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": "account must be a string"}, 400)
                 return self._json(marketing.publisher_dryrun(account=account))
 
+            # Sentinel: record an operator exception for one held post. Writes an
+            # append-only row that the NEXT nightly gate reads — nothing posts now.
+            if path == "/api/marketing/sentinel/allow":
+                item_id = b.get("item_id")
+                reason = b.get("reason")
+                if not isinstance(item_id, str) or not item_id.strip():
+                    return self._json({"ok": False, "error": "item_id required"}, 400)
+                if not isinstance(reason, str) or not reason.strip():
+                    return self._json({"ok": False,
+                                       "error": "reason required — say why this post is safe to allow"}, 400)
+                res = marketing.sentinel_allow(item_id, reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # Desk on/off: merge-write the override file, then try to commit+push it.
+            # Refused in deployed mode (same as /api/git/commit — the VPS admin has
+            # no working tree to commit from; the file must land via a local push).
+            if path == "/api/marketing/accounts/toggle":
+                if settings.deployed():
+                    return self._json({"ok": False, "error":
+                                       "not available in deployed mode — the override file is "
+                                       "committed from a local checkout, not the VPS"}, 400)
+                account_id = b.get("account_id")
+                if not isinstance(account_id, str) or not account_id.strip():
+                    return self._json({"ok": False, "error": "account_id required"}, 400)
+                if "enabled" not in b or not isinstance(b.get("enabled"), bool):
+                    return self._json({"ok": False, "error": "enabled must be a boolean"}, 400)
+                note = b.get("note")
+                if note is not None and not isinstance(note, str):
+                    return self._json({"ok": False, "error": "note must be a string"}, 400)
+                res = marketing.accounts_toggle(account_id, b.get("enabled"), note=note)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             if path == "/api/orchestrator/chat":
                 return self._json(orchestrator_chat.chat(b.get("message", ""),
                                                          history=b.get("history")))
