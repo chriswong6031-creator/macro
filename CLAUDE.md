@@ -33,6 +33,7 @@ A spawned/chipped session starts with ONLY its prompt + the target repo's CLAUDE
 4. **No self-merge on first pass** of flagship UI — the PR waits, with its visual artifact, for operator/orchestrator review.
 5. **Masterplans for user-facing builds carry ACCEPTANCE GATES as §0** at the top of the file, not buried mid-doc.
 6. **Audit the target repo's CLAUDE/AGENTS file before spawning** — if it carries no design/verification laws, fix that first (charting-app `terminal/AGENTS.md` got its laws 2026-07-23).
+7. **The build surface follows the FUNNEL, not the plumbing** — where the auth/billing machinery lives never decides where the user experience lives (onboarding sheet belonged to the landing, not the terminal app).
 
 ## House laws (short list; details in research/ masterplans)
 
