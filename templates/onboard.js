@@ -548,7 +548,10 @@
         sb.auth.signInWithPassword({ email: S.email, password: S.password }).then(function (r) {
           if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
           // success — close the sheet; the page's signed-in chrome updates via MDXAuth.onChange
-          S.password = ""; stashClear(); closeSheet();
+          S.password = ""; stashClear();
+          var rt = retTarget();
+          if (rt) { location.href = rt; return; }
+          closeSheet();
         });
         return;
       }
@@ -993,7 +996,12 @@
     term.addEventListener("click", function () { window.open(TERMINAL_URL, "_blank", "noopener"); });
     el.foot.appendChild(term);
     var dash = T("button", "obm-btn", "openDashboard", { type: "button" });
-    dash.addEventListener("click", function () { stashClear(); closeSheet(); });
+    dash.addEventListener("click", function () {
+      stashClear();
+      var rt = retTarget();
+      if (rt) { location.href = rt; return; }
+      closeSheet();
+    });
     el.foot.appendChild(dash);
     return root;
   }
@@ -1035,6 +1043,16 @@
     document.documentElement.style.overflow = "hidden";
     render();
     stashSave();
+  }
+  // The registration wall 302s guests to /?signin=1&ret=<path>; after a
+  // successful sign-in (or finishing signup) return them to that page.
+  // Same-origin PATHS only — never navigate off-origin from a query param.
+  function retTarget() {
+    try {
+      var p = new URLSearchParams(location.search).get("ret");
+      if (p && p.charAt(0) === "/" && p.slice(0, 2) !== "//") return p;
+    } catch (e) { /* ignore */ }
+    return "";
   }
   function closeSheet() {
     if (!el.scrim) return;
