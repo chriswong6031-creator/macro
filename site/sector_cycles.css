@@ -50,6 +50,39 @@ body { background: var(--bg); color: var(--text); }
 @media (min-width: 881px) { #sc-chart { height: 600px; } }
 @media (min-width: 1400px) { #sc-chart { height: 660px; } }
 @media (max-width: 880px) { #sc-chart { height: min(56vh, 440px); } }
+
+/* ---- first-paint loading skeleton -------------------------------------- */
+/* #sc-chart already reserves its height above, so there's no reflow when mm_charts appends the
+   SVG (H = clientHeight || data-h — clientHeight is the CSS height here). This only paints a
+   loading affordance INTO that reserved box so users don't stare at a blank void while the core
+   data + engine + orchestrator download. The :empty rule vanishes the instant mm_charts appends
+   the <svg>. Tokens only (--panel/--line/--muted) — no new palette. */
+#sc-chart:empty {
+  position: relative;
+  border-radius: 12px;
+  background:
+    linear-gradient(100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--panel) 55%, transparent) 40%,
+      color-mix(in srgb, var(--line) 40%, transparent) 50%,
+      color-mix(in srgb, var(--panel) 55%, transparent) 60%,
+      transparent 100%),
+    color-mix(in srgb, var(--panel) 35%, transparent);
+  background-size: 220% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  animation: sc-chart-shimmer 1.5s ease-in-out infinite;
+}
+#sc-chart:empty::after {
+  content: "Loading the cycle map…";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; letter-spacing: .01em;
+}
+html[data-lang="zh"] #sc-chart:empty::after { content: "周期图加载中…"; }
+@keyframes sc-chart-shimmer { 0% { background-position: 120% 0, 0 0; } 100% { background-position: -120% 0, 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  #sc-chart:empty { animation: none; background: color-mix(in srgb, var(--panel) 35%, transparent); }
+}
 /* let the hero breathe + lift the chart inside its card */
 .sc-page .cyc-hero { padding: 18px 18px 12px; }
 

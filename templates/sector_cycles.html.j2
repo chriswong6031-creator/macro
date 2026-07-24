@@ -17,6 +17,15 @@
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">
+{# Preload the critical path (core data + engine + orchestrator) so they download in PARALLEL;
+   prefetch the after-first-paint chunks. optimize_assets stamps ?v=<hash> on these hrefs post-render
+   → immutable edge cache; sector_cycles.js vUrl() reuses the stamped/preloaded response. #}
+<link rel="preload" href="sector_cycles_data.js" as="script">
+<link rel="preload" href="mm_charts.js" as="script">
+<link rel="preload" href="sector_cycles.js" as="script">
+<link rel="prefetch" href="sector_cycles_series_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_dna_data.js" as="script">
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
@@ -96,8 +105,8 @@
 </div>
 
 <script src="sector_cycles_data.js"></script>
-<script src="mm_charts.js?v=4"></script>
-<script>window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];</script>
+<script src="mm_charts.js"></script>
+<script>window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];window.SC_SERIES_DATA='sector_cycles_series_data.js';</script>
 <script src="sector_cycles.js"></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
 <script src="theme.js"></script>

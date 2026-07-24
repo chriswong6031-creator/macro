@@ -112,6 +112,9 @@ on:
       - "site/cycle_ontology.js"
       - "engine/cycle_forward_log.py"
       - "tests/test_cycle_forward_log.py"
+      # perf: cycle-map payload splitter (core + lazy series chunk)
+      - "scripts/_cycles_payload.py"
+      - "tests/test_cycles_payload_split.py"
       - "engine/grading_stats.py"
       - "tests/test_grading_stats.py"
       # W3.6 cross-page cycle-consistency gate (R3-M3): same instrument must show the
@@ -992,6 +995,22 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: forward-log writer contract tests (keep-FIRST, cone edges, never-raise)
         run: python -m pytest tests/test_cycle_forward_log.py -q
+
+  cycles-payload-split:
+    # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
+    # usd_record) off the cycle-map payload into a lazy-hydrated series chunk. A regression
+    # here (wrong family stripped, lossy split, or input mutation) would corrupt every cycle
+    # page's data or the full features json. Pure-Python, no engine deps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: cycles payload split contract tests (lossless recombine, no-mutate, family rules)
+        run: python -m pytest tests/test_cycles_payload_split.py -q
 
   cycle-grading-stats:
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one
