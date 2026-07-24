@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-24T16:15:16.965891+00:00",
-  "count": 60,
+  "generated_at": "2026-07-24T16:29:22.135630+00:00",
+  "count": 62,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
@@ -13,6 +13,46 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-s7texszbvn1-e4139e",
+      "title": "JPM US Market Intell | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-24T16:26:10Z",
+      "summary_points": [
+        "**Oil Disruption Pricing**: Each additional month of disruption adds $7-8/bbl to Brent; extended conflict could push prices above $4.50, with gasoline prices nearing $4.20/$4.50 triggering political intervention thresholds.",
+        "**Geopolitical Supply Shock**: Strait of Hormuz traffic at 50% (vs 73% expected) due to Houthi blockade, with pipeline re-routing vulnerable to disruptions, driving Brent $13 above fair value ($87).",
+        "**Tariff Policy Shift**: New 10-12.5% Section 301 tariffs on imports (capped at 12.5% for Mexico/UK/Canada/etc.), introducing trade flow risks for import-dependent sectors amid Section 122 tariff expiry (July 24).",
+        "**Eurozone PMI Surprise**: Manufacturing/services PMI at 51.9 (vs 50.2 survey, 50.0 prior) triggered \"everything rally,\" outperforming D1 baskets (Software +2.6%, Ceasefire +1.3%).",
+        "**Critical Data Catalysts**: US PMI (July 24), Home Sales (July 24), and Eurozone/UK/Japan PMIs/CPI (July 23-24) drive near-term market direction and trade policy risk assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lu8t6ndgkpg-7a0813",
+      "title": "Meta July 24",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-24T16:14:03Z",
+      "summary_points": [
+        "**Revenue Beat & Guidance**: Q2 revenue $60.5bn (27% y/y, above consensus), 3Q guidance $64bn (25-26% y/y); driven by ad demand recovery post-Iran conflict and new verticals (GLP-1/peptide).",
+        "**AI Monetization Catalysts**: Muse Spark/Muse Image releases enable LLM-native ads and subscriptions ($7.99-$49.99 tiers), with $4.5-$15.6bn FY27 revenue potential from direct monetization.",
+        "**Capex & Capacity Expansion**: FY26 capex $125-$145bn; capacity growth (7GW→14GW) via Hyperion/internal silicon supports $210-$265bn revenue by 2027, reducing stranded-asset risk.",
+        "**Valuation Undervaluation**: Current $800 price target undervalues expanding monetization (subscriptions, APIs, cloud) and ad franchise resilience, with operating income +11.4% y/y.",
+        "**FCF & Cash Generation**: Q2 FCF $8.55bn (+64.2% y/y), driven by ad durability and direct monetization, supporting valuation upside."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-n9bbznete6s-da51a1",
       "title": "2026 07 24 Rearming Britain's Supply Side en",
