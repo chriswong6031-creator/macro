@@ -144,6 +144,28 @@ def main():
                     "washed": " ".join(washed) or "\u2014"})
     L.append(md_table(att))
 
+    # ── environment tags (descriptive; operator conditioner hypothesis 07-24:
+    # "2022 is a midterm year and was a rate hike year") ─────────────────────
+    L.append("\n## Environment tags \u2014 basket S1-A signals (descriptive only)\n")
+    L.append("policy = \u0394FFR over prior ~6mo (DFF, house store): hiking \u2265 +25bp \u00b7 "
+             "cutting \u2264 \u221225bp \u00b7 else flat. midterm = US midterm election year. "
+             "Tags are census description, NOT a fitted filter (prereg \u00a72c).\n")
+    try:
+        dff = pd.read_parquet(ROOT / "data" / "fred" / "DFF.parquet").iloc[:, 0]
+        env_rows = []
+        for tdate in two_a.index[sig_b.fillna(False)]:
+            d_bp = float(dff.asof(tdate)) - float(dff.asof(tdate - pd.Timedelta(days=182)))
+            pol = "hiking" if d_bp >= 0.25 else ("cutting" if d_bp <= -0.25 else "flat")
+            st = fwd_stats(daily, tdate)
+            good = st.get("fwd63", -99) > 0 and st.get("adverse", -99) > -10
+            env_rows.append({"date": str(tdate.date()),
+                             "lens": "GOOD" if good else "not-good",
+                             "midterm_yr": tdate.year % 4 == 2, "policy": pol,
+                             "dFFR_6m_bp": int(round(d_bp * 100))})
+        L.append(md_table(env_rows))
+    except Exception as e:  # noqa: BLE001 — store-optional, fail-open
+        L.append(f"_(DFF store unavailable \u2014 tags skipped: {e})_\n")
+
     # current state (the "are we washed out NOW" read)
     L.append("\n## Current state (as of last store close)\n")
     for nm, bars in [("2W anchor A", two_a), ("2W anchor B", two_b)]:

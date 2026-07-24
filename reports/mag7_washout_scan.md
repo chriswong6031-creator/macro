@@ -301,6 +301,27 @@ GOOD lens (descriptive, prereg §2): fwd63 > 0 AND adverse > −10%.
 | 2026-04-10 | 7 | AAPL MSFT NVDA AMZN GOOGL META TSLA |
 
 
+## Environment tags — basket S1-A signals (descriptive only)
+
+policy = ΔFFR over prior ~6mo (DFF, house store): hiking ≥ +25bp · cutting ≤ −25bp · else flat. midterm = US midterm election year. Tags are census description, NOT a fitted filter (prereg §2c).
+
+| date | lens | midterm_yr | policy | dFFR_6m_bp |
+|---|---|---|---|---|
+| 2016-02-26 | GOOD | False | flat | 23 |
+| 2018-05-04 | GOOD | True | hiking | 54 |
+| 2019-01-11 | GOOD | False | hiking | 49 |
+| 2020-05-01 | GOOD | False | cutting | -152 |
+| 2021-04-16 | GOOD | False | flat | -2 |
+| 2021-06-25 | GOOD | False | flat | 1 |
+| 2022-03-18 | not-good | True | hiking | 25 |
+| 2022-06-24 | not-good | True | hiking | 150 |
+| 2022-11-11 | not-good | True | hiking | 300 |
+| 2023-01-20 | GOOD | False | hiking | 275 |
+| 2024-09-13 | GOOD | False | flat | 0 |
+| 2025-04-25 | GOOD | False | cutting | -50 |
+| 2026-04-10 | GOOD | True | cutting | -46 |
+
+
 ## Current state (as of last store close)
 
 - 2W anchor A: Stoch-RSI K=55.1 D=56.4 (washout floor 20 — not washed out)

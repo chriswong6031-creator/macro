@@ -64,10 +64,22 @@ all reproduce in our stores.
 
 **The open question phase-0 does NOT answer**: the 2022-class conditioner. Three failure
 instances are not fitting material — any "bear-regime guard" tuned on them would be
-overfit-on-the-overfit. Candidate conditioners for a phase-1 study (each needs its own
-prereg discipline, multiplicity-counted): drawdown-from-ATH depth at signal; the house
-risk band; weekly+monthly structure per postmortem rule R2 (note: the 2022 cluster IS
-R2's evidence from the long side — these may unify into one higher-timeframe law).
+overfit-on-the-overfit. The NAMED candidate list below is the phase-1 comparison budget
+(multiplicity-counted; adding a candidate = amendment):
+
+1. **Policy-direction / tightening-speed regime** (operator hypothesis 2026-07-24:
+   "2022 … was a rate hike year"): ΔFFR over trailing ~6mo from the house DFF store;
+   see §2c tags.
+2. **Election-cycle position — as MODULATOR ONLY** (operator: "2022 is a midterm
+   year"): prior art REQUIRES this form — "Election / midterm cycle as standalone
+   signal: REFUTED — survives only as US-only Risk-Radar modulator" (registry §2), and
+   hard-wiring a midterm gate without adjudication is a FORBIDDEN pattern (registry §1,
+   "midterm-blackout gate" laundering row, BTC-vector audit). It enters through this
+   prereg's phase-1 or not at all.
+3. **Weekly+monthly structure veto** (postmortem rule R2 — the 2022 cluster is R2's
+   evidence from the long side; may unify with #1).
+4. **Drawdown depth/duration at signal** (fast-shock V-bottoms 2019/2020/2023 vs the
+   2022 slow grind).
 
 ## §2b. Per-member census (phase-0b, operator ask 2026-07-24 — "which stocks does it
 work on, which are noise / a different beast")
@@ -103,6 +115,25 @@ Findings (descriptive; no per-name authority is created here):
    ALSO ran 5-7/7. Breadth therefore CANNOT be the 2022-class conditioner (§2's open
    question stands as a regime question, not a breadth question). Breadth ≥4/7 is
    retained ONLY as an alternative arming condition, never as a quality filter.
+
+## §2c. Environment tags on the S1-A census (descriptive; conditioner hypothesis)
+
+Every basket S1-A signal tagged with midterm-year + trailing-6mo ΔFFR (DFF store;
+full table in the report). The honest reading at n=13:
+
+- **All three failures sit in the midterm ∧ hiking cell** (2022-03/06/11 at +25/+150/
+  +300bp) — the operator's environment claim has real support;
+- **but the cell contains a winner** (2018-05, midterm + hiking +54bp, +12.8% fwd63),
+  hiking-alone is 3 GOOD / 3 bad (2019-01 +49bp and 2023-01 at +275bp trailing — the
+  terminal-hike pivot — were among the best entries), and
+- **2026-04 is itself a midterm-year washout that WORKED — with the Fed cutting
+  (−46bp)**: the cleanest single illustration that 2022's poison was the environment
+  conjunction, not the calendar year.
+
+No threshold is fitted here. Instead the ENGINE now stamps every forward trigger with
+`midterm_yr` / `policy` / `dffr_6m_bp` AT FIRE TIME (hindsight-proof); the phase-1
+conditioner adjudication runs on those stamped forward triggers plus this census under
+one pre-stated ruler.
 
 ## §3. What accrues now (display-tier, freely)
 

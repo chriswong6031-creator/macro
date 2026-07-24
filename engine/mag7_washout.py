@@ -103,6 +103,25 @@ def cross_up(a: pd.Series, b: pd.Series) -> pd.Series:
     return (a > b) & (a.shift() <= b.shift())
 
 
+def _env_tags(root: Path | None, when: pd.Timestamp) -> dict:
+    """Fire-time environment tags for the conditioner hypothesis (prereg §2c —
+    operator 2026-07-24: '2022 is a midterm year and was a rate hike year').
+    Recorded AT trigger time so phase-1 grading is hindsight-proof. Fail-open:
+    absent DFF store → policy tags omitted, midterm flag always present."""
+    out: dict = {"midterm_yr": bool(when.year % 4 == 2)}
+    try:
+        dff = pd.read_parquet(
+            (root if root is not None else config.data_dir()) / "fred" / "DFF.parquet"
+        ).iloc[:, 0]
+        d_bp = float(dff.asof(when)) - float(dff.asof(when - pd.Timedelta(days=182)))
+        out["dffr_6m_bp"] = int(round(d_bp * 100))
+        out["policy"] = ("hiking" if d_bp >= 0.25 else
+                         "cutting" if d_bp <= -0.25 else "flat")
+    except Exception as e:  # noqa: BLE001 — store-optional
+        log.debug("mag7_washout env tags unavailable (%s)", e)
+    return out
+
+
 def _members_washed(root: Path | None) -> tuple[int, dict[str, float]]:
     per = {}
     for t in M7:
@@ -136,10 +155,13 @@ def snapshot(root: Path | None = None, write: bool = True) -> dict | None:
         s1_cross = (cross_up(k2, d2) & (k2.shift() < WASHOUT_FLOOR)).fillna(False)
         s3_cross = (cross_up(line3, sig3) & (line3 < 0)).fillna(False)
         triggers: list[dict] = []
+        env = _env_tags(root, daily.index[-1])
         if bool(s1_cross.iloc[-1]):
-            triggers.append({"tf": "2W_stochrsi", "date": str(bars2w.index[-1].date())})
+            triggers.append({"tf": "2W_stochrsi",
+                             "date": str(bars2w.index[-1].date()), **env})
         if armed and bool(s3_cross.iloc[-1]):
-            triggers.append({"tf": "3D_rsimacd", "date": str(three_day_bars(daily).index[-1].date())})
+            triggers.append({"tf": "3D_rsimacd",
+                             "date": str(three_day_bars(daily).index[-1].date()), **env})
 
         state = "triggered" if triggers else ("washed_out" if basket_washed else "idle")
         out = {
