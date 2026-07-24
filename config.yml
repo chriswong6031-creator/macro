@@ -32,7 +32,7 @@ prophet:
   autopsy_cap_per_cycle: 12
   # PR-R8: Fable deliberation grant for Prophet/standout-audit lanes.
   # Set false to force all lanes back to claude-opus-4-8.
-  fable_enabled: true
+  fable_enabled: false
   # Daily deliberation token budget. When today's usage (by_model for the
   # deliberation model prefix) reaches this cap, all lanes fall back to
   # claude-opus-4-8 for the rest of the day.
