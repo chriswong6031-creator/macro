@@ -402,7 +402,8 @@ html.still{scroll-behavior:auto}
 .ph-track{display:flex;width:max-content;padding-left:clamp(20px,4.5vw,60px)}
 .ph-set{display:flex;gap:14px;padding-right:14px}
 .ph-track.run{animation:phDrift 95s linear infinite}
-.ph-track.ps,.ph-clip:hover .ph-track.run{animation-play-state:paused}
+.ph-track.ps{animation-play-state:paused}
+/* hover no longer pauses the belt — JS eases playbackRate to .7 instead (seamless) */
 /* loop distance = one measured set width (--phsw, set by the renderer) so the
    lead-in gutter never causes a seam jump */
 @keyframes phDrift{to{transform:translateX(calc(-1 * var(--phsw, 50%)))}}
