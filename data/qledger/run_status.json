@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-07-24T00:33:36.496722+00:00",
-  "as_of": "2026-07-23",
-  "n_open": 25559,
-  "n_graded_today": 436,
-  "n_blocked_by_coverage": 24744,
+  "generated_at": "2026-07-24T09:14:06.324385+00:00",
+  "as_of": "2026-07-24",
+  "n_open": 25633,
+  "n_graded_today": 98,
+  "n_blocked_by_coverage": 24757,
   "n_ungradeable": 0,
-  "n_already_graded": 23916,
+  "n_already_graded": 24352,
   "dry_run": false,
   "w6_readiness": {
     "n_families_ready": 0,
@@ -19,7 +19,7 @@
     "grader_quiet_days": 0
   },
   "regime_stamp_backfill": {
-    "n_claims": 25560,
+    "n_claims": 25634,
     "n_backfilled": 0,
     "n_unstamped": 5773,
     "n_precoverage": 3633
