@@ -38,6 +38,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                neural_web,
                orchestrator_chat,
                prophet,
+               revenue,
                services, settings, site_gate, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
@@ -615,6 +616,13 @@ class Handler(BaseHTTPRequestHandler):
                     search=(q.get("search") or q.get("q") or [None])[0],
                     page=_int_param(q, "page", 1, 1, 100_000),
                     page_size=_int_param(q, "page_size", 50, 1, 200)))
+            # revenue analytics (billing/revenue suite): MRR/ARR, sub counts, real collected
+            # cash, forward projections, and comp give-away counts — computed live from Stripe
+            # (Subscription/Invoice + the entitlements comp read), ~60s in-process cache. ?force=1
+            # busts the cache for a fresh pull. Stripe unconfigured → {ok:false} (honest empty state).
+            if path == "/api/revenue":
+                force = (q.get("force") or ["0"])[0] in ("1", "true", "yes")
+                return self._json(revenue.summary(force=force))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())

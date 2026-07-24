@@ -143,6 +143,7 @@ const ICONS = {
   mastermind_ai: NAV_ICO('<rect x="5" y="7" width="14" height="12" rx="2.5"/><circle cx="9.5" cy="12.5" r="1.2"/><circle cx="14.5" cy="12.5" r="1.2"/><path d="M12 7V4M12 4h.01M9 16h6"/>'),
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
+  revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
   /* Marketing lobe icons */
   marketing_overview:    NAV_ICO('<path d="M3 17V8l5-3 4 2 5-3v9l-5 3-4-2-5 3Z"/><path d="M8 5v9M12 7v9M17 4v9"/>'),
   marketing_departments: NAV_ICO('<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="5" height="4" rx="1"/><rect x="9" y="15" width="5" height="4" rx="1"/><rect x="17" y="15" width="5" height="4" rx="1"/><path d="M12 7v4M4.5 15v-3h15v3"/>'),
@@ -163,7 +164,7 @@ const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
-  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
+  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
@@ -1625,6 +1626,129 @@ async function entRemoveGo(i) {
   const u = ENT.rows[i];
   if (!confirm(`Revert ${u.email || u.user_id} to Free?`)) return;
   await _entPost({ user_id: u.user_id, action: "remove_comp", params: { ..._entForceParams() } }, "reverted to free");
+}
+
+/* ---- REVENUE (Stripe billing/revenue analytics) ------------------------- */
+/* One live payload from /api/revenue (MRR/ARR, sub counts, real cash, projections, comps).
+   Mirrors the entitlements panel idiom: own fetch, not-connected card on !ok, palette classes. */
+RENDER.revenue = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div id="revBody"><div class="spin">loading…</div></div>`;
+  await revLoad();
+};
+
+async function revLoad(force) {
+  const body = $("#revBody");
+  if (!body) return;
+  const d = await api("/api/revenue" + (force ? "?force=1" : ""));
+  if (!d.ok) {
+    body.innerHTML = `<div class="card"><h3>Revenue — not connected</h3>
+      <div class="sub">${esc(d.error === "stripe not configured"
+        ? "Stripe is not configured on this server (STRIPE_SECRET_KEY unset). Revenue analytics read live from Stripe; set the key in /etc/macro-api.env to enable this panel."
+        : (d.error || d.reason || "could not load"))}</div></div>`;
+    return;
+  }
+
+  const nowB = d.now || {}, mrr = d.mrr || {}, coll = d.collections || {}, proj = d.projections || {}, comps = d.comps || {};
+
+  // ---- headline cards -----------------------------------------------------
+  const cash30 = (coll.windows_usd || {})["30d"];
+  const cash90 = (coll.windows_usd || {})["90d"];
+  const cards = `
+    <div class="grid">
+      ${card("MRR", `<div class="big">${fmtUSD(mrr.mrr_usd)}</div><div class="sub">monthly recurring · from live Stripe amounts</div>`)}
+      ${card("ARR", `<div class="big">${fmtUSD(mrr.arr_usd)}</div><div class="sub">12 × MRR</div>`)}
+      ${card("Paid subscriptions", `<div class="big">${fmtNum(nowB.active_total)}</div><div class="sub">${fmtNum(nowB.canceled_this_month)} canceled this month</div>`)}
+      ${card("Trialing", `<div class="big">${fmtNum(nowB.trialing)}</div><div class="sub">${fmtUSD(mrr.trialing_pending_usd)}/mo pending · ${fmtNum(nowB.trialing_convert_within_7d)} end ≤7d</div>`)}
+      ${card("Cash collected (30d)", `<div class="big">${fmtUSD(cash30)}</div><div class="sub">${fmtUSD(cash90)} in 90d · ${fmtNum(coll.paid_invoice_count_90d)} paid invoices</div>`)}
+    </div>`;
+
+  // ---- tier × interval breakdown table ------------------------------------
+  const ai = nowB.active_by_tier_interval || {};
+  const byInt = mrr.by_interval_usd || {};
+  const byTier = mrr.by_tier_usd || {};
+  const REV_TIERS = ["insider", "pro"];
+  let totMonthly = 0, totAnnual = 0;
+  const tierRows = REV_TIERS.map(t => {
+    const row = ai[t] || {};
+    const m = row.monthly || 0, a = row.annual || 0;
+    totMonthly += m; totAnnual += a;
+    return `<tr>
+      <td><b>${esc(t)}</b></td>
+      <td class="mono">${fmtNum(m)}</td>
+      <td class="mono">${fmtNum(a)}</td>
+      <td class="mono">${fmtNum(m + a)}</td>
+      <td class="mono">${fmtUSD(byTier[t])}</td>
+    </tr>`;
+  }).join("");
+  const table = `
+    <div class="section">Active subscriptions & MRR by tier × interval</div>
+    <div class="card" style="padding:0">
+      <table class="rev-table"><thead><tr>
+        <th>Tier</th><th>Monthly</th><th>Annual</th><th>Subs</th><th>MRR</th>
+      </tr></thead><tbody>
+        ${tierRows}
+        <tr class="rev-total"><td><b>Total</b></td>
+          <td class="mono">${fmtNum(totMonthly)}</td>
+          <td class="mono">${fmtNum(totAnnual)}</td>
+          <td class="mono"><b>${fmtNum(nowB.active_total)}</b></td>
+          <td class="mono"><b>${fmtUSD(mrr.mrr_usd)}</b></td></tr>
+      </tbody></table>
+      <div class="sub rev-note">MRR by interval — monthly ${fmtUSD(byInt.monthly)} · annual ${fmtUSD(byInt.annual)}${byInt.other ? " · other " + fmtUSD(byInt.other) : ""}. ${esc(mrr.note || "")}</div>
+    </div>`;
+
+  // ---- 6-month cash bar chart (pure CSS .spark, reused) -------------------
+  const series = coll.monthly_series || [];
+  const maxCash = Math.max(1, ...series.map(x => Number(x.cash_usd) || 0));
+  const chart = `
+    <div class="section">Collected cash — last ${series.length} months</div>
+    <div class="card">
+      <div class="spark tall rev-cash">${series.map(x => {
+        const val = Number(x.cash_usd) || 0;
+        return `<i style="height:${Math.round(val / maxCash * 100)}%" title="${esc(x.month)}: ${fmtUSD(val)}"></i>`;
+      }).join("") || "<span class='muted'>no paid invoices in range</span>"}</div>
+      <div class="rev-cash-labels">${series.map(x => `<span>${esc((x.month || "").slice(5))}</span>`).join("")}</div>
+      <div class="sub rev-note">${esc(coll.note || "")}${coll.trial_start_invoices_90d ? " · " + fmtNum(coll.trial_start_invoices_90d) + " trial-start invoices ($0, excluded)" : ""}</div>
+    </div>`;
+
+  // ---- projections block (method + assumptions as fine print) -------------
+  const projCard = (label, p) => {
+    if (!p) return "";
+    const val = p.value_usd == null ? "—" : fmtUSD(p.value_usd);
+    const assumptions = (p.assumptions || []).map(a => `<li>${esc(a)}</li>`).join("");
+    return `<div class="card rev-proj">
+      <h3>${esc(label)}</h3>
+      <div class="big">${val}<span class="sub"> /yr</span></div>
+      <div class="rev-proj-method"><b>method:</b> ${esc(p.method || "")}</div>
+      <ul class="rev-proj-assume">${assumptions}</ul>
+    </div>`;
+  };
+  const projections = `
+    <div class="section">Revenue projections <span class="sub">— forward estimates, not booked revenue</span></div>
+    <div class="grid rev-proj-grid">
+      ${projCard("Naive (MRR × 12)", proj.naive_12mo)}
+      ${projCard("Trial-adjusted", proj.trial_adjusted)}
+      ${projCard("Growth trend", proj.growth_projection)}
+    </div>`;
+
+  // ---- comps row ----------------------------------------------------------
+  const compBody = comps.ok
+    ? `<div class="card"><h3>Comp give-aways <span class="sub">(revenue-zero — not in MRR)</span></h3>
+        <div class="rev-comps">${Object.keys(comps.by_tier || {}).length
+          ? Object.entries(comps.by_tier).map(([t, n]) => `<span class="statpill s-mut">${esc(t)}: ${fmtNum(n)}</span>`).join(" ")
+          : "<span class='muted sub'>no comp rows</span>"}
+          <span class="sub">— ${fmtNum(comps.total)} total comped account${comps.total === 1 ? "" : "s"}</span></div></div>`
+    : `<div class="card"><h3>Comp give-aways</h3><div class="sub">${esc(comps.reason || comps.error || "not connected (Supabase PAT unset)")}</div></div>`;
+
+  // ---- header (generated-at + refresh) ------------------------------------
+  const genAt = d.generated_at ? new Date(d.generated_at).toLocaleString() : "—";
+  const header = `<div class="rev-head">
+    <div class="sub">Live from Stripe · computed ${esc(genAt)} · cached ~60s</div>
+    <button class="btn" id="revRefresh">Refresh</button></div>`;
+
+  body.innerHTML = header + cards + table + chart + projections + compBody;
+  const rb = $("#revRefresh");
+  if (rb) rb.onclick = async () => { rb.disabled = true; rb.textContent = "refreshing…"; await revLoad(true); };
 }
 
 /* ---- SYSTEM + SERVICES + UPTIME ----------------------------------------- */
