@@ -1,23 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-24T20:41:01.620251+00:00",
-  "posts_seen": 18,
+  "as_of": "2026-07-24T22:17:11.120574+00:00",
+  "posts_seen": 14,
   "seen_total": 61,
-  "evaluated": 2,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-24-restoring-trust-in-the-smithsonian-institution-e061",
-      "importance": 5,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-24-fact-sheet-president-donald-j-trump-restores-trust-in-the-smithsonian-institutio",
-      "importance": 10,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
