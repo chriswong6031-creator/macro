@@ -6,10 +6,11 @@ a dependency-overridden auth + a monkeypatched tier resolver):
 
   * auth: anon → 401 on every paid route.
   * paywall: free/unknown tier → 402 on view AND download (fails CLOSED).
-  * view: insider → 200 inline PDF; does NOT consume the download quota.
-  * download quota: insider gets 5/day then 402 quota_exhausted; pro gets 20;
-    the counter is server-authoritative (increments only on allow); peek() does
-    NOT increment; the day period resets (injected ``now``).
+  * view: PRO → 200 inline PDF (does NOT consume the download quota); insider/free
+    → 402 paid_required (reading full PDFs is Pro-only; insider is a teaser tier).
+  * download quota: PRO gets 10/day then 402 quota_exhausted; insider/free blocked
+    (402 paid_required, before the quota check); the counter is server-authoritative
+    (increments only on allow); peek() does NOT increment; the day period resets.
   * doc_id hardening: traversal / ``..`` / uppercase / slash / unknown id →
     400 or 404, and NEVER a raw R2 fetch of an unvalidated key.
   * watermark: download returns a body whether pypdf/reportlab are present OR
@@ -281,12 +282,12 @@ def test_lapsed_paid_subscriber_blocked_via_real_status_gate(client, monkeypatch
 
 
 # ===========================================================================
-# VIEW — insider streams inline PDF; does NOT consume download quota
+# VIEW — PRO streams inline PDF (no quota consumed); insider/free → 402
 # ===========================================================================
 
-def test_insider_view_streams_pdf_inline(client):
+def test_pro_view_streams_pdf_inline(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     r = c.get(f"/api/research/view/{_DOC_ID}", headers=_AUTH)
     assert r.status_code == 200
     assert r.headers["content-type"] == "application/pdf"
@@ -296,54 +297,66 @@ def test_insider_view_streams_pdf_inline(client):
     assert r.content.startswith(b"%PDF")
 
 
-def test_view_does_not_consume_download_quota(client, tmp_path):
+def test_insider_view_402_pro_only(client):
+    """Insider is a teaser tier — reading the full PDF requires PRO → 402."""
     c, ctl = client
     ctl["tier"] = "insider"
+    r = c.get(f"/api/research/view/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 402
+    body = r.json()
+    assert body["error"] == "paid_required"
+    assert body["tier"] == "insider"
+
+
+def test_view_does_not_consume_download_quota(client, tmp_path):
+    c, ctl = client
+    ctl["tier"] = "pro"
     # Several views…
     for _ in range(3):
         assert c.get(f"/api/research/view/{_DOC_ID}", headers=_AUTH).status_code == 200
     # …leave the download quota fully intact.
-    info = download_quota.peek(ctl["user"]["id"], "insider")
+    info = download_quota.peek(ctl["user"]["id"], "pro")
     assert info["used"] == 0
-    assert info["remaining"] == 5
+    assert info["remaining"] == 10
 
 
 # ===========================================================================
-# DOWNLOAD — quota metering (5 insider / 20 pro), server-authoritative
+# DOWNLOAD — PRO-only, metered 10/day, server-authoritative
 # ===========================================================================
 
-def test_insider_download_increments_then_402_after_5(client):
+def test_insider_download_402_pro_only(client):
+    """Insider cannot download — the Pro gate 402s before the quota check."""
     c, ctl = client
     ctl["tier"] = "insider"
-    for i in range(5):
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 402
+    assert r.json()["error"] == "paid_required"
+
+
+def test_pro_gets_10_downloads_then_402(client):
+    c, ctl = client
+    ctl["tier"] = "pro"
+    for i in range(10):
         r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
         assert r.status_code == 200, f"download {i} should pass"
         assert r.headers["content-disposition"].startswith("attachment;")
         assert r.headers["cache-control"] == "private, no-store"
         assert "noindex" in r.headers["x-robots-tag"]
         assert r.content.startswith(b"%PDF")
-    # 6th is refused server-side regardless of client.
-    r6 = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
-    assert r6.status_code == 402
-    body = r6.json()
+    # 11th is refused server-side regardless of client.
+    r11 = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r11.status_code == 402
+    body = r11.json()
     assert body["error"] == "quota_exhausted"
     assert body["remaining"] == 0
-    assert body["limit"] == 5
-    assert body["tier"] == "insider"
+    assert body["limit"] == 10
+    assert body["tier"] == "pro"
     assert body["upgrade"] == "/plans.html"
-
-
-def test_pro_gets_20_downloads(client):
-    c, ctl = client
-    ctl["tier"] = "pro"
-    for i in range(20):
-        assert c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH).status_code == 200, i
-    assert c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH).status_code == 402
 
 
 def test_download_attachment_filename_from_title(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
     assert r.status_code == 200
     cd = r.headers["content-disposition"]
@@ -357,22 +370,22 @@ def test_download_attachment_filename_from_title(client):
 
 def test_quota_peek_does_not_increment(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     a = c.get("/api/research/quota", headers=_AUTH).json()
     b = c.get("/api/research/quota", headers=_AUTH).json()
     assert a["used"] == 0 and b["used"] == 0
-    assert a["remaining"] == 5 and b["remaining"] == 5
-    assert a["limit"] == 5 and a["tier"] == "insider"
+    assert a["remaining"] == 10 and b["remaining"] == 10
+    assert a["limit"] == 10 and a["tier"] == "pro"
 
 
 def test_quota_reflects_spent_downloads(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
     c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
     q = c.get("/api/research/quota", headers=_AUTH).json()
     assert q["used"] == 2
-    assert q["remaining"] == 3
+    assert q["remaining"] == 8
 
 
 def test_quota_free_tier_zero_limit(client):
@@ -400,7 +413,7 @@ def test_quota_free_tier_zero_limit(client):
 ])
 def test_download_bad_doc_id_never_fetches_raw_key(client, monkeypatch, bad):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
 
     # Trip-wire: if the router ever builds an R2 key from an unvalidated id, this
     # spy would see a get_bytes for a *.pdf key. A rejected id must NEVER reach it.
@@ -424,7 +437,7 @@ def test_download_bad_doc_id_never_fetches_raw_key(client, monkeypatch, bad):
 @pytest.mark.parametrize("bad", ["../../etc/passwd", "UPPER", "has space", "a/b"])
 def test_view_bad_doc_id_rejected(client, bad):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     r = c.get(f"/api/research/view/{bad}", headers=_AUTH)
     assert r.status_code in (400, 404)
 
@@ -435,7 +448,7 @@ def test_doc_id_trailing_newline_rejected(client):
     ``\\Z`` anchor rejects it → 400, never a key build."""
     from urllib.parse import quote
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     # %0A is a raw newline appended to an otherwise-valid slug.
     path = "/api/research/view/" + quote(f"{_DOC_ID}\n", safe="")
     r = c.get(path, headers=_AUTH)
@@ -457,7 +470,7 @@ def test_download_filename_strips_header_injection(client, tmp_path, monkeypatch
     monkeypatch.setattr(research_mod, "_catalog_title",
                         lambda did: 'evil"\r\nSet-Cookie: x=1')
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
     assert r.status_code == 200
     cd = r.headers["content-disposition"]
@@ -468,7 +481,7 @@ def test_download_filename_strips_header_injection(client, tmp_path, monkeypatch
 
 def test_wellformed_but_unknown_id_is_404(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     # Valid slug shape, but not in the catalog → 404, never a fetch attempt result.
     r = c.get("/api/research/view/goldman-2026-01-01-not-ingested", headers=_AUTH)
     assert r.status_code == 404
@@ -478,10 +491,10 @@ def test_wellformed_but_unknown_id_is_404(client):
 
 def test_unknown_id_does_not_consume_quota(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     c.post("/api/research/download/goldman-2026-01-01-not-ingested", headers=_AUTH)
     # A 404 (bad id) must not have debited the day counter.
-    assert download_quota.peek(ctl["user"]["id"], "insider")["used"] == 0
+    assert download_quota.peek(ctl["user"]["id"], "pro")["used"] == 0
 
 
 # ===========================================================================
@@ -490,7 +503,7 @@ def test_unknown_id_does_not_consume_quota(client):
 
 def test_download_body_when_watermark_libs_present(client):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
     assert r.status_code == 200
     assert r.content.startswith(b"%PDF")
@@ -499,7 +512,7 @@ def test_download_body_when_watermark_libs_present(client):
 
 def test_download_body_when_watermark_libs_absent(client, monkeypatch):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
 
     # Simulate pypdf/reportlab absent: force watermark.stamp to hit its degrade path
     # by making the lazy import fail. We patch the module's stamp to exercise the
@@ -533,17 +546,17 @@ def test_download_quota_day_period_resets(tmp_path, monkeypatch):
     day1 = datetime(2026, 7, 22, 12, 0, tzinfo=timezone.utc)
     day2 = datetime(2026, 7, 23, 0, 30, tzinfo=timezone.utc)
 
-    # Exhaust insider (5) on day 1.
-    for _ in range(5):
-        ok, _info = download_quota.check_and_increment("u", "insider", now=day1)
+    # Exhaust pro (10) on day 1.
+    for _ in range(10):
+        ok, _info = download_quota.check_and_increment("u", "pro", now=day1)
         assert ok
-    ok6, info6 = download_quota.check_and_increment("u", "insider", now=day1)
-    assert ok6 is False and info6["remaining"] == 0
+    ok11, info11 = download_quota.check_and_increment("u", "pro", now=day1)
+    assert ok11 is False and info11["remaining"] == 0
 
     # Next day → fresh allowance.
-    ok_next, info_next = download_quota.check_and_increment("u", "insider", now=day2)
+    ok_next, info_next = download_quota.check_and_increment("u", "pro", now=day2)
     assert ok_next is True
-    assert info_next["remaining"] == 4
+    assert info_next["remaining"] == 9
     assert info_next["used"] == 1
 
 
@@ -571,7 +584,7 @@ def test_download_quota_fail_open_loud_on_unwritable_dir(tmp_path, monkeypatch, 
     (state / "research_download_quota").write_text("x")
 
     with caplog.at_level(logging.ERROR):
-        ok, _info = download_quota.check_and_increment("u", "insider")
+        ok, _info = download_quota.check_and_increment("u", "pro")
     assert ok is True  # fail-open: a paying subscriber is NOT locked out
     assert any("::error::" in rec.message and "QUOTA WRITE FAILED" in rec.message
                for rec in caplog.records), "the degrade must log LOUD (::error::)"
@@ -606,7 +619,7 @@ def test_view_ratelimit_hashes_ip_in_filename(tmp_path, monkeypatch):
 
 def test_view_route_429_when_rate_limited(client, monkeypatch):
     c, ctl = client
-    ctl["tier"] = "insider"
+    ctl["tier"] = "pro"
     import app.research as research_mod
     # Force the limiter to deny.
     monkeypatch.setattr(research_mod.view_ratelimit, "allow",

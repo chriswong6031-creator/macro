@@ -8,8 +8,8 @@ Routes
 ------
 GET  /api/research/catalog            unauth  — R2 read-through of catalog.json (60s TTL)
 GET  /api/research/search?q=&…        unauth  — FTS over corpus.sqlite (TTL-cached from R2)
-GET  /api/research/view/{doc_id}      paid    — stream PDF inline (rate-limited, no quota)
-POST /api/research/download/{doc_id}  paid    — watermark + attachment (daily quota 5/20)
+GET  /api/research/view/{doc_id}      PRO     — stream PDF inline (rate-limited, no quota)
+POST /api/research/download/{doc_id}  PRO     — watermark + attachment (daily quota 10/day)
 GET  /api/research/quota              authed  — read-only remaining today
 
 SECURITY INVARIANTS (the red-team probes these — see the block above each guard):
@@ -19,8 +19,9 @@ SECURITY INVARIANTS (the red-team probes these — see the block above each guar
      input never reaches an R2 key. Blocks path traversal / key injection / prefix
      listing.
   2. Entitlement fails CLOSED: any error/absence resolving tier → 'free' → blocked
-     (402). Unknown is NEVER paid. (The download COUNTER fails OPEN per the
-     availability rule in download_quota — that asymmetry is deliberate + correct.)
+     (402). Reading is PRO-only — insider/free/unknown are NEVER granted view (402
+     paid_required); insider is a browse-and-teaser tier. (The download COUNTER
+     fails OPEN per the availability rule in download_quota — deliberate asymmetry.)
   3. Server-authoritative quota: the 402 on exhaustion is returned regardless of
      client state; the counter increments only on a successful allow, before bytes.
   4. No public PDF path: PDFs come from the PRIVATE bucket via server creds; there
@@ -60,7 +61,11 @@ _CORPUS_KEY = "research_vault/corpus.sqlite"          # ingest CORPUS_KEY
 _VAULT_PREFIX = "research_vault/"                      # ingest VAULT_PREFIX
 
 _UPGRADE_URL = "/plans.html"
-_PAID_TIERS = frozenset({"insider", "pro"})
+# Reading research (stream PDF + download) is a PRO-only benefit. Insider is a
+# TEASER tier: it may browse the public catalog and read the latest few summaries
+# (client-side), but the view/download endpoints require PRO — insider/free/unknown
+# all resolve to 402 paid_required here. Fails CLOSED (unknown is never granted).
+_VIEW_TIERS = frozenset({"pro"})
 
 # ── doc_id validation ──────────────────────────────────────────────────────
 # The slug shape produced by sidecar.slug (lowercase alnum + hyphens, first char
@@ -352,8 +357,9 @@ def _resolve_tier_fallback(user_id: str) -> str:
     return "free"
 
 
-def _is_paid(tier: str) -> bool:
-    return tier in _PAID_TIERS
+def _can_view(tier: str) -> bool:
+    """True only for tiers that may stream/download a research PDF (PRO-only)."""
+    return tier in _VIEW_TIERS
 
 
 def _user_id_of(user: dict) -> str:
@@ -476,11 +482,11 @@ def research_search(
 @router.get("/api/research/view/{doc_id}")
 def research_view(doc_id: str, request: Request,
                   user: dict = Depends(require_user)) -> Response:
-    """Stream a PDF inline to an authenticated PAID user (no quota consumed).
+    """Stream a PDF inline to an authenticated PRO user (no quota consumed).
 
     Gate order (each step is a distinct guard the red-team probes):
       1. auth (require_user) — 401 handled by the dependency.
-      2. tier resolve → non-paid (free/unknown) → 402 paid_required.
+      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
       3. doc_id validate (shape 400 / existence 404) BEFORE any R2 key.
       4. hourly view rate-limit (anti-scrape) → 429 on exceed.
       5. fetch from the PRIVATE bucket; 404 if the object is absent.
@@ -490,9 +496,9 @@ def research_view(doc_id: str, request: Request,
     user_id = _user_id_of(user)
 
     tier = _resolve_tier(user_id)
-    if not _is_paid(tier):
+    if not _can_view(tier):
         return JSONResponse(
-            {"error": "paid_required", "upgrade": _UPGRADE_URL}, status_code=402)
+            {"error": "paid_required", "tier": tier, "upgrade": _UPGRADE_URL}, status_code=402)
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 
@@ -522,11 +528,11 @@ def research_view(doc_id: str, request: Request,
 @router.post("/api/research/download/{doc_id}")
 def research_download(doc_id: str, request: Request,
                       user: dict = Depends(require_user)) -> Response:
-    """Metered, watermarked PDF download for an authenticated PAID user.
+    """Metered, watermarked PDF download for an authenticated PRO user.
 
     Gate order:
       1. auth (require_user).
-      2. tier resolve → non-paid → 402 paid_required.
+      2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
       3. doc_id validate (400/404) BEFORE any R2 key.
       4. ``download_quota.check_and_increment`` (day-keyed, 5/20). allowed=False →
          402 quota_exhausted (server-authoritative — increments only on allow, so
@@ -542,9 +548,9 @@ def research_download(doc_id: str, request: Request,
     email = str((user or {}).get("email") or user_id)
 
     tier = _resolve_tier(user_id)
-    if not _is_paid(tier):
+    if not _can_view(tier):
         return JSONResponse(
-            {"error": "paid_required", "upgrade": _UPGRADE_URL}, status_code=402)
+            {"error": "paid_required", "tier": tier, "upgrade": _UPGRADE_URL}, status_code=402)
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 
