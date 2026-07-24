@@ -107,6 +107,12 @@ on:
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"
       - "tests/test_pooling.py"
+      # WRI W3: watchlist book-structure math + its node-shelled unit tests. templates/**
+      # already covers risk_core.js/watchlist_risk.js; list the test file so a test-only
+      # edit still triggers CI (ci-test-whitelist-rot guard).
+      - "tests/test_risk_core_js.py"
+      - "templates/risk_core.js"
+      - "templates/watchlist_risk.js"
       # audit #46 reliability-contract guard: a gated-out field must not render directionally.
       - "scripts/check_reliability_contract.py"
       - "engine/btc_leverage_cascade.py"
@@ -1643,6 +1649,26 @@ jobs:
         run: python -m pytest tests/test_finnhub_transcripts.py -q
       - name: stocktwits sentiment collector tests
         run: python -m pytest tests/test_stocktwits.py -q
+
+  wri-risk-core:
+    # WRI W3: the watchlist book-structure math (templates/risk_core.js) is a pure
+    # ES5 module exercised by shelling `node` over fixture JSON — proves the §7
+    # sanity anchors (ENB≈20 pure-idio / →1 single-factor, negative-MCTR hedge,
+    # abstain path) + the factor-bet grouping + stress-lens gating. node is on the
+    # runner; the suite skips loudly if it ever isn't. No build, no site/.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: risk_core.js math — §7 sanity anchors + structural invariants
+        run: python -m pytest tests/test_risk_core_js.py -q
 
   house-law-registry:
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.

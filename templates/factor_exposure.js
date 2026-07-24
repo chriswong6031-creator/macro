@@ -242,10 +242,24 @@
         var a = aggregate(LAST, DATA, w);
         var res = document.getElementById('fx_results');
         if (a.ok && res) res.innerHTML = resultsInner(a, DATA);  // editor untouched → focus kept
+        // manual weight edit only fires in non-auto mode; keep the WRI layer in sync
+        CUR = { universe: LAST.slice(), wmap: w, mode: 'manual' };
+        announceWeights();
       });
     });
     var reset = panel.querySelector('.fx-wreset');
     if (reset) reset.addEventListener('click', function () { saveW({}); window.FX.refresh(); });
+  }
+
+  // The resolved weighting the panel is currently displaying — the SINGLE source
+  // of truth watchlist_risk.js (the WRI book-structure layer) reuses so the two
+  // never fork. { universe, wmap, mode }; mode 'auto' = portfolio dollar values,
+  // 'manual' = the local weight editor / equal-weight fallback.
+  var CUR = { universe: [], wmap: {}, mode: 'manual' };
+  function currentWeights() { return { universe: CUR.universe.slice(), wmap: CUR.wmap, mode: CUR.mode }; }
+  function announceWeights() {
+    try { document.dispatchEvent(new CustomEvent('fx-weights', { detail: currentWeights() })); }
+    catch (e) { /* older browsers: watchlist_risk.js falls back to polling on render */ }
   }
 
   function render(panel, tickers, data) {
@@ -256,6 +270,10 @@
     var autoMode = AUTO_W !== null;
     var universe = autoMode ? Object.keys(AUTO_W) : tickers;
     var wmap = autoMode ? AUTO_W : loadW();
+    // publish the resolved weighting for the WRI layer (before the ok/thin gate so
+    // it also learns about a thin/empty book and can collapse its hero in step).
+    CUR = { universe: universe.slice(), wmap: wmap, mode: autoMode ? 'auto' : 'manual' };
+    announceWeights();
     var a = aggregate(universe, data, wmap);
     if (!a.ok) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
@@ -281,6 +299,8 @@
       load().then(function (data) { render(p, LAST, data); });
     },
     refresh: function () { window.FX.update(LAST); },
+    // the resolved weighting the WRI book-structure layer (watchlist_risk.js) reuses
+    currentWeights: currentWeights,
     // Called by portfolio.js after every render.
     // w = {ticker: dollarValue} for open holdings with shares + price; null resets to equal-weight.
     setAutoWeights: function (w) {
