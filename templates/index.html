@@ -680,6 +680,7 @@ html[data-lang="zh"] .tier.hot::before{content:"最受欢迎";letter-spacing:.08
 .tier .gist b{color:var(--ink);font-weight:600}
 /* matrix */
 .matrix-card{margin-top:28px;background:#fff;border:1px solid var(--hair-2);border-radius:var(--r-lg);box-shadow:var(--sh-card);overflow:auto}
+.mx-mobile-head{display:none}
 table.mx{width:100%;border-collapse:collapse;min-width:760px}
 .mx th,.mx td{padding:9px 16px;text-align:center;font-size:13.5px;border-bottom:1px solid var(--hair)}
 .mx thead th{font-family:'Archivo',sans-serif;font-weight:800;font-size:13px;letter-spacing:.02em;position:sticky;top:0;background:#fff;z-index:2;border-bottom:1px solid var(--hair-2)}
@@ -703,7 +704,9 @@ tr.t-ins td:first-child,tr.t-pro td:first-child{position:sticky;left:0}
 .mx td.feat{position:relative}
 .mx td.feat.has-tip{cursor:help}
 .mx td.feat.has-tip .ft{border-bottom:1px dotted #bcc6d3}
-.mx .tipbox{position:absolute;left:16px;top:calc(100% - 4px);z-index:80;width:min(280px,64vw);background:var(--ink);color:#fff;font-size:11.5px;font-weight:400;line-height:1.5;border-radius:9px;padding:9px 12px;opacity:0;visibility:hidden;transform:translateY(3px);transition:opacity .18s,transform .18s,visibility 0s .18s;pointer-events:none;white-space:normal}
+.mx td.feat:hover,.mx td.feat:focus-within{z-index:30}
+.mx td.feat:focus-visible{outline-offset:-3px}
+.mx .tipbox{position:absolute;left:16px;top:calc(100% - 4px);z-index:80;width:min(280px,64vw);background:var(--ink);color:#fff;font-size:11.5px;font-weight:400;line-height:1.5;border-radius:9px;padding:9px 12px;box-shadow:0 12px 30px -12px rgba(18,26,45,.55);opacity:0;visibility:hidden;transform:translateY(3px);transition:opacity .18s,transform .18s,visibility 0s .18s;pointer-events:none;white-space:normal}
 .mx .tipbox.up{top:auto;bottom:calc(100% - 4px);transform:translateY(-3px)}
 .mx td.feat:hover .tipbox,.mx td.feat:focus-within .tipbox{opacity:1;visibility:visible;transform:none;transition:opacity .18s,transform .18s}
 /* tier chip on the aurora row labels */
@@ -764,6 +767,40 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
   .chat{height:560px}
   .tiers{grid-template-columns:1fr}
 }
+@media (max-width:760px){
+  .matrix-card{overflow:visible;border-radius:18px}
+  .mx-mobile-head{display:block;position:sticky;top:62px;z-index:35;padding:12px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--hair-2);border-radius:18px 18px 0 0;box-shadow:0 10px 24px -22px rgba(18,26,45,.6);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%)}
+  .mx-mobile-label{margin:0 0 8px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+  .mx-plan-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:4px;background:var(--panel-2);border:1px solid var(--hair);border-radius:12px}
+  .mx-plan-tabs button{min-width:0;min-height:46px;border:1px solid transparent;border-radius:9px;padding:6px 5px;color:var(--muted);transition:background .16s,color .16s,box-shadow .16s,border-color .16s}
+  .mx-plan-tabs button span{display:block;font-family:'Archivo',sans-serif;font-size:12.5px;font-weight:800;line-height:1.15}
+  .mx-plan-tabs button small{display:block;margin-top:2px;font-size:10px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mx-plan-tabs button[aria-pressed="true"]{background:#fff;border-color:var(--hair-2);color:var(--blue);box-shadow:var(--sh-card)}
+  .mx-mobile-hint{margin:8px 2px 0;color:var(--faint);font-size:11px;line-height:1.35}
+
+  table.mx{min-width:0;table-layout:fixed}
+  .mx th,.mx td{padding:11px 12px}
+  .mx th:first-child,.mx td:first-child{position:static;left:auto;min-width:0;width:68%;text-align:left}
+  .mx thead th{position:static;top:auto;font-size:12px;vertical-align:top}
+  .mx thead th:first-child{color:var(--muted);font-size:11px;font-weight:600}
+  .mx thead th small{font-size:9.5px;line-height:1.25}
+  .mx th:nth-child(n+2),.mx td:nth-child(n+2){display:none}
+  .matrix-card[data-plan="free"] .mx th:nth-child(2),.matrix-card[data-plan="free"] .mx td:nth-child(2),
+  .matrix-card[data-plan="insider"] .mx th:nth-child(3),.matrix-card[data-plan="insider"] .mx td:nth-child(3),
+  .matrix-card[data-plan="pro"] .mx th:nth-child(4),.matrix-card[data-plan="pro"] .mx td:nth-child(4){display:table-cell;width:32%}
+  .mx .grp td{display:table-cell !important;width:auto !important;padding:10px 12px}
+  .mx .ok{font-size:16px}
+  .mx .val{font-size:12px;line-height:1.25}
+  .mx .soon{display:inline-block;font-size:8.5px;padding:4px 6px;line-height:1.2}
+  .mx .feat .mchip{margin-left:6px;padding:2px 5px;font-size:7.5px}
+  .mx td.feat.has-tip{cursor:pointer}
+  .mx td.feat.has-tip .ft::after{content:" ⓘ";color:var(--blue);font-size:10px;text-decoration:none}
+  .mx td.feat.has-tip .tipbox{position:static;display:block;width:100%;max-height:0;margin:0;padding:0;background:transparent;color:var(--muted);border:0;border-radius:0;box-shadow:none;font-size:11.5px;line-height:1.45;opacity:0;visibility:hidden;overflow:hidden;transform:none;transition:max-height .22s ease,opacity .16s ease,margin .22s ease,visibility 0s .22s}
+  .mx td.feat.has-tip.tip-open .tipbox{max-height:96px;margin-top:7px;opacity:1;visibility:visible;transition:max-height .22s ease,opacity .16s ease,margin .22s ease}
+  .mx td.feat:hover,.mx td.feat:focus-within{z-index:auto}
+  .mx td.feat:hover .tipbox,.mx td.feat:focus-within .tipbox{opacity:0;visibility:hidden}
+  .mx td.feat.has-tip.tip-open .tipbox{opacity:1;visibility:visible}
+}
 @media (max-width:680px){
   .nav-links{display:none}
   .nav-right>a:not(.btn):not(.gearbtn){display:none}
@@ -771,6 +808,24 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
   .sits{grid-template-columns:1fr}
   .tri3{grid-template-columns:1fr}
   .demo{padding:13px}
+  #pricing.section-pad{padding-block:56px}
+  .p-head .toggle{display:grid;grid-template-columns:1fr 1fr;width:100%;max-width:360px}
+  .toggle button{min-height:44px;padding:8px 10px}
+  .toggle .save{display:block;margin:2px 0 0;font-size:8.5px}
+  .tiers{gap:18px;margin-top:32px}
+  .tier{padding:22px 20px;border-radius:18px}
+  .tier .who{min-height:0;margin-bottom:2px}
+  .tier .gist{margin:12px 0 17px}
+  .tier .btn{min-height:48px}
+  .price{font-size:36px}
+  .matrix-card{margin-top:30px}
+}
+@media (max-width:360px){
+  .nav-in{gap:8px}
+  .brand{gap:0;font-size:0}
+  .brand .m{font-size:14px}
+  .nav-right{gap:8px}
+  .nav-right .btn{padding-inline:12px;white-space:nowrap}
 }
 </style>
 </head>
@@ -1364,8 +1419,17 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
     </div>
 
     <!-- the matrix -->
-    <div class="matrix-card rv">
-      <table class="mx">
+    <div class="matrix-card rv" data-plan="insider">
+      <div class="mx-mobile-head">
+        <p class="mx-mobile-label" data-zh="选择方案查看每项功能">Choose a plan to compare every feature</p>
+        <div class="mx-plan-tabs" role="group" aria-label="Plan shown in feature comparison">
+          <button type="button" data-mx-plan="free" aria-pressed="false" aria-controls="pricing-matrix"><span data-zh="免费">Free</span><small>$0</small></button>
+          <button type="button" data-mx-plan="insider" aria-pressed="true" aria-controls="pricing-matrix"><span>Insider</span><small class="mx-mobile-price" data-annual="$49/mo" data-monthly="$69/mo" data-annual-zh="$49/月" data-monthly-zh="$69/月">$49/mo</small></button>
+          <button type="button" data-mx-plan="pro" aria-pressed="false" aria-controls="pricing-matrix"><span>Pro</span><small class="mx-mobile-price" data-annual="$69/mo" data-monthly="$99/mo" data-annual-zh="$69/月" data-monthly-zh="$99/月">$69/mo</small></button>
+        </div>
+        <p class="mx-mobile-hint" data-zh="点击带 ⓘ 的功能查看说明。">Tap any feature marked ⓘ for a plain-language description.</p>
+      </div>
+      <table class="mx" id="pricing-matrix" aria-label="Plan feature comparison">
         <thead>
           <tr>
             <th data-zh="逐项对比">Compare every feature</th>
@@ -1531,12 +1595,66 @@ function applyPricing(){
   document.querySelectorAll('.mx-price').forEach(el => {
     el.textContent = zh ? (annual ? el.dataset.annualZh : el.dataset.monthlyZh) : (annual ? el.dataset.annual : el.dataset.monthly);
   });
+  document.querySelectorAll('.mx-mobile-price').forEach(el => {
+    el.textContent = zh ? (annual ? el.dataset.annualZh : el.dataset.monthlyZh) : (annual ? el.dataset.annual : el.dataset.monthly);
+  });
 }
 tog.forEach(b => b.addEventListener('click', () => {
   tog.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   applyPricing();
 }));
 LANG.onChange(applyPricing);
+
+/* ───── mobile matrix: one readable plan column + tap-to-expand details ───── */
+(function(){
+  const card = document.querySelector('.matrix-card');
+  if (!card) return;
+  const planButtons = [...card.querySelectorAll('[data-mx-plan]')];
+  const tipCells = [...card.querySelectorAll('td.feat.has-tip')];
+  const mobile = matchMedia('(max-width:760px)');
+
+  planButtons.forEach(button => button.addEventListener('click', () => {
+    card.dataset.plan = button.dataset.mxPlan;
+    planButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  }));
+
+  tipCells.forEach((cell, index) => {
+    const tip = cell.querySelector('.tipbox');
+    if (!tip) return;
+    tip.id = tip.id || 'mx-tip-' + (index + 1);
+    tip.setAttribute('role', 'tooltip');
+    cell.tabIndex = 0;
+    cell.setAttribute('aria-describedby', tip.id);
+
+    const toggleTip = () => {
+      const willOpen = !cell.classList.contains('tip-open');
+      tipCells.forEach(item => item.classList.remove('tip-open'));
+      if (willOpen) cell.classList.add('tip-open');
+    };
+    cell.addEventListener('click', event => {
+      if (!mobile.matches) return;
+      event.stopPropagation();
+      toggleTip();
+    });
+    cell.addEventListener('keydown', event => {
+      if (!mobile.matches) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleTip();
+      } else if (event.key === 'Escape') {
+        cell.classList.remove('tip-open');
+      }
+    });
+  });
+
+  document.addEventListener('click', event => {
+    if (!mobile.matches || card.contains(event.target)) return;
+    tipCells.forEach(cell => cell.classList.remove('tip-open'));
+  });
+  mobile.addEventListener('change', event => {
+    if (!event.matches) tipCells.forEach(cell => cell.classList.remove('tip-open'));
+  });
+})();
 
 /* ───── gentle live ticks: heatmap + econ/assets ───── */
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('still')) {
