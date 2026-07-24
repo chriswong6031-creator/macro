@@ -26,6 +26,21 @@
 
 /* ── scrim + shell ───────────────────────────────────────────────────────── */
 .obm-scrim{
+  /* Self-carried design tokens (the landing's :root values, copied verbatim) so the
+     sheet renders identically on EVERY www page — macro pages (theme.css) name their
+     variables differently, and without these the sheet painted transparent there.
+     Custom properties inherit from this root to every .obm-* descendant. */
+  --bg:#f7f8fa; --panel:#ffffff; --panel-2:#fbfcfd;
+  --hair:#eaecf0; --hair-2:#dfe3e9;
+  --ink:#1c2430; --ink-soft:#34404f; --muted:#5d6b7e; --faint:#8a95a4;
+  --blue:#285fff; --blue-ink:#1c47cc; --blue-wash:#eef2ff;
+  --q-green:#1f8b41; --q-gold:#b07d05; --q-red:#c12f2f;
+  --green-wash:#e9f5ec; --red-wash:#faeceb; --gold-wash:#faf3e2;
+  --sh-card:0 1px 3px rgba(20,30,50,.07),0 1px 2px rgba(20,30,50,.05);
+  --sh-lift:0 14px 34px -14px rgba(20,30,50,.25),0 3px 8px rgba(20,30,50,.07);
+  --sh-deep:0 30px 60px -22px rgba(18,26,45,.35),0 8px 18px -8px rgba(18,26,45,.12);
+  --sh-plate:0 24px 60px -20px rgba(18,26,45,.34),0 6px 16px -6px rgba(18,26,45,.14);
+  --r-sm:6px; --r:12px; --r-lg:16px;
   position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
   padding:clamp(12px,3vh,40px);
   background:rgba(16,22,34,.44);
