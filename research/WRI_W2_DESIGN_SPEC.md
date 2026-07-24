@@ -149,3 +149,23 @@ unmodeled chip + abstain state. honesty: "Measurement, not a forecast" footnote 
    (aria-pressed) + details; braid aria-label.
 5. Verify against production-shaped data in preview (not curl); crops light+dark+zh in PR body;
    nav-gap + banned-vocab + template-site-sync CI green; **no self-merge** (masterplan §0.2).
+
+## 5-A. W3 adjudication record (2026-07-24, orchestrator ratification)
+
+The W3 build surfaced that §5's cluster rule (twin components at implied ρ≥0.70) is
+unreachable on the calm lens for real books: factor-IMPLIED pairwise correlation is capped
+at √(r²ᵢ·r²ⱼ) ≈ 0.5–0.6 for typical names (each ~50% idio under the 9-factor model, which
+carries no industry factors — shared semi-industry moves count as idio). The literal spec
+produced "7 names move as 7 bets" beside a "mostly one bet" chip.
+
+**RATIFIED (builder decision #1, PR #3405):** the patch-bay picture + verdict count group by
+dominant factor-bet, verdict count = round(ENB) — the same construct family as the state
+chip, so the surface cannot self-contradict. The ρ≥0.70 twin rule remains the "Move as one"
+card's standard (honest "literally track each other" claim; populated mainly under the
+stress lens). Riders: the twins card must show a plain-word empty state on the calm lens;
+the verdict phrasing uses "about N bets". Model-limitation come-backs recorded in the
+masterplan lane: (a) evaluate an industry/subsector factor extension, (b) add GLD/IAU to
+the factor model's ETF universe (gold factor exists; GLD currently reads unmodeled).
+
+W3 gate artifacts (real page, real data, calm lens — stress cov ships with tonight's
+nightly): `mockups/refs/wri/w3/01_dark.png · 02_light.png · 03_zh.png · 04_mobile.png`.
