@@ -422,6 +422,8 @@
     var rows = ITEMS.filter(matchItem);
     var feed = $('feed');
     var picksGate = LANE === 'picks' && picksLocked();
+    var pt = doc.querySelector('.rv-lane[data-lane="picks"]');
+    if (pt) pt.classList.toggle('locked', picksLocked());   // small lock glyph on the tab
     if (!ITEMS.length) {
       feed.innerHTML = emptyState(
         T('Institutional research is being onboarded', '机构研报正在接入'),
