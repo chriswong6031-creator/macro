@@ -47,6 +47,8 @@ on:
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
       - "templates/**"
+      # SEO meta rollout guard (D12A): template-source SEO head/desc contract.
+      - "tests/test_seo_meta_rollout.py"
       - ".github/workflows/ci.yml"
       # Research Vault (RV W1) ingestion spine: sidecar contract, corpus FTS,
       # catalog, and the idempotent never-raise ingest pipeline. (RV W3) adds the
@@ -1086,7 +1088,8 @@ jobs:
           tests/test_rr_scorecard_card.py
           tests/test_engine_run_no_regress.py
           tests/test_cycles.py
-          tests/test_opex_risk.py -q
+          tests/test_opex_risk.py
+          tests/test_seo_meta_rollout.py -q
       # house-law registry census (post-#2297 fix): run the statement-tape schema
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
