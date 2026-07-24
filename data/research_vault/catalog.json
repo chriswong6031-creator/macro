@@ -1,7 +1,66 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-23T23:48:33.196613+00:00",
-  "count": 0,
-  "institutions": [],
-  "items": []
+  "generated_at": "2026-07-24T00:04:18.940352+00:00",
+  "count": 3,
+  "institutions": [
+    "RBC",
+    "The Market Ear"
+  ],
+  "items": [
+    {
+      "id": "marketdesk-ocw3opucwd0-128d5a",
+      "title": "The Market Is Starting To Crack",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-23T22:46:29Z",
+      "summary_points": [
+        "**NDX Technicals**: Index trading below 50-day MA with 21-day MA crossed below 50-day (bearish); break below 28,500 leaves minimal support at 27,000 - **Oil-Spike Spillover Risk**: Europe’s energy vulnerability (geopolitics) and low VIX/V2X signal underpriced cross-asset spillover risk if crude re-enters focus - **VIX Call Skew at 96th Percentile**: Elevated volatility protection signal despite light market positioning, critical for hedging strategy decisions - **Asset Manager VIX Futures Positioning**: Near historic lows, historically precedes sharp volatility repricing and signals potential liquidity risk for portfolios"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c7gm7yebcno-3504c3",
+      "title": "Inside The Magnificent 7 Selloff",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-23T22:45:58Z",
+      "summary_points": [
+        "**Magnificent 7 Technical Risk**: Massive down candle, group trading near September lows with key support below 200-day MA (flat), signaling potential further downside.",
+        "**MSFT Range Stagnation**: Trapped in Nov 2023 range, below 200-day MA, near $360, indicating lack of breakout momentum.",
+        "**AMZN Breakout Signal**: Breakout above 200-day MA confirms bullish momentum, key technical signal for continuation.",
+        "**GOOG Support Test**: Testing critical support at long-term trendline + 200-day MA; must-hold zone despite weak momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-umrprzixcel-3e20aa",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-23T22:44:08Z",
+      "summary_points": [
+        "**Equinor ASA Upgrade**: Strategic international focus and capital allocation shift drive Sector Perform upgrade; $420 price target (+16.7%) reflects market disruption tailwinds.",
+        "**Var Energi ASA Downgrade**: $1.3bn BlueNord acquisition strains balance sheet, raising dividend sustainability risks for FY27-28; Sector Perform downgrade with $55 target.",
+        "**Airbus SE Buyback & Targets**: €5B share buyback and 2029 EBIT targets (€12B–€13B) underpin Outperform rating; capital allocation update critical for growth trajectory.",
+        "**Iran Geopolitical Risk**: Houthi conflict threatens Red Sea oil flows, risking oil prices to 2008/2022 highs; sustained force deployment could trigger market sentiment shift.",
+        "**Global Gas Geopolitics**: Middle East tensions lift EU gas prices to $20/mmbtu; Iran war escalation makes winter storage strategy critical amid supply disruption risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    }
+  ]
 }
