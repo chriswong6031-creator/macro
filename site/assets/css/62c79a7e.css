@@ -521,3 +521,25 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 .ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
+
+/* ===== personal welcome — a typed greeting stands in for the wordmark on entry,
+   then cross-dissolves into the brand lockup. Decorative (aria-hidden); the brand
+   + tagline stay the accessible content. The hero-stack overlaps greeting + brand
+   in ONE grid cell so the crossfade never shifts layout. ===== */
+.hub-hero-stack{display:grid}
+.hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
+.hub-brand{transition:opacity .55s ease,transform .55s ease}
+.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(52px,7vw,74px);
+ opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .5s ease,transform .5s ease}
+.h.greet-run .hub-greet{opacity:1;transform:none}
+.h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
+.hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
+ font-size:clamp(27px,4.6vw,47px);
+ background:linear-gradient(176deg,var(--text) 20%,color-mix(in srgb,var(--text) 55%,var(--accent,var(--info))));
+ -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 32px var(--bg))}
+.hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
+ background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
+ animation:greetCaret 1.05s steps(1) infinite}
+@keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
