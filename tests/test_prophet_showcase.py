@@ -1,9 +1,11 @@
 """tests/test_prophet_showcase.py — landing showcase slice (build_prophet.py).
 
 The showcase payload is the public teaser the marketing landing
-(templates/index.html #f-prophet) fetches instead of the ~1MB
-us_standouts.json. Its card derivation must MIRROR the pv_card cx
-construction in templates/dashboard.html.j2 — these tests pin that mirror.
+(templates/index.html #f-prophet) renders. It is a DELAYED-WINNERS slice
+(operator order 2026-07-24): winning calls from the freshest fully-graded
+board in data/us_board_ledger — never the live board. Card derivation must
+MIRROR the pv_card cx construction in templates/dashboard.html.j2 — these
+tests pin that mirror and the selection contract.
 
 Coverage:
   1.  Verb mapping: every entry_signal.status → the board verb, incl. the
@@ -14,11 +16,13 @@ Coverage:
   5.  Not-showable rows (no ticker / price / spark) → None.
   6.  Flags: 'accounting watch' dropped, zh pairing with EN fallback,
       ext_z / earnings_soon / sector_stance / base-broken folds.
-  7.  Curation: board order preserved; wait+hold vocabulary breadth is
-      guaranteed by tail swaps when the top slice is all-green.
-  8.  write_showcase round-trip: schema keys, as_of passthrough, no
-      affirmative 'validated' in payload-authored copy, fail-soft on a
-      missing standouts file.
+  7.  Selection: winners only (ret > 0), ranked by return desc, capped at
+      limit, since_pct stamped; boards without a snapshot are skipped in
+      favour of the freshest one that has both grades and a snapshot;
+      < min_winners → None (callers keep the previous payload).
+  8.  write_showcase round-trip: schema v2 keys, board as_of passthrough,
+      no affirmative 'validated' in payload-authored copy, fail-soft keeps
+      the previous file on missing inputs.
 """
 from __future__ import annotations
 
@@ -26,9 +30,12 @@ import json
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.build_prophet import (  # noqa: E402
+    SHOWCASE_HORIZON,
     SHOWCASE_LIMIT,
     build_showcase_payload,
     derive_showcase_card,
@@ -147,57 +154,122 @@ def test_flags_fold_and_zh_pairing():
     assert card2["flags"][0] == ["only en", "only en"]
 
 
-# ── 7. curation ─────────────────────────────────────────────────────────────
+# ── 7. delayed-winners selection ────────────────────────────────────────────
 
-def test_curation_keeps_board_order_and_guarantees_breadth():
-    rows = [_row(ticker=f"B{i:02d}") for i in range(SHOWCASE_LIMIT + 3)]
-    rows.append(_row(ticker="WAITER", entry_signal={"status": "cooling"}))
-    rows.append(_row(ticker="HOLDER", entry_signal={"status": "hold"}))
-    payload = build_showcase_payload({"as_of": "2026-07-22", "buy": rows})
-    cards = payload["cards"]
-    assert payload["count"] == len(cards) == SHOWCASE_LIMIT
-    verbs = {c["verb"] for c in cards}
-    assert {"wait", "hold"} <= verbs
-    # head of the slice is untouched board order
-    assert [c["tk"] for c in cards[:SHOWCASE_LIMIT - 2]] == \
-        [f"B{i:02d}" for i in range(SHOWCASE_LIMIT - 2)]
+def _grades(rows):
+    """rows: (as_of, ticker, ret) at buy-lane, SHOWCASE_HORIZON."""
+    return pd.DataFrame([
+        {"as_of": a, "ticker": t, "ret": r, "lane": "buy",
+         "horizon": SHOWCASE_HORIZON} for a, t, r in rows
+    ])
 
 
-def test_curation_no_swap_when_breadth_already_present():
-    rows = [
-        _row(ticker="A", entry_signal={"status": "buy_now"}),
-        _row(ticker="B", entry_signal={"status": "cooling"}),
-        _row(ticker="C", entry_signal={"status": "hold"}),
-    ]
-    payload = build_showcase_payload({"as_of": "2026-07-22", "buy": rows})
-    assert [c["tk"] for c in payload["cards"]] == ["A", "B", "C"]
+def _snap(tickers):
+    return {"buy": [_row(ticker=t) for t in tickers]}
+
+
+def test_selection_winners_only_ranked_with_since_pct():
+    grades = _grades([
+        ("2026-07-06", "WIN2", 0.05), ("2026-07-06", "LOSER", -0.08),
+        ("2026-07-06", "WIN1", 0.223), ("2026-07-06", "FLAT", 0.0),
+        ("2026-07-06", "WIN3", 0.01), ("2026-07-06", "WIN4", 0.02),
+        ("2026-07-06", "WIN5", 0.03), ("2026-07-06", "WIN6", 0.04),
+    ])
+    snaps = {"2026-07-06": _snap(["WIN1", "WIN2", "WIN3", "WIN4", "WIN5",
+                                  "WIN6", "LOSER", "FLAT"])}
+    payload = build_showcase_payload(grades, snaps, min_winners=6)
+    assert payload is not None
+    tks = [c["tk"] for c in payload["cards"]]
+    assert tks == ["WIN1", "WIN2", "WIN6", "WIN5", "WIN4", "WIN3"]  # ret desc
+    assert "LOSER" not in tks and "FLAT" not in tks
+    assert payload["cards"][0]["since_pct"] == 22.3
+    assert all(c["since_pct"] > 0 for c in payload["cards"])
+    assert payload["schema"] == "prophet.showcase/v2"
+    assert payload["kind"] == "delayed_winners"
+    assert payload["as_of"] == "2026-07-06"
+    assert payload["window_sessions"] == SHOWCASE_HORIZON
+
+
+def test_selection_prefers_freshest_board_with_snapshot():
+    grades = _grades(
+        [("2026-07-10", f"N{i}", 0.05) for i in range(8)]      # no snapshot
+        + [("2026-07-06", f"O{i}", 0.04) for i in range(8)])   # snapshot ✓
+    snaps = {"2026-07-06": _snap([f"O{i}" for i in range(8)])}
+    payload = build_showcase_payload(grades, snaps, min_winners=6)
+    assert payload is not None and payload["as_of"] == "2026-07-06"
+
+
+def test_selection_caps_at_limit_and_needs_min_winners():
+    many = _grades([("2026-07-06", f"W{i:02d}", 0.01 + i / 100)
+                    for i in range(SHOWCASE_LIMIT + 5)])
+    snaps = {"2026-07-06": _snap([f"W{i:02d}"
+                                  for i in range(SHOWCASE_LIMIT + 5)])}
+    payload = build_showcase_payload(many, snaps, min_winners=6)
+    assert payload["count"] == len(payload["cards"]) == SHOWCASE_LIMIT
+    # too few winners → None (caller keeps the previous payload)
+    few = _grades([("2026-07-06", "A", 0.05), ("2026-07-06", "B", -0.02)])
+    assert build_showcase_payload(few, {"2026-07-06": _snap(["A", "B"])},
+                                  min_winners=6) is None
+
+
+def test_selection_ignores_other_lanes_and_horizons():
+    df = _grades([("2026-07-06", f"W{i}", 0.05) for i in range(6)])
+    other = pd.DataFrame([
+        {"as_of": "2026-07-06", "ticker": "WATCHY", "ret": 0.5,
+         "lane": "watch", "horizon": SHOWCASE_HORIZON},
+        {"as_of": "2026-07-06", "ticker": "SHORTH", "ret": 0.5,
+         "lane": "buy", "horizon": 5},
+    ])
+    grades = pd.concat([df, other], ignore_index=True)
+    snaps = {"2026-07-06": _snap([f"W{i}" for i in range(6)]
+                                 + ["WATCHY", "SHORTH"])}
+    payload = build_showcase_payload(grades, snaps, min_winners=6)
+    tks = [c["tk"] for c in payload["cards"]]
+    assert "WATCHY" not in tks and "SHORTH" not in tks
 
 
 # ── 8. write round-trip ─────────────────────────────────────────────────────
 
+def _write_fixture_ledger(tmp_path, n_winners=6):
+    gpath = tmp_path / "retro_grades.parquet"
+    spath = tmp_path / "snapshots.jsonl"
+    _grades([("2026-07-06", f"W{i}", 0.02 + i / 100)
+             for i in range(n_winners)]).to_parquet(gpath)
+    spath.write_text(json.dumps(
+        {"as_of": "2026-07-06",
+         "buy": [_row(ticker=f"W{i}") for i in range(n_winners)]}) + "\n",
+        encoding="utf-8")
+    return gpath, spath
+
+
 def test_write_showcase_roundtrip(tmp_path):
-    src = tmp_path / "us_standouts.json"
-    src.write_text(json.dumps({"as_of": "2026-07-22", "buy": [_row()]}),
-                   encoding="utf-8")
+    gpath, spath = _write_fixture_ledger(tmp_path)
     out = tmp_path / "showcase.json"
-    payload = write_showcase(standouts_path=src, out_path=out)
+    payload = write_showcase(grades_path=gpath, snapshots_path=spath,
+                             out_path=out)
     assert payload is not None and out.exists()
     disk = json.loads(out.read_text(encoding="utf-8"))
-    assert disk["schema"] == "prophet.showcase/v1"
-    assert disk["as_of"] == "2026-07-22"
+    assert disk["schema"] == "prophet.showcase/v2"
+    assert disk["kind"] == "delayed_winners"
+    assert disk["as_of"] == "2026-07-06"
     assert disk["authority_tier"] == "display"
-    assert disk["count"] == 1
+    assert disk["count"] == 6
     card = disk["cards"][0]
     for key in ("tk", "name", "sec", "sec_zh", "price_txt", "verb", "edge",
                 "stage", "zone_kind", "zone_lo", "zone_hi", "date", "flags",
-                "triage", "spark"):
+                "triage", "spark", "since_pct"):
         assert key in card, key
     # payload-authored copy never claims 'validated'
     assert "validated" not in disk["note"].lower()
 
 
-def test_write_showcase_fail_soft(tmp_path):
+def test_write_showcase_fail_soft_keeps_previous(tmp_path):
     out = tmp_path / "showcase.json"
-    assert write_showcase(standouts_path=tmp_path / "missing.json",
+    out.write_text('{"schema":"prophet.showcase/v2","cards":[1]}',
+                   encoding="utf-8")
+    prev = out.read_text(encoding="utf-8")
+    # missing grades file → None AND the previous payload survives untouched
+    assert write_showcase(grades_path=tmp_path / "missing.parquet",
+                          snapshots_path=tmp_path / "missing.jsonl",
                           out_path=out) is None
-    assert not out.exists()
+    assert out.read_text(encoding="utf-8") == prev

@@ -6,8 +6,9 @@ runs the management confidence engine for every active plan, and writes:
     site/prophet/index.json          — all active plans + states inline
     site/prophet/plans/<ID>.json     — per-plan artifact
     site/prophet/states/<ID>.json    — per-state artifact
-    site/prophet/showcase.json       — slim public landing-teaser slice of the
-                                       nightly board (templates/index.html
+    site/prophet/showcase.json       — public landing teaser: DELAYED winning
+                                       calls from the board ledger, never the
+                                       live board (templates/index.html
                                        #f-prophet; also --showcase-only)
     data/prophet/ledger.jsonl        — forward outcome ledger (INITIALIZED here;
                                        nightly is the SOLE future advancer)
@@ -153,15 +154,25 @@ def _read_json(path: Path) -> dict | None:
 
 # ---------------------------------------------------------------------------
 # Landing showcase slice — public teaser payload for the marketing landing
-# (templates/index.html #f-prophet). A slim, curated cut of the nightly board:
-# us_standouts.json is ~1MB and carries internal fields, so the landing fetches
-# this instead. Card derivation MIRRORS the pv_card cx construction in
+# (templates/index.html #f-prophet). DELAYED WINNERS, never the live board
+# (operator order 2026-07-24: the current board is paid product — the free
+# teaser shows winning calls from ~2 weeks back, labelled as exactly that).
+# Source: data/us_board_ledger (grade_us_board.py) — the latest board whose
+# 10-session grades have fully matured AND whose snapshot is stored; winners
+# only (ret > 0), ranked by return, each card stamped with its since_pct.
+# Card derivation MIRRORS the pv_card cx construction in
 # templates/dashboard.html.j2 (verb / stage / zone_kind / flags) — keep the two
 # in sync when the board mapping changes.
 # ---------------------------------------------------------------------------
 
 SHOWCASE_PATH = SITE_PROPHET / "showcase.json"
 SHOWCASE_LIMIT = 12
+SHOWCASE_HORIZON = 10       # sessions after next-bar entry (grader convention)
+SHOWCASE_MIN_WINNERS = 6    # fewer than this → keep the previous payload
+
+BOARD_LEDGER_DIR = _REPO / "data" / "us_board_ledger"
+GRADES_PATH      = BOARD_LEDGER_DIR / "retro_grades.parquet"
+SNAPSHOTS_PATH   = BOARD_LEDGER_DIR / "snapshots.jsonl"
 
 # EN → ZH sector names, byte-matched to the rendered board (site/us_stocks.html
 # pv-ind l-zh spans) so the landing teaser and the board never disagree.
@@ -278,54 +289,103 @@ def derive_showcase_card(row: dict) -> dict | None:
     }
 
 
-def build_showcase_payload(standouts: dict, limit: int = SHOWCASE_LIMIT) -> dict:
-    """Curate the landing slice: board order, with vocabulary breadth.
-
-    Takes the first `limit` showable cards in producer (confluence-rank) order,
-    then — honesty by construction — if the slice contains no wait or no hold
-    card, swaps the deepest slot(s) for the first such card found further down
-    the board, so the teaser never shows an all-green wall the board itself
-    doesn't have.
-    """
-    cards = [c for c in (derive_showcase_card(r) for r in standouts.get("buy") or [])
-             if c is not None]
-    picked = cards[:limit]
-    rest = cards[limit:]
-    slot = len(picked) - 1  # each swap takes its own tail slot
-    for want in ("wait", "hold"):
-        if any(c["verb"] == want for c in picked):
-            continue
-        sub = next((c for c in rest if c["verb"] == want), None)
-        if sub is not None and slot >= 0:
-            picked[slot] = sub
-            slot -= 1
-            rest = [c for c in rest if c is not sub]
-    return {
-        "schema": "prophet.showcase/v1",
-        "as_of": standouts.get("as_of"),
-        "authority_tier": "display",
-        "count": len(picked),
-        "note": (
-            "DISPLAY-ONLY landing teaser — a slim slice of the nightly Prophet"
-            " board (us_standouts.json). No signal originates here; nightly is"
-            " the sole refresher."
-        ),
-        "cards": picked,
-    }
-
-
-def write_showcase(standouts_path: Path = STANDOUTS_PATH,
-                   out_path: Path = SHOWCASE_PATH) -> dict | None:
-    """Read standouts → write the landing showcase payload. Fail-soft."""
+def _load_board_snapshots(path: Path) -> dict:
+    """as_of → board snapshot dict from the append-only JSONL. Fail-soft {}."""
+    snaps: dict = {}
     try:
-        with standouts_path.open(encoding="utf-8") as f:
-            standouts = json.load(f)
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    d = json.loads(line)
+                except Exception:  # noqa: BLE001 — one bad line never kills the file
+                    continue
+                if d.get("as_of"):
+                    snaps[d["as_of"]] = d
     except Exception as e:  # noqa: BLE001
-        log.warning("build_prophet: showcase skipped — standouts unreadable: %s", e)
+        log.warning("build_prophet: showcase snapshots unreadable: %s", e)
+    return snaps
+
+
+def build_showcase_payload(grades, snapshots: dict,
+                           limit: int = SHOWCASE_LIMIT,
+                           horizon: int = SHOWCASE_HORIZON,
+                           min_winners: int = SHOWCASE_MIN_WINNERS) -> dict | None:
+    """Delayed-winners slice: winning calls from the freshest fully-graded board.
+
+    Walks board dates newest-first; a board qualifies when its buy-lane rows
+    have matured `horizon`-session grades (retro_grades) AND its snapshot is
+    stored (card fields + spark). Winners only (ret > 0), ranked by return,
+    capped at `limit`, each stamped with `since_pct`. Returns None when no
+    board yields >= min_winners — callers keep the previous payload then.
+    Grade semantics inherit grade_us_board.py honesty conventions: entry =
+    next session's close after the board date; dividend-adjusted total-return
+    closes; survivorship handled via the dead-name store.
+    """
+    df = grades[(grades["lane"] == "buy")
+                & (grades["horizon"] == horizon)
+                & grades["ret"].notna()]
+    for as_of in sorted(df["as_of"].unique(), reverse=True):
+        snap = snapshots.get(as_of)
+        if not snap:
+            continue
+        rows_by_tk = {r.get("ticker"): r for r in (snap.get("buy") or [])}
+        winners = df[(df["as_of"] == as_of) & (df["ret"] > 0)] \
+            .sort_values("ret", ascending=False)
+        cards: list[dict] = []
+        for rec in winners.itertuples():
+            row = rows_by_tk.get(rec.ticker)
+            if not row:
+                continue
+            card = derive_showcase_card(row)
+            if card is None:
+                continue
+            card["since_pct"] = round(float(rec.ret) * 100, 1)
+            cards.append(card)
+            if len(cards) >= limit:
+                break
+        if len(cards) >= min_winners:
+            return {
+                "schema": "prophet.showcase/v2",
+                "kind": "delayed_winners",
+                "as_of": as_of,
+                "window_sessions": horizon,
+                "authority_tier": "display",
+                "count": len(cards),
+                "note": (
+                    f"DISPLAY-ONLY, DELAYED. Winning calls from the board of {as_of},"
+                    f" graded at {horizon} sessions from the next session's close"
+                    " after the call (grade_us_board conventions, survivorship-"
+                    "adjusted). Selected because they worked; the live board ships"
+                    " nightly behind registration and includes wins and losses."
+                    " No signal originates here."
+                ),
+                "cards": cards,
+            }
+    return None
+
+
+def write_showcase(grades_path: Path = GRADES_PATH,
+                   snapshots_path: Path = SNAPSHOTS_PATH,
+                   out_path: Path = SHOWCASE_PATH) -> dict | None:
+    """Board ledger → landing showcase payload. Fail-soft: on any miss the
+    PREVIOUS showcase.json is kept (a stale winners wall beats an empty one,
+    and the live board is never the fallback)."""
+    payload = None
+    try:
+        import pandas as pd  # noqa: PLC0415
+        grades = pd.read_parquet(grades_path)
+        payload = build_showcase_payload(grades, _load_board_snapshots(snapshots_path))
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_prophet: showcase build failed: %s", e)
+    if payload is None:
+        log.warning("build_prophet: showcase NOT refreshed — keeping previous %s",
+                    out_path)
         return None
-    payload = build_showcase_payload(standouts)
     _write_json(out_path, payload)
-    log.info("build_prophet: wrote showcase.json (%d cards, as_of=%s)",
+    log.info("build_prophet: wrote showcase.json (%d winners, board_as_of=%s)",
              payload["count"], payload["as_of"])
     return payload
 
