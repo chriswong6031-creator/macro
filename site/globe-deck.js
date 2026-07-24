@@ -137,7 +137,14 @@
   // ---- projection & sizing -------------------------------------------------
   var projection = d3.geoOrthographic().precision(0.4);
   var path = d3.geoPath(projection, ctx);
-  var rot = [98, -38];      // [lambda, phi] — start centered on North America (98W, 38N)
+  var rot = (function () {
+    // Start centred on the viewer's HOME country when the hub resolved it in the
+    // <head> boot (window.__mmHome = [lon,lat], from the browser timezone); the
+    // orthographic rotation to centre [lon,lat] is [-lon,-lat]. Falls back to North
+    // America (98W, 38N) when home is unknown — identical to the prior default.
+    try { var hp = window.__mmHome; if (hp && isFinite(hp[0]) && isFinite(hp[1])) return [-hp[0], -hp[1]]; } catch (e) {}
+    return [98, -38];
+  })();                     // [lambda, phi]
   var fitScale = 240, scale = 240, W = 0, H = 0, R = 0, dpr = 1, lastClipR = -1;
 
   // cached radial gradients (avoid per-frame createRadialGradient allocations)
