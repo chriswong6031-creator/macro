@@ -1721,11 +1721,11 @@ const STILL = document.documentElement.classList.contains('still');
 (function(){
   const wrap=document.getElementById('lanes'); if(!wrap) return;
   const TH={'Big Pharma':'大型药企','Insurance':'保险','Payments':'支付','AI Software':'AI软件',
-    'Industrials':'工业','US Energy':'美国能源','Mag 7':'七巨头',
+    'Industrials':'工业','US Energy':'美国能源',
     'Defensives':'防御板块','Regional Banks':'区域银行','Cybersecurity':'网络安全',
     'GLP-1 & Obesity':'GLP-1减重','Non-AI Software':'非AI软件'};
   const disp=n=>LANG.cur()==='zh'?(TH[n]||n):n;
-  const SEED={buy:['Big Pharma|69','US Energy|71','Insurance|67'],alm:['AI Software|62','Mag 7|54','Industrials|58'],
+  const SEED={buy:['Big Pharma|69','US Energy|71','Insurance|67'],alm:['AI Software|62','Industrials|58'],
     tp:['Defensives|57','Regional Banks|60','Payments|64'],
     sa:['Cybersecurity|72','GLP-1 & Obesity|61','Non-AI Software|60']};
   for(const k in SEED) SEED[k].forEach(s=>{ const [n,sc]=s.split('|');
