@@ -1504,3 +1504,249 @@ class TestOutboxActivityPayload:
         it = r["accounts"][0]["items"][0]
         assert it["attempts"] == 1
         assert it["status"] == "failed"
+
+
+# ---------------------------------------------------------------------------
+# Operator console additions (PR 2/3) — pipeline block, sentinel/allow,
+# accounts/toggle, sentinel `passed` pass-through
+# ---------------------------------------------------------------------------
+
+class TestPipelineBlock:
+    def test_overview_pipeline_present_on_empty_root(self, empty_root):
+        r = marketing.overview(empty_root)
+        assert r["ok"] is True
+        assert "pipeline" in r, "overview must always carry a pipeline block"
+        pl = r["pipeline"]
+        # every stage present as a dict, fail-soft (not None) on a bare root
+        for stage in ("plan", "gate", "outbox", "publisher", "receipts"):
+            assert stage in pl, f"pipeline missing {stage}"
+        assert pl["plan"]["present"] is False
+        assert pl["gate"]["present"] is False
+        assert pl["outbox"]["present"] is False
+        # publisher stage is computable from config/env even with no files
+        assert pl["publisher"]["armed"] is False
+        assert isinstance(pl["publisher"]["slots_utc"], list)
+
+    def test_overview_pipeline_reads_content_plan(self, seeded_content_root):
+        r = marketing.overview(seeded_content_root)
+        pl = r["pipeline"]
+        assert pl["plan"]["present"] is True
+        assert pl["plan"]["items"] == 3          # summary.total_posts in fixture
+        # 2026-07-18 as_of is before "today" → stale by the date-compare fallback
+        assert pl["plan"]["stale"] is True
+
+    def test_pipeline_next_slot_is_iso_or_none(self, empty_root):
+        pl = marketing.overview(empty_root)["pipeline"]
+        nxt = pl["publisher"]["next_slot_utc"]
+        # either a Z-suffixed ISO string or None — never a bare magic string
+        assert nxt is None or (isinstance(nxt, str) and nxt.endswith("Z"))
+
+
+class TestSentinelAllow:
+    def test_appends_valid_exception_row(self, tmp_path):
+        r = marketing.sentinel_allow("ob-2026-07-24-abc123", "dup was my own post", root=tmp_path)
+        assert r["ok"] is True
+        p = tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl"
+        assert p.exists()
+        rows = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["item_id"] == "ob-2026-07-24-abc123"
+        assert row["allow"] is True
+        assert row["reason"] == "dup was my own post"
+        assert row["actor"] == "operator"
+        assert "at" in row and row["at"].endswith("Z")
+
+    def test_appends_are_additive(self, tmp_path):
+        marketing.sentinel_allow("ob-1", "reason one", root=tmp_path)
+        marketing.sentinel_allow("ob-2", "reason two", root=tmp_path)
+        p = tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl"
+        rows = [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
+        assert [r["item_id"] for r in rows] == ["ob-1", "ob-2"]
+
+    def test_rejects_empty_reason(self, tmp_path):
+        r = marketing.sentinel_allow("ob-x", "   ", root=tmp_path)
+        assert r["ok"] is False
+        assert "reason" in r["error"].lower()
+        # nothing written
+        assert not (tmp_path / "data" / "marketing" / "sentinel_exceptions.jsonl").exists()
+
+    def test_rejects_empty_item_id(self, tmp_path):
+        r = marketing.sentinel_allow("", "a reason", root=tmp_path)
+        assert r["ok"] is False
+        assert "item_id" in r["error"].lower()
+
+
+class TestAccountsToggle:
+    def test_merge_writes_overrides_atomically(self, tmp_path):
+        r1 = marketing.accounts_toggle("flagship", False, note="pausing", root=tmp_path, push=False)
+        assert r1["ok"] is True
+        assert r1["pushed"] is False
+        p = tmp_path / "data" / "marketing" / "account_overrides.json"
+        obj = json.loads(p.read_text())
+        assert obj["flagship"]["enabled"] is False
+        assert obj["flagship"]["note"] == "pausing"
+        assert obj["flagship"]["at"].endswith("Z")
+        # a second toggle MERGES (does not clobber the first)
+        marketing.accounts_toggle("research_a", True, root=tmp_path, push=False)
+        obj2 = json.loads(p.read_text())
+        assert set(obj2.keys()) == {"flagship", "research_a"}
+        assert obj2["research_a"]["enabled"] is True
+        # no stray temp file left behind
+        assert not (p.with_suffix(p.suffix + ".tmp")).exists()
+
+    def test_toggle_flip_updates_same_key(self, tmp_path):
+        marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        marketing.accounts_toggle("flagship", True, root=tmp_path, push=False)
+        obj = json.loads((tmp_path / "data" / "marketing" / "account_overrides.json").read_text())
+        assert obj["flagship"]["enabled"] is True
+
+    def test_rejects_empty_account_id(self, tmp_path):
+        r = marketing.accounts_toggle("  ", True, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "account_id" in r["error"].lower()
+
+    def test_rejects_unknown_account_when_config_present(self, tmp_path):
+        cfg = tmp_path / "config"
+        cfg.mkdir(parents=True)
+        (cfg / "marketing.yml").write_text(
+            "desk_network:\n  accounts:\n    - id: flagship\n    - id: research_a\n",
+            encoding="utf-8")
+        r = marketing.accounts_toggle("not_a_desk", True, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "unknown account" in r["error"]
+        # known id still accepted against the same config
+        r2 = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r2["ok"] is True
+
+    def test_refused_in_deployed_mode(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        assert r["ok"] is False
+        assert "deployed" in r["error"].lower()
+        assert not (tmp_path / "data" / "marketing" / "account_overrides.json").exists()
+
+    def test_note_and_reason_length_capped(self, tmp_path):
+        marketing.accounts_toggle("flagship", True, note="n" * 2000,
+                                  root=tmp_path, push=False)
+        obj = json.loads((tmp_path / "data" / "marketing"
+                          / "account_overrides.json").read_text())
+        assert len(obj["flagship"]["note"]) == 500
+        r = marketing.sentinel_allow("post-x-001", "r" * 2000, root=tmp_path)
+        assert r["ok"] is True
+        row = json.loads((tmp_path / "data" / "marketing"
+                          / "sentinel_exceptions.jsonl").read_text().splitlines()[-1])
+        assert len(row["reason"]) == 500
+
+    def test_honest_pushed_false_when_git_push_refused(self, tmp_path, monkeypatch):
+        """When the git commit+push step reports pushed:false (e.g. off a main
+        tracking branch), the override is still saved and the result is honest."""
+        from admin import gitops
+
+        def fake_commit_paths(paths, message="", push=False, confirm=False):
+            # mimic gitops refusing to push from a feature branch
+            return {"ok": True, "committed": True, "pushed": False,
+                    "warning": "committed locally; refused to push (not on a main tracking branch)"}
+
+        monkeypatch.setattr(gitops, "commit_paths", fake_commit_paths)
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=True)
+        assert r["ok"] is True
+        assert r["pushed"] is False
+        assert "not yet" in r["note"].lower() or "will not reach" in r["note"].lower()
+        # the local write still happened
+        p = tmp_path / "data" / "marketing" / "account_overrides.json"
+        assert json.loads(p.read_text())["flagship"]["enabled"] is False
+
+    def test_channels_passes_through_overrides(self, tmp_path):
+        """channels() surfaces the override file so the UI toggle reflects state."""
+        # seed state so channels() reaches the populated branch
+        nw = tmp_path / "data" / "neuralweb"
+        nw.mkdir(parents=True)
+        (nw / "marketing_state.json").write_text(
+            json.dumps(MINIMAL_STATE, ensure_ascii=False), encoding="utf-8")
+        marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
+        ch = marketing.channels(tmp_path)
+        assert ch["ok"] is True
+        assert "overrides" in ch
+        assert ch["overrides"]["flagship"]["enabled"] is False
+        assert "channels_set" in ch
+
+
+class TestGitopsCommitPaths:
+    def test_refuses_non_allowlisted_path(self):
+        from admin import gitops
+        r = gitops.commit_paths(["site/evil.html"], confirm=True)
+        assert r["ok"] is False
+        assert "allowlist" in r["error"].lower()
+
+    def test_requires_confirm(self):
+        from admin import gitops
+        r = gitops.commit_paths(["config.yml"])
+        assert r["ok"] is False
+        assert "confirm" in r["error"].lower()
+
+    def test_allowlisted_path_accepted(self, monkeypatch):
+        """An allowlisted path passes the guard (no real git side-effect: the
+        _git call is stubbed to report a clean tree → no-op)."""
+        from admin import gitops
+        monkeypatch.setattr(gitops, "_git", lambda *a, **k: (0, "", ""))
+        r = gitops.commit_paths(["config.yml"], confirm=True)
+        assert r["ok"] is True
+        # clean tree → nothing to commit, but the path was accepted (not refused)
+        assert "allowlist" not in str(r.get("error", "")).lower()
+        assert r.get("committed") in (False, None)
+
+
+class TestSentinelPassedPassthrough:
+    _SENTINEL_WITH_PASSED = {
+        "schema_version": 1,
+        "as_of": "2026-07-24",
+        "produced_at": "2026-07-24T04:00:00Z",
+        "plan_status": "pass",
+        "publish_enabled": False,
+        "auditor_strict": True,
+        "counts": {"items": 21, "passed": 12, "quarantined_policy": 2,
+                   "quarantined_overflow": 7},
+        "reasons_histogram": {"cadence_cap_daily": 7, "near_dup": 2},
+        "passed": [
+            {"id": "ob-2026-07-24-a", "account": "flagship", "type": "signal",
+             "cashtag": "$TNDM", "headline": "Tandem momentum", "slot": "D1-AM",
+             "display_time": "9:30 AM ET"},
+            {"id": "ob-2026-07-24-b", "account": "research_a", "type": "education",
+             "cashtag": None, "headline": "MACD without jargon", "slot": "D1-PM"},
+        ],
+        "quarantined": [
+            {"id": "ob-q1", "class": "overflow", "account": "flagship"},
+            {"id": "ob-q2", "account": "flagship", "reasons": ["near_dup:ob-x"]},
+        ],
+        "checks": {},
+        "notes": [],
+    }
+
+    def _seed(self, tmp_path):
+        d = tmp_path / "data" / "marketing"
+        d.mkdir(parents=True)
+        (d / "sentinel_report.json").write_text(
+            json.dumps(self._SENTINEL_WITH_PASSED, ensure_ascii=False), encoding="utf-8")
+        return tmp_path
+
+    def test_passes_through_passed_list_when_present(self, tmp_path):
+        self._seed(tmp_path)
+        r = marketing.sentinel(tmp_path)
+        assert r["ok"] is True
+        assert isinstance(r["passed"], list)
+        assert len(r["passed"]) == 2
+        assert r["passed"][0]["cashtag"] == "$TNDM"
+        assert r["passed"][0]["display_time"] == "9:30 AM ET"
+
+    def test_passed_is_none_when_absent(self, tmp_path):
+        # the older MINIMAL fixture has no `passed` — must not raise, must be None
+        d = tmp_path / "data" / "marketing"
+        d.mkdir(parents=True)
+        (d / "sentinel_report.json").write_text(
+            json.dumps({"plan_status": "pass", "publish_enabled": False,
+                        "counts": {"items": 5}, "reasons_histogram": {},
+                        "quarantined": []}, ensure_ascii=False), encoding="utf-8")
+        r = marketing.sentinel(tmp_path)
+        assert r["ok"] is True
+        assert r["passed"] is None
