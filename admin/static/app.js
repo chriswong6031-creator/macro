@@ -398,8 +398,7 @@ async function refreshOutboxNavDot() {
   try {
     const d = await api("/api/marketing/outbox");
     if (!d || !d.ok) return;
-    const s = d.summary || {};
-    setNavDot("marketing_outbox", (s.queued || 0) + (s.held || 0));
+    setNavDot("marketing_outbox", obxAwaitingCount(d));
   } catch (e) { /* ignore — advisory only */ }
 }
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
@@ -4936,6 +4935,26 @@ function obxIsBulkApprovable(it) {
   if (obxIsFailedRearmable(it)) return it.decision !== "approve";
   return obxIsDecidable(it) && obxEffState(it) !== "approve_ok";
 }
+/* A "cleared" item has the operator's yes and is now waiting on the publisher —
+   either still ledger-queued carrying an approve decision (approve_ok) or already
+   folded to 'approved' by the actuator. Cleared items leave the awaiting-approval
+   zone and drop into the collapsed "awaiting publish" shelf; they show no Approve
+   button (see obxItemCard). */
+function obxIsCleared(it) {
+  return obxEffState(it) === "approve_ok" || it.status === "approved";
+}
+/* Total posts genuinely awaiting the operator across all desks — undecided
+   (ready) + held — for the nav dot and desk badges. Uses effective state so an
+   already-approved item never inflates the "needs you" signal (the server folds
+   it as 'queued' until the actuator advances it). */
+function obxAwaitingCount(d) {
+  let n = 0;
+  ((d && d.accounts) || []).forEach(a => (a.items || []).forEach(it => {
+    const s = obxEffState(it);
+    if (s === "queued" || s === "held") n += 1;
+  }));
+  return n;
+}
 
 function obxStamp(ts) {
   if (!ts) return "—";
@@ -5040,11 +5059,22 @@ function obxRenderLive(d) {
   OBX_LAST = d;
 
   const cap = d.cap != null ? d.cap : "—";
-  const summary = d.summary || {};
   const accounts = d.accounts || [];
   const history = d.history || [];
   const sentinel = d.sentinel || null;
   const activity = d.activity || [];
+
+  /* Display counts recomputed from EFFECTIVE state. The server folds an
+     operator-approved item as 'queued' until the actuator runs, so d.summary
+     can't separate "ready to review" from "cleared, awaiting publish" —
+     recompute here so the tiles agree with the two review zones below.
+     approve_ok (queued + approve decision) counts as Cleared, not Ready. */
+  const effSummary = { queued: 0, held: 0, approved: 0, posted: 0, failed: 0, quarantined: 0 };
+  accounts.forEach(a => (a.items || []).forEach(it => {
+    const s = obxEffState(it);
+    const key = (s === "approve_ok") ? "approved" : s;
+    if (effSummary[key] != null) effSummary[key] += 1;
+  }));
 
   /* Global work count — how many undecided/re-armable items across all desks. */
   let globalReady = 0;
@@ -5068,7 +5098,7 @@ function obxRenderLive(d) {
   ];
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
-      const val = summary[k] != null ? summary[k] : 0;
+      const val = effSummary[k] != null ? effSummary[k] : 0;
       return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
         <div class="eyebrow">${esc(lbl)}</div>
         <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
@@ -5093,48 +5123,55 @@ function obxRenderLive(d) {
   const acctPills = `<div class="mkt-acct-switcher" id="obx-acct-sw">
     <button class="mkt-acct-pill active" data-acct="all" onclick="obxSwitchAcct('all',this)">All desks</button>
     ${accounts.map(a => {
-      const c = a.counts || {};
-      const pend = (c.queued || 0) + (c.held || 0);
+      /* Badge = posts still awaiting a decision (undecided + held), from
+         effective state so cleared-but-queued items don't inflate it. */
+      const pend = (a.items || []).filter(it => { const s = obxEffState(it); return s === "queued" || s === "held"; }).length;
       const badge = pend ? ` <span class="obx-pill-n">${pend}</span>` : "";
       return `<button class="mkt-acct-pill" data-acct="${esc(a.id)}" onclick="obxSwitchAcct(${esc(JSON.stringify(a.id))},this)">${esc(a.id)}${badge}</button>`;
     }).join("")}
   </div>`;
 
-  /* Per-account review sections. */
+  /* Per-account review sections. Each desk splits into two zones: posts still
+     AWAITING the operator's approval (undecided / held / failed — the action
+     list) and posts already CLEARED and awaiting publish (approved — no longer
+     needing a decision). Approving a post moves it out of the action list into
+     the collapsed "awaiting publish" shelf, and its Approve button disappears. */
   let sections = "";
   accounts.forEach(acct => {
     const items = acct.items || [];
-    /* Rail = still-decidable (queued/held) first, then cleared (approved,
-       awaiting actuator), then failed (actionable). Within a bucket: by
-       scheduled_at. Posted/quarantined are history — not in the rail. */
     const rail = items.filter(obxInRail);
-    const rank = it => obxIsDecidable(it) ? 0 : (it.status === "approved" ? 1 : 2);
-    rail.sort((a, b) => {
-      const r = rank(a) - rank(b);
-      if (r !== 0) return r;
-      return (a.scheduled_at || "").localeCompare(b.scheduled_at || "");
-    });
+    /* Split the rail: awaiting a decision vs cleared (approved) awaiting publish. */
+    const awaiting = rail.filter(it => !obxIsCleared(it));
+    const cleared  = rail.filter(obxIsCleared);
+    /* Awaiting order: undecided first, then held, then failed; each by scheduled_at.
+       Cleared: by scheduled_at (post order). */
+    const awRank = it => obxEffState(it) === "held" ? 1 : (it.status === "failed" ? 2 : 0);
+    awaiting.sort((a, b) => (awRank(a) - awRank(b)) || (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
+    cleared.sort((a, b) => (a.scheduled_at || "").localeCompare(b.scheduled_at || ""));
 
-    const cards = rail.map(it => obxItemCard(it, acct.id)).join("");
-    const c = acct.counts || {};
-    const pend = (c.queued || 0) + (c.held || 0);
-    const failN = c.failed || 0;
+    /* Counts from effective state — the server folds an approved-but-not-yet-posted
+       item as 'queued', so acct.counts can't tell "awaiting" from "cleared". */
+    const undecidedN = awaiting.filter(it => obxEffState(it) === "queued").length;
+    const heldN      = awaiting.filter(it => obxEffState(it) === "held").length;
+    const failN      = awaiting.filter(it => it.status === "failed").length;
+    const clearedN   = cleared.length;
     const parts = [];
-    if (pend) parts.push(`${pend} awaiting review`);
-    if (c.approved) parts.push(`${c.approved} cleared`);
-    if (failN) parts.push(`${failN} failed`);
+    if (undecidedN) parts.push(`${undecidedN} awaiting review`);
+    if (heldN)      parts.push(`${heldN} held`);
+    if (failN)      parts.push(`${failN} failed`);
+    if (clearedN)   parts.push(`${clearedN} cleared`);
     const countChip = parts.length
       ? `<span class="cnt">${parts.join(" · ")}</span>`
       : `<span class="cnt">nothing to review</span>`;
 
     /* Slot meter — cap-many dots, filled = slots this desk has already spent
        today (posted). The visual explanation for the small daily ceiling. */
-    const slotMeter = obxSlotMeter(c.posted || 0, cap);
+    const slotMeter = obxSlotMeter((acct.counts || {}).posted || 0, cap);
 
-    /* Per-account bulk bar — one batch POST each; only when there is ready work.
-       "ready" here = undecided queued + re-armable failures (not held). */
-    const acctReady = items.filter(it => obxIsBulkApprovable(it) && obxEffState(it) !== "held");
-    const acctHeld = items.filter(it => obxEffState(it) === "held");
+    /* Per-account bulk bar — acts only on the awaiting zone (ready = undecided
+       queued + re-armable failures, not held). */
+    const acctReady = awaiting.filter(it => obxIsBulkApprovable(it) && obxEffState(it) !== "held");
+    const acctHeld  = awaiting.filter(it => obxEffState(it) === "held");
     const bulk = (acctReady.length || acctHeld.length) ? `<div class="obx-acct-bulk">
       <button class="obx-bulk-btn obx-bulk-approve" ${acctReady.length ? "" : "disabled"}
         onclick="obxBulkAccount(${esc(JSON.stringify(acct.id))},'approve',this)">Approve all ready${acctReady.length ? ` (${acctReady.length})` : ""}</button>
@@ -5143,13 +5180,38 @@ function obxRenderLive(d) {
       <span class="obx-bulk-msg"></span>
     </div>` : "";
 
+    /* Zone 1 — awaiting approval. The small zone label appears only when there
+       is also a cleared shelf, so the two-zone split is legible without adding
+       noise to the common "nothing cleared yet" case. */
+    const awCards = awaiting.map(it => obxItemCard(it, acct.id)).join("");
+    const awLabel = clearedN
+      ? `<div class="obx-zone-label">Awaiting your approval${undecidedN ? ` <span class="obx-zone-n">${undecidedN}</span>` : ""}</div>`
+      : "";
+    const awaitingHtml = awCards
+      ? `${awLabel}${awCards}`
+      : `<div class="card"><div class="note muted">${clearedN ? "Nothing left to review — everything is cleared and waiting to post." : "No items in the review window for this desk."}</div></div>`;
+
+    /* Zone 2 — cleared, awaiting publish. Collapsed shelf; cards here carry no
+       Approve button (already approved) — only a quiet "Hold instead" pull-back
+       while the decision is still reversible. */
+    const clearedHtml = clearedN ? `<details class="obx-cleared-group">
+      <summary class="obx-cleared-summary">
+        <span class="obx-cleared-ico" aria-hidden="true">✓</span>
+        <span class="obx-cleared-lbl">Awaiting publish</span>
+        <span class="obx-cleared-n">${clearedN}</span>
+        <span class="obx-cleared-hint">approved — will post at the next slot</span>
+      </summary>
+      <div class="obx-cleared-body">${cleared.map(it => obxItemCard(it, acct.id)).join("")}</div>
+    </details>` : "";
+
     sections += `<div class="obx-acct-section" data-acct="${esc(acct.id)}">
       <div class="obx-acct-head">
         <div class="obx-acct-title">${esc(acct.id)} ${countChip}</div>
         ${slotMeter}
       </div>
       ${bulk}
-      ${cards || `<div class="card"><div class="note muted">No items in the review window for this desk.</div></div>`}
+      ${awaitingHtml}
+      ${clearedHtml}
     </div>`;
   });
 
@@ -5178,9 +5240,9 @@ async function obxRefreshInPlace() {
      express it — fall back to a full mount so the accruing card renders. */
   if (d.note && !(d.accounts || []).length) { await RENDER.marketing_outbox(); return; }
   obxRenderLive(d);
-  /* keep the nav pending-dot in sync with the just-refreshed queue */
-  const s = d.summary || {};
-  setNavDot("marketing_outbox", (s.queued || 0) + (s.held || 0));
+  /* keep the nav pending-dot in sync — awaiting-review only (cleared items are
+     still ledger-queued but already approved, so they don't count as "needs you"). */
+  setNavDot("marketing_outbox", obxAwaitingCount(d));
   window.scrollTo({ top: y, behavior: "instant" });
 }
 
@@ -6194,7 +6256,7 @@ function obxItemCard(it, acctId) {
 
   /* Decided items recede: held + cleared already have the operator's call, so
      they drop emphasis and let undecided (ready) + failed work pop. */
-  const decided = (eff === "held" || eff === "approved");
+  const decided = (eff === "held" || obxIsCleared(it));
   const recedeCls = decided ? " obx-recede" : "";
 
   const kindChip = obxKindChip(it.kind);
@@ -6221,10 +6283,22 @@ function obxItemCard(it, acctId) {
     </div>`;
   }).join("");
 
-  /* Controls — decidable (queued/held), re-armable failure, spent failure, or
-     locked (cleared / posted). */
+  /* Controls. A cleared item (approved, awaiting publish) shows NO Approve
+     button — it already has the operator's yes. While still ledger-queued the
+     decision is reversible, so it keeps a quiet "Hold instead" pull-back; once
+     the actuator folds it to 'approved' it is locked. Undecided/held items get
+     the full Approve/Hold pair; failures get retry / spent-attempts states. */
   let controls = "";
-  if (obxIsDecidable(it)) {
+  if (obxIsCleared(it)) {
+    const flippable = obxIsDecidable(it);   /* queued + approve → still reversible */
+    controls = flippable
+      ? `<div class="obx-controls obx-cleared-ctrl" data-item="${esc(it.id)}">
+          <span class="obx-lock-note">Cleared — will post at the next slot.</span>
+          <button class="btn obx-btn-hold obx-pullback" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold instead</button>
+          <span class="obx-ctrl-msg"></span>
+        </div>`
+      : `<div class="obx-controls obx-locked"><span class="obx-lock-note">Cleared — waiting for the actuator.</span></div>`;
+  } else if (obxIsDecidable(it)) {
     controls = `<div class="obx-controls" data-item="${esc(it.id)}">
       <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve</button>
       <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold</button>
@@ -6241,7 +6315,9 @@ function obxItemCard(it, acctId) {
       <span class="obx-fail-warn">Out of retries — the next actuator run will quarantine this item.</span>
     </div>`;
   } else {
-    controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">${eff === "approved" ? "Cleared — waiting for the actuator." : "Locked — decision window closed."}</span></div>`;
+    /* Cleared/approved is handled above; this is any other non-decidable rail
+       item (a terminal status that slipped into the window). */
+    controls = `<div class="obx-controls obx-locked"><span class="obx-lock-note">Locked — decision window closed.</span></div>`;
   }
 
   /* Provenance chips: when the draft was written (created_at) + which plan day it

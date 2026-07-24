@@ -3069,6 +3069,74 @@ tr.lab-cell-floor td { opacity: .72; }
 .obx-card.obx-recede { opacity: .62; }
 .obx-card.obx-recede:hover { opacity: 1; }
 
+/* Two-zone review split — a subtle label over the awaiting-approval cards, shown
+   only when a cleared shelf is also present so the split reads clearly. */
+.obx-zone-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 4px 0 10px;
+}
+.obx-zone-n {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  background: var(--surface2);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+/* "Awaiting publish" shelf — approved posts that have left the review list and
+   now wait on the publisher. Collapsed by default (a hidden section) so the
+   review list shows only what still needs a decision. */
+.obx-cleared-group {
+  margin-top: 6px;
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.obx-cleared-summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.obx-cleared-summary::-webkit-details-marker { display: none; }
+.obx-cleared-summary::before {
+  content: "\25B8";                 /* ▸ — rotates when open */
+  font-size: 10px;
+  color: var(--faint);
+  transition: transform var(--dur) var(--ease);
+}
+.obx-cleared-group[open] .obx-cleared-summary::before { transform: rotate(90deg); }
+.obx-cleared-summary:hover { color: var(--text); }
+.obx-cleared-ico { color: var(--ok); font-weight: 700; }
+.obx-cleared-lbl { font-weight: 600; color: var(--text); }
+.obx-cleared-n {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ok);
+  background: var(--ok-bg);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.obx-cleared-hint { color: var(--faint); font-size: 11px; }
+.obx-cleared-body { padding-top: 8px; }
+
+/* Cleared-item controls — no Approve button; a quiet pull-back to Hold while the
+   decision is still reversible (before the actuator folds it). */
+.obx-cleared-ctrl { flex-wrap: wrap; }
+.obx-btn-hold.obx-pullback { padding: 4px 12px; font-size: 11.5px; }
+
 /* Posted-history table — rides .exp-table (fixed layout + scroll wrap) but
    redefines its own column widths, overriding the experiments-schema nth-child
    widths for this 6-column shape. */
