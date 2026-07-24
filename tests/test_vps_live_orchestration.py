@@ -80,6 +80,25 @@ def test_atomic_publish_makes_browser_artifact_readable(tmp_path: Path):
     assert target.stat().st_mode & 0o777 == 0o644
 
 
+def test_quote_snapshot_quality_rejects_empty_or_low_coverage(tmp_path: Path):
+    path = tmp_path / "quotes.json"
+    path.write_text('{"quotes":{},"meta":{"requested":25,"resolved":0}}')
+    assert "quality too low" in (
+        vlo.quote_snapshot_error(path, min_resolved=5, min_coverage=0.2) or ""
+    )
+    path.write_text(
+        json.dumps(
+            {
+                "quotes": {f"S{i}": {"price": i + 1} for i in range(5)},
+                "meta": {"requested": 25, "resolved": 5},
+            }
+        )
+    )
+    assert vlo.quote_snapshot_error(
+        path, min_resolved=5, min_coverage=0.2
+    ) is None
+
+
 def test_command_can_publish_private_state_outside_public_root(tmp_path: Path):
     source = tmp_path / "stage" / "quotes_full.json"
     source.parent.mkdir()
@@ -254,7 +273,7 @@ def _healthy_vps_status() -> dict:
     return {
         "status": "ok",
         "checks": {
-            "quotes": {"age_min": 1},
+            "quotes": {"age_min": 1, "requested": 25, "resolved": 20},
             "release_publications": {"age_min": 1},
             "orchestrator": {
                 "age_min": 1,

@@ -20,7 +20,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 log = logging.getLogger("vps_live")
 ROOT = Path(__file__).resolve().parent.parent
@@ -82,6 +82,34 @@ def atomic_publish(source: Path, target: Path, *, mode: int = 0o644) -> None:
             pass
 
 
+def quote_snapshot_error(
+    path: Path,
+    *,
+    min_resolved: int,
+    min_coverage: float,
+) -> str | None:
+    """Return a quality error for an empty/severely degraded quote snapshot."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        meta = payload.get("meta") or {}
+        quotes = payload.get("quotes") or {}
+        requested = int(meta.get("requested") or 0)
+        resolved = int(meta.get("resolved") or 0)
+        if not isinstance(quotes, dict) or resolved != len(quotes):
+            return "quote snapshot resolved count does not match payload"
+        if requested <= 0:
+            return "quote snapshot requested no symbols"
+        coverage = resolved / requested
+        if resolved < min_resolved or coverage < min_coverage:
+            return (
+                f"quote snapshot quality too low: {resolved}/{requested} "
+                f"({coverage:.1%})"
+            )
+        return None
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return f"quote snapshot quality check failed: {exc}"
+
+
 class Orchestrator:
     def __init__(
         self,
@@ -114,6 +142,7 @@ class Orchestrator:
         outputs: tuple[tuple[Path, Path], ...] = (),
         timeout: int,
         env: dict[str, str] | None = None,
+        validator: Callable[[Path], str | None] | None = None,
     ) -> TaskResult:
         started = time.monotonic()
         merged_env = os.environ.copy()
@@ -155,9 +184,17 @@ class Orchestrator:
             published: list[str] = []
             if completed.returncode == 0:
                 required_missing = bool(outputs and not outputs[0][0].is_file())
+                validation_error = (
+                    validator(outputs[0][0])
+                    if validator is not None and not required_missing
+                    else None
+                )
                 if required_missing:
                     status = "failed"
                     detail = f"required output was not produced: {outputs[0][0]}"
+                elif validation_error:
+                    status = "failed"
+                    detail = validation_error
                 else:
                     for index, (source, target) in enumerate(outputs):
                         if not source.is_file():
@@ -236,6 +273,9 @@ class Orchestrator:
             ["--display", "--out", str(self.stage_dir / "quotes.json")],
             outputs=self._publish_pairs(("quotes.json",)),
             timeout=45,
+            validator=lambda path: quote_snapshot_error(
+                path, min_resolved=5, min_coverage=0.20
+            ),
         )
 
         weekday = self.now.weekday() < 5
@@ -299,6 +339,9 @@ class Orchestrator:
             ["--out", str(snapshot_stage)],
             outputs=((snapshot_stage, snapshot_live),),
             timeout=230,
+            validator=lambda path: quote_snapshot_error(
+                path, min_resolved=50, min_coverage=0.10
+            ),
         )
         if quote_result.status != "ok" or not snapshot_live.exists():
             return

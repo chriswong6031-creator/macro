@@ -113,6 +113,10 @@ if [ "$smoke_rc" -ne 0 ]; then
   exit "$smoke_rc"
 fi
 test -s "$LIVE_DIR/orchestrator_status.json"
+test -s "$LIVE_DIR/quotes.json"
+"$VENV/bin/python" -c \
+  'import json,sys; d=json.load(open(sys.argv[1])); assert int((d.get("meta") or {}).get("resolved") or 0) >= 5' \
+  "$LIVE_DIR/quotes.json"
 
 log "[5/6] enable replacement timers"
 systemctl enable --now \

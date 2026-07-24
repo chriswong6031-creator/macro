@@ -51,6 +51,13 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     _require_age(failures, checks, "quotes", 5)
     _require_age(failures, checks, "release_publications", 5)
     _require_age(failures, checks, "orchestrator", 5)
+    try:
+        resolved = int(checks["quotes"]["resolved"])
+    except (KeyError, TypeError, ValueError):
+        failures.append("quotes: missing or invalid resolved count")
+    else:
+        if resolved < 5:
+            failures.append(f"quotes: only {resolved} symbols resolved (minimum 5)")
 
     lanes = (checks.get("orchestrator") or {}).get("lanes")
     if not isinstance(lanes, dict):

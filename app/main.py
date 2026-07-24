@@ -463,6 +463,14 @@ def status() -> dict:
                 }
                 if key == "overlay":
                     checks[key].update({"n": data.get("n"), "fresh": data.get("n_fresh")})
+                elif key == "quotes":
+                    meta = data.get("meta") or {}
+                    checks[key].update(
+                        {
+                            "requested": meta.get("requested"),
+                            "resolved": meta.get("resolved"),
+                        }
+                    )
                 elif key == "release_publications":
                     checks[key].update(
                         {
