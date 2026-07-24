@@ -122,7 +122,8 @@ FACTOR_CONFIDENCE = {
 
 def _cfg() -> dict:
     base = {"window_d": 252, "min_obs": 126, "min_factor_obs": 252,
-            "max_abs_beta": 5.0, "top_n_idio": 12}
+            "max_abs_beta": 5.0, "top_n_idio": 12,
+            "stress_window_d": 756, "stress_quantile": 0.25}
     return {**base, **(config.load().get("engine", {}).get("factor_exposure", {}) or {})}
 
 
@@ -178,6 +179,55 @@ def factor_frame(asof=None) -> pd.DataFrame:
     return F.dropna(how="any")
 
 
+def orthogonalize_fit(F_win: pd.DataFrame) -> dict:
+    """FIT the sequential (Gram-Schmidt) orthogonalization transform on one window.
+
+    Returns the projection coefficients — for each factor k (in FACTOR_ORDER), the
+    slope of its residual-so-far on each *already-orthogonalized* prior column p:
+    `coeffs[k][p] = cov(v_k, g_p) / var(g_p)` computed exactly as the sequential peel
+    encounters it. This is the fixed transform; `orthogonalize_apply` reproduces the
+    same residuals on the fit window and — crucially for the stress lens — projects a
+    DIFFERENT (e.g. longer) frame into the SAME orthogonal basis. Returns
+    `{"order": [...], "coeffs": {k: {p: float, ...}, ...}}`."""
+    order = [k for k in FACTOR_ORDER if k in F_win.columns]
+    G = pd.DataFrame(index=F_win.index)
+    coeffs: dict[str, dict[str, float]] = {}
+    for k in order:
+        v = F_win[k].astype(float)
+        ck: dict[str, float] = {}
+        for prior in G.columns:                          # priors are already orthogonal cols
+            p = G[prior]
+            var = float(p.var())
+            beta = (float(v.cov(p)) / var) if var > 0 else 0.0
+            ck[prior] = beta
+            if beta:
+                v = v - beta * p
+        coeffs[k] = ck
+        G[k] = v
+    return {"order": order, "coeffs": coeffs}
+
+
+def orthogonalize_apply(F: pd.DataFrame, transform: dict) -> pd.DataFrame:
+    """APPLY a fitted transform (from `orthogonalize_fit`) to any frame with the same
+    factor columns, producing the orthogonalized set in the FIXED basis.
+
+    Peels each factor with the stored coefficients (against the priors it re-derives on
+    THIS frame as it goes — identical construction to the fit, but the slopes are frozen
+    from the fit window). Applying the fit-window transform back to the fit window
+    reproduces `orthogonalize_factors` exactly; applying it to an extended window keeps
+    every column in the shipped betas' basis (so b′·F_stress·b is meaningful)."""
+    order = [k for k in transform["order"] if k in F.columns]
+    coeffs = transform["coeffs"]
+    G = pd.DataFrame(index=F.index)
+    for k in order:
+        v = F[k].astype(float)
+        for prior, beta in coeffs.get(k, {}).items():
+            if prior in G.columns and beta:
+                v = v - beta * G[prior]
+        G[k] = v
+    return G
+
+
 def orthogonalize_factors(F: pd.DataFrame) -> pd.DataFrame:
     """Sequential (Gram-Schmidt) orthogonalization in FACTOR_ORDER priority.
 
@@ -186,18 +236,10 @@ def orthogonalize_factors(F: pd.DataFrame) -> pd.DataFrame:
     becomes IWM⟂{market,growth}; and so on. The result is a mutually-orthogonal factor
     set whose betas read as marginal exposures and decouple into univariate cov/var.
     Estimated over the whole supplied window (static transform) — callers pass the
-    estimation window so the transform and the betas share a sample."""
-    order = [k for k in FACTOR_ORDER if k in F.columns]
-    G = pd.DataFrame(index=F.index)
-    for k in order:
-        v = F[k].astype(float)
-        for prior in G.columns:
-            p = G[prior]
-            var = float(p.var())
-            if var > 0:
-                v = v - (float(v.cov(p)) / var) * p
-        G[k] = v
-    return G
+    estimation window so the transform and the betas share a sample. Convenience
+    fit+apply on one frame; use `orthogonalize_fit`/`orthogonalize_apply` when the
+    transform must be frozen on one window and applied to another (stress lens)."""
+    return orthogonalize_apply(F, orthogonalize_fit(F))
 
 
 # --------------------------------------------------------------------------- #
@@ -301,6 +343,57 @@ def factor_cov(F: pd.DataFrame, *, window: int) -> pd.DataFrame:
     return G.cov() * TRADING_YEAR
 
 
+def factor_cov_stress(F: pd.DataFrame, *, fit_window: int, stress_window: int,
+                      quantile: float, min_stress_rows: int = 400,
+                      min_stress_days: int = 60) -> dict:
+    """Stress-conditioned orthogonal factor covariance — factor co-movement re-estimated
+    on the worst-quartile market days, in the SAME orthogonal basis as the shipped betas.
+
+    The core subtlety: the transform is FIT on the trailing `fit_window` rows (the window
+    `stock_betas`/`factor_cov` use) and then APPLIED — never re-fit — to the trailing
+    `stress_window` rows, so `b′·F_stress·b` client-side stays in one basis. Stress days
+    are rows whose RAW `mkt` return (un-orthogonalized SPY daily) is ≤ its `quantile`
+    percentile over the stress window. Returns a dict:
+      {"available": bool, "cov": DataFrame|None, "vol_ann": {k: float}|None,
+       "window_d": int, "n_stress": int, "mkt_cut_daily": float, "quantile": float,
+       "reason": str (only when unavailable)}.
+    Small-sample guard: <`min_stress_rows` usable rows → shrink window to what exists
+    (stamped in window_d); <`min_stress_days` stress days → available=False, no cov."""
+    if F.empty or "mkt" not in F.columns:
+        return {"available": False, "reason": "no factor frame / missing mkt column",
+                "window_d": 0, "n_stress": 0}
+
+    # trailing stress window (shrink to what exists — never ship a scrap-sample cov)
+    F_stress = F.tail(stress_window)
+    win_actual = len(F_stress)
+
+    # fit the transform on the SHIPPED-beta window, then APPLY it to the stress window
+    F_fit = F.tail(fit_window)
+    transform = orthogonalize_fit(F_fit)
+    G_stress = orthogonalize_apply(F_stress, transform)
+
+    # stress days: raw (un-orthogonalized) mkt ≤ its quantile over the same window
+    mkt_raw = F_stress["mkt"].astype(float)
+    cut = float(mkt_raw.quantile(quantile))
+    mask = (mkt_raw <= cut).to_numpy()
+    n_stress = int(mask.sum())
+
+    meta = {"window_d": int(win_actual), "n_stress": n_stress,
+            "mkt_cut_daily": round(cut, 5), "quantile": quantile}
+
+    if win_actual < min_stress_rows or n_stress < min_stress_days:
+        reason = (f"insufficient stress sample "
+                  f"(window {win_actual} rows, {n_stress} stress days; "
+                  f"need ≥{min_stress_rows} rows and ≥{min_stress_days} stress days)")
+        return {"available": False, "reason": reason, **meta}
+
+    G_days = G_stress.loc[mask]
+    cov = G_days.cov() * TRADING_YEAR
+    keys = list(cov.columns)
+    vol_ann = {k: round(float(np.sqrt(max(cov.loc[k, k], 0.0))), 4) for k in keys}
+    return {"available": True, "cov": cov, "vol_ann": vol_ann, **meta}
+
+
 def portfolio_exposure(weights: dict[str, float], betas: dict[str, dict],
                        fcov: pd.DataFrame, idio: dict[str, float] | None = None) -> dict:
     """Aggregate a weighted book into portfolio factor betas, per-factor RISK
@@ -395,6 +488,12 @@ def compute_exposure(asof=None, closes: pd.DataFrame | None = None) -> dict | No
     fcov = factor_cov(F, window=win)
     keys = list(fcov.columns)
 
+    # Stress lens (W1): factor co-movement re-estimated on worst-quartile market days,
+    # in the SAME orthogonal basis as the shipped betas (transform fit on `win`, applied
+    # to the trailing stress window). Additive + guarded — a scrap sample emits nothing.
+    stress = factor_cov_stress(F, fit_window=win, stress_window=int(cfg["stress_window_d"]),
+                               quantile=float(cfg["stress_quantile"]))
+
     ns = _names_sectors()
     betas = res["betas"]
     for t, rec in betas.items():
@@ -408,7 +507,7 @@ def compute_exposure(asof=None, closes: pd.DataFrame | None = None) -> dict | No
     most_idio = sorted((t for t in betas if betas[t].get("idio_vol") is not None),
                        key=lambda t: -betas[t]["idio_vol"])[:int(cfg["top_n_idio"])]
 
-    return {
+    out = {
         "as_of": str(F.index.max().date()),
         "window_d": win, "n": len(betas), "note": NOTE,
         "factors": [{"key": f.key, "label": f.label, "note": f.note,
@@ -421,6 +520,25 @@ def compute_exposure(asof=None, closes: pd.DataFrame | None = None) -> dict | No
                                 "idio_vol": betas[t]["idio_vol"], "r2": betas[t]["r2"]}
                                for t in most_idio],
     }
+
+    # additive stress-lens emit — see factor_cov_stress(). Shares `keys` (== factor_cov
+    # ordering) so the client reads both covariances in one basis. Guarded: on a scrap
+    # sample only stress_meta (available:false) ships, no covariance.
+    if stress.get("available"):
+        scov = stress["cov"]
+        skeys = [k for k in keys if k in scov.columns]
+        out["factor_cov_stress"] = {a: {b: round(float(scov.loc[a, b]), 6) for b in skeys}
+                                    for a in skeys}
+        out["factor_vol_stress_ann"] = {k: stress["vol_ann"][k] for k in skeys}
+        out["stress_meta"] = {
+            "available": True, "window_d": stress["window_d"], "quantile": stress["quantile"],
+            "n_stress": stress["n_stress"], "mkt_cut_daily": stress["mkt_cut_daily"],
+            "note": ("factor co-movement re-estimated on worst-quartile market days; "
+                     "idiosyncratic vol estimated on all days"),
+        }
+    else:
+        out["stress_meta"] = {"available": False, "reason": stress.get("reason", "unavailable")}
+    return out
 
 
 def snapshot() -> dict:
