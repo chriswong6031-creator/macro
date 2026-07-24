@@ -293,7 +293,17 @@
     });
   }
   function authEnabled() { return !!(window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()); }
-  function apiBase() { return (window.MM_API || "").replace(/\/+$/, ""); }
+  // The landing serves /api/* on its OWN origin (Caddy proxies to macro-api). theme.js
+  // sets window.MM_API='https://app.mastermind-x.com' for the macro DASHBOARD pages, but
+  // on the landing that turns /api/me + /api/billing/* into CROSS-ORIGIN calls the Terminal
+  // answers WITHOUT CORS headers → the browser blocks the read, fetchMe rejects, and the
+  // signed-in chrome never paints (the "Log in still shows after login" bug). So the landing
+  // always talks same-origin; only honor a cross-origin MM_API when hosted off the site.
+  function apiBase() {
+    var host = location.hostname || "";
+    if (/(^|\.)mastermind-x\.com$/i.test(host) || host === "localhost" || host === "127.0.0.1") return "";
+    return (window.MM_API || "").replace(/\/+$/, "");
+  }
   // Cheap signed-in sniff without loading theme.js (mirrors theme.js _hasSessionCookie):
   // an `sb-…-auth-token` or a chunk `…-auth-token.0` cookie. Guests pay zero cost.
   function hasSessionCookie() {
@@ -931,8 +941,15 @@
     } catch (e) {}
     return null;
   }
-  function writeMeCache(me) { try { sessionStorage.setItem(SS_ME, JSON.stringify({ t: Date.now(), me: me })); } catch (e) {} }
+  function writeMeCache(me) { try { sessionStorage.setItem(SS_ME, JSON.stringify({ t: Date.now(), me: me })); } catch (e) {} writeMeHint(me); }
   function clearMeCache() { try { sessionStorage.removeItem(SS_ME); } catch (e) {} }
+  // A DURABLE signed-in hint (localStorage — survives tab close, unlike the 60s SS cache).
+  // Lets the landing paint the CORRECT signed-in chrome INSTANTLY on the next visit: the
+  // CTA lands on the right label for the known tier before /api/me round-trips to confirm.
+  var LS_ME_HINT = "mm.me.hint";
+  function readMeHint() { try { var o = JSON.parse(localStorage.getItem(LS_ME_HINT) || "null"); return (o && o.tier) ? o : null; } catch (e) { return null; } }
+  function writeMeHint(me) { try { localStorage.setItem(LS_ME_HINT, JSON.stringify({ tier: me.tier || "free", interval: me.interval || null, email: me.email || "" })); } catch (e) {} }
+  function clearMeHint() { try { localStorage.removeItem(LS_ME_HINT); } catch (e) {} }
   function fetchMe(force) {
     var cached = force ? null : readMeCache();
     if (cached) return Promise.resolve(cached);
@@ -1551,6 +1568,7 @@
     current: ["Current plan", "当前方案"]
   };
   function _byId(id) { return document.getElementById(id); }
+  var _navSnap = null;   // signed-out nav-cta snapshot, so a dead session can be reverted exactly
 
   // Wire the gear ACCOUNT buttons — independent of auth state, so signed-out
   // visitors can sign in / create an account straight from the gear.
@@ -1669,18 +1687,49 @@
     var em = _byId("gp-email"); if (em) em.textContent = email || "";
   }
 
-  // Entry: sniff the cookie; if signed-in, resolve /api/me and paint. Fail quiet.
+  // Undo the signed-in chrome → guest state. Called only when /api/me returns a hard 401
+  // (cookie present but the session is dead/revoked): sign out locally so the stale cookie
+  // stops masquerading as a live login, and restore the signed-out header from the snapshot.
+  function revertAuthChrome() {
+    clearMeHint(); clearMeCache();
+    var login = _byId("nav-login"); if (login) { login.hidden = false; login.style.display = ""; }
+    var cta = _byId("nav-cta");
+    if (cta && _navSnap && _navSnap.ctaHtml != null) {
+      cta.innerHTML = _navSnap.ctaHtml;
+      if (_navSnap.ctaHref) cta.setAttribute("href", _navSnap.ctaHref);
+      cta.__upgrade = false;
+    }
+    var out = _byId("gp-acct-out"), inn = _byId("gp-acct-in");
+    if (out) { out.hidden = false; out.style.display = ""; }
+    if (inn) { inn.hidden = true; inn.style.display = "none"; }
+    ensureAuthBroker().then(function (auth) { if (auth && auth.signOut) { try { auth.signOut(); } catch (e) {} } });
+  }
+
+  // Entry: sniff the cookie; if signed-in, paint the signed-in chrome IMMEDIATELY (never
+  // leave "Log in" up while the network is in flight), then confirm with /api/me. Fail quiet.
   function initAuthChrome() {
     // Only the landing has these ids; bail on macro pages (this file's other
     // consumers never render the landing nav).
     if (!_byId("nav-cta") && !_byId("gp-acct-out")) return;
     wireGearAccount();                         // always (signed-out gear needs its buttons)
-    if (!hasSessionCookie()) return;           // guest → default signed-out markup, zero network
-    // resolve the broker so MDXAuth.user() is available for the avatar, then /api/me
+    if (!_navSnap) { var c0 = _byId("nav-cta"); _navSnap = c0 ? { ctaHtml: c0.innerHTML, ctaHref: c0.getAttribute("href") } : {}; }
+    if (!hasSessionCookie()) { clearMeHint(); return; }   // guest → signed-out markup, zero network
+    // OPTIMISTIC PAINT: a session cookie means the user IS signed in. Reflect it NOW from
+    // the fresh SS cache or the durable hint (or a free-tier default) so the "Log in" chrome
+    // never lingers — the root cause of "I keep having to log in" was the header waiting on a
+    // /api/me that, until now, went CROSS-ORIGIN and was silently CORS-blocked.
+    applyAuthChrome(readMeCache() || readMeHint() || { tier: "free", interval: null, email: "" });
+    // Confirm with the server: refine the tier, or revert to signed-out ONLY on a hard 401.
     ensureAuthBroker().then(function () {
-      fetchMe(false).then(function (me) {
-        if (!me) return;                       // token expired / 401 → leave signed-out chrome
-        applyAuthChrome(me);                    // re-applies LANG over the nodes it rewrites
+      getAccessToken().then(function (token) {
+        if (!token) return;                    // no token yet → keep the optimistic chrome
+        fetch(apiBase() + "/api/me", { headers: { Authorization: "Bearer " + token }, cache: "no-store" })
+          .then(function (r) {
+            if (r && r.ok) return r.json().then(function (me) { if (me) { writeMeCache(me); applyAuthChrome(me); } }).catch(function () {});
+            if (r && r.status === 401) revertAuthChrome();   // session truly dead → signed-out
+            // 429 / 5xx / offline → keep the optimistic signed-in chrome (transient)
+          })
+          .catch(function () {/* network/offline → keep the optimistic signed-in chrome */});
       });
     });
   }

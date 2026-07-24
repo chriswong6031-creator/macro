@@ -1973,6 +1973,28 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 /* ===== report teaser badge on reports card ===== */
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 .ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
+
+/* ===== personal welcome — a typed greeting stands in for the wordmark on entry,
+   then cross-dissolves into the brand lockup. Decorative (aria-hidden); the brand
+   + tagline stay the accessible content. The hero-stack overlaps greeting + brand
+   in ONE grid cell so the crossfade never shifts layout. ===== */
+.hub-hero-stack{display:grid}
+.hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
+.hub-brand{transition:opacity .55s ease,transform .55s ease}
+.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(52px,7vw,74px);
+ opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .5s ease,transform .5s ease}
+.h.greet-run .hub-greet{opacity:1;transform:none}
+.h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
+.hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
+ font-size:clamp(27px,4.6vw,47px);
+ background:linear-gradient(176deg,var(--text) 20%,color-mix(in srgb,var(--text) 55%,var(--accent,var(--info))));
+ -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 32px var(--bg))}
+.hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
+ background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
+ animation:greetCaret 1.05s steps(1) infinite}
+@keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
 </style>"""
 
 # Critical a11y CSS that must ship INLINE in the hub page itself (start.html
@@ -2583,6 +2605,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             + _seo +
             _jsonld +
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('soft-contrast');}catch(e){}</script>\n"
+            # resolve the viewer's HOME [lon,lat] from the browser timezone so the
+            # deferred globe opens centred on their country — window.__mmHome. Falls
+            # back to a UTC-offset longitude (15°/hr) + locale-guessed latitude.
+            '<script>window.__mmHome=(function(){try{var tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"",M={"America/New_York":[-74,40.7],"America/Detroit":[-83,42.3],"America/Toronto":[-79.4,43.7],"America/Montreal":[-73.6,45.5],"America/Halifax":[-63.6,44.6],"America/Chicago":[-87.6,41.9],"America/Winnipeg":[-97.1,49.9],"America/Denver":[-105,39.7],"America/Edmonton":[-113.5,53.5],"America/Phoenix":[-112.1,33.4],"America/Los_Angeles":[-118.2,34.1],"America/Vancouver":[-123.1,49.3],"America/Mexico_City":[-99.1,19.4],"America/Sao_Paulo":[-46.6,-23.5],"America/Bogota":[-74.1,4.7],"Europe/London":[-0.1,51.5],"Europe/Dublin":[-6.3,53.3],"Europe/Lisbon":[-9.1,38.7],"Europe/Madrid":[-3.7,40.4],"Europe/Paris":[2.3,48.9],"Europe/Brussels":[4.4,50.8],"Europe/Amsterdam":[4.9,52.4],"Europe/Zurich":[8.5,47.4],"Europe/Berlin":[13.4,52.5],"Europe/Rome":[12.5,41.9],"Europe/Vienna":[16.4,48.2],"Europe/Stockholm":[18.1,59.3],"Europe/Warsaw":[21,52.2],"Europe/Athens":[23.7,38],"Europe/Istanbul":[29,41],"Europe/Moscow":[37.6,55.8],"Asia/Jerusalem":[35.2,31.8],"Asia/Dubai":[55.3,25.2],"Asia/Karachi":[67,24.9],"Asia/Kolkata":[77.2,28.6],"Asia/Dhaka":[90.4,23.8],"Asia/Bangkok":[100.5,13.8],"Asia/Jakarta":[106.8,-6.2],"Asia/Singapore":[103.8,1.35],"Asia/Kuala_Lumpur":[101.7,3.1],"Asia/Manila":[121,14.6],"Asia/Shanghai":[116.4,39.9],"Asia/Chongqing":[106.5,29.6],"Asia/Urumqi":[87.6,43.8],"Asia/Hong_Kong":[114.2,22.3],"Asia/Taipei":[121.5,25],"Asia/Seoul":[127,37.6],"Asia/Tokyo":[139.7,35.7],"Australia/Perth":[115.9,-31.9],"Australia/Sydney":[151.2,-33.9],"Australia/Melbourne":[145,-37.8],"Australia/Brisbane":[153,-27.5],"Pacific/Auckland":[174.8,-36.9],"Africa/Johannesburg":[28,-26.2],"Africa/Cairo":[31.2,30],"Africa/Lagos":[3.4,6.5]};if(M[tz])return M[tz];var off=-(new Date().getTimezoneOffset())/60,lon=Math.max(-179,Math.min(179,off*15)),lang=(navigator.language||"").toLowerCase(),lat=/^(zh|ja|ko)/.test(lang)?32:(/^(en-gb|de|fr|nl|sv|pl|it|es|nb|da|fi|cs|ru|uk)/.test(lang)?50:38);return[lon,lat];}catch(e){return null;}})();</script>\n'
             '<link rel="stylesheet" href="theme.css">\n'
             + _GLOBE_HUB_CSS + _HUB_CRITICAL_CSS + "</head><body>")
 
@@ -2618,10 +2644,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
         + _bi('Live · <span class="hub-clock" data-loc="en">—</span>',
               '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
-        + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
+        + '</span>'
+        # hero stack: the personal typed greeting overlays the brand lockup in one
+        # grid cell, then cross-dissolves into it (hub-greet.js). Brand is the
+        # accessible content; the greeting is decorative (aria-hidden).
+        + '<div class="hub-hero-stack">'
+        + '<div class="hub-greet" aria-hidden="true"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
+        + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, disciplined engine.",
-                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></header>'
+                    "覆盖各大类资产的市场周期仪表盘——一套机械化、有纪律的引擎。") + '</p></div></div></header>'
         + globe_deck
         + '<div class="hub-views" id="hub-views" data-view="mk">'
         + _HUB_SEG_HTML
@@ -2648,6 +2680,29 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         'function tick(){var d=new Date();for(var i=0;i<els.length;i++){var l=els[i].getAttribute("data-loc")||undefined;'
         'try{els[i].textContent=d.toLocaleString(l,opt);}catch(e){els[i].textContent=d.toLocaleString(undefined,opt);}}}'
         'tick();setInterval(tick,1000);})();</script>'
+        # personal welcome — a typewriter greeting keyed off the session cookie's first
+        # name: "Welcome, X" first time, time-of-day variety ("Good evening, X" /
+        # "You're up late, X" / zh) when returning, then cross-dissolve into the brand.
+        r'<script>(function(){var hdr=document.querySelector("header.h");if(!hdr)return;'
+        r'var g=hdr.querySelector(".hub-greet"),tx=g&&g.querySelector(".greet-tx");if(!tx)return;'
+        r'function su(){try{var m={},P=(document.cookie||"").split(";"),i;for(i=0;i<P.length;i++){var p=P[i].trim(),e=p.indexOf("=");if(e>0)m[p.slice(0,e)]=p.slice(e+1);}var K=null,k;for(k in m){if(/^sb-.*-auth-token(\.\d+)?$/.test(k)){K=k.replace(/\.\d+$/,"");break;}}if(!K)return null;var r=m[K],j=r;if(r==null){var v=[],n=0,c;while((c=m[K+"."+n])!=null){v.push(c);n++;}j=v.length?v.join(""):null;}if(j==null)return null;var B="base64-";if(j.indexOf(B)===0){var b=j.slice(B.length).replace(/-/g,"+").replace(/_/g,"/");while(b.length%4)b+="=";j=decodeURIComponent(escape(atob(b)));}var s=JSON.parse(j);return(s&&s.user)||null;}catch(e){return null;}}'
+        r'var u=su();if(!u){try{u=window.MDXAuth&&window.MDXAuth.user&&window.MDXAuth.user();}catch(e){}}'
+        r'var md=(u&&u.user_metadata)||{},nm=(md.first_name||md.display_name||md.name||md.full_name||"").toString().trim();'
+        r'if(!nm&&u&&u.email)nm=String(u.email).split("@")[0];'
+        r'nm=nm.replace(/[<>]/g,"").slice(0,24);if(nm&&nm===nm.toLowerCase())nm=nm.charAt(0).toUpperCase()+nm.slice(1);'
+        r'var KEY="mm.hub.welcomed",ft=false;try{ft=!localStorage.getItem(KEY);localStorage.setItem(KEY,"1");}catch(e){}'
+        r'var zh=document.documentElement.getAttribute("data-lang")==="zh",H=(new Date()).getHours();'
+        r'var tod=H<5?"late":H<12?"morning":H<18?"afternoon":H<23?"evening":"late";'
+        r'function pk(a){return a[Math.floor(Math.random()*a.length)];}var EN,ZH;'
+        r'if(ft){EN="Welcome";ZH="欢迎";}'
+        r'else{var PE={morning:["Good morning","Rise and shine","Welcome back"],afternoon:["Good afternoon","Welcome back","Good to see you"],evening:["Good evening","Welcome back","Good to see you"],late:["You’re up late","Burning the midnight oil","Welcome back"]},PZ={morning:["早上好","欢迎回来"],afternoon:["下午好","欢迎回来"],evening:["晚上好","欢迎回来"],late:["夜深了","欢迎回来"]};EN=pk(PE[tod]);ZH=pk(PZ[tod]);}'
+        r'var full=zh?(nm?ZH+"，"+nm:ZH):(nm?EN+", "+nm:EN);'
+        r'hdr.classList.add("greet-run");'
+        r'var rm=false;try{rm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){}'
+        r'function done(){setTimeout(function(){hdr.classList.remove("greet-run");},1500);}'
+        r'if(rm){tx.textContent=full;done();return;}'
+        r'var i2=0;(function ty(){tx.textContent=full.slice(0,i2);if(i2<=full.length){var ch=full.charAt(i2-1);i2++;setTimeout(ty,ch===" "||ch==="，"||ch===","?120:48);}else{done();}})();'
+        r'})();</script>'
         # hub-views segmented toggle + scroll CTA
         '<script>(function(){'
         'var hv=document.getElementById("hub-views");if(!hv)return;'
