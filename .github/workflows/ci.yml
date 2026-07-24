@@ -188,9 +188,6 @@ on:
       - "templates/_mag7_panel.html.j2"
       - "templates/_mag7_panel.css.j2"
       - "tests/test_mag7_panel.py"
-      # MLC-W1 Leadership Board: template partial + build_site view + radar builder.
-      - "templates/_leadership_board.html.j2"
-      - "tests/test_leadership_board.py"
       # MLC-W2b stance matrix + conflicted shelf: builder, theme_scoring demotion, templates.
       - "scripts/build_stance_matrix.py"
       - "engine/theme_scoring.py"
@@ -1062,7 +1059,6 @@ jobs:
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
-          tests/test_leadership_board.py
           tests/test_stance_matrix.py
           tests/test_theme_scoring_conflicted.py
           tests/test_basket_score_rollover_w4.py

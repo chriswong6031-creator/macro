@@ -43,7 +43,7 @@ _EXCLUDED_TEMPLATES = {
     "_base_effect_strip.html.j2", "_baskets_desk.html.j2",
     "_cmd_hero.css.j2", "_desk_grader_panel.html.j2",
     "_forming_narratives.html.j2", "_ignition_radar_card.css.j2",
-    "_ignition_radar_card.html.j2", "_leadership_board.html.j2",
+    "_ignition_radar_card.html.j2",
     "_mag7_panel.css.j2", "_mag7_panel.html.j2",
     "_market_state_board.html.j2", "_market_state.css.j2",
     "_radar_panel.html.j2", "_regime_prob_panel.html.j2",
