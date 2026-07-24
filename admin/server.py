@@ -28,7 +28,7 @@ from urllib.parse import parse_qs, urlparse
 from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brain_guest, brief, causal_lab,
                codex_panel,
                config_store,
-               content, context_lobe, experiments,
+               content, context_lobe, entitlements, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
                marketing,
@@ -605,6 +605,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/users/subscribers":
                 limit = _int_param(q, "limit", 200, 1, 500)
                 return self._json(users.subscribers(limit=limit))
+            # entitlements roster (MNZ W2): auth.users(name,email) ⋈ user_entitlements,
+            # filterable by tier/status, searchable, paged. Read via the same Management-API
+            # PAT path as /api/users; writes are the POST /api/entitlements/action twin.
+            if path == "/api/entitlements":
+                return self._json(entitlements.list_users(
+                    tier=(q.get("tier") or [None])[0],
+                    status=(q.get("status") or [None])[0],
+                    search=(q.get("search") or q.get("q") or [None])[0],
+                    page=_int_param(q, "page", 1, 1, 100_000),
+                    page_size=_int_param(q, "page_size", 50, 1, 200)))
             # system / services
             if path == "/api/system":
                 return self._json(system.snapshot())
@@ -872,6 +882,14 @@ class Handler(BaseHTTPRequestHandler):
                     alert_emit_ts=alert_emit_ts,
                 )
                 return self._json({"ok": True, "row": row})
+
+            # Operator entitlement mutation (MNZ W2 + MNZ-R3): manual tier change, trial
+            # extend/reset, free passes, remove-comp. Single-operator console → the audit
+            # actor is the constant "operator" (no user DB; matches actions/allies ledgers).
+            # Comp-over-live-Stripe is refused unless force+cancel_stripe (see entitlements.py).
+            if path == "/api/entitlements/action":
+                payload, code = entitlements.act(b, operator="operator")
+                return self._json(payload, code)
 
             # Allies (MKT-D11): record an operator status transition. This is a
             # decision-recording write — it NEVER contacts anyone. The transition
