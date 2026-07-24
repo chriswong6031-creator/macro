@@ -87,7 +87,7 @@
 
 {% block base_css %}
 /* ===================== MARKETS NEWS — mx5 idiom ===================== */
-.nxx{ --num:"SF Mono",ui-monospace,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace;
+.nxx{ --num:var(--font-mono,ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace);
   --nx-card:color-mix(in srgb, var(--panel) 80%, transparent);
   --nx-card-solid:var(--panel);
   --nx-card2:color-mix(in srgb, var(--panel2) 78%, transparent);
