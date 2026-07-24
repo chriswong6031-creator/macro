@@ -80,6 +80,34 @@ def test_diff_fields_both():
     assert removed == ["bar"]
 
 
+def test_diff_fields_optional_absent_is_clean():
+    """An optional field absent from the artifact is NOT `removed` drift."""
+    added, removed = _diff_fields("a.json", ["foo"], ["foo"], optional=["bar"])
+    assert added == []
+    assert removed == []
+
+
+def test_diff_fields_optional_present_is_not_added():
+    """An optional field present in the artifact is known, NOT `added` drift."""
+    added, removed = _diff_fields("a.json", ["foo"], ["foo", "bar"], optional=["bar"])
+    assert added == []
+    assert removed == []
+
+
+def test_diff_fields_undocumented_still_added_with_optional():
+    """A key in neither schema_fields nor optional_fields still trips `added`."""
+    added, removed = _diff_fields("a.json", ["foo"], ["foo", "bar", "zzz"], optional=["bar"])
+    assert added == ["zzz"]
+    assert removed == []
+
+
+def test_diff_fields_required_missing_still_removed_with_optional():
+    """A REQUIRED field absent is still `removed` even when optional_fields is set."""
+    added, removed = _diff_fields("a.json", ["foo", "bar"], ["foo"], optional=["baz"])
+    assert added == []
+    assert removed == ["bar"]
+
+
 # ---------------------------------------------------------------------------
 # unit: _actual_fields
 # ---------------------------------------------------------------------------
@@ -239,6 +267,71 @@ def test_no_schema_fields_skipped(monkeypatch, tmp_path):
     assert _run_drift(monkeypatch, tmp_path, entries) == 0
 
 
+def test_optional_field_absent_is_clean(monkeypatch, tmp_path):
+    """Conditional field declared in optional_fields, absent from artifact → exit 0.
+
+    Regression: canada_standouts.sector_concentration / dispersion_regime fire only on
+    concentrated / regime-on nights; a diversified-board nightly must NOT go red.
+    """
+    art = tmp_path / "site" / "factordata" / "board.json"
+    _write_json(art, {"buy": [], "as_of": "2026-07-24"})  # sector_concentration absent
+    entries = [
+        {
+            "artifact": "site/factordata/board.json",
+            "kind": "board",
+            "schema_version": "1.2.0",
+            "schema_fields": ["as_of", "buy"],
+            "optional_fields": ["dispersion_regime", "sector_concentration"],
+            "expected_max_age_td": 2,
+            "as_of_field": "as_of",
+            "consumers": ["bot:canada_book"],
+        }
+    ]
+    assert _run_drift(monkeypatch, tmp_path, entries) == 0
+
+
+def test_optional_field_present_is_clean(monkeypatch, tmp_path):
+    """Same entry, but the conditional field IS present → still exit 0 (not `added`)."""
+    art = tmp_path / "site" / "factordata" / "board.json"
+    _write_json(art, {"buy": [], "as_of": "2026-07-24",
+                      "sector_concentration": {"sector": "Materials", "n": 9}})
+    entries = [
+        {
+            "artifact": "site/factordata/board.json",
+            "kind": "board",
+            "schema_version": "1.2.0",
+            "schema_fields": ["as_of", "buy"],
+            "optional_fields": ["dispersion_regime", "sector_concentration"],
+            "expected_max_age_td": 2,
+            "as_of_field": "as_of",
+            "consumers": ["bot:canada_book"],
+        }
+    ]
+    assert _run_drift(monkeypatch, tmp_path, entries) == 0
+
+
+def test_undocumented_field_still_drifts_with_optional(monkeypatch, tmp_path, capsys):
+    """A key in NEITHER schema_fields nor optional_fields still trips `added` drift."""
+    art = tmp_path / "site" / "factordata" / "board.json"
+    _write_json(art, {"buy": [], "as_of": "2026-07-24", "surprise": 1})
+    entries = [
+        {
+            "artifact": "site/factordata/board.json",
+            "kind": "board",
+            "schema_version": "1.2.0",
+            "schema_fields": ["as_of", "buy"],
+            "optional_fields": ["sector_concentration"],
+            "expected_max_age_td": 2,
+            "as_of_field": "as_of",
+            "consumers": ["bot:canada_book"],
+        }
+    ]
+    result = _run_drift(monkeypatch, tmp_path, entries)
+    out = capsys.readouterr().out
+    assert result == 1
+    assert "surprise" in out
+
+
 def test_wildcard_artifact_sampled(monkeypatch, tmp_path):
     """Wildcard per_stock_intel artifact → first file in dir is sampled."""
     stockdata = tmp_path / "site" / "stockdata"
@@ -329,6 +422,22 @@ def test_artifact_manifest_has_schema_version_and_fields():
         assert len(fields) > 0, (
             f"schema_fields must be non-empty in {entry['artifact']}"
         )
+        # optional_fields (when present) must be a sorted list and DISJOINT from
+        # schema_fields — a conditional key belongs to exactly one bucket, or the drift
+        # semantics (required-vs-may-be-absent) become ambiguous.
+        opt = entry.get("optional_fields")
+        if opt is not None:
+            assert isinstance(opt, list), (
+                f"optional_fields must be a list in {entry['artifact']}"
+            )
+            assert opt == sorted(opt), (
+                f"optional_fields must be sorted in {entry['artifact']}: got {opt!r}"
+            )
+            overlap = set(opt) & set(fields)
+            assert not overlap, (
+                f"optional_fields must be disjoint from schema_fields in "
+                f"{entry['artifact']}: overlap {sorted(overlap)!r}"
+            )
 
 
 def test_build_manifest_includes_schema_fields():

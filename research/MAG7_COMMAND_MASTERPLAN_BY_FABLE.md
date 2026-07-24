@@ -3,6 +3,17 @@
 Status: ADJUDICATED MASTERPLAN (Fable, 2026-07-11). Operator-initiated: "MAG 7 is on the
 run … yet our us_stocks.html and baskets.html dashboard does not reflect any of this."
 
+**STATUS UPDATE 2026-07-23 — PROGRAM SURFACE CLOSED (operator ruling).** The 07-11 read
+failed as a false breakout: worst 1-day Mag-7 basket drop in ~5y (GS; TSLA −15%, GOOGL −7%
+intraday). The Big Seven board and all Ignition Radar surfaces were removed; the forced-call
+construction is KILLED (`DO_NOT_REBUILD.md` §2) and ignition surfaces are SUSPENDED →
+background-only (§4). Full accounting: `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`
++ `research/lessons/` L-20260723-1/2. Background lanes (mag7_regime organ, ignition
+engine + forward self-grading, S-MLC preregs) keep accruing; any return of a Mag-7
+leadership surface requires prereg + gauntlet, not board pinning. The re-entry prereg
+was chartered 2026-07-24: `MAG7_WASHOUT_REENTRY_PREREG.md` (MWR — operator's 2W
+Stoch-RSI washout construction, phase-0 census done, background engine accruing).
+
 ## 0. The incident of record (what the operator saw vs what the site showed)
 
 Verified from our own stores (data/baskets/ohlcv through 07-08; massive_stock_day through

@@ -24,9 +24,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=24ca655a">
-<link rel="stylesheet" href="assets/css/2a844885.css?v=2a844885">
+<link rel="stylesheet" href="assets/css/fc9f5257.css?v=fc9f5257">
 </head>
-<body>
+<body class="page-subsectors">
 <nav class="site-nav">
   
 
@@ -187,6 +187,7 @@
         <div class="nav-mega-feat">
           <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
           <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
@@ -236,12 +237,10 @@
         </div>
       </div>
     </div>
-      
-      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=e1a3ca0d" defer></script>
+  <script src="live.js?v=5cbadd26" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -258,30 +257,35 @@
 </nav>
 
 <div class="wrap">
-  <div class="sc-head">
-    <h1 class="sc-titletip" tabindex="0"
-      data-tip-en="Every sub-industry as its own basket, scored for entry timing. ENTRY-NOW = a subsector that just turned buyable; the double-gate then finds stocks firing inside a subsector with the wind at its back. A timing map — confirm before acting."
-      data-tip-zh="将每个子行业视作独立篮子，按入场时机评分。现可入场=刚转为可买的子行业；双重闸门再筛出在顺风子行业中触发的个股。择时图——行动前请确认。">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span> <span class="sc-info" aria-hidden="true">ⓘ</span></h1>
-    <div class="asof" id="sc-asof"></div>
+  <div class="sc-top">
+    <div class="sc-kicker">
+      <h1><span class="glyph">💫</span> <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span></h1>
+      <div class="sc-asof" id="sc-asof"></div>
+    </div>
+    <p class="sc-lede"><span class="l-en">Every sub-industry as its own basket, scored for entry <b>timing</b>. The read below is answer-first: the rotation backdrop, which groups just turned <b>buyable</b>, which are <b>late or fading</b>, and the stocks firing inside a group with the wind at its back. A timing map — <b>confirm before acting</b>.</span><span class="l-zh">将每个子行业视作独立篮子，按入场<b>时机</b>评分。下方读数以结论优先：轮动背景、哪些子行业刚转为<b>可买</b>、哪些已<b>偏晚或转弱</b>，以及在顺风子行业中触发的个股。择时图——<b>行动前请确认</b>。</span></p>
   </div>
 
-  <div class="sc-tabs">
-    <div class="sc-tab on" data-tab="subsectors"><span class="l-en">S&amp;P 500 Subsectors</span><span class="l-zh">标普500子行业</span> <span class="n" id="tabn-sub"></span></div>
-    <div class="sc-tab" data-tab="nasdaq"><span class="l-en">Nasdaq-100</span><span class="l-zh">纳斯达克100</span> <span class="n" id="tabn-ndx"></span></div>
-    <div class="sc-tab" data-tab="russell"><span class="l-en">Russell-2000</span><span class="l-zh">罗素2000</span> <span class="n" id="tabn-rut"></span></div>
-    <div class="sc-tab" data-tab="baskets"><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <span class="n" id="tabn-bas"></span></div>
+  <div class="sc-tabs" role="tablist">
+    <div class="sc-tab on" data-tab="subsectors" role="tab"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> <span class="n" id="tabn-sub"></span></div>
+    <div class="sc-tab" data-tab="nasdaq" role="tab"><span class="l-en">Nasdaq-100</span><span class="l-zh">纳斯达克100</span> <span class="n" id="tabn-ndx"></span></div>
+    <div class="sc-tab" data-tab="russell" role="tab"><span class="l-en">Russell-2000</span><span class="l-zh">罗素2000</span> <span class="n" id="tabn-rut"></span></div>
+    <div class="sc-tab" data-tab="baskets" role="tab"><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <span class="n" id="tabn-bas"></span></div>
   </div>
 
   <div id="sc-app"><div class="empty"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></div></div>
 
-  <div class="sc-foot"><span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-23 11:56</div>
+  <div class="sc-foot">
+    <span class="l-en">Every subsector is an equal-weight basket of its members, scored on a 3-day cadence for entry timing — not a buy list. Tiers rank freshness of the confluence cross (T1 freshest). See the</span><span class="l-zh">每个子行业为其成分的等权篮子，按 3 日周期为入场时机评分——并非买入清单。层级衡量汇聚交叉的新鲜度（T1 最新）。参见</span>
+    <a href="subsector_rotation.html"><span class="l-en">rotation map</span><span class="l-zh">轮动图</span></a> <span class="l-en">for where each group sits in the leading / lagging cycle.</span><span class="l-zh">了解各组在领先/落后周期中的位置。</span>
+    · <span class="l-en">Built</span><span class="l-zh">生成于</span> <span class="num">2026-07-24 17:32</span>
+  </div>
 </div>
 
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
 
-<script src="theme.js?v=e573de07" defer></script>
-<script src="subsectors.js?v=2a7c6808" defer></script>
+<script src="theme.js?v=16dc65dc" defer></script>
+<script src="subsectors.js?v=3b991591" defer></script>
 </body>
 </html>

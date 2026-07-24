@@ -13,6 +13,15 @@ from .paths import ROOT
 
 _FILE = "config.yml"
 
+# Only these repo-relative paths may be committed+pushed by the admin. Anything
+# outside this set is refused — an admin-initiated push can never carry an
+# arbitrary file to main. config.yml is the flag/interval store; the marketing
+# override file is the operator's desk on/off switch (admin/marketing.py owns it).
+_ALLOWED_PATHS = frozenset({
+    "config.yml",
+    "data/marketing/account_overrides.json",
+})
+
 
 def _git(*args, timeout: int = 20) -> tuple[int, str, str]:
     p = subprocess.run(["git", *args], cwd=str(ROOT),
@@ -70,6 +79,67 @@ def commit(message: str = "admin: config update", push: bool = False,
     log.append(f"git commit: {(out or err)[:300]}")
     if rc != 0:
         return {"ok": False, "error": err or "git commit failed", "log": log}
+    if push:
+        if not st["can_push_live"]:
+            return {"ok": True, "committed": True, "pushed": False,
+                    "warning": "committed locally; refused to push (not on a main tracking branch)",
+                    "log": log}
+        rc, out, err = _git("push", timeout=60)
+        log.append(f"git push: {(out or err)[:300]}")
+        if rc != 0:
+            return {"ok": False, "committed": True, "pushed": False,
+                    "error": err or "git push failed", "log": log}
+        return {"ok": True, "committed": True, "pushed": True, "log": log}
+    return {"ok": True, "committed": True, "pushed": False, "log": log}
+
+
+def commit_paths(paths, message: str = "admin: update", push: bool = False,
+                 confirm: bool = False) -> dict:
+    """Commit (and optionally push) an ALLOWLISTED set of repo-relative paths.
+
+    Generalises commit(): the same confirm gate, the same push-only-on-a-main-
+    tracking-branch safety, but scoped to the given files instead of just
+    config.yml. Any path outside _ALLOWED_PATHS is refused outright. If a path
+    has no staged/working changes it is skipped (not an error) — a no-op toggle
+    that re-writes the same content still succeeds with committed:False.
+
+    Returns the same shape as commit(): {ok, committed?, pushed?, warning?/error?, log}.
+    """
+    if not confirm:
+        return {"ok": False, "error": "confirm required for git commit/push"}
+    if isinstance(paths, str):
+        paths = [paths]
+    paths = [str(p).replace("\\", "/") for p in (paths or [])]
+    if not paths:
+        return {"ok": False, "error": "no paths given"}
+    bad = [p for p in paths if p not in _ALLOWED_PATHS]
+    if bad:
+        return {"ok": False, "error": f"refused: paths not allowlisted: {bad}"}
+
+    log = []
+    # Which of the requested paths actually have changes (staged or unstaged)?
+    dirty = []
+    for p in paths:
+        rc, out, _ = _git("status", "--porcelain", "--", p)
+        if rc == 0 and out.strip():
+            dirty.append(p)
+    if not dirty:
+        # Nothing changed on disk — the override matched the committed content.
+        return {"ok": True, "committed": False, "pushed": False,
+                "warning": "no changes to commit for the given paths", "log": log}
+
+    rc, out, err = _git("add", "--", *dirty)
+    log.append(f"git add: {err or out or 'ok'}")
+    if rc != 0:
+        return {"ok": False, "error": err or "git add failed", "log": log}
+    # Scope the commit to exactly these paths so a pre-staged unrelated file can't
+    # ride along into the commit (and the live-main push).
+    rc, out, err = _git("commit", "-m", message, "--", *dirty)
+    log.append(f"git commit: {(out or err)[:300]}")
+    if rc != 0:
+        return {"ok": False, "error": err or "git commit failed", "log": log}
+
+    st = status()
     if push:
         if not st["can_push_live"]:
             return {"ok": True, "committed": True, "pushed": False,

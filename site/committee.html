@@ -26,11 +26,12 @@
 <link rel="stylesheet" href="theme.css?v=24ca655a">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
-  window.COMMITTEE_GENERATED = "2026-07-23 11:56";
+  window.COMMITTEE_GENERATED = "2026-07-24 17:32";
 </script>
-<link rel="stylesheet" href="assets/css/ca87bf45.css?v=ca87bf45">
+<link rel="stylesheet" href="assets/css/e754f2e0.css?v=e754f2e0">
 </head>
-<body>
+<body class="page-committee">
+<div class="nw-aurora" aria-hidden="true"></div>
 
 
 <nav class="site-nav">
@@ -193,6 +194,7 @@
         <div class="nav-mega-feat">
           <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
           <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
@@ -242,12 +244,10 @@
         </div>
       </div>
     </div>
-      
-      <a class="nav-link nav-link-plans" href="plans.html">✨ <span class="l-en">Plans</span><span class="l-zh">定价</span></a>
   </div>
   
   <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=e1a3ca0d" defer></script>
+  <script src="live.js?v=5cbadd26" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -285,8 +285,63 @@
 <!-- Main content (hidden until auth) -->
 <div id="cm_content">
 
+  <!-- Chapter tabs — jump to any part of the brain (sticky segmented control) -->
+  <nav class="nw-subnav" aria-label="Neural Web sections智脑分区">
+    <div class="nw-subnav-inner" id="nw_subnav">
+      <a class="nw-tab" href="#cm_hero_section"><span class="tdot" style="--accent:var(--lobe-us)"></span><span class="l-en">Now</span><span class="l-zh">此刻</span></a>
+      <a class="nw-tab" href="#cm_graph_section"><span class="tdot" style="--accent:var(--lobe-core)"></span><span class="l-en">Brain map</span><span class="l-zh">大脑地图</span></a>
+      <a class="nw-tab" href="#tr_card_section"><span class="tdot" style="--accent:var(--lobe-macro)"></span><span class="l-en">Today's read</span><span class="l-zh">今日读数</span></a>
+      <a class="nw-tab" href="#cm_ask_section"><span class="tdot" style="--accent:var(--lobe-sig)"></span><span class="l-en">Ask the brain</span><span class="l-zh">问大脑</span></a>
+      <a class="nw-tab" href="#cm_ticker_section"><span class="tdot" style="--accent:var(--lobe-us)"></span><span class="l-en">Ticker committee</span><span class="l-zh">个股委员会</span></a>
+      <a class="nw-tab" href="#sec_desks"><span class="tdot" style="--accent:var(--lobe-cn)"></span><span class="l-en">The desks</span><span class="l-zh">数据台</span></a>
+      <a class="nw-tab" href="#cm_policy_doctrine_section"><span class="tdot"></span><span class="l-en">Doctrine</span><span class="l-zh">守则</span></a>
+    </div>
+  </nav>
+  <script>
+  /* Scroll-spy: highlight the tab for the section nearest the top. Progressive
+     enhancement — the tabs work as plain anchor links without this. */
+  (function () {
+    var tabs = [].slice.call(document.querySelectorAll('#nw_subnav .nw-tab'));
+    if (!tabs.length) return;
+    var ids = tabs.map(function (a) { return a.getAttribute('href').slice(1); });
+    function activate(id) {
+      tabs.forEach(function (a) { a.classList.toggle('is-active', a.getAttribute('href') === '#' + id); });
+    }
+    var ticking = false;
+    function scan() {
+      ticking = false;
+      var best = null, bestTop = -1e9, anchor = 120;
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el || el.offsetParent === null) return;
+        var top = el.getBoundingClientRect().top - anchor;
+        if (top <= 0 && top > bestTop) { bestTop = top; best = id; }
+      });
+      activate(best || ids[0]);
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(scan); }
+    }, { passive: true });
+    window.addEventListener('resize', scan, { passive: true });
+    if (document.readyState !== 'loading') scan();
+    else document.addEventListener('DOMContentLoaded', scan);
+  })();
+  </script>
+
+  <!-- Section band: The desks (flex order:60 places it above the technical panels) -->
+  <div class="nw-band section-lazy" id="sec_desks" style="order:60">
+    <span class="nw-eyebrow"><span class="l-en">Under the hood</span><span class="l-zh">底层</span></span>
+    <div class="nw-band-title"><span class="l-en">The desks</span><span class="l-zh">数据台</span></div>
+    <div class="nw-band-sub"><span class="l-en">The machinery the reads above are built from — freshness, disagreements, graded accuracy, and the liquidity backdrop. Everything here is context-tier: it explains, it never calls.</span><span class="l-zh">上方研判背后的机器——新鲜度、分歧、评分准确率与流动性背景。此处一切均为背景层：只解释，不下单。</span></div>
+  </div>
+  <!-- Section band: Doctrine (flex order:80 places it just above the closing panels) -->
+  <div class="nw-band section-lazy" id="sec_doctrine" style="order:80">
+    <span class="nw-eyebrow"><span class="l-en">House rules</span><span class="l-zh">内部守则</span></span>
+    <div class="nw-band-title"><span class="l-en">Doctrine &amp; accountability</span><span class="l-zh">守则与问责</span></div>
+  </div>
+
   <!-- 0. TODAY'S READ / 今日读数 (PR-4 M1) -->
-  <div class="tr-card section-lazy" id="tr_card_section">
+  <div class="tr-card section-lazy" id="tr_card_section" data-lobe="macro" style="order:30">
     <div class="tr-header">
       <div class="tr-title">
         <span class="l-en">Today's Read</span>
@@ -345,18 +400,23 @@
     </div>
   </div>
 
-  <!-- 1. HERO -->
-  <div class="nw-hero section-lazy" id="cm_hero_section">
+  <!-- 1. HERO — the living brain (masthead) -->
+  <div class="nw-hero section-lazy" id="cm_hero_section" style="order:10">
+    <div class="nw-hero-eyebrow">
+      <span class="l-en">The Neural Web</span><span class="l-zh">智脑</span>
+      <span class="live"><i></i><span class="l-en">thinking · refreshed nightly</span><span class="l-zh">运行中 · 每晚刷新</span></span>
+    </div>
     <div class="nw-hero-headline">
-      <span class="l-en">The Neural Web</span>
-      <span class="l-zh">智脑</span>
+      <span class="l-en">One brain behind every signal</span>
+      <span class="l-zh">每个信号背后的同一个大脑</span>
     </div>
     <div class="nw-hero-tagline">
-      <span class="l-en">The living brain behind this dashboard</span>
-      <span class="l-zh">仪表盘背后的活体大脑</span>
+      <span class="l-en">Every engine on the site, wired into one web — see what it reads, watch it think, and ask it why.</span>
+      <span class="l-zh">全站每个引擎连成一张网——看它读到什么、如何思考，并问它为什么。</span>
     </div>
-    <div class="nw-hero-desc">
-      <span class="l-en">This page is the visual front-end of the Neural Web — the machine that connects every engine on the site. It integrates the <strong>signal spine</strong> (every fired signal, append-only), <strong>synapses</strong> (co-firing links between engines), the <strong>kernel</strong> (graded accuracy estimates, display-only until the Oct 2026 batch), and the <strong>cortex</strong> (an overnight AI deliberation that reviews contradictions and writes this page's memo). Nothing here is investment advice.</span><span class="l-zh">本页面是智脑的可视化前端——连接站点上每个引擎的机器。它整合了<strong>信号脊梁</strong>（每个触发信号，只追加），<strong>突触</strong>（引擎间的共触发链接），<strong>核心</strong>（评分准确率估计，展示用——待2026年10月批次运行），以及<strong>皮层</strong>（夜间AI审议，审查矛盾并撰写本页备忘录）。此处任何内容均非投资建议。</span>
+    <div class="nw-hero-stance">
+      <span class="tag"><span class="l-en">Context only</span><span class="l-zh">仅供参考</span></span>
+      <span><span class="l-en">The brain explains the tape and flags what disagrees — it never tells you what to buy or sell.</span><span class="l-zh">大脑解释行情、标记分歧——但从不告诉你买卖什么。</span></span>
     </div>
     <div class="nw-stat-chips" id="nw_stat_chips">
       <div class="nw-chip" id="chip_neurons">
@@ -391,10 +451,14 @@
          neuralwebdata/market_plane.json (display tier, is_context_only=true).
          Fail-open: fetch 404 → strip stays hidden. -->
     <div class="mp-strip" id="mp_strip" style="display:none"></div>
+    <details class="nw-about">
+      <summary><span class="l-en">What is the Neural Web?</span><span class="l-zh">什么是智脑？</span></summary>
+      <p><span class="l-en">This page is the visual front-end of the Neural Web — the machine that connects every engine on the site. It integrates the <strong>signal spine</strong> (every fired signal, append-only), <strong>synapses</strong> (co-firing links between engines), the <strong>kernel</strong> (graded accuracy estimates, display-only until the Oct 2026 batch), and the <strong>cortex</strong> (an overnight AI deliberation that reviews contradictions and writes this page's memo). Nothing here is investment advice.</span><span class="l-zh">本页面是智脑的可视化前端——连接站点上每个引擎的机器。它整合了<strong>信号脊梁</strong>（每个触发信号，只追加），<strong>突触</strong>（引擎间的共触发链接），<strong>核心</strong>（评分准确率估计，展示用——待2026年10月批次运行），以及<strong>皮层</strong>（夜间AI审议，审查矛盾并撰写本页备忘录）。此处任何内容均非投资建议。</span></p>
+    </details>
   </div>
 
   <!-- 2. SYNAPSE MAP -->
-  <div class="panel section-lazy" id="cm_graph_section">
+  <div class="panel section-lazy" id="cm_graph_section" style="order:20">
     <div class="panel-head">
       <h1><span class="l-en">Synapse Map — watch the machine think</span><span class="l-zh">突触地图 — 看机器思考</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -434,7 +498,7 @@
   </div>
 
   <!-- 2b. WEB HEALTH (NW read layer) -->
-  <div class="panel section-lazy" id="cm_health_section">
+  <div class="panel section-lazy" id="cm_health_section" data-lobe="macro" style="order:66">
     <div class="panel-head">
       <h1><span class="l-en">Web Health — is the brain fresh?</span><span class="l-zh">网络健康 — 大脑是否新鲜？</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -462,7 +526,7 @@
   </div>
 
   <!-- 2c. DISAGREEMENTS (NW read layer) -->
-  <div class="panel section-lazy" id="cm_contra_section">
+  <div class="panel section-lazy" id="cm_contra_section" data-lobe="cn" style="order:68">
     <div class="panel-head">
       <h1><span class="l-en">What disagrees right now</span><span class="l-zh">当前的分歧</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -486,9 +550,9 @@
   </div>
 
   <!-- 3. NEURAL WEB DAILY BRIEF -->
-  <div class="panel section-lazy" id="cm_brief_section">
+  <div class="panel section-lazy" id="cm_brief_section" data-lobe="macro" style="order:35">
     <div class="panel-head">
-      <h1><span class="l-en">Neural Web Daily Brief</span><span class="l-zh">智脑每日简报</span></h1>
+      <h1><span class="l-en">What changed overnight</span><span class="l-zh">隔夜变化</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
     </div>
     <div class="cm-loading" id="brief_loading"><span class="l-en">Loading brief…</span><span class="l-zh">加载简报中…</span></div>
@@ -517,7 +581,7 @@
   </div>
 
   <!-- 4. SIGNAL COMMITTEE -->
-  <div class="panel section-lazy" id="cm_ticker_section">
+  <div class="panel section-lazy" id="cm_ticker_section" data-lobe="us" style="order:50">
     <div class="panel-head">
       <h1><span class="l-en">Signal Committee — per-ticker provenance</span><span class="l-zh">信号委员会 — 个股信号溯源</span></h1>
       <div class="cm-search-wrap">
@@ -552,7 +616,7 @@
   </div>
 
   <!-- 3. COMMITTEE MEMO PANEL -->
-  <div class="panel section-lazy" id="cm_memo_section">
+  <div class="panel section-lazy" id="cm_memo_section" data-lobe="sig" style="order:70">
     <div class="panel-head">
       <h1><span class="l-en">Cortex Committee Memo</span><span class="l-zh">皮层委员会备忘录</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -565,7 +629,7 @@
   </div>
 
   <!-- 6. ASK THE BRAIN -->
-  <div class="panel section-lazy" id="cm_ask_section">
+  <div class="panel section-lazy" id="cm_ask_section" data-lobe="sig" style="order:40">
     <div class="panel-head">
       <h1><span class="l-en">Ask the Brain</span><span class="l-zh">问问大脑</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -617,7 +681,7 @@
   </div>
 
   <!-- 7. KERNEL FAMILY ESTIMATES -->
-  <div class="panel section-lazy" id="cm_kernel_section">
+  <div class="panel section-lazy" id="cm_kernel_section" data-lobe="sig" style="order:62">
     <div class="panel-head">
       <h1><span class="l-en">Kernel Family Estimates</span><span class="l-zh">核心族估计</span></h1>
       <span class="kf-fresh-chip" id="kf_freshness" style="display:none"></span>
@@ -637,7 +701,7 @@
   </div>
 
   <!-- 8. LIQUIDITY PLUMBING LOBE -->
-  <div class="panel section-lazy" id="cm_liqplumb_section">
+  <div class="panel section-lazy" id="cm_liqplumb_section" data-lobe="macro" style="order:64">
     <div class="panel-head">
       <h1><span class="l-en">Liquidity Plumbing</span><span class="l-zh">流动性管道</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -678,7 +742,7 @@
   </div>
 
   <!-- 8a. REBALANCE PULSE (RLT-R2) -->
-  <div class="panel section-lazy" id="cm_rebalance_pulse_section">
+  <div class="panel section-lazy" id="cm_rebalance_pulse_section" data-lobe="us" style="order:72">
     <div class="panel-head">
       <h1><span class="l-en">Rebalance Pulse</span><span class="l-zh">再平衡脉冲</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -706,7 +770,7 @@
   </div>
 
   <!-- 8b. CONSTITUTION LEDGER (NW read layer) -->
-  <div class="panel section-lazy" id="cm_gov_section" style="display:none">
+  <div class="panel section-lazy" id="cm_gov_section" data-lobe="macro" style="display:none;order:74">
     <div class="panel-head">
       <h1><span class="l-en">Constitution ledger — recent governance events</span><span class="l-zh">宪章台账 — 近期治理事件</span></h1>
       <span class="is-context-badge"><span class="l-en">CONTEXT ONLY</span><span class="l-zh">仅供参考</span></span>
@@ -719,7 +783,7 @@
   </div>
 
   <!-- 9. POLICY-PUT DOCTRINE -->
-  <div class="panel section-lazy" id="cm_policy_doctrine_section">
+  <div class="panel section-lazy" id="cm_policy_doctrine_section" style="order:82">
     <div class="panel-head">
       <h1><span class="l-en">Policy-Put Doctrine</span><span class="l-zh">政策托底守则</span></h1>
       <span class="is-context-badge"><span class="l-en">2026-07</span><span class="l-zh">2026-07</span></span>
@@ -731,7 +795,7 @@
   </div>
 
   <!-- SA-W5: Standout Accountability operator card -->
-  <div class="panel section-lazy" id="cm_standout_accountability_section">
+  <div class="panel section-lazy" id="cm_standout_accountability_section" style="order:84">
     <div class="panel-head">
       <h1>
         <span class="l-en">Prophet Accountability</span>
@@ -769,7 +833,7 @@
 <script src="supabase.js?v=8596965f" defer></script>
 <script src="watchstore.js?v=2"></script>
 <!-- Shared nav chrome: settings-gear (theme + language live inside it), account system, mega-menu. -->
-<script src="theme.js?v=e573de07" defer></script>
+<script src="theme.js?v=16dc65dc" defer></script>
 <script>
 (function () {
   'use strict';
@@ -818,7 +882,7 @@
 
   function showContent() {
     document.getElementById('cm_gate').style.display = 'none';
-    document.getElementById('cm_content').style.display = 'block';
+    document.getElementById('cm_content').style.display = 'flex';
     document.getElementById('disc_bar').style.display = 'flex';
     if (!authBooted) {
       authBooted = true;

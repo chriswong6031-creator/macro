@@ -1359,6 +1359,64 @@ def _summarize_stage_analysis(repo: Path) -> tuple[dict, str | None]:
         return {}, f"stage_analysis summarize failed: {exc}"
 
 
+def _summarize_darkpool_flow(repo: Path) -> tuple[dict, str | None]:
+    """Distil darkpool_context into the darkpool_flow lobe (off-exchange positioning).
+
+    Source: data/darkpool/context/latest.json (darkpool_context.v1).
+    Written by scripts/build_darkpool_desk.py (engine.darkpool_context); absent until
+    first nightly run. Fail-soft: absent or unreadable artifact → empty lobe + gap note.
+
+    Standing laws:
+    - 100% deterministic re-projection; no LLM-originated content.
+    - Off-exchange leans are display-tier context only — nothing here may gate, rank,
+      size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    - is_context_only=True always; display_only=True always.
+    """
+    ctx_path = repo / "data" / "darkpool" / "context" / "latest.json"
+    raw = _read_json(ctx_path)
+    if raw is None:
+        return {}, "data/darkpool/context/latest.json absent or unreadable"
+
+    try:
+        tally = raw.get("tally") or {}
+        leans = raw.get("leans") or {}
+        standouts = raw.get("standouts") or []
+        changes = (raw.get("changes") or {}).get("items") or []
+        mover = (raw.get("venues") or {}).get("mover") or {}
+
+        lobe: dict = {
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "hero": (raw.get("hero") or {}).get("en"),
+            "tally": {
+                "accumulation": tally.get("accumulation"),
+                "distribution": tally.get("distribution"),
+                "unusual": tally.get("unusual"),
+            },
+            "leans": {
+                k: {
+                    "n": (leans.get(k) or {}).get("n"),
+                    "names": ((leans.get(k) or {}).get("names") or [])[:8],
+                }
+                for k in ("accumulation", "distribution", "unusual")
+            },
+            "standouts": [
+                {"ticker": s.get("ticker"), "lean": s.get("lean"),
+                 "oe_share": s.get("oe_share"), "oe_z": s.get("oe_z"),
+                 "trend_pp": s.get("trend_pp")}
+                for s in standouts[:8] if isinstance(s, dict)
+            ],
+            "venue_mover": {"name": mover.get("name"), "wow_pp": mover.get("wow_pp")} if mover else None,
+            "n_changes": len(changes) if isinstance(changes, list) else 0,
+            "honesty_note": "context only — off-exchange positioning leans, never a signal or sizing input",
+        }
+        return lobe, None
+    except Exception as exc:  # noqa: BLE001
+        return {}, f"darkpool_flow summarize failed: {exc}"
+
+
 def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
     """Distil world_state.theme_rotation into the theme_rotation lobe.
 
@@ -1523,6 +1581,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "fx_dollar": _summarize_fx_dollar,  # FX/dollar transmission context lobe
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
     "stage_analysis": _summarize_stage_analysis,  # SGA-W2 Weinstein stage classification context lobe
+    "darkpool_flow": _summarize_darkpool_flow,  # darkpool_context.v1 off-exchange positioning context lobe
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
     "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
@@ -1546,6 +1605,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "fx_dollar": ["world-state"],  # reads world_state.fx_dollar (from data/forex/latest.json)
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
     "stage_analysis": ["stage-analysis-context-latest"],  # SGA-W2: reads context artifact directly
+    "darkpool_flow": ["darkpool-context-latest"],  # reads darkpool_context.v1 artifact directly
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
     "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)

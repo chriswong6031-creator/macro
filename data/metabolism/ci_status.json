@@ -1,7 +1,20 @@
 {
-  "ts": "2026-07-23T10:41:49+00:00",
-  "main_sha": "c69618b302e406019c1a81f486a2761d5c6abc65",
-  "red_required": [],
-  "green": true,
-  "consecutive_failures": 0
+  "ts": "2026-07-24T19:54:22+00:00",
+  "main_sha": "ca93e61af12b06aeb502b3e3155602d46ca8cb09",
+  "red_required": [
+    {
+      "name": "engine-render-guards",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/30121682118/job/89575639281"
+    },
+    {
+      "name": "Supabase Preview",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/runs/89572747454"
+    }
+  ],
+  "green": false,
+  "consecutive_failures": 1
 }

@@ -36,7 +36,7 @@ import os
 import re
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -465,6 +465,32 @@ def current_statuses(root: Path | str | None = None) -> dict[str, str]:
     return fold_state(root)["status"]
 
 
+def posted_today_by_account(state: dict, today: str) -> dict[str, int]:
+    """Ledger-based posts-today per account — the Sentinel daily-cap counter.
+
+    Nightly content-plan items carry the GENERATION day's as_of (content_studio
+    stamps the nightly run date) and post the NEXT trading day, so counting
+    as_of == today undercounts. Count instead by the last ledger row's `at`
+    date: an item whose folded status is posted/posting AND whose last
+    transition happened today consumed a posting slot today ("posting" is
+    in-flight — it likely reached the network, so it holds its slot).
+
+    `state` is a fold_state() dict; `today` is "YYYY-MM-DD".
+    """
+    items = state.get("items") or {}
+    last = state.get("last") or {}
+    status = state.get("status") or {}
+    out: dict[str, int] = {}
+    for iid, it in items.items():
+        if status.get(iid, "queued") not in {"posted", "posting"}:
+            continue
+        at = str((last.get(iid) or {}).get("at") or "")
+        if at[:10] == today:
+            acct = it.get("account", "")
+            out[acct] = out.get(acct, 0) + 1
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Enqueue
 # ─────────────────────────────────────────────────────────────────────────────
@@ -542,12 +568,17 @@ def transition(
     root: Path | str | None = None,
     note: str | None = None,
     receipt: dict | str | None = None,
+    now: datetime | None = None,
     _state: dict | None = None,
 ) -> bool:
     """Append a status transition row to status_ledger.jsonl.
 
     Returns False (with log.warning) if the item is unknown or the transition
     is illegal from the current folded status. Never raises.
+
+    now: stamps the row's `at` (default wall-clock UTC). Tests inject a fixed
+    now so posted_today_by_account() — which counts by `at` date — stays
+    deterministic; production callers leave it unset.
 
     _state (internal): a preloaded fold_state() snapshot for batch callers;
     kept current on success so N sequential transitions fold once, not N times.
@@ -568,7 +599,7 @@ def transition(
                 "id": item_id,
                 "from": current,
                 "to": to,
-                "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "at": (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "actor": actor,
                 "note": note,
                 "receipt": receipt,
@@ -721,16 +752,48 @@ _SLOT_SUFFIX_TIMES = {
 }
 
 
-def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
-    """Map slot suffix to an advisory scheduled_at time.
+def slot_datetime(as_of: str, slot: str) -> str | None:
+    """Resolve a plan slot to its advisory absolute ISO datetime (UTC), or None.
 
-    Advisory times; W1 actuator applies jitter/spacing before actual posting.
+    A day slot is ``D<n>-<AM|PM|EOD>``: day n runs on ``as_of + (n-1) days`` (D1
+    is as_of itself), at the suffix's time. Returns None for immediate/publish-
+    time slots (MOVER-/THEME-/CONF-, or any non-``D<n>`` prefix), an unknown time
+    suffix, or an unparseable as_of — the admin renders "immediate"/blank for None.
+
+    Advisory only; the W1 actuator applies jitter/spacing before actual posting.
+
+    Prior bug: every ``D<n>-AM`` mapped to ``as_of T14:00Z`` regardless of n, so
+    D2..D7 items all showed day-1's date. This offsets by (n-1) days.
     """
-    suffix = slot.rsplit("-", 1)[-1] if "-" in slot else ""
-    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix)
-    if time_suffix:
-        return f"{as_of}{time_suffix}"
-    return "immediate"
+    if "-" not in slot:
+        return None
+    prefix, suffix = slot.split("-", 1)
+    # suffix may itself contain a "-" for exotic labels; the time key is the LAST
+    # segment (matches the historical rsplit behaviour).
+    suffix_key = suffix.rsplit("-", 1)[-1]
+    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix_key)
+    if time_suffix is None:
+        return None
+    if not (len(prefix) >= 2 and prefix[0] == "D" and prefix[1:].isdigit()):
+        return None  # non-day slot with a time suffix — treat as immediate
+    day_n = int(prefix[1:])
+    try:
+        base = datetime.strptime(as_of[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+    offset_days = max(day_n - 1, 0)
+    date_str = (base + timedelta(days=offset_days)).strftime("%Y-%m-%d")
+    return f"{date_str}{time_suffix}"
+
+
+def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
+    """Map a slot to an advisory scheduled_at time, or "immediate".
+
+    Thin wrapper over slot_datetime() that preserves the enqueue contract: a
+    resolvable day slot returns its absolute ISO datetime; everything else
+    (publish-time slots, unparseable inputs) returns the "immediate" sentinel.
+    """
+    return slot_datetime(as_of, slot) or "immediate"
 
 
 def emit_from_content_plan(
@@ -845,12 +908,23 @@ def emit_from_content_plan(
                                     "outbox.emit_from_content_plan: media write failed for %r: %s",
                                     chart_id, exc)
 
-                            media.append({
+                            media_entry: dict[str, Any] = {
                                 "kind": "chart_svg",
                                 "path": svg_rel_path,
                                 "chart_id": chart_id,
                                 "ticker": qi.get("ticker") or fc.get("ticker") or "",
-                            })
+                            }
+                            # Copy through the PNG variant rendered at plan-build
+                            # time (content_studio._attach_chart_media): media_url
+                            # is the public https URL the publisher attaches to the
+                            # post; media_png_path is the repo-relative local PNG.
+                            # Absent when publish.media_enabled is off or no chart
+                            # closes existed — the post then stays text/SVG-only.
+                            if fc.get("media_url"):
+                                media_entry["media_url"] = fc.get("media_url")
+                            if fc.get("media_png_path"):
+                                media_entry["media_png_path"] = fc.get("media_png_path")
+                            media.append(media_entry)
 
                     scheduled_at = _scheduled_at_for_slot(slot, as_of)
 
@@ -858,9 +932,36 @@ def emit_from_content_plan(
                         "plan_item_id": qi.get("id"),
                         "chart_id": chart_id,
                     }
+                    # Surface the chart PNG on source too (the publisher reads
+                    # source.media_url to attach without unpacking the media list).
+                    if chart_id and chart_id in featured_charts:
+                        _fc = featured_charts[chart_id]
+                        if _fc.get("media_url"):
+                            source["media_url"] = _fc.get("media_url")
+                        if _fc.get("media_png_path"):
+                            source["media_png_path"] = _fc.get("media_png_path")
+                    # Structured tape-claim stamp for the publisher's post-time
+                    # live gate (engine/marketing/live_verify.py): the ticker the
+                    # copy is about, the thesis direction and levels, and any
+                    # same-day move pct the copy asserts. Without this the gate
+                    # can only regex cashtags out of the text.
+                    if qi.get("ticker"):
+                        source["ticker"] = qi.get("ticker")
                     plan_block = qi.get("_plan")
                     if isinstance(plan_block, dict):
-                        source["signal_id"] = plan_block.get("id")
+                        if plan_block.get("id") is not None:
+                            source["signal_id"] = plan_block.get("id")
+                        for _sk, _pk in (("direction", "direction"),
+                                         ("entry", "entry"),
+                                         ("invalidation", "invalidation")):
+                            if plan_block.get(_pk) is not None:
+                                source[_sk] = plan_block.get(_pk)
+                    _mv_blk = qi.get("_mover_data")
+                    if isinstance(_mv_blk, dict) and _mv_blk.get("pct") is not None:
+                        source["baseline_pct"] = _mv_blk.get("pct")
+                    _th_blk = qi.get("_theme_data")
+                    if isinstance(_th_blk, dict) and _th_blk.get("agg_pct") is not None:
+                        source["baseline_pct"] = _th_blk.get("agg_pct")
 
                     try:
                         item = make_item(

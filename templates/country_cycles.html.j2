@@ -18,6 +18,17 @@
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css?v=4">
 <link rel="stylesheet" href="sector_cycles.css">
+{# Preload the critical path (core data + engine + orchestrator) so they download in PARALLEL;
+   prefetch the after-first-paint chunks. This page's data was ONE 2.7MB bundle (SECTOR_CYCLES +
+   NARR + DNA); it is now split into core + series + narr + dna. The 24 countries' price + fx +
+   usd_record (~1.6MB, currency card only) live in the series chunk, hydrated after first paint.
+   optimize_assets stamps ?v=<hash> on these hrefs; sector_cycles.js vUrl() reuses them. #}
+<link rel="preload" href="country_cycles_data.js" as="script">
+<link rel="preload" href="mm_charts.js" as="script">
+<link rel="preload" href="sector_cycles.js" as="script">
+<link rel="prefetch" href="country_cycles_series_data.js" as="script">
+<link rel="prefetch" href="country_cycles_narr_data.js" as="script">
+<link rel="prefetch" href="country_cycles_dna_data.js" as="script">
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
@@ -99,7 +110,10 @@
 </div>
 
 <script src="country_cycles_data.js"></script>
-<script src="mm_charts.js?v=4"></script>
+<script src="mm_charts.js"></script>
+{# narr/dna were bundled into country_cycles_data.js before; now split into their own files loaded
+   via sector_cycles.js's eager-idle SC_EXTRA_DATA path, and the heavy series via SC_SERIES_DATA. #}
+<script>window.SC_SERIES_DATA='country_cycles_series_data.js';window.SC_EXTRA_DATA=['country_cycles_narr_data.js','country_cycles_dna_data.js'];</script>
 <script src="sector_cycles.js"></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
 <script src="theme.js"></script>

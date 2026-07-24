@@ -1,25 +1,25 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-07-23",
-  "generated_at": "2026-07-23T10:09:17.183342+00:00",
+  "as_of": "2026-07-24",
+  "generated_at": "2026-07-24T10:08:07.460322+00:00",
   "is_context_only": true,
-  "n_snapshots": 1385,
+  "n_snapshots": 1482,
   "horizons": {
     "5": {
-      "n_matured": 120,
-      "opportunity_ic_pooled": 0.3276,
+      "n_matured": 134,
+      "opportunity_ic_pooled": 0.2688,
       "opportunity_ic_daily": {
-        "mean_ic": 0.126,
-        "ic_vol": 0.613,
-        "ic_ir": 0.206,
-        "ic_ir_ann": 0.65,
-        "t_hac": null,
-        "p_hac": null,
-        "hit": 0.571,
-        "n": 7
+        "mean_ic": 0.0717,
+        "ic_vol": 0.5879,
+        "ic_ir": 0.122,
+        "ic_ir_ann": 0.386,
+        "t_hac": 0.514,
+        "p_hac": 0.6074,
+        "hit": 0.5,
+        "n": 8
       },
-      "opportunity_ic": 0.126,
-      "edge_ic_pooled": 0.3185,
+      "opportunity_ic": 0.0717,
+      "edge_ic_pooled": 0.2576,
       "by_stage": {
         "consensus": {
           "n": 3,
@@ -27,14 +27,14 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 41,
-          "mean_fwd_rel": -0.0272,
-          "hit_rate": 0.683
+          "n": 49,
+          "mean_fwd_rel": -0.0225,
+          "hit_rate": 0.633
         },
         "exhausted": {
-          "n": 8,
-          "mean_fwd_rel": -0.0445,
-          "hit_rate": 0.75
+          "n": 10,
+          "mean_fwd_rel": -0.0446,
+          "hit_rate": 0.7
         },
         "faltering": {
           "n": 11,
@@ -42,22 +42,22 @@
           "hit_rate": null
         },
         "early": {
-          "n": 57,
-          "mean_fwd_rel": 0.0167,
-          "hit_rate": 0.649
+          "n": 61,
+          "mean_fwd_rel": 0.0123,
+          "hit_rate": 0.607
         }
       },
       "by_source": {},
       "by_regime": {}
     },
     "10": {
-      "n_matured": 74,
-      "opportunity_ic_pooled": 0.5009,
+      "n_matured": 85,
+      "opportunity_ic_pooled": 0.5113,
       "opportunity_ic_daily": {
-        "n_days": 4
+        "n_days": 5
       },
       "opportunity_ic": null,
-      "edge_ic_pooled": 0.5391,
+      "edge_ic_pooled": 0.5501,
       "by_stage": {
         "consensus": {
           "n": 3,
@@ -65,9 +65,9 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 18,
-          "mean_fwd_rel": -0.0762,
-          "hit_rate": 0.889
+          "n": 22,
+          "mean_fwd_rel": -0.0743,
+          "hit_rate": 0.864
         },
         "exhausted": {
           "n": 2,
@@ -75,14 +75,14 @@
           "hit_rate": 1.0
         },
         "faltering": {
-          "n": 7,
-          "mean_fwd_rel": 0.0628,
+          "n": 10,
+          "mean_fwd_rel": 0.054,
           "hit_rate": null
         },
         "early": {
-          "n": 44,
-          "mean_fwd_rel": 0.0149,
-          "hit_rate": 0.727
+          "n": 48,
+          "mean_fwd_rel": 0.0167,
+          "hit_rate": 0.75
         }
       },
       "by_source": {},

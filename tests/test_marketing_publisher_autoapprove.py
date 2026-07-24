@@ -47,10 +47,16 @@ def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day
 
 def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
                        links_allowed: bool = True, auto_approve: bool = False,
-                       cap: int = 2) -> None:
-    """Write a minimal config/marketing.yml with publish + sentinel blocks."""
+                       cap: int = 2, auto_approve_kinds: str | None = None) -> None:
+    """Write a minimal config/marketing.yml with publish + sentinel blocks.
+
+    auto_approve_kinds: when given (e.g. "[mover, theme_list]"), adds the scoped
+    exception key so publish-time-lane items of those kinds auto-approve even
+    while require_approval stays true and auto_approve stays false.
+    """
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
+    scoped = f"  auto_approve_kinds: {auto_approve_kinds}\n" if auto_approve_kinds else ""
     (cfg_dir / "marketing.yml").write_text(
         "sentinel:\n"
         f"  max_posts_per_account_per_day: {cap}\n"
@@ -58,12 +64,27 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         "  backend: buffer\n"
         "  require_approval: true\n"
         f"  auto_approve: {'true' if auto_approve else 'false'}\n"
+        + scoped +
         "  channels:\n"
         f"    flagship: \"{channel}\"\n"
         "  links_allowed:\n"
         f"    flagship: {'true' if links_allowed else 'false'}\n",
         encoding="utf-8",
     )
+
+
+def _seed_queued_kind(tmp_path: Path, *, kind: str, provenance: str,
+                      text: str, account: str = "flagship", as_of: str = _AS_OF,
+                      source: dict | None = None) -> str:
+    """Enqueue one queued item of a given kind + provenance. Returns its id."""
+    from engine.marketing.outbox import make_item, enqueue
+    item = make_item(
+        account=account, kind=kind, text=text, as_of=as_of,
+        scheduled_at="immediate", provenance=provenance, now=_FIXED_NOW,
+        source=source,
+    )
+    enqueue(item, root=tmp_path, max_per_account_day=99)
+    return item["id"]
 
 
 class _FakePublisher:
@@ -88,6 +109,23 @@ class _FakePublisher:
         return [{"id": "buf-chan-123", "service": "twitter", "name": "Flagship"}]
 
 
+def _write_fresh_quotes(tmp_path: Path, now: str,
+                        tickers: tuple[str, ...] = ("PLTR",)) -> None:
+    """Write a live-quotes snapshot so the publisher's tape gate can verify
+    the fixture tickers (a signal it cannot verify is HELD, by design)."""
+    import json as _json
+    from datetime import datetime, timezone as _tz
+    dt = datetime.fromisoformat(now.replace("Z", "+00:00")).replace(tzinfo=_tz.utc)
+    ts_ms = int(dt.timestamp() * 1000)
+    p = tmp_path / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "live_quotes_snapshot.json").write_text(_json.dumps({
+        "asof": now,
+        "quotes": {t: {"price": 100.0, "prevClose": 99.5, "changePct": 0.5,
+                       "ts": ts_ms} for t in tickers},
+    }), encoding="utf-8")
+
+
 def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
                    fake_publisher: _FakePublisher | None = None,
                    kill_switch: bool = False, now: str = "2026-07-19T13:00:00Z") -> int:
@@ -95,6 +133,7 @@ def _run_publisher(monkeypatch, tmp_path: Path, argv: list[str], *,
     import scripts.marketing_publisher as pub
     monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if kill_switch else "0")
     monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    _write_fresh_quotes(tmp_path, now)
     if fake_publisher is not None:
         monkeypatch.setattr(pub, "_make_publisher",
                             lambda backend, *, token, cfg: fake_publisher)
@@ -394,3 +433,106 @@ def test_admin_publisher_dryrun_wrapper_no_writes(monkeypatch, tmp_path):
     assert d["ok"] is True
     assert d["mode"] == "dry_run"
     assert read_ledger(tmp_path) == ledger_before
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. Scoped auto-approve (publish.auto_approve_kinds) — the require_approval
+#    exception for publish-time-lane mover/theme_list items.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _mover_text(pct: float = 0.5) -> str:
+    return f"$PLTR +{pct:.1f}% today. Strength worth respecting, not chasing."
+
+
+def test_scoped_auto_approves_publisher_lane_mover(monkeypatch, tmp_path):
+    """A queued mover with provenance publisher_live_movers auto-approves when
+    auto_approve_kinds=[mover, theme_list] AND global auto_approve is false."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False,
+                       auto_approve_kinds="[mover, theme_list]")
+    qid = _seed_queued_kind(tmp_path, kind="mover",
+                            provenance="publisher_live_movers",
+                            text=_mover_text(),
+                            source={"ticker": "PLTR", "baseline_pct": 0.5})
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    # queued → approved (scoped) → posting → posted (tape gate posts the +0.5%).
+    assert current_statuses(tmp_path)[qid] == "posted"
+    assert len(fake.calls) == 1
+
+
+def test_scoped_does_not_approve_content_studio_mover(monkeypatch, tmp_path):
+    """The SAME kind (mover) from provenance content_studio is NOT auto-approved
+    by the scoped exception — the lane guard is provenance publisher_live_movers."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False,
+                       auto_approve_kinds="[mover, theme_list]")
+    qid = _seed_queued_kind(tmp_path, kind="mover", provenance="content_studio",
+                            text=_mover_text(),
+                            source={"ticker": "PLTR", "baseline_pct": 0.5})
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[qid] == "queued"     # untouched
+
+
+def test_scoped_does_not_approve_signal_of_wrong_kind(monkeypatch, tmp_path):
+    """A publisher-lane item of a kind NOT in auto_approve_kinds (signal) stays
+    queued under the scoped exception."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False,
+                       auto_approve_kinds="[mover, theme_list]")
+    qid = _seed_queued_kind(tmp_path, kind="signal",
+                            provenance="publisher_live_movers",
+                            text="$PLTR reclaimed the 50-day. Watching now.")
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    assert fake.calls == []
+    assert current_statuses(tmp_path)[qid] == "queued"
+
+
+def test_global_auto_approve_true_still_approves_everything(monkeypatch, tmp_path):
+    """Global auto_approve: true is unchanged by the scoping — any kind /
+    provenance auto-approves (the scoped list is a superset here, not a filter)."""
+    from engine.marketing.outbox import current_statuses
+    # Global ON; the scoped list is present but must be ignored (global wins).
+    _write_publish_cfg(tmp_path, auto_approve=True,
+                       auto_approve_kinds="[mover]")
+    qid = _seed_queued_item(tmp_path)   # a plain content_studio signal
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    # A content_studio SIGNAL (not in the scoped list) still posts because the
+    # global flag is on → unrestricted, exactly as before this feature.
+    assert current_statuses(tmp_path)[qid] == "posted"
+    assert len(fake.calls) == 1
+
+
+def test_scoped_junk_config_values_ignored(monkeypatch, tmp_path):
+    """Junk auto_approve_kinds entries are ignored; a real mover still approves."""
+    from engine.marketing.outbox import current_statuses
+    # "signal" is a valid kind but not what we seed; "garbage" and 5 are junk.
+    _write_publish_cfg(tmp_path, auto_approve=False,
+                       auto_approve_kinds="[mover, garbage, 5]")
+    qid = _seed_queued_kind(tmp_path, kind="mover",
+                            provenance="publisher_live_movers",
+                            text=_mover_text(),
+                            source={"ticker": "PLTR", "baseline_pct": 0.5})
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake,
+                        kill_switch=True)
+    assert rc == 0
+    # Junk was dropped, "mover" survived → the item auto-approves and posts.
+    assert current_statuses(tmp_path)[qid] == "posted"

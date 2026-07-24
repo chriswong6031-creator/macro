@@ -297,6 +297,19 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
             return None
         triple = [r for r in rows if r["n_signals"] >= 3]
         crowding = [r["ticker"] for r in rows if r["flags"]][:20]
+        # Market-level convergence BREADTH — a display composite of the per-name reads
+        # (how one-sided the cross-section is right now). Context only: it summarizes where
+        # the free feeds agree across the whole universe; it is never a size or a gate.
+        _acc = sum(1 for r in rows if r["side"] == "accumulate")
+        _dis = sum(1 for r in rows if r["side"] == "distribute")
+        _neu = len(rows) - _acc - _dis
+        breadth = {
+            "accumulate": _acc, "distribute": _dis, "neutral": _neu, "n": len(rows),
+            # net tilt in [-100, +100]: + = accumulation-skewed cross-section
+            "net_pct": round(100.0 * (_acc - _dis) / len(rows), 1) if rows else 0.0,
+            "acc_pct": round(100.0 * _acc / len(rows), 1) if rows else 0.0,
+            "dis_pct": round(100.0 * _dis / len(rows), 1) if rows else 0.0,
+        }
         # Probationary chips: deep-discount blocks + inst-seat LHB (ZERO weight, display only).
         # Emitted separately so they never contaminate the convergence score ranking.
         prob = _probationary_chips()
@@ -309,6 +322,7 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
             "schema": SCHEMA, "is_context_only": True, "asof": str(date.today()),
             "built": datetime.now(timezone.utc).isoformat(),
             "n_universe": len(rows), "n_triple": len(triple),
+            "breadth": breadth,
             "triple": triple[:top_n],
             "top": rows[:top_n], "bottom": rows[-top_n:][::-1],
             "crowding_flags": crowding,

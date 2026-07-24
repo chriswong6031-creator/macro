@@ -496,6 +496,17 @@ jobs:
           # ONLY site/ — never data/ or reports/. engine.run + the builders touch data/ in the
           # working tree (regime recompute, ledger appends, cache writes); committing NONE of it
           # keeps the nightly the single advancer of every forward-accountability ledger.
+          # pre-commit template↔site re-sync (ui.template_site_sync): inject_data_base +
+          # externalize_css above rewrite the site/ copies of the ~48 templates/-paired
+          # plain-copy assets, so this FIRST commit always carried the divergence and only
+          # the post-rebase --fix inside the push loop below healed it, one follow-up commit
+          # later. Any cancellation/failure between the two ships the divergence: 2026-07-24
+          # run 30057066815 was cancelled mid-push-loop and landed b6386adb4af (externalized
+          # site/index.html + site/chat.html, no heal commit) — main's sync gate went red on
+          # every PR until #3358. Heal BEFORE staging so the first commit is never diverged;
+          # the post-rebase --fix below STAYS (it re-copies from fresh post-rebase templates/,
+          # guarding the -X theirs mid-render-merge reword case, 2026-07-07 incident).
+          python -m scripts.check_template_site_sync --fix || true
           git add site/
           git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi

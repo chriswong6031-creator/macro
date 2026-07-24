@@ -43,6 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-context-rail | 17 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
+| mag7-washout | 2 |
 | market-structure | 3 |
 | marketing | 2 |
 | mastermind-feedback-contract | 2 |
@@ -77,7 +78,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
-| signal-commons | 11 |
+| signal-commons | 12 |
 | signal-foundry | 4 |
 | standout-accountability | 8 |
 | stock-personality | 5 |
@@ -96,7 +97,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 316 |
+| display | 319 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -105,7 +106,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 464 |
+| git | 467 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -474,6 +475,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | mag7-regime-latest | `data/mag7_regime/latest.json` | json | daily-engine | display | 2 | 0 |
 | mag7-regime-site | `site/stockdata/mag7_regime.json` | json | daily-engine | display | 1 | 0 |
 | mag7-regime-ledger | `data/mag7_regime/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### mag7-washout
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| mag7-washout-latest | `data/mag7_washout/latest.json` | json | daily-engine | display | 1 | 0 |
+| mag7-washout-triggers | `data/mag7_washout/triggers.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### market-structure
 
@@ -881,6 +889,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | special-sits-context-latest | `data/special_situations/context/latest.json` | json | daily-engine | display | 2 | 1 |
 | stage-analysis-context-latest | `data/stage_analysis/context/latest.json` | json | daily-engine | display | 2 | 1 |
+| darkpool-context-latest | `data/darkpool/context/latest.json` | json | daily-engine | display | 1 | 1 |
 | event-priors-clinicaltrials | `data/special_situations/event_priors/clinicaltrials.json` | json | weekly | display | 2 | 0 |
 | event-priors-earnings | `data/special_situations/event_priors/earnings.json` | json | weekly | display | 2 | 0 |
 | event-priors-ipo-lockup | `data/special_situations/event_priors/ipo_lockup.json` | json | weekly | display | 2 | 0 |

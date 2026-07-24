@@ -728,16 +728,23 @@
           '将鼠标悬停在板块标题上查看成员 · 悬停方块查看研判 · 点击进入分析器')
       : L('Hover a sector or subsector header for its members · hover a tile for our read · click through to the analyzer',
           '将鼠标悬停在板块或子行业标题上查看成员 · 悬停方块查看研判 · 点击进入分析器');
+    // The dashboard chrome (market pulse · breadth stats · movers board) rides on
+    // the standalone full pages; the expand overlay stays a pure edge-to-edge map.
+    var IN_OV = !!(root.closest && root.closest('.hm-ov'));
+    var SHOW_DASH = !IN_OV;
     root.innerHTML = ''
+      + (SHOW_DASH ? '<div class="hx-pulse" aria-live="polite"></div><div class="hx-stats"></div>' : '')
       + '<div class="hm-bar">'
       +   '<div class="hm-tfs" role="tablist" aria-label="Timeframe"></div>'
+      +   (SHOW_DASH ? '<label class="hm-search"><span class="mag" aria-hidden="true">🔎</span><input type="text" autocomplete="off" spellcheck="false" aria-label="Filter tiles" placeholder="' + (isZh() ? '筛选个股…' : 'Filter…') + '"></label>' : '')
       +   '<div class="hm-legend"></div>'
       +   '<div class="hm-grow"></div>'
       +   '<div class="hm-read"></div>'
       + '</div>'
       + '<div class="hm-sort" role="group" aria-label="Sort"></div>'
       + '<div class="hm-tm-wrap"><div class="hm-tm"></div></div>'
-      + '<div class="hm-hint">' + hint + '</div>';
+      + '<div class="hm-hint">' + hint + '</div>'
+      + (SHOW_DASH ? '<div class="hx-boards"></div>' : '');
 
     var tfsEl = root.querySelector('.hm-tfs');
     var legendEl = root.querySelector('.hm-legend');
@@ -745,9 +752,13 @@
     var sortEl = root.querySelector('.hm-sort');
     var wrap = root.querySelector('.hm-tm-wrap');
     var tm = root.querySelector('.hm-tm');
+    var pulseEl = root.querySelector('.hx-pulse');
+    var statsEl = root.querySelector('.hx-stats');
+    var boardsEl = root.querySelector('.hx-boards');
+    var searchEl = root.querySelector('.hm-search input');
+    var _q = '';
     var firstLayout = true;
     var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var IN_OV = !!(root.closest && root.closest('.hm-ov'));
     function mapHeight() {
       // In the full-page overlay the treemap fills the viewport — the map IS
       // the page (Finviz look, no scrolling). Standalone pages keep a bounded
@@ -811,6 +822,7 @@
       if (mode === 'tree') recolor(); else layoutList();
       updateLegend();
       updateRead();
+      renderDash();
     }
     function updateLegend() {
       var e = edgesFor(TF), pal = binPalette();
@@ -1176,6 +1188,7 @@
         sp.el.textContent = fmtPc(v);
         sp.el.className = 'pc ' + (v == null ? '' : (v >= 0 ? 'up' : 'dn'));
       });
+      applyFilter();
     }
 
     /* ----- mobile list ----- */
@@ -1289,7 +1302,7 @@
     var rt;
     function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); layout(); }, 150); }
     function onTheme() { hideCard(); hideMembers(); if (mode === 'tree') recolor(); else layoutList(); updateLegend(); updateRead(); }
-    function onLang() { buildTabs(); buildSort(); updateLegend(); updateRead(); hideCard(); hideMembers(); layout(); }
+    function onLang() { buildTabs(); buildSort(); updateLegend(); updateRead(); if (searchEl) searchEl.placeholder = isZh() ? '筛选个股…' : 'Filter…'; hideCard(); hideMembers(); layout(); renderDash(); }
     function onRefresh(e) {
       if (e.detail && e.detail.url !== (data._url || JSON_URL)) return;
       hideCard(); hideMembers();
@@ -1299,15 +1312,188 @@
         var first = (data.timeframes || []).filter(function (tf) { return tf.available; })[0];
         if (first) { TF = first.key; data._tf = TF; }
       }
-      buildTabs(); updateLegend(); updateRead(); layout();
+      buildTabs(); updateLegend(); updateRead(); layout(); renderDash();
     }
     window.addEventListener('resize', onResize);
     document.addEventListener('themechange', onTheme);
     document.addEventListener('langchange', onLang);
     document.addEventListener('hm-refresh', onRefresh);
 
+    /* ---------------------------------------------------------------- */
+    /*  DASHBOARD CHROME — market pulse · breadth stats · movers board   */
+    /*  All derived client-side from the same payload the treemap draws, */
+    /*  for the active timeframe. Re-rendered on TF / lang / data change. */
+    /* ---------------------------------------------------------------- */
+    function _secName(name) {
+      var l = labs[name];
+      return l ? (isZh() ? l.zh : l.en) : name;
+    }
+    function _secLabL(name) {
+      var l = labs[name];
+      return l ? L(esc(l.en), esc(l.zh)) : esc(name);
+    }
+    function computeSummary(tf) {
+      var ts = data.tiles.filter(function (t) { var v = t.perf[tf]; return v != null && !isNaN(v); });
+      var adv = 0, dec = 0, flat = 0;
+      ts.forEach(function (t) { var v = t.perf[tf]; if (v > 0.05) adv++; else if (v < -0.05) dec++; else flat++; });
+      var sorted = ts.slice().sort(function (a, b) { return b.perf[tf] - a.perf[tf]; });
+      var byS = {};
+      ts.forEach(function (t) { (byS[t.sector] || (byS[t.sector] = [])).push(t); });
+      var secs = Object.keys(byS).map(function (k) {
+        return { name: k, agg: sectorAgg(data, byS[k], tf), n: byS[k].length };
+      }).filter(function (s) { return s.agg != null && !isNaN(s.agg); })
+        .sort(function (a, b) { return b.agg - a.agg; });
+      return {
+        n: ts.length, adv: adv, dec: dec, flat: flat,
+        pctUp: ts.length ? adv / ts.length * 100 : 0,
+        med: medianPc(ts, tf),
+        gainers: sorted.slice(0, 5),
+        losers: sorted.slice(-5).reverse(),
+        secs: secs
+      };
+    }
+    // Deterministic market-state read (breadth + leadership) — a plain-word
+    // description of the tape, never an LLM-originated or trade signal.
+    function stanceOf(sm) {
+      var up = sm.pctUp, med = sm.med || 0;
+      var top = sm.secs[0], bot = sm.secs[sm.secs.length - 1];
+      var lead = top && top.agg > 1.2;
+      if (up >= 60 && med > 0.2) return { tone: 'up', en: 'Broad advance', zh: '普涨' };
+      if (up <= 40 && med < -0.2) return { tone: 'down', en: 'Broad decline', zh: '普跌' };
+      if (lead && up < 52) return { tone: 'flat', en: 'Narrow · led by ' + _secName(top.name), zh: '结构性行情' };
+      if (up >= 54) return { tone: 'up', en: 'Firmer tape', zh: '偏强' };
+      if (up <= 46) return { tone: 'down', en: 'Softer tape', zh: '偏弱' };
+      return { tone: 'flat', en: 'Split tape', zh: '涨跌分化' };
+    }
+    function _leadPhrase(sm) {
+      var up = sm.secs.filter(function (s) { return s.agg > 0.05; }).slice(0, 2);
+      var dn = sm.secs.filter(function (s) { return s.agg < -0.05; }).slice(-2).reverse();
+      var zh = isZh();
+      function names(arr) { return arr.map(function (s) { return '<b>' + esc(_secName(s.name)) + '</b>'; }).join(zh ? '、' : ', '); }
+      var parts = [];
+      if (up.length) parts.push(zh ? (names(up) + ' 走强') : ('strength in ' + names(up)));
+      if (dn.length) parts.push(zh ? (names(dn) + ' 走弱') : ('weakness in ' + names(dn)));
+      return parts.join(zh ? '，' : ', ');
+    }
+    function renderPulse(sm) {
+      if (!pulseEl) return;
+      var st = stanceOf(sm);
+      var when = (data.source === 'polygon-live' ? (fmtUpdated(data) || data.asof) : data.asof) || '—';
+      var pctUp = Math.round(sm.pctUp), medTxt = fmtPc(sm.med);
+      var lead = _leadPhrase(sm);
+      var read = lz(pctUp + '% of names advancing · median ' + medTxt + '. ',
+                    pctUp + '% 个股上涨 · 中位数 ' + medTxt + '。')
+               + (lead ? (lz('Money flowing to ', '资金流向：') + lead + (isZh() ? '。' : '.')) : '');
+      pulseEl.className = 'hx-pulse ' + st.tone;
+      pulseEl.innerHTML = ''
+        + '<div class="hx-pulse-top">'
+        +   '<span class="hx-stance"><span class="ic"></span>' + L(esc(st.en), esc(st.zh)) + '</span>'
+        +   '<span class="hx-pulse-lab">' + L('Market pulse', '市场脉搏') + '</span>'
+        +   '<span class="hx-pulse-when">' + esc(when) + '</span>'
+        + '</div>'
+        + '<div class="hx-pulse-read">' + read + '</div>';
+    }
+    function _medWord(v) {
+      if (v == null) return '';
+      if (Math.abs(v) < 0.25) return lz('Flat — no drift', '基本走平');
+      return v > 0 ? lz('Tilted higher', '偏强') : lz('Tilted lower', '偏弱');
+    }
+    function _statCard(k, v, m, tone) {
+      return '<div class="hx-stat"><div class="k">' + k + '</div>'
+        + '<div class="v ' + (tone || '') + '">' + v + '</div>'
+        + '<div class="m">' + m + '</div></div>';
+    }
+    function renderStats(sm) {
+      if (!statsEl) return;
+      var tot = Math.max(1, sm.adv + sm.dec + sm.flat);
+      var top = sm.secs[0], bot = sm.secs[sm.secs.length - 1];
+      var h = ''
+        + '<div class="hx-stat hx-stat-br">'
+        +   '<div class="k">' + L('Breadth · advancing vs declining', '市场广度 · 涨跌家数') + '</div>'
+        +   '<div class="v">' + Math.round(sm.pctUp) + '% <span class="u">' + L('advancing', '上涨') + '</span></div>'
+        +   '<div class="hx-bbar"><i class="adv" style="width:' + (100 * sm.adv / tot) + '%"></i>'
+        +     '<i class="flt" style="width:' + (100 * sm.flat / tot) + '%"></i>'
+        +     '<i class="dec" style="width:' + (100 * sm.dec / tot) + '%"></i></div>'
+        +   '<div class="hx-bleg"><span class="hx-up">▲ ' + sm.adv + '</span>'
+        +     '<span class="hx-dn">' + sm.dec + ' ▼</span></div>'
+        + '</div>'
+        + _statCard(L('Median move', '涨跌中位数'), fmtPc(sm.med), _medWord(sm.med),
+            sm.med > 0 ? 'up' : sm.med < 0 ? 'down' : '');
+      if (top) h += _statCard(L('Strongest sector', '最强板块'), fmtPc(top.agg), esc(_secName(top.name)), top.agg >= 0 ? 'up' : 'down');
+      if (bot && bot !== top) h += _statCard(L('Weakest sector', '最弱板块'), fmtPc(bot.agg), esc(_secName(bot.name)), bot.agg >= 0 ? 'up' : 'down');
+      statsEl.innerHTML = h;
+    }
+    function renderBoards(sm) {
+      if (!boardsEl) return;
+      var linkable = !IS_THEMES;
+      function moverRow(t, maxAbs, dir) {
+        var v = t.perf[TF];
+        var nm = (data.tile_label === 'name') ? (t.name_zh || t.name || dispT(t.t)) : (t.name || dispT(t.t));
+        var w = maxAbs > 0 ? Math.max(6, Math.min(100, Math.abs(v) / maxAbs * 100)) : 0;
+        var col = dir > 0 ? 'var(--up)' : 'var(--down)';
+        var inner = '<span class="tk">' + esc(dispT(t.t)) + '</span>'
+          + '<span class="nm">' + esc(nm) + '</span>'
+          + '<span class="pc ' + (dir > 0 ? 'hx-up' : 'hx-dn') + '">' + fmtPc(v) + '</span>'
+          + '<span class="bar"><i style="width:' + w.toFixed(0) + '%;background:' + col + '"></i></span>';
+        return linkable
+          ? '<a class="hx-row" href="' + STOCK_URL + encodeURIComponent(t.t) + '">' + inner + '</a>'
+          : '<div class="hx-row">' + inner + '</div>';
+      }
+      function amax(arr, f) { return arr.length ? Math.max.apply(null, arr.map(f)) : 0; }
+      var gMax = amax(sm.gainers, function (t) { return Math.abs(t.perf[TF]); });
+      var lMax = amax(sm.losers, function (t) { return Math.abs(t.perf[TF]); });
+      var secMax = amax(sm.secs, function (s) { return Math.abs(s.agg); });
+      function secRow(s) {
+        var w = secMax > 0 ? Math.max(4, Math.abs(s.agg) / secMax * 100) : 0;
+        var col = s.agg >= 0 ? 'var(--up)' : 'var(--down)';
+        return '<div class="hx-sec"><span class="nm">' + _secLabL(s.name) + '</span>'
+          + '<span class="track"><i style="width:' + w.toFixed(0) + '%;background:' + col + '"></i></span>'
+          + '<span class="pc ' + (s.agg >= 0 ? 'hx-up' : 'hx-dn') + '">' + fmtPc(s.agg) + '</span></div>';
+      }
+      var moversLbl = IS_THEMES
+        ? [L('Top subsectors', '领涨子板块'), L('Bottom subsectors', '领跌子板块')]
+        : [L('Biggest gainers', '涨幅榜'), L('Biggest losers', '跌幅榜')];
+      var secHtml;
+      if (sm.secs.length <= 6) {
+        secHtml = sm.secs.map(secRow).join('');
+      } else {
+        secHtml = sm.secs.slice(0, 3).map(secRow).join('')
+          + '<div class="hx-secdiv"></div>'
+          + sm.secs.slice(-3).reverse().map(secRow).join('');
+      }
+      boardsEl.innerHTML = ''
+        + '<div class="hx-board"><h3><span class="tag up">▲</span>' + moversLbl[0] + '</h3>'
+        +   sm.gainers.map(function (t) { return moverRow(t, gMax, 1); }).join('') + '</div>'
+        + '<div class="hx-board"><h3><span class="tag dn">▼</span>' + moversLbl[1] + '</h3>'
+        +   sm.losers.map(function (t) { return moverRow(t, lMax, -1); }).join('') + '</div>'
+        + '<div class="hx-board hx-board-sec"><h3>' + L('Sector leaders &amp; laggards', '板块强弱') + '</h3>'
+        +   secHtml + '</div>';
+    }
+    function renderDash() {
+      if (!SHOW_DASH) return;
+      var sm = computeSummary(TF);
+      renderPulse(sm); renderStats(sm); renderBoards(sm);
+    }
+    // In-map filter: dim every tile whose ticker / EN name / ZH name doesn't match.
+    function applyFilter() {
+      if (!tm) return;
+      if (!_q) { tm.classList.remove('hm-filtering'); return; }
+      tm.classList.add('hm-filtering');
+      tileEls.forEach(function (rec) {
+        if (!rec.el) return;
+        var hay = (String(rec.t.t) + ' ' + (rec.t.name || '') + ' ' + (rec.t.name_zh || '')).toLowerCase();
+        rec.el.classList.toggle('hm-match', hay.indexOf(_q) >= 0);
+      });
+    }
+    if (searchEl) {
+      searchEl.addEventListener('input', function () {
+        _q = (searchEl.value || '').trim().toLowerCase();
+        applyFilter();
+      });
+    }
+
     data._tf = TF;
-    buildTabs(); buildSort(); updateLegend(); updateRead(); layout();
+    buildTabs(); buildSort(); updateLegend(); updateRead(); layout(); renderDash();
     startAutoRefresh(data._url || JSON_URL);
 
     return {
@@ -1792,7 +1978,79 @@
       + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-mem,.hm-ov-scrim,.hm-ov-panel{transition:none !important;} .hm-c-load span{animation:none;}}'
       + '@media (max-width:560px){.hm-bar{gap:8px;} .hm-sc-foot{gap:10px;} .hm-sc-meta{font-size:10px;}}'
       // hide the scorecard Expand on small screens OR any touch device (no hover) — the deep map stays reachable via the standalone Sector Heatmap page
-      + '@media (max-width:560px),(any-hover:none){.hm-sc-exp{display:none;}}';
+      + '@media (max-width:560px),(any-hover:none){.hm-sc-exp{display:none;}}'
+
+      /* ============ revamp: dashboard chrome (pulse · stats · movers) ============ */
+      /* hero header (restyle the SSR .hm-head from the template) */
+      + '.hm-scope .hm-head,.wrap>.hm-head{margin:16px 2px 12px;}'
+      + '.hm-head h1{font-size:25px;font-weight:820;letter-spacing:-.02em;}'
+      + '.hm-head .sub{font-size:12.5px;max-width:72ch;line-height:1.55;}'
+      + '.hx-help{display:inline-flex;width:15px;height:15px;border-radius:50%;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--line);font-size:9px;font-weight:800;color:var(--muted);cursor:help;position:relative;vertical-align:middle;margin-left:4px;}'
+      + '.hx-help .hx-tip{display:none;position:absolute;left:0;top:150%;width:min(280px,72vw);background:var(--glass-bg,var(--panel));-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd,var(--line));border-radius:11px;padding:10px 12px;font:500 11.5px/1.55 var(--font-ui);color:var(--text);box-shadow:var(--glass-shadow,var(--popover-shadow));z-index:60;text-transform:none;letter-spacing:0;}'
+      + '.hx-help:hover .hx-tip,.hx-help:focus-within .hx-tip{display:block;}'
+
+      /* market pulse card */
+      + '.hx-pulse{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--warn) 26%,var(--line));border-radius:15px;padding:13px 16px;margin:0 0 10px;background:linear-gradient(180deg,color-mix(in srgb,var(--warn) 8%,var(--panel)),color-mix(in srgb,var(--warn) 2%,var(--panel2)));}'
+      + '.hx-pulse.up{border-color:color-mix(in srgb,var(--up) 30%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--up) 11%,var(--panel)),color-mix(in srgb,var(--up) 2%,var(--panel2)));}'
+      + '.hx-pulse.down{border-color:color-mix(in srgb,var(--down) 30%,var(--line));background:linear-gradient(180deg,color-mix(in srgb,var(--down) 11%,var(--panel)),color-mix(in srgb,var(--down) 2%,var(--panel2)));}'
+      + '.hx-pulse::after{content:"";position:absolute;inset:-55% -12% auto auto;width:46%;height:190%;background:radial-gradient(closest-side,color-mix(in srgb,var(--warn) 22%,transparent),transparent 72%);filter:blur(32px);opacity:.26;pointer-events:none;}'
+      + '.hx-pulse.up::after{background:radial-gradient(closest-side,color-mix(in srgb,var(--up) 22%,transparent),transparent 72%);}'
+      + '.hx-pulse.down::after{background:radial-gradient(closest-side,color-mix(in srgb,var(--down) 22%,transparent),transparent 72%);}'
+      + '.hx-pulse-top{position:relative;z-index:1;display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}'
+      + '.hx-stance{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.01em;background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);}'
+      + '.hx-pulse.up .hx-stance{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 42%,transparent);}'
+      + '.hx-pulse.down .hx-stance{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down);border-color:color-mix(in srgb,var(--down) 42%,transparent);}'
+      + '.hx-stance .ic{width:7px;height:7px;border-radius:50%;background:currentColor;}'
+      + '.hx-pulse-lab{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}'
+      + '.hx-pulse-when{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;}'
+      + '.hx-pulse-read{position:relative;z-index:1;font-size:13.5px;line-height:1.5;color:color-mix(in srgb,var(--text) 92%,transparent);}'
+      + '.hx-pulse-read b{color:var(--text);font-weight:750;}'
+
+      /* breadth stat strip */
+      + '.hx-stats{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:9px;margin:0 0 12px;}'
+      + '.hx-stat{border:1px solid var(--line);border-radius:13px;background:var(--panel);padding:11px 13px;min-width:0;}'
+      + '.hx-stat .k{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+      + '.hx-stat .v{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-top:3px;font-family:var(--num);font-variant-numeric:tabular-nums;}'
+      + '.hx-stat .v .u{font-size:12px;font-weight:600;color:var(--muted);}'
+      + '.hx-stat .v.up{color:var(--up);} .hx-stat .v.down{color:var(--down);}'
+      + '.hx-stat .m{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+      + '.hx-bbar{display:flex;height:8px;border-radius:5px;overflow:hidden;margin-top:9px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line);}'
+      + '.hx-bbar i{display:block;height:100%;} .hx-bbar .adv{background:var(--up);} .hx-bbar .flt{background:var(--g-mid);} .hx-bbar .dec{background:var(--down);}'
+      + '.hx-bleg{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
+      + '.hx-up{color:var(--up);} .hx-dn{color:var(--down);}'
+
+      /* leaderboards */
+      + '.hx-boards{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:11px;margin:14px 0 2px;}'
+      + '.hx-board{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 13px 8px;min-width:0;}'
+      + '.hx-board h3{margin:0 0 8px;font-size:12.5px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:7px;color:var(--text);}'
+      + '.hx-board h3 .tag{font-size:11px;font-weight:800;} .hx-board h3 .tag.up{color:var(--up);} .hx-board h3 .tag.dn{color:var(--down);}'
+      + '.hx-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;padding:5px 6px;border-radius:8px;text-decoration:none;color:inherit;transition:background .13s;}'
+      + 'a.hx-row:hover{background:var(--panel2);}'
+      + '.hx-row .tk{font-family:var(--font-mono);font-size:10px;color:var(--muted);min-width:46px;}'
+      + '.hx-row .nm{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}'
+      + '.hx-row .pc{font-family:var(--num);font-size:12.5px;font-weight:800;text-align:right;min-width:52px;font-variant-numeric:tabular-nums;}'
+      + '.hx-row .bar{grid-column:1 / -1;height:3px;border-radius:2px;background:var(--panel2);overflow:hidden;}'
+      + '.hx-row .bar i{display:block;height:100%;border-radius:2px;}'
+      + '.hx-sec{display:grid;grid-template-columns:1fr 60px auto;gap:9px;align-items:center;padding:5px 6px;}'
+      + '.hx-sec .nm{font-size:12px;font-weight:650;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+      + '.hx-sec .track{height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;} .hx-sec .track i{display:block;height:100%;border-radius:4px;}'
+      + '.hx-sec .pc{font-family:var(--num);font-weight:800;font-size:12px;min-width:46px;text-align:right;font-variant-numeric:tabular-nums;}'
+      + '.hx-secdiv{height:1px;background:var(--line);margin:7px 4px;}'
+
+      /* in-map search + control restyle */
+      + '.hm-search{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px 10px;min-width:148px;}'
+      + '.hm-search .mag{font-size:11px;opacity:.7;} .hm-search input{border:0;background:transparent;color:var(--text);font:12.5px var(--font-ui);outline:none;width:100%;min-width:64px;}'
+      + '.hm-search input::placeholder{color:var(--muted);}'
+      + '.hm-tfs{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:1px;}'
+      + '.hm-tf{border-radius:7px;padding:5px 9px;} .hm-tf.on{box-shadow:0 2px 7px -2px color-mix(in srgb,var(--link) 55%,transparent);}'
+      + '.hm-sortb{border-radius:8px;}'
+      + '.hm-filtering .hm-tile{opacity:.16;transition:opacity .15s;} .hm-filtering .hm-tile.hm-match{opacity:1;outline:2px solid var(--info);outline-offset:-1px;z-index:2;}'
+
+      /* motion + responsive */
+      + '@media (prefers-reduced-motion:no-preference){.hx-stance .ic{animation:hxblink 2.4s ease-in-out infinite;}@keyframes hxblink{0%,100%{opacity:1}50%{opacity:.3}}.hx-pulse::after{animation:hxglow 9s ease-in-out infinite;}@keyframes hxglow{0%,100%{opacity:.2}50%{opacity:.42}}}'
+      + '@media (max-width:900px){.hx-stats{grid-template-columns:1fr 1fr;} .hx-boards{grid-template-columns:1fr;}}'
+      + '@media (max-width:560px){.hx-stats{grid-template-columns:1fr 1fr;gap:7px;} .hm-search{display:none;} .hx-pulse-read{font-size:13px;}}'
+      + '.hm-mobile .hm-search{display:none;}';
     var st = document.createElement('style');
     st.id = 'mm-heatmap-style';
     st.textContent = css;

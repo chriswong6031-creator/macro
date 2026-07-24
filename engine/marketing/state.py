@@ -268,7 +268,7 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
         budget_alloc.allocate(depts_list)
 
         # --- Desk network (with per-account tilt + mix_observed) ---
-        dn = desk_network(cfg)
+        dn = desk_network(cfg, root=str(r))
 
         # --- Content plan summary (reads data/marketing/content_plan.json if present) ---
         content_summary: dict = {

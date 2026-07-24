@@ -625,7 +625,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 150    # was 120 — engine runtime crept 61m→116m→125m through 2026-07 and breached the 120 cap on 07-13/07-14, getting CANCELLED mid-run BEFORE the commit/upload steps → stale deploy (durable fix: split the LLM/desk band off the critical path). Earlier: was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 150m restores headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
+    timeout-minutes: 200    # was 150 — 5 of the 8 nightlies 2026-07-16→07-23 got CANCELLED at exactly the 150m cap (the greens finished 133m/147m/148.6m — success had become a coin flip). Measured step timings (07-21 green vs 07-24 cancelled jobs): checkout 3s→14.5m (huge variance on the 14k-file tree), R2 restores + signal/ledger preamble ~10–20m, "run regime engine + build dashboard + daily brief" 74–84m (inside it: build_site ~33m, build_news ~26–29m incl. GDELT 429-backoff stalls, share_cards ~7m), parallel regional/desk builders 31–33m normal with one >61m blowout (07-23 night, cut mid-step), tail band (NW/LLM desks → hub) ~35m. Normal total 135–160m; worst observed combination ≈190m. The timeout-cancel grace window does NOT reliably save the deploy: 07-24's "commit engine outputs" (if: always) ran post-cancel but the pages-artifact upload still failed → publish red; 07-23 was hard-killed before commit → stale site. So the cap must cover the whole job: 200m clears the worst observed night with headroom. Next lever if creep resumes: build_news (~26–29m even on green nights, largely GDELT rate-limit backoff — cache/de-rate the sweep or move the news suite into the parallel builders band). Prior history: was 120 (crept 61m→116m→125m, breached 07-13/07-14); was 70 (cancelled at special-situations pre-commit; fixed by parallelising the ~22 regional/desk builders — serial band ~75m → longest cluster, special-situations' ~28m EDGAR sweep). pages.yml deploys the COMMITTED main tree, so any cancel before "commit engine outputs" leaves the live site serving a stale dashboard until a later run lands.
     env:
       COLLECT_LANE: nightly   # job-level sentinel: inherited by every step; ensures all
                               # forward-ledger writers in this job (build_track_record,
@@ -1181,6 +1181,7 @@ jobs:
           cl_misc() {
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
             brun reports       "research reports section (build_reports)"     scripts.build_reports
+            brun research_vault "research vault page (build_research_vault)"   scripts.build_research_vault
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
             brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
             brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
@@ -1211,7 +1212,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stage_analysis stage_analysis_page"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime market_structure event_windows darkpool options_flow flow_desk options_skew options_ivspread options_screener options_entry intraday_flow baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics rotation_events rebalance_pulse methodology nasdaq_internals seasonality reports research_vault cycle sectorcyc countrycyc markets measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state stage_analysis stage_analysis_page"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -2176,6 +2177,14 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
+          # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
+          # assets, and only the post-rebase --fix in the push loop heals the divergence —
+          # a cancellation/failure between this commit and that heal ships it (engine-render
+          # 2026-07-24: run 30057066815 cancelled mid-push-loop landed b6386adb4af, sync gate
+          # red on every PR until #3358). Heal BEFORE staging so the first commit is never
+          # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.check_template_site_sync --fix || true
           git add data/ site/ reports/
           # W0b (2026-07-08 stale-HK incident): US engine job must NOT commit asia-owned
           # data/ paths — asia-close.yml is the sole writer of all china*/hk* stores.
@@ -2800,6 +2809,14 @@ jobs:
           # Emits the current D1 content-plan items into the outbox queue
           # (status=queued). Posting stays gated by approval + MARKETING_PUBLISH_ENABLED.
           MARKETING_OUTBOX_ENABLED: "1"
+          # D02 chart-image pipeline: content_studio uploads the rendered PNG to the
+          # public R2 data plane so the post can attach a chart (Buffer hosts no
+          # uploads; X rejects SVG). Same creds the oracle/data lanes use — absent
+          # them media_publish no-ops and the post degrades to text-only.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           set +e
           python -m scripts.build_marketing; rc=$?
@@ -2823,6 +2840,7 @@ jobs:
           git add data/neuralweb/marketing_state.json 2>/dev/null || true
           git add site/neuralwebdata/marketing_lobe.json 2>/dev/null || true
           git add data/marketing/sentinel_report.json 2>/dev/null || true
+          git add data/marketing/content_plan.json 2>/dev/null || true
           git add data/marketing/cashtag_tiers.json 2>/dev/null || true
           git add data/marketing/radar_report.json 2>/dev/null || true
           git add data/marketing/opportunities.jsonl 2>/dev/null || true

@@ -1,0 +1,247 @@
+"""Build the Research Vault page -> site/research_vault.html.
+
+RV W3. A flagship, gated vault + feed of third-party institutional research PDFs.
+The page is an SSR shell + client hydrate:
+
+  • At build time we read ``data/research_vault/catalog.json`` (the snapshot the
+    hourly ingest job commits) IF present, and bake it into the page as a
+    ``<script id="rv-catalog" type="application/json">`` island — so the feed +
+    Top Picks paint instantly and are crawlable for SEO.
+  • If the catalog is absent or empty, we bake an empty ``{items:[]}`` and the
+    client renders an honest empty state ("Institutional research is being
+    onboarded"). We NEVER bake fake sample data (house law).
+  • On load, ``site/research_vault_app.js`` refreshes from GET /api/research/catalog
+    (hourly-fresh) and drives all interaction (feed/lanes/tree/facets/search + the
+    auth-gated pdf.js viewer with quota-metered download).
+
+Fully static + additive: depends on no live JSON at build time, so it can never
+break the daily build (a missing catalog degrades to the empty state). Bilingual
+(EN/中文) via the same l-en/l-zh spans as the rest of the site.
+
+Usage: python -m scripts.build_research_vault
+"""
+from __future__ import annotations
+
+import html as _html
+import json
+import logging
+import sys
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from lib import config  # noqa: E402
+from lib.pages import write_page  # noqa: E402
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+log = logging.getLogger("build_research_vault")
+
+ROOT = Path(__file__).resolve().parent.parent
+TEMPLATES = ROOT / "templates"
+CATALOG_PATH = ROOT / "data" / "research_vault" / "catalog.json"
+
+_EMPTY_CATALOG = {
+    "schema": "research_vault.catalog.v1",
+    "generated_at": "",
+    "count": 0,
+    "institutions": [],
+    "items": [],
+}
+
+# The public-safe fields we bake per item (mirror engine/research_vault/catalog.py
+# _ITEM_FIELDS — body text is NEVER in the catalog, it lives in the search corpus).
+_ITEM_FIELDS = (
+    "id", "title", "institution", "side", "desk", "published_at",
+    "summary_points", "tags", "tickers", "top_pick", "pages", "needs_metadata",
+)
+
+
+def load_catalog() -> dict:
+    """Load the committed catalog snapshot, or the empty catalog if absent/bad.
+
+    Never raises — a missing or corrupt snapshot degrades to the honest empty
+    state rather than wedging the nightly build.
+    """
+    if not CATALOG_PATH.exists():
+        log.info("no committed catalog at %s — baking empty state", CATALOG_PATH)
+        return dict(_EMPTY_CATALOG)
+    try:
+        obj = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+        if not isinstance(obj, dict) or not isinstance(obj.get("items"), list):
+            log.warning("catalog malformed — baking empty state")
+            return dict(_EMPTY_CATALOG)
+        return obj
+    except Exception as e:  # noqa: BLE001 — a bad snapshot must not break the build
+        log.warning("catalog read failed (%s) — baking empty state", e)
+        return dict(_EMPTY_CATALOG)
+
+
+def _public_item(item: dict) -> dict:
+    return {k: item.get(k) for k in _ITEM_FIELDS}
+
+
+def _public_catalog(cat: dict) -> dict:
+    """Project to the public-safe subset (defensive: drops any stray body text)."""
+    items = [_public_item(it) for it in (cat.get("items") or []) if isinstance(it, dict)]
+    return {
+        "schema": cat.get("schema") or _EMPTY_CATALOG["schema"],
+        "generated_at": cat.get("generated_at") or "",
+        "count": len(items),
+        "institutions": cat.get("institutions") or [],
+        "items": items,
+    }
+
+
+_MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_STAMP = {"buy": "BUY", "sell": "SELL", "independent": "IND"}
+
+
+def _e(s) -> str:
+    return _html.escape("" if s is None else str(s), quote=True)
+
+
+def _fmt_date(d: str) -> str:
+    if not d or d.count("-") < 2:
+        return _e(d)
+    y, m, dd = d.split("-")[:3]
+    try:
+        return f"{_MON[int(m) - 1]} {int(dd)}, {y}"
+    except (ValueError, IndexError):
+        return _e(d)
+
+
+def _fmt_datetime(pub: str) -> str:
+    """'Jul 24, 2026 · 10:08 UTC' — the desk's source publish time (published_at),
+    shown in UTC. Mirrors the client's ``fmtWhen`` exactly so the SSR baseline and
+    the hydrated card read identically. Degrades to date-only when no time is present."""
+    date = (pub or "").split("T")[0]
+    base = _fmt_date(date)
+    if pub and "T" in pub:
+        hm = pub.split("T")[1][:5]
+        if len(hm) == 5 and hm[2] == ":":
+            return f"{base} · {_e(hm)} UTC"
+    return base
+
+
+def _logo_for(inst: str) -> str:
+    inst = (inst or "").strip()
+    if not inst or inst == "Unknown":
+        return "?"
+    parts = [p for p in inst.replace(".", " ").split() if p]
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[1][0]).upper()
+
+
+def _title_link(x: dict) -> str:
+    """Report title linked to its research/<slug>.html landing page when a slug is
+    present (crawlable internal link + shareable permalink); plain text otherwise."""
+    title = _e(x.get("title"))
+    slug = (x.get("slug") or "").strip()
+    if not slug:
+        return title
+    return f'<a class="rep-titlelink" href="research/{_e(slug)}.html">{title}</a>'
+
+
+def _ssr_card(x: dict) -> str:
+    """A crawlable, static Latest-lane card (SEO + instant paint). The client
+    re-renders the full interactive feed on hydrate; this is the no-JS baseline.
+    English content only (report text is the analyst's source language); the page
+    chrome around it stays bilingual via the template's l-en/l-zh spans."""
+    inst = (x.get("institution") or "Unknown").strip() or "Unknown"
+    side = (x.get("side") or "independent").lower()
+    stamp_cls = "buy" if side == "buy" else ("sell" if side == "sell" else "indep")
+    stamp = _STAMP.get(side, "IND")
+    desk = x.get("desk") or ""
+    top = bool(x.get("top_pick"))
+    needs = bool(x.get("needs_metadata"))
+    pts = x.get("summary_points") or []
+    tags = x.get("tags") or []
+
+    desk_bits = f'<span class="rep-sep">·</span><span class="rep-desk">{_e(desk)}</span>' if desk else (
+        '<span class="rep-sep">·</span><span class="backfill">institution to be confirmed</span>' if needs else "")
+    pin = '<span class="rep-pin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>Highlighted</span>' if top else ""
+    if pts:
+        pts_html = '<ul class="rep-points">' + "".join(f"<li>{_e(p)}</li>" for p in pts[:4]) + "</ul>"
+    else:
+        pts_html = '<ul class="rep-points pend"><li>Summary pending — full report available to read.</li></ul>'
+    tags_html = "".join(f'<span class="rep-tag">{_e(t)}</span>' for t in tags)
+    cal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+    cls = "rep glass" + (" pick" if top else "") + (" needs" if needs else "")
+    return (
+        f'<article class="{cls}" data-id="{_e(x.get("id"))}">'
+        f'<div class="rep-top">'
+        f'<span class="rep-logo">{_e(_logo_for(inst))}</span>'
+        f'<span class="rep-unread" aria-hidden="true"></span>'
+        f'<span class="rep-inst">{_e(inst)}</span>{desk_bits}'
+        f'<span class="stamp {stamp_cls}"><span class="dt"></span>{stamp}</span>{pin}'
+        f'</div>'
+        f'<h3>{_title_link(x)}</h3>{pts_html}'
+        f'<div class="rep-foot"><div class="rep-meta">'
+        f'<span class="rep-date">{cal}{_fmt_datetime(x.get("published_at"))}</span>'
+        f'<span class="rep-tags">{tags_html}</span></div></div>'
+        f'</article>'
+    )
+
+
+def _ssr_feed(catalog: dict) -> str:
+    items = catalog.get("items") or []
+    if not items:
+        return ""  # client renders the honest bilingual empty state
+    return "".join(_ssr_card(x) for x in items)
+
+
+def render(catalog: dict | None = None) -> str:
+    env = Environment(
+        loader=FileSystemLoader(str(TEMPLATES)),
+        autoescape=True,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    tmpl = env.get_template("research_vault.html.j2")
+    if catalog is None:
+        catalog = _public_catalog(load_catalog())
+    # Bake as a JSON island. ensure_ascii=False keeps CJK readable; </script> is
+    # escaped so a title/summary containing it can't break out of the island.
+    catalog_json = json.dumps(catalog, ensure_ascii=False).replace("</", "<\\/")
+    ssr_feed = _ssr_feed(catalog)
+    return tmpl.render(catalog_json=catalog_json, ssr_feed=ssr_feed)
+
+
+def build() -> Path:
+    catalog = _public_catalog(load_catalog())
+    # Inject the per-report slug so the SSR cards + JS island can link straight to
+    # the matching research/<slug>.html landing page (shared slug logic with
+    # build_research_pages — strong internal linking for the SEO play).
+    try:
+        from scripts import build_research_pages as _rp
+        _smap = _rp.slug_map(catalog["items"])
+        for _it in catalog["items"]:
+            _it["slug"] = _smap.get(_it.get("id"), "")
+    except Exception:  # noqa: BLE001 — links degrade to none; pages still build below
+        for _it in catalog["items"]:
+            _it.setdefault("slug", "")
+    page = render(catalog)
+    out = config.ROOT / "site" / "research_vault.html"
+    write_page(out, page)
+    n = page.count('class="rep glass')  # SSR cards (0 when empty → empty state)
+    log.info("built %s (%d report cards baked)", out, n)
+    # Programmatic SEO: one indexable landing page per report (+ crawl hub +
+    # sitemap). Rides this nightly vault build; never fatal to it.
+    try:
+        from scripts import build_research_pages
+        build_research_pages.build(catalog)
+    except Exception as exc:  # noqa: BLE001 — SEO pages must not break the vault build
+        log.warning("research report pages build failed (non-fatal): %s", exc)
+    return out
+
+
+def main() -> int:
+    build()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

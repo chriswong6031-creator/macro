@@ -7,20 +7,26 @@ name: marketing-publish
 # scripts.marketing_publisher.
 #
 # WHY IT IS SAFE / DARK: the runner self-downgrades to DRY-RUN unless the global
-# kill-switch is set (engine.marketing.sentinel.publish_enabled() reads env
-# MARKETING_PUBLISH_ENABLED ∈ {1,true,yes}). With the secret unset the run posts
-# NOTHING and the ledger does not change, so the commit-back step is a clean
-# no-op. `--live` is passed unconditionally BECAUSE that downgrade guard makes it
-# harmless until the operator opts in (scripts/marketing_publisher.py:
-# `live = bool(args.live) and kill_on`).
+# kill-switch is on (engine.marketing.sentinel.publish_enabled() reads env
+# MARKETING_PUBLISH_ENABLED ∈ {1,true,yes}). The kill-switch is a repo VARIABLE
+# (vars.MARKETING_PUBLISH_ENABLED) — the single source of truth; `1` = armed,
+# `0`/absent = dark. With it off the run posts NOTHING and the ledger does not
+# change, so the commit-back step is a clean no-op. `--live` is passed
+# unconditionally BECAUSE that downgrade guard makes it harmless until the
+# operator opts in (scripts/marketing_publisher.py: `live = bool(args.live) and
+# kill_on`).
 #
-# HOW TO ARM IT (operator, see docs/marketing_publisher_runbook.md):
-#   1. Repo secret  BUFFER_TOKEN            = a Buffer personal API token
-#   2. Repo secret  MARKETING_PUBLISH_ENABLED = 1   (the kill-switch; unset to disarm)
+# HOW TO ARM IT (operator — one click in the admin Publisher panel; the panel
+# writes the variable for you, see docs/marketing_publisher_runbook.md §6):
+#   1. Repo secret    BUFFER_TOKEN              = a Buffer personal API token
+#      (the panel's token paste-box sets this via `gh secret set BUFFER_TOKEN`)
+#   2. Repo VARIABLE  MARKETING_PUBLISH_ENABLED = 1   (the kill-switch; the panel
+#      ARM toggle sets it — `0` or absent to disarm). This is a VARIABLE, not a
+#      secret; any lingering old SECRET of the same name is IGNORED by this run.
 #   3. config/marketing.yml  publish.channels.flagship = the Buffer channel id
 #      (discover it: BUFFER_TOKEN=... python -m scripts.marketing_publisher --list-channels)
-# Unset MARKETING_PUBLISH_ENABLED at any time to instantly revert every path to
-# dry-run — that is the kill switch / rollback.
+# Set MARKETING_PUBLISH_ENABLED to 0 (or the panel DISARM) at any time to
+# instantly revert every path to dry-run — that is the kill switch / rollback.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -47,7 +53,11 @@ jobs:
     timeout-minutes: 15
     env:
       BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
-      MARKETING_PUBLISH_ENABLED: ${{ secrets.MARKETING_PUBLISH_ENABLED }}
+      # Kill-switch: a repo VARIABLE (single source of truth), NOT a secret. The
+      # admin Publisher panel's ARM/DISARM toggle writes it. `1` = armed; `0` or
+      # absent = dark. No secrets.* fallback on purpose — a lingering old secret
+      # of this name must NOT keep the publisher live after the toggle is off.
+      MARKETING_PUBLISH_ENABLED: ${{ vars.MARKETING_PUBLISH_ENABLED }}
     steps:
       - name: checkout (full history + write token)
         uses: actions/checkout@v4
@@ -61,9 +71,10 @@ jobs:
           python-version: "3.12"
 
       - name: install deps
-        # The runner + its engine import chain is stdlib-only except pyyaml
-        # (config/marketing.yml load). Nothing else is needed for the publish path.
-        run: pip install --quiet pyyaml
+        # pyyaml: config/marketing.yml load. pandas+pyarrow: the tape gate's
+        # earnings-day guard reads data/earnings/earnings.parquet (fail-soft —
+        # the guard degrades open if the import or file is missing).
+        run: pip install --quiet pyyaml pandas pyarrow
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
@@ -71,26 +82,62 @@ jobs:
         # the account never posts on the exact same wall-clock minute).
         run: sleep $((RANDOM % 600))
 
+      - name: fetch full-universe live quotes (tape gate input)
+        # AFTER the jitter sleep so the snapshot is as fresh as possible at post
+        # time. The live-data orphan branch carries a ~2k-symbol quotes.json
+        # refreshed every 5 min in RTH (15-min-delayed prices). The publisher's
+        # tape gate (engine/marketing/live_verify.py) uses it to re-verify every
+        # item against TODAY's tape before posting — the content plan was
+        # written off yesterday's close. Fail-soft: without the snapshot the
+        # gate falls back to site/live/quotes.json + the sp500 heatmap, and
+        # holds any signal it cannot verify.
+        run: |
+          if git fetch --depth 1 origin live-data && \
+             git show FETCH_HEAD:quotes.json > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
+            echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
+          else
+            echo "::warning::live-data quotes unavailable — tape gate falls back to site/live artifacts"
+            rm -f data/marketing/live_quotes_snapshot.json
+          fi
+
       - name: run publisher (dark until the kill-switch secret is set)
         run: |
           # --live is safe here: with MARKETING_PUBLISH_ENABLED unset the runner
           # runs DRY-RUN, posts nothing, and writes no status transitions.
           python -m scripts.marketing_publisher --live
 
+      - name: poll post metrics (dark until BUFFER_TOKEN is set)
+        # Reads back per-post analytics (impressions/likes/reposts/… + the x.com
+        # permalink) for items posted in the last 7 days and appends them to
+        # data/marketing/post_metrics.jsonl. Metrics refresh ~daily, so this runs
+        # every slot to keep the console current. Fully independent of the
+        # kill-switch: with BUFFER_TOKEN unset it prints one line and exits 0
+        # (no network, no write) — so it is harmless while the publisher is dark.
+        run: python -m scripts.marketing_metrics_poll
+
       - name: commit changed outbox ledgers (no-op when nothing changed)
-        # Only persist ledger state when ARMED. While dark (kill-switch unset) the
-        # dry-run writes a throwaway activity row we must NOT commit to main — else
-        # every scheduled dark run would spam main with no-op commits.
-        if: always() && env.MARKETING_PUBLISH_ENABLED != ''
+        # Only persist ledger state when ARMED. While dark the dry-run writes a
+        # throwaway activity row we must NOT commit to main — else every dark run
+        # would spam main with no-op commits. The kill-switch is now a repo
+        # VARIABLE whose disarmed value is the literal "0" (non-empty), so this
+        # guard tests `== '1'` (armed), NOT `!= ''` — otherwise a disarmed "0"
+        # would wrongly commit the dry-run's audit row.
+        if: always() && env.MARKETING_PUBLISH_ENABLED == '1'
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Stage ONLY the outbox ledger dir — never touch other paths. A dry-run
+          # Stage ONLY the marketing ledgers — never touch other paths. A dry-run
           # (dark mode) still appends a publisher_dry_run activity row, which is a
-          # legitimate audit trail; a live run additionally advances statuses.
+          # legitimate audit trail; a live run additionally advances statuses AND
+          # appends posted receipts to publications.jsonl (the Channels page
+          # reader). post_metrics.jsonl (one level up from outbox/) is the metrics
+          # poller's append-only ledger — staged alongside so a fetched analytics
+          # row lands on main with the same commit. Absent (poller dark) → no-op.
           git add data/marketing/outbox 2>/dev/null || true
+          git add data/marketing/publications.jsonl 2>/dev/null || true
+          git add data/marketing/post_metrics.jsonl 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "marketing-publish: no ledger changes to commit"

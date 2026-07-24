@@ -286,9 +286,9 @@
         tick();                                              // immediate tick on resume
       }
     };
-    // Boot gate: if the user previously chose to disable live quotes, start paused
-    // (no initial tick, no interval) so we fire zero network requests.
-    try { if (localStorage.getItem("liveOff") === "1") { _paused = true; } } catch (e) {}
+    // Live prices are always on (the settings toggle was removed); clear any
+    // previously stored pause so nobody stays stranded off.
+    try { localStorage.removeItem("liveOff"); } catch (e) {}
     if (!_paused) {
       tick();
       _startTimer();

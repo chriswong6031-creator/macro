@@ -864,6 +864,59 @@ artifacts:
       cw_r10, generals}. Idempotent — re-running the same date does not
       duplicate. Nightly is the sole advancer.
 
+  # MWR-W0: Mag-7 washout re-entry gate — BACKGROUND-ONLY (no surface, no site
+  # consumer by ruling).  DO_NOT_REBUILD §2 mandates prereg+gauntlet before any
+  # Mag-7 leadership surface returns; these artifacts accrue that gate's record.
+  # Prereg: research/MAG7_WASHOUT_REENTRY_PREREG.md.
+  mag7-washout-latest:
+    path: data/mag7_washout/latest.json
+    format: json
+    producer: engine/mag7_washout.py
+    known_extra_writers: []
+    owner_program: mag7-washout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: mag7_washout.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/run.py
+    external_consumers: []
+    notes: >
+      BACKGROUND-ONLY / NOT VALIDATED (MWR-W0). Gate ladder idle→washed_out→
+      triggered from 2W Stoch-RSI (anchor A) + member breadth + 3D RSI-MACD arm
+      on the equal-weight basket. Use-A process gate per prereg §4; Use-B
+      timing claim NOT in force. No template/site consumer by ruling
+      (DO_NOT_REBUILD §2); resurfacing requires the prereg gauntlet + operator
+      ruling.
+  mag7-washout-triggers:
+    path: data/mag7_washout/triggers.jsonl
+    format: jsonl
+    producer: engine/mag7_washout.py
+    known_extra_writers: []
+    owner_program: mag7-washout
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      EVENT-SPARSE forward trigger ledger (~2-3 rows/year expected; months of
+      silence are normal — deliberately NOT in check_ledger_advance's
+      _LEDGER_MANIFEST heartbeat). One row per (tf, bar-date) trigger, dedup on
+      append; nightly is the sole advancer. Graded per prereg §4 rules
+      (HIT/FAIL/KILL) by scan re-runs, not in-line.
+
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py
   # (called in-process by engine/run.py); no new collectors required.
@@ -10290,6 +10343,39 @@ artifacts:
       is_context_only=true, display_only=true — no score or ranking authority. Absent
       until scripts/build_stage_analysis.py first runs; all consumers fail-open
       (block=None or honest-null).
+
+  darkpool-context-latest:
+    path: data/darkpool/context/latest.json
+    format: json
+    producer: scripts/build_darkpool_desk.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: darkpool_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Nightly context feed for off-exchange (dark-pool) positioning, built by
+      engine/darkpool_context.py alongside the Dark Pool desk page. Turns the raw desk
+      into plain-word leans — quiet-accumulation / distribution / unusual — from a
+      deterministic threshold on each name's off-exchange share vs its own norm (oe_z)
+      paired with the CHANGE in short-marked selling (never the raw level, since ~half
+      of off-exchange volume is short-marked by default). Carries a hero verdict, a
+      laid-out standout board, weekly per-ATS venue shifts, and a same-day idempotent
+      change-feed (names entering/leaving each lean + venue movers vs prev_state).
+      Off-exchange volume hides direction, so every lean is a heads-up to watch —
+      display/context tier only, NEVER a signal, rank, size, or escalation.
+      is_context_only=true, display_only=true. Absent until scripts/build_darkpool_desk.py
+      first runs; all consumers fail-open (block=None or honest-null).
 
   special-sits-context-latest:
     path: data/special_situations/context/latest.json

@@ -420,6 +420,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Operator force-add of un-gauntleted directional calls to signal surfaces (incident: Mag-7 "Big Seven" leadership board, MLC-W1)'
+    verdict: 'KILLED (process class + this surface) — the program was operator-initiated 2026-07-11 ("MAG 7 is on the run … our dashboard does not reflect any of this") OVERRIDING the engines'' contemporaneous reads (action-board mag7 deteriorating→avoid, Ignition Radar ⚪ OFF K=0/8, "recovery inside a larger consolidation") and higher-timeframe structure (Nasdaq weekly/bi-weekly/monthly topping); the multi-name 3-day bullish-crossover confluence failed as a false breakout → 2026-07-23 worst 1-day Mag-7 basket drop in ~5y (TSLA −15%, GOOGL −7% intraday, per GS). Board + Ignition strip removed from us_stocks. Closes the FORCED-CALL construction: operator conviction may seed a display-tier watch item or a prereg, never pin an un-gauntleted call to a signal surface; a Mag-7 leadership read may return only via prereg + gauntlet. Mag-7 as plain data display (heatmap rows, options-flow groups, intraday watchlist membership, allocation''s own 200d-gated sleeve) stays lawful'
+    source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`; context `MAG7_COMMAND_MASTERPLAN_BY_FABLE.md` §0 + `POSTMORTEM_20260722_CROSSOVERS_VS_CAPEX_BIND_BY_FABLE.md`'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Ticker-cluster bootstrap CIs without time control'
     verdict: 'FORBIDDEN estimator — anti-conservative, effective N = months'
     source: 'DT-R14; `TIME_CONFOUND_EXPOSURE_AUDIT` (#1755)'
@@ -519,6 +525,12 @@ entries:
   - topic: 'Dedicated CHF machine-registration family through metabolism'
     verdict: 'DEFERRED — Phase-2 clock 2026-10-15, needs ≥8 matured exit-(a)/(b) candidates + fresh ruling; cortex 3/week chokepoint stands (QS-U2)'
     source: 'CHF-R2, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
+    section: 4
+    section_name: held_suspended
+
+  - topic: 'Ignition Radar user-facing surfaces (us_stocks strip, macro Upturn hero button, dlg-ignition dialog, wnx "Turning up?" card, risk-dialog cross-ref row)'
+    verdict: 'SUSPENDED → background-only (2026-07-23) — surfaced ahead of its own pre-registered display gate ("display-only until ≥30 grades + operator ruling", never met); the 07-23 tape showed the narrow-theme channel promoting an event-driven war-bid (XLE day-8 streak → "Warming" with 1/8 broad lit) and a dead-cat AI Semiconductors as "#3 igniting". Engine + nightly forward self-grading KEEP ACCRUING (engine/ignition_radar.py + ignition_audit.py, data/ignition_radar/). Re-surface needs ALL of: ≥30 graded calls with acceptable broad TP rate, event-sector exclusion for narrow themes (geopolitical single-sector bids ≠ ignition), an honest-null "nothing igniting" state (no forced top-3 ranking in a dead tape), and an operator ruling'
+    source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md` §2'
     section: 4
     section_name: held_suspended
 

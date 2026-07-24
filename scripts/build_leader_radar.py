@@ -1788,15 +1788,32 @@ def _build_changed_today(
                 last = grp.iloc[-1]
                 prev_states[str(ticker)] = str(last.get("confirmed_state", ""))
 
+    # LRV-O9: carry each row's entry_read onto its changed_today items so the
+    # Tonight's-focus cards can lead with the entry-quality stance (display-only).
+    row_by_ticker = {r["ticker"]: r for r in rows}
+
+    def _eread_of(tkr: str) -> dict | None:
+        r = row_by_ticker.get(tkr)
+        if r is None:
+            return None
+        er = r.get("entry_read")
+        return er if isinstance(er, dict) else None
+
     for row in rows:
         ticker = row["ticker"]
         tonight = row["state"]
         prev = prev_states.get(ticker)
         if prev is not None and prev != tonight:
-            entered.append({"ticker": ticker, "state": tonight, "prev_state": prev})
+            entered.append({
+                "ticker": ticker, "state": tonight, "prev_state": prev,
+                "entry_read": _eread_of(ticker),
+            })
         elif prev is None and tonight != "NONE":
             # First time appearing — treat as entered
-            entered.append({"ticker": ticker, "state": tonight, "prev_state": None})
+            entered.append({
+                "ticker": ticker, "state": tonight, "prev_state": None,
+                "entry_read": _eread_of(ticker),
+            })
 
     # exited: tickers in prev_states but NOT in tonight's rows.
     # Gate on universe membership: tickers that failed per-ticker processing (continue
@@ -1811,11 +1828,20 @@ def _build_changed_today(
                 continue
             exited.append({"ticker": ticker, "state": None, "prev_state": prev})
 
-    # fired
-    for ticker in fire_precipice_set:
-        fired.append({"ticker": ticker, "fire_type": "precipice"})
-    for ticker in fire_onset_set:
-        fired.append({"ticker": ticker, "fire_type": "onset"})
+    # fired (LRV-O9: + state and entry_read so fire cards carry the honest stance —
+    # a fire that is already extended must render "don't chase", not a celebration)
+    for ticker in sorted(fire_precipice_set):
+        _r = row_by_ticker.get(ticker) or {}
+        fired.append({
+            "ticker": ticker, "fire_type": "precipice",
+            "state": _r.get("state"), "entry_read": _eread_of(ticker),
+        })
+    for ticker in sorted(fire_onset_set):
+        _r = row_by_ticker.get(ticker) or {}
+        fired.append({
+            "ticker": ticker, "fire_type": "onset",
+            "state": _r.get("state"), "entry_read": _eread_of(ticker),
+        })
 
     return {"entered": entered, "exited": exited, "fired": fired}
 
@@ -2344,6 +2370,20 @@ def build(
             _display_chips = _extract_display_chips({}, revisions_df, ticker)
             _display_chips["rs_line_gap_pct"] = _rs_gap
 
+            # LRV-O9: entry-quality read (display-only fence — never a gate or sort key).
+            # extension_vs_50dma re-computed here for the receipt number ("+X% vs 50d");
+            # the boolean chip form already lives in evidence via _crowded_check.
+            from engine.leader_lifecycle import entry_read as _entry_read
+            from engine.leader_lifecycle import extension_vs_50dma as _ext_50
+            try:
+                _ext_pct = _ext_50(close_series)
+            except Exception:  # noqa: BLE001
+                _ext_pct = None
+            _eread = _entry_read(
+                confirmed_state, assessment.evidence,
+                assessment.de_escalation_chips, _ext_pct,
+            )
+
             rows.append({
                 "ticker": ticker,
                 "raw_state": raw_state,
@@ -2359,6 +2399,7 @@ def build(
                 "k_true": k_true,
                 "n_avail": n_avail,
                 "display_chips": _display_chips,
+                "entry_read": _eread,
                 "context": {
                     "pe": val.get("fwd_pe"),
                     "fwd_pe": val.get("fwd_pe"),

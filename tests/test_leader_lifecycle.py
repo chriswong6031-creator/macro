@@ -67,6 +67,19 @@ from engine.leader_lifecycle import (
     precipice_fire,
     onset_fire,
     eligible_for_refire,
+    # Entry read (LRV-O9 display layer)
+    entry_read,
+    ENTRY_READ_IN_MOTION,
+    ENTRY_READ_PROTECT,
+    ENTRY_READ_FAILED,
+    ENTRY_READ_TURNAROUND,
+    ENTRY_READ_EXTENDED,
+    ENTRY_READ_STAGED,
+    ENTRY_READ_BUILDING,
+    ENTRY_READ_DORMANT,
+    ENTRY_READ_NONE,
+    ENTRY_CAVEAT_EARNINGS,
+    ENTRY_CAVEAT_EXTENDED,
     # Handoff
     extended_leg,
     basing_leg,
@@ -519,6 +532,139 @@ class TestParabolicFlag:
 
     def test_parabolic_none_on_short(self):
         assert parabolic_flag(_flat_close(30)) is None
+
+    def test_parabolic_false_on_dead_cat_bounce(self):
+        """SIGN GUARD regression (2026-07-23): a bounce inside a crash must NOT flag.
+
+        Pre-guard, the ratio test 13*ret_4w > 8*ret_13w was vacuously true whenever
+        ret_13w < 0 — ANY 4-week bounce beat 8× a negative number, so post-crash
+        names (the desk's own SUPPRESSED/QA turnaround class: ADBE/CRM 2026-07-23)
+        were labeled with the blow-off signature. Build: flat, then -40% crash over
+        9 weeks, then +8% bounce in the last 4 weeks → 13w return deeply negative,
+        4w positive → must be False.
+        """
+        prices = [100.0] * 60
+        p = 100.0
+        for _ in range(45):  # ~9 weeks of decline
+            p *= 0.989
+            prices.append(p)
+        for _ in range(20):  # ~4 weeks of bounce
+            p *= 1.004
+            prices.append(p)
+        close = pd.Series(prices, index=_date_index(len(prices)))
+        assert float(close.iloc[-1] / close.iloc[-66] - 1.0) < 0  # 13w leg is negative
+        assert parabolic_flag(close) is False
+
+    def test_parabolic_false_on_negative_4w(self):
+        """Still falling (both windows negative) → False, not vacuously True."""
+        close = _declining_close(200, pct_per_day=-0.004)
+        assert parabolic_flag(close) is False
+
+
+class TestEntryRead:
+    """LRV-O9 display-tier entry-quality read — deterministic re-expression matrix.
+
+    Display-only fence: these tests pin the verdict ladder; entry_read must never
+    be consulted by classify()/fires (structurally separate functions).
+    """
+
+    @staticmethod
+    def _ev(**kw):
+        """Evidence dict with all relevant chips defaulting to None (tri-state)."""
+        base = {
+            "extension_extreme": None, "monthly_rsi_80": None, "parabolic": None,
+            "below_200dma_12m": None, "rs_slope_negative_3m": None,
+            "drawdown_25pct": None,
+        }
+        base.update(kw)
+        return base
+
+    def test_trv_shape_extended_with_earnings_caveat(self):
+        """CW + extension_extreme + earnings window → don't-chase verdict + receipt."""
+        r = entry_read(
+            STATE_CATALYST_WINDOW,
+            self._ev(extension_extreme=True),
+            {"earnings_within_14d": True},
+            17.44,
+        )
+        assert r["key"] == ENTRY_READ_EXTENDED
+        assert r["basis"] == ["extension_extreme"]
+        assert ENTRY_CAVEAT_EARNINGS in r["caveats"]
+        assert r["extension_pct_50d"] == 17.4
+
+    def test_adbe_shape_turnaround(self):
+        """CW but below 200dma for a year → turnaround watch, never a staged read."""
+        r = entry_read(
+            STATE_CATALYST_WINDOW,
+            self._ev(below_200dma_12m=True, rs_slope_negative_3m=True, drawdown_25pct=True),
+            {},
+        )
+        assert r["key"] == ENTRY_READ_TURNAROUND
+        assert "below_200dma_12m" in r["basis"]
+        assert r["caveats"] == []
+
+    def test_turnaround_via_drawdown_and_rs_slope(self):
+        """Downtrend leg 2: rs_slope_negative_3m AND drawdown_25pct (no 200dma chip)."""
+        r = entry_read(
+            STATE_QUIET_ACCUMULATION,
+            self._ev(rs_slope_negative_3m=True, drawdown_25pct=True),
+            {},
+        )
+        assert r["key"] == ENTRY_READ_TURNAROUND
+        assert "below_200dma_12m" not in r["basis"]
+
+    def test_drawdown_alone_is_not_turnaround(self):
+        """AND leg: drawdown without negative RS slope stays a clean build."""
+        r = entry_read(STATE_QUIET_ACCUMULATION, self._ev(drawdown_25pct=True), {})
+        assert r["key"] == ENTRY_READ_BUILDING
+
+    def test_turnaround_outranks_extended_with_caveat(self):
+        """Bear-rally class (MELI/ROP shape): downtrend verdict + extended caveat."""
+        r = entry_read(
+            STATE_QUIET_ACCUMULATION,
+            self._ev(below_200dma_12m=True, extension_extreme=True),
+            {},
+        )
+        assert r["key"] == ENTRY_READ_TURNAROUND
+        assert ENTRY_CAVEAT_EXTENDED in r["caveats"]
+
+    def test_parabolic_excluded_from_stretch_set(self):
+        """parabolic alone (fresh ignition off a base — CVX shape) stays clean."""
+        r = entry_read(STATE_QUIET_ACCUMULATION, self._ev(parabolic=True), {})
+        assert r["key"] == ENTRY_READ_BUILDING
+
+    def test_clean_reads_per_state(self):
+        assert entry_read(STATE_CATALYST_WINDOW, self._ev(), {})["key"] == ENTRY_READ_STAGED
+        assert entry_read(STATE_QUIET_ACCUMULATION, self._ev(), {})["key"] == ENTRY_READ_BUILDING
+        assert entry_read(STATE_SUPPRESSED, self._ev(), {})["key"] == ENTRY_READ_DORMANT
+
+    def test_state_class_reads(self):
+        assert entry_read(STATE_BREAKAWAY, {}, {})["key"] == ENTRY_READ_IN_MOTION
+        assert entry_read(STATE_LEADERSHIP, {}, {})["key"] == ENTRY_READ_IN_MOTION
+        assert entry_read(STATE_CROWDED, {}, {})["key"] == ENTRY_READ_PROTECT
+        assert entry_read(STATE_FAILED, {}, {})["key"] == ENTRY_READ_FAILED
+        assert entry_read(STATE_NONE, {}, {})["key"] == ENTRY_READ_NONE
+
+    def test_null_chips_never_trigger(self):
+        """Kleene honesty: None is not True — all-null evidence stays clean."""
+        r = entry_read(STATE_CATALYST_WINDOW, self._ev(), {"earnings_within_14d": None})
+        assert r["key"] == ENTRY_READ_STAGED
+        assert r["caveats"] == []
+
+    def test_false_chips_never_trigger(self):
+        r = entry_read(
+            STATE_CATALYST_WINDOW,
+            self._ev(extension_extreme=False, below_200dma_12m=False,
+                     rs_slope_negative_3m=False, drawdown_25pct=False,
+                     monthly_rsi_80=False),
+            {"earnings_within_14d": False},
+        )
+        assert r["key"] == ENTRY_READ_STAGED
+        assert r["caveats"] == []
+
+    def test_extension_pct_nan_dropped(self):
+        r = entry_read(STATE_CATALYST_WINDOW, self._ev(), {}, float("nan"))
+        assert r["extension_pct_50d"] is None
 
 
 class TestBasketCorrelationRising:

@@ -89,10 +89,7 @@
 {% import "_risk_radar_card.html.j2" as rrc %}
 {# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
    (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
-{% import "_ignition_radar_card.html.j2" as igc %}
-{# mag7_panel import retained (dormant) — _mag7_panel.html.j2 and _mag7_regime_view are NOT deleted (MLC-W2a spec) #}
-{% from "_mag7_panel.html.j2" import mag7_panel %}
-{% import "_leadership_board.html.j2" as ldb_macro %}
+{# ignition-radar / mag7-panel / leadership-board imports removed 2026-07-23 (operator ruling; DO_NOT_REBUILD §2/§4) #}
 {% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
@@ -281,7 +278,6 @@
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
 {% include "_risk_radar_card.css.j2" %}
-{% include "_ignition_radar_card.css.j2" %}
 {% include "_aibrief_css.j2" %}{# ABX v2 — shared AI-brief body stylesheet (.aib2-*) #}
 {# _mag7_panel.css.j2 removed (MLC-W2a): .m7p-stale moved to ldb <style>; no .m7p elements rendered #}
 
@@ -1287,8 +1283,8 @@
      ====================================================================== */
   body.page-macro {
     /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
-    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
-           "Roboto Mono", Menlo, Consolas, monospace;
+    --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+           "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     /* hairlines + inset surface, layered on the existing palette */
     --hair: color-mix(in srgb, var(--line) 72%, transparent);
     --hair-strong: var(--line);
@@ -1827,18 +1823,8 @@
     </div>
     {% endif %}
   </div>
-  {# Ignition Radar — stocks mode placement (after the stocks header).
-     Compact span12 STRIP variant (operator revamp 2026-07-11): the tray card
-     rendered un-wrapped into the 12-col .grid and collapsed into one skinny
-     column. Renders only when the payload is present; guarded by truthiness. #}
-  {% if mode == 'stocks' and latest.ignition_radar %}{{ igc.ignition_radar_strip(latest.ignition_radar) }}{% endif %}
-  {# Mag 7 Panel removed 2026-07-16 (MLC-W2a): absorbed into the Leadership Board.
-     leadership_board already renders below in stocks mode. #}
-  {# Leadership Board (.ldb) — absorbs the Mag 7 panel (MLC-W2a) #}
-  {% if mode == 'stocks' and leadership_board %}{{ ldb_macro.leadership_board(leadership_board) }}{% endif %}
+  {# Ignition Radar strip + "Big Seven" leadership board REMOVED 2026-07-23 (operator ruling — forced Mag-7 call failed; see research/DO_NOT_REBUILD.md §2/§4 and research/POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md). Engine lanes (mag7_regime, ignition_radar) keep accruing in the background. #}
   {% endif %}
-  {# Leadership Board now renders in stocks mode above (MLC-W2a, replaces Mag 7 panel).
-     _leadership_board_view() retained in build_site.py — active, not dormant. #}
 
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
@@ -4476,183 +4462,6 @@ body.page-macro .rsx-dlg-footer{
   line-height:1.5;margin-top:4px;
 }
 
-/* ── igd-* : dlg-ignition (Ignition Radar dialog) ── */
-body.page-macro .igd-state-hero{
-  display:flex;align-items:flex-start;gap:14px;
-  padding:14px 0 10px;
-}
-body.page-macro .igd-state-text{flex:1;min-width:0;}
-body.page-macro .igd-state-label{
-  font-size:16px;font-weight:700;line-height:1.3;
-  color:color-mix(in srgb,var(--up) 85%,white);
-}
-[data-theme="light"] body.page-macro .igd-state-label{
-  color:color-mix(in srgb,var(--up) 70%,#000);
-}
-body.page-macro .igd-state-label.igd-off{color:var(--ink-2,rgba(255,255,255,.62));}
-[data-theme="light"] body.page-macro .igd-state-label.igd-off{color:rgba(0,0,0,.45);}
-body.page-macro .igd-asof{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
-}
-[data-theme="light"] body.page-macro .igd-asof{color:rgba(0,0,0,.38);}
-body.page-macro .igd-fragile-line{
-  font-size:11.5px;color:var(--warn,#f59e0b);margin-top:6px;line-height:1.4;
-}
-/* K-meter: 8 dots */
-body.page-macro .igd-kmeter{
-  display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;
-}
-body.page-macro .igd-dots{display:flex;gap:4px;}
-body.page-macro .igd-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:rgba(255,255,255,.12);
-  transition:background .2s;
-}
-[data-theme="light"] body.page-macro .igd-dot{background:rgba(0,0,0,.1);}
-body.page-macro .igd-dot.lit{
-  background:color-mix(in srgb,var(--up) 75%,white);
-}
-body.page-macro .igd-dot.lit.fresh{
-  box-shadow:0 0 5px 2px color-mix(in srgb,var(--up) 50%,transparent);
-}
-body.page-macro .igd-knum{
-  font-size:10px;font-weight:700;
-  color:color-mix(in srgb,var(--up) 70%,white);
-}
-[data-theme="light"] body.page-macro .igd-knum{
-  color:color-mix(in srgb,var(--up) 65%,#000);
-}
-/* Broad checks chip grid */
-body.page-macro .igd-chips-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;
-  margin:4px 0 0;
-}
-@media(max-width:700px){body.page-macro .igd-chips-grid{grid-template-columns:1fr;}}
-body.page-macro .igd-chip{
-  display:flex;align-items:flex-start;gap:6px;
-  padding:7px 10px;border-radius:10px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.07);
-  font-size:11.5px;line-height:1.35;
-}
-[data-theme="light"] body.page-macro .igd-chip{
-  background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.06);
-}
-body.page-macro .igd-chip-dot{
-  width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px;
-  background:rgba(255,255,255,.15);
-}
-[data-theme="light"] body.page-macro .igd-chip-dot{background:rgba(0,0,0,.12);}
-body.page-macro .igd-chip.lit .igd-chip-dot{
-  background:color-mix(in srgb,var(--up) 75%,white);
-}
-body.page-macro .igd-chip.lit.fresh .igd-chip-dot{
-  box-shadow:0 0 4px 1px color-mix(in srgb,var(--up) 45%,transparent);
-}
-body.page-macro .igd-chip-body{flex:1;min-width:0;}
-body.page-macro .igd-chip-lbl{font-weight:600;color:var(--ink-1,rgba(255,255,255,.88));}
-[data-theme="light"] body.page-macro .igd-chip-lbl{color:rgba(0,0,0,.8);}
-body.page-macro .igd-chip.lit .igd-chip-lbl{
-  color:color-mix(in srgb,var(--up) 80%,white);
-}
-[data-theme="light"] body.page-macro .igd-chip.lit .igd-chip-lbl{
-  color:color-mix(in srgb,var(--up) 70%,#000);
-}
-body.page-macro .igd-chip-since{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.38));margin-top:1px;
-}
-[data-theme="light"] body.page-macro .igd-chip-since{color:rgba(0,0,0,.38);}
-body.page-macro .igd-chips-sub{
-  font-size:10.5px;color:var(--ink-3,rgba(255,255,255,.38));
-  margin-bottom:6px;
-}
-[data-theme="light"] body.page-macro .igd-chips-sub{color:rgba(0,0,0,.38);}
-/* Theme board */
-body.page-macro .igd-theme-row{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 0;
-  border-bottom:1px solid rgba(255,255,255,.05);
-}
-[data-theme="light"] body.page-macro .igd-theme-row{border-color:rgba(0,0,0,.05);}
-body.page-macro .igd-theme-row:last-child{border-bottom:none;}
-/* full display names wrap, never truncate (doctrine §3 case law) */
-body.page-macro .igd-theme-name{
-  flex:0 0 130px;font-size:11.5px;font-weight:600;line-height:1.3;
-  color:var(--ink-1,rgba(255,255,255,.88));
-}
-[data-theme="light"] body.page-macro .igd-theme-name{color:rgba(0,0,0,.8);}
-body.page-macro .igd-theme-bar-wrap{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.08);}
-[data-theme="light"] body.page-macro .igd-theme-bar-wrap{background:rgba(0,0,0,.07);}
-/* display:block is load-bearing — the fill is a span; inline spans render width 0 */
-body.page-macro .igd-theme-bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.2);}
-body.page-macro .igd-theme-bar.igniting{background:color-mix(in srgb,var(--up) 75%,white);}
-body.page-macro .igd-theme-bar.running{background:color-mix(in srgb,var(--up) 50%,white);}
-body.page-macro .igd-theme-bar.fading{background:color-mix(in srgb,var(--warn) 60%,white);}
-body.page-macro .igd-theme-pct{
-  flex:0 0 36px;font-size:10.5px;font-weight:700;text-align:right;
-  color:var(--ink-2,rgba(255,255,255,.62));
-}
-[data-theme="light"] body.page-macro .igd-theme-pct{color:rgba(0,0,0,.5);}
-body.page-macro .igd-theme-state{
-  flex:0 0 90px;font-size:10.5px;color:var(--ink-2,rgba(255,255,255,.55));text-align:right;
-}
-[data-theme="light"] body.page-macro .igd-theme-state{color:rgba(0,0,0,.45);}
-body.page-macro .igd-theme-state.igniting{color:color-mix(in srgb,var(--up) 80%,white);}
-[data-theme="light"] body.page-macro .igd-theme-state.igniting{color:color-mix(in srgb,var(--up) 65%,#000);}
-body.page-macro .igd-theme-flags{font-size:11px;flex-shrink:0;}
-body.page-macro .igd-theme-null{
-  font-size:11.5px;color:var(--ink-3,rgba(255,255,255,.36));padding:8px 0;
-}
-[data-theme="light"] body.page-macro .igd-theme-null{color:rgba(0,0,0,.38);}
-/* Stance + action lines */
-body.page-macro .igd-stance{
-  font-size:12px;line-height:1.5;color:var(--ink-1,rgba(255,255,255,.88));
-  padding:8px 0;
-}
-[data-theme="light"] body.page-macro .igd-stance{color:rgba(0,0,0,.8);}
-body.page-macro .igd-action-ptr{
-  font-size:11.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.62));
-  margin-top:2px;
-}
-[data-theme="light"] body.page-macro .igd-action-ptr{color:rgba(0,0,0,.5);}
-body.page-macro .igd-action-ptr a{
-  color:color-mix(in srgb,var(--up) 80%,white);text-decoration:none;
-}
-[data-theme="light"] body.page-macro .igd-action-ptr a{
-  color:color-mix(in srgb,var(--up) 65%,#000);
-}
-body.page-macro .igd-action-ptr a:hover{text-decoration:underline;}
-/* Risk cross-ref chip */
-/* igd-risk-xref — gbtn glass recipe (macro sweep 2026-07); severity variants
-   (.caution/.elevated/.risk-off) re-derive their border tint from --warn/--down. */
-body.page-macro .igd-risk-xref{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:999px;
-  font-size:11.5px;font-weight:600;cursor:pointer;
-  background:var(--gbtn-bg);
-  border:1px solid var(--gbtn-brd);
-  -webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen);
-  color:var(--ink-1,rgba(255,255,255,.85));
-  transition:background .2s ease,border-color .2s ease,transform .16s ease,box-shadow .25s ease;
-}
-[data-theme="light"] body.page-macro .igd-risk-xref{
-  color:rgba(0,0,0,.75);
-}
-body.page-macro .igd-risk-xref:hover{background:var(--gbtn-bg-hover);border-color:var(--gbtn-brd-hover);transform:translateY(-1px);
-  box-shadow:inset 0 1px 0 var(--gbtn-sheen),0 8px 20px -10px rgba(3,7,18,.55);}
-body.page-macro .igd-risk-xref:active{transform:translateY(0) scale(.985);box-shadow:inset 0 1px 0 var(--gbtn-sheen);}
-body.page-macro .igd-risk-xref.caution{border-color:color-mix(in srgb, var(--warn) 45%, var(--gbtn-brd));}
-body.page-macro .igd-risk-xref.elevated{border-color:color-mix(in srgb, var(--down) 45%, var(--gbtn-brd));}
-body.page-macro .igd-risk-xref.risk-off{border-color:color-mix(in srgb, var(--down) 62%, var(--gbtn-brd));color:color-mix(in srgb, var(--down) 90%, var(--text));}
-@media (prefers-reduced-motion: reduce){ body.page-macro .igd-risk-xref,body.page-macro .igd-risk-xref:hover,body.page-macro .igd-risk-xref:active{transform:none;} }
-/* Footer */
-body.page-macro .igd-footer{
-  font-size:10px;color:var(--ink-3,rgba(255,255,255,.36));
-  line-height:1.5;margin-top:4px;
-}
-[data-theme="light"] body.page-macro .igd-footer{color:rgba(0,0,0,.38);}
-
 /* Six-factor deep rows (SIGNALS dialog) */
 .mx5-dlg-factor-row{
   display:grid;grid-template-columns:minmax(120px,1.4fr) 1fr 52px;
@@ -7032,25 +6841,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </svg>
           <span class="l-en">Elevated Risk{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
           <span class="l-zh">风险偏高{% if _mx5_radar_top > 0 %} &middot; {{ _mx5_radar_top }}{% endif %}</span>
-        </button>
-        {% elif latest.ignition_radar is defined and latest.ignition_radar %}
-        {# Non-elevated + ignition present: show adaptive upturn button instead of generic Risk Detail #}
-        {% set _ign = latest.ignition_radar %}
-        <button class="mx5-sc-btn mx5-sc-btn-up{% if _ign.state == 'ignited' %} mx5-sc-btn-up-strong{% endif %}" id="mx5BtnRisk"
-                onclick="mx5OpenDlg('dlg-ignition')"
-                aria-haspopup="dialog"
-                type="button">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
-          {% set _ign_kb = _ign.k_count if (_ign.k_count is defined and _ign.k_count is not none) else 0 %}
-          {% if _ign.state == 'ignited' %}
-          <span class="l-en">&#9889; Upturn: strong sign &middot; {{ _ign_kb }}/8</span><span class="l-zh">&#9889; 转强：较强迹象 &middot; {{ _ign_kb }}/8</span>
-          {% elif _ign.state == 'warming' %}
-          <span class="l-en">Upturn: early sign &middot; {{ _ign_kb }}/8</span><span class="l-zh">转强：初步迹象 &middot; {{ _ign_kb }}/8</span>
-          {% else %}
-          <span class="l-en">Upturn: no signs yet</span><span class="l-zh">转强：暂无迹象</span>
-          {% endif %}
         </button>
         {% else %}
         {# Fallback: risk not elevated, no ignition data — neutral Risk Detail #}
@@ -10602,8 +10392,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- set _wnx_rstate = (_wnx_rdr.state if (_wnx_rdr and _wnx_rdr.state is defined) else '') -%}
     {%- set _wnx_rtop = ((_wnx_rdr.get('top_score') or _wnx_rdr.get('top') or 0) | int) if _wnx_rdr else 0 -%}
     {%- set _wnx_risk_elev = (_wnx_rdr and ((_wnx_rstate not in ('calm','quiet','dormant','none','unknown','')) or (_wnx_rtop >= 50))) -%}
-    {%- set _wnx_ign = (latest.ignition_radar if (latest is defined and latest.ignition_radar is defined and latest.ignition_radar) else none) -%}
-    {%- set _wnx_ign_k = ((_wnx_ign.k_count if (_wnx_ign and _wnx_ign.k_count is defined and _wnx_ign.k_count is not none) else 0) | int) -%}
     <div class="sxg-face mx5-card-face">
       <div class="wnx-eyebrow"><span class="l-en">Where next</span><span class="l-zh">接下来</span></div>
       <div class="wnx-cards">
@@ -10672,16 +10460,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="wnx-state">{% if _wnx_rtop %}<span class="l-en">Risk {{ _wnx_rtop }}</span><span class="l-zh">风险 {{ _wnx_rtop }}</span>{% else %}<span class="l-en">Risk radar loud</span><span class="l-zh">风险雷达偏响</span>{% endif %}</div>
           <div class="wnx-line"><span class="l-en">See exactly what would make it worse</span><span class="l-zh">看清什么会让它恶化</span></div>
           <span class="wnx-go"><span class="l-en">Open risk radar</span><span class="l-zh">打开风险雷达</span> &rarr;</span>
-        </a>
-        {% elif _wnx_ign %}
-        <a class="wnx-card" style="--wnx-c:var(--isle-brief)" href="#dlg-ignition" onclick="event.preventDefault();mx5OpenDlg('dlg-ignition');">
-          <div class="wnx-kicker">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
-            <span class="l-en">Turning up?</span><span class="l-zh">是否转强</span>
-          </div>
-          <div class="wnx-state">{% if _wnx_ign_k %}<span class="l-en">{{ _wnx_ign_k }} of 8 signs</span><span class="l-zh">8项中{{ _wnx_ign_k }}项</span>{% else %}<span class="l-en">Upturn signs</span><span class="l-zh">转强迹象</span>{% endif %}</div>
-          <div class="wnx-line"><span class="l-en">Track whether early strength is real</span><span class="l-zh">跟踪初步转强是否成立</span></div>
-          <span class="wnx-go"><span class="l-en">Open upturn signs</span><span class="l-zh">打开转强迹象</span> &rarr;</span>
         </a>
         {% else %}
         <a class="wnx-card" style="--wnx-c:var(--isle-brief)" href="aibrief.html">
@@ -12109,236 +11887,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {# MX2-SENTIMENT-END #}
 
-        {# — 9. Upturn cross-ref row — #}
-        {% if latest.ignition_radar is defined and latest.ignition_radar %}
-        {% set _ign2 = latest.ignition_radar %}
-        {% set _ign2_st = _ign2.state if (_ign2.state is defined and _ign2.state) else 'off' %}
-        {% set _ign2_k = _ign2.k_count if (_ign2.k_count is defined and _ign2.k_count is not none) else 0 %}
-        <div class="rsx-xref-row">
-          <div class="rsx-xref-text">
-            {% if _ign2_st == 'ignited' %}
-            <span class="l-en">Upturn signs: <b>strong sign</b> ({{ _ign2_k }}/8) — see the Upturn panel</span>
-            <span class="l-zh">转强迹象：<b>较强迹象</b>（{{ _ign2_k }}/8）——查看转强面板</span>
-            {% elif _ign2_st == 'warming' %}
-            <span class="l-en">Upturn signs: <b>early sign</b> ({{ _ign2_k }}/8) — see the Upturn panel</span>
-            <span class="l-zh">转强迹象：<b>初步迹象</b>（{{ _ign2_k }}/8）——查看转强面板</span>
-            {% else %}
-            <span class="l-en">Upturn signs: none yet ({{ _ign2_k }}/8) — see the Upturn panel</span>
-            <span class="l-zh">转强迹象：暂无（{{ _ign2_k }}/8）——查看转强面板</span>
-            {% endif %}
-          </div>
-          <button type="button" class="rsx-xref-btn" onclick="mx5OpenDlg('dlg-ignition')">
-            <span class="l-en">Open &rarr;</span><span class="l-zh">打开 &rarr;</span>
-          </button>
-        </div>
-        {% endif %}
 
       </div>
     </div>
   </div>
   {% endif %}{# /market_state — dlg-risk #}
 
-  {# dlg-ignition: Ignition Radar — Upturn Signs
-     Gate: macro mode only + ignition_radar present (null = no dialog = no dead HTML).
-     Opened from: adaptive hero button (Stage 1) + dlg-risk cross-ref row (Stage 2). #}
-  {% if mode != 'stocks' and latest is defined and latest.ignition_radar is defined and latest.ignition_radar %}
-  {%- set _ign = latest.ignition_radar -%}
-  {%- set _ign_state = _ign.state if _ign.state is defined and _ign.state else 'off' -%}
-  {%- set _ign_k = _ign.k_count if _ign.k_count is defined and _ign.k_count is not none else 0 -%}
-  {%- set _ign_regime = _ign.regime if _ign.regime is defined and _ign.regime else {} -%}
-  {%- set _ign_fragile = _ign_regime.fragile if _ign_regime.fragile is defined and _ign_regime.fragile else false -%}
-  {%- set _ign_narrow = _ign.narrow if _ign.narrow is defined and _ign.narrow else {} -%}
-  {%- set _ign_items = _ign_narrow['items'] if _ign_narrow['items'] is defined else [] -%}
-  {%- set _ign_xref = _ign.radar_xref if _ign.radar_xref is defined and _ign.radar_xref else {} -%}
-  {%- set _ign_fl = _ign.forward_log if _ign.forward_log is defined and _ign.forward_log else {} -%}
-  <div class="mx5-dlg" id="dlg-ignition" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="mx5-dlg-backdrop" onclick="mx5CloseDlg()"></div>
-    <div class="mx5-dlg-panel">
-      <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title">
-          <span class="l-en">Ignition Radar &mdash; Upturn Signs</span>
-          <span class="l-zh">点火雷达——转强迹象</span>
-        </span>
-        <button class="mx5-dlg-close" type="button" onclick="mx5CloseDlg()" aria-label="Close">&#xd7;</button>
-      </div>
-      <div class="mx5-dlg-body">
-
-        {# ── §3-1: State hero ── #}
-        <div class="igd-state-hero">
-          {# K-meter: 8 dots #}
-          <div class="igd-kmeter">
-            <div class="igd-dots">
-              {%- if _ign.chips is defined and _ign.chips %}
-              {%- for c in _ign.chips %}
-              <span class="igd-dot{{ ' lit' if c.lit is defined and c.lit }}{{ ' fresh' if c.fresh is defined and c.fresh }}"></span>
-              {%- endfor %}
-              {%- else %}
-              {%- for _ in range(8) %}<span class="igd-dot"></span>{%- endfor %}
-              {%- endif %}
-            </div>
-            <span class="igd-knum">K {{ _ign_k }}/8</span>
-          </div>
-          <div class="igd-state-text">
-            {%- if _ign_state == 'ignited' %}
-            <div class="igd-state-label">
-              <span class="l-en">Strong sign &mdash; broad upturn evidence</span>
-              <span class="l-zh">较强迹象——大盘转强证据较多</span>
-            </div>
-            {%- elif _ign_state == 'warming' %}
-            <div class="igd-state-label">
-              <span class="l-en">Early sign &mdash; first sparks, not confirmed</span>
-              <span class="l-zh">初步迹象——初现火花，未经确认</span>
-            </div>
-            {%- else %}
-            <div class="igd-state-label igd-off">
-              <span class="l-en">Quiet &mdash; no upturn signs</span>
-              <span class="l-zh">平静——暂无转强迹象</span>
-            </div>
-            {%- endif %}
-            {%- if _ign.as_of is defined and _ign.as_of %}
-            <div class="igd-asof">
-              <span class="l-en">as of {{ _ign.as_of }}</span>
-              <span class="l-zh">截至 {{ _ign.as_of }}</span>
-            </div>
-            {%- endif %}
-            {%- if _ign_fragile %}
-            <div class="igd-fragile-line">
-              <span class="l-en">Fragile &mdash; narrow theme strength without broad participation. Watch &mdash; don&rsquo;t chase.</span>
-              <span class="l-zh">脆弱——主题走强但参与度不足。观望，勿追高。</span>
-            </div>
-            {%- endif %}
-          </div>
-        </div>
-
-        <div class="mx5-dlg-sep"></div>
-
-        {# ── §3-2: Broad checks — 8 chips, 2-col grid ── #}
-        <div class="mx5-dlg-eyebrow">
-          <span class="l-en">Broad market checks</span>
-          <span class="l-zh">大盘检查</span>
-        </div>
-        <div class="igd-chips-sub">
-          <span class="l-en">{{ _ign_k }} of 8 lit &mdash; a broad turn usually lights several at once.</span>
-          <span class="l-zh">8项中{{ _ign_k }}项点亮——真正的大盘转强通常同时点亮多项。</span>
-        </div>
-        {%- if _ign.chips is defined and _ign.chips %}
-        <div class="igd-chips-grid">
-          {%- for c in _ign.chips %}
-          <div class="igd-chip{{ ' lit' if c.lit is defined and c.lit }}{{ ' fresh' if c.fresh is defined and c.fresh }}"
-            {%- if c.detail_en is defined and c.detail_en %} data-tip-en="{{ c.detail_en }}"{% endif %}
-            {%- if c.detail_zh is defined and c.detail_zh %} data-tip-zh="{{ c.detail_zh }}"{% endif %}>
-            <span class="igd-chip-dot"></span>
-            <span class="igd-chip-body">
-              <span class="igd-chip-lbl">
-                <span class="l-en">{{ c.label_en if c.label_en is defined and c.label_en else c.key }}</span>
-                <span class="l-zh">{{ c.label_zh if c.label_zh is defined and c.label_zh else c.key }}</span>
-              </span>
-              {%- if c.lit is defined and c.lit and c.since is defined and c.since %}
-              <div class="igd-chip-since">{{ c.since }}</div>
-              {%- endif %}
-            </span>
-          </div>
-          {%- endfor %}
-        </div>
-        {%- endif %}
-
-        <div class="mx5-dlg-sep"></div>
-
-        {# ── §3-3: Theme board (narrow.items, skip idle, cap 8) ── #}
-        <div class="mx5-dlg-eyebrow">
-          <span class="l-en">Theme strength</span>
-          <span class="l-zh">主题强度</span>
-        </div>
-        {%- set _ign_active_items = _ign_items | selectattr('state', 'ne', 'idle') | list %}
-        {%- if _ign_active_items %}
-        {%- for it in _ign_active_items[:8] %}
-        {%- set _it_sc = it.ignition_score if it.ignition_score is defined and it.ignition_score is not none else 0 %}
-        {%- set _it_state = it.state if it.state is defined and it.state else 'idle' %}
-        {%- set _it_name = it.name if it.name is defined and it.name else (it.id if it.id is defined else '') %}
-        <div class="igd-theme-row">
-          <span class="igd-theme-name"
-            data-tip-en="{{ _it_name }}{% if it.rs_new_high is defined and it.rs_new_high %} · RS at 6-month high{% endif %}{% if it.above_200d_rising is defined and it.above_200d_rising %} · above rising 200d MA{% endif %}"
-            data-tip-zh="{{ it.name_zh if it.name_zh is defined and it.name_zh else _it_name }}{% if it.rs_new_high is defined and it.rs_new_high %} · 相对强度创6个月新高{% endif %}{% if it.above_200d_rising is defined and it.above_200d_rising %} · 高于上升200日均线{% endif %}">
-            <span class="l-en">{{ _it_name }}</span><span class="l-zh">{{ it.name_zh if (it.name_zh is defined and it.name_zh) else _it_name }}</span>
-            {%- if it.rs_new_high is defined and it.rs_new_high %} <span class="igd-theme-flags">▲</span>{%- endif %}
-            {%- if it.above_200d_rising is defined and it.above_200d_rising %} <span class="igd-theme-flags">↗</span>{%- endif %}
-          </span>
-          <span class="igd-theme-bar-wrap">
-            <span class="igd-theme-bar {{ _it_state }}" style="width:{{ [(_it_sc * 100)|round|int, 100]|min }}%"></span>
-          </span>
-          <span class="igd-theme-pct">{{ (_it_sc * 100)|round|int }}%</span>
-          <span class="igd-theme-state {{ _it_state }}">
-            {%- if _it_state == 'igniting' %}
-            <span class="l-en">turning up now</span><span class="l-zh">正在转强</span>
-            {%- elif _it_state == 'running' %}
-            <span class="l-en">still running</span><span class="l-zh">延续走强</span>
-            {%- elif _it_state == 'fading' %}
-            <span class="l-en">losing steam</span><span class="l-zh">动能减弱</span>
-            {%- else %}
-            <span class="l-en">{{ _it_state }}</span><span class="l-zh">{{ _it_state }}</span>
-            {%- endif %}
-          </span>
-        </div>
-        {%- endfor %}
-        {%- else %}
-        <div class="igd-theme-null">
-          <span class="l-en">No themes turning up right now.</span>
-          <span class="l-zh">当前没有主题在转强。</span>
-        </div>
-        {%- endif %}
-
-        <div class="mx5-dlg-sep"></div>
-
-        {# ── §3-4: Stance line ── #}
-        {%- if _ign_regime.do_en is defined and _ign_regime.do_en %}
-        <div class="igd-stance">
-          <span class="l-en">{{ _ign_regime.do_en }}</span>
-          <span class="l-zh">{{ _ign_regime.do_zh if _ign_regime.do_zh is defined and _ign_regime.do_zh else _ign_regime.do_en }}</span>
-        </div>
-        {%- endif %}
-
-        {# ── §3-5: Where to act pointer ── #}
-        <div class="igd-action-ptr">
-          <span class="l-en">If these signs persist, the US board&rsquo;s Buy lanes upgrade on their own. &mdash; <a href="us_stocks.html">Open the US board &rarr;</a></span>
-          <span class="l-zh">若迹象持续，美股行动板的买入通道会自行升级。&mdash; <a href="us_stocks.html">打开美股行动板 &rarr;</a></span>
-        </div>
-
-        <div class="mx5-dlg-sep"></div>
-
-        {# ── §3-6: Risk cross-ref chip (gate radar_xref.state) ── #}
-        {%- if _ign_xref.state is defined and _ign_xref.state %}
-        {%- set _xref_state = _ign_xref.state %}
-        <button type="button"
-          class="igd-risk-xref {{ _xref_state }}"
-          onclick="mx5OpenDlg('dlg-risk')"
-          aria-haspopup="dialog">
-          <span class="l-en">Risk Radar: {{ _xref_state | title }}</span>
-          <span class="l-zh">风险雷达：{{ {'caution':'警惕','watch':'关注','elevated':'升高','risk-off':'避险','calm':'平静'}.get(_xref_state, _xref_state) }}</span>
-        </button>
-        <div class="igd-action-ptr" style="margin-top:4px">
-          <span class="l-en">Risk first when both speak.</span>
-          <span class="l-zh">两者同时作响时，以风险为先。</span>
-        </div>
-        {%- endif %}
-
-        <div class="mx5-dlg-sep"></div>
-
-        {# ── §3-7: Footer — forward log accrual ── #}
-        <div class="igd-footer">
-          {%- set _fl_n = _ign_fl.n_graded if _ign_fl.n_graded is defined and _ign_fl.n_graded is not none else 0 %}
-          {%- if _fl_n and _fl_n > 0 %}
-          <span class="l-en">Forward record accruing ({{ _fl_n }} graded) &mdash; display context until the record matures.</span>
-          <span class="l-zh">前瞻记录积累中（已评分{{ _fl_n }}）——记录成熟前仅供参考。</span>
-          {%- else %}
-          <span class="l-en">Forward record accruing (0 graded so far) &mdash; display context until the record matures.</span>
-          <span class="l-zh">前瞻记录积累中（暂无评分）——记录成熟前仅供参考。</span>
-          {%- endif %}
-        </div>
-
-      </div>{# /mx5-dlg-body #}
-    </div>{# /mx5-dlg-panel #}
-  </div>{# /dlg-ignition #}
-  {% endif %}{# /dlg-ignition gate #}
 
   {# dlg-policy: Policy Monitor — full redesign (spec §4b) #}
   {% if policy_lever is defined and policy_lever %}
@@ -13882,7 +13436,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     var _legacyAnchor = {
       'risk-state':'dlg-risk', 'liquidity':'dlg-risk', 'credit':'dlg-risk',
       'dials':'regime-radar', 'sectors':'dlg-sector',
-      'ignition':'dlg-ignition',
       'positioning':'macro_context.html#board',
       'holdings':'us_stocks.html#holdings',
       'accumulation':'us_stocks.html#accumulation'

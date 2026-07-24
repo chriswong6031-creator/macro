@@ -999,6 +999,9 @@
   function _onAuth(evt, session) {
     _curUser = (session && session.user) ? session.user : (evt === 'SIGNED_OUT' ? null : _curUser);
     if (evt === 'SIGNED_OUT') _curUser = null;
+    // Drop any cached entitlement when the account changes, so a stale plan never shows for the
+    // wrong (or signed-out) user; the next dashboard render re-fetches for the current session.
+    if (!_curUser || (_curUser.id && _curUser.id !== _sdPlanFor)) { _sdPlan = null; _sdPlanFor = null; }
     _authReady = true;
     _emitAuth({ user: _curUser, event: evt });
     _renderAcct();
@@ -1503,6 +1506,22 @@
     '.sd-cta-n{font-size:12px;color:var(--muted,var(--ink-3,#8b93a7));line-height:1.55;margin:0 auto 14px;max-width:300px}',
     '.sd-cta-btns{display:flex;gap:8px;justify-content:center}',
     '.sd-cta-btns .sd-btn{min-width:120px}',
+    /* plan block — tier row + status chip + prorated-upgrade CTA */
+    '.sd-plan-tier{font-weight:800}',
+    '.sd-plan-chip{display:inline-flex;align-items:center;flex:none;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap;border:1px solid transparent}',
+    '.sd-plan-chip.live{color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 12%,transparent);border-color:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 30%,transparent)}',
+    '.sd-plan-chip.trial{color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 9%,transparent);border-color:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 22%,transparent)}',
+    '.sd-plan-chip.warn{color:var(--warn,#e0a53d);background:color-mix(in srgb,var(--warn,#e0a53d) 12%,transparent);border-color:color-mix(in srgb,var(--warn,#e0a53d) 30%,transparent)}',
+    '.sd-plan-cta{margin-top:10px}',
+    '.sd-plan-cta .sd-btn{width:100%}',
+    /* bilingual toggle SCOPED to the dashboard: _sdBl() emits .l-en/.l-zh spans, but
+       the landing (index.html) has no site-wide .l-en/.l-zh rule, so both languages
+       showed. Scoping to .sd-card keeps the dashboard single-language on every host
+       without touching the page around it. */
+    '.sd-card .l-zh{display:none}',
+    'html[data-lang="zh"] .sd-card .l-en{display:none}',
+    'html[data-lang="zh"] .sd-card .l-zh{display:inline}',
+    '.sd-muted{color:var(--muted,var(--ink-3,#8b93a7))}',
     /* mobile sign-out (rail hidden -> row at the end of Account) */
     '.sd-signout-m{display:none}',
     /* desktop: hide the mobile close slot */
@@ -1583,6 +1602,22 @@
     userIdNote: ['Quote it if you ever contact support.', '联系支持时请提供此 ID。'],
     copy:       ['Copy', '复制'],
     copied:     ['Copied', '已复制'],
+    // plan block
+    plan:        ['Plan', '订阅'],
+    planLoading: ['Loading your plan…', '正在加载订阅…'],
+    tierFree:    ['Free', '免费版'],
+    tierInsider: ['Insider', 'Insider'],
+    tierPro:     ['Pro', 'Pro'],
+    planTrialUntil: ['Trial until', '试用至'],
+    planRenews:  ['Renews', '续订于'],
+    planExpires: ['Expires', '到期于'],
+    planExpired: ['Expired', '已过期'],
+    planLifetime:['Lifetime', '永久'],
+    upgradePro:  ['Upgrade to Pro', '升级到 Pro'],
+    switchAnnual:['Switch to annual — save 30%', '切换年付 — 立省 30%'],
+    upgradeAnnual:['Upgrade — save up to 30%', '升级 — 最高省 30%'],
+    choosePlan:  ['Choose a plan', '选择套餐'],
+    planErr:     ['Couldn’t update your plan — please try again.', '无法更新订阅，请重试。'],
     // signed-out CTA
     ctaTitle:   ['Sign in to Mastermind', '登录 Mastermind'],
     ctaNote:    ['Sync your watchlists, alerts and settings across devices — free.', '免费同步自选、提醒与设置到你的所有设备。'],
@@ -1599,8 +1634,6 @@
     themeDark:  ['Dark', '深色'],
     language:   ['Language', '语言'],
     langNote:   ['Applies to every page.', '应用于所有页面。'],
-    liveP:      ['Live prices', '实时报价'],
-    livePNote:  ['Streaming quotes on boards that support them.', '支持的看板将实时刷新报价。'],
     // sync section
     syncOn:     ['Sync is on', '同步已开启'],
     syncOff:    ['Sync is off', '同步未开启'],
@@ -1644,6 +1677,10 @@
   /* ---- dashboard state ---------------------------------------------------- */
   var _sdBuilt = false, _sdOverlay = null, _sdSect = 'account', _sdLastFocus = null,
       _sdCopyTimer = null;
+  // Entitlement payload from /api/me, cached by user id so the dashboard re-renders
+  // (on 'mdx-auth' + 'langchange') paint the plan synchronously instead of re-fetching.
+  // Reset to null on sign-out / user switch so a stale plan never shows for the wrong account.
+  var _sdPlan = null, _sdPlanFor = null, _sdPlanBusy = false;
 
   function _sdInjectCSS() {
     if (document.getElementById('setdash-css')) return;
@@ -1827,7 +1864,6 @@
     _renderSDPrefs();
     _renderSDSync(state, u);
     _sdSyncThemeSeg();
-    _sdSyncLiveRow();
     // if the current section is now invalid (account tab hidden), route to prefs
     if (_sdSect === 'account' && !_authEnabled) _sdShow('prefs');
   }
@@ -1890,6 +1926,10 @@
             '</span>' +
           '</span>' +
         '</div>';
+
+      // Plan group (tier + status chip + upgrade/choose CTA). Rendered from the cached
+      // /api/me payload; _wireSDAccount fetches it on first paint if the cache is cold.
+      html += _sdPlanHTML();
 
       // Profile group
       html += '<div class="sd-group">' +
@@ -1977,7 +2017,6 @@
   function _renderSDPrefs() {
     var host = document.getElementById('sd-sect-prefs');
     if (!host) return;
-    var showLive = (typeof window.LiveQuotes !== 'undefined');
     host.innerHTML = _sdHead('prefsTitle', 'prefsSub') + '<div class="sd-body">' +
       '<div class="sd-group" style="margin-top:4px">' +
         // appearance
@@ -2000,13 +2039,6 @@
             '<button type="button" class="sd-seg-b" data-sd-lang="en">EN</button>' +
             '<button type="button" class="sd-seg-b" data-sd-lang="zh">中文</button>' +
           '</span>' +
-        '</div></div>' +
-        // live prices (hidden unless LiveQuotes present)
-        '<div class="sd-row" id="sd-live-row"' + (showLive ? '' : ' style="display:none"') + '><div class="sd-row-line">' +
-          '<span class="sd-row-main">' +
-            '<span class="sd-row-lbl">' + _sdBl('liveP') + '</span>' +
-            '<span class="sd-row-desc">' + _sdBl('livePNote') + '</span></span>' +
-          '<button type="button" class="sd-toggle" id="sd-live-toggle" role="switch" aria-checked="true" aria-label="' + _escHtml(_sdL('liveP')) + '"><span class="knob"></span></button>' +
         '</div></div>' +
       '</div>' +
     '</div>';
@@ -2065,22 +2097,158 @@
     if (on) { btn._sdLbl = btn.innerHTML; btn.disabled = true; if (label) btn.textContent = label; }
     else { btn.disabled = false; if (btn._sdLbl != null) btn.innerHTML = btn._sdLbl; }
   }
-  // shared CTA + sign-out wiring across sections
+  // shared CTA + sign-out wiring across sections.
+  // Sign-in / create-account open the LANDING-NATIVE onboarding sheet IN PLACE on
+  // whatever www page the user is on (operator escalation 2026-07-23: auth must
+  // exist on mastermind-x.com — never bounce to app.*). onboard.js is lazy-loaded
+  // once and exposes window.MMOnboard; it self-provisions its CSS/fonts. Fallback
+  // (script unreachable): navigate to the landing with the param — index.html
+  // always carries the sheet.
+  function _mmOpenOnboard(mode) {
+    // whitelist: signin (default) · signup · upgrade (post-login monetization sheet)
+    var m = (mode === 'signup') ? 'signup' : (mode === 'upgrade') ? 'upgrade' : 'signin';
+    if (window.MMOnboard && window.MMOnboard.open) { window.MMOnboard.open(m); return; }
+    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    if (window.__mmOnboardLoading) return;    // second click while loading — first one will open
+    window.__mmOnboardLoading = true;
+    var s = document.createElement('script');
+    s.src = pfx + 'onboard.js'; s.defer = true;
+    var fbQ = (m === 'signup') ? 'signup=1' : (m === 'upgrade') ? 'upgrade=1' : 'signin=1';
+    var fallback = function () { location.href = pfx + 'index.html?' + fbQ; };
+    var t = setTimeout(function () { if (!window.MMOnboard) fallback(); }, 4000);
+    s.onload = function () {
+      clearTimeout(t); window.__mmOnboardLoading = false;
+      if (window.MMOnboard && window.MMOnboard.open) window.MMOnboard.open(m); else fallback();
+    };
+    s.onerror = function () { clearTimeout(t); window.__mmOnboardLoading = false; fallback(); };
+    (document.head || document.documentElement).appendChild(s);
+  }
   function _sdWireCta(host) {
     host.querySelectorAll('[data-sd-cta]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var mode = b.getAttribute('data-sd-cta');
+        var mode = b.getAttribute('data-sd-cta');   // signup · signin · upgrade
         _closeSDash();
-        openAuthModal(mode === 'signup' ? 'signup' : 'signin');
+        _mmOpenOnboard(mode === 'signup' ? 'signup' : mode === 'upgrade' ? 'upgrade' : 'signin');
       });
     });
     var som = host.querySelector('#sd-signout-m');
     if (som) som.addEventListener('click', function () { if (window.MDXAuth) window.MDXAuth.signOut(); });
   }
 
+  /* ---- plan block (tier + status chip + prorated upgrade) ----------------- */
+  // The set of tiers that already have everything an upgrade would buy — no CTA shown.
+  function _sdTierLabel(tier) {
+    if (tier === 'pro' || tier === 'unlimited') return _sdL('tierPro');
+    if (tier === 'insider') return _sdL('tierInsider');
+    return _sdL('tierFree');
+  }
+  // status chip text for a plan payload; '' when nothing meaningful to show (free/none).
+  function _sdPlanChip(p) {
+    var status = p.status || 'none';
+    var cpe = p.current_period_end || null;
+    var when = cpe ? _sdDate(cpe) : '';
+    // comp / uncapped grant with no period end = lifetime.
+    if ((p.tier === 'unlimited' || p.source === 'comp') && !cpe && status !== 'canceled') {
+      return '<span class="sd-plan-chip live">' + _escHtml(_sdL('planLifetime')) + '</span>';
+    }
+    if (status === 'trialing') {
+      return '<span class="sd-plan-chip trial">' + _escHtml(_sdL('planTrialUntil')) +
+        (when ? ' ' + _escHtml(when) : '') + '</span>';
+    }
+    if (status === 'active') {
+      return '<span class="sd-plan-chip live">' + _escHtml(_sdL('planRenews')) +
+        (when ? ' ' + _escHtml(when) : '') + '</span>';
+    }
+    if (status === 'canceled') {
+      // A canceled row still inside its paid period shows the end date; past it, just "Expired".
+      var future = cpe && (new Date(cpe).getTime() > Date.now());
+      return '<span class="sd-plan-chip warn">' +
+        _escHtml(future ? _sdL('planExpires') + (when ? ' ' + when : '') : _sdL('planExpired')) + '</span>';
+    }
+    return '';
+  }
+  function _sdPlanHTML() {
+    // Cold cache → a quiet loading row; _wireSDAccount fills it in from /api/me.
+    if (!_sdPlan) {
+      return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
+          '<span class="sd-group-t">' + _sdBl('plan') + '</span>' +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl sd-muted">' + _sdBl('planLoading') + '</span></span>' +
+          '</div></div>' +
+        '</div>';
+    }
+    var p = _sdPlan;
+    var tier = p.tier || 'free';
+    var paid = tier !== 'free';
+    var chip = _sdPlanChip(p);
+    var interval = p.interval || null;
+    // Every upgrade lane lives in the one onboard sheet (MMOnboard 'upgrade'), which
+    // reads /api/me and shows the tier-correct lanes + the trial/prorate confirm.
+    // Nothing left to buy ONLY at the very top (Pro annual / unlimited). Everyone else
+    // gets a button — including a Pro MONTHLY subscriber who can still switch to annual
+    // for the ~30% discount, and trial-monthly users (their trial continues; billing
+    // switches to annual when it ends). Label mirrors onboard.js savePct (locked pricing).
+    var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
+    var cta = '';
+    if (!top) {
+      var lblKey = !paid ? 'choosePlan'
+                 : (tier === 'pro') ? 'switchAnnual'
+                 : (interval === 'monthly' || !interval) ? 'upgradeAnnual'
+                 : 'upgradePro';
+      cta = '<div class="sd-plan-cta">' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl(lblKey) + '</button>' +
+        '</div>';
+    }
+    return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
+        '<span class="sd-group-t">' + _sdBl('plan') + '</span>' +
+        '<div class="sd-row"><div class="sd-row-line">' +
+          '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('plan') + '</span></span>' +
+          '<span class="sd-row-val strong sd-plan-tier">' + _escHtml(_sdTierLabel(tier)) + '</span>' +
+          (chip || '') +
+        '</div></div>' +
+        cta +
+      '</div>';
+  }
+  // Fetch /api/me with the Supabase bearer, cache by user id, re-render once on arrival.
+  function _sdLoadPlan(u) {
+    var uid = (u && u.id) || null;
+    if (!uid) return;
+    if (_sdPlan && _sdPlanFor === uid) return;   // already have this user's plan
+    if (_sdPlanBusy) return;                       // a fetch is in flight
+    _sdPlanBusy = true;
+    // /api/me is served by the SAME origin (macro-api behind Caddy) on every
+    // mastermind-x.com host. window.MM_API points cross-subdomain to app. for other
+    // consumers, but app./api/me sends NO Access-Control-Allow-Origin → the browser
+    // silently blocked this read and the plan hung forever on "Loading your plan…".
+    // Talk same-origin here (guests/off-site keep the MM_API base).
+    var base = /(^|\.)mastermind-x\.com$/i.test(location.hostname || '') ? '' : (window.MM_API || '');
+    getSupabaseClient().then(function (sb) {
+      return sb ? sb.auth.getSession() : null;
+    }).then(function (res) {
+      var tok = res && res.data && res.data.session && res.data.session.access_token;
+      if (!tok) throw new Error('no-session');
+      return fetch(base + '/api/me', { headers: { Authorization: 'Bearer ' + tok } });
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error('me-' + (r && r.status));
+      return r.json();
+    }).then(function (j) {
+      _sdPlanBusy = false;
+      _sdPlan = j || {}; _sdPlanFor = uid;
+      if (_sdBuilt) _renderSDash();               // repaint with the real plan
+    }).catch(function () {
+      _sdPlanBusy = false;                          // leave the loading row; a later render retries
+    });
+  }
+  // (Upgrade POST moved into the onboard 'upgrade' sheet — see onboard.js doUpgrade.
+  //  The dashboard's plan CTA now opens that sheet via data-sd-cta="upgrade".)
+
   function _wireSDAccount(host, state, u) {
     _sdWireCta(host);
     if (state !== 'in') return;
+
+    // ---- plan: load it if cold. The upgrade CTA (data-sd-cta="upgrade") is wired
+    //      by _sdWireCta → _mmOpenOnboard('upgrade'); every lane lives in that sheet. ----
+    _sdLoadPlan(u);
 
     // inline-edit open/cancel
     host.querySelectorAll('[data-sd-edit]').forEach(function (b) {
@@ -2204,19 +2372,6 @@
     host.querySelectorAll('[data-sd-lang]').forEach(function (b) {
       b.addEventListener('click', function () { setLang(b.getAttribute('data-sd-lang')); });
     });
-    var lt = host.querySelector('#sd-live-toggle');
-    if (lt) lt.addEventListener('click', function () {
-      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
-      if (off) {
-        try { localStorage.removeItem('liveOff'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
-      } else {
-        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
-      }
-      _sdSyncLiveRow();
-    });
-    _sdSyncLiveRow();
   }
   function _wireSDSync(host) { _sdWireCta(host); }
 
@@ -2237,16 +2392,9 @@
       b.classList.toggle('active', b.getAttribute('data-sd-lang') === curLang());
     });
   }
-  // live-prices row: re-check availability + aria-checked from localStorage
-  function _sdSyncLiveRow() {
-    if (!_sdOverlay) return;
-    var row = _sdOverlay.querySelector('#sd-live-row'), t = _sdOverlay.querySelector('#sd-live-toggle');
-    if (row) row.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
-    if (t) {
-      var off = false; try { off = localStorage.getItem('liveOff') === '1'; } catch (e) {}
-      t.setAttribute('aria-checked', off ? 'false' : 'true');
-    }
-  }
+
+  // Live prices are always on now (the toggle was removed); heal any stored pause.
+  try { localStorage.removeItem('liveOff'); } catch (e) {}
 
   /* ---- open / close ------------------------------------------------------- */
   function _openSDash(section) {
@@ -2370,9 +2518,7 @@
     themeAuto:  ['Auto', '自动'],
     themeDark:  ['Dark', '深色'],
     fxOn:    ['On', '开'],
-    fxOff:   ['Off', '关'],
-    // Feature 7: live prices
-    liveP:   ['Live prices', '实时报价']
+    fxOff:   ['Off', '关']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -2553,12 +2699,6 @@
           '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span></span>' +
           '<span class="sr-ctrl" id="set-lang-slot"></span>' +
         '</div>' +
-        // Live prices row (hidden until LiveQuotes is available)
-        '<div class="settings-row" id="set-live-row" style="display:none">' +
-          '<span class="sr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>' +
-          '<span class="sr-main"><span class="sr-lbl" data-set="liveP"></span></span>' +
-          '<span class="sr-ctrl"><button type="button" class="set-toggle-btn" id="set-live-toggle" role="switch" aria-checked="true"><span class="set-toggle-knob"></span></button></span>' +
-        '</div>' +
       '</div>' +
       '<div class="settings-sec" id="set-acct-sec">' +
         '<div class="settings-sec-t"><span data-set="account"></span></div>' +
@@ -2666,8 +2806,8 @@
     var bSignin = pop.querySelector('#set-signin'), bSignup = pop.querySelector('#set-signup'),
         bSignout = pop.querySelector('#set-signout');
     if (_authEnabled) {
-      if (bSignin) bSignin.addEventListener('click', function () { close(); openAuthModal('signin'); });
-      if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
+      if (bSignin) bSignin.addEventListener('click', function () { close(); _mmOpenOnboard('signin'); });
+      if (bSignup) bSignup.addEventListener('click', function () { close(); _mmOpenOnboard('signup'); });
       if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
 
       /* ---- account management → the full settings dashboard -------------- */
@@ -2728,31 +2868,6 @@
     // keep the segment in sync when themechange fires (e.g. from legacy toggleTheme)
     document.addEventListener('themechange', function () { _syncThemeSegNow(); });
 
-    // ---- Feature 7: wire the Live-prices toggle (hub-optional) ---------------
-    var _liveRow = pop.querySelector('#set-live-row'), _liveToggle = pop.querySelector('#set-live-toggle');
-    function _updateLiveRow() {
-      if (!_liveRow) return;
-      _liveRow.style.display = (typeof window.LiveQuotes !== 'undefined') ? '' : 'none';
-    }
-    // Check after DOM ready (LiveQuotes may not be set yet at initSettings time)
-    document.addEventListener('DOMContentLoaded', function () { _updateLiveRow(); });
-    _updateLiveRow();
-    // Initial state from localStorage (liveOff='1' = paused)
-    function _liveOff() { try { return localStorage.getItem('liveOff') === '1'; } catch (e) { return false; } }
-    function _setLiveAria() {
-      if (_liveToggle) _liveToggle.setAttribute('aria-checked', _liveOff() ? 'false' : 'true');
-    }
-    _setLiveAria();
-    if (_liveToggle) _liveToggle.addEventListener('click', function () {
-      if (_liveOff()) {
-        try { localStorage.removeItem('liveOff'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.resume === 'function') window.LiveQuotes.resume();
-      } else {
-        try { localStorage.setItem('liveOff', '1'); } catch (e) {}
-        if (window.LiveQuotes && typeof window.LiveQuotes.pause === 'function') window.LiveQuotes.pause();
-      }
-      _setLiveAria();
-    });
 
     // ---- Feature 9: sign-in link wiring (hub-only, hub-signin element) -------
     function _initHubSignin() {
@@ -2776,12 +2891,10 @@
       if (window.MDXAuth && typeof window.MDXAuth.onChange === 'function') {
         window.MDXAuth.onChange(function (user) { _updateSigninLink(user); });
       }
-      // click: open settings pane scrolled/focused to the ACCOUNT section
+      // click: open the landing-native onboarding sheet IN PLACE (never app.*).
       signinLink.addEventListener('click', function (e) {
         e.preventDefault();
-        open();
-        var acctSec = pop.querySelector('#set-acct-sec');
-        if (acctSec) { setTimeout(function () { acctSec.scrollIntoView({ block: 'nearest' }); var btn = acctSec.querySelector('button'); if (btn) btn.focus(); }, 60); }
+        _mmOpenOnboard('signin');
       });
       // initial state
       _updateSigninLink(window.MDXAuth.user ? window.MDXAuth.user() : null);

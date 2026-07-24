@@ -2387,214 +2387,6 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
-def _leadership_board_view() -> dict | None:
-    """Assemble the MLC-W1 Leadership Board payload (display-only, MLC-R2).
-
-    Joins three sources — all DISPLAY-ONLY; no new scoring/ranking math:
-      1. data/mag7_regime/latest.json   — M7C cohort state + per-member fields
-      2. site/leaderradar/radar.json    — LRV lifecycle state per name (rows[].state)
-      3. data/earnings/earnings.parquet — next_date / as_of for earnings chip (MLC-R10)
-      4. site/sectordata/sector_central.json — sector RS ranks (momentum.rs_rank/lead)
-
-    Returns None on any hard failure (panel fails open / silent).
-    Individual per-name fields are None when absent (Jinja guards handle nulls).
-    Never raises — additive, display-tier, never fatal to the build.
-    """
-    try:
-        import datetime
-
-        # ── 1. M7C cohort payload (required: if absent, skip whole panel) ────────
-        m7_path = config.data_dir() / "mag7_regime" / "latest.json"
-        if not m7_path.exists():
-            return None
-        m7 = json.loads(m7_path.read_text(encoding="utf-8"))
-        if not m7.get("trend_state"):
-            return None  # degraded artifact
-
-        M7_SYMS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA"]
-
-        # ── 2. LRV lifecycle states (optional — fail-open per name) ─────────────
-        # Source: site/leaderradar/radar.json (schema leader_radar.v1), rebuilt by
-        # build_leader_radar every engine run — rows[].state IS the hysteresis-
-        # confirmed lifecycle state (the builder writes "state": confirmed_state).
-        # The prior source (the leader_radar state-history parquet store) sat
-        # frozen at its 2026-07-11 seed (nightly append env-gated off pre-#2598,
-        # then dtype-crashed) and this join had no freshness gate — silently-
-        # stale reads. (Store named without its path literal on purpose: the
-        # synapse read-gate scans path literals and would flag a phantom read.)
-        # Gate mirrors the earnings block below: absent / self-reported stale /
-        # as_of older than 7 calendar days → empty map → every tile renders the
-        # plain-word null ("no trend read") and the footnote discloses why
-        # (lifecycle_stale). Fail-open, display-only, never fatal (MLC-R2).
-        lifecycle_by_sym: dict[str, str] = {}
-        lifecycle_stale = True  # honest default: no fresh radar → disclose
-        try:
-            _cfg_paths = config.load().get("paths", {})
-            _site_root = (
-                Path(_cfg_paths["site"]) if _cfg_paths.get("site")
-                else Path(__file__).parent.parent / "site"
-            )
-            rr_path = _site_root / "leaderradar" / "radar.json"
-            if rr_path.exists():
-                rr_doc = json.loads(rr_path.read_text(encoding="utf-8"))
-                rr_age = _asof_age_days(rr_doc.get("as_of"))
-                if not rr_doc.get("stale") and rr_age is not None and rr_age <= 7:
-                    lifecycle_stale = False
-                    for r in (rr_doc.get("rows") or []):
-                        sym = r.get("ticker")
-                        if sym in M7_SYMS and r.get("state"):
-                            lifecycle_by_sym[sym] = str(r["state"])
-        except Exception as _le:  # noqa: BLE001
-            log.warning("leadership_board: lifecycle load failed (%s)", _le)
-
-        # ── 3. Earnings chip (MLC-R10: disclosure only, not a gate) ─────────────
-        earnings_by_sym: dict[str, dict] = {}
-        try:
-            import pandas as pd
-            ep = config.data_dir() / "earnings" / "earnings.parquet"
-            if ep.exists():
-                edf = pd.read_parquet(ep)
-                today = datetime.date.today()
-                for sym in M7_SYMS:
-                    if sym not in edf.index:
-                        continue
-                    row = edf.loc[sym]
-                    nd = row.get("next_date")
-                    ao = row.get("as_of")
-                    if pd.isna(nd) or nd is None:
-                        continue
-                    # as_of freshness gate: stale store must not show wrong dates
-                    if ao is not None and not pd.isna(ao):
-                        try:
-                            ao_str = str(ao)[:10]  # ISO date prefix
-                            ao_date = datetime.date.fromisoformat(ao_str)
-                            stale = (today - ao_date).days > 7
-                        except Exception:  # noqa: BLE001
-                            stale = True
-                    else:
-                        stale = True
-                    if stale:
-                        continue
-                    try:
-                        next_dt = datetime.date.fromisoformat(str(nd)[:10])
-                        days_until = (next_dt - today).days
-                        if 0 <= days_until <= 14:
-                            earnings_by_sym[sym] = {
-                                "next_date": str(nd)[:10],
-                                "days_until": days_until,
-                            }
-                    except Exception:  # noqa: BLE001
-                        pass
-        except Exception as _ee:  # noqa: BLE001
-            log.warning("leadership_board: earnings load failed (%s)", _ee)
-
-        # ── 4. Sector RS strip from sector_central.json (already written) ────────
-        sector_rs: list[dict] = []
-        try:
-            _cfg_paths = config.load().get("paths", {})
-            sc_path = Path(_cfg_paths.get("site", "site")) / "sectordata" / "sector_central.json"
-            if not sc_path.exists():
-                # fallback: resolve relative to repo root
-                sc_path = Path(__file__).parent.parent / "site" / "sectordata" / "sector_central.json"
-            if sc_path.exists():
-                sc_doc = json.loads(sc_path.read_text(encoding="utf-8"))
-                raw_sectors = sc_doc.get("sectors") or []
-                for sec in raw_sectors:
-                    mom = sec.get("momentum") or {}
-                    rr = mom.get("rs_rank")
-                    lead = mom.get("lead")
-                    if rr is None:
-                        continue  # skip if rank absent
-                    sector_rs.append({
-                        "ticker": sec.get("ticker", ""),
-                        "name": sec.get("name", ""),
-                        "name_zh": sec.get("name_zh", ""),
-                        "rs_rank": rr,
-                        "lead": lead,  # "leading" / "mid-pack" / "lagging"
-                        "conviction_en": (sec.get("conviction") or {}).get("label_en"),
-                        "conviction_zh": (sec.get("conviction") or {}).get("label_zh"),
-                    })
-                sector_rs.sort(key=lambda x: x["rs_rank"])
-        except Exception as _se:  # noqa: BLE001
-            log.warning("leadership_board: sector RS load failed (%s)", _se)
-
-        # ── 5. Enrich per-member tiles with lifecycle + earnings ─────────────────
-        members_out = []
-        for m in (m7.get("members") or []):
-            sym = m.get("sym", "")
-            lifecycle = lifecycle_by_sym.get(sym)  # None if absent
-            earn = earnings_by_sym.get(sym)         # None if absent / stale / >14d
-            members_out.append({**m, "lifecycle": lifecycle, "earnings": earn})
-
-        # ── "The Big Seven" rebuild — display ARITHMETIC over the raw returns the
-        #    payload already carries. No new signal/score: sort by the week move so
-        #    the green/red split reads before any word; the cohort verdict is a
-        #    literal count of the up rows, so it cannot contradict the tape.
-        def _r5key(mm):
-            v = mm.get("r5")
-            return v if isinstance(v, (int, float)) else -9.99
-        members_out.sort(key=_r5key, reverse=True)
-        up_count = sum(1 for mm in members_out
-                       if isinstance(mm.get("r5"), (int, float)) and mm["r5"] > 0)
-        n_total = sum(1 for mm in members_out
-                      if isinstance(mm.get("r5"), (int, float))) or len(members_out)
-        # Stance DERIVED from the visible up-count by a fixed, disclosed rule.
-        # De-escalatory by construction: caps at "In favour" (never "Act"/"Buy"),
-        # and a mostly-red tape can only read "Watch"/"Stand aside". This is display
-        # arithmetic, not an originated signal (house epistemics).
-        if up_count >= 5:
-            stance_en, stance_zh = "In favour", "有利"
-        elif up_count >= 3:
-            stance_en, stance_zh = "Watch — don't chase", "观望 — 勿追"
-        else:
-            stance_en, stance_zh = "Stand aside", "观望为主"
-        # Trading-day staleness (weekend-false-alarm-proof) + a plain close-date
-        # label ("Fri Jul 17") that names the last print instead of doing age math.
-        sess_lag = _asof_session_lag(m7.get("as_of"))
-        _days_en = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        _mons_en = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        _wd_zh = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-        try:
-            # NB: `datetime` is the *module* inside this function (local `import
-            # datetime` above shadows the top-level class import) — use datetime.date.
-            _ad = datetime.date.fromisoformat(str(m7.get("as_of"))[:10])
-            as_of_label_en = f"{_days_en[_ad.weekday()]} {_mons_en[_ad.month]} {_ad.day}"
-            as_of_label_zh = f"{_wd_zh[_ad.weekday()]} {_ad.month}月{_ad.day}日"
-        except Exception:  # noqa: BLE001 — display-only, never fatal
-            as_of_label_en = str(m7.get("as_of") or "")
-            as_of_label_zh = as_of_label_en
-
-        return {
-            "as_of": m7.get("as_of"),
-            "age_days": _asof_age_days(m7.get("as_of")),
-            "sessions_stale": sess_lag,       # trading-day lag (0 = fresh; weekend-safe)
-            "up_count": up_count,             # names up over the last 5 sessions
-            "n_total": n_total,               # names with a week return
-            "stance_en": stance_en,           # count-derived, de-escalatory
-            "stance_zh": stance_zh,
-            "as_of_label_en": as_of_label_en,  # "Fri Jul 17"
-            "as_of_label_zh": as_of_label_zh,  # "周五 7月17日"
-            "lifecycle_stale": lifecycle_stale,
-            "trend_state": m7.get("trend_state"),
-            "run": m7.get("run") or {},
-            "generals": m7.get("generals") or {},
-            "k7": m7.get("k7") or {},
-            "cw": m7.get("cw") or {},
-            "ew": m7.get("ew") or {},
-            "members": members_out,
-            "sector_rs": sector_rs,
-            # MLC-W2a panel-merge fields (threaded from m7 json, display-only)
-            "structure": m7.get("structure") or {},
-            "flow": m7.get("flow") or {},
-            "mags": m7.get("mags") or {},
-            "weights_basis": m7.get("weights_basis") or "polygon_mktcap",
-        }
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("leadership_board_view failed (%s)", e)
-        return None
-
-
 def _asof_age_days(asof: str | None) -> int | None:
     """Calendar days between an ISO as_of date and today (UTC). None on any parse
     problem. Drives the plain-word staleness stamp on the Mag 7 / Leadership panels
@@ -3464,7 +3256,7 @@ def _plans_view_model() -> dict:
         m_cents = int(prices.get("monthly", {}).get("unit_amount", 0))
         a_cents = int(prices.get("annual", {}).get("unit_amount", 0))
         # Per-month equivalents. Dollars are whole here because the catalog prices
-        # are round ($59/$89 monthly; $588/$828 annual → $49/$69 per month) — round()
+        # are round ($69/$99 monthly; $588/$828 annual → $49/$69 per month) — round()
         # keeps the badge honest if a future price isn't a clean multiple of 12.
         monthly_pm = round(m_cents / 100)
         annual_pm = round(a_cents / 12 / 100)
@@ -4448,6 +4240,8 @@ def main() -> int:
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "illus.css", "illus.js",
                   "account.js",
+                  # landing onboarding sheet (paired templates/ -> site/ byte copy)
+                  "onboard.js", "onboard.css",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
                   "aibrief.js", "stockbrief.js", "aidesk_lean.js",
@@ -5200,7 +4994,6 @@ def main() -> int:
         policy_lever=_policy_lever_view(),  # Policy-Shock W2-F lever card (display-only, PS-R3)
         flip_confirmation=_flip_confirmation_view(),  # T+1 sector-flip confirmation lens (Policy-Shock W1-C, display-only)
         shock_state=_dash_shock_state,  # policy-shock de-escalation (PS-R3, display-only)
-        leadership_board=_leadership_board_view(),  # MLC-W1 — LIVE on us_stocks.html (rendered by dashboard.html.j2 in mode=='stocks'). (Earlier "removed from all pages 2026-07-15" note was stale — the stocks-mode render was retained.) Consumes mag7_regime / leaderradar / earnings; audit those synapse edges before deleting.
         intl_cascade=_intl_cascade,          # B1a: n_alert/n_total/alerts/asof from intl forward logs (display-only)
         intl_spillover=_intl_spillover,      # B1c: two-tier spillover state from intl_risk/latest.json (display-only)
         global_leg_lag_days=_global_leg_lag_days,  # B1d: ETF parquet lag vs radar asof in business days (display-only)

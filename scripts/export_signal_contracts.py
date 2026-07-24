@@ -163,12 +163,18 @@ def build_golden_signals() -> dict:
 # R4 contract governance (NW Rails PR-7):
 #   schema_version  — semver string; bump minor when fields are added (backwards-compatible),
 #                     bump major when fields are removed or renamed (breaking change).
-#   schema_fields   — sorted list of ACTUAL top-level JSON keys in the artifact.
+#   schema_fields   — sorted list of ALWAYS-PRESENT (required) top-level JSON keys.
 #                     For list-valued artifacts where kind implies items (e.g. board),
 #                     schema_item_fields lists the item-level keys (buy[] / reduce[] items).
 #                     scripts/check_contract_drift.py compares these against the live artifact
 #                     and exits nonzero on divergence — use --warn-only during the ratchet
 #                     period, then flip to hard-fail after one clean week (see that script).
+#   optional_fields — sorted list of CONDITIONAL top-level keys the builder emits only when
+#                     a data condition holds (present some nights, absent others by design).
+#                     Documented for consumers but EXCLUDED from drift (present-or-absent is
+#                     fine); a conditional field belongs here, NOT in schema_fields, or it
+#                     flaps the drift lane red↔green with the data. A key in NEITHER list is
+#                     undocumented and still trips `added` drift.
 #   Per-wildcard artifacts (per_stock_intel, per_stock_signal): schema is derived from a
 #   representative sample; all files in the same kind share the schema.
 #
@@ -258,10 +264,20 @@ ARTIFACT_MANIFEST = [
      "note": "Prophet China board; CN calendar has more holidays → wider cadence"},
     {"artifact": "site/factordata/canada_standouts.json",
      "kind": "board",
-     "schema_version": "1.1.0",
+     "schema_version": "1.2.0",
      "schema_fields": [
-         "as_of", "branch", "buy", "confluence", "dispersion_regime", "eligible",
-         "laggards", "rank_basis", "sector_concentration", "universe",
+         "as_of", "branch", "buy", "confluence", "eligible",
+         "laggards", "rank_basis", "universe",
+     ],
+     "optional_fields": [
+         # dispersion_regime — build_canada_library.py:1136 `if disp_regime:` (only when
+         # the selection-regime dispersion dial computes). sector_concentration —
+         # build_canada_library.py:700 `if _sc:` (only when >60% of the board clusters in
+         # one sector). Both are conditional-by-design: present on concentrated/regime-on
+         # nights, absent otherwise. Kept OUT of schema_fields so the drift lane does not
+         # flap red↔green with the tape (were wrongly required in 1.1.0 / #3289 — that lane
+         # went red on the first diversified-board nightly after).
+         "dispersion_regime", "sector_concentration",
      ],
      "schema_item_fields": [
          "align_tier", "alpha", "alpha_entry", "board_pos", "conviction", "dir",
@@ -273,7 +289,27 @@ ARTIFACT_MANIFEST = [
      "expected_max_age_td": 2,
      "as_of_field": "as_of",
      "consumers": ["bot:canada_book"],
-     "note": "Prophet Canada board"},
+     "note": ("Prophet Canada board. dispersion_regime + sector_concentration are "
+              "conditional (optional_fields) — bot:canada_book must treat both as "
+              "may-be-absent, unchanged from prior behaviour (they were always emitted "
+              "conditionally; 1.2.0 only corrects the contract classification)")},
+    {"artifact": "site/data/portfolio_ctx.json",
+     "kind": "context",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "asof", "built", "coverage", "gate_go", "regime", "schema", "sectors",
+         "tickers", "v",
+     ],
+     # W0 stub is NOT nightly-wired yet (that lands in W1 → daily.yml). Set high so the
+     # committed stub cannot rot CI red before W1; tighten to 2 when nightly-wired (W1).
+     "expected_max_age_td": 30,
+     "as_of_field": "asof",
+     "consumers": ["terminal:portfolio"],
+     "note": ("Portfolio-Aware Intelligence per-ticker context (charter: "
+              "research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §2). Re-expresses "
+              "existing nightly reads keyed by ticker; the terminal Portfolio page "
+              "composes each user's brief on demand off the render path. W0 = 3-ticker "
+              "stub; W1 wires the full-universe nightly bake.")},
     {"artifact": "site/regime_timeline.json",
      "kind": "regime",
      "schema_version": "1.0.0",
