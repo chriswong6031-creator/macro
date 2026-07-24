@@ -1,17 +1,37 @@
-# WRI W2 — design spec of record (pinned)
+# WRI W2 — design spec of record (pinned, v2)
 
-Date: 2026-07-24. Parent: `WATCHLIST_RISK_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` (§0 gates bind).
-Pinned artifact: **`mockups/wri/watchlist_risk_mockup.html`** — the exact markup/CSS W3 copies.
-Reference crops: `mockups/refs/wri/01–05` (dark stress/calm, zh, light, mobile).
-Verified live in preview 2026-07-24 (all five variants). Design decided per DESIGN_DOCTRINE +
-frontend-design skill in the Fable main loop; W3 is implementation only — deviations from this
-spec come back here first.
+Date: 2026-07-24 (v2 same day — operator feedback: "more premium, match macro.html", braid v1
+read as "cartoon noodles"). Parent: `WATCHLIST_RISK_INTELLIGENCE_MASTERPLAN_BY_FABLE.md`
+(§0 gates bind). Pinned artifact: **`mockups/wri/watchlist_risk_mockup.html`** — the exact
+markup/CSS W3 copies. Reference crops: `mockups/refs/wri/01–05` (dark stress/calm, zh, light,
+mobile). Verified live in preview (all five variants + calm lens + console-clean). Design
+decided per DESIGN_DOCTRINE + frontend-design skill in the Fable main loop; W3 is
+implementation only — deviations come back here first.
 
 ## 1. The design in one line
 
-The page's thesis is a verdict — "Your 8 names move as 2 bets" — proven by the **bets braid**
-(signature element): one thread per holding, threads of the same bet merging into strands whose
-thickness is risk contribution; a two-lens toggle re-braids it for calm tape vs selloffs.
+The page's thesis is a verdict — "Your 8 names move as 2 bets" — set in macro.html's
+gradient-ink type and proven by the **bets patch-bay** (signature element): one hairline
+multi-filament cord per holding dropping into a bus rail, cords of the same bet landing on a
+shared segment; a two-lens toggle re-patches it for calm tape vs selloffs, and re-words the
+verdict ("Calm days: 6 groups. Selloffs: 2 bets").
+
+## 1b. macro.html idiom ported (v2 — the premium layer)
+
+- **Aurora backdrop**: fixed blurred radial washes (violet .10 + green .07; lighter in light
+  theme), z-0 behind a z-1 content wrap — the mx5 atmosphere.
+- **Hairline tiles**: cards = 1px `color-mix(line 72%, transparent)` border, translucent panel
+  fill, 12px radius, hover lift — the ms-sig anatomy; no fat borders anywhere.
+- **Gradient-ink verdict** (the macro `v-thesis` treatment): h2 clamp(19–24px)/800/-.02em,
+  `background-clip:text` gradient from the book-state hue to an info blend; hue driven by
+  `data-state` on the hero (ok/tilt/conc/one). State chip = mono letterspaced hairline chip
+  with glowing dot in the same hue.
+- **Mono micro-labels**: every eyebrow, section head, table header, tick, state token, chip
+  label in `--font-mono` 10–11px uppercase letterspaced (.10–.16em) — numerals tabular mono.
+  Typeface stays the house pair (self-hosted Inter + SF Mono stack) — premium comes from
+  treatment (gradient ink, weight discipline, letterspacing), not a new font download.
+- **Bars**: 7px tracks `rgba(255,255,255,.07)` (light: `rgba(10,25,40,.08)`), fills
+  `linear-gradient(90deg, hue@40% → hue)` — the mx5-factor-bar idiom.
 
 ## 2. Page order (top → bottom)
 
@@ -53,20 +73,31 @@ Weight plumbing (`FX.setAutoWeights` / `mdash.fx_weights.v1` fallback) is reused
 - **Empty/thin:** <2 weighted names → hero collapses to one invitation line (empty state is
   an invitation, not a mood).
 
-## 5. Braid spec (signature)
+## 5. Patch-bay spec (signature, v2 — replaces the noodle braid)
 
-- SVG viewBox `0 0 1000 208`; top ticks y=14; threads cubic `M x,26 C x,97 cx,97 cx,168`;
-  strand bars y=170 h=7; labels y=186 (stagger +13 when strand <96px and odd index).
-- Thread width `clamp(2, 34·√|share|, 15)` where share = position risk contribution;
-  **negative contributors** (hedges) render dashed + `⇄` suffix on tick and label.
-- Clusters = connected components of the twin graph (ρ ≥ 0.70) under the active lens;
-  singleton labels = plain-word name (Gold/黄金) or ticker; multi-name strands get a bet name
-  from the shared dominant factor ("Growth/Tech bet / 成长/科技押注").
-- **No numbers on the braid** (decided in critique: strand % vs factor % were two different
-  measures dressed alike — an honesty defect). Numbers live in sub-cards only.
-- Draw-in animation 0.7s staggered 55ms, `prefers-reduced-motion` → static. Lens switch
-  re-renders (paths transition). `role="img"` + aria-label summarising clusters; bucket-list
-  fallback ≤560px (swatch + bet name + member tickers, singleton dedupe).
+- SVG viewBox `0 0 1000 192`. Ticks (mono 10.5px) y=12; faint dotted vertical guides
+  (`stroke:var(--line)`, dash `1 6`, .55) per name from y=20 to the rail.
+- **Cords, not strokes**: each holding = a bundle of 1.25px hairline filaments,
+  `count = min(6, 1 + round(|share|·14))` spaced 2.6px — weight is conveyed by filament
+  count at hairline weight, never by fat strokes. Hedges: dashed `5 4` + `⇄` on tick/label.
+- Geometry: drop vertical `M x,24 L x,92`, then ONE late tight cubic into the rail landing —
+  engineering bend, no S-swoosh. Landings distribute along the segment
+  (`bx = seg.x + seg.w·(k+.5)/n`) so member cords fan into their bus like cables.
+- **Bus rail**: full-width 1px hairline at y=150; each cluster = a 2.5px segment on it, length
+  ∝ cluster risk share (min 56px, renormalized), square end-ticks ±4px. **Only the dominant
+  cluster carries saturated hue + drop-shadow glow**; all other segments/cords lean
+  `color-mix(hue ~50%, muted)` — restraint is the premium.
+- Labels: mono 10px uppercase .1em under segments (stagger +13 when <96px & odd); dominant
+  label ink-bright, rest muted. **No numbers on the braid** (v1 critique ruling stands).
+- Clusters = connected components of the twin graph (ρ ≥ 0.70) under the active lens.
+- Motion: draw-in ONLY on first paint (`.animate` class removed after ~1.4s) — lens/lang
+  re-renders swap instantly (replay jank + mid-draw screenshots were a v1 bug); hedge cords
+  exempt from the draw trick (dasharray conflict); `prefers-reduced-motion` → static.
+- `role="img"` + aria-label summarising clusters; bucket-list fallback ≤560px (hairline rows:
+  swatch + bet name + member tickers, singleton dedupe).
+- **Lens-aware verdict** (§4) is DEMONSTRATED in the mockup: `setLens` swaps the h2 wording
+  (stress: "Your 8 names move as 2 bets" / calm: "Calm days: 6 groups. Selloffs: 2 bets");
+  the state chip stays pinned to the stress read.
 
 ## 6. Sub-cards (L2)
 
