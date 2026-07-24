@@ -465,6 +465,32 @@ def current_statuses(root: Path | str | None = None) -> dict[str, str]:
     return fold_state(root)["status"]
 
 
+def posted_today_by_account(state: dict, today: str) -> dict[str, int]:
+    """Ledger-based posts-today per account — the Sentinel daily-cap counter.
+
+    Nightly content-plan items carry the GENERATION day's as_of (content_studio
+    stamps the nightly run date) and post the NEXT trading day, so counting
+    as_of == today undercounts. Count instead by the last ledger row's `at`
+    date: an item whose folded status is posted/posting AND whose last
+    transition happened today consumed a posting slot today ("posting" is
+    in-flight — it likely reached the network, so it holds its slot).
+
+    `state` is a fold_state() dict; `today` is "YYYY-MM-DD".
+    """
+    items = state.get("items") or {}
+    last = state.get("last") or {}
+    status = state.get("status") or {}
+    out: dict[str, int] = {}
+    for iid, it in items.items():
+        if status.get(iid, "queued") not in {"posted", "posting"}:
+            continue
+        at = str((last.get(iid) or {}).get("at") or "")
+        if at[:10] == today:
+            acct = it.get("account", "")
+            out[acct] = out.get(acct, 0) + 1
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Enqueue
 # ─────────────────────────────────────────────────────────────────────────────
@@ -542,12 +568,17 @@ def transition(
     root: Path | str | None = None,
     note: str | None = None,
     receipt: dict | str | None = None,
+    now: datetime | None = None,
     _state: dict | None = None,
 ) -> bool:
     """Append a status transition row to status_ledger.jsonl.
 
     Returns False (with log.warning) if the item is unknown or the transition
     is illegal from the current folded status. Never raises.
+
+    now: stamps the row's `at` (default wall-clock UTC). Tests inject a fixed
+    now so posted_today_by_account() — which counts by `at` date — stays
+    deterministic; production callers leave it unset.
 
     _state (internal): a preloaded fold_state() snapshot for batch callers;
     kept current on success so N sequential transitions fold once, not N times.
@@ -568,7 +599,7 @@ def transition(
                 "id": item_id,
                 "from": current,
                 "to": to,
-                "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "at": (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "actor": actor,
                 "note": note,
                 "receipt": receipt,

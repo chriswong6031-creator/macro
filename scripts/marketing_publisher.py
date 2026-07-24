@@ -18,8 +18,10 @@ Usage:
 
 Guards (ALL must pass or the runner no-ops with a clear log line):
   * kill-switch  sentinel.publish_enabled() is true AND --live was passed
-  * per-account daily cap  outbox.effective_cap(cfg), counting items already
-                           `posted` today (as_of == today)
+  * per-account daily cap  outbox.effective_cap(cfg), counted ledger-based via
+                           outbox.posted_today_by_account (folded status
+                           posted/posting whose last transition landed today —
+                           nightly items post the day AFTER their as_of)
   * per-item     social_publisher.validate_postable() (280 cap, link policy,
                  empty text)
 
@@ -356,15 +358,11 @@ def main(argv: list[str] | None = None) -> int:
             "item %s is stuck in 'posting' (in-flight from a prior run) — "
             "reporting, NOT reposting (no-double-post)", iid)
 
-    # ── Per-account cap accounting: count items already posted TODAY ─────────
+    # ── Per-account cap accounting: ledger-based posts-today ─────────────────
+    # NOT as_of-based: nightly items post the day AFTER their as_of, so as_of
+    # counting misses them — see outbox.posted_today_by_account.
     today = now.strftime("%Y-%m-%d")
-    posted_today: dict[str, int] = {}
-    for iid, s in statuses.items():
-        if s == "posted" and iid in items_by_id:
-            it = items_by_id[iid]
-            if it.get("as_of") == today:
-                acct = it.get("account", "")
-                posted_today[acct] = posted_today.get(acct, 0) + 1
+    posted_today: dict[str, int] = _outbox.posted_today_by_account(state, today)
 
     # ── Publish-time mover/theme generation (honest live tape posts) ─────────
     # mover/theme_list posts are generated NIGHTLY but never emitted (a "+7%
@@ -689,11 +687,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                  if s == "posting" and i in items_by_id and _acct_ok(items_by_id[i])]
 
         today = now.strftime("%Y-%m-%d")
-        posted_today: dict[str, int] = {}
-        for iid, s in statuses.items():
-            if s == "posted" and iid in items_by_id and items_by_id[iid].get("as_of") == today:
-                acct = items_by_id[iid].get("account", "")
-                posted_today[acct] = posted_today.get(acct, 0) + 1
+        posted_today: dict[str, int] = _outbox.posted_today_by_account(state, today)
 
         # Auto-approve preview (always dry here → never mutates). Honors both the
         # global flag AND the scoped publish.auto_approve_kinds exception, so the
