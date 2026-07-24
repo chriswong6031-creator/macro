@@ -159,8 +159,15 @@ def test_cutover_guards_keep_manual_recovery():
 def test_caddy_serves_live_store_without_cache():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "Caddyfile").read_text()
-    assert "@vps_live" in text
-    assert "handle /live/*" in text
+    assert "@vps_public_quote" in text
+    assert "@vps_external" in text
+    assert "handle /live/quotes.json" in text
     assert "root * /var/lib/macro-live/public" in text
     assert 'Cache-Control "no-store"' in text
-    assert "not path /live/* /marketdata/sp500_heatmap.json" in text
+    # Only the reviewed quote snapshot bypasses auth. All other external live
+    # artifacts must be selected from inside the fail-closed asset route.
+    assert "handle /live/*" not in text
+    protected = text[text.index("handle @reg_asset {") : text.index("@gate_html {")]
+    assert "rewrite /api/regwall/check" in protected
+    assert "rewrite /api/paywall/check" in protected
+    assert "handle @vps_external" in protected

@@ -81,6 +81,10 @@ Caddy serves external files from `/var/lib/macro-live/public` with `no-store`;
 the sibling state/data directories are not web-addressable. Existence matchers
 fall back to the last `/opt/macro/site.served` copy during installation or an
 individual artifact cold start, so merging the route cannot create a live-data 404.
+Only the reviewed `/live/quotes.json` snapshot is public. Other `/live/*` files
+and the heatmap pass the existing registration and entitlement checks before
+Caddy selects an external file; the live plane does not widen the static-access
+boundary.
 `/marketdata/sp500_heatmap.json` is the one exact legacy path overlaid from the
 same live store. Everything else continues to come from `/opt/macro/site.served`.
 
