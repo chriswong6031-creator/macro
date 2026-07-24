@@ -31,6 +31,8 @@
   var SS_STASH = "mm.onboardLanding";        // per-tab wizard stash (this surface)
   var LS_PENDING_PREFS = "mm.pendingPrefs";  // SAME key the Terminal applies on first sign-in
   var LS_ONBOARD_RESUME = "mm.onboardResume";// Google-OAuth round-trip stash (matches terminal oauth.ts)
+  var SS_ME = "mm.me";                        // /api/me cache (60s) — shared by upgrade mode + auth chrome
+  var ME_TTL = 60000;                         // 60s
   var STRIPE_JS = "https://js.stripe.com/v3";
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
@@ -195,6 +197,42 @@
     openDashboard:["Open the dashboard", "打开仪表盘"],
     openTerminal: ["Open the Terminal →", "打开 Terminal →"],
 
+    // ── upgrade mode (post-login monetization sheet) ──
+    upTitle:      ["Upgrade your desk", "升级你的台席"],
+    upLoad:       ["Loading your plan…", "正在加载你的方案…"],
+    upErr:        ["We couldn't load your plan. Please try again.", "无法加载你的方案，请重试。"],
+    upRetry:      ["Try again", "重试"],
+    // free → start a trial
+    upFreeSub:    ["Start a 7-day free trial of Insider or Pro — your card starts the trial and we tell you exactly when the first charge lands.", "开启 Insider 或 Pro 的 7 天免费试用——绑卡即开始试用，我们会明确告知首次扣款时间。"],
+    // annual-discount subheads
+    upToAnnualSub:["Switch to annual and save up to " + bestSavePct() + "%.", "切换为年付，最高可省 " + bestSavePct() + "%。"],
+    upProAnnualSub:["Move up to Pro Annual — everything in Pro, at the lowest per-month price.", "升级到 Pro 年付——Pro 全部功能，月均价格最低。"],
+    // lane cards
+    laneInsAnnual:["Insider Annual", "Insider 年付"],
+    laneProMonthly:["Pro Monthly", "Pro 月付"],
+    laneProAnnual:["Pro Annual", "Pro 年付"],
+    laneInsAnnualWho:["Your desk, billed yearly — same features, lower monthly price.", "你的台席，按年结算——功能不变，月均更低。"],
+    laneProMonthlyWho:["Every Pro desk and report, month to month.", "全部 Pro 台席与报告，按月付。"],
+    laneProAnnualWho:["Everything in Pro at the best price we offer.", "以我们最优的价格获得 Pro 全部功能。"],
+    laneBilledAnnual:["/mo billed annually", "/月 · 按年结算"],
+    laneBilledMonthly:["/mo", "/月"],
+    laneSave:     ["SAVE __P__%", "省 __P__%"],
+    lanePopular:  ["MOST POPULAR", "最受欢迎"],
+    laneProAnnualPitch:["$__A__/yr instead of $__M__ — save __P__%.", "$__A__/年，而非 $__M__——省 __P__%。"],
+    // inline confirm
+    upConfirmProrate:["You'll be charged the prorated difference now.", "现在将按比例向你收取差额。"],
+    upConfirmTrial:["Your trial continues — billing switches when it ends.", "试用继续——结算将在试用结束时切换。"],
+    upConfirmGo:  ["Confirm upgrade", "确认升级"],
+    upConfirmGoBusy:["Upgrading…", "正在升级…"],
+    // best-plan panel
+    upBestH:      ["You're on the best plan.", "你已在最优方案。"],
+    upBestS:      ["Pro Annual is our top tier — every desk, report and dive is already yours.", "Pro 年付是我们的最高方案——全部台席、报告与深度分析均已包含。"],
+    // success panel
+    upDoneH:      ["You're upgraded.", "已升级完成。"],
+    upDonePlan:   ["You're now on __N__.", "你现在使用 __N__。"],
+    upDoneCharged:["Charged today: $__T__.", "今日扣款：$__T__。"],
+    upDoneRenew:  ["Renews __D__.", "续订日 __D__。"],
+
     goBack:       ["Go back", "返回"],
     closeLbl:     ["Close", "关闭"],
     dialogLbl:    ["Onboarding", "引导"]
@@ -209,7 +247,9 @@
     firstName: "", lastName: "", email: "", password: "",
     prefs: { market_focus: [], trade_types: [], theme_pref: "auto" },
     plan: "pro", period: "annual",
-    confirmPending: false, trialActive: false, trialEnd: null
+    confirmPending: false, trialActive: false, trialEnd: null,
+    // upgrade mode (post-login monetization sheet)
+    pendingUpgrade: false, upgradeOpts: null, me: null
   };
 
   // ── stash (per-tab, password never persisted) ──────────────────────────────
@@ -253,6 +293,18 @@
   }
   function authEnabled() { return !!(window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()); }
   function apiBase() { return (window.MM_API || "").replace(/\/+$/, ""); }
+  // Cheap signed-in sniff without loading theme.js (mirrors theme.js _hasSessionCookie):
+  // an `sb-…-auth-token` or a chunk `…-auth-token.0` cookie. Guests pay zero cost.
+  function hasSessionCookie() {
+    try {
+      var parts = String(document.cookie || "").split(";");
+      for (var i = 0; i < parts.length; i++) {
+        var name = parts[i].split("=")[0].trim();
+        if (/^sb-.*-auth-token(\.\d+)?$/.test(name)) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
 
   // ── DOM refs (built lazily on first open) ──────────────────────────────────
   var el = {};   // { scrim, sheet, steps, body, foot, ... }
@@ -381,9 +433,12 @@
       1: ["paneAccountH", "paneAccountS"], 2: ["panePrefsH", "panePrefsS"],
       3: ["planePlanH", "planePlanS"], 4: ["paneBillH", "paneBillS"], 5: ["paneDoneH", "paneDoneS"]
     };
-    var m = map[S.step] || map[1];
+    // upgrade mode borrows the billing pane copy ("7 days free · cancel in one click")
+    var m = (S.mode === "upgrade") ? ["paneBillH", "paneBillS"] : (map[S.step] || map[1]);
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
     el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
+    // the assembly card (name/email/markets/plan) is wizard-only; hide it in upgrade mode
+    if (el.asm) el.asm.style.display = (S.mode === "upgrade") ? "none" : "";
     renderAssembly();
   }
   function renderAssembly() {
@@ -421,18 +476,20 @@
   function render() {
     if (!el.sheet) return;
     renderSteps();
-    // signin is a compact one-step variant — the multi-step stepper doesn't apply
-    el.steps.style.display = (S.mode === "signin") ? "none" : "";
+    // signin + upgrade are compact single-panel variants — hide the multi-step stepper
+    el.steps.style.display = (S.mode === "signin" || S.mode === "upgrade") ? "none" : "";
     renderPane();
     el.body.innerHTML = "";
     el.foot.innerHTML = "";
     var view;
-    if (S.mode === "signin") view = viewAccount();       // signin lives on step 1 only
+    if (S.mode === "upgrade") view = viewUpgrade();       // post-login monetization sheet
+    else if (S.mode === "signin") view = viewAccount();   // signin lives on step 1 only
     else if (S.step === STEP_ACCOUNT) view = viewAccount();
     else if (S.step === STEP_PREFS) view = viewPrefs();
     else if (S.step === STEP_PLAN) view = viewPlan();
     else if (S.step === STEP_BILLING) view = viewBilling();
     else view = viewDone();
+    if (view === null) return;   // a nested render() (upgrade→free handoff) already owns the DOM
     el.body.appendChild(view);
     applyLang();
     // focus the heading (a11y)
@@ -547,11 +604,12 @@
       if (S.mode === "signin") {
         sb.auth.signInWithPassword({ email: S.email, password: S.password }).then(function (r) {
           if (r.error) { showErr(r.error.message); setSubmitBusy(false); return; }
-          // success — close the sheet; the page's signed-in chrome updates via MDXAuth.onChange
           S.password = ""; stashClear();
-          var rt = retTarget();
-          if (rt) { location.href = rt; return; }
-          closeSheet();
+          // Signin fired from the Upgrade entry: don't redirect — resolve the
+          // account and continue into the upgrade panel in place.
+          if (S.pendingUpgrade) { S.pendingUpgrade = false; setSubmitBusy(false); enterUpgrade(S.upgradeOpts || {}); return; }
+          // Normal signin — go to the desk (?ret wall target wins, else start.html).
+          location.href = loginDest();
         });
         return;
       }
@@ -572,10 +630,14 @@
 
   function onGoogle() {
     showErr("");
-    // stash wizard state for the OAuth round-trip (matches terminal oauth.ts shape)
+    // stash wizard state for the OAuth round-trip (matches terminal oauth.ts shape).
+    // `mode`/`pendingUpgrade` let the resume decide between redirect (signin) and
+    // continuing the wizard / upgrade panel (signup / upgrade entry).
     try {
       localStorage.setItem(LS_ONBOARD_RESUME, JSON.stringify({
-        step: STEP_PREFS, firstName: S.firstName, lastName: S.lastName,
+        step: STEP_PREFS, mode: S.mode, pendingUpgrade: !!S.pendingUpgrade,
+        upgradeOpts: S.upgradeOpts || null,
+        firstName: S.firstName, lastName: S.lastName,
         plan: S.plan, period: S.period, prefs: S.prefs
       }));
     } catch (e) {}
@@ -791,6 +853,299 @@
     else go(STEP_BILLING);
   }
 
+  // ══════════════════════════ UPGRADE MODE ═══════════════════════════════════
+  // The post-login monetization sheet. Same .obm- light-Swiss language as the
+  // signup wizard; reuses the plan-price helpers so every figure is COMPUTED.
+  // Entered via openSheet('upgrade') (nav "Upgrade", pricing cards, sd dash CTA).
+
+  // /api/me with the Supabase bearer, cached 60s in sessionStorage (shared with
+  // the auth-chrome module so a page open costs one fetch). null on any failure.
+  function readMeCache() {
+    try {
+      var raw = sessionStorage.getItem(SS_ME); if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (o && o.t && (Date.now() - o.t) < ME_TTL && o.me) return o.me;
+    } catch (e) {}
+    return null;
+  }
+  function writeMeCache(me) { try { sessionStorage.setItem(SS_ME, JSON.stringify({ t: Date.now(), me: me })); } catch (e) {} }
+  function clearMeCache() { try { sessionStorage.removeItem(SS_ME); } catch (e) {} }
+  function fetchMe(force) {
+    var cached = force ? null : readMeCache();
+    if (cached) return Promise.resolve(cached);
+    return getAccessToken().then(function (token) {
+      if (!token) return null;
+      return fetch(apiBase() + "/api/me", { headers: { Authorization: "Bearer " + token }, cache: "no-store" })
+        .then(function (r) { if (!r || !r.ok) return null; return r.json().catch(function () { return null; }); })
+        .then(function (me) { if (me) writeMeCache(me); return me; });
+    }).catch(function () { return null; });
+  }
+
+  // Open the sheet in upgrade mode. Guests → signin with a pending-upgrade flag.
+  function openUpgrade(opts) {
+    opts = opts || {};
+    if (!opts.me && !hasSessionCookie()) {
+      // not signed in → signin first, then continue into the panel (no redirect)
+      ensureAssets(); build();
+      S.mode = "signin"; S.step = STEP_ACCOUNT;
+      S.pendingUpgrade = true; S.upgradeOpts = opts;
+      S.open = true; _lastFocus = document.activeElement;
+      el.scrim.style.display = "flex";
+      requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
+      document.documentElement.style.overflow = "hidden";
+      render(); stashSave();
+      return;
+    }
+    enterUpgrade(opts);
+  }
+  // Signed-in entry: show the sheet, fetch /api/me, render the tier branch.
+  function enterUpgrade(opts) {
+    opts = opts || {};
+    ensureAssets(); build();
+    S.mode = "upgrade"; S.step = STEP_PLAN; S.upgradeOpts = opts;
+    S.me = null; S.upDone = null; S.upErr = false;
+    S.open = true; _lastFocus = document.activeElement;
+    el.scrim.style.display = "flex";
+    requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
+    document.documentElement.style.overflow = "hidden";
+    render(); stashSave();
+    // A host that already knows the plan may pass opts.me to skip the round-trip.
+    if (opts.me) { S.me = opts.me; S.upErr = false; render(); return; }
+    fetchMe(false).then(function (me) {
+      S.me = me; S.upErr = !me;
+      if (S.mode === "upgrade") render();
+    });
+  }
+
+  // ── the upgrade view (router dispatches here when S.mode === 'upgrade') ──
+  function viewUpgrade() {
+    var root = h("div", "obm-fade");
+    var head = T("h1", "obm-h1", "upTitle"); head.setAttribute("data-ob-heading", ""); head.setAttribute("tabindex", "-1");
+    root.appendChild(head);
+
+    // success panel (after a completed upgrade) takes precedence
+    if (S.upDone) return upgradeSuccess(root);
+
+    // loading / error before /api/me resolves
+    if (!S.me) {
+      if (S.upErr) {
+        root.appendChild(T("p", "obm-sub", "upErr"));
+        var retry = T("button", "obm-btn", "upRetry", { type: "button" }); retry.style.marginTop = "16px";
+        retry.addEventListener("click", function () { S.upErr = false; render(); fetchMe(true).then(function (me) { S.me = me; S.upErr = !me; if (S.mode === "upgrade") render(); }); });
+        root.appendChild(retry);
+      } else {
+        var sk = h("div", "obm-bill-skel", { "aria-live": "polite", "aria-busy": "true" });
+        sk.innerHTML = '<span class="obm-spin"></span><span class="obm-bill-skel-lbl" data-k="upLoad">' + tx("upLoad") + '</span>';
+        root.appendChild(sk);
+      }
+      return root;
+    }
+
+    var tier = (S.me.tier || "free");
+    var interval = S.me.interval || null;
+
+    // free (or no active status) → reuse the PLAN→BILLING→DONE steps (they work
+    // for a signed-in user; subscribe/init is authenticated). Preselect Pro annual.
+    if (tier === "free") {
+      S.mode = "signup";                      // hand off to the wizard machinery
+      S.step = STEP_PLAN; S.planTouched = true;
+      S.confirmPending = false;               // signed-in: no email-confirm gate
+      var o = S.upgradeOpts || {};
+      S.plan = (o.plan === "insider" || o.plan === "pro") ? o.plan : "pro";
+      S.period = (o.period === "monthly" || o.period === "annual") ? o.period : "annual";
+      render();                                // re-enter as the plan step (owns el.body)
+      return null;                             // signal render() to not append over it
+    }
+
+    // paid tiers → lane cards
+    var lanes = upgradeLanes(tier, interval);
+    if (!lanes.length) return upgradeBest(root);   // pro-annual / unlimited
+
+    // insider-monthly has the three-lane "switch to annual" story; the single-lane
+    // cases (insider-annual, pro-monthly) all point up to Pro Annual.
+    var subKey = (tier === "insider" && (interval === "monthly" || !interval)) ? "upToAnnualSub" : "upProAnnualSub";
+    root.appendChild(T("p", "obm-sub", subKey));
+
+    var wrap = h("div", "obm-plans obm-up-lanes");
+    lanes.forEach(function (ln) { wrap.appendChild(upgradeLaneCard(ln)); });
+    root.appendChild(wrap);
+
+    // footer: quiet "Open the dashboard" (never a dead end)
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    var dash = T("button", "obm-quiet", "openDashboard", { type: "button" }); dash.style.width = "auto";
+    dash.addEventListener("click", function () { location.href = loginDest(); });
+    el.foot.appendChild(dash);
+    return root;
+  }
+
+  // The lane matrix (upward-only, tier and interval may each rise, never fall).
+  function upgradeLanes(tier, interval) {
+    var monthly = (interval === "monthly" || !interval);
+    if (tier === "insider" && monthly) {
+      return [
+        { tier: "insider", interval: "annual" },
+        { tier: "pro", interval: "monthly" },
+        { tier: "pro", interval: "annual", popular: true }
+      ];
+    }
+    if (tier === "insider") return [{ tier: "pro", interval: "annual", proPitch: true }];   // insider-annual
+    if (tier === "pro" && monthly) return [{ tier: "pro", interval: "annual", proPitch: true }];
+    return [];   // pro-annual / unlimited → best-plan panel
+  }
+
+  function upgradeLaneCard(ln) {
+    var annual = ln.interval === "annual";
+    var nmKey = ln.tier === "insider" ? "laneInsAnnual" : (annual ? "laneProAnnual" : "laneProMonthly");
+    var whoKey = ln.tier === "insider" ? "laneInsAnnualWho" : (annual ? "laneProAnnualWho" : "laneProMonthlyWho");
+    var hue = ln.tier === "pro" ? "var(--ob-pro)" : "var(--ob-insider)";
+    var mo = perMonth(ln.tier, ln.interval);
+    var card = h("button", "obm-plan obm-up-lane" + (ln.popular ? " obm-hot" : ""), { type: "button" });
+    card.style.setProperty("--obm-accent", hue);
+
+    var left = h("div", "obm-plan-l");
+    var nm = h("div", "obm-plan-nm");
+    nm.innerHTML = '<span data-k="' + nmKey + '">' + tx(nmKey) + '</span>';
+    if (annual) {   // computed savings badge (blue-wash chip), never a hardcoded claim
+      var pct = savePct(ln.tier);
+      var badge = h("span", "obm-up-save");
+      badge.setAttribute("data-obm-zh", LEX.laneSave[1].replace("__P__", String(pct)));
+      badge.innerHTML = LEX.laneSave[0].replace("__P__", String(pct));
+      nm.appendChild(badge);
+    }
+    left.appendChild(nm);
+    left.appendChild(T("div", "obm-plan-who", whoKey));
+    // pro-pitch framing line (insider-annual / pro-monthly → pro-annual) — computed
+    if (ln.proPitch) {
+      var pitch = h("p", "obm-up-pitch");
+      var a = annualBilled(ln.tier), m = monthlyPrice(ln.tier) * 12, p = savePct(ln.tier);
+      pitch.setAttribute("data-obm-zh", LEX.laneProAnnualPitch[1].replace("__A__", String(a)).replace("__M__", String(m)).replace("__P__", String(p)));
+      pitch.innerHTML = LEX.laneProAnnualPitch[0].replace("__A__", String(a)).replace("__M__", String(m)).replace("__P__", String(p));
+      left.appendChild(pitch);
+    }
+
+    var right = h("div", "obm-plan-r");
+    var price = h("div", "obm-plan-price");
+    var was = annual ? ('<span class="obm-was">$' + monthlyPrice(ln.tier) + '</span>') : "";
+    var perK = annual ? "laneBilledAnnual" : "laneBilledMonthly";
+    price.innerHTML = was + '$' + mo + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
+    right.appendChild(price);
+    var chev = h("span", "obm-up-chev"); chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+    right.appendChild(chev);
+
+    card.appendChild(left); card.appendChild(right);
+    if (ln.popular) { var rb = h("span", "obm-ribbon", { "data-k": "lanePopular" }); rb.textContent = tx("lanePopular"); card.appendChild(rb); }
+
+    // progressive inline confirm (mirror the sd plan block's ARM→CONFIRM pattern)
+    var confirm = h("div", "obm-up-confirm");
+    var trialing = S.me && S.me.status === "trialing";
+    var note = T("p", "obm-up-note", trialing ? "upConfirmTrial" : "upConfirmProrate");
+    var goBtn = T("button", "obm-btn", "upConfirmGo", { type: "button" });
+    var msg = h("div", "obm-err obm-up-msg"); msg.style.display = "none";
+    confirm.appendChild(note); confirm.appendChild(goBtn); confirm.appendChild(msg);
+    card.appendChild(confirm);
+
+    card.addEventListener("click", function (e) {
+      if (confirm.contains(e.target)) return;               // clicks inside the confirm area don't re-toggle
+      var open = card.classList.contains("obm-confirming");
+      // single-open: collapse siblings
+      var sibs = card.parentNode ? card.parentNode.querySelectorAll(".obm-up-lane.obm-confirming") : [];
+      for (var i = 0; i < sibs.length; i++) sibs[i].classList.remove("obm-confirming");
+      if (!open) { card.classList.add("obm-confirming"); try { goBtn.focus(); } catch (er) {} }
+    });
+    goBtn.addEventListener("click", function () { doUpgrade(ln, goBtn, msg); });
+    return card;
+  }
+
+  // POST /api/billing/upgrade {tier, interval}. 200 → success panel; 402 → Stripe
+  // message inline; 409 → refetch /api/me + re-render; 404 → fall back to subscribe.
+  function doUpgrade(ln, goBtn, msgBox) {
+    function setMsg(m) { if (!msgBox) return; if (!m) { msgBox.style.display = "none"; return; } msgBox.style.display = ""; msgBox.textContent = m; }
+    setMsg(""); goBtn.disabled = true; goBtn.textContent = tx("upConfirmGoBusy");
+    function reset() { goBtn.disabled = false; goBtn.setAttribute("data-k", "upConfirmGo"); goBtn.innerHTML = tx("upConfirmGo"); }
+    getAccessToken().then(function (token) {
+      var headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = "Bearer " + token;
+      return fetch(apiBase() + "/api/billing/upgrade", {
+        method: "POST", credentials: "include", headers: headers,
+        body: JSON.stringify({ tier: ln.tier, interval: ln.interval })
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (body) { return { status: r.status, ok: r.ok, body: body }; });
+    }).then(function (res) {
+      if (res.ok) {
+        clearMeCache();
+        S.upDone = {
+          tier: (res.body && res.body.tier) || ln.tier,
+          interval: (res.body && res.body.interval) || ln.interval,
+          invoiceCents: (res.body && typeof res.body.invoice_total_cents === "number") ? res.body.invoice_total_cents : null,
+          trialing: !!(res.body && res.body.trialing),
+          periodEnd: (res.body && res.body.current_period_end) || null
+        };
+        render();
+        return;
+      }
+      reset();
+      if (res.status === 402) {   // card declined — Stripe's own message, don't translate
+        setMsg((res.body && (res.body.detail || res.body.message)) || tx("billErr"));
+        return;
+      }
+      if (res.status === 409) {   // not an upward move → refetch + re-render the branch
+        fetchMe(true).then(function (me) { S.me = me; S.upDone = null; render(); });
+        return;
+      }
+      if (res.status === 404) {   // no Stripe sub (comp'd) → subscribe lane preselecting the target
+        S.mode = "signup"; S.step = STEP_PLAN; S.planTouched = true; S.confirmPending = false;
+        S.plan = ln.tier; S.period = ln.interval;
+        go(STEP_BILLING);
+        return;
+      }
+      setMsg(tx("billErr"));
+    }).catch(function () { reset(); setMsg(tx("billErr")); });
+  }
+
+  function upgradeSuccess(root) {
+    var d = S.upDone;
+    var wrap = h("div", "obm-done");
+    var mark = h("div", "obm-done-mark"); mark.innerHTML = svgCheck("");
+    var head = h("h1", "obm-h1", { "data-ob-heading": "", tabindex: "-1" }); head.style.margin = "0";
+    head.setAttribute("data-k", "upDoneH"); head.textContent = tx("upDoneH");
+    var body = h("div", "obm-done-body");
+    var intLbl = d.interval === "annual" ? (lang() === "zh" ? "年付" : "Annual") : (lang() === "zh" ? "月付" : "Monthly");
+    var planNm = tx(d.tier === "pro" ? "planPro" : "planInsider") + " · " + intLbl;
+    var l1 = h("p", "obm-done-line"); l1.innerHTML = escLine(LEX.upDonePlan, { "__N__": esc(planNm) }); body.appendChild(l1);
+    // amount actually invoiced today — omit when trialing / zero
+    if (!d.trialing && d.invoiceCents && d.invoiceCents > 0) {
+      var l2 = h("p", "obm-done-line"); l2.innerHTML = escLine(LEX.upDoneCharged, { "__T__": esc(fmtMoney(d.invoiceCents)) }); body.appendChild(l2);
+    }
+    if (d.periodEnd) {
+      var l3 = h("p", "obm-done-line"); l3.innerHTML = escLine(LEX.upDoneRenew, { "__D__": esc(fmtDate(new Date(d.periodEnd))) }); body.appendChild(l3);
+    }
+    wrap.appendChild(mark); wrap.appendChild(head); wrap.appendChild(body);
+    root.appendChild(wrap);
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    var dash = T("button", "obm-btn", "openDashboard", { type: "button" });
+    dash.addEventListener("click", function () { location.href = loginDest(); });
+    el.foot.appendChild(dash);
+    return root;
+  }
+  function fmtMoney(cents) { var n = cents / 100; return (n % 1 === 0) ? String(n) : n.toFixed(2); }
+
+  function upgradeBest(root) {
+    var wrap = h("div", "obm-done obm-up-best");
+    var mark = h("div", "obm-done-mark obm-up-best-mark"); mark.innerHTML = svgCheck("");
+    var head = h("h1", "obm-h1", { "data-ob-heading": "", tabindex: "-1" }); head.style.margin = "0";
+    head.setAttribute("data-k", "upBestH"); head.textContent = tx("upBestH");
+    var body = h("div", "obm-done-body");
+    body.appendChild(T("p", "obm-done-line", "upBestS"));
+    wrap.appendChild(mark); wrap.appendChild(head); wrap.appendChild(body);
+    root.appendChild(wrap);
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    var dash = T("button", "obm-btn", "openDashboard", { type: "button" });
+    dash.addEventListener("click", function () { location.href = loginDest(); });
+    el.foot.appendChild(dash);
+    return root;
+  }
+
   // ══════════════════════════ STEP 4 — BILLING ═══════════════════════════════
   var _stripe = null, _elements = null;
   function viewBilling() {
@@ -998,9 +1353,7 @@
     var dash = T("button", "obm-btn", "openDashboard", { type: "button" });
     dash.addEventListener("click", function () {
       stashClear();
-      var rt = retTarget();
-      if (rt) { location.href = rt; return; }
-      closeSheet();
+      location.href = loginDest();   // ?ret wall target, else start.html
     });
     el.foot.appendChild(dash);
     return root;
@@ -1028,6 +1381,7 @@
   }
   var _lastFocus = null;
   function openSheet(mode, opts) {
+    if (mode === "upgrade") { openUpgrade(opts || {}); return; }
     ensureAssets();
     build();
     S.mode = mode || "signup";
@@ -1054,6 +1408,10 @@
     } catch (e) { /* ignore */ }
     return "";
   }
+  // Post-login landing: the ?ret= wall target if present, else the prefix-aware
+  // /start.html (pages under /sectors/ need "../"). A signed-in user must never
+  // be dropped back on the marketing page.
+  function loginDest() { return retTarget() || (_pfx() + "start.html"); }
   function closeSheet() {
     if (!el.scrim) return;
     S.open = false;
@@ -1107,11 +1465,170 @@
     var intent = qIdx === -1 ? null : parseIntent(href.slice(qIdx + 1));
     if (!intent) return;                       // not an onboarding link → let it navigate
     e.preventDefault();
+    // Auth-aware: a signed-in user (cached /api/me) clicking a plan/signup link
+    // wants to UPGRADE, not sign up again — route plan-carrying clicks to upgrade.
+    var me = readMeCache();
+    if (me && ((me.tier || "free") !== "free" || intent.mode === "signup")) {
+      openSheet("upgrade", { plan: intent.plan, period: intent.period });
+      return;
+    }
     openSheet(intent.mode, { plan: intent.plan, period: intent.period, resume: intent.resume });
   }, true);
 
+  // ══════════════════════════ LANDING AUTH CHROME ════════════════════════════
+  // Auth-aware header + gear ACCOUNT wiring for the LANDING only. Every function
+  // here no-ops when the landing's ids are absent (so it costs nothing on macro
+  // pages, which never hit this file's landing branch). Guests pay zero network:
+  // the cheap cookie sniff gates the /api/me fetch entirely.
+  var UPCHROME = {
+    upgrade: ["Upgrade", "升级"],
+    openDash: ["Open the dashboard", "打开仪表盘"],
+    included: ["Included", "已包含"],
+    current: ["Current plan", "当前方案"]
+  };
+  function _byId(id) { return document.getElementById(id); }
+
+  // Wire the gear ACCOUNT buttons — independent of auth state, so signed-out
+  // visitors can sign in / create an account straight from the gear.
+  function wireGearAccount() {
+    var si = _byId("gp-signin"), su = _byId("gp-signup");
+    var card = _byId("gp-acct-card"), so = _byId("gp-signout");
+    if (si && !si.__wired) { si.__wired = true; si.addEventListener("click", function () { closeGearPop(); openSheet("signin", {}); }); }
+    if (su && !su.__wired) { su.__wired = true; su.addEventListener("click", function () { closeGearPop(); openSheet("signup", {}); }); }
+    if (card && !card.__wired) {
+      card.__wired = true;
+      var openMgr = function () { closeGearPop(); openSettingsDash(); };
+      card.addEventListener("click", openMgr);
+      card.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openMgr(); } });
+    }
+    if (so && !so.__wired) {
+      so.__wired = true;
+      so.addEventListener("click", function () {
+        ensureAuthBroker().then(function (auth) {
+          clearMeCache();
+          if (auth && auth.signOut) { auth.signOut().then(function () { location.reload(); }, function () { location.reload(); }); }
+          else location.reload();
+        });
+      });
+    }
+  }
+  function closeGearPop() { var p = _byId("gear-pop"), b = _byId("gear-btn"); if (p) p.classList.remove("open"); if (b) b.setAttribute("aria-expanded", "false"); }
+  // open the personal settings dashboard (theme.js sd-* modal) — lazy-load theme.js
+  function openSettingsDash() {
+    if (window.MMSettings && window.MMSettings.open) { window.MMSettings.open("account"); return; }
+    ensureAuthBroker().then(function () {
+      if (window.MMSettings && window.MMSettings.open) window.MMSettings.open("account");
+    });
+  }
+
+  // Apply the signed-in header chrome from an /api/me payload.
+  function applyAuthChrome(me) {
+    if (!me) return;
+    var tier = me.tier || "free";
+    var interval = me.interval || null;
+    var best = (tier === "unlimited") || (tier === "pro" && interval === "annual");
+    var start = _pfx() + "start.html";
+
+    // 1) hide the nav "Log in"
+    var login = _byId("nav-login"); if (login) { login.hidden = true; login.style.display = "none"; }
+
+    // 2) nav CTA → best plan = "Open the dashboard"→start.html; else "Upgrade"→sheet
+    var cta = _byId("nav-cta");
+    if (cta) {
+      if (best) { setChromeLabel(cta, "openDash"); cta.setAttribute("href", start); cta.__upgrade = false; }
+      else { setChromeLabel(cta, "upgrade"); cta.setAttribute("href", start); cta.__upgrade = true; }
+      bindChromeCta(cta);
+    }
+
+    // 3) hero + closing "Start free" → "Open the dashboard" → start.html (never "Start free" for a signed-in user)
+    var sf = document.querySelectorAll(".js-startfree");
+    for (var i = 0; i < sf.length; i++) {
+      var b = sf[i];
+      setChromeLabel(b, "openDash"); b.setAttribute("href", start);
+      b.classList.remove("js-startfree"); b.classList.add("js-startfree-done");
+    }
+
+    // 4) pricing-card CTAs
+    document.querySelectorAll(".js-plan-cta").forEach(function (pc) {
+      var plan = pc.getAttribute("data-plan");
+      if (plan === "free") {
+        // Free card: inert "Current plan" when free, else "Included" (paid tiers include Free)
+        makeInert(pc, tier === "free" ? "current" : "included");
+      } else {
+        // paid card → open upgrade preselecting that plan (or best-plan panel)
+        pc.setAttribute("href", start);
+        pc.__upgradePlan = { plan: plan, period: pc.getAttribute("data-period") || "annual" };
+        bindPlanCta(pc);
+      }
+    });
+
+    // 5) gear ACCOUNT card (signed-in view)
+    renderGearAccount(me);
+  }
+
+  // Paint a node bilingually: cache the English original in __en and set data-zh so
+  // the landing's [data-zh] LANG applier keeps it in sync on later toggles, AND show
+  // the CURRENT language immediately (window.LANG isn't a global — the inline const
+  // never reaches window — so we can't defer to it; do the swap in place).
+  function paintBilingual(el, en, zh) {
+    el.setAttribute("data-zh", zh);
+    el.__en = en;
+    el.innerHTML = (lang() === "zh") ? zh : en;
+  }
+  function setChromeLabel(el, key) { paintBilingual(el, UPCHROME[key][0], UPCHROME[key][1]); }
+  function bindChromeCta(cta) {
+    if (cta.__bound) return; cta.__bound = true;
+    cta.addEventListener("click", function (e) { if (cta.__upgrade) { e.preventDefault(); openSheet("upgrade", {}); } });
+  }
+  function bindPlanCta(pc) {
+    if (pc.__bound) return; pc.__bound = true;
+    pc.addEventListener("click", function (e) { e.preventDefault(); openSheet("upgrade", pc.__upgradePlan || {}); });
+  }
+  function makeInert(pc, key) {
+    paintBilingual(pc, UPCHROME[key][0], UPCHROME[key][1]);
+    pc.setAttribute("aria-disabled", "true");
+    pc.removeAttribute("href");
+    pc.style.pointerEvents = "none"; pc.style.opacity = ".65";
+  }
+  function renderGearAccount(me) {
+    var out = _byId("gp-acct-out"), inn = _byId("gp-acct-in");
+    if (!out || !inn) return;
+    out.hidden = true; out.style.display = "none";
+    inn.hidden = false; inn.style.display = "";
+    // avatar initial: first name from user_metadata, else email
+    var u = null; try { u = window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user(); } catch (e) {}
+    var meta = (u && u.user_metadata) || {};
+    var first = meta.first_name || meta.display_name || meta.name || meta.full_name || "";
+    var email = (u && u.email) || me.email || "";
+    var initial = (first || email || "?").trim().charAt(0).toUpperCase();
+    var av = _byId("gp-avatar"); if (av) av.textContent = initial || "?";
+    var em = _byId("gp-email"); if (em) em.textContent = email || "";
+  }
+
+  // Entry: sniff the cookie; if signed-in, resolve /api/me and paint. Fail quiet.
+  function initAuthChrome() {
+    // Only the landing has these ids; bail on macro pages (this file's other
+    // consumers never render the landing nav).
+    if (!_byId("nav-cta") && !_byId("gp-acct-out")) return;
+    wireGearAccount();                         // always (signed-out gear needs its buttons)
+    if (!hasSessionCookie()) return;           // guest → default signed-out markup, zero network
+    // resolve the broker so MDXAuth.user() is available for the avatar, then /api/me
+    ensureAuthBroker().then(function () {
+      fetchMe(false).then(function (me) {
+        if (!me) return;                       // token expired / 401 → leave signed-out chrome
+        applyAuthChrome(me);                    // re-applies LANG over the nodes it rewrites
+      });
+    });
+  }
+
   // ══════════════════════════ on-load: deep links + resume ═══════════════════
   function bootDeepLinks() {
+    // ?upgrade=1 deep link (the _mmOpenOnboard cross-page fallback) → upgrade sheet
+    try {
+      if (new URLSearchParams(location.search).has("upgrade")) {
+        stripOnboardParams(); openSheet("upgrade", {}); return;
+      }
+    } catch (e) {}
     var intent = parseIntent(window.location.search.replace(/^\?/, ""));
     var resumeStash = null;
     if (intent && intent.resume) {
@@ -1127,6 +1644,12 @@
         if (resumeStash.plan) S.plan = resumeStash.plan;
         if (resumeStash.period) S.period = resumeStash.period;
         if (resumeStash.prefs) S.prefs = resumeStash.prefs;
+      }
+      // Google-OAuth return: a signin-mode round-trip lands on the desk (ret wins),
+      // not back in the sheet; a pending-upgrade round-trip resumes the upgrade panel.
+      if (intent.resume && resumeStash) {
+        if (resumeStash.pendingUpgrade) { stripOnboardParams(); openSheet("upgrade", resumeStash.upgradeOpts || {}); return; }
+        if (resumeStash.mode === "signin") { stripOnboardParams(); location.href = loginDest(); return; }
       }
       openSheet(intent.mode, { plan: intent.plan || S.plan, period: intent.period || S.period, resume: intent.resume });
       stripOnboardParams();
@@ -1147,7 +1670,7 @@
     try {
       var sp = new URLSearchParams(window.location.search);
       var changed = false;
-      ["signup", "signin", "onboard", "plan", "period"].forEach(function (k) { if (sp.has(k)) { sp.delete(k); changed = true; } });
+      ["signup", "signin", "onboard", "plan", "period", "upgrade"].forEach(function (k) { if (sp.has(k)) { sp.delete(k); changed = true; } });
       if (!changed) return;
       var qs = sp.toString();
       var url = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
@@ -1155,9 +1678,12 @@
     } catch (e) {}
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bootDeepLinks);
-  else bootDeepLinks();
+  function boot() { bootDeepLinks(); initAuthChrome(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 
-  // expose a tiny API (parity with MDXAuth.open) for other scripts/tests
-  window.MMOnboard = { open: openSheet, close: closeSheet };
+  // expose a tiny API (parity with MDXAuth.open) for other scripts/tests.
+  // applyChrome(me) lets a host that already resolved /api/me paint the landing's
+  // signed-in header without re-fetching (also the console-driven verify seam).
+  window.MMOnboard = { open: openSheet, close: closeSheet, applyChrome: applyAuthChrome };
 })();

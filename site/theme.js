@@ -1514,10 +1514,6 @@
     '.sd-plan-chip.warn{color:var(--warn,#e0a53d);background:color-mix(in srgb,var(--warn,#e0a53d) 12%,transparent);border-color:color-mix(in srgb,var(--warn,#e0a53d) 30%,transparent)}',
     '.sd-plan-cta{margin-top:10px}',
     '.sd-plan-cta .sd-btn{width:100%}',
-    '.sd-plan-confirm{display:none;margin-top:10px}',
-    '.sd-plan-cta.confirming #sd-up-btn{display:none}',
-    '.sd-plan-cta.confirming .sd-plan-confirm{display:block}',
-    '.sd-plan-confirm .sd-note{margin:0 0 8px}',
     '.sd-muted{color:var(--muted,var(--ink-3,#8b93a7))}',
     /* mobile sign-out (rail hidden -> row at the end of Account) */
     '.sd-signout-m{display:none}',
@@ -1611,10 +1607,6 @@
     planExpired: ['Expired', '已过期'],
     planLifetime:['Lifetime', '永久'],
     upgradePro:  ['Upgrade to Pro — prorated', '升级到 Pro — 按比例计费'],
-    upgradeNote: ['You’ll be charged the prorated difference now.', '将立即按剩余时间收取差价。'],
-    upgradeGo:   ['Confirm upgrade', '确认升级'],
-    upgrading:   ['Upgrading…', '升级中…'],
-    upgradeDone: ['You’re on Pro.', '已升级到 Pro。'],
     choosePlan:  ['Choose a plan', '选择套餐'],
     planErr:     ['Couldn’t update your plan — please try again.', '无法更新订阅，请重试。'],
     // signed-out CTA
@@ -2104,14 +2096,16 @@
   // (script unreachable): navigate to the landing with the param — index.html
   // always carries the sheet.
   function _mmOpenOnboard(mode) {
-    var m = (mode === 'signup') ? 'signup' : 'signin';
+    // whitelist: signin (default) · signup · upgrade (post-login monetization sheet)
+    var m = (mode === 'signup') ? 'signup' : (mode === 'upgrade') ? 'upgrade' : 'signin';
     if (window.MMOnboard && window.MMOnboard.open) { window.MMOnboard.open(m); return; }
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
     if (window.__mmOnboardLoading) return;    // second click while loading — first one will open
     window.__mmOnboardLoading = true;
     var s = document.createElement('script');
     s.src = pfx + 'onboard.js'; s.defer = true;
-    var fallback = function () { location.href = pfx + 'index.html?' + (m === 'signup' ? 'signup=1' : 'signin=1'); };
+    var fbQ = (m === 'signup') ? 'signup=1' : (m === 'upgrade') ? 'upgrade=1' : 'signin=1';
+    var fallback = function () { location.href = pfx + 'index.html?' + fbQ; };
     var t = setTimeout(function () { if (!window.MMOnboard) fallback(); }, 4000);
     s.onload = function () {
       clearTimeout(t); window.__mmOnboardLoading = false;
@@ -2123,9 +2117,9 @@
   function _sdWireCta(host) {
     host.querySelectorAll('[data-sd-cta]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var mode = b.getAttribute('data-sd-cta');
+        var mode = b.getAttribute('data-sd-cta');   // signup · signin · upgrade
         _closeSDash();
-        _mmOpenOnboard(mode === 'signup' ? 'signup' : 'signin');
+        _mmOpenOnboard(mode === 'signup' ? 'signup' : mode === 'upgrade' ? 'upgrade' : 'signin');
       });
     });
     var som = host.querySelector('#sd-signout-m');
@@ -2179,20 +2173,16 @@
     var paid = tier !== 'free';
     var chip = _sdPlanChip(p);
     var cta = '';
+    // Every upgrade lane now lives in the one onboard sheet (MMOnboard 'upgrade'),
+    // which reads /api/me and shows the tier-correct lanes + prorated confirm.
+    // Pro/unlimited already have everything an upgrade would buy → no CTA.
     if (tier === 'insider') {
-      // Insider → the one upgrade that exists. Progressive inline confirm: the primary button
-      // reveals the prorated-charge note + a Confirm button (data-sd-up-go) that POSTs the upgrade.
-      cta = '<div class="sd-plan-cta" id="sd-plan-cta">' +
-          '<button type="button" class="sd-btn primary" id="sd-up-btn">' + _sdBl('upgradePro') + '</button>' +
-          '<div class="sd-plan-confirm" id="sd-up-confirm">' +
-            '<p class="sd-note">' + _sdBl('upgradeNote') + '</p>' +
-            '<button type="button" class="sd-btn primary" id="sd-up-go">' + _sdBl('upgradeGo') + '</button>' +
-          '</div>' +
-          '<div class="sd-msg" id="sd-plan-msg" role="alert"></div>' +
+      cta = '<div class="sd-plan-cta">' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl('upgradePro') + '</button>' +
         '</div>';
     } else if (!paid) {
       cta = '<div class="sd-plan-cta">' +
-          '<button type="button" class="sd-btn primary" data-sd-cta="signup" id="sd-choose-plan">' + _sdBl('choosePlan') + '</button>' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-choose-plan">' + _sdBl('choosePlan') + '</button>' +
         '</div>';
     }
     return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
@@ -2230,56 +2220,16 @@
       _sdPlanBusy = false;                          // leave the loading row; a later render retries
     });
   }
-  // POST /api/billing/upgrade (prorated Insider → Pro), then refresh the plan + entitlement.
-  function _sdDoUpgrade(goBtn) {
-    _sdMsg('sd-plan-msg', ''); _sdSetBusy(goBtn, true, _sdL('upgrading'));
-    var base = window.MM_API || '';
-    getSupabaseClient().then(function (sb) {
-      return sb ? sb.auth.getSession() : null;
-    }).then(function (res) {
-      var tok = res && res.data && res.data.session && res.data.session.access_token;
-      if (!tok) throw new Error('no-session');
-      return fetch(base + '/api/billing/upgrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
-        body: JSON.stringify({})
-      });
-    }).then(function (r) {
-      return r.json().then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
-    }).then(function (res) {
-      _sdSetBusy(goBtn, false);
-      if (!res.ok) {
-        // 402 carries Stripe's decline message; anything else → the generic plan error.
-        var msg = (res.status === 402 && res.body && res.body.detail) ? res.body.detail : _sdL('planErr');
-        _sdMsg('sd-plan-msg', msg, 'err');
-        return;
-      }
-      _sdMsg('sd-plan-msg', _sdL('upgradeDone'), 'ok');
-      // Drop the cached (Insider) plan and fire the shared refresh: the 'mdx-auth' listener
-      // re-renders the dashboard, whose _wireSDAccount re-fetches /api/me and paints Pro; every
-      // other gated surface (sync pill, onChange subscribers) re-checks entitlement off the same event.
-      _sdPlan = null; _sdPlanFor = null;
-      if (_curUser) _emitAuth({ user: _curUser, event: 'ENTITLEMENT' });
-    }).catch(function () {
-      _sdSetBusy(goBtn, false);
-      _sdMsg('sd-plan-msg', _sdL('planErr'), 'err');
-    });
-  }
+  // (Upgrade POST moved into the onboard 'upgrade' sheet — see onboard.js doUpgrade.
+  //  The dashboard's plan CTA now opens that sheet via data-sd-cta="upgrade".)
 
   function _wireSDAccount(host, state, u) {
     _sdWireCta(host);
     if (state !== 'in') return;
 
-    // ---- plan: load it if cold, wire the inline-confirm upgrade ----
+    // ---- plan: load it if cold. The upgrade CTA (data-sd-cta="upgrade") is wired
+    //      by _sdWireCta → _mmOpenOnboard('upgrade'); every lane lives in that sheet. ----
     _sdLoadPlan(u);
-    var upBtn = document.getElementById('sd-up-btn');
-    if (upBtn) upBtn.addEventListener('click', function () {
-      var cta = document.getElementById('sd-plan-cta');
-      if (cta) cta.classList.add('confirming');   // reveal note + Confirm button
-      var go = document.getElementById('sd-up-go'); if (go) go.focus();
-    });
-    var upGo = document.getElementById('sd-up-go');
-    if (upGo) upGo.addEventListener('click', function () { _sdDoUpgrade(upGo); });
 
     // inline-edit open/cancel
     host.querySelectorAll('[data-sd-edit]').forEach(function (b) {
