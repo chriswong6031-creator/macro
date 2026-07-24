@@ -999,6 +999,9 @@
   function _onAuth(evt, session) {
     _curUser = (session && session.user) ? session.user : (evt === 'SIGNED_OUT' ? null : _curUser);
     if (evt === 'SIGNED_OUT') _curUser = null;
+    // Drop any cached entitlement when the account changes, so a stale plan never shows for the
+    // wrong (or signed-out) user; the next dashboard render re-fetches for the current session.
+    if (!_curUser || (_curUser.id && _curUser.id !== _sdPlanFor)) { _sdPlan = null; _sdPlanFor = null; }
     _authReady = true;
     _emitAuth({ user: _curUser, event: evt });
     _renderAcct();
@@ -1503,6 +1506,19 @@
     '.sd-cta-n{font-size:12px;color:var(--muted,var(--ink-3,#8b93a7));line-height:1.55;margin:0 auto 14px;max-width:300px}',
     '.sd-cta-btns{display:flex;gap:8px;justify-content:center}',
     '.sd-cta-btns .sd-btn{min-width:120px}',
+    /* plan block — tier row + status chip + prorated-upgrade CTA */
+    '.sd-plan-tier{font-weight:800}',
+    '.sd-plan-chip{display:inline-flex;align-items:center;flex:none;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap;border:1px solid transparent}',
+    '.sd-plan-chip.live{color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 12%,transparent);border-color:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 30%,transparent)}',
+    '.sd-plan-chip.trial{color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 9%,transparent);border-color:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 22%,transparent)}',
+    '.sd-plan-chip.warn{color:var(--warn,#e0a53d);background:color-mix(in srgb,var(--warn,#e0a53d) 12%,transparent);border-color:color-mix(in srgb,var(--warn,#e0a53d) 30%,transparent)}',
+    '.sd-plan-cta{margin-top:10px}',
+    '.sd-plan-cta .sd-btn{width:100%}',
+    '.sd-plan-confirm{display:none;margin-top:10px}',
+    '.sd-plan-cta.confirming #sd-up-btn{display:none}',
+    '.sd-plan-cta.confirming .sd-plan-confirm{display:block}',
+    '.sd-plan-confirm .sd-note{margin:0 0 8px}',
+    '.sd-muted{color:var(--muted,var(--ink-3,#8b93a7))}',
     /* mobile sign-out (rail hidden -> row at the end of Account) */
     '.sd-signout-m{display:none}',
     /* desktop: hide the mobile close slot */
@@ -1583,6 +1599,24 @@
     userIdNote: ['Quote it if you ever contact support.', '联系支持时请提供此 ID。'],
     copy:       ['Copy', '复制'],
     copied:     ['Copied', '已复制'],
+    // plan block
+    plan:        ['Plan', '订阅'],
+    planLoading: ['Loading your plan…', '正在加载订阅…'],
+    tierFree:    ['Free', '免费版'],
+    tierInsider: ['Insider', 'Insider'],
+    tierPro:     ['Pro', 'Pro'],
+    planTrialUntil: ['Trial until', '试用至'],
+    planRenews:  ['Renews', '续订于'],
+    planExpires: ['Expires', '到期于'],
+    planExpired: ['Expired', '已过期'],
+    planLifetime:['Lifetime', '永久'],
+    upgradePro:  ['Upgrade to Pro — prorated', '升级到 Pro — 按比例计费'],
+    upgradeNote: ['You’ll be charged the prorated difference now.', '将立即按剩余时间收取差价。'],
+    upgradeGo:   ['Confirm upgrade', '确认升级'],
+    upgrading:   ['Upgrading…', '升级中…'],
+    upgradeDone: ['You’re on Pro.', '已升级到 Pro。'],
+    choosePlan:  ['Choose a plan', '选择套餐'],
+    planErr:     ['Couldn’t update your plan — please try again.', '无法更新订阅，请重试。'],
     // signed-out CTA
     ctaTitle:   ['Sign in to Mastermind', '登录 Mastermind'],
     ctaNote:    ['Sync your watchlists, alerts and settings across devices — free.', '免费同步自选、提醒与设置到你的所有设备。'],
@@ -1642,6 +1676,10 @@
   /* ---- dashboard state ---------------------------------------------------- */
   var _sdBuilt = false, _sdOverlay = null, _sdSect = 'account', _sdLastFocus = null,
       _sdCopyTimer = null;
+  // Entitlement payload from /api/me, cached by user id so the dashboard re-renders
+  // (on 'mdx-auth' + 'langchange') paint the plan synchronously instead of re-fetching.
+  // Reset to null on sign-out / user switch so a stale plan never shows for the wrong account.
+  var _sdPlan = null, _sdPlanFor = null, _sdPlanBusy = false;
 
   function _sdInjectCSS() {
     if (document.getElementById('setdash-css')) return;
@@ -1888,6 +1926,10 @@
           '</span>' +
         '</div>';
 
+      // Plan group (tier + status chip + upgrade/choose CTA). Rendered from the cached
+      // /api/me payload; _wireSDAccount fetches it on first paint if the cache is cold.
+      html += _sdPlanHTML();
+
       // Profile group
       html += '<div class="sd-group">' +
           '<span class="sd-group-t">' + _sdBl('profile') + '</span>' +
@@ -2090,9 +2132,154 @@
     if (som) som.addEventListener('click', function () { if (window.MDXAuth) window.MDXAuth.signOut(); });
   }
 
+  /* ---- plan block (tier + status chip + prorated upgrade) ----------------- */
+  // The set of tiers that already have everything an upgrade would buy — no CTA shown.
+  function _sdTierLabel(tier) {
+    if (tier === 'pro' || tier === 'unlimited') return _sdL('tierPro');
+    if (tier === 'insider') return _sdL('tierInsider');
+    return _sdL('tierFree');
+  }
+  // status chip text for a plan payload; '' when nothing meaningful to show (free/none).
+  function _sdPlanChip(p) {
+    var status = p.status || 'none';
+    var cpe = p.current_period_end || null;
+    var when = cpe ? _sdDate(cpe) : '';
+    // comp / uncapped grant with no period end = lifetime.
+    if ((p.tier === 'unlimited' || p.source === 'comp') && !cpe && status !== 'canceled') {
+      return '<span class="sd-plan-chip live">' + _escHtml(_sdL('planLifetime')) + '</span>';
+    }
+    if (status === 'trialing') {
+      return '<span class="sd-plan-chip trial">' + _escHtml(_sdL('planTrialUntil')) +
+        (when ? ' ' + _escHtml(when) : '') + '</span>';
+    }
+    if (status === 'active') {
+      return '<span class="sd-plan-chip live">' + _escHtml(_sdL('planRenews')) +
+        (when ? ' ' + _escHtml(when) : '') + '</span>';
+    }
+    if (status === 'canceled') {
+      // A canceled row still inside its paid period shows the end date; past it, just "Expired".
+      var future = cpe && (new Date(cpe).getTime() > Date.now());
+      return '<span class="sd-plan-chip warn">' +
+        _escHtml(future ? _sdL('planExpires') + (when ? ' ' + when : '') : _sdL('planExpired')) + '</span>';
+    }
+    return '';
+  }
+  function _sdPlanHTML() {
+    // Cold cache → a quiet loading row; _wireSDAccount fills it in from /api/me.
+    if (!_sdPlan) {
+      return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
+          '<span class="sd-group-t">' + _sdBl('plan') + '</span>' +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl sd-muted">' + _sdBl('planLoading') + '</span></span>' +
+          '</div></div>' +
+        '</div>';
+    }
+    var p = _sdPlan;
+    var tier = p.tier || 'free';
+    var paid = tier !== 'free';
+    var chip = _sdPlanChip(p);
+    var cta = '';
+    if (tier === 'insider') {
+      // Insider → the one upgrade that exists. Progressive inline confirm: the primary button
+      // reveals the prorated-charge note + a Confirm button (data-sd-up-go) that POSTs the upgrade.
+      cta = '<div class="sd-plan-cta" id="sd-plan-cta">' +
+          '<button type="button" class="sd-btn primary" id="sd-up-btn">' + _sdBl('upgradePro') + '</button>' +
+          '<div class="sd-plan-confirm" id="sd-up-confirm">' +
+            '<p class="sd-note">' + _sdBl('upgradeNote') + '</p>' +
+            '<button type="button" class="sd-btn primary" id="sd-up-go">' + _sdBl('upgradeGo') + '</button>' +
+          '</div>' +
+          '<div class="sd-msg" id="sd-plan-msg" role="alert"></div>' +
+        '</div>';
+    } else if (!paid) {
+      cta = '<div class="sd-plan-cta">' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="signup" id="sd-choose-plan">' + _sdBl('choosePlan') + '</button>' +
+        '</div>';
+    }
+    return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
+        '<span class="sd-group-t">' + _sdBl('plan') + '</span>' +
+        '<div class="sd-row"><div class="sd-row-line">' +
+          '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('plan') + '</span></span>' +
+          '<span class="sd-row-val strong sd-plan-tier">' + _escHtml(_sdTierLabel(tier)) + '</span>' +
+          (chip || '') +
+        '</div></div>' +
+        cta +
+      '</div>';
+  }
+  // Fetch /api/me with the Supabase bearer, cache by user id, re-render once on arrival.
+  function _sdLoadPlan(u) {
+    var uid = (u && u.id) || null;
+    if (!uid) return;
+    if (_sdPlan && _sdPlanFor === uid) return;   // already have this user's plan
+    if (_sdPlanBusy) return;                       // a fetch is in flight
+    _sdPlanBusy = true;
+    var base = window.MM_API || '';
+    getSupabaseClient().then(function (sb) {
+      return sb ? sb.auth.getSession() : null;
+    }).then(function (res) {
+      var tok = res && res.data && res.data.session && res.data.session.access_token;
+      if (!tok) throw new Error('no-session');
+      return fetch(base + '/api/me', { headers: { Authorization: 'Bearer ' + tok } });
+    }).then(function (r) {
+      if (!r || !r.ok) throw new Error('me-' + (r && r.status));
+      return r.json();
+    }).then(function (j) {
+      _sdPlanBusy = false;
+      _sdPlan = j || {}; _sdPlanFor = uid;
+      if (_sdBuilt) _renderSDash();               // repaint with the real plan
+    }).catch(function () {
+      _sdPlanBusy = false;                          // leave the loading row; a later render retries
+    });
+  }
+  // POST /api/billing/upgrade (prorated Insider → Pro), then refresh the plan + entitlement.
+  function _sdDoUpgrade(goBtn) {
+    _sdMsg('sd-plan-msg', ''); _sdSetBusy(goBtn, true, _sdL('upgrading'));
+    var base = window.MM_API || '';
+    getSupabaseClient().then(function (sb) {
+      return sb ? sb.auth.getSession() : null;
+    }).then(function (res) {
+      var tok = res && res.data && res.data.session && res.data.session.access_token;
+      if (!tok) throw new Error('no-session');
+      return fetch(base + '/api/billing/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({})
+      });
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
+    }).then(function (res) {
+      _sdSetBusy(goBtn, false);
+      if (!res.ok) {
+        // 402 carries Stripe's decline message; anything else → the generic plan error.
+        var msg = (res.status === 402 && res.body && res.body.detail) ? res.body.detail : _sdL('planErr');
+        _sdMsg('sd-plan-msg', msg, 'err');
+        return;
+      }
+      _sdMsg('sd-plan-msg', _sdL('upgradeDone'), 'ok');
+      // Drop the cached (Insider) plan and fire the shared refresh: the 'mdx-auth' listener
+      // re-renders the dashboard, whose _wireSDAccount re-fetches /api/me and paints Pro; every
+      // other gated surface (sync pill, onChange subscribers) re-checks entitlement off the same event.
+      _sdPlan = null; _sdPlanFor = null;
+      if (_curUser) _emitAuth({ user: _curUser, event: 'ENTITLEMENT' });
+    }).catch(function () {
+      _sdSetBusy(goBtn, false);
+      _sdMsg('sd-plan-msg', _sdL('planErr'), 'err');
+    });
+  }
+
   function _wireSDAccount(host, state, u) {
     _sdWireCta(host);
     if (state !== 'in') return;
+
+    // ---- plan: load it if cold, wire the inline-confirm upgrade ----
+    _sdLoadPlan(u);
+    var upBtn = document.getElementById('sd-up-btn');
+    if (upBtn) upBtn.addEventListener('click', function () {
+      var cta = document.getElementById('sd-plan-cta');
+      if (cta) cta.classList.add('confirming');   // reveal note + Confirm button
+      var go = document.getElementById('sd-up-go'); if (go) go.focus();
+    });
+    var upGo = document.getElementById('sd-up-go');
+    if (upGo) upGo.addEventListener('click', function () { _sdDoUpgrade(upGo); });
 
     // inline-edit open/cancel
     host.querySelectorAll('[data-sd-edit]').forEach(function (b) {

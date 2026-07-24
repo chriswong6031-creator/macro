@@ -102,6 +102,19 @@ in the dashboard) and its signing secret is auto-installed into `/etc/macro-api.
 deploy-api-secrets workflow — so step 4's manual dashboard endpoint is the fallback, not the primary
 path, once the workflow is wired.
 
+## 5c. Upgrade lane (Insider → Pro)
+
+`POST /api/billing/upgrade` (bearer; body `{interval?}`, target is always tier `pro`) modifies the
+caller's existing live subscription **in place** — it never creates a second one. It swaps the item
+to the Pro price at the user's current cadence (override with `interval`) using
+`proration_behavior="always_invoice"`, so Stripe credits the unused Insider time and charges the
+prorated Pro difference **immediately**; `payment_behavior="error_if_incomplete"` turns a card decline
+into a `402` (Stripe's message) instead of a half-switched sub. **Trialing subs** keep their trial —
+Stripe swaps the price with no proration and an unchanged `trial_end`, so the user just starts Pro
+billing at trial end (`trialing:true`, `prorated:false`). No Stripe dashboard step is required.
+Returns `{status, tier, prorated, trialing, invoice_total_cents, current_period_end}`;
+`404 no subscription` when there's no live sub, `409 already pro` when it is already Pro.
+
 ## 6. Stripe Tax
 
 Dashboard → **Settings → Tax**: set the origin address + registrations. Until configured, set

@@ -193,19 +193,21 @@ def _user_for_customer(customer_id: str) -> str | None:
 
 
 def read_entitlement(user_id: str) -> dict:
-    """Full entitlement row for a user: {tier, features, status, current_period_end}.
+    """Full entitlement row for a user: {tier, features, status, current_period_end, source}.
 
     Fail-safe to the free default (table/key absent, network error → free). Used by
-    /api/me and /api/account for plan display + client-side Pro gating.
+    /api/me and /api/account for plan display + client-side Pro gating. `source`
+    ('stripe'|'substack'|'comp') lets the client distinguish a comp/lifetime grant
+    (source='comp' with a null current_period_end) from a canceled Stripe row.
     """
-    default = {"tier": "free", "features": [], "status": "none", "current_period_end": None}
+    default = {"tier": "free", "features": [], "status": "none", "current_period_end": None, "source": "stripe"}
     if not user_id or not SUPABASE_SERVICE_ROLE_KEY:
         return default
     try:
         rows = _pg(
             "GET",
             f"user_entitlements?user_id=eq.{urllib.parse.quote(user_id)}"
-            "&select=tier,features,status,current_period_end",
+            "&select=tier,features,status,current_period_end,source",
         )
     except Exception as exc:  # noqa: BLE001
         log.debug("billing: read_entitlement failed for %s (%s)", user_id, exc)
@@ -217,6 +219,7 @@ def read_entitlement(user_id: str) -> dict:
             "features": r.get("features") or [],
             "status": r.get("status") or "none",
             "current_period_end": r.get("current_period_end"),
+            "source": r.get("source") or "stripe",
         }
     return default
 
@@ -388,6 +391,57 @@ def _has_live_subscription(customer_id: str) -> bool:
         if status in ("active", "trialing"):
             return True
     return False
+
+
+def _live_subscription(customer_id: str) -> Any | None:
+    """Return the customer's live (active|trialing) subscription OBJECT, or None.
+
+    The upgrade lane needs the object itself (item id + current price), not just the boolean
+    _has_live_subscription gives. Same `status='all'` then filter as the recompute/guards, so all
+    three see the same set. Returns the first live sub — the app only ever creates one at a time.
+    """
+    stripe = _stripe()
+    for s in stripe.Subscription.list(customer=customer_id, status="all", limit=20).data:
+        status = s["status"] if isinstance(s, dict) else s.status
+        if status in ("active", "trialing"):
+            return s
+    return None
+
+
+def _sub_id(sub: Any) -> str | None:
+    return sub["id"] if isinstance(sub, dict) else getattr(sub, "id", None)
+
+
+def _first_item_id(sub: Any) -> str | None:
+    """The id of the subscription's first item — the target of Subscription.modify's items[0].id."""
+    items = _sub_items(sub)
+    if not items:
+        return None
+    it = items[0]
+    return it["id"] if isinstance(it, dict) else getattr(it, "id", None)
+
+
+def _sub_interval(sub: Any) -> str | None:
+    """Derive the billing interval ('monthly'|'annual') from the first item's price.
+
+    Reads the price lookup_key suffix (pro_monthly -> 'monthly', insider_annual -> 'annual') so the
+    upgrade keeps the user on their current cadence unless the request overrides it. Falls back to the
+    price's raw `interval` field ('month'->'monthly', 'year'->'annual') if the lookup_key is missing or
+    unrecognized. Returns None only when neither signal is present (caller then defaults to 'monthly').
+    """
+    items = _sub_items(sub)
+    if not items:
+        return None
+    it = items[0]
+    price = it["price"] if isinstance(it, dict) else getattr(it, "price", None)
+    if price is None:
+        return None
+    lk = (price.get("lookup_key") if isinstance(price, dict) else getattr(price, "lookup_key", None)) or ""
+    suffix = lk.rsplit("_", 1)[-1] if "_" in lk else ""
+    if suffix in ("monthly", "annual"):
+        return suffix
+    raw = (price.get("interval") if isinstance(price, dict) else getattr(price, "interval", None)) or ""
+    return {"month": "monthly", "year": "annual"}.get(raw)
 
 
 # --------------------------------------------------------------------------- #
@@ -651,6 +705,113 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     sub_id = sub["id"] if isinstance(sub, dict) else sub.id
     sub_status = sub["status"] if isinstance(sub, dict) else sub.status
     return {"status": sub_status, "subscription_id": sub_id, "trial_end": trial_end}
+
+
+class UpgradeRequest(BaseModel):
+    interval: str | None = Field(
+        None, description="'monthly' | 'annual' — defaults to the current subscription's cadence")
+
+
+@router.post("/api/billing/upgrade")
+def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
+    """Upgrade the caller's live subscription to Pro, charging the prorated difference NOW.
+
+    The only upgrade that exists is → tier 'pro' (Insider → Pro). We modify the existing
+    subscription in place (never create a second one), swapping its price for the Pro price at the
+    same cadence the user is already on — unless the body overrides `interval`.
+
+    Proration law (the operator's ask — "pro-rated rate using their leftover time, by the difference
+    in cost"): `proration_behavior='always_invoice'` credits the unused time on the old (Insider) price
+    and charges the new (Pro) price pro-rata for the remainder of the current period, invoicing that
+    net difference immediately. `payment_behavior='error_if_incomplete'` makes a card decline fail the
+    call (→ 402) instead of leaving a half-switched subscription in an incomplete state.
+
+    TRIALING subs are honest by construction: Stripe swaps the price but does NOT prorate during a
+    trial (there is nothing to prorate — no money has changed hands), and trial_end is untouched. The
+    user simply starts Pro billing when the trial ends. We surface that as trialing:true / prorated:false.
+
+    Same-module authority (like /subscribe/complete + _handle_event): on success we recompute → upsert
+    → invalidate so /api/me reflects Pro immediately; the webhook remains the convergent source of truth.
+    """
+    target_tier = "pro"
+    interval_override = (body.interval or "").strip().lower() or None
+    if interval_override and interval_override not in ("monthly", "annual"):
+        raise HTTPException(400, f"unknown interval '{interval_override}'")
+
+    user_id = user.get("id")
+    if not user_id:
+        raise HTTPException(401, "no user id")
+
+    customer_id = _existing_customer(user_id)
+    if not customer_id:
+        raise HTTPException(404, "no subscription")
+
+    stripe = _stripe()
+    try:
+        sub = _live_subscription(customer_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing: upgrade sub-lookup failed for %s (%s)", user_id, exc)
+        raise HTTPException(502, f"upgrade failed: {exc}") from None
+    if sub is None:
+        raise HTTPException(404, "no subscription")
+
+    if _sub_tier(sub) == target_tier:
+        raise HTTPException(409, "already pro")
+
+    sub_id = _sub_id(sub)
+    item_id = _first_item_id(sub)
+    if not sub_id or not item_id:
+        raise HTTPException(502, "upgrade failed: subscription has no modifiable item")
+
+    interval = interval_override or _sub_interval(sub) or "monthly"
+    target_lookup_key = _tier_to_lookup_key(target_tier, interval)
+    if not target_lookup_key:
+        raise HTTPException(400, f"no price for {target_tier}/{interval}")
+
+    is_trialing = (sub["status"] if isinstance(sub, dict) else sub.status) == "trialing"
+
+    try:
+        updated = stripe.Subscription.modify(
+            sub_id,
+            items=[{"id": item_id, "price": _price_id(target_lookup_key)}],
+            proration_behavior="always_invoice",
+            payment_behavior="error_if_incomplete",
+            metadata={"mm_user_id": user_id},
+            expand=["latest_invoice"],
+        )
+    except stripe.error.CardError as exc:
+        # error_if_incomplete surfaces the decline synchronously — pass Stripe's message straight through.
+        msg = getattr(exc, "user_message", None) or str(exc)
+        log.info("billing: upgrade declined for %s (%s)", user_id, msg)
+        raise HTTPException(402, msg) from None
+    except Exception as exc:  # noqa: BLE001 — house pattern: any other Stripe failure -> 502
+        log.warning("billing: upgrade modify failed for %s (%s)", user_id, exc)
+        raise HTTPException(502, f"upgrade failed: {exc}") from None
+
+    # Same-module authority: recompute -> upsert -> invalidate so /api/me flips to Pro instantly.
+    try:
+        ent = _compute_entitlement(customer_id)
+        _upsert_entitlement(user_id, customer_id, ent)
+        _invalidate(user_id)
+    except Exception as exc:  # noqa: BLE001 — the sub is switched; the webhook converges the row even if this fails
+        log.warning("billing: post-upgrade entitlement sync failed for %s (%s)", user_id, exc)
+
+    # Trials don't prorate (no money moves during the trial); a real switch always invoices.
+    prorated = not is_trialing
+    inv = updated.get("latest_invoice") if isinstance(updated, dict) else getattr(updated, "latest_invoice", None)
+    invoice_total_cents = None
+    if isinstance(inv, dict):
+        invoice_total_cents = inv.get("total")
+    elif inv is not None and not isinstance(inv, str):
+        invoice_total_cents = getattr(inv, "total", None)
+    return {
+        "status": "ok",
+        "tier": target_tier,
+        "prorated": prorated,
+        "trialing": is_trialing,
+        "invoice_total_cents": invoice_total_cents,
+        "current_period_end": _iso(_sub_period_end(updated)),
+    }
 
 
 # events we act on; anything else is acknowledged (200) and ignored
