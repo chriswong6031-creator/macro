@@ -128,5 +128,19 @@ ALFRED/official retrieval remains the only canonical actual/scoreboard writer.
    set the variable false before dispatching or simply use manual dispatch, which
    is always allowed by the workflow guards.
 
+The installer does not remove the legacy VPS cron writer until the fast lane
+passes its smoke test and all replacement timers are enabled. To roll back the
+VPS itself, run:
+
+```bash
+sudo bash /opt/macro/app/deploy/live-rollback.sh
+```
+
+The rollback disables the three timers, restores the legacy five-minute cron
+entry if needed, and moves the external public tree to a timestamped backup.
+Caddy then falls back to the last `site.served` artifacts immediately. Private
+state and data are retained for diagnosis. Set `VPS_LIVE_PRIMARY=false` (or delete
+the variable) as a separate control-plane step to resume scheduled Actions jobs.
+
 Do not run both scheduled writers after cutover. A dead-man failover may be added,
 but it must first check VPS freshness and acquire ownership before writing.

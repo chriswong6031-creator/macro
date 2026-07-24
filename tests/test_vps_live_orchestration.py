@@ -156,6 +156,24 @@ def test_cutover_guards_keep_manual_recovery():
         assert "github.event_name == 'workflow_dispatch'" in text
 
 
+def test_live_setup_retires_legacy_only_after_smoke_and_timer_enable():
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "app" / "deploy" / "live-setup.sh").read_text()
+    smoke = text.index("systemctl start macro-live-fast.service")
+    enable = text.index("systemctl enable --now")
+    retire = text.index('grep -v "macro-live')
+    assert smoke < enable < retire
+
+
+def test_live_rollback_is_non_destructive_and_restores_legacy_writer():
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "app" / "deploy" / "live-rollback.sh").read_text()
+    assert "systemctl disable --now" in text
+    assert "/usr/local/bin/macro-live" in text
+    assert 'mv "$PUBLIC_DIR" "$backup_dir"' in text
+    assert "rm -rf" not in text
+
+
 def test_caddy_serves_live_store_without_cache():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "Caddyfile").read_text()

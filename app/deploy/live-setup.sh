@@ -57,13 +57,10 @@ do
 done
 systemctl daemon-reload
 
-log "[4/6] remove legacy cron writer"
-tmp_cron=$(mktemp)
-crontab -l 2>/dev/null | grep -v "macro-live\\|build_live_overlay" > "$tmp_cron" || true
-crontab "$tmp_cron"
-rm -f "$tmp_cron"
-
-log "[5/6] smoke test publication + fast lane"
+log "[4/6] smoke test publication + fast lane"
+# Keep the legacy cron writer in place until the replacement has proven that it
+# can publish successfully. A failed install therefore leaves the old live path
+# intact instead of creating an outage.
 set +e
 systemctl start macro-live-fast.service
 smoke_rc=$?
@@ -75,11 +72,20 @@ if [ "$smoke_rc" -ne 0 ]; then
 fi
 test -s "$LIVE_DIR/orchestrator_status.json"
 
-log "[6/6] enable timers"
+log "[5/6] enable replacement timers"
 systemctl enable --now \
   macro-live-fast.timer \
   macro-live-snapshot.timer \
   macro-live-bars.timer >/dev/null
+
+log "[6/6] retire legacy cron writer"
+tmp_cron=$(mktemp)
+cleanup() { rm -f "$tmp_cron"; }
+trap cleanup EXIT
+crontab -l 2>/dev/null | grep -v "macro-live\\|build_live_overlay" > "$tmp_cron" || true
+crontab "$tmp_cron"
+cleanup
+trap - EXIT
 
 log "DONE — live plane installed"
 systemctl list-timers \

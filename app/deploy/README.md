@@ -83,6 +83,7 @@ curl -sI https://mastermind-x.com/ | head -10        # expect 200 + x-robots-tag
 | `Caddyfile` | serves `/opt/macro/site.served` plus the external live plane |
 | `update.sh` | `git pull` + Caddy reload (installed as `/usr/local/bin/macro-update`, cron'd) |
 | `live-setup.sh` | installs the fast, full-snapshot, and intraday-bar systemd lanes |
+| `live-rollback.sh` | disables the live lanes, restores legacy cron, and preserves artifacts in a backup |
 
 ## Notes / gotchas
 
