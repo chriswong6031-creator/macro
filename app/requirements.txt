@@ -5,6 +5,9 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30
 pydantic>=2.0,<3.0
+# Reviewed serving-boundary policy (config/site_access.yml). Imported at API
+# startup by app/paywall.py, so this is a hard serving-tier dependency.
+PyYAML>=6.0,<7.0
 # Auth is secretless (verifies tokens via Supabase /auth/v1/user using stdlib
 # urllib) — no JWT library needed.
 # W8b PR2: ask-the-brain — LLM client for the request-scoped cortex loop.

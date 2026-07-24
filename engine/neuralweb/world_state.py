@@ -3477,6 +3477,60 @@ def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_mag7_washout(root: "Path | str | None" = None) -> dict:
+    """Compose the mag7_washout gate lobe from data/mag7_washout/latest.json.
+
+    MWR §7 W1c (research/MAG7_WASHOUT_REENTRY_PREREG.md): cohort washout
+    re-entry GATE state — deterministic arithmetic (2W Stoch-RSI + member
+    breadth + RSI-MACD arm), background-only by ruling (DO_NOT_REBUILD §2).
+    Follows the darkpool-lobe discipline: all IO here, _clean() every scalar,
+    display_only=True + is_context_only=True ALWAYS (incl. the null fallback),
+    absent artifact → honest-null block (caller appends NO gap).
+
+    Standing law: this is a PROCESS gate, never a signal/rank/size — Use-B
+    (timing authority) is un-ratified; LLM consumers may only de-escalate
+    ("gate idle/armed" is context, never a call to act).
+    """
+    repo = _repo_root(root)
+    base = repo / "data" / "mag7_washout"
+    null_out = {
+        "as_of": None, "state": None, "stoch2w_k": None, "stoch2w_d": None,
+        "members_washed": None, "armed": None, "last_trigger": None,
+        "display_only": True, "is_context_only": True,
+    }
+    try:
+        path = base / "latest.json"
+        if not path.exists():
+            return null_out
+        d = json.loads(path.read_text(encoding="utf-8")) or {}
+        basket = d.get("basket") or {}
+        last_trigger = None
+        trig_p = base / "triggers.jsonl"
+        if trig_p.exists():
+            for ln in reversed(trig_p.read_text(encoding="utf-8").splitlines()):
+                if ln.strip():
+                    try:
+                        r = json.loads(ln)
+                        last_trigger = {"tf": _clean(r.get("tf")), "date": _clean(r.get("date"))}
+                    except Exception:  # noqa: BLE001
+                        pass
+                    break
+        return {
+            "as_of": _clean(d.get("as_of")),
+            "state": _clean(d.get("state")),
+            "stoch2w_k": _clean(basket.get("stoch2w_k")),
+            "stoch2w_d": _clean(basket.get("stoch2w_d")),
+            "members_washed": _clean(d.get("members_washed")),
+            "armed": _clean(d.get("armed")),
+            "last_trigger": last_trigger,
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("mag7_washout: compose failed — %s", exc)
+        return null_out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -4216,6 +4270,19 @@ def build_world_state(
             "venue_mover": None, "changes": None, "display_only": True, "is_context_only": True,
         }
     sources[str(_dpf_path.relative_to(repo))] = (darkpool_flow_block or {}).get("as_of")
+    # MWR §7 W1c — mag7 washout re-entry gate lobe (display-only; honest-null when absent)
+    _mwr_path = data_dir / "mag7_washout" / "latest.json"
+    try:
+        mag7_washout_block: dict = _compose_mag7_washout(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: mag7_washout lobe failed — %s", exc)
+        gaps.append(f"mag7_washout: {exc}")
+        mag7_washout_block = {
+            "as_of": None, "state": None, "stoch2w_k": None, "stoch2w_d": None,
+            "members_washed": None, "armed": None, "last_trigger": None,
+            "display_only": True, "is_context_only": True,
+        }
+    sources[str(_mwr_path.relative_to(repo))] = (mag7_washout_block or {}).get("as_of")
     # No gap appended when absent: the honest-null block communicates absence; the
     # producer (scripts/build_darkpool_desk.py → engine.darkpool_context) is optional
     # until its first nightly run. Matches the stage_analysis optional-artifact pattern.
@@ -4266,6 +4333,7 @@ def build_world_state(
         "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
         "stage_analysis": stage_analysis_block,  # SGA-W2 stage_context.v1 lobe (display-only, None-fields until first run)
         "darkpool_flow": darkpool_flow_block,  # darkpool_context.v1 off-exchange positioning lobe (display-only)
+        "mag7_washout": mag7_washout_block,  # MWR §7 W1c re-entry gate lobe (display-only; Use-B un-ratified)
         "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)
         "gaps": gaps,
         "sources": sources,

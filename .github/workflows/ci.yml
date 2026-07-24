@@ -194,9 +194,11 @@ on:
       # M7C-R2/R3: Mag-7 Regime Context Organ (engine/mag7_regime.py).
       - "engine/mag7_regime.py"
       - "tests/test_mag7_regime.py"
-      # MWR-W0: Mag-7 washout re-entry gate (background-only; prereg-gated resurface).
+      # MWR-W0/W1: Mag-7 washout re-entry gate + shadow lane (background-only).
       - "engine/mag7_washout.py"
+      - "engine/mag7_washout_shadow.py"
       - "tests/test_mag7_washout.py"
+      - "tests/test_mag7_washout_shadow.py"
       - "tests/test_ignition_persistence.py"
       # Mag 7 panel: template partial + build_site loader.
       - "templates/_mag7_panel.html.j2"
@@ -258,6 +260,12 @@ on:
       # headline crash or schema drift fails RED before merging.
       - "scripts/build_intel_hub.py"
       - "tests/test_china_lens_hub.py"
+      # china.html.j2 Prophet-board render guards: the W1-C three-shelf + anv2 board test
+      # and the board-track-record test render against templates/china.html.j2 (already in
+      # templates/**), but the test-only files need explicit paths so a test-only re-pin
+      # still re-runs the rot-sweep step that carries them.
+      - "tests/test_china_stocks_w1c_render.py"
+      - "tests/test_china_board_track_render.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -359,10 +367,13 @@ on:
       - "site/factordata/contracts/artifact_manifest.json"
       - "tests/test_contract_drift.py"
       # Portfolio-Aware Intelligence W0/W1: portfolio_ctx.v1 bake + brief composer +
-      # tests (see the portfolio-ctx job). Whitelisted so both unit suites run on any
-      # change to the bake, the composer, or their tests.
+      # theme_lanes side-write + tests (see the portfolio-ctx job). Whitelisted so the
+      # bake's unit suite, the composer suite, and the theme_lanes.v1 side-write guard
+      # (page-byte-identity invariant) all run on any change.
       - "scripts/build_portfolio_ctx.py"
       - "tests/test_build_portfolio_ctx.py"
+      - "scripts/build_state_of_themes.py"
+      - "tests/test_state_of_themes.py"
       - "engine/portfolio_brief.py"
       - "tests/test_portfolio_brief.py"
       # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
@@ -1094,6 +1105,7 @@ jobs:
           tests/test_build_netliq_daily.py
           tests/test_ignition_radar.py
           tests/test_mag7_washout.py
+          tests/test_mag7_washout_shadow.py
           tests/test_mag7_regime.py
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
@@ -1115,6 +1127,8 @@ jobs:
           tests/test_china_news_engine.py
           tests/test_china_library_limited.py
           tests/test_china_standouts_serialization.py
+          tests/test_china_stocks_w1c_render.py
+          tests/test_china_board_track_render.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
@@ -2693,8 +2707,13 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas pyarrow fastapi httpx pydantic
+        run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
       - name: portfolio-ctx bake unit tests
         run: python -m pytest tests/test_build_portfolio_ctx.py -q
       - name: portfolio-brief composer + endpoint tests
         run: python -m pytest tests/test_portfolio_brief.py -q
+      - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
+        # The theme_lanes.v1 side-artifact + the page-byte-identity invariant that keep
+        # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
+        # jinja-based subset (no node / no heavy repo state) is selected here.
+        run: python -m pytest tests/test_state_of_themes.py -q -k "theme_lanes or byte_identical"

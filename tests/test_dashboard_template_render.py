@@ -359,3 +359,120 @@ def test_deep_dive_dialog_still_has_cash_indices():
                            "rsi": 55.0, "label": "S&P 500"}]
     html = env.get_template("dashboard.html.j2").render(**vm, mode="macro")
     assert 'class="mx5-dlg-idx-px nb-px" data-sym="SPY"' in html
+
+
+# --------------------------------------------------------------------------- #
+# ⚡ Prophet × Top-setups presentation merge (2026-07-24 masterplan:
+# research/PROPHET_TOPSETUPS_PRESENTATION_MERGE_MASTERPLAN.md).
+# Contract under test: membership in the top_setups artifact IS the trigger gate
+# (chip on the card), and the sub-board lists ONLY names not carded above.
+# --------------------------------------------------------------------------- #
+
+def _setup_row(**overrides) -> dict:
+    """One top_setups.buy row — field census from the sub-board table body.
+    alpha/setup must be numeric ('%+.2f'|format crashes on Undefined); the
+    guarded-but-`is not none`-tested keys (factor_z) must be EXPLICIT None
+    (a MISSING key yields Undefined, and `Undefined is not none` is True, which
+    then reaches the format filter — the same crash class the module docstring
+    documents)."""
+    row = {
+        "ticker": "ZORB",
+        "name": "Zorb Dynamics",
+        "sector": "Industrials",
+        "alpha": 0.61,
+        "setup": 0.88,
+        "sector_rank": None,
+        "sector_n": None,
+        "label": None,
+        "alpha_entry": None,
+        "factor_z": None,
+        "insider_buyers": None,
+        "insider_net_mn": None,
+        "insider_bps": None,
+        "sue_z": None,
+        "signal": {"tier_cascade": "T1", "provisional": False},
+    }
+    row.update(overrides)
+    return row
+
+
+def _vm_with_setups(setup_rows: list) -> dict:
+    vm = _base_vm()
+    vm["top_setups"] = {"buy": setup_rows, "eligible": len(setup_rows)}
+    return vm
+
+
+def test_trigger_chip_renders_for_carded_overlap_ticker():
+    """A board card whose ticker is also in top_setups.buy carries the ⚡ chip
+    (fired form for T1), and — same render — the sub-board does NOT repeat the
+    name as a table row: with full overlap the all-overlap empty state shows."""
+    vm = _vm_with_setups([_setup_row(ticker="ACME", name="Acme Corp",
+                                     sector="Information Technology")])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert 'class="pv-trg"' in html            # chip rendered (fired = no -soon class)
+    assert ">Triggered<" in html               # EN chip label (l-en span)
+    assert ">已触发<" in html                   # ZH chip label (l-zh span)
+    assert "onclick=\"location.href='stock.html#ACME'\"" not in html  # no ts-row dupe
+    assert "already on the board above" in html  # all-overlap empty state, not a bare table
+
+
+def test_trigger_chip_imminent_variant_is_dashed():
+    """T3 (about-to-cross) renders the dashed 'imminent' chip form."""
+    vm = _vm_with_setups([_setup_row(ticker="ACME",
+                                     signal={"tier_cascade": "T3", "provisional": True})])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert "pv-trg-soon" in html
+    assert ">Imminent<" in html and ">即将触发<" in html
+    # provisional caveat reaches the chip tip (Tier 2), in plain words
+    assert "about 1 in 10 of these vanish" in html
+
+
+def test_no_chip_when_top_setups_absent():
+    """Fail-soft (§0.5): top_setups None/empty -> cards render with no chip and
+    no sub-board. This is the first-run / degraded-build shape."""
+    env = _env()
+    for absent in (None, []):
+        vm = _base_vm()
+        vm["top_setups"] = absent
+        html = env.get_template("dashboard.html.j2").render(**vm, mode="stocks")
+        assert "ACME" in html          # board itself still renders
+        # element-level absence (the .pv-trg / .topsetups CSS rules always ship)
+        assert '<span class="pv-trg' not in html   # no chip markup
+        assert '<div class="topsetups"' not in html  # no sub-board wrapper
+
+
+def test_subboard_lists_only_residual_names():
+    """Filter runs before the display cap: the carded name (ACME) is excluded
+    from the table, the non-carded name (ZORB) renders as a row, and the bridge
+    count line states the split."""
+    vm = _vm_with_setups([
+        _setup_row(ticker="ACME", name="Acme Corp", sector="Information Technology"),
+        _setup_row(),  # ZORB — not on the card board
+    ])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert "onclick=\"location.href='stock.html#ZORB'\"" in html      # residual row shown
+    assert "onclick=\"location.href='stock.html#ACME'\"" not in html  # carded name filtered
+    assert "1 of today" in html  # bridge line: "1 of today's 2 triggers already appear…"
+
+
+def test_subboard_unfiltered_when_standouts_absent():
+    """us_standouts=None -> empty carded set -> the sub-board falls back to the
+    full unfiltered trigger list (no cards exist for the chips to live on).
+    The panel gate is `_su or action_board.notable`, so the degraded shape needs
+    a notable row for the panel (and with it the sub-board) to render at all —
+    _board_row() already carries the notable branch's full key census."""
+    vm = _vm_with_setups([_setup_row()])
+    vm["us_standouts"] = None
+    vm["action_board"]["notable"] = [_board_row(ticker="ZAPP", name="Zapp Co",
+                                                spark_svg="<svg></svg>")]
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert "onclick=\"location.href='stock.html#ZORB'\"" in html
+
+
+def test_no_triggers_empty_state_preserved():
+    """top_setups present but with zero buy rows keeps the original honest
+    empty state (distinct from the all-overlap state)."""
+    vm = _vm_with_setups([])
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert "No fresh buy triggers today" in html
+    assert "already on the board above" not in html

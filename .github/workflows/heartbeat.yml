@@ -38,7 +38,7 @@ jobs:
           # DISCORD_WEBHOOK_URL when present, else uses this).
           DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
         run: python -m scripts.healthcheck
-      - name: light-lane dead-man (fastpath ticks on the macstudio-light runner)
+      - name: live-plane dead-man handoff
         # The live lanes (intraday-fastpath / intraday-bars / the three sentinels) are
         # pinned to the single dedicated `macstudio-light` runner so they never queue
         # behind the heavy 3-slot macstudio pool. Single-runner label = if that runner
@@ -49,10 +49,18 @@ jobs:
         # 90 minutes. Holidays skip (fastpath provably commits nothing on holidays —
         # zero `live:` commits on 2026-06-19 Juneteenth). Failure trips the workflow's
         # GitHub notification like every other heartbeat leg.
+        # Once VPS_LIVE_PRIMARY is armed, the GitHub-hosted vps-live-heartbeat
+        # owns this check. Do not interpret the intentionally absent Mac commit
+        # as a dead runner.
+        env:
+          VPS_LIVE_PRIMARY: ${{ vars.VPS_LIVE_PRIMARY }}
         run: |
           python - <<'PY'
-          import datetime as dt, subprocess, sys
+          import datetime as dt, os, subprocess, sys
           from lib.nyse_calendar import is_session
+          if os.environ.get("VPS_LIVE_PRIMARY", "").lower() == "true":
+              print("VPS live plane is primary; external vps-live-heartbeat owns freshness")
+              sys.exit(0)
           now = dt.datetime.now(dt.timezone.utc)
           if not is_session(now.date()):
               print(f"{now.date()} is not a NYSE session day - skipping dead-man check")

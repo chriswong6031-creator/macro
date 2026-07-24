@@ -39,6 +39,9 @@ concurrency:
 
 jobs:
   snapshot:
+    # The VPS display-quote lane is 24/7 and supersedes this commit-based writer.
+    # Keep workflow_dispatch as an operator fallback after scheduled cutover.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:

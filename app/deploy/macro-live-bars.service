@@ -1,0 +1,22 @@
+[Unit]
+Description=Mastermind low-priority intraday bar accrual and flow lane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.vps_live_orchestrator --lane bars
+TimeoutStartSec=900
+Nice=10
+CPUWeight=20
+CPUQuota=90%
+MemoryHigh=900M
+MemoryMax=1280M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

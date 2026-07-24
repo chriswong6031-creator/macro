@@ -1,0 +1,25 @@
+name: vps-live-heartbeat
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vps-live-heartbeat
+  cancel-in-progress: true
+
+jobs:
+  health:
+    # This becomes the external dead-man only after the production soak. It uses
+    # GitHub-hosted compute so an offline Mac fleet cannot mask a dead VPS.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: verify public VPS lane freshness
+        run: python scripts/check_vps_live_health.py

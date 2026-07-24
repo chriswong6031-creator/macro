@@ -35,6 +35,7 @@ import json
 import logging
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
@@ -116,7 +117,8 @@ def _write_meta(outdir, *, bar: str, universe_n: int, now: datetime) -> None:
 
 
 def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
-           only: list[str] | None = None, limit: int | None = None) -> dict:
+           only: list[str] | None = None, limit: int | None = None,
+           out_dir: Path | None = None) -> dict:
     """Extend data/intraday/<T>.parquet with fresh Polygon hourly bars.
 
     ``lookback_days`` overrides the cold-start window (when no prior file exists); on an
@@ -135,7 +137,9 @@ def accrue(as_of=None, *, lookback_days: int | None = None, full: bool = False,
 
     now = as_of or datetime.now(timezone.utc)
     to = now.date()
-    outdir = config.data_dir() / GROUP
+    # The VPS uses an external ephemeral store so intraday accrual never mutates
+    # canonical repo data. Mac/CI callers keep the historical default.
+    outdir = Path(out_dir) if out_dir is not None else config.data_dir() / GROUP
     outdir.mkdir(parents=True, exist_ok=True)
 
     universe = _universe()
@@ -207,9 +211,22 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None, help="cap the universe (debug)")
     ap.add_argument("--symbols", default=None,
                     help="comma-separated tickers to restrict to (debug)")
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="override data/intraday output directory (VPS uses /var/lib/macro-live/data/intraday)",
+    )
     args = ap.parse_args()
     only = [s.strip() for s in args.symbols.split(",")] if args.symbols else None
-    print(accrue(lookback_days=args.lookback_days, full=args.full, only=only, limit=args.limit))
+    print(
+        accrue(
+            lookback_days=args.lookback_days,
+            full=args.full,
+            only=only,
+            limit=args.limit,
+            out_dir=Path(args.out_dir) if args.out_dir else None,
+        )
+    )
 
 
 if __name__ == "__main__":

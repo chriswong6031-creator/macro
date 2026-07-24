@@ -19,27 +19,26 @@ flock -n 9 || exit 0
 git -C "$APP_DIR" fetch --depth 1 -q origin main
 OLD=$(git -C "$APP_DIR" rev-parse HEAD)
 NEW=$(git -C "$APP_DIR" rev-parse FETCH_HEAD)
-[ "$OLD" = "$NEW" ] && exit 0   # nothing new — cheap no-op (frequent-cron safe)
+CHANGED=""
+REPO_UPDATED=0
+RECONCILED=0
 
-CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW" 2>/dev/null || true)
-git -C "$APP_DIR" reset --hard -q FETCH_HEAD
+if [ "$OLD" != "$NEW" ]; then
+	CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW" 2>/dev/null || true)
+	git -C "$APP_DIR" reset --hard -q FETCH_HEAD
+	REPO_UPDATED=1
 
-# Publish the served tree ATOMICALLY. `git reset --hard` above rewrites changed
-# files IN PLACE (truncate-then-write), so if Caddy's root were the git work-tree
-# it could hand out a 0-byte file mid-reset — and the CDN would cache that empty
-# 200 (the 2026-07-03 white-page incident: a blank us_stocks/macro/china served
-# for ~an hour from a poisoned EdgeOne edge entry). So the Caddy root is a SEPARATE
-# dir OUTSIDE the git tree (see Caddyfile: root /opt/macro/site.served), refreshed
-# here by rsync — whose per-file temp-write + rename() is atomic on the same
-# filesystem, so a concurrent read sees either the whole old file or the whole new
-# one, never a partial. --delete prunes pages removed upstream.
-# --min-size=1 is the 0-byte guard: an empty source file (interrupted checkout,
-# disk-full, any future race this script hasn't met yet) is never transferred,
-# so the last GOOD copy keeps serving — an empty page can't reach the CDN from
-# here. site/ legitimately contains no empty files (verified 2026-07-11);
-# revisit the flag if a deliberately-empty file ever ships.
-mkdir -p "$APP_DIR/site.served"
-rsync -a --delete --min-size=1 "$APP_DIR/site/" "$APP_DIR/site.served/"
+	# Publish the served tree ATOMICALLY. `git reset --hard` above rewrites
+	# changed files IN PLACE, so Caddy serves a separate rsync target whose
+	# per-file temp-write + rename keeps every visible file whole.
+	mkdir -p "$APP_DIR/site.served"
+	rsync -a --delete --min-size=1 "$APP_DIR/site/" "$APP_DIR/site.served/"
+fi
+
+# Do not exit just because Git is current. A prior run may have self-updated
+# this script while continuing to execute its old inode, or an operator may
+# have drifted an installed unit/config. Reconciliation below is deliberately
+# idempotent and must also run on a repository no-op.
 
 # Self-update: setup.sh installs this script ONCE at provisioning; without this
 # block a repo-side fix to update.sh only reaches the box when an operator
@@ -51,6 +50,7 @@ rsync -a --delete --min-size=1 "$APP_DIR/site/" "$APP_DIR/site.served/"
 if ! cmp -s "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update; then
 	if bash -n "$APP_DIR/app/deploy/update.sh"; then
 		install -m 0755 "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update
+		RECONCILED=1
 		echo "macro-update: self-updated from repo"
 	else
 		echo "macro-update: refusing self-update — bash -n failed" >&2
@@ -60,8 +60,29 @@ fi
 # Caddyfile: reinstall + validate + reload ONLY when it actually changed (a bad
 # config can never take the site down — reload is gated on `caddy validate`).
 if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
-	install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
-	caddy validate --config /etc/caddy/Caddyfile && { systemctl reload caddy 2>/dev/null || systemctl restart caddy; }
+	if caddy validate --config "$APP_DIR/app/deploy/Caddyfile" --adapter caddyfile; then
+		install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
+		systemctl reload caddy 2>/dev/null || systemctl restart caddy
+		RECONCILED=1
+	else
+		echo "macro-update: refusing Caddyfile update — validation failed" >&2
+	fi
+fi
+
+# macro-api systemd sandbox: keep the installed unit aligned with the reviewed
+# repo copy. Validate before installation; a broken unit never replaces the
+# running one. The restart decision below includes this path.
+API_UNIT_UPDATED=0
+if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service; then
+	if systemd-analyze verify "$APP_DIR/app/deploy/macro-api.service"; then
+		install -m 0644 "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-api.service
+		systemctl daemon-reload
+		API_UNIT_UPDATED=1
+		RECONCILED=1
+		echo "macro-update: macro-api systemd sandbox updated"
+	else
+		echo "macro-update: refusing macro-api unit update — systemd-analyze verify failed" >&2
+	fi
 fi
 
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
@@ -71,8 +92,36 @@ fi
 # without a restart an engine-side fix never goes live. Doctrine CONTENT
 # (engine/neuralweb/doctrine/*.md) is deliberately NOT here: doctrine.py reloads
 # the .md files on mtime change, so prose-only edits go live without an /api blip.
-if echo "$CHANGED" | grep -qE '^(app/(main\.py|requirements\.txt|__init__\.py)|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
+# Any Python module under app/ is import-cached by uvicorn and therefore needs
+# a restart. The old narrow list omitted routers such as regwall.py/paywall.py:
+# code could deploy while the running API kept the previous access policy.
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
+fi
+
+# Live-plane systemd definitions are installed by live-setup.sh. Once that setup
+# has happened, keep unit/resource/timer changes tracking main automatically.
+# Python task code needs no restart because every lane is a fresh oneshot process.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   echo "$CHANGED" | grep -qE '^app/deploy/macro-live-(fast|snapshot|bars)\.(service|timer)$'; then
+	LIVE_UNIT_SOURCES=()
+	for UNIT in \
+		macro-live-fast.service macro-live-fast.timer \
+		macro-live-snapshot.service macro-live-snapshot.timer \
+		macro-live-bars.service macro-live-bars.timer
+	do
+		LIVE_UNIT_SOURCES+=("$APP_DIR/app/deploy/$UNIT")
+	done
+	if systemd-analyze verify "${LIVE_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${LIVE_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+		done
+		systemctl daemon-reload
+		systemctl restart macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer
+	else
+		echo "macro-update: refusing live-plane unit update — systemd-analyze verify failed" >&2
+	fi
 fi
 
 # admin console: restart ONLY when its own code changed, so the deployed panel at
@@ -90,4 +139,6 @@ if echo "$CHANGED" | grep -qE '^(admin/.*|lib/ai_costs\.py|engine/neuralweb/(key
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
-echo "macro-update $(date -u +%FT%TZ) ${OLD:0:8}..$(git -C "$APP_DIR" rev-parse --short HEAD)"
+if [ "$REPO_UPDATED" -eq 1 ] || [ "$RECONCILED" -eq 1 ]; then
+	echo "macro-update $(date -u +%FT%TZ) ${OLD:0:8}..$(git -C "$APP_DIR" rev-parse --short HEAD)"
+fi

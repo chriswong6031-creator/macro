@@ -44,7 +44,7 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="theme.css?v=eeb9bebc">
 
 <link rel="stylesheet" href="assets/css/d45955e9.css?v=d45955e9">
 </head>
@@ -749,7 +749,7 @@
           </div>
           <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
         </div>
-        <div class="actbody lst-collapse lst-cap6 is-collapsed" id="dash-hold-fold">
+        <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
           <div data-theme-id="energy_complex"><a class="actitem ai-theme" data-rpop href="basket/energy_complex.html">
       <span class="act-row-top">
         <span class="ai-bdg">🧩</span>
@@ -1760,7 +1760,7 @@
           <p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+9 more — full list on the baskets page →</span><span class="l-zh">还有 9 个 — 完整列表见主题篮子页 →</span></a></p>
         </div>
         
-        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> (22) ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> (25) ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
         
       </div>
     </div>
@@ -1803,7 +1803,7 @@
       
       
       
-      <details class="nb-delta-strip">
+      <details class="nb-delta-strip" hidden aria-hidden="true">
         <summary class="nb-delta-hdr">
           <span class="l-en">What changed today (30)</span>
           <span class="l-zh">今日变化 (30)</span>
@@ -5121,6 +5121,7 @@
 
   // ── open / close ──────────────────────────────────────────────────────────
   function open(){
+    document.dispatchEvent(new CustomEvent('prophet:dialog-open', {detail:{id:dlg.id}}));
     scrollY = window.scrollY || 0;
     dlg.classList.add('trd-open');
     document.documentElement.classList.add('trd-lock');
@@ -5136,10 +5137,12 @@
     btn.setAttribute('aria-expanded','false'); btn.classList.remove('trd-is-open');
     var done = function(){
       dlg.classList.remove('trd-open','trd-closing');
-      document.documentElement.classList.remove('trd-lock');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollY);
-      btn.focus();
+      if(!document.querySelector('.trd-dlg.trd-open')){
+        document.documentElement.classList.remove('trd-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+        btn.focus();
+      }
       panel.removeEventListener('transitionend', done);
     };
     if(reduce){ done(); } else { var t=setTimeout(done, 260); panel.addEventListener('transitionend', function h(){ clearTimeout(t); done(); }, {once:true}); }
@@ -5147,6 +5150,9 @@
   btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
   dlg.querySelectorAll('[data-trd-close]').forEach(function(el){ el.addEventListener('click', close); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  document.addEventListener('prophet:dialog-open', function(e){
+    if(e.detail && e.detail.id !== dlg.id && dlg.classList.contains('trd-open')) close();
+  });
   // focus trap (lightweight)
   dlg.addEventListener('keydown', function(e){
     if(e.key !== 'Tab') return;
@@ -5370,6 +5376,177 @@
   // re-render chips/labels on language flip so ZH copy stays live
   var langObs = new MutationObserver(function(){ if(DATA){ buildRail(); render(); } });
   langObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang']});
+})();
+</script>
+
+<style>
+/* Prophet action-board contract: show the top three rows before Show more. */
+.actbody.act-fold.is-collapsed > a.actitem:nth-child(n+4),
+.actbody.act-fold.is-collapsed > div:nth-child(n+4),
+.ab-trim-fold.is-collapsed > a.actitem:nth-child(n+4),
+.ab-trim-fold.is-collapsed > div:nth-child(n+4),
+.lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
+.lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4){display:none}
+.wcd-wrap{--trd-accent:var(--link,#7aa7e0);margin-left:8px}
+.wcd-glyph{display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;
+  border-radius:50%;font-size:15px;color:var(--trd-accent);
+  background:color-mix(in srgb,var(--trd-accent) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--trd-accent) 34%,var(--trd-brd))}
+.wcd-dlg .trd-panel{width:min(92vw,860px);max-width:860px}
+.wcd-cards{grid-template-columns:repeat(4,minmax(120px,1fr))}
+.wcd-list .nb-delta-body{padding:0;gap:8px}
+.wcd-list .nb-delta-row{padding:12px 14px;border:1px solid var(--trd-line);border-radius:12px;
+  background:color-mix(in srgb,var(--trd-panel) 54%,transparent)}
+.wcd-list .nb-delta-row:first-child{border-top:1px solid var(--trd-line)}
+.wcd-list .nb-delta-tk{font-size:13px;min-width:0;color:var(--trd-text)}
+.wcd-list .nb-delta-cleared,.wcd-list .nb-delta-added{line-height:1.45}
+@media(max-width:700px){
+  .wcd-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wcd-list .nb-delta-row{padding:10px 11px}
+  .wcd-wrap .trd-stat{white-space:normal}
+}
+</style>
+
+<span class="trd-wrap trd-band-neutral wcd-wrap">
+<button type="button" id="wcd-btn" class="trd-btn"
+        aria-haspopup="dialog" aria-expanded="false" aria-controls="wcd-dlg">
+  <span class="wcd-glyph" aria-hidden="true">✦</span>
+  <span class="trd-stat">
+    <span class="trd-lead"><span class="l-en">What changed today</span><span class="l-zh">今日变化</span></span>
+    <span class="trd-sep">·</span><b id="wcd-button-count">30</b>
+  </span>
+  <span class="trd-chev" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M4.5 2.5 L8 6 L4.5 9.5"/></svg></span>
+</button>
+</span>
+
+<div class="trd-wrap trd-band-neutral wcd-wrap" style="display:contents">
+<div id="wcd-dlg" class="trd-dlg wcd-dlg" role="dialog" aria-modal="true" aria-labelledby="wcd-dlg-title">
+  <div class="trd-backdrop" data-wcd-close></div>
+  <div class="trd-panel">
+    <div class="trd-hd">
+      <div class="trd-hd-txt">
+        <div class="trd-eyebrow"><span class="l-en">Prophet board · daily change log</span><span class="l-zh">先知榜单 · 每日变动记录</span></div>
+        <div class="trd-title" id="wcd-dlg-title"><span class="l-en">What changed today</span><span class="l-zh">今日变化</span></div>
+        <div class="trd-sub">
+          <span class="l-en">Board additions, removals and reason changes · 2026-07-22 → 2026-07-23</span>
+          <span class="l-zh">榜单新增、移除与原因变化 · 2026-07-22 → 2026-07-23</span>
+        </div>
+      </div>
+      <button type="button" class="trd-close" data-wcd-close aria-label="Close">
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2 L12 12 M12 2 L2 12"/></svg>
+      </button>
+    </div>
+    <div class="trd-body">
+      <div class="trd-stg trd-stg-1">
+        <div class="trd-cards wcd-cards">
+          <div class="trd-card">
+            <div class="trd-card-k"><span class="l-en">Total updates</span><span class="l-zh">变动总数</span></div>
+            <div class="trd-card-v trd-accented" id="wcd-total">30</div>
+            <div class="trd-card-m"><span class="l-en">names with a board change</span><span class="l-zh">发生榜单变化的标的</span></div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k"><span class="l-en">Joined</span><span class="l-zh">新上榜</span></div>
+            <div class="trd-card-v az-up" id="wcd-joined">—</div>
+            <div class="trd-card-m"><span class="l-en">new to the board</span><span class="l-zh">今日新增至榜单</span></div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k"><span class="l-en">Left</span><span class="l-zh">已离榜</span></div>
+            <div class="trd-card-v az-dn" id="wcd-left">—</div>
+            <div class="trd-card-m"><span class="l-en">removed from the board</span><span class="l-zh">今日从榜单移除</span></div>
+          </div>
+          <div class="trd-card">
+            <div class="trd-card-k"><span class="l-en">Read changed</span><span class="l-zh">读数变化</span></div>
+            <div class="trd-card-v" id="wcd-read-changed">—</div>
+            <div class="trd-card-m"><span class="l-en">verb or reason updates</span><span class="l-zh">动作词或原因变化</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="trd-stg trd-stg-2 wcd-list" id="wcd-list-mount" role="list"></div>
+    </div>
+    <div class="trd-ft">
+      <div class="trd-ft-note">
+        <span class="l-en">Descriptive change log only — this dashboard does not alter rankings or recommendations.</span>
+        <span class="l-zh">仅为描述性变动记录——此面板不会改变排名或建议。</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('wcd-btn');
+  var dlg = document.getElementById('wcd-dlg');
+  var source = document.querySelector('.nb-delta-strip .nb-delta-body');
+  if(!btn || !dlg || !source || dlg.dataset.wcdInit) return;
+  dlg.dataset.wcdInit = '1';
+  var rows = Array.prototype.slice.call(source.children).filter(function(x){ return x.classList.contains('nb-delta-row'); });
+  var joined = 0, left = 0, changed = 0;
+  rows.forEach(function(row){
+    if(row.querySelector('.nb-delta-enter')) joined++;
+    if(row.querySelector('.nb-delta-leave')) left++;
+    if(row.querySelector('.nb-delta-verb:not(.nb-delta-enter):not(.nb-delta-leave),.nb-delta-cleared,.nb-delta-added')) changed++;
+  });
+  document.getElementById('wcd-button-count').textContent = rows.length;
+  document.getElementById('wcd-total').textContent = rows.length;
+  document.getElementById('wcd-joined').textContent = joined;
+  document.getElementById('wcd-left').textContent = left;
+  document.getElementById('wcd-read-changed').textContent = changed;
+  var clone = source.cloneNode(true);
+  clone.querySelectorAll('.nb-delta-row').forEach(function(row){ row.setAttribute('role','listitem'); });
+  document.getElementById('wcd-list-mount').appendChild(clone);
+
+  var panel = dlg.querySelector('.trd-panel');
+  var closeBtn = dlg.querySelector('.trd-close');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var scrollY = 0;
+  function open(){
+    document.dispatchEvent(new CustomEvent('prophet:dialog-open', {detail:{id:dlg.id}}));
+    scrollY = window.scrollY || 0;
+    dlg.classList.add('trd-open');
+    document.documentElement.classList.add('trd-lock');
+    document.body.style.top = (-scrollY) + 'px';
+    btn.setAttribute('aria-expanded','true');
+    btn.classList.add('trd-is-open');
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ dlg.classList.add('trd-in'); }); });
+    (closeBtn || panel).focus();
+  }
+  function close(){
+    if(!dlg.classList.contains('trd-open')) return;
+    dlg.classList.add('trd-closing');
+    dlg.classList.remove('trd-in');
+    btn.setAttribute('aria-expanded','false');
+    btn.classList.remove('trd-is-open');
+    var done = function(){
+      dlg.classList.remove('trd-open','trd-closing');
+      if(!document.querySelector('.trd-dlg.trd-open')){
+        document.documentElement.classList.remove('trd-lock');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+        btn.focus();
+      }
+    };
+    if(reduce) done();
+    else {
+      var timer = setTimeout(done, 300);
+      panel.addEventListener('transitionend', function(){ clearTimeout(timer);done(); }, {once:true});
+    }
+  }
+  btn.addEventListener('click', function(){ dlg.classList.contains('trd-open') ? close() : open(); });
+  dlg.querySelectorAll('[data-wcd-close]').forEach(function(el){ el.addEventListener('click', close); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && dlg.classList.contains('trd-open')) close(); });
+  document.addEventListener('prophet:dialog-open', function(e){
+    if(e.detail && e.detail.id !== dlg.id && dlg.classList.contains('trd-open')) close();
+  });
+  dlg.addEventListener('keydown', function(e){
+    if(e.key !== 'Tab') return;
+    var f = dlg.querySelectorAll('button,a[href],input,select,[tabindex]:not([tabindex="-1"])');
+    f = Array.prototype.filter.call(f, function(x){ return x.offsetParent !== null; });
+    if(!f.length) return;
+    var first = f[0], last = f[f.length-1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault();last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault();first.focus(); }
+  });
 })();
 </script>
       

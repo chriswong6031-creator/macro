@@ -76,6 +76,10 @@ if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
 
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
+# VPS live artifacts live outside the git work-tree so a frequent
+# ``git reset --hard``/site rsync can never roll them back or expose an
+# in-progress write. Local/test installs transparently fall back to SITE/live.
+LIVE = Path(os.environ.get("MACRO_LIVE_DIR", "/var/lib/macro-live/public/live"))
 # The Terminal's data manifest (refreshed by the daily terminal-data cron) — read-only
 # freshness check for /api/status.
 TERMINAL_MANIFEST = Path(
@@ -395,10 +399,16 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
 @app.get("/api/overlay")
 def overlay():
     """The intraday live overlay the nightly/fast loop emits (read-through)."""
-    f = SITE / "live" / "overlay.json"
+    f = _live_artifact("overlay.json")
     if not f.exists():
         raise HTTPException(503, "overlay not built yet")
     return JSONResponse(json.loads(f.read_text()))
+
+
+def _live_artifact(name: str) -> Path:
+    """Prefer the VPS-owned store, with a development/back-compat fallback."""
+    primary = LIVE / name
+    return primary if primary.exists() else SITE / "live" / name
 
 
 @app.get("/api/status")
@@ -430,19 +440,70 @@ def status() -> dict:
         ctime = None
     checks["site"] = {"commit": _commit(), "commit_time": ctime}
 
-    # overlay — the 5-min live engine-scoring loop
-    ov = SITE / "live" / "overlay.json"
-    if ov.exists():
-        try:
-            d = json.loads(ov.read_text())
-            checks["overlay"] = {
-                "built": d.get("built"), "n": d.get("n"),
-                "fresh": d.get("n_fresh"), "age_min": age_min(ov),
-            }
-        except Exception as e:  # noqa: BLE001
-            checks["overlay"] = {"error": str(e)}
-    else:
-        checks["overlay"] = {"status": "missing"}
+    # VPS-owned live lanes. The external store is primary; local/test installs
+    # continue to read the historical SITE/live location.
+    for key, filename in (
+        ("overlay", "overlay.json"),
+        ("risk_state", "risk_state.json"),
+        ("china_risk_state", "china_risk_state.json"),
+        ("quotes", "quotes.json"),
+        ("basket_pulse", "basket_pulse.json"),
+        ("flow_pulse", "flow_pulse.json"),
+        ("release_publications", "release_publications.json"),
+        ("orchestrator", "orchestrator_status.json"),
+    ):
+        artifact = _live_artifact(filename)
+        if artifact.exists():
+            try:
+                data = json.loads(artifact.read_text())
+                checks[key] = {
+                    "schema": data.get("schema"),
+                    "built": data.get("built") or data.get("updated_at") or data.get("as_of"),
+                    "age_min": age_min(artifact),
+                }
+                if key == "overlay":
+                    checks[key].update({"n": data.get("n"), "fresh": data.get("n_fresh")})
+                elif key == "quotes":
+                    meta = data.get("meta") or {}
+                    checks[key].update(
+                        {
+                            "requested": meta.get("requested"),
+                            "resolved": meta.get("resolved"),
+                        }
+                    )
+                elif key == "release_publications":
+                    checks[key].update(
+                        {
+                            "due": len(data.get("due") or []),
+                            "published": len(data.get("publications") or []),
+                        }
+                    )
+                elif key == "orchestrator":
+                    lanes = {}
+                    for lane_name, lane in (data.get("lanes") or {}).items():
+                        finished = lane.get("finished_at")
+                        lane_age = None
+                        if finished:
+                            try:
+                                stamp = datetime.fromisoformat(str(finished).replace("Z", "+00:00"))
+                                lane_age = round(
+                                    (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc))
+                                    .total_seconds()
+                                    / 60,
+                                    1,
+                                )
+                            except (TypeError, ValueError):
+                                pass
+                        lanes[lane_name] = {
+                            "ok": lane.get("ok"),
+                            "finished_at": finished,
+                            "age_min": lane_age,
+                        }
+                    checks[key]["lanes"] = lanes
+            except Exception as e:  # noqa: BLE001
+                checks[key] = {"error": str(e), "age_min": age_min(artifact)}
+        else:
+            checks[key] = {"status": "missing"}
 
     # terminal_data — the daily Terminal-data refresh loop
     if TERMINAL_MANIFEST.exists():
@@ -484,6 +545,12 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
         raise HTTPException(401, f"invalid token ({e.code})") from None
     except Exception as e:  # noqa: BLE001 - network/upstream failure, not the user's fault
         raise HTTPException(502, f"auth check failed: {e}") from None
+
+
+def require_site_full_user(user: dict = Depends(require_user)) -> dict:
+    """Registered user now; site_full user when the paid launch switch is armed."""
+    from app.paywall import enforce_site_full  # noqa: PLC0415
+    return enforce_site_full(user)
 
 
 @app.get("/api/me")
@@ -552,7 +619,7 @@ class AskRequest(BaseModel):
 
 
 @app.post("/api/ask")
-def ask_brain(body: AskRequest, user: dict = Depends(require_user)) -> dict:
+def ask_brain(body: AskRequest, user: dict = Depends(require_site_full_user)) -> dict:
     """Ask the Neural Web brain a question.
 
     Read-only cortex tools; write tools are absent from the schema (Article 1).
@@ -581,7 +648,7 @@ def ask_brain(body: AskRequest, user: dict = Depends(require_user)) -> dict:
 
 
 @app.post("/api/ask/stream")
-def ask_brain_stream(body: AskRequest, user: dict = Depends(require_user)):
+def ask_brain_stream(body: AskRequest, user: dict = Depends(require_site_full_user)):
     """SSE streaming variant of /api/ask.
 
     Tool-calling turns run synchronously; the final synthesis turn is streamed
@@ -1431,3 +1498,16 @@ try:
 except Exception as _tape_exc:  # noqa: BLE001
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("tape relay not mounted (page degrades to polling): %r", _tape_exc)
+
+# ---------------------------------------------------------------------------
+# Paid site wall (app/paywall.py): /api/paywall/check — a distinct fail-closed
+# entitlement stage after registration. PAYWALL_ENABLED=0 keeps it in observe/
+# pass-through mode until the paid-launch prerequisites are verified. If the
+# router cannot mount, Caddy receives a non-2xx and serves no protected file.
+# ---------------------------------------------------------------------------
+try:
+    from app.paywall import router as paywall_router  # noqa: E402
+    app.include_router(paywall_router)
+except Exception as _paywall_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("paywall router not mounted (wall fails CLOSED at Caddy): %r", _paywall_exc)

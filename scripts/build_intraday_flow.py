@@ -324,7 +324,10 @@ def _resolve_universe(cfg: dict, data_root: Path) -> list[str]:
 
 def _load_intraday_bars(ticker: str, data_root: Path) -> pd.DataFrame | None:
     """Load data/intraday/<T>.parquet — hourly OHLCV bars."""
-    p = data_root / "intraday" / f"{ticker}.parquet"
+    # The VPS keeps the mutable intraday cache outside canonical repo data while
+    # still reading memberships/baselines from data_root.
+    intraday_dir = Path(os.environ.get("MACRO_INTRADAY_DIR", data_root / "intraday"))
+    p = intraday_dir / f"{ticker}.parquet"
     if not p.exists():
         return None
     try:

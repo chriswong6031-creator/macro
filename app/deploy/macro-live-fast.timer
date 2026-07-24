@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the Mastermind macro fast/release lane every minute
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=60s
+AccuracySec=1s
+RandomizedDelaySec=5s
+Persistent=false
+Unit=macro-live-fast.service
+
+[Install]
+WantedBy=timers.target

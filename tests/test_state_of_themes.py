@@ -1022,3 +1022,56 @@ def test_non_mixed_tf_single_line_form(tmp_path):
     assert ai_tf.get("direction_leg_rows", []) == [], (
         "non-mixed theme should have empty direction_leg_rows"
     )
+
+
+# ---------------------------------------------------------------------------
+# theme_lanes.v1 side-artifact (Portfolio-Aware W1)
+# ---------------------------------------------------------------------------
+# build_state_of_themes now ALSO writes a tiny theme_lanes.json side-artifact from
+# the SAME composed ctx it renders the page from (single source of truth — the
+# Portfolio brief joins it). These tests assert: (1) schema + 5-lane vocabulary,
+# (2) the page HTML is byte-identical whether render() composes internally or is
+# handed the pre-composed ctx (so the side-write path cannot alter the page).
+
+def test_theme_lanes_side_write_schema_and_vocab(tmp_path):
+    """write_theme_lanes emits theme_lanes.v1 with lanes ⊆ the 5-lane vocabulary."""
+    import json as _json
+    import scripts.build_state_of_themes as sot
+    ctx = sot.compose(REPO_ROOT)
+    root = tmp_path
+    (root / "site" / "basketdata").mkdir(parents=True, exist_ok=True)
+    out = sot.write_theme_lanes(ctx, root)
+    assert out is not None and out.exists()
+    payload = _json.loads(out.read_text(encoding="utf-8"))
+    assert payload["schema"] == "theme_lanes.v1"
+    assert "asof" in payload and isinstance(payload["asof"], str)
+    lanes = payload["lanes"]
+    assert isinstance(lanes, dict)
+    # every lane value is one of the 5-lane vocabulary
+    assert set(lanes.values()) <= set(sot._LANE_ORDER)
+    # every keyed theme id appears in the composed themes (no fabricated ids)
+    theme_ids = {t.get("theme_id") for t in ctx.get("themes", [])}
+    assert set(lanes) <= theme_ids
+
+
+def test_theme_lanes_side_write_never_raises_on_bad_ctx(tmp_path):
+    """A malformed ctx must not raise (fail-open) — the page render must never break."""
+    import scripts.build_state_of_themes as sot
+    (tmp_path / "site" / "basketdata").mkdir(parents=True, exist_ok=True)
+    # missing/odd shapes → skipped rows, still writes a valid (possibly empty) artifact
+    out = sot.write_theme_lanes({"themes": [{"no_id": True}, {"theme_id": "x"}]}, tmp_path)
+    assert out is not None
+    import json as _json
+    payload = _json.loads(out.read_text(encoding="utf-8"))
+    assert payload["schema"] == "theme_lanes.v1"
+    assert payload["lanes"] == {}   # neither row had a valid (id, lane) pair
+
+
+def test_page_html_byte_identical_with_precomposed_ctx():
+    """render(root) and render(root, compose(root)) produce byte-identical HTML —
+    the compose-once wiring (page + side-write) does not change the page output."""
+    import scripts.build_state_of_themes as sot
+    html_internal = sot.render(REPO_ROOT)
+    ctx = sot.compose(REPO_ROOT)
+    html_passed = sot.render(REPO_ROOT, ctx)
+    assert html_internal == html_passed

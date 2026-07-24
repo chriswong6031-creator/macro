@@ -930,16 +930,26 @@ def test_effective_cap_sentinel_config_is_authoritative():
                           "outbox": {"max_posts_per_account_per_day": 1}}) == 1
     assert effective_cap({"sentinel": {"max_posts_per_account_per_day": 2},
                           "outbox": {"max_posts_per_account_per_day": 10}}) == 2
+    # Unlimited (-1): the autonomous-cadence policy. effective_cap returns -1 to
+    # signal "no daily cap"; consumers treat a negative cap as unbounded.
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": -1}}) == -1
+    # Outbox may still LOWER an unlimited Sentinel cap to a real number.
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": -1},
+                          "outbox": {"max_posts_per_account_per_day": 5}}) == 5
+    # Both unlimited → unlimited.
+    assert effective_cap({"sentinel": {"max_posts_per_account_per_day": -1},
+                          "outbox": {"max_posts_per_account_per_day": -1}}) == -1
 
 
-def test_effective_cap_repo_config_is_weeks_1_2_tier():
-    """The shipped config must hold the actuator at the new-account tier (2/day)."""
+def test_effective_cap_repo_config_is_unlimited():
+    """The shipped config lifts the daily cap to unlimited (autonomous cadence,
+    operator 2026-07-24) — effective_cap returns -1 (no bound). Was 2/day."""
     import yaml
     from engine.marketing.outbox import effective_cap
 
     cfg_path = Path(__file__).resolve().parent.parent / "config" / "marketing.yml"
     cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
-    assert effective_cap(cfg) == 2
+    assert effective_cap(cfg) == -1
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -202,6 +202,12 @@ def effective_cap(cfg: dict) -> int:
     the Sentinel cap, never raise it. There is deliberately no independent
     outbox ceiling: when Sentinel's ramp raises the cap (week 5+), the outbox
     follows.
+
+    UNLIMITED: a value of -1 (or any negative) means "no daily cap" — the
+    autonomous-cadence policy (operator 2026-07-24). This function returns -1 to
+    signal unlimited; every consumer treats a negative cap as "do not bound"
+    (emission gate below, the admin slot-meter/limits display). The outbox may
+    still LOWER an unlimited Sentinel cap to a real number.
     """
     defaults = _sentinel_defaults()
     try:
@@ -215,7 +221,11 @@ def effective_cap(cfg: dict) -> int:
             "max_posts_per_account_per_day", sentinel_cap))
     except Exception:  # noqa: BLE001
         outbox_cap = sentinel_cap
-    return max(0, min(outbox_cap, sentinel_cap))
+    # Negative = unlimited (+∞ for the min); outbox may lower a bounded ceiling.
+    s = float("inf") if sentinel_cap < 0 else sentinel_cap
+    o = float("inf") if outbox_cap < 0 else outbox_cap
+    eff = min(s, o)
+    return -1 if eff == float("inf") else max(0, int(eff))
 
 
 def sentinel_contract(cfg: dict) -> dict[str, Any]:
@@ -527,8 +537,9 @@ def enqueue(
                 return "duplicate"
             # Cap: every existing same-day item consumed a slot regardless of
             # status (quarantined/failed included — refilling a bad slot the
-            # same day is how retry-spam starts).
-            if ctx["day_counts"].get((account, as_of), 0) >= cap:
+            # same day is how retry-spam starts). A negative cap = unlimited
+            # (autonomous cadence) → never blocks on volume.
+            if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
                 return "cap_exceeded"
             if not append_jsonl(_items_path(root), item):
                 log.warning("outbox.enqueue: append_jsonl failed for item %r", item_id)
