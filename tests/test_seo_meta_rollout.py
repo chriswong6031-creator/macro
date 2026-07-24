@@ -52,6 +52,10 @@ _EXCLUDED_TEMPLATES = {
     "_sig_badge.html.j2", "_stock_decision.css.j2",
     "_theme_addons.html.j2", "_track_record_dlg.html.j2",
     "_vector_polish.html.j2",
+    # Research Vault programmatic-SEO shells (#3392): bespoke <head> with dynamic
+    # per-report canonical/OG/JSON-LD — deliberately NOT on the shared _seo_head
+    # partial (the partial can't express per-report canonicals + Article JSON-LD).
+    "research_index.html.j2", "research_report.html.j2",
     # Per-stock / per-sector detail shells (ticker SEO pages — separate program):
     "ticker.html.j2", "ticker_index.html.j2", "stock.html.j2",
     "sector.html.j2", "hk_sector.html.j2", "canada_sector.html.j2",
