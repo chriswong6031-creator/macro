@@ -46,9 +46,17 @@
   try { firstEver = !localStorage.getItem(everKey); localStorage.setItem(everKey, '1'); } catch (e) {}
   var d0 = new Date(), today = d0.getFullYear() + '-' + (d0.getMonth() + 1) + '-' + d0.getDate();
   var MEM; try { MEM = JSON.parse(localStorage.getItem('mm.hub.convo') || 'null'); } catch (e) {}
-  if (!MEM || MEM.day !== today) MEM = { day: today, visits: 0, seen: [], mids: [] };
+  if (!MEM || MEM.day !== today) MEM = { day: today, visits: 0, seen: [], mids: [], lastSeen: 0 };
   if (!MEM.mids) MEM.mids = [];
-  MEM.visits += 1; var visit = MEM.visits;
+  // A "visit" is a genuine RETURN, not a page refresh. Opening and closing the tab three
+  // times in a minute is ONE visit playing with the door — count it once. Only a real gap of
+  // time (you went and did something, then came back) makes it a new visit; anything sooner is
+  // a reload, and we recognise it AS one instead of pretending you just walked back in.
+  var SESSION_GAP = 25 * 60 * 1000, nowMs = Date.now();
+  var reload = !!(MEM.lastSeen && (nowMs - MEM.lastSeen) < SESSION_GAP);
+  if (!reload) MEM.visits += 1;
+  MEM.lastSeen = nowMs;
+  var visit = MEM.visits;
   function fresh(id) { return MEM.seen.indexOf(id) < 0; }
   function keep(id) { if (MEM.seen.indexOf(id) < 0) MEM.seen.push(id); }
   function save() { try { localStorage.setItem('mm.hub.convo', JSON.stringify(MEM)); } catch (e) {} }
@@ -127,18 +135,29 @@
     ['Two things before you get to work.', '开工之前,先说两件事。'],
     ["Before you touch anything — here's the temperature.", '动手之前——先跟你说说今天的温度。']
   ];
+  // Recall lines fire only on a GENUINE return (a real gap of time). Kept clear, not
+  // cryptic — they say what the count means ("at the desk today", "check-ins today").
   var VISIT2 = [
-    ['Back already? Twice today — I like the appetite.', '这么快又来了?今天第二回,有胃口,我喜欢。'],
-    ["Round two. Something out there's got your eye.", '第二趟了。看来有东西勾着你。'],
-    ['Twice in one day. Good — pay attention, it pays you back.', '一天两回。挺好——你盯着它,它就回报你。'],
-    ["You're back. The tape's not going anywhere, but I'm glad you are.", '你回来了。盘面跑不掉,不过有你在,挺好。']
+    ['Good to have you back at the desk today.', '今天又回到台前了,挺好。'],
+    ["Back for a second look today — let's see what moved.", '今天来看第二回——看看动了什么。'],
+    ['Second time on the hub today. Something on your mind?', '今天第二次来了。有什么在想的?'],
+    ["You're back. I'll keep this read shorter.", '你回来了。这回我说短点。']
   ];
   var VISIT3 = [
-    ["That's {V} times today. The market's got its hooks in you.", '今天第 {V} 回了。市场这是把你勾住了。'],
-    ['{V} visits and counting. Locked in — that’s how it’s done.', '第 {V} 次了。够专注——就该这样。'],
-    ["{V} times. You're not here to browse — so I'll be quick.", '第 {V} 次了。你不是来闲逛的——那我快点。'],
-    ['You again — {V} today. I’ll skip the small talk.', '又是你——今天第 {V} 回。废话我省了。'],
-    ["{V} in a day. Either you're worried or you're hunting. Either way, I'm here.", '一天 {V} 回。要么你在担心,要么你在猎。不管哪样,我都在。']
+    ["That's your {V}th look at the desk today — you're dialed in.", '今天你第 {V} 次到台前了——很投入。'],
+    ['Back again — {V} check-ins today. Markets keeping you busy?', '又回来了——今天第 {V} 次了。市场让你没闲着?'],
+    ["{V} times on the hub today. You know the drill — I'll be quick.", '今天第 {V} 次来 hub 了。你懂流程——我快点。'],
+    ['You keep coming back today. Fine by me — let’s talk.', '你今天来了一趟又一趟。我乐意——来聊。'],
+    ["{V} looks today. When you check in this often, I watch it closer too.", '今天第 {V} 次了。你看得这么勤,我也盯得更紧。']
+  ];
+  // A page REFRESH (same session) — witty, honest, brief. NOT a "you're back".
+  var RELOAD = [
+    ['Same desk, same read — you were just here.', '还是这张台子,还是那个结论——你刚来过。'],
+    ["Back that fast? Nothing's moved much since you looked.", '这么快又刷?你刚看过,没什么大变化。'],
+    ["I'll save us both the time — the read hasn't changed.", '省点时间——结论没变。'],
+    ['Still here, still watching. Nothing new to add yet.', '还在,还盯着。暂时没有新东西。'],
+    ['Refreshing won’t move the tape — but hi again.', '刷新动不了盘面——不过,再见到你挺好。'],
+    ['You just looked. Give the market a minute to do something.', '你刚看过。给市场一点时间再动。']
   ];
   var TAPE = { up: [
       ["Tape's got a bid today. Nothing wild — just green.", '今天盘面有买盘。没什么疯狂的,就是绿。'],
@@ -271,6 +290,12 @@
     return [name ? g[0] + ', ' + name : g[0], name ? g[1] + '，' + name : g[1]];
   }
   var lines = [];
+  if (reload && C) {
+    // A page REFRESH (same session) — one witty beat that acknowledges it, then straight to
+    // the brand. We don't re-welcome someone standing right here, or re-read a market they
+    // saw a minute ago. (This is the smarter move than pretending it's a fresh visit.)
+    lines.push({ s: draw('reload', RELOAD) });
+  } else {
   lines.push({ big: true, s: greetingLine() });                       // the name (large)
 
   if (C) {
@@ -318,6 +343,7 @@
     lines.push({ s: draw('open', OPEN) });
     lines.push({ s: draw('meta', META) });
     lines.push({ s: draw('close', CLOSE) });
+  }
   }
   save();
 
