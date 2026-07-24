@@ -206,6 +206,15 @@ PNG must sit at a public https URL.
 3. **Attach (post time, GitHub Actions):** the publisher passes `media_url` to
    Buffer as a post asset. No public URL on the item → text-only.
 
+**The local PNG is ephemeral, R2 is the hosting plane.** The file at
+`data/marketing/outbox/media/<as_of>/<chart_id>.png` is a throwaway render input,
+not a delivery artifact — the post attaches the R2 public URL (`media_url`), never
+the local file. Local chart PNGs are therefore **git-ignored by design**
+(`.gitignore` → `data/marketing/outbox/media/**/*.png`); only the `.svg` chart
+snapshots stay committed (the admin console previews render from SVG). Do not "fix"
+a missing PNG in git — it was never meant to be there. If a post is text-only,
+check the R2 upload (creds on the Mac, `media_url` on the item), not the repo.
+
 **Kill switch / gate:** `config/marketing.yml publish.media_enabled` (top-level).
 `false` → never render, never upload, never attach. The Sentinel
 `max_media_posts_per_account_per_day` cap still governs how many chart items may

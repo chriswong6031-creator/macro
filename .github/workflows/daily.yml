@@ -2801,6 +2801,14 @@ jobs:
           # Emits the current D1 content-plan items into the outbox queue
           # (status=queued). Posting stays gated by approval + MARKETING_PUBLISH_ENABLED.
           MARKETING_OUTBOX_ENABLED: "1"
+          # D02 chart-image pipeline: content_studio uploads the rendered PNG to the
+          # public R2 data plane so the post can attach a chart (Buffer hosts no
+          # uploads; X rejects SVG). Same creds the oracle/data lanes use — absent
+          # them media_publish no-ops and the post degrades to text-only.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           set +e
           python -m scripts.build_marketing; rc=$?
