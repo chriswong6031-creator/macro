@@ -14794,6 +14794,17 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          JSON producer (build_stock_library.py rank_by="confluence"); the template
          renders as-is — no re-sort here. #}
       {% set _board = _su.buy %}
+      {# ⚡ PRESENTATION MERGE (2026-07-24 masterplan, research/PROPHET_TOPSETUPS_
+         PRESENTATION_MERGE_MASTERPLAN.md): membership in the Top-setups artifact IS
+         the fresh-trigger gate — never re-derive freshness from row.signal here
+         (the artifact carries signal_gate.is_buyable; a local re-derivation drifts).
+         Map ticker -> setups row so the card chip can read the tier; the sub-board
+         below reuses the carded-ticker set to list only residual (non-carded) names.
+         Fail-soft: top_setups absent/None -> empty map -> no chips, board unchanged. #}
+      {%- set _trg_map = {} -%}
+      {%- if top_setups and top_setups.buy is defined and top_setups.buy -%}
+        {%- for _tr in top_setups.buy -%}{%- if _tr.get('ticker') -%}{%- set _ = _trg_map.update({_tr.ticker: _tr}) -%}{%- endif -%}{%- endfor -%}
+      {%- endif -%}
       {# --- TRUE STABLE LANE PARTITION (P2.4 §4.2).
            Canonical group order: bottoming, continuation, trend, recovery, watch (skip empty).
            Cards with lane missing/None render FIRST, ungrouped, with NO heading (honest
@@ -14867,6 +14878,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         {% set _zk = ('readd' if _verb == 'hold' else ('active' if _verb in ('buy','near') else 'muted')) if (_bz and _bz.high is not none) else ('confirm' if _verb in ('wait','near') else 'none') %}
         {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) %}
         {% set _tip_zh = ((c.verdict_zh if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline_zh if es else '')) %}
+        {# ⚡ fresh-trigger chip: kind from the setups row's own signal tier (T3 = imminent,
+           else fired). Tips are plain strings (attribute-safe — no t() in attrs). The verb
+           stays the ruling stance; the tip says so for the Wait+⚡ case. #}
+        {% set _tsr = _trg_map.get(n.ticker) %}
+        {% set _tsg = (_tsr.get('signal') or {}) if _tsr else {} %}
+        {% set _trg_kind = ('imminent' if _tsg.get('tier_cascade') == 'T3' else 'fired') if _tsr else none %}
+        {% set _trg_prov = ' Provisional: projected off an incomplete bar — about 1 in 10 of these vanish when the bar completes.' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
+        {% set _trg_prov_zh = '（暂定：基于未完成的K线推算 — 约十分之一会在K线完成后消失。）' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
+        {% set _trg_tip_en = ('Fresh entry trigger — the 2-day MACD and 3-day StochRSI both crossed up within the last ~6 days and momentum is still constructive. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don\'t chase.') if _trg_kind == 'fired' else ('Entry trigger imminent — the 3-day StochRSI has crossed and the 2-day MACD is about to cross within the next 1-2 bars.' ~ _trg_prov ~ ' The main chip still rules the stance.') %}
+        {% set _trg_tip_zh = ('新入场触发 — 2日MACD与3日StochRSI均已在约近6日内上穿，动量仍具建设性。信念卡片叠加新触发是本板最强组合 — 但主标签仍是最终判断：若卡片显示「等待」，说明价格已越过买区，勿追高。') if _trg_kind == 'fired' else ('入场触发临近 — 3日StochRSI已上穿，2日MACD将在未来1-2根K线内交叉。' ~ _trg_prov_zh ~ '主标签仍是最终判断。') %}
         {{ pv.pv_card({
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
@@ -14880,7 +14901,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
           'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
           'date': (n.signal or {}).get('asof'),
-          'flags': _fl.rows, 'triage': _is_triage
+          'flags': _fl.rows, 'triage': _is_triage,
+          'trigger': ({'kind': _trg_kind, 'tip_en': _trg_tip_en, 'tip_zh': _trg_tip_zh} if _trg_kind else none)
         }) }}
         {% endif %}{# end if not heading #}
       {% endfor %}{# end for n in _render_list.items #}
@@ -15003,14 +15025,24 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% include '_track_record_dlg.html.j2' %}
       {% endif %}
       {% if top_setups %}
+      {# ⚡ RESIDUAL-ONLY VIEW (presentation merge 2026-07-24, research/PROPHET_
+         TOPSETUPS_PRESENTATION_MERGE_MASTERPLAN.md): names already carded above are
+         not repeated here — they carry the ⚡ chip on their card instead. Filter runs
+         BEFORE the display cap so residual names ranked below the old top-10 still
+         surface. _su absent (degraded build) -> empty carded set -> unfiltered list. #}
+      {%- set _ts_all = top_setups.get('buy') or [] -%}
+      {%- set _tsn = namespace(carded=[], resid=[]) -%}
+      {%- if _su and _su.buy -%}{%- for _n in _su.buy -%}{%- if _n.get('ticker') -%}{%- set _tsn.carded = _tsn.carded + [_n.ticker] -%}{%- endif -%}{%- endfor -%}{%- endif -%}
+      {%- for _r in _ts_all -%}{%- if _r.get('ticker') not in _tsn.carded -%}{%- set _tsn.resid = _tsn.resid + [_r] -%}{%- endif -%}{%- endfor -%}
+      {%- set _ts_ov = _ts_all|length - _tsn.resid|length -%}
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-          <span style="font-weight:700;font-size:12.5px">⚡ {{ t('Top setups', '顶级布局') }}</span>
-          <span class="muted" style="font-size:11px">{{ t('Stocks with a fresh buy trigger, strongest leaders first · across the S&P 1500', '已触发新买入信号的个股，最强领涨优先 · 覆盖标普 1500') }}
-            {{ help("Actionable setups only. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.", "仅显示可操作布局。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。") }}</span>
+          <span style="font-weight:700;font-size:12.5px">⚡ {{ t('More fresh triggers', '更多新触发') }}</span>
+          <span class="muted" style="font-size:11px">{{ t('Buy triggers fired elsewhere in the S&P 1500 — names not already carded above.', '标普1500中其余刚触发买入的个股 — 上方卡片未含。') }}{% if _ts_ov %} {{ t(_ts_ov ~ " of today's " ~ _ts_all|length ~ " triggers already appear as cards above — marked ⚡.", "今日 " ~ _ts_all|length ~ " 个触发中 " ~ _ts_ov ~ " 个已在上方卡片中（⚡标注）。") }}{% endif %}
+            {{ help("Actionable residual setups: names already shown as Prophet cards above are not repeated here — they carry the ⚡ chip on their card instead. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.", "仅显示剩余可操作布局：已在上方以卡片展示的标的不在此重复 — 它们的卡片上带有 ⚡ 标记。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。") }}</span>
           <a class="ts-more" href="discovery.html">{{ t('Top Picks', '精选股') }} →</a>
         </div>
-        {% if top_setups.buy %}
+        {% if _tsn.resid %}
         <div class="tbl-scroll"><table class="ts-tbl">
           <thead><tr>
             <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
@@ -15021,7 +15053,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <th class="r" data-tip-en="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md)." data-tip-zh="入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
           </tr></thead>
           <tbody>
-          {% for r in top_setups.buy[:10] %}
+          {% for r in _tsn.resid[:10] %}
             <tr class="ts-row" onclick="location.href='stock.html#{{ r.ticker }}'">
               <td><span class="ts-tk">{{ r.ticker }}</span> <span class="ts-nm">{{ r.name }}</span>{% if r.insider_buyers %} <span class="ts-ins" data-tip-en="{{ r.insider_buyers }} distinct insiders net-bought{% if r.insider_net_mn %} ${{ '%.1f'|format(r.insider_net_mn) }}M{% endif %}{% if r.insider_bps %} (+{{ r.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer" data-tip-zh="{{ r.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认">👤 {{ r.insider_buyers }}</span>{% endif %}{% if r.sue_z %} <span class="ts-sue" data-tip-en="Earnings momentum: SUE z {{ '%+.1f'|format(r.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score" data-tip-zh="盈利动量：SUE z {{ '%+.1f'|format(r.sue_z) }}（相对标普1500）— 在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 {{ t('earnings beat', '盈利超预期') }}</span>{% endif %}</td>
               <td class="muted">{{ td(r.sector) }}</td>
@@ -15036,6 +15068,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endfor %}
           </tbody>
         </table></div>{# /tbl-scroll #}
+        {% elif _ts_all %}
+        <p class="ts-empty">⚡ {{ t("All of today's fresh triggers are already on the board above — look for the ⚡ chip on the cards.", "今日所有新触发都已在上方卡片中 — 请看卡片上的 ⚡ 标记。") }}</p>
         {% else %}
         <p class="ts-empty">⚪ {{ t("No fresh buy triggers today — this board only lists names whose entry has actually fired, so a strong leader that is stretched or rolling over stays off it. New entries appear here when they trigger; see Top Picks for the full conviction board.", "今日无新买入触发 — 本榜单只列出确实已触发入场的标的，过度拉伸或正在回落的强势股不会出现。新入场触发后会在此显示；完整信念榜见精选股。") }}</p>
         {% endif %}
