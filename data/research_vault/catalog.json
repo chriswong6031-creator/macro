@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-24T16:29:22.135630+00:00",
-  "count": 62,
+  "generated_at": "2026-07-24T16:45:53.518111+00:00",
+  "count": 64,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
@@ -13,6 +13,45 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-nkuj9j9ver8-914817",
+      "title": "Reddit July 24",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-24T16:29:36Z",
+      "summary_points": [
+        "**Revenue Beat & Momentum**: Q2 revenue expected at $780–$790mn (+57–59% y/y), exceeding $715–$725mn guidance, driven by Dynamic Product Ads, Shopify integration, and Reddit Max automation accelerating advertiser monetization.",
+        "**Monetization Outpacing User Growth**: Monetization growth expected to exceed user growth (doubled y/y in 1Q26), fueled by lower-funnel ad expansion, ML-driven onboarding, and new lead-gen products (tech/healthcare/finance).",
+        "**DAU Decline Risk**: Sequential drop in US logged-in DAUs signals Google referral dependency and weak conversion of occasional users to daily users, critical for advertising revenue and profitability.",
+        "**Google Renewal Catalyst**: Renewals viewed as positive catalyst (stronger economics, clearer protections), with mutual value capture expected; withdrawal unlikely, substantive news late 2H26.",
+        "**EBITDA Upside Potential**: 2Q26 Adj."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zasraxrojmi-8e84b5",
+      "title": "The AI Trade Is Coming Apart",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T16:28:57Z",
+      "summary_points": [
+        "**NDX/SOX Bearish Technicals**: Nasdaq futures near 28,500 support with bearish 21/50-day crossover; SOX index shows bearish crossover, 100-day support at 11,200.",
+        "Downside target 27,000 for NDX.",
+        "**Korean Tech Export Collapse**: Non-chip tech exports down 11.2% m/m SA; US/Taiwan exports drop 10.4%/28.4% (two-thirds of total decline), signaling supply chain stress.",
+        "**Tech Volatility & VIX Paradox**: VIX-VXX gap widens as investors shift to downside protection; KOSPI underperforming SOX signals deteriorating risk appetite despite falling KOSPI VIX from option selling normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-s7texszbvn1-e4139e",
       "title": "JPM US Market Intell | Morning Briefing",
