@@ -1,16 +1,151 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-24T14:42:57.449217+00:00",
-  "count": 53,
+  "generated_at": "2026-07-24T14:52:48.055826+00:00",
+  "count": 60,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
     "J.P. Morgan",
     "Other",
     "RBC",
-    "The Market Ear"
+    "TS Lombard",
+    "The Market Ear",
+    "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-n9bbznete6s-da51a1",
+      "title": "2026 07 24 Rearming Britain's Supply Side en",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:50:09Z",
+      "summary_points": [
+        "**UK DIP Funding Limitations**: £15bn DIP (4yr) offers only modest near-term boost; larger gains require private investment, R&D, cheaper energy, and BoE easing; £1.7bn extra funding needed by Autumn budget.",
+        "**NATO Spending Gap & Budget Reality**: UK’s £297.7bn defense budget includes £15bn DIP but faces offsetting cuts; NATO’s 3.5% GDP target by 2026 highlights underfunding risks (e.g., Romania at 2.9%).",
+        "**Domestic Sourcing Dominance**: 85% of 2024/25 defense expenditure domestically sourced; 84.9% of UK government contracts domestic, enabling sustained revenue via multi-year order books (e.g., submarines, GCAP).",
+        "**Productivity Multiplier Effect**: 1% GDP military spending ↑ → ~0.3% total factor productivity ↑ via learning-by-doing; stable programs (shipbuilding/nuclear) critical for industrial learning vs.",
+        "stop-start procurement."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fjifim4aie0-3a8606",
+      "title": "2026 07 24 Pmi Fall Seven Times Get Up Eight en",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:48:53Z",
+      "summary_points": [
+        "**July EA PMI Surprises Up**: Manufacturing output (53.0, 52-mo high) and service activity drive upside, with new hiring, lower inflation pressures, and robust expansion.",
+        "**EA Services PMI Resilience**: Sustained services strength and low output cost inflation signal limited passthrough, reducing ECB inflation risk and supporting policy easing.",
+        "**EA vs Germany Manufacturing Divergence**: EA manufacturing output expanding (above 50), while Germany’s export orders and new orders contract (below 50), highlighting sectoral weakness.",
+        "**Euro Area PMI Resilience Post-Iran Conflict**: Flash PMI data confirms rebound in activity and labor markets post-war flare-up, with supply shock pause likely to accelerate positive sentiment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lx9tflwvgf8-fe2849",
+      "title": "Bond Volatility Is Sending A Warning",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:47:47Z",
+      "summary_points": [
+        "**Bond Volatility Acceleration**: MOVE Index shows largest cumulative advance since mid-May, driven by oil-driven rate moves; bond market now reacting more orderly (vs.",
+        "initial panic), signaling stress building in rates.",
+        "**Bond-Equity Volatility Gap**: MOVE Index’s rise exceeds VIX’s, indicating bond volatility is the primary stress indicator—critical for positioning given historical bond-equity correlation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1x8fde7d63g-040a6f",
+      "title": "What If The Bond Market Is Right About AI",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:47:17Z",
+      "summary_points": [
+        "**Hyperscaler bond spreads expanding**: Meta's $27.3B bond issuance trading below par (97) and widening spreads signal cash flow pressure from accelerating AI capex, indicating market skepticism on spending sustainability.",
+        "**AI debt surge outpaces Treasuries**: Hyperscalers' record debt issuance now exceeds US Treasury supply (Goldman Sachs), with AI-driven issuance (yellow segment) growing significantly in trailing 12-month data.",
+        "**Credit-equity disconnect**: Credit spreads warn of AI spending economics risks while equity valuations remain elevated; convergence could trigger meaningful downside for hyperscaler equities.",
+        "**Google technical breakdown**: GOOG below 200-day MA for first time since June, reflecting investor skepticism on AI spending costs despite strong results, increasing sector-wide technical risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9ih2z5xd9ca-f48984",
+      "title": "The Most Fundamental Macro Risk Is Back",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:44:25Z",
+      "summary_points": [
+        "**Inflation volatility as fundamental macro risk**: Middle East conflict driving oil prices toward $100 fuels rising inflation volatility, triggering earnings disappointments, wider credit spreads, and heightened stock/bond price variability.",
+        "**CPI volatility nears pandemic highs**: Rising variability in US CPI components sustains counter-narratives on inflation regime, amplifying market volatility and risk premia.",
+        "**Inflation Volatility-Earnings Breadth Link**: Higher CPI YoY volatility deciles correlate with narrower large-cap earnings breadth (historical data back to 1950), a critical risk factor for equity portfolios.",
+        "**Inflation-Bond Volatility Correlation**: Rising inflation volatility (Inflation Vol Index) directly correlates with higher bond volatility (ICE BofA MOVE Index), driven by rising term premia, amplifying stock market risks via uncertain cash flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pbrqy0j6xai-3993d6",
+      "title": "Surprise July Rate Hike Would Upend Risk Sentiment",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:44:19Z",
+      "summary_points": [
+        "**Fed Hike Probability Surge**: Markets now price >35% chance of July Fed hike (up from ~10% post-June), driven by core PCE >2%, Iran conflict energy risks, and accommodative financial conditions.",
+        "**Geopolitical Inflation Catalyst**: Renewed Iran conflict reignites energy shock risks, directly reinforcing inflation concerns and pushing Fed hike odds higher ahead of July FOMC.",
+        "**Core Inflation Anchor**: Core PCE remaining above 2% is the primary fundamental driver, overriding strong GDPNow (~3%) and labor market stability in justifying Fed tightening focus.",
+        "**FOMC Consensus for July**: Multiple Fed governors (Wallar, Logan, Kashkari) signal openness to July hike, forming quorum for tightening despite Wash’s dissent, with oil-driven conditions resurfacing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-px1bqzeoemw-0f599b",
+      "title": "Gold To Show Resilience On Reserves, Debt Burdens",
+      "institution": "Zero Hedge",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-24T14:44:17Z",
+      "summary_points": [
+        "**Central Bank Demand Acceleration**: Q1 2026 net official gold purchases hit 244 tons (vs 208 tons prior), with China’s 20th consecutive month of stockpile growth and Poland meeting 2025 targets, signaling institutional commitment amid geopolitical volatility.",
+        "**Geopolitical Hedge Imperative**: Gold prices sustained above $4,100/oz amid US-Iran tensions, Trump tariff threats, and AI boom skepticism, as central banks’ buying offsetted March-June market declines.",
+        "**Reserve Diversification Shift**: Russia-Ukraine sanctions (2022) exposed dollar reserve vulnerability, accelerating central bank pivot to gold—reinforcing its role as a geopolitical risk hedge and accelerating dollar’s decline in global reserves.",
+        "**Market Structure Transition**: Speculative ETF flows and short-term trading declined post-rate-hike bets, with central banks becoming primary buyers as long-term holders shift from momentum-driven trades to strategic accumulation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-jftebbbjnyi-71f35b",
       "title": "oils next move hinges on three variables",
