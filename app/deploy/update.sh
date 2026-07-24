@@ -104,15 +104,24 @@ fi
 # Python task code needs no restart because every lane is a fresh oneshot process.
 if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
    echo "$CHANGED" | grep -qE '^app/deploy/macro-live-(fast|snapshot|bars)\.(service|timer)$'; then
+	LIVE_UNIT_SOURCES=()
 	for UNIT in \
 		macro-live-fast.service macro-live-fast.timer \
 		macro-live-snapshot.service macro-live-snapshot.timer \
 		macro-live-bars.service macro-live-bars.timer
 	do
-		install -m 0644 "$APP_DIR/app/deploy/$UNIT" "/etc/systemd/system/$UNIT"
+		LIVE_UNIT_SOURCES+=("$APP_DIR/app/deploy/$UNIT")
 	done
-	systemctl daemon-reload
-	systemctl restart macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer
+	if systemd-analyze verify "${LIVE_UNIT_SOURCES[@]}"; then
+		for UNIT_SOURCE in "${LIVE_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+		done
+		systemctl daemon-reload
+		systemctl restart macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer
+	else
+		echo "macro-update: refusing live-plane unit update — systemd-analyze verify failed" >&2
+	fi
 fi
 
 # admin console: restart ONLY when its own code changed, so the deployed panel at

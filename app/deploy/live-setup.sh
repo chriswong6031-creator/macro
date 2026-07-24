@@ -24,6 +24,41 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
+# Treat the first install as a transaction. Until the replacement timers are
+# enabled AND legacy cron is retired, any error restores the old serving path.
+# Existing installations are left in place on a rerun failure for diagnosis.
+initial_install=1
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1; then
+  initial_install=0
+fi
+setup_complete=0
+tmp_cron=""
+fail_safe_exit() {
+  rc=$?
+  trap - EXIT
+  if [ -n "$tmp_cron" ]; then
+    rm -f "$tmp_cron"
+  fi
+  if [ "$rc" -ne 0 ] && [ "$initial_install" -eq 1 ] && [ "$setup_complete" -eq 0 ]; then
+    log "first install failed; restoring legacy-only ownership"
+    systemctl disable --now \
+      macro-live-fast.timer \
+      macro-live-snapshot.timer \
+      macro-live-bars.timer >/dev/null 2>&1 || true
+    systemctl stop \
+      macro-live-fast.service \
+      macro-live-snapshot.service \
+      macro-live-bars.service >/dev/null 2>&1 || true
+    if [ -d "$PUBLIC_DIR" ]; then
+      failed_dir="$BASE_DIR/public.failed.$(date -u +%Y%m%dT%H%M%SZ)"
+      mv "$PUBLIC_DIR" "$failed_dir" || true
+      log "failed-install artifacts preserved at $failed_dir"
+    fi
+  fi
+  exit "$rc"
+}
+trap fail_safe_exit EXIT
+
 log "[1/6] runtime + live directories"
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y python3-venv rsync >/dev/null 2>&1 || true
@@ -48,11 +83,18 @@ if ! grep -q '^MACRO_LIVE_DIR=' /etc/macro-live.env; then
 fi
 
 log "[3/6] systemd services + timers"
+unit_sources=()
 for unit in \
   macro-live-fast.service macro-live-fast.timer \
   macro-live-snapshot.service macro-live-snapshot.timer \
   macro-live-bars.service macro-live-bars.timer
 do
+  unit_sources+=("$APP_DIR/app/deploy/$unit")
+done
+systemd-analyze verify "${unit_sources[@]}"
+for unit_source in "${unit_sources[@]}"
+do
+  unit=$(basename "$unit_source")
   install -m 0644 "$APP_DIR/app/deploy/$unit" "/etc/systemd/system/$unit"
 done
 systemctl daemon-reload
@@ -80,13 +122,13 @@ systemctl enable --now \
 
 log "[6/6] retire legacy cron writer"
 tmp_cron=$(mktemp)
-cleanup() { rm -f "$tmp_cron"; }
-trap cleanup EXIT
 crontab -l 2>/dev/null | grep -v "macro-live\\|build_live_overlay" > "$tmp_cron" || true
 crontab "$tmp_cron"
-cleanup
-trap - EXIT
+rm -f "$tmp_cron"
+tmp_cron=""
 
+setup_complete=1
+trap - EXIT
 log "DONE — live plane installed"
 systemctl list-timers \
   macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer \

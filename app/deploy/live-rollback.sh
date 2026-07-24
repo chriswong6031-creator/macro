@@ -21,6 +21,10 @@ systemctl disable --now \
   macro-live-fast.timer \
   macro-live-snapshot.timer \
   macro-live-bars.timer >/dev/null 2>&1 || true
+systemctl stop \
+  macro-live-fast.service \
+  macro-live-snapshot.service \
+  macro-live-bars.service >/dev/null 2>&1 || true
 
 log "[2/3] restore legacy cron writer if needed"
 tmp_cron=$(mktemp)

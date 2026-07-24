@@ -236,12 +236,15 @@ def test_live_setup_retires_legacy_only_after_smoke_and_timer_enable():
     enable = text.index("systemctl enable --now")
     retire = text.index('grep -v "macro-live')
     assert smoke < enable < retire
+    assert "first install failed; restoring legacy-only ownership" in text
+    assert 'systemd-analyze verify "${unit_sources[@]}"' in text
 
 
 def test_live_rollback_is_non_destructive_and_restores_legacy_writer():
     root = Path(__file__).resolve().parents[1]
     text = (root / "app" / "deploy" / "live-rollback.sh").read_text()
     assert "systemctl disable --now" in text
+    assert "systemctl stop" in text
     assert "/usr/local/bin/macro-live" in text
     assert 'mv "$PUBLIC_DIR" "$backup_dir"' in text
     assert "rm -rf" not in text
