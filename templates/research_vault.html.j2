@@ -229,7 +229,9 @@ html[data-theme="light"] .rv-tw.sel{ color:var(--rv); }
 .rv-leaf .rv-tw{ font-size:13px; }
 .rv-leaf .rv-tw .dotinst{ width:6px; height:6px; border-radius:50%; background:var(--rv); opacity:.6; flex:none; }
 
-.rv-filter{ position:sticky; top:60px; z-index:40; padding:13px 15px; margin-bottom:16px; }
+/* static (not sticky) — the sticky filter floated with a see-through empty top
+   that read as messy on scroll. It now scrolls in-flow with the feed. */
+.rv-filter{ padding:13px 15px; margin-bottom:16px; }
 .rv-search{ display:flex; align-items:center; }
 .rv-search input[type="search"]{
   appearance:none; -webkit-appearance:none; flex:1 1 auto; min-width:0; box-sizing:border-box;
@@ -260,6 +262,14 @@ html[data-theme="light"] .rv-tw.sel{ color:var(--rv); }
 .chiptag button:hover{ background:var(--rv); color:#fff; }
 .rv-clear{ appearance:none; border:0; background:none; color:var(--rv); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; padding:2px; }
 .rv-clear:hover{ text-decoration:underline; }
+
+/* "Show more" pager button (reveals the next page of already-loaded cards) */
+.rv-more{ align-self:center; appearance:none; display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  margin-top:4px; min-width:220px; padding:12px 22px; border-radius:12px; cursor:pointer; font:inherit; font-size:13.5px; font-weight:700;
+  color:var(--rv-ink); background:var(--rv-dim); border:1px solid color-mix(in srgb,var(--rv) 30%,transparent); transition:.16s; }
+html[data-theme="light"] .rv-more{ color:var(--rv); }
+.rv-more:hover{ background:color-mix(in srgb,var(--rv) 16%,transparent); border-color:var(--rv); transform:translateY(-1px); }
+.rv-more .rv-more-rem{ font-family:var(--num); font-weight:600; color:var(--muted); font-size:12px; }
 .rv-searching{ font-size:12px; color:var(--muted); font-family:var(--num); }
 
 .rv-browse-btn{ display:none; }

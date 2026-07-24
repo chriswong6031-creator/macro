@@ -68,6 +68,9 @@
   function teaseCount() { return USER_TIER === 'insider' ? 3 : 1; }
   // Top Picks is a Pro-only lane; a resolved non-Pro tier is sent to the upgrade panel.
   function picksLocked() { return USER_TIER !== null && USER_TIER !== 'pro'; }
+  // Pager: reveal the (already-loaded) feed a page at a time. shownN resets
+  // whenever the result set — lane + filters + search — changes (see renderFeed).
+  var PAGE_SIZE = 18, shownN = 18, _feedSig = '';
 
   function normItem(x) {
     x = x || {};
@@ -424,6 +427,9 @@
     var picksGate = LANE === 'picks' && picksLocked();
     var pt = doc.querySelector('.rv-lane[data-lane="picks"]');
     if (pt) pt.classList.toggle('locked', picksLocked());   // small lock glyph on the tab
+    // reset the pager whenever the result set (lane + filters + search) changes
+    var sig = LANE + '|' + FILT.inst + '|' + FILT.side + '|' + FILT.theme + '|' + FILT.q;
+    if (sig !== _feedSig) { _feedSig = sig; shownN = PAGE_SIZE; }
     if (!ITEMS.length) {
       feed.innerHTML = emptyState(
         T('Institutional research is being onboarded', '机构研报正在接入'),
@@ -437,7 +443,10 @@
         savedLane ? T('Tap the bookmark on any report to keep it here for later.', '点击任意报告上的书签，即可收藏到此处。')
           : T('Try clearing a filter or widening your search.', '试试清除筛选或放宽搜索条件。'));
     } else if (feedUnlocked()) {
-      feed.innerHTML = rows.map(cardHTML).join('');
+      // Pro/unresolved: paged — show the first shownN, then a "Show more" button
+      var pg = rows.slice(0, shownN).map(cardHTML).join('');
+      if (rows.length > shownN) pg += moreButton(rows.length - shownN);
+      feed.innerHTML = pg;
     } else {
       // non-Pro: the latest N summaries readable (Insider 3 / Free 1), then a wall
       var n = teaseCount();
@@ -446,8 +455,8 @@
       if (locked.length) html += lockedTeaser(locked);
       feed.innerHTML = html;
     }
-    $('cnt-n').textContent = picksGate ? 0 : (feedUnlocked() ? rows.length : Math.min(teaseCount(), rows.length));
-    $('cnt-t').textContent = ITEMS.filter(laneMatch).length;
+    $('cnt-n').textContent = picksGate ? 0 : (feedUnlocked() ? Math.min(shownN, rows.length) : Math.min(teaseCount(), rows.length));
+    $('cnt-t').textContent = rows.length;   // filtered total, so "showing X of Y" tracks the pager
     renderActiveChips();
   }
   function emptyState(h, p) {
@@ -488,6 +497,13 @@
       + '<h3>' + esc(head) + '</h3><p>' + esc(body) + '</p>'
       + '<a class="btn upgrade" href="plans.html" style="margin-top:16px">' + T('Upgrade to Pro', '升级 Pro') + '</a>'
       + '</div>';
+  }
+  // "Show more" pager button; `remaining` is how many rows are still hidden.
+  function moreButton(remaining) {
+    var next = Math.min(remaining, PAGE_SIZE);
+    return '<button class="rv-more" data-act="more">' + CHEV_SVG
+      + '<span>' + T('Show ' + next + ' more', '再看 ' + next + ' 篇') + '</span>'
+      + '<span class="rv-more-rem">' + T(remaining + ' left', '剩 ' + remaining) + '</span></button>';
   }
   function cardHTML(x) {
     var pts = x.points, hasPts = pts.length > 0;
@@ -909,6 +925,8 @@
     });
     // feed (event-delegated)
     $('feed').addEventListener('click', function (e) {
+      var showMore = e.target.closest('[data-act="more"]');
+      if (showMore) { shownN += PAGE_SIZE; renderFeed(); return; }   // reveal the next page
       var art = e.target.closest('.rep'); if (!art) return;
       var id = art.getAttribute('data-id');
       var more = e.target.closest('[data-act="morepts"]'); if (more) { art.classList.toggle('open-pts'); return; }
