@@ -10,7 +10,9 @@ construction is KILLED (`DO_NOT_REBUILD.md` §2) and ignition surfaces are SUSPE
 background-only (§4). Full accounting: `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`
 + `research/lessons/` L-20260723-1/2. Background lanes (mag7_regime organ, ignition
 engine + forward self-grading, S-MLC preregs) keep accruing; any return of a Mag-7
-leadership surface requires prereg + gauntlet, not board pinning.
+leadership surface requires prereg + gauntlet, not board pinning. The re-entry prereg
+was chartered 2026-07-24: `MAG7_WASHOUT_REENTRY_PREREG.md` (MWR — operator's 2W
+Stoch-RSI washout construction, phase-0 census done, background engine accruing).
 
 ## 0. The incident of record (what the operator saw vs what the site showed)
 

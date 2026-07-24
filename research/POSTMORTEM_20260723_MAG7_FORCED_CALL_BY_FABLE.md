@@ -135,3 +135,7 @@ forbids a future prereg that clears the promotion gate. What is dead is the *del
 mechanism*: conviction → board, skipping the gauntlet. Likewise the ignition machinery may
 earn its way back through its own forward log — the suspension row lists exactly what
 "earned" means.
+
+*(Update 2026-07-24: that future prereg now exists — `MAG7_WASHOUT_REENTRY_PREREG.md`,
+the operator's 2W Stoch-RSI washout construction entering by the front door with a
+phase-0 census and a background engine. R1 working as written.)*
