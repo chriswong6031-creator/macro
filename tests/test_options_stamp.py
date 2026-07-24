@@ -990,11 +990,23 @@ def test_ovc_stamp_coverage_cols_excludes_root_class():
 
 # ── W-OVC: PIT-clean OI shift(1) fix tests ──────────────────────────────────
 
+# Fixture anchor: expiries MUST derive from the same frozen date the engine receives
+# as as_of/chain_date.  The engine classifies front-week as (expiry − chain_date) ≤ 7;
+# deriving expiries from date.today() while chain_date stays frozen makes DTE grow
+# with the wall clock, so the front7 branch silently stops being exercised and the
+# cross-expiry keying assertions pass vacuously.
+_OVC_ASOF = _dt.date(2026, 7, 17)   # engine as_of == current chain snapshot date
+_OVC_PRIOR = _dt.date(2026, 7, 16)  # prior snapshot (provides the PIT OI)
+
+
 def _ovc_chain_frame(ticker, *, spot=100.0, call_oi=500.0, put_oi=400.0, iv=0.20,
                      expiry_days=14):
-    """Chain frame with all columns required by _ovc_from_chain, including T and expiry."""
-    import datetime as _dt2
-    expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+    """Chain frame with all columns required by _ovc_from_chain, including T and expiry.
+
+    ``expiry_days`` counts from _OVC_ASOF (the chain snapshot date), so the engine-side
+    DTE equals ``expiry_days`` no matter when the test runs.
+    """
+    expiry = (_OVC_ASOF + _dt.timedelta(days=expiry_days)).isoformat()
     T = expiry_days / 365.0
     strikes = [95.0, 100.0, 105.0]
     rows = []
@@ -1031,12 +1043,12 @@ def test_ovc_from_chain_null_when_single_snapshot():
     """
     from engine.options_stamp import _ovc_from_chain
 
-    dates = [_dt.date(2026, 7, 17)]  # only one snapshot
+    dates = [_OVC_ASOF]  # only one snapshot
 
     def read_chain(d):
         return _ovc_chain_frame("FOO")
 
-    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    result = _ovc_from_chain(_OVC_ASOF, "FOO", dates, read_chain)
     assert result["opt_front7_charm_share"] is None, (
         "With only 1 snapshot, prior-day OI is unavailable — opt_front7_charm_share must be null"
     )
@@ -1054,21 +1066,21 @@ def test_ovc_from_chain_uses_prior_day_oi():
     """
     from engine.options_stamp import _ovc_from_chain
 
-    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]  # two snapshots
+    dates = [_OVC_PRIOR, _OVC_ASOF]  # two snapshots
 
     # Prior day: normal OI
     # Current day: 100x OI spike — if used, charm_share would be same because ALL contracts
     # spike equally (the ratio would stay the same). Instead, test that prior OI is used by
     # making prior OI zero: if prior OI is used, result should be null (no prior OI > 0).
     def read_chain_zero_prior(d):
-        if d == _dt.date(2026, 7, 16):
+        if d == _OVC_PRIOR:
             # prior snapshot: zero OI
             return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
         else:
             # current snapshot: normal OI  (should NOT be used for OI)
             return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
 
-    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_prior)
+    result = _ovc_from_chain(_OVC_ASOF, "FOO", dates, read_chain_zero_prior)
     assert result["opt_front7_charm_share"] is None, (
         "Prior-day OI is zero — if prior-day OI is used (correct PIT construction), "
         "opt_front7_charm_share must be null.  A non-null result means same-day OI was used "
@@ -1077,14 +1089,14 @@ def test_ovc_from_chain_uses_prior_day_oi():
 
     # Positive control: prior OI normal, current OI zero — should produce a value
     def read_chain_zero_current(d):
-        if d == _dt.date(2026, 7, 16):
+        if d == _OVC_PRIOR:
             # prior snapshot: normal OI
             return _ovc_chain_frame("FOO", call_oi=500.0, put_oi=400.0)
         else:
             # current snapshot: zero OI (irrelevant to OI weighting)
             return _ovc_chain_frame("FOO", call_oi=0.0, put_oi=0.0)
 
-    result_pos = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain_zero_current)
+    result_pos = _ovc_from_chain(_OVC_ASOF, "FOO", dates, read_chain_zero_current)
     assert result_pos["opt_front7_charm_share"] is not None, (
         "Prior-day OI is normal and current-day OI is zero — result should be non-null "
         "when prior-day OI is used correctly (charm_share uses prior OI for weighting, "
@@ -1095,20 +1107,23 @@ def test_ovc_from_chain_uses_prior_day_oi():
 def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries():
     """Prior-OI lookup must key on the full contract (expiry, K, is_call), not (K, is_call).
 
-    Fixture: the SAME strikes exist at a front expiry (3d) and a back expiry (60d).
-    Prior-day OI is ZERO for every front-expiry contract and large for every back-expiry
-    contract.  With correct per-contract keying the front-week charm numerator is exactly 0
-    (front contracts have no prior OI), so opt_front7_charm_share == 0.0 while the total
-    board (back expiry) is non-zero.  A lookup pooled by (K, is_call) would hand the back
-    expiry's OI to the front contracts and produce a positive share.
+    Fixture: the SAME strikes exist at a front expiry (DTE 3) and a back expiry (DTE 60),
+    both anchored to _OVC_ASOF so the front expiry deterministically lands in the engine's
+    dte<=7 bucket.  Prior-day OI is ZERO for every front-expiry contract and large for
+    every back-expiry contract.  With correct per-contract keying the front-week charm
+    numerator is exactly 0 (front contracts have no prior OI), so opt_front7_charm_share
+    == 0.0 while the total board (back expiry) is non-zero.  A lookup pooled by
+    (K, is_call) would hand the back expiry's OI to the front contracts and produce a
+    positive share.  A positive control (front expiry WITH prior OI → share > 0) pins
+    the front7 classification itself, so this test cannot rot back to vacuous.
     """
-    import datetime as _dt2
     from engine.options_stamp import _ovc_from_chain
 
     def _two_expiry_frame(front_oi: float, back_oi: float) -> pd.DataFrame:
         rows = []
+        # Anchored to _OVC_ASOF: engine DTE is exactly 3 (front-week) and 60 (back).
         for expiry_days, oi in ((3, front_oi), (60, back_oi)):
-            expiry = (_dt2.date.today() + _dt2.timedelta(days=expiry_days)).isoformat()
+            expiry = (_OVC_ASOF + _dt.timedelta(days=expiry_days)).isoformat()
             T = expiry_days / 365.0
             for k in (95.0, 100.0, 105.0):
                 for is_call in (True, False):
@@ -1118,14 +1133,14 @@ def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries()
                     })
         return pd.DataFrame(rows)
 
-    dates = [_dt.date(2026, 7, 16), _dt.date(2026, 7, 17)]
+    dates = [_OVC_PRIOR, _OVC_ASOF]
 
     def read_chain(d):
-        if d == _dt.date(2026, 7, 16):
+        if d == _OVC_PRIOR:
             return _two_expiry_frame(front_oi=0.0, back_oi=500.0)
         return _two_expiry_frame(front_oi=200.0, back_oi=500.0)
 
-    result = _ovc_from_chain(_dt.date(2026, 7, 17), "FOO", dates, read_chain)
+    result = _ovc_from_chain(_OVC_ASOF, "FOO", dates, read_chain)
     share = result["opt_front7_charm_share"]
     assert share is not None, (
         "Back-expiry contracts have prior OI — total board charm is non-zero, share must compute"
@@ -1134,4 +1149,21 @@ def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries()
         f"Front-week share must be exactly 0 (front contracts had zero prior-day OI); "
         f"got {share} — a positive value means prior OI was pooled across expiries "
         f"(back-month OI leaked into front-week contracts)."
+    )
+
+    # Positive control: give the front expiry prior-day OI too — the share must come out
+    # strictly positive.  This keeps the == 0.0 assertion above falsifiable: if fixture
+    # DTE ever drifts out of the dte<=7 window again, this goes red instead of the main
+    # assertion passing vacuously.
+    def read_chain_front_live(d):
+        if d == _OVC_PRIOR:
+            return _two_expiry_frame(front_oi=100.0, back_oi=500.0)
+        return _two_expiry_frame(front_oi=200.0, back_oi=500.0)
+
+    result_pos = _ovc_from_chain(_OVC_ASOF, "FOO", dates, read_chain_front_live)
+    share_pos = result_pos["opt_front7_charm_share"]
+    assert share_pos is not None and 0.0 < share_pos < 1.0, (
+        f"Front expiry has prior OI and sits at DTE=3 — the front-week branch must "
+        f"contribute (0 < share < 1); got {share_pos!r}. Zero means the fixture expiries "
+        f"drifted out of the dte<=7 window (front7 path not exercised)."
     )
