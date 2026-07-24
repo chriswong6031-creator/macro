@@ -1514,6 +1514,13 @@
     '.sd-plan-chip.warn{color:var(--warn,#e0a53d);background:color-mix(in srgb,var(--warn,#e0a53d) 12%,transparent);border-color:color-mix(in srgb,var(--warn,#e0a53d) 30%,transparent)}',
     '.sd-plan-cta{margin-top:10px}',
     '.sd-plan-cta .sd-btn{width:100%}',
+    /* bilingual toggle SCOPED to the dashboard: _sdBl() emits .l-en/.l-zh spans, but
+       the landing (index.html) has no site-wide .l-en/.l-zh rule, so both languages
+       showed. Scoping to .sd-card keeps the dashboard single-language on every host
+       without touching the page around it. */
+    '.sd-card .l-zh{display:none}',
+    'html[data-lang="zh"] .sd-card .l-en{display:none}',
+    'html[data-lang="zh"] .sd-card .l-zh{display:inline}',
     '.sd-muted{color:var(--muted,var(--ink-3,#8b93a7))}',
     /* mobile sign-out (rail hidden -> row at the end of Account) */
     '.sd-signout-m{display:none}',
@@ -1606,7 +1613,9 @@
     planExpires: ['Expires', '到期于'],
     planExpired: ['Expired', '已过期'],
     planLifetime:['Lifetime', '永久'],
-    upgradePro:  ['Upgrade to Pro — prorated', '升级到 Pro — 按比例计费'],
+    upgradePro:  ['Upgrade to Pro', '升级到 Pro'],
+    switchAnnual:['Switch to annual — save 30%', '切换年付 — 立省 30%'],
+    upgradeAnnual:['Upgrade — save up to 30%', '升级 — 最高省 30%'],
     choosePlan:  ['Choose a plan', '选择套餐'],
     planErr:     ['Couldn’t update your plan — please try again.', '无法更新订阅，请重试。'],
     // signed-out CTA
@@ -2172,17 +2181,22 @@
     var tier = p.tier || 'free';
     var paid = tier !== 'free';
     var chip = _sdPlanChip(p);
+    var interval = p.interval || null;
+    // Every upgrade lane lives in the one onboard sheet (MMOnboard 'upgrade'), which
+    // reads /api/me and shows the tier-correct lanes + the trial/prorate confirm.
+    // Nothing left to buy ONLY at the very top (Pro annual / unlimited). Everyone else
+    // gets a button — including a Pro MONTHLY subscriber who can still switch to annual
+    // for the ~30% discount, and trial-monthly users (their trial continues; billing
+    // switches to annual when it ends). Label mirrors onboard.js savePct (locked pricing).
+    var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
     var cta = '';
-    // Every upgrade lane now lives in the one onboard sheet (MMOnboard 'upgrade'),
-    // which reads /api/me and shows the tier-correct lanes + prorated confirm.
-    // Pro/unlimited already have everything an upgrade would buy → no CTA.
-    if (tier === 'insider') {
+    if (!top) {
+      var lblKey = !paid ? 'choosePlan'
+                 : (tier === 'pro') ? 'switchAnnual'
+                 : (interval === 'monthly' || !interval) ? 'upgradeAnnual'
+                 : 'upgradePro';
       cta = '<div class="sd-plan-cta">' +
-          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl('upgradePro') + '</button>' +
-        '</div>';
-    } else if (!paid) {
-      cta = '<div class="sd-plan-cta">' +
-          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-choose-plan">' + _sdBl('choosePlan') + '</button>' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl(lblKey) + '</button>' +
         '</div>';
     }
     return '<div class="sd-group sd-plan" id="sd-plan-grp">' +
@@ -2202,7 +2216,12 @@
     if (_sdPlan && _sdPlanFor === uid) return;   // already have this user's plan
     if (_sdPlanBusy) return;                       // a fetch is in flight
     _sdPlanBusy = true;
-    var base = window.MM_API || '';
+    // /api/me is served by the SAME origin (macro-api behind Caddy) on every
+    // mastermind-x.com host. window.MM_API points cross-subdomain to app. for other
+    // consumers, but app./api/me sends NO Access-Control-Allow-Origin → the browser
+    // silently blocked this read and the plan hung forever on "Loading your plan…".
+    // Talk same-origin here (guests/off-site keep the MM_API base).
+    var base = /(^|\.)mastermind-x\.com$/i.test(location.hostname || '') ? '' : (window.MM_API || '');
     getSupabaseClient().then(function (sb) {
       return sb ? sb.auth.getSession() : null;
     }).then(function (res) {
