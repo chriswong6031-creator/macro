@@ -1980,9 +1980,9 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
    in ONE grid cell so the crossfade never shifts layout. ===== */
 .hub-hero-stack{display:grid}
 .hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
-.hub-brand{transition:opacity .55s ease,transform .55s ease}
-.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(52px,7vw,74px);
- opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .5s ease,transform .5s ease}
+.hub-brand{transition:opacity .85s ease,transform .85s ease}
+.hub-greet{display:flex;align-items:center;justify-content:center;gap:3px;min-height:clamp(88px,12vw,124px);
+ opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .8s ease,transform .8s ease}
 .h.greet-run .hub-greet{opacity:1;transform:none}
 .h.greet-run .hub-brand{opacity:0;transform:translateY(7px)}
 .hub-greet .greet-tx{font-family:var(--font-ui);font-weight:850;letter-spacing:-.006em;line-height:1.05;text-align:center;
@@ -1993,6 +1993,12 @@ html[data-lang="zh"] .regime-changed .l-zh{display:inline}
 .hub-greet .greet-caret{width:3px;height:clamp(26px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
  background:var(--accent,var(--info));box-shadow:0 0 10px color-mix(in srgb,var(--accent,var(--info)) 65%,transparent);
  animation:greetCaret 1.05s steps(1) infinite}
+.greet-tx{transition:opacity .34s ease}
+/* conversation mode: the market read wraps in a smaller, lighter voice than the
+   big name greeting; the caret becomes an inline blink at the end of the text. */
+.hub-greet.convo .greet-tx{font-size:clamp(19px,2.7vw,29px);font-weight:600;letter-spacing:0;line-height:1.34;max-width:min(30ch,86vw);text-wrap:balance}
+.hub-greet.convo .greet-caret{display:none}
+.hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:3px;transform:translateY(3px);border-radius:1px;background:var(--accent,var(--info));animation:greetCaret 1.05s steps(1) infinite}
 @keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.hub-greet .greet-caret{animation:none}.hub-brand,.hub-greet{transition:none}}
 </style>"""
@@ -2680,29 +2686,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         'function tick(){var d=new Date();for(var i=0;i<els.length;i++){var l=els[i].getAttribute("data-loc")||undefined;'
         'try{els[i].textContent=d.toLocaleString(l,opt);}catch(e){els[i].textContent=d.toLocaleString(undefined,opt);}}}'
         'tick();setInterval(tick,1000);})();</script>'
-        # personal welcome — a typewriter greeting keyed off the session cookie's first
-        # name: "Welcome, X" first time, time-of-day variety ("Good evening, X" /
-        # "You're up late, X" / zh) when returning, then cross-dissolve into the brand.
-        r'<script>(function(){var hdr=document.querySelector("header.h");if(!hdr)return;'
-        r'var g=hdr.querySelector(".hub-greet"),tx=g&&g.querySelector(".greet-tx");if(!tx)return;'
-        r'function su(){try{var m={},P=(document.cookie||"").split(";"),i;for(i=0;i<P.length;i++){var p=P[i].trim(),e=p.indexOf("=");if(e>0)m[p.slice(0,e)]=p.slice(e+1);}var K=null,k;for(k in m){if(/^sb-.*-auth-token(\.\d+)?$/.test(k)){K=k.replace(/\.\d+$/,"");break;}}if(!K)return null;var r=m[K],j=r;if(r==null){var v=[],n=0,c;while((c=m[K+"."+n])!=null){v.push(c);n++;}j=v.length?v.join(""):null;}if(j==null)return null;var B="base64-";if(j.indexOf(B)===0){var b=j.slice(B.length).replace(/-/g,"+").replace(/_/g,"/");while(b.length%4)b+="=";j=decodeURIComponent(escape(atob(b)));}var s=JSON.parse(j);return(s&&s.user)||null;}catch(e){return null;}}'
-        r'var u=su();if(!u){try{u=window.MDXAuth&&window.MDXAuth.user&&window.MDXAuth.user();}catch(e){}}'
-        r'var md=(u&&u.user_metadata)||{},nm=(md.first_name||md.display_name||md.name||md.full_name||"").toString().trim();'
-        r'if(!nm&&u&&u.email)nm=String(u.email).split("@")[0];'
-        r'nm=nm.replace(/[<>]/g,"").slice(0,24);if(nm&&nm===nm.toLowerCase())nm=nm.charAt(0).toUpperCase()+nm.slice(1);'
-        r'var KEY="mm.hub.welcomed",ft=false;try{ft=!localStorage.getItem(KEY);localStorage.setItem(KEY,"1");}catch(e){}'
-        r'var zh=document.documentElement.getAttribute("data-lang")==="zh",H=(new Date()).getHours();'
-        r'var tod=H<5?"late":H<12?"morning":H<18?"afternoon":H<23?"evening":"late";'
-        r'function pk(a){return a[Math.floor(Math.random()*a.length)];}var EN,ZH;'
-        r'if(ft){EN="Welcome";ZH="欢迎";}'
-        r'else{var PE={morning:["Good morning","Rise and shine","Welcome back"],afternoon:["Good afternoon","Welcome back","Good to see you"],evening:["Good evening","Welcome back","Good to see you"],late:["You’re up late","Burning the midnight oil","Welcome back"]},PZ={morning:["早上好","欢迎回来"],afternoon:["下午好","欢迎回来"],evening:["晚上好","欢迎回来"],late:["夜深了","欢迎回来"]};EN=pk(PE[tod]);ZH=pk(PZ[tod]);}'
-        r'var full=zh?(nm?ZH+"，"+nm:ZH):(nm?EN+", "+nm:EN);'
-        r'hdr.classList.add("greet-run");'
-        r'var rm=false;try{rm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;}catch(e){}'
-        r'function done(){setTimeout(function(){hdr.classList.remove("greet-run");},1500);}'
-        r'if(rm){tx.textContent=full;done();return;}'
-        r'var i2=0;(function ty(){tx.textContent=full.slice(0,i2);if(i2<=full.length){var ch=full.charAt(i2-1);i2++;setTimeout(ty,ch===" "||ch==="，"||ch===","?120:48);}else{done();}})();'
-        r'})();</script>'
+        # personal welcome — name greeting + a short market-aware read (real #globe-data,
+        # no LLM), paced with pauses, then a slow dissolve to the brand. Engine + topic/
+        # phrasing rotation + same-day visit recall live in hub-welcome.js.
+        '<script defer src="hub-welcome.js"></script>'
         # hub-views segmented toggle + scroll CTA
         '<script>(function(){'
         'var hv=document.getElementById("hub-views");if(!hv)return;'
