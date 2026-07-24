@@ -119,7 +119,7 @@ html.still{scroll-behavior:auto}
 .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
 .btn.primary:hover{background:var(--blue-ink);color:#fff}
 .btn.sm{padding:8px 15px;font-size:13.5px}
-.gearbtn{width:37px;height:37px;flex:none;border-radius:10px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
+.gearbtn{width:37px;height:37px;flex:none;border-radius:999px;border:1px solid var(--hair-2);background:#fff;box-shadow:var(--sh-card);display:grid;place-items:center;color:var(--muted);transition:transform .16s,box-shadow .16s,color .16s}
 .gearbtn:hover{color:var(--ink);transform:translateY(-1px);box-shadow:var(--sh-lift)}
 .gearbtn[aria-expanded="true"]{color:var(--ink);border-color:var(--faint)}
 .gearbtn svg{width:17px;height:17px}
@@ -137,6 +137,24 @@ html.still{scroll-behavior:auto}
 .gp-div{height:1px;background:var(--hair);margin:4px 4px 6px}
 .gp-link{display:block;font-size:13px;color:var(--ink-soft);border-radius:8px;padding:8px 8px;font-weight:500;transition:background .14s,color .14s}
 .gp-link:hover{background:var(--panel-2);color:var(--ink)}
+/* gear ACCOUNT section (mirrors the macro gear's account block, landing light tokens) */
+.gp-acct-t{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--faint);margin:2px 8px 8px}
+.gp-acct-d{font-size:12px;line-height:1.5;color:var(--muted);margin:0 8px 10px}
+.gp-acct-btns{display:flex;gap:8px;padding:0 4px 4px}
+.gp-abtn{flex:1;border-radius:9px;padding:8px 10px;font-size:12.5px;font-weight:600;transition:background .14s,color .14s,border-color .14s}
+.gp-abtn.ghost{border:1px solid var(--hair-2);background:#fff;color:var(--ink-soft)}
+.gp-abtn.ghost:hover{background:var(--blue-wash);color:var(--blue-ink);border-color:var(--blue)}
+.gp-abtn.solid{background:var(--blue);border:1px solid var(--blue);color:#fff;box-shadow:var(--sh-card)}
+.gp-abtn.solid:hover{background:var(--blue-ink);border-color:var(--blue-ink)}
+.gp-acct-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;min-width:0;transition:background .14s}
+.gp-acct-card:hover{background:var(--panel-2)}
+.gp-acct-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.gp-avatar{flex:none;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#fff;background:var(--blue)}
+.gp-acct-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.gp-acct-email{font-size:12.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gp-acct-sub{font-size:11px;color:var(--muted)}
+.gp-signout{display:block;width:calc(100% - 8px);margin:6px 4px 2px;border:1px solid var(--hair-2);border-radius:9px;padding:8px;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:#fff;transition:background .14s,color .14s,border-color .14s}
+.gp-signout:hover{background:var(--panel-2);color:var(--ink)}
 
 /* ============ COVER ============ */
 .cover{position:relative;overflow:clip}
@@ -680,11 +698,11 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
       <a href="https://app.mastermind-x.com">Terminal</a><a href="#ai" data-zh="Mastermind AI">Mastermind AI</a><a href="#pricing" data-zh="定价">Pricing</a>
     </div>
     <div class="nav-right">
-      <a href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
-      <a class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <a id="nav-login" href="https://app.mastermind-x.com/terminal?signin=1" style="color:var(--muted)" data-zh="登录">Log in</a>
+      <a id="nav-cta" class="btn primary sm" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <span class="gear-wrap">
         <button class="gearbtn" id="gear-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01A1.7 1.7 0 0 0 10 4.09V4a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01c.26.63.87 1.04 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="gear-pop" id="gear-pop" role="menu" aria-label="Settings">
           <p class="gp-kicker" data-zh="设置">SETTINGS</p>
@@ -697,8 +715,26 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
           </div>
           <div class="gp-div"></div>
           <a class="gp-link" role="menuitem" href="start.html" data-zh="打开仪表盘">Open the dashboard</a>
-          <a class="gp-link" role="menuitem" href="https://app.mastermind-x.com/terminal?signin=1" data-zh="登录">Log in</a>
-          <a class="gp-link" role="menuitem" href="#pricing" data-zh="定价">Pricing</a>
+          <!-- ACCOUNT section — mirrors the macro dashboard gear's ACCOUNT block, in
+               landing light tokens. onboard.js's auth-chrome module swaps -out ⇄ -in. -->
+          <div class="gp-div"></div>
+          <div class="gp-acct">
+            <p class="gp-acct-t" data-zh="账户">ACCOUNT</p>
+            <div class="gp-acct-out" id="gp-acct-out">
+              <p class="gp-acct-d" data-zh="登录以在所有设备同步自选、提醒与设置。">Sign in to sync your watchlists, alerts and settings across devices.</p>
+              <div class="gp-acct-btns">
+                <button type="button" class="gp-abtn ghost" id="gp-signin" data-zh="登录">Sign in</button>
+                <button type="button" class="gp-abtn solid" id="gp-signup" data-zh="创建账户">Create account</button>
+              </div>
+            </div>
+            <div class="gp-acct-in" id="gp-acct-in" hidden>
+              <div class="gp-acct-card" id="gp-acct-card" role="button" tabindex="0">
+                <span class="gp-avatar" id="gp-avatar"></span>
+                <span class="gp-acct-main"><span class="gp-acct-email" id="gp-email"></span><span class="gp-acct-sub" data-zh="管理账户与同步 ›">Manage account &amp; sync ›</span></span>
+              </div>
+              <button type="button" class="gp-signout" id="gp-signout" data-zh="退出登录">Sign out</button>
+            </div>
+          </div>
         </div>
       </span>
     </div>
@@ -714,7 +750,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
       <h1 data-zh="你的专属<br>机构级<span class='dim'>市场情报台。</span>">Your personal,<br>institutional-grade<br><span class="dim">market intelligence.</span></h1>
       <p class="sub" data-zh="宏观、信号、期权流与深度研究——每晚由相互校验的引擎重建。<b>就在下方，实时运行。</b>">Macro, signals, options flow and deep research — rebuilt nightly by engines that check each other's work. <b>Live, below.</b></p>
       <div class="cta-row">
-        <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+        <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
         <a class="btn" href="#f-terminal" data-zh="看实时演示">See it live</a>
       </div>
       <p class="micro" data-zh="免费试用 · 机构级市场情报">FREE TRIAL · INSTITUTIONAL MARKET INTELLIGENCE</p>
@@ -1194,7 +1230,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
         <p class="who" data-zh="每日研判、六条信号、Terminal——永久免费。">The daily read, six signals, the Terminal — forever.</p>
         <div class="price">$0</div>
         <p class="gist" data-zh="每日研判、<b>全部宏观看板</b>、<b>每天 6 条信号</b>、完整 Terminal。无需绑卡。">The daily read, <b>every macro dashboard</b>, <b>6 signals a day</b>, full Terminal. No card.</p>
-        <a class="btn" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
+        <a class="btn js-plan-cta" data-plan="free" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
       </div>
       <div class="tier rv" style="--d:.1s">
         <h3>Insider</h3>
@@ -1202,7 +1238,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
         <div class="price" data-annual="$49" data-monthly="$69"><span class="was">$69</span>$49 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 29% · $588/年">SAVE 29% · $588/YR</span>
         <p class="gist" data-zh="<b>无限量 Flash AI</b>、每月 20 次 Pro AI、<b>日内期权流</b>、内部人/国会与 13F 台席、电话会记录、每日简报。"><b>Unlimited Flash AI</b>, 20 Pro AI dives a month, <b>intraday options flow</b>, the Insider/Congress &amp; 13F desks, transcripts, daily briefs.</p>
-        <a class="btn" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
+        <a class="btn js-plan-cta" data-plan="insider" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=insider&amp;period=annual" style="justify-content:center" data-zh="开始 7 天试用">Start 7-day trial</a>
       </div>
       <div class="tier hot rv" style="--d:.16s">
         <h3>Pro</h3>
@@ -1210,7 +1246,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
         <div class="price" data-annual="$69" data-monthly="$99"><span class="was">$99</span>$69 <span class="per">/mo billed annually</span></div>
         <span class="badge" data-zh="省 30% · $828/年">SAVE 30% · $828/YR</span>
         <p class="gist" data-zh="<b>每月 50 次 Pro AI</b>、Mastermind 与机构研究报告、机器人组合、MCP 即将上线。"><b>50 Pro AI dives a month</b>, Mastermind + institutional research reports, Bot Portfolios, MCP soon.</p>
-        <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
+        <a class="btn primary js-plan-cta" data-plan="pro" data-period="annual" href="https://app.mastermind-x.com/terminal?signup=1&amp;plan=pro&amp;period=annual" style="justify-content:center" data-zh="免费试用 Pro 7天">Try Pro free for 7 days</a>
       </div>
     </div>
 
@@ -1265,7 +1301,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
     <h2 class="sec-title display" style="margin-top:12px" data-zh="你的台席已就绪。">Your desk is ready.</h2>
     <p class="sec-sub" style="max-width:46ch;margin-inline:auto" data-zh="仪表盘、信号与 Terminal 现在就在运行。免费开始，几秒上手。">Dashboards, signals and the Terminal are live right now. Start free — you're in within seconds.</p>
     <div class="cta-row" style="justify-content:center;margin-top:28px">
-      <a class="btn primary" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
+      <a class="btn primary js-startfree" href="https://app.mastermind-x.com/terminal?signup=1" data-zh="免费开始">Start free</a>
       <a class="btn" href="https://app.mastermind-x.com" data-zh="打开 Terminal">Open the Terminal</a>
     </div>
     <div class="trust">
