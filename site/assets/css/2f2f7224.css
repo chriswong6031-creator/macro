@@ -257,7 +257,7 @@
      bar: 2x2 quadrant locator · headline regime + plain-English standfirst · a
      vitals strip of the market's NATIVE drivers (LABEL · VALUE · MEANING). */
   .cmd-hero {
-    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     --hair: color-mix(in srgb, var(--line) 72%, transparent);
     --tile: color-mix(in srgb, var(--panel2, var(--panel)) 86%, var(--panel));
     --ink-1: var(--text);

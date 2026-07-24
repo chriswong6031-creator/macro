@@ -25,8 +25,15 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=24ca655a">
 <link rel="stylesheet" href="cycle.css?v=4">
-<link rel="stylesheet" href="sector_cycles.css?v=53d45064">
-<link rel="stylesheet" href="assets/css/383df8c4.css?v=383df8c4">
+<link rel="stylesheet" href="sector_cycles.css?v=8d6b401d">
+
+<link rel="preload" href="sector_cycles_data.js?v=ff68cf79" as="script">
+<link rel="preload" href="mm_charts.js?v=244eb769" as="script">
+<link rel="preload" href="sector_cycles.js?v=bc35b288" as="script">
+<link rel="prefetch" href="sector_cycles_series_data.js" as="script">
+<link rel="prefetch" href="sector_cycles_narr_data.js?v=cd8873c3" as="script">
+<link rel="prefetch" href="sector_cycles_dna_data.js?v=46b0879d" as="script">
+<link rel="stylesheet" href="assets/css/11d1098b.css?v=11d1098b">
 </head>
 <body>
 
@@ -392,7 +399,7 @@
   </footer>
 </div>
 
-<script src="sector_central_data.js?v=2c3e88cd" defer></script>
+<script src="sector_central_data.js?v=e6648a77" defer></script>
 <script>
 (function(){
   "use strict";
@@ -705,18 +712,17 @@
 
 <script>
 (function(){
-  window.SC_LAZY_EXTRAS=true;  // defer the ~2.2MB narr+dna to first sector focus (see sector_cycles.js)
+  window.SC_LAZY_EXTRAS=true;  // defer narr+dna to first sector focus (see sector_cycles.js)
   window.SC_EXTRA_DATA=['sector_cycles_narr_data.js','sector_cycles_dna_data.js'];
-  var files=['sector_cycles_data.js','mm_charts.js?v=4','sector_cycles.js'];
+  window.SC_SERIES_DATA='sector_cycles_series_data.js';  // heavy arrays, hydrated after first paint
+  function vUrl(name){try{var l=document.querySelector('link[rel="preload"][href^="'+name+'"],link[rel="prefetch"][href^="'+name+'"]');if(l){var h=l.getAttribute('href');if(h)return h;}}catch(e){}return name;}
+  var files=['sector_cycles_data.js','mm_charts.js','sector_cycles.js'];
   var head=document.head;
-  function loadNext(i){
-    if(i>=files.length) return;
-    var s=document.createElement('script'); s.async=false; s.src=files[i];
+  files.forEach(function(f,i){
+    var s=document.createElement('script'); s.async=false; s.src=vUrl(f);
     if(i===0) s.addEventListener('load',function(){ document.dispatchEvent(new CustomEvent('sc:cycles-data')); });
-    s.addEventListener('load',function(){ loadNext(i+1); });
     head.appendChild(s);
-  }
-  loadNext(0);
+  });
 })();
 </script>
 

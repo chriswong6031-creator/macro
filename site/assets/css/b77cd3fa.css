@@ -2,7 +2,7 @@
   * { box-sizing: border-box; }
   /* ── design tokens ported from macro.html (deep command-center canvas + mono numerals) ── */
   body {
-    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
     --hair: color-mix(in srgb, var(--line) 74%, transparent);
     --ink-2: color-mix(in srgb, var(--text) 66%, transparent);

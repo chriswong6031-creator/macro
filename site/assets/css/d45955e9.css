@@ -1501,8 +1501,8 @@
      ====================================================================== */
   body.page-macro {
     /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
-    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
-           "Roboto Mono", Menlo, Consolas, monospace;
+    --num: var(--font-mono, ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+           "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace);
     /* hairlines + inset surface, layered on the existing palette */
     --hair: color-mix(in srgb, var(--line) 72%, transparent);
     --hair-strong: var(--line);
