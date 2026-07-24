@@ -1,0 +1,51 @@
+name: regime-self-heal
+
+on:
+  schedule:
+    - cron: "5 14 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regime-self-heal
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    # intraday-fastpath used to carry this canonical repair every 30 minutes.
+    # After VPS cutover retain one local reconciliation pass without making the
+    # VPS a second writer for regime/market-state/reflex ledgers.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY == 'true' }}
+    runs-on: [self-hosted, macstudio-light]
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: repair stale canonical regime pointer
+        run: python -m scripts.refresh_regime_if_stale
+      - name: commit only canonical repair artifacts
+        run: |
+          set -euo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -f data/regime/latest.json data/market_state/latest.json data/reflexes/ 2>/dev/null || true
+          git checkout -- . 2>/dev/null || true
+          git clean -fdq data/ 2>/dev/null || true
+          if git diff --cached --quiet; then echo "canonical regime pointer already fresh"; exit 0; fi
+          git commit -m "repair: reconcile stale regime pointer $(date -u +%FT%H:%MZ)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then echo "pushed (attempt $i)"; exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i lost a race"
+            sleep $((i * 5))
+          done
+          echo "::error::could not push canonical regime repair after 5 attempts"
+          exit 1

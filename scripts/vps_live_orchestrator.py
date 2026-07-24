@@ -118,6 +118,30 @@ class Orchestrator:
         started = time.monotonic()
         merged_env = os.environ.copy()
         merged_env.update(env or {})
+        # The first output is the task's required product. Remove only that
+        # staging file before launch so a builder which exits 0 without writing
+        # cannot make an old checkout artifact look like a fresh success. Keep
+        # optional sidecars in place because basket/flow builders use their
+        # lastgood files as inputs outside active sessions.
+        optional_before: dict[Path, tuple[int, int] | None] = {}
+        if outputs:
+            try:
+                outputs[0][0].unlink(missing_ok=True)
+            except OSError as exc:
+                result = TaskResult(
+                    name,
+                    "error",
+                    round(time.monotonic() - started, 3),
+                    detail=f"could not clear required staging output: {exc}"[:800],
+                )
+                self.results.append(result)
+                return result
+            for source, _ in outputs[1:]:
+                try:
+                    stat = source.stat()
+                    optional_before[source] = (stat.st_mtime_ns, stat.st_size)
+                except OSError:
+                    optional_before[source] = None
         try:
             completed = self.runner(
                 args,
@@ -130,8 +154,18 @@ class Orchestrator:
             )
             published: list[str] = []
             if completed.returncode == 0:
-                for source, target in outputs:
-                    if source.exists():
+                required_missing = bool(outputs and not outputs[0][0].is_file())
+                if required_missing:
+                    status = "failed"
+                    detail = f"required output was not produced: {outputs[0][0]}"
+                else:
+                    for index, (source, target) in enumerate(outputs):
+                        if not source.is_file():
+                            continue
+                        if index > 0 and optional_before.get(source) is not None:
+                            stat = source.stat()
+                            if (stat.st_mtime_ns, stat.st_size) == optional_before[source]:
+                                continue
                         try:
                             label = str(target.relative_to(self.public_dir))
                             mode = 0o644
@@ -140,8 +174,8 @@ class Orchestrator:
                             mode = 0o600
                         atomic_publish(source, target, mode=mode)
                         published.append(label)
-                status = "ok"
-                detail = (completed.stdout or "").strip()[-500:] or None
+                    status = "ok"
+                    detail = (completed.stdout or "").strip()[-500:] or None
             else:
                 status = "failed"
                 detail = (completed.stderr or completed.stdout or "").strip()[-800:] or None
@@ -407,7 +441,7 @@ def main() -> int:
         )
         getattr(orchestrator, args.lane)()
         orchestrator.write_status(args.lane, started_at)
-        return 0
+        return 0 if all(result.status == "ok" for result in orchestrator.results) else 1
     finally:
         lock_file.close()
 

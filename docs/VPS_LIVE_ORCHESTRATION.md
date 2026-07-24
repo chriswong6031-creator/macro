@@ -14,6 +14,7 @@ Use a hybrid ownership model:
 | Intraday bars + flow pulse | VPS, hourly, low priority | Manual GitHub workflow |
 | S&P 500 heatmap price splice | VPS, ~10 minutes in US window | Nightly static heatmap |
 | Canonical daily source pulls and corrections | Mac/PC nightly | Rerun nightly |
+| Regime-pointer stale repair | Mac light runner, once at 14:05 UTC after cutover | Manual dispatch |
 | Forward ledgers, grading, calibration, research | Mac/PC nightly | Rerun nightly |
 | Full engine and static-site render | Mac/PC nightly | Render workflow |
 | Historical/bulk backfills and LLM-heavy jobs | Mac/PC | Explicit operator run |
@@ -47,6 +48,12 @@ The first migration reduces live-runner queueing and commit/deploy churn. It doe
 not intentionally remove the nightly correctness pass. Later, collector-level
 telemetry can justify skipping a redundant network fetch, but reconciliation and
 ledger advancement still remain.
+
+The old intraday workflow also carried a canonical regime-pointer self-heal.
+Because that is not an ephemeral display artifact, it is not moved to the VPS.
+After cutover, `regime-self-heal.yml` retains one daily pass on
+`macstudio-light`; this replaces dozens of intraday opportunities with one
+bounded reconciliation run while preserving single-writer ownership.
 
 ## Measured VPS capacity (2026-07-24)
 
@@ -94,7 +101,8 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   Overlay and risk state alternate minutes instead of competing. Resource ceiling:
   180% CPU and 1.5 GiB memory.
 - `macro-live-snapshot.timer`: every ~5 minutes. Full quote pull followed by both
-  basket pulses. Lower priority, 90% CPU and 1 GiB memory.
+  basket pulses on weekdays (the full equity universe does not poll all weekend).
+  Lower priority, 90% CPU and 1 GiB memory.
 - `macro-live-bars.timer`: hourly at `:37` during 13:00–21:00 UTC weekdays.
   Lowest priority, 90% CPU and 1.25 GiB memory.
 
@@ -123,6 +131,8 @@ ALFRED/official retrieval remains the only canonical actual/scoreboard writer.
    one full US session and one HK session.
 5. Confirm `/live/orchestrator_status.json` is current and browser paths are
    served from the external store.
+   `python scripts/check_vps_live_health.py` must also pass; after cutover the
+   GitHub-hosted `vps-live-heartbeat` workflow runs this dead-man every ten minutes.
 6. Set repository variable `VPS_LIVE_PRIMARY=true`.
 7. Keep the old workflows available for manual recovery. If the VPS goes stale,
    set the variable false before dispatching or simply use manual dispatch, which

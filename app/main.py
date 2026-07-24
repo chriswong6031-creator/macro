@@ -471,7 +471,27 @@ def status() -> dict:
                         }
                     )
                 elif key == "orchestrator":
-                    checks[key]["lanes"] = sorted((data.get("lanes") or {}).keys())
+                    lanes = {}
+                    for lane_name, lane in (data.get("lanes") or {}).items():
+                        finished = lane.get("finished_at")
+                        lane_age = None
+                        if finished:
+                            try:
+                                stamp = datetime.fromisoformat(str(finished).replace("Z", "+00:00"))
+                                lane_age = round(
+                                    (datetime.now(timezone.utc) - stamp.astimezone(timezone.utc))
+                                    .total_seconds()
+                                    / 60,
+                                    1,
+                                )
+                            except (TypeError, ValueError):
+                                pass
+                        lanes[lane_name] = {
+                            "ok": lane.get("ok"),
+                            "finished_at": finished,
+                            "age_min": lane_age,
+                        }
+                    checks[key]["lanes"] = lanes
             except Exception as e:  # noqa: BLE001
                 checks[key] = {"error": str(e), "age_min": age_min(artifact)}
         else:

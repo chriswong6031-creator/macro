@@ -2,8 +2,7 @@
 Description=Run the Mastermind full quote/basket lane every five minutes
 
 [Timer]
-OnBootSec=2m40s
-OnUnitActiveSec=5m
+OnCalendar=Mon..Fri *-*-* *:0/5:00 UTC
 AccuracySec=1s
 RandomizedDelaySec=8s
 Persistent=false
