@@ -237,6 +237,12 @@ on:
       # test pins producer (AST) + template consumer, so the builder must trigger CI.
       - "scripts/build_stock_library.py"
       - "tests/test_sector_pulse_wiring.py"
+      # Options Alpha W1.3/W-C/W-OVC stamp + entry-state guards: engine files are
+      # covered by engine/**, but the test files need explicit paths so a test-only
+      # change (e.g. the 2026-07-23 W-OVC fixture re-anchor) still re-runs the
+      # whitelist step that carries them.
+      - "tests/test_options_stamp.py"
+      - "tests/test_options_entry_state.py"
       # China Lens / Intel Hub W0.2: builder + test must re-run together so a
       # headline crash or schema drift fails RED before merging.
       - "scripts/build_intel_hub.py"
