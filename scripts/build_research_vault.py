@@ -112,6 +112,19 @@ def _fmt_date(d: str) -> str:
         return _e(d)
 
 
+def _fmt_datetime(pub: str) -> str:
+    """'Jul 24, 2026 · 10:08 UTC' — the desk's source publish time (published_at),
+    shown in UTC. Mirrors the client's ``fmtWhen`` exactly so the SSR baseline and
+    the hydrated card read identically. Degrades to date-only when no time is present."""
+    date = (pub or "").split("T")[0]
+    base = _fmt_date(date)
+    if pub and "T" in pub:
+        hm = pub.split("T")[1][:5]
+        if len(hm) == 5 and hm[2] == ":":
+            return f"{base} · {_e(hm)} UTC"
+    return base
+
+
 def _logo_for(inst: str) -> str:
     inst = (inst or "").strip()
     if not inst or inst == "Unknown":
@@ -134,7 +147,6 @@ def _ssr_card(x: dict) -> str:
     desk = x.get("desk") or ""
     top = bool(x.get("top_pick"))
     needs = bool(x.get("needs_metadata"))
-    date = (x.get("published_at") or "").split("T")[0]
     pts = x.get("summary_points") or []
     tags = x.get("tags") or []
 
@@ -158,7 +170,7 @@ def _ssr_card(x: dict) -> str:
         f'</div>'
         f'<h3>{_e(x.get("title"))}</h3>{pts_html}'
         f'<div class="rep-foot"><div class="rep-meta">'
-        f'<span class="rep-date">{cal}{_fmt_date(date)}</span>'
+        f'<span class="rep-date">{cal}{_fmt_datetime(x.get("published_at"))}</span>'
         f'<span class="rep-tags">{tags_html}</span></div></div>'
         f'</article>'
     )
