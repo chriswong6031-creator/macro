@@ -166,18 +166,33 @@ def test_notify_source_f_detects_dedups_and_copy(tmp_path, monkeypatch):
     import scripts.notify_turn_events as NTE
     trig = tmp_path / "triggers.jsonl"
     trig.write_text(json.dumps({"tf": "2W_stochrsi", "date": "2026-07-20",
-                                "stoch2w_k": 14.2, "policy": "cutting"}) + "\n")
+                                "stoch2w_k": 14.2, "regime": "cutting"}) + "\n")
     monkeypatch.setattr(NTE, "_MWR_TRIGGERS_PATH", trig)
     state: dict = {}
     res = NTE._detect_mwr_trigger(state, "2026-07-22")
     assert len(res) == 1
     subject, msg = res[0]
     assert subject == "2W_stochrsi|2026-07-20"
-    # copy contract: process language, never an action call
-    assert "TRIGGERED" in msg and "Use-A" in msg and "un-ratified" in msg
+    # Amendment 2: regime clear → actionable copy; still never buy/sell words
+    assert "TRIGGERED" in msg and "ACTIONABLE" in msg and "kill-switch" in msg
     assert "buy" not in msg.lower() and "sell" not in msg.lower()
     # once-ever dedup (bar-date keyed)
     NTE._mark_fired(state, "mwr_trigger", subject, "2026-07-20")
     assert NTE._detect_mwr_trigger(state, "2026-07-22") == []
     # stale rows (>5 calendar days) never replay on later runs
     assert NTE._detect_mwr_trigger({}, "2026-08-30") == []
+
+
+def test_notify_veto_and_unknown_copy(tmp_path, monkeypatch):
+    import scripts.notify_turn_events as NTE
+    trig = tmp_path / "triggers.jsonl"
+    rows = [{"tf": "2W_stochrsi", "date": "2026-07-20", "regime": "hike_accel"},
+            {"tf": "3D_rsimacd", "date": "2026-07-21"}]  # no regime tag
+    trig.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    monkeypatch.setattr(NTE, "_MWR_TRIGGERS_PATH", trig)
+    res = dict(NTE._detect_mwr_trigger({}, "2026-07-22"))
+    veto_msg = res["2W_stochrsi|2026-07-20"]
+    assert "VETOED" in veto_msg and "accelerating-tightening" in veto_msg
+    assert "ACTIONABLE" not in veto_msg
+    unknown_msg = res["3D_rsimacd|2026-07-21"]
+    assert "Regime tag unavailable" in unknown_msg and "manually" in unknown_msg

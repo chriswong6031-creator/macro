@@ -117,6 +117,17 @@ def _env_tags(root: Path | None, when: pd.Timestamp) -> dict:
         out["dffr_6m_bp"] = int(round(d_bp * 100))
         out["policy"] = ("hiking" if d_bp >= 0.25 else
                          "cutting" if d_bp <= -0.25 else "flat")
+        # Amendment-2 conditioner (operator override 2026-07-24): the failure
+        # class is ACCELERATING tightening — trailing-6m ΔFFR still rising vs
+        # 91 calendar days ago. Panel evidence: hike_accel median excess −1.02%
+        # vs hike_decel +1.98% / cutting +2.44% across 27,647 signals
+        # (reports/mwr_phase1_conditioner_study.md; CI includes 0 — disclosed).
+        d_prev = (float(dff.asof(when - pd.Timedelta(days=91)))
+                  - float(dff.asof(when - pd.Timedelta(days=91 + 182))))
+        accel = d_bp - d_prev
+        out["regime"] = ("hike_accel" if (d_bp >= 0.25 and accel > 0) else
+                         "hike_decel" if d_bp >= 0.25 else
+                         "cutting" if d_bp <= -0.25 else "flat")
     except Exception as e:  # noqa: BLE001 — store-optional
         log.debug("mag7_washout env tags unavailable (%s)", e)
     return out
@@ -180,8 +191,19 @@ def snapshot(root: Path | None = None, write: bool = True) -> dict | None:
             "members": per_member,
             "armed": armed,
             "triggers_today": triggers,
-            "note": "background-only re-entry gate (MWR-W0); no surface until "
-                    "prereg gauntlet + operator ruling (DO_NOT_REBUILD §2)",
+            # Amendment 2 (operator override 2026-07-24): Use-B is CONDITIONAL-LIVE —
+            # a trigger is actionable ONLY outside the accelerating-tightening regime.
+            # regime unknown (no DFF store) → actionable None: operator checks manually.
+            "regime": env.get("regime"),
+            "gate_actionable": (
+                None if (state != "triggered" or env.get("regime") is None)
+                else env.get("regime") != "hike_accel"
+            ),
+            "veto": ("hike_accel" if (state == "triggered"
+                                      and env.get("regime") == "hike_accel") else None),
+            "note": "MWR Amendment 2 (2026-07-24): conditional-live behind the "
+                    "accelerating-tightening veto; §4 kill-switch binding "
+                    "(2 consecutive FAILs or −25% adverse → auto-demote)",
         }
         if write:
             base = (root if root is not None else config.data_dir()) / "mag7_washout"
