@@ -149,6 +149,78 @@ Levers:
 - New accounts posting links, or the same link twice, is a documented X
   suspension trip; `sentinel.links_allowed` is false until the ramp allows it.
 
+## 11. Post metrics (analytics read-back)
+
+Posts are fire-and-forget by default — Buffer's `createPost` returns only a post
+id, no permalink and no analytics. `scripts/marketing_metrics_poll.py` closes the
+loop: it reads back per-post impressions/likes/reposts/comments/clicks/engagement
+rate **and the public x.com permalink** (`externalLink`, which `createPost` never
+returns) via Buffer's `post(input:{id})` query, and appends them to
+`data/marketing/post_metrics.jsonl`.
+
+- **When it runs:** automatically, right after the publish step in
+  `marketing-publish.yml`, every posting slot (metrics refresh ~daily, so
+  re-polling keeps the console current). It also runs standalone:
+  `BUFFER_TOKEN=… python -m scripts.marketing_metrics_poll` (add `--dry-run` to
+  list what it would poll without any network call).
+- **What it needs:** only `BUFFER_TOKEN`. It is **independent of the publish
+  kill-switch** — with `BUFFER_TOKEN` unset it prints one line and exits 0 (no
+  network, no write), so it is harmless while the publisher is dark. (Note: the
+  workflow commits `post_metrics.jsonl` back only when `MARKETING_PUBLISH_ENABLED`
+  is set — the same "don't spam main with dark-run commits" gate as the outbox
+  ledger. If you set only `BUFFER_TOKEN`, metrics are fetched locally each run but
+  not committed until the publisher is armed.)
+- **What it polls:** every item posted in the last 7 days — from
+  `status_ledger.jsonl` (`posted` rows, keyed by the receipt's `external_id`) and
+  from `publications.jsonl` (`remote_id`), deduped by id.
+- **Follower counts are NOT available** from Buffer's API and are intentionally
+  not collected (a masterplan tracks the paid X-API option).
+- **Where it shows up:** Admin → Marketing → Publisher joins the latest metrics
+  row per post into the recent-posted table (`metrics` + `external_url`).
+- **Row shape** (`data/marketing/post_metrics.jsonl`, append-only, one row per
+  poll): `{remote_id, account, external_url, metrics:{impressions, likes,
+  reposts, comments, clicks, engagement_rate}, metrics_raw:[…], metrics_updated_at,
+  polled_at, ok, note?}`. An item Buffer has not yet refreshed produces an honest
+  row with `metrics: {}` and a `metrics_empty` note — never a fabricated zero.
+
+## 12. Images on posts
+
+By default posts are text-only. When enabled, each single-name signal card also
+posts as a **PNG chart** (price line, BUY marker, min/max/last, MASTERMIND brand
+mark). X rejects SVG, so a PNG is required — and Buffer hosts no uploads, so the
+PNG must sit at a public https URL.
+
+**How it works (where each step happens):**
+
+1. **Render (nightly, on the Mac):** `content_studio` renders the PNG at
+   content-plan build time — where the price closes are in scope — via
+   `chart_render.render_signal_chart_png`, and writes it to
+   `data/marketing/outbox/media/<as_of>/<chart_id>.png`.
+2. **Upload (nightly, on the Mac):** if R2 creds are present,
+   `media_publish.publish_chart_png` uploads that PNG to the **existing public R2
+   data plane** (`config.yml r2_data_plane.public_base`, the same
+   `pub-…​.r2.dev` bucket every `build_*` script reads) under
+   `marketing/charts/<as_of>/<chart_id>.png`, and stamps the public URL onto the
+   outbox item (`media_url`). No R2 creds → the PNG stays local, `media_url` is
+   null, and the post degrades to text-only.
+3. **Attach (post time, GitHub Actions):** the publisher passes `media_url` to
+   Buffer as a post asset. No public URL on the item → text-only.
+
+**Kill switch / gate:** `config/marketing.yml publish.media_enabled` (top-level).
+`false` → never render, never upload, never attach. The Sentinel
+`max_media_posts_per_account_per_day` cap still governs how many chart items may
+post per account per day.
+
+**What the operator must provide for public images:** the same R2 env the
+oracle/data lanes use — `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+`R2_BUCKET` — **on the nightly Mac** (that is where the plan is built and the
+upload happens). These are not needed in the GitHub Actions publisher: by post
+time the public URL is already on the item. Without them, everything works
+text-only. (The bucket already serves its objects publicly at
+`r2_data_plane.public_base`; no new bucket and no ACL change is introduced — but
+if you would rather not expose chart images on that domain, leave
+`publish.media_enabled: false` and the whole path stays dark.)
+
 ---
 
 ### Where to look when something is off

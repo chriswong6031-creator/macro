@@ -322,6 +322,196 @@ def render_signal_chart(
     return svg
 
 
+def render_signal_chart_png(
+    ticker: str,
+    dates: list[str],
+    closes: list[float],
+    *,
+    marker_index: int,
+    width: int = 1200,
+    height: int = 675,
+    subtitle: str | None = None,
+) -> bytes:
+    """Render the signal chart as a PNG (X rejects SVG) — deterministic bytes.
+
+    A PIL rasterization of render_signal_chart's dark-theme brand look: price
+    line, area fill, gridlines, BUY vertical guide + triangle + label, min/max/
+    last price labels, ticker, first/last date, MASTERMIND brand mark. Landscape
+    ~1200x675 (16:9) for the X card. NO technical-indicator words anywhere (no
+    MACD/RSI/EMA) — neither drawn nor in PNG metadata (bare save, no pnginfo).
+
+    Deterministic: pure function of the inputs (no clock, no randomness), so two
+    calls with the same args return byte-identical PNGs. PIL fonts resolve via
+    share_cards.load_font (host-agnostic, never raises). Returns b"" only if PIL
+    is unavailable (it is a vendored dep — this is defensive, never in practice).
+
+    Colors mirror the SVG hex exactly:
+      bg #0E1420, price/last #38e0d4, BUY #3ddc84, grid #2a3045,
+      muted-label #93a0b4, ticker #e2e8f0.
+    """
+    try:
+        import io  # noqa: PLC0415
+        from PIL import Image, ImageDraw  # noqa: PLC0415
+        from engine.marketing.share_cards import load_font  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001 — PIL is vendored; defensive only
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "render_signal_chart_png: PIL/share_cards unavailable (%s) — no PNG", exc)
+        return b""
+
+    # Palette (RGB) mirroring the SVG string colors.
+    BG = (14, 20, 32)          # #0E1420
+    GRID = (42, 48, 69)        # #2a3045
+    MUTED = (147, 160, 180)    # #93a0b4
+    LINE = (56, 224, 212)      # #38e0d4  price line + last
+    BUY = (61, 220, 132)       # #3ddc84  buy marker
+    TICK = (226, 232, 240)     # #e2e8f0  ticker label
+    AREA = (24, 46, 58)        # flat blend of LINE @ ~6% over BG (opaque fill)
+
+    img = Image.new("RGB", (width, height), BG)
+    draw = ImageDraw.Draw(img)
+
+    n = len(closes)
+    if n < 2:
+        # Honest empty card: ticker + brand mark, no fabricated line.
+        f = load_font(40, bold=True)
+        draw.text((60, 48), str(ticker or "").upper()[:12], font=f, fill=TICK)
+        _png_brand_mark(img, draw, width, height)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        return buf.getvalue()
+
+    marker_index = max(0, min(marker_index, n - 1))
+
+    # Layout — scaled from the SVG pads, roomier for the large canvas.
+    PAD_LEFT, PAD_RIGHT, PAD_TOP, PAD_BOT = 96, 44, 96, 96
+    chart_w = width - PAD_LEFT - PAD_RIGHT
+    chart_h = height - PAD_TOP - PAD_BOT
+
+    price_min = min(closes)
+    price_max = max(closes)
+    price_range = (price_max - price_min) or 1.0
+    margin = price_range * 0.05
+    y_min = price_min - margin
+    y_max = price_max + margin
+    y_range = y_max - y_min
+
+    def px(i: int) -> float:
+        return PAD_LEFT + (i / (n - 1)) * chart_w
+
+    def py(price: float) -> float:
+        return PAD_TOP + chart_h * (1 - (price - y_min) / y_range)
+
+    pts = [(px(i), py(c)) for i, c in enumerate(closes)]
+
+    # Area fill under the line (opaque flat blend — deterministic, no alpha).
+    area_bottom = PAD_TOP + chart_h
+    poly = [(PAD_LEFT, area_bottom)] + pts + [(PAD_LEFT + chart_w, area_bottom)]
+    draw.polygon(poly, fill=AREA)
+
+    # Gridlines (3 horizontal) + price labels.
+    grid_font = load_font(20, bold=False)
+    for frac in (0.25, 0.5, 0.75):
+        gy = PAD_TOP + chart_h * frac
+        grid_price = y_max - frac * y_range
+        draw.line([(PAD_LEFT, gy), (PAD_LEFT + chart_w, gy)], fill=GRID, width=1)
+        _png_text_anchor(draw, PAD_LEFT - 8, gy, _fmt_price(grid_price),
+                         grid_font, MUTED, anchor="rm")
+
+    # Price line.
+    draw.line(pts, fill=LINE, width=3, joint="curve")
+
+    # Last-price dot + label (anchored right-bottom, lifted clear of the dot).
+    last_x, last_y = px(n - 1), py(closes[-1])
+    _png_dot(draw, last_x, last_y, 5, LINE)
+    _png_text_anchor(draw, last_x - 10, last_y - 16, _fmt_price(closes[-1]),
+                     grid_font, LINE, anchor="rb")
+
+    # BUY vertical guide (dashed) + triangle + dot + label.
+    bx, by = px(marker_index), py(closes[marker_index])
+    _png_dashed_vline(draw, bx, PAD_TOP, PAD_TOP + chart_h, BUY, dash=6, gap=6)
+    tri = 16
+    draw.polygon(
+        [(bx, by - tri), (bx - tri * 0.7, by + tri * 0.3), (bx + tri * 0.7, by + tri * 0.3)],
+        fill=BUY)
+    _png_dot(draw, bx, by, 6, BUY, outline=BG, outline_w=2)
+    buy_font = load_font(24, bold=True)
+    _png_text_anchor(draw, bx, by - tri - 20, "BUY", buy_font, BUY, anchor="mm")
+
+    # Min / max labels at their price points.
+    min_idx = closes.index(price_min)
+    max_idx = closes.index(price_max)
+    _png_text_anchor(draw, px(min_idx), py(price_min) + 22, _fmt_price(price_min),
+                     grid_font, MUTED, anchor="mm")
+    _png_text_anchor(draw, px(max_idx), py(price_max) - 22, _fmt_price(price_max),
+                     grid_font, MUTED, anchor="mm")
+
+    # Date labels (first + last).
+    date_y = PAD_TOP + chart_h + 30
+    if dates:
+        draw.text((PAD_LEFT, date_y), str(dates[0]), font=grid_font, fill=MUTED)
+        _png_text_anchor(draw, PAD_LEFT + chart_w, date_y + 10, str(dates[-1]),
+                         grid_font, MUTED, anchor="rm")
+
+    # Ticker + optional subtitle.
+    tick_font = load_font(40, bold=True)
+    draw.text((PAD_LEFT, PAD_TOP - 56), str(ticker or "").upper()[:12], font=tick_font, fill=TICK)
+    if subtitle:
+        sub_font = load_font(22, bold=False)
+        draw.text((PAD_LEFT, PAD_TOP - 12), str(subtitle)[:60], font=sub_font, fill=MUTED)
+
+    _png_brand_mark(img, draw, width, height)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def _png_text_anchor(draw, x: float, y: float, text: str, font, fill, *, anchor: str) -> None:
+    """Draw text with a 2-char anchor (h∈l/m/r, v∈t/m/b), computed from textbbox.
+
+    PIL's own `anchor=` is font-dependent for some bitmap fallbacks; measuring the
+    bbox keeps placement deterministic across the host font chain.
+    """
+    l, t, r, b = draw.textbbox((0, 0), text, font=font)
+    w, h = r - l, b - t
+    h_a, v_a = anchor[0], anchor[1]
+    dx = {"l": 0, "m": -w / 2, "r": -w}[h_a]
+    dy = {"t": 0, "m": -h / 2, "b": -h}[v_a]
+    draw.text((x + dx - l, y + dy - t), text, font=font, fill=fill)
+
+
+def _png_dot(draw, cx: float, cy: float, r: float, fill, *, outline=None, outline_w: int = 0) -> None:
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill,
+                 outline=outline, width=outline_w)
+
+
+def _png_dashed_vline(draw, x: float, y0: float, y1: float, fill, *, dash: int, gap: int) -> None:
+    y = y0
+    while y < y1:
+        draw.line([(x, y), (x, min(y + dash, y1))], fill=fill, width=1)
+        y += dash + gap
+
+
+def _png_brand_mark(img, draw, width: int, height: int) -> None:
+    """Draw the MASTERMIND lockup bottom-right, reusing share_cards helpers."""
+    try:
+        from engine.marketing.share_cards import _draw_logomark, load_font, _tracked_text  # noqa: PLC0415
+        INK = (147, 160, 180)  # muted so the mark never fights the chart
+        size = 28.0
+        cx, cy = width - 190, height - 40
+        _draw_logomark(img, draw, cx, cy, size)
+        wf = load_font(22, bold=True)
+        _tracked_text(draw, (cx + size * 0.75, cy - 12), "MASTERMIND", wf, INK, tracking=1.6)
+    except Exception:  # noqa: BLE001 — brand mark is decorative; never fatal
+        try:
+            from engine.marketing.share_cards import load_font  # noqa: PLC0415
+            draw.text((width - 260, height - 40), "MASTERMIND",
+                      font=load_font(20, bold=True), fill=(42, 48, 69))
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def _empty_svg(width: int, height: int, ticker: str) -> str:
     """Fallback SVG when insufficient data."""
     return (
