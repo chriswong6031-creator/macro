@@ -884,6 +884,10 @@
     
     
     
+    
+    <p class="note st-health" style="margin:0 0 2px;text-transform:none;color:var(--muted)">◐ <span class="l-en">Some inputs didn't update this render — ranks may be a day old.</span><span class="l-zh">部分数据本次未更新 —— 排名可能为上一交易日。</span><span class="help">?<span class="tip"><span class="l-en">Board ledger write returned no rows — the scoreboard did not accrue this render.</span><span class="l-zh">看板账本写入 0 行 —— 本次渲染未累积记分。</span></span></span></p>
+    
+    
     <div id="st-count-chips" style="display:none!important"></div>
 
     
@@ -1911,7 +1915,7 @@
     
   
   
-  <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px"><link rel="stylesheet" href="assets/css/05b5fc96.css?v=05b5fc96"><span class="trd-wrap trd-band-neutral">
+  <div class="panel span12" id="track-record" style="display:flex;justify-content:center;padding:16px"><link rel="stylesheet" href="assets/css/b0c0c009.css?v=b0c0c009"><span class="trd-wrap trd-band-neutral">
 <button type="button" id="trd-btn" class="trd-btn"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="trd-dlg"><svg class="trd-spark" viewBox="0 0 40 14" aria-hidden="true" preserveAspectRatio="none">
     <path d="M0,10 L8,10 L12,4 L17,12 L22,7 L30,8 L40,6"/>
@@ -2138,7 +2142,11 @@
     return rows.slice().sort(function(a,b){
       var av=a[k], bv=b[k];
       if(k==='d'){ av = av||''; bv = bv||''; return av<bv?-dir:av>bv?dir:0; }
-      av = (av==null)? -Infinity : av; bv = (bv==null)? -Infinity : bv;
+      // Untracked (null) values sort to the END in BOTH directions — never as an
+      // extreme. Coercing null→-Infinity made an ascending "vs CSI300" sort surface
+      // the '—' rows at the top instead of the real worst (most-negative) performers.
+      var an = (av==null), bn = (bv==null);
+      if(an || bn) return an && bn ? 0 : (an ? 1 : -1);
       return (av-bv)*dir;
     });
   }
@@ -2176,7 +2184,11 @@
       var mvTxt = (mv==null)?'—':((mv>=0?'+':'')+ (Math.round(mv*10)/10) + '%');
       var tk = esc(r.t);
       var tkInner = (market==='us') ? '<a href="stock.html#'+tk+'">'+tk+'</a>' : tk;
-      var subInfo = r.sec || r.grp || '';
+      // Company name (bilingual). Stored "EN / 中文" — show the side matching the
+      // active language; fall back to sector/group when a name isn't logged.
+      var nmTxt = '';
+      if(r.nm){ var np = String(r.nm).split(' / '); nmTxt = isZh() ? (np[1]||np[0]) : np[0]; }
+      var subInfo = nmTxt || r.sec || r.grp || '';
       var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
       h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
       h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';
@@ -3060,7 +3072,7 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-24 09:55 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-24 11:56 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 

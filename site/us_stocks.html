@@ -5050,7 +5050,7 @@
       
       
       
-      <link rel="stylesheet" href="assets/css/05b5fc96.css?v=05b5fc96"><span class="trd-wrap trd-band-up">
+      <link rel="stylesheet" href="assets/css/b0c0c009.css?v=b0c0c009"><span class="trd-wrap trd-band-up">
 <button type="button" id="trd-btn" class="trd-btn trd-breathe"
         aria-haspopup="dialog" aria-expanded="false" aria-controls="trd-dlg"><svg class="trd-spark" viewBox="0 0 40 14" aria-hidden="true" preserveAspectRatio="none">
     <path class="trd-live" d="M0.0,2.0 L10.0,7.7 L20.0,12.0 L30.0,7.2 L40.0,4.3"/>
@@ -5282,7 +5282,11 @@
     return rows.slice().sort(function(a,b){
       var av=a[k], bv=b[k];
       if(k==='d'){ av = av||''; bv = bv||''; return av<bv?-dir:av>bv?dir:0; }
-      av = (av==null)? -Infinity : av; bv = (bv==null)? -Infinity : bv;
+      // Untracked (null) values sort to the END in BOTH directions — never as an
+      // extreme. Coercing null→-Infinity made an ascending "vs CSI300" sort surface
+      // the '—' rows at the top instead of the real worst (most-negative) performers.
+      var an = (av==null), bn = (bv==null);
+      if(an || bn) return an && bn ? 0 : (an ? 1 : -1);
       return (av-bv)*dir;
     });
   }
@@ -5320,7 +5324,11 @@
       var mvTxt = (mv==null)?'—':((mv>=0?'+':'')+ (Math.round(mv*10)/10) + '%');
       var tk = esc(r.t);
       var tkInner = (market==='us') ? '<a href="stock.html#'+tk+'">'+tk+'</a>' : tk;
-      var subInfo = r.sec || r.grp || '';
+      // Company name (bilingual). Stored "EN / 中文" — show the side matching the
+      // active language; fall back to sector/group when a name isn't logged.
+      var nmTxt = '';
+      if(r.nm){ var np = String(r.nm).split(' / '); nmTxt = isZh() ? (np[1]||np[0]) : np[0]; }
+      var subInfo = nmTxt || r.sec || r.grp || '';
       var flags = (r.fl||[]).map(function(f){ var d=FLAG[f]; return d? '<span class="trd-flag" data-tip-en="'+d.en+'" data-tip-zh="'+d.zh+'">⚑</span>':''; }).join('');
       h += '<tr class="'+(reduce?'':'trd-anim')+'" style="'+(reduce?'':'animation-delay:'+Math.min(i,25)*12+'ms')+'">';
       h += '<td><span class="trd-tk">'+tkInner+'</span>'+flags+(subInfo?'<span class="trd-sub-cell">'+esc(subInfo)+'</span>':'')+'</td>';
