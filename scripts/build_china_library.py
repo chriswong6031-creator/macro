@@ -879,8 +879,30 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
     bench_dict = {"code": "510300.SS", "en": "CSI 300", "zh": "沪深300"}
     state = _cn_track_state(bt)
 
-    # name/sector display lookup from today's ranked board (cheap, in-memory).
+    # name/sector display lookup. Today's ranked board carries the freshest name +
+    # sector, but the ledger spans EVERY board_day×ticker back to first-write — most
+    # of those tickers have long since rotated off the board, so a board-only lookup
+    # left ~85% of rows with no name (the receipt read as bare tickers). Backfill from
+    # the curated search universe (china_search/members.parquet, 'EN / 中文' names —
+    # the same table the board's own names derive from) so historical rows resolve too.
     look: dict[str, dict] = {}
+    try:
+        mp = config.data_dir() / "china_search" / "members.parquet"
+        if mp.exists():
+            mem = pd.read_parquet(mp)
+            name_col = mem["name"] if "name" in mem.columns else None
+            sec_col = mem["sector"] if "sector" in mem.columns else None
+            for tk in mem.index:
+                tks = str(tk)
+                nm_v = name_col.get(tk) if name_col is not None else None
+                sec_v = sec_col.get(tk) if sec_col is not None else None
+                look[tks] = {
+                    "nm": str(nm_v) if pd.notna(nm_v) else None,
+                    "sec": str(sec_v) if pd.notna(sec_v) else None,
+                }
+    except Exception as _e:  # noqa: BLE001 — display enrichment only, never fatal
+        log.warning("cn track_ledger name backfill skipped (%s)", _e)
+    # today's board wins on conflict (freshest name/sector).
     for r in (buy_rows or []):
         tk = r.get("ticker")
         if tk:
