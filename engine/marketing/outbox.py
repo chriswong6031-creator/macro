@@ -542,6 +542,7 @@ def transition(
     root: Path | str | None = None,
     note: str | None = None,
     receipt: dict | str | None = None,
+    now: datetime | None = None,
     _state: dict | None = None,
 ) -> bool:
     """Append a status transition row to status_ledger.jsonl.
@@ -549,10 +550,19 @@ def transition(
     Returns False (with log.warning) if the item is unknown or the transition
     is illegal from the current folded status. Never raises.
 
+    now: the timestamp to stamp on the ledger row's ``at`` (defaults to the
+    real UTC clock, as ``make_item`` does). Downstream posts-today accounting
+    (``publish_time_content._posted_today_by_account``) keys the daily cap off
+    this ``at`` date, so an injected ``now`` must reach the ledger for the cap
+    to stay consistent with a caller's frozen clock — otherwise a run whose
+    ``now`` is pinned near a UTC-midnight boundary counts posts against the
+    wrong calendar day.
+
     _state (internal): a preloaded fold_state() snapshot for batch callers;
     kept current on success so N sequential transitions fold once, not N times.
     """
     try:
+        ts_now = now if now is not None else datetime.now(timezone.utc)
         def _do(state: dict) -> bool:
             if item_id not in state["status"]:
                 log.warning("outbox.transition: unknown item_id %r", item_id)
@@ -568,7 +578,7 @@ def transition(
                 "id": item_id,
                 "from": current,
                 "to": to,
-                "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "at": ts_now.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "actor": actor,
                 "note": note,
                 "receipt": receipt,
