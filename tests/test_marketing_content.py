@@ -522,7 +522,14 @@ def test_load_closes_returns_none_for_missing_ticker():
 
 
 def test_load_closes_returns_dates_and_closes_for_known_ticker():
-    """Only runs if PLTR.parquet exists in the real repo."""
+    """Only runs if PLTR.parquet exists AND a parquet reader is available.
+
+    The marketing-engine CI job is deliberately minimal-deps (no pandas), so
+    guard on the reader too — the file-existence guard alone went red in CI
+    the day this suite was whitelisted (#3347).
+    """
+    pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
     parquet_path = ROOT / "data" / "stocks" / "PLTR.parquet"
     if not parquet_path.exists():
         pytest.skip("PLTR.parquet not present")
