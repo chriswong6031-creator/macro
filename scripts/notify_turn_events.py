@@ -97,6 +97,7 @@ _SHOCK_STATE_PATH = _SITE_LIVE / "shock_state.json"
 _BASKET_PULSE_PATH = _SITE_LIVE / "basket_pulse.json"
 _NOTIFY_STATE_PATH = _SITE_LIVE / "notify_state.json"
 _MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
+_MWR_TRIGGERS_PATH = ROOT / "data" / "mag7_washout" / "triggers.jsonl"  # MWR §7 W1b (committed nightly)
 
 # ---------------------------------------------------------------------------
 # Copy constants (FT-R13 compliant)
@@ -701,6 +702,67 @@ def _lookup_slow_reco(basket_id: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _mwr_trigger_message(tf: str, date: str, row: dict) -> str:
+    """MWR §7 W1b operator ping — PROCESS language only (prereg §5 amendment
+    2026-07-24-b): the gate opened; re-entry PROPOSALS are lawful per §4 Use-A.
+    Never a buy call; no direction words; Use-B stays un-ratified."""
+    tf_word = "2-week Stoch-RSI" if tf == "2W_stochrsi" else "3-day RSI-MACD"
+    k = row.get("stoch2w_k")
+    env = row.get("policy")
+    extra = f" · 2W K {k}" if k is not None else ""
+    env_s = f" · policy {env}" if env else ""
+    return (
+        f"🚪 **Mag-7 washout gate: TRIGGERED** ({tf_word} cross, bar {date}{extra}{env_s})\n"
+        "Process event, not a signal: re-entry proposals are now lawful under "
+        "MWR prereg §4 Use-A (cite this trigger). Shadow book opens hypothetical "
+        "entries tonight; Use-B (timing authority) remains un-ratified until the "
+        "forward gauntlet passes."
+    )
+
+
+def _detect_mwr_trigger(
+    notify_state: dict,
+    today_str: str,
+) -> list[tuple[str, str]]:
+    """Source (f): fresh Mag-7 washout-gate triggers (MWR §7 W1b).
+
+    Reads data/mag7_washout/triggers.jsonl (appended by the nightly engine,
+    ~2-3 rows/yr). A row is FRESH when its bar date is within 5 calendar days
+    of today (covers weekend/nightly lag without replaying history on first
+    run). Dedup key: (kind="mwr_trigger", f"{tf}|{date}") — once ever per
+    trigger row (bar-date keyed, not state-day: a trigger is a point event).
+    """
+    results: list[tuple[str, str]] = []
+    if not _MWR_TRIGGERS_PATH.exists():
+        return results
+    try:
+        import datetime as _dt
+        today = _dt.date.fromisoformat(today_str)
+        for ln in _MWR_TRIGGERS_PATH.read_text(encoding="utf-8").splitlines():
+            if not ln.strip():
+                continue
+            try:
+                row = json.loads(ln)
+            except Exception:  # noqa: BLE001
+                continue
+            tf, date = row.get("tf"), row.get("date")
+            if not tf or not date:
+                continue
+            try:
+                age = (today - _dt.date.fromisoformat(str(date)[:10])).days
+            except Exception:  # noqa: BLE001
+                continue
+            if not (0 <= age <= 5):
+                continue
+            subject = f"{tf}|{date}"
+            if _already_fired(notify_state, "mwr_trigger", subject, date):
+                continue
+            results.append((subject, _mwr_trigger_message(tf, str(date), row)))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: mwr_trigger detection error: %s", exc)
+    return results
+
+
 def run(
     today_str: str | None = None,
     dry_run: bool = False,
@@ -730,7 +792,8 @@ def run(
     basket_pulse = _load_json(_BASKET_PULSE_PATH) or {}
     mtf_upturn = _load_json(_MTF_UPTURN_PATH) or {}
 
-    if not turn_watch and not shock_state and not mtf_upturn:
+    if (not turn_watch and not shock_state and not mtf_upturn
+            and not _MWR_TRIGGERS_PATH.exists()):
         log.info("notify_turn_events: no event source data — nothing to evaluate")
         return 0
 
@@ -779,6 +842,17 @@ def run(
             _mark_fired(notify_state, "mtf_upturn_mag7", sym, today_str)
     except Exception as exc:  # noqa: BLE001
         log.warning("notify_turn_events: mtf_upturn_mag7 source error (skipped): %s", exc)
+
+    # (f) Mag-7 washout-gate trigger (MWR §7 W1b) — fail-open, isolated.
+    # Dedup is bar-date-keyed (point event, fires once ever per trigger row).
+    try:
+        for subject, msg in _detect_mwr_trigger(notify_state, today_str):
+            if _send_discord(msg, dry_run=dry_run):
+                dispatched += 1
+            date_key = subject.split("|", 1)[1] if "|" in subject else today_str
+            _mark_fired(notify_state, "mwr_trigger", subject, date_key)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("notify_turn_events: mwr_trigger source error (skipped): %s", exc)
 
     # Persist updated state (site-only write, FT-R5)
     if notify_state != original_state:

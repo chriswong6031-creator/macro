@@ -756,6 +756,15 @@ def run(force: bool = False) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mag7-washout failed: %s", e)
         latest["mag7_washout"] = None
+    # MWR-W1a/W1d shadow lane (engine/mag7_washout_shadow.py): shadow book of
+    # hypothetical entries per trigger (the §4 Use-B evidence vehicle) + Prophet
+    # confluence sidecar. PURE ACCRUAL — never gates/ranks/alters anything;
+    # ledger append is nightly-gated (ledger_lane sentinel). Never fatal.
+    try:
+        from engine import mag7_washout_shadow as _m7ws
+        _m7ws.update(gate=latest.get("mag7_washout") or {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("mag7-washout-shadow failed: %s", e)
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
