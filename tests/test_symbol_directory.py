@@ -12,12 +12,21 @@ All tests are fully synthetic (no network calls):
 from __future__ import annotations
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 import pandas as pd
 import pytest
+
+
+def _engine_today() -> date:
+    """Same clock as SymbolDirectoryAdapter (UTC): snapshot/cik filenames and the
+    ISO-week guard are stamped from datetime.now(timezone.utc).date(). Local
+    date.today() goes red every evening 5pm–midnight PDT when local/UTC dates
+    differ (expected paths point at yesterday's filename), and in local-ahead
+    zones the pre-seeded files land on the wrong day/ISO week."""
+    return datetime.now(timezone.utc).date()
 
 
 # ---------------------------------------------------------------------------
@@ -188,7 +197,7 @@ class TestSnapshotIdempotency:
         """First call today: snapshot parquet is written."""
         import collectors.symbol_directory as m
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
 
         with patch("collectors.symbol_directory.config") as mock_cfg, \
              patch("collectors.symbol_directory._fetch_text") as mock_text, \
@@ -217,7 +226,7 @@ class TestSnapshotIdempotency:
         """Second call same day: snapshot already exists -> skip write, snapshot_written=0."""
         import collectors.symbol_directory as m
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
         snap_dir = tmp_path / "symbol_directory" / "snapshots"
         snap_dir.mkdir(parents=True)
 
@@ -254,7 +263,7 @@ class TestCikMapIdempotency:
         """No CIK map this week -> write one."""
         import collectors.symbol_directory as m
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
 
         with patch("collectors.symbol_directory.config") as mock_cfg, \
              patch("collectors.symbol_directory._fetch_text") as mock_text, \
@@ -279,7 +288,7 @@ class TestCikMapIdempotency:
         """CIK map already written this ISO week -> skip."""
         import collectors.symbol_directory as m
 
-        today = date.today()
+        today = _engine_today()
         # Put a file dated within the same ISO week
         cik_dir = tmp_path / "symbol_directory" / "cik_map"
         cik_dir.mkdir(parents=True)
@@ -306,7 +315,7 @@ class TestCikMapIdempotency:
         """File exists but from LAST week -> write a new one this week."""
         import collectors.symbol_directory as m
 
-        today = date.today()
+        today = _engine_today()
         last_week = today - timedelta(weeks=1)
 
         # Ensure different ISO week
@@ -431,7 +440,7 @@ class TestManifest:
         }])
         old_df.to_parquet(snap_dir / f"{old_date}.parquet", index=False)
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
         # Pre-populate today's snapshot too (so no new write happens)
         snap_dir2 = snap_dir
         today_df = pd.DataFrame([{
@@ -511,7 +520,7 @@ class TestSnapshotGuards:
         """If one source raises a non-connection parse error, NO snapshot is written."""
         import collectors.symbol_directory as m
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
 
         # First source (nasdaqlisted) returns text; second raises a non-connection ValueError
         def _side_effect(url, **kwargs):
@@ -540,7 +549,7 @@ class TestSnapshotGuards:
         """Both sources parse but combined rows < 8000 -> no snapshot written."""
         import collectors.symbol_directory as m
 
-        today_str = date.today().isoformat()
+        today_str = _engine_today().isoformat()
 
         with patch("collectors.symbol_directory.config") as mock_cfg, \
              patch("collectors.symbol_directory._fetch_text") as mock_text, \
