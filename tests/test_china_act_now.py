@@ -525,7 +525,8 @@ class TestBasketTurnOrganRider:
         baijiu_rows = [row for row in bw if row["id"] == "b-cn_baijiu"]
         assert baijiu_rows, f"b-cn_baijiu not found in bottoming_watch: {[r['id'] for r in bw]}"
         assert baijiu_rows[0]["organ_state"] == "TURNING"
-        assert "TURNING" in (baijiu_rows[0]["organ_chip_en"] or "")
+        assert baijiu_rows[0]["organ_chip_en"] == "Turning up"
+        assert baijiu_rows[0]["organ_chip_zh"] == "走势转强"
 
     def test_confirmed_organ_chip_added(self):
         """CONFIRMED state in basket_turn adds organ chip."""
@@ -536,7 +537,8 @@ class TestBasketTurnOrganRider:
         semis_rows = [row for row in bw if row["id"] == "cn_semis"]
         assert semis_rows
         assert semis_rows[0]["organ_state"] == "CONFIRMED"
-        assert "CONFIRMED" in (semis_rows[0]["organ_chip_en"] or "")
+        assert semis_rows[0]["organ_chip_en"] == "Trend confirmed"
+        assert semis_rows[0]["organ_chip_zh"] == "走势确认"
 
     def test_organ_adds_not_removes(self):
         """Existing forward_log row stays even when organ state is WASHED_OUT (not TURNING)."""
@@ -558,8 +560,9 @@ class TestBasketTurnOrganRider:
         bw = r["lanes"]["bottoming_watch"]
         pharma_rows = [row for row in bw if row["id"] == "cn_pharma"]
         assert pharma_rows, "TURNING basket should be surfaced as new bottoming row"
-        assert pharma_rows[0]["organ_chip_en"] is not None
-        assert "TURNING" in pharma_rows[0]["organ_chip_en"]
+        assert pharma_rows[0]["organ_state"] == "TURNING"
+        assert pharma_rows[0]["organ_chip_en"] == "Turning up"
+        assert pharma_rows[0]["organ_chip_zh"] == "走势转强"
 
     def test_organ_no_buy_words_in_chip(self):
         """Organ chips must not contain buy/accumulate/enter words (F1 law)."""
