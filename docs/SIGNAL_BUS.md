@@ -43,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | macro-context-rail | 17 |
 | macro-release-intel | 6 |
 | mag7-regime | 3 |
-| mag7-washout | 2 |
+| mag7-washout | 5 |
 | market-structure | 3 |
 | marketing | 2 |
 | mastermind-feedback-contract | 2 |
@@ -97,7 +97,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 319 |
+| display | 322 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -106,7 +106,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 467 |
+| git | 470 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -480,8 +480,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| mag7-washout-latest | `data/mag7_washout/latest.json` | json | daily-engine | display | 1 | 0 |
-| mag7-washout-triggers | `data/mag7_washout/triggers.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| mag7-washout-triggers | `data/mag7_washout/triggers.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+| mag7-washout-latest | `data/mag7_washout/latest.json` | json | daily-engine | display | 2 | 0 |
+| mag7-washout-prophet-confluence | `data/mag7_washout/prophet_confluence.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| mag7-washout-shadow-book | `data/mag7_washout/shadow_book.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| mag7-washout-shadow-state | `data/mag7_washout/shadow_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### market-structure
 

@@ -164,6 +164,54 @@ No auto-alerts, no page panel, no stance copy, no feed into rank/size/gate anywh
 A future surface, if earned, starts as a Tier-2 receipt inside an existing Mag-7 data
 display, not a board.
 
+*(Amendment 2026-07-24-b, pre-forward-trigger per §1: an OPERATOR-audience ops
+notification on trigger events is allowed — Discord ops channel via
+`scripts/notify_turn_events.py` source (f), state-day dedup, ~2-3 events/yr expected.
+The gate must reach the operator to function as a gate. PUBLIC surfaces remain out
+until the gauntlet; nothing in §7 touches selection, rank, size, or the live board.)*
+
+## §7. W1 integration map (registered 2026-07-24 — wiring built dark; recipes pinned
+BEFORE the code, promotion stays behind §4)
+
+Operator intent: "tie this deeper … triggering entries and getting these picks onto
+Prophet … a very important key indicator." Lawful decomposition: everything below is
+display/shadow tier. The live-entry and live-Prophet paths are NOT built — not even
+behind a flag — so no un-gauntleted selection path exists to flip on by accident.
+
+- **W1a — Shadow book** (`engine/mag7_washout_shadow.py`, the §4 Use-B evidence
+  vehicle; mirrors `prophet_stage_shadow`'s pure-accrual discipline). Recipe, pinned:
+  every `triggers.jsonl` row spawns 8 hypothetical unit-notional entries — the EW
+  basket + each member (per-name accrual continues §2b's beast question forward).
+  Entry basis = **next-session CLOSE after trigger date** (one price basis, closes
+  only, conservative vs the census's t0 close). Grades at maturity from store closes:
+  ret21, ret63, adverse63 (worst close ≤63td), env tags carried from the trigger row.
+  Ruler (frozen): HIT = ret63 > +8.9% (census all-days median, pinned) AND adverse
+  > −10%; FAIL = ret63 < 0 OR adverse ≤ −15%; else MIXED. One row per
+  (tf, trigger_date, instrument), appended ONLY at 63td maturity — idempotent;
+  `data/mag7_washout/shadow_book.jsonl`; nightly is the sole advancer
+  (`ledger_lane.nightly_advance_enabled()`). Open positions mark-to-market in
+  `shadow_state.json` (display context). The BASKET rows are the §4 gauntlet rows;
+  member rows are diagnostic only.
+- **W1b — Operator trigger ping** (`notify_turn_events` source (f)): fires on fresh
+  trigger rows, dedup (kind=`mwr_trigger`, tf, date). Copy is process-language
+  ("gate open — re-entry proposals lawful per MWR §4 Use-A"), never a buy call.
+- **W1c — Neural-web context lobe** (`world_state._compose_mag7_washout`): gate
+  state + K/D + breadth + last trigger as an always-display_only/is_context_only
+  block (darkpool-lobe discipline: honest-null when absent, LLM consumers may only
+  de-escalate).
+- **W1d — Prophet confluence sidecar** (`data/mag7_washout/prophet_confluence.jsonl`):
+  nightly, for every US board pick with ticker ∈ M7 (snapshots_v2 lanes), append
+  (as_of, lane, ticker, gate state, K, breadth) — dedup (as_of, lane, ticker).
+  READ-ONLY with respect to Prophet: stamps context on picks Prophet already made;
+  selection/rank untouched. This accrues the natural experiment "do Prophet Mag-7
+  picks behave differently when the gate is armed?" — graded jointly with the board
+  ledger's own outcomes at gauntlet time, ruler to be fixed in a §7 amendment BEFORE
+  first read of the joint result.
+- **Deferred to W2 (not built)**: mastermind brain lobe (`mastermind_context`
+  summarize), admin gate tile, any prophet-governor lane registration (deliberately
+  absent per the no-dark-selection-path rule above), any public Tier-2 receipt
+  (§5 gauntlet condition unchanged).
+
 ## §6. Distinctions from prior washout kills (blocklist compiler: these are different constructions)
 
 - "Washout × turn (2W operator seed)" KILLED (#1747) — an entry-stack interaction

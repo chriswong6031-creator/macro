@@ -194,9 +194,11 @@ on:
       # M7C-R2/R3: Mag-7 Regime Context Organ (engine/mag7_regime.py).
       - "engine/mag7_regime.py"
       - "tests/test_mag7_regime.py"
-      # MWR-W0: Mag-7 washout re-entry gate (background-only; prereg-gated resurface).
+      # MWR-W0/W1: Mag-7 washout re-entry gate + shadow lane (background-only).
       - "engine/mag7_washout.py"
+      - "engine/mag7_washout_shadow.py"
       - "tests/test_mag7_washout.py"
+      - "tests/test_mag7_washout_shadow.py"
       - "tests/test_ignition_persistence.py"
       # Mag 7 panel: template partial + build_site loader.
       - "templates/_mag7_panel.html.j2"
@@ -1094,6 +1096,7 @@ jobs:
           tests/test_build_netliq_daily.py
           tests/test_ignition_radar.py
           tests/test_mag7_washout.py
+          tests/test_mag7_washout_shadow.py
           tests/test_mag7_regime.py
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
