@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-17"
+updated: "2026-07-24"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1034,6 +1034,43 @@ checks:
     owner_program: live-options-flow
     notes: >
       Run manually before each live-quotes worker deploy.
+
+  - law_id: ops.vps_live_freshness
+    summary: >
+      Once the VPS is the declared live-plane primary, its public status
+      envelope must prove that the fast, snapshot, and session-gated bars lanes
+      are healthy and within their cadence budgets. Quotes, release detection,
+      market-state leaves, baskets, and flow artifacts must also stay within
+      their session-aware freshness limits. This is an external dead-man on
+      GitHub-hosted compute, so an offline VPS or Mac fleet cannot report itself
+      healthy.
+    source_ref:
+      - scripts/check_vps_live_health.py
+      - .github/workflows/vps-live-heartbeat.yml
+      - docs/VPS_LIVE_ORCHESTRATION.md
+    severity: hard
+    check_script: scripts/check_vps_live_health.py
+    ci_wiring:
+      - workflow: .github/workflows/vps-live-heartbeat.yml
+        job: health
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Pure-stdlib evaluator and CLI failure behavior are covered by
+      tests/test_vps_live_orchestration.py with healthy, stale/failed, and
+      weekend/session-gating fixtures.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The ten-minute GitHub schedule is best-effort and can itself be delayed.
+      - The check proves artifact/lane freshness and last-run success; it does
+        not validate the economic correctness of a vendor print.
+      - It becomes scheduled only when VPS_LIVE_PRIMARY=true; manual dispatch
+        is always available during the pre-cutover soak.
+    owner_program: vps-live-orchestration
+    notes: >
+      The VPS cannot be the only observer of its own liveness. Keep this job on
+      ubuntu-latest and keep its status source read-only and secretless.
 
   - law_id: ops.price_store_freshness
     summary: >
