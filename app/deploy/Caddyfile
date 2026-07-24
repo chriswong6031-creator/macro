@@ -61,6 +61,42 @@
 	# path to a PDF is the require_user + paid + rate-limited/metered API route.
 	reverse_proxy /api/* 127.0.0.1:8000
 
+	# VPS live plane — artifacts are owned by systemd lanes and published by
+	# atomic rename outside both the git work-tree and site.served. This prevents
+	# a main-branch pull/rsync from rolling a fresh tick back to the last commit.
+	#
+	# SECURITY: /live/quotes.json is an explicitly reviewed PUBLIC asset. Every
+	# other /live/* artifact and the heatmap remain inside @reg_asset below and
+	# therefore pass registration + paywall checks before the external file is
+	# considered. Never add a top-level /live/* file_server: that would bypass
+	# the default-deny static boundary.
+	@vps_public_quote {
+		path /live/quotes.json
+		file {
+			root /var/lib/macro-live/public
+		}
+	}
+	handle @vps_public_quote {
+		root * /var/lib/macro-live/public
+		header Cache-Control "no-store"
+		file_server
+	}
+	# Zero-downtime fallback before live-setup creates the external quote.
+	handle /live/quotes.json {
+		header Cache-Control "public, max-age=60, must-revalidate"
+		file_server
+	}
+
+	# Protected external artifacts are served only from inside @reg_asset's
+	# authenticated route. The matcher also provides a zero-downtime fallback:
+	# when a file is absent externally, the canonical site.served file wins.
+	@vps_external {
+		path /live/* /marketdata/sp500_heatmap.json
+		file {
+			root /var/lib/macro-live/public
+		}
+	}
+
 	# ── Site Access Boundary ──────────────────────────────────────────────────
 	#
 	# DEFAULT-DENY STATIC SERVING. Only the explicit public funnel/assets listed
@@ -165,6 +201,10 @@
 			header Cache-Control "private, no-store"
 			header Vary "Cookie"
 			header X-Robots-Tag "noindex, noarchive"
+			handle @vps_external {
+				root * /var/lib/macro-live/public
+				file_server
+			}
 			file_server {
 				index index.html
 			}
@@ -263,7 +303,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"

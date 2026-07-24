@@ -68,6 +68,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -89,13 +90,15 @@ log = logging.getLogger("notify_turn_events")
 # ---------------------------------------------------------------------------
 
 _SITE_BASKETDATA = ROOT / "site" / "basketdata"
-_SITE_LIVE = ROOT / "site" / "live"
+_SITE_LIVE = Path(os.environ.get("MACRO_LIVE_DIR", ROOT / "site" / "live"))
 
 _TURN_WATCH_PATH = _SITE_BASKETDATA / "turn_watch.json"
 _BASKETS_JSON_PATH = _SITE_BASKETDATA / "baskets.json"
 _SHOCK_STATE_PATH = _SITE_LIVE / "shock_state.json"
 _BASKET_PULSE_PATH = _SITE_LIVE / "basket_pulse.json"
-_NOTIFY_STATE_PATH = _SITE_LIVE / "notify_state.json"
+_NOTIFY_STATE_PATH = Path(
+    os.environ.get("MACRO_NOTIFY_STATE_DIR", _SITE_LIVE)
+) / "notify_state.json"
 _MTF_UPTURN_PATH = ROOT / "site" / "stockdata" / "mtf_upturn.json"
 _MWR_TRIGGERS_PATH = ROOT / "data" / "mag7_washout" / "triggers.jsonl"  # MWR §7 W1b (committed nightly)
 

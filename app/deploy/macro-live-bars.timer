@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Mastermind intraday bars/flow hourly during the US window
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 13..21:37:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=10s
+Persistent=false
+Unit=macro-live-bars.service
+
+[Install]
+WantedBy=timers.target

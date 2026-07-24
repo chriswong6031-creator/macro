@@ -48,6 +48,10 @@ concurrency:
 
 jobs:
   fastpath:
+    # Cutover guard: keep manual dispatch as the recovery path, but stop the
+    # scheduled duplicate writer after the VPS live plane passes freshness checks.
+    # This is intentionally controlled by a repo variable, not by merging code.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true' }}
     runs-on: [self-hosted, macstudio-light]   # dedicated light runner: live ticks must never queue behind nightly/asia/render holds on the 3-slot macstudio pool (observed 47-144m queue waits for 0.4m of work)
     timeout-minutes: 15
     steps:
