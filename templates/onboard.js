@@ -1463,6 +1463,12 @@
   function openSheet(mode, opts) {
     if (mode === "upgrade") { openUpgrade(opts || {}); return; }
     ensureAssets();
+    // Warm the Supabase broker + SDK the instant the sheet opens, so the first
+    // Sign in / Create account click pays ONLY the auth network call — not a cold
+    // theme.js -> supabase.js (SDK) -> createClient chain (the landing preloads
+    // neither). Fire-and-forget; sbClient()/getSupabaseClient() cache their work,
+    // so this is idempotent and the later submit reuses the same warm client.
+    sbClient().catch(function () {});
     build();
     S.mode = mode || "signup";
     if (opts && opts.plan && (opts.plan === "free" || opts.plan === "insider" || opts.plan === "pro")) S.plan = opts.plan;
@@ -1479,9 +1485,14 @@
     redrawDesk();
     stashSave();
   }
-  // The registration wall 302s guests to /?signin=1&ret=<path>; after a
-  // successful sign-in (or finishing signup) return them to that page.
-  // Same-origin PATHS only — never navigate off-origin from a query param.
+  // Post-login landing: the ?ret= share/deep-link target if the registration
+  // wall (app/regwall.py) set one, else the signed-in HOME hub (prefix-aware
+  // start.html; pages under /sectors/ need "../"). Now that the SEO estate
+  // (/stocks/, /tools/, /learn/, /blog/) is public, the wall only fires on
+  // genuinely gated pages — so returning a visitor to the exact page they were
+  // sent or shared is the right call. A generic sign-in (no ret) lands on the
+  // fast hub, never the marketing landing. Same-origin "/…" paths only — never
+  // navigate off-origin from a query param.
   function retTarget() {
     try {
       var p = new URLSearchParams(location.search).get("ret");
@@ -1489,9 +1500,6 @@
     } catch (e) { /* ignore */ }
     return "";
   }
-  // Post-login landing: the ?ret= wall target if present, else the prefix-aware
-  // /start.html (pages under /sectors/ need "../"). A signed-in user must never
-  // be dropped back on the marketing page.
   function loginDest() { return retTarget() || (_pfx() + "start.html"); }
   function closeSheet() {
     if (!el.scrim) return;

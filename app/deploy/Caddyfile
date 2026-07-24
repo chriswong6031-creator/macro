@@ -98,7 +98,9 @@
 
 	# --- REGISTRATION WALL (operator lockdown 2026-07-24) -----------------------
 	# Every .html page EXCEPT the public funnel (/ + index.html + plans.html) now
-	# requires a signed-in account (any tier). Two sequential gate stages inside
+	# requires a signed-in account (any tier). The public set now ALSO includes the free/SEO trees
+	# (/stocks/ /tools/ /learn/ /blog/), mirrored EXACTLY in app/regwall.py
+	# PUBLIC_PREFIXES; keep the two lists identical. Two sequential gate stages inside
 	# one route: the fail-open IP gate (unchanged semantics), then the FAIL-CLOSED
 	# registration check (/api/regwall/check — 204 allow, 302 → landing+sheet on
 	# no session). Gated content is `private, no-store`: it must NEVER enter the
@@ -107,7 +109,7 @@
 	# gated pages have no fail-open path anywhere.
 	@reg_html {
 		path *.html
-		not path /api/* /index.html /plans.html
+		not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/*
 	}
 
 	handle @reg_html {
@@ -183,7 +185,7 @@
 		# handle wins.
 		@reg_html_err {
 			path *.html
-			not path /api/* /index.html /plans.html
+			not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/*
 		}
 		handle @reg_html_err {
 			header Cache-Control "no-store"
