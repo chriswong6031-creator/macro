@@ -4582,3 +4582,87 @@ tr.lab-cell-floor td { opacity: .72; }
   .pipe-rail { grid-template-columns: 1fr; }
   .acct-meta-grid { grid-template-columns: 1fr; }
 }
+
+/* ---- entitlements management (Users → Subscribers) ---------------------- */
+.ent-toolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 6px 0 12px;
+}
+.ent-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; }
+.ent-chip {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+  border-radius: 999px; padding: 4px 11px; font-size: 12px; cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.ent-chip:hover:not([disabled]) { color: var(--text); border-color: var(--accent); }
+.ent-chip.on { color: var(--text); border-color: var(--accent); background: var(--info-bg); }
+.ent-chip[disabled] { opacity: .4; cursor: default; }
+.ent-chip-sep { width: 1px; align-self: stretch; background: var(--grid); margin: 0 4px; }
+.ent-search {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: var(--r-md); padding: 6px 12px; font-size: 13px; min-width: 200px;
+}
+.ent-search:focus { outline: none; border-color: var(--accent); }
+.ent-pager { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+
+.ent-table td { vertical-align: middle; }
+.ent-name { font-size: 13.5px; color: var(--text); display: flex; align-items: center; gap: 7px; }
+.ent-email { font-size: 11.5px; margin-top: 2px; }
+.ent-badge {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .02em;
+  color: var(--accent-cyan); border: 1px solid var(--border); border-radius: 5px;
+  padding: 1px 5px; background: rgba(56,224,212,.08);
+}
+.ent-act-btn {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 5px 11px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.ent-act-btn:hover { border-color: var(--accent); }
+
+/* modal — mirrors the allies dialog contract */
+.ent-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(6,8,12,.9); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  animation: alliesFade .16s var(--ease);
+}
+.ent-dialog {
+  width: 100%; max-width: 440px; max-height: 86vh; overflow: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lift); animation: alliesRise .2s var(--ease);
+}
+.ent-dialog-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px 18px 12px; border-bottom: 1px solid var(--grid);
+}
+.ent-dialog-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.ent-dialog-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.ent-x { background: transparent; border: none; color: var(--faint); font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+.ent-x:hover { color: var(--text); }
+.ent-warn {
+  margin: 12px 18px 0; padding: 10px 12px; font-size: 12px; line-height: 1.5;
+  color: #ffd9a8; background: var(--warn-bg); border: 1px solid rgba(255,184,77,.3);
+  border-radius: var(--r-md);
+}
+.ent-actions { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px 18px; }
+.ent-form { display: flex; flex-direction: column; gap: 12px; padding: 14px 18px 18px; }
+.ent-form label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+.ent-form select, .ent-form input[type="number"] {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 7px 10px; font-size: 13px;
+}
+.ent-check { flex-direction: row !important; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.ent-check input { accent-color: var(--accent); }
+.ent-form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.ent-act {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 9px; padding: 8px 13px; font-size: 13px; cursor: pointer; text-align: left;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.ent-act:hover { border-color: var(--accent); }
+.ent-primary { background: var(--info-bg); border-color: var(--accent); }
+.ent-danger { color: #ffc8c5; }
+.ent-danger:hover { border-color: var(--bad); }
+@media (prefers-reduced-motion: reduce) {
+  .ent-backdrop, .ent-dialog { animation: none; }
+}

@@ -1385,9 +1385,16 @@ RENDER.users = async () => {
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
     <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
     <div id="uTbl"><div class="spin">loading…</div></div>
-    <div class="section" style="margin-top:22px">Subscribers <span class="cnt" id="subCnt"></span> <span class="sub">— paid + trial, from Stripe (user_entitlements)</span></div>
-    <div id="subSummary"></div>
-    <div id="subTbl"><div class="spin">loading…</div></div>`;
+    <div class="section" style="margin-top:22px">Subscribers &amp; entitlements <span class="cnt" id="entCnt"></span>
+      <span class="sub">— manage tier, trials, and comp passes (writes user_entitlements)</span></div>
+    <div id="entSummary"></div>
+    <div class="ent-toolbar">
+      <div id="entChips" class="ent-chips"></div>
+      <input id="entSearch" class="ent-search" type="search" placeholder="search name or email…" autocomplete="off">
+    </div>
+    <div id="entTbl"><div class="spin">loading…</div></div>
+    <div id="entPager" class="ent-pager"></div>
+    <div id="ent-modal-root"></div>`;
   const rec = await api("/api/users/recent?limit=50");
   if (rec.ok) {
     $("#uCnt").textContent = rec.users.length;
@@ -1397,19 +1404,228 @@ RENDER.users = async () => {
     </tbody></table>`;
   } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
 
-  const subs = await api("/api/users/subscribers?limit=200");
-  if (subs.ok) {
-    const bd = (subs.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>";
-    $("#subSummary").innerHTML = `<div class="card">${bd}</div>`;
-    const rows = subs.subscribers || [];
-    $("#subCnt").textContent = rows.length;
-    $("#subTbl").innerHTML = rows.length ? `<table><thead><tr><th>Email</th><th>Tier</th><th>Status</th><th>Renews</th><th>Source</th><th>Updated</th></tr></thead><tbody>
-      ${rows.map(u => `<tr><td class="mono">${esc(u.email)}</td><td><b>${esc(u.tier)}</b></td>
-        <td><span class="statpill ${["active", "trialing"].includes(u.status) ? "s-ok" : "s-mut"}">${esc(u.status)}</span></td>
-        <td class="mono sub">${esc(u.renews || "—")}</td><td class="sub">${esc(u.source || "")}</td><td class="mono sub">${esc(u.updated_at || "—")}</td></tr>`).join("")}
-    </tbody></table>` : `<div class="card sub">No paid or trialing subscribers yet.</div>`;
-  } else { $("#subTbl").innerHTML = `<div class="card sub">${esc(subs.error || "could not load")}</div>`; }
+  ENT.filter = { tier: null, status: null, search: "" };
+  ENT.page = 1;
+  const si = $("#entSearch");
+  if (si) si.addEventListener("input", () => {
+    clearTimeout(ENT._searchT);
+    ENT._searchT = setTimeout(() => { ENT.filter.search = si.value.trim(); ENT.page = 1; entLoad(); }, 300);
+  });
+  entLoad();
 };
+
+/* ---- entitlements management (subscribers panel) ------------------------ */
+const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
+const ENT_TIERS = ["free", "insider", "pro"];
+const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
+
+function entChip(label, active, on) {
+  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+}
+
+async function entLoad() {
+  const f = ENT.filter;
+  const qs = new URLSearchParams();
+  if (f.tier) qs.set("tier", f.tier);
+  if (f.status) qs.set("status", f.status);
+  if (f.search) qs.set("search", f.search);
+  qs.set("page", String(ENT.page));
+  qs.set("page_size", "50");
+  const tbl = $("#entTbl");
+  const d = await api("/api/entitlements?" + qs.toString());
+  if (!d.ok) {
+    tbl.innerHTML = `<div class="card"><h3>Entitlements — not connected</h3><div class="sub">${esc(d.reason || d.error || "")}</div>
+      <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+    return;
+  }
+  ENT.rows = d.users || [];
+  // tier / status filter chips (from the unfiltered roster summary)
+  const byTier = {}, byStatus = {};
+  (d.summary || []).forEach(r => { byTier[r.tier] = (byTier[r.tier] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
+  const chips = [entChip("All", !f.tier && !f.status, "entSetFilter('tier',null)")]
+    .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, `entSetFilter('tier',${JSON.stringify(t)})`)))
+    .concat(['<span class="ent-chip-sep"></span>'])
+    .concat(ENT_STATUSES.filter(s => byStatus[s]).map(s => entChip(`${s} (${byStatus[s]})`, f.status === s, `entSetFilter('status',${JSON.stringify(s)})`)));
+  $("#entChips").innerHTML = chips.join("");
+  $("#entSummary").innerHTML = `<div class="card">${(d.summary || []).map(r => `<span class="statpill ${["active", "trialing"].includes(r.status) ? "s-ok" : "s-mut"}">${esc(r.tier)} · ${esc(r.status)}: ${r.n}</span>`).join(" ") || "<span class='muted'>no entitlement rows yet</span>"}</div>`;
+  $("#entCnt").textContent = d.total != null ? d.total : ENT.rows.length;
+
+  tbl.innerHTML = ENT.rows.length ? `<table class="ent-table"><thead><tr>
+      <th>Name / email</th><th>Tier</th><th>Status</th><th>Source</th><th>Period end</th><th>Created</th><th></th></tr></thead><tbody>
+    ${ENT.rows.map((u, i) => {
+      const nm = u.name ? `<b>${esc(u.name)}</b>` : `<span class="sub">(no name)</span>`;
+      const stripe = u.stripe_customer_id ? ` <span class="ent-badge" title="has a Stripe customer id">stripe</span>` : "";
+      return `<tr>
+        <td><div class="ent-name">${nm}${stripe}</div><div class="ent-email mono sub">${esc(u.email || u.user_id)}</div></td>
+        <td><b>${esc(u.tier)}</b></td>
+        <td><span class="statpill ${["active", "trialing"].includes(u.status) ? "s-ok" : "s-mut"}">${esc(u.status)}</span></td>
+        <td class="sub">${esc(u.source || "")}</td>
+        <td class="mono sub">${esc(u.current_period_end || (u.status === "active" && u.source === "comp" ? "lifetime" : "—"))}</td>
+        <td class="mono sub">${esc(u.created || "—")}</td>
+        <td><button class="ent-act-btn" onclick="entMenu(${i}, this)">Manage ▾</button></td>
+      </tr>`;
+    }).join("")}
+  </tbody></table>` : `<div class="card sub">No entitlement rows match this filter.</div>`;
+
+  const pages = d.pages || 1;
+  $("#entPager").innerHTML = pages > 1 ? `
+    <button class="ent-chip" ${ENT.page <= 1 ? "disabled" : ""} onclick="entGoto(${ENT.page - 1})">← prev</button>
+    <span class="sub">page ${ENT.page} / ${pages}</span>
+    <button class="ent-chip" ${ENT.page >= pages ? "disabled" : ""} onclick="entGoto(${ENT.page + 1})">next →</button>` : "";
+}
+
+function entSetFilter(kind, val) { ENT.filter[kind] = val; ENT.page = 1; entLoad(); }
+function entGoto(p) { ENT.page = Math.max(1, p); entLoad(); }
+
+/* ---- per-row action menu + modals --------------------------------------- */
+function entCloseModal() {
+  const root = $("#ent-modal-root");
+  if (root) root.innerHTML = "";
+  document.removeEventListener("keydown", _entEsc);
+}
+function _entEsc(e) { if (e.key === "Escape") entCloseModal(); }
+function entModal(innerHtml) {
+  const root = $("#ent-modal-root");
+  if (!root) return;
+  root.innerHTML = `<div class="ent-backdrop" onclick="if(event.target===this)entCloseModal()">
+    <div class="ent-dialog" role="dialog" aria-modal="true">${innerHtml}</div></div>`;
+  document.addEventListener("keydown", _entEsc);
+}
+
+function entMenu(i, btn) {
+  const u = ENT.rows[i];
+  if (!u) return;
+  const live = !!u.stripe_customer_id;
+  const stripeWarn = live
+    ? `<div class="ent-warn">This user has a Stripe customer id. If they hold a LIVE subscription, comp actions are blocked unless you also cancel their paid sub — the nightly reconciler would otherwise revert the comp.</div>`
+    : "";
+  entModal(`<div class="ent-dialog-head">
+      <div><div class="ent-dialog-title">${esc(u.name || u.email || u.user_id)}</div>
+        <div class="ent-dialog-sub mono">${esc(u.email || "")} · <b>${esc(u.tier)}</b> / ${esc(u.status)} · ${esc(u.source || "")}</div></div>
+      <button class="ent-x" onclick="entCloseModal()" aria-label="Close">✕</button>
+    </div>
+    ${stripeWarn}
+    <div class="ent-actions">
+      <button class="ent-act" onclick="entChangeTier(${i})">Change tier…</button>
+      <button class="ent-act" onclick="entTrial(${i},'extend')">Extend trial +7d</button>
+      <button class="ent-act" onclick="entTrial(${i},'reset')">Reset trial (7d)</button>
+      <button class="ent-act" onclick="entPass(${i},'monthly')">Grant monthly pass…</button>
+      <button class="ent-act" onclick="entPass(${i},'annual')">Grant annual pass…</button>
+      <button class="ent-act" onclick="entPass(${i},'lifetime')">Grant lifetime…</button>
+      <button class="ent-act ent-danger" onclick="entRemove(${i})">Remove comp → free</button>
+    </div>`);
+}
+
+/* Shared force/cancel checkboxes shown for stripe-linked users. */
+function _entForceBox(u) {
+  if (!u.stripe_customer_id) return "";
+  return `<label class="ent-check"><input type="checkbox" id="entForce"> force over a live Stripe subscription</label>
+    <label class="ent-check"><input type="checkbox" id="entCancel"> cancel their paid Stripe subscription first (required with force)</label>`;
+}
+function _entForceParams() {
+  const f = $("#entForce"), c = $("#entCancel");
+  const p = {};
+  if (f && f.checked) p.force = true;
+  if (c && c.checked) p.cancel_stripe = true;
+  return p;
+}
+
+async function _entPost(params, okMsg) {
+  const uid = params.user_id;
+  const r = await post("/api/entitlements/action", params);
+  if (r.ok) { toast(okMsg); entCloseModal(); entLoad(); }
+  else { toast(r.error || "action failed", true); }
+  return r;
+}
+
+function entChangeTier(i) {
+  const u = ENT.rows[i];
+  entModal(`<div class="ent-dialog-head"><div class="ent-dialog-title">Change tier — ${esc(u.name || u.email)}</div>
+      <button class="ent-x" onclick="entCloseModal()">✕</button></div>
+    <div class="ent-form">
+      <label>New tier
+        <select id="entTier"><option value="insider">Insider</option><option value="pro">Pro</option><option value="free">Free (downgrade)</option></select></label>
+      ${_entForceBox(u)}
+      <div class="ent-form-actions">
+        <button class="ent-act" onclick="entCloseModal()">Cancel</button>
+        <button class="ent-act ent-primary" onclick="entChangeTierGo(${i})">Apply comp</button>
+      </div>
+    </div>`);
+}
+async function entChangeTierGo(i) {
+  const u = ENT.rows[i];
+  const tier = $("#entTier").value;
+  if (!confirm(`Write a comp entitlement setting ${u.email || u.user_id} to tier "${tier}"?`)) return;
+  await _entPost({ user_id: u.user_id, action: "change_tier", params: { tier, ..._entForceParams() } },
+    `tier → ${tier}`);
+}
+
+function entTrial(i, mode) {
+  const u = ENT.rows[i];
+  if (mode === "reset") {
+    if (!confirm(`Reset ${u.email || u.user_id}'s trial to 7 days from now?`)) return;
+    _entPost({ user_id: u.user_id, action: "reset_trial", params: {} }, "trial reset to 7d");
+    return;
+  }
+  entModal(`<div class="ent-dialog-head"><div class="ent-dialog-title">Extend trial — ${esc(u.name || u.email)}</div>
+      <button class="ent-x" onclick="entCloseModal()">✕</button></div>
+    <div class="ent-form">
+      <label>Extend by (days)<input id="entDays" type="number" min="1" max="365" value="7"></label>
+      <div class="ent-dialog-sub">On a live Stripe trial this calls Stripe (Subscription.modify, no proration). Otherwise it writes a trialing comp window.</div>
+      <div class="ent-form-actions">
+        <button class="ent-act" onclick="entCloseModal()">Cancel</button>
+        <button class="ent-act ent-primary" onclick="entExtendGo(${i})">Extend</button>
+      </div>
+    </div>`);
+}
+async function entExtendGo(i) {
+  const u = ENT.rows[i];
+  const days = parseInt($("#entDays").value, 10);
+  if (!(days >= 1 && days <= 365)) { toast("days must be 1..365", true); return; }
+  if (!confirm(`Extend ${u.email || u.user_id}'s trial by ${days} day(s)?`)) return;
+  await _entPost({ user_id: u.user_id, action: "extend_trial", params: { days } }, `trial +${days}d`);
+}
+
+function entPass(i, kind) {
+  const u = ENT.rows[i];
+  const label = { monthly: "Monthly (+30d)", annual: "Annual (+365d)", lifetime: "Lifetime (no end date)" }[kind];
+  entModal(`<div class="ent-dialog-head"><div class="ent-dialog-title">Grant ${esc(label)} pass — ${esc(u.name || u.email)}</div>
+      <button class="ent-x" onclick="entCloseModal()">✕</button></div>
+    <div class="ent-form">
+      <label>Tier<select id="entPassTier"><option value="insider">Insider</option><option value="pro">Pro</option></select></label>
+      ${_entForceBox(u)}
+      <div class="ent-form-actions">
+        <button class="ent-act" onclick="entCloseModal()">Cancel</button>
+        <button class="ent-act ent-primary" onclick="entPassGo(${i},'${kind}')">Grant ${esc(kind)}</button>
+      </div>
+    </div>`);
+}
+async function entPassGo(i, kind) {
+  const u = ENT.rows[i];
+  const tier = $("#entPassTier").value;
+  if (!confirm(`Grant a ${kind} ${tier} comp pass to ${u.email || u.user_id}?`)) return;
+  await _entPost({ user_id: u.user_id, action: "grant_pass", params: { kind, tier, ..._entForceParams() } },
+    `${kind} ${tier} pass granted`);
+}
+
+function entRemove(i) {
+  const u = ENT.rows[i];
+  entModal(`<div class="ent-dialog-head"><div class="ent-dialog-title">Remove comp — ${esc(u.name || u.email)}</div>
+      <button class="ent-x" onclick="entCloseModal()">✕</button></div>
+    <div class="ent-form">
+      <div class="ent-dialog-sub">Reverts this user to Free (tier free, status none, no features).</div>
+      ${_entForceBox(u)}
+      <div class="ent-form-actions">
+        <button class="ent-act" onclick="entCloseModal()">Cancel</button>
+        <button class="ent-act ent-danger" onclick="entRemoveGo(${i})">Revert to Free</button>
+      </div>
+    </div>`);
+}
+async function entRemoveGo(i) {
+  const u = ENT.rows[i];
+  if (!confirm(`Revert ${u.email || u.user_id} to Free?`)) return;
+  await _entPost({ user_id: u.user_id, action: "remove_comp", params: { ..._entForceParams() } }, "reverted to free");
+}
 
 /* ---- SYSTEM + SERVICES + UPTIME ----------------------------------------- */
 RENDER.system = async () => {
