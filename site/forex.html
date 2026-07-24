@@ -32,484 +32,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>
-:root{
-  --blue:#285FFF; --indigo:#4559DC; --r1:#E2E7FC; --r2:#B8C6FA; --r3:#8FA5F6;
-  --r4:#6888FB; --r5:#285FFF; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
-  --faint:#A0A0A0; --red:#D30B0B; --redfill:#FEB5B5; --amber:#F5AD42;
-  --green:#1a7f43; --grid:#EAECF0; --card:#FFFFFF; --bg:#F7F8FA;
-}
-*{box-sizing:border-box}
-html:not([data-lang="zh"]) .l-zh{display:none}
-html[data-lang="zh"] .l-en{display:none}
-html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--red:#e06464;--r1:#1b2740;--r2:#243352}
-.grid{display:grid;gap:18px}
-.cols-2{grid-template-columns:1.05fr .95fr}.cols-3{grid-template-columns:repeat(3,1fr)}
-@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
-.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(328px,1fr));gap:18px}
-.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;transition:transform 150ms,box-shadow 150ms}
-.card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.07)}
-html[data-theme="dark"] .card:hover{box-shadow:0 6px 24px rgba(0,0,0,.28)}
-.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
-.brand .gn{color:var(--blue)}
-.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
-.sub{font-size:13px;color:var(--muted)}.faint{color:var(--faint)}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#eef1f6;color:var(--ink);margin:2px 4px 2px 0}
-html[data-theme="dark"] .pill{background:#222732}
-.kpis{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
-.kpi{font-size:13px;color:var(--muted)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700}
-.flag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:10px}
-.flag.warn{background:rgba(245,173,66,.14);color:#9a6a10}
-.flag.info{background:rgba(40,95,255,.10);color:var(--blue)}
-/* ---- section heads ---- */
-.section-h{display:flex;align-items:baseline;gap:8px;margin:28px 0 10px;flex-wrap:wrap}
-.section-h h2{margin:0;font-size:15px;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:-.01em}
-.section-h .eyebrow{color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.section-h .sh-sub{font-size:12px;color:var(--muted);margin-left:2px}
-.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
-/* ---- HERO glass card ---- */
-.hero-glass{background:rgba(255,255,255,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--grid);border-radius:20px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.06)}
-html[data-theme="dark"] .hero-glass{background:rgba(24,27,33,.82);box-shadow:0 8px 32px rgba(0,0,0,.28)}
-.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
-@media(max-width:900px){.hero-grid{grid-template-columns:1fr}}
-.hero-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
-.hero-state{font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1.1;margin:0 0 8px}
-.hero-state.tone-usd_up{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
-.hero-state.tone-usd_dn{color:#D30B0B;text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
-.hero-state.tone-mixed{color:#C8A53B;text-shadow:0 0 32px rgba(200,165,59,.22),0 0 8px rgba(200,165,59,.13)}
-html[data-theme="dark"] .hero-state.tone-usd_up{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
-html[data-theme="dark"] .hero-state.tone-usd_dn{color:#e06464;text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
-html[data-theme="dark"] .hero-state.tone-mixed{text-shadow:0 0 32px rgba(200,165,59,.38),0 0 8px rgba(200,165,59,.22)}
-.stance-chip{display:inline-block;padding:4px 14px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;margin:0 6px 0 0}
-.stance-chip.calm{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .stance-chip.calm{background:#222732}
-.stance-chip.watch{background:rgba(245,173,66,.16);color:#9a6a10}
-.stance-chip.alert{background:rgba(211,11,11,.13);color:var(--red);animation:pulse-alert 2.4s ease-in-out infinite}
-@keyframes pulse-alert{0%,100%{opacity:.75}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.stance-chip.alert{animation:none}.smile-dot{animation:none!important}.smile-path{animation:none!important}}
-.hero-sentence{font-size:15px;color:var(--muted);margin:8px 0 0;line-height:1.5}
-.hero-kpi-row{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}
-.hkpi{font-size:12.5px;color:var(--muted)}.hkpi b{display:block;font-size:17px;color:var(--ink);font-weight:700}
-.hero-badge{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px;margin-right:6px}
-.hero-badge.flash{background:rgba(245,173,66,.14);color:#9a6a10}
-.hero-badge.triple{background:rgba(211,11,11,.12);color:var(--red)}
-/* ---- dollar smile arc ---- */
-.smile-wrap{position:relative}
-.smile-svg{width:100%;overflow:visible}
-.smile-path{stroke-dasharray:500;stroke-dashoffset:500;animation:draw-smile 1s ease-out forwards}
-@keyframes draw-smile{to{stroke-dashoffset:0}}
-.smile-dot{animation:breathe 3.2s ease-in-out infinite}
-@keyframes breathe{0%,100%{opacity:.55;r:5}50%{opacity:1;r:6.5}}
-.smile-labels{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
-.smile-lbl{position:absolute;font-size:11.5px;font-weight:700;color:var(--text);line-height:1.2;white-space:nowrap}
-.smile-zone-line{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
-/* ---- sparkline SVG ---- */
-.spark-wrap{position:relative}
-.spark-svg{width:100%;display:block;overflow:visible}
-.spark-legend{display:flex;gap:12px;margin-top:4px;font-size:11px;color:var(--muted)}
-.spark-legend span{display:flex;align-items:center;gap:4px}
-.spark-legend i{display:inline-block;width:16px;height:2px;border-radius:1px;vertical-align:middle}
-/* ---- why tiles rack ---- */
-.why-rack{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
-@media(max-width:700px){.why-rack{grid-template-columns:repeat(2,1fr)}}
-.why-tile{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:12px 13px;cursor:default}
-.why-tile:hover .tip-pop{opacity:1;pointer-events:auto;transform:translateY(0)}
-.wt-lab{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-.wt-state{font-size:15px;font-weight:800;color:var(--ink);margin:4px 0 2px}
-.wt-state.up{color:var(--green)}.wt-state.down{color:var(--red)}.wt-state.flat{color:var(--muted)}
-.wt-q{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--r1);color:var(--blue);font-size:10px;font-weight:800;text-align:center;line-height:16px;vertical-align:middle;margin-left:4px;cursor:help}
-/* ---- tooltip system (B1.6) ---- */
-[data-tip-en],[data-tip-zh]{position:relative}
-.tip-pop{position:absolute;z-index:99;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%) translateY(4px);background:var(--ink);color:#fff;font-size:11.5px;line-height:1.5;border-radius:8px;padding:7px 11px;min-width:180px;max-width:280px;white-space:normal;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;box-shadow:0 4px 16px rgba(0,0,0,.22)}
-[data-tip-en]:hover .tip-pop,[data-tip-en]:focus .tip-pop,
-[data-tip-zh]:hover .tip-pop,[data-tip-zh]:focus .tip-pop{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}
-/* ---- §2 transmission ---- */
-.trans-table{width:100%;border-collapse:collapse}
-.trans-table td,.trans-table th{padding:8px 6px;border-bottom:1px solid var(--grid);font-size:13px;vertical-align:middle}
-.trans-table th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--grid)}
-.eff-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
-.eff-chip.headwind{background:rgba(211,11,11,.12);color:var(--red)}
-.eff-chip.tailwind{background:rgba(26,127,67,.12);color:var(--green)}
-.eff-chip.neutral{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .eff-chip.neutral{background:#222732}
-.str-bar{height:8px;border-radius:4px;background:var(--grid);overflow:hidden;width:80px;display:inline-block;vertical-align:middle}
-.str-bar .fill{height:100%;border-radius:4px;background:var(--indigo)}
-.unstable-tag{font-size:10.5px;color:var(--amber);font-weight:700;margin-left:5px}
-/* strength meter */
-.seg-toggle{display:inline-flex;gap:4px}
-.seg-btn{padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;color:var(--muted);background:#eef1f6;border:1px solid var(--grid);cursor:pointer}
-.seg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-html[data-theme="dark"] .seg-btn{background:#222732}
-.smeter[hidden]{display:none}
-.srow{display:grid;grid-template-columns:72px 1fr 60px;align-items:center;gap:12px;margin:6px 0}
-.sccy{font-weight:800;color:var(--ink);font-size:13.5px}
-.sbar{position:relative;height:16px;background:#eef1f6;border-radius:8px;overflow:hidden}
-html[data-theme="dark"] .sbar{background:#222732}
-.sbar .smid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--faint);opacity:.6}
-.sbar .sfill{position:absolute;top:0;bottom:0}
-.sbar .sfill.pos{background:var(--green);border-radius:0 8px 8px 0}
-.sbar .sfill.neg{background:var(--red);border-radius:8px 0 0 8px}
-.spct{text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
-/* ---- §3 stress watch ---- */
-.stress-dot-strip{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
-.stress-dot-item{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text);position:relative;cursor:default}
-.sdot{width:10px;height:10px;border-radius:50%;flex:none}
-.sdot.quiet{background:var(--faint)}
-.sdot.building{background:var(--amber);animation:pulse-dot 1.8s ease-in-out infinite}
-.sdot.active{background:var(--red);animation:pulse-dot 1.2s ease-in-out infinite}
-@keyframes pulse-dot{0%,100%{opacity:.5}50%{opacity:1}}
-@media(prefers-reduced-motion:reduce){.sdot.building,.sdot.active{animation:none}}
-.stress-card-active{border-color:var(--red)!important}
-.stress-stance{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(211,11,11,.12);color:var(--red);margin-bottom:8px}
-.cnh-chip{display:inline-block;padding:4px 11px;border-radius:8px;font-size:12.5px;font-weight:600;margin-top:8px}
-.cnh-chip.outflow{background:rgba(211,11,11,.12);color:var(--red)}
-.cnh-chip.inflow{background:rgba(26,127,67,.12);color:var(--green)}
-/* ---- §4 pairs ---- */
-.pair-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.pair-name{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
-.pair-nick{font-size:12px;color:var(--muted);margin:2px 0 6px;line-height:1.4;font-style:italic}
-.quote{font-size:22px;font-weight:800;color:var(--ink)}
-.chg.up{color:var(--green)}.chg.dn{color:var(--red)}
-.action-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;letter-spacing:.01em;cursor:default}
-.action-chip.higher{background:rgba(26,127,67,.13);color:var(--green)}
-.action-chip.lower{background:rgba(211,11,11,.12);color:var(--red)}
-.action-chip.flat{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .action-chip.flat{background:#222732}
-.less-tested{display:inline-block;padding:2px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-left:6px}
-.pair-headline{font-size:14px;font-weight:600;color:var(--ink);margin:8px 0 6px;line-height:1.4}
-.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-.mini-chip{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600}
-.mini-chip.carry{background:rgba(26,127,67,.10);color:var(--green)}
-.mini-chip.value-cheap{background:rgba(40,95,255,.10);color:var(--blue)}
-.mini-chip.value-rich{background:rgba(211,11,11,.10);color:var(--red)}
-.mini-chip.value-fair{background:#eef1f6;color:var(--muted)}
-html[data-theme="dark"] .mini-chip.value-fair{background:#222732}
-.mini-chip.mtf{background:rgba(69,89,220,.10);color:var(--indigo)}
-.factor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
-.factor-cell{font-size:11.5px;padding:5px 7px;border-radius:8px;background:#f6f8fc;border:1px solid var(--grid)}
-html[data-theme="dark"] .factor-cell{background:#11151c}
-.factor-cell .fc-label{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-bottom:2px}
-.factor-cell .fc-dir{font-size:15px;font-weight:800}
-.fc-dir.for{color:var(--green)}.fc-dir.against{color:var(--red)}.fc-dir.flat{color:var(--muted)}
-.peg-note{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(245,173,66,.14);color:#9a6a10;margin-top:6px}
-.cnh-basis{margin:8px 0;padding:7px 10px;border-radius:8px;font-size:12.5px;background:#eef1f6}
-html[data-theme="dark"] .cnh-basis{background:#222732}
-.cnh-basis.s-outflow_stress{background:rgba(211,11,11,.10)}
-.cnh-basis.s-inflow{background:rgba(26,127,67,.10)}
-/* ---- §5 scoreboard & recent ---- */
-.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(305px,1fr));gap:16px;margin-top:6px}
-.sc-card{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:18px}
-.sc-name{font-size:16px;font-weight:800;color:var(--ink)}
-.sc-verdict{font-size:13px;color:var(--text);margin:4px 0 8px;line-height:1.5}
-.sc-tilt{font-size:12px;color:var(--muted);margin-top:6px}
-/* legacy scorecard support */
-.sc-met{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 0}
-.sc-met .m{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
-.sc-met .m b{display:block;font-size:16px;color:var(--ink);font-weight:800;margin-top:2px}
-.sc-split{font-size:12px;margin-top:8px}
-.sc-split .sr{display:grid;grid-template-columns:54px 1fr 1fr 1fr;gap:6px;padding:3px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
-.sc-split .sr.h{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em;border:none}
-.sc-pos{color:var(--green);font-weight:700}.sc-neg{color:var(--red);font-weight:700}
-/* timeline */
-.timeline{margin-top:6px}
-.tl-day{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 4px}
-.tl-ev{display:flex;align-items:baseline;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid);font-size:13px}
-.tl-type{flex:none;min-width:62px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
-.tl-asset{flex:none;min-width:66px;color:var(--muted);font-size:12px}
-.tl-head{color:var(--text)}
-.tl-ev.is-hidden,.tl-day.is-hidden{display:none}
-.tl-more{margin-top:10px;border:1px solid var(--grid);background:var(--card);color:var(--text);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
-.tl-more .lbl-close{display:none}
-.tl-more.open .lbl-open{display:none}
-.tl-more.open .lbl-close{display:inline}
-.sev-high .tl-type{color:var(--red)}.sev-medium .tl-type{color:#9a6a10}.sev-info .tl-type{color:var(--muted)}
-/* tables */
-table.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
-table.tbl th,table.tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);text-align:right}
-table.tbl th:first-child,table.tbl td:first-child{text-align:left}
-table.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
-/* footer */
-.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;color:var(--muted);font-size:12.5px}
-.honesty-note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:8px}
-.meta-foot{font-size:11.5px;color:var(--faint);margin-top:8px}
-/* sparkline color by chg sign (EN: up=green, dn=red; ZH flipped below) */
-.sp-up{color:var(--green)}.sp-dn{color:var(--red)}
-/* zh 红涨绿跌 */
-html[data-lang="zh"] .chg.up{color:var(--red)}
-html[data-lang="zh"] .chg.dn{color:var(--green)}
-html[data-lang="zh"] .action-chip.higher{background:rgba(211,11,11,.13);color:var(--red)}
-html[data-lang="zh"] .action-chip.lower{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .eff-chip.headwind{background:rgba(26,127,67,.12);color:var(--green)}
-html[data-lang="zh"] .eff-chip.tailwind{background:rgba(211,11,11,.12);color:var(--red)}
-html[data-lang="zh"] .sbar .sfill.pos{background:var(--red)}
-html[data-lang="zh"] .sbar .sfill.neg{background:var(--green)}
-html[data-lang="zh"] .sc-pos{color:var(--red)}
-html[data-lang="zh"] .sc-neg{color:var(--green)}
-html[data-lang="zh"] .wt-state.up{color:var(--red)}
-html[data-lang="zh"] .wt-state.down{color:var(--green)}
-html[data-lang="zh"] .fc-dir.for{color:var(--red)}
-html[data-lang="zh"] .fc-dir.against{color:var(--green)}
-html[data-lang="zh"] .cnh-basis.s-outflow_stress{background:rgba(26,127,67,.10)}
-html[data-lang="zh"] .cnh-basis.s-inflow{background:rgba(211,11,11,.10)}
-html[data-lang="zh"] .sp-up{color:var(--red)}
-html[data-lang="zh"] .sp-dn{color:var(--green)}
-/* tone-usd_up/dn = USD directional hero badge — direction read, flip in zh */
-html[data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(211,11,11,.22),0 0 8px rgba(211,11,11,.13)}
-html[data-lang="zh"] .hero-state.tone-usd_dn{color:#285FFF;text-shadow:0 0 32px rgba(40,95,255,.22),0 0 8px rgba(40,95,255,.13)}
-html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_up{color:var(--red);text-shadow:0 0 32px rgba(224,100,100,.34),0 0 8px rgba(224,100,100,.2)}
-html[data-theme="dark"][data-lang="zh"] .hero-state.tone-usd_dn{text-shadow:0 0 32px rgba(40,95,255,.38),0 0 8px rgba(40,95,255,.22)}
-</style>
+<link rel="stylesheet" href="assets/css/a0ee3a3a.css?v=a0ee3a3a">
 
-<style>
-/* ambient aurora — fixed accents blended into transparent, pinned behind all
-   content (paints over the opaque body bg, under the page). Light default gets
-   the airier tint; dark gets the richer wash. */
-html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 9%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 8%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 7%,transparent),transparent 70%);}
-html[data-theme="dark"] body::before{
-  background:
-   radial-gradient(680px 440px at 10% -8%,color-mix(in srgb,#416aec 20%,transparent),transparent 68%),
-   radial-gradient(620px 440px at 94% 2%,color-mix(in srgb,#8b5cf6 16%,transparent),transparent 70%),
-   radial-gradient(760px 520px at 50% 112%,color-mix(in srgb,#0ea5e9 14%,transparent),transparent 70%);}
-
-/* buttons — smooth transition + a subtle accent glow / lift on hover (additive;
-   vtm/tm only exist on the Bitcoin Vector page, harmless elsewhere) */
-.vtm-btn,.tm-btn,.navbtn,.ai-brief-link{transition:transform .16s ease,border-color .16s ease,
-  color .16s ease,background .16s ease,box-shadow .18s ease;}
-.vtm-btn:hover,.tm-btn:hover,.navbtn:hover{border-color:color-mix(in srgb,var(--blue) 58%,var(--grid));
-  box-shadow:0 4px 13px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-.ai-brief-link:hover{transform:translateY(-1px);
-  box-shadow:0 5px 14px -5px color-mix(in srgb,var(--blue) 42%,transparent);}
-
-/* top-bar link light-up — accent-tinted hover/active. Mix base uses the FULL
-   surface fallback chain --card → --panel2 → --panel (+ hardcoded final), same as
-   the glass fill below: the vector family has two palette conventions (most pages
-   define --card; commodities uses --panel2/--panel and no --card), so a bare
-   --card OR bare --panel2 base is null on some pages → invalid color-mix → dead
-   hover. The dropdown-item hover moved to the aurora-glass block below. */
-a.nav-link:hover,a.nav-link.active{background:color-mix(in srgb,var(--blue) 12%,var(--card,var(--panel2,var(--panel,#eef1f6))));}
-html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{
-  background:color-mix(in srgb,var(--blue) 20%,var(--card,var(--panel2,var(--panel,#222732))));}
-
-/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
-   palette inherited from the host page's inline nav-dd-menu. Loaded after the
-   page <style>, so these position overrides win. */
-.nav-dd-menu .nav-sub{display:block;position:relative;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:flex-start;}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
-  opacity:.55;flex:none;align-self:center;transition:transform .2s,color .2s,opacity .2s,filter .2s;}
-/* breathe only while the dropdown is open + hover-capable + motion allowed — never
-   on hidden carets (perf) or the mobile accordion (theme.js rotate clobber). */
-@media (hover:hover) and (prefers-reduced-motion:no-preference){
-  .nav-dd:hover .nav-sub>a.nav-sub-trig .caret-r,
-  .nav-dd:focus-within .nav-sub>a.nav-sub-trig .caret-r{animation:navCaretBreath 2.6s ease-in-out infinite;}}
-.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{animation:none;opacity:1;transform:translateX(3px);
-  color:var(--blue,var(--link,#5b9dff));
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 65%,transparent));}
-.nav-dd-menu .nav-sub>a.nav-sub-trig .nav-sub-text{display:block;flex:1;min-width:0;white-space:normal;}
-.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
-.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
-
-/* ---- #286 regression repair -------------------------------------------------
-   PR #286 switched the self-contained Vector-family pages (vector, commodities,
-   forex, bonds, transmission) from the old inline `.topbar` nav to
-   `<nav class="site-nav">` — but these pages don't link theme.css, so the
-   `.site-nav` menu lost ALL its base styling and rendered as a fully-expanded,
-   unstyled list ("menu looks css-broken"). Restore the base menu + controls CSS
-   here (the partial every Vector-family page already shares), themed with the
-   Vector-family vars (--card/--grid/--ink/--text/--muted/--blue) and scoped to
-   `.site-nav` so the `.topbar` pages that also include this partial keep their
-   own inline nav untouched. The fly-out + hover polish above still apply. The
-   `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
-/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
-.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
-.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px;position:relative;min-width:0}
-/* global stock search field — the #286 repair restored the menu/brand/controls but
-   left the search field itself unstyled: the <input> fell back to a raw browser box
-   (inset border, square corners, ~150px wide) with the 🔎 glyph floating inline and
-   the suggestions list dropping into normal flow ("search bar looks css-broken").
-   Port theme.css's .nav-search recipe, scoped to .site-nav and themed via var
-   fallbacks that cover every palette this partial serves: theme.css pages
-   (--panel2/--line/--text/--muted/--link/--glass-*), the --card/--grid/--text/--muted
-   pages, and commodities' --panel2/--line/--tx/--mut/--blue. Loaded after each page's
-   own <style> (and after theme.css on the two pages that link it), so it wins. */
-/* CLS: pre-collapse the mobile nav at PARSE time (port of the theme.css rule —
-   this partial's pages don't all load theme.css). theme.js's hamburger sheet lands
-   ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
-   (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
-   re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
-@media (max-width:1259px){
-  .site-nav:not(.nav-open) .nav-links{display:none}
-}
-.site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}
-.site-nav .nav-search input{width:100%;box-sizing:border-box;padding:8px 12px 8px 32px;border-radius:10px;border:1px solid color-mix(in srgb,#416aec 30%,var(--line,var(--grid)));background:var(--panel2,var(--card));color:var(--text,var(--tx));font:inherit;font-size:13px;outline:none;box-shadow:0 0 5px 0 rgba(65,106,236,.10);transition:border-color .18s,box-shadow .25s ease}
-/* Perf: glow breathe on a pseudo animating ONLY opacity (compositor) — animating
-   border/box-shadow on the input restyled+repainted every frame (2026-07-21 mobile
-   audit; mirrors theme.css .nav-search::after). Local keyframes: vector-family
-   pages don't all load theme.css. */
-.site-nav .nav-search{position:relative}
-.site-nav .nav-search::after{content:"";position:absolute;inset:0;border-radius:10px;border:1px solid #416aec;box-shadow:0 0 0 3px rgba(65,106,236,.22),0 0 16px 2px rgba(65,106,236,.38);opacity:0;pointer-events:none;animation:vpGlowO 3.8s ease-in-out infinite}
-.site-nav .nav-search:focus-within::after{animation:none;opacity:0}
-@keyframes vpGlowO{0%,100%{opacity:0}50%{opacity:1}}
-.site-nav .nav-search input::placeholder{color:var(--muted,var(--mut))}
-.site-nav .nav-search input:focus{border-color:var(--blue,var(--link));box-shadow:none}
-@media(prefers-reduced-motion:reduce){.site-nav .nav-search::after{animation:none;opacity:0}}
-.site-nav .nav-sugg{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:80;background:var(--glass-bg,color-mix(in srgb,var(--card,var(--panel)) 92%,transparent));-webkit-backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));backdrop-filter:var(--glass-blur,saturate(180%) blur(22px));border:1px solid var(--glass-brd,color-mix(in srgb,var(--ink) 12%,transparent));border-radius:13px;overflow:hidden;overflow-y:auto;max-height:60vh;box-shadow:var(--glass-shadow,0 20px 54px -24px rgba(20,32,64,.34),0 10px 24px -14px rgba(20,32,64,.20));display:none}
-html[data-theme="dark"] .site-nav .nav-sugg{box-shadow:var(--glass-shadow,0 24px 64px -22px rgba(3,7,18,.74),0 10px 26px -12px rgba(3,7,18,.55))}
-.site-nav .nav-sugg.show{display:block}
-.site-nav .nav-sugg .row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer}
-.site-nav .nav-sugg .row:hover,.site-nav .nav-sugg .row.sel{background:color-mix(in srgb,var(--blue,var(--link)) 12%,var(--panel2,var(--card)))}
-.site-nav .nav-sugg .row .mkt{flex:none;width:20px;text-align:center;font-size:13px;line-height:1}
-.site-nav .nav-sugg .row b{min-width:58px;font-size:13px;color:var(--text,var(--tx));font-weight:600}
-.site-nav .nav-sugg .row small{flex:1;color:var(--muted,var(--mut));font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.site-nav .nav-sugg .row .stt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
-.site-nav .nav-sugg .empty{padding:11px 13px;color:var(--muted,var(--mut));font-size:12.5px}
-/* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
-.site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
-.site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
-.site-nav .nav-brand .brand-glyph,.topbar .nav-brand .brand-glyph{width:29px;height:29px;display:block;flex:none;filter:drop-shadow(0 2px 6px rgba(40,56,128,.34))}
-.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{font-family:var(--font-ui);font-size:13.5px;font-weight:900;letter-spacing:.07em;line-height:1;color:var(--text);white-space:nowrap}
-@media(max-width:560px){.site-nav .nav-brand .brand-word,.topbar .nav-brand .brand-word{display:none}}
-.site-nav a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
-.site-nav .nav-dd{position:relative;display:inline-flex}
-.site-nav .nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
-.site-nav .nav-dd:hover>a.nav-link .caret,.site-nav .nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
-.site-nav .nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
-/* frosted glass — mirrors the --glass-* token recipe in theme.css (which this
-   self-contained family can't load), themed with the vector palette. Dual-targets
-   BOTH nav wrappers this family ships: the migrated `.site-nav` pages (forex,
-   bonds, commodities, vector, crossasset, transmission) and the legacy `.topbar`
-   pages (strategies, masterminds, spr, *_allocation …), so every page in the
-   family gets the same glass — not just the site-nav half. Loaded after each
-   page's inline `.nav-dd-menu` (0,1,0), so this (0,2,0) wins. */
-/* surface fallback chain --card → --panel2 → --panel covers BOTH vector-family
-   palette conventions: most pages (forex/vector/bonds/spr/strategies…) define
-   --card but not --panel2; commodities uses --panel2/--panel and no --card. A
-   hardcoded final keeps the glass opaque even if a page defines none. */
-.site-nav .nav-dd-menu,.topbar .nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#ffffff))) 90%,transparent);
-  -webkit-backdrop-filter:saturate(185%) blur(26px);backdrop-filter:saturate(185%) blur(26px);
-  border:1px solid color-mix(in srgb,var(--ink) 12%,transparent);border-radius:15px;
-  box-shadow:0 20px 54px -24px rgba(20,32,64,.34),0 12px 28px -14px rgba(20,32,64,.20),inset 0 1px 0 rgba(255,255,255,.85);
-  padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
-html[data-theme="dark"] .site-nav .nav-dd-menu,html[data-theme="dark"] .topbar .nav-dd-menu{background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#14171f))) 86%,transparent);
-  border-color:color-mix(in srgb,var(--text,var(--tx)) 14%,transparent);
-  box-shadow:0 24px 64px -22px rgba(3,7,18,.74),0 12px 28px -14px rgba(3,7,18,.55),inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent)}
-/* 3rd-tier fly-out: its parent .nav-dd-menu is already a backdrop root, so the
-   nested backdrop-filter can't blur the page behind and the fill reads see-through.
-   A denser near-opaque card fill matches the 2nd tier's frosted density. This
-   selector is (0,4,0) — it beats the 2nd-tier glass rules above, including the
-   dark override (0,3,1), so one rule covers both themes. */
-.site-nav .nav-dd-menu .nav-sub>.nav-dd-menu,.topbar .nav-dd-menu .nav-sub>.nav-dd-menu{
-  background:color-mix(in srgb,var(--card,var(--panel2,var(--panel,#181b21))) 97%,transparent)}
-.site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
-.site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
-.site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted,var(--mut,#8b93a1));margin-top:2px}
-/* aurora-glass hover — mirrors theme.css so the whole site shares one menu feel:
-   a soft blue→violet wash (::before) + luminous left bar (::after) + 2px glide.
-   Excludes the Research mega cards (.nm-feat/.nav-mega-item, kept as-is). Accent
-   --blue→--link→#5b9dff so it resolves on every family palette. .active = current
-   page. Loaded after the page's inline nav, so it wins. */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item){position:relative;isolation:isolate;transition:transform .24s cubic-bezier(.2,.7,.3,1),color .18s}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s ease;
-  background:radial-gradient(130% 150% at 0% 50%,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 18%,transparent),transparent 62%),linear-gradient(90deg,color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 10%,transparent),color-mix(in srgb,#9b8cff 7%,transparent) 70%,transparent);
-  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent)}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);height:0;width:2.5px;border-radius:3px;z-index:-1;opacity:0;
-  background:linear-gradient(color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 90%,#fff),#9b8cff);
-  box-shadow:0 0 8px color-mix(in srgb,var(--blue,var(--link,#5b9dff)) 70%,transparent);transition:height .3s cubic-bezier(.2,.7,.3,1),opacity .3s ease}
-/* background:transparent neutralises each page's hardcoded inline flat hover
-   (#222732 / #eef1f6) so only the aurora wash paints (my 0,4,1 beats page 0,2,0). */
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:translateX(2px);background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active{background:transparent}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::before,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::before{opacity:1}
-.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover::after,.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item).active::after{height:56%;opacity:1}
-@keyframes navCaretBreath{0%,100%{opacity:.45;transform:translateX(0)}50%{opacity:.9;transform:translateX(2px)}}
-@media(prefers-reduced-motion:reduce){.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{animation:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item):hover{transform:none}.nav-dd-menu a:not(.nm-feat):not(.nav-mega-item)::after{transition:none}}
-.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
-.site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
-.site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
-.site-nav .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
-.site-nav .theme-switch .ic.sun{right:8px}
-.site-nav .theme-switch .ic.moon{left:8px}
-.site-nav .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
-.site-nav .theme-switch .knob::before{content:"🌙"}
-html[data-theme="light"] .site-nav .theme-switch .knob{transform:translateX(29px);background:#285fff}
-html[data-theme="light"] .site-nav .theme-switch .knob::before{content:"☀️"}
-.site-nav .lang-toggle{display:inline-flex;position:relative;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;flex:none;cursor:pointer}
-.site-nav .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
-html[data-lang="zh"] .site-nav .lang-toggle .pill{transform:translateX(100%)}
-.site-nav .lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
-html:not([data-lang="zh"]) .site-nav .lang-toggle .en-opt{color:#fff}
-html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
-
-/* One-row section menu (re-fix on current main): the 8-dropdown section menu
-   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
-   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
-   whichever nav variant a family page renders today: the body-level .site-nav
-   (migrated vector pages, capped by an inline max-width:1180) and the legacy
-   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
-   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
-   untouched. */
-@media (min-width:701px){
-  nav.site-nav{max-width:1500px !important;}
-  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-    padding-left:max(40px,calc((100vw - 1500px)/2));
-    padding-right:max(40px,calc((100vw - 1500px)/2));}
-}
-
-/* toggles — subtle hover feedback (their slide animations are untouched) */
-.theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
-.theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
-  box-shadow:0 3px 11px -5px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* clickable card / tile containers — the landing's hover light-up, but only when
-   the card is actually a link (display cards are untouched) */
-a.card,a.actitem,a.idx-alloc{transition:transform .2s cubic-bezier(.2,.7,.3,1),
-  border-color .2s ease,box-shadow .2s ease;}
-a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
-  border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
-  box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
-
-/* AI Daily Brief card — these self-contained pages don't link theme.css, where
-   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
-   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
-   lays out; the base .card surface + the a.card:hover above still apply. */
-.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
-.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
-.aibrief-card .abc-mid{flex:1;min-width:0}
-.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
-.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
-.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
-
-/* "?" help affordance — a circled question-mark that reveals a plain-language
-   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
-   Used to lift cryptic micro-copy off the cards without losing the explanation. */
-.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
-  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
-  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
-  user-select:none;transition:border-color .15s ease,color .15s ease}
-.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
-
-/* accessible keyboard focus ring */
-:where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
-  .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
-  outline:2px solid color-mix(in srgb,var(--blue) 70%,transparent);outline-offset:2px;}
-
-@media (prefers-reduced-motion: reduce){
-  .vtm-btn:hover,.tm-btn:hover,.navbtn:hover,.ai-brief-link:hover,
-  a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:none;}
-}
-</style>
+<link rel="stylesheet" href="assets/css/4e16fcd2.css?v=4e16fcd2">
 </head>
 <body>
 <nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
@@ -664,71 +189,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       </div>
     </div>
     
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -786,11 +247,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </div>
       </div>
     </div>
-      
   </div>
   
-  <script src="live_config.js"></script>
-  <script src="live.js"></script>
+  <script src="live_config.js?v=0add7ac4" defer></script>
+  <script src="live.js?v=5cbadd26" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -833,9 +293,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="l-zh">美元偏强</span>
         </div>
         <div style="margin:8px 0 0">
-          <span class="stance-chip calm">
-            <span class="l-en">Watch — don&#39;t chase</span>
-            <span class="l-zh">观望，别追</span>
+          <span class="stance-chip alert">
+            <span class="l-en">Get ready</span>
+            <span class="l-zh">做好准备</span>
           </span>
         </div>
         <p class="hero-sentence">
@@ -844,8 +304,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </p>
         <div class="hero-kpi-row">
           <div class="hkpi"><span class="l-en">Broad USD</span><span class="l-zh">广义美元</span><b>120.53</b></div>
-          <div class="hkpi">DXY<b class="nb-px" data-sym="DX-Y.NYB" data-mkt="fx">101.44</b></div>
-          <div class="hkpi"><span class="l-en">63d move</span><span class="l-zh">63日走势</span><b>1.5%</b></div>
+          <div class="hkpi">DXY<b class="nb-px" data-sym="DX-Y.NYB" data-mkt="fx">101.14</b></div>
+          <div class="hkpi"><span class="l-en">63d move</span><span class="l-zh">63日走势</span><b>1.6%</b></div>
           <div class="hkpi"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span><b><span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></b></div>
         </div>
         
@@ -899,10 +359,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <svg class="spark-svg" viewBox="0 0 440 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             
             
-            <polyline points="0.0,35.7 3.5,34.7 7.0,33.9 10.6,30.5 14.1,30.4 17.6,30.0 21.1,33.7 24.6,31.6 28.2,28.3 31.7,25.8 35.2,31.1 38.7,33.2 42.2,32.8 45.8,32.4 49.3,27.4 52.8,27.3 56.3,29.2 59.8,30.9 63.4,31.1 66.9,34.9 70.4,29.9 73.9,35.1 77.4,37.0 81.0,34.0 84.5,30.6 88.0,26.6 91.5,20.2 95.0,24.8 98.6,21.1 102.1,13.1 105.6,16.6 109.1,17.8 112.6,18.7 116.2,14.5 119.7,11.3 123.2,16.2 126.7,19.3 130.2,15.9 133.8,17.4 137.3,13.7 140.8,16.7 144.3,14.2 147.8,16.5 151.4,13.0 154.9,5.4 158.4,2.0 161.9,10.8 165.4,11.9 169.0,12.6 172.5,12.6 176.0,8.6 179.5,18.7 183.0,21.5 186.6,23.3 190.1,23.7 193.6,27.1 197.1,28.8 200.6,29.7 204.2,31.2 207.7,30.1 211.2,33.0 214.7,34.8 218.2,32.5 221.8,32.8 225.3,34.6 228.8,33.0 232.3,33.6 235.8,34.9 239.4,35.2 242.9,33.1 246.4,37.3 249.9,44.0 253.4,43.9 257.0,42.5 260.5,42.5 264.0,41.4 267.5,42.5 271.0,47.0 274.6,41.4 278.1,41.0 281.6,37.5 285.1,41.2 288.6,40.6 292.2,44.5 295.7,45.8 299.2,45.5 302.7,47.6 306.2,48.2 309.8,51.1 313.3,57.0 316.8,53.9 320.3,56.0 323.8,43.9 327.4,45.7 330.9,43.7 334.4,37.8 337.9,48.0 341.4,54.2 345.0,57.3 348.5,53.3 352.0,55.3 355.5,56.7 359.0,58.0 362.6,46.4 366.1,46.4 369.6,45.3 373.1,45.8 376.6,50.5 380.2,55.5 383.7,49.7 387.2,47.9 390.7,51.5 394.2,49.9 397.8,48.3 401.3,44.9 404.8,47.3 408.3,42.6 411.8,40.9 415.4,39.1 418.9,36.2 422.4,30.5 425.9,29.1 429.4,31.5 433.0,37.7 436.5,34.2 440.0,34.7" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,35.7 3.5,35.7 7.0,34.7 10.6,33.9 14.1,30.5 17.6,30.4 21.1,30.0 24.6,33.7 28.2,31.6 31.7,28.3 35.2,25.8 38.7,31.1 42.2,33.2 45.8,32.8 49.3,32.4 52.8,27.4 56.3,27.3 59.8,29.2 63.4,30.9 66.9,31.1 70.4,34.9 73.9,29.9 77.4,35.1 81.0,37.0 84.5,34.0 88.0,30.6 91.5,26.6 95.0,20.2 98.6,24.8 102.1,21.1 105.6,13.1 109.1,16.6 112.6,17.8 116.2,18.7 119.7,14.5 123.2,11.3 126.7,16.2 130.2,19.3 133.8,15.9 137.3,17.4 140.8,13.7 144.3,16.7 147.8,14.2 151.4,16.5 154.9,13.0 158.4,5.4 161.9,2.0 165.4,10.8 169.0,11.9 172.5,12.6 176.0,12.6 179.5,8.6 183.0,18.7 186.6,21.5 190.1,23.3 193.6,23.7 197.1,27.1 200.6,28.8 204.2,29.7 207.7,31.2 211.2,30.1 214.7,33.0 218.2,34.8 221.8,32.5 225.3,32.8 228.8,34.6 232.3,33.0 235.8,33.6 239.4,34.9 242.9,35.2 246.4,33.1 249.9,37.3 253.4,44.0 257.0,43.9 260.5,42.5 264.0,42.5 267.5,41.4 271.0,42.5 274.6,47.0 278.1,41.4 281.6,41.0 285.1,37.5 288.6,41.2 292.2,40.6 295.7,44.5 299.2,45.8 302.7,45.5 306.2,47.6 309.8,48.2 313.3,51.1 316.8,57.0 320.3,53.9 323.8,56.0 327.4,43.9 330.9,45.7 334.4,43.7 337.9,37.8 341.4,48.0 345.0,54.2 348.5,57.3 352.0,53.3 355.5,55.3 359.0,56.7 362.6,58.0 366.1,46.4 369.6,46.4 373.1,45.3 376.6,45.8 380.2,50.5 383.7,55.5 387.2,49.7 390.7,47.9 394.2,51.5 397.8,49.9 401.3,48.3 404.8,44.9 408.3,47.3 411.8,42.6 415.4,40.9 418.9,39.1 422.4,36.2 425.9,30.5 429.4,29.1 433.0,31.5 436.5,37.7 440.0,34.5" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
             
             
-            <polyline points="0.0,37.4 3.5,49.4 7.0,57.8 10.6,57.0 14.1,58.0 17.6,51.5 21.1,45.0 24.6,50.4 28.2,46.4 31.7,43.0 35.2,46.7 38.7,55.2 42.2,56.8 45.8,57.7 49.3,56.6 52.8,56.8 56.3,53.8 59.8,52.3 63.4,46.8 66.9,50.2 70.4,51.0 73.9,50.9 77.4,53.4 81.0,51.5 84.5,52.6 88.0,40.7 91.5,29.9 95.0,35.0 98.6,28.0 102.1,29.1 105.6,28.7 109.1,39.9 112.6,31.9 116.2,24.4 119.7,14.1 123.2,20.5 126.7,24.3 130.2,22.9 133.8,19.4 137.3,18.0 140.8,22.8 144.3,20.1 147.8,20.1 151.4,16.4 154.9,9.4 158.4,3.8 161.9,7.3 165.4,20.2 169.0,14.8 172.5,15.8 176.0,17.4 179.5,35.2 183.0,37.4 186.6,38.0 190.1,36.1 193.6,45.1 197.1,45.0 200.6,45.0 204.2,49.0 207.7,46.8 211.2,44.0 214.7,41.6 218.2,40.0 221.8,39.8 225.3,42.4 228.8,39.2 232.3,34.6 235.8,40.6 239.4,44.6 242.9,38.4 246.4,41.3 249.9,48.7 253.4,49.9 257.0,49.5 260.5,49.3 264.0,42.7 267.5,43.4 271.0,40.7 274.6,32.0 278.1,35.2 281.6,29.6 285.1,33.7 288.6,30.8 292.2,32.0 295.7,33.6 299.2,33.4 302.7,35.6 306.2,37.7 309.8,33.7 313.3,35.5 316.8,30.6 320.3,30.9 323.8,20.7 327.4,21.4 330.9,22.4 334.4,23.1 337.9,20.3 341.4,28.9 345.0,31.6 348.5,32.4 352.0,30.5 355.5,16.3 359.0,14.2 362.6,7.0 366.1,2.0 369.6,7.0 373.1,9.4 376.6,8.5 380.2,8.9 383.7,5.8 387.2,12.2 390.7,10.1 394.2,10.4 397.8,6.0 401.3,11.3 404.8,14.8 408.3,11.5 411.8,15.2 415.4,17.6 418.9,17.2 422.4,14.4 425.9,14.4 429.4,14.4 433.0,14.4 436.5,14.4 440.0,14.4" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,33.2 3.5,37.4 7.0,49.4 10.6,57.8 14.1,57.0 17.6,58.0 21.1,51.5 24.6,45.0 28.2,50.4 31.7,46.4 35.2,43.0 38.7,46.7 42.2,55.2 45.8,56.8 49.3,57.7 52.8,56.6 56.3,56.8 59.8,53.8 63.4,52.3 66.9,46.8 70.4,50.2 73.9,51.0 77.4,50.9 81.0,53.4 84.5,51.5 88.0,52.6 91.5,40.7 95.0,29.9 98.6,35.0 102.1,28.0 105.6,29.1 109.1,28.7 112.6,39.9 116.2,31.9 119.7,24.4 123.2,14.1 126.7,20.5 130.2,24.3 133.8,22.9 137.3,19.4 140.8,18.0 144.3,22.8 147.8,20.1 151.4,20.1 154.9,16.4 158.4,9.4 161.9,3.8 165.4,7.3 169.0,20.2 172.5,14.8 176.0,15.8 179.5,17.4 183.0,35.2 186.6,37.4 190.1,38.0 193.6,36.1 197.1,45.1 200.6,45.0 204.2,45.0 207.7,49.0 211.2,46.8 214.7,44.0 218.2,41.6 221.8,40.0 225.3,39.8 228.8,42.4 232.3,39.2 235.8,34.6 239.4,40.6 242.9,44.6 246.4,38.4 249.9,41.3 253.4,48.7 257.0,49.9 260.5,49.5 264.0,49.3 267.5,42.7 271.0,43.4 274.6,40.7 278.1,32.0 281.6,35.2 285.1,29.6 288.6,33.7 292.2,30.8 295.7,32.0 299.2,33.6 302.7,33.4 306.2,35.6 309.8,37.7 313.3,33.7 316.8,35.5 320.3,30.6 323.8,30.9 327.4,20.7 330.9,21.4 334.4,22.4 337.9,23.1 341.4,20.3 345.0,28.9 348.5,31.6 352.0,32.4 355.5,30.5 359.0,16.3 362.6,14.2 366.1,7.0 369.6,2.0 373.1,7.0 376.6,9.4 380.2,8.5 383.7,8.9 387.2,5.8 390.7,12.2 394.2,10.1 397.8,10.4 401.3,6.0 404.8,11.3 408.3,14.8 411.8,11.5 415.4,15.2 418.9,17.6 422.4,17.2 425.9,14.4 429.4,14.4 433.0,14.4 436.5,14.4 440.0,14.4" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
           <div class="spark-legend">
             <span><i style="background:#4559DC"></i> <span class="l-en">Broad USD</span><span class="l-zh">广义美元</span></span>
@@ -974,8 +434,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
         </div>
         <div class="tip-pop">
-          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: -130B / 63d.</div>
-          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：-130B / 63天。</div>
+          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: -168B / 63d.</div>
+          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：-168B / 63天。</div>
         </div>
       </div>
     </div>
@@ -1228,63 +688,63 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="smeter" data-h="1w" hidden>
         
         <div class="srow">
-          <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:29.2%;left:50%"></span></div>
-          <div class="spct">+0.2%</div>
+          <div class="sccy">MXN</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:18.9%;left:50%"></span></div>
+          <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:21.1%;left:50%"></span></div>
+          <div class="sccy">BRL</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:18.1%;left:50%"></span></div>
           <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:20.3%;left:50%"></span></div>
-          <div class="spct">-0.0%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:18.1%;left:50%"></span></div>
+          <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:8.9%;left:50%"></span></div>
-          <div class="spct">-0.3%</div>
+          <div class="sccy">USD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:17.6%;left:50%"></span></div>
+          <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:6.0%;left:50%"></span></div>
-          <div class="spct">-0.4%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:12.8%;left:50%"></span></div>
+          <div class="spct">-0.1%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:0.8%;right:50%"></span></div>
-          <div class="spct">-0.6%</div>
+          <div class="sccy">CAD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:0.4%;left:50%"></span></div>
+          <div class="spct">-0.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:7.4%;right:50%"></span></div>
-          <div class="spct">-0.8%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:7.5%;right:50%"></span></div>
+          <div class="spct">-0.5%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:19.2%;right:50%"></span></div>
-          <div class="spct">-1.1%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:14.1%;right:50%"></span></div>
+          <div class="spct">-0.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:24.3%;right:50%"></span></div>
-          <div class="spct">-1.2%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:22.1%;right:50%"></span></div>
+          <div class="spct">-0.8%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:34.0%;right:50%"></span></div>
-          <div class="spct">-1.5%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:42.1%;right:50%"></span></div>
+          <div class="spct">-1.2%</div>
         </div>
         
       </div>
@@ -1293,62 +753,62 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="srow">
           <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:33.7%;left:50%"></span></div>
-          <div class="spct">+1.8%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:28.0%;left:50%"></span></div>
+          <div class="spct">+1.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:22.6%;left:50%"></span></div>
-          <div class="spct">+1.3%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:27.3%;left:50%"></span></div>
+          <div class="spct">+1.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:13.8%;left:50%"></span></div>
-          <div class="spct">+0.9%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:20.6%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:13.6%;left:50%"></span></div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:9.6%;left:50%"></span></div>
           <div class="spct">+0.9%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:3.2%;right:50%"></span></div>
-          <div class="spct">+0.2%</div>
+          <div class="sccy">MXN</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:1.7%;left:50%"></span></div>
+          <div class="spct">+0.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:6.1%;right:50%"></span></div>
-          <div class="spct">+0.0%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:4.8%;right:50%"></span></div>
+          <div class="spct">+0.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:6.8%;right:50%"></span></div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:12.0%;right:50%"></span></div>
           <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:8.1%;right:50%"></span></div>
+          <div class="sccy">CNH</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:15.0%;right:50%"></span></div>
           <div class="spct">-0.1%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:23.9%;right:50%"></span></div>
-          <div class="spct">-0.7%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:23.5%;right:50%"></span></div>
+          <div class="spct">-0.5%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:35.4%;right:50%"></span></div>
-          <div class="spct">-1.2%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:31.8%;right:50%"></span></div>
+          <div class="spct">-0.8%</div>
         </div>
         
       </div>
@@ -1357,62 +817,62 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="srow">
           <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:40.1%;left:50%"></span></div>
-          <div class="spct">+1.8%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:39.3%;left:50%"></span></div>
+          <div class="spct">+2.1%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:21.7%;left:50%"></span></div>
-          <div class="spct">+0.1%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:25.2%;left:50%"></span></div>
+          <div class="spct">+0.7%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:21.1%;left:50%"></span></div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:18.4%;left:50%"></span></div>
           <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:4.5%;left:50%"></span></div>
-          <div class="spct">-1.6%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:8.6%;right:50%"></span></div>
-          <div class="spct">-2.9%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:6.5%;left:50%"></span></div>
+          <div class="spct">-1.2%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:9.3%;right:50%"></span></div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:8.8%;right:50%"></span></div>
+          <div class="spct">-2.7%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">CAD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:11.0%;right:50%"></span></div>
           <div class="spct">-2.9%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:9.3%;right:50%"></span></div>
-          <div class="spct">-2.9%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:14.1%;right:50%"></span></div>
+          <div class="spct">-3.2%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:17.5%;right:50%"></span></div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:16.4%;right:50%"></span></div>
+          <div class="spct">-3.4%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">JPY</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:19.0%;right:50%"></span></div>
           <div class="spct">-3.7%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:21.0%;right:50%"></span></div>
-          <div class="spct">-4.1%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:21.6%;right:50%"></span></div>
-          <div class="spct">-4.1%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:20.1%;right:50%"></span></div>
+          <div class="spct">-3.8%</div>
         </div>
         
       </div>
@@ -1433,134 +893,173 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 
   
   
-  <div class="card">
-    <p class="sub" style="margin:0 0 12px"><span class="l-en">Nothing flashing — six stress patterns quiet.</span><span class="l-zh">暂无预警 — 六种压力情景均平静。</span></p>
-    <div class="stress-dot-strip">
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">Carry-trade unwind</span><span class="l-zh">套息平仓</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">Carry-trade unwind: intensity 11%. In 1290 similar past days, ≈1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">套息平仓：强度11%。在1290个类似历史日中，约1/10在10天内出现不利走势（历史样本薄，不确定性宽）。</div>
-          
-        </div>
+  <div class="board-grid">
+  
+  
+  
+  
+  <div class="card ">
+    <div class="pair-head">
+      <div>
+        <span class="sdot quiet" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">Carry-trade unwind</span><span class="l-zh">套息平仓</span></span>
       </div>
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">Dollar squeeze</span><span class="l-zh">美元挤压</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">Dollar squeeze: intensity 7%. In 3671 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">美元挤压：强度7%。在3671个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</div>
-          
-        </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#6F6F6F">
+        12<span style="font-size:11px;color:var(--muted)">/100</span>
       </div>
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">EM outflows</span><span class="l-zh">新兴市场资金外流</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">EM outflows: intensity 5%. In 3490 similar past days, ≈3 in 10 saw the adverse move within 20d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
-          <div class="l-zh">新兴市场资金外流：强度5%。在3490个类似历史日中，约3/10在20天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
-          
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">Flight to safety</span><span class="l-zh">避险出逃</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">Flight to safety: intensity 7%. In 3782 similar past days, ≈1 in 10 saw the adverse move within 15d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">避险出逃：强度7%。在3782个类似历史日中，约1/10在15天内出现不利走势（历史样本薄，不确定性宽）。</div>
-          
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">Risk-on rally</span><span class="l-zh">风险偏好回升</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">Risk-on rally: intensity 14%. In 1795 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">风险偏好回升：强度14%。在1795个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</div>
-          
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot quiet"></span>
-        <span><span class="l-en">Intervention watch</span><span class="l-zh">干预关注</span></span>
-        <div class="tip-pop">
-          
-          
-          
-          
-          
-          
-          <div class="l-en">Intervention watch: intensity 20%. In 854 similar past days, fewer than 1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
-          <div class="l-zh">干预关注：强度20%。在854个类似历史日中，不到一成在10天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
-          
-        </div>
-      </div>
-      
     </div>
     
     
     
+    
+    
+    
+    
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In 1101 similar past days, ≈1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在1101个类似历史日中，约1/10在10天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    
+    
+  </div>
+  
+  
+  
+  
+  <div class="card ">
+    <div class="pair-head">
+      <div>
+        <span class="sdot quiet" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">Dollar squeeze</span><span class="l-zh">美元挤压</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#6F6F6F">
+        7<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In 3671 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在3671个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    
+    
+  </div>
+  
+  
+  
+  
+  <div class="card ">
+    <div class="pair-head">
+      <div>
+        <span class="sdot quiet" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">EM outflows</span><span class="l-zh">新兴市场资金外流</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#6F6F6F">
+        37<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In 475 similar past days, ≈3 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在475个类似历史日中，约3/10在20天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    
+    
+    <p class="sub faint" style="margin:4px 0"><span class="l-en">Pattern illustrative — managed market.</span><span class="l-zh">情景示意 — 受管理市场。</span></p>
+    
+  </div>
+  
+  
+  
+  
+  <div class="card ">
+    <div class="pair-head">
+      <div>
+        <span class="sdot quiet" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">Flight to safety</span><span class="l-zh">避险出逃</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#6F6F6F">
+        2<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In 5262 similar past days, ≈1 in 10 saw the adverse move within 15d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在5262个类似历史日中，约1/10在15天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    
+    
+  </div>
+  
+  
+  
+  
+  <div class="card stress-card-active">
+    <div class="pair-head">
+      <div>
+        <span class="sdot active" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">Risk-on rally</span><span class="l-zh">风险偏好回升</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#F5AD42">
+        62<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    
+    <div style="margin:8px 0"><span class="stress-stance"><span class="l-en">Get ready</span><span class="l-zh">做好准备</span></span></div>
+    
+    
+    
+    
+  </div>
+  
+  
+  
+  
+  <div class="card ">
+    <div class="pair-head">
+      <div>
+        <span class="sdot quiet" style="display:inline-block;margin-right:6px;vertical-align:middle"></span>
+        <span style="font-size:16px;font-weight:800;color:var(--ink)"><span class="l-en">Intervention watch</span><span class="l-zh">干预关注</span></span>
+      </div>
+      <div style="text-align:right;font-size:22px;font-weight:800;color:#6F6F6F">
+        6<span style="font-size:11px;color:var(--muted)">/100</span>
+      </div>
+    </div>
+    
+    
+    
+    
+    
+    
+    
+    <p class="sub" style="margin:8px 0">
+      <span class="l-en">In 2980 similar past days, fewer than 1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty).</span>
+      <span class="l-zh">在2980个类似历史日中，不到一成在10天内出现不利走势（历史样本薄，不确定性宽）。</span>
+    </p>
+    
+    
+    <p class="sub faint" style="margin:4px 0"><span class="l-en">Pattern illustrative — managed market.</span><span class="l-zh">情景示意 — 受管理市场。</span></p>
+    
+  </div>
+  
   </div>
   
   
@@ -1593,8 +1092,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">The world&#39;s most traded pair</span><span class="l-zh">全球交易量最大货币对</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="EURUSD=X" data-mkt="fx">1.1383</div>
-          <div class="chg up">+0.0% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="EURUSD=X" data-mkt="fx">1.1413</div>
+          <div class="chg up">+0.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1607,8 +1106,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -22 of ±100, confidence 75% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-22（±100范围），信心75% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -22 of ±100, confidence 76% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-22（±100范围），信心76% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -1620,7 +1119,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,2.0 2.4,8.1 4.8,10.7 7.2,9.8 9.6,10.6 12.0,11.8 14.4,9.3 16.8,5.2 19.2,6.0 21.6,6.7 24.0,7.1 26.4,7.1 28.8,8.1 31.2,8.0 33.6,11.3 36.0,12.3 38.4,8.9 40.8,11.0 43.2,12.0 45.6,9.9 48.0,10.5 50.4,12.8 52.8,16.0 55.2,20.5 57.6,19.3 60.0,20.7 62.4,25.2 64.8,20.2 67.2,20.5 69.6,24.1 72.0,25.2 74.4,29.8 76.8,26.4 79.2,24.3 81.6,28.2 84.0,22.3 86.4,23.2 88.8,20.8 91.2,20.4 93.6,23.2 96.0,24.5 98.4,26.8 100.8,28.5 103.2,22.5 105.6,21.6 108.0,24.2 110.4,25.8 112.8,24.2 115.2,16.6 117.6,18.0 120.0,16.4 122.4,17.2 124.8,12.3 127.2,10.7 129.6,10.2 132.0,11.6 134.4,13.7 136.8,11.5 139.2,13.6 141.6,15.6 144.0,16.7 146.4,15.6 148.8,14.7 151.2,15.0 153.6,16.7 156.0,14.4 158.4,14.5 160.8,16.3 163.2,15.1 165.6,13.4 168.0,14.3 170.4,12.3 172.8,11.7 175.2,14.1 177.6,15.1 180.0,17.9 182.4,20.4 184.8,18.3 187.2,20.8 189.6,19.8 192.0,20.0 194.4,18.9 196.8,19.2 199.2,19.2 201.6,20.2 204.0,18.4 206.4,18.6 208.8,19.3 211.2,20.0 213.6,20.6 216.0,20.5 218.4,25.2 220.8,24.9 223.2,24.5 225.6,24.5 228.0,22.4 230.4,20.4 232.8,21.0 235.2,21.4 237.6,20.6 240.0,26.0 242.4,28.5 244.8,28.3 247.2,30.2 249.6,32.7 252.0,34.0 254.4,33.6 256.8,32.4 259.2,30.5 261.6,30.9 264.0,32.8 266.4,30.4 268.8,29.6 271.2,29.4 273.6,31.4 276.0,30.5 278.4,29.9 280.8,31.4 283.2,32.4 285.6,30.3 288.0,27.9 290.4,29.3 292.8,30.2 295.2,30.7 297.6,31.4 300.0,32.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,2.0 2.4,8.1 4.8,10.7 7.2,9.8 9.6,10.6 12.0,11.8 14.4,9.3 16.8,5.2 19.2,6.0 21.6,6.7 24.0,7.1 26.4,7.1 28.8,8.1 31.2,8.0 33.6,11.3 36.0,12.3 38.4,8.9 40.8,11.0 43.2,12.0 45.6,9.9 48.0,10.5 50.4,12.8 52.8,16.0 55.2,20.5 57.6,19.3 60.0,20.7 62.4,25.2 64.8,20.2 67.2,20.5 69.6,24.1 72.0,25.2 74.4,29.8 76.8,26.4 79.2,24.3 81.6,28.2 84.0,22.3 86.4,23.2 88.8,20.8 91.2,20.4 93.6,23.2 96.0,24.5 98.4,26.8 100.8,28.5 103.2,22.5 105.6,21.6 108.0,24.2 110.4,25.8 112.8,24.2 115.2,16.6 117.6,18.0 120.0,16.4 122.4,17.2 124.8,12.3 127.2,10.7 129.6,10.2 132.0,11.6 134.4,13.7 136.8,11.5 139.2,13.6 141.6,15.6 144.0,16.7 146.4,15.6 148.8,14.7 151.2,15.0 153.6,16.7 156.0,14.4 158.4,14.5 160.8,16.3 163.2,15.1 165.6,13.4 168.0,14.3 170.4,12.3 172.8,11.7 175.2,14.1 177.6,15.1 180.0,17.9 182.4,20.4 184.8,18.3 187.2,20.8 189.6,19.8 192.0,20.0 194.4,18.9 196.8,19.2 199.2,19.2 201.6,20.2 204.0,18.4 206.4,18.6 208.8,19.3 211.2,20.0 213.6,20.6 216.0,20.5 218.4,25.2 220.8,24.9 223.2,24.5 225.6,24.5 228.0,22.4 230.4,20.4 232.8,21.0 235.2,21.4 237.6,20.6 240.0,26.0 242.4,28.5 244.8,28.3 247.2,30.2 249.6,32.7 252.0,34.0 254.4,33.6 256.8,32.4 259.2,30.5 261.6,30.9 264.0,32.8 266.4,30.4 268.8,29.6 271.2,29.4 273.6,31.4 276.0,30.5 278.4,29.9 280.8,31.4 283.2,32.4 285.6,30.3 288.0,27.9 290.4,29.3 292.8,30.2 295.2,30.7 297.6,31.4 300.0,30.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1723,8 +1222,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: against. Pull on the score: +0.05.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：+0.05。</div>
+          <div class="l-en">Its own trend: against. Pull on the score: +0.04.</div>
+          <div class="l-zh">自身趋势：利空。对评分的拉动：+0.04。</div>
         </div>
       </div>
       
@@ -1775,8 +1274,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: against. Pull on the score: -0.02.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：-0.02。</div>
+          <div class="l-en">Sudden shocks: against. Pull on the score: -0.01.</div>
+          <div class="l-zh">突发冲击：利空。对评分的拉动：-0.01。</div>
         </div>
       </div>
       
@@ -1809,8 +1308,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">UK rates and fiscal mood</span><span class="l-zh">英国利率与财政情绪</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="GBPUSD=X" data-mkt="fx">1.3316</div>
-          <div class="chg up">+0.9% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="GBPUSD=X" data-mkt="fx">1.3373</div>
+          <div class="chg up">+1.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1823,8 +1322,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 7 of ±100, confidence 67% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向7（±100范围），信心67% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 6 of ±100, confidence 63% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向6（±100范围），信心63% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -1836,7 +1335,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,12.1 2.4,6.6 4.8,2.0 7.2,5.0 9.6,5.7 12.0,5.9 14.4,4.2 16.8,5.5 19.2,9.4 21.6,13.6 24.0,15.8 26.4,11.3 28.8,13.5 31.2,13.5 33.6,9.8 36.0,13.9 38.4,19.1 40.8,18.9 43.2,22.4 45.6,21.4 48.0,22.2 50.4,25.7 52.8,18.0 55.2,18.4 57.6,20.7 60.0,22.5 62.4,29.0 64.8,24.9 67.2,22.1 69.6,27.9 72.0,18.0 74.4,23.8 76.8,18.0 79.2,18.5 81.6,21.8 84.0,23.5 86.4,29.6 88.8,33.6 91.2,29.3 93.6,25.6 96.0,30.1 98.4,32.8 100.8,29.8 103.2,19.4 105.6,19.9 108.0,17.7 110.4,19.9 112.8,12.4 115.2,8.7 117.6,8.8 120.0,11.7 122.4,14.3 124.8,11.4 127.2,12.8 129.6,13.3 132.0,15.4 134.4,12.4 136.8,11.0 139.2,11.8 141.6,14.1 144.0,7.0 146.4,8.3 148.8,11.4 151.2,9.1 153.6,7.7 156.0,9.9 158.4,7.5 160.8,6.9 163.2,11.1 165.6,11.7 168.0,20.1 170.4,25.2 172.8,17.6 175.2,19.8 177.6,17.4 180.0,17.5 182.4,14.5 184.8,13.6 187.2,16.1 189.6,18.5 192.0,16.8 194.4,16.4 196.8,15.8 199.2,16.2 201.6,17.9 204.0,17.9 206.4,23.5 208.8,23.7 211.2,21.3 213.6,21.9 216.0,18.7 218.4,16.3 220.8,16.5 223.2,18.6 225.6,17.9 228.0,25.7 230.4,31.8 232.8,29.6 235.2,29.6 237.6,31.4 240.0,29.0 242.4,31.9 244.8,34.0 247.2,32.7 249.6,32.1 252.0,28.6 254.4,28.8 256.8,27.0 259.2,23.3 261.6,22.7 264.0,22.5 266.4,19.7 268.8,22.7 271.2,19.8 273.6,18.6 276.0,19.5 278.4,20.4 280.8,22.8 283.2,19.7 285.6,10.8 288.0,14.7 290.4,16.3 292.8,16.7 295.2,17.6 297.6,20.8 300.0,24.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,12.1 2.4,6.6 4.8,2.0 7.2,5.0 9.6,5.7 12.0,5.9 14.4,4.2 16.8,5.5 19.2,9.4 21.6,13.6 24.0,15.8 26.4,11.3 28.8,13.5 31.2,13.5 33.6,9.8 36.0,13.9 38.4,19.1 40.8,18.9 43.2,22.4 45.6,21.4 48.0,22.2 50.4,25.7 52.8,18.0 55.2,18.4 57.6,20.7 60.0,22.5 62.4,29.0 64.8,24.9 67.2,22.1 69.6,27.9 72.0,18.0 74.4,23.8 76.8,18.0 79.2,18.5 81.6,21.8 84.0,23.5 86.4,29.6 88.8,33.6 91.2,29.3 93.6,25.6 96.0,30.1 98.4,32.8 100.8,29.8 103.2,19.4 105.6,19.9 108.0,17.7 110.4,19.9 112.8,12.4 115.2,8.7 117.6,8.8 120.0,11.7 122.4,14.3 124.8,11.4 127.2,12.8 129.6,13.3 132.0,15.4 134.4,12.4 136.8,11.0 139.2,11.8 141.6,14.1 144.0,7.0 146.4,8.3 148.8,11.4 151.2,9.1 153.6,7.7 156.0,9.9 158.4,7.5 160.8,6.9 163.2,11.1 165.6,11.7 168.0,20.1 170.4,25.2 172.8,17.6 175.2,19.8 177.6,17.4 180.0,17.5 182.4,14.5 184.8,13.6 187.2,16.1 189.6,18.5 192.0,16.8 194.4,16.4 196.8,15.8 199.2,16.2 201.6,17.9 204.0,17.9 206.4,23.5 208.8,23.7 211.2,21.3 213.6,21.9 216.0,18.7 218.4,16.3 220.8,16.5 223.2,18.6 225.6,17.9 228.0,25.7 230.4,31.8 232.8,29.6 235.2,29.6 237.6,31.4 240.0,29.0 242.4,31.9 244.8,34.0 247.2,32.7 249.6,32.1 252.0,28.6 254.4,28.8 256.8,27.0 259.2,23.3 261.6,22.7 264.0,22.5 266.4,19.7 268.8,22.7 271.2,19.8 273.6,18.6 276.0,19.5 278.4,20.4 280.8,22.8 283.2,19.7 285.6,10.8 288.0,14.7 290.4,16.3 292.8,16.7 295.2,17.6 297.6,20.8 300.0,21.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1896,38 +1395,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Choppiness: for. Pull on the score: -0.07.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.07。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
           <div class="l-en">Trader crowding: for. Pull on the score: +0.06.</div>
           <div class="l-zh">持仓拥挤度：利多。对评分的拉动：+0.06。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Choppiness: for. Pull on the score: -0.05.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.05。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.02.</div>
-          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -1948,6 +1434,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
@@ -1961,12 +1460,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.01。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.01.</div>
+          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -1996,19 +1508,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         </div>
       </div>
       
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
-        </div>
-      </div>
-      
       </div>
       
 
@@ -2035,8 +1534,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">The China-growth barometer</span><span class="l-zh">中国增长晴雨表</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="AUDUSD=X" data-mkt="fx">0.6971</div>
-          <div class="chg up">+1.3% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="AUDUSD=X" data-mkt="fx">0.6993</div>
+          <div class="chg up">+1.6% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2049,8 +1548,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -39 of ±100, confidence 81% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-39（±100范围），信心81% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -38 of ±100, confidence 79% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-38（±100范围），信心79% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2062,7 +1561,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,12.1 2.4,15.1 4.8,16.4 7.2,16.2 9.6,15.4 12.0,18.5 14.4,17.6 16.8,13.2 19.2,17.2 21.6,17.2 24.0,12.5 26.4,14.0 28.8,17.4 31.2,13.7 33.6,18.8 36.0,16.0 38.4,21.1 40.8,24.6 43.2,16.6 45.6,12.5 48.0,11.8 50.4,16.1 52.8,21.5 55.2,16.6 57.6,13.4 60.0,19.6 62.4,15.6 64.8,21.3 67.2,21.5 69.6,22.2 72.0,26.4 74.4,30.8 76.8,33.6 79.2,34.0 81.6,28.2 84.0,27.9 86.4,28.9 88.8,30.9 91.2,28.4 93.6,15.9 96.0,18.9 98.4,16.0 100.8,20.4 103.2,14.2 105.6,11.8 108.0,8.2 110.4,9.5 112.8,11.4 115.2,8.3 117.6,9.7 120.0,9.6 122.4,11.8 124.8,10.7 127.2,7.0 129.6,7.3 132.0,11.7 134.4,6.2 136.8,5.3 139.2,8.8 141.6,6.0 144.0,3.6 146.4,5.6 148.8,3.4 151.2,2.7 153.6,3.3 156.0,2.0 158.4,5.2 160.8,11.8 163.2,8.4 165.6,13.6 168.0,10.2 170.4,10.3 172.8,9.6 175.2,8.6 177.6,8.6 180.0,11.5 182.4,9.1 184.8,7.8 187.2,9.1 189.6,8.3 192.0,11.4 194.4,11.6 196.8,18.5 199.2,18.8 201.6,20.1 204.0,22.4 206.4,18.2 208.8,18.1 211.2,15.8 213.6,16.1 216.0,16.2 218.4,16.8 220.8,20.5 223.2,20.9 225.6,20.7 228.0,20.7 230.4,21.7 232.8,22.4 235.2,28.5 237.6,29.8 240.0,29.7 242.4,29.7 244.8,29.7 247.2,30.1 249.6,31.1 252.0,28.8 254.4,30.4 256.8,28.5 259.2,26.4 261.6,26.9 264.0,25.4 266.4,28.0 268.8,26.9 271.2,26.3 273.6,25.5 276.0,25.5 278.4,26.5 280.8,28.3 283.2,23.8 285.6,21.3 288.0,22.0 290.4,23.1 292.8,23.6 295.2,21.9 297.6,21.9 300.0,24.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,12.1 2.4,15.1 4.8,16.4 7.2,16.2 9.6,15.4 12.0,18.5 14.4,17.6 16.8,13.2 19.2,17.2 21.6,17.2 24.0,12.5 26.4,14.0 28.8,17.4 31.2,13.7 33.6,18.8 36.0,16.0 38.4,21.1 40.8,24.6 43.2,16.6 45.6,12.5 48.0,11.8 50.4,16.1 52.8,21.5 55.2,16.6 57.6,13.4 60.0,19.6 62.4,15.6 64.8,21.3 67.2,21.5 69.6,22.2 72.0,26.4 74.4,30.8 76.8,33.6 79.2,34.0 81.6,28.2 84.0,27.9 86.4,28.9 88.8,30.9 91.2,28.4 93.6,15.9 96.0,18.9 98.4,16.0 100.8,20.4 103.2,14.2 105.6,11.8 108.0,8.2 110.4,9.5 112.8,11.4 115.2,8.3 117.6,9.7 120.0,9.6 122.4,11.8 124.8,10.7 127.2,7.0 129.6,7.3 132.0,11.7 134.4,6.2 136.8,5.3 139.2,8.8 141.6,6.0 144.0,3.6 146.4,5.6 148.8,3.4 151.2,2.7 153.6,3.3 156.0,2.0 158.4,5.2 160.8,11.8 163.2,8.4 165.6,13.6 168.0,10.2 170.4,10.3 172.8,9.6 175.2,8.6 177.6,8.6 180.0,11.5 182.4,9.1 184.8,7.8 187.2,9.1 189.6,8.3 192.0,11.4 194.4,11.6 196.8,18.5 199.2,18.8 201.6,20.1 204.0,22.4 206.4,18.2 208.8,18.1 211.2,15.8 213.6,16.1 216.0,16.2 218.4,16.8 220.8,20.5 223.2,20.9 225.6,20.7 228.0,20.7 230.4,21.7 232.8,22.4 235.2,28.5 237.6,29.8 240.0,29.7 242.4,29.7 244.8,29.7 247.2,30.1 249.6,31.1 252.0,28.8 254.4,30.4 256.8,28.5 259.2,26.4 261.6,26.9 264.0,25.4 266.4,28.0 268.8,26.9 271.2,26.3 273.6,25.5 276.0,25.5 278.4,26.5 280.8,28.3 283.2,23.8 285.6,21.3 288.0,22.0 290.4,23.1 292.8,23.6 295.2,21.9 297.6,21.9 300.0,22.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2099,10 +1598,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Avoid</span><span class="l-zh">回避</span>
+            <span class="l-en">Caution</span><span class="l-zh">谨慎</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: AVOID — Downtrend confirmed across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：回避 — 各周期确认下行。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: CAUTION — Unconfirmed turn within a bearish bigger picture. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：谨慎 — 偏空大格局内的未确认转向。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -2213,12 +1712,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -2226,12 +1725,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">形态结构：中性。对评分的拉动：+0.00。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -2251,7 +1750,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">The oil currency</span><span class="l-zh">石油货币</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCAD=X" data-mkt="fx">1.4083</div>
+          <div class="quote nb-px" data-sym="USDCAD=X" data-mkt="fx">1.4085</div>
           <div class="chg dn">-0.9% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
@@ -2265,8 +1764,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 15 of ±100, confidence 69% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向15（±100范围），信心69% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 14 of ±100, confidence 68% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向14（±100范围），信心68% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2278,7 +1777,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,34.0 2.4,32.3 4.8,31.9 7.2,31.1 9.6,31.0 12.0,28.1 14.4,28.6 16.8,30.5 19.2,28.3 21.6,27.9 24.0,29.1 26.4,29.1 28.8,29.5 31.2,29.4 33.6,29.2 36.0,30.7 38.4,29.4 40.8,32.7 43.2,33.4 45.6,33.6 48.0,32.7 50.4,31.2 52.8,27.4 55.2,28.7 57.6,28.5 60.0,26.5 62.4,26.2 64.8,27.5 67.2,26.5 69.6,25.2 72.0,22.4 74.4,20.6 76.8,18.3 79.2,16.9 81.6,18.1 84.0,19.4 86.4,17.4 88.8,16.0 91.2,17.7 93.6,21.1 96.0,20.7 98.4,22.0 100.8,19.6 103.2,23.8 105.6,24.8 108.0,26.4 110.4,27.9 112.8,27.7 115.2,30.7 117.6,30.0 120.0,29.4 122.4,28.0 124.8,29.1 127.2,31.8 129.6,29.0 132.0,29.3 134.4,33.8 136.8,33.4 139.2,31.8 141.6,32.6 144.0,31.0 146.4,29.9 148.8,28.8 151.2,29.0 153.6,28.1 156.0,27.7 158.4,26.8 160.8,25.0 163.2,26.1 165.6,25.7 168.0,25.6 170.4,24.3 172.8,23.0 175.2,22.9 177.6,22.7 180.0,21.0 182.4,23.9 184.8,23.3 187.2,21.2 189.6,20.9 192.0,18.6 194.4,18.0 196.8,16.1 199.2,15.5 201.6,15.6 204.0,16.0 206.4,14.7 208.8,13.9 211.2,15.6 213.6,15.2 216.0,13.9 218.4,13.6 220.8,8.6 223.2,6.6 225.6,6.0 228.0,6.2 230.4,5.0 232.8,5.7 235.2,3.2 237.6,2.0 240.0,3.7 242.4,4.0 244.8,4.8 247.2,4.2 249.6,3.3 252.0,3.5 254.4,2.9 256.8,4.2 259.2,3.8 261.6,3.5 264.0,3.3 266.4,3.5 268.8,5.3 271.2,5.5 273.6,6.0 276.0,6.0 278.4,5.5 280.8,6.2 283.2,10.9 285.6,11.6 288.0,11.6 290.4,12.4 292.8,12.5 295.2,9.9 297.6,8.3 300.0,9.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,34.0 2.4,32.3 4.8,31.9 7.2,31.1 9.6,31.0 12.0,28.1 14.4,28.6 16.8,30.5 19.2,28.3 21.6,27.9 24.0,29.1 26.4,29.1 28.8,29.5 31.2,29.4 33.6,29.2 36.0,30.7 38.4,29.4 40.8,32.7 43.2,33.4 45.6,33.6 48.0,32.7 50.4,31.2 52.8,27.4 55.2,28.7 57.6,28.5 60.0,26.5 62.4,26.2 64.8,27.5 67.2,26.5 69.6,25.2 72.0,22.4 74.4,20.6 76.8,18.3 79.2,16.9 81.6,18.1 84.0,19.4 86.4,17.4 88.8,16.0 91.2,17.7 93.6,21.1 96.0,20.7 98.4,22.0 100.8,19.6 103.2,23.8 105.6,24.8 108.0,26.4 110.4,27.9 112.8,27.7 115.2,30.7 117.6,30.0 120.0,29.4 122.4,28.0 124.8,29.1 127.2,31.8 129.6,29.0 132.0,29.3 134.4,33.8 136.8,33.4 139.2,31.8 141.6,32.6 144.0,31.0 146.4,29.9 148.8,28.8 151.2,29.0 153.6,28.1 156.0,27.7 158.4,26.8 160.8,25.0 163.2,26.1 165.6,25.7 168.0,25.6 170.4,24.3 172.8,23.0 175.2,22.9 177.6,22.7 180.0,21.0 182.4,23.9 184.8,23.3 187.2,21.2 189.6,20.9 192.0,18.6 194.4,18.0 196.8,16.1 199.2,15.5 201.6,15.6 204.0,16.0 206.4,14.7 208.8,13.9 211.2,15.6 213.6,15.2 216.0,13.9 218.4,13.6 220.8,8.6 223.2,6.6 225.6,6.0 228.0,6.2 230.4,5.0 232.8,5.7 235.2,3.2 237.6,2.0 240.0,3.7 242.4,4.0 244.8,4.8 247.2,4.2 249.6,3.3 252.0,3.5 254.4,2.9 256.8,4.2 259.2,3.8 261.6,3.5 264.0,3.3 266.4,3.5 268.8,5.3 271.2,5.5 273.6,6.0 276.0,6.0 278.4,5.5 280.8,6.2 283.2,10.9 285.6,11.6 288.0,11.6 290.4,12.4 292.8,12.5 295.2,9.9 297.6,8.3 300.0,9.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2390,19 +1889,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: against. Pull on the score: +0.02.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
@@ -2435,6 +1921,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="l-en">Risk mood: for. Pull on the score: +0.01.</div>
           <div class="l-zh">风险情绪：利多。对评分的拉动：+0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：中性。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -2477,8 +1976,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">The funding currency — moves fast in panics</span><span class="l-zh">融资货币 — 恐慌时波动剧烈</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDJPY=X" data-mkt="fx">163.832</div>
-          <div class="chg up">+1.3% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDJPY=X" data-mkt="fx">163.097</div>
+          <div class="chg up">+0.8% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2491,8 +1990,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -42 of ±100, confidence 94% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-42（±100范围），信心94% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -40 of ±100, confidence 92% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-40（±100范围），信心92% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2504,7 +2003,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,22.4 2.4,21.1 4.8,24.3 7.2,29.1 9.6,32.6 12.0,33.9 14.4,34.0 16.8,31.6 19.2,32.9 21.6,28.5 24.0,27.1 26.4,29.5 28.8,28.6 31.2,25.0 33.6,24.1 36.0,25.1 38.4,22.8 40.8,21.0 43.2,19.5 45.6,21.8 48.0,20.2 50.4,17.6 52.8,19.3 55.2,18.6 57.6,15.8 60.0,15.4 62.4,14.3 64.8,15.7 67.2,16.3 69.6,13.7 72.0,19.1 74.4,15.3 76.8,17.5 79.2,16.8 81.6,14.9 84.0,14.0 86.4,12.4 88.8,13.6 91.2,17.2 93.6,16.9 96.0,14.6 98.4,13.7 100.8,14.0 103.2,16.8 105.6,17.0 108.0,15.7 110.4,14.0 112.8,15.4 115.2,16.6 117.6,16.5 120.0,15.4 122.4,15.5 124.8,16.4 127.2,14.9 129.6,14.6 132.0,13.8 134.4,14.3 136.8,15.0 139.2,14.4 141.6,12.6 144.0,21.8 146.4,22.2 148.8,21.2 151.2,19.8 153.6,23.2 156.0,22.3 158.4,22.2 160.8,21.1 163.2,19.8 165.6,19.3 168.0,17.8 170.4,16.4 172.8,16.4 175.2,15.9 177.6,16.3 180.0,15.9 182.4,16.1 184.8,16.1 187.2,15.3 189.6,14.3 192.0,15.2 194.4,15.0 196.8,14.1 199.2,13.2 201.6,13.3 204.0,13.1 206.4,12.1 208.8,12.6 211.2,12.0 213.6,11.6 216.0,12.7 218.4,12.6 220.8,13.4 223.2,13.2 225.6,12.4 228.0,11.9 230.4,11.4 232.8,9.4 235.2,9.4 237.6,9.4 240.0,8.9 242.4,8.5 244.8,8.5 247.2,8.0 249.6,7.9 252.0,8.2 254.4,8.1 256.8,7.9 259.2,7.5 261.6,5.5 264.0,5.7 266.4,8.9 268.8,8.9 271.2,7.0 273.6,6.3 276.0,5.7 278.4,6.3 280.8,7.7 283.2,6.1 285.6,6.8 288.0,7.1 290.4,6.2 292.8,5.8 295.2,5.9 297.6,3.9 300.0,2.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,21.7 2.4,20.3 4.8,23.7 7.2,28.8 9.6,32.5 12.0,33.9 14.4,34.0 16.8,31.4 19.2,32.9 21.6,28.1 24.0,26.7 26.4,29.2 28.8,28.3 31.2,24.5 33.6,23.5 36.0,24.5 38.4,22.1 40.8,20.2 43.2,18.6 45.6,21.1 48.0,19.4 50.4,16.6 52.8,18.4 55.2,17.6 57.6,14.6 60.0,14.2 62.4,13.1 64.8,14.5 67.2,15.2 69.6,12.4 72.0,18.2 74.4,14.2 76.8,16.5 79.2,15.7 81.6,13.7 84.0,12.7 86.4,11.1 88.8,12.3 91.2,16.2 93.6,15.8 96.0,13.4 98.4,12.5 100.8,12.8 103.2,15.7 105.6,16.0 108.0,14.5 110.4,12.8 112.8,14.2 115.2,15.5 117.6,15.5 120.0,14.3 122.4,14.4 124.8,15.4 127.2,13.7 129.6,13.4 132.0,12.6 134.4,13.1 136.8,13.8 139.2,13.2 141.6,11.2 144.0,21.1 146.4,21.5 148.8,20.4 151.2,18.9 153.6,22.5 156.0,21.5 158.4,21.5 160.8,20.3 163.2,19.0 165.6,18.4 168.0,16.8 170.4,15.4 172.8,15.3 175.2,14.8 177.6,15.2 180.0,14.8 182.4,15.0 184.8,15.0 187.2,14.1 189.6,13.1 192.0,14.0 194.4,13.8 196.8,12.9 199.2,11.9 201.6,12.0 204.0,11.8 206.4,10.8 208.8,11.3 211.2,10.6 213.6,10.2 216.0,11.4 218.4,11.2 220.8,12.1 223.2,11.9 225.6,11.1 228.0,10.5 230.4,10.0 232.8,7.8 235.2,7.9 237.6,7.9 240.0,7.4 242.4,7.0 244.8,6.9 247.2,6.4 249.6,6.2 252.0,6.6 254.4,6.5 256.8,6.3 259.2,5.9 261.6,3.7 264.0,4.0 266.4,7.3 268.8,7.3 271.2,5.4 273.6,4.5 276.0,4.0 278.4,4.5 280.8,6.0 283.2,4.3 285.6,5.1 288.0,5.4 290.4,4.5 292.8,4.1 295.2,4.1 297.6,2.0 300.0,2.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2517,8 +2016,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Paid to hold: -2.8%/yr</span><span class="l-zh">持有有息：-2.8%/年</span>
             <div class="tip-pop">
-              <div class="l-en">Interest-rate edge (carry): -2.79% annualised. Carry/vol: -0.92.</div>
-              <div class="l-zh">利差优势（套息）：-2.79%年化。套息/波动：-0.92。</div>
+              <div class="l-en">Interest-rate edge (carry): -2.79% annualised. Carry/vol: -0.94.</div>
+              <div class="l-zh">利差优势（套息）：-2.79%年化。套息/波动：-0.94。</div>
             </div>
           </span>
         
@@ -2568,8 +2067,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: against. Pull on the score: -0.22.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.22。</div>
+          <div class="l-en">Its own trend: against. Pull on the score: -0.21.</div>
+          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.21。</div>
         </div>
       </div>
       
@@ -2581,8 +2080,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.07.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.07。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.08.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.08。</div>
         </div>
       </div>
       
@@ -2669,11 +2168,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：-0.00。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -2693,8 +2192,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">The quiet haven</span><span class="l-zh">低调避险</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCHF=X" data-mkt="fx">0.8166</div>
-          <div class="chg up">+0.8% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDCHF=X" data-mkt="fx">0.8143</div>
+          <div class="chg up">+0.5% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2704,11 +2203,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div style="margin:8px 0">
-        <span class="action-chip higher" tabindex="0" data-tip-en="." data-tip-zh=".">
-          <span class="l-en">Leaning higher</span><span class="l-zh">倾向走高</span>
+        <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
+          <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 21 of ±100, confidence 71% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向21（±100范围），信心71% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 18 of ±100, confidence 68% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向18（±100范围），信心68% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2720,7 +2219,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,27.2 2.4,28.4 4.8,34.0 7.2,33.1 9.6,31.4 12.0,32.4 14.4,33.3 16.8,32.4 19.2,32.0 21.6,30.7 24.0,28.7 26.4,31.0 28.8,29.4 31.2,29.7 33.6,30.8 36.0,30.0 38.4,32.4 40.8,26.5 43.2,24.4 45.6,26.2 48.0,25.2 50.4,24.9 52.8,27.0 55.2,26.6 57.6,24.5 60.0,22.2 62.4,19.3 64.8,20.5 67.2,22.6 69.6,17.5 72.0,20.0 74.4,20.6 76.8,21.5 79.2,20.5 81.6,18.2 84.0,16.2 86.4,12.9 88.8,12.8 91.2,14.3 93.6,16.7 96.0,13.6 98.4,12.0 100.8,14.0 103.2,18.9 105.6,18.3 108.0,18.6 110.4,17.5 112.8,23.6 115.2,25.1 117.6,24.8 120.0,23.6 122.4,23.3 124.8,26.6 127.2,25.3 129.6,22.6 132.0,21.6 134.4,21.6 136.8,22.3 139.2,19.9 141.6,18.8 144.0,24.8 146.4,24.9 148.8,23.1 151.2,24.8 153.6,26.4 156.0,25.5 158.4,27.1 160.8,26.9 163.2,25.4 165.6,24.7 168.0,23.0 170.4,21.0 172.8,22.8 175.2,20.0 177.6,21.2 180.0,21.5 182.4,24.2 184.8,23.7 187.2,22.4 189.6,20.6 192.0,23.3 194.4,24.5 196.8,21.7 199.2,20.3 201.6,18.5 204.0,19.9 206.4,15.1 208.8,13.9 211.2,13.2 213.6,12.8 216.0,15.9 218.4,15.1 220.8,16.9 223.2,16.7 225.6,16.3 228.0,17.2 230.4,13.1 232.8,9.6 235.2,8.6 237.6,8.6 240.0,7.6 242.4,7.0 244.8,6.5 247.2,4.6 249.6,5.9 252.0,7.6 254.4,6.2 256.8,7.8 259.2,7.1 261.6,6.8 264.0,9.9 266.4,10.3 268.8,9.5 271.2,7.0 273.6,7.5 276.0,8.5 278.4,7.7 280.8,6.7 283.2,3.2 285.6,6.9 288.0,9.7 290.4,7.4 292.8,7.3 295.2,6.3 297.6,4.7 300.0,2.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,26.9 2.4,28.1 4.8,34.0 7.2,33.0 9.6,31.3 12.0,32.4 14.4,33.3 16.8,32.3 19.2,31.9 21.6,30.6 24.0,28.5 26.4,30.9 28.8,29.2 31.2,29.6 33.6,30.6 36.0,29.9 38.4,32.4 40.8,26.2 43.2,24.1 45.6,25.9 48.0,24.9 50.4,24.5 52.8,26.8 55.2,26.3 57.6,24.2 60.0,21.8 62.4,18.7 64.8,19.9 67.2,22.1 69.6,16.9 72.0,19.5 74.4,20.1 76.8,21.0 79.2,20.0 81.6,17.6 84.0,15.5 86.4,12.0 88.8,12.0 91.2,13.5 93.6,16.0 96.0,12.8 98.4,11.1 100.8,13.2 103.2,18.4 105.6,17.7 108.0,18.0 110.4,16.9 112.8,23.2 115.2,24.7 117.6,24.5 120.0,23.2 122.4,22.9 124.8,26.3 127.2,25.0 129.6,22.1 132.0,21.1 134.4,21.1 136.8,21.8 139.2,19.3 141.6,18.2 144.0,24.4 146.4,24.6 148.8,22.7 151.2,24.4 153.6,26.1 156.0,25.2 158.4,26.8 160.8,26.6 163.2,25.1 165.6,24.3 168.0,22.5 170.4,20.4 172.8,22.3 175.2,19.4 177.6,20.7 180.0,21.0 182.4,23.8 184.8,23.3 187.2,21.9 189.6,20.1 192.0,22.9 194.4,24.1 196.8,21.2 199.2,19.8 201.6,17.9 204.0,19.4 206.4,14.3 208.8,13.1 211.2,12.4 213.6,11.9 216.0,15.2 218.4,14.3 220.8,16.2 223.2,16.0 225.6,15.6 228.0,16.5 230.4,12.3 232.8,8.6 235.2,7.6 237.6,7.6 240.0,6.5 242.4,6.0 244.8,5.4 247.2,3.4 249.6,4.8 252.0,6.5 254.4,5.1 256.8,6.8 259.2,6.1 261.6,5.8 264.0,8.9 266.4,9.3 268.8,8.5 271.2,6.0 273.6,6.5 276.0,7.5 278.4,6.7 280.8,5.6 283.2,2.0 285.6,5.8 288.0,8.8 290.4,6.3 292.8,6.2 295.2,5.2 297.6,3.6 300.0,2.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2733,8 +2232,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Paid to hold: -3.7%/yr</span><span class="l-zh">持有有息：-3.7%/年</span>
             <div class="tip-pop">
-              <div class="l-en">Interest-rate edge (carry): -3.67% annualised. Carry/vol: -0.64.</div>
-              <div class="l-zh">利差优势（套息）：-3.67%年化。套息/波动：-0.64。</div>
+              <div class="l-en">Interest-rate edge (carry): -3.67% annualised. Carry/vol: -0.65.</div>
+              <div class="l-zh">利差优势（套息）：-3.67%年化。套息/波动：-0.65。</div>
             </div>
           </span>
         
@@ -2810,8 +2309,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.08.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.08。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.09.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.09。</div>
         </div>
       </div>
       
@@ -2836,8 +2335,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: against. Pull on the score: +0.04.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.04。</div>
+          <div class="l-en">Sudden shocks: against. Pull on the score: +0.03.</div>
+          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -2846,11 +2345,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: against. Pull on the score: +0.03.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：+0.03。</div>
+          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.02.</div>
+          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -2919,8 +2418,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">High-carry EM bellwether</span><span class="l-zh">高息新兴市场风向标</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDMXN=X" data-mkt="fx">17.509</div>
-          <div class="chg up">+0.1% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDMXN=X" data-mkt="fx">17.4026</div>
+          <div class="chg dn">-0.6% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2933,8 +2432,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -22 of ±100, confidence 68% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-22（±100范围），信心68% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -35 of ±100, confidence 81% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-35（±100范围），信心81% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2945,8 +2444,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       
-      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,21.6 2.4,29.3 4.8,30.6 7.2,31.4 9.6,31.1 12.0,30.7 14.4,32.1 16.8,31.9 19.2,33.4 21.6,30.6 24.0,29.1 26.4,34.0 28.8,29.1 31.2,31.5 33.6,32.2 36.0,30.8 38.4,27.3 40.8,27.7 43.2,16.5 45.6,18.8 48.0,15.5 50.4,6.6 52.8,16.4 55.2,18.9 57.6,14.2 60.0,11.5 62.4,9.9 64.8,16.1 67.2,17.0 69.6,11.2 72.0,14.4 74.4,8.3 76.8,13.0 79.2,14.7 81.6,13.2 84.0,9.0 86.4,2.0 88.8,2.1 91.2,9.9 93.6,11.8 96.0,11.1 98.4,10.0 100.8,13.5 103.2,21.3 105.6,23.3 108.0,25.6 110.4,23.8 112.8,28.5 115.2,29.2 117.6,29.5 120.0,29.4 122.4,25.6 124.8,27.5 127.2,27.2 129.6,26.6 132.0,24.3 134.4,24.3 136.8,25.5 139.2,25.2 141.6,20.9 144.0,22.9 146.4,23.3 148.8,21.1 151.2,26.7 153.6,29.2 156.0,28.5 158.4,30.4 160.8,31.1 163.2,30.0 165.6,31.9 168.0,30.0 170.4,26.5 172.8,28.7 175.2,24.7 177.6,27.7 180.0,27.9 182.4,29.1 184.8,28.1 187.2,27.9 189.6,25.2 192.0,27.6 194.4,26.5 196.8,26.2 199.2,27.9 201.6,27.0 204.0,28.5 206.4,22.8 208.8,22.7 211.2,23.1 213.6,24.1 216.0,29.5 218.4,28.3 220.8,32.3 223.2,31.9 225.6,30.5 228.0,30.7 230.4,27.9 232.8,26.1 235.2,27.5 237.6,26.4 240.0,25.9 242.4,20.1 244.8,18.0 247.2,21.4 249.6,21.7 252.0,21.5 254.4,22.6 256.8,21.9 259.2,20.0 261.6,22.4 264.0,22.9 266.4,22.4 268.8,25.3 271.2,21.0 273.6,19.6 276.0,20.5 278.4,21.7 280.8,21.1 283.2,24.2 285.6,25.7 288.0,24.6 290.4,22.2 292.8,20.5 295.2,24.3 297.6,24.7 300.0,21.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
+        <polyline points="0.0,21.6 2.4,29.3 4.8,30.6 7.2,31.4 9.6,31.1 12.0,30.7 14.4,32.1 16.8,31.9 19.2,33.4 21.6,30.6 24.0,29.1 26.4,34.0 28.8,29.1 31.2,31.5 33.6,32.2 36.0,30.8 38.4,27.3 40.8,27.7 43.2,16.5 45.6,18.8 48.0,15.5 50.4,6.6 52.8,16.4 55.2,18.9 57.6,14.2 60.0,11.5 62.4,9.9 64.8,16.1 67.2,17.0 69.6,11.2 72.0,14.4 74.4,8.3 76.8,13.0 79.2,14.7 81.6,13.2 84.0,9.0 86.4,2.0 88.8,2.1 91.2,9.9 93.6,11.8 96.0,11.1 98.4,10.0 100.8,13.5 103.2,21.3 105.6,23.3 108.0,25.6 110.4,23.8 112.8,28.5 115.2,29.2 117.6,29.5 120.0,29.4 122.4,25.6 124.8,27.5 127.2,27.2 129.6,26.6 132.0,24.3 134.4,24.3 136.8,25.5 139.2,25.2 141.6,20.9 144.0,22.9 146.4,23.3 148.8,21.1 151.2,26.7 153.6,29.2 156.0,28.5 158.4,30.4 160.8,31.1 163.2,30.0 165.6,31.9 168.0,30.0 170.4,26.5 172.8,28.7 175.2,24.7 177.6,27.7 180.0,27.9 182.4,29.1 184.8,28.1 187.2,27.9 189.6,25.2 192.0,27.6 194.4,26.5 196.8,26.2 199.2,27.9 201.6,27.0 204.0,28.5 206.4,22.8 208.8,22.7 211.2,23.1 213.6,24.1 216.0,29.5 218.4,28.3 220.8,32.3 223.2,31.9 225.6,30.5 228.0,30.7 230.4,27.9 232.8,26.1 235.2,27.5 237.6,26.4 240.0,25.9 242.4,20.1 244.8,18.0 247.2,21.4 249.6,21.7 252.0,21.5 254.4,22.6 256.8,21.9 259.2,20.0 261.6,22.4 264.0,22.9 266.4,22.4 268.8,25.3 271.2,21.0 273.6,19.6 276.0,20.5 278.4,21.7 280.8,21.1 283.2,24.2 285.6,25.7 288.0,24.6 290.4,22.2 292.8,20.5 295.2,24.3 297.6,24.7 300.0,24.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2997,6 +2496,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Its own trend: for. Pull on the score: -0.14.</div>
+          <div class="l-zh">自身趋势：利多。对评分的拉动：-0.14。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
@@ -3010,12 +2522,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: for. Pull on the score: -0.13.</div>
-          <div class="l-zh">自身趋势：利多。对评分的拉动：-0.13。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: -0.05.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：-0.05。</div>
         </div>
       </div>
       
@@ -3027,8 +2539,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: against. Pull on the score: +0.06.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.06。</div>
+          <div class="l-en">Sudden shocks: against. Pull on the score: +0.03.</div>
+          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -3042,19 +2554,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           
           <div class="l-en">Trader crowding: against. Pull on the score: -0.02.</div>
           <div class="l-zh">持仓拥挤度：利空。对评分的拉动：-0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Chart structure: against. Pull on the score: +0.02.</div>
-          <div class="l-zh">形态结构：利空。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -3100,8 +2599,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">Commodity-linked carry</span><span class="l-zh">商品挂钩套息</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDBRL=X" data-mkt="fx">5.0799</div>
-          <div class="chg dn">-1.8% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDBRL=X" data-mkt="fx">5.0875</div>
+          <div class="chg dn">-1.6% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -3114,8 +2613,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -13 of ±100, confidence 54% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-13（±100范围），信心54% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -11 of ±100, confidence 52% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-11（±100范围），信心52% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -3127,7 +2626,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,12.4 2.4,12.1 4.8,11.9 7.2,10.7 9.6,10.4 12.0,8.4 14.4,10.2 16.8,9.2 19.2,11.1 21.6,13.6 24.0,14.0 26.4,15.4 28.8,17.5 31.2,16.6 33.6,17.1 36.0,14.0 38.4,5.9 40.8,9.5 43.2,7.0 45.6,8.5 48.0,11.4 50.4,14.6 52.8,15.5 55.2,8.4 57.6,2.0 60.0,9.2 62.4,12.3 64.8,7.1 67.2,10.3 69.6,3.3 72.0,9.3 74.4,9.3 76.8,9.0 79.2,9.1 81.6,8.9 84.0,6.9 86.4,12.3 88.8,15.2 91.2,15.1 93.6,15.0 96.0,16.4 98.4,15.5 100.8,19.3 103.2,19.7 105.6,26.5 108.0,27.3 110.4,28.1 112.8,27.5 115.2,27.9 117.6,26.4 120.0,30.5 122.4,26.3 124.8,28.1 127.2,24.6 129.6,28.5 132.0,26.9 134.4,27.3 136.8,25.6 139.2,29.2 141.6,30.6 144.0,28.1 146.4,32.4 148.8,32.0 151.2,31.1 153.6,33.5 156.0,34.0 158.4,33.8 160.8,25.0 163.2,26.6 165.6,22.3 168.0,26.5 170.4,22.5 172.8,26.0 175.2,25.6 177.6,25.0 180.0,26.1 182.4,23.5 184.8,21.4 187.2,23.0 189.6,23.9 192.0,24.0 194.4,25.3 196.8,21.1 199.2,22.3 201.6,13.5 204.0,11.5 206.4,12.5 208.8,12.4 211.2,18.3 213.6,22.2 216.0,22.2 218.4,22.3 220.8,21.2 223.2,19.2 225.6,17.7 228.0,13.2 230.4,16.2 232.8,15.6 235.2,15.5 237.6,15.1 240.0,11.9 242.4,11.2 244.8,12.2 247.2,14.0 249.6,14.0 252.0,14.0 254.4,13.2 256.8,13.7 259.2,10.2 261.6,10.1 264.0,14.3 266.4,13.0 268.8,16.0 271.2,14.0 273.6,14.5 276.0,16.8 278.4,18.8 280.8,18.8 283.2,15.7 285.6,20.3 288.0,20.0 290.4,18.3 292.8,17.3 295.2,19.0 297.6,20.3 300.0,20.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,10.6 2.4,12.4 4.8,12.1 7.2,11.9 9.6,10.7 12.0,10.4 14.4,8.4 16.8,10.2 19.2,9.2 21.6,11.1 24.0,13.6 26.4,14.0 28.8,15.4 31.2,17.5 33.6,16.6 36.0,17.1 38.4,14.0 40.8,5.9 43.2,9.5 45.6,7.0 48.0,8.5 50.4,11.4 52.8,14.6 55.2,15.5 57.6,8.4 60.0,2.0 62.4,9.2 64.8,12.3 67.2,7.1 69.6,10.3 72.0,3.3 74.4,9.3 76.8,9.3 79.2,9.0 81.6,9.1 84.0,8.9 86.4,6.9 88.8,12.3 91.2,15.2 93.6,15.1 96.0,15.0 98.4,16.4 100.8,15.5 103.2,19.3 105.6,19.7 108.0,26.5 110.4,27.3 112.8,28.1 115.2,27.5 117.6,27.9 120.0,26.4 122.4,30.5 124.8,26.3 127.2,28.1 129.6,24.6 132.0,28.5 134.4,26.9 136.8,27.3 139.2,25.6 141.6,29.2 144.0,30.6 146.4,28.1 148.8,32.4 151.2,32.0 153.6,31.1 156.0,33.5 158.4,34.0 160.8,33.8 163.2,25.0 165.6,26.6 168.0,22.3 170.4,26.5 172.8,22.5 175.2,26.0 177.6,25.6 180.0,25.0 182.4,26.1 184.8,23.5 187.2,21.4 189.6,23.0 192.0,23.9 194.4,24.0 196.8,25.3 199.2,21.1 201.6,22.3 204.0,13.5 206.4,11.5 208.8,12.5 211.2,12.4 213.6,18.3 216.0,22.2 218.4,22.2 220.8,22.3 223.2,21.2 225.6,19.2 228.0,17.7 230.4,13.2 232.8,16.2 235.2,15.6 237.6,15.5 240.0,15.1 242.4,11.9 244.8,11.2 247.2,12.2 249.6,14.0 252.0,14.0 254.4,14.0 256.8,13.2 259.2,13.7 261.6,10.2 264.0,10.1 266.4,14.3 268.8,13.0 271.2,16.0 273.6,14.0 276.0,14.5 278.4,16.8 280.8,18.8 283.2,18.8 285.6,15.7 288.0,20.3 290.4,20.0 292.8,18.3 295.2,17.3 297.6,19.0 300.0,20.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -3182,8 +2681,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.18.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.18。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.17.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.17。</div>
         </div>
       </div>
       
@@ -3247,8 +2746,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.00.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -3281,8 +2780,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="pair-nick"><em><span class="l-en">Beijing-managed — watched for stress</span><span class="l-zh">北京管理 — 关注压力信号</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCNH=X" data-mkt="fx">6.755</div>
-          <div class="chg dn">-0.2% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDCNH=X" data-mkt="fx">6.75</div>
+          <div class="chg up">+0.1% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -3295,8 +2794,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 15 of ±100, confidence 52% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向15（±100范围），信心52% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 15 of ±100, confidence 51% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向15（±100范围），信心51% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         <span class="less-tested"><span class="l-en">less tested</span><span class="l-zh">检验不足</span></span>
@@ -3307,8 +2806,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       
-      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,2.0 2.4,2.9 4.8,2.9 7.2,4.7 9.6,5.8 12.0,5.6 14.4,5.3 16.8,5.9 19.2,6.5 21.6,5.4 24.0,5.3 26.4,5.2 28.8,5.9 31.2,5.8 33.6,6.7 36.0,6.3 38.4,8.4 40.8,9.2 43.2,8.5 45.6,9.2 48.0,9.0 50.4,9.1 52.8,10.1 55.2,10.9 57.6,11.3 60.0,11.6 62.4,12.0 64.8,13.2 67.2,13.8 69.6,12.3 72.0,12.7 74.4,11.8 76.8,12.4 79.2,12.8 81.6,13.8 84.0,13.0 86.4,13.2 88.8,13.8 91.2,13.5 93.6,15.0 96.0,14.8 98.4,14.3 100.8,15.4 103.2,15.4 105.6,16.1 108.0,15.8 110.4,15.3 112.8,14.5 115.2,16.0 117.6,16.4 120.0,15.8 122.4,16.3 124.8,16.6 127.2,17.8 129.6,18.0 132.0,18.7 134.4,19.1 136.8,19.5 139.2,20.9 141.6,20.2 144.0,19.7 146.4,19.8 148.8,20.6 151.2,21.4 153.6,23.6 156.0,24.2 158.4,22.7 160.8,20.0 163.2,18.2 165.6,20.0 168.0,17.0 170.4,18.6 172.8,18.2 175.2,21.3 177.6,21.0 180.0,20.4 182.4,18.5 184.8,28.0 187.2,26.7 189.6,28.1 192.0,27.9 194.4,28.2 196.8,29.0 199.2,29.5 201.6,29.9 204.0,30.5 206.4,30.5 208.8,30.5 211.2,29.1 213.6,29.3 216.0,28.1 218.4,28.6 220.8,29.2 223.2,28.9 225.6,29.7 228.0,30.2 230.4,34.0 232.8,33.6 235.2,33.6 237.6,33.3 240.0,31.0 242.4,31.7 244.8,31.7 247.2,31.9 249.6,30.0 252.0,29.3 254.4,29.5 256.8,29.8 259.2,29.9 261.6,30.2 264.0,30.8 266.4,31.1 268.8,30.0 271.2,29.8 273.6,29.7 276.0,31.0 278.4,31.1 280.8,31.1 283.2,32.1 285.6,31.2 288.0,31.0 290.4,31.3 292.8,31.8 295.2,31.8 297.6,31.3 300.0,30.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
+        <polyline points="0.0,2.0 2.4,2.0 4.8,2.9 7.2,2.9 9.6,4.7 12.0,5.8 14.4,5.7 16.8,5.4 19.2,5.9 21.6,6.6 24.0,5.4 26.4,5.3 28.8,5.2 31.2,5.9 33.6,5.8 36.0,6.7 38.4,6.4 40.8,8.4 43.2,9.2 45.6,8.5 48.0,9.2 50.4,9.0 52.8,9.1 55.2,10.1 57.6,10.9 60.0,11.3 62.4,11.6 64.8,12.1 67.2,13.3 69.6,13.8 72.0,12.3 74.4,12.7 76.8,11.8 79.2,12.4 81.6,12.8 84.0,13.8 86.4,13.0 88.8,13.3 91.2,13.9 93.6,13.5 96.0,15.0 98.4,14.8 100.8,14.3 103.2,15.4 105.6,15.4 108.0,16.1 110.4,15.8 112.8,15.3 115.2,14.5 117.6,16.0 120.0,16.4 122.4,15.9 124.8,16.3 127.2,16.6 129.6,17.8 132.0,18.0 134.4,18.7 136.8,19.1 139.2,19.5 141.6,20.9 144.0,20.3 146.4,19.7 148.8,19.8 151.2,20.6 153.6,21.4 156.0,23.6 158.4,24.2 160.8,22.7 163.2,20.0 165.6,18.2 168.0,20.0 170.4,17.0 172.8,18.6 175.2,18.2 177.6,21.3 180.0,21.0 182.4,20.4 184.8,18.5 187.2,28.0 189.6,26.8 192.0,28.1 194.4,27.9 196.8,28.2 199.2,29.0 201.6,29.5 204.0,29.9 206.4,30.5 208.8,30.5 211.2,30.5 213.6,29.1 216.0,29.3 218.4,28.1 220.8,28.6 223.2,29.2 225.6,28.9 228.0,29.7 230.4,30.2 232.8,34.0 235.2,33.6 237.6,33.6 240.0,33.3 242.4,31.0 244.8,31.7 247.2,31.7 249.6,31.9 252.0,30.0 254.4,29.3 256.8,29.5 259.2,29.8 261.6,29.9 264.0,30.2 266.4,30.8 268.8,31.1 271.2,30.0 273.6,29.8 276.0,29.7 278.4,31.0 280.8,31.1 283.2,31.1 285.6,32.1 288.0,31.2 290.4,31.0 292.8,31.3 295.2,31.8 297.6,31.8 300.0,31.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -3349,7 +2848,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="cnh-basis s-neutral">
-        <b><span class="l-en">Offshore–onshore CNH basis</span><span class="l-zh">离岸–在岸人民币基差</span>:</b> -31 bps —
+        <b><span class="l-en">Offshore–onshore CNH basis</span><span class="l-zh">离岸–在岸人民币基差</span>:</b> -38 bps —
         <span class="l-en">broadly aligned with the onshore fix.</span><span class="l-zh">与在岸中间价大体一致。</span>
       </div>
       
@@ -3359,6 +2858,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="factor-grid">
       
       
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Choppiness: for. Pull on the score: +0.10.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：+0.10。</div>
+        </div>
+      </div>
       
       
       
@@ -3377,25 +2889,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Choppiness: for. Pull on the score: +0.09.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：+0.09。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.04.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.04。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: +0.05.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.05。</div>
         </div>
       </div>
       
@@ -3430,11 +2929,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：-0.00。</div>
+          <div class="l-en">Sudden shocks: against. Pull on the score: -0.01.</div>
+          <div class="l-zh">突发冲击：利空。对评分的拉动：-0.01。</div>
         </div>
       </div>
       
@@ -3478,7 +2977,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             · Gain per unit of swing: 0.13
             · Worst fall: -38%
             | Pre-2008: +0.7% / 0.15
-            | Post-2008: +0.9% / 0.13
+            | Post-2008: +0.8% / 0.13
             — past data only.
           </div>
           <div class="l-zh">
@@ -3486,7 +2985,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             · 单位波动收益：0.13
             · 最大回撤：-38%
             | 2008前：+0.7% / 0.15
-            | 2008后：+0.9% / 0.13
+            | 2008后：+0.8% / 0.13
             — 仅基于历史数据。
           </div>
         </div>
@@ -3584,6 +3083,21 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         
         <span class="tl-head"><span class="l-en">Triple-red cleared: safe-haven function may be restoring</span><span class="l-zh">三重下跌解除：避险功能可能恢复</span></span>
+      </div>
+      
+    
+      <div class="tl-day">Thu Jul 23</div>
+      
+      <div class="tl-ev sev-high" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Dollar regime</span><span class="l-zh">美元格局</span></span>
+        <span class="tl-asset">Dollar</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">Risk-on rally pattern now active</span><span class="l-zh">风险偏好回升压力情景已激活</span></span>
       </div>
       
     
@@ -4860,7 +4374,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <span class="l-en">This page describes today's currency backdrop. It moves with markets and does not predict them; nothing here is a trade recommendation. Pair reads are measured on past data and shown for context.</span>
       <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅作背景参考。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Jul 23, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-23 23:29 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-07-23
+    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Jul 23, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-24 01:21 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-07-23
     </div>
   </div>
 </div>
@@ -4925,7 +4439,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   });
 })();
 </script>
-<script src="theme.js"></script>
+<script src="theme.js?v=e4fce3af" defer></script>
 <footer class="site-footer">
   <span>© 2026 Mastermind Inc</span>
 </footer>

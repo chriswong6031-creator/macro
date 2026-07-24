@@ -2,14 +2,14 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-22",
-  "generated_utc": "2026-07-23T23:28:42Z",
+  "generated_utc": "2026-07-24T01:20:38Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 5,
-    "n_eff": 1.42,
+    "n": 4,
+    "n_eff": 1.53,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 5 candidates \u2248 1.42 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 4 candidates \u2248 1.53 independent bets."
   },
   "same_thesis_groups": [
     {
@@ -17,15 +17,14 @@
         "GNTX",
         "HWM",
         "KSS",
-        "LEA",
         "YETI"
       ],
-      "size": 5,
+      "size": 4,
       "basis": "membership-jaccard",
       "label": "Consumer Discretionary"
     }
   ],
-  "earnings_coverage_frac": 0.8,
+  "earnings_coverage_frac": 0.75,
   "by_ticker": {
     "HWM": {
       "verdict": "duplicate",
@@ -42,20 +41,20 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "LEA",
-          "combined": 0.902,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.902,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
           "ticker": "YETI",
           "combined": 0.8773,
           "membership_jaccard": 0.0,
           "factor_cosine": 0.8773,
           "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "KSS",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.12<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         }
@@ -74,17 +73,6 @@
       "max_similarity": 1.0,
       "basis": "membership+high-tier-factor",
       "nearest": [
-        {
-          "ticker": "LEA",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9121,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": false
-        },
         {
           "ticker": "KSS",
           "combined": 1.0,
@@ -106,6 +94,15 @@
             "sector:Consumer Discretionary"
           ],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "HWM",
+          "combined": 0.8773,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8773,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
@@ -114,58 +111,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as LEA \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e LEA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "LEA": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "YETI",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9121,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "KSS",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.12<0.2",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "GNTX",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9709,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-24",
-        "same_week_peers": [
-          "GNTX"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as YETI \u2014 Consumer Discretionary (similarity 100%).",
-      "why_zh": "\u4e0e YETI \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+      "why_en": "Same bet as KSS \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e KSS \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "KSS": {
       "verdict": "duplicate",
@@ -184,7 +131,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "LEA",
+          "ticker": "GNTX",
           "combined": 1.0,
           "membership_jaccard": 1.0,
           "factor_cosine": null,
@@ -195,14 +142,12 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "GNTX",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
+          "ticker": "HWM",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.12<0.2",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
+          "shared_groups": [],
           "same_earnings_week": null
         }
       ],
@@ -232,17 +177,6 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "LEA",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": 0.9709,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [
-            "sector:Consumer Discretionary"
-          ],
-          "same_earnings_week": true
-        },
-        {
           "ticker": "KSS",
           "combined": 1.0,
           "membership_jaccard": 1.0,
@@ -252,13 +186,20 @@
             "sector:Consumer Discretionary"
           ],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "HWM",
+          "combined": 0.9201,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9201,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
         "next_date": "2026-07-24",
-        "same_week_peers": [
-          "LEA"
-        ],
+        "same_week_peers": [],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
@@ -271,13 +212,6 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.8773,
       "combined": 0.8773,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "HWM__LEA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.902,
-      "combined": 0.902,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -295,15 +229,6 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "YETI__LEA": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": 0.9121,
-      "combined": 1.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
     "YETI__KSS": {
       "membership_jaccard": 1.0,
       "factor_cosine": null,
@@ -316,24 +241,6 @@
     "YETI__GNTX": {
       "membership_jaccard": 1.0,
       "factor_cosine": 0.8566,
-      "combined": 1.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "LEA__KSS": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": null,
-      "combined": 1.0,
-      "factor_basis": "beta-read-thin:r2=0.12<0.2",
-      "shared_groups": [
-        "sector:Consumer Discretionary"
-      ]
-    },
-    "LEA__GNTX": {
-      "membership_jaccard": 1.0,
-      "factor_cosine": 0.9709,
       "combined": 1.0,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": [
