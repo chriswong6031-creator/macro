@@ -5191,7 +5191,8 @@ function pubNextSlotIso(now) {
 
 /* Go-Live checklist — the operator's "what stands between me and live posting".
    Each row is derived from real config/state, with the exact next action in
-   plain words. Rotate-the-token warning is loud (it was chat-log-exposed). */
+   plain words. (Operator instruction 2026-07-23: the existing Buffer token is
+   used as-is — no rotation prompts.) */
 function pubGoLive(d) {
   const cfg = d.config || {};
   const sc = d.status_counts || {};
@@ -5210,9 +5211,8 @@ function pubGoLive(d) {
     },
     {
       done: cfg.token_present === true,
-      warn: true,
-      title: `<span class="warn">⚠ rotate the old token first</span> — <span class="k">BUFFER_TOKEN</span> repo secret`,
-      do: `The old Buffer token was exposed in a chat log — <b>rotate it before arming</b>, then add the new value as the <span class="k">BUFFER_TOKEN</span> repo secret. <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`,
+      title: `<span class="k">BUFFER_TOKEN</span> repo secret`,
+      do: `Add the Buffer personal API token (the existing one) as the <span class="k">BUFFER_TOKEN</span> repo secret. <a href="https://github.com" onclick="return false" title="docs/marketing_publisher_runbook.md §1">runbook §1</a>`,
     },
     {
       done: false,   /* kill-switch is an env on the runner; we can't read it here → treat as a manual step */
