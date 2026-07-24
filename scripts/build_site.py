@@ -5681,9 +5681,15 @@ def main() -> int:
     # site/neuralwebdata theme artifacts already written by build_thematic_state.
     try:
         import scripts.build_state_of_themes as _sot
-        _sot_html = _sot.render(config.ROOT)
+        # Compose ONCE; render the page and write the theme_lanes.v1 side-artifact
+        # from the same ctx so the page's lanes and the Portfolio brief's lanes are
+        # the identical computed value (single source of truth — build_portfolio_ctx
+        # joins theme_lanes.json). The side-write never raises.
+        _sot_ctx = _sot.compose(config.ROOT)
+        _sot_html = _sot.render(config.ROOT, _sot_ctx)
         write_page(site / "state_of_themes.html", _sot_html)
         log.info("wrote %s", site / "state_of_themes.html")
+        _sot.write_theme_lanes(_sot_ctx, config.ROOT)
     except Exception as _sot_e:  # noqa: BLE001 — additive; never break main build
         log.warning("state_of_themes.html render failed (%s); page skipped", _sot_e)
 

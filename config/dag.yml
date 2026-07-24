@@ -542,6 +542,22 @@ lanes:
           Artifact: data/us_sector_rotation/latest.json.
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_portfolio_ctx
+        module: scripts.build_portfolio_ctx
+        note: >
+          Portfolio-Aware Intelligence W1 (charter:
+          research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §2). Bakes the
+          full-universe per-ticker context blob site/data/portfolio_ctx.json the
+          mastermind-terminal Portfolio page joins per-user off the render path.
+          RE-EXPRESSES existing nightly reads (no new signal; DISPLAY-ONLY;
+          CONST-ART2 authority: false). Reads committed source artifacts ONLY —
+          screener/us_standouts/insider/subsector/state_of_themes(theme_lanes.json)
+          from build_site, by_ticker from build_alt_data, 13F from build_smart_money,
+          congress.parquet from build_congress, and sector conviction/rotation from
+          build_sector_central (immediately above) — so it MUST run AFTER the band
+          barrier as a serial step here. ~2s wall time on the ~4.2k universe.
+          Non-fatal (a failed run keeps the last committed artifact). Output rides
+          the existing `git add site/` commit. Artifact: site/data/portfolio_ctx.json.
       - id: build_stance_matrix
         module: scripts.build_stance_matrix
         note: >
