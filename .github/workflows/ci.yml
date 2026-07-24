@@ -701,8 +701,12 @@ on:
       # 2026-07-23 after it rotted red on main: opportunities.jsonl is a forward
       # ledger the nightly radar fills with live radar-* rows, but the seed round-trip
       # test asserted shadow-only. Triggers on the engine tree + the committed ledgers.
+      # test_marketing_sentinel co-whitelisted 2026-07-23: it too rotted red on main
+      # (fixture aged dates with local date.today() while receipts_context ages
+      # against the UTC date — red every evening 5pm–midnight PDT).
       - "engine/marketing/**"
       - "tests/test_marketing_engine.py"
+      - "tests/test_marketing_sentinel.py"
       - "data/marketing/opportunities.jsonl"
       - "data/marketing/claims.jsonl"
   workflow_dispatch:
@@ -2581,7 +2585,11 @@ jobs:
       - name: install deps
         run: pip install pytest pyyaml
       - name: marketing engine unit tests
-        run: python -m pytest tests/test_marketing_engine.py -q
+        # test_marketing_sentinel is co-run (2026-07-23): the Sentinel W1 gate suite
+        # was never whitelisted and rotted red on main via a local-vs-UTC clock
+        # fixture bomb. Both files are stdlib-only — verified against a minimal
+        # pytest+pyyaml env.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py -q
 
   portfolio-ctx:
     # Portfolio-Aware Intelligence W0 (charter:
