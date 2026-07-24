@@ -6105,16 +6105,19 @@ function sentFooter(d) {
 function obxSentinelCard(s, cap) {
   if (!s) return "";
   const capN = (s.effective_cap != null ? s.effective_cap : cap);
-  const newTier = (s.source === "sentinel_defaults") || (Number(capN) <= 2);
-  const capNote = newTier ? "new-account tier" : "steady tier";
+  /* A negative cap is the "no limit" sentinel (unlimited daily volume). */
+  const capUnlimited = Number(capN) < 0;
+  const newTier = !capUnlimited && ((s.source === "sentinel_defaults") || (Number(capN) <= 2));
+  const capNote = capUnlimited ? "no daily cap" : (newTier ? "new-account tier" : "steady tier");
   const spacing = s.min_minutes_between_posts;
   const links = s.links_allowed ? "allowed" : "off";
   const mediaN = s.max_media_posts_per_account_per_day;
+  const mediaUnlimited = mediaN != null && Number(mediaN) < 0;
   const rows = [
-    ["Posts per desk each day", `${esc(String(capN))}`, esc(capNote)],
+    ["Posts per desk each day", (capUnlimited ? "∞" : esc(String(capN))), esc(capNote)],
     ["Minimum gap between posts", (spacing != null ? `${esc(String(spacing))} min` : "—"), ""],
     ["Links in posts", esc(links), ""],
-    ["Charts per desk each day", (mediaN != null ? `${esc(String(mediaN))}` : "—"), ""],
+    ["Charts per desk each day", (mediaUnlimited ? "∞" : (mediaN != null ? esc(String(mediaN)) : "—")), ""],
   ];
   return `<div class="obx-sentinel">
     <div class="obx-sentinel-head">
