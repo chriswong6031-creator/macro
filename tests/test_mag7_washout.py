@@ -137,8 +137,54 @@ def test_trigger_state_reachable(tmp_path):
         if out["state"] == "triggered":
             hit = True
             assert out["triggers_today"]
+            # no DFF store in fixture → regime unknown → actionable is None
+            assert out["regime"] is None and out["gate_actionable"] is None
             break
     assert hit, "no recovery length produced a triggered state"
+
+
+def _write_dff(root, idx, rates):
+    d = root / "fred"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"DFF": rates}, index=idx).to_parquet(d / "DFF.parquet")
+
+
+def test_amendment2_veto_and_actionable(tmp_path):
+    """Amendment 2 conditioner: same triggered tape, DFF regime decides
+    gate_actionable — hike_accel → vetoed, cutting → actionable."""
+    from engine.mag7_washout import _env_tags
+    px = _crash_then_recover()
+    days = pd.date_range(px.index[0] - pd.Timedelta(days=400), px.index[-1], freq="D")
+    # accelerating tightening: rate rises with increasing slope into the end
+    accel = np.linspace(0, 1, len(days)) ** 2 * 4.0
+    root_a = tmp_path / "accel"; _write_dff(root_a, days, accel)
+    tags_a = _env_tags(root_a, px.index[-1])
+    assert tags_a["regime"] == "hike_accel"
+    # cutting: rate falls steadily
+    cut = np.linspace(4.0, 1.0, len(days))
+    root_c = tmp_path / "cut"; _write_dff(root_c, days, cut)
+    tags_c = _env_tags(root_c, px.index[-1])
+    assert tags_c["regime"] == "cutting"
+    # end-to-end: find a triggered case per regime and check the gate verdicts
+    rate_fns = {"a": (lambda n: np.linspace(0, 1, n) ** 2 * 4.0, "hike_accel", False),
+                "c": (lambda n: np.linspace(4.0, 1.0, n), "cutting", True)}
+    for extra in range(0, 26, 2):
+        series = _crash_then_recover(n=884 + extra)
+        for name, (fn, want_regime, want_action) in rate_fns.items():
+            root = tmp_path / f"e{extra}{name}"
+            _write_members(root, series)
+            dd = pd.date_range(series.index[0] - pd.Timedelta(days=400),
+                               series.index[-1], freq="D")
+            _write_dff(root, dd, fn(len(dd)))
+            out = snapshot(root=root)
+            if out and out["state"] == "triggered":
+                assert out["regime"] == want_regime
+                assert out["gate_actionable"] is want_action
+                assert (out["veto"] == "hike_accel") is (not want_action)
+                assert out["triggers_today"][0]["regime"] == want_regime
+                if want_action:
+                    return
+    raise AssertionError("no triggered case reached for both regimes")
 
 
 def test_fail_open_on_missing_store(tmp_path):

@@ -954,7 +954,7 @@ entries:
       operator-initiated 2026-07-11 ("MAG 7 is on the run … our
       dashboard does not reflect any of this") OVERRIDING the engines'
       contemporaneous reads
-    source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`; context `MAG7_COMMAND_MASTERPLAN_BY_FABLE.md` §0 + `POSTMORTEM_20260722_CROSSOVERS_VS_CAPEX_BIND_BY_FABLE.md`'
+    source: 'Operator ruling 2026-07-23 + `POSTMORTEM_20260723_MAG7_FORCED_CALL_BY_FABLE.md`; context `MAG7_COMMAND_MASTERPLAN_BY_FABLE.md` §0 + `POSTMORTEM_20260722_CROSSOVERS_VS_CAPEX_BIND_BY_FABLE.md`; Amendmen'
 
   - id: BL-G072
     match:

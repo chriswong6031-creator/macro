@@ -174,6 +174,38 @@ real edge is NOT excluded — but the census cannot ratify it. Forward gauntlet 
 Any operator override from here requires an explicit `DO_NOT_REBUILD` §2 amendment made
 against these recorded numbers, eyes open.
 
+**AMENDMENT 2 — operator override: Use-B → CONDITIONAL-LIVE (2026-07-24).**
+Operator ruling, issued twice and executed here: *"we will use first principles
+conclusion for this, and you can change the prereg to allow for this exception, i
+authorize it."* Evidence basis at ruling time (`reports/mwr_phase1_conditioner_study.md`,
+1,630 names / 27,647 signals): mechanism-interaction gradient CONFIRMS direction
+(chop −0.59% → strong-trend +0.58% median uplift; MAG7-EW +5.74% — a 10× outlier even
+in the favorable class); conditioner direction CONFIRMS the operator's 2022 narrative
+(hike_accel −1.02% vs hike_decel +1.98% / cutting +2.44%); corrected family-wise
+p = 0.143 (max-stat null — the earlier ×5 Bonferroni was over-conservative and is
+retracted). ON THE RECORD against it: MCD −0.03% / COST −2.91% (the operator's own
+example names show no uplift — the class does not explain the MAG7 magnitude);
+hike_accel CI includes 0 [−5.08, +1.61]; anchor-B fragility stands. Fable's position:
+magnitude unproven, promotion premature — recorded, not relitigated. The override is
+the operator's constitutional right (PRD Amendment-1 precedent).
+
+Terms (binding):
+1. **Conditional-live**: a trigger is ACTIONABLE only when the fire-time regime ≠
+   `hike_accel` (trailing-6m ΔFFR ≥ +25bp AND still rising vs 91d prior). Engine emits
+   `regime` / `gate_actionable` / `veto`; the operator ping carries
+   ACTIONABLE / VETOED / regime-unknown copy. Disclosed cost: the veto would have
+   removed 2018-05-04 (+12.8%) along with all three 2022 failures.
+2. **Regime unknown** (DFF store absent) → `gate_actionable: null` — manual check,
+   never a silent pass.
+3. **Kill-switch unchanged and binding**: 2 consecutive live FAILs, or any single
+   adverse < −25%, auto-demotes Use-B back to background and reopens this log.
+4. **Prophet linkage stays presentation-tier**: entries NEVER join the graded board
+   population (`DO_NOT_REBUILD` §1 Top-setups contamination row, ratified 2026-07-24,
+   governs identically here); the W2 surface is a washout-entry card beside Prophet +
+   admin gate console, built through the normal build lane before any plausible
+   trigger (gate is idle, 2W K ≈ 55).
+5. The shadow book continues as the live grading record; §7 recipes unchanged.
+
 ## §5. Non-goals
 
 No auto-alerts, no page panel, no stance copy, no feed into rank/size/gate anywhere.

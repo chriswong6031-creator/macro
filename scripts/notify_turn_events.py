@@ -711,15 +711,28 @@ def _mwr_trigger_message(tf: str, date: str, row: dict) -> str:
     Never a buy call; no direction words; Use-B stays un-ratified."""
     tf_word = "2-week Stoch-RSI" if tf == "2W_stochrsi" else "3-day RSI-MACD"
     k = row.get("stoch2w_k")
-    env = row.get("policy")
+    regime = row.get("regime")
     extra = f" · 2W K {k}" if k is not None else ""
-    env_s = f" · policy {env}" if env else ""
-    return (
-        f"🚪 **Mag-7 washout gate: TRIGGERED** ({tf_word} cross, bar {date}{extra}{env_s})\n"
-        "Process event, not a signal: re-entry proposals are now lawful under "
-        "MWR prereg §4 Use-A (cite this trigger). Shadow book opens hypothetical "
-        "entries tonight; Use-B (timing authority) remains un-ratified until the "
-        "forward gauntlet passes."
+    env_s = f" · regime {regime}" if regime else ""
+    head = f"🚪 **Mag-7 washout gate: TRIGGERED** ({tf_word} cross, bar {date}{extra}{env_s})\n"
+    # MWR Amendment 2 (operator override 2026-07-24): conditional-live behind
+    # the accelerating-tightening veto. Copy stays process-language.
+    if regime == "hike_accel":
+        return head + (
+            "**VETOED — accelerating-tightening regime** (the 2022 failure class, "
+            "Amendment 2 conditioner). Not actionable; shadow book still records "
+            "it. Gate re-opens if the regime decelerates while washed out."
+        )
+    if regime is None:
+        return head + (
+            "Regime tag unavailable — check policy backdrop manually before "
+            "acting (Amendment 2: actionable only outside accelerating "
+            "tightening). Shadow book opens entries tonight."
+        )
+    return head + (
+        "**ACTIONABLE under MWR Amendment 2** (conditional-live; regime clear). "
+        "Shadow book + live grading start tonight; kill-switch: 2 consecutive "
+        "FAILs or −25% adverse auto-demotes to background."
     )
 
 
