@@ -817,6 +817,36 @@ class TestContentPanel:
         assert r["content_types"] == []
         assert r["accounts"] == []
 
+    # ── F7: payload timestamps for the admin (display_time / produced_at / stale) ──
+
+    def test_content_posts_carry_display_time(self, seeded_content_root):
+        """Each post gets display_time = slot_datetime(as_of, slot). The fixture
+        as_of is 2026-07-18, so D1 slots are that day and D2 is the next."""
+        r = marketing.content(seeded_content_root)
+        by_slot = {p["slot"]: p
+                   for a in r["accounts"] for p in a["queue"] if p.get("slot")}
+        assert by_slot["D1-AM"]["display_time"] == "2026-07-18T14:00:00Z"
+        assert by_slot["D1-PM"]["display_time"] == "2026-07-18T17:30:00Z"
+        assert by_slot["D2-AM"]["display_time"] == "2026-07-19T14:00:00Z"  # +1 day
+
+    def test_content_top_level_produced_and_stale(self, seeded_content_root):
+        r = marketing.content(seeded_content_root)
+        # Fixture as_of 2026-07-18 is well over a day old → stale.
+        assert r["as_of"] == "2026-07-18"
+        assert r["produced_at"] == "2026-07-18T00:00:00Z"
+        assert r["stale"] is True
+
+    def test_content_fresh_plan_not_stale(self, tmp_path):
+        """A plan whose as_of is today (UTC) is NOT stale."""
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        plan = {**MINIMAL_CONTENT_PLAN, "as_of": today}
+        cdir = tmp_path / "data" / "marketing"
+        cdir.mkdir(parents=True)
+        (cdir / "content_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+        r = marketing.content(tmp_path)
+        assert r["stale"] is False
+
 
 # ---------------------------------------------------------------------------
 # Tests — department() panel (round 2)

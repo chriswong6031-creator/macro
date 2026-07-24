@@ -690,3 +690,97 @@ def test_dept_formation_gate_rejected():
     result = department_formation_gate([item])
     assert len(result["rejected"]) == 1
     assert result["rejected"][0]["id"] == "bad_dept"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# F3: account liveness model (engine.marketing.accounts) + desk_network status
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _accounts_cfg():
+    return {
+        "desk_network": {
+            "accounts": [
+                {"id": "flagship", "handle": "mastermindx001", "enabled": True},
+                {"id": "receipts", "enabled": False},
+                {"id": "legacy_off", "disabled": True},   # backward-compat path
+                {"id": "bare"},                            # neither key → default True
+            ]
+        },
+        "publish": {"channels": {"flagship": "chan-123"}},
+    }
+
+
+class TestEffectiveAccounts:
+    def test_resolves_enabled_with_defaults_and_legacy(self):
+        from engine.marketing.accounts import effective_accounts
+        eff = {a["id"]: a for a in effective_accounts(_accounts_cfg())}
+        assert eff["flagship"]["enabled"] is True
+        assert eff["receipts"]["enabled"] is False
+        assert eff["legacy_off"]["enabled"] is False   # disabled: true → off
+        assert eff["bare"]["enabled"] is True          # absent → default True
+
+    def test_absent_cfg_is_empty(self):
+        from engine.marketing.accounts import effective_accounts
+        assert effective_accounts(None) == []
+        assert effective_accounts({}) == []
+
+    def test_override_file_flips_enabled(self):
+        from engine.marketing.accounts import effective_accounts
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data" / "marketing").mkdir(parents=True)
+            (root / "data" / "marketing" / "account_overrides.json").write_text(
+                json.dumps({
+                    "flagship": {"enabled": False, "note": "paused", "at": "2026-07-23T18:00:00Z"},
+                    "receipts": {"enabled": True},
+                }), encoding="utf-8")
+            eff = {a["id"]: a for a in effective_accounts(_accounts_cfg(), root)}
+            assert eff["flagship"]["enabled"] is False   # override wins over config True
+            assert eff["receipts"]["enabled"] is True     # override wins over config False
+            assert eff["bare"]["enabled"] is True         # untouched by overrides
+
+    def test_malformed_override_file_is_ignored(self):
+        from engine.marketing.accounts import effective_accounts
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data" / "marketing").mkdir(parents=True)
+            (root / "data" / "marketing" / "account_overrides.json").write_text(
+                "{ this is not json", encoding="utf-8")
+            eff = {a["id"]: a for a in effective_accounts(_accounts_cfg(), root)}
+            # Fail-soft: config intent stands, no exception.
+            assert eff["flagship"]["enabled"] is True
+            assert eff["receipts"]["enabled"] is False
+
+    def test_missing_override_file_is_no_overrides(self):
+        from engine.marketing.accounts import effective_accounts, load_overrides
+        with tempfile.TemporaryDirectory() as td:
+            assert load_overrides(Path(td)) == {}
+            eff = {a["id"]: a for a in effective_accounts(_accounts_cfg(), Path(td))}
+            assert eff["flagship"]["enabled"] is True
+
+
+class TestAccountStatus:
+    def test_three_states(self):
+        from engine.marketing.accounts import account_status
+        channels = {"flagship": "chan-123"}
+        # enabled + channel → live
+        assert account_status({"id": "flagship", "enabled": True}, channels) == "live"
+        # enabled + no channel → ready
+        assert account_status({"id": "receipts", "enabled": True}, channels) == "ready"
+        # not enabled → planned (even if a channel somehow exists)
+        assert account_status({"id": "flagship", "enabled": False}, channels) == "planned"
+
+    def test_empty_channel_id_is_ready_not_live(self):
+        from engine.marketing.accounts import account_status
+        assert account_status({"id": "x", "enabled": True}, {"x": "  "}) == "ready"
+
+
+class TestDeskNetworkStatus:
+    def test_desk_network_status_reflects_liveness(self):
+        from engine.marketing.publication import desk_network
+        dn = desk_network(_accounts_cfg())
+        by_id = {a["id"]: a for a in dn["accounts"]}
+        assert by_id["flagship"]["status"] == "live"      # enabled + channel
+        assert by_id["flagship"]["handle"] == "mastermindx001"
+        assert by_id["receipts"]["status"] == "planned"   # enabled False
+        assert by_id["bare"]["status"] == "ready"         # enabled default, no channel

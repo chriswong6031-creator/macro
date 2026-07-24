@@ -106,10 +106,13 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Stage ONLY the outbox ledger dir — never touch other paths. A dry-run
-          # (dark mode) still appends a publisher_dry_run activity row, which is a
-          # legitimate audit trail; a live run additionally advances statuses.
+          # Stage ONLY the outbox ledger dir + the publications ledger — never
+          # touch other paths. A dry-run (dark mode) still appends a
+          # publisher_dry_run activity row, which is a legitimate audit trail; a
+          # live run additionally advances statuses AND appends posted receipts to
+          # publications.jsonl (the Channels page reader).
           git add data/marketing/outbox 2>/dev/null || true
+          git add data/marketing/publications.jsonl 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "marketing-publish: no ledger changes to commit"
