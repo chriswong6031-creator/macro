@@ -13,6 +13,14 @@ Wildcard artifacts (kind=per_stock_intel, per_stock_signal): sampled from the fi
 file in the glob directory.  If no live sample exists the entry is SKIPPED (no data
 in this environment is not a drift).
 
+Optional (conditional) fields: a manifest entry may carry an `optional_fields` list
+for top-level keys the builder emits only when a data condition holds (e.g.
+canada_standouts.sector_concentration fires only when >60% of the board clusters in
+one sector).  Such a field is present some nights and absent others by design — it is
+excluded from BOTH the added- and removed-drift diffs so it never flaps the lane
+red↔green with the data.  A genuinely undocumented new key (in neither schema_fields
+nor optional_fields) still trips `added`, preserving the silent-field-added guard.
+
 Usage:
     python scripts/check_contract_drift.py            # hard-fail mode (default)
     python scripts/check_contract_drift.py --warn-only  # exit 0 even on drift
@@ -71,12 +79,26 @@ def _diff_fields(
     artifact: str,
     registered: list[str],
     actual: list[str],
+    optional: list[str] | None = None,
 ) -> tuple[list[str], list[str]]:
-    """Return (added, removed) field lists."""
+    """Return (added, removed) field lists.
+
+    `registered` = the REQUIRED top-level keys (schema_fields): every one must be
+    present or the field counts as `removed` (breaking drift).
+    `optional`   = CONDITIONAL keys (optional_fields) the builder emits only when a
+    data condition holds (e.g. canada_standouts.sector_concentration fires only when
+    >60% of the board shares one sector; dispersion_regime only when the regime dial
+    computes). An optional key may be present or absent on any given day WITHOUT drift,
+    so it is excluded from BOTH lists: absent optionals are not `removed`, and present
+    optionals are `known` (not `added`). A genuinely undocumented new key — in neither
+    list — still trips `added`, preserving the "silent field added" guard.
+    """
     reg_set = set(registered)
+    opt_set = set(optional or [])
+    known = reg_set | opt_set
     act_set = set(actual)
-    added = sorted(act_set - reg_set)    # in artifact but not in contract
-    removed = sorted(reg_set - act_set)  # in contract but not in artifact
+    added = sorted(act_set - known)      # in artifact but documented nowhere
+    removed = sorted(reg_set - act_set)  # a REQUIRED field the artifact dropped
     return added, removed
 
 
@@ -107,8 +129,9 @@ def check_drift(warn_only: bool = False) -> int:
             skip_count += 1
             continue
 
+        optional = entry.get("optional_fields") or []
         actual = _actual_fields(live_path)
-        added, removed = _diff_fields(artifact_pattern, registered, actual)
+        added, removed = _diff_fields(artifact_pattern, registered, actual, optional)
 
         if not added and not removed:
             clean_count += 1
