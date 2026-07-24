@@ -198,6 +198,10 @@ html[data-theme="light"] .rv-web-node .dot{ stroke:color-mix(in srgb,#fff 80%,tr
   font-variant-numeric:tabular-nums; }
 .rv-lane.on .badge{ background:rgba(255,255,255,.24); color:#fff; }
 .rv-lane svg{ width:15px; height:15px; }
+/* Top Picks is Pro-only for non-Pro: show a small lock (replacing the count badge) */
+.rv-lane .rv-lane-lock{ display:none; width:12px; height:12px; flex:none; opacity:.8; }
+.rv-lane.locked .rv-lane-lock{ display:inline-block; }
+.rv-lane.locked .badge{ display:none; }
 .rv-unread{ margin-left:auto; font-size:12.5px; color:var(--muted); font-family:var(--num); font-variant-numeric:tabular-nums; }
 .rv-unread b{ color:var(--rv-ink); font-weight:700; }
 html[data-theme="light"] .rv-unread b{ color:var(--rv); }
@@ -605,6 +609,7 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
     <button class="rv-lane" role="tab" aria-selected="false" data-lane="picks">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>
       {{ t('Top Picks', '精选') }}<span class="badge" id="badge-picks">0</span>
+      <svg class="rv-lane-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     </button>
     <button class="rv-lane" role="tab" aria-selected="false" data-lane="saved">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
