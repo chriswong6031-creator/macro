@@ -1042,6 +1042,7 @@
      chip + dialog now live in the shared partial templates/_track_record_dlg.html.j2
      (all styles are self-scoped `trd-`). theme.js pinBoardTrackToggle() early-
      returns harmlessly now that #board-track-toggle no longer renders. */
+  .prophet-board-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -1095,14 +1096,8 @@
   /* W4 stock-personality slim chips (expander only, guardrail 16) */
   .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
   .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
-  /* B4 Conviction Delta — "What changed today" collapsed strip */
-  .nb-delta-strip{margin:5px 0 3px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:11px}
-  .nb-delta-hdr{cursor:pointer;padding:5px 11px;display:flex;align-items:center;gap:8px;user-select:none;list-style:none;color:var(--muted);font-weight:600}
-  .nb-delta-hdr::-webkit-details-marker{display:none}
-  .nb-delta-hdr::before{content:"▶";font-size:9px;transition:transform .15s;flex:none}
-  details[open].nb-delta-strip .nb-delta-hdr::before{transform:rotate(90deg)}
-  .nb-delta-asof{margin-left:auto;font-size:10px;font-weight:400;color:var(--muted);opacity:.7}
-  .nb-delta-body{padding:4px 11px 8px;display:flex;flex-direction:column;gap:3px}
+  /* B4 Conviction Delta — rows now live inside the Track-record-style dashboard. */
+  .nb-delta-body{display:flex;flex-direction:column;gap:3px}
   .nb-delta-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding:2px 0;border-top:1px solid var(--line)}
   .nb-delta-row:first-child{border-top:none}
   .nb-delta-tk{font-weight:700;font-size:11.5px;min-width:48px;flex:none}
@@ -1697,21 +1692,17 @@
     .dtp-col + .dtp-col { border-left:none; border-top:1px solid var(--line); }
     .dtp-mname { font-size:12px; }
   }
-/* page-scoped fold — V2 action board uses .actbody wrapper containing .actitem children */
-/* Buy/soon/run/aside lanes: cap 6 visible */
-.actbody.act-fold.is-collapsed > a.actitem:nth-child(n+7),
-.actbody.act-fold.is-collapsed > div:nth-child(n+7) { display: none; }
+/* page-scoped fold — every V2 action lane shows only its top 3 rows initially */
+.actbody.act-fold.is-collapsed > a.actitem:nth-child(n+4),
+.actbody.act-fold.is-collapsed > div:nth-child(n+4) { display: none; }
 /* Hide the Show-more button when the lane holds fewer rows than its cap.
-   2026-07-11 fix: the old selector only knew the .act-fold cap-6 lanes, so the
-   take-profits lane (.ab-trim-fold, cap 5) could NEVER show its button — rows
-   6+ were unreachable whenever take_profits held more than 5 entries. */
-.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(7))):not(:has(.actbody.act-fold > div:nth-child(7))):not(:has(.ab-trim-fold > a.actitem:nth-child(6))):not(:has(.ab-trim-fold > div:nth-child(6))) .lst-more.act-more { display: none; }
-/* Take-profits lane: cap 5 visible */
-.ab-trim-fold.is-collapsed > a.actitem:nth-child(n+6),
-.ab-trim-fold.is-collapsed > div:nth-child(n+6) { display: none; }
-/* Stand-aside uses .lst-collapse .lst-cap6 — cap 6 via actitem children */
-.lst-collapse.lst-cap6.is-collapsed > a.actitem:nth-child(n+7),
-.lst-collapse.lst-cap6.is-collapsed > div:nth-child(n+7) { display: none; }
+   All five lanes now share the same top-three contract. */
+.actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(4))):not(:has(.actbody.act-fold > div:nth-child(4))):not(:has(.ab-trim-fold > a.actitem:nth-child(4))):not(:has(.ab-trim-fold > div:nth-child(4))) .lst-more.act-more { display: none; }
+.ab-trim-fold.is-collapsed > a.actitem:nth-child(n+4),
+.ab-trim-fold.is-collapsed > div:nth-child(n+4) { display: none; }
+/* Stand-aside keeps its stable id for Turn Watch, but uses the shared cap-3 fold. */
+.lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
+.lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4) { display: none; }
 /* Sector-setups table (unchanged) */
 #sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
 
@@ -14334,7 +14325,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         Sector rows: glyph + name + optional chip + optional gate-✓ + stat line.
         Theme rows: name + star/check/lens glyphs (% moves to popover).
         Popover data stored in hidden .rp-src span, cloned by theme.js row-pop engine on hover.
-        Folds: take_profits cap 5, stand-aside (hold+avoid) cap 6.
+        Folds: every lane shows its top three rows, then offers Show more.
         TS-R5 dash-hold-fold id PRESERVED on the stand-aside column.
     -#}
     {#- ---- Jinja macros for V2 rows ---- -#}
@@ -14561,7 +14552,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
           {%- if _more_bn > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_bn }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_bn }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
-        {% if _bn_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _bn_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bn_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 2: ALMOST READY (buy_soon) ---- -#}
       <div class="actcol act-soon">
@@ -14579,7 +14570,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
           {%- if _more_bs > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_bs }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_bs }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
-        {% if _bs_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _bs_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _bs_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
       {#- ---- LANE 3: IN FAVOUR — DON'T CHASE (on_the_run) ---- -#}
       <div class="actcol act-run">
@@ -14597,9 +14588,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing extended right now.', '当前无过度延伸的标的。') }}</p>{% endfor %}
           {%- if _more_run > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_run }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_run }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
-        {% if _run_cnt > 6 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _run_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _run_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
-      {#- ---- LANE 4: TAKE PROFITS (cap 5 visible) ---- -#}
+      {#- ---- LANE 4: TAKE PROFITS ---- -#}
       <div class="actcol act-trim">
         <div class="acth">
           <div class="acth-title-row">
@@ -14615,9 +14606,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% else %}<p class="muted sm" style="padding:8px 12px">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
           {%- if _more_tp > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_tp }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_tp }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
-        {% if _tp_cnt > 5 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 5 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
+        {% if _tp_cnt > 3 %}<button class="lst-more act-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more','显示更多') }} ({{ _tp_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>{% endif %}
       </div>
-      {#- ---- LANE 5: STAND ASIDE (hold + avoid; cap 6 visible) ---- -#}
+      {#- ---- LANE 5: STAND ASIDE (hold + avoid; top 3 visible) ---- -#}
       {#- TS-R5: id="dash-hold-fold" PRESERVED — JS auto-expand on turn-watch match -#}
       <div class="actcol act-hold lst-wrap">
         <div class="acth">
@@ -14628,7 +14619,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="acth-sub"><span class="l-en">Hold what you own · no new buying</span><span class="l-zh">持有勿动 · 不新开仓</span></div>
         </div>
-        <div class="actbody lst-collapse lst-cap6 is-collapsed" id="dash-hold-fold">
+        <div class="actbody lst-collapse lst-cap3 is-collapsed" id="dash-hold-fold">
           {% for x in action_board.hold %}
             {#- TS-R5: data-theme-id wrapper enables client-side auto-expand -#}
             {% if x.kind == 'theme' %}<div data-theme-id="{{ x.slug or x.ticker }}">{{ ab_theme_row(x) }}</div>{% else %}{{ ab_sector_row(x) }}{% endif %}
@@ -14638,8 +14629,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% endfor %}
           {%- if _more_hold > 0 %}<p class="muted sm" style="padding:4px 12px 8px"><a href="baskets.html#actnow-section"><span class="l-en">+{{ _more_hold }} more — full list on the baskets page →</span><span class="l-zh">还有 {{ _more_hold }} 个 — 完整列表见主题篮子页 →</span></a></p>{%- endif %}
         </div>
-        {% if _hold_cnt > 6 %}
-        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 6 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
+        {% if _hold_cnt > 3 %}
+        <button class="lst-more" type="button" aria-expanded="false" style="margin:6px 10px 8px;width:calc(100% - 20px)"><span class="lm-show">{{ t('Show more', '显示更多') }} ({{ _hold_cnt - 3 }}) ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
         {% endif %}
       </div>
     </div>
@@ -14700,57 +14691,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="l-en">⚠ BOARD DELAYED — priced {{ _stale.get('price_through', '?') }} ({{ _stale.get('age_days', '?') }}d behind). Data is stale; entries shown may not reflect latest prices.</span><span class="l-zh">⚠ 数据延迟 — 价格截至 {{ _stale.get('price_through', '?') }}（落后 {{ _stale.get('age_days', '?') }} 天）。当前数据过期，入场信号可能不反映最新价格。</span>
       </div>
       {% endif %}
-      {# B4 Conviction Delta — collapsed "What changed today" strip.
+      {# B4 Conviction Delta — data prep for the "What changed today" dashboard.
          Rendered only when us_standouts.delta exists and has >=1 entry.
          Purely descriptive: shows which verb and which reason-codes changed.
-         No advice verbs, no causal phrasing.  Fail-soft: absent key = nothing shown.
-         JS/CSS template pairs = no fast-deploy (documented in PR). #}
-      {% if _su and _su.get('delta') and _su.delta.get('entries') %}
+         No advice verbs, no causal phrasing. Fail-soft: absent key = no button. #}
+      {% set _has_delta = _su and _su.get('delta') and _su.delta.get('entries') %}
+      {% if _has_delta %}
       {% set _dlt = _su.delta %}
       {% set _NBR_EN = {'freshness_expired':'Cross too old — wait for a fresh trigger','not_topped':'Topped / overbought — wait for it to reset','earnings_blackout':'Earnings within blackout window','risk_veto':'Stressed tape — size down or wait','extended':'Extended / parabolic — do not chase','capped_by_entry':'Entry capped — entry timing blocks a full buy'} %}
       {% set _NBR_ZH = {'freshness_expired':'交叉信号过期——等待新触发','not_topped':'超买/见顶——等待重置','earnings_blackout':'处于财报窗口期','risk_veto':'盘面承压——减仓或等待','extended':'过度拉伸/抛物线——勿追高','capped_by_entry':'入场封顶——入场时机阻碍满仓'} %}
-      <details class="nb-delta-strip">
-        <summary class="nb-delta-hdr">
-          <span class="l-en">What changed today ({{ _dlt.entries | length }})</span>
-          <span class="l-zh">今日变化 ({{ _dlt.entries | length }})</span>
-          <span class="nb-delta-asof">{{ _dlt.get('prev_as_of','?') }} → {{ _dlt.get('cur_as_of','?') }}</span>
-        </summary>
-        <div class="nb-delta-body">
-          {% for _de in _dlt.entries %}
-          <div class="nb-delta-row">
-            <span class="nb-delta-tk">{{ _de.ticker }}</span>
-            {# Verb change display — purely descriptive, no advice phrasing #}
-            {% if _de.get('entered_board') %}
-              <span class="nb-delta-verb nb-delta-enter">
-                <span class="l-en">entered board{% if _de.cur_verb %} · {{ _de.cur_verb }}{% endif %}</span>
-                <span class="l-zh">新上榜{% if _de.cur_verb %} · {{ _de.cur_verb }}{% endif %}</span>
-              </span>
-            {% elif _de.get('left_board') %}
-              <span class="nb-delta-verb nb-delta-leave">
-                <span class="l-en">left board{% if _de.prev_verb %} · was {{ _de.prev_verb }}{% endif %}</span>
-                <span class="l-zh">已离榜{% if _de.prev_verb %} · 原为 {{ _de.prev_verb }}{% endif %}</span>
-              </span>
-            {% elif _de.prev_verb != _de.cur_verb and (_de.prev_verb or _de.cur_verb) %}
-              <span class="nb-delta-verb">{{ _de.get('prev_verb','—') }} → {{ _de.get('cur_verb','—') }}</span>
-            {% endif %}
-            {# Reason code changes — descriptive labels only #}
-            {% if _de.get('reasons_removed') %}
-            <span class="nb-delta-cleared">
-              <span class="l-en">cleared: {% for _rc in _de.reasons_removed %}{{ _NBR_EN.get(_rc, _rc) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-              <span class="l-zh">已解除：{% for _rc in _de.reasons_removed %}{{ _NBR_ZH.get(_rc, _rc) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-            </span>
-            {% endif %}
-            {% if _de.get('reasons_added') %}
-            <span class="nb-delta-added">
-              <span class="l-en">added: {% for _ra in _de.reasons_added %}{{ _NBR_EN.get(_ra, _ra) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-              <span class="l-zh">新增：{% for _ra in _de.reasons_added %}{{ _NBR_ZH.get(_ra, _ra) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
-            </span>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-      </details>
-      {% endif %}{# end delta strip #}
+      {% endif %}
       {# ── W8-R6: US stocktable JSON data block + mount points ───────────
          Serializes us_standouts.buy rows with flat keys for StockTable.init.
          No re-ordering: system order is preserved (CN no-mutation pattern).
@@ -14949,13 +14899,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {% endif %}
       </div>{# end .nbgrid #}
       </div>{# end .nb-grid-section #}
+      {% set _has_outcomes = us_board_outcomes and us_board_outcomes.get('rows') %}
+      {% if _has_outcomes %}<div class="prophet-board-tools">{% endif %}
       {# W2 outcomes strip: recently surfaced → outcome. Renders only when the artifact
          exists and has rows (us_board_outcomes is None when empty:true or absent).
          Ticker links mirror the standout card href pattern (stock.html#TICKER).
          Color uses az-up / az-dn semantic vars — zh root flips up→red/down→green correctly.
          W3 survivorship disclosure: n_skipped_no_price = names with no price / delisted
          that were silently excluded from graded outcomes (the win/loss mix is survivor-tilted). #}
-      {% if us_board_outcomes and us_board_outcomes.get('rows') %}{% set _oc = us_board_outcomes %}
+      {% if _has_outcomes %}{% set _oc = us_board_outcomes %}
       {% set _sm = _oc.get('summary') or {} %}
       {# Track-record stats for the pinned toggle button. Prefer the builder-emitted
          summary.win_rate (0..1) / summary.avg_pct (%); fall back to computing from the
@@ -15002,6 +14954,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       } %}
       {% include '_track_record_dlg.html.j2' %}
       {% endif %}
+      {% if _has_outcomes and _has_delta %}{% include '_what_changed_dlg.html.j2' %}{% endif %}
+      {% if _has_outcomes %}</div>{% endif %}
       {% if top_setups %}
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">

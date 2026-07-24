@@ -1158,6 +1158,12 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .lst-wrap:has(.lst-collapse.lst-cap4 > :nth-child(5)) > .lst-more { display:block; }
 }
 
+/* Prophet action lanes: top three at a glance, with the remainder in Show more. */
+.lst-collapse.lst-cap3.is-collapsed > :nth-child(n+4) { display:none; }
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse.lst-cap3 > :nth-child(4)) > .lst-more { display:block; }
+}
+
 /* ---- List overlay (theme.js initListOverlay) -------------------------------------
    Replaces the in-flow "Show more" expansion on every .lst-wrap list: theme.js restyles
    the .lst-more button into a quiet "View all N" pill (.lst-viewall) and a click MOVES
