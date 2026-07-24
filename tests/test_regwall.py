@@ -71,10 +71,36 @@ def test_ret_sanitization():
     assert r.headers["location"] == "/?signin=1"
 
 
-def test_public_ret_not_echoed():
-    # redirecting back to a public page is pointless; keep the location minimal
+def test_public_funnel_page_allows():
+    # the marketing funnel is public — allow without a session (never 302 to login)
     r = _check(orig="/index.html")
-    assert r.headers["location"] == "/?signin=1"
+    assert r.status_code == 204
+    assert r.headers["x-regwall"] == "public"
+
+
+def test_public_seo_trees_allow_without_session():
+    # the free/SEO estate must stay crawlable — Googlebot carries no session, so
+    # these MUST 204, never 302, or the wall silently kills organic reach.
+    for orig in ("/stocks/NVDA.html", "/tools/index.html",
+                 "/tools/calculators/roi.html", "/learn/technical/index.html",
+                 "/blog/win-rate-is-overrated.html"):
+        r = _check(orig=orig)
+        assert r.status_code == 204, f"{orig} must be public (no session needed)"
+        assert r.headers["x-regwall"] == "public", orig
+
+
+def test_gated_dashboard_still_denies_with_ret():
+    # a non-public dashboard still requires an account and echoes ret for return
+    r = _check(orig="/bonds.html")
+    assert r.status_code == 302
+    assert r.headers["location"] == "/?signin=1&ret=/bonds.html"
+
+
+def test_deny_skips_public_ret():
+    # _deny never bounces back to a public page (pointless); gated pages ARE echoed
+    assert regwall._deny("/index.html").headers["Location"] == "/?signin=1"
+    assert regwall._deny("/stocks/NVDA.html").headers["Location"] == "/?signin=1"
+    assert regwall._deny("/bonds.html").headers["Location"] == "/?signin=1&ret=/bonds.html"
 
 
 def test_kill_switch(monkeypatch):
