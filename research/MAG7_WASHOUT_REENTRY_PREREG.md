@@ -135,6 +135,32 @@ No threshold is fitted here. Instead the ENGINE now stamps every forward trigger
 conditioner adjudication runs on those stamped forward triggers plus this census under
 one pre-stated ruler.
 
+## §2d. Timeframe × personality assessment (operator hypothesis 2026-07-24 —
+"MCD is slower, works on a higher timeframe"; report
+`reports/mwr_timeframe_personality.md`, scan
+`scripts/research/mwr_timeframe_personality_scan.py`)
+
+S1 on a 4-rung bar ladder (3D/1W/2W/1M) across 1,623 names. Three findings:
+
+1. **Operator's specific rung call CONFIRMED**: MCD's best liquid rung is 1W
+   (+2.22%, n=37) vs −0.03% at 2W — the §2b "MCD is flat" read sampled the name
+   at nearly its worst rung and is RETRACTED as a class argument. JNJ same shape
+   (1W +2.76%). COST's −2.91% was also its worst rung (3D/1W positive).
+2. **The general slow-name→higher-rung law NOT supported**: corr(vol, best rung)
+   = +0.035 ≈ 0; no monotone tercile pattern (best rungs: low-vol 3D, mid-vol 1W,
+   high-vol 3D); defensives' best liquid rungs are FASTER (1W/3D), not higher.
+   The home rung is idiosyncratic per name. Per-name best-rung values carry
+   4-way selection multiplicity — any per-class construction (e.g. a defensive-
+   compounder gate: MCD/JNJ-class at 1W, graded fwd126 — defensives mean-revert
+   on ~6-month horizons: KO +6.67, JNJ +5.07 at fwd126) is a NEW prereg with the
+   grid counted. Nothing here changes the live gate.
+3. **MAG7-EW ladder retires most of the anchor-B fragility concern**: basket
+   uplift RISES with rung (3D +1.09 → 1W +2.30 → 2W +5.74 → 1M +5.60, n=6) —
+   the 2W home is not an anchor fluke; cohort-synchronized washouts are slow
+   events, so the basket behaves slow though its members are fast. The pinned
+   2W-primary / 3D-precision-arm-while-armed structure is the shape the data
+   independently selects.
+
 ## §3. What accrues now (display-tier, freely)
 
 Nightly `snapshot()`: gate state + 2W K/D + 1W/3D RSI-MACD + member breadth into
