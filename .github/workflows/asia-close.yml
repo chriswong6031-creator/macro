@@ -608,6 +608,15 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
+          # step above rewrites the site/ copies of the ~48 templates/-paired plain-copy
+          # assets, and only the post-rebase --fix in the push loop heals the divergence —
+          # a cancellation/failure between this commit and that heal ships it (engine-render
+          # 2026-07-24: run 30057066815 cancelled mid-push-loop landed b6386adb4af, sync gate
+          # red on every PR until #3358; this lane's own instance was 2026-07-23 commit
+          # 4b356dd6b1a, pre-#3285). Heal BEFORE staging so the first commit is never
+          # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
+          python -m scripts.check_template_site_sync --fix || true
           git add data/ site/
           # force-add the gitignored per-market search libraries + reconstructed candles
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
