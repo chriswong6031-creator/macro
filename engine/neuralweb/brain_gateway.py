@@ -255,6 +255,9 @@ _BRAIN_TOOLS = frozenset({
     "get_movers",
     "get_house_view",
     "get_watchlist",
+    # Portfolio-Aware Intelligence W1 — the signed-in user's own book, read through the
+    # desks' current reads (Pro-only, descriptive-only).
+    "get_portfolio_brief",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -293,6 +296,8 @@ _BRAIN_ONLY_TOOLS = frozenset({
     "get_movers",
     "get_house_view",
     "get_watchlist",
+    # Portfolio-Aware Intelligence W1
+    "get_portfolio_brief",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -934,6 +939,19 @@ def _brain_tool_schemas() -> list[dict]:
                 "NAMED board states (on the buy board / on watch / lagging) and plain-word stage. "
                 "Call when the user asks about 'my watchlist', 'my positions', or 'my portfolio'. "
                 "No arguments — the user is resolved from the session. Never blends a fused risk score."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "get_portfolio_brief",
+            "description": (
+                "The signed-in user's OWN book (holdings/watchlist) read through the desks' "
+                "current reads — sector exposure, rotation-board placement, Weinstein stage "
+                "tally, the daily regime read, the earnings clock, and filings touches on their "
+                "names. DESCRIPTIVE ONLY — reports exposures, counts, dates, and the desk's "
+                "general stance words applied to their book; NEVER a recommendation, target, or "
+                "'buy/sell X' instruction. Pro-only: a non-Pro user gets a pro_required result "
+                "to explain, not a brief. No arguments — the user is resolved from the session."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
@@ -1991,6 +2009,74 @@ def _tool_get_watchlist(params: dict, root: Path, user_id: str = "") -> dict:
     }
 
 
+def _tool_get_portfolio_brief(params: dict, root: Path, user_id: str = "") -> dict:
+    """The signed-in user's own book, read through the desks' CURRENT reads.
+
+    Portfolio-Aware Intelligence W1 (charter §1 V1). Loads the user's holdings the same
+    way as get_watchlist (open portfolio_positions → positions mode; else the watchlist
+    symbols → equal mode) and joins them against the nightly portfolio_ctx.v1 artifact
+    via the pure composer engine.portfolio_brief.compose_brief. DESCRIPTIVE ONLY — no
+    recommendations, no imperatives; every stance word is the desk's own, applied to the
+    book. Pro-only, mirroring GET /api/portfolio/brief: a non-Pro user gets
+    {"error":"pro_required","tier":…} as the tool result so the model can explain the
+    gate instead of fabricating a brief. The advice filter needs no changes — the
+    composer passes it untouched by construction (tests assert this)."""
+    if not user_id:
+        return {"available": False, "note": "no user_id — sign in to see your book"}
+
+    # Pro gate (active/trialing entitled) — reuse the in-process tier resolver.
+    ent = _resolve_tier(user_id, root=root)
+    tier = ent.get("tier") or "free"
+    status = ent.get("status") or "active"
+    if not (tier in ("pro", "unlimited") and status in ("active", "trialing")):
+        return {"error": "pro_required", "tier": tier,
+                "note": ("The portfolio brief is a Pro capability. This user is on the "
+                         f"'{tier}' tier — explain the Pro gate; do not compose a brief.")}
+
+    # Holdings: open positions first (positions mode), else watchlist symbols (equal).
+    import urllib.parse as _up  # noqa: PLC0415
+    quid = _up.quote(str(user_id))
+    holdings: list[dict] = []
+    pos_rows = _sb_get(
+        f"portfolio_positions?user_id=eq.{quid}&status=eq.open"
+        f"&select=ticker,shares,entry_price")
+    if pos_rows:
+        for r in pos_rows:
+            if isinstance(r, dict) and r.get("ticker"):
+                holdings.append({"ticker": r.get("ticker"), "shares": r.get("shares"),
+                                 "entry_price": r.get("entry_price")})
+    if not holdings:
+        lists = _sb_get(f"watchlists?user_id=eq.{quid}&select=id&order=position")
+        list_ids = [str(r.get("id")) for r in (lists or [])
+                    if isinstance(r, dict) and r.get("id") is not None]
+        if list_ids:
+            sym_rows = _sb_get(
+                f"watchlist_symbols?watchlist_id=in.({','.join(list_ids)})"
+                f"&select=symbol,position&order=position")
+            seen: set = set()
+            for r in (sym_rows or []):
+                s = r.get("symbol") if isinstance(r, dict) else None
+                if s and s not in seen:
+                    seen.add(s)
+                    holdings.append({"ticker": s, "shares": None, "entry_price": None})
+
+    # ctx artifact from disk (same idiom as the other file-backed reads).
+    ctx_path = root / "site" / "data" / "portfolio_ctx.json"
+    try:
+        ctx = json.loads(ctx_path.read_text(encoding="utf-8"))
+        if not isinstance(ctx, dict):
+            raise ValueError("ctx not an object")
+    except Exception:  # noqa: BLE001
+        return {"error": "ctx_unavailable",
+                "note": "the nightly portfolio context artifact is missing tonight"}
+
+    from datetime import date as _date, datetime as _dt, timezone as _tz  # noqa: PLC0415
+    from engine.portfolio_brief import compose_brief  # noqa: PLC0415
+    today = _date.today().isoformat()
+    generated_at = _dt.now(_tz.utc).replace(microsecond=0).isoformat()
+    return compose_brief(ctx, holdings, today, generated_at)
+
+
 def _tool_set_chart_symbol(params: dict) -> dict:
     """CLIENT-EXECUTED: emit set_symbol command. Server performs no action."""
     symbol = _safe_symbol(params.get("symbol") or "")
@@ -2675,6 +2761,8 @@ def _dispatch_brain_tool(
             return _tool_get_house_view(tool_params, root)
         if tool_name == "get_watchlist":
             return _tool_get_watchlist(tool_params, root, user_id=user_id)
+        if tool_name == "get_portfolio_brief":
+            return _tool_get_portfolio_brief(tool_params, root, user_id=user_id)
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)

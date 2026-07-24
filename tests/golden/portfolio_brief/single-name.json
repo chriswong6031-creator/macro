@@ -1,0 +1,101 @@
+{
+  "asof": "2026-07-23",
+  "book": {
+    "covered": 1,
+    "n": 1,
+    "uncovered": []
+  },
+  "generated_at": "2026-07-23T14:00:00+00:00",
+  "headline": {
+    "en": "Your book today: 1 name, top weight Technology 100%, desk read Risk-on.",
+    "zh": "你今日的持仓：1 只个股，最大权重Technology 100%，桌面判读风险偏好。"
+  },
+  "schema": "portfolio_brief.v1",
+  "sections": [
+    {
+      "key": "exposure",
+      "lines": [
+        {
+          "en": "100% of your book is Technology — today's desk read on Technology is Cautious (bounce, not a turn).",
+          "zh": "你的持仓有 100% 在Technology — 桌面今日对Technology的判读为谨慎（bounce, not a turn）。"
+        },
+        {
+          "en": "With that much in one sector, your effective diversification is thinner than it looks.",
+          "zh": "如此集中于单一板块，你的实际分散度比看上去要薄。"
+        }
+      ],
+      "title_en": "Exposure",
+      "title_zh": "持仓暴露"
+    },
+    {
+      "key": "lanes",
+      "lines": [
+        {
+          "en": "Your sectors on the board: Technology — Cautious (bounce, not a turn).",
+          "zh": "你的板块在桌面的位置：Technology — 谨慎（bounce, not a turn）。"
+        }
+      ],
+      "title_en": "Rotation board",
+      "title_zh": "轮动板"
+    },
+    {
+      "key": "signals",
+      "lines": [
+        {
+          "en": "1 of your 1 covered names are in Stage 2 uptrends (1 fresh).",
+          "zh": "你 1 只有覆盖的个股中，有 1 只处于第 2 阶段上升趋势（1 只为新转）。"
+        },
+        {
+          "en": "The desk's global entry gate is shut tonight — new-entry signals are blocked.",
+          "zh": "桌面的全局入场闸门今晚关闭 — 新入场信号被拦下。"
+        },
+        {
+          "en": "NVDA: UNCONFIRMED TURN (COUNTERTREND BOUNCE).",
+          "zh": "NVDA：UNCONFIRMED TURN（COUNTERTREND BOUNCE）。"
+        }
+      ],
+      "title_en": "Signals",
+      "title_zh": "信号"
+    },
+    {
+      "key": "regime",
+      "lines": [
+        {
+          "en": "The desk's daily read: Risk-on (77/100).",
+          "zh": "桌面今日判读：风险偏好（77/100）。"
+        }
+      ],
+      "title_en": "Regime",
+      "title_zh": "市场环境"
+    },
+    {
+      "key": "filings",
+      "lines": [
+        {
+          "en": "This week: a Congress buy in NVDA (filed 2026-07-22).",
+          "zh": "本周：NVDA 出现一笔国会购入披露（申报于 2026-07-22）。"
+        },
+        {
+          "en": "This week: a Congress sell in NVDA (filed 2026-07-18).",
+          "zh": "本周：NVDA 出现一笔国会售出披露（申报于 2026-07-18）。"
+        },
+        {
+          "en": "Insider tape: NVDA 0 buyers / 10 sellers.",
+          "zh": "内部人动向：NVDA 0 买 / 10 卖。"
+        },
+        {
+          "en": "13F trend: 1 of your names saw more adds than trims last quarter.",
+          "zh": "13F 趋势：上季度有 1 只被更多机构增持而非减持。"
+        }
+      ],
+      "title_en": "Filings desk",
+      "title_zh": "监管申报"
+    }
+  ],
+  "stale": false,
+  "weighting": {
+    "label_en": "by cost basis",
+    "label_zh": "按成本权重",
+    "mode": "positions"
+  }
+}
