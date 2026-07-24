@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-23",
+ "as_of": "2026-07-24",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -44,12 +44,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "QCOM",
-     "name": "Qualcomm Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
     },
     {
      "ticker": "NXPI",
@@ -106,12 +106,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
@@ -398,12 +398,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "QCOM",
-     "name": "Qualcomm Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
     },
     {
      "ticker": "NXPI",
@@ -548,12 +548,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
