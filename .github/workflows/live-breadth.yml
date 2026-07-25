@@ -1,0 +1,64 @@
+name: live-breadth
+# Backstop lane for the live intraday breadth poller (Phase 2 of the Live Tape
+# program — research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4, D6/D7).
+#
+# The PRIMARY producer is scripts/live_breadth_poller.py running as a persistent
+# loop on the VPS/Mac host (--rth-only --publish, 60-120s cadence — see
+# docs/live_breadth_runbook.md). GH cron cannot hold a 1-2 min cadence
+# (best-effort ~15-45 min), so this workflow is only the COARSE floor: when the
+# host loop is down it still refreshes site/live/breadth.json every ~30 min
+# during RTH so the surface never goes fully stale.
+#
+# Runs ONE cycle with --publish (the same site/live/*.json commit-to-main path
+# the intraday-fastpath uses for overlay.json). site/live/ is gitignored and
+# force-tracked; the poller's own git add/commit/push handles the publish and is
+# INERT on any git failure.
+#
+# Feed is ~15-min-delayed Polygon STANDARD (delay_min stamped honestly). Set the
+# POLYGON_API_KEY repo secret to arm it; absent a key the poller emits a
+# fail-soft empty-tiers payload (the surface falls back to the baked nightly
+# numbers).
+on:
+  schedule:
+    # :05 + :35 past the hour, 13:00-20:59 UTC, Mon-Fri (roughly US premarket
+    # through the close). Offset from the intraday-fastpath (:00/:30) so the two
+    # commit lanes don't collide on the same tick.
+    - cron: "5,35 13-20 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Only the latest breadth snapshot matters — cancel any in-flight run.
+  group: live-breadth
+  cancel-in-progress: true
+
+jobs:
+  poll:
+    # Cutover guard (mirrors intraday-fastpath): the scheduled backstop is
+    # disabled once the VPS host loop is primary (VPS_LIVE_PRIMARY=true); manual
+    # dispatch always remains as the recovery path.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true' }}
+    runs-on: [self-hosted, macstudio-light]   # light runner: never queue behind nightly/render on the macstudio pool; the baked breadth caches are already on the box
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: poll breadth once + publish
+        # RTH gate is inside session_tag/delay stamping; the poller always emits with
+        # an honest `session` value. Non-fatal: any failure leaves the last committed
+        # breadth.json untouched (tracked file) so the surface keeps the prior read.
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          python -m scripts.live_breadth_poller --once --publish || \
+            echo "::warning::live-breadth poll failed (non-fatal; prior breadth.json retained)"

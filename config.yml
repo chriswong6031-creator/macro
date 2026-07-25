@@ -3068,6 +3068,17 @@ live_flow:
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
 
+# Live intraday breadth poller (scripts/live_breadth_poller.py) — Phase 2 of the
+# Live Tape program (research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4, D6/D7). ONE
+# Polygon full-market snapshot per cycle, joined to the nightly-baked per-name
+# breadth thresholds (data/<ns>/_closes_cache.parquet for the S&P 500/400/600
+# tiers), -> site/live/breadth.json. DISPLAY-TIER: zero data/ writes, no ledger
+# advancement. Runs on the VPS/Mac loop host beside live_flow_poller (D7).
+live_breadth:
+  cadence_sec: 90           # target poll interval (seconds; clamped to 60-120)
+  jitter_sec: 10            # +uniform jitter added to each sleep (thundering-herd guard)
+  # delayed_min: 15         # vendor delay floor; defaults to the shared live.delayed_min
+
 # U-CHAIN intraday chain-snapshot lane (scripts/chain_snapshot_poller.py) —
 # 15-min full-chain greeks/OI sweeps for the active universe, persisted as
 # per-root per-day parquet (the Interval Map / Volatility Drift data plane).
