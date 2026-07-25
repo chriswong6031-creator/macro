@@ -24,6 +24,17 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
 # a snapshot, so a fresh checkout may hold none of them. The policy line is
 # still the boundary of record — only the on-disk existence check is exempt.
+#
+# NOT a home for render-lane output. Generated-but-COMMITTED trees (/stocks/,
+# /research/, /factordata/tech_events/, ...) are built on the runner and land
+# through the render lane's `git add site/`, so a fresh checkout holds them like
+# any other tracked file. When one is missing the honest fix is to COMMIT the
+# tree, not to exempt it: #3487 wired the /research/ builder into render.yml +
+# engine-render.yml, but no render had committed the pages yet, so the prefix was
+# declared public while the tree existed nowhere — tier-gate red on every PR AND
+# /research/ 404 in production. Exempting it here would have required gitignoring
+# site/research/ (see test_runtime_artifact_exemption_stays_honest), which cements
+# the 404 by permanently stopping the render lane from ever shipping the pages.
 RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
 
 
