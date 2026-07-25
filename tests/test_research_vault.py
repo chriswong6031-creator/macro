@@ -105,6 +105,33 @@ def test_normalize_missing_title_falls_back_to_pdf_then_filename():
     assert item2["needs_metadata"] is True
 
 
+def test_normalize_recovers_truncated_title_from_pdf():
+    # MarketDesk dropped the Reuters ".US)" suffix → unbalanced "(". A fuller,
+    # balanced PDF /Title is preferred (and the recovery is transparent — the
+    # sidecar DID supply a title, so needs_metadata is NOT raised).
+    item = sidecar_mod.normalize(
+        {"title": "Alcon Inc. (ALCC", "institution": "GS", "published_at": "2026-07-01"},
+        fallback_title_pdf="Alcon Inc. (ALCC.US) - Q2 Results")
+    assert item["title"] == "Alcon Inc. (ALCC.US) - Q2 Results"
+    assert item["needs_metadata"] is False
+
+
+def test_normalize_keeps_truncated_title_when_pdf_not_better():
+    # PDF title absent, itself truncated, or shorter → keep the sidecar title as-is.
+    base = {"title": "Carrefour (CARR", "institution": "GS"}
+    assert sidecar_mod.normalize(base)["title"] == "Carrefour (CARR"                       # no pdf
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour (CARR"   # pdf also truncated
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour (CARR"             # pdf shorter
+
+
+def test_normalize_good_title_never_touched_by_pdf():
+    # A balanced sidecar title is never replaced, even if a PDF title exists.
+    item = sidecar_mod.normalize(
+        {"title": "Datacenter demand inflecting", "institution": "GS"},
+        fallback_title_pdf="Microsoft Word - template.docx")
+    assert item["title"] == "Datacenter demand inflecting"
+
+
 def test_normalize_missing_title_all_the_way_to_placeholder():
     item = sidecar_mod.normalize({"institution": "GS"})
     assert item["title"] == "Untitled research"

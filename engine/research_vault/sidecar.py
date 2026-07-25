@@ -142,6 +142,12 @@ def parse_json(raw: bytes | str | None) -> tuple[dict, bool]:
     return obj, False
 
 
+def _looks_truncated(title: str) -> bool:
+    """True when a title has more '(' than ')' — the fingerprint of MarketDesk
+    dropping a Reuters ".EX)" exchange suffix (e.g. "Alcon Inc. (ALCC")."""
+    return title.count("(") > title.count(")")
+
+
 def normalize(
     sidecar: dict | None,
     *,
@@ -172,6 +178,14 @@ def normalize(
 
     # --- title ladder ------------------------------------------------------
     title = _as_str(sc.get("title"))
+    # Recover a MarketDesk-truncated title from the PDF's embedded /Title. MarketDesk
+    # drops the Reuters ".EX)" exchange suffix off its own name, so "Alcon Inc. (ALCC.US)"
+    # arrives as "Alcon Inc. (ALCC" (the tell is an unbalanced "("). When that happens and
+    # the PDF carries a fuller, balanced /Title, prefer it — never regressing a good title.
+    if title and _looks_truncated(title):
+        pdf_title = _as_str(fallback_title_pdf)
+        if pdf_title and not _looks_truncated(pdf_title) and len(pdf_title) >= len(title):
+            title = pdf_title
     if not title:
         title = _as_str(fallback_title_pdf)
         if title:
