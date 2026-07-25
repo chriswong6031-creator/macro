@@ -30,12 +30,19 @@ name: marketing-publish
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
-    # Weekday posting slots matching the outbox AM / PM / EOD queue times.
-    # Deliberately clear of the 22:30 UTC nightly (daily.yml) window to reduce
-    # ledger-commit races on data/marketing/outbox/*.jsonl.
-    - cron: "0 14 * * 1-5"    # AM slot  (14:00 UTC)
-    - cron: "30 17 * * 1-5"   # PM slot  (17:30 UTC)
-    - cron: "15 20 * * 1-5"   # EOD slot (20:15 UTC)
+    # 2-hour Pacific signal ladder (cadence masterplan §5). Sweep every 2h across
+    # the 11:00–03:00 UTC window that covers the 4 AM–6 PM PT ladder slots in BOTH
+    # PDT (11:00–01:00 UTC) and PST (12:00–02:00 UTC) — 9 sweeps/day, EVERY day
+    # (weekend signal content is naturally thinner, so weekends post fewer). Each
+    # sweep posts whatever ladder items are DUE (scheduled_at ≤ now), one at a
+    # time under the 10-min global floor; the humanizing jitter scatters off the
+    # round minute. Breaking/news fire via event-driven dispatch, not cron.
+    # The ~22:30 UTC nightly (daily.yml) also commits the outbox ledger; the 23:00
+    # sweep's retry-rebase push loop tolerates that overlap. Cost note: each sweep
+    # does a full-history checkout (~7m) for a race-safe ledger push — reducing
+    # that (shallow + unshallow-on-commit) is the lever if runner minutes matter,
+    # but it is NOT done here because a failed post-commit push double-posts.
+    - cron: "0 1,3,11,13,15,17,19,21,23 * * *"
   workflow_dispatch:          # manual runs (still dark unless the secret is set)
 
 permissions:
@@ -83,13 +90,12 @@ jobs:
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
-        # best-effort ~0-15m late; this adds up to 5 more minutes of scatter so
-        # the account never posts on the exact same wall-clock minute). Capped at
-        # 5m (was 10m): combined with the ~7m full-history checkout + deps install
-        # a high draw ran past the job timeout and the run was cancelled before the
-        # publisher step (see timeout-minutes note above). 5m still de-syncs the
-        # wall-clock minute; the cron itself already adds ~0-15m of natural scatter.
-        run: sleep $((RANDOM % 300))
+        # best-effort ~0-15m late; this adds a little scatter so the account never
+        # posts on the exact same wall-clock minute). Capped at 2m (was 5m, was
+        # 10m): now that the ladder runs 9 sweeps/day, a big per-sweep sleep is
+        # wasted runner time AND the 10-min global floor already paces posting, so
+        # 2m is plenty of de-sync. Well clear of the 25m job timeout.
+        run: sleep $((RANDOM % 120))
 
       - name: fetch full-universe live quotes (tape gate input)
         # AFTER the jitter sleep so the snapshot is as fresh as possible at post
