@@ -557,6 +557,13 @@ Leg names — **reuse the existing `A_LEGS` / `B_LEGS` arrays from
 | Volume confirms | 成交量确认 |
 | Not a failed breakout | 非假突破 |
 
+**Hover is per-LADDER, not per-dot** — a deliberate deviation from the lane brief's "plain-
+word hover per dot". Each segment is 8px wide; eight individual hover targets are far below
+the 44px touch minimum and would be unusable on phones, and eight separate popovers to read
+one row is worse than one. The single ladder tip names *every* leg, split into confirming
+and not-yet, which delivers the same information in one gesture and works on touch. This is
+also what #3224 shipped, so adopting it keeps one idiom across the estate.
+
 Ladder hover text is composed exactly as the #3224 macro does — "N of M signs confirming ·
 <lit list>. Not yet — <missing list>" / "M 项信号中 N 项确认：<…>。尚缺：<…>".
 
