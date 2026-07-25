@@ -132,6 +132,9 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      # Lane G: intraday BS greek engine feeding the surface gex/dex/vanna/charm grids.
+      - "engine/intraday_greeks.py"
+      - "tests/test_intraday_greeks.py"
       - "engine/grading_stats.py"
       - "tests/test_grading_stats.py"
       # W3.6 cross-page cycle-consistency gate (R3-M3): same instrument must show the
@@ -1061,21 +1064,26 @@ jobs:
 
   flow-surface:
     # Flow-Surface store: scripts/build_flow_surface materializes per-strike net-premium
-    # grids (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the Terminal
-    # surface pane replays. A regression here (grid orientation/dims, idx↔files stamp
-    # drift, dishonest cadence, non-idempotent stamp append) would corrupt or blank the
-    # pane. Shapes are asserted against a vendored copy of the Terminal contract
-    # (surfaceContract.ts). Pure-Python, no engine deps.
+    # grids + (Lane G) intraday dealer-exposure greek grids (gex/dex/vanna/charm) +
+    # walls/coverage (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the
+    # Terminal surface pane replays. A regression here (grid orientation/dims, idx↔files
+    # stamp drift, dishonest cadence, non-idempotent append, greek-vs-EOD sign drift, or a
+    # greek failure breaking the netprem write) would corrupt or blank the pane. Shapes are
+    # asserted against a vendored copy of the Terminal contract (surfaceContract.ts); the
+    # greek math is checked against engine/greeks + engine/gex_engine (the EOD source it
+    # mirrors), so numpy/pandas/scipy are needed (the greek engine is numpy-vectorized).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pyyaml
-      - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append)
+      - name: install deps
+        run: pip install pytest pyyaml numpy pandas scipy
+      - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
+      - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
+        run: python -m pytest tests/test_intraday_greeks.py -q
 
   cycle-grading-stats:
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one

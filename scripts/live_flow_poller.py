@@ -416,6 +416,37 @@ def _load_oi_prev(root: str, session_date: str) -> object | None:
         return None
 
 
+# ── surface greek OI cache (Lane G) ────────────────────────────────────────────────
+# The intraday greek grids weight per-contract exposure by prior-day OI (the OI-timing
+# law: OPRA OI is EOD t-1, unchanged intraday). OI is therefore constant for the whole
+# session — cache the {(exp,strike,right)→oi} map per surface root ONCE per session so the
+# greek path costs no extra parquet read after the first cycle. Reuses _load_oi_prev (the
+# same EOD-t-1 source the feed uses) — no new API fetch, no 8-request-ceiling contention.
+_SURFACE_OI_CACHE: dict[str, dict] = {}
+
+
+def _surface_oi_map(root: str, session_date: str) -> dict:
+    """Session-cached {(exp_str,strike,right)→oi} for a surface root (Lane G). {} if absent."""
+    key = f"{session_date}:{root.upper()}"
+    if key in _SURFACE_OI_CACHE:
+        return _SURFACE_OI_CACHE[key]
+    oi_map: dict = {}
+    try:
+        oi_df = _load_oi_prev(root, session_date)  # cols: expiration, strike, right, open_interest
+        if oi_df is not None:
+            from scripts.build_flow_surface import oi_by_contract
+            oi_map = oi_by_contract(oi_df)
+    except Exception as e:  # noqa: BLE001 — never break a cycle for greek OI
+        log.debug("poller: surface OI map failed for %s: %s", root, e)
+        oi_map = {}
+    _SURFACE_OI_CACHE[key] = oi_map
+    if oi_map:
+        log.info("poller: surface OI cached %s — %d contracts (EOD t-1)", root.upper(), len(oi_map))
+    else:
+        log.info("poller: surface OI empty for %s (greek grids will show 0 coverage)", root.upper())
+    return oi_map
+
+
 # ── prior-session close loader (FIX 3 — moneyness) ───────────────────────────
 
 def _load_prev_close(root: str, session_date: str) -> float | None:
@@ -900,6 +931,20 @@ def run_cycle(
     meta_notes: list[str]   = []
     requests_count          = 0
 
+    # ── Lane G: surface greek inputs (per-contract quotes tapped from the raw tape) ──
+    # For SURFACE roots only, extract the freshest per-contract NBBO mid this cycle from
+    # calls_df/puts_df BEFORE they're freed (line ~"del calls_df"), so the greek grids get
+    # per-contract quotes without any extra API fetch. Bounded: surface roots only, one
+    # quote per contract. Fenced so a failure never disturbs the feed. Timed → meta.
+    try:
+        from scripts.build_flow_surface import resolve_surface_roots as _rsr
+        _surface_root_set = set(_rsr(cfg, root_gross))
+    except Exception:  # noqa: BLE001
+        _surface_root_set = set()
+    surface_quotes: dict[str, list] = {}
+    surface_spot_fallback: dict[str, float] = {}
+    surface_quote_sec: float = 0.0
+
     # Fetch in parallel (max_concurrent=2); per-root start_time in time_window mode
     fetch_results: dict[str, tuple] = {}
     with ThreadPoolExecutor(max_workers=max_w) as pool:
@@ -1022,6 +1067,26 @@ def run_cycle(
                 unusual_by_root[r2] = un
 
         meta_notes.extend(result.get("meta_notes", []))
+
+        # ── Lane G: tap this cycle's per-contract quotes for the surface greek grids ──
+        # Surface roots only; freshest NBBO mid per contract; fenced + timed. Done BEFORE
+        # the frames are freed below so no extra fetch is needed. prev_close is the parity
+        # spot fallback the greek engine uses when parity can't resolve.
+        if root.upper() in _surface_root_set:
+            _sq_t0 = time.perf_counter()
+            try:
+                from scripts.build_flow_surface import extract_cycle_quotes
+                near_cap = cfg.get("near_dte_cap_days", 90)
+                quotes = extract_cycle_quotes(
+                    calls_df, puts_df, session_date=session_date,
+                    near_dte_cap_days=int(near_cap) if near_cap is not None else None)
+                if quotes:
+                    surface_quotes[root.upper()] = quotes
+                    if prev_close is not None and prev_close > 0:
+                        surface_spot_fallback[root.upper()] = float(prev_close)
+            except Exception as sq_err:  # noqa: BLE001 — greek tap must not disturb the feed
+                log.debug("poller: surface quote tap failed for %s: %s", root, sq_err)
+            surface_quote_sec += time.perf_counter() - _sq_t0
 
         # Item 8 — free per-root frames after processing to cap intraday memory growth.
         del calls_df, puts_df, result
@@ -1150,6 +1215,10 @@ def run_cycle(
         "max_concurrent":        max_w,
         "two_tier":              _two_tier_enabled(),
         "daily_summary":         _daily_summary_enabled(),
+        # Lane G: added wall time to tap per-contract quotes for the surface greek grids
+        # (surface roots only). Measured so the render budget stays honest.
+        "surface_greek_quote_sec": round(surface_quote_sec, 3),
+        "surface_greek_roots":     len(surface_quotes),
         "notes":                 notes,
     }
 
@@ -1163,6 +1232,10 @@ def run_cycle(
         "root_expiries":       root_expiries_acc,
         "root_top_contracts":  root_top_contr,
         "root_gross_today":    root_gross,
+        # Lane G: per-contract quote extract for the surface greek grids (this cycle only —
+        # ephemeral, never serialized to day_state). Consumed by build_and_stage_surfaces.
+        "surface_quotes":         surface_quotes,
+        "surface_spot_fallback":  surface_spot_fallback,
     }
 
     updated_state = {
@@ -1541,25 +1614,37 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             except Exception as tk_err:  # noqa: BLE001
                 log.warning("poller: ticker JSON failed for %s: %s", tick_root, tk_err)
 
-        # ── Flow-Surface snapshot store (per-strike net-premium grids) ────────
-        # Materialize the Terminal surface pane's replay store from the same
-        # tide_day_state["root_strikes"] cumulative rollup. Staged to the gitignored
-        # data/live_flow_out/surface/ dir + uploaded to R2 below (live_flow/surface/…).
-        # Cadence carried honestly = the poller's cadence_sec (this loop's true interval).
-        # Never raises for a root; a bad root is logged and skipped. See
-        # scripts/build_flow_surface.py + RECON §2 / MASTERPLAN §3 Lane T item 5.
+        # ── Flow-Surface snapshot store (netprem + Lane-G greek grids) ────────
+        # Materialize the Terminal surface pane's replay store. netprem comes from the
+        # tide_day_state["root_strikes"] cumulative rollup; the GEX/DEX/VANNA/CHARM grids +
+        # walls + coverage come from tide_day_state["surface_quotes"] (this cycle's freshest
+        # per-contract NBBO, tapped in run_cycle) joined to EOD-t-1 OI (session-cached).
+        # Staged to the gitignored data/live_flow_out/surface/ dir + uploaded to R2 below.
+        # Cadence carried honestly = the poller's cadence_sec. A greek failure never blocks
+        # a root's netprem column (fenced in build_and_stage_surfaces). See
+        # scripts/build_flow_surface.py + engine/intraday_greeks.py + RECON §2 / MASTERPLAN §4.
         surface_paths: list[tuple[Path, str]] = []
         try:
             from scripts.build_flow_surface import (
                 build_and_stage_surfaces, resolve_surface_roots,
             )
             surf_roots = resolve_surface_roots(cfg, rg_dict)
+            surf_quotes = tide_day_state.get("surface_quotes", {}) or {}
+            surf_spot_fb = tide_day_state.get("surface_spot_fallback", {}) or {}
+            # EOD-t-1 OI map per surface root that has quotes (session-cached; no new fetch).
+            surf_oi = {}
+            for _sr in surf_roots:
+                if surf_quotes.get(_sr.upper()):
+                    surf_oi[_sr.upper()] = _surface_oi_map(_sr, session_date)
             surface_paths = build_and_stage_surfaces(
                 root_strikes_by_root=tide_day_state.get("root_strikes", {}),
                 roots=surf_roots,
                 session_date=session_date,
                 asof=meta.get("asof", feed.get("asof", "")),
                 cadence_sec=cadence,
+                quotes_by_root=surf_quotes,
+                oi_by_root=surf_oi,
+                spot_fallback_by_root=surf_spot_fb,
             )
         except Exception as surf_err:  # noqa: BLE001
             log.warning("poller: flow-surface store failed: %s", surf_err)
