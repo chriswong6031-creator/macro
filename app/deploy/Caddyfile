@@ -61,6 +61,11 @@
 	# path to a PDF is the require_user + paid + rate-limited/metered API route.
 	reverse_proxy /api/* 127.0.0.1:8000
 
+	# Live Tape websocket — same-origin relay to macro-api (app/tape.py).
+	# China-reachable (same-origin, like the /sb Supabase proxy). Placed with
+	# the /api/* proxy so a ws upgrade never reaches the HTML gate matchers.
+	reverse_proxy /ws/tape 127.0.0.1:8000
+
 	# VPS live plane — artifacts are owned by systemd lanes and published by
 	# atomic rename outside both the git work-tree and site.served. This prevents
 	# a main-branch pull/rsync from rolling a fresh tick back to the last commit.
