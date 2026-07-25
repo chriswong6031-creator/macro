@@ -525,17 +525,18 @@ class TestRealSynapseSmoke:
         assert len(g.producer_to_artifacts) > 50
 
     def test_regime_latest_downstream_count(self):
-        """downstream(regime-latest) should return ~59 artifacts per census."""
+        """downstream(regime-latest) should return ~98 artifacts per census."""
         pytest.importorskip("yaml")
         g = load_graph()
         result = downstream(g, "regime-latest")
         count = len(result)
-        # Census is 59 as of 2026-07-08. It has grown from the original ~43-46
-        # (5-hop) prediction as downstream consumers of regime-latest were added
-        # across many PRs — legitimate graph growth, not a regression. Band
-        # re-anchored on the true census with ±10 headroom for continued drift.
-        assert 50 <= count <= 70, (
-            f"Expected ~59 downstream artifacts for regime-latest, got {count}"
+        # Census is 98 as of 2026-07-25. It has grown from the original ~43-46
+        # (5-hop) prediction, then 59 (2026-07-08), as downstream consumers of
+        # regime-latest were added across many PRs — legitimate graph growth, not
+        # a regression. Band re-anchored on the true census with headroom for
+        # continued drift (floor kept well below to still catch a collapse).
+        assert 70 <= count <= 130, (
+            f"Expected ~98 downstream artifacts for regime-latest, got {count}"
         )
 
     def test_all_results_bound_upper(self):
