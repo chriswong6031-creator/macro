@@ -115,8 +115,16 @@ jobs:
         #
         # SKIPPED on a breaking dispatch (masterplan §6): a "post now" click must
         # not sit out a random sleep. Any post_now_item implies skip_jitter.
+        #
+        # The event_name guard is deliberate belt-and-braces: on a `schedule` run
+        # the `inputs` context is empty, and rather than depend on how GitHub
+        # coerces a missing property against '' (it compares as equal, so the
+        # bare form also works), this makes the scheduled lane provably identical
+        # to before this input existed. The scheduled lane is not a place to be
+        # clever about expression semantics we cannot run locally.
         if: >-
-          !(inputs.skip_jitter || inputs.post_now_item != '')
+          ${{ !(github.event_name == 'workflow_dispatch'
+                && (inputs.skip_jitter || inputs.post_now_item != '')) }}
         run: sleep $((RANDOM % 120))
 
       - name: fetch full-universe live quotes (tape gate input)
