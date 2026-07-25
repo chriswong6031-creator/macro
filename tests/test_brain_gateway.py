@@ -2032,6 +2032,129 @@ def test_run_brain_loop_fails_over_to_next_provider():
     assert "answer" in ans
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Dead-credential (401/403) failover — the Mastermind blackout fix
+#
+# When a lane's PRIMARY credential expires (Fast: DEEPSEEK_API_KEY, Pro:
+# CLAUDE_CODE_OAUTH_TOKEN) the STREAMING path must fail over to the Anthropic
+# fallback, not black out to an empty reply. Before the fix, _create_failover only
+# failed over on 429/5xx and re-raised a 401 straight out of the loop → meta then a
+# degraded done with NO delta (a blank bubble that reads as "totally broken").
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _auth_error(msg: str = "Error code: 401 - {'type': 'authentication_error', 'message': 'invalid x-api-key'}"):
+    """A plain exception whose message llm_auth._is_auth_error recognises as a 401."""
+    return Exception(msg)
+
+
+def test_is_failover_error_covers_auth_and_transient():
+    class R429(Exception):
+        status_code = 429
+    assert gw._is_failover_error(R429())                  # transient → failover
+    assert gw._is_failover_error(_auth_error())           # 401 dead credential → failover
+    class Bad(Exception):
+        status_code = 400
+    assert not gw._is_failover_error(Bad("bad request"))  # 400 → NOT failover (reraise)
+
+
+def test_create_failover_fails_over_on_dead_primary_key():
+    """A 401 on the primary (expired key) fails over to the fallback and marks it dead."""
+    from engine import llm_auth
+    llm_auth.clear_dead()
+    try:
+        ok = _MockResponse([_MockBlock("text", "served by fallback")], "end_turn")
+        cands = [
+            {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "deepseek-chat"},
+            {"name": "anthropic", "env_var": "ANTHROPIC_API_KEY",
+             "client": _RaiseThenClient(resp=ok), "model": "claude-haiku-4-5"},
+        ]
+        resp, used = gw._create_failover(cands, max_tokens=10, system="", tools=[], messages=[])
+        assert used == "claude-haiku-4-5"
+        assert resp.content[0].text == "served by fallback"
+        assert llm_auth.is_dead("deepseek", "DEEPSEEK_API_KEY")  # skipped on later turns
+    finally:
+        llm_auth.clear_dead()
+
+
+def test_create_failover_reraises_when_all_creds_dead():
+    """Every provider 401 → no working key → raise (caller degrades)."""
+    from engine import llm_auth
+    llm_auth.clear_dead()
+    try:
+        cands = [
+            {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "deepseek-chat"},
+            {"name": "anthropic", "env_var": "ANTHROPIC_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "claude-haiku-4-5"},
+        ]
+        with pytest.raises(Exception):
+            gw._create_failover(cands, max_tokens=10, system="", tools=[], messages=[])
+    finally:
+        llm_auth.clear_dead()
+
+
+def test_chat_stream_fails_over_to_fallback_on_dead_primary(tmp_path):
+    """END-TO-END repro of the outage: a Fast lane whose DeepSeek key is expired must
+    serve the answer from the Anthropic (Haiku) fallback — a delta with the real answer,
+    degraded False — instead of blacking out."""
+    from engine import llm_auth
+    llm_auth.clear_dead()
+    try:
+        root = _make_temp_root()
+        ok = _MockResponse(
+            [_MockBlock("text", "Fallback served this. is_context_only: true — all signals are display-tier pending FDR.")],
+            "end_turn",
+        )
+        mock_providers = [
+            {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "deepseek-chat"},
+            {"name": "anthropic", "env_var": "ANTHROPIC_API_KEY",
+             "client": _RaiseThenClient(resp=ok), "model": "claude-haiku-4-5"},
+        ]
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            events = list(gw.chat_stream("hello", "user_failover", lane="fast", root=root))
+        parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+        delta = next((e for e in parsed if e.get("type") == "delta"), None)
+        done = next((e for e in parsed if e.get("type") == "done"), None)
+        assert delta is not None and "Fallback served this" in delta.get("text", "")
+        assert done is not None and done.get("degraded") is False
+    finally:
+        llm_auth.clear_dead()
+
+
+def test_chat_stream_degraded_emits_visible_delta(tmp_path):
+    """When EVERY provider credential is dead, the widget must still show a visible
+    message (not a blank bubble): a non-empty delta precedes the degraded done."""
+    from engine import llm_auth
+    llm_auth.clear_dead()
+    try:
+        root = _make_temp_root()
+        mock_providers = [
+            {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "deepseek-chat"},
+            {"name": "anthropic", "env_var": "ANTHROPIC_API_KEY",
+             "client": _RaiseThenClient(exc=_auth_error()), "model": "claude-haiku-4-5"},
+        ]
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "insider", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            events = list(gw.chat_stream("hello", "user_alldead", lane="fast", root=root))
+        parsed = [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+        delta = next((e for e in parsed if e.get("type") == "delta"), None)
+        done = next((e for e in parsed if e.get("type") == "done"), None)
+        assert delta is not None and delta.get("text", "").strip(), "degraded turn must emit a visible (non-empty) delta"
+        assert done is not None and done.get("degraded") is True
+    finally:
+        llm_auth.clear_dead()
+
+
 def test_chat_free_tier_image_is_gated_text_only(tmp_path):
     """Vision is Pro-only (operator decision): a Free user's image is dropped and the
     turn stays on the Fast primary (text-only)."""
