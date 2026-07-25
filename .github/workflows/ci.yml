@@ -818,6 +818,28 @@ on:
       - "tests/test_api_paywall.py"
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
+      # OEU M-FIX wiring (2026-07-25): flow-leaders / market-structure /
+      # options-screener suites + the neural-web support-map suite — previously
+      # run by ZERO workflows (see the options-estate-guards job). Engine
+      # sources listed here; engine/neuralweb/**, engine/pick_lab/candidates.py,
+      # config/synapse.yml and templates/** already trigger above.
+      # confluence_graph.json feeds the support-map coverage census band.
+      - "engine/flow_leaders.py"
+      - "engine/market_structure_context.py"
+      - "engine/systematic_flows.py"
+      - "engine/pick_lab/registry.py"
+      - "scripts/build_flow_leaders.py"
+      - "scripts/build_market_structure.py"
+      - "scripts/build_market_structure_page.py"
+      - "scripts/build_options_screener.py"
+      - "tests/test_flow_leaders.py"
+      - "tests/test_build_flow_leaders.py"
+      - "tests/test_market_structure.py"
+      - "tests/test_market_structure_nw.py"
+      - "tests/test_build_market_structure_page.py"
+      - "tests/test_build_options_screener.py"
+      - "tests/test_support_map.py"
+      - "data/neuralweb/confluence_graph.json"
   workflow_dispatch:
 
 permissions:
@@ -2888,3 +2910,32 @@ jobs:
         # the State-of-Themes page and the Portfolio brief's lanes in lockstep. Only the
         # jinja-based subset (no node / no heavy repo state) is selected here.
         run: python -m pytest tests/test_state_of_themes.py -q -k "theme_lanes or byte_identical"
+
+  options-estate-guards:
+    # OEU M-FIX wiring (2026-07-25): the flow-leaders / market-structure /
+    # options-screener engine+builder suites (plus the neural-web support-map
+    # suite, surfaced unwired by the same audit) were run by ZERO GitHub
+    # workflows — #3496's regression pins (flow_leaders washout-flip truth,
+    # market_structure week_map emission, options_screener denominators) could
+    # silently rot without them. All seven suites are network-free and
+    # tmp-isolated (MM_DATA_GUARD-clean as one batch: 309 tests, no data/ or
+    # site/ writes). The support-map smoke reads only committed inputs
+    # (config/synapse.yml + data/neuralweb/confluence_graph.json), so its
+    # census bands move only via PRs that themselves trigger this job.
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4
+      - name: flow-leaders engine + builder suites (washout-flip pins, pick-lab flow books)
+        run: python -m pytest tests/test_flow_leaders.py tests/test_build_flow_leaders.py -q
+      - name: market-structure engine + nw-context + page suites (week_map emission pins)
+        run: python -m pytest tests/test_market_structure.py tests/test_market_structure_nw.py tests/test_build_market_structure_page.py -q
+      - name: options-screener builder suite (denominator pins)
+        run: python -m pytest tests/test_build_options_screener.py -q
+      - name: neural-web support-map suite (real-synapse census bands)
+        run: python -m pytest tests/test_support_map.py -q
