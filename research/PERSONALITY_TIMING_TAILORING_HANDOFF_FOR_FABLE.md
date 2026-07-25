@@ -190,4 +190,73 @@ census sweeps may fan to sonnet `Explore` ONLY for non-code lookup. Not done unl
 is killed/deferred; (5) memory updated (`mag7-forced-call-ignition-demotion` file
 carries this week's arc; add a sibling `personality-timing-tailoring` memory).
 
-## §6. W1 verdict — (to be appended by the executing session)
+## §6. W1 verdict — persistence-of-fit (Fable, executed 2026-07-25)
+
+Ruler: `scripts/research/ptt_w1_persistence_of_fit.py` header, pinned and committed
+PRE-RUN (535f4877fbd; trial-ledger family `personality_timing_w1`, config hash
+`1e11abdf48022228`). Report: `reports/ptt_w1_persistence_of_fit.md`; panel artifact
+`data/research/ptt_w1_panel.parquet` (1,300 eligible names, 109,974 TEST signals;
+331 excluded by the ≥3+≥3-on-all-6-tools rule, incl. NVDA and PG — disclosed).
+Measurement amendments A1/A2 (charter's zigzag AND spectral-peak swing-period
+definitions BOTH degenerate at measurement stage — ATR normalization removes
+cross-name variance; red spectra pin to the high-pass corner) were made and
+disclosed PRE-OUTCOME; final W1b measurement = reversion-by-scale (per-rung
+bar-return AR(1), derived rung = argmin ρ; distribution 1W 46% / 3D 31% / 2W 23%).
+
+**1. The decisive answer: outcome-audition tailoring is NOISE (pre-stated reading
+3 fires for W1a).** FIT-best tool lands in TEST top-2 at **33.2% vs 33.3% chance**;
+per-name FIT↔TEST tool-rank Spearman median **−0.03** (49% positive); the audition
+arm grades −0.29% OOS vs random floor −0.03% ((a)−(d) −0.26% [−0.79, +0.11]).
+§1's arithmetic objection (15–60 events cannot identify a 6-tool grid) is
+CONFIRMED at panel scale. Registry row appended (DO_NOT_REBUILD §2): audition-
+derived per-name tool selection is a killed construction, anywhere.
+
+**2. No class altitude exists in this evidence.** The pre-registered vol×trend
+lens DEGENERATED — all 9 cells selected the same tool (S2W), so class ≡ global by
+construction ((c)−(b) = 0.00 exactly). The archetype PIT secondary (118 covered
+names) differentiated tools but moved +0.11% vs global (descriptive). W4
+(per-class gate profiles) is UNLICENSED.
+
+**3. Structure-tailoring (the operator's measurement method) is the only arm
+above the random floor — direction consistent, magnitude unproven.** W1b-pure
+(derived rung, S family, ZERO outcome input): +0.26% OOS; vs global +1.09%
+[−0.32, +2.51]; vs W1a +0.55% [−0.32, +1.60]; vs random +0.30% [−0.50, +1.15];
+same ordering on the 2021+ sub-split; fwd126 low-vol descriptive +0.34% vs global
+−0.93%. Every CI includes 0 — the pre-stated bars for "W1b > W1a" and "W1b ≥
+class" are NOT met; the engine seat is NOT yet earned. MCD is the mechanism
+illustration (bars alone derive 1W — its §2d empirical home rung; W1b +3.54%
+where audition chose M2W → −0.07%); TSLA is the honest countercase (derived 1W
+−5.27% vs hindsight-best S2W +10.57%).
+
+**4. One-size-fits-all also auditions poorly.** The global IS-best tool (S2W —
+the MWR-family 2W stoch washout) decayed to −0.83% OOS, BELOW the random floor
+point ((b)−(d) −0.80% [−1.75, +0.34]). Fit-decay is not a per-name disease; it is
+what outcome-selection does at every altitude on this grid.
+
+**5. Stationarity: real, and it hurts audition most.** W1a decays hardest on
+shape-shifters (−1.08% vs −0.11% stationary tercile); the W1b gradient is humped
+(+0.34/+0.51/+0.05) — the codex SHRINKAGE WEIGHT is NOT yet earned from this
+column. no_reversion flag (all-ρ>0; 6% of names): W1b-pure +1.46% (descriptive
+curiosity at n=78; ships as a codex flag, decides nothing).
+
+**Rulings (all display/process tier; no authority created):**
+- **R-W1-1 (KILL):** per-name outcome-audition tool selection — DNR §2 row, this
+  PR. Closes the construction tested, not the search space.
+- **R-W1-2 (PROCEED):** W2 Personality Timing Codex ships display-tier as
+  chartered, carrying MEASURED structure only (ρ ladder, derived rung,
+  stationarity_fit/full, no_reversion) — never audition-best tools (R-W1-1).
+  `ptt_w1_panel.parquet` is the seed artifact.
+- **R-W1-3 (PROCEED, shadow):** W3 Prophet tailored-gate shadow uses the
+  W1b STRUCTURE-derived tool as its candidate (mirror `mag7_washout_shadow`
+  discipline; display/accrual tier). W1's wide CIs are exactly what a forward
+  shadow ledger resolves; audition-derived gates are barred by R-W1-1.
+- **R-W1-4 (DEFER):** W4 per-class gate profiles — no class altitude in
+  evidence; revisit only if W3's shadow or new labels produce one.
+- **R-W1-5:** any promotion to authority (live Prophet gate/rank/size) remains
+  prereg + gauntlet + operator ruling, unchanged.
+
+Position of record (Fable): the operator's measurement frame survived its first
+controlled test better than the audition form the house arithmetic condemned —
+measurement beat audition on every point estimate, exactly as §1b predicted —
+but nothing here clears a CI. The falsifiable next step is W3's forward shadow,
+which accrues new evidence instead of re-slicing the same twelve years.

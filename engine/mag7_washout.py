@@ -88,7 +88,9 @@ def stoch_rsi(close: pd.Series, n_rsi: int = 14, n_st: int = 14,
               k_s: int = 3, d_s: int = 3) -> tuple[pd.Series, pd.Series]:
     r = rsi(close, n_rsi)
     lo, hi = r.rolling(n_st).min(), r.rolling(n_st).max()
-    st = (100 * (r - lo) / (hi - lo).replace(0, pd.NA)).astype(float)
+    # flat-RSI window (hi==lo) must yield NaN, not pd.NA: .astype(float) raises
+    # TypeError on NAType, crashing any tape with a 14-bar flat stretch
+    st = (100 * (r - lo) / (hi - lo).replace(0, float("nan"))).astype(float)
     k = st.rolling(k_s).mean()
     return k, k.rolling(d_s).mean()
 
