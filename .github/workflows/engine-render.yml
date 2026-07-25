@@ -505,7 +505,12 @@ jobs:
           python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        if: ${{ !cancelled() }}
+        # always(), NOT !cancelled() — same reasoning as render.yml: the commit below is
+        # if: always(), so a CANCELLED engine-render still pushes site/ to main, and
+        # !cancelled() skipped this normalization first → raw un-externalized pages live
+        # on a 60s-TTL document. Idempotent normalizers, ~5s over 237 pages, so they are
+        # safe to run inside the cancellation window. Guards above stay !cancelled().
+        if: always()
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"

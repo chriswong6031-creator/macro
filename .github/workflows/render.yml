@@ -535,7 +535,16 @@ jobs:
           python3 scripts/check_ms_board_coherence.py --heal-from HEAD || true
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        if: ${{ !cancelled() }}
+        # always(), NOT !cancelled(): the commit below is if: always(), so a CANCELLED
+        # render still pushes site/ to main — but !cancelled() skipped this normalization
+        # first, shipping raw un-externalized pages (macro.html 1.02MB vs 570KB, china
+        # 400KB vs 234KB) on a 60s-TTL document. With renders cancelled ~24/25 on a
+        # merge-spree day, main oscillated in/out of the optimized state all day
+        # (2026-07-25: 4e78c8a891e pushed raw from cancelled run 30172913675). These are
+        # idempotent normalizers, not gates — a no-op when nothing is inline, ~5s over
+        # 237 pages, so running them in the cancellation window costs nothing and keeps
+        # "whatever we ship, we ship optimized". Guards above stay !cancelled().
+        if: always()
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
