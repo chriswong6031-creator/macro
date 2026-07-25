@@ -32,6 +32,12 @@
   if (!window.LIVE_ENABLED) return;                          // static-site no-op
   var URL = window.LIVE_QUOTES_URL || "";
   var SNAP = window.LIVE_SNAPSHOT_URL || "";                 // keyless no-Worker fallback
+  // Live breadth (Phase 2, LIVE_TAPE_SCOREBOARD_MASTERPLAN §4): the intraday
+  // adv/dec payload the breadth poller publishes beside quotes.json. Fetched on
+  // the same 60s tick ONLY when the page carries the sbx scoreboard; absent or
+  // stale payload -> the baked "last close" numbers stay untouched.
+  var BREADTH = window.LIVE_BREADTH_URL ||
+    (SNAP ? SNAP.replace(/quotes\.json(\?.*)?$/, "breadth.json") : "live/breadth.json");
   var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
   var STALE_MIN = window.LIVE_STALE_MIN || 20;
   // Vendor plan delay FLOOR (min). Polygon Standard + Yahoo spark are ~15-min delayed,
@@ -311,15 +317,86 @@
       // a refresh() requested mid-flight (SPA navigated to a new symbol) runs now.
       if (pendingRefresh) { pendingRefresh = false; tick(); }
     }
-    Promise.all([qP, getJSON(OVERLAY)]).then(function (res) {
+    var bP = document.getElementById("sbx-stamp") ? getJSON(BREADTH) : Promise.resolve(null);
+    Promise.all([qP, getJSON(OVERLAY), bP]).then(function (res) {
       var quotes = (res[0] && res[0].quotes) || {};
       var ts = (res[0] && res[0].ts) || 0;
       if (!(ts && ts < lastTs)) {                            // ignore out-of-order
         if (ts) lastTs = ts;
         if (Object.keys(quotes).length || res[1]) apply(quotes, res[1]);
       }
+      if (res[2]) applyBreadth(res[2]);
       done();
     }, done);
+  }
+
+  // ── Live breadth patch (sbx scoreboard, us_stocks) ─────────────────────────
+  // Stance bands MIRROR scripts/build_site.py::_breadth_read exactly — if those
+  // thresholds or words change, change these with them (render test pins baked).
+  var SBX_STANCE = {
+    broad: { l: ["broad", "广泛"], v: ["The advance is well-supported across the full 1,500", "上涨在整个 1500 只股票中获得良好支撑"], tone: "pos" },
+    thin:  { l: ["thin", "稀薄"], v: ["Few names hold their trend — rallies here are fragile", "守住趋势的个股很少 — 此时的反弹较脆弱"], tone: "neg" },
+    mixed: { l: ["mixed", "参差"], v: ["No clear breadth edge either way", "广度上没有明显的方向性优势"], tone: "muted" }
+  };
+  var SBX_WORDS = {
+    w50hi: ["healthy participation", "参与度健康"], w50lo: ["below half — thin tape", "不足半数 — 盘面稀薄"], w50mid: ["middling", "中等水平"],
+    w200ok: ["long-term trend intact", "长期趋势完好"], w200bad: ["long-term trend damaged", "长期趋势受损"],
+    nnhup: ["more breakouts than breakdowns", "创新高多于创新低"], nnhdn: ["more stocks breaking down than out", "创新低多于创新高"]
+  };
+  function sbxBi(pair) {
+    return '<span class="l-en">' + pair[0] + '</span><span class="l-zh">' + pair[1] + '</span>';
+  }
+  function sbxSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
+  function applyBreadth(b) {
+    var c = b && b.comp;
+    if (!c || typeof c.adv !== "number" || typeof c.dec !== "number") return;
+    // freshness + session honesty: patch only a payload from an open/near session,
+    // stamped within the last 25 min — otherwise the baked close numbers stand.
+    var age = b.asof ? (Date.now() - new Date(b.asof).getTime()) / 60000 : 1e9;
+    if (age > 25 || b.session === "closed") return;
+    var n = c.n || (c.adv + c.dec + (c.unch || 0)) || 1;
+    var unch = (typeof c.unch === "number") ? c.unch : Math.max(0, n - c.adv - c.dec);
+    var den = (c.adv + c.dec + unch) || 1;
+    sbxSet("sbx-adv", c.adv.toLocaleString("en-US"));
+    sbxSet("sbx-dec", c.dec.toLocaleString("en-US"));
+    var ba = document.getElementById("sbx-bar-a"), bu = document.getElementById("sbx-bar-u"), bd = document.getElementById("sbx-bar-d");
+    if (ba) ba.style.width = (100 * c.adv / den).toFixed(1) + "%";
+    if (bu) bu.style.width = (100 * unch / den).toFixed(1) + "%";
+    if (bd) bd.style.width = (100 * c.dec / den).toFixed(1) + "%";
+    if (typeof c.pa50 === "number") {
+      sbxSet("sbx-v50", Math.round(c.pa50) + "%");
+      var wl50 = document.getElementById("sbx-wl50");
+      if (wl50) { wl50.classList.toggle("low", c.pa50 < 50); wl50.firstElementChild.style.width = Math.round(c.pa50) + "%"; }
+      sbxSet("sbx-w50", sbxBi(c.pa50 >= 60 ? SBX_WORDS.w50hi : (c.pa50 <= 40 ? SBX_WORDS.w50lo : SBX_WORDS.w50mid)));
+    }
+    if (typeof c.pa200 === "number") {
+      sbxSet("sbx-v200", Math.round(c.pa200) + "%");
+      var wl2 = document.getElementById("sbx-wl200");
+      if (wl2) { wl2.classList.toggle("low", c.pa200 < 50); wl2.firstElementChild.style.width = Math.round(c.pa200) + "%"; }
+      sbxSet("sbx-w200", sbxBi(c.pa200 >= 50 ? SBX_WORDS.w200ok : SBX_WORDS.w200bad));
+    }
+    if (typeof c.net_nh === "number") {
+      var nnh = document.getElementById("sbx-nnh");
+      if (nnh) {
+        nnh.textContent = (c.net_nh >= 0 ? "+" : "−") + Math.abs(c.net_nh);
+        nnh.classList.toggle("pos", c.net_nh >= 0); nnh.classList.toggle("neg", c.net_nh < 0);
+      }
+      sbxSet("sbx-nnhw", sbxBi(c.net_nh >= 0 ? SBX_WORDS.nnhup : SBX_WORDS.nnhdn));
+    }
+    var st = (typeof c.pa50 === "number" && c.pa50 >= 60 && c.net_nh >= 0) ? SBX_STANCE.broad
+           : ((typeof c.pa50 === "number" && c.pa50 <= 40) || c.net_nh < 0) ? SBX_STANCE.thin
+           : SBX_STANCE.mixed;
+    var sl = document.getElementById("sbx-stance-l");
+    if (sl) { sl.innerHTML = sbxBi(st.l); sl.className = st.tone; }
+    sbxSet("sbx-stance-v", sbxBi(st.v));
+    var stamp = document.getElementById("sbx-stamp");
+    if (stamp) {
+      stamp.classList.add("live");
+      var et = new Date(b.asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+      var dm = (typeof b.delay_min === "number") ? b.delay_min : 15;
+      stamp.innerHTML = '<span class="sbx-dot"></span>' +
+        sbxBi(["≈" + dm + "-min delayed · " + et + " ET", "约" + dm + "分钟延迟 · 美东 " + et]);
+    }
   }
 
   // Stamp an honest feed caption into any [data-live-label] element the build placed
