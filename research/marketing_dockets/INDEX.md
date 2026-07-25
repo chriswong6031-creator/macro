@@ -44,6 +44,8 @@ D11's recommended affiliate economics, dated Founding 20 offer, product-native a
 | [D09](D09_STUDIO_FORMATS_WAVE2.md) | Studio W2: heatmap cards, day-recap, threads, weekly receipts | Studio | P2 | — | No |
 | [D10](D10_WORKSHOP_PUBLIC_TOOLS_W1.md) | Workshop W1: free public tools as lead magnets | Workshop | P3 | — | No |
 | [D11](D11_ALLIES_ECOSYSTEM_W1.md) | Allies W1: creator/partner/community scaffold + [affiliate program shape ruling](D11_AFFILIATE_CREATOR_PROGRAM_SHAPE_RULING.md) | Allies | P3 | D07 + MNZ for live payouts | Ratification + outreach |
+| [D13](../agentic_media/PERSONA_NETWORK_MASTERPLAN_BY_FABLE.md) | Persona Network: persona layer over desk_network, thesis memory, pipeline experiments, earned scale (chartered 2026-07-25; provenance/scale law AM-R1/R2) | Broadcast + Studio | P1 | D02, D08; Chronicle W0 for context packs | W3 accounts + policy-wording verify |
+| [D14](../agentic_media/MEDIA_NETWORK_MASTERPLAN_BY_FABLE.md) | Media Network: automated 3-desk publication on /blog/ (Brief / Research Desk / Editorial), spin-outs gated (chartered 2026-07-25) | Studio + Beacon | P1 | D12 estate; Chronicle W0; vault catalog | No for W1 |
 
 **Sequencing:** D08 → D02(W0) → D01(W0) unlocks launch the moment the operator provides accounts + host. D04/D05/D09 fatten content quality in parallel. D03 turns on the learning loop once posts are live. D06/D07 make the CMO loop real. D10/D11 are later waves.
 
