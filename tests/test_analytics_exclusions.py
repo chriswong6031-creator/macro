@@ -131,6 +131,59 @@ def test_sessions_applies_exclusion_and_filter(monkeypatch):
     assert "limit 500" in sql
 
 
+# ---- soft candidate-identity linkage (anon cookie -> likely registered user) --------
+def test_candidate_cte_ambiguity_guarded_and_routable():
+    cte = a._candidate_cte()
+    # the named parts of the chain
+    for name in ("uanchor as", "cand_fp as", "cand_ip as", "cand as"):
+        assert name in cte
+    # a shared anchor is only trusted when it maps to EXACTLY ONE registered user (fp + ip arms)
+    assert cte.count("having count(distinct a.uid) = 1") == 2
+    # fingerprint arm ignores null fingerprints; IP arm links only routable IPs on BOTH sides
+    assert "a.fp = e.fp and e.fp is not null" in cte
+    assert "e.ip is not null" in cte and "'127.0.0.1'" in cte      # _routable guard inlined
+    # device (fingerprint) wins over IP, and the basis is carried for display
+    assert "case when f.uid is not null then 'device' else 'ip' end as basis" in cte
+    # unbounded by default; a window bounds every analytics_events scan (no full-table scan added)
+    assert "interval" not in cte
+    wcte = a._candidate_cte(43200)
+    assert wcte.count("created_at > now() - interval '43200 minutes'") == 3   # uanchor + cand_fp + cand_ip
+
+
+def test_cte_include_candidate_prepends_ident():
+    sql = a._cte(include_candidate=True)
+    assert sql.startswith("with ident as")      # candidate needs ident to resolve users
+    assert "cand as (" in sql and "uanchor as (" in sql
+    # not requested -> not present
+    assert "cand as (" not in a._cte()
+
+
+def test_sessions_resolves_hard_email_and_soft_candidate(monkeypatch):
+    seen = _capture(monkeypatch)
+    a.sessions(limit=100, q="jiaying")
+    sql = seen["sql"]
+    # hard: the login-attributed user of the session's cookie
+    assert "left join ident hi on hi.visitor_id = s.visitor_id" in sql
+    assert "left join auth.users hu on hu.id::text = hi.uid" in sql
+    assert "hu.email as email" in sql
+    # soft: the likely registered owner via shared device/IP
+    assert "left join cand c on c.visitor_id = s.visitor_id" in sql
+    assert "cu.email as candidate_email" in sql and "c.basis as candidate_basis" in sql
+    # the operator can now filter Sessions by either email
+    assert "hu.email ilike '%jiaying%'" in sql and "cu.email ilike '%jiaying%'" in sql
+
+
+def test_visitors_adds_soft_candidate_for_anon(monkeypatch):
+    seen = _capture(monkeypatch)
+    a.visitors(limit=250, q="")
+    sql = seen["sql"]
+    assert "cand as (" in sql                                       # candidate chain present
+    assert "left join cand c on c.visitor_id = v.canon" in sql      # joined per canonical id
+    assert "cu.email as candidate_email" in sql and "c.basis as candidate_basis" in sql
+    # counts are still identity-honest (candidate never feeds the aggregates)
+    assert "count(distinct session_id)::int as sessions" in sql
+
+
 def test_overview_and_realtime_filter_excluded(monkeypatch):
     seen = _capture(monkeypatch)
     a.overview(days=7)
