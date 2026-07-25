@@ -1226,11 +1226,22 @@ async function anLoadTable(kind) {
   host.removeAttribute("aria-busy");
 }
 const AN_BOT_PILL = '<span class="statpill s-mut" title="detected crawler/automation">bot</span>';
+/* Soft-identity pill: an anonymous cookie's LIKELY registered owner, guessed from a shared
+   device fingerprint or IP — a suggestion, not a confirmed login (the "~"), so it reads
+   distinctly from the solid "registered" pill a real login-stitch earns. */
+function anCandPill(email, basis) {
+  if (!email) return "";
+  const via = basis === "device" ? "shared device" : "shared IP";
+  return ` <span class="statpill s-warn" title="likely — not a confirmed login (${via} as this account)">~ ${esc(email)}</span>`;
+}
 function anSessionsTable(rows, q) {
   const empty = q ? "no sessions match this filter" : "no sessions yet";
   return `<table><thead><tr><th>Started</th><th>Visitor</th><th>IP</th><th>Location</th><th>Site</th><th class="r">Pages</th><th class="r">Events</th><th class="r">Duration</th><th></th></tr></thead><tbody>
     ${rows.map(s => `<tr><td class="mono sub">${esc(s.started || "")}</td>
-      <td><a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
+      <td>${s.email
+        ? `<a href="#/visitor/${encodeURIComponent(s.visitor_id || "")}"><b>${esc(s.email)}</b></a> <span class="statpill s-ok">registered</span>`
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(s.visitor_id || "")}">${esc((s.visitor_id || "—").slice(0, 8))}…</a>${anCandPill(s.candidate_email, s.candidate_basis)}`
+      }${s.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(s.ip || "—")}</td>
       <td class="sub">${esc(s.city || "—")}${s.region ? ", " + esc(s.region) : ""}${s.country_code ? " · " + esc(s.country_code) : ""}</td>
       <td class="sub">${esc(s.site || "")}</td>
@@ -1245,7 +1256,7 @@ function anVisitorsTable(rows, q) {
     ${rows.map(v => `<tr>
       <td>${v.is_user
         ? `<a href="#/visitor/${encodeURIComponent(v.visitor_id || "")}"><b>${esc(v.email || "registered user")}</b></a> <span class="statpill s-ok">registered</span>`
-        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>`
+        : `<a class="mono" href="#/visitor/${encodeURIComponent(v.visitor_id || "")}">${esc((v.visitor_id || "—").slice(0, 10))}…</a>${anCandPill(v.candidate_email, v.candidate_basis)}`
       }${(v.identities > 1) ? ` <span class="statpill s-mut">${fmtNum(v.identities)} devices</span>` : ""}${v.is_bot ? " " + AN_BOT_PILL : ""}</td>
       <td class="mono">${esc(v.last_ip || "—")}</td>
       <td>${esc(v.city || "—")}${v.region ? ", " + esc(v.region) : ""}${v.country_code ? " · " + esc(v.country_code) : ""}</td>
@@ -1353,7 +1364,7 @@ async function renderVisitorDetail(id) {
   const p = d.profile || {}, ips = d.ips || [], linked = d.linked || [], recent = d.recent || [], searches = d.searches || [], viewed = d.tickers_viewed || [];
   det.innerHTML = `
     <div class="grid">
-      ${card("Identity", `<div class="big" style="font-size:15px">${d.email ? esc(d.email) : (p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous")}</div><div class="sub">${d.email ? '<span class="statpill s-ok">registered</span> ' : ""}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
+      ${card("Identity", `<div class="big" style="font-size:15px">${d.email ? esc(d.email) : (d.candidate && d.candidate.email ? "~ " + esc(d.candidate.email) : (p.user_id ? "user " + esc(String(p.user_id).slice(0, 8)) : "anonymous"))}</div><div class="sub">${d.email ? '<span class="statpill s-ok">registered</span> ' : (d.candidate && d.candidate.email ? `<span class="statpill s-warn" title="likely — not a confirmed login (shared ${d.candidate.via_fp ? "device" : "IP"} as this account)">likely account</span> ` : "")}${(p.identities > 1) ? fmtNum(p.identities) + " cookies merged · " : ""}first ${esc(String(p.first_seen || "").slice(0, 16))}</div>`)}
       ${card("Activity", `<div class="big">${fmtNum(p.events)}</div><div class="sub">${fmtNum(p.sessions)} sessions</div>`)}
       ${card("Devices / IPs", `<div class="big">${fmtNum(p.ips)}<span class="sub"> IPs</span></div><div class="sub">${fmtNum(p.fingerprints)} fingerprints</div>`)}
       ${card("Linked identities", `<div class="big" style="color:${linked.length ? "var(--warn)" : "var(--text)"}">${fmtNum(linked.length)}</div><div class="sub">same device/IP, other cookie</div>`)}
@@ -1362,9 +1373,9 @@ async function renderVisitorDetail(id) {
     <table><thead><tr><th>IP</th><th>City</th><th>Country</th><th>Network</th><th>Flags</th><th class="r">Events</th></tr></thead><tbody>
     ${ips.map(r => `<tr><td class="mono">${esc(r.ip || "")}</td><td>${esc(r.city || "—")}${r.region ? ", " + esc(r.region) : ""}</td><td>${esc(r.country_code || "—")}</td><td class="sub">${esc(r.org || r.asn || "—")}</td><td>${anFlags(r)}</td><td class="r">${fmtNum(r.events)}</td></tr>`).join("") || "<tr><td colspan='6' class='muted'>no IPs</td></tr>"}
     </tbody></table>
-    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person)</span></div>
+    ${linked.length ? `<div class="section">Linked visitors <span class="cnt">${linked.length}</span> <span class="sub">— same fingerprint or IP, different cookie (likely one person). A registered email here means that shared device/IP also signed into an account.</span></div>
     <table><thead><tr><th>Visitor</th><th>Matched by</th><th class="r">Shared events</th></tr></thead><tbody>
-    ${linked.map(l => `<tr><td><a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a></td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
+    ${linked.map(l => `<tr><td>${l.email ? `<a href="#/visitor/${encodeURIComponent(l.visitor_id)}"><b>${esc(l.email)}</b></a> <span class="statpill s-ok">registered</span>` : `<a class="mono" href="#/visitor/${encodeURIComponent(l.visitor_id)}">${esc((l.visitor_id || "").slice(0, 12))}…</a>`}</td><td>${l.via_fp ? '<span class="statpill s-warn">device</span> ' : ""}${l.via_ip ? '<span class="statpill s-mut">IP</span>' : ""}</td><td class="r">${fmtNum(l.shared_events)}</td></tr>`).join("")}
     </tbody></table>` : ""}
     <div class="grid" style="margin-top:4px">
       <div class="card"><h3>Tickers searched <span class="cnt">${searches.length}</span></h3>${searches.length ? anBars(searches, r => `<b class="mono">${esc(r.ticker || "")}</b>`, "n", { sub: r => r.last ? esc(String(r.last).slice(0, 10)) : "" }) : "<span class='muted sub'>none yet</span>"}</div>
