@@ -12,6 +12,20 @@ POLICY = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
 CADDY = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
 SITE = ROOT / "site"
 
+# Caddy exclusions that have no home in config/site_access.yml. The policy
+# schema classifies static FILE paths under site/; these are reverse-proxied
+# ROUTES to macro-api (app/main.py), which enforces its own auth. Excluding them
+# from the static matchers is what stops a ws upgrade / API call from being
+# swallowed by the file gate — it is not a public-content decision.
+NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
+
+# Public policy entries whose target is a RUNTIME artifact, not a committed
+# file. site/live/ is gitignored: the systemd lanes publish by atomic rename
+# into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
+# a snapshot, so a fresh checkout may hold none of them. The policy line is
+# still the boundary of record — only the on-disk existence check is exempt.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
+
 
 def _caddy_public_exclusions() -> set[str]:
     match = re.search(
@@ -24,7 +38,7 @@ def _caddy_public_exclusions() -> set[str]:
 
 
 def test_caddy_public_boundary_matches_policy_exactly():
-    expected = {"/api/*", "*.html"}
+    expected = set(NON_POLICY_ROUTES) | {"*.html"}
     expected.update(POLICY["public"]["exact"])
     expected.update(prefix.rstrip("/") + "/*" for prefix in POLICY["public"]["prefixes"])
     assert _caddy_public_exclusions() == expected
@@ -32,17 +46,29 @@ def test_caddy_public_boundary_matches_policy_exactly():
 
 def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
-        if path == "/":
+        if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
         assert (SITE / path.lstrip("/")).is_file(), f"missing public exact path: {path}"
     for prefix in POLICY["public"]["prefixes"]:
+        if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
+            continue
         assert (SITE / prefix.strip("/")).is_dir(), f"missing public prefix: {prefix}"
+
+
+def test_runtime_artifact_exemption_stays_honest():
+    """The existence exemption is only legitimate for genuinely gitignored
+    planes. If site/live/ ever became a committed tree, the exemption would
+    start hiding typo'd/dead public policy entries instead of runtime churn."""
+    ignored = {line.strip() for line in (ROOT / ".gitignore").read_text().splitlines()}
+    for prefix in RUNTIME_ARTIFACT_PREFIXES:
+        assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
 
 
 def test_generated_data_is_not_accidentally_public():
     public = _caddy_public_exclusions()
     intentional = {
         "/live/quotes.json",
+        "/live/breadth.json",
         "/prophet/showcase.json",
         "/factordata/tech_lab.json",
     }
