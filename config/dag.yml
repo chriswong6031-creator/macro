@@ -1723,6 +1723,24 @@ lanes:
           shell site/special_situations.html and its Insider+ payload
           site/premiumdata/special_situations.json (docs/TIER_PREVIEW_PATTERN.md) —
           they must never be rebuilt apart. Display-only; CONST-ART2 authority: false.
+      - id: build_china_special_situations_page_only
+        module: scripts.build_china_special_situations
+        args: [--no-refresh]
+        note: >
+          China Special Situations desk, PAGE ONLY (scope `china`, also inside
+          scope=all). --no-refresh skips the engine entirely — the collectors and the
+          qledger claim registration stay in the asia-close lane (CN_LANE=asia) under
+          the single-writer law — and re-renders the desk from the COMMITTED
+          site/chinaspecialdata/special.json with no network, so a template or
+          tier-gate fix reaches the baked page in minutes instead of waiting a night.
+          Reusing that snapshot verbatim (countdowns and `built` included) means an
+          unchanged desk rebakes byte-identically and this lane commits nothing; a
+          missing/unreadable snapshot aborts the step rather than baking the
+          "warming up" shell over a good page. Emits BOTH halves of the tier gate
+          together: the free preview shell site/china_special_situations.html and its
+          Insider+ payload site/premiumdata/china_special_situations.json
+          (docs/TIER_PREVIEW_PATTERN.md) — they must never be rebuilt apart.
+          Display-only; CONST-ART2 authority: false.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
