@@ -45,6 +45,27 @@ from scripts.build_prophet import (  # noqa: E402
 SPARK = '<svg class="nch" viewBox="0 0 240 42"><polyline points="0,42 1,1"/></svg>'
 
 
+def test_landing_stage_labels_survive_browser_minimum_font_scaling():
+    """The equal-width stage rail must not rely on sub-8px long labels fitting.
+
+    Some browsers/accessibility settings promote micro-copy to a larger minimum
+    font size. Compact glance labels keep all four stages collision-free while
+    the rail's aria-label retains the current-stage meaning for assistive tech.
+    """
+    root = Path(__file__).resolve().parent.parent
+    expected = (
+        '<span class="stg" data-zh="筑底">Base</span>'
+        '<span class="stg" data-zh="转折">Turn</span>'
+        '<span class="stg on" data-zh="就绪">Ready</span>'
+        '<span class="stg" data-zh="趋势">Trend</span>'
+    )
+    for rel in ("templates/index.html", "site/index.html"):
+        html = (root / rel).read_text(encoding="utf-8")
+        compact = "".join(line.strip() for line in html.splitlines())
+        assert expected in compact, f"{rel} regressed to labels that can collide"
+        assert 'class="psc-stages" aria-label="Setup stage: Ready"' in html
+
+
 def _row(**over) -> dict:
     """A minimal showable us_standouts.buy row; override freely."""
     base = {
