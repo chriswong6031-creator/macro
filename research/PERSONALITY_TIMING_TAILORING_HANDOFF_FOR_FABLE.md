@@ -261,6 +261,10 @@ measurement beat audition on every point estimate, exactly as §1b predicted —
 but nothing here clears a CI. The falsifiable next step is W3's forward shadow,
 which accrues new evidence instead of re-slicing the same twelve years.
 
+*[Re-read 2026-07-25 under the §7 bottom-picking ruler → §8: ordering
+ruler-robust; structure arm now clears the random floor CI-clean; audition
+noise under both rulers; reset-confirmer product identity.]*
+
 ## §7. RULER AMENDMENT — bottom-picking, not hold-returns (operator correction
 2026-07-25; BINDING on all further PTT grading)
 
@@ -301,3 +305,86 @@ td_to_trough) were printed but carried no inferential weight. Corrections:
 5. Sessions keep making this mistake (this is at least the second instance —
    #1458 precedent): the receiving session should add the wrong-ruler check to any
    new signal study header BEFORE choosing statistics.
+
+## §8. W1-T verdict — the §7 re-grade re-reads §6 (Fable, 2026-07-25)
+
+Ruler: `scripts/research/ptt_w1_timing_regrade.py` header, pinned and committed
+PRE-RUN (35e23231548; trial-ledger family `personality_timing_w1t`, hash
+`3ba294f37cbc5574`). Report `reports/ptt_w1_timing_regrade.md`; artifact
+`data/research/ptt_w1t_panel.parquet`. Same 1,300 names / 109,974 TEST signals;
+arms byte-frozen from W1 (two-pass consistency gate green). U_MAE (median
+signal MAE63 − all-days median) primary; U_W5 (within-5%-of-±31td-low rate −
+all-days rate) co-primary; per-name per-half random-day nulls per metric.
+
+**R1 — §6's ordering is ruler-robust, and the timing ruler SHARPENS it.** Fixed
+arms under U_MAE preserve W1b ≥ random ≥ W1a ≈ global (no flip). What changes:
+the structure arms now clear the random floor with CIs excluding 0 — W1b-pure
++0.41pp [+0.13, +1.16], W1b-hybrid +0.33pp [+0.15, +0.74] — the program's first
+CI-clean separations, on the primary metric. §7 item 3's prediction ("the wide
+W1 CIs may be ruler artifacts") is CONFIRMED for the structure arm.
+
+**R2 — audition is noise under BOTH rulers; the kill row stands and gains the
+ruler-swap leg.** Timing-native audition (W1a_T, selected in-sample BY U_MAE):
+FIT-best in TEST top-2 at 35.0% vs 33.3% chance; Spearman +0.03; (aT)−(random)
++0.08pp [−0.12, +0.47]. Fixed fwd63-audition arm re-graded: same picture
+(−0.09pp, incl 0). DNR §2 row amended in this PR (two-ruler kill).
+
+**R3 — still no class altitude.** Under the timing ruler the vol×trend cells DO
+differentiate tools (M1W/M3D/M2W/S3D/S2W mix — the fwd63 degeneracy was itself
+partly a ruler artifact), but separate from nothing: class_T − global_T
++0.04pp incl 0; class_T − random +0.04pp incl 0. W4 stays unlicensed.
+
+**R4 — FIRES: the engine-seat evidence is upgraded.** W1b-pure > random on the
+primary metric with CI excluding 0 (+0.41pp [+0.13, +1.16]); on the co-primary
+proximity metric the separation is unambiguous — W1b-pure − random +5.87pp
+[+3.51, +6.43]; − W1a +8.72pp [+7.17, +10.88]; − global +9.40pp [+7.95,
++11.79]. Channel disclosed honestly: part of the proximity edge is rung SPEED
+(structure derives faster rungs than audition's winner's-curse drift toward 2W;
+a 2W bar stamps up to 10td after the turn) and FAMILY (M-family at the same
+derived rungs loses the proximity edge: hybrid U_W5 −7.55pp) — the deliverable
+construction is specifically **S-family at the structure-derived rung**
+(= W1b-pure, reversion-by-scale). W3's shadow candidate is pinned to exactly
+this construction. Authority still requires prereg + gauntlet (unchanged).
+
+**R5 — the product truth: these are reset-CONFIRMERS, not bottom-callers.**
+Called-low 5–8% vs 8.4% ambient base; confirmed-reset 48–66% (the global arm's
+median entry is 10td AFTER the trough). MWR census re-graded: 0/13 basket
+signals within 5% of the low; 11/13 fired after the trough with median MAE
+−0.64% vs base −3.85% (genuinely shallow-adverse entries); the only two "early"
+rows are the 2022 catastrophes (fired 27–31td BEFORE the trough). BINDING COPY
+LAW for any future surface (display-tier): "reset confirmed / washout turn",
+never "bottom called". Per-member on the right ruler: NVDA U_MAE −5.21pp (the
+§2b beast, confirmed), MSFT −3.43pp; TSLA +9.43pp (best member, as §2b's 61%).
+
+**Ladder re-read — per-name home rungs are ruler-dependent.** MCD's "1W home
+rung" (§2d, fwd63) flips to 2W under U_MAE; 5 of 7 named defensives flip
+(mostly into the thin n≈5–8 1M cell). No per-name rung is citable as a "home
+rung" without stating the ruler — one more face of the audition kill. §2d's
+findings stand for the fwd63 apparatus that produced them.
+
+**Method notes (disclosed):** U_W5 arm-LEVEL bootstrap CIs sit offset from
+their point estimates (per-name rates on 3–15 signals are coarse; name-dropout
+asymmetry across month draws) — the DIFF CIs are paired within draw and
+well-behaved; all decisions here read U_MAE plus diff CIs, per the prereg.
+Random floor U_W5 = −6.12pp below ambient: the average washout tool enters
+FARTHER from lows than a random day — §7's base-rate guard did its job.
+
+**Rulings:**
+- **R-W1T-1:** DNR audition kill row AMENDED — noise under fwd63 AND under the
+  §7 timing ruler, timing-native selection included (two-ruler kill).
+- **R-W1T-2:** W3 Prophet shadow candidate pinned = S-family at the
+  structure-derived rung (W1b-pure). Evidence upgraded; tier unchanged
+  (shadow/display; no board writes — DNR §1 row governs).
+- **R-W1T-3:** copy law (R5): reset-confirmation language only on any future
+  surface; "bottom call" phrasing barred.
+- **R-W1T-4:** W2 codex gains the timing-ruler columns (U_MAE / U_W5 /
+  td-to-trough profile vs own base rates) from `ptt_w1t_panel.parquet`.
+- **R-W1T-5:** W4 unlicensed (unchanged). MWR Amendment-2 live gate untouched
+  (§7 item 4); the shadow-book additive timing scorecard is the chartered
+  engine follow-up.
+
+Position of record (Fable): the operator was right twice — on the frame
+(measure the stock, don't audition the wardrobe) and on the ruler
+(bottom-picking, not hold-returns). Under the corrected ruler the structure
+method is the only construction that clears the random floor with a CI, and
+the honest identity of this tool family is confirmation, not prophecy.

@@ -604,11 +604,11 @@ entries:
       any_of:
         - 'name.{0,30}timing.{0,30}tool'
     reason: >
-      KILLED — zero OOS persistence at panel scale: FIT-best tool lands
-      in TEST top-2 at 33.2% vs 33.3% chance, per-name tool-rank
-      Spearman −0.03, audition arm at/below the random floor ((a)−(d)
-      −0.26% [−0.
-    source: 'PTT-W1 verdict, `PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md` §6 + `reports/ptt_w1_persistence_of_fit.md` (family `personality_timing_w1`, 2026-07-25)'
+      KILLED, TWO-RULER — zero OOS persistence at panel scale under
+      BOTH the fwd63 apparatus (FIT-best in TEST top-2 33.2% vs 33.3%
+      chance, Spearman −0.03, (a)−(d) −0.26% [−0.79, +0.11]) AND the §7
+      bottom-p
+    source: 'PTT-W1 §6 + PTT-W1-T §8, `PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md`; `reports/ptt_w1_persistence_of_fit.md` + `reports/ptt_w1_timing_regrade.md` (families `personality_timing_w1`/`_w1t`, 2026'
 
   - id: BL-G033
     match:
