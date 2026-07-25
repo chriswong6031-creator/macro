@@ -664,9 +664,11 @@
     var ov = $('overlay'); ov.classList.remove('open', 'fs'); ov.setAttribute('aria-hidden', 'true');
     setFsBtn(false);
     doc.documentElement.classList.remove('rv-lock');
-    // release the pdf
+    // release the pdf (bump the token + drop observers so any in-flight page
+    // render/getPage resolves into a no-op instead of touching a destroyed doc)
+    V.renderTok++; _teardownObservers();
     try { if (V.pdf) V.pdf.destroy(); } catch (e) {}
-    V.pdf = null;
+    V.pdf = null; V.pageEls = null;
     if (V.lastFocus && V.lastFocus.focus) V.lastFocus.focus();
   }
 
@@ -727,32 +729,105 @@
       }).then(function (pdf) {
         if (tok !== V.renderTok) { try { pdf.destroy(); } catch (e) {} return; }
         V.pdf = pdf; V.pages = pdf.numPages;
-        if (V.page > V.pages) V.page = 1;
-        // clean stage → canvas host
-        $('vstage').innerHTML = '<div class="vcanvas-wrap"><canvas id="vcanvas"></canvas></div>';
-        renderPage(); buildThumbs(); updatePager();
+        if (V.page > V.pages || V.page < 1) V.page = 1;
+        buildPageColumn(); buildThumbs(); updatePager();
       });
     }).catch(function () { if (tok === V.renderTok) showGate('error'); });
   }
 
-  function renderPage() {
-    if (!V.pdf) return;
+  /* ── continuous-scroll page column ──────────────────────────────────────
+     One <div.vpage> per page, each with its OWN <canvas>, stacked vertically in
+     a scrollable column. Pages render lazily as they near the viewport (per-page
+     canvases avoid the single-canvas "concurrent render" lock that could wedge
+     the old click-to-turn viewer on page 1). The pager buttons + thumbnails now
+     scroll to a page; the page indicator tracks whatever is in view. */
+  function _teardownObservers() {
+    if (V.io) { try { V.io.disconnect(); } catch (e) {} V.io = null; }
+    if (V.spy) { try { V.spy.disconnect(); } catch (e) {} V.spy = null; }
+  }
+  function buildPageColumn() {
+    _teardownObservers();
+    V.pageEls = []; V.rendered = {}; V._vis = {};
+    $('vstage').innerHTML = '<div class="vscroll" id="vscroll"></div>';
+    var col = $('vscroll');
+    for (var i = 1; i <= V.pages; i++) {
+      var el = doc.createElement('div');
+      el.className = 'vpage'; el.setAttribute('data-page', i);
+      el.innerHTML = '<canvas></canvas>';
+      col.appendChild(el); V.pageEls.push(el);
+    }
+    // Uniform-page assumption: size every placeholder from page 1's aspect at the
+    // current fit×zoom (so the scrollbar is right immediately), then correct each
+    // page to its own dimensions when it actually renders.
+    V.pdf.getPage(1).then(function (p1) {
+      var base = p1.getViewport({ scale: 1 });
+      V.baseW = base.width; V.baseH = base.height;
+      layoutColumn();
+      if (V.page > 1) requestAnimationFrame(function () { scrollToPage(V.page, 'auto'); });
+    });
+  }
+  function _computeFit() {
+    var stageW = $('vstage').clientWidth - 48;                   // minus padding
+    return Math.max(0.4, Math.min(3, stageW / (V.baseW || stageW)));
+  }
+  function layoutColumn() {
+    if (!V.pageEls || !V.baseW) return;
+    V.fitScale = _computeFit();
+    var scale = V.fitScale * V.zoom;
+    var w = Math.floor(V.baseW * scale), ratio = V.baseH / V.baseW;
+    V.pageEls.forEach(function (el) {
+      el.style.width = w + 'px';
+      if (!el.classList.contains('rendered')) el.style.height = Math.floor(w * ratio) + 'px';
+    });
+    _spinObservers(scale);
+  }
+  function _spinObservers(scale) {
+    _teardownObservers();
+    var stage = $('vstage');
+    // lazy render: draw a page (plus a generous margin) as it nears the viewport
+    V.io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (e) { if (e.isIntersecting) renderPageInto(+e.target.getAttribute('data-page'), scale); });
+    }, { root: stage, rootMargin: '500px 0px' });
+    // page indicator: the page occupying the most of the viewport wins
+    V.spy = new IntersectionObserver(function (ents) {
+      ents.forEach(function (e) { V._vis[+e.target.getAttribute('data-page')] = e.isIntersecting ? e.intersectionRatio : 0; });
+      var best = V.page, bestR = -1;
+      Object.keys(V._vis).forEach(function (k) { if (V._vis[k] > bestR) { bestR = V._vis[k]; best = +k; } });
+      if (best !== V.page) { V.page = best; updatePager(); scrollThumb(); if (V.item) DocState.setLastPage(V.item.id, V.page); }
+    }, { root: stage, threshold: [0.1, 0.3, 0.6, 0.9] });
+    V.pageEls.forEach(function (el) { V.io.observe(el); V.spy.observe(el); });
+  }
+  function renderPageInto(n, scale) {
+    var el = V.pageEls[n - 1]; if (!el || !V.pdf) return;
+    if (V.rendered[n] === scale) return;
+    V.rendered[n] = scale;                                       // claim synchronously → no double render
     var tok = V.renderTok;
-    V.pdf.getPage(V.page).then(function (page) {
-      if (tok !== V.renderTok) return;
-      var canvas = $('vcanvas'); if (!canvas) return;
-      var stageW = $('vstage').clientWidth - 48;                 // minus padding
-      var base = page.getViewport({ scale: 1 });
-      var fit = Math.max(0.4, Math.min(3, (stageW / base.width)));
-      var vp = page.getViewport({ scale: fit * V.zoom });
+    V.pdf.getPage(n).then(function (page) {
+      if (tok !== V.renderTok || !V.pdf) return;
+      var canvas = el.querySelector('canvas'); if (!canvas) return;
+      if (el._task) { try { el._task.cancel(); } catch (e) {} el._task = null; }
+      var vp = page.getViewport({ scale: scale });
       var dpr = window.devicePixelRatio || 1;
       canvas.width = Math.floor(vp.width * dpr); canvas.height = Math.floor(vp.height * dpr);
       canvas.style.width = Math.floor(vp.width) + 'px'; canvas.style.height = Math.floor(vp.height) + 'px';
+      el.style.width = Math.floor(vp.width) + 'px'; el.style.height = Math.floor(vp.height) + 'px';
+      el.classList.add('rendered');
       var ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      page.render({ canvasContext: ctx, viewport: vp });
+      var task = page.render({ canvasContext: ctx, viewport: vp }); el._task = task;
+      task.promise.then(function () { el._task = null; }, function () { el._task = null; if (V.rendered[n] === scale) delete V.rendered[n]; });
+    }).catch(function () { if (V.rendered[n] === scale) delete V.rendered[n]; });
+  }
+  // zoom / fit / fullscreen re-flow: resize every placeholder and re-render what's on screen
+  function relayout() {
+    if (!V.pdf || !V.pageEls) return;
+    V.rendered = {};
+    V.pageEls.forEach(function (el) { el.classList.remove('rendered'); if (el._task) { try { el._task.cancel(); } catch (e) {} el._task = null; } });
+    layoutColumn();
+    var scale = V.fitScale * V.zoom, sr = $('vstage').getBoundingClientRect();
+    V.pageEls.forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (r.bottom > sr.top - 500 && r.top < sr.bottom + 500) renderPageInto(+el.getAttribute('data-page'), scale);
     });
-    DocState.setLastPage(V.item.id, V.page);
-    updatePager();
   }
   function buildThumbs() {
     var host = $('vthumbs'); if (!host || !V.pdf) return;
@@ -782,14 +857,20 @@
     $('pg-next').disabled = !V.pages || V.page >= V.pages;
     doc.querySelectorAll('.vthumb').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-page') === V.page); });
   }
-  function gotoPage(n) { if (!V.pdf || n < 1 || n > V.pages) return; V.page = n; renderPage(); scrollThumb(); }
-  function turnPage(d) { gotoPage(V.page + d); }
+  function scrollToPage(n, behavior) {
+    var el = V.pageEls && V.pageEls[n - 1], stage = $('vstage'); if (!el || !stage) return;
+    var r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    var top = stage.scrollTop + (r.top - sr.top) - 16;
+    stage.scrollTo({ top: top < 0 ? 0 : top, behavior: behavior || 'smooth' });
+  }
+  function gotoPage(n) { if (!V.pdf || n < 1 || n > V.pages) return; V.page = n; updatePager(); scrollThumb(); scrollToPage(n); }
+  function turnPage(d) { gotoPage(Math.min(V.pages, Math.max(1, V.page + d))); }
   function scrollThumb() { var t = doc.querySelector('.vthumb[data-page="' + V.page + '"]'); if (t) t.scrollIntoView({ block: 'nearest' }); }
-  function zoomBy(d) { V.zoom = Math.max(0.7, Math.min(2.4, V.zoom + d * 0.15)); $('zoom-ind').textContent = Math.round(V.zoom * 100) + '%'; renderPage(); }
-  function fitWidth() { V.zoom = 1.0; $('zoom-ind').textContent = '100%'; renderPage(); }
+  function zoomBy(d) { V.zoom = Math.max(0.7, Math.min(2.4, V.zoom + d * 0.15)); $('zoom-ind').textContent = Math.round(V.zoom * 100) + '%'; relayout(); }
+  function fitWidth() { V.zoom = 1.0; $('zoom-ind').textContent = '100%'; relayout(); }
   function toggleInvert() { V.invert = !V.invert; $('vstage').classList.toggle('inverted', V.invert); setInvertBtn(V.invert); }
   function setInvertBtn(on) { var b = $('vh-invert'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
-  function toggleFullscreen() { var on = $('overlay').classList.toggle('fs'); setFsBtn(on); if (V.pdf) renderPage(); }
+  function toggleFullscreen() { var on = $('overlay').classList.toggle('fs'); setFsBtn(on); if (V.pdf) setTimeout(relayout, 60); }
   function setFsBtn(on) { var b = $('vh-fs'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
 
   function buildRelated(x) {
@@ -958,6 +1039,7 @@
     $('vh-fs').addEventListener('click', toggleFullscreen);
     $('pg-prev').addEventListener('click', function () { turnPage(-1); });
     $('pg-next').addEventListener('click', function () { turnPage(1); });
+    $('vthumbs').addEventListener('click', function (e) { var b = e.target.closest('.vthumb'); if (b) gotoPage(+b.getAttribute('data-page')); });
     $('zoom-in').addEventListener('click', function () { zoomBy(1); });
     $('zoom-out').addEventListener('click', function () { zoomBy(-1); });
     $('fit-w').addEventListener('click', fitWidth);
