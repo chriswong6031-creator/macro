@@ -187,6 +187,14 @@
   .ssx-chip.stale{ color:var(--warn,#e0a63a); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
   .ssx-chip.missing{ color:var(--ink-3); background:var(--q-dim); border-color:var(--gl-bd); }
   .ssx-asof{ font-size:10.5px; color:var(--ink-3); flex:0 0 auto; }
+  /* Phone: the head is title + chips + a full sentence, which cannot share one
+     335px row — the glance line was already overflowing its squeezed flex box
+     before the gate pill joined it. Drop the sentence to its own line. */
+  @media(max-width:640px){
+    .ssx-sec{ flex-wrap:wrap; row-gap:5px; }
+    .ssx-sec h2{ flex:1 1 auto; }
+    .ssx-sec .sh-stance{ flex:1 0 100%; order:5; }
+  }
 
   /* ── event rows (the workhorse) ── */
   .ssx-row{ display:flex; align-items:flex-start; gap:12px; padding:11px 0; border-bottom:1px solid var(--hair); }
@@ -217,6 +225,16 @@
   .ssx-lg{ font-size:8.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     color:var(--e); background:var(--e-dim); border:1px solid color-mix(in srgb,var(--e) 32%,transparent); white-space:nowrap; }
   .ssx-pdf{ font-size:10.5px; color:var(--link); white-space:nowrap; }
+  /* Phone: a ticker + a "supply event" flag + a countdown chip leave the note
+     column ~60px wide, which wraps it one word per line. Stack instead: chips on
+     the first line, the sentence full-width underneath. (Pre-existing on this
+     desk; it now fronts the free preview slice, so it has to read.) */
+  @media(max-width:640px){
+    .ssx-row{ flex-wrap:wrap; row-gap:6px; }
+    .ssx-row .rlead{ flex:0 1 auto; }
+    .ssx-row .rright{ margin-left:auto; }
+    .ssx-row .rbody{ flex:1 0 100%; order:3; }
+  }
   /* regime context chips (muted, neutral only) */
   .ssx-rg{ display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
   .ssx-rg span{ font-size:9px; font-weight:600; letter-spacing:.02em; padding:1px 6px; border-radius:5px;
@@ -275,10 +293,72 @@
     .ssx-card,.ssx-sec,.ssx-track{ animation:none; }
     .ssx-aurora .au-i{ animation:none; }
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     TIER GATE — preview shell only; hydration removes every trace.
+     The skeletons here are content-free BY CONSTRUCTION: this document never
+     receives the paid rows, so there is nothing to un-blur or read out of the
+     DOM. See docs/TIER_PREVIEW_PATTERN.md.
+     Palette note: the gate accent (violet) is deliberately outside the desk's
+     event-heat ramp — a commercial boundary is not a severity reading, and must
+     never be mistaken for one.
+     ══════════════════════════════════════════════════════════════════════════ */
+  .ssx-gpill{ font-size:8.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; white-space:nowrap; flex:0 0 auto;
+    color:#9b7ff0; background:color-mix(in srgb,#9b7ff0 13%,transparent);
+    border:1px solid color-mix(in srgb,#9b7ff0 34%,transparent); }
+  [data-theme="light"] .ssx-gpill{ color:#6d4fd0; background:color-mix(in srgb,#6d4fd0 10%,transparent);
+    border-color:color-mix(in srgb,#6d4fd0 26%,transparent); }
+
+  /* skeletons */
+  @keyframes ssxGh{ 0%,100%{ opacity:.4 } 50%{ opacity:.85 } }
+  .gh{ display:block; border-radius:6px; background:linear-gradient(90deg,var(--gl-bd),color-mix(in srgb,var(--gl-bd) 35%,transparent));
+    animation:ssxGh 2.4s ease-in-out infinite; }
+  [data-theme="light"] .gh{ background:linear-gradient(90deg,rgba(0,0,0,.09),rgba(0,0,0,.04)); }
+  @media(prefers-reduced-motion:reduce){ .gh{ animation:none; } }
+  .ssx-ghrow{ display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--hair); }
+  .ssx-ghrow:last-child{ border-bottom:none; }
+  .ssx-ghrow .gh-tkr{ width:58px; height:20px; border-radius:8px; flex:0 0 auto; }
+  .ssx-ghrow .gh-line{ height:10px; flex:1; min-width:0; }
+  .ssx-ghrow .gh-line.short{ flex:0 0 22%; }
+  .ssx-ghrow .gh-cd{ width:56px; height:18px; border-radius:8px; flex:0 0 auto; }
+
+  /* the note that explains the preview, directly under the hero */
+  .ssx-gnote{ display:flex; align-items:flex-start; gap:9px; margin:0 0 14px; padding:11px 14px; border-radius:13px;
+    font-size:12.5px; line-height:1.5; color:var(--ink-2);
+    background:color-mix(in srgb,#9b7ff0 7%,transparent); border:1px solid color-mix(in srgb,#9b7ff0 22%,transparent); }
+  .ssx-gnote svg{ width:14px; height:14px; flex:none; margin-top:2px; color:#9b7ff0; }
+  [data-theme="light"] .ssx-gnote svg{ color:#6d4fd0; }
+
+  /* the wall */
+  .ssx-wall{ text-align:center; padding:30px 28px 26px; border-radius:20px; margin:22px 0 4px;
+    background:var(--gl-bg); border:1px solid color-mix(in srgb,#9b7ff0 24%,var(--gl-bd));
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--gl-sh); }
+  .ssx-wall .wl-lock{ width:28px; height:28px; color:#9b7ff0; margin-bottom:12px; }
+  [data-theme="light"] .ssx-wall .wl-lock{ color:#6d4fd0; }
+  .ssx-wall .wl-h{ font-size:19px; font-weight:800; letter-spacing:-.02em; color:var(--ink-1); line-height:1.25; margin-bottom:9px; }
+  html[data-lang="zh"] .ssx-wall .wl-h{ letter-spacing:0; }
+  .ssx-wall .wl-p{ font-size:13px; line-height:1.6; color:var(--ink-2); max-width:52ch; margin:0 auto 18px; }
+  .ssx-wall .wl-acts{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ssx-wall .wl-btn{ display:inline-flex; align-items:center; justify-content:center; padding:11px 26px; border-radius:12px;
+    text-decoration:none; font-size:13.5px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#5b9bf0,#9b7ff0); box-shadow:0 8px 22px -10px color-mix(in srgb,#9b7ff0 70%,transparent);
+    transition:transform .16s ease,box-shadow .2s ease; }
+  .ssx-wall .wl-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 28px -10px color-mix(in srgb,#9b7ff0 80%,transparent); }
+  @media(prefers-reduced-motion:reduce){ .ssx-wall .wl-btn{ transition:none; } }
+  .ssx-wall .wl-note{ font-size:11px; color:var(--ink-3); }
+  .ssx-wall .wl-signed{ margin-top:12px; font-size:12px; }
+  .ssx-wall .wl-signed a{ color:var(--link); }
+  @media(max-width:560px){ .ssx-wall{ padding:24px 18px 20px; } .ssx-wall .wl-h{ font-size:17px; } }
 {% endblock %}
 
 {% block content %}
 {%- import "_china_special_situations_rows.html.j2" as rows %}
+{# Tier gate (docs/TIER_PREVIEW_PATTERN.md). `gate` is None on an ungated build.
+   `gate.planes` lists ONLY the planes that actually have paid content in this
+   build — a plane whose data is missing or genuinely empty keeps its honest
+   empty state for Free rather than a skeleton that promises rows nobody has. #}
+{%- set _gplanes = (gate.planes if gate else []) %}
 {%- set ss = special %}
 {%- set hero = (ss.hero if ss else none) %}
 {%- set _state = (hero.state if hero else 'quiet') %}
@@ -340,16 +420,34 @@
     </div>
   </div>
 
+  {# Gated build: say what this page is showing, once, in plain words — before
+     the first skeleton. Dead-looking panels with no explanation read as a bug. #}
+  {%- if gate %}
+  <div class="ssx-gnote" id="cssx-gnote">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <span class="l-en">Every plane above is live and complete — this is the whole overhang read. The
+      <b>names</b> behind it are the members' half: you get the {{ gate.n_preview }} closest in time,
+      Insider gets all {{ gate.locked + gate.n_preview }}.</span>
+    <span class="l-zh">上方各条线均为完整实时读数——这就是全部压力概览。其背后的<b>个股名单</b>面向会员：
+      你可以看到时间上最近的 {{ gate.n_preview }} 条，Insider 可查看全部 {{ gate.locked + gate.n_preview }} 条。</span>
+  </div>
+  {%- endif %}
+
   {# ═══════════════ A · UNLOCK SUPPLY ═══════════════ #}
   {%- set u = ss.unlocks %}
-  {{ sec_head('🔓', t('Unlock Supply', '解禁供给'), u) }}
+  {{ sec_head('🔓', t('Unlock Supply', '解禁供给'), u, 'unlocks' in _gplanes) }}
   {%- if not u or u.status == 'missing' %}
     {{ rows.empty(t('No unlock data yet — it populates after the first collect.', '暂无解禁数据——将在首次采集后填充。')) }}
-  {%- elif not u.events %}
+  {%- elif not u.events and 'unlocks' not in _gplanes %}
     {{ rows.empty(t('Nothing flagged — no unlocks scheduled in the next 30 days.', '无标记——未来30天内无解禁安排。')) }}
   {%- else %}
   <div class="ssx-card">
-    {{- rows.unlock_rows(u.events) }}
+    <div id="cssx-unlocks"{% if 'unlocks' in _gplanes %} data-gate-key="unlocks_html" data-gate-mode="append"{% endif %}>
+      {{- rows.unlock_rows(u.events) }}
+      {%- if 'unlocks' in _gplanes %}{{ ghosts(3) }}{% endif %}
+    </div>
     {%- if u.weekly_strip %}
     <details class="ssx-more"><summary>{{ t('Supply by week ▸', '按周供给 ▸') }}</summary>
       <div class="ssx-pills" style="margin-top:8px">
@@ -364,26 +462,62 @@
 
   {# ═══════════════ B · OPEN QUESTIONS (inquiry letters) ═══════════════ #}
   {%- set inq = ss.inquiry %}
-  {{ sec_head('📬', t('Open Questions', '监管问询'), inq) }}
+  {{ sec_head('📬', t('Open Questions', '监管问询'), inq, 'inquiry' in _gplanes) }}
   {%- if not inq or inq.status == 'missing' %}
     {{ rows.empty(t('No inquiry data yet — it populates after the first collect.', '暂无问询数据——将在首次采集后填充。')) }}
-  {%- elif not inq.letters %}
+  {%- elif not inq.letters and 'inquiry' not in _gplanes %}
     {{ rows.empty(t('Nothing flagged — no exchange letters in the past 14 days.', '无标记——过去14天内无交易所问询函。')) }}
   {%- else %}
   <div class="ssx-card">
-    {{- rows.inquiry_rows(inq.letters) }}
+    <div id="cssx-inquiry"{% if 'inquiry' in _gplanes %} data-gate-key="inquiry_html" data-gate-mode="append"{% endif %}>
+      {{- rows.inquiry_rows(inq.letters) }}
+      {%- if 'inquiry' in _gplanes %}{{ ghosts(3) }}{% endif %}
+    </div>
     {%- if inq.n_letters > inq.letters|length %}
-    <p class="ssx-asof" style="margin-top:8px"><span class="l-en">Showing the {{ inq.letters|length }} newest of {{ inq.n_letters }}</span><span class="l-zh">显示最新{{ inq.letters|length }}条，共{{ inq.n_letters }}条</span></p>
+    <p class="ssx-asof" style="margin-top:8px"{% if 'inquiry' in _gplanes %} data-gate-key="inquiry_note_html"{% endif %}>{{ rows.inquiry_note(inq.letters|length, inq.n_letters) }}</p>
     {%- endif %}
+  </div>
+  {%- endif %}
+
+  {# ═══════════════ THE WALL (gated build only) ═══════════════
+     The named rows behind this panel are NOT in this document — they live in the
+     paid payload the hydration step at the bottom asks the server for. This is
+     what a Free account keeps when that request comes back 403. #}
+  {%- if gate %}
+  <div class="ssx-wall" id="cssx-wall">
+    <svg class="wl-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <div class="wl-h">
+      <span class="l-en">{{ gate.locked }} more named situations are open to members</span>
+      <span class="l-zh">另有 {{ gate.locked }} 只个股的事件明细向会员开放</span>
+    </div>
+    <div class="wl-p">
+      <span class="l-en">You keep the whole overhang read — every plane's state, every count, and the
+        nearest unlocks and newest letters. Insider and Pro open the names behind it: the rest of the
+        unlock and letter queues, the buyback and pledge boards, the earnings-preview movers, the
+        risk-warning board and the block-trade tape.</span>
+      <span class="l-zh">压力概览完整保留——各条线状态、全部计数，以及最近的解禁与最新的问询函。
+        Insider 与 Pro 可查看其背后的个股名单：解禁与问询函的其余部分、回购与质押看板、
+        业绩预告变动榜、风险警示板与大宗交易。</span>
+    </div>
+    <div class="wl-acts">
+      <a class="wl-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
+      <span class="wl-note">{{ t('7-day trial · cancel anytime', '7 天试用 · 随时取消') }}</span>
+    </div>
+    <div class="wl-signed" id="cssx-signin" hidden>
+      <a href="#" data-act="signin">{{ t('Already a member? Sign in', '已是会员？登录') }}</a>
+    </div>
   </div>
   {%- endif %}
 
   {# ═══════════════ C · EARNINGS PREVIEWS ═══════════════ #}
   {%- set pa = ss.preannounce %}
-  {{ sec_head('📋', t('Earnings Previews', '业绩预告'), pa) }}
+  {{ sec_head('📋', t('Earnings Previews', '业绩预告'), pa, 'preannounce' in _gplanes) }}
   {%- if not pa or pa.status == 'missing' %}
     {{ rows.empty(t('No pre-announcement data yet — it populates after the first collect.', '暂无业绩预告数据——将在首次采集后填充。')) }}
-  {%- elif not pa.by_type and not pa.top_movers %}
+  {%- elif not pa.by_type and not pa.top_movers and 'preannounce' not in _gplanes %}
     {{ rows.empty(t('Nothing flagged — no pre-announcements this season.', '无标记——本季度无业绩预告。')) }}
   {%- else %}
   <div class="ssx-card">
@@ -395,23 +529,35 @@
     </div>
     <p class="ssx-asof" style="margin-top:8px">{{ t('Counts by exchange-reported forecast label, verbatim.', '按交易所公布的预告类型统计，原文标签。') }}</p>
     {%- endif %}
+    {%- if 'preannounce' in _gplanes %}
+    <div id="cssx-movers" data-gate-key="movers_html">{{ ghosts(2) }}</div>
+    {%- else %}
     {{- rows.preannounce_movers(pa) }}
+    {%- endif %}
   </div>
   {%- endif %}
 
   {# ═══════════════ D · BUYBACKS ═══════════════ #}
   {%- set bb = ss.buyback %}
-  {{ sec_head('🔄', t('Buybacks', '股份回购'), bb) }}
+  {{ sec_head('🔄', t('Buybacks', '股份回购'), bb, 'buyback' in _gplanes) }}
+  {%- if 'buyback' in _gplanes %}
+  <div id="cssx-buyback" data-gate-key="buyback_html"><div class="ssx-card">{{ ghosts(3) }}</div></div>
+  {%- else %}
   {{- rows.buyback_body(bb) }}
+  {%- endif %}
 
   {# ═══════════════ E · PLEDGE STRESS ═══════════════ #}
   {%- set pl = ss.pledge %}
-  {{ sec_head('⛓️', t('Pledge Stress', '质押压力'), pl) }}
+  {{ sec_head('⛓️', t('Pledge Stress', '质押压力'), pl, 'pledge' in _gplanes) }}
+  {%- if 'pledge' in _gplanes %}
+  <div id="cssx-pledge" data-gate-key="pledge_html"><div class="ssx-card">{{ ghosts(3) }}</div></div>
+  {%- else %}
   {{- rows.pledge_body(pl) }}
+  {%- endif %}
 
   {# ═══════════════ F · RISK WARNINGS (ST) ═══════════════ #}
   {%- set st = ss.st %}
-  {{ sec_head('🚨', t('Risk Warnings', '风险警示'), st) }}
+  {{ sec_head('🚨', t('Risk Warnings', '风险警示'), st, 'st' in _gplanes) }}
   {%- if not st or st.status == 'missing' %}
     {{ rows.empty(t('No risk-warning data yet — it populates after the first collect.', '暂无风险警示数据——将在首次采集后填充。')) }}
   {%- else %}
@@ -425,21 +571,29 @@
         </div>
       </div>
     </div>
+    {%- if 'st' in _gplanes %}
+    <div id="cssx-st" data-gate-key="st_html">{{ ghosts(2) }}</div>
+    {%- else %}
     {{- rows.st_named(st) }}
+    {%- endif %}
   </div>
   {%- endif %}
 
   {# ═══════════════ G · BLOCK TRADES ═══════════════ #}
   {%- set bt = ss.block_trades %}
-  {{ sec_head('📦', t('Block Trades', '大宗交易'), bt) }}
+  {{ sec_head('📦', t('Block Trades', '大宗交易'), bt, 'block_trades' in _gplanes) }}
   {%- if not bt or bt.status == 'missing' %}
     {{ rows.empty(t('No block-trade data yet — it populates after the first collect.', '暂无大宗交易数据——将在首次采集后填充。')) }}
-  {%- elif not bt.top_premium and not bt.top_discount %}
+  {%- elif not bt.top_premium and not bt.top_discount and 'block_trades' not in _gplanes %}
     {{ rows.empty(t('Nothing flagged — no block-trade price gaps.', '无标记——无大宗交易价差异常。')) }}
   {%- else %}
   <div class="ssx-card">
     <p class="ssx-asof" style="margin:0 0 4px">{{ t('Off-market block deals struck well above (premium) or below (discount) the tape — who is buying or selling size.', '成交价明显高于（溢价）或低于（折价）市价的场外大宗交易——谁在大额买卖。') }}</p>
+    {%- if 'block_trades' in _gplanes %}
+    <div id="cssx-blocks" data-gate-key="blocks_html">{{ ghosts(2) }}</div>
+    {%- else %}
     {{- rows.block_tables(bt) }}
+    {%- endif %}
   </div>
   {%- endif %}
 
@@ -486,16 +640,112 @@
 </div>
 {% endblock %}
 
+{% block body_scripts %}
+<script>
+/* ══════════ tier gate — attempt-hydrate ══════════
+   On the gated build this document holds ONLY the free half: every plane's
+   state and counts, plus a small preview slice of the two newest-first queues.
+   The named rows live in GATE.payload, which config/site_access.yml enforces as
+   Insider+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the SERVER
+   decides who reads the desk — nothing below is load-bearing. We simply ask, and
+   keep the wall when the answer is 403. See docs/TIER_PREVIEW_PATTERN.md. */
+(function(){
+  var GATE = {{ (gate or None) | tojson }};
+  if(!GATE || !GATE.payload) return;
+
+  /* Session trampoline: the shared cookie carries a ~1h access token, so a
+     long-idle member can be signed in with a token the server will reject.
+     getSession() refreshes and rewrites the cookie before we ask (same fix as
+     the onboarding wall, PR #3454). No-op when signed out. */
+  function freshSession(){
+    try{
+      if(window.MDXAuth && window.MDXAuth.client && window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client()
+          .then(function(sb){ return sb.auth.getSession(); })
+          .catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js loads after this script, so MDXAuth does not exist yet. Wait for
+     its first auth broadcast, with a timeout so a missing or broken auth layer
+     still lets the request through (the server re-decides anyway). */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if(done) return; done = true; resolve(); }
+      if(window.MDXAuth){ go(); return; }
+      window.addEventListener('mdx-auth', go);
+      setTimeout(go, 3000);
+    });
+  }
+
+  function hydrate(payload){
+    /* Every locked region declares which payload key fills it and whether the
+       paid rows go after a preview slice (append) or replace a skeleton. */
+    document.querySelectorAll('[data-gate-key]').forEach(function(el){
+      var html = payload[el.dataset.gateKey];
+      if(typeof html !== 'string' || !html) return;
+      if(el.dataset.gateMode === 'append'){ el.insertAdjacentHTML('beforeend', html); }
+      else { el.innerHTML = html; }
+      el.removeAttribute('data-gate-key');
+      el.removeAttribute('data-gate-mode');
+    });
+    document.querySelectorAll('[data-gate-ghost]').forEach(function(el){ el.remove(); });
+    document.querySelectorAll('[data-gate-pill]').forEach(function(el){ el.remove(); });
+    ['cssx-wall', 'cssx-gnote'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.remove();
+    });
+    /* Nothing to re-wire: bilingual switching is pure CSS (.l-en/.l-zh under
+       html[data-lang]) and theme.js's LENS popover is delegated off document,
+       so both work on nodes inserted after load. */
+  }
+
+  whenAuthSettled()
+    .then(freshSession)
+    .then(function(){ return fetch(GATE.payload, { credentials: 'same-origin', cache: 'no-store' }); })
+    .then(function(r){ if(!r || !r.ok) throw new Error('locked'); return r.json(); })
+    .then(hydrate)
+    .catch(function(){
+      /* Locked (or offline): the wall stays exactly as rendered. Offer sign-in
+         when there is no session at all — a member on a fresh browser would
+         otherwise only see an upgrade CTA. */
+      var si = document.getElementById('cssx-signin');
+      var signedIn = false;
+      try{ signedIn = !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }catch(e){}
+      if(si && !signedIn){
+        si.hidden = false;
+        var a = si.querySelector('[data-act="signin"]');
+        if(a) a.addEventListener('click', function(ev){
+          ev.preventDefault();
+          try{ window.MDXAuth.open('signin'); }catch(e){ location.href = 'plans.html'; }
+        });
+      }
+    });
+})();
+</script>
+{% endblock %}
+
 {# ── reusable macros (defined after use is fine in Jinja) ── #}
-{% macro sec_head(icon, label, blk) %}
+{% macro sec_head(icon, label, blk, locked=false) %}
 {%- set g = (blk.glance if blk else none) %}
 <div class="ssx-sec">
   <span class="sh-ic">{{ icon }}</span>
   <h2>{{ label }}</h2>
+  {%- if locked %}<span class="ssx-gpill" data-gate-pill>Insider</span>{%- endif %}
   {%- if g %}<span class="sh-stance lv-{{ g.level }}"><span class="lv">{{ tw(g) }}</span></span>{%- endif %}
   {%- if blk %}
     <span class="ssx-chip {{ blk.status if blk.status in ['ok','stale','missing'] else 'missing' }}">{{ blk.status or '—' }}</span>
     {%- if blk.asof %}<span class="ssx-asof">{{ blk.asof }}</span>{%- endif %}
   {%- endif %}
 </div>
+{% endmacro %}
+
+{# Content-free skeleton rows. There is nothing to read here by construction —
+   the paid rows never reach this document (docs/TIER_PREVIEW_PATTERN.md). #}
+{% macro ghosts(n) %}
+{%- for _ in range(n) %}
+      <div class="ssx-ghrow" data-gate-ghost aria-hidden="true"><span class="gh gh-tkr"></span><span class="gh gh-line"></span><span class="gh gh-line short"></span><span class="gh gh-cd"></span></div>
+{%- endfor %}
 {% endmacro %}

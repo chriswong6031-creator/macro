@@ -89,6 +89,11 @@
     {%- endfor %}
 {%- endmacro %}
 
+{# ── B · the "showing N newest of M" receipt — one sentence, both tiers ── #}
+{% macro inquiry_note(n_shown, n_total) -%}
+<span class="l-en">Showing the {{ n_shown }} newest of {{ n_total }}</span><span class="l-zh">显示最新{{ n_shown }}条，共{{ n_total }}条</span>
+{%- endmacro %}
+
 {# ── C · earnings previews — the ranked "largest changes" drill-down ── #}
 {% macro preannounce_movers(pa) %}
     {%- if pa.top_movers %}

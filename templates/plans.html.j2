@@ -314,6 +314,7 @@
         <li class="on">{{ ck|safe }}<span>{{ t('Sample dashboards', '样板仪表盘') }} — <b>{{ t('macro, news, methodology', '宏观、新闻、方法论') }}</b></span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('One research report', '一份研究报告') }}</span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></span></li>
+        <li class="on">{{ ck|safe }}<span>{{ t('China special situations', '中国特殊事件') }} — <b>{{ t('the full overhang read + the 3 nearest unlocks', '完整压力概览 + 最近 3 笔解禁') }}</b></span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Committee & brief — a teaser', '委员会与简报 — 预览') }}</span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></span></li>
@@ -344,6 +345,7 @@
         <li class="on">{{ ck|safe }}<span><b>{{ t('All dashboards', '所有仪表盘') }}</b> — {{ t('markets, desks, heatmaps, baskets, sectors, flow', '市场、桌面、热力图、篮子、板块、资金流') }}</span></li>
         <li class="on">{{ ck|safe }}<span><b>{{ t('Every research report', '全部研究报告') }}</b> + {{ t('the intelligence hub', '情报中心') }}</span></li>
         <li class="on">{{ ck|safe }}<span><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</span></li>
+        <li class="on">{{ ck|safe }}<span><b>{{ t('The China event desk', '完整中国事件交易台') }}</b> — {{ t('every named unlock, inquiry letter, buyback and pledge risk', '全部解禁、问询函、回购与质押风险个股') }}</span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></span></li>
         <li class="on">{{ ck|safe }}<span>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></span></li>
@@ -418,6 +420,12 @@
             <td class="col-tier"><span class="val val-muted">{{ t('3 newest filings', '最新 3 份申报') }}</span></td>
             <td class="col-tier"><span class="val">{{ t('Whole board', '完整看板') }}</span></td>
             <td class="col-tier col-pro"><span class="val">{{ t('Whole board', '完整看板') }}</span></td>
+          </tr>
+          <tr>
+            <td class="col-feat"><span class="rlabel">{{ t('China special situations', '中国特殊事件') }}</span><span class="rsub">{{ t('unlocks · inquiry letters · earnings previews · buybacks · pledge stress · block trades', '解禁 · 问询函 · 业绩预告 · 回购 · 质押压力 · 大宗交易') }}</span></td>
+            <td class="col-tier"><span class="val val-muted">{{ t('All 7 gauges + 3 unlocks', '全部 7 条线 + 3 笔解禁') }}</span></td>
+            <td class="col-tier"><span class="val">{{ t('Every name', '全部个股') }}</span></td>
+            <td class="col-tier col-pro"><span class="val">{{ t('Every name', '全部个股') }}</span></td>
           </tr>
           <tr>
             <td class="col-feat"><span class="rlabel">{{ t('Committee, brief & track record', '委员会、简报与业绩记录') }}</span></td>
