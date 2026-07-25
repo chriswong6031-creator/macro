@@ -122,14 +122,33 @@ single bar w/ end counts (同花顺 ref); % gauges; internals plain-word chip;
 click ⇒ detail dialog housing today's full tables; Size&Style removed (D5).
 live.js merges breadth.json on its existing 60s tick — no new poll loop.
 
-## §5 Phase 3 spec (macro signal reactivity)
+## §5 Phase 3 spec (macro signal reactivity) — CLOSED BY AUDIT 2026-07-25
 
-Move `build_live_overlay` invocation onto the poller host at 5-min RTH cadence
-(GH lane stays as backstop); add freshness stamp unification on the macro hero
-(baked + overlay as-of in ONE chip, Law 4 one-footnote). Slow-brain stays
-nightly (tier-S hysteresis law) — reactivity means honest fast-leaf freshness,
-NOT live regime flips. Any proposal to flip regime/quad intraday must reopen
-LIVE_DATA_ARCHITECTURE tier law first (do not bury it in a build PR).
+Both legs were found already satisfied at go-live; no build shipped.
+
+**§5.1 cadence — SATISFIED.** The VPS live plane (docs/VPS_LIVE_ORCHESTRATION.md)
+already runs the fast-leaf lanes at ~1–2 min via `macro-live-fast.timer`
+(verified ticking 2026-07-25; `live/risk_state.json`, `live/overlay.json`,
+`live/quotes.json` all fresh in `/var/lib/macro-live/public/live/`). The GH
+`intraday-fastpath` */30 lane is the documented BACKSTOP, not the primary —
+the §1 audit line reporting */30 as the operative cadence was wrong (it read
+the backstop). Nothing to move.
+
+**§5.2 hero stamp — RESOLVED AS DESIGNED; do not re-add dates.** The hero
+already implements honest freshness under two standing rulings this charter
+must not override: COPY-07 (dates removed from the visible hero — the topbar
+is the canonical page stamp; `#regime-asof` and `#ms-date` are baked + kept
+live-updated by `risk_state_live.js` but display:none BY RULING) and the
+2026-07-16 glance ruling (the transition word carries the honest stance in
+plain words). The `#ms-live-pill` lights only when the feed is genuinely
+real-time (`live_active && realtime`) — correctly never on the 15-min plan
+(delayed-plan honesty law). A visible hero date would re-litigate COPY-07;
+any future proposal to do so goes to the operator citing COPY-07, not into a
+build PR.
+
+Slow-brain stays nightly (tier-S hysteresis law) — reactivity means honest
+fast-leaf freshness, NOT live regime flips. Any proposal to flip regime/quad
+intraday must reopen LIVE_DATA_ARCHITECTURE tier law first.
 
 ## §6 Epistemics / honesty rails (all phases)
 
