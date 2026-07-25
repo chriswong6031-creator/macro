@@ -2384,6 +2384,194 @@ def build_panel(
     return panel
 
 
+# ── dna_class reference emit (R-SP9/R-SP10) ─────────────────────────────────
+def _dna_anchor_date(panel: pd.DataFrame) -> "pd.Timestamp | None":
+    """Return the latest panel date carrying a non-null dna_class, else None.
+
+    This is the PIT anchor for dna_class.json.  See _emit_dna_class_ref for why
+    the panel's *latest* date is the wrong one to publish.
+    """
+    if panel.empty or "date" not in panel.columns or "dna_class" not in panel.columns:
+        return None
+    evaluable = panel[panel["dna_class"].notna()]
+    if evaluable.empty:
+        return None
+    return evaluable["date"].max()
+
+
+def _load_recent_panel_partitions(out_root: Path, n_months: int = 2) -> "pd.DataFrame | None":
+    """Read back the N most recent stored monthly partitions (fail-soft).
+
+    Used only as a fallback when the freshly-built in-memory panel carries no
+    evaluable dna_class cross-section (incremental mode where the sole new date
+    is T).  Bounded to N partitions so this never becomes a render-budget cost.
+    """
+    panel_dir = out_root / "data" / "factordata" / "panel"
+    if not panel_dir.exists():
+        return None
+    parts = sorted(panel_dir.rglob("panel.parquet"))[-n_months:]
+    frames = []
+    for p in parts:
+        try:
+            frames.append(pd.read_parquet(p))
+        except Exception as exc:  # noqa: BLE001 — fail-soft fallback
+            log.debug("dna_class.json: partition read skipped (%s): %s", p, exc)
+    if not frames:
+        return None
+    try:
+        return pd.concat(frames, ignore_index=True)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("dna_class.json: partition concat failed (%s)", exc)
+        return None
+
+
+def _emit_dna_class_ref(panel: pd.DataFrame, out_root: Path) -> dict:
+    """Write site/factordata/dna_class.json — the published per-ticker DNA reference.
+
+    PIT anchor (#3488 fix)
+    ----------------------
+    dna_class is evaluable on exactly ONE cross-section: the factors.json as_of
+    date.  The R3 PIT gate in build_panel (``factors_pit_ok``) emits Block-B
+    ``*_pct`` columns only on that date and NULL-backfills every other build date,
+    and _classify_dna returns None when any required Block-B input is None
+    (RULING-A).  The panel's *latest* date is therefore the one date that is
+    systematically NOT evaluable: the nightly builds through T from the fresh
+    close cache while the checked-out factors.json is still the previous night's
+    (as_of = T-1).  Anchoring on ``panel["date"].max()`` published a 100%-null
+    payload every night while the log cheerfully reported a healthy ticker count.
+
+    So: anchor on the latest date that actually carries a non-null dna_class and
+    report THAT date as as_of.  Consumers already treat this artifact as T-1 by
+    design (engine and factor_panel are parallel siblings).
+
+    style_regime is a market-level scalar stamped identically on every row of a
+    date (build_panel §3.4), so it has zero cross-sectional variance BY DESIGN —
+    that is not a degeneracy and is not guarded here.  Its timeline degeneracy is
+    reported separately by _calibration_sanity_style_regime.
+
+    Fail-soft: absent columns (pre-P1-C partitions) → per_ticker:{} + note field.
+    Never raises; a null NEVER blocks the nightly (CLAUDE.md §Epistemics).
+
+    Returns the emitted document (also written to disk).
+    """
+    as_of_ts = panel["date"].max() if ("date" in panel.columns and not panel.empty) else None
+    note: str | None = None
+
+    # ── 1. Pick the PIT anchor: latest date with an evaluable dna_class ──────
+    anchor = _dna_anchor_date(panel)
+    if anchor is None and "dna_class" in panel.columns:
+        # Fallback: incremental run whose only new date is the non-evaluable T.
+        # Look back at the stored partitions for the last evaluable cross-section.
+        stored = _load_recent_panel_partitions(out_root)
+        if stored is not None:
+            stored_anchor = _dna_anchor_date(stored)
+            if stored_anchor is not None:
+                anchor, panel = stored_anchor, stored
+                log.info("dna_class.json: anchored on stored partition date %s "
+                         "(fresh build carried no evaluable cross-section)", anchor)
+
+    if anchor is not None:
+        as_of_ts = anchor
+    elif as_of_ts is not None and "dna_class" in panel.columns:
+        # Column is there but nothing is evaluable anywhere — publish the latest
+        # date and name the likely cause.  (A missing column is a different
+        # failure, diagnosed in step 3; don't blame the PIT gate for it.)
+        note = (
+            f"dna_class is null for every ticker on {str(as_of_ts)[:10]}: the panel "
+            "carries no evaluable Block-B cross-section. Check that factors.json "
+            "as_of matches a date in the panel build window (R3 PIT gate)."
+        )
+
+    _as_of_str = str(as_of_ts) if as_of_ts is not None else "unknown"
+    _latest_rows = panel[panel["date"] == as_of_ts] if as_of_ts is not None else pd.DataFrame()
+
+    # ── 2. Build the per-ticker cross-section ───────────────────────────────
+    per_ticker: dict[str, dict] = {}
+    if not _latest_rows.empty and "ticker" in _latest_rows.columns:
+        _has_dna = "dna_class" in _latest_rows.columns
+        _has_sr = "style_regime" in _latest_rows.columns
+        if _has_dna or _has_sr:
+            for _, _row in _latest_rows.iterrows():
+                _tk = str(_row["ticker"])
+                _dc = _row.get("dna_class") if _has_dna else None
+                _sr = _row.get("style_regime") if _has_sr else None
+                # Normalize null → None BEFORE the skip check, so a NaN dna_class
+                # is treated as absent (it is) rather than as a value.  pd.isna
+                # (not isinstance-float-isnan) because the panel's string columns
+                # are Arrow-backed: their nulls are pd.NA, which is not a float and
+                # would otherwise serialize as the literal string "<NA>".
+                if _dc is not None and pd.isna(_dc):
+                    _dc = None
+                if _sr is not None and pd.isna(_sr):
+                    _sr = None
+                if _dc is None and _sr is None:
+                    continue
+                per_ticker[_tk] = {
+                    "dna_class": _dc,
+                    "style_regime": _sr,
+                    "as_of": _as_of_str,
+                }
+
+    # ── 3. Coverage census — the guard against a vacuous green ──────────────
+    n_tickers = len(per_ticker)
+    class_counts: dict[str, int] = {}
+    for _v in per_ticker.values():
+        _k = _v.get("dna_class")
+        if _k is not None:
+            class_counts[str(_k)] = class_counts.get(str(_k), 0) + 1
+    dna_non_null = sum(class_counts.values())
+    dna_pct = round(100.0 * dna_non_null / n_tickers, 1) if n_tickers else 0.0
+
+    if not per_ticker:
+        note = note or (
+            "dna_class and style_regime columns absent (pre-P1-C partition); "
+            "per_ticker is empty"
+        )
+    elif dna_non_null == 0:
+        note = note or (
+            f"dna_class is null for all {n_tickers} tickers on {_as_of_str[:10]} — "
+            "presence passes but coverage is zero (vacuous payload)."
+        )
+
+    # market-level scalar; surfaced top-level so consumers need not scan per_ticker
+    style_regimes = {v.get("style_regime") for v in per_ticker.values()}
+    style_regime = style_regimes.pop() if len(style_regimes) == 1 else None
+
+    out = {
+        "schema": "dna_class_ref.v1",
+        "as_of": _as_of_str,
+        "per_ticker": per_ticker,
+        # additive (v1-compatible): consumers read per_ticker/as_of and ignore these
+        "style_regime": style_regime,
+        "coverage": {
+            "n_tickers": n_tickers,
+            "dna_non_null": dna_non_null,
+            "dna_pct": dna_pct,
+            "n_classes": len(class_counts),
+            "class_counts": dict(sorted(class_counts.items(), key=lambda kv: -kv[1])),
+        },
+    }
+    if note:
+        out["note"] = note
+
+    _site_fd = out_root / "site" / "factordata"
+    _site_fd.mkdir(parents=True, exist_ok=True)
+    _dna_path = _site_fd / "dna_class.json"
+    _dna_path.write_text(json.dumps(out, default=str))
+
+    # Loud on vacuity: never report a healthy ticker count over a null payload.
+    if note:
+        log.error("dna_class.json VACUOUS — %d tickers, dna_class non-null %d "
+                  "(%.1f%%), as_of=%s → %s | note: %s",
+                  n_tickers, dna_non_null, dna_pct, _as_of_str, _dna_path, note)
+    else:
+        log.info("dna_class.json: %d tickers, dna_class non-null %d (%.1f%%), "
+                 "%d classes, style_regime=%s, as_of=%s → %s",
+                 n_tickers, dna_non_null, dna_pct, len(class_counts),
+                 style_regime, _as_of_str, _dna_path)
+    return out
+
+
 # ── CLI ──────────────────────────────────────────────────────────────────────
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__,
@@ -2432,52 +2620,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     # ---- dna_class reference emit (R-SP9/R-SP10) --------------------------------
-    # Write site/factordata/dna_class.json: per-ticker {dna_class, style_regime}
-    # from the latest date in the panel. The engine job consumes this T-1 by design
-    # (engine and factor_panel are parallel siblings).
-    # Fail-open: absent columns (pre-P1-C partitions) → per_ticker:{} + note field.
+    # Writes site/factordata/dna_class.json anchored on the latest PIT-evaluable
+    # cross-section (NOT panel max date — see _emit_dna_class_ref / #3488).
     try:
-        _as_of_str = str(panel["date"].max()) if "date" in panel.columns else "unknown"
-        _latest_rows = panel[panel["date"] == panel["date"].max()] if "date" in panel.columns else pd.DataFrame()
-        _per_ticker_dna: dict = {}
-        if not _latest_rows.empty and "ticker" in _latest_rows.columns:
-            _has_dna = "dna_class" in _latest_rows.columns
-            _has_sr = "style_regime" in _latest_rows.columns
-            if _has_dna or _has_sr:
-                for _, _row in _latest_rows.iterrows():
-                    _tk = str(_row["ticker"])
-                    _dc = _row.get("dna_class") if _has_dna else None
-                    _sr = _row.get("style_regime") if _has_sr else None
-                    # Skip rows where dna_class is NaN/None and style_regime is also absent
-                    if _dc is None and _sr is None:
-                        continue
-                    import math as _math  # noqa: PLC0415
-                    if isinstance(_dc, float) and _math.isnan(_dc):
-                        _dc = None
-                    if isinstance(_sr, float) and _math.isnan(_sr):
-                        _sr = None
-                    _per_ticker_dna[_tk] = {
-                        "dna_class": _dc,
-                        "style_regime": _sr,
-                        "as_of": _as_of_str,
-                    }
-        _dna_note = None
-        if not _per_ticker_dna:
-            _dna_note = "dna_class and style_regime columns absent (pre-P1-C partition); per_ticker is empty"
-        _dna_out = {
-            "schema": "dna_class_ref.v1",
-            "as_of": _as_of_str,
-            "per_ticker": _per_ticker_dna,
-        }
-        if _dna_note:
-            _dna_out["note"] = _dna_note
-        _site_fd = out_root / "site" / "factordata"
-        _site_fd.mkdir(parents=True, exist_ok=True)
-        _dna_path = _site_fd / "dna_class.json"
-        import json as _json  # noqa: PLC0415
-        _dna_path.write_text(_json.dumps(_dna_out, default=str))
-        log.info("dna_class.json: %d tickers, as_of=%s → %s",
-                 len(_per_ticker_dna), _as_of_str, _dna_path)
+        _emit_dna_class_ref(panel, out_root)
     except Exception as _dna_e:  # noqa: BLE001 — additive, never fatal
         log.warning("dna_class.json emit failed (%s) — continuing", _dna_e)
     # ---------------------------------------------------------------------------
