@@ -490,17 +490,28 @@ class TestBrunOrderVisibility:
     """Every `brun` slug must appear in its lane's ORDER string.
 
     `brun` records each builder's log/rc into $ART, but the ORDER loop is what
-    prints that log and raises `::error title=<label> failed (rc=N)`. A slug
-    brun'd but absent from ORDER is a builder that RUNS UNWATCHED: it can fail
-    every night with no annotation and no step-summary line.
+    prints that log and raises `::error title=<label> failed (rc=N)` on EVERY
+    rc!=0. A slug brun'd but absent from ORDER loses that reporting.
+
+    How much it costs depends on the lane, because the second reporting path is
+    not universal. scripts/check_builder_failstreaks.py GLOBS `*.rc` (so it is
+    ORDER-independent) but is wired only into daily.yml and asia-close.yml, and
+    it escalates at a streak of >=2:
+
+      * render.yml / engine-render.yml — no failstreak step at all, so ORDER is
+        the ONLY reporting path. A missing slug there runs fully unwatched.
+      * daily.yml / asia-close.yml — a repeated failure still escalates, so the
+        loss is narrower but real: no per-run log, no step-summary line, and no
+        ::error on a FIRST failure.
 
     Found the hard way 2026-07-25. #3487 added `brun research_vault` to the
     cl_misc band of render.yml + engine-render.yml — the fix whose entire point
     was that the /research/ SEO pages must stop going dark silently — but not to
-    their ORDER strings, so the builder was invisible in exactly the lanes it
-    was added to. Auditing for that found daily.yml's transmission_chains in the
-    same state. The reverse direction is deliberately NOT asserted: a stale slug
-    in ORDER is harmless (the loop skips any slug with no $ART/<slug>.log).
+    their ORDER strings, so the builder was invisible in exactly the two lanes
+    that have no failstreak backstop. Auditing for that found daily.yml's
+    transmission_chains in the same state (the milder variant). The reverse
+    direction is deliberately NOT asserted: a stale slug in ORDER is harmless
+    (the loop skips any slug with no $ART/<slug>.log).
     """
 
     LANES = ("daily.yml", "render.yml", "engine-render.yml",
