@@ -306,7 +306,7 @@
 <link rel="stylesheet" href="assets/css/bb3f81c5.css?v=bb3f81c5">
 
 
-<link rel="stylesheet" href="assets/css/d17bc65d.css?v=d17bc65d">
+<link rel="stylesheet" href="assets/css/8f96e584.css?v=8f96e584">
 
     
     
@@ -6610,27 +6610,35 @@
 
           
           
-          <div class="rkc-mood-track-wrap">
-            <div class="rkc-mood-track">
-              
-              
-              <span class="rkc-mood-needle n-a" style="--rkc-pos:calc(90% - 2px)"></span>
-              <span class="rkc-mood-flag f-above" style="--rkc-pos:90%">
-                <span class="rkc-mood-flag-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
-                <span class="rkc-mood-flag-val">90</span>
-              </span>
-              
-              
-              
-              <span class="rkc-mood-needle n-b" style="--rkc-pos:calc(51% - 2px)"></span>
-              <span class="rkc-mood-flag f-below" style="--rkc-pos:51%">
-                <span class="rkc-mood-flag-val">51</span>
-                <span class="rkc-mood-flag-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
-              </span>
-              
+          <div class="rkc-mood-board">
+            <div class="rkc-mood-lens" data-tip-en="5-year percentile of the risk-on/risk-off composite. Display-only — not a signal."
+                 data-tip-zh="风险偏好/避险合成的5年百分位。仅供展示，非信号。">
+              <div class="rkc-mood-lens-top">
+                <span class="rkc-mood-lens-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
+                <span class="rkc-mood-scoreline">
+                  <strong class="rkc-mood-score">90</strong><span class="rkc-mood-unit">/100</span>
+                  <span class="chip c-up"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
+                </span>
+              </div>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Risk appetite 90 out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:90%"></span>
+              </div>
+            </div>
+            <div class="rkc-mood-lens" id="fear-greed"
+                 data-tip-en="Fear / Greed sentiment context — equal-weight composite of 11 qualifying indicators. Context tiles still collecting (too young to count): CBOE put/call ratio, AAII sentiment (bullish %). Display-only — not a signal."
+                 data-tip-zh="恐惧/贪婪情绪参考——11项合格指标的等权合成。以下指标数据尚短、暂不计入：CBOE 看跌/看涨比率、AAII 情绪（看多占比）。仅供展示，非信号。">
+              <div class="rkc-mood-lens-top">
+                <span class="rkc-mood-lens-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
+                <span class="rkc-mood-scoreline">
+                  <strong class="rkc-mood-score">51</strong><span class="rkc-mood-unit">/100</span>
+                  <span class="chip c-muted"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+                </span>
+              </div>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Sentiment mix 51 out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:51%"></span>
+              </div>
             </div>
           </div>
-          
           <div class="rkc-mood-axis rsx-axis-labels">
             <span><span class="l-en">Panic</span><span class="l-zh">恐慌</span></span>
             <span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span>
@@ -6638,23 +6646,7 @@
             <span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
             <span><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
           </div>
-          
-          
-          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"
-               data-tip-en="5-year percentile of the risk-on/risk-off composite. Display-only — not a signal."
-               data-tip-zh="风险偏好/避险合成的5年百分位。仅供展示，非信号。">
-            <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
-            <span class="chip c-up"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
-          </div>
-          
-          
-          
-          <div id="fear-greed" style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"
-               data-tip-en="Fear / Greed sentiment context — equal-weight composite of 11 qualifying indicators. Context tiles still collecting (too young to count): CBOE put/call ratio, AAII sentiment (bullish %). Display-only — not a signal."
-               data-tip-zh="恐惧/贪婪情绪参考——11项合格指标的等权合成。以下指标数据尚短、暂不计入：CBOE 看跌/看涨比率、AAII 情绪（看多占比）。仅供展示，非信号。">
-            <span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span>
-            <span class="chip c-muted"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
-          </div>
+          <div class="rkc-mood-note"><span class="l-en">Use both lenses to size risk — neither is a trade signal.</span><span class="l-zh">用两把尺共同控制仓位——两者都不是交易信号。</span></div>
           
           
           
@@ -6674,8 +6666,9 @@
           
           <div class="rsx-froth" id="froth-fragility">
             <div class="rsx-froth-hd">
-              <span style="color:var(--warn)"><span class="l-en">Top-risk gauge</span><span class="l-zh">顶部风险表</span></span>
-              <span class="lens-q" data-lens-kind="caution" tabindex="0" role="button" aria-label="Top-risk gauge — what it measures">?<span class="lens-src" data-lens-kind="caution" hidden>
+              <span class="rsx-froth-title" style="color:var(--warn)">
+                <span><span class="l-en">Top-risk gauge</span><span class="l-zh">顶部风险表</span></span>
+                <span class="lens-q" data-lens-kind="caution" tabindex="0" role="button" aria-label="Top-risk gauge — what it measures">?<span class="lens-src" data-lens-kind="caution" hidden>
                 <div class="lens-hd">
                   <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15a8 8 0 0116 0"/><path d="M12 15l4.2-4.2"/><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></span>
                   <span class="lens-hgroup">
@@ -6694,13 +6687,16 @@
                   </div>
                 </div>
                 <div class="lens-receipt"><span class="l-en">display context · not a signal</span><span class="l-zh">展示背景 · 非信号</span></div>
-              </span></span>
-              <span style="font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--warn)">30</span>
-              <span class="chip c-warn">
-                <span class="l-en">Watch</span>
-                <span class="l-zh">关注</span>
               </span>
-              <span style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36))"><span class="l-en">provisional</span><span class="l-zh">暂定</span></span>
+              </span>
+              <span class="rsx-froth-scoreline">
+                <strong class="rsx-froth-score" style="color:var(--warn)">30</strong>
+                <span class="chip c-warn">
+                  <span class="l-en">Watch</span>
+                  <span class="l-zh">关注</span>
+                </span>
+                <span class="rsx-froth-provisional"><span class="l-en">provisional</span><span class="l-zh">暂定</span></span>
+              </span>
             </div>
             
             <div class="rsx-froth-quad">
