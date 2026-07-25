@@ -1736,11 +1736,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             for tk_local, tk_r2_key in ticker_paths:
                 _upload_r2(s3, bucket, tk_local, tk_r2_key)
 
-            # Flow-Surface store: idx.json + {HHMM}.json per root. The r2_key is the
-            # full key (live_flow/surface/{ROOT}/…) built by build_flow_surface — no
-            # R2_PREFIX join here.
-            # Flow-Surface store: idx.json + {HHMM}.json per root, each under BOTH the
-            # legacy today-key and the date-keyed {YYYY-MM-DD}/ copy, plus dates.json.
+            # Flow-Surface store: idx.json + {HHMM}.json per root, each queued under BOTH
+            # the legacy today-key and its date-keyed {YYYY-MM-DD}/ copy, plus dates.json.
+            # The r2_key is the full key (live_flow/surface/{ROOT}/…) built by
+            # build_flow_surface — no R2_PREFIX join here.
             for surf_local, surf_r2_key in surface_paths:
                 _upload_r2(s3, bucket, surf_local, surf_r2_key)
 
