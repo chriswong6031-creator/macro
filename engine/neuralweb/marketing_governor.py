@@ -253,6 +253,32 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                 outbox_summary = emit_from_content_plan(content_plan_obj, root=r, cfg=cfg)
                 result["outbox"] = outbox_summary
                 log.info("marketing_governor: outbox emit summary: %s", outbox_summary)
+
+                # Weekend reach lane: on a weekend the signal supply is thin and
+                # markets are closed, so supplement the queue with popular-ticker
+                # "levels into the week" watchlist posts (engine.marketing.
+                # weekend_levels) — drought-proof, and the reach thesis (people
+                # search the cashtags of the stocks they hold over the weekend).
+                # Fail-soft, gated on the target day being Sat/Sun, idempotent
+                # (make_item ids collapse a re-run to duplicates).
+                try:
+                    from engine.marketing import weekend_levels as _wl
+                    from engine.marketing.outbox import enqueue as _enqueue, effective_cap as _eff_cap
+                    _as_of = content_plan_obj.get("as_of") or ""
+                    if _wl.should_run(_as_of):
+                        _reach = ((cfg.get("radar") or {}).get("t1_always")) or None
+                        _wl_items = _wl.build_items(
+                            r, tickers=_reach, as_of=_as_of,
+                            schedule=_wl.weekend_schedule(_as_of, 8), max_items=8,
+                        )
+                        _cap = _eff_cap(cfg)
+                        _nq = sum(1 for _it in _wl_items
+                                  if _enqueue(_it, root=r, max_per_account_day=_cap) == "queued")
+                        result["weekend_levels"] = {"generated": len(_wl_items), "queued": _nq}
+                        log.info("marketing_governor: weekend_levels queued %d/%d for %s",
+                                 _nq, len(_wl_items), _as_of)
+                except Exception as _wexc:  # noqa: BLE001
+                    log.warning("marketing_governor: weekend_levels lane failed: %s", _wexc)
             else:
                 log.info(
                     "marketing_governor: outbox emit skipped (MARKETING_OUTBOX_ENABLED not set)"
