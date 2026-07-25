@@ -315,6 +315,24 @@ def _prior_built() -> str | None:
         return None
 
 
+def _would_thin_the_desk(new_total: int) -> tuple[bool, int | None]:
+    """Refuse a no-refresh rebake that would gut the shipped desk.
+
+    See lib/desk_guard.py for the 2026-07-25 case: the express lane rebuilt this
+    page from main's event store on a runner that lacked the nightly's
+    accumulated collector progress and silently took it from 1129 situations to
+    641. The reference is the SHIPPED BYTES, not data/'s snapshot — the snapshot
+    was three days staler than the page it described.
+    """
+    from lib import desk_guard  # noqa: PLC0415 — stdlib-only, import kept local
+
+    prior = desk_guard.shipped_row_count(
+        config.ROOT / "site" / "special_situations.html",
+        config.ROOT / "site" / PAYLOAD_DIR / PAYLOAD_NAME,
+    )
+    return desk_guard.would_thin(new_total, prior), prior
+
+
 def _gate_cfg() -> tuple[bool, int]:
     """(gated, preview_rows) from config.yml — the desk's tier-gate switch."""
     ss = config.load().get("special_situations", {}) or {}
@@ -356,9 +374,21 @@ def build(refresh: bool = True) -> str:
     # last real build published. That also keeps the rebake BYTE-STABLE, so a
     # template-only render commits nothing when the desk itself did not move.
     if not refresh:
+        from lib import desk_guard  # noqa: PLC0415 — stdlib-only guard, see below
+
         prior = _prior_built()
         if prior:
             snap["built"] = prior
+        thin, shipped = _would_thin_the_desk(len(snap.get("situations") or []))
+        if thin:
+            log.error(
+                "special_situations: REFUSING no-refresh rebake — this machine's event "
+                "store yields %d situations but the shipped desk carries %d (<%.0f%%). "
+                "Keeping the last-known page; the nightly (refresh=True, which also "
+                "commits data/) is the lane that may legitimately change this number.",
+                len(snap.get("situations") or []), shipped, desk_guard.THIN_FLOOR * 100,
+            )
+            return str(config.ROOT / "site" / "special_situations.html")
 
     # Intelligence enrichment (display-tier: tech/ident/favor/setup)
     intel_cov: dict = {}
