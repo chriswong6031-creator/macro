@@ -1047,13 +1047,17 @@ jobs:
         run: python -m pytest tests/test_cycle_forward_log.py -q
 
   tier-gate:
-    # Revenue boundary. A paid desk ships as a free preview shell at the page URL
-    # plus a separate /premiumdata/ payload that app/paywall.py gates as Insider+
-    # ahead of the site-wide PAYWALL_ENABLED switch (docs/TIER_PREVIEW_PATTERN.md).
-    # Two regressions this catches: the shell quietly regaining the paid rows (the
-    # split IS the gate — a client-side hide is not), and /premiumdata/ dropping
-    # out of premium.enforced_early, which would re-open the desk to every
-    # registered account. Hermetic — no network, no engine data.
+    # Revenue + serving boundary. A paid desk ships as a free preview shell at the
+    # page URL plus a separate /premiumdata/ payload that app/paywall.py gates as
+    # Insider+ ahead of the site-wide PAYWALL_ENABLED switch
+    # (docs/TIER_PREVIEW_PATTERN.md). Three regressions this catches: the shell
+    # quietly regaining the paid rows (the split IS the gate — a client-side hide
+    # is not), /premiumdata/ dropping out of premium.enforced_early (which would
+    # re-open the desk to every registered account), and the edge's public
+    # exclusion list drifting away from config/site_access.yml (which is how a
+    # generated artifact silently becomes anonymously fetchable — that boundary
+    # test sat red on main for a week unwatched before this job adopted it).
+    # Hermetic — no network, no engine data.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1066,6 +1070,8 @@ jobs:
         run: python -m pytest tests/test_special_situations_gate.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
+      - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
+        run: python -m pytest tests/test_site_access_boundary.py -q
 
   cycles-payload-split:
     # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
