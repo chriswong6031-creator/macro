@@ -305,6 +305,12 @@ on:
       - "engine/transmission_chains.py"
       - "scripts/run_transmission_chains.py"
       - "tests/test_transmission_chains.py"
+      # TXI W3 transmission calibration: the historical episode miner, its runner, and its test
+      # file must all trigger the calibration suite (same #3357 both-halves rule). The miner
+      # imports the shared vectorized evaluator from engine/transmission_chains.py (already above).
+      - "engine/transmission_calibration.py"
+      - "scripts/run_transmission_calibration.py"
+      - "tests/test_transmission_calibration.py"
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
@@ -1521,12 +1527,16 @@ jobs:
         run: python -m pytest tests/test_dag_conformance.py -q
 
   transmission-chains:
-    # TXI W1: the transmission chain library (knowledge/transmission/*.yaml), its compiler
-    # (engine/transmission_chains.py), and the runner (scripts/run_transmission_chains.py).
-    # The suite exercises the episode state machine (arm→propagate→express / expire / fail),
+    # TXI W1/W3: the transmission chain library (knowledge/transmission/*.yaml), its compiler
+    # (engine/transmission_chains.py), the runner (scripts/run_transmission_chains.py), AND the
+    # W3 historical episode miner (engine/transmission_calibration.py + its runner).
+    # The W1 suite exercises the episode state machine (arm→propagate→express / expire / fail),
     # idempotent same-day re-runs, the fail-loud strict validator + fail-open runtime loader,
     # and a real-artifact smoke over the four committed seeds (guarded on artifact presence).
-    # Wired here AND in pull_request.paths above (the #3357 vacuous-green trap needs both).
+    # The W3 suite exercises the vectorized-metric = point-in-time guarantee, hop-rate recovery
+    # (M/N with n), regime split (per-cell rates + thin→untested), right-censoring, the
+    # calibration merge (fill base_rates + tier promotion + rev-mismatch/absent fail-open), and
+    # null honesty. Wired here AND in pull_request.paths above (the #3357 trap needs both).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1537,6 +1547,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: transmission chains — engine + state machine + validator + smoke
         run: python -m pytest tests/test_transmission_chains.py -q
+      - name: transmission calibration — miner + regime split + merge + null honesty
+        run: python -m pytest tests/test_transmission_calibration.py -q
 
   research-factory-authority:
     # RF-11 (Research Factory W1): authority guard — no Article-2 money-path
