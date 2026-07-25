@@ -292,6 +292,93 @@ def test_wr_split_tape_verdict_is_label_not_score_floor():
         assert ra["tone"] == "warn"
 
 
+def test_wr_split_tape_fires_in_the_40_60_band():
+    """F1 regression: a split tape whose score lands in the 40-60 band must still
+    read 'Split tape'/'warn', not plain 'Neutral'/'flat'. Reviewer's failing input —
+    US (62% cap) + CN (6.5% cap) both crashing = ~68% of covered cap breaking, yet
+    the cap-weighted score sits mid-band because the crashed markets' price/trend
+    legs are still elevated. The old branch order gated the warning behind score>=60,
+    so this exact tape read a bland 'Neutral' and hid a two-mega-cap breakdown."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_crash(4000.0, 0.0006, 0.14, seed=20),
+             "CN": _wr_crash(3000.0, 0.0006, 0.14, seed=21),
+             "HK": _wr_trend(18000.0, 0.0006, seed=22)}
+    states = {cc: {"state": "uptrend"} for cc in _ALL_CCS}
+    states["US"] = {"state": "crash"}
+    states["CN"] = {"state": "crash"}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    # the constructed scenario must actually exercise the 40-60 band, else the test
+    # is vacuous (asserting on inputs that never reach the reordered branch)
+    assert 40 <= ra["score"] < 60, f"score {ra['score']} must be in the 40-60 band for this test"
+    assert ra["breakdown_share_pct"] >= 20, ra["breakdown_share_pct"]
+    assert ra["label_en"] == "Split tape"
+    assert ra["label_zh"] == "分化行情"
+    assert ra["tone"] == "warn"
+
+
+def _wr_crash_classifying(start: float, crash_frac: float = 0.24, seed: int = 0,
+                          n: int = 400, up: float = 0.0006, crash_days: int = 20) -> pd.Series:
+    """A series that GENUINELY classifies as 'crash' through market_states(): rises
+    to a fresh 252d high for most of the window, then falls crash_frac over the final
+    crash_days sessions WITH a volatility spike. Tuned so ret20 <= -15% (the crash
+    gate). Distinct from _wr_crash above, whose 40-session decay classifies only as
+    'downtrend' — the reviewer's F2 finding: hand-injected 'crash' states never
+    exercised the market_states()->dial wiring."""
+    idx = pd.bdate_range("2023-06-01", periods=n)
+    rng = np.random.default_rng(seed)
+    lr = np.full(n, np.log(1 + up))
+    # steep decline + vol spike on the crash leg
+    lr[-crash_days:] = np.full(crash_days, np.log(1 - crash_frac / crash_days)) + rng.normal(0, 0.02, crash_days)
+    return pd.Series(start * np.exp(np.cumsum(lr)), index=idx)
+
+
+def test_wr_integration_market_states_wiring_drives_dial():
+    """F2: the six hand-injected v2 tests inject `states=` literals, so the
+    market_states()->dial wiring is untested. This test derives states through the
+    REAL market_states() (as scripts/build_intl.py does), asserts the stressed
+    markets genuinely classify as crash/breaking (so it can't silently rot into a
+    vacuous green), threads them into risk_appetite() the way the build does, and
+    checks the dial drops below 60 with a non-empty drag list."""
+    from engine import intl_inputs
+    from engine.intl_market_state import market_states
+
+    # US (62% cap) + CN (6.5% cap) fall ~24% in 20 sessions off a fresh high; the
+    # other 8 markets drift mildly up.
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_crash_classifying(4000.0, crash_frac=0.24, seed=20),
+             "CN": _wr_crash_classifying(3000.0, crash_frac=0.24, seed=21),
+             "HK": _wr_trend(18000.0, 0.0006, seed=22)}
+
+    # Reproduce build_intl's _wr_state_closes EXACTLY: 7 intl primary indices keyed
+    # by cc via intl_inputs.countries() + the US/CN/HK locals. Using the real config
+    # mapping guards against ticker/cc drift.
+    countries = intl_inputs.countries()
+    state_closes: dict[str, pd.Series] = {}
+    for cc, meta in countries.items():
+        col = meta["index"]
+        if col in closes:
+            s = closes[col].dropna()
+            if not s.empty:
+                state_closes[cc] = s
+    for cc, ser in extra.items():
+        state_closes[cc] = ser
+
+    states = market_states(state_closes)
+
+    # anti-rot: the wiring is only meaningful if the stressed markets ACTUALLY
+    # classify as crash/breaking through market_states() — assert on the derived
+    # states, not the inputs.
+    assert states["US"]["state"] in {"crash", "breaking"}, states["US"]["state"]
+    assert states["CN"]["state"] in {"crash", "breaking"}, states["CN"]["state"]
+
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    assert ra["score"] < 60, ra["score"]
+    assert ra["top_drags"], "expected a non-empty drag list when US+CN are breaking"
+    assert {d["cc"] for d in ra["top_drags"]} & {"US", "CN"}
+
+
 def test_wr_state_health_map_matches_market_state_keys():
     """Test 5 (drift guard): the state-health map's keys == the STATES catalogue."""
     from engine.intl_market_state import STATES

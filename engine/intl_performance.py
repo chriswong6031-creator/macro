@@ -595,12 +595,16 @@ def risk_appetite(closes: pd.DataFrame | None = None,
     breakdown_share_pct = round(100.0 * breakdown_num / coverage_num, 1) if coverage_num else 0.0
 
     # --- verdict (display semantics — the SCORE is never floored/overridden) ---
-    if score >= 60 and breakdown_share_pct < 20:
-        label_en, label_zh, tone = "Risk-on", "风险偏好", "up"
-    elif score >= 60 and breakdown_share_pct >= 20:
-        label_en, label_zh, tone = "Split tape", "分化行情", "warn"
-    elif score < 40:
+    # Branch order matters: the breakdown-share warning must be checked BEFORE the
+    # score>=60 gate so a split tape sitting anywhere in the 40-60 band still reads
+    # "Split tape" (a US+CN crash carrying ~68% of covered cap can land the score at
+    # ~57 — plain "Neutral" would hide it). Risk-off (score<40) still wins outright.
+    if score < 40:
         label_en, label_zh, tone = "Risk-off", "风险规避", "down"
+    elif breakdown_share_pct >= 20:
+        label_en, label_zh, tone = "Split tape", "分化行情", "warn"
+    elif score >= 60:
+        label_en, label_zh, tone = "Risk-on", "风险偏好", "up"
     else:
         label_en, label_zh, tone = "Neutral", "中性", "flat"
 

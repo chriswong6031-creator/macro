@@ -212,6 +212,13 @@ def main() -> int:
 
     perf, rates = None, None
     _world_states: dict[str, dict] = {}
+    # ITR-R7 (render budget is law): the intl close frame + the fresh benchmark are
+    # each read ONCE here and reused across the world-risk block below, the ITR block
+    # (turn board + rotation) and performance_panel — _intl_closes() reads ~14 parquet
+    # files uncached, so hoisting removes ~28 redundant reads. Initialised to None so
+    # the ITR block can fail-open if this try never runs.
+    _wr_intl_raw: "pd.DataFrame | None" = None
+    _wr_bench: "pd.Series | None" = None
     try:
         from engine import intl_performance
         from engine import intl_inputs as _wr_inputs
@@ -243,7 +250,14 @@ def main() -> int:
             log.warning("world_risk market_states failed (fail-open): %s", _wse)
             _world_states = {}
 
+        # US is its own benchmark (rs20 = px/bench), so its relative-strength read is
+        # ~0 by construction, not a signal — blank it rather than show a spurious 0.0%.
+        _us_state = _world_states.get("US")
+        if isinstance(_us_state, dict):
+            _us_state["rs20_pct"] = None
+
         perf = intl_performance.performance_panel(
+            closes=_wr_intl_raw,               # reuse the hoisted close frame (ITR-R7)
             records=latest["records"],
             extra_closes=_wr_extra_closes,
             states=_world_states,
@@ -587,7 +601,9 @@ def main() -> int:
 
     try:
         from engine import intl_inputs as _itr_inputs
-        _itr_closes_raw = _itr_inputs._intl_closes()
+        # ITR-R7: reuse the close frame hoisted for the world-risk block above (same
+        # _intl_closes() content); only re-read if that hoist never ran (fail-open).
+        _itr_closes_raw = _wr_intl_raw if _wr_intl_raw is not None else _itr_inputs._intl_closes()
         _itr_countries = _itr_inputs.countries()
 
         # Build a cc->Series dict (primary index only) for the rotation engine
@@ -604,6 +620,9 @@ def main() -> int:
         if perf is not None:
             _itr_bench = perf.get("bench")
             bench_note = perf.get("bench_note")
+        elif _wr_bench is not None:
+            # ITR-R7: reuse the bench hoisted for the world-risk block (same helper).
+            _itr_bench = _wr_bench
         else:
             try:
                 from engine.intl_performance import _bench_series_fresh as _itr_bf
