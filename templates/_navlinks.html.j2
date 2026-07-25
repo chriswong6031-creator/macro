@@ -58,7 +58,7 @@
     </a>
     {# Home link removed — the brand logomark above links Home (standard pattern). #}
     <div class="nav-dd">
-      <a class="nav-link" href="{{ NP }}macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}macro.html"><span class="menu-icon menu-icon-flag menu-icon-us" aria-hidden="true"></span>{{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="{{ NP }}us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet · sectors · flows', '先知 · 板块 · 资金') }}</span></a>
@@ -97,7 +97,7 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="{{ NP }}china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}china.html"><span class="menu-icon menu-icon-flag menu-icon-cn" aria-hidden="true"></span>{{ t('China', '中国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="{{ NP }}china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet · alpha · setups', '先知 · 阿尔法 · 布局') }}</span></a>
@@ -130,7 +130,7 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="{{ NP }}hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}hk.html"><span class="menu-icon menu-icon-flag menu-icon-hk" aria-hidden="true"></span>{{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
         <a href="{{ NP }}hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet HK · alpha', '先知港股 · 阿尔法') }}</span></a>
@@ -141,7 +141,7 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="{{ NP }}canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}canada.html"><span class="menu-icon menu-icon-flag menu-icon-ca" aria-hidden="true"></span>{{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
         <a href="{{ NP }}canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet TSX · sectors · alpha', '先知TSX · 板块 · 阿尔法') }}</span></a>
@@ -151,7 +151,7 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="{{ NP }}intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span>{{ t('International', '国际') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
         <a href="{{ NP }}intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet cross-market · sectors', '先知跨市场 · 板块') }}</span></a>
@@ -159,7 +159,7 @@
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="javascript:void(0)">💠 {{ t('Other Assets', '其他资产') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span>{{ t('Other Assets', '其他资产') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="{{ NP }}vector.html"><span class="nav-sub-text">₿ {{ t('Bitcoin Vector', '比特币向量') }}<span class="d">{{ t('Market state · risk · cycle', '市场状态 · 风险 · 周期') }}</span></span><span class="caret-r">▸</span></a>
@@ -257,7 +257,7 @@
       .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
-      <a class="nav-link" href="{{ NP }}intelligence_hub.html">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
+      <a class="nav-link" href="{{ NP }}intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span>{{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
         {# Featured — the two flagship meta-desks: the fused command center + the written archive #}
         <div class="nav-mega-feat">
