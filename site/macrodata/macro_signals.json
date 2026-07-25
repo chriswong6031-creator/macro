@@ -1,6 +1,6 @@
 {
   "date": "2026-07-24",
-  "generated_utc": "2026-07-25 19:11",
+  "generated_utc": "2026-07-25 19:24",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -8,8 +8,8 @@
       "leading": {
         "asof": "2026-07-31",
         "index": 94.81205127705975,
-        "mom6": 0.37137666191111407,
-        "trend": 0.5978515621428264,
+        "mom6": 0.37137666191109986,
+        "trend": 0.5978515621428235,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -1138,7 +1138,7 @@
       },
       "coincident": {
         "asof": "2026-06-30",
-        "index": 35.54997927837482,
+        "index": 35.54997927837485,
         "mom6": -0.19521292979656835,
         "trend": -0.3761025914334855,
         "diffusion": 100.0,
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08858904928302,
+        "index": 93.08858904928299,
         "mom6": 0.68950527159231,
-        "trend": 0.014829474145929906,
+        "trend": 0.014829474145930343,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -3399,7 +3399,7 @@
         ]
       }
     },
-    "cl_ratio_mom6": -0.7078680369326662,
+    "cl_ratio_mom6": -0.7078680369326733,
     "recession_signal": {
       "available": true,
       "state": "off",
@@ -4085,7 +4085,7 @@
       "initial_claims_4wk": 207500.0,
       "continued_claims": 1796000.0,
       "claims_yoy_pct": -6.108597285067874,
-      "claims_z": -1.4269523775735755,
+      "claims_z": -1.4269523775734116,
       "claims_trend": "falling",
       "indeed_postings": 101.54,
       "indeed_chg_3m_pct": -0.9752291788570289,
@@ -4103,22 +4103,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 7.21249772407595,
+      "vrp": 7.2124977240759485,
       "vrp_pctile": 0.7182539682539683,
       "vrp_state": "rich (vol overpriced)",
-      "realized_vol": 11.367502199630104,
+      "realized_vol": 11.367502199630106,
       "vix_term": 0.9058995473604146,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 145.95,
       "skew_pctile": 0.46130952380952384,
-      "stock_bond_corr": 0.5415527494317214,
+      "stock_bond_corr": 0.5415527494317207,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.570756031046402,
+      "roro": 0.5707560310464708,
       "roro_state": "risk-on",
-      "vol_target_scalar": 1.0556408777638484,
+      "vol_target_scalar": 1.0556408777638482,
       "news_sentiment": 0.010867821983993053,
-      "news_sentiment_z": 0.5900793207434646,
+      "news_sentiment_z": 0.5900793207434637,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 90,
     "band": "Euphoria",
-    "roro": 0.570756031046402,
+    "roro": 0.5707560310464708,
     "roro_state": "risk-on",
     "legs": [
       {

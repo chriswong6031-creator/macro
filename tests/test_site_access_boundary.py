@@ -22,11 +22,39 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
 # into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
-# a snapshot, so a fresh checkout may hold none of them. site/research/ is the
-# render-lane-generated research-vault SEO plane (#3392) — same class: built,
-# never committed. The policy line is still the boundary of record — only the
-# on-disk existence check is exempt.
-RUNTIME_ARTIFACT_PREFIXES = ("/live/", "/research/")
+# a snapshot, so a fresh checkout may hold none of them. The policy line is
+# still the boundary of record — only the on-disk existence check is exempt.
+#
+# The qualifying property is the DELIVERY path, NOT "is the content generated".
+# site/live/ reaches the edge out of band, so a fresh checkout legitimately lacks
+# it. A tree that reaches the edge only by being COMMITTED — "the VPS serves
+# committed main; there is no Pages-artifact fallback" (render.yml) — is committed
+# content no matter which builder emits it, and belongs in the existence check.
+#
+# /research/ was added here by #3507 to clear the #3488 red and is REMOVED again:
+# it is render-lane output delivered by `git add site/`, and the exemption required
+# gitignoring site/research/ to satisfy the honesty guard below. A gitignored
+# subtree makes `git add site/` silently skip every NEW file — edits to the pages
+# already tracked keep staging, new ones never do — so the estate would have frozen
+# at the 86 pages #3501 landed while the research-ingest lane kept growing
+# catalog.json: the exact "shipped dark" failure #3487 had just fixed. The tree is
+# committed, so the assertion below now passes on its own merits.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
+
+# Shown on every missing-target failure. A public entry that points at nothing is a
+# REAL defect (the edge advertises a path that 404s), so this stays a hard failure --
+# but the cheap exit is the wrong one and #3507 proves the bait works: when a policy
+# entry lands before its content, the red reads "missing public prefix" and the
+# nearest fix is RUNTIME_ARTIFACT_PREFIXES. Name the two real remedies instead.
+_MISSING_TARGET_HINT = (
+    "config/site_access.yml declares it public but that path does not exist under "
+    "site/. Either land the content first (a CI-generated tree needs its builder's "
+    "first output committed BEFORE the policy entry -- see #3487/#3488/#3501), or "
+    "drop the policy entry until it does. Do NOT add it to RUNTIME_ARTIFACT_PREFIXES "
+    "unless the content reaches the edge WITHOUT being committed: that exemption "
+    "requires gitignoring the tree, which silently stops the render lane's "
+    "`git add site/` from ever shipping a new file under it."
+)
 
 
 def _caddy_public_exclusions() -> set[str]:
@@ -50,11 +78,29 @@ def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
         if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / path.lstrip("/")).is_file(), f"missing public exact path: {path}"
+        assert (SITE / path.lstrip("/")).is_file(), (
+            f"missing public exact path: {path} -- {_MISSING_TARGET_HINT}"
+        )
     for prefix in POLICY["public"]["prefixes"]:
         if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / prefix.strip("/")).is_dir(), f"missing public prefix: {prefix}"
+        assert (SITE / prefix.strip("/")).is_dir(), (
+            f"missing public prefix: {prefix} -- {_MISSING_TARGET_HINT}"
+        )
+
+
+def test_public_theme_imports_are_declared_public():
+    """A public stylesheet must not import an asset hidden behind the regwall."""
+    public_exact = set(POLICY["public"]["exact"])
+    theme = (SITE / "theme.css").read_text()
+    imports = re.findall(r'@import\s+url\(["\']?([^"\')?]+)', theme)
+    assert imports, "site/theme.css should expose its external dependencies"
+    for imported in imports:
+        public_path = "/" + imported.split("?", 1)[0].lstrip("/")
+        assert public_path in public_exact, (
+            f"public theme.css imports gated asset {public_path}; "
+            "declare the UI dependency in config/site_access.yml"
+        )
 
 
 def test_runtime_artifact_exemption_stays_honest():
