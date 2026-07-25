@@ -410,9 +410,41 @@ class TestBuild:
 # ──────────────────────────────────────────────────── pick_lab registry ──
 
 class TestPickLabRegistry:
-    def test_25_books(self):
+    """Registry integrity from the flow-leaders side: our Family G books exist and
+    the shared registry is structurally sound.
+
+    Count-agnostic on purpose (2026-07-25; same ruling as TestRegistryBookCount in
+    test_build_leader_radar.py, 2026-07-17): other programs add books to the shared
+    registry (28th = plab_lh_edge_durability_b, PR #2743) and an exact-count pin
+    here breaks their CI. The exact count is pinned once — in
+    tests/test_pick_lab_core.py::TestRegistry and the module-load assert at the
+    bottom of engine/pick_lab/registry.py.
+    """
+
+    def test_registry_min_count(self):
         from engine.pick_lab.registry import REGISTRY
-        assert len(REGISTRY) == 27, f"Expected 27 books, got {len(REGISTRY)}"  # LR W2a added plab_leader_precipice, plab_leader_onset (25->27)
+        assert len(REGISTRY) >= 27, f"Registry shrank: {len(REGISTRY)} books"
+
+    def test_unique_engine_ids(self):
+        from engine.pick_lab.registry import REGISTRY
+        ids = [b["engine_id"] for b in REGISTRY]
+        dupes = {i for i in ids if ids.count(i) > 1}
+        assert not dupes, f"Duplicate engine_ids: {dupes}"
+
+    def test_books_carry_required_keys(self):
+        from engine.pick_lab.registry import REGISTRY
+        required = {
+            "engine_id", "name_en", "name_zh", "family", "ruler",
+            "horizon_role", "max_picks", "refire_lockout_sessions",
+            "config", "config_hash", "kill_adjacency",
+        }
+        for b in REGISTRY:
+            missing = required - set(b)
+            assert not missing, f"{b.get('engine_id', b)} missing keys: {missing}"
+            assert b["family"], f"{b['engine_id']}: empty family label"
+            assert b["horizon_role"] in ("entry", "hold_thesis"), (
+                f"{b['engine_id']}: bad horizon_role {b['horizon_role']!r}"
+            )
 
     def test_unique_hashes(self):
         from engine.pick_lab.registry import REGISTRY, _config_hash
