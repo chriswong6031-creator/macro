@@ -759,7 +759,11 @@
   body.page-canada .cax-card[role="button"]{cursor:pointer}
   body.page-canada .cax-card[role="button"]:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35)}
   /* hero */
-  body.page-canada .cax-hero{display:grid;grid-template-columns:3fr 2fr;position:relative;z-index:30;padding:0}
+  body.page-canada .cax-hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,7fr);position:relative;z-index:30;padding:0}
+  /* mirror US mx4 hero: ease the left column wider in the narrow 2-col band so the
+     gauge+score cluster never overflows the divider (below 1000px it goes 1-col).
+     Held to 1200px (vs US 1100) — the Canada gauge is a touch larger. */
+  @media(max-width:1200px){body.page-canada .cax-hero{grid-template-columns:minmax(0,34fr) minmax(0,66fr)}}
   body.page-canada .cax-hero-solo{grid-template-columns:1fr}
   /* until the score log accrues >=2 sessions, HIDE the empty history panel
      (1-col grid alone just reflows it below the hero) */
