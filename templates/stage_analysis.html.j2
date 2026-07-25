@@ -712,10 +712,11 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   <div class="controls rise d2">
     <span class="ctl-lab">{{ t('Region', '地区') }}</span>
     <div class="seg" id="region-seg" role="group" aria-label="Region">
-      <button data-region="all" aria-pressed="true">{{ t('All', '全部') }}</button>
-      <button data-region="US" aria-pressed="false">{{ t('N. America', '北美') }}</button>
-      <button data-region="EUROPE" aria-pressed="false">{{ t('Europe', '欧洲') }}</button>
-      <button data-region="ASIA" aria-pressed="false">{{ t('Asia', '亚洲') }}</button>
+      <button data-region="US" aria-pressed="true">{{ t('US', '美国') }}</button>
+      <button data-region="CHINA" aria-pressed="false">{{ t('China', '中国') }}</button>
+      <button data-region="HK" aria-pressed="false">{{ t('HK', '香港') }}</button>
+      <button data-region="CANADA" aria-pressed="false">{{ t('Canada', '加拿大') }}</button>
+      <button data-region="OTHER" aria-pressed="false">{{ t('Other', '其他') }}</button>
     </div>
     <span class="ctl-lab">{{ t('Tags', '标签') }}</span>
     <div class="seg" id="tag-seg" role="group" aria-label="Tag level">
@@ -1021,30 +1022,24 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   };
 
   /* ---- state ---- */
-  var RAW=[],VIEW=[],sortKey='rating',sortDir=-1,region='all',tagLevel='L1',search='';
+  var RAW=[],VIEW=[],sortKey='rating',sortDir=-1,region='US',tagLevel='L1',search='';
   var WATCH=(function(){try{return JSON.parse(localStorage.getItem('sga_watch')||'[]');}catch(e){return [];}})();
 
-  /* regionOf — read the row's `region` field from the data lane
-     ("USA"/"EUROPE"/"ASIA"); the shared toggle emits US → map to USA. Fall
-     back to a ticker-suffix guess only when the field is absent (older
-     artifacts before the region backfill lands), so N.America/Europe/Asia
-     populate correctly on Screener/Board/Earnings. */
-  function normRegion(v){
-    if(!v)return null;
-    v=String(v).toUpperCase();
-    if(v==='US'||v==='USA'||v==='N. AMERICA'||v==='NORTH AMERICA')return 'US';
-    if(v==='EU'||v==='EUROPE')return 'EUROPE';
-    if(v==='ASIA'||v==='APAC')return 'ASIA';
-    return null;
-  }
-  function regionFromTicker(t){
-    t=t||'';
-    if(/\.(TW|HK|SS|SZ|KS|SI|AX|NS|JK|T)$/i.test(t))return 'ASIA';
-    if(/\.(L|PA|DE|MI|AS|SW|ST|CO|HE|OL|BR|MC|VI|LS)$/i.test(t))return 'EUROPE';
-    return 'US';
-  }
+  /* regionOf — classify a row into one of the five UI buckets
+     (US / CHINA / HK / CANADA / OTHER). The exchange suffix on the ticker is
+     authoritative for the sub-markets the coarse `region` field can't tell
+     apart — the field only says "ASIA" for a .HK or .SS name — so the suffix
+     wins first; the `region` field ("USA"/"EUROPE"/"ASIA") then decides the
+     US-vs-Other split, and a bare (suffix-less) ticker is treated as US-listed. */
   function regionOf(row){
-    return normRegion(row.region)||regionFromTicker(row.ticker);
+    var t=String((row&&row.ticker)||'').toUpperCase();
+    if(/\.(SS|SH|SZ|BJ)$/.test(t))return 'CHINA';     /* Shanghai / Shenzhen / Beijing A-shares */
+    if(/\.HK$/.test(t))return 'HK';                   /* Hong Kong */
+    if(/\.(TO|V|CN|NE)$/.test(t))return 'CANADA';     /* TSX / TSX-V / CSE / NEO */
+    var reg=String((row&&row.region)||'').toUpperCase();
+    if(reg==='USA'||reg==='US'||reg==='N. AMERICA'||reg==='NORTH AMERICA')return 'US';
+    if(reg)return 'OTHER';                            /* EUROPE / ASIA / any other tagged region */
+    return /\.[A-Z]{1,4}$/.test(t)?'OTHER':'US';      /* no region field: a foreign suffix ⇒ Other, else US */
   }
   /* a small muted provenance chip for EquityDesk-seed EU/Asia rows (until we
      wire non-US OHLCV). Only shows when the data lane marks source==="seed". */
@@ -1053,7 +1048,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     return ' <span class="seedtag" data-tip-en="Seed data from the EquityDesk backfill — non-US names have no live price feed yet, so this stage read is historical, not fresh." data-tip-zh="来自 EquityDesk 回填的种子数据 —— 非美股暂无实时行情，此阶段判定为历史数据，非最新。">'+TT('seed','种子')+'</span>';
   }
   function passFilters(row){
-    if(region!=='all'&&regionOf(row)!==region)return false;
+    if(regionOf(row)!==region)return false;
     if(search){var s=search.toLowerCase();if((row.ticker||'').toLowerCase().indexOf(s)<0&&(row.name||'').toLowerCase().indexOf(s)<0)return false;}
     var f=readFilters();
     if(f.pctile!=null&&(row.industry_percentile==null||row.industry_percentile<f.pctile))return false;
@@ -1309,7 +1304,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   function boardRows(){
     var d=BOARD[boardCadence];if(!d)return [];
     var rows=(d.rows||[]).filter(function(r){return r.stage===2&&r.fresh;});
-    if(region!=='all')rows=rows.filter(function(r){return regionOf(r)===region;});
+    rows=rows.filter(function(r){return regionOf(r)===region;});
     rows.sort(function(a,b){return (b.rating||0)-(a.rating||0);});
     return rows;
   }
@@ -1384,7 +1379,17 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
      ===================================================================== */
   var IND={ranks:null,heat:null,ec:null,flows:null},indView='ranking',indLoaded={};
   var indFlowGrain='industry',indEcMode='combined',flowSortKey='rs_chg_4w_median',flowSortDir=-1;
-  function dataRegion(){return region==='US'?'USA':region;}
+  /* Industry artifacts are keyed at coarse region granularity (USA/EUROPE/ASIA);
+     the five UI buckets fold onto the nearest coarse key. CHINA/HK share the
+     ASIA industry ranks (the artifact can't split them); OTHER shows EUROPE;
+     CANADA has no coarse key, so its industry views render empty via the
+     null-guards in pickRegion/heatGrid. */
+  function dataRegion(){
+    if(region==='US')return 'USA';
+    if(region==='CHINA'||region==='HK')return 'ASIA';
+    if(region==='OTHER')return 'EUROPE';
+    return region;
+  }
   function pickRegion(map){
     if(!map)return null;
     var r=dataRegion();
@@ -1683,7 +1688,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
      ===================================================================== */
   var ERN={table:null,season:null,compare:null},ernView='calls',ernLoaded={};
   var ernSortKey='ec_combined',ernSortDir=-1,ernFilters={ind:'',band:''};
-  function ernRegionOf(r){return normRegion(r.region)||regionFromTicker(r.ticker);}
+  function ernRegionOf(r){return regionOf(r);}
   var ECOLS=[
     {k:'ticker',en:'Ticker',zh:'代码',sticky:true},
     {k:'company_name',en:'Company',zh:'公司'},
@@ -1701,7 +1706,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   }
   function ernRows(){
     var rows=((ERN.table&&ERN.table.rows)||[]).slice();
-    if(region!=='all')rows=rows.filter(function(r){return ernRegionOf(r)===region;});
+    rows=rows.filter(function(r){return ernRegionOf(r)===region;});
     if(search){var s=search.toLowerCase();rows=rows.filter(function(r){return (r.ticker||'').toLowerCase().indexOf(s)>=0||(r.company_name||'').toLowerCase().indexOf(s)>=0;});}
     if(ernFilters.ind)rows=rows.filter(function(r){return r.gics_industry===ernFilters.ind;});
     if(ernFilters.band==='up')rows=rows.filter(function(r){return r.ec_sent!=null&&r.ec_sent>=20;});
@@ -1786,7 +1791,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   function ernCompareView(){
     var rows=((ERN.compare&&ERN.compare.rows)||[]).slice();
     if(!rows.length)return ernEmpty();
-    if(region!=='all')rows=rows.filter(function(r){return ernRegionOf(r)===region;});
+    rows=rows.filter(function(r){return ernRegionOf(r)===region;});
     if(search){var s=search.toLowerCase();rows=rows.filter(function(r){return (r.ticker||'').toLowerCase().indexOf(s)>=0||(r.company_name||'').toLowerCase().indexOf(s)>=0;});}
     rows.sort(function(a,b){return Math.abs(b.delta_combined||0)-Math.abs(a.delta_combined||0);});
     var head='<tr><th class="sticky-l">'+LT('Ticker','代码')+'</th><th>'+LT('Company','公司')+'</th>'+
@@ -1976,7 +1981,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   var RES=null,resLoaded={};
   function resItems(){
     var its=(RES&&RES.items)||[];
-    if(region!=='all'||search){
+    if(search){
       its=its.filter(function(i){
         if(search){var s=search.toLowerCase();var tk=(i.ticker_ui||i.tickerb||'').toLowerCase();var nm=(i.thesis_summary||'').toLowerCase();if(tk.indexOf(s)<0&&nm.indexOf(s)<0)return false;}
         return true;
@@ -2028,21 +2033,17 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   var REGION_AGNOSTIC={research:1,altdata:1};
   function syncRegionToggle(name){
     var agnostic=!!REGION_AGNOSTIC[name];
+    /* Research / Alt-Data are one combined company index — the region toggle
+       can't split them, so disable every button (there is no "All" fallback to
+       snap to). The active US-default filter is simply ignored by these two
+       surfaces, and the buttons re-enable on return to a region-aware tab. */
     qsa('#region-seg button').forEach(function(b){
-      var r=b.getAttribute('data-region');
-      var off=agnostic&&(r==='EUROPE'||r==='ASIA'||r==='US');
-      b.disabled=off;
-      b.style.opacity=off?'0.4':'';
-      b.style.cursor=off?'not-allowed':'';
-      if(off){b.setAttribute('data-tip-en','This view is one combined company index — not split by region.');b.setAttribute('data-tip-zh','该视图为合并的公司索引 —— 不按地区拆分。');}
-      else b.removeAttribute('data-tip-en');
+      b.disabled=agnostic;
+      b.style.opacity=agnostic?'0.4':'';
+      b.style.cursor=agnostic?'not-allowed':'';
+      if(agnostic){b.setAttribute('data-tip-en','This view is one combined company index — not split by region.');b.setAttribute('data-tip-zh','该视图为合并的公司索引 —— 不按地区拆分。');}
+      else{b.removeAttribute('data-tip-en');b.removeAttribute('data-tip-zh');}
     });
-    /* if we land on an agnostic tab while a region filter is active, snap back
-       to All so the surface isn't silently empty. */
-    if(agnostic&&region!=='all'){
-      region='all';
-      qsa('#region-seg button').forEach(function(x){x.setAttribute('aria-pressed',x.getAttribute('data-region')==='all'?'true':'false');});
-    }
   }
   function selectTab(name,push){
     if(!SURF[name])name='screener';
