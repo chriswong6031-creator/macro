@@ -308,6 +308,10 @@ on:
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
+      # Hosted-runner packing contract: changes to the orchestrator or its
+      # fail-closed tests must exercise the workflow-yaml legacy job below.
+      - "scripts/run_ci_pack.py"
+      - "tests/test_ci_pack.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -823,8 +827,53 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # A newer commit on the same PR makes every older result obsolete.  Cancelling
+  # it here prevents rapid agent pushes from leaving whole 86-job runs in queue.
+  # workflow_dispatch runs stay independent by falling back to the run id.
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
+  ci-pack:
+    # The legacy jobs below remain the reviewable source of truth, but are
+    # intentionally skipped by GitHub.  Two pack runners execute every legacy
+    # run step against a clean working tree, sharing one checkout and reusing
+    # only identical dependency sets instead of provisioning 86 separate VMs.
+    name: ci-pack-${{ matrix.pack }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        pack: [0, 1]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install isolated pack runner
+        run: |
+          python -m venv "$RUNNER_TEMP/ci-pack-runner"
+          "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
+      - name: validate and run legacy CI pack
+        env:
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        run: >-
+          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
+          --workflow .github/workflows/ci.yml
+          --pack-index ${{ matrix.pack }}
+          --pack-count 2
+          --execute
+
   inline-js:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -849,6 +898,7 @@ jobs:
         run: python3 scripts/check_site_js.py site
 
   nav-gap:
+    if: ${{ false }}
     # The shared nav menu (.site-nav / vector-family .topbar) has no built-in top
     # gap — it relies on each page's body top padding. A new page that zeroes its
     # body padding jams the menu against the viewport top ("menu with no padding").
@@ -860,6 +910,7 @@ jobs:
         run: python3 scripts/check_nav_gap.py site
 
   nav-mega:
+    if: ${{ false }}
     # The Research nav is a shared partial (_navlinks.html.j2) whose Research entry is
     # the grouped 'nav-mega' panel. A page built OUTSIDE the routine render loop (an
     # out-of-loop page builder, or a hand-static page) can render the shared nav but
@@ -871,6 +922,7 @@ jobs:
         run: python3 scripts/check_nav_mega.py site
 
   board-contradictions:
+    if: ${{ false }}
     # W2 board invariant guard: validates site/factordata/us_standouts.json for four
     # contradictions that the W8 arbiter + W6-US fix passes must prevent:
     #   (a) FRESH-BUY-ish state with stale cross or extended grade,
@@ -913,6 +965,7 @@ jobs:
           python3 scripts/check_board_contradictions.py site/factordata/us_standouts.json
 
   ms-board-coherence:
+    if: ${{ false }}
     # 2026-07-07 incident: render commit 5bf116a3b3 shipped a hybrid Market State board
     # (score 56 / "Mixed" verdict beside a "Risk Radar forces Risk-off." note + Risk-off
     # thesis) — stitched by the render lane's `git pull --rebase -X theirs` racing the
@@ -935,6 +988,7 @@ jobs:
         run: python -m pytest tests/test_check_ms_board_coherence.py -q
 
   rebase-css-autoresolve:
+    if: ${{ false }}
     # 2026-07-22 incident: asia-close run 29904079071 committed the day's engine outputs,
     # then every push retry died on the SAME rename/rename conflict — two lanes had
     # renamed a content-hashed site/assets/css/<hash>.css to different hashes, and
@@ -954,6 +1008,7 @@ jobs:
         run: python -m pytest tests/test_rebase_autoresolve_hashed_css.py -q
 
   conflict-markers:
+    if: ${{ false }}
     # 2026-07-03 incident: a merge commit shipped literal git conflict markers
     # ('<<<<<<< ours' / '=======' / '>>>>>>> theirs') inside templates/dashboard.html.j2
     # and merged GREEN — Jinja parses marker lines as plain text, pytest never rendered
@@ -969,6 +1024,7 @@ jobs:
         run: python3 scripts/check_conflict_markers.py
 
   title-i18n:
+    if: ${{ false }}
     # The i18n rule: translated text NEVER goes in HTML attributes — the dual-span
     # l-en/l-zh mechanism cannot operate there, so a bilingual title= shows both
     # languages mashed together. This scans template SOURCE for CJK, t() calls, or
@@ -986,6 +1042,7 @@ jobs:
         run: python3 scripts/check_title_i18n.py templates site
 
   signal-contract:
+    if: ${{ false }}
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
     # the single source of truth shared with the charting app). A PR that drifts the engine output
     # from the schema, weakens the validator, or breaks a contract rule fails RED here — the safe
@@ -1005,6 +1062,7 @@ jobs:
         run: python -m pytest tests/test_validate_signals.py -q
 
   trial-budgets:
+    if: ${{ false }}
     # W1d (audit #21): every multiple-testing harness must REGISTER its trial budget, or the
     # DSR/kill/FDR deflation it feeds is a lie. A NEW validate_*/*_phase0 script that deflates a
     # Sharpe without registering fails RED here (the ~33 pre-existing offenders are grandfathered
@@ -1025,6 +1083,7 @@ jobs:
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
 
   outcome-spine:
+    if: ${{ false }}
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
     # badge-passport ratchet (#41) fails RED if a desk brief renders a conviction badge with no
     # provenance passport; the spine/pooling tests prove the four safety properties (sign-safety,
@@ -1043,6 +1102,7 @@ jobs:
         run: python -m pytest tests/test_spine.py tests/test_pooling.py -q
 
   cycle-ontology-js:
+    if: ${{ false }}
     # W1.5 (A10/A12 ruling): the generated site/cycle_ontology.js must exactly match what
     # engine/cycle_ontology.py produces at HEAD.  A PR that edits the engine but forgets to
     # regenerate the JS — or hand-edits the committed JS — fails RED here.  The flag-day
@@ -1063,6 +1123,7 @@ jobs:
         run: python3 -m scripts.gen_ontology_js --check
 
   cycle-forward-log:
+    if: ${{ false }}
     # W1.5 (W0.2 acceptance): four acceptance criteria for the shared forward-log writer.
     # A regression here silently breaks prospective cone-coverage grading for every cycle
     # family (US sectors + country cycles).  Hard gate: the keep-FIRST invariant and
@@ -1079,6 +1140,7 @@ jobs:
         run: python -m pytest tests/test_cycle_forward_log.py -q
 
   tier-gate:
+    if: ${{ false }}
     # Revenue + serving boundary. A paid desk ships as a free preview shell at the
     # page URL plus a separate /premiumdata/ payload that app/paywall.py gates as
     # Insider+ ahead of the site-wide PAYWALL_ENABLED switch
@@ -1116,6 +1178,7 @@ jobs:
         run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
 
   cycles-payload-split:
+    if: ${{ false }}
     # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
     # usd_record) off the cycle-map payload into a lazy-hydrated series chunk. A regression
     # here (wrong family stripped, lossy split, or input mutation) would corrupt every cycle
@@ -1132,6 +1195,7 @@ jobs:
         run: python -m pytest tests/test_cycles_payload_split.py -q
 
   flow-surface:
+    if: ${{ false }}
     # Flow-Surface store: scripts/build_flow_surface materializes per-strike net-premium
     # grids + (Lane G) intraday dealer-exposure greek grids (gex/dex/vanna/charm) +
     # walls/coverage (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the
@@ -1163,6 +1227,7 @@ jobs:
         run: python -m pytest tests/test_build_options_screener.py -q
 
   cycle-grading-stats:
+    if: ${{ false }}
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one
     # cone_coverage implementation (no silent second definition), and the China-grader
     # refactor must be numerically identical to the pre-refactor path on fixed inputs.
@@ -1180,6 +1245,7 @@ jobs:
         run: python -m pytest tests/test_grading_stats.py -q
 
   engine-render-guards:
+    if: ${{ false }}
     # 2026-07-02 rot sweep: these test files silently broke on main because ci.yml only
     # ran a targeted subset. They cover the template render guards (canada / fear↔euphoria /
     # froth merged card / risk-state banner), the froth display-only firewall, the
@@ -1276,6 +1342,7 @@ jobs:
         run: python -m scripts.check_statement_tape
 
   collector-registry:
+    if: ${{ false }}
     # timeout: this job had none (6h GitHub default) — a wedged one-shot (e.g. the
     # pyarrow exit deadlock documented in lib/procutil.py) would block PRs for hours.
     timeout-minutes: 15
@@ -1304,6 +1371,7 @@ jobs:
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
 
   cycle-consistency:
+    if: ${{ false }}
     # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every
     # page that renders it (cycle.html flagship / country_cycles / markets.html / sector),
     # within tolerance, OR carry a declared basis label explaining the difference.  A page
@@ -1324,6 +1392,7 @@ jobs:
         run: python -m pytest tests/test_cycle_consistency.py tests/test_cycle_ontology.py -q
 
   synapse-read-gate:
+    if: ${{ false }}
     # W0 PR3: literal-path scan over engine/*.py, scripts/*.py, collectors/*.py.
     # WARN tier (exit 0): any undeclared reader of a registered artifact.
     # HARD FAIL (exit 1): an undeclared reader that is an Article-2 money-path
@@ -1361,6 +1430,7 @@ jobs:
         run: python -m pytest tests/test_winner_autopsy.py -q
 
   neural-web:
+    if: ${{ false }}
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO
     # GitHub workflows before this job was added.  Without CI wiring, an edit to
     # config/synapse.yml (not under any prior ci.yml path glob) could merge GREEN with a
@@ -1391,6 +1461,7 @@ jobs:
           python3 -m scripts.check_entity_thesis_registry
 
   neural-web-core:
+    if: ${{ false }}
     # NW Macro Context Rail R5 (PR-A): wires the five orphan NW test files that were
     # previously run by ZERO GitHub workflows.  Path-gated on engine/neuralweb/** and
     # the five test files (workflow-level on.pull_request.paths covers engine/neuralweb/**).
@@ -1415,6 +1486,7 @@ jobs:
         run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py -q
 
   cn-standout-audit:
+    if: ${{ false }}
     # SA-W2: CN PIT regime store + species_id + two-axis attribution + fitness card.
     # Tests: lane fail-closed, keep-first, species_id mapping, axis precedence, us_proxy
     # isolation, premature_stop_noise unimplemented (F5), never-raise, data_gap honesty,
@@ -1432,6 +1504,7 @@ jobs:
         run: python -m pytest tests/test_cn_standout_audit.py tests/test_china_standout_track.py -v -q
 
   workflow-yaml:
+    if: ${{ false }}
     # Every .github/workflows/* file must load as YAML and carry on: + jobs:.
     # An unparseable workflow file makes GitHub stamp a FAILED zero-job run on
     # every push to every branch carrying it (metabolism-agenda.yml col-0
@@ -1445,13 +1518,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pyyaml
+        run: pip install pytest pyyaml
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
         run: python scripts/check_workflow_yaml.py .github/workflows
+      - name: hosted-runner packing contract
+        run: python -m pytest tests/test_ci_pack.py -q
 
   causal-factory:
+    if: ${{ false }}
     # Causal Hypothesis Factory (CHF) + Signal Foundry brainstorm: all ten test files
     # below were run by ZERO GitHub workflows before this job — the same 'merged green
     # because no CI job covered X' rot class as #1052 / #1193 / #1195 and the neural-web
@@ -1481,6 +1557,7 @@ jobs:
           tests/test_causal_targets.py tests/test_sf_brainstorm.py -q
 
   rlt-rebalance-calendar-pulse:
+    if: ${{ false }}
     # RLT-R1/R2: rebalance calendar organ + rebalance pulse detector.
     # Hermetic tests: synthetic fixtures, no network, no live data stores.
     runs-on: ubuntu-latest
@@ -1495,6 +1572,7 @@ jobs:
         run: python -m pytest tests/test_rebalance_calendar.py tests/test_rebalance_pulse.py -q
 
   dag-conformance:
+    if: ${{ false }}
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
     # scripts/check_dag_conformance.py diffs the declared sequences against the LIVE
     # .github/workflows/ files and exits 1 on any mismatch not covered by a divergences
@@ -1523,6 +1601,7 @@ jobs:
         run: python -m pytest tests/test_dag_conformance.py -q
 
   transmission-chains:
+    if: ${{ false }}
     # TXI W1: the transmission chain library (knowledge/transmission/*.yaml), its compiler
     # (engine/transmission_chains.py), and the runner (scripts/run_transmission_chains.py).
     # The suite exercises the episode state machine (arm→propagate→express / expire / fail),
@@ -1541,6 +1620,7 @@ jobs:
         run: python -m pytest tests/test_transmission_chains.py -q
 
   research-factory-authority:
+    if: ${{ false }}
     # RF-11 (Research Factory W1): authority guard — no Article-2 money-path
     # module (alert_triage / board_ordering / top_setups) may read
     # data/research_factory/ or import engine.research_factory.  The factory
@@ -1562,6 +1642,7 @@ jobs:
         run: python -m pytest tests/test_research_factory_state.py tests/test_research_factory_schema.py -q
 
   cycle-pattern-authority:
+    if: ${{ false }}
     # CPI P2: authority guard — no Article-2 money-path module (alert_triage /
     # board_ordering / top_setups) may read data/cycle_pattern/ or import the
     # cycle-pattern lake.  The CPI substrate is display-only (context tier);
@@ -1583,6 +1664,7 @@ jobs:
         run: python -m pytest tests/test_check_cycle_pattern_authority.py -q
 
   private-boundary:
+    if: ${{ false }}
     # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
     # Verifies that data/private/ and data/operator/ are gitignored, and that
     # committed feedback artifacts carry only counts — no tickers, fill/position/
@@ -1604,6 +1686,7 @@ jobs:
         run: python3 -m pytest tests/test_check_private_boundary.py -q
 
   ruling-graph:
+    if: ${{ false }}
     # Ruling Graph v1 (RUL-CL-1/6/7/8/11/12): canonical case-law registry guard.
     # Checks that:
     #   - committed site JSON + case-law doc match YAML regeneration (--check)
@@ -1641,6 +1724,7 @@ jobs:
         run: python -m pytest tests/test_model_routing_guard.py -q
 
   contract-drift:
+    if: ${{ false }}
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in
     # site/factordata/contracts/artifact_manifest.json has not drifted from the
     # live artifact's actual top-level JSON fields.  A bot consuming china_standouts
@@ -1667,6 +1751,7 @@ jobs:
         run: python -m pytest tests/test_contract_drift.py -q
 
   flow-cohorts:
+    if: ${{ false }}
     # FL-B cohort flow aggregation (flow-continuity-program): aggregation correctness,
     # coverage honesty counts, idempotence, JSON schema, no-history raw_fallback.
     # Triggers on engine/flow_cohorts.py, scripts/build_flow_desk.py,
@@ -1683,6 +1768,7 @@ jobs:
         run: python -m pytest tests/test_flow_cohorts.py -q
 
   flow-signals-ledger:
+    if: ${{ false }}
     # FS-0 flow-signal ledger + outcome grader (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE):
     # keep-first dedup, tz-normalization (aware-UTC enforcement),
     # PIT leak-injection (no future-data lookahead), split-seam guard,
@@ -1708,6 +1794,7 @@ jobs:
         run: python -m pytest tests/test_fs4_flow_scorer.py -q
 
   flow-signal-cohorts:
+    if: ${{ false }}
     # FS-1 historical flow cohorts (ops lane, off-render):
     # Covers detector parity, eod_proxy PIT leak-injection, cohort separation guard,
     # tz-aware UTC round-trip, resume idempotence, concurrency cap, terminal-down.
@@ -1739,6 +1826,7 @@ jobs:
         run: python -m pytest tests/test_fs4_flow_trainer.py -q
 
   broad-etf-flows:
+    if: ${{ false }}
     # RLT-R3: broad-market index ETF creation/redemption proxy.
     # Tests: proxy math + SO-jump guard (>25% clamped to NaN), causal z60 (no
     # lookahead, min_periods=2), schema of broad_flow_proxy.parquet, upsert
@@ -1756,6 +1844,7 @@ jobs:
         run: python -m pytest tests/test_broad_etf_flows.py -q
 
   qledger-cluster-honest-ci:
+    if: ${{ false }}
     # altdata-diagnosis PR-A: cluster-honest Wilson CI fix.
     # Proves that _aggregate and promotion_check compute wilson_ci_low on n_dates
     # (independent date clusters), not on the correlated n_obs, per the
@@ -1774,6 +1863,7 @@ jobs:
         run: python -m pytest tests/test_altdata_reboot_families.py -q
 
   altdata-new-sources:
+    if: ${{ false }}
     # altdata-W1: new free altdata sources — Finnhub transcript metadata catalog
     # (plan-gated graceful no-op on free tier) + StockTwits public sentiment
     # (keyless, bullish/bearish ratios + watchlist_count). Pure parse + store tests;
@@ -1792,6 +1882,7 @@ jobs:
         run: python -m pytest tests/test_stocktwits.py -q
 
   wri-risk-core:
+    if: ${{ false }}
     # WRI W3: the watchlist book-structure math (templates/risk_core.js) is a pure
     # ES5 module exercised by shelling `node` over fixture JSON — proves the §7
     # sanity anchors (ENB≈20 pure-idio / →1 single-factor, negative-MCTR hedge,
@@ -1812,6 +1903,7 @@ jobs:
         run: python -m pytest tests/test_risk_core_js.py -q
 
   house-law-registry:
+    if: ${{ false }}
     # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
     # Three checks in sequence:
     #   1. selftest: synthetic assertions prove the meta-guard catches violations.
@@ -1844,6 +1936,7 @@ jobs:
         run: python -m pytest tests/test_house_law_registry.py -q
 
   leader-radar-unit:
+    if: ${{ false }}
     # LRV-W1: leader lifecycle engine + builder unit tests.
     # Engine (test_leader_lifecycle.py): state machine, hysteresis, tri-state Kleene,
     # rs_line_gap_pct, count_k_true_n_avail, display chip fence.
@@ -1864,6 +1957,7 @@ jobs:
         run: python -m pytest tests/test_build_leader_radar.py -q
 
   evidence-clock:
+    if: ${{ false }}
     # Global Evidence Clock (EC-R1..R8): the committed display-only artifact
     # data/neuralweb/evidence_clock.json must parse, keep authority=display_only,
     # stay inside the 9-state vocabulary, carry forbidden_actions on every row,
@@ -1886,6 +1980,7 @@ jobs:
         run: python -m pytest tests/test_evidence_clock.py -q
 
   validated-claims:
+    if: ${{ false }}
     # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
     # backed claim. This is the PR-time companion to the nightly calibration run
     # (cycle-calibration.yml/calibrate). A sibling builder is fixing the current
@@ -1900,6 +1995,7 @@ jobs:
         run: python3 scripts/check_validated_claims.py
 
   template-site-sync:
+    if: ${{ false }}
     # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
     # that also ships as site/<name>) must byte-match at every commit — a one-sided
     # reword creates the divergence window the render lanes then propagate at an
@@ -1928,6 +2024,7 @@ jobs:
         run: python3 scripts/check_interfonts_sync.py
 
   grader-manifest:
+    if: ${{ false }}
     # F1 (Metabolism Phase 0 / R-AUT-7): grader-immutability manifest guard.
     # The fitness-producing files (grade_thematic, foresight_leadlag, theme_placebo,
     # qledger_falsifier, sample_qledger_placebo) are registered in
@@ -1951,6 +2048,7 @@ jobs:
         run: python -m pytest tests/test_grader_manifest.py -q
 
   self-mod-fence:
+    if: ${{ false }}
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
     # Hard-fails any PR whose branch name or commit trailers carry the loop
     # namespace (metabolism/* or claude/loop-*, or 'Loop-Authored:' trailer)
@@ -1997,6 +2095,7 @@ jobs:
         run: python -m pytest tests/test_self_mod_fence.py -q
 
   capability-broker:
+    if: ${{ false }}
     # F3 (Metabolism Phase 0 / §3 of masterplan): capability broker + redline scanner.
     # The capability broker (engine/neuralweb/capability_broker.py) resolves capability
     # IDs to ref names only — never secret values.  The redline scanner hard-fails on
@@ -2094,6 +2193,7 @@ jobs:
         run: python3 scripts/check_grader_manifest.py
 
   hub-a11y:
+    if: ${{ false }}
     # Hub UX program (W5 — a11y regression guard): five static checks on every
     # committed page that embeds the globe deck (gd-stage presence):
     #   (a) no focusable element (button/a/input/[tabindex] without tabindex="-1")
@@ -2119,6 +2219,7 @@ jobs:
         run: python -m pytest tests/test_check_hub_a11y.py -q
 
   font-ui-defined:
+    if: ${{ false }}
     # Font-UI definition guard (PR #2647 recurrence tripwire): any template whose
     # body-level CSS sets the page font via var(--font-ui) must either link
     # theme.css (<link rel="stylesheet"> href attribute — never the bare string,
@@ -2142,6 +2243,7 @@ jobs:
         run: python -m pytest tests/test_check_font_ui_defined.py -q
 
   ratio-lens:
+    if: ${{ false }}
     # Ratio Lens W1 (RL-R1..R16): AUTHORITY block, forbidden-key walk,
     # ledger gate, idempotency, builder exit-0, state-signature isolation,
     # anchor honesty. Display-tier oracle organ; no gauntlet.
@@ -2157,6 +2259,7 @@ jobs:
         run: python -m pytest tests/test_oracle_ratio_lens.py -q
 
   hk-confirming-turn:
+    if: ${{ false }}
     # HKRV-W1: evidence-witness bypass in engine/cycles.py — CONFIRMING TURN state.
     # Tests: confirm=None byte-identity, V-recovery+witnesses→CONFIRMING TURN,
     # hard_fail wins, flat/no-witnesses unchanged, ontology crosswalk resolves.
@@ -2172,6 +2275,7 @@ jobs:
         run: python -m pytest tests/test_hk_confirming_turn.py -q
 
   hk-cycle-ontology:
+    if: ${{ false }}
     # HKRV-W1: cycle_ontology completeness — CONFIRMING TURN present in all required
     # sets (SIMPLE_CROSSWALK, LADDER, fallbacks). 5 conformance tests that W4 reviewer
     # found red must pass.
@@ -2187,6 +2291,7 @@ jobs:
         run: python -m pytest tests/test_cycle_ontology.py -q
 
   hk-leadership:
+    if: ${{ false }}
     # HKRV-W2: HK leadership participation organ — cohort cohesion, thrust detection,
     # southbound context, ledger gating (CN_LANE=asia). Display-only authority fence.
     runs-on: ubuntu-latest
@@ -2201,6 +2306,7 @@ jobs:
         run: python -m pytest tests/test_hk_leadership.py -q
 
   hk-context-chips:
+    if: ${{ false }}
     # HKRV-W4: factor/EM context chips — 9 pure fail-open chip functions.
     # Tests: fail-open on absent store, rate_path state mapping, vhsi_pctile sanity,
     # compute_all no-None-values, authority fence (display_only=True) across all chips.
@@ -2216,6 +2322,7 @@ jobs:
         run: python -m pytest tests/test_hk_context_chips.py -q
 
   hk-robustness-w5:
+    if: ${{ false }}
     # HKRV-W5: robustness fixes — alignment health banner, southbound trading-day
     # staleness, freshness sentinel 7th check (southbound holdings), universe coverage
     # logging. Includes tests/test_hk_freshness.py (updated) + test_hk_robustness_w5.py.
@@ -2234,6 +2341,7 @@ jobs:
         run: python -m pytest tests/test_hk_robustness_w5.py tests/test_hk_freshness.py -q
 
   hk-integration-seams:
+    if: ${{ false }}
     # HKRV-F6: integration seam tests — sb_persist_map ticker-key seam guards
     # silent all-False reindex; _apply_hk_confirm ladder bypass unit tests.
     runs-on: ubuntu-latest
@@ -2248,6 +2356,7 @@ jobs:
         run: python -m pytest tests/test_hk_integration_seams.py -q
 
   hkrv-w3-banner:
+    if: ${{ false }}
     # HKRV-W3: leadership banner + CONFIRMING TURN chip in hk.html.j2.
     # Tests: banner renders with leaders_participating; absent on quiet/missing;
     # dynamic counts from members; breadth line; Tier-2 receipt; chip on TURN IN
@@ -2264,6 +2373,7 @@ jobs:
         run: python -m pytest tests/test_hkrv_w3_banner.py -q
 
   basket-staleness-warn:
+    if: ${{ false }}
     # M7C-R8: basket store staleness warning in scripts/build_baskets.py —
     # fires a ::warning annotation and ops alert when collect timed out upstream.
     runs-on: ubuntu-latest
@@ -2278,6 +2388,7 @@ jobs:
         run: python -m pytest tests/test_basket_staleness_warn.py -q
 
   live-flow-ops:
+    if: ${{ false }}
     # FL-C (FC-R6/R7/R8 + Task 3): live-flow lane ops test suite.
     # Tests two-tier cadence, max_concurrent env override, pinned-publish
     # guarantee, and end-of-session daily summary writer.
@@ -2294,6 +2405,7 @@ jobs:
         run: python -m pytest tests/test_live_flow_tiering.py -v
 
   ird-substrate-engines:
+    if: ${{ false }}
     # IRD-W1 + IRD-W2 International Risk Desk tests:
     #   W1: IMF WEO adapter, FRED alias-collision lint, CB calendar, liquidity_plumbing
     #   W2: intl_risk (EM stress + vulnerability), contagion (DY + two-tier), cb_desk
@@ -2311,6 +2423,7 @@ jobs:
         run: python -m pytest tests/test_imf_weo.py tests/test_fred_alias_collision.py tests/test_cb_calendar.py tests/test_liquidity_plumbing.py tests/test_intl_risk.py tests/test_contagion.py tests/test_cb_desk.py tests/test_ird_velocity.py tests/test_ird_wiring.py -q
 
   itr-turn-rotation:
+    if: ${{ false }}
     # ITR-W1 (research/INTL_TURN_ROTATION_REVAMP.md): per-market turn state
     # machine (crash/breaking/topping/... incl. KOSPI replay goldens on the
     # committed _KS11 store) + fast rotation re-rank + ITR-R6 benchmark
@@ -2327,6 +2440,7 @@ jobs:
         run: python -m pytest tests/test_intl_market_state.py tests/test_intl_rotation.py -q
 
   altdata-brain-govern:
+    if: ${{ false }}
     # altdata-brain PR-B: de-escalation-only law enforcement + false Wilson de-dup
     # comment fix.  Two suites:
     #   test_w7a_tenants.py          — Article-3 verdict, actionable flag, governance
@@ -2347,6 +2461,7 @@ jobs:
         run: python -m pytest tests/test_w7a_tenants.py tests/test_altdata_brain_reconcile.py -q
 
   nw-lobe-unfreeze:
+    if: ${{ false }}
     # Regression guard for the two Neural-Web lobes frozen since 2026-07-07:
     #   1. dt_contra_state crash: build_dt_contra_state.py crashed on index.json (list root);
     #      fixed by isinstance(data, dict) guard — 8 tests covering the fix.
@@ -2368,6 +2483,7 @@ jobs:
         run: python -m pytest tests/test_dt_contra_state.py tests/test_build_subsector_membership.py -q
 
   sa-w4-improvement-lanes:
+    if: ${{ false }}
     # SA-W4: standout improvement lanes — clamped review engine + Tier-0 replay +
     # lab come-back alerts.
     # Covers: whitelist/step/disjointness enforcement, dormant-reject on null baseline,
@@ -2387,6 +2503,7 @@ jobs:
         run: python -m pytest tests/test_standout_review.py -v
 
   rc-r14-china-rotation-events:
+    if: ${{ false }}
     # RC-R14: China + HK rotation-event detector port tests.
     # Covers: sector_legs_china/hk loaders (basket series from baskets.json),
     # run_nightly data_subdir parameterization (China/HK path isolation from US),
@@ -2404,6 +2521,7 @@ jobs:
         run: python -m pytest tests/test_rotation_events.py tests/test_rotation_events_china.py tests/test_rotation_events_hk.py -v
 
   codex-research-engine:
+    if: ${{ false }}
     # CRX W1 (CRX-R1..R8): Codex Research Engine — runner/budget core + both lanes.
     # Three suites, one job:
     #   test_codex_runner_budget.py  — runner binary resolution, run_codex subprocess
@@ -2434,6 +2552,7 @@ jobs:
         run: python -m pytest tests/test_admin_codex.py -q
 
   metab-throttle-ux:
+    if: ${{ false }}
     # V11 Metabolism Throttle UX (budget gate + run-until dispatch):
     # Three suites, one job:
     #   test_metabolism_budget_gate.py — key_budget header parsing, gate_verdict
@@ -2464,6 +2583,7 @@ jobs:
         run: python -m pytest tests/test_admin_metabolism_ux.py -q
 
   admin-live-runs:
+    if: ${{ false }}
     # Live-runs feed: server-side snapshot for the admin live-runs panel.
     # Covers: snapshot() shape, active/queued split, elapsed_s computation,
     # last_completed duration + html_url, jobs API budget cap (≤2 calls),
@@ -2483,6 +2603,7 @@ jobs:
         run: python -m pytest tests/test_admin_live_runs.py -q
 
   cbf-regime:
+    if: ${{ false }}
     # CBF-W1 Cross-Border Flow Regime Census (CBF-R1..R12):
     # Classifier engine: pure functions, strictly causal rolling windows,
     # 5-session hysteresis, era split, EM FX sign normalization.
@@ -2505,6 +2626,7 @@ jobs:
         run: python -m pytest tests/test_flow_regime.py -v
 
   ccw-w1-data-spine:
+    if: ${{ false }}
     # CCW-W1 Corporate Credit Watch data spine:
     #   collectors/corp_bond_holdings.py — bond XLSX parser (ISIN-keyed, not equity path)
     #   data/corp_bonds/issuer_themes.json — issuer→theme registry v1
@@ -2537,6 +2659,7 @@ jobs:
         run: python -m pytest tests/test_finra_corp_bonds.py -v
 
   ccw-w2-gspread-engine:
+    if: ${{ false }}
     # CCW-W2 g-spread engine:
     #   engine/corp_credit.py — vectorized YTM solver (Newton+bisection), 30/360 US
     #                           accrued, CMT interpolation (merge_asof ≤7d backward),
@@ -2567,6 +2690,7 @@ jobs:
         run: python -m pytest tests/test_corp_credit.py -v
 
   ccw-w3-credit-momentum:
+    if: ${{ false }}
     # CCW-W3 credit momentum organ:
     #   engine/credit_momentum.py — spread velocity/pctile, oscillator states
     #     (secondary per CCW-R15), density gate, composition suppression,
@@ -2600,6 +2724,7 @@ jobs:
         run: python -m pytest tests/test_credit_momentum.py tests/test_corp_bond_holdings.py tests/test_finra_corp_bonds.py -v
 
   ccw-w4-credit-desk:
+    if: ${{ false }}
     # CCW-W4 corporate credit desk surfaces:
     #   scripts/build_bonds.py — build_corp_credit_vm (null-safe vm builder),
     #     _build_corp_credit_bond_health (bond_health.corporate_credit block),
@@ -2626,6 +2751,7 @@ jobs:
         run: python -m pytest tests/test_bonds_corp_credit_vm.py -v
 
   ccw-w6-study-s1:
+    if: ${{ false }}
     # CCW-W6 Study S1 — spread-velocity percentile lead study (frozen pre-registration):
     #   scripts/ccw_study_s1.py — ONE-SHOT study implementing the frozen spec in
     #     research/CCW_STUDY_S1_PREREG.md. Tests cover §9 anti-look-ahead checklist
@@ -2650,6 +2776,7 @@ jobs:
         run: python -m pytest tests/test_ccw_study_s1.py -v
 
   site-gate:
+    if: ${{ false }}
     # Site Access Gate: IP/country blocklist enforced at the origin.
     # Covers: fail-open contract (disabled default, missing/corrupt file allows all),
     # IP/CIDR matching (v4+v6, exact+CIDR, malformed ignored), allow_ips precedence
@@ -2676,6 +2803,7 @@ jobs:
         run: python -m pytest tests/test_admin_site_gate.py -v
 
   pick-lab-liquidity:
+    if: ${{ false }}
     # Pick Lab liquidity gate regression (P0 fix):
     # On float64, NaN.ge(threshold) returns False — not NA — so the old
     # fillna(True) was a no-op and null-adv rows were silently excluded
@@ -2705,6 +2833,7 @@ jobs:
         run: python -m pytest tests/test_pick_lab_liquidity.py tests/test_pick_lab_core.py tests/test_pick_lab_hk_runner.py tests/test_pick_lab_hk_render.py -q
 
   ric-w2-surface:
+    if: ${{ false }}
     # RIC W2 SURFACE: whole-market dealer-surface history engine unit tests.
     #   test_options_surface.py — 24 tests covering:
     #     dealer-sign convention (call-heavy +GEX, put-heavy -GEX)
@@ -2731,6 +2860,7 @@ jobs:
         run: python -m pytest tests/test_options_surface.py -v
 
   collect-identity:
+    if: ${{ false }}
     # Registered-visitor identity capture (app/main.py /api/collect): Supabase session-cookie
     # parsing (single + chunked base64url), secretless cached token verification (monkeypatched),
     # and the EO-Client-IP real-IP precedence. Imports app.main, so fastapi is installed.
@@ -2746,6 +2876,7 @@ jobs:
         run: python -m pytest tests/test_collect_identity.py -v
 
   research-vault:
+    if: ${{ false }}
     # RV W1 ingestion spine: the sidecar contract normalization + every fallback
     # (missing/blank/bad-JSON, never-drop), catalog upsert ordering + institutions
     # rollup, corpus FTS5 build + a BODY-only search (proves body is searchable) +
@@ -2771,6 +2902,7 @@ jobs:
         run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 
   research-vault-api:
+    if: ${{ false }}
     # RV W2 serving API + download gate (SECURITY-CRITICAL): the app/research.py
     # router — anon→401, free/unknown→402 (fails CLOSED), insider view 200 (no
     # quota), download metering 5/20 (server-authoritative, next-day reset),
@@ -2794,6 +2926,7 @@ jobs:
         run: python -m pytest tests/test_research_api.py -q
 
   marketing-social-publisher:
+    if: ${{ false }}
     # D02 W1 live social publisher: tweet_length/validate_postable, the Buffer
     # adapter (all HTTP mocked via _transport), and the live runner (kill-switch
     # + --live gating, approved→posting→posted, idempotency, no-double-post).
@@ -2816,6 +2949,7 @@ jobs:
         run: python -m pytest tests/test_marketing_social_publisher.py tests/test_marketing_outbox.py tests/test_marketing_publisher_autoapprove.py tests/test_marketing_live_verify.py tests/test_marketing_publish_time_content.py tests/test_marketing_metrics_poll.py -q
 
   marketing-media-pipeline:
+    if: ${{ false }}
     # D02 chart-image pipeline: the PNG signal-chart renderer (determinism +
     # magic bytes + no-indicator-words) and the R2 media publisher (fail-soft,
     # S3 stubbed). Separate job because these need Pillow (PNG raster) — the
@@ -2833,6 +2967,7 @@ jobs:
         run: python -m pytest tests/test_marketing_chart_png.py tests/test_marketing_media_publish.py tests/test_share_cards.py -q
 
   marketing-engine:
+    if: ${{ false }}
     # Marketing lobe engine unit suite (state, departments, authority ladder,
     # opportunity scoring/bus, campaign compiler, economics, events, ledgers,
     # provenance, claims + seed-ledger round-trips). Never whitelisted when it
@@ -2863,6 +2998,7 @@ jobs:
         run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
 
   portfolio-ctx:
+    if: ${{ false }}
     # Portfolio-Aware Intelligence W0 + W1 (charter:
     # research/PORTFOLIO_BRIEF_MASTERPLAN_BY_FABLE.md §6). Two unit suites:
     #   * test_build_portfolio_ctx — the portfolio_ctx.v1 bake (build_ctx joins/omission/
