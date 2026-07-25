@@ -50,9 +50,6 @@ site/feeds/
 # live intraday overlay — runtime artifact written by scripts/build_live_overlay (intraday
 # cron) and by the offline test path; never committed (the cron force-pushes / re-emits it).
 site/live/
-# research-vault SEO landing pages — render-lane-generated (#3392/#3487), one page per
-# report; a fresh checkout holds none, so the plane is a runtime artifact like site/live/.
-site/research/
 # Polygon hourly bars for the 4H chart timeframe — regenerable + daily-changing, so
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the
 # force-tracked, shipped artifact.

@@ -816,6 +816,10 @@ on:
       - "tests/test_regwall_json_gate.py"
       - "tests/test_paywall.py"
       - "tests/test_api_paywall.py"
+      # ...and the tier-preview split pair, the last two of the job's eleven inputs
+      # still unlisted after the 2026-07-25 sweep above. Same rot, same consequence:
+      # a PR that only re-splits a paid desk's free shell could not trigger the job
+      # that proves the split IS the gate.
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
   workflow_dispatch:

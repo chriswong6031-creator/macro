@@ -22,11 +22,37 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
 # into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
-# a snapshot, so a fresh checkout may hold none of them. site/research/ is the
-# render-lane-generated research-vault SEO plane (#3392) — same class: built,
-# never committed. The policy line is still the boundary of record — only the
-# on-disk existence check is exempt.
-RUNTIME_ARTIFACT_PREFIXES = ("/live/", "/research/")
+# a snapshot, so a fresh checkout may hold none of them. The policy line is
+# still the boundary of record — only the on-disk existence check is exempt.
+#
+# /research/ is NOT in this tuple, and adding it back is a regression (#3507 did,
+# reverted here). The distinction is the DELIVERY path, not "is it generated":
+# site/live/ reaches the edge out-of-band via systemd atomic rename, so a fresh
+# checkout legitimately lacks it. site/research/ reaches the edge only by being
+# COMMITTED to main — "the VPS serves committed main; there is no Pages-artifact
+# fallback" (render.yml) — so the render lane's `git add site/` IS its delivery
+# mechanism. Exempting it required gitignoring site/research/, and a gitignored
+# subtree makes `git add site/` silently skip every NEW file: the 86 pages already
+# tracked kept updating, but each new report's landing page would never land again
+# — re-creating the exact "shipped dark" failure #3487 was fixing. The tree is
+# committed (#3501), so the plain existence check below passes on its own merits.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
+
+# Shown on every missing-target failure. A public entry that points at nothing is a
+# REAL defect (the edge advertises a path that 404s), so this stays a hard failure --
+# but the cheap-looking fix is the wrong one, and #3488 proved the bait works: when a
+# policy entry lands before its generator's first committed output, the red shows up
+# as "missing public prefix" and the nearest exit is RUNTIME_ARTIFACT_PREFIXES. Taking
+# it would either trip test_runtime_artifact_exemption_stays_honest or force a bogus
+# .gitignore entry, and would leave the boundary permanently unable to tell a
+# not-yet-built tree from a dead/typo'd one. Name the two real remedies instead.
+_MISSING_TARGET_HINT = (
+    "config/site_access.yml declares it public but that path does not exist under site/. "
+    "Either land the content first (a CI-generated tree must have its builder's first "
+    "output committed BEFORE the policy entry -- see #3487/#3488), or drop the policy "
+    "entry until it does. Do NOT add it to RUNTIME_ARTIFACT_PREFIXES: that exemption is "
+    "only for genuinely gitignored runtime planes, and using it here hides a dead entry."
+)
 
 
 def _caddy_public_exclusions() -> set[str]:
@@ -50,11 +76,15 @@ def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
         if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / path.lstrip("/")).is_file(), f"missing public exact path: {path}"
+        assert (SITE / path.lstrip("/")).is_file(), (
+            f"missing public exact path: {path} -- {_MISSING_TARGET_HINT}"
+        )
     for prefix in POLICY["public"]["prefixes"]:
         if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / prefix.strip("/")).is_dir(), f"missing public prefix: {prefix}"
+        assert (SITE / prefix.strip("/")).is_dir(), (
+            f"missing public prefix: {prefix} -- {_MISSING_TARGET_HINT}"
+        )
 
 
 def test_runtime_artifact_exemption_stays_honest():
