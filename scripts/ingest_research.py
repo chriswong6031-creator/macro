@@ -2,8 +2,14 @@
 
 Builds the object store (R2 private bucket, or a local dir), runs the ingestion
 pass (engine.research_vault.ingest.run), then publishes catalog.json + corpus.sqlite
-to the store and prints a summary. Also snapshots catalog.json to the repo at
-``data/research_vault/catalog.json`` so the nightly render can SSR-bake without R2.
+to the store and prints a summary. Also snapshots to the repo, so the nightly
+render can SSR-bake without R2:
+
+  * ``data/research_vault/catalog.json``  — the public catalog;
+  * ``data/research_vault/excerpts.json`` — the public first-pages excerpts
+    (engine.research_vault.excerpt) that the per-report SEO pages publish
+    outside the paywall. Derived from the corpus body text HERE because the
+    corpus lives only in R2 and the render path must never reach for it.
 
 Usage:
     python -m scripts.ingest_research                 # R2 (R2_RESEARCH_BUCKET + creds)
@@ -17,7 +23,9 @@ Mirrors the brevity of scripts/build_marketing.py.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+import sqlite3
 import sys
 import tempfile
 from pathlib import Path
@@ -26,8 +34,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 log = logging.getLogger("ingest_research")
 
-# Repo snapshot the nightly render SSR-bakes from (masterplan §4).
+# Repo snapshots the nightly render SSR-bakes from (masterplan §4).
 _REPO_CATALOG = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "catalog.json"
+_REPO_EXCERPTS = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "excerpts.json"
 
 
 def main() -> int:
@@ -76,10 +85,34 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001
                 log.warning("ingest_research: repo snapshot write failed: %s", exc)
 
+        # Public first-pages excerpts, snapshotted beside the catalog so the
+        # nightly render stays R2-free (the corpus body text lives only in R2).
+        # Own never-raise guard: an excerpt is never worth failing the hourly job,
+        # and a failure here simply leaves yesterday's committed snapshot in place.
+        n_excerpts = 0
+        try:
+            if corpus_path.is_file() and catalog_bytes:
+                from engine.research_vault import excerpt as excerpt_mod
+
+                items = (json.loads(catalog_bytes.decode("utf-8")) or {}).get("items") or []
+                ids = {it["id"] for it in items if isinstance(it, dict) and it.get("id")}
+                # READ-ONLY: this connection must never mutate the corpus that was
+                # just published to R2.
+                conn = sqlite3.connect(f"file:{corpus_path}?mode=ro", uri=True)
+                try:
+                    excerpts = excerpt_mod.snapshot(conn, ids)
+                finally:
+                    conn.close()
+                if excerpt_mod.write_repo_snapshot(excerpts, _REPO_EXCERPTS):
+                    n_excerpts = len(excerpts)
+        except Exception as exc:  # noqa: BLE001 — keep the hourly job alive
+            log.warning("ingest_research: excerpt snapshot failed: %s", exc)
+
         print(f"ingest_research: ok — ingested={summary['ingested']} "
               f"skipped={summary['skipped']} failed={summary['failed']} "
               f"needs_metadata={summary['needs_metadata']} "
-              f"corpus_published={summary.get('corpus_published')} snapshot={_REPO_CATALOG}")
+              f"corpus_published={summary.get('corpus_published')} "
+              f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
         return 0
     except Exception as exc:  # noqa: BLE001 — never-raise: keep the hourly job alive
         log.warning("ingest_research: run failed: %s", exc)

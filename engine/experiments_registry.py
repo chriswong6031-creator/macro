@@ -11,9 +11,17 @@ Two layers:
     experiment — name, kind, source, what it measures, maturation criteria, next-step,
     priority, and a come-back date. Grounded once by an exhaustive codebase audit; edit
     the seed to add / retire an experiment. This is the source of truth for WHAT is tracked.
-  • DYNAMIC overlay: for the high-value track-records that carry a machine-readable verdict
-    (snapshot jsonl + *_track_record.json), read the REAL current state each build and
-    refresh status / state / ready. Everything degrades safely to the seed values.
+  • DYNAMIC overlay: for every experiment with a machine-readable reader (snapshot jsonl +
+    *_track_record.json, desk ledgers, the radar IC grade, the calibration summary, a firing
+    log, a parquet accrual), read the REAL current state each build and refresh status /
+    state / ready. Everything degrades safely to the seed values.
+
+An entry whose `hook` names no reader in _HOOKS keeps its hand-authored seed `state` FOREVER.
+That is legitimate — plenty of entries have nothing machine-readable to read — but it must be
+labelled: every record carries `state_live` (did a reader produce this line?) and `state_as_of`
+(the artifact's date, or the seed audit date), and the panel prints the seed ones as "as of
+<date> (seed)". Without that cue radar-ic advertised "n_matured=0, ic_all=null" for a month
+after its read matured to n=2,456 / IC=-0.29.
 
 DISPLAY-ONLY operational metadata; never sizes anything. Additive, never fatal.
 """
@@ -31,6 +39,15 @@ OUT = "marketdata/experiments.json"
 SEED = "data/experiments/registry_seed.json"
 _DONE = {"validated", "proven", "gate_open"}  # already concluded — don't re-flag on come-back date
 _NO_AUTO_READY = {"parked_research"}           # never auto-matures a result on a date
+# Date the seed's hand-authored `state` strings were last grounded by a codebase audit.
+# Used when the seed itself carries no top-level `audited` key. Any state the build could
+# NOT derive from a live reader is stamped with this date (see compute) — a frozen string
+# presented as current is how radar-ic showed "n_matured=0" for a month after the read matured.
+_SEED_AUDITED_FALLBACK = "2026-06-30"
+# Row-level date keys, in preference order. Snapshot ledgers key on date/snapshot_date;
+# DESK ledgers (ai_desk/thematic_desk/demand_chain scored.jsonl) carry neither — a call is
+# stamped scored_at when it grades and check_by when it is filed.
+_ROW_DATE_KEYS = ("date", "snapshot_date", "scored_at", "check_by", "as_of")
 
 
 def _root():
@@ -59,7 +76,8 @@ def _jsonl_dates(rel: str) -> tuple[int, int]:
                 continue
             n += 1
             try:
-                d = json.loads(line).get("date") or json.loads(line).get("snapshot_date")
+                row = json.loads(line)
+                d = next((row[k] for k in _ROW_DATE_KEYS if row.get(k)), None)
                 if d:
                     dates.add(str(d)[:10])
             except Exception:  # noqa: BLE001
@@ -69,9 +87,42 @@ def _jsonl_dates(rel: str) -> tuple[int, int]:
     return len(dates), n
 
 
+def _pct(x, nd: int = 1) -> str | None:
+    """0.846 → '84.6%'. None for anything non-numeric (a null prints as a null, never 0%)."""
+    return f"{x * 100:.{nd}f}%" if isinstance(x, (int, float)) and not isinstance(x, bool) else None
+
+
+def _desk_state(tr: dict | None) -> tuple[str | None, int]:
+    """(state line, n_scored) for a DESK-style track-record doc — engine/ai_desk_scorer.py and
+    its clones (thematic_desk, demand_chain): {as_of, scored_total, open, overall:{n, hits,
+    hit_rate, dir_accuracy}}. Returns (None, 0) when the doc is not desk-shaped.
+
+    These ledgers carry no `horizons` block and no `verdict`, so the snapshot-ledger reader
+    below scores them as "0 days logged · 0 matured" — the panel printed exactly that for
+    ai-desk-tracker while all 13 of its calls were graded at hit-rate 0.846.
+    """
+    if not isinstance(tr, dict) or not ("overall" in tr or "scored_total" in tr):
+        return None, 0
+    ov = tr.get("overall") or {}
+    n = int(ov.get("n") or tr.get("scored_total") or 0)
+    bits = [f"{n} scored"]
+    if tr.get("open") is not None:
+        bits.append(f"{tr['open']} open")
+    hit, dacc = _pct(ov.get("hit_rate")), _pct(ov.get("dir_accuracy"))
+    bits.append(f"hit {hit}" + (f" (dir {dacc})" if dacc else "") if hit else "no hit-rate yet")
+    if tr.get("as_of"):
+        bits.append(f"as of {str(tr['as_of'])[:10]}")
+    return " · ".join(bits), n
+
+
 def _refresh_track_record(e: dict) -> dict:
     """Live overlay for a forward track-record: real row/day counts + published verdict +
-    max matured obs → refined {status, state, ready}. Falls back to the seed on any gap."""
+    max matured obs → refined {status, state, ready}. Falls back to the seed on any gap.
+
+    Handles BOTH ledger shapes. A snapshot ledger keys its rows on date/snapshot_date and
+    publishes {verdict, horizons:{h:{n_matured}}}; a DESK ledger keys on scored_at/check_by
+    and publishes {as_of, scored_total, open, overall:{…}} — see _desk_state.
+    """
     ndays, nrows = _jsonl_dates(e.get("storage") or "")
     tr = _read_json(e.get("track_json") or "")
     verdict = (tr or {}).get("verdict")
@@ -82,15 +133,25 @@ def _refresh_track_record(e: dict) -> dict:
         except Exception:  # noqa: BLE001
             pass
     out: dict = {}
-    if verdict:
-        out["status"] = verdict
-    elif ndays:
-        out["status"] = "accruing"
-    if nrows:
-        s = f"{nrows} calls · {ndays} day{'s' if ndays != 1 else ''} logged · {max_mat} matured"
+    desk_line, desk_n = _desk_state(tr)
+    if desk_line:
+        # Desk ledgers publish no verdict — 'measuring' (rows graded, significance gate not
+        # yet callable) is the honest status once anything has scored. The registry never
+        # originates an escalation; the operator adjudicates from the printed numbers.
+        out["status"] = verdict or ("measuring" if desk_n else "accruing")
+        out["state"] = desk_line
+        if tr.get("as_of"):
+            out["state_as_of"] = str(tr["as_of"])[:10]
+    else:
         if verdict:
-            s += f" · verdict={verdict}"
-        out["state"] = s
+            out["status"] = verdict
+        elif ndays:
+            out["status"] = "accruing"
+        if nrows:
+            s = f"{nrows} calls · {ndays} day{'s' if ndays != 1 else ''} logged · {max_mat} matured"
+            if verdict:
+                s += f" · verdict={verdict}"
+            out["state"] = s
     # results are "ready" once the read has GRADED. 'accruing' and 'measuring' are both
     # pre-verdict accrual states ('measuring' = rows matured but the significance gate is
     # not yet callable — engine/subsector_track_record.py); any other verdict (validated /
@@ -98,6 +159,127 @@ def _refresh_track_record(e: dict) -> dict:
     if verdict and verdict not in ("accruing", "measuring"):
         out["ready"] = True
     return out
+
+
+def _refresh_radar_ic(e: dict) -> dict:
+    """Live overlay for the Radar IC accrual — reads the PERSISTED grade,
+    data/radar/radar_ic.json (scripts.build_radar_ic).
+
+    Deliberately NOT a radar_ic.compute_ic() call: that grade re-reads a price parquet per
+    matured snapshot and costs ~50s on the current ledger — 1.3% of the render budget for a
+    display-only string the same pipeline already computed. The artifact's own `as_of` rides
+    in the state line, so a lane that skipped build_radar_ic shows its lag instead of hiding it.
+    """
+    ic = _read_json(e.get("track_json") or "data/radar/radar_ic.json")
+    if not ic:
+        return {}
+    h = ic.get("horizon_d") or 21
+    n_mat, n_snap = ic.get("n_matured") or 0, ic.get("n_snapshots") or 0
+    bits = [f"{n_snap:,} snapshots", f"{n_mat:,} matured @{h}d"]
+    if ic.get("ic_all") is not None:
+        bits.append(f"IC_all={ic['ic_all']:+.4f}")
+    roll = ic.get("ic_rolling_90")
+    if roll is not None:
+        bits.append(f"rolling-90={roll:+.4f}")
+    # The pooled Spearman OVERSTATES significance (overlapping forward windows); the daily
+    # HAC t-stat is the number the signal governor actually gates on — print it when present.
+    hac = ((ic.get("by_horizon") or {}).get(str(h)) or {}).get("ic_daily_hac") or {}
+    if hac.get("t_hac") is not None:
+        bits.append(f"daily-HAC mean_ic={hac.get('mean_ic'):+.4f} "
+                    f"t={hac['t_hac']:+.2f} over n={hac.get('n', 0)} days")
+    if ic.get("as_of"):
+        bits.append(f"as of {str(ic['as_of'])[:10]}")
+    return {"status": "measuring" if n_mat else "accruing", "state": " · ".join(bits),
+            "state_as_of": str(ic.get("as_of") or "")[:10] or None}
+
+
+def _refresh_calibration_hub(e: dict) -> dict:
+    """Live overlay for the calibration-loop accrual — data/calibration/summary.json
+    (scripts.build_calibration): how many desks are live vs cold, and which have calibrated."""
+    s = _read_json(e.get("track_json") or e.get("storage") or "")
+    if not isinstance(s, dict) or not s.get("desks"):
+        return {}
+    desks = [d for d in s["desks"] if isinstance(d, dict)]
+    loops = s.get("loops") or {}
+    live = loops.get("live", sum(1 for d in desks if (d.get("scored") or 0) > 0))
+    cold = loops.get("cold", len(desks) - live)
+    bits = [f"{loops.get('total', len(desks))} desks", f"live={live}/cold={cold}"]
+    warm = [f"{d.get('name')} {d.get('health')} (n={d.get('scored')}"
+            + (f", hit {_pct(d.get('hit_rate'))}" if _pct(d.get("hit_rate")) else "") + ")"
+            for d in desks if (d.get("scored") or 0) > 0]
+    bits.append(", ".join(warm) if warm else "none scored yet")
+    if s.get("as_of"):
+        bits.append(f"as of {str(s['as_of'])[:10]}")
+    return {"status": "measuring" if live else "collecting", "state": " · ".join(bits),
+            "state_as_of": str(s.get("as_of") or "")[:10] or None}
+
+
+def _refresh_vol_shock(e: dict) -> dict:
+    """Live overlay for a firing-log scorecard — rows logged / resolved / hit-rate, read
+    through the engine's own grader (engine.vol_shock_scorecard.track_record)."""
+    try:
+        from engine import vol_shock_scorecard as vss  # local: keeps import cost off cold builds
+        tr = vss.track_record()
+    except Exception as ex:  # noqa: BLE001
+        log.warning("experiments_registry: vol_shock reader failed: %s", ex)
+        return {}
+    ndays, nrows = _jsonl_dates(e.get("storage") or "")
+    n_res = int((tr or {}).get("n") or 0)
+    if not nrows and not n_res:
+        return {}
+    bits = [f"{nrows} firings logged" if nrows else f"{n_res} resolved"]
+    if nrows:
+        bits.append(f"{n_res} resolved")
+    if n_res:
+        bits.append(f"hit {_pct(tr.get('hit_rate'))}")
+        if tr.get("avg_score") is not None:
+            bits.append(f"avg score {tr['avg_score']}")
+        bands = ", ".join(f"{b} n={d.get('n')}" for b, d in sorted((tr.get("by_band") or {}).items()))
+        if bands:
+            bits.append(f"bands: {bands}")
+    if ndays:
+        bits.append(f"{ndays} day{'s' if ndays != 1 else ''} logged")
+    return {"status": "measuring" if n_res else "accruing", "state": " · ".join(bits)}
+
+
+def _refresh_parquet_ledger(e: dict) -> dict:
+    """Live row/vintage counts for an experiment whose accrual IS a parquet store.
+
+    Optional per-entry config in the seed (all keys optional):
+        "parquet_counts": {"distinct": ["first_post", "ticker"],   # distinct-value counts
+                           "flags":    ["is_halt"],                # truthy-row counts
+                           "latest":   "first_post"}               # max() of one column
+    Only the configured columns are read, so a wide store costs one column scan, not a
+    full load. Any gap (missing file, missing column, no pandas) falls back to the seed.
+    """
+    rel = str(e.get("track_json") or e.get("storage") or "").strip()
+    p = _root() / rel
+    if not rel.endswith(".parquet") or not p.exists():
+        return {}
+    cfg = e.get("parquet_counts") or {}
+    distinct = [c for c in (cfg.get("distinct") or []) if isinstance(c, str)]
+    flags = [c for c in (cfg.get("flags") or []) if isinstance(c, str)]
+    latest = cfg.get("latest") if isinstance(cfg.get("latest"), str) else None
+    try:
+        import pandas as pd  # local: pandas import is not free on a cold build
+        cols = sorted({*distinct, *flags, *([latest] if latest else [])})
+        df = pd.read_parquet(p, columns=cols) if cols else pd.read_parquet(p)
+    except Exception as ex:  # noqa: BLE001
+        log.warning("experiments_registry: parquet ledger read failed for %s: %s", rel, ex)
+        return {}
+    bits = [f"{len(df):,} rows"]
+    for c in distinct:
+        if c in df.columns:
+            bits.append(f"{df[c].nunique():,} {c} values")
+    for c in flags:
+        if c in df.columns:
+            bits.append(f"{int(df[c].fillna(False).astype(bool).sum()):,} {c}")
+    if latest and latest in df.columns and len(df):
+        try:
+            bits.append(f"latest {latest} {str(df[latest].max())[:10]}")
+        except Exception:  # noqa: BLE001
+            pass
+    return {"state": " · ".join(bits)}
 
 
 def _refresh_qledger_promotion(e: dict) -> dict:
@@ -231,9 +413,16 @@ def _refresh_cortex_evaluator(e: dict) -> dict:
         return {}
 
 
+# A seed entry whose `hook` is absent, "static", or not a key here keeps its hand-authored
+# seed `state` forever — compute() stamps those with the seed audit date so a frozen string
+# is never presented as current. Wire a hook the moment a live reader exists.
 _HOOKS = {"track_record": _refresh_track_record,
           "qledger_promotion": _refresh_qledger_promotion,
-          "cortex_evaluator": _refresh_cortex_evaluator}
+          "cortex_evaluator": _refresh_cortex_evaluator,
+          "radar_ic": _refresh_radar_ic,
+          "calibration_hub": _refresh_calibration_hub,
+          "vol_shock": _refresh_vol_shock,
+          "parquet_ledger": _refresh_parquet_ledger}
 
 
 # Newer seed entries (hazard-live-reliability-*, w5a-reversal-rederive, hkca-*, w3*-…)
@@ -321,6 +510,7 @@ def _load_machine_registry_entries() -> list[dict]:
 def compute() -> dict:
     today = datetime.now(timezone.utc).date()
     seed = _read_json(SEED) or {}
+    audited = str(seed.get("audited") or _SEED_AUDITED_FALLBACK)[:10]
     rows_in = list(seed.get("experiments") or [])
     # Inject cortex_hypothesis entries from machine registry (W7b PR2)
     rows_in += _load_machine_registry_entries()
@@ -338,11 +528,23 @@ def compute() -> dict:
             "state": e.get("state") or _alt_state(e), "ready": False,
         }
         hook = _HOOKS.get(e.get("hook") or "")
+        hook_out: dict = {}
         if hook:
             try:
-                rec.update({k: v for k, v in hook(e).items() if v is not None})
+                hook_out = {k: v for k, v in (hook(e) or {}).items() if v is not None}
+                rec.update(hook_out)
             except Exception as ex:  # noqa: BLE001 — one bad reader never aborts the manifest
                 log.warning("experiments_registry: hook failed for %s: %s", e.get("id"), ex)
+        # Provenance for the `state` line. A state no live reader produced is the seed's
+        # hand-authored string, frozen at the last audit — say so, rather than letting a
+        # month-old "n_matured=0" read as this morning's truth.
+        # A seed entry may date its own hand-authored line with `state_as_of` (some were
+        # written well after the last full audit); the audit date is the fallback floor.
+        if rec.get("state"):
+            rec["state_live"] = "state" in hook_out
+            rec["state_as_of"] = (hook_out.get("state_as_of") or today.isoformat()
+                                  if rec["state_live"]
+                                  else str(e.get("state_as_of") or audited)[:10])
         try:
             if rec.get("come_back_on"):
                 rec["days_until"] = (date.fromisoformat(str(rec["come_back_on"])[:10]) - today).days
@@ -367,11 +569,15 @@ def compute() -> dict:
         "schema": "experiments_registry.v1",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "as_of": today.isoformat(), "n": len(out), "ready_count": ready,
+        "seed_audited": audited,
+        "state_live_count": sum(1 for r in out if r.get("state_live")),
         "by_status": by_status, "by_kind": by_kind, "experiments": out,
         "note": ("Every running experiment & long-horizon data-collection accrual in the "
                  "codebase, with the date to come back for each next step. Track-records grade "
                  "the read's own calls against realized forward returns; nothing here sizes a "
-                 "position. Seed: data/experiments/registry_seed.json (audited 2026-06-30)."),
+                 f"position. Seed: data/experiments/registry_seed.json (audited {audited}); a "
+                 "state marked 'as of <date> (seed)' is that hand-authored line, not a live "
+                 "read — no reader is wired for it yet."),
     }
 
 

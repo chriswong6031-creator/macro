@@ -111,6 +111,10 @@ def _load_brain_config(root: Path | None = None) -> dict:
                 "usage_lane": "brain-pro",
                 "effort": "high",
                 "thinking": "adaptive",
+                "degraded_models": ["deepseek-v4-pro", "claude-haiku-4-5"],
+                "deepseek_key_env": "DEEPSEEK_API_KEY",
+                "deepseek_base_url": "https://api.deepseek.com/anthropic",
+                "weekly_ceiling_pct": 95,
             },
         },
         "quotas": {
@@ -3566,6 +3570,9 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
         pro_cfg = {
             "provider_order": ["oauth", "anthropic"],
             "oauth_pool_lane": "brain-pro",
+            # Mastermind weekly ceiling (config, not literal): pool keys past this
+            # weekly-% sort last but still get tried (fail-open). None → lane default (95).
+            "oauth_weekly_ceiling_pct": lane_cfg.get("weekly_ceiling_pct"),
             "opus_model": opus_model,
             "usage_lane": usage_lane,
         }
@@ -3582,9 +3589,66 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
             fallback_providers = llm_auth.build_providers(sonnet_cfg, opus_model=fallback_model)
             providers = providers + fallback_providers
 
+        # Degraded-capacity fallbacks: when the whole OAuth pool is rate-capped on
+        # Opus/Sonnet (every subscription token 429s on the higher tiers) AND no
+        # ANTHROPIC_API_KEY exists, the chain above is opus-only and blacks out. These
+        # rungs guarantee a REAL answer instead of a blank/"unavailable" turn. Tried
+        # LAST, so a healthy Opus quota always serves first.
+        providers = providers + _pro_degraded_providers(lane_cfg, providers, usage_lane, root)
+
         return providers
 
     return []
+
+
+def _pro_degraded_providers(
+    lane_cfg: dict, oauth_providers: list[dict], usage_lane: str, root: Path | None,
+) -> list[dict]:
+    """Build the Pro lane's degraded-capacity fallback providers from config.
+
+    For each model in ``lane_cfg['degraded_models']`` (order preserved):
+      • deepseek-*  → a metered DeepSeek provider (DEEPSEEK_API_KEY), independent of
+                      the rate-capped Claude subscriptions;
+      • claude-*    → REUSES each existing OAuth-pool client with the model swapped
+                      (so Haiku rides the same pool that still has headroom when the
+                      subscription's Opus/Sonnet weekly cap is hit) — no new clients,
+                      and cap_id is preserved so the load-balancing ledger still tracks it.
+
+    Returns [] on any error (a fallback that can't be built must never break the lane).
+    """
+    out: list[dict] = []
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        models = lane_cfg.get("degraded_models") or []
+        for m in models:
+            m = str(m or "")
+            if not m:
+                continue
+            if m.startswith("deepseek"):
+                ds_cfg = {
+                    "provider_order": ["deepseek"],
+                    "deepseek_key_env": lane_cfg.get("deepseek_key_env") or "DEEPSEEK_API_KEY",
+                    "deepseek_base_url": lane_cfg.get("deepseek_base_url") or "https://api.deepseek.com/anthropic",
+                    "deepseek_model": m,
+                    "usage_lane": usage_lane,
+                }
+                out += llm_auth.build_providers(ds_cfg, deepseek_model=m)
+            elif m.startswith("claude"):
+                # Reuse each OAuth-pool client with the cheaper model swapped in.
+                seen: set[str] = set()
+                for p in oauth_providers:
+                    if p.get("name") != "oauth" or p.get("client") is None:
+                        continue
+                    key = p.get("env_var") or p.get("cap_id") or ""
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    q = dict(p)
+                    q["model"] = m
+                    out.append(q)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("brain_gateway: _pro_degraded_providers failed (%s)", exc)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -3751,6 +3815,36 @@ def _mark_provider_dead_if_auth(p: dict, exc: Exception) -> None:
         pass
 
 
+def _pool_record_success(p: dict, resp: Any = None) -> None:
+    """Load-balancing: record a successful pool session so the shared key ledger
+    reflects Mastermind usage and OTHER processes/turns can rotate off a hot key.
+    No-op for non-pool providers (checks cap_id inside). Never raises."""
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        est = 0
+        u = getattr(resp, "usage", None) if resp is not None else None
+        if u:
+            est = int(getattr(u, "input_tokens", 0) or 0) + int(getattr(u, "output_tokens", 0) or 0)
+        llm_auth._note_pool_success(p, "mastermind", est_tokens=est)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _pool_cool_for_exc(p: dict, exc: Exception) -> None:
+    """Load-balancing: persist a cooling row for a pool key that just failed over so
+    the NEXT turn's pool selection de-prioritises it (mirrors llm_auth.make_call).
+      • 401/403 → 'auth' (24h re-probe)   • 429/quota → 'window' (5h)
+    No-op for non-pool providers / non-failover errors. Never raises."""
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        if llm_auth._is_auth_error(exc):
+            llm_auth._cool_pool_key(p, "auth")
+        elif llm_auth._is_rate_limit_error(exc) or _is_retryable_provider_error(exc):
+            llm_auth._cool_pool_key(p, "window")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _model_supports_effort_thinking(model: str) -> bool:
     """True when `model` accepts `output_config.effort` + `thinking: adaptive`.
 
@@ -3823,10 +3917,12 @@ def _create_failover(cands: list[dict], *, per_model_kwargs=None, **kwargs) -> t
         try:
             _mk = per_model_kwargs(p.get("model")) if per_model_kwargs else {}
             resp = cl.messages.create(model=p.get("model"), **{**kwargs, **_mk})
+            _pool_record_success(p, resp)  # load-balancing ledger
             return resp, (p.get("model") or "")
         except Exception as exc:  # noqa: BLE001
             last = exc
             _mark_provider_dead_if_auth(p, exc)
+            _pool_cool_for_exc(p, exc)  # cool a rate-limited/dead pool key for the next turn
             if not _is_failover_error(exc) or i >= len(cands) - 1:
                 raise
             log.warning("brain_gateway: provider %s create failed (%s) — failover to next",
@@ -4303,11 +4399,13 @@ def _run_brain_loop_stream(
                         "input_tokens": getattr(u, "input_tokens", 0),
                         "output_tokens": getattr(u, "output_tokens", 0),
                     }
+                _pool_record_success(_p, final_resp)  # load-balancing ledger
                 model = _p.get("model") or model
                 break
             except Exception as exc:  # noqa: BLE001
                 _last_err = exc
                 _mark_provider_dead_if_auth(_p, exc)
+                _pool_cool_for_exc(_p, exc)  # cool a rate-limited/dead pool key for the next turn
                 if _is_failover_error(exc) and _i < len(_cands) - 1:
                     log.warning("brain_gateway: stream provider %s failed (%s) — failover",
                                 _p.get("model"), str(exc)[:80])

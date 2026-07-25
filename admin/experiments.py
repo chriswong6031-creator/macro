@@ -28,6 +28,9 @@ _RENDER_KEYS = (
     "id", "name", "what", "source", "kind", "status", "cadence",
     "come_back_on", "next_step", "phase_hint", "state", "surfaced",
     "days_until", "ready",
+    # state provenance — the panel prints a "as of <date> (seed)" cue on any state line no
+    # live reader produced, so a frozen hand-authored string never reads as this morning's truth
+    "state_live", "state_as_of",
 )
 # statuses that are already concluded (don't re-flag their come-back date as "newly ready")
 _DONE = {"validated", "proven"}
@@ -101,7 +104,12 @@ def alert_summary() -> dict:
     p = panel()
     if not p.get("ok"):
         return {"available": False, "ready_count": 0, "n": 0}
-    upcoming = [e for e in p["experiments"] if not e["ready"] and e.get("days_until") is not None]
+    # "soonest" means soonest STILL AHEAD. `ready` already excludes concluded (_DONE) and
+    # never-auto-mature (_NO_AUTO_READY) items, so a past-due one of those stays not-ready
+    # with a negative days_until — and min() would pick the MOST overdue of them, which is
+    # how the overview card came to read "next in -10d".
+    upcoming = [e for e in p["experiments"]
+                if not e["ready"] and (e.get("days_until") or 0) > 0]
     soonest = min(upcoming, key=lambda e: e["days_until"]) if upcoming else None
     return {
         "available": True, "ready_count": p["ready_count"], "n": p["n"],

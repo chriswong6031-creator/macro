@@ -79,6 +79,54 @@ def test_find_commit_handles_nested_health_payload():
     assert GUARD._find_commit(payload) == "a" * 40
 
 
+def _commit(repo: Path, rel: str, body: str, message: str) -> str:
+    target = repo / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(body, encoding="utf-8")
+    _git(repo, "add", rel)
+    _git(repo, "commit", "-m", message)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def test_needs_render_only_when_the_merge_itself_touched_render_inputs(tmp_path):
+    """The render precondition must match render.yml's push path filter.
+
+    _render_status looks for a `push` render run whose head_sha IS the merge sha,
+    and render.yml only fires on templates/** + scripts/build_*.py. A merge that
+    touched neither can never have such a run, so demanding one is an
+    unsatisfiable block rather than a real gap.
+    """
+    repo = _repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    # A CONCURRENT session's template merge lands first — this is what used to
+    # poison the session-range basis for every later unrelated merge.
+    _commit(repo, "templates/index.html", "<p>other session</p>\n", "other: hero")
+    mine = _commit(repo, ".github/workflows/ci.yml", "on: push\n", "ci: wire a test")
+
+    assert GUARD._needs_render(repo, mine, start_head, mine) is False, (
+        "a ci.yml-only merge must not require a render it can never have"
+    )
+    # And the session range genuinely does contain templates/ — proving the
+    # False above comes from correct scoping, not from an empty diff.
+    session_range = _git(repo, "diff", "--name-only", start_head, mine).splitlines()
+    assert "templates/index.html" in session_range
+
+
+def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
+    """The fix must not weaken the gate for merges that DO render."""
+    repo = _repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    tmpl = _commit(repo, "templates/macro.html.j2", "{{ x }}\n", "feat: template")
+    assert GUARD._needs_render(repo, tmpl, start_head, tmpl) is True
+
+    builder = _commit(repo, "scripts/build_thing.py", "print(1)\n", "feat: builder")
+    assert GUARD._needs_render(repo, builder, start_head, builder) is True
+
+    # A sibling script that is not a build_* entrypoint must not trigger one.
+    other = _commit(repo, "scripts/check_thing.py", "print(2)\n", "chore: checker")
+    assert GUARD._needs_render(repo, other, start_head, other) is False
+
+
 def test_settings_wire_session_start_and_stop():
     settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     hooks = settings["hooks"]

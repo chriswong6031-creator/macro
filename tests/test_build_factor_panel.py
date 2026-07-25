@@ -3610,3 +3610,151 @@ class TestSeasonalClimateRead:
         assert out["verdicts"] == {"momentum": "headwind", "value": "neutral"}
         assert "rough month" in out["headline_en"]
         assert out["stance_en"].startswith("Watch")
+
+
+class TestDnaClassRefEmit:
+    """dna_class.json emitter — PIT anchor + vacuity guard (#3488).
+
+    Root cause the anchor test pins: dna_class is evaluable on exactly ONE
+    cross-section (the factors.json as_of date) because the R3 PIT gate
+    NULL-backfills Block-B *_pct on every other build date.  The nightly builds
+    through T from the fresh close cache while the checked-out factors.json is
+    still as_of=T-1, so the panel's LATEST date is systematically the one date
+    that is NOT evaluable.  Anchoring on panel["date"].max() published a
+    100%-null payload nightly while logging a healthy ticker count.
+    """
+
+    @staticmethod
+    def _emit(tmp_path, panel):
+        from scripts.build_factor_panel import _emit_dna_class_ref
+        out = _emit_dna_class_ref(panel, tmp_path)
+        on_disk = json.loads(
+            (tmp_path / "site" / "factordata" / "dna_class.json").read_text()
+        )
+        assert on_disk == out, "returned doc must match what was written to disk"
+        return out
+
+    @staticmethod
+    def _panel(rows):
+        return pd.DataFrame(rows)
+
+    def _two_date_panel(self):
+        """07-23 is PIT-evaluable; 07-24 (the max date) is NULL-backfilled."""
+        rows = []
+        for tk, cls in [("AAPL", "quality_growth"), ("AA", "high_beta_liquidity"),
+                        ("ABM", "cyclical_value"), ("AAL", None)]:
+            rows.append({"date": pd.Timestamp("2026-07-23"), "ticker": tk,
+                         "dna_class": cls, "style_regime": "mixed"})
+            rows.append({"date": pd.Timestamp("2026-07-24"), "ticker": tk,
+                         "dna_class": None, "style_regime": "mixed"})
+        return self._panel(rows)
+
+    def test_anchors_on_evaluable_date_not_max_date(self, tmp_path):
+        """THE regression test: must NOT publish the null max-date cross-section."""
+        out = self._emit(tmp_path, self._two_date_panel())
+        assert out["as_of"].startswith("2026-07-23"), (
+            "must anchor on the PIT-evaluable date, not panel max (2026-07-24)"
+        )
+        assert out["coverage"]["dna_non_null"] == 3
+        assert out["per_ticker"]["AAPL"]["dna_class"] == "quality_growth"
+        assert "note" not in out, "a healthy payload must not carry a vacuity note"
+
+    def test_all_null_payload_emits_note(self, tmp_path):
+        """Vacuity guard: presence passes, coverage zero → note, not a clean count."""
+        rows = [{"date": pd.Timestamp("2026-07-24"), "ticker": tk,
+                 "dna_class": None, "style_regime": "mixed"}
+                for tk in ("AAPL", "AA", "ABM")]
+        out = self._emit(tmp_path, self._panel(rows))
+        assert out["note"], "all-null payload must emit the note field"
+        assert out["coverage"]["dna_non_null"] == 0
+        assert out["coverage"]["n_tickers"] == 3
+        assert out["coverage"]["n_classes"] == 0
+
+    def test_coverage_block_counts_classes(self, tmp_path):
+        out = self._emit(tmp_path, self._two_date_panel())
+        cov = out["coverage"]
+        assert cov["n_tickers"] == 4
+        assert cov["dna_non_null"] == 3
+        assert cov["dna_pct"] == 75.0
+        assert cov["n_classes"] == 3
+        assert cov["class_counts"]["quality_growth"] == 1
+
+    def test_arrow_backed_na_serializes_as_json_null(self, tmp_path):
+        """Panel string cols are Arrow-backed: their nulls are pd.NA, not float nan.
+
+        The old isinstance(x, float) and math.isnan(x) check missed pd.NA entirely,
+        which would serialize (default=str) as the literal string "<NA>".
+        """
+        df = self._panel([
+            {"date": pd.Timestamp("2026-07-23"), "ticker": "AAPL",
+             "dna_class": "quality_growth", "style_regime": "mixed"},
+            {"date": pd.Timestamp("2026-07-23"), "ticker": "AAL",
+             "dna_class": None, "style_regime": "mixed"},
+        ])
+        df["dna_class"] = df["dna_class"].astype("string[pyarrow]")
+        raw = (tmp_path / "site" / "factordata" / "dna_class.json")
+        out = self._emit(tmp_path, df)
+        assert out["per_ticker"]["AAL"]["dna_class"] is None
+        assert "<NA>" not in raw.read_text()
+
+    def test_style_regime_zero_variance_is_not_flagged(self, tmp_path):
+        """style_regime is a market-level scalar — constant across tickers BY DESIGN.
+
+        Guarding it as a 'degeneracy' would fire every single night. It is surfaced
+        top-level instead; its *timeline* degeneracy is reported separately by
+        _calibration_sanity_style_regime.
+        """
+        out = self._emit(tmp_path, self._two_date_panel())
+        assert out["style_regime"] == "mixed"
+        assert "note" not in out
+
+    def test_absent_columns_fail_open_with_note(self, tmp_path):
+        """Pre-P1-C partition: no dna_class/style_regime columns at all."""
+        out = self._emit(tmp_path, self._panel([
+            {"date": pd.Timestamp("2026-07-24"), "ticker": "AAPL"},
+        ]))
+        assert out["per_ticker"] == {}
+        assert out["coverage"]["n_tickers"] == 0
+        # A missing column is NOT a PIT-gate problem — don't misdiagnose it.
+        assert "absent" in out["note"]
+        assert "factors.json" not in out["note"]
+
+    def test_all_null_note_names_the_pit_gate(self, tmp_path):
+        """Column present but nothing evaluable → point at the factors.json anchor."""
+        rows = [{"date": pd.Timestamp("2026-07-24"), "ticker": tk,
+                 "dna_class": None, "style_regime": "mixed"}
+                for tk in ("AAPL", "AA")]
+        out = self._emit(tmp_path, self._panel(rows))
+        assert "factors.json" in out["note"]
+
+    def test_empty_panel_does_not_raise(self, tmp_path):
+        out = self._emit(tmp_path, pd.DataFrame())
+        assert out["per_ticker"] == {}
+        assert out["note"]
+
+    def test_falls_back_to_stored_partition_when_fresh_build_has_none(self, tmp_path):
+        """Incremental run whose only new date is the non-evaluable T.
+
+        The evaluable cross-section lives in the stored partition, so the emitter
+        must fall back to it rather than publish a null payload.
+        """
+        part = tmp_path / "data" / "factordata" / "panel" / "2026-07"
+        part.mkdir(parents=True)
+        self._two_date_panel().to_parquet(part / "panel.parquet")
+        fresh = self._panel([
+            {"date": pd.Timestamp("2026-07-25"), "ticker": tk,
+             "dna_class": None, "style_regime": "mixed"}
+            for tk in ("AAPL", "AA")
+        ])
+        out = self._emit(tmp_path, fresh)
+        assert out["as_of"].startswith("2026-07-23")
+        assert out["coverage"]["dna_non_null"] == 3
+        assert "note" not in out
+
+    def test_schema_and_consumer_contract_preserved(self, tmp_path):
+        """build_stock_library reads per_ticker[tk]['dna_class'|'style_regime'|'as_of']."""
+        out = self._emit(tmp_path, self._two_date_panel())
+        assert out["schema"] == "dna_class_ref.v1"
+        entry = out["per_ticker"]["AAPL"]
+        assert set(entry) == {"dna_class", "style_regime", "as_of"}
+        assert entry["as_of"] == out["as_of"]

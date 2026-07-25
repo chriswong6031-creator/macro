@@ -214,6 +214,70 @@ class TestExperiments:
         assert "by_status" in result
         assert "ready_count" in result
 
+    def _summary_over(self, tmp_path: Path, rows: list) -> dict:
+        from admin import experiments
+
+        registry_dir = tmp_path / "site" / "marketdata"
+        registry_dir.mkdir(parents=True)
+        (registry_dir / "experiments.json").write_text(
+            json.dumps({"as_of": "2026-07-25", "experiments": rows}))
+        saved = self._patch(experiments, tmp_path)
+        try:
+            return experiments.alert_summary()
+        finally:
+            _restore(experiments, saved)
+
+    def test_soonest_is_never_a_past_due_experiment(self, tmp_path: Path) -> None:
+        """The overview card renders soonest.days_until verbatim as "next in Nd". Items that
+        are past due but excluded from `ready` (status in _DONE, kind in _NO_AUTO_READY) kept
+        a negative days_until, and min() picked the MOST overdue of them — the card read
+        "next in -10d". Only dates still AHEAD are candidates."""
+        result = self._summary_over(tmp_path, [
+            # past due, but parked_research never auto-matures → not ready, days_until < 0
+            {"id": "parked", "name": "Parked", "kind": "parked_research",
+             "status": "parked", "come_back_on": "2020-01-01", "ready": False},
+            # already concluded → not ready either, also long past due
+            {"id": "done", "name": "Done", "kind": "track_record",
+             "status": "validated", "come_back_on": "2020-06-01", "ready": False},
+            {"id": "ahead", "name": "Ahead", "kind": "track_record",
+             "status": "accruing", "come_back_on": "2099-03-01", "ready": False},
+        ])
+        assert result["available"] is True
+        assert result["soonest"] is not None
+        assert result["soonest"]["id"] == "ahead"
+        assert result["soonest"]["days_until"] > 0
+
+    def test_soonest_is_none_when_nothing_is_ahead(self, tmp_path: Path) -> None:
+        result = self._summary_over(tmp_path, [
+            {"id": "parked", "name": "Parked", "kind": "parked_research",
+             "status": "parked", "come_back_on": "2020-01-01", "ready": False},
+            {"id": "no-date", "name": "No date", "kind": "study", "status": "accruing",
+             "ready": False},
+        ])
+        assert result["soonest"] is None
+
+    def test_panel_passes_state_provenance_through_the_render_whitelist(
+            self, tmp_path: Path) -> None:
+        """panel() projects each record down to _RENDER_KEYS; the seed-staleness cue the
+        front end draws (app.js EXP_STATE) dies silently if those keys are dropped."""
+        from admin import experiments
+
+        registry_dir = tmp_path / "site" / "marketdata"
+        registry_dir.mkdir(parents=True)
+        (registry_dir / "experiments.json").write_text(json.dumps({
+            "as_of": "2026-07-25",
+            "experiments": [{"id": "frozen", "name": "Frozen", "status": "accruing",
+                             "come_back_on": "2099-01-01", "ready": False,
+                             "state": "hand-authored", "state_live": False,
+                             "state_as_of": "2026-06-30"}]}))
+        saved = self._patch(experiments, tmp_path)
+        try:
+            rec = experiments.panel()["experiments"][0]
+        finally:
+            _restore(experiments, saved)
+        assert rec["state_live"] is False
+        assert rec["state_as_of"] == "2026-06-30"
+
 
 # ---------------------------------------------------------------------------
 # 5. vector_override behaviour smoke

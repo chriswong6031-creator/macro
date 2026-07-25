@@ -1,5 +1,6 @@
 {
   "schema": "experiments_registry_seed.v1",
+  "audited": "2026-06-30",
   "experiments": [
     {
       "id": "index-leadership",
@@ -70,8 +71,8 @@
       "what": "Whether the divergence-radar continuous edge_score predicts 21d forward returns; per-state directional accuracy (BULLISH->positive) and per-bucket (70-100 vs 0-40) hit-rate.",
       "source": "engine/radar_ic.py",
       "storage": "data/radar/edge_snapshots.jsonl",
-      "track_json": "",
-      "hook": "static",
+      "track_json": "data/radar/radar_ic.json",
+      "hook": "radar_ic",
       "started": "2026-06-20",
       "come_back_on": "2026-07-14",
       "come_back_note": "2026-07-14 (07-12 read nulled by price-store coverage, not a data gap: SPY last bar Fri 07-10; the Jun-20..22 snapshot batches (~406 legacy 21d rows) clear both the calendar gate and the SPY coverage gate only after the Mon 07-13 close lands in the early-07-14 nightly — far above the n>=30 floor)",
@@ -150,8 +151,8 @@
       "what": "Forward grading of thematic theses (theme_rel_return vs SPY, e.g. SMH) at their hard check_by dates; DISPLAY-ONLY, no formal proven gate.",
       "source": "engine/thematic_desk.py",
       "storage": "data/thematic_desk/track_record.json",
-      "track_json": "",
-      "hook": "static",
+      "track_json": "data/thematic_desk/track_record.json",
+      "hook": "track_record",
       "started": "2026-06-23",
       "come_back_on": "2026-07-16",
       "come_back_note": "2026-07-16 (first 3 theses mature); full first cohort ~2026-08-07",
@@ -170,8 +171,8 @@
       "what": "Whether demand-chain relative-return theses (vs SPY +/-5%, 126d horizon) resolve correctly; capex-vintage / divergence-flip driven.",
       "source": "engine/demand_ledger.py",
       "storage": "data/demand_chain/track_record.json",
-      "track_json": "",
-      "hook": "static",
+      "track_json": "data/demand_chain/track_record.json",
+      "hook": "track_record",
       "started": "2026-06-19",
       "come_back_on": "2026-12-21",
       "come_back_note": "2026-12-21 (all 8 open theses score first outcomes); statistically meaningful verdict not until 2027",
@@ -190,8 +191,8 @@
       "what": "Consolidated per-desk calibration state (hit_rate>=50% coin-flip bar + conviction monotonicity) across 6 Phase-C desks; graduates cold->calibrated/weak/inverted.",
       "source": "engine/calibration_hub.py",
       "storage": "data/calibration/summary.json",
-      "track_json": "",
-      "hook": "static",
+      "track_json": "data/calibration/summary.json",
+      "hook": "calibration_hub",
       "started": "2026-06-15",
       "come_back_on": "2026-07-16",
       "come_back_note": "2026-07-16: all 6 desks still COLD on 07-12 (AI n=3, Stock n=4, both <10). Past-due batches (AI ~31 theses check_by 07-13..07-16, Stock 78 by 07-16) plausibly push both past n=10 — CONDITIONAL on the nightly scorer pathway. Conviction monotonicity unevaluable until medium/high-conviction theses exist (all scored to date are low/cautious). Radar+Alt-Data ~2026-09-20.",
@@ -310,8 +311,8 @@
       "what": "Phase-3 START (pre-consensus catalyst) + HALT events per curated pharma/biotech sponsor; snapshot-only (event date IS signal date), display/context, not scored.",
       "source": "collectors/clinicaltrials.py",
       "storage": "data/clinicaltrials/trials.parquet",
-      "track_json": "",
-      "hook": "static",
+      "track_json": "data/clinicaltrials/trials.parquet",
+      "hook": "parquet_ledger",
       "started": "2026-06-20",
       "come_back_on": "2026-07-14",
       "come_back_note": "2026-07-14 (run the retrospective Phase-0 lead-lag event study — data already present, analyst-bound ~2wk); forward PIT validation of live 0.35 prior ~2027-06-20",
@@ -319,7 +320,17 @@
       "status": "collecting",
       "state": "1,498 rows / 1,045 first_post dates / 19 tickers, 90 halts, 7 vintages (06-20..06-30); channel LIVE at static 0.35 prior; UNVALIDATED (no event study yet).",
       "next_step": "Run the Phase-0 event study NOW (1,045 historical first_post dates + price history to 2001 in parquet). Wire Phase-3 START as display catalyst leg, HALT as caution flag; no scoring until lead-time validated.",
-      "phase_hint": null
+      "phase_hint": null,
+      "parquet_counts": {
+        "distinct": [
+          "first_post",
+          "ticker"
+        ],
+        "flags": [
+          "is_halt"
+        ],
+        "latest": "first_post"
+      }
     },
     {
       "id": "web-traffic-nowcast",
@@ -411,7 +422,7 @@
       "source": "engine/vol_shock_scorecard.py",
       "storage": "data/vol_shock/log.jsonl",
       "track_json": "",
-      "hook": "static",
+      "hook": "vol_shock",
       "started": null,
       "come_back_on": "2026-07-20",
       "come_back_note": "2026-07-20 (first ~10d-resolved rows if logging began ~late June; verify log.jsonl accrual)",
@@ -2608,7 +2619,8 @@
       "status": "parked",
       "state": "Registered 2026-07-07 at operator request (register in admin/site alerts, not agent memory). No build dispatched.",
       "next_step": "On come-back: read sector gate verdicts from data/*/scorecards/ + truths.jsonl; if green, draft stock-panel prereg; if failed, close as dead-by-inheritance.",
-      "phase_hint": "pre-charter"
+      "phase_hint": "pre-charter",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "ftosc2-down-oscillator-retest",
@@ -2627,7 +2639,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 by chair adjudication of the FT-OSC-1 kill run (PR #1835). No evaluation run.",
       "next_step": "Wait for accrual. Come back 2027-01-15.",
-      "phase_hint": "pre-evaluation"
+      "phase_hint": "pre-evaluation",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "cnhar2-cn-analog-calibration",
@@ -2646,7 +2659,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 by chair adjudication of HAR-1 (#1838). No evaluation run.",
       "next_step": "Wait for accrual. Come back 2027-07-01.",
-      "phase_hint": "pre-evaluation"
+      "phase_hint": "pre-evaluation",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "stock-personality-compat",
@@ -2687,7 +2701,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 (W5 PR-G). Awaiting first factor_panel rebuild post-merge.",
       "next_step": "Come back 2026-07-13 to verify dna_class.json presence and coverage.",
-      "phase_hint": "infrastructure"
+      "phase_hint": "infrastructure",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "stock-personality-gex-persistence",
@@ -2706,7 +2721,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 (W5 PR-G). GEX chain accrual in progress.",
       "next_step": "Come back 2026-09-15 to count accrued GEX days and run persistence check.",
-      "phase_hint": "pre-evaluation"
+      "phase_hint": "pre-evaluation",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "stock-personality-finra-si-accrual",
@@ -2725,7 +2741,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 (W5 PR-G). FINRA SI accrual in progress.",
       "next_step": "Come back 2026-10-01 to run tinderbox disguise test with 8+ snapshots.",
-      "phase_hint": "pre-evaluation"
+      "phase_hint": "pre-evaluation",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "stock-personality-forward-review",
@@ -2744,7 +2761,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 (W5 PR-G). Forward ledger accrual in progress.",
       "next_step": "Come back 2026-12-15 for first forward-ledger compat review.",
-      "phase_hint": "accrual"
+      "phase_hint": "accrual",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "stock-personality-crowding-charter",
@@ -2763,7 +2781,8 @@
       "status": "registered",
       "state": "Registered 2026-07-07 (W5 PR-G). Crowding engine deferred (R-SP6).",
       "next_step": "Come back 2026-12-31 to assess crowding engine availability and run charter question.",
-      "phase_hint": "deferred"
+      "phase_hint": "deferred",
+      "state_as_of": "2026-07-07"
     },
     {
       "id": "winner-autopsy-watch-ledger",
@@ -2857,7 +2876,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "Verify data/stock_personality/forward_ledger.parquet exists in the nightly commit with the backfilled TTD 07-06 + SBUX 07-07 buy rows (and any newer fires). If still absent after the 07-14 nightly, check runner logs for the \"personality forward ledger\" warning line (stamper is fail-open).",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-fire-coordinates-accrual",
@@ -2876,7 +2896,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "Verify data/factordata/fire_coordinates.jsonl exists on host post-W1 repair with non-null dna_class/style_regime/top_contrib_streams coordinates.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-risk-lens-stability",
@@ -2895,7 +2916,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "With 20+ board snapshots accrued, review day-to-day variance of the board personality-exposure profile (context_risk.json) for readability.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-scanner-first-review",
@@ -2914,7 +2936,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "Human triage of the context scanner first month of candidates (context_candidates.jsonl): counts, nulls, dedupe behavior, decay.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-board-cells-powered",
@@ -2933,7 +2956,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "Most archetype board-entry cells reach n>=50 (census accrual math); charter the first pre-registered board-context study with rulers derived from playbook/scanner claims.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-kernel-conditioning-question",
@@ -2952,7 +2976,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "At the kernel-FDR batch: evaluate personality-conditioned kernel cells as batch entries (R-CI8) IF forward ledgers carry adequate stamped n.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "nwci-indicator-personality-map",
@@ -2971,7 +2996,8 @@
       "status": "registered",
       "state": "Registered 2026-07-08 (NWCI W0).",
       "next_step": "If tech-lab PR #1840 has merged: build C1 personality-stratified indicator characterization; if not merged, re-check weekly.",
-      "phase_hint": "nw-context-intelligence"
+      "phase_hint": "nw-context-intelligence",
+      "state_as_of": "2026-07-08"
     },
     {
       "id": "w3-bank-callreport-stress",

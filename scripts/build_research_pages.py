@@ -2,17 +2,22 @@
 
 For every report in the vault catalog we generate ``site/research/<slug>.html``: a
 lightweight, crawlable landing page that surfaces the report's TITLE, institution,
-date, rating, tickers/themes and a ONE-LINE public snippet — with the full summary
-+ the original PDF behind the Pro gate. JSON-LD (``Article`` with
-``isAccessibleForFree:false`` + ``hasPart``) marks the page as paywalled so Google
-indexes the snippet without it counting as cloaking (the sanctioned news/research
-paywall pattern).
+date, rating, tickers/themes, a ONE-LINE public snippet and the public FIRST-PAGES
+EXCERPT — with the full summary + the original PDF behind the Pro gate. JSON-LD
+(``Article`` with ``isAccessibleForFree:false`` + ``hasPart``) marks the page as
+paywalled so Google indexes the public part without it counting as cloaking (the
+sanctioned news/research paywall pattern); the excerpt sits OUTSIDE ``.rr-gate``,
+so that markup stays truthful.
 
 The play: when someone Googles an exact report title, our dedicated page is a
 precise match — and usually the only host — so we rank; they land on the teaser +
-a paywall and some convert. Also emits a ``/research/index.html`` crawl hub and
-merges ``/research/`` entries into ``site/sitemap.xml`` (preserving every other
-section, exactly like build_ticker_pages does for ``/stocks/``).
+a paywall and some convert. The excerpt widens that to EXACT-QUOTE searches: a
+reader who Googles a sentence a news blog lifted from the PDF matches our page
+too. Its text comes from ``data/research_vault/excerpts.json``, a snapshot the
+hourly ingest commits (engine/research_vault/excerpt.py) precisely so this render
+never needs R2. Also emits a ``/research/index.html`` crawl hub and merges
+``/research/`` entries into ``site/sitemap.xml`` (preserving every other section,
+exactly like build_ticker_pages does for ``/stocks/``).
 
 Called at the end of ``build_research_vault.build()`` so it rides the nightly vault
 build — no extra workflow/dag step. Fully static + additive: a missing/empty
@@ -36,6 +41,14 @@ TEMPLATES = ROOT / "templates"
 SITE = ROOT / "site"
 RESEARCH_DIR = SITE / "research"
 SITEMAP = SITE / "sitemap.xml"
+EXCERPTS = ROOT / "data" / "research_vault" / "excerpts.json"
+
+# Render-side re-cap on the published excerpt. engine/research_vault/excerpt.py
+# already caps at 4200 when it derives, but excerpts.json is committed repo data
+# that a human could hand-edit — this bounds what a bad/edited snapshot can push
+# outside the paywall, with a little headroom so a legitimate snapshot is never
+# clipped by rounding.
+EXCERPT_RENDER_CAP = 4600
 
 try:  # canonical base ("https://www.mastermind-x.com"), trailing slash stripped
     from lib.seo import SITE_BASE as _SITE_BASE  # noqa: E402
@@ -184,6 +197,52 @@ def _jsonld(n: dict, canonical: str, meta_desc: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# public first-pages excerpts (committed hourly by scripts/ingest_research.py)
+# ---------------------------------------------------------------------------
+
+def _cap_paras(paras: list[str]) -> list[str]:
+    """Truncate a paragraph list so its total stays under EXCERPT_RENDER_CAP."""
+    out: list[str] = []
+    total = 0
+    for p in paras:
+        if total + len(p) > EXCERPT_RENDER_CAP:
+            break
+        out.append(p)
+        total += len(p)
+    if not out and paras:                     # one oversized paragraph: hard-slice
+        out = [paras[0][:EXCERPT_RENDER_CAP]]
+    return out
+
+
+def _load_excerpts() -> dict[str, list[str]]:
+    """id -> public excerpt paragraphs, from the committed snapshot.
+
+    Returns ``{}`` on ANY failure — missing file (the normal state before the
+    first hourly run commits one), bad JSON, wrong shape. An absent snapshot must
+    render exactly today's page, so this can never be a build dependency.
+    Shape is validated rather than trusted: the file is repo data.
+    """
+    try:
+        raw = json.loads(EXCERPTS.read_text(encoding="utf-8"))
+        blob = raw.get("excerpts") if isinstance(raw, dict) else None
+        if not isinstance(blob, dict):
+            return {}
+        out: dict[str, list[str]] = {}
+        for k, v in blob.items():
+            if not isinstance(k, str) or not isinstance(v, list):
+                continue
+            paras = _cap_paras([p for p in v if isinstance(p, str) and p.strip()])
+            if paras:
+                out[k] = paras
+        return out
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:  # noqa: BLE001 — never let the snapshot break the build
+        log.warning("research pages: excerpts snapshot unusable (%s) — rendering without", exc)
+        return {}
+
+
+# ---------------------------------------------------------------------------
 # sitemap merge — preserve every non-/research/ url, replace /research/ block
 # ---------------------------------------------------------------------------
 
@@ -244,6 +303,7 @@ def build(catalog: dict | None = None) -> int:
     RESEARCH_DIR.mkdir(parents=True, exist_ok=True)
     from lib.pages import write_page  # noqa: PLC0415
 
+    excerpts = _load_excerpts()                 # {} when the snapshot is absent
     sitemap_entries: list[dict] = []
     written = 0
     for n in all_norm:
@@ -257,6 +317,7 @@ def build(catalog: dict | None = None) -> int:
             n=n, canonical=canonical, meta_desc=meta_desc,
             jsonld_str=_jsonld(n, canonical, meta_desc),
             related=_related(n, all_norm, slug_by_id),
+            excerpt_paras=excerpts.get(n["id"]) or [],
             site_base=CANONICAL_BASE,
         )
         write_page(RESEARCH_DIR / f"{slug}.html", page)

@@ -5,7 +5,10 @@ Covers:
   - catalog upsert ordering (newest-first) + institutions rollup + idempotent replace;
   - corpus FTS5 build + a body-only search (proves BODY is searchable) + facet filter;
   - ingest end-to-end via the LOCAL store with tiny fixture PDFs — idempotency
-    (second run ingests 0), receipt written, needs_metadata path, top-picks prefix.
+    (second run ingests 0), receipt written, needs_metadata path, top-picks prefix;
+  - the PUBLIC first-pages excerpt (engine/research_vault/excerpt.py): page-window
+    + sparse-cover behaviour, email/URL cleaning, the char cap, and the repo
+    snapshot's refuse-empty + deterministic (churn-free) serialization.
 
 No R2 needed: the LocalStore backend + a monkeypatched pdftotext extractor keep the
 whole suite offline. stdlib + pytest only.
@@ -19,6 +22,7 @@ import pytest
 
 from engine.research_vault import catalog as catalog_mod
 from engine.research_vault import corpus as corpus_mod
+from engine.research_vault import excerpt as excerpt_mod
 from engine.research_vault import ingest as ingest_mod
 from engine.research_vault import sidecar as sidecar_mod
 from engine.research_vault.r2_store import LocalStore, build_store
@@ -679,6 +683,140 @@ def test_ingest_dry_run_mutates_nothing(tmp_path, canned_pdftotext):
 
     # A real run right after still ingests it (dry-run left no receipt).
     assert ingest_mod.run(store, corpus_path)["ingested"] == 1
+
+
+# ===========================================================================
+# excerpt: the PUBLIC first-pages lead-in (SEO exact-quote play)
+# ===========================================================================
+
+# pdftotext writes \f between pages, so these fixtures are shaped like real
+# extractor output: form-feed page breaks, blank-line paragraph groups.
+_XP1 = ("Alphapageone opens the report with a thesis paragraph long enough to read as "
+        "prose rather than page furniture, which is what the cleaner is deciding.\n\n"
+        "A second paragraph on the same page carries that thesis forward with plenty of "
+        "characters to clear the paragraph floor.")
+_XP2 = ("Bravopagetwo continues onto the next page with another substantial block of "
+        "argument, keeping the first two pages comfortably above the sparse floor.")
+_XP3 = "Charliepagethree sits past the two-page window and must never be published."
+
+
+def test_excerpt_derive_stops_at_the_page_window():
+    paras = excerpt_mod.derive("\f".join([_XP1, _XP2, _XP3]))
+    joined = " ".join(paras)
+    assert "Alphapageone" in joined and "Bravopagetwo" in joined
+    # Rich first pages: no reason to widen the window, so page 3 stays private.
+    assert sum(len(p) for p in paras) >= excerpt_mod.SPARSE_MIN_CHARS
+    assert "Charliepagethree" not in joined
+
+
+def test_excerpt_derive_strips_emails_urls_and_phones():
+    body = ("Contact research@example-bank.com for distribution, see "
+            "https://example-bank.com/disclosures and www.example-bank.com/terms for "
+            "the standard disclaimers that accompany every published report.\n\n"
+            "Analyst contacts: ben.x@example-bank.com +1 212 555 0100 and "
+            "(212) 555-0199, on guidance of $780-790mn for the coming year.\n\n"
+            "We hold our 2025-2026 estimates unchanged as of 2026-07-25, with the "
+            "risk to that call skewed to the upside on the back of the capex guide.")
+    joined = " ".join(excerpt_mod.derive(body))
+    assert "Contact for distribution" in joined     # text kept, contact/link removed
+    assert "@" not in joined
+    assert "http" not in joined and "www." not in joined
+    # Stripping the email but leaving the desk line would still publish the phone.
+    assert "555" not in joined and "212" not in joined
+    # ...while a short prose figure stays: the length floor is what separates them.
+    assert "$780-790mn" in joined
+    # Dates share the phone SHAPE, so the digit floor — not the length floor — is
+    # what saves them: 8 digits each, and bank prose is full of both.
+    assert "our 2025-2026 estimates" in joined
+    assert "as of 2026-07-25" in joined
+
+
+def test_excerpt_derive_caps_chars_at_a_word_boundary():
+    body = ("hyperscaler capacity " * 60).strip()   # one long single paragraph
+    paras = excerpt_mod.derive(body, max_chars=120)
+    assert len(paras) == 1
+    text = paras[0]
+    assert text.endswith("…")                       # visibly stops mid-report
+    assert len(text) <= 121                         # cap + the ellipsis
+    kept = text[:-1]
+    assert body.startswith(kept) and not kept.endswith(" ")   # whole-word prefix
+
+    # The default dial bounds a full-length body too.
+    big = excerpt_mod.derive("alpha beta gamma delta " * 500)
+    assert sum(len(p) for p in big) <= excerpt_mod.EXCERPT_MAX_CHARS + 1
+
+
+def test_excerpt_derive_empty_input_is_empty_list():
+    assert excerpt_mod.derive(None) == []
+    assert excerpt_mod.derive("") == []
+    assert excerpt_mod.derive("   \n\n \f \t ") == []   # scanned PDF: no text layer
+
+
+def test_excerpt_sparse_cover_pages_extend_the_window():
+    """Bank cover pages are often text-sparse — widen rather than publish nothing."""
+    cover = "MORGAN STANLEY"                                  # under the para floor
+    page2 = "Global Macro Strategy — July 2026 edition"       # kept, still sparse
+    page3 = ("Deltapagethree carries the actual opening argument and runs well past "
+             "the sparse floor, so the widened window stops right here. " * 4)
+    page4 = "Echopagefour must stay out of the published excerpt entirely."
+    joined = " ".join(excerpt_mod.derive("\f".join([cover, page2, page3, page4])))
+    assert "Deltapagethree" in joined      # widened past the 2-page default…
+    assert "Echopagefour" not in joined    # …but only as far as it had to
+
+
+def test_excerpt_window_never_exceeds_four_pages():
+    thin = [f"Page {i} carries one short line only, nowhere near the sparse floor."
+            for i in range(1, 5)]
+    thin.append("Foxtrotpagefive is past the four-page ceiling and must never publish.")
+    joined = " ".join(excerpt_mod.derive("\f".join(thin)))
+    assert "Page 1 carries" in joined and "Page 4 carries" in joined
+    assert "Foxtrotpagefive" not in joined
+
+
+def _x_doc(conn, doc_id, body):
+    corpus_mod.upsert(conn, sidecar_mod.normalize(
+        {"id": doc_id, "title": "T", "institution": "GS", "published_at": "2026-07-01"}),
+        body)
+
+
+def test_excerpt_snapshot_is_restricted_to_catalog_ids():
+    conn = corpus_mod.open_db(":memory:")
+    prose = ("Alphabody opens the sampled report with a paragraph long enough to "
+             "survive the paragraph floor and land in the published excerpt.")
+    _x_doc(conn, "z-doc", prose)
+    _x_doc(conn, "a-doc", prose)
+    _x_doc(conn, "m-doc", prose)      # in the corpus but NOT in the catalog
+    _x_doc(conn, "s-doc", "")         # scanned PDF: derives to [] → omitted
+
+    out = excerpt_mod.snapshot(conn, {"z-doc", "a-doc", "s-doc"})
+    assert list(out) == ["a-doc", "z-doc"]        # sorted → deterministic diffs
+    assert out["a-doc"][0].startswith("Alphabody")
+    assert excerpt_mod.snapshot(conn, set()) == {}
+    conn.close()
+
+
+def test_excerpt_write_repo_snapshot_refuses_empty(tmp_path):
+    """An empty derivation must never clobber a good committed snapshot."""
+    p = tmp_path / "excerpts.json"
+    assert excerpt_mod.write_repo_snapshot({}, p) is False
+    assert not p.exists()
+
+
+def test_excerpt_write_repo_snapshot_is_deterministic(tmp_path):
+    """Timestamp-free + sorted: an unchanged hour produces no git diff, no churn."""
+    p = tmp_path / "sub" / "excerpts.json"        # parent is created on demand
+    data = {"b-doc": ["second doc"], "a-doc": ["first doc", "第二段"]}
+    assert excerpt_mod.write_repo_snapshot(data, p) is True
+    first = p.read_bytes()
+
+    reordered = dict(reversed(list(data.items())))
+    assert excerpt_mod.write_repo_snapshot(reordered, p) is True
+    assert p.read_bytes() == first
+
+    payload = json.loads(first.decode("utf-8"))
+    assert payload["schema"] == 1
+    assert payload["excerpts"]["a-doc"] == ["first doc", "第二段"]
+    assert "第二段".encode("utf-8") in first        # ensure_ascii=False
 
 
 # ===========================================================================

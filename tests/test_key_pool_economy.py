@@ -444,7 +444,7 @@ class TestLlmAuthLegacySkip:
 
         # Patch _oauth_pool_candidates to return no pool keys so only legacy path runs
         from engine import llm_auth
-        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
 
         cfg = {
             "provider_order": ["oauth"],
@@ -490,7 +490,7 @@ class TestLlmAuthLegacySkip:
         monkeypatch.setenv("METAB_KEYS_ENABLED", "1,legacy")
 
         from engine import llm_auth
-        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
 
         cfg = {
             "provider_order": ["oauth"],
@@ -512,7 +512,7 @@ class TestLlmAuthLegacySkip:
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
 
         from engine import llm_auth
-        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
 
         cfg = {
             "provider_order": ["oauth"],
@@ -543,7 +543,7 @@ class TestLlmAuthLegacySkip:
         monkeypatch.setitem(sys.modules, "engine.neuralweb.key_pool", broken_mod)
 
         from engine import llm_auth
-        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
 
         cfg = {
             "provider_order": ["oauth"],

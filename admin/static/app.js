@@ -522,7 +522,7 @@ RENDER.overview = async () => {
       ${card("Est. AI cost", `<div class="big">${fmtUSD(c.monthly_usd)}<span class="sub"> /mo</span></div><div class="sub">${fmtUSD(c.effective_daily_usd)}/day</div>`)}
       ${card("Features on", `<div class="big">${flagsOn}</div><div class="sub">of your feature switches</div>`)}
       ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
-      ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
+      ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest && s.experiments.soonest.days_until > 0 ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
@@ -540,6 +540,18 @@ RENDER.overview = async () => {
 const EXP_STATUS_PILL = (s) => {
   const cls = s === "validated" ? "s-ok" : (s === "measuring" || s === "proven") ? "s-warn" : s === "blocked" ? "s-bad" : "s-mut";
   return `<span class="statpill ${cls}">${esc(s || "?")}</span>`;
+};
+/* A `state` line the nightly could not derive from a live reader is the registry seed's
+   hand-authored string — frozen at the seed audit and often months stale (radar-ic advertised
+   "n_matured=0" for a month after its read matured). Label those; never let one read as
+   current. state_live/state_as_of come from engine/experiments_registry.py. */
+const EXP_STATE = (e) => {
+  if (!e.state) return "";
+  const seeded = e.state_live === false && e.state_as_of;
+  return `<div class="note mono muted">${esc(e.state)}${seeded
+    ? ` <span class="statpill s-mut" style="font-size:10px;padding:1px 6px;margin-left:4px"
+         title="Hand-authored in the registry seed — no live reader is wired for this one yet.">as of ${esc(e.state_as_of)} (seed)</span>`
+    : ""}</div>`;
 };
 const EXP_DUE = (e) => {
   if (e.ready) return `<b style="color:var(--ok)">ready ✓</b>`;
@@ -570,7 +582,7 @@ RENDER.experiments = async () => {
         <div class="kv" style="margin-top:8px"><span>Status</span>${EXP_STATUS_PILL(e.status)}</div>
         ${e.phase_hint ? `<div class="kv"><span>Next</span><b>${esc(e.phase_hint)}</b></div>` : ""}
         <div class="note" style="margin-top:6px">${esc(e.next_step || "")}</div>
-        ${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}
+        ${EXP_STATE(e)}
         ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
   }
   html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
@@ -581,7 +593,7 @@ RENDER.experiments = async () => {
       <td>${EXP_STATUS_PILL(e.status)}</td>
       <td class="sub">${esc(e.cadence || "")}</td>
       <td class="r">${EXP_DUE(e)}</td>
-      <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td>
+      <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${EXP_STATE(e)}</td>
       <td class="exp-actions">
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="acted">Acted</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="dismissed">Dismiss</button>

@@ -47,6 +47,27 @@ lanes:
     # See _model_supports_effort_thinking() in brain_gateway.py for the gate.
     effort: high        # low | medium | high | xhigh | max
     thinking: adaptive  # adaptive | off
+    # Degraded-capacity fallbacks (operator 2026-07-25): when the OAuth pool is fully
+    # rate-capped on Opus/Sonnet (every subscription token 429s on the higher tiers —
+    # observed live), serve a REAL answer from these instead of a blank/"unavailable"
+    # turn. Tried in order AFTER opus/sonnet, so a healthy Opus quota always wins.
+    #   deepseek-v4-pro  — metered, strong, INDEPENDENT of the capped subscriptions
+    #   claude-haiku-4-5 — rides the same OAuth pool (works when a subscription's
+    #                      Opus/Sonnet weekly cap is hit but Haiku still has headroom)
+    # effort/thinking are auto-omitted for these (see _model_supports_effort_thinking).
+    degraded_models:
+      - deepseek-v4-pro
+      - claude-haiku-4-5
+    deepseek_key_env: DEEPSEEK_API_KEY
+    deepseek_base_url: https://api.deepseek.com/anthropic
+    # OAuth-pool weekly ceiling for Mastermind (operator 2026-07-25): the metabolism
+    # BUILD loop backs a key off at 85% weekly (budget_gate weekly_key_stop_pct); the
+    # user-facing Mastermind chat may lean on a key up to this weekly-% before it is
+    # de-prioritised, leaving a subscription reserve. Soft ordering only — never excludes
+    # a key (fail-open: a fully-capped pool still gets tried, then falls to the degraded
+    # models). Wired via build_providers → _oauth_pool_candidates; env override
+    # MASTERMIND_WEEKLY_CEILING_PCT.
+    weekly_ceiling_pct: 95
 
 # ── Per-tier request allowances (MNZ-R12: config-not-literals) ────────────────
 # Periods: week = ISO week (UTC), month = calendar month (UTC),
