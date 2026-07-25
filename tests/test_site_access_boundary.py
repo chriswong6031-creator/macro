@@ -34,11 +34,18 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
 # into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
-# a snapshot, so a fresh checkout may hold none of them. site/research/ is the
-# render-lane-generated research-vault SEO plane (#3392) — same class: built,
-# never committed. The policy line is still the boundary of record — only the
-# on-disk existence check is exempt.
-RUNTIME_ARTIFACT_PREFIXES = ("/live/", "/research/")
+# a snapshot, so a fresh checkout may hold none of them. The policy line is
+# still the boundary of record — only the on-disk existence check is exempt.
+#
+# /research/ was added here on 2026-07-25 (#3507) to clear the #3488 red and is
+# now REMOVED: #3501/#3512 landed the estate as 87 tracked files, so the tree
+# exists and the real assertion passes on its merits. Keeping the exemption would
+# have been the bad outcome on both counts — the honesty guard below explains the
+# epistemic half, and gitignoring a tracked tree would have made the render lanes'
+# `git add site/` silently skip every NEW report page (edits to existing pages
+# still stage; new files do not), freezing the estate at 85 reports while the
+# hourly research-ingest lane kept growing catalog.json.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
 
 
 def _caddy_public_exclusions() -> set[str]:
@@ -76,6 +83,39 @@ def test_runtime_artifact_exemption_stays_honest():
     ignored = {line.strip() for line in (ROOT / ".gitignore").read_text().splitlines()}
     for prefix in RUNTIME_ARTIFACT_PREFIXES:
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
+
+
+def test_no_public_prefix_is_exempted_from_the_existence_check():
+    """An exemption may excuse individual runtime FILES, never a whole subtree.
+
+    The /live/ exemption covers two `exact` entries (quotes.json, breadth.json)
+    whose on-disk presence really is runtime-dependent — the systemd lanes publish
+    them by atomic rename and force-add a fallback snapshot. Exempting a public
+    PREFIX is a different act: it disables the is_dir() check for an entire estate,
+    so a typo'd or dead prefix passes forever.
+
+    That is what happened on 2026-07-25. Three PRs raced the #3488 red: #3507
+    exempted /research/ (and gitignored it) while #3501 committed the 85 baked
+    pages and #3512 added a .gitkeep — leaving site/research/ both gitignored and
+    holding 87 tracked files. The gitignore half of the honesty guard above was
+    then satisfied by a tree that was not runtime at all, and the ignore itself
+    was worse than useless: gitignore governs only untracked paths, so every
+    render lane's `git add site/` would keep staging edits to the 85 existing
+    pages while silently skipping each NEW report page — freezing the estate as
+    the hourly research-ingest lane kept growing catalog.json.
+
+    Both halves were reverted; this keeps the door shut. Not vacuous — it walks
+    every declared public prefix.
+    """
+    assert POLICY["public"]["prefixes"], "no public prefixes to check — policy shape changed?"
+    exempted = [p for p in POLICY["public"]["prefixes"]
+                if p.startswith(RUNTIME_ARTIFACT_PREFIXES)]
+    assert exempted == [], (
+        f"public prefix(es) exempted from the existence check: {exempted}. A prefix "
+        "is committed estate — if its tree is missing, bake and commit it rather "
+        "than exempting it. RUNTIME_ARTIFACT_PREFIXES is for individual runtime "
+        "files listed under public.exact."
+    )
 
 
 def _gh_path_filter_to_re(pattern: str) -> re.Pattern:
