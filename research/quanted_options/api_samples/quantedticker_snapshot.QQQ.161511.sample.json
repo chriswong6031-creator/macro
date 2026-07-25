@@ -1,0 +1,9 @@
+{"ticker":"QQQ","spot":684.476,"sessionDate":"2026-07-24",
+ "expiries":["2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-03","...33 total..."],
+ "views":{
+   "zero":{"strikes":[[355,0,-479,-479,0,75,7826562,4,235,4,0,-2970,-2970],[360,0,-20,-20,0,3,0,0,0,0,0,-121,-121]],
+           "totals":"...","flip":"...","callWall":"...","putWall":"..."},
+   "all":{"strikes":[[204.78,6186,-65932,-59746,264,6710,0,485,0,20,17909589,-1006442,16903147]]},
+   "allx0":{"note":"all minus zero-dte"}},
+ "source":"...","date":"2026-07-24","ts":"161511","capturedAtCt":"...","oiFresh":true,"contractCount":0,"fetchSeconds":0,
+ "_note":"13 cols per strike row; ~97KB/snapshot; one file per minute 04:00-16:15 ET; index.json lists ts[]; signed URLs via /api/quantedticker/data-urls?keys=client/QQQ/2026-07-24/161511.json (DigitalOcean Spaces, expiresIn 300s)"}

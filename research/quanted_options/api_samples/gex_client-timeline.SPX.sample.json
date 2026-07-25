@@ -1,0 +1,5 @@
+{"date":"2026-07-24","rfr":0,"source":"lite","expiries":[],
+ "timestamps":["04:01","04:10","...74 stamps at 10-min cadence...","16:00","16:15"],
+ "timeline":[{"ts":"18:00","spx":7411.98,"gex":-22617897170.9,"call_gex":-18294711686.0,"put_gex":-4323185484.9,"dex":2117090312.1,"vix":0,"net_gex":-27375456976.8}],
+ "walls":{"gex_flip":7405,"put_wall":7410,"call_wall":7405},
+ "v":"2026-07-27_18-00"}

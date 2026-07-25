@@ -1,0 +1,3 @@
+{"ts":1784954636428,"sort":"premium","scan_id":"1ab79c14-dfaa-498e-8d81-44a41e6caf6b","scan_started_at":"2026-07-24T19:59:41.487659+00:00","scan_date":"2026-07-24","fallback_used":false,"count":50,
+ "signals":[{"contract":"O:SNDK260731C01000000","ticker":"SNDK","expiry":"2026-07-31","strike":1000,"side":"C","day_vol":1953,"oi":18,"vol_oi":108.5,"premium_dollars":86545827.9,"mid":443.143,"iv":1.5477,"delta":0.9636,"gamma":0.000256,"spot":1436.501,"day_change_pct":-28.5,"delta_vol":0},
+  {"contract":"O:SNDK260724C01000000","ticker":"SNDK","expiry":"2026-07-24","strike":1000,"side":"C","day_vol":1861,"oi":1861,"vol_oi":1,"premium_dollars":80920374.2,"mid":434.822,"iv":null,"delta":null,"gamma":null,"spot":1436.501,"day_change_pct":-31.8,"delta_vol":0}]}
