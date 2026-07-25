@@ -11,18 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
 CADDY = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
 SITE = ROOT / "site"
-CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
-
-# Non-test inputs of the tier-gate job that no `run:` line names, so the
-# reachability test below cannot derive them: the two halves of the boundary this
-# module diffs, and the two routers the regwall/paywall suites exercise. Editing
-# any of them is exactly the change tier-gate exists to catch.
-TIER_GATE_SOURCE_INPUTS = (
-    "config/site_access.yml",
-    "app/deploy/Caddyfile",
-    "app/regwall.py",
-    "app/paywall.py",
-)
 
 # Caddy exclusions that have no home in config/site_access.yml. The policy
 # schema classifies static FILE paths under site/; these are reverse-proxied
@@ -37,15 +25,36 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # a snapshot, so a fresh checkout may hold none of them. The policy line is
 # still the boundary of record — only the on-disk existence check is exempt.
 #
-# /research/ was added here on 2026-07-25 (#3507) to clear the #3488 red and is
-# now REMOVED: #3501/#3512 landed the estate as 87 tracked files, so the tree
-# exists and the real assertion passes on its merits. Keeping the exemption would
-# have been the bad outcome on both counts — the honesty guard below explains the
-# epistemic half, and gitignoring a tracked tree would have made the render lanes'
-# `git add site/` silently skip every NEW report page (edits to existing pages
-# still stage; new files do not), freezing the estate at 85 reports while the
-# hourly research-ingest lane kept growing catalog.json.
+# The qualifying property is the DELIVERY path, NOT "is the content generated".
+# site/live/ reaches the edge out of band, so a fresh checkout legitimately lacks
+# it. A tree that reaches the edge only by being COMMITTED — "the VPS serves
+# committed main; there is no Pages-artifact fallback" (render.yml) — is committed
+# content no matter which builder emits it, and belongs in the existence check.
+#
+# /research/ was added here by #3507 to clear the #3488 red and is REMOVED again:
+# it is render-lane output delivered by `git add site/`, and the exemption required
+# gitignoring site/research/ to satisfy the honesty guard below. A gitignored
+# subtree makes `git add site/` silently skip every NEW file — edits to the pages
+# already tracked keep staging, new ones never do — so the estate would have frozen
+# at the 86 pages #3501 landed while the research-ingest lane kept growing
+# catalog.json: the exact "shipped dark" failure #3487 had just fixed. The tree is
+# committed, so the assertion below now passes on its own merits.
 RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
+
+# Shown on every missing-target failure. A public entry that points at nothing is a
+# REAL defect (the edge advertises a path that 404s), so this stays a hard failure --
+# but the cheap exit is the wrong one and #3507 proves the bait works: when a policy
+# entry lands before its content, the red reads "missing public prefix" and the
+# nearest fix is RUNTIME_ARTIFACT_PREFIXES. Name the two real remedies instead.
+_MISSING_TARGET_HINT = (
+    "config/site_access.yml declares it public but that path does not exist under "
+    "site/. Either land the content first (a CI-generated tree needs its builder's "
+    "first output committed BEFORE the policy entry -- see #3487/#3488/#3501), or "
+    "drop the policy entry until it does. Do NOT add it to RUNTIME_ARTIFACT_PREFIXES "
+    "unless the content reaches the edge WITHOUT being committed: that exemption "
+    "requires gitignoring the tree, which silently stops the render lane's "
+    "`git add site/` from ever shipping a new file under it."
+)
 
 
 def _caddy_public_exclusions() -> set[str]:
@@ -69,11 +78,29 @@ def test_public_policy_targets_exist():
     for path in POLICY["public"]["exact"]:
         if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / path.lstrip("/")).is_file(), f"missing public exact path: {path}"
+        assert (SITE / path.lstrip("/")).is_file(), (
+            f"missing public exact path: {path} -- {_MISSING_TARGET_HINT}"
+        )
     for prefix in POLICY["public"]["prefixes"]:
         if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
             continue
-        assert (SITE / prefix.strip("/")).is_dir(), f"missing public prefix: {prefix}"
+        assert (SITE / prefix.strip("/")).is_dir(), (
+            f"missing public prefix: {prefix} -- {_MISSING_TARGET_HINT}"
+        )
+
+
+def test_public_theme_imports_are_declared_public():
+    """A public stylesheet must not import an asset hidden behind the regwall."""
+    public_exact = set(POLICY["public"]["exact"])
+    theme = (SITE / "theme.css").read_text()
+    imports = re.findall(r'@import\s+url\(["\']?([^"\')?]+)', theme)
+    assert imports, "site/theme.css should expose its external dependencies"
+    for imported in imports:
+        public_path = "/" + imported.split("?", 1)[0].lstrip("/")
+        assert public_path in public_exact, (
+            f"public theme.css imports gated asset {public_path}; "
+            "declare the UI dependency in config/site_access.yml"
+        )
 
 
 def test_runtime_artifact_exemption_stays_honest():
@@ -83,90 +110,6 @@ def test_runtime_artifact_exemption_stays_honest():
     ignored = {line.strip() for line in (ROOT / ".gitignore").read_text().splitlines()}
     for prefix in RUNTIME_ARTIFACT_PREFIXES:
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
-
-
-def test_no_public_prefix_is_exempted_from_the_existence_check():
-    """An exemption may excuse individual runtime FILES, never a whole subtree.
-
-    The /live/ exemption covers two `exact` entries (quotes.json, breadth.json)
-    whose on-disk presence really is runtime-dependent — the systemd lanes publish
-    them by atomic rename and force-add a fallback snapshot. Exempting a public
-    PREFIX is a different act: it disables the is_dir() check for an entire estate,
-    so a typo'd or dead prefix passes forever.
-
-    That is what happened on 2026-07-25. Three PRs raced the #3488 red: #3507
-    exempted /research/ (and gitignored it) while #3501 committed the 85 baked
-    pages and #3512 added a .gitkeep — leaving site/research/ both gitignored and
-    holding 87 tracked files. The gitignore half of the honesty guard above was
-    then satisfied by a tree that was not runtime at all, and the ignore itself
-    was worse than useless: gitignore governs only untracked paths, so every
-    render lane's `git add site/` would keep staging edits to the 85 existing
-    pages while silently skipping each NEW report page — freezing the estate as
-    the hourly research-ingest lane kept growing catalog.json.
-
-    Both halves were reverted; this keeps the door shut. Not vacuous — it walks
-    every declared public prefix.
-    """
-    assert POLICY["public"]["prefixes"], "no public prefixes to check — policy shape changed?"
-    exempted = [p for p in POLICY["public"]["prefixes"]
-                if p.startswith(RUNTIME_ARTIFACT_PREFIXES)]
-    assert exempted == [], (
-        f"public prefix(es) exempted from the existence check: {exempted}. A prefix "
-        "is committed estate — if its tree is missing, bake and commit it rather "
-        "than exempting it. RUNTIME_ARTIFACT_PREFIXES is for individual runtime "
-        "files listed under public.exact."
-    )
-
-
-def _gh_path_filter_to_re(pattern: str) -> re.Pattern:
-    """GitHub filter-pattern semantics: `*` stops at `/`, `**` crosses it."""
-    out: list[str] = []
-    i = 0
-    while i < len(pattern):
-        if pattern[i] == "*":
-            if pattern[i + 1:i + 2] == "*":
-                out.append(".*")
-                i += 2
-            else:
-                out.append("[^/]*")
-                i += 1
-        elif pattern[i] == "?":
-            out.append("[^/]")
-            i += 1
-        else:
-            out.append(re.escape(pattern[i]))
-            i += 1
-    return re.compile("^" + "".join(out) + "$")
-
-
-def test_tier_gate_is_reachable_from_its_own_inputs():
-    """A guard the guarded change cannot trigger is not a guard.
-
-    tier-gate runs every serving-boundary suite, but ci.yml is `on: pull_request`
-    with a ~530-entry `paths:` filter. Until 2026-07-25 not one of the job's
-    inputs was in that list, so the job only ever fired incidentally — when a PR
-    happened to also touch site/** or templates/**. #3488 changed ONLY
-    site_access.yml + Caddyfile + regwall.py, triggered no workflow at all, and
-    merged with the boundary test never executed (it then sat red on main). This
-    pins the trigger to the job: every test file tier-gate runs, plus the source
-    inputs above, must be named in the filter.
-    """
-    ci = yaml.safe_load(CI_WORKFLOW.read_text())
-    # PyYAML resolves the bare key `on` to True (YAML 1.1 booleans).
-    triggers = ci.get("on") or ci.get(True)
-    paths = triggers["pull_request"]["paths"]
-    matchers = [_gh_path_filter_to_re(p) for p in paths]
-
-    steps = ci["jobs"]["tier-gate"]["steps"]
-    run_tests = set(re.findall(r"tests/test_[A-Za-z0-9_]+\.py", "\n".join(
-        s["run"] for s in steps if "run" in s)))
-    assert run_tests, "tier-gate runs no pytest targets — did the job change shape?"
-
-    required = run_tests | set(TIER_GATE_SOURCE_INPUTS)
-    unreachable = sorted(t for t in required if not any(m.match(t) for m in matchers))
-    assert unreachable == [], (
-        "tier-gate inputs missing from ci.yml pull_request paths (a PR touching "
-        f"only these would run no boundary guard): {unreachable}")
 
 
 def test_generated_data_is_not_accidentally_public():

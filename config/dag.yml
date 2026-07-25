@@ -601,10 +601,13 @@ lanes:
       - id: mirror_terminal_context_r2
         module: scripts.mirror_terminal_context_r2
         note: >-
-          OEU M-XP (#3499) — mirrors the Terminal context surface to R2 in the
-          same R2-creds-gated step as the mirror_flow_idx trio, non-fatal by
-          `|| echo ::warning`. Undeclared at merge (dag conformance red on main
-          2026-07-25); declared here.
+          OEU M-XP(b): mirrors the Terminal EOD-context artifacts to R2 —
+          site/darkpool_eod.json -> darkpool/eod.json and site/vol/regime.json ->
+          vol/regime.json — so the Terminal reads fresh EOD context without
+          waiting for a site deploy (same problem the gex_state mirror solved).
+          Runs in the same non-fatal step as mirror_flow_idx, after the builders
+          that write those two files. R2-creds-gated, exits 0 on every failure
+          path, and never uploads a file that does not parse as JSON.
       - id: build_flow_signals
         module: scripts.build_flow_signals
         note: >-
