@@ -242,6 +242,8 @@ jobs:
           # (e.g. reports/*.md graders, site/qledger/) — without it, the push dies on
           # every attempt and the weekly commit is silently discarded.
           PUSH_BUDGET_SECS=600   # the weekly data day exists only on this runner (job timeout 300 min — ample headroom)
+          PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
+                                 # retries burn only ~2 min, so the raised budget above would never bind
           push_retry_init "weekly outputs"
           while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can

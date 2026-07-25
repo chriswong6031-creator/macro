@@ -25,6 +25,7 @@ The assertions that matter here:
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -587,6 +588,36 @@ def test_no_lane_still_carries_the_old_five_attempt_ladder():
             if pattern in text:
                 stale.append(f"{lane}: {pattern}")
     assert not stale, "lanes still on the old deterministic ladder: " + ", ".join(stale)
+
+
+def test_a_raised_time_budget_is_never_decorative():
+    """A lane that raises PUSH_BUDGET_SECS must raise PUSH_MAX_ATTEMPTS with it.
+
+    Measured 2026-07-25 against render.yml's real run block: ten contention retries
+    spend only ~2 min of backoff, so the default attempt cap stops the loop with most
+    of a raised 600s budget untouched — the budget reads as "we'll wait 10 minutes for
+    the ref" while the loop actually gives up in two. On these lanes the DEADLINE is
+    meant to be the governor; the attempt count is not doing the safety work.
+    """
+    for lane in LANES:
+        text = (REPO_ROOT / ".github" / "workflows" / lane).read_text()
+        lines = text.splitlines()
+        for i, line in enumerate(lines):
+            if not re.match(r"\s*PUSH_BUDGET_SECS=(\d+)", line):
+                continue
+            budget = int(re.match(r"\s*PUSH_BUDGET_SECS=(\d+)", line).group(1))
+            if budget <= 420:
+                continue
+            window = "\n".join(lines[max(0, i - 4): i + 6])
+            m = re.search(r"PUSH_MAX_ATTEMPTS=(\d+)", window)
+            assert m, (
+                f"{lane}:{i + 1} raises PUSH_BUDGET_SECS to {budget} but leaves the "
+                f"attempt cap at the default — the extra budget can never be spent"
+            )
+            assert int(m.group(1)) > 10, (
+                f"{lane}:{i + 1} raises the budget to {budget} but caps attempts at "
+                f"{m.group(1)}"
+            )
 
 
 def test_every_lane_loop_sources_the_shared_policy():

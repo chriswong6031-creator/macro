@@ -521,6 +521,8 @@ jobs:
           # EVERY push. Autostash parks them, rebases, restores. This push is the only path
           # to the live site (VPS serves committed main; no Pages-artifact fallback).
           PUSH_BUDGET_SECS=600     # this push is the ONLY path to the live site — worth 10 min of waiting for the ref
+          PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
+                                 # retries burn only ~2 min, so the raised budget above would never bind
           push_retry_init "engine-rendered site"
           while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can

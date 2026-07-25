@@ -2288,6 +2288,8 @@ jobs:
           # artifact, so it never depends on this commit landing.
           PUSH_ALARM=420
           PUSH_BUDGET_SECS=600   # a dropped push here costs the nightly's forward-ledger DAY (sole-advancer law) — worth waiting 10 min for the ref
+          PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
+                                 # retries burn only ~2 min, so the raised budget above would never bind
           push_retry_init "engine outputs"
           while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
