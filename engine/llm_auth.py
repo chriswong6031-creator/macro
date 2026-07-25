@@ -199,12 +199,49 @@ def _is_rate_limit_error(exc: BaseException) -> bool:
 # rate-limited key never strands a stage while any working key remains.
 
 
-def _oauth_pool_candidates(lane: str) -> list[tuple[str, str]]:
+def _lane_weekly_ceiling_pct(lane: str) -> float | None:
+    """Weekly-utilisation ceiling (%) above which a pool key is DE-PRIORITISED for
+    this lane (never excluded — soft ordering only).
+
+    Mastermind chat lanes (``brain-*``) may lean on a key up to 95% weekly (operator
+    2026-07-25) — higher than the metabolism BUILD loop's 85% (budget_gate
+    ``weekly_key_stop_pct``) — leaving a small subscription reserve. Other lanes get
+    None here (the build loop enforces its own 85% hard stop separately).
+    Env override: ``MASTERMIND_WEEKLY_CEILING_PCT``. NEVER raises."""
+    try:
+        if not str(lane or "").startswith("brain"):
+            return None
+        raw = os.environ.get("MASTERMIND_WEEKLY_CEILING_PCT", "").strip()
+        if raw:
+            v = float(raw)
+            if 0 < v <= 100:
+                return v
+        return 95.0
+    except Exception:  # noqa: BLE001
+        return 95.0
+
+
+def _weekly_pct(cap_id: str) -> float | None:
+    """Latest known weekly utilisation % for a pool key (reported ratelimit headers,
+    else estimated), or None when unknown. NEVER raises."""
+    try:
+        from engine.metabolism import budget_gate as _bg  # noqa: PLC0415
+        pw = _bg.key_budget(cap_id).get("pct_weekly")
+        return float(pw) if pw is not None else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _oauth_pool_candidates(lane: str, ceiling_pct: float | None = None) -> list[tuple[str, str]]:
     """Return [(cap_id, env_var_name)] for pool keys usable for `lane`.
 
-    Ordering: non-cooling keys by ascending 5h-window load, then cooling keys
-    by ascending load (emergency fallback).  NEVER raises — any pool/broker
-    error degrades to an empty list (legacy single-key behavior).
+    Ordering (best first): under-ceiling before over-ceiling, then non-cooling
+    before cooling, then ascending 5h-window load. The weekly ceiling is a soft
+    de-prioritisation (a key over 95% still gets tried when nothing better exists,
+    then the caller falls to the degraded models) — see _lane_weekly_ceiling_pct.
+    ``ceiling_pct`` (from config, MNZ-R12) wins when given; else the lane default.
+    NEVER raises — any pool/broker error degrades to an empty list (legacy
+    single-key behavior).
     REDLINE: returns capability ids and env-var NAMES only, never values.
     """
     try:
@@ -224,7 +261,15 @@ def _oauth_pool_candidates(lane: str) -> list[tuple[str, str]]:
                             cap_id, lane, exc)
         cool = {cap_id: bool(is_cooling(cap_id)) for cap_id, _ in allowed}
         load = {cap_id: int(window_load(cap_id)) for cap_id, _ in allowed}
-        return sorted(allowed, key=lambda c: (cool[c[0]], load[c[0]]))
+        # Lane-aware weekly ceiling (Mastermind 95% vs build loop 85%): keys past the
+        # ceiling sort AFTER under-ceiling keys but are still returned (fail-open).
+        # Config value (MNZ-R12) wins; else the lane default.
+        ceiling = ceiling_pct if ceiling_pct is not None else _lane_weekly_ceiling_pct(lane)
+        if ceiling is not None:
+            over = {cap_id: ((_weekly_pct(cap_id) or 0.0) >= ceiling) for cap_id, _ in allowed}
+        else:
+            over = {cap_id: False for cap_id, _ in allowed}
+        return sorted(allowed, key=lambda c: (over[c[0]], cool[c[0]], load[c[0]]))
     except Exception as exc:  # noqa: BLE001
         log.warning("llm_auth: _oauth_pool_candidates(lane=%s) failed: %s", lane, exc)
         return []
@@ -600,8 +645,9 @@ def build_providers(
             #   no consumer anywhere depends on the deprecated token.
             pool_envs: set[str] = set()
             lane = cfg.get("oauth_pool_lane") or ""
+            _ceiling = cfg.get("oauth_weekly_ceiling_pct")  # MNZ-R12: config, not literal
             if lane:
-                for cap_id, ref_env in _oauth_pool_candidates(lane):
+                for cap_id, ref_env in _oauth_pool_candidates(lane, ceiling_pct=_ceiling):
                     prov = _mk_oauth_provider(ref_env, cap_id=cap_id)
                     if prov is not None:
                         pool_envs.add(ref_env)
