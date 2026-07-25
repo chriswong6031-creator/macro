@@ -1,11 +1,12 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-24T23:54:36.559994+00:00",
-  "count": 75,
+  "generated_at": "2026-07-25T00:13:01.733381+00:00",
+  "count": 76,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
     "J.P. Morgan",
+    "Morgan Stanley",
     "Other",
     "RBC",
     "TS Lombard",
@@ -14,6 +15,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-nsykygenf6i-d40f04",
+      "title": "MS AI Debt Financing Tracker Heat Advisory",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T00:05:01Z",
+      "summary_points": [
+        "**2027 hyperscaler capex revised to >$1.25tn**: Structural shift driving credit market financing needs through 2026-27, with USD concentration and off-balance sheet commitments rising to $866bn by 2026.",
+        "**AI debt surge accelerates**: Global credit markets up 389% YoY (2026 YTD), U.S.",
+        "corporate credit up 452%, driven by hyperscalers and data center construction; AI-related debt now 6% of IG index.",
+        "**Hyperscaler spread widening & refinancing risk**: Spreads ~25bp wider YTD vs.",
+        "IG index; $253.1bn in 2025+ maturities (ORCL: $21.8bn in 2026 Q3), signaling cash flow pressure amid capex acceleration."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-cjutnk10juw-30685f",
       "title": "ubs hv monthly letter 16 July en 1 1",
