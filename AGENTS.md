@@ -48,3 +48,11 @@ not “live” until the VPS/render path and live marker are verified.
 
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
+
+The contract is actively enforced for Claude by the tracked `SessionStart` and
+`Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
+files, then refuses a normal stop while session-created work is uncommitted,
+unpushed, unmerged, waiting on the required render, or absent from production.
+Codex must follow the same chain directly from this file. A genuine repeated
+external blocker must be reported as `SHIP LOOP BLOCKED:` with concrete evidence;
+ordinary local cleanup, authentication setup, and waiting are not blockers.
