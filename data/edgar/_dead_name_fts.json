@@ -2187,5 +2187,2216 @@
 "top_docs": 3,
 "top_name": "FAY LESLIE CO INC  (CIK 0000796226)",
 "total": 13
+},
+"CITGQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "CIT GROUP INC  (CIK 0001171825)",
+"total": 1
+},
+"CIVI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 25,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "GERDAU S.A.  (GGB)  (CIK 0001073404)",
+"total": 35
+},
+"CKH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 859598,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "SEACOR HOLDINGS INC /NEW/",
+"current_tickers": [],
+"former_names": [
+"SEACOR SMIT INC",
+"SEACOR HOLDINGS INC"
+],
+"n_entities": 7,
+"runner_docs": 2,
+"status": "reject_no_name_corroboration",
+"top_docs": 21,
+"top_name": "SEACOR HOLDINGS INC /NEW/  (CIK 0000859598)",
+"total": 30
+},
+"CLC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "FLEETCOR TECHNOLOGIES INC  (CPAY)  (CIK 0001175454)",
+"total": 625
+},
+"CLDT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1476045,
+"confirm": "accept",
+"confirm_name": "Chatham Lodging Trust",
+"current_tickers": [
+"CLDT",
+"CLDT-PA"
+],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 12,
+"top_name": "Chatham Lodging Trust  (CLDT, CLDT-PA)  (CIK 0001476045)",
+"total": 17
+},
+"CLFD": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 2,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Clearfield, Inc.  (CLFD)  (CIK 0000796505)",
+"total": 5
+},
+"CLGX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 36047,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "CORELOGIC, INC.",
+"current_tickers": [],
+"former_names": [
+"FIRST AMERICAN CORP",
+"FIRST AMERICAN FINANCIAL CORP"
+],
+"n_entities": 7,
+"runner_docs": 3,
+"status": "reject_no_name_corroboration",
+"top_docs": 127,
+"top_name": "CORELOGIC, INC.  (CIK 0000036047)",
+"total": 137
+},
+"CLI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 34,
+"status": "no_dominant",
+"top_docs": 34,
+"top_name": "MACK CALI REALTY CORP  (VRE)  (CIK 0000924901)",
+"total": 1881
+},
+"CLW": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 20,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "General Enterprise Ventures, Inc.  (GEVI)  (CIK 0000894556)",
+"total": 65
+},
+"CMA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 28412,
+"confirm": "accept",
+"confirm_name": "COMERICA INC",
+"current_tickers": [],
+"former_names": [
+"COMERICA INC /NEW/"
+],
+"n_entities": 30,
+"runner_docs": 44,
+"status": "resolved",
+"top_docs": 130,
+"top_name": "COMERICA INC /NEW/  (CMA)  (CIK 0000028412)",
+"total": 3871
+},
+"CMB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CMCSK": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "COMCAST CORP  (CCZ, CMCSA)  (CIK 0001166691)",
+"total": 1
+},
+"CMD": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 29,
+"runner_docs": 6,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "Macy's, Inc.  (M)  (CIK 0000794367)",
+"total": 77
+},
+"CMO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 13,
+"top_name": "CAPSTEAD MORTGAGE CORP  (CIK 0000766701)",
+"total": 1481
+},
+"CMP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1227654,
+"confirm": "accept",
+"confirm_name": "COMPASS MINERALS INTERNATIONAL INC",
+"current_tickers": [
+"CMP"
+],
+"former_names": [
+"SALT HOLDINGS CORP"
+],
+"n_entities": 30,
+"runner_docs": 34,
+"status": "resolved",
+"top_docs": 118,
+"top_name": "COMPASS MINERALS INTERNATIONAL INC  (CMP)  (CIK 0001227654)",
+"total": 1420
+},
+"CMTL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 3,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "COMTECH TELECOMMUNICATIONS CORP /DE/  (CMTL)  (CIK 0000023197)",
+"total": 8
+},
+"CMVT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 6,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "LANOPTICS LTD  (CIK 0000892534)",
+"total": 15
+},
+"CMX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 14,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "CAREMARK RX INC  (CIK 0001000736)",
+"total": 25
+},
+"CNG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"CNL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 101,
+"status": "no_dominant",
+"top_docs": 117,
+"top_name": "CLECO POWER LLC  (CIK 0000018672)",
+"total": 425
+},
+"CNQR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1066026,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "CONCUR TECHNOLOGIES INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 3,
+"runner_docs": 4,
+"status": "reject_no_name_corroboration",
+"top_docs": 27,
+"top_name": "CONCUR TECHNOLOGIES INC  (CIK 0001066026)",
+"total": 32
+},
+"CNSL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1304421,
+"confirm": "accept",
+"confirm_name": "Consolidated Communications Holdings, Inc.",
+"current_tickers": [],
+"former_names": [
+"Consolidated Communications Illinois Holdings, Inc."
+],
+"n_entities": 3,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 28,
+"top_name": "Consolidated Communications Holdings, Inc.  (CNSL)  (CIK 0001304421)",
+"total": 34
+},
+"CNVR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1099215,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "PROTALEX INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 3,
+"runner_docs": 1,
+"status": "reject_no_name_corroboration",
+"top_docs": 4,
+"top_name": "PROTALEX INC  (CIK 0001099215)",
+"total": 6
+},
+"CNW": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CNXT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "CONEXANT SYSTEMS INC  (CIK 0001069353)",
+"total": 2
+},
+"COC-B": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 2,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "AIRGATE PCS INC /DE/  (CIK 0001086844)",
+"total": 4
+},
+"COG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 20,
+"status": "no_dominant",
+"top_docs": 31,
+"top_name": "CABOT OIL & GAS CORP  (CTRA)  (CIK 0000858470)",
+"total": 553
+},
+"COL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 41,
+"status": "no_dominant",
+"top_docs": 53,
+"top_name": "CEMEX SAB DE CV  (CX, CXMSF)  (CIK 0001076378)",
+"total": 4262
+},
+"COMS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 12,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "INFOSYS TECHNOLOGIES LTD  (INFY)  (CIK 0001067491)",
+"total": 13
+},
+"CONE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1553023,
+"confirm": "accept",
+"confirm_name": "CyrusOne Holdco LLC",
+"current_tickers": [],
+"former_names": [
+"CyrusOne Inc."
+],
+"n_entities": 30,
+"runner_docs": 15,
+"status": "resolved",
+"top_docs": 45,
+"top_name": "CyrusOne Inc.  (CIK 0001553023)",
+"total": 951
+},
+"CONN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 28,
+"top_name": "CONNS INC  (CONNQ)  (CIK 0001223389)",
+"total": 215
+},
+"COOP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "GlobalTech Corp  (GLTK)  (CIK 0001938338)",
+"total": 392
+},
+"CORE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 14,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "ALLIANCE RESOURCE PARTNERS LP  (ARLP)  (CIK 0001086600)",
+"total": 10000
+},
+"COV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1385187,
+"confirm": "accept",
+"confirm_name": "Covidien plc",
+"current_tickers": [],
+"former_names": [
+"Covidien Ltd.",
+"Tyco Healthcare Ltd."
+],
+"n_entities": 30,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 41,
+"top_name": "Covidien plc  (CIK 0001385187)",
+"total": 215
+},
+"CPE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "Chicken Soup for the Soul Entertainment, Inc.  (CSSEQ, CSSLQ, CSSNQ, CSSPQ)  (CIK 0001679063)",
+"total": 477
+},
+"CPGX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1629995,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "Columbia Pipeline Group, Inc.",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 2,
+"runner_docs": 1,
+"status": "reject_no_name_corroboration",
+"top_docs": 16,
+"top_name": "Columbia Pipeline Group, Inc.  (CIK 0001629995)",
+"total": 17
+},
+"CPNLQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"CPQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 17,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "DIGEX INC/DE  (CIK 0001085098)",
+"total": 22
+},
+"CPS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 814676,
+"confirm": "reject_live_mismatch",
+"confirm_name": "CPS TECHNOLOGIES CORP/DE/",
+"current_tickers": [
+"CPSH"
+],
+"former_names": [
+"CERAMICS PROCESS SYSTEMS CORP/DE/"
+],
+"n_entities": 30,
+"runner_docs": 9,
+"status": "reject_live_mismatch",
+"top_docs": 26,
+"top_name": "CPS TECHNOLOGIES CORP/DE/  (CPSH)  (CIK 0000814676)",
+"total": 288
+},
+"CPSI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 6,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "COMPUTER PROGRAMS & SYSTEMS INC  (TBRG)  (CIK 0001169445)",
+"total": 20
+},
+"CPWR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "COMPUWARE CORP  (CIK 0000859014)",
+"total": 27
+},
+"CRCM": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "Renren Inc.  (MTBLY)  (CIK 0001509223)",
+"total": 1
+},
+"CRMT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "AMERICAS CARMART INC  (CRMT)  (CIK 0000799850)",
+"total": 12
+},
+"CRNC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1768267,
+"confirm": "accept",
+"confirm_name": "Cerence Inc.",
+"current_tickers": [
+"CRNC"
+],
+"former_names": [
+"Cerence LLC"
+],
+"n_entities": 4,
+"runner_docs": 1,
+"status": "resolved",
+"top_docs": 36,
+"top_name": "Cerence Inc.  (CRNC)  (CIK 0001768267)",
+"total": 39
+},
+"CRR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CRZO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"CSC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "CABLEVISION SYSTEMS CORP /NY  (CIK 0001053112)",
+"total": 320
+},
+"CSE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CSGS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1005757,
+"confirm": "accept",
+"confirm_name": "CSG SYSTEMS INTERNATIONAL INC",
+"current_tickers": [
+"CSGS"
+],
+"former_names": [],
+"n_entities": 5,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 76,
+"top_name": "CSG SYSTEMS INTERNATIONAL INC  (CSGS)  (CIK 0001005757)",
+"total": 83
+},
+"CSII": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 11,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "CLPS Inc  (CLPS)  (CIK 0001724542)",
+"total": 27
+},
+"CSRA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1646383,
+"confirm": "accept",
+"confirm_name": "CSRA Inc.",
+"current_tickers": [],
+"former_names": [
+"Computer Sciences Government Services Inc."
+],
+"n_entities": 30,
+"runner_docs": 6,
+"status": "resolved",
+"top_docs": 15,
+"top_name": "CSRA Inc.  (CIK 0001646383)",
+"total": 75
+},
+"CST": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 26,
+"status": "no_dominant",
+"top_docs": 30,
+"top_name": "CST Brands, Inc.  (CIK 0001562039)",
+"total": 778
+},
+"CTB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 42,
+"status": "no_dominant",
+"top_docs": 54,
+"top_name": "COOPER TIRE & RUBBER CO  (CIK 0000024491)",
+"total": 441
+},
+"CTLT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1596783,
+"confirm": "accept",
+"confirm_name": "Catalent, Inc.",
+"current_tickers": [],
+"former_names": [
+"PTS Holdings Corp."
+],
+"n_entities": 8,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 14,
+"top_name": "Catalent, Inc.  (CTLT)  (CIK 0001596783)",
+"total": 23
+},
+"CTRA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 14,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "Coterra Energy Inc.  (CTRA)  (CIK 0000858470)",
+"total": 47
+},
+"CTX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 14,
+"status": "no_dominant",
+"top_docs": 23,
+"top_name": "CENTEX CORP  (CIK 0000018532)",
+"total": 231
+},
+"CTXS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 877890,
+"confirm": "accept",
+"confirm_name": "CITRIX SYSTEMS INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 11,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 55,
+"top_name": "CITRIX SYSTEMS INC  (CIK 0000877890)",
+"total": 71
+},
+"CUB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 11,
+"top_name": "CUBIC CORP /DE/  (CIK 0000026076)",
+"total": 69
+},
+"CUTR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1162461,
+"confirm": "accept",
+"confirm_name": "CUTERA INC",
+"current_tickers": [],
+"former_names": [
+"ALTUS MEDICAL INC"
+],
+"n_entities": 6,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 27,
+"top_name": "CUTERA INC  (CUTR)  (CIK 0001162461)",
+"total": 33
+},
+"CVC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 25,
+"status": "no_dominant",
+"top_docs": 25,
+"top_name": "CABLEVISION SYSTEMS CORP /NY  (CIK 0001053112)",
+"total": 279
+},
+"CVEO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "Civeo Corp  (CVEO)  (CIK 0001590584)",
+"total": 1
+},
+"CVET": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1752836,
+"confirm": "accept",
+"confirm_name": "COVETRUS, INC.",
+"current_tickers": [],
+"former_names": [
+"HS Spinco, Inc."
+],
+"n_entities": 7,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 7,
+"top_name": "COVETRUS, INC.  (CIK 0001752836)",
+"total": 15
+},
+"CVG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 42,
+"status": "no_dominant",
+"top_docs": 66,
+"top_name": "CONVERGYS CORP  (CIK 0001062047)",
+"total": 415
+},
+"CVGW": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1133470,
+"confirm": "accept",
+"confirm_name": "CALAVO GROWERS INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 34,
+"top_name": "CALAVO GROWERS INC  (CVGW)  (CIK 0001133470)",
+"total": 44
+},
+"CVH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1054833,
+"confirm": "accept",
+"confirm_name": "COVENTRY HEALTH CARE INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 8,
+"runner_docs": 8,
+"status": "resolved",
+"top_docs": 23,
+"top_name": "COVENTRY HEALTH CARE INC  (CIK 0001054833)",
+"total": 46
+},
+"CXO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1358071,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "CONCHO RESOURCES INC",
+"current_tickers": [],
+"former_names": [
+"CONCO RESOURCES INC"
+],
+"n_entities": 30,
+"runner_docs": 6,
+"status": "reject_no_name_corroboration",
+"top_docs": 15,
+"top_name": "CONCHO RESOURCES INC  (CIK 0001358071)",
+"total": 85
+},
+"CY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 60,
+"status": "no_dominant",
+"top_docs": 89,
+"top_name": "CORVEL CORP  (CRVL)  (CIK 0000874866)",
+"total": 1532
+},
+"CYH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1108109,
+"confirm": "accept",
+"confirm_name": "COMMUNITY HEALTH SYSTEMS INC",
+"current_tickers": [
+"CYH"
+],
+"former_names": [
+"COMMUNITY HEALTH SYSTEMS INC/"
+],
+"n_entities": 10,
+"runner_docs": 13,
+"status": "resolved",
+"top_docs": 59,
+"top_name": "COMMUNITY HEALTH SYSTEMS INC  (CYH)  (CIK 0001108109)",
+"total": 95
+},
+"CYM": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CYN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 13,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "AUSCRETE Corp  (ASCK)  (CIK 0001492091)",
+"total": 25
+},
+"CYR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"CYT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 912513,
+"confirm": "accept",
+"confirm_name": "CYTEC INDUSTRIES INC/DE/",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 9,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 21,
+"top_name": "CYTEC INDUSTRIES INC/DE/  (CIK 0000912513)",
+"total": 40
+},
+"DAKT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 915779,
+"confirm": "reject_still_active",
+"confirm_name": "DAKTRONICS INC /SD/",
+"current_tickers": [
+"DAKT"
+],
+"former_names": [],
+"last_annual": "2026-06-24",
+"n_entities": 2,
+"runner_docs": 1,
+"status": "reject_still_active",
+"top_docs": 8,
+"top_name": "DAKTRONICS INC /SD/  (DAKT)  (CIK 0000915779)",
+"total": 9
+},
+"DALRQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "DELTA AIR LINES INC /DE/  (DAL)  (CIK 0000027904)",
+"total": 1
+},
+"DAY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 50,
+"status": "no_dominant",
+"top_docs": 51,
+"top_name": "Polestar Automotive Holding UK PLC  (PSNY, PLSAY, PSNYW)  (CIK 0001884082)",
+"total": 10000
+},
+"DBI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1319947,
+"confirm": "accept",
+"confirm_name": "Designer Brands Inc.",
+"current_tickers": [
+"DBI"
+],
+"former_names": [
+"Designer Brands Inc.",
+"DSW Inc."
+],
+"n_entities": 30,
+"runner_docs": 10,
+"status": "resolved",
+"top_docs": 29,
+"top_name": "Designer Brands Inc.  (DBI)  (CIK 0001319947)",
+"total": 117
+},
+"DCNAQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "DANA CORP  (DAN)  (CIK 0000026780)",
+"total": 1
+},
+"DCT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 27,
+"runner_docs": 26,
+"status": "no_dominant",
+"top_docs": 26,
+"top_name": "DCT Industrial Operating Partnership LP  (CIK 0001604042)",
+"total": 78
+},
+"DDD": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 910638,
+"confirm": "accept",
+"confirm_name": "3D SYSTEMS CORP",
+"current_tickers": [
+"DDD"
+],
+"former_names": [
+"3D SYSTEMS CORP",
+"3 D SYSTEMS CORP"
+],
+"n_entities": 30,
+"runner_docs": 23,
+"status": "resolved",
+"top_docs": 69,
+"top_name": "3D SYSTEMS CORP  (DDD)  (CIK 0000910638)",
+"total": 796
+},
+"DDR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 894315,
+"confirm": "reject_live_mismatch",
+"confirm_name": "SITE Centers Corp.",
+"current_tickers": [
+"SITC"
+],
+"former_names": [
+"DDR CORP",
+"DEVELOPERS DIVERSIFIED REALTY CORP",
+"DEVELOPERS DIVERSIFIED REALTY"
+],
+"n_entities": 30,
+"runner_docs": 6,
+"status": "reject_live_mismatch",
+"top_docs": 28,
+"top_name": "DEVELOPERS DIVERSIFIED REALTY CORP  (SITC, SITC-PA)  (CIK 0000894315)",
+"total": 191
+},
+"DDS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 46,
+"status": "no_dominant",
+"top_docs": 47,
+"top_name": "DILLARDS INC  (DDS, DDT)  (CIK 0000028917)",
+"total": 877
+},
+"DEC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"DF": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 33,
+"status": "no_dominant",
+"top_docs": 61,
+"top_name": "DEAN FOODS CO  (CIK 0000931336)",
+"total": 974
+},
+"DFS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 39,
+"status": "no_dominant",
+"top_docs": 89,
+"top_name": "Discover Financial Services  (DFS)  (CIK 0001393612)",
+"total": 1417
+},
+"DGN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"DHC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 16,
+"top_name": "Discovery Communications, Inc.  (WBD)  (CIK 0001437107)",
+"total": 252
+},
+"DI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"DIGI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"DIN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 49754,
+"confirm": "accept",
+"confirm_name": "Dine Brands Global, Inc.",
+"current_tickers": [
+"DIN"
+],
+"former_names": [
+"DineEquity, Inc",
+"IHOP CORP"
+],
+"n_entities": 30,
+"runner_docs": 8,
+"status": "resolved",
+"top_docs": 52,
+"top_name": "Dine Brands Global, Inc.  (DIN)  (CIK 0000049754)",
+"total": 453
+},
+"DISCA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 8,
+"runner_docs": 14,
+"status": "no_dominant",
+"top_docs": 25,
+"top_name": "Discovery Communications, Inc.  (WBD)  (CIK 0001437107)",
+"total": 54
+},
+"DISCK": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "Discovery Communications, Inc.  (WBD)  (CIK 0001437107)",
+"total": 10
+},
+"DISH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 56,
+"status": "no_dominant",
+"top_docs": 58,
+"top_name": "DISH Network CORP  (CIK 0001001082)",
+"total": 1069
+},
+"DJ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1157972,
+"confirm": "accept",
+"confirm_name": "DJO Opco Holdings, Inc.",
+"current_tickers": [],
+"former_names": [
+"DJO INC",
+"DJ ORTHOPEDICS INC"
+],
+"n_entities": 30,
+"runner_docs": 11,
+"status": "resolved",
+"top_docs": 36,
+"top_name": "DJ ORTHOPEDICS INC  (CIK 0001157972)",
+"total": 534
+},
+"DLPH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "Delphi Technologies PLC  (CIK 0001707092)",
+"total": 11
+},
+"DNB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 713671,
+"confirm": "accept",
+"confirm_name": "DNB FINANCIAL CORP /PA/",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 27,
+"status": "resolved",
+"top_docs": 89,
+"top_name": "DNB FINANCIAL CORP /PA/  (CIK 0000713671)",
+"total": 1318
+},
+"DNKN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1357204,
+"confirm": "accept",
+"confirm_name": "DUNKIN' BRANDS GROUP, INC.",
+"current_tickers": [],
+"former_names": [
+"DUNKIN' BRANDS GROUP HOLDINGS, INC.",
+"DUNKIN BRANDS GROUP HOLDINGS, INC",
+"DUNKIN BRANDS GROUP HOLDINGS INC"
+],
+"n_entities": 2,
+"runner_docs": 1,
+"status": "resolved",
+"top_docs": 33,
+"top_name": "DUNKIN' BRANDS GROUP, INC.  (CIK 0001357204)",
+"total": 34
+},
+"DNR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 945764,
+"confirm": "reject_still_active",
+"confirm_name": "DENBURY INC",
+"current_tickers": [],
+"former_names": [
+"DENBURY RESOURCES INC"
+],
+"last_annual": "2023-02-23",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "reject_still_active",
+"top_docs": 86,
+"top_name": "DENBURY RESOURCES INC  (CIK 0000945764)",
+"total": 316
+},
+"DO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 552,
+"status": "no_dominant",
+"top_docs": 553,
+"top_name": "PECO ENERGY CO  (CIK 0000078100)",
+"total": 10000
+},
+"DOUG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "Equinox Gold Corp.  (EQX)  (CIK 0001756607)",
+"total": 522
+},
+"DPHIQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "DELPHI CORP  (CIK 0001072342)",
+"total": 1
+},
+"DPLO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "BBCMS Mortgage Trust 2019-C5  (CIK 0001790441)",
+"total": 287
+},
+"DRC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 18,
+"status": "no_dominant",
+"top_docs": 25,
+"top_name": "Dresser-Rand Group Inc.  (CIK 0001316656)",
+"total": 805
+},
+"DRE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 12,
+"status": "no_dominant",
+"top_docs": 21,
+"top_name": "DUKE REALTY CORP  (CIK 0000783280)",
+"total": 246
+},
+"DRQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1042893,
+"confirm": "reject_live_mismatch",
+"confirm_name": "Innovex International, Inc.",
+"current_tickers": [
+"INVX"
+],
+"former_names": [
+"Innovex International, Inc.",
+"DRIL-QUIP INC"
+],
+"n_entities": 5,
+"runner_docs": 3,
+"status": "reject_live_mismatch",
+"top_docs": 69,
+"top_name": "DRIL-QUIP INC  (DRQ)  (CIK 0001042893)",
+"total": 76
+},
+"DSPG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 9,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "DSP GROUP INC /DE/  (CIK 0000915778)",
+"total": 21
+},
+"DST": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 714603,
+"confirm": "accept",
+"confirm_name": "DST SYSTEMS INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 11,
+"status": "resolved",
+"top_docs": 76,
+"top_name": "DST SYSTEMS INC  (CIK 0000714603)",
+"total": 838
+},
+"DTV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 17,
+"status": "no_dominant",
+"top_docs": 34,
+"top_name": "DIRECTV  (CIK 0001465112)",
+"total": 564
+},
+"DVAX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1029142,
+"confirm": "accept",
+"confirm_name": "DYNAVAX TECHNOLOGIES CORP",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 5,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 25,
+"top_name": "DYNAVAX TECHNOLOGIES CORP  (DVAX)  (CIK 0001029142)",
+"total": 30
+},
+"DWA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1297401,
+"confirm": "accept",
+"confirm_name": "DreamWorks Animation, LLC",
+"current_tickers": [],
+"former_names": [
+"DreamWorks Animation SKG, Inc.",
+"DreamWorks Animation, Inc."
+],
+"n_entities": 21,
+"runner_docs": 8,
+"status": "resolved",
+"top_docs": 43,
+"top_name": "DreamWorks Animation SKG, Inc.  (CIK 0001297401)",
+"total": 95
+},
+"DWD": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"DWDP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "DUPONT E I DE NEMOURS & CO  (CTA-PA, CTA-PB)  (CIK 0000030554)",
+"total": 6
+},
+"DYN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "EMCOR GROUP INC  (EME)  (CIK 0000105634)",
+"total": 157
+},
+"EBIX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 814549,
+"confirm": "accept",
+"confirm_name": "EBIX INC",
+"current_tickers": [],
+"former_names": [
+"EBIX COM INC",
+"DELPHI INFORMATION SYSTEMS INC /DE/"
+],
+"n_entities": 15,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 42,
+"top_name": "EBIX INC  (EBIXQ)  (CIK 0000814549)",
+"total": 65
+},
+"EBS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "Emergent BioSolutions Inc.  (EBS)  (CIK 0001367644)",
+"total": 238
+},
+"EC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 16,
+"status": "no_dominant",
+"top_docs": 22,
+"top_name": "SCOTTISH POWER PLC  (CIK 0001045513)",
+"total": 2576
+},
+"ECH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"ECHO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 16,
+"top_name": "Echo Global Logistics, Inc.  (CIK 0001426945)",
+"total": 435
+},
+"ECO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"ECOL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1783400,
+"confirm": "accept",
+"confirm_name": "US Ecology, Inc.",
+"current_tickers": [],
+"former_names": [
+"US Ecology Parent, Inc."
+],
+"n_entities": 30,
+"runner_docs": 7,
+"status": "resolved",
+"top_docs": 26,
+"top_name": "US Ecology, Inc.  (CIK 0001783400)",
+"total": 117
+},
+"EDR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 6,
+"status": "no_dominant",
+"top_docs": 8,
+"top_name": "ENDEAVOUR SILVER CORP  (EXK)  (CIK 0001277866)",
+"total": 65
+},
+"EDS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1007456,
+"confirm": "accept",
+"confirm_name": "ELECTRONIC DATA SYSTEMS CORP /DE/",
+"current_tickers": [],
+"former_names": [
+"ELECTRONIC DATA SYSTEMS HOLDING CORP"
+],
+"n_entities": 30,
+"runner_docs": 20,
+"status": "resolved",
+"top_docs": 83,
+"top_name": "ELECTRONIC DATA SYSTEMS CORP /DE/  (CIK 0001007456)",
+"total": 1981
+},
+"EE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 14,
+"status": "no_dominant",
+"top_docs": 18,
+"top_name": "GOLDMAN SACHS GROUP INC  (GS, GSCE, GS-PA, GS-PC, GS-PD)  (CIK 0000886982)",
+"total": 1298
+},
+"EFU": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 1,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "COHO ENERGY INC  (CIK 0000908797)",
+"total": 1
+},
+"EGHT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1023731,
+"confirm": "accept",
+"confirm_name": "8X8 INC /DE/",
+"current_tickers": [
+"EGHT"
+],
+"former_names": [
+"NETERGY NETWORKS INC",
+"8X8 INC"
+],
+"n_entities": 3,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 10,
+"top_name": "8X8 INC /DE/  (EGHT)  (CIK 0001023731)",
+"total": 14
+},
+"EGOV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1065332,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "NIC INC",
+"current_tickers": [],
+"former_names": [
+"NATIONAL INFORMATION CONSORTIUM",
+"NATIONAL INFORMATION CONSORTIUM INC"
+],
+"n_entities": 2,
+"runner_docs": 4,
+"status": "reject_no_name_corroboration",
+"top_docs": 19,
+"top_name": "NIC INC  (CIK 0001065332)",
+"total": 23
+},
+"EGRX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 827871,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "EAGLE PHARMACEUTICALS, INC.",
+"current_tickers": [],
+"former_names": [
+"EAGLE PHARMACEUTICALS INC"
+],
+"n_entities": 4,
+"runner_docs": 1,
+"status": "reject_no_name_corroboration",
+"top_docs": 6,
+"top_name": "EAGLE PHARMACEUTICALS, INC.  (EGRX)  (CIK 0000827871)",
+"total": 9
+},
+"EHAB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 5,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "Enhabit, Inc.  (EHAB)  (CIK 0001803737)",
+"total": 16
+},
+"EHTH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 5,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 6,
+"top_name": "Digital Media Solutions, Inc.  (DMSL)  (CIK 0001725134)",
+"total": 14
+},
+"EKDKQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"ELME": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 104894,
+"confirm": "accept",
+"confirm_name": "Elme Communities",
+"current_tickers": [
+"ELME"
+],
+"former_names": [
+"WASHINGTON REAL ESTATE INVESTMENT TRUST"
+],
+"n_entities": 12,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 49,
+"top_name": "Elme Communities  (ELME)  (CIK 0000104894)",
+"total": 62
+},
+"ELY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "CALLAWAY GOLF CO  (MODG)  (CIK 0000837465)",
+"total": 358
+},
+"EMC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 170,
+"status": "no_dominant",
+"top_docs": 192,
+"top_name": "EMC INSURANCE GROUP INC  (CIK 0000356130)",
+"total": 5677
+},
+"ENDP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1593034,
+"confirm": "accept",
+"confirm_name": "Endo International plc",
+"current_tickers": [],
+"former_names": [
+"Endo International Ltd"
+],
+"n_entities": 13,
+"runner_docs": 3,
+"status": "resolved",
+"top_docs": 13,
+"top_name": "Endo International plc  (CIK 0001593034)",
+"total": 30
+},
+"ENH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 9,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "SASOL LTD  (SSL, SASOF)  (CIK 0000314590)",
+"total": 17
+},
+"ENRNQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"ENV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 22,
+"top_name": "ENVESTNET, INC.  (ENV)  (CIK 0001337619)",
+"total": 159
+},
+"EOP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 21,
+"status": "no_dominant",
+"top_docs": 30,
+"top_name": "EOP OPERATING LTD PARTNERSHIP  (CIK 0001043866)",
+"total": 488
+},
+"EP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 39,
+"status": "no_dominant",
+"top_docs": 63,
+"top_name": "EL PASO CORP/DE  (CIK 0001066107)",
+"total": 2684
+},
+"EPAY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 17,
+"runner_docs": 7,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "BOTTOMLINE TECHNOLOGIES INC /DE/  (CIK 0001073349)",
+"total": 47
+},
+"EQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 9,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "GREAT BASIN GOLD LTD  (CIK 0000865492)",
+"total": 292
+},
+"EQY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1042810,
+"confirm": "accept",
+"confirm_name": "EQUITY ONE, INC.",
+"current_tickers": [],
+"former_names": [
+"EQUITY ONE INC"
+],
+"n_entities": 5,
+"runner_docs": 11,
+"status": "resolved",
+"top_docs": 42,
+"top_name": "EQUITY ONE, INC.  (CIK 0001042810)",
+"total": 55
+},
+"ESRX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 6,
+"runner_docs": 30,
+"status": "no_dominant",
+"top_docs": 51,
+"top_name": "Express Scripts Holding Co.  (CIK 0001532063)",
+"total": 85
+},
+"ESV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 314808,
+"confirm": "reject_live_mismatch",
+"confirm_name": "Valaris Ltd",
+"current_tickers": [
+"VAL",
+"VAL-WT"
+],
+"former_names": [
+"Valaris plc",
+"Ensco Rowan plc",
+"Ensco plc",
+"Ensco International plc",
+"ENSCO INTERNATIONAL INC",
+"ENERGY SERVICE COMPANY INC"
+],
+"n_entities": 22,
+"runner_docs": 12,
+"status": "reject_live_mismatch",
+"top_docs": 58,
+"top_name": "Ensco plc  (VAL, VAL-WT)  (CIK 0000314808)",
+"total": 123
+},
+"ETRN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1747009,
+"confirm": "accept",
+"confirm_name": "Midstream Co LLC",
+"current_tickers": [],
+"former_names": [
+"Equitrans Midstream Corp"
+],
+"n_entities": 8,
+"runner_docs": 5,
+"status": "resolved",
+"top_docs": 17,
+"top_name": "Equitrans Midstream Corp  (EQTNP)  (CIK 0001747009)",
+"total": 35
+},
+"ETS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "EDISON INTERNATIONAL  (EIX)  (CIK 0000827052)",
+"total": 40
+},
+"EV": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1361937,
+"confirm": "accept",
+"confirm_name": "Harvest Oil & Gas Corp.",
+"current_tickers": [],
+"former_names": [
+"EV Energy Partners, LP"
+],
+"n_entities": 30,
+"runner_docs": 16,
+"status": "resolved",
+"top_docs": 76,
+"top_name": "EV Energy Partners, LP  (CIK 0001361937)",
+"total": 2062
+},
+"EVHC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 3,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 3,
+"top_name": "Envision Healthcare Corp  (CIK 0001678531)",
+"total": 6
+},
+"EXPI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 13,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 26,
+"top_name": "eXp World Holdings, Inc.  (EXPI)  (CIK 0001495932)",
+"total": 55
+},
+"EXPR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 7,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 5,
+"top_name": "ESTEE LAUDER COMPANIES INC  (EL)  (CIK 0001001250)",
+"total": 17
+},
+"EXTN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1635881,
+"confirm": "accept",
+"confirm_name": "Exterran Corp",
+"current_tickers": [],
+"former_names": [
+"Exterran SpinCo, Inc."
+],
+"n_entities": 5,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 27,
+"top_name": "Exterran Corp  (CIK 0001635881)",
+"total": 34
+},
+"FARO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 917491,
+"confirm": "accept",
+"confirm_name": "FARO TECHNOLOGIES INC",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 11,
+"status": "resolved",
+"top_docs": 46,
+"top_name": "FARO TECHNOLOGIES INC  (FARO)  (CIK 0000917491)",
+"total": 134
+},
+"FB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 52,
+"status": "no_dominant",
+"top_docs": 67,
+"top_name": "Facebook Inc  (META)  (CIK 0001326801)",
+"total": 2843
+},
+"FBC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 20,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 9,
+"top_name": "FARMER BROTHERS CO  (FARM)  (CIK 0000034563)",
+"total": 61
+},
+"FBF": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 50341,
+"confirm": "accept",
+"confirm_name": "FLEETBOSTON FINANCIAL CORP",
+"current_tickers": [],
+"former_names": [
+"FLEET BOSTON CORP",
+"FLEET FINANCIAL GROUP INC",
+"FLEET FINANCIAL GROUP INC /RI/"
+],
+"n_entities": 6,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 7,
+"top_name": "FLEETBOSTON FINANCIAL CORP  (CIK 0000050341)",
+"total": 14
+},
+"FBHS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 1519751,
+"confirm": "reject_live_mismatch",
+"confirm_name": "Fortune Brands Innovations, Inc.",
+"current_tickers": [
+"FBIN"
+],
+"former_names": [
+"Fortune Brands Home & Security, Inc.",
+"Fortune Brands Home & Security LLC"
+],
+"n_entities": 3,
+"runner_docs": 8,
+"status": "reject_live_mismatch",
+"top_docs": 52,
+"top_name": "Fortune Brands Home & Security, Inc.  (FBIN)  (CIK 0001519751)",
+"total": 63
+},
+"FBM": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 9,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "Foundation Building Materials, Inc.  (CIK 0001688941)",
+"total": 19
+},
+"FBO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"FCS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 14,
+"top_name": "HIGHWATER ETHANOL LLC  (CIK 0001371451)",
+"total": 203
+},
+"FDC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 24,
+"top_name": "FIRST DATA CORP  (CIK 0000883980)",
+"total": 825
+},
+"FDO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 26,
+"runner_docs": 34,
+"status": "no_dominant",
+"top_docs": 42,
+"top_name": "FAMILY DOLLAR STORES INC  (CIK 0000034408)",
+"total": 110
+},
+"FF": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 18,
+"top_name": "GOLDMAN SACHS GROUP INC  (GS, GSCE, GS-PA, GS-PC, GS-PD)  (CIK 0000886982)",
+"total": 6070
+},
+"FI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 12,
+"top_name": "DR REDDYS LABORATORIES LTD  (RDY)  (CIK 0001135951)",
+"total": 1934
+},
+"FII": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 19,
+"status": "no_dominant",
+"top_docs": 43,
+"top_name": "FEDERATED INVESTORS INC /PA/  (FHI)  (CIK 0001056288)",
+"total": 321
+},
+"FJ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 3,
+"runner_docs": 1,
+"status": "no_dominant",
+"top_docs": 1,
+"top_name": "CABLETRON SYSTEMS INC  (CIK 0000846909)",
+"total": 3
+},
+"FL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 46,
+"status": "no_dominant",
+"top_docs": 67,
+"top_name": "DARDEN RESTAURANTS INC  (DRI)  (CIK 0000940944)",
+"total": 10000
+},
+"FLGT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1674930,
+"confirm": "accept",
+"confirm_name": "Fulgent Genetics, Inc.",
+"current_tickers": [
+"FLGT"
+],
+"former_names": [
+"Fulgent Diagnostics, Inc."
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 52,
+"top_name": "Fulgent Genetics, Inc.  (FLGT)  (CIK 0001674930)",
+"total": 52
+},
+"FLMIQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"FLOW": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 18,
+"status": "no_dominant",
+"top_docs": 19,
+"top_name": "AMERICAN TOWER CORP /MA/  (AMT)  (CIK 0001053507)",
+"total": 10000
+},
+"FLT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 8,
+"status": "no_dominant",
+"top_docs": 10,
+"top_name": "FLEETCOR TECHNOLOGIES INC  (CPAY)  (CIK 0001175454)",
+"total": 108
+},
+"FLTWQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"FMBI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 4,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "FIRST MIDWEST BANCORP INC  (CIK 0000702325)",
+"total": 9
+},
+"FMCC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 24,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "CONNECTICUT LIGHT & POWER CO  (CNLHN, CNLHO, CNLHP, CNLPL, CNLPM, CNLTL, CNLTN, CNLTP, CNPWM, CNPWP, CNTHN, CNTHO, CNTHP)  (CIK 0000023426)",
+"total": 71
+},
+"FMER": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 7,
+"runner_docs": 5,
+"status": "no_dominant",
+"top_docs": 7,
+"top_name": "FIRST MARBLEHEAD CORP  (CIK 0001262279)",
+"total": 21
+},
+"FMY": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"FNFG": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1051741,
+"confirm": "accept",
+"confirm_name": "FIRST NIAGARA FINANCIAL GROUP INC",
+"current_tickers": [],
+"former_names": [
+"NIAGARA BANCORP INC"
+],
+"n_entities": 7,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 9,
+"top_name": "FIRST NIAGARA FINANCIAL GROUP INC  (CIK 0001051741)",
+"total": 16
+},
+"FNMA": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 15,
+"status": "no_dominant",
+"top_docs": 15,
+"top_name": "CASCADE FINANCIAL CORP  (CIK 0000928911)",
+"total": 4986
+},
+"FOE": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 35214,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "FERRO CORP",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 4,
+"status": "reject_no_name_corroboration",
+"top_docs": 20,
+"top_name": "FERRO CORP  (CIK 0000035214)",
+"total": 66
+},
+"FORR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1023313,
+"confirm": "accept",
+"confirm_name": "FORRESTER RESEARCH, INC.",
+"current_tickers": [
+"FORR"
+],
+"former_names": [
+"FORRESTER RESEARCH INC"
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 50,
+"top_name": "FORRESTER RESEARCH, INC.  (FORR)  (CIK 0001023313)",
+"total": 50
+},
+"FOSL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 883569,
+"confirm": "accept",
+"confirm_name": "Fossil Group, Inc.",
+"current_tickers": [
+"FOSL"
+],
+"former_names": [
+"FOSSIL INC",
+"FOSSIL INCORPORATED"
+],
+"n_entities": 6,
+"runner_docs": 2,
+"status": "resolved",
+"top_docs": 78,
+"top_name": "Fossil Group, Inc.  (FOSL, FOSLL)  (CIK 0000883569)",
+"total": 85
+},
+"FPC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 18,
+"runner_docs": 2,
+"status": "no_dominant",
+"top_docs": 2,
+"top_name": "3333 HOLDING CORP  (CIK 0000818762)",
+"total": 14
+},
+"FRC": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 13,
+"status": "no_dominant",
+"top_docs": 19,
+"top_name": "Atlanticus Holdings Corp  (ATLC, ATLCL, ATLCP, ATLCZ)  (CIK 0001464343)",
+"total": 315
+},
+"FRGI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1534992,
+"confirm": "accept",
+"confirm_name": "Fiesta Restaurant Group, Inc.",
+"current_tickers": [],
+"former_names": [],
+"n_entities": 4,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 35,
+"top_name": "Fiesta Restaurant Group, Inc.  (CIK 0001534992)",
+"total": 43
+},
+"FRO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"FRX": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 24,
+"runner_docs": 11,
+"status": "no_dominant",
+"top_docs": 13,
+"top_name": "EPICOR SOFTWARE CORP  (CIK 0000891178)",
+"total": 75
+},
+"FSB": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 19,
+"status": "no_dominant",
+"top_docs": 24,
+"top_name": "Sequoia Mortgage Trust 2013-1  (CIK 0001563531)",
+"total": 741
+},
+"FSH": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 24,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "Aeterna Zentaris Inc.  (CSCI)  (CIK 0001113423)",
+"total": 40
+},
+"FSL": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 9,
+"runner_docs": 3,
+"status": "no_dominant",
+"top_docs": 4,
+"top_name": "ROYAL & SUN ALLIANCE INSURANCE GROUP PLC  (CIK 0001126313)",
+"total": 18
+},
+"FSP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1031316,
+"confirm": "accept",
+"confirm_name": "FRANKLIN STREET PROPERTIES CORP /MA/",
+"current_tickers": [
+"FSP"
+],
+"former_names": [
+"FRANKLIN STREET PARTNERS LP"
+],
+"n_entities": 30,
+"runner_docs": 7,
+"status": "resolved",
+"top_docs": 36,
+"top_name": "FRANKLIN STREET PROPERTIES CORP /MA/  (FSP)  (CIK 0001031316)",
+"total": 174
+},
+"FST": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 38079,
+"confirm": "accept",
+"confirm_name": "SABINE OIL & GAS CORP",
+"current_tickers": [],
+"former_names": [
+"FOREST OIL CORP"
+],
+"n_entities": 16,
+"runner_docs": 4,
+"status": "resolved",
+"top_docs": 33,
+"top_name": "FOREST OIL CORP  (CIK 0000038079)",
+"total": 57
+},
+"FTL-A": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"note": "delisted before EDGAR full-text coverage (2001)",
+"status": "out_of_range"
+},
+"FTR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 32,
+"status": "no_dominant",
+"top_docs": 70,
+"top_name": "FRONTIER COMMUNICATIONS CORP  (FYBR)  (CIK 0000020520)",
+"total": 630
+},
+"FWLT": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"FYBR": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"candidate_cik": 20520,
+"confirm": "reject_no_name_corroboration",
+"confirm_name": "Frontier Communications Parent, Inc.",
+"current_tickers": [],
+"former_names": [
+"FRONTIER COMMUNICATIONS CORP",
+"CITIZENS COMMUNICATIONS CO",
+"CITIZENS UTILITIES CO"
+],
+"n_entities": 2,
+"runner_docs": 2,
+"status": "reject_no_name_corroboration",
+"top_docs": 22,
+"top_name": "Frontier Communications Parent, Inc.  (FYBR)  (CIK 0000020520)",
+"total": 24
+},
+"GAPTQ": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 0,
+"runner_docs": 0,
+"status": "no_dominant",
+"top_docs": 0,
+"total": 0
+},
+"GAS": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 218,
+"status": "no_dominant",
+"top_docs": 223,
+"top_name": "CARRIZO OIL & GAS INC  (CIK 0001040593)",
+"total": 10000
+},
+"GCI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 14,
+"status": "no_dominant",
+"top_docs": 26,
+"top_name": "Gannett Co., Inc.  (GCI)  (CIK 0001579684)",
+"total": 186
+},
+"GCO": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 18498,
+"confirm": "accept",
+"confirm_name": "GENESCO INC",
+"current_tickers": [
+"GCO"
+],
+"former_names": [],
+"n_entities": 30,
+"runner_docs": 10,
+"status": "resolved",
+"top_docs": 39,
+"top_name": "GENESCO INC  (GCO)  (CIK 0000018498)",
+"total": 126
+},
+"GCP": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 30,
+"runner_docs": 10,
+"status": "no_dominant",
+"top_docs": 22,
+"top_name": "GCP Applied Technologies Inc.  (CIK 0001644440)",
+"total": 4630
+},
+"GDEN": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"cik": 1071255,
+"confirm": "accept",
+"confirm_name": "NEW ROYAL HOLDCO I INC.",
+"current_tickers": [
+"GDEN"
+],
+"former_names": [
+"GOLDEN ENTERTAINMENT, INC.",
+"LAKES ENTERTAINMENT INC",
+"LAKES GAMING INC"
+],
+"n_entities": 1,
+"runner_docs": 0,
+"status": "resolved",
+"top_docs": 5,
+"top_name": "GOLDEN ENTERTAINMENT, INC.  (GDEN)  (CIK 0001071255)",
+"total": 5
+},
+"GDI": {
+"attempted_utc": "2026-07-25T15:06:50.235818+00:00",
+"n_entities": 13,
+"runner_docs": 4,
+"status": "no_dominant",
+"top_docs": 6,
+"top_name": "GREEN DRAGON WOOD PRODUCTS, INC.  (CIK 0001417172)",
+"total": 34
 }
 }

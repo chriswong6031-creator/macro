@@ -1,0 +1,19 @@
+{
+ "schema": "mag7_washout_shadow.v1",
+ "as_of": "2026-07-24",
+ "open_positions": [],
+ "book": {
+  "rows": 0,
+  "gauntlet_rows": 0,
+  "gauntlet_hits": 0,
+  "gauntlet_fails": 0,
+  "timing": {
+   "called_low": 0,
+   "confirmed_reset": 0,
+   "early": 0,
+   "within_5": 0
+  }
+ },
+ "confluence_stamped": 0,
+ "note": "shadow tier (MWR §7 W1a/W1d) — measurement only; never gates, ranks, or alters any decision; §4 Use-B stays un-ratified"
+}
