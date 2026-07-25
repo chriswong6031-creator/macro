@@ -717,6 +717,65 @@ _SSE_BRAIN_HEADERS = {
     "X-Accel-Buffering": "no",
 }
 
+# Idle-cull guard for the brain SSE stream.
+#
+# The brain generator has long DEAD-AIR gaps with zero bytes on the wire: the
+# blocking tool-calling turns (the model thinks for 10-15s before the first
+# `tool` event) and — the big one — synthesis, which is BUFFERED server-side
+# (the advice-filter must run on the full answer before any delta can be sent),
+# so a slow model (a DeepSeek fallback, a long research report) can go 40-60s
+# without emitting a single byte. An idle SSE socket that quiet gets culled by a
+# proxy / the browser / an intermediate → the widget sees the stream end with no
+# delta and shows "The reply didn't make it through." (the tape websocket already
+# ships a 20s heartbeat for exactly this reason — see app/tape.py).
+#
+# _sse_keepalive wraps the generator: it runs the source in a thread feeding a
+# queue and emits an SSE COMMENT (`: keepalive`, ignored by the EventSource
+# parser but real bytes on the socket) whenever no event arrives within the
+# interval. It ALSO converts an unexpected source exception into a degraded
+# delta+done so the client never sees a bare mid-stream connection drop.
+_BRAIN_KEEPALIVE_INTERVAL_S = 12.0
+
+
+def _sse_keepalive(source, interval: float = _BRAIN_KEEPALIVE_INTERVAL_S):
+    """Yield from `source`, injecting `: keepalive` comments during dead-air gaps."""
+    import queue as _queue  # noqa: PLC0415
+
+    q: "_queue.Queue" = _queue.Queue()
+    _DONE = object()
+
+    def _pump():
+        try:
+            for item in source:
+                q.put(item)
+        except Exception as exc:  # noqa: BLE001 — surfaced as a degraded turn below
+            q.put(("__brain_exc__", exc))
+        finally:
+            q.put(_DONE)
+
+    threading.Thread(target=_pump, name="brain-sse-pump", daemon=True).start()
+    while True:
+        try:
+            item = q.get(timeout=interval)
+        except Exception:  # queue.Empty → dead air; keep the socket warm  # noqa: BLE001
+            yield ": keepalive\n\n"
+            continue
+        if item is _DONE:
+            return
+        if isinstance(item, tuple) and len(item) == 2 and item[0] == "__brain_exc__":
+            # The generator died before finishing — emit a visible degraded reply
+            # + done instead of dropping the connection with no delta.
+            import logging as _logging  # noqa: PLC0415
+            _logging.getLogger(__name__).warning("brain_stream: generator failed (%s)", item[1])
+            try:
+                from engine.neuralweb.brain_gateway import _DEGRADED_USER_MSG as _msg  # noqa: PLC0415
+            except Exception:  # noqa: BLE001
+                _msg = "The AI assistant is temporarily unavailable. Please try again in a moment."
+            yield f"data: {json.dumps({'type': 'delta', 'text': _msg})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
+            return
+        yield item
+
 
 def _brain_module():
     """Lazy import brain_gateway; raises HTTP 503 if unavailable."""
@@ -993,7 +1052,10 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             guest_ip=guest_ip,
         )
 
-    return StreamingResponse(_gen(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
+    # _sse_keepalive keeps the socket warm through the brain's dead-air gaps
+    # (blocking tool turns + buffered synthesis) so a slow answer is never culled
+    # to a blank "reply didn't make it through".
+    return StreamingResponse(_sse_keepalive(_gen()), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
 
 
 @app.get("/api/brain/me")

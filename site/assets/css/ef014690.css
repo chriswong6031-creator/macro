@@ -190,6 +190,14 @@
   .ssx-chip.stale{ color:var(--warn,#e0a63a); background:color-mix(in srgb,var(--warn,#e0a63a) 13%,transparent); border-color:color-mix(in srgb,var(--warn,#e0a63a) 32%,transparent); }
   .ssx-chip.missing{ color:var(--ink-3); background:var(--q-dim); border-color:var(--gl-bd); }
   .ssx-asof{ font-size:10.5px; color:var(--ink-3); flex:0 0 auto; }
+  /* Phone: the head is title + chips + a full sentence, which cannot share one
+     335px row — the glance line was already overflowing its squeezed flex box
+     before the gate pill joined it. Drop the sentence to its own line. */
+  @media(max-width:640px){
+    .ssx-sec{ flex-wrap:wrap; row-gap:5px; }
+    .ssx-sec h2{ flex:1 1 auto; }
+    .ssx-sec .sh-stance{ flex:1 0 100%; order:5; }
+  }
 
   /* ── event rows (the workhorse) ── */
   .ssx-row{ display:flex; align-items:flex-start; gap:12px; padding:11px 0; border-bottom:1px solid var(--hair); }
@@ -220,6 +228,16 @@
   .ssx-lg{ font-size:8.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
     color:var(--e); background:var(--e-dim); border:1px solid color-mix(in srgb,var(--e) 32%,transparent); white-space:nowrap; }
   .ssx-pdf{ font-size:10.5px; color:var(--link); white-space:nowrap; }
+  /* Phone: a ticker + a "supply event" flag + a countdown chip leave the note
+     column ~60px wide, which wraps it one word per line. Stack instead: chips on
+     the first line, the sentence full-width underneath. (Pre-existing on this
+     desk; it now fronts the free preview slice, so it has to read.) */
+  @media(max-width:640px){
+    .ssx-row{ flex-wrap:wrap; row-gap:6px; }
+    .ssx-row .rlead{ flex:0 1 auto; }
+    .ssx-row .rright{ margin-left:auto; }
+    .ssx-row .rbody{ flex:1 0 100%; order:3; }
+  }
   /* regime context chips (muted, neutral only) */
   .ssx-rg{ display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
   .ssx-rg span{ font-size:9px; font-weight:600; letter-spacing:.02em; padding:1px 6px; border-radius:5px;
@@ -278,4 +296,61 @@
     .ssx-card,.ssx-sec,.ssx-track{ animation:none; }
     .ssx-aurora .au-i{ animation:none; }
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     TIER GATE — preview shell only; hydration removes every trace.
+     The skeletons here are content-free BY CONSTRUCTION: this document never
+     receives the paid rows, so there is nothing to un-blur or read out of the
+     DOM. See docs/TIER_PREVIEW_PATTERN.md.
+     Palette note: the gate accent (violet) is deliberately outside the desk's
+     event-heat ramp — a commercial boundary is not a severity reading, and must
+     never be mistaken for one.
+     ══════════════════════════════════════════════════════════════════════════ */
+  .ssx-gpill{ font-size:8.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; white-space:nowrap; flex:0 0 auto;
+    color:#9b7ff0; background:color-mix(in srgb,#9b7ff0 13%,transparent);
+    border:1px solid color-mix(in srgb,#9b7ff0 34%,transparent); }
+  [data-theme="light"] .ssx-gpill{ color:#6d4fd0; background:color-mix(in srgb,#6d4fd0 10%,transparent);
+    border-color:color-mix(in srgb,#6d4fd0 26%,transparent); }
+
+  /* skeletons */
+  @keyframes ssxGh{ 0%,100%{ opacity:.4 } 50%{ opacity:.85 } }
+  .gh{ display:block; border-radius:6px; background:linear-gradient(90deg,var(--gl-bd),color-mix(in srgb,var(--gl-bd) 35%,transparent));
+    animation:ssxGh 2.4s ease-in-out infinite; }
+  [data-theme="light"] .gh{ background:linear-gradient(90deg,rgba(0,0,0,.09),rgba(0,0,0,.04)); }
+  @media(prefers-reduced-motion:reduce){ .gh{ animation:none; } }
+  .ssx-ghrow{ display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid var(--hair); }
+  .ssx-ghrow:last-child{ border-bottom:none; }
+  .ssx-ghrow .gh-tkr{ width:58px; height:20px; border-radius:8px; flex:0 0 auto; }
+  .ssx-ghrow .gh-line{ height:10px; flex:1; min-width:0; }
+  .ssx-ghrow .gh-line.short{ flex:0 0 22%; }
+  .ssx-ghrow .gh-cd{ width:56px; height:18px; border-radius:8px; flex:0 0 auto; }
+
+  /* the note that explains the preview, directly under the hero */
+  .ssx-gnote{ display:flex; align-items:flex-start; gap:9px; margin:0 0 14px; padding:11px 14px; border-radius:13px;
+    font-size:12.5px; line-height:1.5; color:var(--ink-2);
+    background:color-mix(in srgb,#9b7ff0 7%,transparent); border:1px solid color-mix(in srgb,#9b7ff0 22%,transparent); }
+  .ssx-gnote svg{ width:14px; height:14px; flex:none; margin-top:2px; color:#9b7ff0; }
+  [data-theme="light"] .ssx-gnote svg{ color:#6d4fd0; }
+
+  /* the wall */
+  .ssx-wall{ text-align:center; padding:30px 28px 26px; border-radius:20px; margin:22px 0 4px;
+    background:var(--gl-bg); border:1px solid color-mix(in srgb,#9b7ff0 24%,var(--gl-bd));
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:var(--gl-sh); }
+  .ssx-wall .wl-lock{ width:28px; height:28px; color:#9b7ff0; margin-bottom:12px; }
+  [data-theme="light"] .ssx-wall .wl-lock{ color:#6d4fd0; }
+  .ssx-wall .wl-h{ font-size:19px; font-weight:800; letter-spacing:-.02em; color:var(--ink-1); line-height:1.25; margin-bottom:9px; }
+  html[data-lang="zh"] .ssx-wall .wl-h{ letter-spacing:0; }
+  .ssx-wall .wl-p{ font-size:13px; line-height:1.6; color:var(--ink-2); max-width:52ch; margin:0 auto 18px; }
+  .ssx-wall .wl-acts{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ssx-wall .wl-btn{ display:inline-flex; align-items:center; justify-content:center; padding:11px 26px; border-radius:12px;
+    text-decoration:none; font-size:13.5px; font-weight:700; color:#fff;
+    background:linear-gradient(135deg,#5b9bf0,#9b7ff0); box-shadow:0 8px 22px -10px color-mix(in srgb,#9b7ff0 70%,transparent);
+    transition:transform .16s ease,box-shadow .2s ease; }
+  .ssx-wall .wl-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 28px -10px color-mix(in srgb,#9b7ff0 80%,transparent); }
+  @media(prefers-reduced-motion:reduce){ .ssx-wall .wl-btn{ transition:none; } }
+  .ssx-wall .wl-note{ font-size:11px; color:var(--ink-3); }
+  .ssx-wall .wl-signed{ margin-top:12px; font-size:12px; }
+  .ssx-wall .wl-signed a{ color:var(--link); }
+  @media(max-width:560px){ .ssx-wall{ padding:24px 18px 20px; } .ssx-wall .wl-h{ font-size:17px; } }
 
