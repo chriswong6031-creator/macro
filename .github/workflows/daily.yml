@@ -1126,6 +1126,11 @@ jobs:
             brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
             brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
             brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
+            # TXI W1: staged-cascade chain episode tracker. Runs AFTER build_transmission
+            # (reads data/transmission/latest.json + forex/regime latest.json + the parquet
+            # store). Display-only; nightly is the sole advancer of chain_episodes.jsonl.
+            # Cheap (<10s wall). No-ops gracefully when upstream artifacts are absent.
+            brun transmission_chains "TXI W1 — transmission chain episodes (run_transmission_chains)" scripts.run_transmission_chains
             brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
           }
           # cl_china / cl_hk MOVED to .github/workflows/asia-close.yml — rebuilt after the

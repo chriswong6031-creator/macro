@@ -455,6 +455,10 @@ lanes:
             - scripts.build_bonds
             - scripts.build_crossasset
             - scripts.build_transmission
+            # TXI W1: staged-cascade chain episode tracker — runs AFTER build_transmission
+            # (reads transmission/forex/regime latest.json + parquet store). Display-only,
+            # nightly-only forward-ledger advancer (NOT in the render lanes' cl_markets).
+            - scripts.run_transmission_chains
             - scripts.build_discovery
           cl_gex:
             - scripts.build_gex_board

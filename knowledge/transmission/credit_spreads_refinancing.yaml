@@ -1,0 +1,72 @@
+# TXI seed chain — credit spreads widen → refinancing-dependent cohort de-rate.
+# Seed list §7 ("credit spreads widen → refinancing-dependent smallcaps; HYG/LQD
+# collected"). Display-tier. HYG/LQD verified present in lib.store yahoo.
+chain: credit_spreads_refinancing
+rev: 0
+tier: hypothesis
+title:
+  en: "Credit spreads widen → refinancing-dependent cohort de-rate"
+  zh: "信用利差走阔 → 依赖再融资的板块下修"
+
+nodes:
+  spread_widen:
+    title: {en: "HY credit spreads widening", zh: "高收益信用利差走阔"}
+    src: yahoo
+    # No FRED HY-OAS series in lib.store here; the HYG/LQD PRICE RATIO is the collected,
+    # daily risk-appetite proxy (HYG = high-yield, LQD = investment-grade). A FALLING
+    # ratio = HY under-performing IG = spreads widening. 30d ≈ 22 trading days.
+    test: {series: "HYG", ratio: "LQD", metric: ratio_ret, window: 22, op: lt, value: -2.0}
+  refi_cohort_derate:
+    title: {en: "Refinancing-dependent cohort under-performing", zh: "依赖再融资的板块相对走弱"}
+    src: yahoo
+    # Small caps (IWM) are the most refinancing-/floating-rate-dependent listed cohort
+    # (Russell 2000 debt is shorter-dated + more floating than large-cap). RS vs SPY < 0
+    # over 63d. Per-name refinancing screen (debt maturity wall × weak coverage) is W2.
+    test: {series: "IWM", vs: "SPY", metric: rs, window: 63, op: lt, value: 0}
+
+hops:
+  - from: spread_widen
+    to: refi_cohort_derate
+    sign: "+"
+    lag_d: [0, 90]
+    condition:
+      en: "widening driven by credit risk / financing stress, not a pure rates move (a rate-driven HYG move without IG divergence is a different chain)"
+      zh: "由信用风险/融资压力驱动的走阔，而非纯利率变动（无IG分化的利率型HYG变动属于另一条链）"
+    mechanism:
+      en: "wider spreads raise the marginal cost (and reduce the availability) of refinancing → issuers dependent on rolling short-dated or floating debt de-rate first"
+      zh: "利差走阔抬高再融资的边际成本（并降低可得性）→依赖滚动短期或浮动利率债务的发行人首先下修"
+    prior: "theory (refinancing / rollover risk) — credit-channel; smallcap floating-debt tilt"
+
+falsifiers:
+  # spreads widened but the refinancing cohort is OUTPERFORMING for 63d — leg absent.
+  - when: {series: "IWM", vs: "SPY", metric: rs, window: 63, op: gt, value: 0}
+    note: "spread_widen sustained but the refi cohort RS>0 over 63d — the refinancing-drag leg is falsified"
+
+null_model: "does credit-spread conditioning beat unconditional smallcap-momentum on the refinancing cohort?"
+
+exposure_screens:            # W2 — declared only
+  refinancing_channel:
+    field_expr: "financials.raw.debt_lt / assets high AND weak interest coverage (EBIT/interest low)"
+    note: "issuers with a near-dated maturity wall and thin coverage — most exposed to a rollover at wider spreads"
+  floating_rate_debt:
+    field_expr: "financials floating-rate debt share high (cost rises immediately with spreads/rates)"
+    note: "issuers whose interest cost reprices with the spread move, not at maturity"
+  fcf_burner:
+    field_expr: "financials.fcf_margin < 0 AND multiyear cash trend down (dependent on external capital)"
+    note: "cash-burning names that must access credit markets to fund operations"
+
+provenance:
+  theory: ["refinancing / rollover risk", "credit channel of monetary policy"]
+  episodes: ["2008 (GFC credit freeze)", "2015-16 (energy HY)", "2020-Q1 (dash-for-cash)"]
+  added_by: "TXI-W1"
+  added_on: "2026-07-24"
+
+validator_note: >
+  No HY-OAS FRED series is present in this repo's lib.store, so spread_widen binds to the
+  HYG/LQD PRICE RATIO — the collected daily HY-vs-IG risk-appetite proxy (both ETFs
+  verified present, ~4.8k / ~6.0k rows). A falling ratio = spreads widening. refi_cohort_
+  derate uses IWM-vs-SPY RS_63d as the refinancing-dependent cohort proxy (small caps carry
+  the most floating/short-dated debt); the per-name refinancing screen is the W2 resolver.
+  All nodes resolve; tier=hypothesis (base rates untested until W3). This is a 2-node / 1-hop
+  chain — the shortest seed — because the HYG/LQD ratio already fuses the "spreads widen"
+  observation; a separate IG-confirm node would be mechanically collinear.

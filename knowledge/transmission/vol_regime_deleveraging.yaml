@@ -1,0 +1,96 @@
+# TXI seed chain — vol-regime shift → systematic deleveraging → high-beta unwind.
+# Seed list §7 ("vol-regime shift → systematic deleveraging → high-beta unwind;
+# vol_regime + positioning"). Display-tier. Reads data/regime/latest.json.
+chain: vol_regime_deleveraging
+rev: 0
+tier: hypothesis
+title:
+  en: "Vol-regime shift → systematic deleveraging → high-beta unwind"
+  zh: "波动率状态转变 → 系统性去杠杆 → 高贝塔平仓"
+
+nodes:
+  vol_expansion:
+    title: {en: "Vol regime expanding / stress rising", zh: "波动率状态扩张／压力上升"}
+    src: regime_state
+    # data/regime/latest.json vol_regime block. The engine's 4-state label
+    # (engine/vol_regime._regime_label) is {calm-contango, normalizing, warning,
+    # backwardation-stress}; the two STRESS states are 'warning' and
+    # 'backwardation-stress'. Fire on either, OR on a VIX>=25 floor. Uses the
+    # categorical regime label — the engine's own scored-gate-honest state.
+    test:
+      any:
+        - {path: "vol_regime.regime", op: in, value: ["warning", "backwardation-stress"]}
+        - {path: "vol_regime.vix", op: gte, value: 25}
+  systematic_delever:
+    title: {en: "Systematic strategies cutting exposure", zh: "系统性策略削减敞口"}
+    src: regime_state
+    # vol_regime.vol_target_scalar < 1 = vol-target/risk-parity books scaling DOWN gross
+    # (a mechanical deleveraging signal the engine already computes). Deeper cut = <0.85.
+    test: {path: "vol_regime.vol_target_scalar", op: lt, value: 0.85}
+  highbeta_unwind:
+    title: {en: "High-beta cohort unwinding", zh: "高贝塔板块平仓"}
+    src: yahoo
+    # High-beta cohort RS proxy: SPHB (S&P 500 High Beta) relative to SPLV (Low
+    # Volatility) over 21d < 0 — high-beta under-performing low-vol = a beta unwind.
+    # Per-name crowding/positioning-HHI resolution is W2.
+    test: {series: "SPHB", vs: "SPLV", metric: rs, window: 21, op: lt, value: 0}
+
+hops:
+  - from: vol_expansion
+    to: systematic_delever
+    sign: "+"
+    lag_d: [0, 21]
+    condition:
+      en: "realized-vol expansion (not just an implied-vol bid) — vol-target books resize on realized"
+      zh: "已实现波动率扩张（而非仅隐含波动率买盘）——波动率目标策略按已实现波动率调整"
+    mechanism:
+      en: "a higher vol regime pushes vol-target / risk-parity / CTA books above their vol budget → they mechanically cut gross exposure"
+      zh: "更高的波动率状态使波动率目标/风险平价/CTA策略超出其波动率预算→机械性削减总敞口"
+    prior: "theory (vol-targeting mechanics) — vol_regime.vol_target_scalar is the shipped proxy"
+  - from: systematic_delever
+    to: highbeta_unwind
+    sign: "+"
+    lag_d: [0, 42]
+    condition:
+      en: "crowded high-beta leadership (an unwind needs positioning to unwind FROM)"
+      zh: "拥挤的高贝塔领导地位（平仓需要有可平的仓位）"
+    mechanism:
+      en: "deleveraging is sold pro-rata to beta and liquidity → the highest-beta, most-crowded names unwind hardest relative to low-vol"
+      zh: "去杠杆按贝塔与流动性比例卖出→最高贝塔、最拥挤的名字相对低波动股平仓最剧烈"
+    prior: "theory (beta-proportional deleveraging) + froth_fragility.unwind_risk co-signal"
+
+falsifiers:
+  # deleveraging underway but high-beta is OUTPERFORMING low-vol for 42d — no unwind.
+  - when: {series: "SPHB", vs: "SPLV", metric: rs, window: 42, op: gt, value: 0}
+    note: "systematic_delever with high-beta cohort RS>0 vs low-vol over 42d — the unwind leg is falsified"
+
+null_model: "does vol-regime conditioning beat unconditional low-vol-factor momentum on the high-beta cohort?"
+
+exposure_screens:            # W2 — declared only
+  high_beta:
+    field_expr: "factors beta high (market beta > ~1.3) — sold hardest in a deleveraging"
+    note: "highest-beta names, cut pro-rata to beta when gross comes down"
+  crowded_positioning:
+    field_expr: "positioning / smart_money HHI high (concentrated ownership → forced-seller risk)"
+    note: "crowded names with concentrated holders — the positioning to unwind FROM"
+  low_liquidity:
+    field_expr: "median dollar-volume low relative to float (impact cost amplifies the unwind)"
+    note: "thin names where a deleveraging sale moves the price most"
+
+provenance:
+  theory: ["vol-targeting mechanics", "beta-proportional deleveraging", "crowding unwind"]
+  episodes: ["2018-Q1 (volmageddon)", "2020-Q1 (risk-parity unwind)", "2024-08 (carry/vol unwind)"]
+  added_by: "TXI-W1"
+  added_on: "2026-07-24"
+
+validator_note: >
+  All nodes resolve against data/regime/latest.json (vol_regime.regime / vix /
+  vol_target_scalar) and lib.store yahoo series (SPHB vs SPLV, both verified present).
+  vol_expansion uses the engine's categorical vol-regime label — the two STRESS states
+  ('warning', 'backwardation-stress', verified against engine/vol_regime._regime_label,
+  NOT the guessed 'expanding/stressed' vocabulary) — OR a VIX>=25 floor via the `any` op.
+  systematic_delever uses vol_target_scalar<0.85 —
+  the engine's shipped vol-target deleveraging proxy. highbeta_unwind uses an SPHB-vs-SPLV
+  RS proxy for the high-beta cohort; the per-name crowding/beta resolution is the W2
+  resolver (froth_fragility.unwind_risk is the co-signal, surfaced there). tier=hypothesis
+  (base rates untested until W3).
