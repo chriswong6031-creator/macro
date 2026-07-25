@@ -1902,6 +1902,14 @@ lanes:
         module: scripts.calibrate_rate_inflation
       - id: build_transmission
         module: scripts.build_transmission
+      - id: run_transmission_calibration
+        module: scripts.run_transmission_calibration
+        note: >
+          TXI W3 — historical episode miner + regime-conditional hop calibration.
+          Weekly cadence (heavy full-history scan, off the render path — masterplan §W3);
+          runs AFTER build_transmission, writes data/transmission/chain_calibration.json.
+          The nightly transmission_chains read picks it up to fill hop base_rates + promote
+          the display tier (calibrated_context). Display-only; additive; no-ops on absent history.
       - id: build_rates_command
         module: scripts.build_rates_command
       - id: calibrate_vector
