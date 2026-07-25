@@ -1709,6 +1709,20 @@ lanes:
         module: scripts.build_vector
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_special_situations_page_only
+        module: scripts.build_special_situations
+        args: [--no-refresh]
+        note: >
+          Special Situations desk, PAGE ONLY (scope `sits`, also inside scope=all).
+          --no-refresh skips the ~28m EDGAR/newswire sweep — that stays nightly
+          (daily.yml cl_special) — and re-renders the desk from the COMMITTED event
+          store with no network, so a template/builder fix reaches the baked page in
+          minutes instead of waiting a night. It reuses the last real build's `built`
+          stamp, so an unchanged desk rebakes byte-identically and this lane commits
+          nothing. Emits BOTH halves of the tier gate together: the free preview
+          shell site/special_situations.html and its Insider+ payload
+          site/premiumdata/special_situations.json (docs/TIER_PREVIEW_PATTERN.md) —
+          they must never be rebuilt apart. Display-only; CONST-ART2 authority: false.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
