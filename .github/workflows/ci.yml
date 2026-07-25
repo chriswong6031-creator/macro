@@ -1050,14 +1050,22 @@ jobs:
     # Revenue + serving boundary. A paid desk ships as a free preview shell at the
     # page URL plus a separate /premiumdata/ payload that app/paywall.py gates as
     # Insider+ ahead of the site-wide PAYWALL_ENABLED switch
-    # (docs/TIER_PREVIEW_PATTERN.md). Three regressions this catches: the shell
+    # (docs/TIER_PREVIEW_PATTERN.md). The regressions this catches: the shell
     # quietly regaining the paid rows (the split IS the gate — a client-side hide
     # is not), /premiumdata/ dropping out of premium.enforced_early (which would
-    # re-open the desk to every registered account), and the edge's public
-    # exclusion list drifting away from config/site_access.yml (which is how a
-    # generated artifact silently becomes anonymously fetchable — that boundary
-    # test sat red on main for a week unwatched before this job adopted it).
-    # Hermetic — no network, no engine data.
+    # re-open the desk to every registered account), the edge's public exclusion
+    # list drifting away from config/site_access.yml (which is how a generated
+    # artifact silently becomes anonymously fetchable — #3418 drifted it and the
+    # boundary test sat red ~17h unwatched because no workflow named it), and the
+    # registration wall itself regressing.
+    #
+    # The serving boundary has three enforcement halves and CI now covers all of
+    # them: the Caddy public list (site_access_boundary), the paid stage
+    # (paywall/api_paywall), and the anonymous stage (regwall). The regwall pair
+    # was the last one running in no workflow — and it is the expensive one to get
+    # wrong in the quiet direction: #3387 had to reopen /stocks/ /tools/ /learn/
+    # /blog/ after a wall with no crawler exception 302'd Googlebot off 1,665
+    # sitemap URLs. Hermetic — no network, no engine data.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1072,6 +1080,8 @@ jobs:
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
         run: python -m pytest tests/test_site_access_boundary.py -q
+      - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
+        run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
 
   cycles-payload-split:
     # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
