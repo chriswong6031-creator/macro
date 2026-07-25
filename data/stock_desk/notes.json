@@ -1,52 +1,160 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-22",
-  "generated_at": "2026-07-24T03:39:19.451557+00:00",
+  "as_of": "2026-07-23",
+  "generated_at": "2026-07-25T01:30:02.660802+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-22-ROST-1",
+      "id": "2026-07-23-ROST-1",
       "ticker": "ROST",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Despite strong earnings momentum, the extended entry (pullback/extended, vol-squeeze) and cycle_blocked signal, combined with a Retail narrative basket headwind, point to likely underperformance vs. the S&P 500 over the next month.",
+      "evidence": [
+        "verdict: Extended \u2014 don't chase; wait for a pullback",
+        "entry axis blocked (z -0.32, pct 45, urgency, off-high, rsi, vol-squeeze)",
+        "cycle_blocked: true, caution: NEARING A HIGH",
+        "cautions: Narrative basket (Retail) below long-term trend \u2014 validated drawdown gate"
+      ],
+      "dissent": "Positive SUE (z 1.92, 22 days fresh) and upward revisions could drive outperformance if the tape rotates back to discretionary retail.",
+      "falsifier": {
+        "text": "If ROST closes above its 20-day high within the next 10 trading days, the extension brake is invalidated and the cautious lean fails.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "ROST",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+    },
+    {
+      "id": "2026-07-23-RCUS-2",
+      "ticker": "RCUS",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "ROST is a high-confluence leader but near highs with a TURN SIGNALED board state and the equal-weight Consumer Discretionary basket below trend; the risk controls (don't chase, size down) suggest waiting for a pullback, leaving no directional edge near-term.",
+      "thesis": "The screen yields a mixed picture: modest selection with stale negative SUE and revisions, offset by positive momentum and tailwind capital, while an accounting watch flag and the engine's no-edge verdict prevent a directional lean.",
       "evidence": [
-        "High-confluence leader verdict",
-        "SUE z=1.92, momentum z=2.32",
-        "Pullback/extended entry z=0.58",
-        "Board: TURN SIGNALED, urgency now",
-        "Narrative basket drawdown caution"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection: SUE z -0.17 (stale, 54 days), revisions z -0.31",
+        "quality: accounting watch flag (z -2.95)",
+        "tailwind: spotlight present (z 0.35)"
       ],
-      "dissent": "Momentum often persists, and the turn signal could be a false alarm; the stock might grind higher even without a pullback.",
+      "dissent": "If a fresh earnings beat or clinical catalyst ignites momentum, RCUS could break out of its range.",
       "falsifier": {
-        "text": "ROST closes above its prior high ($240.13) within 5 trading days, negating the turn signal and suggesting the neutral lean missed further upside.",
+        "text": "A close above $32 on above-average volume would indicate a breakout, shifting the lean to constructive.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-19",
-      "engine_verdict": "High-confluence leader (context)"
+      "check_by": "2026-08-20",
+      "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-07-22-LEA-2",
+      "id": "2026-07-23-WAB-3",
+      "ticker": "WAB",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Strong selection factors (SUE, revisions, momentum) are overshadowed by an extended entry and a cycle_blocked signal, suggesting near-term underperformance relative to the S&P 500.",
+      "evidence": [
+        "verdict: Extended \u2014 don't chase; wait for a pullback",
+        "entry axis blocked (z -0.78, pct 38, pullback/extended, rsi, vol-squeeze)",
+        "cycle_blocked: true, caution: NEARING A HIGH"
+      ],
+      "dissent": "A powerful breakout above recent highs could resume the uptrend, negating the extension signal.",
+      "falsifier": {
+        "text": "If WAB makes a new 20-day high on above-average volume, the cautious lean fails.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "WAB",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+    },
+    {
+      "id": "2026-07-23-VSAT-4",
+      "ticker": "VSAT",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Multiple red flags\u2014accounting warn, extreme extension (+46% over 200dma), cycle unconfirmed turn, and a weak Space Economy basket\u2014indicate a high probability of underperformance vs. the S&P 500.",
+      "evidence": [
+        "verdict: Extended \u2014 don't chase; wait for a pullback",
+        "entry axis blocked (z -2.5, pct 18, pullback/extended, over-200dma, rsi, vol-squeeze)",
+        "cycle_blocked: true, caution: UNCONFIRMED TURN",
+        "cautions: accounting warn, extended +46% over 200dma \u2014 chasing, basket below long-term trend"
+      ],
+      "dissent": "Momentum could persist if the space narrative gains a sudden influx of retail and institutional interest, ignoring fundamentals.",
+      "falsifier": {
+        "text": "If VSAT closes above its 50-day high on expanding volume, the cautious lean is invalidated.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "VSAT",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+    },
+    {
+      "id": "2026-07-23-CASY-5",
+      "ticker": "CASY",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The constructive insider/SUE signal is stale (136 days) and offset by a deteriorating consumer staples basket, leaving no clear directional edge.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection: SUE z 2.03 but fresh_days 136 (stale)",
+        "cautions: Narrative basket (Consumer Staples Equal-Weight) is deteriorating \u2014 validated risk gate"
+      ],
+      "dissent": "A fresh earnings catalyst or unexpected insider buying could reignite momentum and push the stock higher.",
+      "falsifier": {
+        "text": "A close above $900 would invalidate neutrality and suggest a bullish breakout.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-23-LEA-6",
       "ticker": "LEA",
       "name": null,
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "LEA is building a base with upward momentum and insider buying context; the imminent earnings add binary event risk, but the constructive verdict supports a tilt relative to the S&P assuming no negative surprise.",
+      "thesis": "The engine's 'building a base' verdict is supported by still-fresh SUE (z 1.14) and an unblocked entry, pointing to potential outperformance vs. the S&P 500 as the stock stabilizes.",
       "evidence": [
-        "Constructive 'building a base' verdict",
-        "SUE z=1.14 (stale), momentum z=1.34",
-        "Board: RALLY ON, urgency hold",
-        "Earnings imminent binary event caution"
+        "verdict: Constructive \u2014 building a base",
+        "selection: SUE z 1.14, fresh_days 83",
+        "entry axis not blocked (z 0.05, pct 51, off-high, rsi present but no block)"
       ],
-      "dissent": "Earnings could disappoint and break the base, leading to a sharp decline.",
+      "dissent": "The bounce could fail if the market rotates away from rate-sensitive industrials, and the lack of insider presence weakens the signal.",
       "falsifier": {
-        "text": "LEA reports earnings and stock trades below $140 (near base support) within 5 days post-release, indicating failure of the base-building thesis.",
+        "text": "If LEA closes below its 20-day low, the base-building pattern breaks and the constructive lean is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "LEA",
@@ -56,116 +164,8 @@
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-19",
+      "check_by": "2026-08-20",
       "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-22-BG-3",
-      "ticker": "BG",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "BG carries a leader momentum but with an accounting warning and earnings in 5 days; the quality flag raises the risk of a fundamental-driven correction, making avoidance prudent until financials are verified.",
-      "evidence": [
-        "Leader verdict with accounting warn flag",
-        "Quality z=-0.795",
-        "Earnings binary event caution (5d)",
-        "Board: rally on, off high -5.7%"
-      ],
-      "dissent": "Accounting warning may be noise; a clean quarter could send the stock soaring. (softened: strong leader, momentum intact \u2014 extension is not a short (cautious-on-leader historically ~17% right); watch, don't chase)",
-      "falsifier": {
-        "text": "BG files its next 10-Q with a clean audit opinion and the stock closes above its pre-earnings high ($131) within 10 days, invalidating the cautious stance.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-19",
-      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
-    },
-    {
-      "id": "2026-07-22-GM-4",
-      "ticker": "GM",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "GM shows early base-building characteristics with upward momentum and positive revisions, though the equal-weight consumer discretionary basket is a drag; the constructive lean is risk-controlled with size down.",
-      "evidence": [
-        "Constructive 'building a base' verdict",
-        "Revisions z=0.85, momentum z=1.23",
-        "Board: RALLY ON, urgency hold",
-        "Narrative basket drawdown caution"
-      ],
-      "dissent": "The base could fail if macro headwinds persist, turning the rally into a bull trap.",
-      "falsifier": {
-        "text": "GM closes below $80 (recent base low) within 10 trading days, signaling failure of base-building and invalidating the constructive lean.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "GM",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-09-02",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-22-HWM-5",
-      "ticker": "HWM",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "HWM benefits from a strong recent SUE (z=3.0) and insider buying context, with a constructive band; though earnings in 6 days add binary risk and the board shows TURN SIGNALED, the base-building setup leans positive.",
-      "evidence": [
-        "Constructive band verdict",
-        "SUE z=3.0 (high), momentum z=1.22",
-        "Board: TURN SIGNALED near high but uptrend intact",
-        "Earnings in 6d binary event caution"
-      ],
-      "dissent": "The TURN SIGNALED pattern could precede a negative earnings reaction and a sharp pullback from extended levels.",
-      "falsifier": {
-        "text": "HWM reports earnings and the stock drops below $275 (near current support) within 5 days, breaking the base and negating the constructive lean.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "HWM",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-19",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-22-ODFL-6",
-      "ticker": "ODFL",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "ODFL's neutral verdict, negative SUE, and caution board with a countertrend bounce offer no clear directional edge; earnings in 5 days further cloud the near-term outlook.",
-      "evidence": [
-        "Neutral verdict - no clear edge",
-        "SUE z=-0.37, momentum z=0.92",
-        "Board: COUNTERTREND BOUNCE, dir caution, urgency caution",
-        "Earnings in 5d binary event caution"
-      ],
-      "dissent": "The bounce could turn into a sustained rally if earnings surprise strongly.",
-      "falsifier": {
-        "text": "ODFL reports earnings and the stock closes above $240 (breaching recent resistance) within 5 days, suggesting the neutral lean missed a rally.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-19",
-      "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
