@@ -326,8 +326,9 @@
     var mktBeta = RR.calm.bookBeta && RR.calm.bookBeta.mkt;
     renderRail(mktBeta);
 
-    // stash the model so lens toggle / lang flip re-render without recompute
-    hero.__wri = { RR: RR, cov: cov, data: data };
+    // stash the model so lens toggle / lang flip re-render without recompute.
+    // wIn + mode feed the W4 pre-trade check (hypothetical-book math + $ prefill).
+    hero.__wri = { RR: RR, cov: cov, data: data, wmap: wIn, mode: weights.mode };
     var lens = hero.getAttribute('data-lens') || RR.defaultLens;
     if (!RR.hasStress) lens = 'calm';
     hero.setAttribute('data-lens', lens);
@@ -398,6 +399,10 @@
     // ---- sub-cards ----
     html += subCards(RR, active, cov);
 
+    // ---- pre-trade check (W4) — inside the hero, after the sub-cards, before
+    //      the footnote. Hidden below 1 modeled holding (handled in wireWhatIf). ----
+    html += whatIfRow(RR, active);
+
     // ---- footnote + method receipt ----
     html += footnote(RR, cov);
 
@@ -405,6 +410,9 @@
     // paint the patch-bay from the active-lens model
     paintBraid(active, clusters);
     absorbFxPanel(hero, RR.calm);
+    // wire the pre-trade check (suggestions + resolve); restores the user's typed
+    // candidate across lens/lang re-renders from hero.__w4.
+    wireWhatIf(hero, RR, active);
   }
 
   // clusters(active): the patch-bay PICTURE — names grouped by their dominant
@@ -604,12 +612,320 @@
     var methodZh = 'Beta 基于 252 个交易日拟合' + (RR.hasStress
       ? '；跌市视角在三年内最差四分位的大盘交易日上重估因子联动' : '') + '；个股特有风险按全部交易日估计。';
     return '<div class="wri-foot">' +
-      '<span class="l-en">Measurement from a 9-factor model of daily moves — not a forecast.' + unEn + clampEn +
+      '<span class="l-en">Measurement from a 9-factor model of daily moves — not a forecast, and not a recommendation.' + unEn + clampEn +
       ' <span class="q" data-tip-en="' + esc(methodEn) + '" data-tip-zh="' + esc(methodZh) +
       '" tabindex="0" role="button">method</span></span>' +
-      '<span class="l-zh">基于 9 因子日度模型的测量——并非预测。' + unZh + clampZh +
+      '<span class="l-zh">基于 9 因子日度模型的测量——并非预测，也非建议。' + unZh + clampZh +
       ' <span class="q" data-tip-en="' + esc(methodEn) + '" data-tip-zh="' + esc(methodZh) +
       '" tabindex="0" role="button">方法</span></span></div>';
+  }
+
+  // =========================================================================
+  //  W4 — the pre-trade check (what-if diagnostic). Operator-signed NWP-U18
+  //  carve-out (WRI-R3): the user proposes ONE candidate (ticker + optional $
+  //  size); we print the SAME descriptive statistics for the hypothetical book.
+  //  The user constructs; WE DESCRIBE. No optimizer, no suggested weight/size, no
+  //  advice verbs — ever. Deltas are NEVER tinted (a diversification delta is a
+  //  measurement, not a verdict). Math is RiskCore.whatIf (pure composition of
+  //  book(), no new estimator); result respects the surface's active lens.
+  // =========================================================================
+  var W4_DEFAULT_DOLLARS = 10000;   // manual-mode fallback (no real dollars exist)
+
+  // static markup: header + input row + (empty) live result container. The row
+  // is present only when the book has ≥1 modeled holding (wireWhatIf hides it
+  // otherwise — the empty-book state).
+  function whatIfRow(RR, active) {
+    var tipEn = 'Type a name to see what it would do to the book’s structure. A measurement of the hypothetical book — not a recommendation.';
+    var tipZh = '输入代码，查看它对组合结构的影响。对假设组合的测量——并非建议。';
+    var subEn = 'assuming a position about the size of your average holding — adjust to your intent';
+    var subZh = '默认按你的平均持仓规模——可自行调整';
+    return '<div class="wri-w4" id="wri_w4">' +
+      '<div class="wri-w4-head"><span>' + te('PRE-TRADE CHECK', '试仓检查') + '</span>' +
+      '<span class="q" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) +
+      '" tabindex="0" role="button" aria-label="' + esc(isZh() ? tipZh : tipEn) + '">?</span></div>' +
+      '<div class="wri-w4-in">' +
+      '<div class="wri-w4-tk"><input id="wri_w4_tk" type="text" autocomplete="off" ' +
+      'autocapitalize="characters" placeholder="' + (isZh() ? '代码或名称' : 'ticker or name') +
+      '" aria-label="' + (isZh() ? '候选代码' : 'candidate ticker') + '">' +
+      '<div class="wri-w4-sugg" id="wri_w4_sugg"></div></div>' +
+      '<div class="wri-w4-amt"><div class="wri-w4-amtrow"><span class="cur">$</span>' +
+      '<input id="wri_w4_amt" type="text" inputmode="numeric" aria-label="' +
+      (isZh() ? '仓位金额' : 'position amount in dollars') + '"></div>' +
+      '<span class="sub">' + te(subEn, subZh) + '</span></div>' +
+      '<button class="wri-w4-clear" id="wri_w4_clear" type="button" style="display:none">' +
+      te('clear', '清除') + '</button></div>' +
+      '<div class="wri-w4-res" id="wri_w4_res" aria-live="polite"></div></div>';
+  }
+
+  // average position size for the $ prefill. Averaged from the book's OWN per-name
+  // weight values so the candidate is scaled to the book and the deltas are
+  // meaningful (a size that dwarfs every holding would read as "100% of the swing"
+  // regardless of the name). AUTO mode: those values are real dollars, so the
+  // prefill is the real average holding. MANUAL mode: the book carries only
+  // relative weights (equal-weight => 1 each); scaling the candidate to that same
+  // average keeps it comparable, and we express it as a round default only when
+  // the weights are unit-scale (≤ a few) so the $ field never shows a bare "1".
+  function avgPositionSize(hero) {
+    var st = hero.__wri; if (!st) return W4_DEFAULT_DOLLARS;
+    var vals = [];
+    if (st.wmap) Object.keys(st.wmap).forEach(function (t) {
+      var v = st.wmap[t]; if (isNum(v) && v > 0) vals.push(v);
+    });
+    if (!vals.length) return W4_DEFAULT_DOLLARS;
+    var m = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+    // real dollars (auto, or a manual editor in dollars) -> use the average as-is.
+    // unit-scale weights (manual equal-weight, avg ~1) carry no dollar meaning, so
+    // show a round nominal ($10k) — but the RESOLVE always re-scales to the book's
+    // average weight so the delta stays comparable regardless of what's displayed.
+    if (m >= 100) return Math.max(1, Math.round(m));
+    return W4_DEFAULT_DOLLARS;
+  }
+  // the dollar size to actually FEED whatIf: in a real-dollar book it's the typed
+  // amount; in a unit-weight book (manual equal-weight) the typed "$10,000" is
+  // nominal, so we translate it into the book's own weight scale — the candidate
+  // is sized at (typed / displayed-default) × average-book-weight, i.e. "about one
+  // average holding" when left at the prefill. Keeps the what-if honest either way.
+  function effectiveDollars(hero, typed) {
+    var st = hero.__wri; if (!st) return typed;
+    var vals = [];
+    if (st.wmap) Object.keys(st.wmap).forEach(function (t) {
+      var v = st.wmap[t]; if (isNum(v) && v > 0) vals.push(v);
+    });
+    if (!vals.length) return typed;
+    var m = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+    if (m >= 100) return typed;                 // real-dollar book: feed dollars directly
+    // unit-weight book: map the displayed $ onto the book's weight scale so the
+    // candidate is ~one average holding at the prefill, and scales linearly if edited.
+    var disp = avgPositionSize(hero) || W4_DEFAULT_DOLLARS;
+    return (typed / disp) * m;
+  }
+  function fmtDollars(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function parseDollars(s) {
+    var v = parseFloat(String(s == null ? '' : s).replace(/[^0-9.]/g, ''));
+    return isNum(v) && v > 0 ? v : 0;
+  }
+
+  function wireWhatIf(hero, RR, active) {
+    var row = document.getElementById('wri_w4'); if (!row) return;
+    // empty-book state: hide the row below 1 modeled holding.
+    var modeledN = (active && active.held) ? active.held.length : 0;
+    if (modeledN < 1) { row.style.display = 'none'; return; }
+    row.style.display = '';
+
+    var tk = document.getElementById('wri_w4_tk');
+    var amt = document.getElementById('wri_w4_amt');
+    var sugg = document.getElementById('wri_w4_sugg');
+    var clear = document.getElementById('wri_w4_clear');
+    if (!tk || !amt || !sugg) return;
+
+    // restore prior state (survives lens/lang re-render); default $ = avg holding.
+    // The typed amount is sticky ONLY when the user hand-edited it (userAmt) — a
+    // lens/lang flip keeps their number, but a book change (e.g. weights→dollars)
+    // refreshes the prefill to the new average holding.
+    var prior = hero.__w4 || {};
+    var avg = avgPositionSize(hero);
+    var keepAmt = prior.userAmt && isNum(prior.dollars) && prior.dollars > 0;
+    amt.value = fmtDollars(keepAmt ? prior.dollars : avg);
+    if (prior.ticker) { tk.value = prior.ticker; clear.style.display = '';
+      // re-sync the stashed dollars to the (possibly refreshed) default
+      if (!keepAmt) hero.__w4.dollars = avg; }
+
+    var sel = -1, items = [];
+    // suggestions from the SAME index the watchlist search uses (SD.loadIndex).
+    function renderSugg() {
+      var v = tk.value.trim().toLowerCase(); sel = -1;
+      if (!v || !W4_INDEX) { sugg.style.display = 'none'; return; }
+      items = W4_INDEX.filter(function (x) {
+        return x.t.toLowerCase().indexOf(v) === 0 ||
+          x.n.toLowerCase().indexOf(v) >= 0 || (x.s || '').toLowerCase().indexOf(v) >= 0;
+      }).sort(function (a, b) {
+        var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
+        if (ae !== be) return ae - be;
+        var ap = a.t.toLowerCase().indexOf(v) === 0 ? 0 : 1, bp = b.t.toLowerCase().indexOf(v) === 0 ? 0 : 1;
+        return ap - bp || a.t.localeCompare(b.t);
+      }).slice(0, 10);
+      sugg.innerHTML = items.map(function (x, i) {
+        return '<div data-i="' + i + '"><b>' + esc(x.t) + '</b><small>' + esc(x.n) +
+          (x.s ? ' · ' + esc(x.s) : '') + '</small></div>';
+      }).join('');
+      sugg.style.display = items.length ? 'block' : 'none';
+    }
+    function pickSugg(i) {
+      var x = items[i] || (items[0]); if (!x) { commit(tk.value.trim().toUpperCase()); return; }
+      sugg.style.display = 'none';
+      commit(x.t);
+    }
+    // commit a candidate: stash state + resolve. Resolve to the index's CANONICAL
+    // ticker (x.t) so it matches the factor_betas.json / stockdata keys exactly
+    // (GC=F, BRK-B, ^GSPC keep their case/symbols — never blindly uppercased).
+    function commit(ticker) {
+      if (!ticker) return;
+      var canon = canonTicker(ticker);
+      var wasUserAmt = !!(hero.__w4 && hero.__w4.userAmt);   // preserve hand-edited size
+      tk.value = canon;
+      hero.__w4 = { ticker: canon, dollars: parseDollars(amt.value) || avg, userAmt: wasUserAmt };
+      clear.style.display = '';
+      resolveWhatIf(hero, canon);
+    }
+
+    ensureW4Index(function () { /* index ready; input handlers already live */ });
+
+    tk.addEventListener('input', renderSugg);
+    tk.addEventListener('keydown', function (e) {
+      if (sugg.style.display !== 'none') {
+        var divs = sugg.querySelectorAll('div');
+        if (e.key === 'ArrowDown') { sel = Math.min(sel + 1, divs.length - 1); e.preventDefault(); divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); }); return; }
+        if (e.key === 'ArrowUp') { sel = Math.max(sel - 1, 0); e.preventDefault(); divs.forEach(function (d, i) { d.classList.toggle('sel', i === sel); }); return; }
+        if (e.key === 'Escape') { sugg.style.display = 'none'; return; }
+      }
+      if (e.key === 'Enter') { e.preventDefault(); pickSugg(sel >= 0 ? sel : 0); }
+    });
+    sugg.addEventListener('mousedown', function (e) {
+      var d = e.target.closest('div[data-i]'); if (d) { e.preventDefault(); pickSugg(+d.dataset.i); }
+    });
+    // amount edits re-resolve live (only when a candidate is set). Mark the size
+    // as user-owned so a later lens/lang flip keeps it (userAmt).
+    amt.addEventListener('input', function () {
+      if (!hero.__w4 || !hero.__w4.ticker) return;
+      hero.__w4.dollars = parseDollars(amt.value) || avg;
+      hero.__w4.userAmt = true;
+      resolveWhatIf(hero, hero.__w4.ticker);
+    });
+    clear.addEventListener('click', function () {
+      hero.__w4 = null; tk.value = ''; sugg.style.display = 'none';
+      amt.value = fmtDollars(avg); clear.style.display = 'none';
+      var res = document.getElementById('wri_w4_res'); if (res) res.innerHTML = '';
+      tk.focus();
+    });
+
+    // re-resolve on a lens/lang re-render if a candidate is already set
+    if (hero.__w4 && hero.__w4.ticker) resolveWhatIf(hero, hero.__w4.ticker);
+  }
+
+  // resolve a typed string to the index's canonical ticker key (exact match,
+  // then case-insensitive), else fall back to the trimmed input as-is (so an
+  // unmodeled name still resolves to the honest-null branch, never crashes).
+  function canonTicker(s) {
+    var raw = String(s || '').trim();
+    if (!raw) return raw;
+    if (W4_BY && W4_BY[raw]) return raw;
+    var up = raw.toUpperCase();
+    if (W4_BY && W4_BY[up]) return up;
+    if (W4_BY) {
+      var lo = raw.toLowerCase();
+      var hit = Object.keys(W4_BY).filter(function (t) { return t.toLowerCase() === lo; })[0];
+      if (hit) return hit;
+    }
+    return up;
+  }
+
+  // resolve + render the neutral result block for the current candidate. Reads
+  // the ACTIVE lens off the hero so the deltas match what the surface shows.
+  function resolveWhatIf(hero, ticker) {
+    var st = hero.__wri; if (!st) return;
+    var res = document.getElementById('wri_w4_res'); if (!res) return;
+    var lens = hero.getAttribute('data-lens') || st.RR.defaultLens;
+    if (!st.RR.hasStress) lens = 'calm';
+    var typed = (hero.__w4 && hero.__w4.dollars) || avgPositionSize(hero);
+    // feed whatIf the size on the BOOK's own scale (dollars in a real-dollar book;
+    // translated to the weight scale in a unit-weight manual book) so the delta is
+    // comparable — see effectiveDollars.
+    var dollars = effectiveDollars(hero, typed);
+    var wi = RiskCore.whatIf(st.data, st.wmap, ticker, dollars, lens);
+    res.innerHTML = whatIfResult(wi);
+    // the candidate's own lane chips (reuse the L1 lane engine) mount async
+    mountCandidateChips(res, ticker);
+  }
+
+  // build the neutral result lines. NUMBERS mono, arrows plain, deltas untinted.
+  function whatIfResult(wi) {
+    var T = esc(wi.ticker || '');
+    // unmodeled candidate -> honest null, no fabricated numbers (WRI-R6/R3).
+    if (!wi.modeled) {
+      return '<p class="ln"><span class="dot"></span><span class="null">' +
+        te('<span class="tk">' + T + '</span> — not in the risk model, price signals only.',
+          '<span class="tk">' + T + '</span> —— 未纳入风险模型，仅价格信号。') +
+        '</span></p>';
+    }
+    var before = wi.before, after = wi.after;
+    if (!after || !after.ok) {
+      // e.g. the candidate is the only modeled name (thin after-book) — stay honest.
+      return '<p class="ln"><span class="dot"></span><span class="null">' +
+        te('Add another modeled holding to compare the book with and without ' + '<span class="tk">' + T + '</span>.',
+          '再添加一项可建模持仓，以比较加入 <span class="tk">' + T + '</span> 前后的组合。') +
+        '</span></p>';
+    }
+    // Line 1: bets before->after · top-factor share before->after
+    var enb0 = before && before.ok ? Math.max(1, Math.round(before.enb)) : null;
+    var enb1 = Math.max(1, Math.round(after.enb));
+    var topK = after.topFactor;
+    var topLab = flabel(topK);
+    var a0 = before && before.ok ? Math.round((before.factorShare[topK] || 0) * 100) : null;
+    var a1 = Math.round((after.factorShare[topK] || 0) * 100);
+    var enbFrag = (enb0 != null)
+      ? '<span class="num">' + enb0 + '</span><span class="arw">→</span><span class="num">' + enb1 + '</span>'
+      : '<span class="num">' + enb1 + '</span>';
+    var shFrag = (a0 != null)
+      ? '<span class="num">' + a0 + '%</span><span class="arw">→</span><span class="num">' + a1 + '%</span>'
+      : '<span class="num">' + a1 + '%</span>';
+    var line1 = '<p class="ln"><span class="dot"></span><span>' + te(
+      'With <span class="tk">' + T + '</span>: effectively ' + enbFrag + ' bets · ' + esc(topLab) + ' share ' + shFrag,
+      '加入 <span class="tk">' + T + '</span>：有效押注数 ' + enbFrag + ' · ' + esc(topLab) + '占比 ' + shFrag
+    ) + '</span></p>';
+
+    // Line 2 (conditional): twin membership OR hedge lean
+    var line2 = '';
+    var cand = wi.candidate;
+    if (cand.hedge) {
+      line2 = '<p class="ln"><span class="dot"></span><span>' + te(
+        '<span class="tk">' + T + '</span> would lean against the rest of the book',
+        '<span class="tk">' + T + '</span> 将与组合其余部分反向') + '</span></p>';
+    } else if (cand.twinWith && cand.twinWith.length) {
+      var withT = esc(cand.twinWith.slice(0, 3).join(', '));
+      var inSell = (wi.lens === 'stress');
+      line2 = '<p class="ln"><span class="dot"></span><span>' + te(
+        'moves with <span class="tk">' + withT + '</span>' + (inSell ? ' in selloffs' : ''),
+        '与 <span class="tk">' + withT + '</span> 同步' + (inSell ? '（跌市中）' : '')) + '</span></p>';
+    }
+
+    // Line 3: candidate's own swing share + rank
+    var c = Math.abs(Math.round((cand.mctrShare || 0) * 100));
+    var k = cand.rank || after.rankedPositions.length;
+    var line3 = '<p class="ln"><span class="dot"></span><span>' + te(
+      'would carry about <span class="num">' + c + '%</span> of the book’s swing (#<span class="num">' + k + '</span> largest)',
+      '约占组合波动的 <span class="num">' + c + '%</span>（第<span class="num">' + k + '</span>大）') + '</span></p>';
+
+    return line1 + line2 + line3 + '<div class="wri-lanes" id="wri_w4_chips"></div>';
+  }
+
+  // reuse the L1 lane engine to build the candidate's own chips (async — its
+  // stockdata JSON loads on demand; degrades to nothing if absent).
+  function mountCandidateChips(res, ticker) {
+    var host = res.querySelector('#wri_w4_chips'); if (!host) return;
+    window.SD.loadTicker(ticker).then(function (j) {
+      if (!host.isConnected || !j) return;
+      var lanes = laneRead(j);
+      var chips = [];
+      LANES.forEach(function (kk) {
+        var L = lanes[kk];
+        if (L && L.chip) chips.push('<span class="wri-chip ' + (L.chip.cls || '') + '">' +
+          te(esc(L.chip.en), esc(L.chip.zh)) + '</span>');
+      });
+      host.innerHTML = chips.join('');
+    });
+  }
+
+  // shared search index for the what-if input (same source as the watchlist
+  // search: stockdata/index.json via SD.loadIndex). Loaded once, cached.
+  var W4_INDEX = null, W4_BY = null, W4_INDEX_LOADING = null;
+  function ensureW4Index(cb) {
+    if (W4_INDEX) { cb && cb(); return; }
+    if (!W4_INDEX_LOADING) {
+      W4_INDEX_LOADING = window.SD.loadIndex().then(function (r) {
+        W4_INDEX = r.list; W4_BY = r.byTicker; return r;
+      }).catch(function () { W4_INDEX = []; W4_BY = {}; });
+    }
+    W4_INDEX_LOADING.then(function () { cb && cb(); });
   }
 
   // ---- patch-bay painter (data-driven port of the mockup SVG builder) -----

@@ -305,6 +305,81 @@
   }
 
   // =========================================================================
+  //  whatIf(): the W4 pre-trade diagnostic (WRI-R3, operator-signed NWP-U18).
+  //  The user proposes ONE candidate (ticker + dollar size); we print the SAME
+  //  descriptive statistics for the hypothetical book that would result. The
+  //  user constructs; we describe — NO optimizer, NO suggested size/weight, NO
+  //  advice. This is pure composition of book() (no new estimator): `after` is
+  //  book() with the candidate's dollars merged into the weights map; `before`
+  //  is book() on the current book. Both under the SAME lens the surface shows.
+  //
+  //  Delta symmetry is exact by construction: removing the candidate (dollars ≤ 0
+  //  or the ticker absent) yields `after` === `before`. An UNMODELED candidate
+  //  (no betas) never fabricates numbers — after === before, modeled:false, and
+  //  the caller prints the honest "price signals only" null.
+  //
+  //  inputs: data (factor_betas.json), wmap {ticker->dollarValue} of the CURRENT
+  //    book, ticker (candidate, upper/lower as the index gives it), dollars (the
+  //    proposed position size in the same units as wmap), lens ('calm'|'stress').
+  //  returns {
+  //    ok, lens, ticker, dollars, modeled,      // modeled=false => honest null
+  //    before, after,                            // book() results (before may be !ok on a thin start)
+  //    candidate: {                              // the candidate's own role in `after`
+  //      mctrShare, rank, hedge,                 // its risk contribution / #k largest / offsets the book
+  //      topFactor, topFactorShareOfName,        // the factor that drives the candidate itself
+  //      twinWith                                // [tickers] the candidate clusters with under this lens (ρ≥0.70), or []
+  //    }
+  //  }
+  // =========================================================================
+  function whatIf(data, wmap, ticker, dollars, lens) {
+    lens = lens === 'stress' ? 'stress' : 'calm';
+    if (lens === 'stress' && !stressAvailable(data)) lens = 'calm';
+    wmap = wmap || {};
+    var d = (isNum(dollars) && dollars > 0) ? dollars : 0;
+    var betas = (data && data.betas) || {};
+    var modeled = !!(ticker && betas[ticker]);
+
+    var before = book(data, wmap, lens);
+    // build the hypothetical weights map: current book + the candidate's dollars.
+    // (a candidate already held gets its dollars REPLACED by the proposed size —
+    // the user is asking "what if this position were about this big", not "add on top".)
+    var afterMap = {};
+    Object.keys(wmap).forEach(function (t) { afterMap[t] = wmap[t]; });
+    if (ticker && d > 0) afterMap[ticker] = d;
+    var after = book(data, afterMap, lens);
+
+    // candidate role IN the after-book (only meaningful when modeled & present)
+    var cand = { mctrShare: null, rank: null, hedge: false,
+      topFactor: null, topFactorShareOfName: null, twinWith: [] };
+    if (modeled && d > 0 && after.ok && after.held.indexOf(ticker) >= 0) {
+      cand.mctrShare = after.mctrShare[ticker];
+      cand.hedge = (after.mctrShare[ticker] || 0) < 0;
+      cand.rank = after.rankedPositions.indexOf(ticker) + 1;   // 1-based, #k largest by |share|
+      // the factor that drives the CANDIDATE ITSELF (argmax of its own factor
+      // variance share) — reuses the same near-diagonal split factorBets() uses.
+      var keys = after.keys, bt = betas[ticker], F = data.factor_cov;
+      if (lens === 'stress' && stressAvailable(data)) F = data.factor_cov_stress;
+      var sig = after.sigmaByName[ticker] || 0, tot = sig * sig || 1;
+      var domF = null, domV = 0;
+      keys.forEach(function (k) {
+        var v = (bt[k] || 0) * (bt[k] || 0) * ((F[k] && F[k][k]) || 0);
+        if (v > domV) { domV = v; domF = k; }
+      });
+      cand.topFactor = domF;
+      cand.topFactorShareOfName = domV / tot;
+      // twins: names the candidate clusters with at ρ ≥ 0.70 under this lens
+      after.held.forEach(function (t) {
+        if (t !== ticker && after.rho(ticker, t) >= TWIN_RHO) cand.twinWith.push(t);
+      });
+    }
+
+    return {
+      ok: true, lens: lens, ticker: ticker || null, dollars: d,
+      modeled: modeled, before: before, after: after, candidate: cand
+    };
+  }
+
+  // =========================================================================
   //  factorBets(): group the book's names into "bets" for the patch-bay PICTURE.
   //  A name joins its single dominant factor's bet when that factor is at least
   //  `floor` of the name's own variance; otherwise the name is its own
@@ -360,7 +435,7 @@
   }
 
   var api = {
-    book: book, read: read, factorBets: factorBets,
+    book: book, read: read, whatIf: whatIf, factorBets: factorBets,
     coverage: coverage, stressAvailable: stressAvailable, covFor: covFor,
     normalizeWeights: normalizeWeights, enbState: enbState,
     TWIN_RHO: TWIN_RHO, ABSTAIN_UNMODELED: ABSTAIN_UNMODELED
