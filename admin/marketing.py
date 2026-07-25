@@ -1917,10 +1917,47 @@ def sentinel_allow(item_id, reason, root=None) -> dict:
         return {"ok": False, "error": str(exc)}
 
 
+def _accounts_toggle_via_api(aid: str, entry: dict) -> dict:
+    """Deployed-mode desk toggle: read data/marketing/account_overrides.json from
+    main via the GitHub Contents API, merge this one account's override, and commit
+    it straight back to main. Read-modify-write against the on-main copy means a
+    single toggle never drops another desk's override. Never raises."""
+    from . import github_api  # noqa: PLC0415
+    rel = str(_ACCT_OVERRIDES_REL).replace("\\", "/")
+    gf = github_api.get_file(rel)
+    if not gf.get("ok"):
+        return {"ok": False, "error": f"could not read {rel} on main: {gf.get('error')}"}
+    current: dict = {}
+    if gf.get("content"):
+        try:
+            parsed = json.loads(gf["content"])
+            if isinstance(parsed, dict):
+                current = parsed
+        except Exception:  # noqa: BLE001 — a corrupt file must not wedge the toggle
+            current = {}
+    current[aid] = entry
+    new_content = json.dumps(current, ensure_ascii=False, indent=2) + "\n"
+    msg = f"admin: account override {aid} enabled={entry['enabled']}"
+    pf = github_api.put_file(rel, new_content, msg, sha=gf.get("sha"))
+    if not pf.get("ok"):
+        return {"ok": False, "error": f"commit failed: {pf.get('error')}"}
+    return {
+        "ok": True, "account_id": aid, "enabled": entry["enabled"],
+        "overrides": current, "pushed": True, "via": "github_api",
+        "commit_sha": pf.get("commit_sha"),
+        "note": ("Override committed to main via the GitHub API. The next nightly "
+                 f"plan will treat {aid} as {'on' if entry['enabled'] else 'off'}."),
+    }
+
+
 def accounts_toggle(account_id, enabled, note=None, root=None,
                     push: bool = True) -> dict:
     """Turn a desk account on/off via the operator override file, then try to
     commit+push that one file so the nightly runner picks it up.
+
+    Local checkout: read-modify-write the override file + git commit+push it.
+    Deployed VPS (no git auth): commit the override to main via the GitHub
+    Contents API instead (``_accounts_toggle_via_api``) — no longer refused.
 
     Read-modify-write of data/marketing/account_overrides.json (atomic replace),
     shape ``{"<account_id>": {"enabled": bool, "note": str, "at": iso}}``. Then
@@ -1932,11 +1969,6 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
         aid = str(account_id or "").strip()[:100]
         if not aid:
             return {"ok": False, "error": "account_id required"}
-        # mirror the server route's deployed refusal so a future caller can't
-        # reach the auto-push path from a deployed box
-        from . import settings  # noqa: PLC0415
-        if settings.deployed():
-            return {"ok": False, "error": "account toggles are disabled in deployed mode"}
         en = bool(enabled)
         from datetime import datetime, timezone  # noqa: PLC0415
         repo = Path(root) if root is not None else _default_root()
@@ -1947,18 +1979,29 @@ def accounts_toggle(account_id, enabled, note=None, root=None,
                  if isinstance(a, dict)] if isinstance(cfg, dict) else []
         if known and aid not in known:
             return {"ok": False, "error": f"unknown account '{aid}'"}
-        path = repo / _ACCT_OVERRIDES_REL
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        # read-modify-write
-        current = _read_json(path)
-        if not isinstance(current, dict):
-            current = {}
-        current[aid] = {
+        entry = {
             "enabled": en,
             "note": str(note or "").strip()[:500],
             "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
+
+        # Deployed VPS admin has no authenticated git working tree, so persist the
+        # override by committing it to main via the GitHub Contents API — the same
+        # tokened path the variable/dispatch controls already use. Read-modify-write
+        # is done against the file ON main so a single-account toggle never clobbers
+        # the other accounts' overrides.
+        from . import settings  # noqa: PLC0415
+        if settings.deployed():
+            return _accounts_toggle_via_api(aid, entry)
+
+        path = repo / _ACCT_OVERRIDES_REL
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # read-modify-write (local checkout path)
+        current = _read_json(path)
+        if not isinstance(current, dict):
+            current = {}
+        current[aid] = entry
         # atomic replace: write a temp sibling then os.replace
         import os  # noqa: PLC0415
         tmp = path.with_suffix(path.suffix + ".tmp")

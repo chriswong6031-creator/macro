@@ -225,6 +225,78 @@ def set_repo_variable(name: str, value: str) -> bool:
         return False
 
 
+def get_file(path: str, ref: str = "main") -> dict:
+    """Read a repo file via the Contents API → {ok, content: str|None, sha: str|None}.
+
+    ``content`` is the decoded UTF-8 text, or None when the file does not exist
+    (HTTP 404 — still ``ok: True`` so a caller can create it). Never raises;
+    transport/permission failures return {ok: False, error}. Requires a token
+    with Contents: Read.
+    """
+    if requests is None:
+        return {"ok": False, "error": "requests unavailable"}
+    if not token():
+        return {"ok": False, "error": "no GH_TOKEN / GITHUB_TOKEN set"}
+    owner, name_repo = repo()
+    if not (owner and name_repo):
+        return {"ok": False, "error": "repo not resolved"}
+    url = f"{API}/repos/{owner}/{name_repo}/contents/{path}"
+    try:
+        resp = requests.get(url, headers=_headers(), params={"ref": ref}, timeout=12)
+        if resp.status_code == 404:
+            return {"ok": True, "content": None, "sha": None}
+        if resp.status_code != 200:
+            return {"ok": False, "error": f"HTTP {resp.status_code}"}
+        j = resp.json()
+        import base64  # noqa: PLC0415
+        raw = base64.b64decode(j.get("content", "") or "").decode("utf-8")
+        return {"ok": True, "content": raw, "sha": j.get("sha")}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc)}
+
+
+def put_file(path: str, content: str, message: str, *, sha: str | None = None,
+             branch: str = "main") -> dict:
+    """Create/update a repo file via the Contents API — commits directly to *branch*.
+
+    This is the deployed-mode write path (the VPS admin has no authenticated git
+    working tree). Pass *sha* (from get_file) to update an existing file; omit it
+    to create. Returns {ok, commit_sha?} or {ok: False, error}. Never raises.
+    Requires a token with Contents: Read & write.
+    """
+    if requests is None:
+        return {"ok": False, "error": "requests unavailable"}
+    if not token():
+        return {"ok": False, "error": "no GH_TOKEN / GITHUB_TOKEN set (needs Contents: write)"}
+    owner, name_repo = repo()
+    if not (owner and name_repo):
+        return {"ok": False, "error": "repo not resolved"}
+    import base64  # noqa: PLC0415
+    url = f"{API}/repos/{owner}/{name_repo}/contents/{path}"
+    body: dict = {
+        "message": message,
+        "content": base64.b64encode(content.encode("utf-8")).decode("ascii"),
+        "branch": branch,
+    }
+    if sha:
+        body["sha"] = sha
+    try:
+        resp = requests.put(url, headers=_headers(), json=body, timeout=15)
+        if resp.status_code in (200, 201):
+            j = resp.json()
+            return {"ok": True, "commit_sha": ((j.get("commit") or {}).get("sha"))}
+        if resp.status_code == 403:
+            return {"ok": False, "error":
+                    "HTTP 403 — the GitHub token can't write repo contents. It needs "
+                    "Contents: Read & write. Update GH_TOKEN in /etc/macro-admin.env "
+                    "on the admin host, then restart the admin service."}
+        if resp.status_code == 409:
+            return {"ok": False, "error": "HTTP 409 — sha conflict (file changed under us); retry"}
+        return {"ok": False, "error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc)}
+
+
 def _slim_pr(p: dict) -> dict:
     return {
         "number": p.get("number"),
