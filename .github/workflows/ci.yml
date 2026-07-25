@@ -296,6 +296,11 @@ on:
       # covered by engine/**, but a test-only re-pin must still re-run the rot-sweep
       # step that carries it (2026-07-24 born-red organ-chip re-pin).
       - "tests/test_china_act_now.py"
+      # W4 stock-personality surface suite (re-pinned 2026-07-25 after PR #3256's Prophet
+      # card removed the dashboard chips): template/engine/script sides are covered by
+      # their globs; the test file needs an explicit path so a test-only re-pin still
+      # re-runs the rot-sweep step that carries it.
+      - "tests/test_stock_personality_w4_surfaces.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -332,6 +337,12 @@ on:
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
+      # push-retry policy: the shared retry loop every lane's commit→push step sources.
+      # A silent regression here throws away whole renders/ledger days (render.yml run
+      # 30167139398, 2026-07-25 — ~95 min discarded on a lost ref race). Both entries
+      # needed: .github/workflows/** covers the lanes, these cover the policy itself.
+      - "scripts/ci/push_retry.sh"
+      - "tests/test_push_retry.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -832,6 +843,12 @@ on:
       # boundary docs point at only ever fired incidentally, on unrelated PRs.
       # List every subject + test file the tier-gate job runs (app/main.py is
       # already listed above), so the exact PRs that move the boundary are gated.
+      # A guard the guarded change cannot trigger is not a guard: that is the #3418
+      # lesson ("red ~17h unwatched because no workflow named it") one layer up —
+      # #3474 wired the test into a job, nothing wired the job to its inputs.
+      # The TEST files below were the other half of the same hole (a PR editing only
+      # a boundary test ran nothing either). tests/test_site_access_boundary.py now
+      # pins the whole list by parsing this job's own `run:` steps — keep in sync.
       - "app/regwall.py"
       - "app/paywall.py"
       - "app/deploy/Caddyfile"
@@ -1270,6 +1287,7 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
+          tests/test_stock_personality_w4_surfaces.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
@@ -1546,6 +1564,33 @@ jobs:
         run: python scripts/check_dag_conformance.py --verbose
       - name: DAG conformance selftest + live conformance tests
         run: python -m pytest tests/test_dag_conformance.py -q
+
+  push-retry-policy:
+    # scripts/ci/push_retry.sh is the shared retry policy that EVERY lane's commit→push
+    # step sources (render, engine-render, daily ×13, closing-bell, asia-close ×2,
+    # weekly, earlyclose). It exists because render.yml run 30167139398 (2026-07-25)
+    # built a correct scope=all render and then lost all five push attempts to
+    # "cannot lock ref 'refs/heads/main'" — a lost RACE for the ref, not a conflict —
+    # discarding ~95 minutes of work. A regression here is silent and expensive: a lane
+    # that stops telling contention from a conflict, or slides back to a deterministic
+    # ladder, just throws renders and ledger days away under a red X that reads like a
+    # merge problem.
+    #
+    # The suite drives the library in a real `bash -eo pipefail` shell (GitHub's shell)
+    # and replays the incident against real git repos, then asserts the LANES still
+    # source it — so deleting the policy from a workflow reds here too.
+    #
+    # Triggers on: .github/workflows/**, scripts/ci/push_retry.sh, tests/test_push_retry.py.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: push-retry policy tests (classification, budgets, jitter, real git races)
+        run: python -m pytest tests/test_push_retry.py -q
 
   transmission-chains:
     # TXI W1/W3: the transmission chain library (knowledge/transmission/*.yaml), its compiler

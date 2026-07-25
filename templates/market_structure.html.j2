@@ -113,6 +113,10 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:8px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--panel2);color:var(--tx)}
 .badge.up{border-color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent);color:var(--up)}
 .badge.dn{border-color:var(--dn);background:color-mix(in srgb,var(--dn) 12%,transparent);color:var(--dn)}
+/* compact neutral badge: marks a figure as a model estimate, not an observation.
+   flex:none + nowrap — .sec-head is a flex row and would otherwise shrink the
+   badge until the label wrapped onto two lines. */
+.badge.est{flex:none;white-space:nowrap;padding:2px 8px;font-size:10px;font-weight:600;letter-spacing:.02em;border-style:dashed;color:var(--mut)}
 /* ── kpi row ── */
 .kpi-row{display:flex;gap:14px 22px;flex-wrap:wrap;margin:12px 0}
 .kpi{font-size:12px;color:var(--mut)}.kpi b{display:block;font-size:18px;color:var(--ink);font-weight:700;line-height:1.2}
@@ -244,8 +248,8 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
   </div>
 
   <span class="help">?<span class="tip">
-    <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: {{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B ({{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}th pctile since {{ gamma.series_start if gamma.series_start is not none else 'inception' }}).<br><br><em>Model estimate only — actual dealer books are unobservable. 70/30 SPX/SPY blend reconstruction.</em></span>
-    <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：{{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B（自{{ gamma.series_start if gamma.series_start is not none else '首日' }}以来{{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，为SPX/SPY 70/30混合重建。</em></span>
+    <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: {{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B ({{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}th pctile since {{ gamma.series_start if gamma.series_start is not none else 'inception' }}).<br><br><em>Model estimate only — actual dealer books are unobservable. Reconstructed from the SPX options chain.</em></span>
+    <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：{{ '%.1f'|format(gamma.net_gex_bn|float if gamma.net_gex_bn is not none else 0) }}B（自{{ gamma.series_start if gamma.series_start is not none else '首日' }}以来{{ '%.0f'|format(gamma.net_gex_pctile|float if gamma.net_gex_pctile is not none else 0) }}百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，由标普500指数期权链重建。</em></span>
   </span></span>
 
   {% if gamma.series_start is not none or (msp is defined and msp is not none and msp.asof is not none) %}
@@ -289,9 +293,13 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 <div class="sec-head">
   <span class="eyebrow">3</span>
   <h2>{{ t('Machine money flows', '机器资金动向') }}</h2>
+  {# The dollar figures below are arithmetic on a STYLIZED pool ($300B AUM at a 10%
+     vol target), not observed fund flow — say so where the numbers are, not only
+     in a hover. #}
+  <span class="badge est">{{ t('model estimate', '模型估算') }}</span>
   <span class="help">?<span class="tip">
     <span class="l-en"><b>What these are</b><br>Volatility-control funds (VC): target ~{{ vc.aum_bn if vc is not none and vc.aum_bn is not none else '300' }}B AUM; hold SPX at fraction min(1, 10% / max(RV21,RV63)). Pure price arithmetic — full backcast.<br><br>Trend-following funds (CTA): 20/50/100/200d trend z-score; flow estimated from positioning change.<br><br><em>Representative model estimates of mechanical fund behavior — NOT audited positions or actual AUM data.</em></span>
-    <span class="l-zh"><b>说明</b><br>波动率控制基金（VC）：目标约{{ vc.aum_bn if vc is not none and vc.aum_bn is not none else '300' }}亿美元规模；持仓比例 min(1, 10%/max(RV21,RV63))，纯价格计算，可全程回测。<br><br>趋势跟踪基金（CTA）：20/50/100/200日趋势Z分数；持仓变化估算资金流。<br><br><em>代表性机械基金行为的模型估算，非实际基金审计持仓。</em></span>
+    <span class="l-zh"><b>说明</b><br>波动率控制基金（VC）：目标规模约{{ ((vc.aum_bn|float * 10)|round|int) if vc is not none and vc.aum_bn is not none else 3000 }}亿美元；持仓比例 min(1, 10%/max(RV21,RV63))，纯价格计算，可全程回测。<br><br>趋势跟踪基金（CTA）：20/50/100/200日趋势Z分数；持仓变化估算资金流。<br><br><em>代表性机械基金行为的模型估算，非实际基金审计持仓。</em></span>
   </span></span>
   {% if sys is not none and sys.history is not none and sys.history | length > 0 %}
   <div class="range-btns" id="sys-range-btns" style="margin-left:auto">
@@ -470,8 +478,8 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
   <span class="eyebrow">6</span>
   <h2>{{ t('Weekly range', '本周区间') }}</h2>
   <span class="help">?<span class="tip">
-    <span class="l-en">The range options paid for at Friday's close, held through the week. ±1σ = 68% of outcomes; ±2σ = 95%. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend.</span>
-    <span class="l-zh">周五收盘时期权定价的本周区间，持有至本周末。±1σ=68%概率；±2σ=95%。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。</span>
+    <span class="l-en">Where the week could reasonably land, measured from Friday's close and the volatility priced in at that close. ±1σ covers about 68% of outcomes, ±2σ about 95% — if vol behaves as priced. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend. A model estimate, not a forecast or a boundary the market must respect.</span>
+    <span class="l-zh">从周五收盘价及当时定价的波动率推算，本周价格可能落在的区间。±1σ约覆盖68%的情形，±2σ约95% — 前提是波动率按定价兑现。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。这是模型估算，既非预测，也非市场必须遵守的边界。</span>
   </span></span>
 </div>
 
@@ -528,7 +536,10 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
     {% if wm_flip is not none %}<div class="kpi"><b class="amb">{{ '%.0f'|format(wm_flip|float) }}</b>{{ t('gamma flip', '伽马翻转位') }}</div>{% endif %}
   </div>
   {% endif %}
-  <div class="sec-foot" style="margin-top:10px">{{ t('Bands from Friday IV · held through week · resets each weekend · source:', '区间由周五IV确定 · 本周持有 · 每周末重置 · 来源：') }} {{ wm.source if wm.source is not none else 'iv_derived_atm_weekly' }}</div>
+  <div class="sec-foot" style="margin-top:10px">
+    <span class="l-en">Model estimate. Locked at Friday's close and held through the week; resets each weekend. Width comes from SPX 30-day implied volatility rescaled to five trading days, which assumes vol is priced the same at one week as at one month.</span>
+    <span class="l-zh">模型估算。于周五收盘锁定并持有至本周末，每周末重置。区间宽度由标普500 30天隐含波动率折算至5个交易日，前提是一周与一个月的波动率定价相同。</span>
+  </div>
 </div>
 {% else %}
 <div class="warmup"><b><span class="l-en">Week map warming up</span><span class="l-zh">周度图预热中</span></b><span class="l-en">The weekly expected-move bands appear after tonight's data run.</span><span class="l-zh">本周期权定价区间将在今晚数据更新后显示。</span></div>
@@ -536,8 +547,8 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
 
 {# ── Footer ── #}
 <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">
-  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions. Shock-absorber series from {{ gamma.series_start if gamma is not none and gamma.series_start is not none else 'inception' }}; correlation series from 2006.</span>
-  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓。缓冲机制数据自{{ gamma.series_start if gamma is not none and gamma.series_start is not none else '首日' }}起，相关性数据自2006年起。</span>
+  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions: the dollar amounts are arithmetic on one stylised $300B pool run at a 10% volatility target, so read them as scale and direction, not as money that actually moved. Shock-absorber series from {{ gamma.series_start if gamma is not none and gamma.series_start is not none else 'inception' }}; correlation series from 2006.</span>
+  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓：其中的美元金额是按单一模型化的3000亿美元资金池、10%波动率目标推算而来，应视为量级与方向的参考，而非真实成交的资金。缓冲机制数据自{{ gamma.series_start if gamma is not none and gamma.series_start is not none else '首日' }}起，相关性数据自2006年起。</span>
   {% if msp is defined and msp is not none and msp.built_at is not none %} · {{ t('Built', '构建于') }} {{ msp.built_at[:10] }}{% endif %}
 </div>
 

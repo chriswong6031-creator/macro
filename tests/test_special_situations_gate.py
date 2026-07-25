@@ -152,6 +152,51 @@ def test_shipped_shell_leaks_no_paid_row():
     assert len(TICKER_RE.findall(shell)) <= payload["preview"] + 1
 
 
+# ------------------------------------------------- express-lane thinning guard
+#
+# The guard lives in lib/desk_guard.py (stdlib only) rather than in the builder,
+# so this lane can exercise it without importing the page stack (pandas, plotly).
+
+
+def test_thin_guard_refuses_a_desk_that_lost_a_quarter_of_its_rows():
+    """A no-refresh rebake on a machine without the accumulated event store took
+    the live desk from 1129 situations to 641 on 2026-07-25. Aging never does
+    that in a day, so the guard must refuse instead of shipping a thinner page."""
+    from lib import desk_guard
+
+    assert desk_guard.would_thin(641, 1129) is True
+    assert desk_guard.would_thin(846, 1129) is True      # just under the floor
+    assert desk_guard.would_thin(847, 1129) is False     # ordinary aging passes
+    assert desk_guard.would_thin(1200, 1129) is False    # growth always passes
+
+
+def test_thin_guard_is_inert_without_a_baseline():
+    """First build (or an unreadable artifact) must never block itself."""
+    from lib import desk_guard
+
+    assert desk_guard.would_thin(1, None) is False
+    assert desk_guard.would_thin(1, 0) is False
+
+
+def test_shipped_count_reads_the_bytes_not_the_snapshot(tmp_path):
+    """The count comes from page rows + payload `locked`, because data/'s snapshot
+    can be staler than the page it describes — that drift IS the bug, so it
+    cannot also be the reference."""
+    from lib import desk_guard
+
+    page = tmp_path / "special_situations.html"
+    page.write_text('<div class="ss-row-card" data-ticker="a"></div>'
+                    '<div class="ss-row-card" data-ticker="b"></div>', encoding="utf-8")
+    payload = tmp_path / "payload.json"
+    payload.write_text(json.dumps({"schema": "tier_payload.v1", "gated": True, "locked": 500}),
+                       encoding="utf-8")
+    assert desk_guard.shipped_row_count(page, payload) == 502
+    # payload absent / ungated -> the page is the whole desk
+    assert desk_guard.shipped_row_count(page, tmp_path / "nope.json") == 2
+    # no shipped page at all -> no baseline
+    assert desk_guard.shipped_row_count(tmp_path / "missing.html") is None
+
+
 def test_shipped_payload_declares_the_required_tier():
     if not PAYLOAD.exists():
         pytest.skip("desk not yet rebaked in the gated shape")

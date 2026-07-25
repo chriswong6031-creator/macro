@@ -23,8 +23,13 @@ global allocator actually uses:
     USD return streams (5 international + the US), and the average off-diagonal as a
     single "how much diversification is on offer" gauge.
 
-  * Risk appetite — a cross-market RORO composite (breadth above trend, median
-    momentum, currency tide) as a 0-100 dial.
+  * World Risk Appetite v2 — a DESCRIPTIVE display-tier 0-100 dial for how risk-on
+    the WORLD equity tape is (not just the 7 ex-US intl markets). It widens the
+    universe to include the US, China and Hong Kong, weights each market by a
+    sqrt-dampened share of world equity market capitalisation (hand-pinned in
+    config, not live data), and blends a graded trend leg, a USD-momentum leg and
+    a turn-state health leg per market. Hand-pinned weights, never a forecast, and
+    NEVER feeds sizing or gating. See ``risk_appetite`` for the full construction.
 
 Pure functions over the shared parquet store; degrade-don't-crash per market.
 """
@@ -35,7 +40,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine import intl_inputs
+from engine import intl_inputs, intl_market_state
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -375,43 +380,271 @@ def correlation_matrix(closes: pd.DataFrame | None = None,
             "read_en": read_en, "read_zh": read_zh, "window_d": win}
 
 
+# --- World Risk Appetite v2 --------------------------------------------------
+# Per-state health score in [0,1] — how "risk-on" a market in this turn state is.
+# Keys MUST stay == set(engine.intl_market_state.STATES) (CI drift guard); a market
+# with no available state renormalises its leg weights over trend + mom.
+_STATE_HEALTH: dict[str, float] = {
+    "uptrend":   1.0,
+    "calm":      0.75,
+    "recovery":  0.65,
+    "extended":  0.6,
+    "basing":    0.5,
+    "parabolic": 0.45,
+    "topping":   0.35,
+    "downtrend": 0.2,
+    "breaking":  0.1,
+    "crash":     0.0,
+}
+# States that count toward the breakdown share (the "how much of the world is
+# actively breaking" gauge that turns Risk-on into a Split tape).
+_BREAKDOWN_STATES = {"crash", "breaking"}
+# States that qualify a market as a "drag" (ranked worst-first for the headline).
+_DRAG_STATES = {"crash", "breaking", "topping", "downtrend"}
+
+
+def _wr_cfg() -> dict:
+    return config.load()["intl"].get("world_risk", {}) or {}
+
+
+def _clip01(x: float) -> float:
+    return float(np.clip(x, 0.0, 1.0))
+
+
 def risk_appetite(closes: pd.DataFrame | None = None,
-                  usd_map: dict[str, pd.Series] | None = None) -> dict | None:
-    """Cross-market RORO dial (0-100): breadth above 200d (USD) + median 3m USD
-    momentum. Display-only — a descriptive 'how risk-on is the international tape'
-    gauge."""
+                  usd_map: dict[str, pd.Series] | None = None,
+                  extra_closes: dict[str, pd.Series] | None = None,
+                  states: dict[str, dict] | None = None) -> dict | None:
+    """World Risk Appetite v2 — a cap-weighted, state-aware 0-100 dial.
+
+    DESCRIPTIVE display-tier gauge only: how risk-on the WORLD equity tape is,
+    not just the 7 ex-US international markets. Widens the universe to include the
+    US, China and Hong Kong and weights each market by a sqrt-dampened share of
+    world equity market capitalisation (hand-pinned in config; see ``world_risk``)
+    so the US counts most and no single small market can swing the whole dial.
+    Hand-pinned weights, never a forecast, and NEVER feeds sizing or gating.
+
+    Construction (all causal, close-only, fail-open per market):
+      * ``w_i = sqrt(cap_share_i)`` renormalised over markets actually available.
+      * Per-market health ``h_i = 0.35·trend + 0.30·mom + 0.35·state`` in [0,1]:
+          trend = 0.6·g200 + 0.4·g50 (graded distance to the 200d/50d MA, LOCAL
+                  currency) — a market just above its 200d but under its 50d reads
+                  ~0.55, not 1.0, so rollovers are caught.
+          mom   = clipped 3-month return in USD terms.
+          state = the turn-state health map (uptrend 1.0 … crash 0.0); when no
+                  state is available the market's leg weights renormalise over
+                  trend + mom only.
+      * ``score = round(100 · Σ w_i·h_i / Σ w_i)``.
+
+    Parameters
+    ----------
+    closes:        the 7-market intl index/FX close frame (as usual).
+    usd_map:       precomputed USD index per intl cc (reused, not reloaded).
+    extra_closes:  optional {cc → LOCAL close Series} for markets outside
+                   intl.countries (US bench, CN Shanghai Composite, HK ^HSI).
+    states:        optional {cc → market_states dict} covering any/all markets;
+                   the ``state`` key drives the state leg + drags + breakdown.
+    """
     if closes is None:
         closes = intl_inputs._intl_closes()
     if usd_map is None:
         usd_map = _usd_map(closes)
-    above, moms = 0, []
-    n = 0
-    for cc, c in intl_inputs.countries().items():
-        usd = usd_map.get(cc)
-        if usd is None or len(usd) < 200:
-            continue
-        n += 1
-        ma200 = usd.rolling(200, min_periods=100).mean()
-        if ma200.notna().iloc[-1] and usd.iloc[-1] > ma200.iloc[-1]:
-            above += 1
-        m = _ret(usd, 63)
-        if m is not None:
-            moms.append(m)
-    if n == 0 or not moms:
-        return None
-    breadth = above / n                                  # 0..1
-    med_mom = float(np.median(moms))                     # %
-    breadth_leg = breadth                                # 0..1
-    mom_leg = float(np.clip((med_mom + 10) / 20, 0, 1))  # -10%..+10% -> 0..1
-    score = round((0.55 * breadth_leg + 0.45 * mom_leg) * 100, 0)
-    if score >= 66:
-        label_en, label_zh, tone = "Risk-on", "风险偏好", "up"
-    elif score >= 40:
-        label_en, label_zh, tone = "Neutral", "中性", "flat"
+    extra_closes = extra_closes or {}
+    states = states or {}
+
+    cap_share: dict[str, float] = {k: float(v) for k, v in (_wr_cfg().get("cap_share") or {}).items()}
+    extra_meta: dict[str, dict] = _wr_cfg().get("extra_markets") or {}
+    countries = intl_inputs.countries()
+
+    # A CNY series lets us express the Shanghai Composite in USD. The build passes
+    # it in via extra_closes["_CNY"] (loaded from the china store); it may also be
+    # present as a column in `closes` (intl/forex frame). When absent we score CN
+    # in local terms (a code comment marks the fallback below).
+    cny = None
+    _cny_extra = extra_closes.get("_CNY")
+    if _cny_extra is not None and not _cny_extra.dropna().empty:
+        cny = _cny_extra.dropna()
     else:
+        for _c in ("USDCNY=X", "CNY=X", "USDCNH=X", "CNH=F"):
+            if _c in closes:
+                s = closes[_c].dropna()
+                if not s.empty:
+                    cny = s
+                    break
+
+    def _local_index(cc: str) -> pd.Series | None:
+        """LOCAL-currency index close for a market (trend leg is local-currency)."""
+        if cc in extra_closes:
+            s = extra_closes[cc]
+            return s.dropna() if s is not None else None
+        c = countries.get(cc)
+        if not c:
+            return None
+        col = c["index"]
+        if col in closes:
+            s = closes[col].dropna()
+            return s if not s.empty else None
+        return None
+
+    def _usd_index(cc: str) -> pd.Series | None:
+        """USD-terms index for the momentum leg."""
+        if cc in usd_map:                       # the 7 intl markets are pre-converted
+            return usd_map[cc]
+        if cc in extra_closes:
+            s = extra_closes[cc]
+            s = s.dropna() if s is not None else None
+            if s is None or s.empty:
+                return None
+            if cc == "US":
+                return s                        # ^GSPC/SPY already USD
+            if cc == "HK":
+                return s                        # HKD is pegged to USD — treat as USD-equivalent
+            if cc == "CN" and cny is not None:
+                # USD/CNY quote (higher = weaker CNY) → USD value DIVIDES by the pair
+                idx = s.index.union(cny.index)
+                px = s.reindex(idx).ffill()
+                fx = cny.reindex(idx).ffill()
+                return (px / fx).dropna()
+            return s                            # CN with no CNY series — local proxy (fallback)
+        return None
+
+    def _trend_leg(px: pd.Series) -> float | None:
+        px = px.dropna()
+        if len(px) < 200:
+            return None
+        ma200 = px.rolling(200, min_periods=100).mean()
+        ma50 = px.rolling(50, min_periods=25).mean()
+        if not (ma200.notna().iloc[-1] and ma50.notna().iloc[-1]):
+            return None
+        last = float(px.iloc[-1])
+        dist200 = (last / float(ma200.iloc[-1]) - 1.0) * 100.0
+        dist50 = (last / float(ma50.iloc[-1]) - 1.0) * 100.0
+        g200 = _clip01((dist200 + 8) / 12)
+        g50 = _clip01((dist50 + 6) / 9)
+        return 0.6 * g200 + 0.4 * g50
+
+    def _mom_leg(usd: pd.Series | None) -> float | None:
+        if usd is None:
+            return None
+        r = _ret(usd, 63)
+        return None if r is None else _clip01((r + 10) / 20)
+
+    # --- per-market health -----------------------------------------------------
+    per_market: dict[str, dict] = {}
+    above_200d = 0
+    n_above_denom = 0
+    all_moms: list[float] = []          # for the hover receipt (full available universe)
+
+    for cc in cap_share:
+        local = _local_index(cc)
+        usd = _usd_index(cc)
+        trend = _trend_leg(local) if local is not None else None
+        mom = _mom_leg(usd)
+        st = (states.get(cc) or {}).get("state")
+        state_h = _STATE_HEALTH.get(st) if st in _STATE_HEALTH else None
+        if trend is None and mom is None and state_h is None:
+            continue                    # market entirely unavailable — drop it
+
+        # leg weights: 0.35 trend + 0.30 mom + 0.35 state; renormalise over present legs
+        legs: list[tuple[float, float]] = []
+        if trend is not None:
+            legs.append((0.35, trend))
+        if mom is not None:
+            legs.append((0.30, mom))
+        if state_h is not None:
+            legs.append((0.35, state_h))
+        wsum = sum(w for w, _ in legs)
+        if wsum <= 0:
+            continue
+        health = sum(w * v for w, v in legs) / wsum
+
+        # receipt aggregates over the FULL available universe (not just the 7)
+        if local is not None:
+            px = local.dropna()
+            if len(px) >= 200:
+                ma200 = px.rolling(200, min_periods=100).mean()
+                if ma200.notna().iloc[-1]:
+                    n_above_denom += 1
+                    if px.iloc[-1] > ma200.iloc[-1]:
+                        above_200d += 1
+        if mom is not None and usd is not None:
+            _mr = _ret(usd, 63)
+            if _mr is not None:
+                all_moms.append(_mr)
+
+        per_market[cc] = {"h": round(health, 3), "state": st, "weight_pct": None,
+                          "cap_share": cap_share[cc]}
+
+    if not per_market:
+        return None
+
+    # --- cap-weighted compose (sqrt-dampened) ----------------------------------
+    weights = {cc: float(np.sqrt(cap_share[cc])) for cc in per_market}
+    wtot = sum(weights.values())
+    for cc in per_market:
+        per_market[cc]["weight_pct"] = round(100.0 * weights[cc] / wtot, 1) if wtot else None
+    score = int(round(100.0 * sum(weights[cc] * per_market[cc]["h"] for cc in per_market) / wtot)) if wtot else 0
+
+    coverage_num = sum(cap_share[cc] for cc in per_market)
+    coverage_den = sum(cap_share.values()) or 1.0
+    coverage_pct = round(100.0 * coverage_num / coverage_den, 1)
+
+    # breakdown share: cap-share of markets actively breaking (crash/breaking)
+    breakdown_num = sum(cap_share[cc] for cc in per_market
+                        if (states.get(cc) or {}).get("state") in _BREAKDOWN_STATES)
+    breakdown_share_pct = round(100.0 * breakdown_num / coverage_num, 1) if coverage_num else 0.0
+
+    # --- verdict (display semantics — the SCORE is never floored/overridden) ---
+    # Branch order matters: the breakdown-share warning must be checked BEFORE the
+    # score>=60 gate so a split tape sitting anywhere in the 40-60 band still reads
+    # "Split tape" (a US+CN crash carrying ~68% of covered cap can land the score at
+    # ~57 — plain "Neutral" would hide it). Risk-off (score<40) still wins outright.
+    if score < 40:
         label_en, label_zh, tone = "Risk-off", "风险规避", "down"
-    return {"score": score, "label_en": label_en, "label_zh": label_zh, "tone": tone,
-            "breadth_above_200d": f"{above}/{n}", "median_mom_3m": round(med_mom, 1)}
+    elif breakdown_share_pct >= 20:
+        label_en, label_zh, tone = "Split tape", "分化行情", "warn"
+    elif score >= 60:
+        label_en, label_zh, tone = "Risk-on", "风险偏好", "up"
+    else:
+        label_en, label_zh, tone = "Neutral", "中性", "flat"
+
+    # --- top drags: worst markets by w_i·(1−h_i), state in the drag set --------
+    def _meta(cc: str) -> dict:
+        if cc in countries:
+            c = countries[cc]
+            return {"name": c["name"], "name_zh": c.get("name_zh", c["name"]), "flag": c.get("flag", "")}
+        m = extra_meta.get(cc, {})
+        return {"name": m.get("name", cc), "name_zh": m.get("name_zh", cc), "flag": m.get("flag", "")}
+
+    drags: list[dict] = []
+    for cc, pm in per_market.items():
+        st = pm["state"]
+        if st in _DRAG_STATES:
+            meta = _meta(cc)
+            sm = intl_market_state.STATES.get(st, {})
+            drags.append({
+                "cc": cc, "name": meta["name"], "name_zh": meta["name_zh"], "flag": meta["flag"],
+                "state": st, "state_en": sm.get("en", st), "state_zh": sm.get("zh", st),
+                "_rank": weights[cc] * (1.0 - pm["h"]),
+            })
+    drags.sort(key=lambda d: d["_rank"], reverse=True)
+    top_drags = [{k: v for k, v in d.items() if k != "_rank"} for d in drags[:3]]
+
+    med_mom = round(float(np.median(all_moms)), 1) if all_moms else None
+
+    return {
+        "score": score,
+        "label_en": label_en, "label_zh": label_zh, "tone": tone,
+        "breadth_above_200d": f"{above_200d}/{n_above_denom}" if n_above_denom else None,
+        "median_mom_3m": med_mom,
+        "coverage_pct": coverage_pct,
+        "n_available": len(per_market),
+        "n_universe": len(cap_share),
+        "breakdown_share_pct": breakdown_share_pct,
+        "top_drags": top_drags,
+        "per_market": {cc: {"h": pm["h"], "state": pm["state"], "weight_pct": pm["weight_pct"]}
+                       for cc, pm in per_market.items()},
+    }
 
 
 def global_read(records: list[dict], board: list[dict], rrg: dict | None,
@@ -457,19 +690,34 @@ def global_read(records: list[dict], board: list[dict], rrg: dict | None,
         parts_en.append(rrg["tilt_en"] + ".")
         parts_zh.append(rrg["tilt_zh"] + "。")
     if risk:
-        parts_en.append(f"Cross-market risk appetite {risk['label_en'].lower()} ({int(risk['score'])}/100).")
-        parts_zh.append(f"跨市场风险偏好{risk['label_zh']}（{int(risk['score'])}/100）。")
+        drags = risk.get("top_drags") or []
+        drag_en = drag_zh = ""
+        if drags:
+            names_en = ", ".join(d["name"] for d in drags[:2])
+            names_zh = "、".join(d["name_zh"] for d in drags[:2])
+            drag_en = f" — dragged by {names_en}"
+            drag_zh = f"——受{names_zh}拖累"
+        parts_en.append(f"World risk appetite {risk['label_en'].lower()} ({int(risk['score'])}/100){drag_en}.")
+        parts_zh.append(f"全球风险偏好{risk['label_zh']}（{int(risk['score'])}/100）{drag_zh}。")
     return {"en": " ".join(parts_en), "zh": "".join(parts_zh), "dominant_quad": dom}
 
 
 def performance_panel(closes: pd.DataFrame | None = None,
-                      records: list[dict] | None = None) -> dict:
+                      records: list[dict] | None = None,
+                      extra_closes: dict[str, pd.Series] | None = None,
+                      states: dict[str, dict] | None = None) -> dict:
     """Assemble the whole performance/rotation block for the build script.
 
     The returned dict gains a 'bench_note' key (str | None) that is non-None
     when SPY was substituted for a stale ^GSPC benchmark (ITR-R6).
     The fresh benchmark is also stored under 'bench' for callers such as
     build_intl that need to pass it to intl_rotation.rank().
+
+    ``extra_closes`` (US/CN/HK LOCAL close Series) and ``states`` (per-cc turn
+    states covering the full universe) are threaded into the World Risk Appetite
+    v2 dial so it can weigh the US, China and Hong Kong alongside the 7 intl
+    markets. Both are optional and fail-open — absent, the dial simply covers
+    fewer markets (coverage_pct < 100).
     """
     if closes is None:
         closes = intl_inputs._intl_closes()
@@ -479,7 +727,7 @@ def performance_panel(closes: pd.DataFrame | None = None,
     board = usd_leaderboard(closes, usd_map=usd_map)
     rrg = relative_to_us(closes, bench=bench, usd_map=usd_map)
     corr = correlation_matrix(closes, bench=bench, usd_map=usd_map)
-    risk = risk_appetite(closes, usd_map=usd_map)
+    risk = risk_appetite(closes, usd_map=usd_map, extra_closes=extra_closes, states=states)
     read = global_read(records or [], board, rrg, risk)
     return {"leaderboard": board, "rrg": rrg, "correlation": corr,
             "risk_appetite": risk, "global_read": read,

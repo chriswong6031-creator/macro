@@ -604,7 +604,13 @@ def _build_ticker_record(
                 gross_hist = summary_df[col].dropna().astype(float)
                 break
         if "net_premium_mn" in summary_df.columns:
-            net_hist = summary_df["net_premium_mn"].dropna().astype(float)
+            # NO dropna() here: flow_inflect needs to SEE the gaps.  A missing
+            # session must break a negative run (it is not evidence of selling),
+            # and dropping it would splice the run back together at the call
+            # site — exactly the defect the detector was fixed to avoid.
+            # (Sessions absent from the frame entirely are still invisible; the
+            # detector can only break on gaps the store actually records.)
+            net_hist = summary_df["net_premium_mn"].astype(float)
 
     # Recurrence count and leg (for non-stale sessions)
     ticker_membership = (
@@ -935,8 +941,15 @@ def build(
             # the "turned back up" board — only names that actually inflected (a
             # real washout-turn) belong there, not the whole universe. A name may
             # qualify for both; a name that never flipped belongs on neither's turn list.
+            #
+            # Admission is the corrected detector's verdict (B5 = flow_inflect
+            # `inflected`): a NEWEST-flip washout pattern [-,-,-,+] with the run
+            # unbroken, the flip ≤INFLECT_FRESH_MAX sessions old, and the latest
+            # session still positive.  `days_since_inflection is not None` is NOT
+            # sufficient — it stays populated for stale flips so the "how fresh"
+            # read can stay honest, which is exactly why it must not gate the board.
             board_a_rows.append(rec)
-            if rec.get("days_since_inflection") is not None:
+            if rec.get("B5_flow_inflect") is True:
                 board_b_rows.append(rec)
         except Exception as e:  # noqa: BLE001
             log.warning("build_flow_leaders: ticker %s failed (skipped): %s", ticker, e)
@@ -1073,7 +1086,17 @@ def build(
             html_out.write_text(rendered)
             log.info("build_flow_leaders: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001
-            log.warning("build_flow_leaders: HTML render failed: %s", e)
+            # Fail-soft by law but LOUD (#3487 pattern): full traceback into the
+            # builder log + a one-line ::warning that surfaces in the Actions
+            # annotations even at rc=0 — a silent miss here freezes the baked page
+            # on its last-committed vintage while leaders.json moves on.
+            log.warning("build_flow_leaders: HTML render failed: %s", e, exc_info=True)
+            log.warning(
+                "::warning title=flow_leaders::HTML render failed (non-fatal) — "
+                "leaders.json updated but site/flow_leaders.html was NOT re-rendered "
+                "and stays on its last-committed vintage: %s: %s",
+                type(e).__name__, e,
+            )
     else:
         log.info("build_flow_leaders: template %s absent — skipping HTML", tpl_path)
 
@@ -1093,7 +1116,18 @@ def main() -> int:
                 result.get("stale"),
             )
     except Exception as e:  # noqa: BLE001
-        log.error("build_flow_leaders: unexpected error: %s", e)
+        # Fail-soft by law but LOUD (#3487 pattern): traceback + a ::warning
+        # annotation at rc=0. A silent crash here means NEITHER leaders.json nor
+        # flow_leaders.html is rewritten — the baked page freezes on its
+        # last-committed vintage with no red anywhere (how the pre-#3224 render
+        # survived live for 3 days, 2026-07-22..25).
+        log.error("build_flow_leaders: unexpected error: %s", e, exc_info=True)
+        log.warning(
+            "::warning title=flow_leaders::builder crashed (non-fatal, exit 0) — "
+            "site/flow_leaders.html + leaders.json NOT rewritten this run, baked "
+            "page stays on its last-committed vintage: %s: %s",
+            type(e).__name__, e,
+        )
     return 0
 
 

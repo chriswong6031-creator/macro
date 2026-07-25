@@ -4070,39 +4070,20 @@ def _master_brief_vm() -> dict:
 
 
 def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None":
-    """Thread the DISPLAY-ONLY board attaches onto us_standouts buy cards — W4
-    stock-personality chips + RLT-R6 sector-stance labels. Mutates and returns `doc`
-    (None passes through). Each attach is fail-open: a missing or malformed sidecar
-    just omits its chip and never breaks the build. Factored so the first-pass render
-    and the post-build_library re-render (one-build-lag fix) share ONE enrichment path
-    and can never silently diverge (e.g. drop chips on the re-render)."""
+    """Thread the DISPLAY-ONLY board attaches onto us_standouts buy cards — RLT-R6
+    sector-stance labels. Mutates and returns `doc` (None passes through). The attach is
+    fail-open: a missing or malformed sidecar just omits its chip and never breaks the
+    build. Factored so the first-pass render and the post-build_library re-render
+    (one-build-lag fix) share ONE enrichment path and can never silently diverge.
+
+    The W4 stock-personality chip attach that lived here was removed 2026-07-25 as dead
+    display code: PR #3256 (Prophet card v1) deleted its only consumer — the dashboard
+    .nb-more nb-sp-chips block — so the attach enriched a key no template read (the doc
+    is in-memory only, never written back to us_standouts.json). stock_personality.json
+    production and the stock.html / basket_detail personality surfaces are unaffected.
+    Tombstone pin: tests/test_stock_personality_w4_surfaces.py §2."""
     if not doc:
         return doc
-    # W4 stock-personality slim attach: thread chart+mode chips into buy cards
-    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent/malformed).
-    _sp_path = site / "factordata" / "stock_personality.json"
-    _sp_per_ticker: dict = {}
-    if _sp_path.exists():
-        try:
-            _sp_doc = json.loads(_sp_path.read_text())
-            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
-        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
-            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
-    if _sp_per_ticker:
-        try:
-            for _card in (doc.get("buy") or []):
-                _tk = _card.get("ticker")
-                _sp_slim = _sp_per_ticker.get(_tk)
-                if _sp_slim:
-                    _chart = _sp_slim.get("chart") or []
-                    _modes = _sp_slim.get("modes") or []
-                    _mode1 = next((m for m in _modes if m != "normal"), None)
-                    _card["personality"] = {
-                        "chart": _chart[0] if _chart else None,
-                        "mode": _mode1,
-                    }
-        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
-            log.warning("stock_personality board attach failed (%s)", _spe2)
     # RLT-R6 sector-stance disclosure: join sector_central verdicts onto buy-board rows.
     # DISPLAY-ONLY — zero effect on selection, rank, or gating. Missing sector or
     # sector_central data -> field absent, chip silently omitted. Ordering: sector_central.json

@@ -419,3 +419,170 @@ def test_rows_export_survives_non_json_native_values(tmp_path):
     txt = out.read_text()
     assert "2026-07-25" in txt
     assert json.loads(txt)["n_rows"] == 1
+
+
+# ---------------------------------------------------------------------------
+# 9. OEU M-FIX — screener consistency fixes
+#    (a) pain_dist_pct uses the SPOT denominator, like the wall distances
+#    (b) stringified-NaN gamma regimes are nulled at the schema boundary
+#    (c) median_depth_days copy says "sessions observed", not "calendar days"
+# ---------------------------------------------------------------------------
+
+def _write_mfix_gex_fixture(gex_dir: pathlib.Path, ticker: str, gamma_regime_last):
+    """GEX fixture with a wide spot/max_pain gap so the denominator is unambiguous.
+
+    Last row: spot=200, max_pain=100 →
+        spot denominator (correct): (200-100)/200*100 =  50.0
+        max_pain denominator (bug): (200-100)/100*100 = 100.0
+    """
+    n_rows = 5
+    dates = pd.date_range("2026-06-15", periods=n_rows, freq="D")
+    df = pd.DataFrame(
+        {
+            "spot":              [200.0] * n_rows,
+            "iv30":              [0.20 + 0.01 * i for i in range(n_rows)],
+            "put_call_oi_ratio": [1.0] * n_rows,
+            "max_pain":          [100.0] * n_rows,
+            "magnet_up":         [220.0] * n_rows,
+            "magnet_down":       [180.0] * n_rows,
+            "gamma_flip":        [210.0] * n_rows,
+            "gamma_regime":      ["long"] * (n_rows - 1) + [gamma_regime_last],
+            "tier":              ["full"] * n_rows,
+            "n_strikes":         [100] * n_rows,
+        },
+        index=dates,
+    )
+    df.to_parquet(gex_dir / f"summary_{ticker}.parquet")
+
+
+def _run_mfix_builder(tmp_path, monkeypatch, gamma_regime_last):
+    """Run the builder over a single M-FIX fixture; return (rows, html)."""
+    from lib import config as lib_config
+
+    _real_load = lib_config.load
+    monkeypatch.setattr(
+        lib_config, "load",
+        lambda: {**_real_load(), "options_screener": {"enabled": True}},
+    )
+
+    gex_dir  = tmp_path / "data" / "polygon_gex"
+    flow_dir = tmp_path / "data" / "options_flow"
+    tape_dir = tmp_path / "data" / "tape_flow" / "daily"
+    site_dir = tmp_path / "site"
+    gex_dir.mkdir(parents=True)
+    flow_dir.mkdir(parents=True)
+    site_dir.mkdir(parents=True)
+
+    _write_mfix_gex_fixture(gex_dir, "TSTM", gamma_regime_last)
+
+    monkeypatch.setattr(bos, "GEX_DIR",       gex_dir)
+    monkeypatch.setattr(bos, "FLOW_DIR",      flow_dir)
+    monkeypatch.setattr(bos, "TAPE_FLOW_DIR", tape_dir)
+
+    captured: dict[str, str] = {}
+
+    def _fake_write(path, html, **kw):
+        captured["html"] = html
+        return site_dir / pathlib.Path(path).name
+
+    monkeypatch.setattr(bos, "write_page", _fake_write)
+    # main() also writes the Scanner-mode rows export (M-XP c). Redirect it into
+    # tmp_path — a test must never write into the live site/ tree (MM_DATA_GUARD).
+    # Still the real writer, so my corrected pain_dist_pct / gamma_regime values
+    # are exercised through the export path too, not just the page.
+    _real_export = bos.write_rows_export
+    monkeypatch.setattr(
+        bos, "write_rows_export",
+        lambda rows, coverage, out_path=None: _real_export(rows, coverage, site_dir / "rows.json"))
+
+    assert bos.main() == 0
+    html = captured["html"]
+
+    import re as _re
+    m = _re.search(r'<script[^>]+id="os-rows"[^>]*>(.*?)</script>', html, _re.DOTALL)
+    assert m, "os-rows script tag not found"
+    return json.loads(m.group(1)), html
+
+
+class TestSafeStr:
+    """_safe_str: the schema-boundary guard against stringified NaN."""
+
+    def test_float_nan_becomes_none(self):
+        """The actual defect: pandas gives float('nan'), which is TRUTHY."""
+        assert bos._safe_str(float("nan")) is None
+
+    def test_pandas_na_becomes_none(self):
+        assert bos._safe_str(pd.NA) is None
+
+    def test_literal_nan_string_becomes_none(self):
+        assert bos._safe_str("nan") is None
+        assert bos._safe_str("NaN") is None
+
+    def test_none_stays_none(self):
+        assert bos._safe_str(None) is None
+
+    def test_empty_and_whitespace_become_none(self):
+        assert bos._safe_str("") is None
+        assert bos._safe_str("   ") is None
+
+    def test_real_value_survives_and_is_stripped(self):
+        assert bos._safe_str("long") == "long"
+        assert bos._safe_str("  short ") == "short"
+
+    def test_old_idiom_would_have_produced_the_bug(self):
+        """Pin the root cause so the regression is legible, not folklore."""
+        raw = float("nan")
+        assert bool(raw) is True                      # NaN is truthy
+        assert str(raw or "") or None == "nan"        # the old expression
+        assert bos._safe_str(raw) is None             # the fix
+
+
+def test_pain_dist_pct_uses_spot_denominator(tmp_path, monkeypatch):
+    """spot=200, max_pain=100 → 50.0 (÷spot), NOT 100.0 (÷max_pain)."""
+    rows, _ = _run_mfix_builder(tmp_path, monkeypatch, "long")
+    row = next(r for r in rows if r["ticker"] == "TSTM")
+    assert row["pain_dist_pct"] == 50.0, (
+        f"expected 50.0 (spot denominator), got {row['pain_dist_pct']} "
+        "— 100.0 means the max_pain denominator is back"
+    )
+
+
+def test_pain_dist_pct_matches_wall_distance_denominator(tmp_path, monkeypatch):
+    """Both distances must be quoted against the same base, so they compare."""
+    rows, _ = _run_mfix_builder(tmp_path, monkeypatch, "long")
+    row = next(r for r in rows if r["ticker"] == "TSTM")
+    spot, max_pain, wall_up = 200.0, 100.0, 220.0
+    assert row["pain_dist_pct"]    == round((spot - max_pain) / spot * 100, 2)
+    assert row["wall_up_dist_pct"] == round((wall_up - spot) / spot * 100, 2)
+
+
+def test_nan_gamma_regime_is_nulled_not_stringified(tmp_path, monkeypatch):
+    """A NaN regime cell must reach the payload as null, never as "nan"."""
+    rows, html = _run_mfix_builder(tmp_path, monkeypatch, float("nan"))
+    row = next(r for r in rows if r["ticker"] == "TSTM")
+    assert row["gamma_regime"] is None, f"got {row['gamma_regime']!r}"
+    assert '"gamma_regime":"nan"' not in html.replace(" ", "")
+
+
+def test_real_gamma_regime_still_passes_through(tmp_path, monkeypatch):
+    """Positive control: the guard must not null out real values."""
+    rows, _ = _run_mfix_builder(tmp_path, monkeypatch, "short")
+    row = next(r for r in rows if r["ticker"] == "TSTM")
+    assert row["gamma_regime"] == "short"
+
+
+def test_coverage_stamp_says_sessions_observed(tmp_path, monkeypatch):
+    """median_depth_days counts observation rows — the copy must say so.
+
+    Scoped to the coverage stamp: "calendar days" elsewhere on the page (the
+    252-day young-IV threshold) IS a true calendar span and must stay.
+    """
+    import re as _re
+    _, html = _run_mfix_builder(tmp_path, monkeypatch, "long")
+    m = _re.search(r'<div class="cov-stamp">(.*?)</div>', html, _re.DOTALL)
+    assert m, "coverage stamp not found in rendered page"
+    stamp = m.group(1)
+    assert "sessions observed" in stamp
+    assert "已观测交易日" in stamp
+    assert "calendar days" not in stamp, "median depth is an observation count, not a calendar span"
+    assert "个日历日" not in stamp

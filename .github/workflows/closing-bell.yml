@@ -480,6 +480,7 @@ jobs:
       - name: commit rendered site + provisional snapshot pointers (ledgers discarded)
         if: steps.mutex.outputs.skip != 'true' && steps.guard.outputs.skip != 'true'
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
@@ -509,7 +510,9 @@ jobs:
           SESSION_DATE=$(python3 -c "import sys; sys.path.insert(0,'.'); from lib.nyse_calendar import session_date; print(session_date().isoformat())")
           MSG="closingbell: full close render ${SESSION_DATE} (scope=close)"$'\n\n'"provisional close render (full market scope); nightly is canonical"$'\n'"CLOSINGBELL=1 lane - site/ + regime/market-state snapshot pointers (fastpath idiom); ledgers discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
           git commit -m "$MSG"
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "closingbell rendered site"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -537,13 +540,14 @@ jobs:
                 git add site/ && git commit -m "render-sync: post-rebase guards (closingbell)" \
                   || echo "::warning::render-sync commit failed (non-fatal)"
               fi
-              if perl -e 'alarm 420; exec @ARGV or die' -- git push; then echo "pushed closingbell rendered site on attempt $i"; exit 0; fi
+              if push_do; then echo "pushed closingbell rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "closingbell push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::error title=closingbell rendered site NOT pushed::5 rebase/push attempts failed — main does not carry this render (the Pages artifact still deploys it; the nightly re-lands main). With rename/rename now autoresolved, repeated hits mean a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ⚠️ closingbell rendered site NOT pushed after 5 attempts (artifact still deploys; nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
+          push_lost
+          echo "::error title=closingbell rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (the Pages artifact still deploys it; the nightly re-lands main). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ⚠️ closingbell rendered site NOT pushed after $PUSH_ATTEMPT attempts (artifact still deploys; nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
 
       # ── strip heavy per-ticker stores from the Pages artifact (served from R2) ───────
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)

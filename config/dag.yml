@@ -355,6 +355,18 @@ lanes:
       - id: grade_news_events
         module: scripts.grade_news_events
         note: writes site/news/calibration.json which build_site reads (W4 side-artifact)
+      # OEU M-FIX — same class as the NWS-01 fix above: the MSP data spine must run
+      # BEFORE build_site, which renders market_structure.html from
+      # data/market_structure/latest.json inside its MSP block. It previously sat in
+      # the parallel cl_gex band AFTER build_site, so the page shipped one generation
+      # stale every night (the Weekly Range / gamma / systematic blocks described the
+      # previous run). Cheap (<10s); inputs are collect-job artifacts, not band output.
+      - id: build_market_structure
+        module: scripts.build_market_structure
+        note: >
+          MSP W1 market-structure data spine (VC/CTA systematic flows + gamma +
+          dispersion + week_map). Lane-gated ledger (COLLECT_LANE=nightly); artifact
+          data/market_structure/latest.json, consumed by build_site's MSP render block.
       - id: build_site
         module: scripts.build_site
       - id: build_ticker_pages
@@ -463,11 +475,11 @@ lanes:
           cl_gex:
             - scripts.build_gex_board
             - scripts.build_vol_regime
-            # MSP W1: market-structure data spine (VC/CTA systematic flows + gamma + dispersion).
-            # Runs AFTER build_gex_board (reads gex_SPX.parquet committed by the collect step;
-            # build_gex_board may refresh it but gex_SPX is committed nightly regardless).
-            # Cheap (<10s); lane-gated ledger; artifact data/market_structure/latest.json.
-            - scripts.build_market_structure
+            # MSP W1 (scripts.build_market_structure) MOVED OUT of this band to the serial
+            # spine before build_site — OEU M-FIX. It used to sit here, i.e. AFTER build_site
+            # had already rendered market_structure.html, so the page always described the
+            # PREVIOUS run's data/market_structure/latest.json. Its inputs (gex_SPX.parquet,
+            # _GSPC.parquet) come from the collect job, so it never depended on this band.
             # W4 EVW (RIC program, P3): event-window snapshot + forward-log stamp
             - scripts.build_event_windows
             - scripts.build_options_flow
@@ -1607,6 +1619,17 @@ lanes:
         module: scripts.build_vector
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_flow_leaders
+        module: scripts.build_flow_leaders
+        note: >
+          Flow Leaders desk, page-only re-render (scope=all, serial post-band via
+          flowleaders()). Reads committed flow/tape/chains/options-entry stores +
+          build_site's stockdata JSONs; zero data/ writes by design, absent-safe,
+          exit 0. Added 2026-07-25: daily-lane-only membership + 3 dead nightlies
+          froze site/flow_leaders.html at its pre-#3224 render (banned-vocab slugs
+          on a live doctrine surface). Serial post-band, not cl_misc, because
+          cl_gex's build_options_entry_state rewrites
+          data/options_entry/state.parquet — an input here.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -1726,6 +1749,16 @@ lanes:
         module: scripts.build_vector
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: build_flow_leaders
+        module: scripts.build_flow_leaders
+        note: >
+          Flow Leaders desk, page-only re-render (scope=all, serial post-band via
+          flowleaders()). Reads committed flow/tape/chains/options-entry stores +
+          build_site's stockdata JSONs; zero data/ writes by design, absent-safe,
+          exit 0. Added 2026-07-25: daily-lane-only membership + 3 dead nightlies
+          froze site/flow_leaders.html at its pre-#3224 render. Serial post-band,
+          not cl_misc, because cl_gex's build_options_entry_state rewrites
+          data/options_entry/state.parquet — an input here.
       - id: build_special_situations_page_only
         module: scripts.build_special_situations
         args: [--no-refresh]

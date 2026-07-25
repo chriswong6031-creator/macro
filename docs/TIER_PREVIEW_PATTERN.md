@@ -82,6 +82,14 @@ Deploy is automatic: `app/deploy/update.sh` (cron, every ~3 min) restarts
    (the desk PAGE, not its slow collector) so a template fix reaches the baked
    shell in minutes. Reuse the last real build's `built` stamp on a no-refresh
    rebake so an unchanged desk rebakes byte-identically and commits nothing.
+   **Guard the rebake against thinning** with `lib/desk_guard.py`: a no-refresh
+   render reads the COMMITTED store, but a collector's `enrich_*` progress
+   accumulates in the *nightly runner's* working copy and only a successful
+   nightly `git add data/` publishes it. On 2026-07-25 that gap was three days
+   wide and a `scope=sits` render on a fresh runner took the live desk from 1129
+   situations to 641 — silently. The guard refuses any no-refresh rebake that
+   would drop >25% of the SHIPPED row count (page rows + payload `locked`; never
+   a `data/` snapshot, which is what went stale).
 7. **Tests**: prove the split hermetically (fake rows → the shell contains only
    the preview), and assert the shipped bytes carry no payload row. Assert on
    full class attributes, never a bare selector substring — the page's own CSS

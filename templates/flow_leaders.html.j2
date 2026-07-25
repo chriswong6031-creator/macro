@@ -30,9 +30,12 @@
 {% set board_a = fl.board_a if fl.board_a is defined and fl.board_a is not none else [] %}
 {% set board_b_raw = fl.board_b if fl.board_b is defined and fl.board_b is not none else [] %}
 {# Board B robustness guard: only names that actually inflected belong on the
-   "turned back up" board. The builder may hand the full universe; keep the turns. #}
+   "turned back up" board. The builder may hand the full universe; keep the turns.
+   Mirrors the builder's admission rule exactly — B5 (the washout-flip verdict),
+   NOT days_since_inflection, which stays populated for stale flips so the
+   "how fresh" column can tell the truth about them. #}
 {% set board_b = [] %}
-{% for r in board_b_raw %}{% if r.days_since_inflection is defined and r.days_since_inflection is not none %}{% set _ = board_b.append(r) %}{% endif %}{% endfor %}
+{% for r in board_b_raw %}{% if r.B5_flow_inflect is defined and r.B5_flow_inflect %}{% set _ = board_b.append(r) %}{% endif %}{% endfor %}
 {% set etf_strip = fl.etf_strip if fl.etf_strip is defined and fl.etf_strip is not none else [] %}
 {% set cov = fl.coverage if fl.coverage is defined and fl.coverage is not none else {} %}
 {% set cs = fl.cold_start_detail if fl.cold_start_detail is defined and fl.cold_start_detail is not none else {} %}
@@ -374,7 +377,7 @@
 {# ── BOARD B — turning up from a beating ───────────────────────────────── #}
 <section class="panel">
   <h2>{{ t('Turning up from a beating', '洗盘后转强') }}
-    <span class="help" data-tip-en="Beaten-down US names where options money just flipped from net-selling to net-buying after at least 3 negative sessions, with a washout already in place (oversold and starting to reclaim) and no failed-breakout trap. Freshest turns first. Describes a flow-turn meeting a price washout — not a guarantee it holds." data-tip-zh="超跌美股中，期权资金在至少3个负向场次后由净卖出转为净买入，且已具备洗盘背景（超卖并开始收复）、无假突破陷阱。最新转向优先。描述资金转向与价格洗盘的重合 — 并不保证成立。">?</span>
+    <span class="help" data-tip-en="Beaten-down US names where options money flipped from net-selling to net-buying straight after at least 3 back-to-back negative sessions — an unbroken run, so a flat or missing session breaks it. Only turns from the last 5 sessions that are still positive today make this board; older turns drop off. A washout must already be in place (oversold and starting to reclaim) with no failed-breakout trap. Freshest turns first. Describes a flow-turn meeting a price washout — not a guarantee it holds." data-tip-zh="超跌美股中，期权资金在至少连续3个负向场次之后紧接着由净卖出转为净买入 — 该负向连续段不可中断，出现持平或缺失场次即中断。仅收录最近5个场次内、且当日仍为正向的转向，更早的转向不再列入。同时须已具备洗盘背景（超卖并开始收复）、无假突破陷阱。最新转向优先。描述资金转向与价格洗盘的重合 — 并不保证成立。">?</span>
     <span class="board-stance">{{ t('Watch — don’t chase', '观望勿追') }}</span>
   </h2>
   <p class="sect-sub">{{ t('Beaten-down names where options money <b>just flipped back positive</b>. Fresher turns sit higher.', '期权资金<b>刚刚转为流入</b>的超跌股。转向越新，排位越高。') }}</p>
