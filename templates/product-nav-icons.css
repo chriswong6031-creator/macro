@@ -69,7 +69,7 @@
 
 .nav-links .menu-icon-ca,
 .nav-ctrls .menu-icon-ca{
-  --flag-art:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'%3E%3Cpath fill='%23fff' d='M0 0h24v16H0z'/%3E%3Cpath fill='%23d80621' d='M0 0h6v16H0zm18 0h6v16h-6zM12 1.8l.92 2.05 1.65-.84-.52 1.83 1.67.24-1.82 2.71.45 1.71-1.9-.34v4.7h-.9v-4.7l-1.9.34.45-1.71-1.82-2.71 1.67-.24-.52-1.83 1.65.84L12 1.8Z'/%3E%3C/svg%3E");
+  --flag-art:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'%3E%3Cpath fill='%23fff' d='M0 0h24v16H0z'/%3E%3Cpath fill='%23d80621' d='M0 0h6v16H0zm18 0h6v16h-6z'/%3E%3Csvg x='6.2' y='1.45' width='11.6' height='13.1' viewBox='-1953 -2031 3906 4061'%3E%3Cpath fill='%23d80621' d='m-90 2030 45-863a95 95 0 0 0-111-98l-859 151 116-320a65 65 0 0 0-20-73l-941-762 212-99a65 65 0 0 0 34-79l-186-572 542 115a65 65 0 0 0 73-38l105-247 423 454a65 65 0 0 0 111-57l-204-1052 327 189a65 65 0 0 0 91-27l332-652 332 652a65 65 0 0 0 91 27l327-189-204 1052a65 65 0 0 0 111 57l423-454 105 247a65 65 0 0 0 73 38l542-115-186 572a65 65 0 0 0 34 79l212 99-941 762a65 65 0 0 0-20 73l116 320-859-151a95 95 0 0 0-111 98l45 863z'/%3E%3C/svg%3E%3C/svg%3E");
 }
 
 .nav-links .menu-icon-intl{
