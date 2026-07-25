@@ -266,6 +266,7 @@ behind a flag — so no un-gauntleted selection path exists to flip on by accide
   (`ledger_lane.nightly_advance_enabled()`). Open positions mark-to-market in
   `shadow_state.json` (display context). The BASKET rows are the §4 gauntlet rows;
   member rows are diagnostic only.
+  *(Amendment 2026-07-25-t — additive timing scorecard, per PTT charter §7 item 4 + PTT-W1-T §8 R-W1T-5: every matured row ALSO carries the bottom-picking ruler — `prox_pct` + `within_3`/`within_5` (entry close vs the ±31td local trough), signed `td_to_trough` (negative = trough before entry) with `timing_label` = called_low [−2,+5] / confirmed_reset (<−2) / early (>+5), and `mfe21`/`rc21` (21td reversion-capture, Oracle-law time-exit). Arithmetic mirrors `scripts/research/ptt_w1_timing_regrade.py` `metric_arrays()` (closes-only; first-hit argmin; PROX=31, TEXIT=21). Proximity fields print null when fewer than 31 prior sessions exist (nulls printed, not hidden). The Amendment-2 HIT/FAIL ruler is UNCHANGED and remains the live gate's ruler — no ruler churn mid-flight; both rulers are graded side-by-side and presented together at the first forward ruling. Zero rows were graded before this landed, so the book is single-schema.)*
 - **W1b — Operator trigger ping** (`notify_turn_events` source (f)): fires on fresh
   trigger rows, dedup (kind=`mwr_trigger`, tf, date). Copy is process-language
   ("gate open — re-entry proposals lawful per MWR §4 Use-A"), never a buy call.

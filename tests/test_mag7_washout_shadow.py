@@ -9,9 +9,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from engine.mag7_washout import M7
-from engine.mag7_washout_shadow import BASELINE_FWD63, SCHEMA, update
+from engine.mag7_washout_shadow import BASELINE_FWD63, PROX, SCHEMA, TEXIT, update
 
 M7SET = list(M7)
 
@@ -32,6 +33,14 @@ def _ramp_series(n: int = 400, recover_at: int = 300) -> pd.Series:
     px = list(100 * np.cumprod(1 + rng.normal(0, 0.002, recover_at)))
     for i in range(n - recover_at):
         px.append(px[-1] * 1.012)
+    return pd.Series(px, index=pd.bdate_range("2024-01-02", periods=n))
+
+
+def _v_series(n: int = 400, trough: int = 200, down: float = 0.006, up: float = 0.012) -> pd.Series:
+    """Monotonic decline into a V-trough at index `trough`, then steady recovery."""
+    px = [100.0]
+    for i in range(1, n):
+        px.append(px[-1] * (1 - down) if i <= trough else px[-1] * (1 + up))
     return pd.Series(px, index=pd.bdate_range("2024-01-02", periods=n))
 
 
@@ -196,3 +205,82 @@ def test_notify_veto_and_unknown_copy(tmp_path, monkeypatch):
     assert "ACTIONABLE" not in veto_msg
     unknown_msg = res["3D_rsimacd|2026-07-21"]
     assert "Regime tag unavailable" in unknown_msg and "manually" in unknown_msg
+
+
+# ── timing scorecard (§7 item 4 — additive bottom-picking ruler) ─────────────
+
+def _v_book(tmp_path, monkeypatch, trigger_idx: int, extra: dict | None = None):
+    """Seed one trigger on the V tape, run update(), return (rows, out)."""
+    _nightly(monkeypatch)
+    s = _v_series()
+    _write_members(tmp_path, s)
+    _seed_trigger(tmp_path, str(s.index[trigger_idx].date()), extra)
+    out = update(root=tmp_path, gate={"as_of": str(s.index[-1].date())})
+    book = tmp_path / "mag7_washout" / "shadow_book.jsonl"
+    rows = [json.loads(l) for l in book.read_text().splitlines()]
+    return rows, out
+
+
+def test_timing_confirmed_reset_after_v_trough(tmp_path, monkeypatch):
+    # trigger at index 209 → e=210, 10 sessions after the V-trough (index 200)
+    rows, _ = _v_book(tmp_path, monkeypatch, 209)
+    assert len(rows) == 1 + len(M7SET)
+    for r in rows:
+        assert r["td_to_trough"] == -10
+        assert r["timing_label"] == "confirmed_reset"
+        assert r["prox_pct"] == pytest.approx((1.012 ** 10 - 1) * 100, abs=0.02)  # ≈12.68
+        assert r["within_3"] is False and r["within_5"] is False
+        assert r["mfe21"] > 0
+        assert r["rc21"] == r["ret21"]                 # arithmetic identity on this tape
+        # hold-ruler still pinned side-by-side with the timing ruler
+        assert r["grade"] == "HIT"
+        assert r["adverse63"] > -10
+
+
+def test_timing_called_low_at_trough(tmp_path, monkeypatch):
+    # trigger at index 199 → e=200 = the exact V-trough
+    rows, _ = _v_book(tmp_path, monkeypatch, 199)
+    for r in rows:
+        assert r["td_to_trough"] == 0
+        assert r["timing_label"] == "called_low"
+        assert r["prox_pct"] == 0.0
+        assert r["within_3"] is True
+        assert r["within_5"] is True
+
+
+def test_timing_early_before_trough(tmp_path, monkeypatch):
+    # trigger at index 189 → e=190, trough 10 sessions ahead (still-falling tape)
+    rows, _ = _v_book(tmp_path, monkeypatch, 189)
+    for r in rows:
+        assert r["td_to_trough"] == 10
+        assert r["timing_label"] == "early"
+        assert r["within_5"] is False
+        assert r["adverse63"] < 0                       # entered before the bottom
+        assert r["grade"] in ("HIT", "MIXED", "FAIL")   # existing grade semantics intact
+
+
+def test_timing_head_guard_nulls_prox_fields(tmp_path, monkeypatch):
+    # trigger at index 10 → e=11 < PROX: proximity fields null, reversion still computed
+    assert 11 < PROX and 11 + TEXIT < 400              # guard precondition on this tape
+    rows, _ = _v_book(tmp_path, monkeypatch, 10)
+    for r in rows:
+        assert r["prox_pct"] is None
+        assert r["td_to_trough"] is None
+        assert r["timing_label"] is None
+        assert r["within_5"] is None
+        assert r["mfe21"] is not None
+        assert r["rc21"] is not None
+        # pinned fields present and unchanged in form
+        assert isinstance(r["ret63"], float)
+        assert isinstance(r["adverse63"], float)
+        assert r["grade"] in ("HIT", "MIXED", "FAIL")
+
+
+def test_state_timing_tally(tmp_path, monkeypatch):
+    # scenario 1 root: the single gauntlet (EW) row is confirmed_reset
+    _, out = _v_book(tmp_path, monkeypatch, 209)
+    timing = out["book"]["timing"]
+    assert timing["confirmed_reset"] == 1              # gauntlet row = EW only
+    assert timing["called_low"] == 0
+    assert timing["early"] == 0
+    assert timing["within_5"] == 0
