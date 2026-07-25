@@ -218,6 +218,10 @@ sentinel extension only ever sees symbols (B6 precedent), never positions.
   the §7 sanity anchors) + watchlist wiring + FX panel upgrade/absorption; paired
   template/site copies; bilingual; CI (banned vocab, nav-gap, template-site sync).
 - **W4 — what-if pre-trade diagnostic:** GATED on operator NWP-U18 sign-off (WRI-R3).
+  OPERATOR SIGN-OFF 2026-07-24: NWP-U18 boundary cleared for the pre-trade diagnostic
+  exactly as WRI-R3 scopes it — user-proposed candidate, descriptive deltas only, neutral
+  presentation, no optimizer or suggested weights ever; any future 'suggest me a
+  hedge/size' feature is a NEW adjudication.
 - **W5 — deltas + alerts:** client transition surfacing; optional B6 symbol-sentinel
   extension. Come-backs: realized-corr overlay (pending W1 closes-check), downside-idio
   study, personality-conditioned thresholds (PRD-R12 study), Terminal parity, any

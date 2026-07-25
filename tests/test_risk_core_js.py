@@ -299,6 +299,158 @@ def test_no_model_returns_not_ok():
 
 
 # ===========================================================================
+# whatIf — the W4 pre-trade diagnostic (WRI-R3, operator-signed NWP-U18)
+# ===========================================================================
+# The user proposes ONE candidate; whatIf() prints the SAME descriptive stats
+# for the hypothetical book (before/after book() results) — pure composition of
+# book(), no new estimator, no advice. These lock the three properties the brief
+# names: delta symmetry (removing the candidate restores before), unmodeled ->
+# honest null, hedge candidate -> negative contribution.
+@needs_node
+def test_whatif_removing_candidate_restores_before():
+    """Delta symmetry: dollars<=0 (or absent ticker) => after === before, exactly.
+    The 'after' book must be byte-identical to 'before' on the reads the surface
+    prints (ENB, top-factor share, held set)."""
+    data = _twin_data()
+    W = _eqw(list(data["betas"].keys()))
+    out = _run(
+        # dollars=0 must be a no-op; also an absent ticker is a no-op.
+        "var a = RiskCore.whatIf(DATA, W, 'OILY', 0, 'calm'); "
+        "var b = RiskCore.whatIf(DATA, W, 'NOPE', 5000, 'calm'); "
+        "OUT({"
+        "  zeroSame: (a.after.enb===a.before.enb && a.after.topFactorShare===a.before.topFactorShare "
+        "             && a.after.held.length===a.before.held.length), "
+        "  zeroModeledCand: a.modeled, "                      # OILY is modeled...
+        "  zeroDollars: a.dollars, "                          # ...but 0 dollars => no-op
+        "  absentSame: (b.after.enb===b.before.enb && b.after.held.length===b.before.held.length), "
+        "  absentModeled: b.modeled"                          # NOPE is not in the model
+        "});",
+        data, {"W": W},
+    )
+    assert out["zeroSame"] is True, out
+    assert out["zeroModeledCand"] is True     # candidate IS modeled
+    assert out["zeroDollars"] == 0            # but proposed size is 0 -> after==before
+    assert out["absentSame"] is True, out
+    assert out["absentModeled"] is False
+
+
+@needs_node
+def test_whatif_unmodeled_candidate_is_honest_null():
+    """A candidate absent from the factor model never fabricates numbers: after
+    === before, modeled:false, and the candidate carries no invented role."""
+    data = _twin_data()  # TW1/TW2/OILY modeled; GC=F is not
+    W = _eqw(list(data["betas"].keys()))
+    out = _run(
+        "var r = RiskCore.whatIf(DATA, W, 'GC=F', 12000, 'calm'); "
+        "OUT({ok:r.ok, modeled:r.modeled, "
+        "sameEnb:(r.after.enb===r.before.enb), "
+        "sameHeld:(r.after.held.length===r.before.held.length), "
+        "candShare:r.candidate.mctrShare, candFactor:r.candidate.topFactor, "
+        "candTwins:r.candidate.twinWith.length});",
+        data, {"W": W},
+    )
+    assert out["ok"] is True
+    assert out["modeled"] is False, out
+    assert out["sameEnb"] is True, out        # unmodeled dollars can't move the factor math
+    assert out["sameHeld"] is True, out
+    assert out["candShare"] is None           # no invented contribution
+    assert out["candFactor"] is None
+    assert out["candTwins"] == 0
+
+
+@needs_node
+def test_whatif_hedge_candidate_has_negative_contribution():
+    """Proposing a candidate that loads OPPOSITE the book carries a negative MCTR
+    share in the after-book (the 'would lean against the rest of the book' case)."""
+    # book is 3 growth-longs; the candidate loads -1 on growth (a hedge). Dollar
+    # sizes are COMPARABLE ($10k book names, $10k candidate) so the hedge isn't
+    # swamped and the after-book stays net-long growth.
+    betas = {}
+    for t in ("A", "B", "C"):
+        b = _zero_betas(); b["growth"] = 1.0; b["idio_vol"] = 0.10; betas[t] = b
+    h = _zero_betas(); h["growth"] = -1.0; h["idio_vol"] = 0.10; betas["SH"] = h
+    data = {"factors": FACTORS, "factor_cov": _diag_cov({"growth": 0.05}), "betas": betas}
+    W = {"A": 10000.0, "B": 10000.0, "C": 10000.0}   # candidate SH is NOT in the current book
+    out = _run(
+        "var r = RiskCore.whatIf(DATA, W, 'SH', 10000, 'calm'); "
+        "OUT({modeled:r.modeled, hedge:r.candidate.hedge, "
+        "candShare:r.candidate.mctrShare, rank:r.candidate.rank, "
+        "beforeHeld:r.before.held.length, afterHeld:r.after.held.length});",
+        data, {"W": W},
+    )
+    assert out["modeled"] is True
+    assert out["hedge"] is True, out
+    assert out["candShare"] < 0, out          # negative risk contribution
+    assert out["beforeHeld"] == 3 and out["afterHeld"] == 4   # candidate joined the book
+    assert out["rank"] >= 1                    # it has a rank in the after-book
+
+
+@needs_node
+def test_whatif_modeled_add_shifts_enb_and_factor_share():
+    """Adding an INDEPENDENT modeled name (oil) to a growth-only book should raise
+    ENB (more independent bets) and lower the top factor's share — the descriptive
+    delta the surface prints. Adding a same-factor name concentrates instead."""
+    data = _twin_data()  # TW1/TW2 = growth twins, OILY = oil
+    Wg = {"TW1": 10000.0, "TW2": 10000.0}  # book is two growth twins (one bet)
+    out = _run(
+        # add a COMPARABLY-sized independent oil name -> more diversified
+        "var ind = RiskCore.whatIf(DATA, W, 'OILY', 10000, 'calm'); "
+        # add another growth name (clone of TW1's loadings) -> more concentrated
+        "OUT({"
+        "  beforeEnb: ind.before.enb, afterEnbIndep: ind.after.enb, "
+        "  beforeTop: ind.before.topFactor, beforeTopShare: ind.before.topFactorShare, "
+        "  afterTopShareIndep: ind.after.topFactorShare, "
+        "  candFactor: ind.candidate.topFactor, candRank: ind.candidate.rank"
+        "});",
+        data, {"W": Wg},
+    )
+    assert out["beforeTop"] == "growth"
+    # an independent oil name raises the effective bet count and dilutes growth's share
+    assert out["afterEnbIndep"] > out["beforeEnb"], out
+    assert out["afterTopShareIndep"] < out["beforeTopShare"], out
+    assert out["candFactor"] == "oil", out     # the candidate is driven by oil
+    assert out["candRank"] >= 1
+
+
+@needs_node
+def test_whatif_respects_stress_lens():
+    """The what-if is computed under the SAME lens the surface shows: a stress cov
+    that lifts growth co-movement makes the after-book's stress ENB <= its calm ENB
+    for the same proposed candidate."""
+    data = _twin_data()
+    # stress lifts growth co-movement 4x (0.05->0.20) while oil is unchanged, so a
+    # growth-heavy after-book concentrates harder in selloffs.
+    data["factor_cov_stress"] = _diag_cov({"growth": 0.20, "oil": 0.20})
+    Wg = {"TW1": 10000.0, "TW2": 10000.0}
+    out = _run(
+        "var calm = RiskCore.whatIf(DATA, W, 'OILY', 10000, 'calm'); "
+        "var stress = RiskCore.whatIf(DATA, W, 'OILY', 10000, 'stress'); "
+        "OUT({calmLens:calm.lens, stressLens:stress.lens, "
+        "calmAfterEnb:calm.after.enb, stressAfterEnb:stress.after.enb});",
+        data, {"W": Wg},
+    )
+    assert out["calmLens"] == "calm"
+    assert out["stressLens"] == "stress"       # honored the requested lens (block present)
+    assert out["stressAfterEnb"] <= out["calmAfterEnb"] + 1e-9, out
+
+
+@needs_node
+def test_whatif_stress_request_falls_back_to_calm_without_block():
+    """Asking for the stress lens when no stress cov ships must silently fall back
+    to calm (never crash) — the UI only shows the toggle when stress is available."""
+    data = _twin_data()  # no factor_cov_stress
+    Wg = _eqw(["TW1", "TW2"])
+    out = _run(
+        "var r = RiskCore.whatIf(DATA, W, 'OILY', 10000, 'stress'); "
+        "OUT({lens:r.lens, ok:r.ok, afterOk:r.after.ok});",
+        data, {"W": Wg},
+    )
+    assert out["ok"] is True
+    assert out["lens"] == "calm", out          # fell back
+    assert out["afterOk"] is True
+
+
+# ===========================================================================
 # factorBets — the patch-bay PICTURE grouping (by dominant factor)
 # ===========================================================================
 @needs_node
