@@ -3691,21 +3691,70 @@ def _is_retryable_provider_error(exc: Exception) -> bool:
     return bool(re.search(r"\b(429|500|502|503|529)\b", s))
 
 
+def _is_failover_error(exc: Exception) -> bool:
+    """True when a provider error should trigger failover to the NEXT candidate.
+
+    Two disjoint cases both mean "this provider can't serve — try the next one":
+      • a transient 429/5xx/overloaded/timeout (see _is_retryable_provider_error), and
+      • a 401/403 auth failure — an EXPIRED or REVOKED credential is permanently dead
+        for THIS provider, so the waterfall must fall through to the Anthropic fallback
+        exactly as llm_auth's make_call is designed to (its whole reason to exist).
+
+    Before this covered auth errors, an expired DEEPSEEK_API_KEY (Fast) or
+    CLAUDE_CODE_OAUTH_TOKEN (Pro) raised straight out of the streaming loop and the
+    lane blacked out to an empty reply — never reaching the healthy fallback key.
+    """
+    if _is_retryable_provider_error(exc):
+        return True
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        return llm_auth._is_auth_error(exc)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _mark_provider_dead_if_auth(p: dict, exc: Exception) -> None:
+    """When exc is a 401/403 auth failure, mark this provider dead for the process so
+    later turns skip it outright (mirrors llm_auth.make_call). No-op otherwise; never
+    raises. Keyed by (name, env_var) so a fixed key + macro-api restart clears it."""
+    try:
+        from engine import llm_auth  # noqa: PLC0415
+        if llm_auth._is_auth_error(exc):
+            llm_auth.mark_dead(p.get("name") or "?", p.get("env_var") or "?", reason="401/403")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _turn_providers(client: Any, model: str, providers: list[dict] | None) -> list[dict]:
     """Ordered candidate providers for a turn — the explicit list when given (enables
-    failover across OAuth tokens), else the single (client, model) the caller resolved."""
+    failover across OAuth tokens / to the Anthropic fallback), else the single
+    (client, model) the caller resolved.
+
+    Providers already marked dead this process (expired 401/403 creds) are dropped so a
+    known-dead primary doesn't cost a fresh round-trip on every turn — UNLESS dropping
+    them would leave nothing, in which case the full list is kept (never blank a lane
+    that still has a usable client)."""
     if providers:
         cands = [p for p in providers if p.get("client") is not None]
+        try:
+            from engine import llm_auth  # noqa: PLC0415
+            live = [p for p in cands
+                    if not llm_auth.is_dead(p.get("name") or "", p.get("env_var") or "")]
+        except Exception:  # noqa: BLE001
+            live = cands
+        if live:
+            return live
         if cands:
             return cands
     return [{"client": client, "model": model}]
 
 
 def _create_failover(cands: list[dict], **kwargs) -> tuple[Any, str]:
-    """Call messages.create across candidate providers in order; on a retryable error
-    (429/5xx/overloaded) fall through to the next token/provider. Returns (resp,
-    used_model). Raises the last error when the final candidate fails or the error is
-    non-retryable — so a single throttled OAuth token no longer fails the whole turn."""
+    """Call messages.create across candidate providers in order; on a failover-worthy
+    error (429/5xx/overloaded OR a 401/403 dead credential) fall through to the next
+    token/provider. Returns (resp, used_model). Raises the last error when the final
+    candidate fails or the error is non-failover — so a single throttled OAuth token or
+    an expired primary key no longer fails the whole turn while a healthy fallback exists."""
     last: Exception | None = None
     for i, p in enumerate(cands):
         cl = p.get("client")
@@ -3716,7 +3765,8 @@ def _create_failover(cands: list[dict], **kwargs) -> tuple[Any, str]:
             return resp, (p.get("model") or "")
         except Exception as exc:  # noqa: BLE001
             last = exc
-            if not _is_retryable_provider_error(exc) or i >= len(cands) - 1:
+            _mark_provider_dead_if_auth(p, exc)
+            if not _is_failover_error(exc) or i >= len(cands) - 1:
                 raise
             log.warning("brain_gateway: provider %s create failed (%s) — failover to next",
                         p.get("model"), str(exc)[:80])
@@ -3735,6 +3785,17 @@ def _degraded_reply(lane: str) -> str:
         "Check DEEPSEEK_API_KEY (fast) or ANTHROPIC_API_KEY / OAuth token (pro).]\n\n"
         "is_context_only: true — all signals are display-tier pending FDR."
     )
+
+
+# User-facing text for a degraded turn on the STREAMING path. The streaming degrade
+# paths used to emit a `done` with no `delta`, so the widget showed a blank bubble that
+# reads as "totally broken". This bilingual line is shown as the delta instead — no ops
+# detail leaked to end users (the real cause is logged server-side). EN + ZH because the
+# chat widget is bilingual and the delta text is rendered as-is (no per-span switching).
+_DEGRADED_USER_MSG = (
+    "The AI assistant is temporarily unavailable. Please try again in a moment.\n\n"
+    "AI 助手暂时不可用，请稍后重试。"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -4071,6 +4132,7 @@ def _run_brain_loop_stream(
             )
         except Exception as exc:  # noqa: BLE001
             log.warning("brain_gateway: stream tool-turn failed: %s", exc)
+            yield f"data: {json.dumps({'type': 'delta', 'text': _DEGRADED_USER_MSG})}\n\n"
             yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': meta_event.get('quota', {}), 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
             return
 
@@ -4170,7 +4232,8 @@ def _run_brain_loop_stream(
                 break
             except Exception as exc:  # noqa: BLE001
                 _last_err = exc
-                if _is_retryable_provider_error(exc) and _i < len(_cands) - 1:
+                _mark_provider_dead_if_auth(_p, exc)
+                if _is_failover_error(exc) and _i < len(_cands) - 1:
                     log.warning("brain_gateway: stream provider %s failed (%s) — failover",
                                 _p.get("model"), str(exc)[:80])
                     continue
@@ -4202,8 +4265,17 @@ def _run_brain_loop_stream(
     # suggestions are emitted as their own event AFTER the delta and BEFORE done.
     filtered_answer, suggestions = _split_suggestions(filtered_answer)
 
-    # Emit delta (full answer, buffered)
-    yield f"data: {json.dumps({'type': 'delta', 'text': filtered_answer})}\n\n"
+    # Emit delta (full answer, buffered). Never emit an EMPTY delta — a blank bubble
+    # reads as "broken". When the answer came back empty for a non-filter reason (every
+    # provider failed synthesis), show the degraded notice so the user always sees
+    # something. This is a DISPLAY-only substitution: the real (empty) filtered_answer
+    # still flows to answer_out below, so the stub is never persisted as an assistant
+    # turn or logged to the eval corpus. A legitimately advice-FILTERED-to-empty answer
+    # keeps its own handling (the `filtered` flag drives the probation chip).
+    display_answer = filtered_answer
+    if not (filtered_answer or "").strip() and not was_filtered:
+        display_answer = _DEGRADED_USER_MSG
+    yield f"data: {json.dumps({'type': 'delta', 'text': display_answer})}\n\n"
 
     # Emit suggestions (W6d) — between delta and done, only when non-empty
     if suggestions:
@@ -4892,6 +4964,7 @@ def chat_stream(
     if not providers:
         meta = {"type": "meta", "lane": lane, "model": "degraded", "thread_id": None, "quota": quota_info}
         yield f"data: {json.dumps(meta)}\n\n"
+        yield f"data: {json.dumps({'type': 'delta', 'text': _DEGRADED_USER_MSG})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
         return
 
@@ -4971,6 +5044,7 @@ def chat_stream(
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
+        yield f"data: {json.dumps({'type': 'delta', 'text': _DEGRADED_USER_MSG})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
 
     # 7. Thread message persistence (best-effort, post-stream) — both turns, so
