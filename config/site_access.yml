@@ -28,7 +28,11 @@ public:
     - /data_base.js
     - /live.js
     - /live_config.js
+    # VPS live plane. Both are published by atomic rename into
+    # /var/lib/macro-live/public (site/live/ is gitignored); the repo copy is
+    # only the zero-downtime fallback. Display-tier breadth, no ranked signal.
     - /live/quotes.json
+    - /live/breadth.json
     - /prophet/showcase.json
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.

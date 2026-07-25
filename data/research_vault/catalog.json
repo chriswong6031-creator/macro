@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-25T16:43:29.078954+00:00",
-  "count": 79,
+  "generated_at": "2026-07-25T18:07:06.377669+00:00",
+  "count": 84,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
@@ -9,12 +9,99 @@
     "Morgan Stanley",
     "Other",
     "RBC",
+    "S&T",
     "TS Lombard",
     "The Market Ear",
     "UBS",
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ehtiyuitugy-0ed3fa",
+      "title": "FOMO Fear Of Momentum",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T18:02:28Z",
+      "summary_points": [
+        "**AI Supply Momentum Shift**: GS estimates $490bn AI-related supply YTD (40% hyperscalers), 1.5x 2025 full-year; narrative shifting to margins/debt with 3Q volatility expected.",
+        "**Geopolitical Policy Shifts**: Asia Leaders Conference (HK, Aug–Sep) and Japan Conference (Tokyo, Nov–Dec) signal regional policy changes amid rising tariff headlines.",
+        "**S&P Volatility Divergence**: Persistent gap between average stock volatility (right axis) and index volatility (left axis) indicates structural risk exposure differences for portfolio allocation.",
+        "**Korea ETFs AUM Halved**: Leveraged ETFs AUM down 50% from $53bn peak; daily rebal flows for Samsung/Hynix fell to 15%/14% (vs 40%/26%), signaling reduced market participation.",
+        "**China Gold Demand Surge**: June imports hit two-year high (geopolitically driven), reflecting physical accumulation with price support implications."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-nuqiiblpvx4-99c7c1",
+      "title": "GS Tony Pasquariello Markets And Macro July 25",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T18:02:22Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-yuir5pzzczx-104728",
+      "title": "EM Asia FX Rates Views Asian tech related currencies outperform",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T18:01:05Z",
+      "summary_points": [
+        "**CNY Outperformance Anchor**: CNY is the sole Asian currency appreciating vs USD (Q1-Q2 growth slowdown 5.3%→3.6% qoq, high-tech manufacturing driving exports), with 12-month USD/CNY forecast at 6.50 amid undervaluation, policy support, and export strength.",
+        "**KRW Surplus Surge**: Current account surplus hit $143bn (13.9% of GDP) in H1-2026, exceeding forecasts, driving KRW rally as reduced foreign equity outflows (post-KOSPI correction) offset surplus impact.",
+        "**China Growth Divergence**: Domestic consumption slowdown vs robust exports (FAI weakening -3.8%→-5.7% yoy) creates fundamental split; CNY outperformance contrasts with tech currencies (KRW, TWD, SGD) benefiting from regional rate hikes and oil-driven Brent $100/bbl.",
+        "**RBI FX Policy for INR**: RBI’s capital flow measures (FX hedging support, concessional swaps, GAB Index eligibility) bolster INR, with oil prices (Brent $80/bbl end-2026) key driver; recommend short THB/INR (2.91→2.70).",
+        "**Indonesia BI Policy Shift**: BI hiked rates 50bps (off-cycle), broadened FX incentives (12.5% onshore forwards discount), conserving policy space for Fed-driven hikes; fiscal pressures (fuel subsidies, S&P BBB rating) risk IDR underperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lizikexcern-35666b",
+      "title": "Fed Chatterbox July Edition",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T18:01:03Z",
+      "summary_points": [
+        "**Policy Divergence**: Jefferson/Williams advocate patience on rates as inflation declines via tariffs/energy, while Logan urges modest hikes; key risk: entrenched inflation from persistent shocks (Middle East, tech demand).",
+        "**Inflation Drivers**: Middle East conflict (energy/commodity supply), tariffs, and tech demand cited as persistent inflation drivers; Fed emphasizes no tolerance for persistent inflation to prevent unanchored expectations.",
+        "**Core Inflation Risk**: Schmid confirms core inflation above 2% (excluding energy), Logan projects mid-2s inflation, Waller flags persistent core trend as compounding return to 2% target."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-o6uotktnk4c-7e7a10",
+      "title": "China Dairy Modern Dairy positive profit alert plus controlling stake on Shengmu",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T18:01:02Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-jvdamhulfoh-9db6fe",
       "title": "Probably the Most Bearish Chart of the Weekend",

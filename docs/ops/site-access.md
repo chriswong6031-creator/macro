@@ -17,6 +17,25 @@ and unknown future extensions pass:
 Protected responses are `private, no-store` and cannot be placed in the shared
 CDN cache. Internal mockup/QA pages return 404 to every user.
 
+### Keeping the two lists aligned
+
+`config/site_access.yml` is the policy of record; `app/deploy/Caddyfile`'s
+`PUBLIC-BOUNDARY` block is the enforcer. `tests/test_site_access_boundary.py`
+fails on any drift between them and runs in CI's `tier-gate` job. Two standing
+exceptions the policy file cannot express:
+
+- **Proxied routes, not files.** `/api/*` and `/ws/tape` are excluded from the
+  static matchers because they are reverse-proxied to `macro-api`, which
+  enforces its own auth. The policy schema classifies file paths under `site/`,
+  so these live in the test's `NON_POLICY_ROUTES` set instead. Never add a route
+  to `public.exact` to silence the drift test — that would tell `app/paywall.py`
+  the path is public content.
+- **Runtime artifacts.** `site/live/` is gitignored: the systemd lanes publish
+  by atomic rename into `/var/lib/macro-live/public`, so a fresh checkout may
+  not contain `/live/quotes.json` or `/live/breadth.json`. The
+  policy-targets-exist check exempts that prefix; the Caddy-alignment check
+  still covers those entries, so a typo'd `/live/*` path is caught.
+
 The paid stage is deliberately independent and defaults off:
 
 ```text

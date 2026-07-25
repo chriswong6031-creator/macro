@@ -11,3 +11,5 @@
 {"id":"ob-2026-07-25-15098c35f1","from":"posting","to":"posted","at":"2026-07-25T16:32:43Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a64e52b22bc282b886f84a7","external_url":null,"at":"2026-07-25T16:32:42Z"}}
 {"id":"ob-2026-07-25-070b14acff","from":"approved","to":"posting","at":"2026-07-25T16:54:42Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-07-25-070b14acff","from":"posting","to":"posted","at":"2026-07-25T16:54:43Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a64ea535e6849349865e35f","external_url":null,"at":"2026-07-25T16:54:42Z"}}
+{"id":"ob-2026-07-25-ebdcbf1f14","from":"approved","to":"posting","at":"2026-07-25T18:04:52Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-07-25-ebdcbf1f14","from":"posting","to":"posted","at":"2026-07-25T18:04:53Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a64fac59d853f398787f6da","external_url":null,"at":"2026-07-25T18:04:51Z"}}
