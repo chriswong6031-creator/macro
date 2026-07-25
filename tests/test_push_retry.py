@@ -501,7 +501,71 @@ def test_repeated_ref_lock_losses_are_retried_far_past_the_old_five(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 7. The lanes actually use it
+# 7. PUSH_ALARM — 15 of the 21 loops alarm-bound their push
+# ---------------------------------------------------------------------------
+
+
+def _fake_git(tmp_path: Path, push_body: str) -> Path:
+    """A `git` earlier on PATH whose `push` runs push_body; everything else is real."""
+    fakebin = tmp_path / "bin"
+    fakebin.mkdir(exist_ok=True)
+    real_git = subprocess.run(["which", "git"], capture_output=True, text=True).stdout.strip()
+    (fakebin / "git").write_text(
+        f'#!/usr/bin/env bash\nif [ "$1" = "push" ]; then\n{push_body}\nfi\nexec {real_git} "$@"\n'
+    )
+    (fakebin / "git").chmod(0o755)
+    return fakebin
+
+
+def test_alarm_bounded_push_still_pushes(tmp_path):
+    """daily.yml (×14) and closing-bell set PUSH_ALARM=420 because macOS runners have no
+    GNU timeout. If the perl wrapper were malformed, every one of those pushes would
+    break — so pin the happy path, not just the timeout."""
+    fakebin = _fake_git(tmp_path, '  echo "PUSHED args=[$*]"; exit 0')
+    r = run_sh(
+        """
+        PUSH_ALARM=420
+        push_retry_init "alarm"
+        push_attempt
+        if push_do; then echo "OK class=[$PUSH_FAIL_CLASS]"; else echo "BROKEN rc=$?"; fi
+        """,
+        env={"PATH": f"{fakebin}:{os.environ['PATH']}"},
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "PUSHED args=[push]" in r.stdout, r.stdout
+    assert "OK class=[]" in r.stdout, r.stdout
+
+
+def test_alarm_actually_kills_a_hung_push_and_classifies_it(tmp_path):
+    """The 2026-07-17 incident behind the alarm: a hung push ate 57 minutes. The alarm
+    must fire, and a SIGALRM kill must not be miscalled a race."""
+    fakebin = _fake_git(tmp_path, "  sleep 30")
+    r = run_sh(
+        """
+        PUSH_ALARM=1
+        push_retry_init "alarm"
+        push_attempt
+        if push_do; then echo "NOT KILLED"; else echo "killed class=$PUSH_FAIL_CLASS"; fi
+        """,
+        env={"PATH": f"{fakebin}:{os.environ['PATH']}"},
+        cwd=tmp_path,
+    )
+    assert "killed class=push-timeout" in r.stdout, r.stdout
+
+
+def test_push_do_passes_extra_args_through(tmp_path):
+    fakebin = _fake_git(tmp_path, '  echo "ARGS=[$*]"; exit 0')
+    r = run_sh(
+        'push_retry_init "t"; push_attempt; push_do origin HEAD:main',
+        env={"PATH": f"{fakebin}:{os.environ['PATH']}"},
+        cwd=tmp_path,
+    )
+    assert "ARGS=[push origin HEAD:main]" in r.stdout, r.stdout
+
+
+# ---------------------------------------------------------------------------
+# 8. The lanes actually use it
 # ---------------------------------------------------------------------------
 
 LANES = [
