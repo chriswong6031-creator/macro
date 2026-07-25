@@ -31,6 +31,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LIB = REPO_ROOT / "scripts" / "ci" / "push_retry.sh"
@@ -566,7 +567,164 @@ def test_push_do_passes_extra_args_through(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 8. The lanes actually use it
+# 8. End-to-end — render.yml's REAL run: block, executed against real git repos
+#
+# The rest of this file proves the library and the lane FILE CONTENTS. Neither
+# catches a lane whose surrounding shell mis-wires the policy — a stray `fi`, a
+# push_won that never runs, a give-up path that swallows the error. So run the
+# shipped block itself, verbatim, with the python guards stubbed and the GitHub
+# ${{ }} expressions substituted.
+# ---------------------------------------------------------------------------
+
+RENDER_STEP = "commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)"
+
+
+def _lane_block(lane: str, step_name: str, subs: dict) -> str:
+    doc = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / lane).read_text())
+    for job in doc["jobs"].values():
+        for s in job.get("steps") or []:
+            if s.get("name") == step_name:
+                body = s["run"]
+                return re.sub(r"\$\{\{([^}]*)\}\}", lambda m: subs.get(m.group(1).strip(), ""), body)
+    raise AssertionError(f"{lane}: step {step_name!r} not found")
+
+
+def _lane_fixture(tmp_path: Path, rejects: int = 0):
+    """A bare origin + a lane clone holding a fresh render + a racing lane that has
+    already landed on main, so the lane's first push is stale."""
+    bare = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+
+    def git(repo, *a):
+        return subprocess.run(["git", "-C", str(repo), *a], check=True,
+                              capture_output=True, text=True)
+
+    seed = tmp_path / "seed"
+    _init_repo(seed)
+    (seed / "site").mkdir()
+    (seed / "site" / "index.html").write_text("<html>old</html>")
+    git(seed, "add", "."); git(seed, "commit", "-qm", "seed")
+    git(seed, "push", "-q", str(bare), "main")
+
+    lane = tmp_path / "lane"
+    subprocess.run(["git", "clone", "-q", str(bare), str(lane)], check=True)
+    git(lane, "config", "user.email", "t@t"); git(lane, "config", "user.name", "t")
+    other = tmp_path / "other"
+    subprocess.run(["git", "clone", "-q", str(bare), str(other)], check=True)
+    git(other, "config", "user.email", "t@t"); git(other, "config", "user.name", "t")
+
+    # the render this run must not lose
+    (lane / "site" / "index.html").write_text("<html>FRESH RENDER</html>")
+    (lane / "site" / "premiumdata").mkdir(parents=True, exist_ok=True)
+    (lane / "site" / "premiumdata" / "special_situations.json").write_text('{"rows": 1121}')
+    # a throwaway data/ write — the step commits site/ ONLY (the nightly owns ledgers)
+    (lane / "data").mkdir(exist_ok=True)
+    (lane / "data" / "ledger.json").write_text('{"lane": "throwaway"}')
+
+    # a racing lane lands on main first
+    (other / "other.txt").write_text("marketing-publish outbox run")
+    git(other, "add", "."); git(other, "commit", "-qm", "other lane")
+    git(other, "push", "-q", "origin", "main")
+
+    stub = tmp_path / "bin"
+    stub.mkdir()
+    for name in ("python", "python3"):
+        (stub / name).write_text('#!/usr/bin/env bash\nexit 0\n')
+        (stub / name).chmod(0o755)
+    if rejects:
+        counter = tmp_path / "n"
+        counter.write_text("0")
+        real_git = subprocess.run(["which", "git"], capture_output=True, text=True).stdout.strip()
+        (stub / "git").write_text(textwrap.dedent(f"""\
+            #!/usr/bin/env bash
+            if [ "$1" = "push" ]; then
+              n=$(cat {counter}); n=$((n+1)); echo "$n" > {counter}
+              if [ "$n" -le {rejects} ]; then
+                echo " ! [remote rejected] main -> main (cannot lock ref 'refs/heads/main': is at aaa but expected bbb)" >&2
+                exit 1
+              fi
+            fi
+            exec {real_git} "$@"
+            """))
+        (stub / "git").chmod(0o755)
+    return bare, lane, stub
+
+
+def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool):
+    env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}",
+           "GITHUB_WORKSPACE": str(REPO_ROOT), "GITHUB_STEP_SUMMARY": str(summary)}
+    if render_ok:
+        env["RENDER_OK"] = "1"
+    else:
+        env.pop("RENDER_OK", None)
+    # no real sleeping: the backoff ladder is unit-tested above
+    return subprocess.run(["bash", "-eo", "pipefail", "-c", "sleep() { :; }\n" + block],
+                          cwd=str(lane), capture_output=True, text=True, env=env)
+
+
+def test_render_lane_block_lands_the_render_over_a_racing_commit(tmp_path):
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub = _lane_fixture(tmp_path)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=True)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+
+    files = subprocess.run(["git", "-C", str(bare), "ls-tree", "-r", "--name-only", "main"],
+                           capture_output=True, text=True, check=True).stdout.split()
+    log = subprocess.run(["git", "-C", str(bare), "log", "--oneline", "-5", "main"],
+                         capture_output=True, text=True, check=True).stdout
+
+    assert "site/premiumdata/special_situations.json" in files, "the render never landed"
+    assert "other.txt" in files, "the racing lane's commit was clobbered"
+    assert "data/ledger.json" not in files, "the step committed data/ — must be site/ ONLY"
+    assert "from=deadbeef" in log, "RENDER_OK=1 run did not stamp the from= watermark"
+    assert summary.read_text() == "", "a first-attempt win should stay out of the summary"
+
+
+def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
+    """The 2026-07-25 incident, replayed against the shipped lane shell. The old loop
+    gave up at 5 and discarded ~95 minutes of render."""
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub = _lane_fixture(tmp_path, rejects=7)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=True)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    assert "pushed rendered site on attempt 8" in r.stdout, r.stdout
+    assert "[contention]" in r.stdout
+    assert "[rebase-conflict]" not in r.stdout, "a ref-lock loss was miscalled a conflict"
+
+    files = subprocess.run(["git", "-C", str(bare), "ls-tree", "-r", "--name-only", "main"],
+                           capture_output=True, text=True, check=True).stdout.split()
+    assert "site/premiumdata/special_situations.json" in files, "the render was discarded"
+
+    text = summary.read_text()
+    assert "attempts=8/20" in text and "ref-lock losses=7" in text, text
+    assert "rebase conflicts=0" in text, text
+
+
+def test_render_lane_block_does_not_stamp_from_on_a_partial_render(tmp_path):
+    """The watermark contract: a run that did not complete its render (no RENDER_OK)
+    must not become the `from=` watermark the NEXT run diffs against, or the pages it
+    skipped are silently marked rendered."""
+    block = _lane_block("render.yml", RENDER_STEP,
+                        {"steps.pick.outputs.scope": "all",
+                         "steps.pick.outputs.rendered_from": "deadbeef"})
+    bare, lane, stub = _lane_fixture(tmp_path)
+    summary = tmp_path / "summary.md"; summary.touch()
+    r = _run_lane(block, lane, stub, summary, render_ok=False)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    log = subprocess.run(["git", "-C", str(bare), "log", "--oneline", "-5", "main"],
+                         capture_output=True, text=True, check=True).stdout
+    assert "render: site re-render" in log, "the partial render never landed"
+    assert "from=" not in log, f"partial render STAMPED from= — contract broken:\n{log}"
+
+
+# ---------------------------------------------------------------------------
+# 9. The lanes actually use it
 # ---------------------------------------------------------------------------
 
 LANES = [
