@@ -107,10 +107,15 @@ runs: wait for its `mdx-auth` event with a timeout fallback.
 
 ## What Free actually sees today
 
-| Surface | Free / anon | Insider · Pro |
-|---|---|---|
-| Special Situations | 3 newest filings, all totals, coverage note | whole board, top setups, search/filter/sort |
-| Research Vault | newest report summary (Insider 3), no PDFs | every desk + PDFs, Top Picks |
+| Surface | Free | Insider | Pro |
+|---|---|---|---|
+| Special Situations | 3 newest filings, all totals, coverage note | whole board, top setups, search/filter/sort | same as Insider |
+| Research Vault | newest 1 summary | newest 3 summaries | every desk, PDFs, Top Picks |
+
+(The Vault draws its line at Pro, this desk at Insider — the pattern is the
+mechanism, not the price point. The Vault's wall is also explicitly a *marketing*
+wall, because its paid content is the PDF, which `app/research.py` gates
+server-side; on a desk whose content is the rows, only the split works.)
 
 Note both pages sit **behind the registration wall** — "Free" here means a signed-in
 free account. Anonymous visitors are redirected to sign in by the regwall; the
