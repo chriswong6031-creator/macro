@@ -10,6 +10,7 @@ Covers:
   (f) llms.txt and brand-facts.json exist in both templates/ and site/ and byte-match
   (g) brand-facts.json parses with effective_at
   (h) no "validated" in sitemap output (CI-enforced ban)
+  (i) every committed sitemap URL resolves to a committed static file
 
 All fixture writes go to tmp_path only (MM_DATA_GUARD law).
 """
@@ -466,3 +467,26 @@ def test_live_sitemap_contains_only_public_urls():
     ]
     gated = [path for path in paths if not is_public_path(path)]
     assert gated == [], f"Gated URLs leaked into sitemap: {gated[:10]}"
+
+
+def test_live_sitemap_urls_have_committed_static_files():
+    """Prevent publishing sitemap entries before their generated pages."""
+    site = _REPO / "site"
+    root = ET.parse(site / "sitemap.xml").getroot()
+    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    missing: list[tuple[str, str]] = []
+
+    for node in root.findall(".//sm:loc", ns):
+        loc = (node.text or "").strip()
+        path = urlsplit(loc).path
+        if path == "/":
+            relative = Path("index.html")
+        elif path.endswith("/"):
+            relative = Path(path.lstrip("/")) / "index.html"
+        else:
+            relative = Path(path.lstrip("/"))
+
+        if not (site / relative).is_file():
+            missing.append((loc, relative.as_posix()))
+
+    assert missing == [], f"Sitemap URLs without committed static files: {missing[:10]}"
