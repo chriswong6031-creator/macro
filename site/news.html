@@ -7,8 +7,240 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markets News — What matters now · Mastermind</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/0bd6e622.css?v=0bd6e622">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+/* ===================== MARKETS NEWS — mx5 idiom ===================== */
+.nxx{ --num:var(--font-mono,ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono","JetBrains Mono",Menlo,Consolas,monospace);
+  --nx-card:color-mix(in srgb, var(--panel) 80%, transparent);
+  --nx-card-solid:var(--panel);
+  --nx-card2:color-mix(in srgb, var(--panel2) 78%, transparent);
+  --nx-brd:color-mix(in srgb, var(--text) 12%, transparent);
+  --nx-hair:color-mix(in srgb, var(--line) 82%, transparent);
+  --nx-blur:blur(16px) saturate(135%);
+  --nx-radius:16px;
+  --nx-shadow:0 12px 34px -18px rgba(0,0,0,.5), inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);
+  position:relative; z-index:1; max-width:1200px; margin:0 auto; }
+.nxx .num{ font-family:var(--num); font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.nxx a{ color:inherit; }
+
+/* aurora backdrop — fixed, low-opacity, gentle breathe (opacity only) */
+.nx-aurora{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.nx-aurora::before,.nx-aurora::after{ content:""; position:absolute; width:60vw; height:60vw;
+  border-radius:50%; filter:blur(90px); opacity:.5; }
+.nx-aurora::before{ top:-18vw; left:-10vw;
+  background:radial-gradient(circle, color-mix(in srgb,var(--link) 30%,transparent) 0%, transparent 70%);
+  animation:nxAur 12s ease-in-out infinite; }
+.nx-aurora::after{ bottom:-22vw; right:-12vw;
+  background:radial-gradient(circle, color-mix(in srgb,var(--up) 22%,transparent) 0%, transparent 70%);
+  animation:nxAur 15s ease-in-out infinite reverse; }
+@keyframes nxAur{ 0%,100%{ opacity:.38; } 50%{ opacity:.62; } }
+
+/* header */
+.nx-head{ padding:8px 0 14px; }
+.nx-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+  display:flex; align-items:center; gap:8px; }
+.nx-eyebrow .live{ width:7px; height:7px; border-radius:50%; background:var(--up);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 26%,transparent); }
+.nx-title{ font-size:30px; font-weight:800; letter-spacing:-.02em; margin:6px 0 4px; line-height:1.08;
+  background:linear-gradient(110deg, var(--text) 0%, color-mix(in srgb,var(--link) 70%, var(--text)) 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.nx-sub{ color:var(--muted); font-size:13px; max-width:60ch; }
+.nx-updated{ font-size:11.5px; color:var(--muted); margin-top:6px; }
+.nx-updated .num{ color:var(--text); }
+
+/* ---- HERO ---- */
+.nx-hero{ display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:14px; margin:6px 0 20px; }
+.nx-lead{ position:relative; padding:20px; border-radius:var(--nx-radius);
+  background:var(--nx-card); border:1px solid var(--nx-brd); box-shadow:var(--nx-shadow);
+  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); overflow:hidden; }
+.nx-lead::after{ content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  box-shadow:inset 0 0 60px -20px var(--acc, var(--link)); opacity:0; animation:nxBreathe 4s ease-in-out infinite; }
+@keyframes nxBreathe{ 0%,100%{ opacity:0; } 50%{ opacity:.55; } }
+.nx-lead-eyebrow{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--acc, var(--link)); margin-bottom:10px; }
+.nx-lead-row{ display:flex; gap:16px; align-items:flex-start; }
+.nx-lead-body{ flex:1; min-width:0; }
+.nx-lead-title{ display:block; font-size:22px; font-weight:800; line-height:1.22; letter-spacing:-.015em;
+  margin-bottom:10px; text-wrap:balance; }
+.nx-lead-title:hover{ color:var(--link); }
+.nx-lead-why{ font-size:13px; color:var(--muted); margin:2px 0 12px; }
+.nx-chips{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.nx-lead-meta{ margin-top:12px; font-size:11.5px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.nx-lead-meta .src{ color:var(--text); font-weight:600; }
+
+/* impact ring (rank_score 0-100) */
+.nx-impact{ --v:0; --acc:var(--link); flex:0 0 auto; width:60px; height:60px; border-radius:50%;
+  display:grid; place-items:center; position:relative;
+  background:conic-gradient(var(--acc) calc(var(--v)*1%), color-mix(in srgb,var(--text) 12%,transparent) 0); }
+.nx-impact::before{ content:""; position:absolute; inset:4px; border-radius:50%; background:var(--nx-card-solid); }
+.nx-impact b{ position:relative; font-size:17px; font-weight:800; font-family:var(--num); }
+.nx-impact small{ position:relative; display:block; font-size:8px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-top:-2px; }
+
+/* movers column */
+.nx-movers{ display:flex; flex-direction:column; gap:8px; }
+.nx-movers-hd{ font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:2px; }
+.nx-mover{ display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:12px;
+  background:var(--nx-card2); border:1px solid var(--nx-hair); transition:border-color .18s, transform .18s; }
+.nx-mover:hover{ border-color:var(--nx-brd); transform:translateY(-1px); }
+.nx-mover-rank{ flex:0 0 auto; font-size:12px; font-weight:800; font-family:var(--num); color:var(--acc,var(--link));
+  width:20px; text-align:center; padding-top:1px; }
+.nx-mover-body{ min-width:0; }
+.nx-mover-title{ font-size:13px; font-weight:600; line-height:1.3; display:block; }
+.nx-mover-title:hover{ color:var(--link); }
+.nx-mover-meta{ font-size:10.5px; color:var(--muted); margin-top:4px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+/* ---- PULSE strip ---- */
+.nx-pulse{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 14px; margin-bottom:16px;
+  border-radius:14px; background:var(--nx-card2); border:1px solid var(--nx-hair); }
+.nx-pulse-lbl{ font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-right:2px; }
+.nx-heat{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:100px;
+  background:color-mix(in srgb,var(--c,var(--muted)) 13%,transparent); color:color-mix(in srgb,var(--c,var(--muted)) 88%,var(--text));
+  border:1px solid color-mix(in srgb,var(--c,var(--muted)) 28%,transparent); }
+.nx-heat b{ font-family:var(--num); }
+.nx-pulse-sent{ margin-left:auto; font-size:11.5px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+.nx-pulse-sent .dot{ width:8px; height:8px; border-radius:50%; }
+
+/* ---- CONTROLS: segmented + search ---- */
+.nx-controls{ display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+.seg{ display:inline-flex; gap:3px; padding:3px; border-radius:100px; background:var(--nx-card2); border:1px solid var(--nx-hair); }
+.seg-btn{ appearance:none; border:0; background:transparent; color:var(--muted); font-family:inherit; font-size:12px; font-weight:600;
+  padding:6px 13px; border-radius:100px; cursor:pointer; transition:background .16s,color .16s; white-space:nowrap; }
+.seg-btn:hover{ color:var(--text); }
+.seg-btn.on{ background:color-mix(in srgb,var(--link) 90%, var(--panel)); color:#fff; }
+.nx-search{ flex:1; min-width:180px; max-width:360px; position:relative; }
+.nx-search input{ width:100%; font-family:inherit; font-size:13px; color:var(--text); padding:9px 12px 9px 32px;
+  border-radius:100px; background:var(--nx-card2); border:1px solid var(--nx-hair); outline:none; transition:border-color .16s; }
+.nx-search input:focus{ border-color:color-mix(in srgb,var(--link) 55%,transparent); }
+.nx-search svg{ position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.5; }
+.nx-count{ font-size:11px; color:var(--muted); font-family:var(--num); }
+
+/* ---- FEED ---- */
+.nx-feed{ display:flex; flex-direction:column; gap:9px; }
+.nx-story{ display:flex; gap:13px; align-items:flex-start; padding:14px 15px; border-radius:14px;
+  background:var(--nx-card); border:1px solid var(--nx-hair); box-shadow:var(--nx-shadow);
+  -webkit-backdrop-filter:var(--nx-blur); backdrop-filter:var(--nx-blur); transition:border-color .18s, transform .18s; }
+.nx-story:hover{ border-color:var(--nx-brd); transform:translateY(-1px); }
+.nx-story.hide{ display:none; }
+.nx-rankdot{ flex:0 0 auto; width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+  font-family:var(--num); font-size:13px; font-weight:800; color:var(--acc,var(--link));
+  background:color-mix(in srgb,var(--acc,var(--link)) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--acc,var(--link)) 26%,transparent); }
+.nx-story-main{ min-width:0; flex:1; }
+.nx-story-title{ font-size:15px; font-weight:600; line-height:1.32; display:block; letter-spacing:-.005em; }
+.nx-story-title:hover{ color:var(--link); }
+.nx-story .nx-chips{ margin-top:8px; }
+.nx-meta{ margin-top:8px; font-size:11px; color:var(--muted); display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+.nx-meta .src{ color:var(--text); font-weight:600; }
+.nx-tk{ font-family:var(--num); font-size:10.5px; font-weight:700; color:var(--link);
+  background:color-mix(in srgb,var(--link) 12%,transparent); padding:1px 6px; border-radius:5px; }
+.nx-more{ margin:14px auto 4px; display:block; }
+.nx-empty{ text-align:center; color:var(--muted); font-size:13px; padding:30px; }
+
+/* ---- generic tinted chip ---- */
+.nx-chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:600; line-height:1.5;
+  padding:2px 8px; border-radius:100px; white-space:nowrap;
+  background:color-mix(in srgb,var(--c,var(--muted)) 14%,transparent);
+  color:color-mix(in srgb,var(--c,var(--muted)) 90%,var(--text));
+  border:1px solid color-mix(in srgb,var(--c,var(--muted)) 28%,transparent); }
+.nx-chip.evt{ --c:var(--link); font-family:var(--num); }
+.nx-chip.ai{ --c:var(--info); }
+.nx-chip.tier{ --c:var(--muted); }
+.dir-up{ --c:var(--up); } .dir-down{ --c:var(--down); } .dir-mixed{ --c:var(--warn); }
+/* theme / lane hues */
+.th-monetary,.th-fed{ --c:#c77dff; } .th-credit{ --c:#3fb6c0; }
+.th-inflation{ --c:#e0973a; } .th-labor{ --c:#5b8def; } .th-growth{ --c:#46b87a; }
+.th-fiscal{ --c:#d0877a; } .th-macro,.th-markets{ --c:#5b8def; }
+.th-earnings,.th-guidance,.th-stocks,.th-companies{ --c:#46b87a; }
+.th-analyst{ --c:#b48ead; } .th-deals,.th-capital_return{ --c:#e0973a; }
+
+/* ---- two-column: releases + rail ---- */
+.nx-cols{ display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; margin-top:26px; align-items:start; }
+.nx-sec-hd{ display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:15px; font-weight:800; letter-spacing:-.01em; }
+.nx-sec-hd::before{ content:""; width:3px; height:16px; border-radius:2px; background:var(--link); }
+.nx-sec-hd .n{ font-size:11px; font-weight:700; color:var(--muted); font-family:var(--num); }
+.nx-rel-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.nx-rel{ padding:13px 14px; border-radius:12px; background:var(--nx-card); border:1px solid var(--nx-hair); }
+.nx-rel-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px; }
+.nx-rel-name{ font-size:13px; font-weight:700; }
+.nx-rel-read{ font-size:11px; font-weight:700; }
+.nx-rel-read.up{ color:var(--up); } .nx-rel-read.down{ color:var(--down); }
+.nx-rel-cells{ display:flex; gap:14px; flex-wrap:wrap; }
+.nx-rel-cell .k{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.nx-rel-cell .v{ font-size:15px; font-weight:800; font-family:var(--num); }
+.nx-rel-sum{ margin-top:8px; font-size:11.5px; color:var(--muted); font-style:italic; }
+.nx-badge{ font-size:9.5px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:100px; }
+.nx-badge.big{ background:color-mix(in srgb,var(--act) 16%,transparent); color:var(--act); }
+.nx-badge.notable{ background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+
+/* ---- rail ---- */
+.nx-rail{ display:flex; flex-direction:column; gap:14px; position:sticky; top:14px; }
+.nx-rail-card{ padding:14px; border-radius:14px; background:var(--nx-card); border:1px solid var(--nx-hair); }
+.nx-rail-hd{ font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.nx-line{ display:flex; gap:8px; align-items:baseline; padding:6px 0; border-top:1px solid var(--nx-hair); font-size:12px; }
+.nx-line:first-of-type{ border-top:0; }
+.nx-line .d{ font-family:var(--num); font-size:11px; color:var(--muted); flex:0 0 auto; min-width:44px; }
+.nx-line .lbl{ flex:1; }
+.nx-odds{ display:flex; justify-content:space-between; font-size:11.5px; padding:3px 0; }
+.nx-odds .p{ font-family:var(--num); font-weight:700; }
+.nx-rail-note{ font-size:10.5px; color:var(--muted); margin-top:8px; }
+
+/* ---- diagnostics drawer ---- */
+.nx-diag{ margin-top:26px; border-radius:12px; background:var(--nx-card2); border:1px solid var(--nx-hair); overflow:hidden; }
+.nx-diag>summary{ cursor:pointer; padding:12px 14px; font-size:12px; font-weight:600; color:var(--muted); list-style:none; display:flex; gap:8px; align-items:center; }
+.nx-diag>summary::-webkit-details-marker{ display:none; }
+.nx-diag>summary::before{ content:"▸"; transition:transform .2s; }
+.nx-diag[open]>summary::before{ transform:rotate(90deg); }
+.nx-diag-body{ padding:0 14px 14px; font-size:11.5px; color:var(--muted); }
+.nx-diag h4{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin:12px 0 6px; color:var(--muted); }
+.nx-diag table{ width:100%; border-collapse:collapse; font-size:11px; }
+.nx-diag td{ padding:3px 6px; border-top:1px solid var(--nx-hair); vertical-align:top; }
+.nx-diag .rej-reason{ color:var(--warn); font-weight:600; }
+.nx-disc{ margin:22px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
+
+/* ---- responsive ---- */
+@media(max-width:900px){
+  .nx-hero{ grid-template-columns:1fr; }
+  .nx-cols{ grid-template-columns:1fr; }
+  .nx-rail{ position:static; }
+  .nx-title{ font-size:25px; }
+}
+@media(max-width:560px){
+  .nx-lead{ padding:16px; } .nx-lead-title{ font-size:19px; }
+  .nx-lead-row{ gap:12px; } .nx-impact{ width:50px; height:50px; }
+  .nx-controls{ gap:8px; } .nx-search{ order:3; max-width:none; flex-basis:100%; }
+}
+/* motion / perf gates (mobile-perf law: opacity-only, killed on reduce/touch) */
+@media(prefers-reduced-motion:reduce){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
+@media(pointer:coarse){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
+
+</style>
 
 
 
@@ -183,68 +415,132 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
         
         <div class="nav-mega-feat">
-          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
-          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
-          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
-            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
-            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
-            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
-            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
-            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
-            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic research-icon research-icon-demand" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic research-icon research-icon-anticipation" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic research-icon research-icon-impulse" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
-            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
-            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
-            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
-            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
-            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
-            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic research-icon research-icon-congress" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic research-icon research-icon-ipo" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
-            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
-            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
-            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
-            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
-            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
-            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
-            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
-            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
-            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
-            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
-            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
-            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
-            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
-            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
-            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic research-icon research-icon-white-house" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic research-icon research-icon-signal-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic research-icon research-icon-technical-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic research-icon research-icon-macro-signals" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic research-icon research-icon-factors-seasonality" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
           </div>
         </div>
       </div>
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -274,7 +570,7 @@
   <div class="nx-eyebrow"><span class="live"></span><span class="l-en">Markets News</span><span class="l-zh">市场新闻</span></div>
   <h1 class="nx-title"><span class="l-en">What matters now</span><span class="l-zh">当下要闻</span></h1>
   <p class="nx-sub"><span class="l-en">The market-moving business and macro news that matters now — importance-ranked, fresh, and de-noised.</span><span class="l-zh">此刻真正影响市场的商业与宏观新闻——按重要性排序、保持新鲜、去除噪音。</span></p>
-  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-25T20:27:24.502030+00:00"></span>
+  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-25T21:54:57.804896+00:00"></span>
     · <span class="num">45</span> <span class="l-en">stories ranked</span><span class="l-zh">条已排序</span></div>
 </header>
 
@@ -285,22 +581,22 @@
   <div class="nx-lead" style="--acc:var(--link);">
     <div class="nx-lead-eyebrow"><span class="l-en">Top story</span><span class="l-zh">头条</span></div>
     <div class="nx-lead-row">
-      <div class="nx-impact" style="--v:65; --acc:var(--link);">
-        <b>65</b><small><span class="l-en">impact</span><span class="l-zh">影响</span></small>
+      <div class="nx-impact" style="--v:55; --acc:var(--link);">
+        <b>55</b><small><span class="l-en">impact</span><span class="l-zh">影响</span></small>
       </div>
       <div class="nx-lead-body">
-        <a class="nx-lead-title" href="https://www.cnbc.com/2026/07/25/nvidia-locks-down-memory-from-sk-hynix-as-part-of-500-billion-ai-deal.html" target="_blank" rel="noopener"><span class="l-en">Nvidia locks down memory supply from SK Hynix as part of $500 billion AI deal</span><span class="l-zh">Nvidia locks down memory supply from SK Hynix as part of $500 billion AI deal</span></a>
+        <a class="nx-lead-title" href="https://www.cnbc.com/2026/07/25/here-are-4-forces-that-drove-a-tough-week-for-stocks.html" target="_blank" rel="noopener"><span class="l-en">Here are 4 forces that drove a tough week for stocks</span><span class="l-zh">Here are 4 forces that drove a tough week for stocks</span></a>
         <div class="nx-lead-why"><span class="l-en">Market context</span><span class="l-zh">市场背景</span></div>
         <div class="nx-chips">
-          <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
+          <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
           
           
           
-          <span class="nx-tk">NVDA</span>
+          
         </div>
         <div class="nx-lead-meta">
           <span class="src">cnbc.com</span>
-          <span>· <span class="rel-time" data-ts="2026-07-25T08:49:00+00:00"></span></span>
+          <span>· <span class="rel-time" data-ts="2026-07-25T19:56:55+00:00"></span></span>
         </div>
       </div>
     </div>
@@ -310,29 +606,29 @@
     <div class="nx-movers-hd"><span class="l-en">Also big</span><span class="l-zh">同样重要</span></div>
     
     
-    <a class="nx-mover" href="https://www.bloomberg.com/news/articles/2026-07-25/europe-s-stock-market-rally-is-the-most-concentrated-in-years" target="_blank" rel="noopener" style="--acc:var(--link);">
+    <a class="nx-mover" href="https://news.google.com/rss/articles/CBMitgFBVV95cUxOWWZFUVRJQ2RrRXktTk1RcmZsTWhuY3dSQVZsLTJCVHBoSVhCV0k1dHFUcTdrSktZVDZDMUd5NW0xTF9BdEFfQnFMNGNhRE1WLUF0QlNia2NJemc1aDhkU29oVElFU0RTa0E0TmhWZ2hYZ1R5cU9BNWJXUFVwZWliVTdQUk02ZVM5ZXJic2hucWxiekRKd3Y1OHBheTdBeWFjS0g2Q3NWb05mZjZ6VkE3QXVjbnFyQQ?oc=5" target="_blank" rel="noopener" style="--acc:var(--link);">
       <div class="nx-mover-rank">2</div>
       <div class="nx-mover-body">
-        <span class="nx-mover-title"><span class="l-en">Europe’s Stock Market Rally Is the Most Concentrated in Years</span><span class="l-zh">Europe’s Stock Market Rally Is the Most Concentrated in Years</span></span>
-        <div class="nx-mover-meta"><span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span><span>bloomberg.com</span>·<span class="rel-time" data-ts="2026-07-25T07:00:00+00:00"></span></div>
+        <span class="nx-mover-title"><span class="l-en">LSEG&#39;s Lipper reviews transaction affecting fixed-income fund flow data</span><span class="l-zh">LSEG&#39;s Lipper reviews transaction affecting fixed-income fund flow data</span></span>
+        <div class="nx-mover-meta"><span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span><span>Reuters</span>·<span class="rel-time" data-ts="2026-07-25T16:32:09+00:00"></span></div>
       </div>
     </a>
     
     
-    <a class="nx-mover" href="https://www.cnbc.com/2026/07/24/moodys-ai-spending-credit-quality-amazon-meta-alphabet.html" target="_blank" rel="noopener" style="--acc:var(--link);">
+    <a class="nx-mover" href="https://www.cnbc.com/2026/07/24/russia-ukraine-war-zelenskyy-putin-oil.html" target="_blank" rel="noopener" style="--acc:var(--link);">
       <div class="nx-mover-rank">3</div>
       <div class="nx-mover-body">
-        <span class="nx-mover-title"><span class="l-en">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span><span class="l-zh">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span></span>
-        <div class="nx-mover-meta"><span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span><span>cnbc.com</span>·<span class="rel-time" data-ts="2026-07-24T22:43:56+00:00"></span></div>
+        <span class="nx-mover-title"><span class="l-en">Russian attack cuts power to around 150,000 in Ukraine’s north as Kyiv hits missile, oil facilities</span><span class="l-zh">Russian attack cuts power to around 150,000 in Ukraine’s north as Kyiv hits missile, oil facilities</span></span>
+        <div class="nx-mover-meta"><span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span><span>cnbc.com</span>·<span class="rel-time" data-ts="2026-07-25T16:10:57+00:00"></span></div>
       </div>
     </a>
     
     
-    <a class="nx-mover" href="https://www.bloomberg.com/news/articles/2026-07-24/wall-street-bulls-are-staring-down-100-oil-tariffs-ai-angst" target="_blank" rel="noopener" style="--acc:var(--link);">
+    <a class="nx-mover" href="https://www.bloomberg.com/news/articles/2026-07-25/the-trump-trade-is-turning-into-a-loser-in-the-stock-market" target="_blank" rel="noopener" style="--acc:var(--link);">
       <div class="nx-mover-rank">4</div>
       <div class="nx-mover-body">
-        <span class="nx-mover-title"><span class="l-en">Wall Street Bulls Are Staring Down $100 Oil, Tariffs, AI Angst</span><span class="l-zh">Wall Street Bulls Are Staring Down $100 Oil, Tariffs, AI Angst</span></span>
-        <div class="nx-mover-meta"><span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span><span>bloomberg.com</span>·<span class="rel-time" data-ts="2026-07-24T20:12:40+00:00"></span></div>
+        <span class="nx-mover-title"><span class="l-en">The ‘Trump Trade’ Is Turning Into a Loser in the Stock Market</span><span class="l-zh">The ‘Trump Trade’ Is Turning Into a Loser in the Stock Market</span></span>
+        <div class="nx-mover-meta"><span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span><span>bloomberg.com</span>·<span class="rel-time" data-ts="2026-07-25T13:00:01+00:00"></span></div>
       </div>
     </a>
     
@@ -342,6 +638,8 @@
 
 
 
+
+  
 
   
 
@@ -400,28 +698,25 @@
   <span class="nx-pulse-lbl"><span class="l-en">Theme pulse</span><span class="l-zh">主题热度</span></span>
   
     
-    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>4</b></span>
+    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>6</b></span>
   
     
-    <span class="nx-heat th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span> <b>4</b></span>
+    <span class="nx-heat th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <b>5</b></span>
   
     
-    <span class="nx-heat th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span> <b>5</b></span>
+    <span class="nx-heat th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span> <b>4</b></span>
   
     
-    <span class="nx-heat th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <b>4</b></span>
+    <span class="nx-heat th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span> <b>3</b></span>
   
     
     <span class="nx-heat th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span> <b>3</b></span>
   
     
-    <span class="nx-heat th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span> <b>3</b></span>
+    <span class="nx-heat th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>3</b></span>
   
     
-    <span class="nx-heat th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>2</b></span>
-  
-    
-    <span class="nx-heat th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span> <b>2</b></span>
+    <span class="nx-heat th-deals"><span class="l-en">Deals</span><span class="l-zh">并购</span> <b>2</b></span>
   
   
   <span class="nx-pulse-sent"><span class="dot" style="background:var(--up);"></span>
@@ -450,11 +745,99 @@
 <section class="nx-feed" id="nxFeed">
   
   
-  <article class="nx-story" data-lane="companies"
+  <article class="nx-story" data-lane="markets"
            data-idx="0"
+           data-search="here are 4 forces that drove a tough week for stocks  cnbc.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">55</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/25/here-are-4-forces-that-drove-a-tough-week-for-stocks.html" target="_blank" rel="noopener"><span class="l-en">Here are 4 forces that drove a tough week for stocks</span><span class="l-zh">Here are 4 forces that drove a tough week for stocks</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">cnbc.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T19:56:55+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="1"
+           data-search="lseg&#39;s lipper reviews transaction affecting fixed-income fund flow data  reuters"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">51</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMitgFBVV95cUxOWWZFUVRJQ2RrRXktTk1RcmZsTWhuY3dSQVZsLTJCVHBoSVhCV0k1dHFUcTdrSktZVDZDMUd5NW0xTF9BdEFfQnFMNGNhRE1WLUF0QlNia2NJemc1aDhkU29oVElFU0RTa0E0TmhWZ2hYZ1R5cU9BNWJXUFVwZWliVTdQUk02ZVM5ZXJic2hucWxiekRKd3Y1OHBheTdBeWFjS0g2Q3NWb05mZjZ6VkE3QXVjbnFyQQ?oc=5" target="_blank" rel="noopener"><span class="l-en">LSEG&#39;s Lipper reviews transaction affecting fixed-income fund flow data</span><span class="l-zh">LSEG&#39;s Lipper reviews transaction affecting fixed-income fund flow data</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Reuters</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T16:32:09+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="2"
+           data-search="russian attack cuts power to around 150,000 in ukraine’s north as kyiv hits missile, oil facilities  cnbc.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">51</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/russia-ukraine-war-zelenskyy-putin-oil.html" target="_blank" rel="noopener"><span class="l-en">Russian attack cuts power to around 150,000 in Ukraine’s north as Kyiv hits missile, oil facilities</span><span class="l-zh">Russian attack cuts power to around 150,000 in Ukraine’s north as Kyiv hits missile, oil facilities</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">cnbc.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T16:10:57+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="3"
+           data-search="the ‘trump trade’ is turning into a loser in the stock market  bloomberg.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">47</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-25/the-trump-trade-is-turning-into-a-loser-in-the-stock-market" target="_blank" rel="noopener"><span class="l-en">The ‘Trump Trade’ Is Turning Into a Loser in the Stock Market</span><span class="l-zh">The ‘Trump Trade’ Is Turning Into a Loser in the Stock Market</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">bloomberg.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T13:00:01+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="companies"
+           data-idx="4"
            data-search="nvidia locks down memory supply from sk hynix as part of $500 billion ai deal nvda cnbc.com"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">65</div>
+    <div class="nx-rankdot">47</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.cnbc.com/2026/07/25/nvidia-locks-down-memory-from-sk-hynix-as-part-of-500-billion-ai-deal.html" target="_blank" rel="noopener"><span class="l-en">Nvidia locks down memory supply from SK Hynix as part of $500 billion AI deal</span><span class="l-zh">Nvidia locks down memory supply from SK Hynix as part of $500 billion AI deal</span></a>
       <div class="nx-chips">
@@ -472,111 +855,23 @@
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
-           data-idx="1"
-           data-search="europe’s stock market rally is the most concentrated in years  bloomberg.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">54</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-25/europe-s-stock-market-rally-is-the-most-concentrated-in-years" target="_blank" rel="noopener"><span class="l-en">Europe’s Stock Market Rally Is the Most Concentrated in Years</span><span class="l-zh">Europe’s Stock Market Rally Is the Most Concentrated in Years</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">bloomberg.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T07:00:00+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="2"
-           data-search="moody&#39;s says &#39;unprecedented&#39; ai spending threatens credit quality of amazon, meta, alphabet and others amzn googl cnbc.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">51</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/moodys-ai-spending-credit-quality-amazon-meta-alphabet.html" target="_blank" rel="noopener"><span class="l-en">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span><span class="l-zh">Moody&#39;s says &#39;unprecedented&#39; AI spending threatens credit quality of Amazon, Meta, Alphabet and others</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">cnbc.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:43:56+00:00"></span>
-        <span class="nx-tk">AMZN</span><span class="nx-tk">GOOGL</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="3"
-           data-search="wall street bulls are staring down $100 oil, tariffs, ai angst  bloomberg.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">50</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-24/wall-street-bulls-are-staring-down-100-oil-tariffs-ai-angst" target="_blank" rel="noopener"><span class="l-en">Wall Street Bulls Are Staring Down $100 Oil, Tariffs, AI Angst</span><span class="l-zh">Wall Street Bulls Are Staring Down $100 Oil, Tariffs, AI Angst</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
-        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
-        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">bloomberg.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T20:12:40+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="markets"
-           data-idx="4"
-           data-search="spacex launches massive starship rocket in first test flight since ipo  cnbc.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">48</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/spacex-launches-massive-starship-rocket-in-first-test-flight-since-ipo.html" target="_blank" rel="noopener"><span class="l-en">SpaceX launches massive Starship rocket in first test flight since IPO</span><span class="l-zh">SpaceX launches massive Starship rocket in first test flight since IPO</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">cnbc.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T02:17:11+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
   <article class="nx-story" data-lane="companies"
            data-idx="5"
-           data-search="trump says us to launch eu probe over &#39;illegal&#39; google fine googl reuters"
+           data-search="earnings scorecard: communication sector sees 4 of 6 stocks top eps estimates this week  seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">48</div>
+    <div class="nx-rankdot">47</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMioAFBVV95cUxOS3dXSEd1bktIXy1XcmlsWGFYekt3d2dPeW53TVdyeVBiT0RkdDJERks0eXp0cVlheW54SFVPYU5aYnhwaFNfLVdXNWc3dVQxM0FTR3Y4UUlEQVZLd1JFZmhGZmx0U282TzdnaXJxbnQ5QkVlczlLZExqdmdTbk4tblE0RXNWMzNlOGk5ZkdXenptLUNLRHZXaS1aNmVocTEz?oc=5" target="_blank" rel="noopener"><span class="l-en">Trump says US to launch EU probe over &#39;illegal&#39; Google fine</span><span class="l-zh">Trump says US to launch EU probe over &#39;illegal&#39; Google fine</span></a>
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618340-earnings-scorecard-communication-sector-sees-4-of-6-stocks-top-eps-estimates-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span><span class="l-zh">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
         
         
         
       </div>
       <div class="nx-meta">
-        <span class="src">Reuters</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:02:32+00:00"></span>
-        <span class="nx-tk">GOOGL</span>
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:00:53+00:00"></span>
+        
       </div>
     </div>
   </article>
@@ -584,11 +879,11 @@
   
   <article class="nx-story" data-lane="companies"
            data-idx="6"
-           data-search="musk&#39;s bad week: tesla suffers worst slump since 2022, spacex drops ahead of starship test flight tsla cnbc.com"
+           data-search="dow jones futures: market triggers sell signal; apple earnings, iran news, fed meeting in focus aapl investor&#39;s business daily"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">48</div>
+    <div class="nx-rankdot">47</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/tesla-tsla-spacex-spcx-stock-starship-test-flight-musk-bad-week.html" target="_blank" rel="noopener"><span class="l-en">Musk&#39;s bad week: Tesla suffers worst slump since 2022, SpaceX drops ahead of Starship test flight</span><span class="l-zh">Musk&#39;s bad week: Tesla suffers worst slump since 2022, SpaceX drops ahead of Starship test flight</span></a>
+      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMiwAFBVV95cUxNN3p3SzdOVDFES19TRHFQWmlIQ3BpZUVqTDdkdUV1bUd3alFyYzVubHNmU3FVWnpYS2JFZDJiZHVpWDJFV3V3OEdfWFd0YmNMOTB2UF9WaktUaUNKd21JV0hacllkdlI1UnNjTDQzV1MzanFXTFJUQWVHN284dVBKTUJXdEthVFg1T1Z3bmFnamFzZXd4OVpjMTVZcTB0MXNqeHRYS1lCX21xbjZhck1xMGs3bXRUV2xuQ3YwbnN1cmo?oc=5" target="_blank" rel="noopener"><span class="l-en">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span><span class="l-zh">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
         
@@ -596,43 +891,21 @@
         
       </div>
       <div class="nx-meta">
-        <span class="src">cnbc.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T21:57:01+00:00"></span>
-        <span class="nx-tk">TSLA</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="7"
-           data-search="nvidia stock has been a chip stock outperformer in july. why its rally is at risk. nvda barron&#39;s"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">46</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMifkFVX3lxTE5vMXR2R0x3UWxLemxmbDd4MXh6cVQ4cXZacnBsWE1IMGE2VjBpY01sT09OcHdILUgtYmthLTZmeUlyZ3VJS0xqTkRIVDdVLWxYdmhkWmlhT2NKOHNQTENuRm1jVW5LdkNVVEhBR2g2Q3E4RjM2WFhEcDBXVENRdw?oc=5" target="_blank" rel="noopener"><span class="l-en">Nvidia Stock Has Been a Chip Stock Outperformer in July. Why Its Rally Is at Risk.</span><span class="l-zh">Nvidia Stock Has Been a Chip Stock Outperformer in July. Why Its Rally Is at Risk.</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Barron&#39;s</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T19:04:00+00:00"></span>
-        <span class="nx-tk">NVDA</span>
+        <span class="src">Investor&#39;s Business Daily</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:04:00+00:00"></span>
+        <span class="nx-tk">AAPL</span>
       </div>
     </div>
   </article>
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="8"
-           data-search="ai has completely rewritten the rules of the stock market  barron&#39;s"
+           data-idx="7"
+           data-search="analysis: a powerful new coalition of ai skeptics is coalescing right in trump&#39;s blind spot  cnbc.com"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">44</div>
+    <div class="nx-rankdot">47</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMidkFVX3lxTE5GeHhXWUFoMkYwT2RzN0NIY0NsRzFZMVhaLTE5Y2ZUMkVJd0RrVWJ4YTU2cDE4NkMyazQ4T1BHZ1I1OUdHblZIU1FJV1BQQTJMaS1DcEVUVlZPM2x3Y2hHbDVVWUM0M2w0NURYdE5ROTMzcm9DRkE?oc=5" target="_blank" rel="noopener"><span class="l-en">AI Has Completely Rewritten the Rules of the Stock Market</span><span class="l-zh">AI Has Completely Rewritten the Rules of the Stock Market</span></a>
+      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/25/trump-ai-data-center-backlash.html" target="_blank" rel="noopener"><span class="l-en">Analysis: A powerful new coalition of AI skeptics is coalescing right in Trump&#39;s blind spot</span><span class="l-zh">Analysis: A powerful new coalition of AI skeptics is coalescing right in Trump&#39;s blind spot</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
         
@@ -640,8 +913,118 @@
         
       </div>
       <div class="nx-meta">
-        <span class="src">Barron&#39;s</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T21:32:00+00:00"></span>
+        <span class="src">cnbc.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T12:00:02+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="8"
+           data-search="big tech debt flood is taking over risk in market: credit weekly  bloomberg.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">46</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-25/big-tech-debt-flood-is-taking-over-risk-in-market-credit-weekly" target="_blank" rel="noopener"><span class="l-en">Big Tech Debt Flood Is Taking Over Risk In Market: Credit Weekly</span><span class="l-zh">Big Tech Debt Flood Is Taking Over Risk In Market: Credit Weekly</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">bloomberg.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T11:00:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="9"
+           data-search="‘time will tell whether that was a good bet’: my adviser got me a full spacex ipo allocation. was i lucky?  marketwatch.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">45</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/time-will-tell-whether-that-was-a-good-bet-my-adviser-got-me-a-full-spacex-ipo-allocation-was-i-lucky-7f319645?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span><span class="l-zh">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">marketwatch.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T20:00:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="10"
+           data-search="yes, the ai stock selloff looks terrifying. but it might actually save the bull market.  marketwatch.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">44</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/yes-the-ai-stock-selloff-looks-terrifying-but-it-might-actually-save-the-bull-market-3bef59be?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span><span class="l-zh">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">marketwatch.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:59:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="11"
+           data-search="is your index fund an accidental bet on ai? these two massive etfs show why it might be.  marketwatch.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">44</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/south-korean-stocks-werent-a-big-deal-in-your-emerging-markets-fund-artificial-intelligence-changed-that-21308089?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span><span class="l-zh">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">marketwatch.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:45:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="12"
+           data-search="oil prices may fall, but gasoline prices won’t. look at the trap we’re in.  marketwatch.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">44</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/oil-prices-may-fall-but-gasoline-prices-wont-look-at-the-trap-were-in-7f4c3738?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span><span class="l-zh">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">marketwatch.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:34:00+00:00"></span>
         
       </div>
     </div>
@@ -649,7 +1032,7 @@
   
   
   <article class="nx-story" data-lane="companies"
-           data-idx="9"
+           data-idx="13"
            data-search="trader who successfully shorted tesla into earnings now sets sights on this high flyer tsla cnbc - investing"
            style="--acc:var(--link);">
     <div class="nx-rankdot">44</div>
@@ -671,117 +1054,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="13"
-           data-search="vitol paid out $5.9 billion to traders as profit halved in 2025  bloomberg.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">44</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-24/vitol-paid-out-5-9-billion-to-traders-as-profit-halved-in-2025" target="_blank" rel="noopener"><span class="l-en">Vitol Paid Out $5.9 Billion to Traders as Profit Halved in 2025</span><span class="l-zh">Vitol Paid Out $5.9 Billion to Traders as Profit Halved in 2025</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">bloomberg.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T20:54:24+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
            data-idx="14"
-           data-search="think this stock market is in a bubble? these earnings numbers say otherwise. spy marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">44</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/welcome-to-the-roaring-20s-heres-how-this-earnings-season-will-keep-the-bull-market-strong-4a70be72?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Think this stock market is in a bubble? These earnings numbers say otherwise.</span><span class="l-zh">Think this stock market is in a bubble? These earnings numbers say otherwise.</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:48:00+00:00"></span>
-        <span class="nx-tk">SPY</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="15"
-           data-search="bank of america hikes common stock dividend by 14% bac reuters"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">44</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMioAFBVV95cUxPUlpieURLTDBBRVV6T1Rrd2sxWnBZWXJXN2ZFaVBvLUhSRVo1RHhKenQ1eHNURG5EVXhGbDRRc3psVFNXei1yaEUycWtkcGVmS3d5ZFI0WXJEdlc1b0tuMlVzNzBrX0tiU3hJdGxET2pKekxTQ0l2VzJGUFlzVWJaUVZqMXktQjFleWZjUXFZLXZwUFM3YzVNYUJtTTdYQWdy?oc=5" target="_blank" rel="noopener"><span class="l-en">Bank of America hikes common stock dividend by 14%</span><span class="l-zh">Bank of America hikes common stock dividend by 14%</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Reuters</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T18:19:21+00:00"></span>
-        <span class="nx-tk">BAC</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="markets"
-           data-idx="13"
-           data-search="oil prices volatile as supply disruptions hit four global fronts  bloomberg.com"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">43</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.bloomberg.com/news/features/2026-07-24/oil-prices-volatile-as-supply-disruptions-hit-four-global-fronts" target="_blank" rel="noopener"><span class="l-en">Oil Prices Volatile as Supply Disruptions Hit Four Global Fronts</span><span class="l-zh">Oil Prices Volatile as Supply Disruptions Hit Four Global Fronts</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">bloomberg.com</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T20:15:20+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="14"
-           data-search="notable tech headlines for the week: alphabet, intel, amd in focus amd googl intc seeking alpha - market currents"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">43</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618374-notable-tech-headlines-for-the-week-alphabet-intel-amd-in-focus?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Notable tech headlines for the week: Alphabet, Intel, AMD in focus</span><span class="l-zh">Notable tech headlines for the week: Alphabet, Intel, AMD in focus</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:05:10+00:00"></span>
-        <span class="nx-tk">AMD</span><span class="nx-tk">GOOGL</span><span class="nx-tk">INTC</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="markets"
-           data-idx="15"
            data-search="paramount skydance agrees to pause merger pending antitrust case  axios"
            style="--acc:var(--link);">
     <div class="nx-rankdot">43</div>
@@ -795,7 +1068,29 @@
       </div>
       <div class="nx-meta">
         <span class="src">Axios</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T06:00:25+00:00"></span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:00:25+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="15"
+           data-search="europe’s stock market rally is the most concentrated in years  bloomberg.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">43</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-25/europe-s-stock-market-rally-is-the-most-concentrated-in-years" target="_blank" rel="noopener"><span class="l-en">Europe’s Stock Market Rally Is the Most Concentrated in Years</span><span class="l-zh">Europe’s Stock Market Rally Is the Most Concentrated in Years</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">bloomberg.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T07:00:00+00:00"></span>
         
       </div>
     </div>
@@ -804,55 +1099,77 @@
   
   <article class="nx-story" data-lane="companies"
            data-idx="16"
-           data-search="digital realty trust is today&#39;s best s&amp;p 500 stock as data center demand backs strong earnings s barron&#39;s"
+           data-search="nvidia to invest $1b in naver to boost south korea ai factory infrastructure qqq nvda seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">43</div>
+    <div class="nx-rankdot">41</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMiiwFBVV95cUxOS3RWT1hfNWhrRk0yQlc5bVRDUk5oQ0E4UVhYdEs3VHpoaDFjb184bG5BOGJUWHAxOFJGLWIxbUNqRHR0bGREMFZNeXY0ejYxVjY3Wmxld0RqcVd0ZUNTM0ZWemhTYWxfWFd5Q3d0U0JJY2lhdlBPa29YRC11cTNGVDRXMW5DSWV5LTlz?oc=5" target="_blank" rel="noopener"><span class="l-en">Digital Realty Trust Is Today&#39;s Best S&amp;P 500 Stock as Data Center Demand Backs Strong Earnings</span><span class="l-zh">Digital Realty Trust Is Today&#39;s Best S&amp;P 500 Stock as Data Center Demand Backs Strong Earnings</span></a>
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618427-nvidia-invest-1b-naver-boost-south-korea-ai-factory-infrastructure?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Nvidia to invest $1B in Naver to boost South Korea AI factory infrastructure</span><span class="l-zh">Nvidia to invest $1B in Naver to boost South Korea AI factory infrastructure</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-companies"><span class="l-en">Companies</span><span class="l-zh">公司</span></span>
+        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
         
         
         
       </div>
       <div class="nx-meta">
-        <span class="src">Barron&#39;s</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T17:01:00+00:00"></span>
-        <span class="nx-tk">S</span>
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:26:56+00:00"></span>
+        <span class="nx-tk">QQQ</span><span class="nx-tk">NVDA</span>
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
+  <article class="nx-story" data-lane="macro"
            data-idx="17"
-           data-search="fuel swings turn us airline earnings forecasts into moving targets  reuters"
+           data-search="president trump just implemented new tariffs. how are small businesses coping?  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">42</div>
+    <div class="nx-rankdot">40</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMiugFBVV95cUxOalhiV3BKNmx6UGlTM29waXhLZ0VNdHdUY2tSX2NiMUYxRlREVlAydDZFeVNVZmlCd2xCY0NjdUs3SThSMmN1OGNjWjd0ZGZnV21zZndLYk1qZTk5X1VxWnlFM2pDRjVtRnYwa3htWnB5VngxNzJ1LXdFNjY4R3E4VmN1R2YtVXI3dGpESTlzOFhfbUpPN3Bmd21WMjRIUEJoQV9YMnliM1g3NDEwN3FOZFB6WTh5MHpLblE?oc=5" target="_blank" rel="noopener"><span class="l-en">Fuel swings turn US airline earnings forecasts into moving targets</span><span class="l-zh">Fuel swings turn US airline earnings forecasts into moving targets</span></a>
+      <a class="nx-story-title" href="https://www.npr.org/2026/07/25/nx-s1-5900891/president-trump-just-implemented-new-tariffs-how-are-small-businesses-coping" target="_blank" rel="noopener"><span class="l-en">President Trump just implemented new tariffs. How are small businesses coping?</span><span class="l-zh">President Trump just implemented new tariffs. How are small businesses coping?</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
+        <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
+        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
+        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
         
       </div>
       <div class="nx-meta">
-        <span class="src">Reuters</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T18:06:29+00:00"></span>
+        <span class="src">NPR - Business</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T21:04:02+00:00"></span>
         
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
+  <article class="nx-story" data-lane="companies"
            data-idx="18"
-           data-search="fed chairman warsh faces cruel summer as bond yields spike  reuters"
+           data-search="samsung nabs $200b chip deal with broadcom xlk avgo seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">42</div>
+    <div class="nx-rankdot">39</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMiogFBVV95cUxPYVRCMXNDaHJWRk9ET3BLVEJzU0loSnRRM3hNcTAxQ1pXT1VoWlA1MUJxelBHYlFyRVVGQkZUZkFNc0NfMFNYbE1KN3pXYzRWYnIwN0JTeDVXaEdfOEpaN0pJSU91aEppRURTR1JSSld2cVl5b3Bval8wb3N0MWI4ZlBBcXlUbDA0Q0MtdFcxa3dRMzFXWkZzdC1WTGJRbW02NkE?oc=5" target="_blank" rel="noopener"><span class="l-en">Fed Chairman Warsh faces cruel summer as bond yields spike</span><span class="l-zh">Fed Chairman Warsh faces cruel summer as bond yields spike</span></a>
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618429-samsung-nabs-200b-chip-deal-broadcom?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Samsung nabs $200B chip deal with Broadcom</span><span class="l-zh">Samsung nabs $200B chip deal with Broadcom</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:45:03+00:00"></span>
+        <span class="nx-tk">XLK</span><span class="nx-tk">AVGO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="19"
+           data-search="brazil extends gasoline subsidy for 30 days amid rising oil prices  reuters"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">37</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMitAFBVV95cUxNWEd2QlN2VGZrSmRxODRxLUVabTh4bXQtUTRtMlNVZmFmRmRiNlBFY095SmRkWGFQM0ZVRFQxaUE1NlRYVmE3WDhjc2V5eHJSMXIxVF8wcjZaalBrMlQ3VndiY0hGSFVldkdyVVU4X1hiU01KTk10R09vU2s4RjRLWnV1OWNwUGp5cEUwSHJQVHFsUGFrRjJ4a0FvYjJGNHBBMlpwT0xLdS03Vm9PTXBnYnVuTFE?oc=5" target="_blank" rel="noopener"><span class="l-en">Brazil extends gasoline subsidy for 30 days amid rising oil prices</span><span class="l-zh">Brazil extends gasoline subsidy for 30 days amid rising oil prices</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
         
@@ -861,7 +1178,7 @@
       </div>
       <div class="nx-meta">
         <span class="src">Reuters</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T18:04:48+00:00"></span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T23:31:43+00:00"></span>
         
       </div>
     </div>
@@ -869,76 +1186,10 @@
   
   
   <article class="nx-story" data-lane="companies"
-           data-idx="19"
-           data-search="apple faces opposition from micron to use chinese memory chips - report xlk aapl mu seeking alpha - market currents"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">40</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618422-apple-faces-opposition-micron-use-chinese-memory-chips?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Apple faces opposition from Micron to use Chinese memory chips - report</span><span class="l-zh">Apple faces opposition from Micron to use Chinese memory chips - report</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T13:30:28+00:00"></span>
-        <span class="nx-tk">XLK</span><span class="nx-tk">AAPL</span><span class="nx-tk">MU</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="markets"
            data-idx="20"
-           data-search="expert says oil prices could go higher as iran war escalates  bbc"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">40</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMiWEFVX3lxTFAzSG5EWnE2MkhrZnVfTjZ1RnJmYlJ3SUYtcWVmTzlqNGJubk1hTmplVHhUQ2lxdE9tMkJwOHFrWHhnQ0V2WU1jMDRwRVd1eFhsaWc3cElaQjA?oc=5" target="_blank" rel="noopener"><span class="l-en">Expert says oil prices could go higher as Iran war escalates</span><span class="l-zh">Expert says oil prices could go higher as Iran war escalates</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">BBC</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T15:40:18+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="21"
-           data-search="financial stocks win on fund inflows; hut 8, iren among gainers; canadian banks, amex in losers xlf seeking alpha - market currents"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">40</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618326-financial-stocks-win-on-fund-inflows-hut-8-iren-among-gainers-canadian-banks-amex-in-losers?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Financial stocks win on fund inflows; Hut 8, Iren among gainers; Canadian banks, AmEx in losers</span><span class="l-zh">Financial stocks win on fund inflows; Hut 8, Iren among gainers; Canadian banks, AmEx in losers</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:00:33+00:00"></span>
-        <span class="nx-tk">XLF</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
-           data-idx="22"
            data-search="intel rides ai boom to fastest revenue growth in almost 15 years, but shares sink qqq intc cnbc - tech"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">38</div>
+    <div class="nx-rankdot">37</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.cnbc.com/2026/07/23/intel-intc-earnings-report-q2-2026.html" target="_blank" rel="noopener"><span class="l-en">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span><span class="l-zh">Intel rides AI boom to fastest revenue growth in almost 15 years, but shares sink</span></a>
       <div class="nx-chips">
@@ -957,32 +1208,32 @@
   
   
   <article class="nx-story" data-lane="companies"
-           data-idx="23"
-           data-search="insider trades: johnson &amp; johnson, tsmc among notable names  seeking alpha - market currents"
+           data-idx="21"
+           data-search="nebius vs. strategy: comparing revenue trends between an artificial intelligence company and a bitcoin giant intc mstr yahoo finance - top stories"
            style="--acc:var(--link);">
     <div class="nx-rankdot">37</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618423-insider-trades-johnson-johnson-tsmc-among-notable-names?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Insider trades: Johnson &amp; Johnson, TSMC among notable names</span><span class="l-zh">Insider trades: Johnson &amp; Johnson, TSMC among notable names</span></a>
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/nebius-vs-strategy-comparing-revenue-213401903.html" target="_blank" rel="noopener"><span class="l-en">Nebius vs. Strategy: Comparing Revenue Trends Between an Artificial Intelligence Company and a Bitcoin Giant</span><span class="l-zh">Nebius vs. Strategy: Comparing Revenue Trends Between an Artificial Intelligence Company and a Bitcoin Giant</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
         
         
         
       </div>
       <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T15:03:27+00:00"></span>
-        
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T21:34:01Z"></span>
+        <span class="nx-tk">INTC</span><span class="nx-tk">MSTR</span>
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story hide" data-lane="fed"
-           data-idx="24"
+  <article class="nx-story" data-lane="fed"
+           data-idx="22"
            data-search="dow jones futures: market triggers sell signal; apple earnings, iran news, fed meeting in focus aapl yahoo finance - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">35</div>
+    <div class="nx-rankdot">36</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-apple-earnings-iran-news-fed-meeting-ai-stocks/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span><span class="l-zh">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span></a>
       <div class="nx-chips">
@@ -993,15 +1244,103 @@
       </div>
       <div class="nx-meta">
         <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T12:24:40Z"></span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T19:09:11Z"></span>
         <span class="nx-tk">AAPL</span>
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story hide" data-lane="companies"
+  <article class="nx-story" data-lane="markets"
+           data-idx="23"
+           data-search="ai has completely rewritten the rules of the stock market  barron&#39;s"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">36</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMidkFVX3lxTE5GeHhXWUFoMkYwT2RzN0NIY0NsRzFZMVhaLTE5Y2ZUMkVJd0RrVWJ4YTU2cDE4NkMyazQ4T1BHZ1I1OUdHblZIU1FJV1BQQTJMaS1DcEVUVlZPM2x3Y2hHbDVVWUM0M2w0NURYdE5ROTMzcm9DRkE?oc=5" target="_blank" rel="noopener"><span class="l-en">AI Has Completely Rewritten the Rules of the Stock Market</span><span class="l-zh">AI Has Completely Rewritten the Rules of the Stock Market</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Barron&#39;s</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T21:32:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="markets"
+           data-idx="24"
+           data-search="earnings are crushing it. stocks are getting crushed. why next week is crucial.  barron&#39;s"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">36</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMic0FVX3lxTE5xUzlYbkZOVVZwM1JEQVRfOUkzdHVnazVWWXVNclVZV2RmajZyeDZxb3pwOS1qc1JSS2Z2dlMwZWUtZUg1dS1FTlRTTWxJNURQM2xuMHNOd05HVWpuaFBKVVBPNXhGXzVFdTlvQjFrdnNkT1k?oc=5" target="_blank" rel="noopener"><span class="l-en">Earnings Are Crushing It. Stocks Are Getting Crushed. Why Next Week Is Crucial.</span><span class="l-zh">Earnings Are Crushing It. Stocks Are Getting Crushed. Why Next Week Is Crucial.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Barron&#39;s</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T21:14:00+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="markets"
            data-idx="25"
+           data-search="vitol paid out $5.9 billion to traders as profit halved in 2025  bloomberg.com"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">36</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bloomberg.com/news/articles/2026-07-24/vitol-paid-out-5-9-billion-to-traders-as-profit-halved-in-2025" target="_blank" rel="noopener"><span class="l-en">Vitol Paid Out $5.9 Billion to Traders as Profit Halved in 2025</span><span class="l-zh">Vitol Paid Out $5.9 Billion to Traders as Profit Halved in 2025</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">bloomberg.com</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T20:54:24+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="26"
+           data-search="sa asks: what&#39;s the best neocloud stock play right now?  seeking alpha - market currents"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">36</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618426-sa-asks-whats-the-best-neocloud-stock-play-right-now?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">SA Asks: What&#39;s the best neocloud stock play right now?</span><span class="l-zh">SA Asks: What&#39;s the best neocloud stock play right now?</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:58:29+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="27"
            data-search="gm beats on earnings, raises guidance amid &#39;resilient&#39; consumer, pricing  cnbc - markets"
            style="--acc:var(--up);">
     <div class="nx-rankdot">34</div>
@@ -1022,8 +1361,30 @@
   </article>
   
   
-  <article class="nx-story hide" data-lane="macro"
+  <article class="nx-story hide" data-lane="companies"
            data-idx="28"
+           data-search="tesla shares poised for biggest earnings move in a year tsla cnbc - investing"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">33</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/21/tesla-shares-poised-for-biggest-earnings-move-in-a-year.html" target="_blank" rel="noopener"><span class="l-en">Tesla shares poised for biggest earnings move in a year</span><span class="l-zh">特斯拉股价或迎一年来最大财报行情</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">CNBC - Investing</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-21T18:25:07+00:00"></span>
+        <span class="nx-tk">TSLA</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="29"
            data-search="expert shares how trump&#39;s new round of tariffs could affect americans  npr - economy"
            style="--acc:var(--link);">
     <div class="nx-rankdot">33</div>
@@ -1045,32 +1406,10 @@
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="29"
-           data-search="tesla shares poised for biggest earnings move in a year tsla cnbc - investing"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">33</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/21/tesla-shares-poised-for-biggest-earnings-move-in-a-year.html" target="_blank" rel="noopener"><span class="l-en">Tesla shares poised for biggest earnings move in a year</span><span class="l-zh">特斯拉股价或迎一年来最大财报行情</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">CNBC - Investing</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-21T18:25:07+00:00"></span>
-        <span class="nx-tk">TSLA</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="companies"
            data-idx="30"
            data-search="‘time will tell whether that was a good bet’: my adviser got me a full spacex ipo allocation. was i lucky?  marketwatch - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">32</div>
+    <div class="nx-rankdot">31</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.marketwatch.com/story/time-will-tell-whether-that-was-a-good-bet-my-adviser-got-me-a-full-spacex-ipo-allocation-was-i-lucky-7f319645?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span><span class="l-zh">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span></a>
       <div class="nx-chips">
@@ -1092,9 +1431,9 @@
            data-idx="31"
            data-search="u.s. allies hit with new tariffs object to trump&#39;s forced labor allegations  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">33</div>
+    <div class="nx-rankdot">31</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.npr.org/2026/07/25/nx-s1-5903183/trump-administration-employs-new-legal-paths-for-tariffs-after-supreme-court-defeat" target="_blank" rel="noopener"><span class="l-en">Trump administration employs new legal paths for tariffs after Supreme Court defeat</span><span class="l-zh">Trump administration employs new legal paths for tariffs after Supreme Court defeat</span></a>
+      <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906301/us-global-trump-tariffs-reaction" target="_blank" rel="noopener"><span class="l-en">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span><span class="l-zh">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
         <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
@@ -1102,126 +1441,16 @@
         
       </div>
       <div class="nx-meta">
-        <span class="src">NPR - Economy</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T11:43:49+00:00"></span>
+        <span class="src">NPR - Business</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T10:31:08+00:00"></span>
         
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="28"
-           data-search="a ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager  marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">31</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/a-generational-buying-opportunity-guarantees-inflation-plus-3-a-year-says-this-hedge-fund-manager-eb4cd29c?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">A ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager</span><span class="l-zh">A ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:32:00+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="29"
-           data-search="s&amp;p 500 flashes sell signals — options traders are bracing for wild swings in apple, meta and microsoft spy aapl msft meta marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">30</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/s-p-500-flashes-sell-signals-options-traders-are-bracing-for-wild-swings-in-apple-meta-and-microsoft-83ff7d65?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">S&amp;P 500 flashes sell signals — options traders are bracing for wild swings in Apple, Meta and Microsoft</span><span class="l-zh">S&amp;P 500 flashes sell signals — options traders are bracing for wild swings in Apple, Meta and Microsoft</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:21:00+00:00"></span>
-        <span class="nx-tk">SPY</span><span class="nx-tk">AAPL</span><span class="nx-tk">MSFT</span><span class="nx-tk">META</span>
       </div>
     </div>
   </article>
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="30"
-           data-search="apple warns scammers are using facetime to steal bank account passwords — here&#39;s what to watch for xlf aapl yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">30</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/technology/articles/apple-warns-scammers-using-facetime-131500866.html" target="_blank" rel="noopener"><span class="l-en">Apple warns scammers are using FaceTime to steal bank account passwords — here&#39;s what to watch for</span><span class="l-zh">Apple warns scammers are using FaceTime to steal bank account passwords — here&#39;s what to watch for</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T13:15:00Z"></span>
-        <span class="nx-tk">XLF</span><span class="nx-tk">AAPL</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="31"
-           data-search="expert shares how trump&#39;s new round of tariffs could affect americans  npr - economy"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">30</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5905322/expert-shares-how-trumps-new-round-of-tariffs-could-affect-americans" target="_blank" rel="noopener"><span class="l-en">Expert shares how Trump&#39;s new round of tariffs could affect Americans</span><span class="l-zh">Expert shares how Trump&#39;s new round of tariffs could affect Americans</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
-        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">NPR - Economy</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T08:43:06+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
            data-idx="32"
-           data-search="forget gold: for retirees, this tips etf fights inflation better tip gld yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">31</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/markets/options/articles/forget-gold-retirees-tips-etf-195329602.html" target="_blank" rel="noopener"><span class="l-en">Forget Gold: For Retirees, This TIPS ETF Fights Inflation Better</span><span class="l-zh">Forget Gold: For Retirees, This TIPS ETF Fights Inflation Better</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T19:53:29Z"></span>
-        <span class="nx-tk">TIP</span><span class="nx-tk">GLD</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="companies"
-           data-idx="33"
            data-search="paramount says it will pause its warner acquisition while legal challenges play out  npr - business"
            style="--acc:var(--link);">
     <div class="nx-rankdot">29</div>
@@ -1244,33 +1473,11 @@
   
   <article class="nx-story hide" data-lane="macro"
            data-idx="33"
-           data-search="u.s. allies hit with new tariffs object to trump&#39;s forced labor allegations  npr - business"
+           data-search="yes, the ai stock selloff looks terrifying. but it might actually save the bull market. qqq marketwatch - top stories"
            style="--acc:var(--link);">
     <div class="nx-rankdot">27</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906301/us-global-trump-tariffs-reaction" target="_blank" rel="noopener"><span class="l-en">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span><span class="l-zh">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
-        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">NPR - Business</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T10:31:08+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="34"
-           data-search="the august stock-market slump is a myth — so why does wall street keep repeating it? spy marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">27</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/the-august-stock-market-slump-is-a-myth-so-why-does-wall-street-keep-repeating-it-bc47db44?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">The August stock-market slump is a myth — so why does Wall Street keep repeating it?</span><span class="l-zh">The August stock-market slump is a myth — so why does Wall Street keep repeating it?</span></a>
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/yes-the-ai-stock-selloff-looks-terrifying-but-it-might-actually-save-the-bull-market-3bef59be?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span><span class="l-zh">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
         
@@ -1279,30 +1486,52 @@
       </div>
       <div class="nx-meta">
         <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:59:00+00:00"></span>
-        <span class="nx-tk">SPY</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:59:00+00:00"></span>
+        <span class="nx-tk">QQQ</span>
       </div>
     </div>
   </article>
   
   
   <article class="nx-story hide" data-lane="fed"
-           data-idx="35"
-           data-search="are 7% mortgage rates next? the treasury market is flashing a warning sign for home buyers. xhb marketwatch - top stories"
+           data-idx="34"
+           data-search="mortgage and refinance interest rates today, saturday, july 25, 2026: highest rates this year xhb yahoo finance - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">24</div>
+    <div class="nx-rankdot">26</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/the-treasury-market-is-flashing-a-warning-sign-for-home-buyers-are-7-mortgage-rates-next-58b5b3b1?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Are 7% mortgage rates next? The Treasury market is flashing a warning sign for home buyers.</span><span class="l-zh">Are 7% mortgage rates next? The Treasury market is flashing a warning sign for home buyers.</span></a>
+      <a class="nx-story-title" href="https://finance.yahoo.com/personal-finance/mortgages/article/mortgage-and-refinance-interest-rates-today-saturday-july-25-2026-highest-rates-this-year-100000185.html" target="_blank" rel="noopener"><span class="l-en">Mortgage and refinance interest rates today, Saturday, July 25, 2026: Highest rates this year</span><span class="l-zh">Mortgage and refinance interest rates today, Saturday, July 25, 2026: Highest rates this year</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-credit"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+        <span class="nx-chip th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T10:00:00Z"></span>
+        <span class="nx-tk">XHB</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="35"
+           data-search="is your index fund an accidental bet on ai? these two massive etfs show why it might be. qqq marketwatch - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">23</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/south-korean-stocks-werent-a-big-deal-in-your-emerging-markets-fund-artificial-intelligence-changed-that-21308089?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span><span class="l-zh">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
         
         
         
       </div>
       <div class="nx-meta">
         <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:08:00+00:00"></span>
-        <span class="nx-tk">XHB</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:45:00+00:00"></span>
+        <span class="nx-tk">QQQ</span>
       </div>
     </div>
   </article>
@@ -1312,7 +1541,7 @@
            data-idx="36"
            data-search="gold prices today, friday, july 24, 2026: gold price remains below $4,100 ahead of next week’s rate decision gld yahoo finance - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">23</div>
+    <div class="nx-rankdot">22</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://finance.yahoo.com/personal-finance/investing/article/gold-prices-today-friday-july-24-2026-gold-price-remains-below-4100-ahead-of-next-weeks-rate-decision-152726975.html" target="_blank" rel="noopener"><span class="l-en">Gold prices today, Friday, July 24, 2026: Gold price remains below $4,100 ahead of next week’s rate decision</span><span class="l-zh">Gold prices today, Friday, July 24, 2026: Gold price remains below $4,100 ahead of next week’s rate decision</span></a>
       <div class="nx-chips">
@@ -1330,33 +1559,11 @@
   </article>
   
   
-  <article class="nx-story hide" data-lane="companies"
-           data-idx="37"
-           data-search="citi warns u.s. equity positioning may face further pressure  yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">23</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/citi-warns-u-equity-positioning-153000651.html" target="_blank" rel="noopener"><span class="l-en">Citi Warns U.S. Equity Positioning May Face Further Pressure</span><span class="l-zh">Citi Warns U.S. Equity Positioning May Face Further Pressure</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T15:30:00Z"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
   <article class="nx-story hide" data-lane="macro"
-           data-idx="38"
+           data-idx="37"
            data-search="real personal consumption expenditures by state and real personal income by state, 2024  bea - current releases"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">20</div>
+    <div class="nx-rankdot">21</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.bea.gov/news/2026/real-personal-consumption-expenditures-state-and-real-personal-income-state-2024" target="_blank" rel="noopener"><span class="l-en">Real Personal Consumption Expenditures by State and Real Personal Income by State, 2024</span><span class="l-zh">2024年各州实际个人消费支出与实际个人收入</span></a>
       <div class="nx-chips">
@@ -1375,10 +1582,32 @@
   
   
   <article class="nx-story hide" data-lane="macro"
+           data-idx="38"
+           data-search="oil prices may fall, but gasoline prices won’t. look at the trap we’re in. uso marketwatch - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">20</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/oil-prices-may-fall-but-gasoline-prices-wont-look-at-the-trap-were-in-7f4c3738?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span><span class="l-zh">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">MarketWatch - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:34:00+00:00"></span>
+        <span class="nx-tk">USO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
            data-idx="39"
            data-search="how investors learned to live with inflation  the economist - finance &amp; economics"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">19</div>
+    <div class="nx-rankdot">20</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.economist.com/finance-and-economics/2026/07/21/how-investors-learned-to-live-with-inflation" target="_blank" rel="noopener"><span class="l-en">How investors learned to live with inflation</span><span class="l-zh">投资者如何学会与通胀共存</span></a>
       <div class="nx-chips">
@@ -1400,7 +1629,7 @@
            data-idx="40"
            data-search="budget and performance  bea - current releases"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">18</div>
+    <div class="nx-rankdot">20</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.bea.gov/about/budget-and-performance" target="_blank" rel="noopener"><span class="l-en">Budget and Performance</span><span class="l-zh">预算与绩效</span></a>
       <div class="nx-chips">
@@ -1420,6 +1649,50 @@
   
   <article class="nx-story hide" data-lane="macro"
            data-idx="41"
+           data-search="cpi for all items falls 0.4% in june; gasoline down uso bls - cpi"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">18</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bls.gov/news.release/archives/cpi_07142026.htm" target="_blank" rel="noopener"><span class="l-en">CPI for all items falls 0.4% in June; gasoline down</span><span class="l-zh">CPI for all items falls 0.4% in June; gasoline down</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">BLS - CPI</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-14T07:50:27.969-04:00"></span>
+        <span class="nx-tk">USO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="42"
+           data-search="ppi for final demand declines 0.3% in june; goods fall 1.4%, services increase 0.2%  bls - ppi"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">16</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bls.gov/news.release/archives/ppi_07152026.htm" target="_blank" rel="noopener"><span class="l-en">PPI for final demand declines 0.3% in June; goods fall 1.4%, services increase 0.2%</span><span class="l-zh">PPI for final demand declines 0.3% in June; goods fall 1.4%, services increase 0.2%</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">BLS - PPI</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-15T07:50:27.246-04:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="43"
            data-search="can china dominate ai exports, too? qqq the economist - finance &amp; economics"
            style="--acc:var(--link);">
     <div class="nx-rankdot">16</div>
@@ -1441,7 +1714,7 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="42"
+           data-idx="44"
            data-search="can prediction markets win over wall street? spy the economist - finance &amp; economics"
            style="--acc:var(--link);">
     <div class="nx-rankdot">16</div>
@@ -1461,31 +1734,9 @@
     </div>
   </article>
   
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="43"
-           data-search="the world’s balance-sheet is out of kilter with its economy  the economist - finance &amp; economics"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">14</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.economist.com/finance-and-economics/2026/07/23/the-worlds-balance-sheet-is-out-of-kilter-with-its-economy" target="_blank" rel="noopener"><span class="l-en">The world’s balance-sheet is out of kilter with its economy</span><span class="l-zh">The world’s balance-sheet is out of kilter with its economy</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">The Economist - Finance &amp; Economics</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-23T09:42:17+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
   <div class="nx-empty" id="nxEmpty" style="display:none;"><span class="l-en">No stories match — try another lane or clear the search.</span><span class="l-zh">没有匹配的新闻——换个分类或清空搜索。</span></div>
 </section>
-<button class="gbtn nx-more" id="nxMore"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> <span class="num">(+20)</span></button>
+<button class="gbtn nx-more" id="nxMore"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> <span class="num">(+21)</span></button>
 
 
 
@@ -1666,7 +1917,7 @@
     
     <div class="nx-rail-card">
       <div class="nx-rail-hd"><span class="l-en">In focus</span><span class="l-zh">焦点</span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"><span class="nx-tk">{&#39;ticker&#39;: &#39;QQQ&#39;, &#39;count&#39;: 4}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;TSLA&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;SPY&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;GLD&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;USO&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;XLI&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;NVDA&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;XLK&#39;, &#39;count&#39;: 1}</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"><span class="nx-tk">{&#39;ticker&#39;: &#39;QQQ&#39;, &#39;count&#39;: 5}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;TSLA&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;INTC&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;USO&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;NVDA&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;XLK&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;AVGO&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;MSTR&#39;, &#39;count&#39;: 1}</span></div>
       <div class="nx-rail-note"><span class="l-en">News tone</span><span class="l-zh">新闻情绪</span>: <b style="color:var(--up);"><span class="l-en">upbeat</span><span class="l-zh">偏乐观</span></b> <span class="num">(z 0.6)</span></div>
     </div>
     
@@ -1676,7 +1927,7 @@
 
 
 <details class="nx-diag">
-  <summary><span class="l-en">Newsroom diagnostics</span><span class="l-zh">新闻室诊断</span> <span class="num" style="color:var(--muted)">(24 <span class="l-en">filtered</span><span class="l-zh">已过滤</span> · 18 <span class="l-en">classes</span><span class="l-zh">类别</span>)</span></summary>
+  <summary><span class="l-en">Newsroom diagnostics</span><span class="l-zh">新闻室诊断</span> <span class="num" style="color:var(--muted)">(41 <span class="l-en">filtered</span><span class="l-zh">已过滤</span> · 18 <span class="l-en">classes</span><span class="l-zh">类别</span>)</span></summary>
   <div class="nx-diag-body">
     <p><span class="l-en">Advanced: how the de-noising filter and event-class calibration are performing. Nothing here changes what you see above; it is the newsroom&#39;s own scorecard.</span><span class="l-zh">进阶：去噪过滤器与事件类别校准的运行情况。此处不影响上方内容，仅为新闻室自评。</span></p>
     
@@ -1808,6 +2059,6 @@
 })();
 </script>
 
-<script src="theme.js?v=015c6c36" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>

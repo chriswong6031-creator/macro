@@ -25,8 +25,240 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/7baf227b.css?v=7baf227b">
+<link rel="stylesheet" href="theme.css">
+<style>
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;margin:0;padding:18px 0 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+a{color:var(--link);text-decoration:none}
+:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:6px}
+
+/* ── design tokens: stance-health + lifecycle spectrum (zh-STABLE — these are
+      severity / stage-identity hues, never price-direction reads, so they do
+      NOT flip under the 红涨绿跌 rule) ── */
+:root{
+  --good:#1f9a55; --early:#3b6fe0; --warn:#c07d16; --bad:#d3453f; --quiet:#7a8494;
+  --lc-watch:#6b7686; --lc-broad:#0d9488; --lc-rerate:#4f5fd0; --lc-accel:#7c3aed; --lc-prec:#c07d16; --lc-corr:#d3453f;
+  --sot-shadow:0 12px 30px -16px rgba(15,25,55,.30);
+}
+html[data-theme="dark"]{
+  --good:#43c07a; --early:#7aa2ff; --warn:#e0a84e; --bad:#e06b66; --quiet:#8b93a1;
+  --lc-watch:#8b96a6; --lc-broad:#2dd4bf; --lc-rerate:#8b96f8; --lc-accel:#a684f5; --lc-prec:#e6b45a; --lc-corr:#e58a86;
+  --sot-shadow:0 16px 40px -20px rgba(0,0,0,.6);
+}
+.lane-working{--acc:var(--good)} .lane-early{--acc:var(--early)}
+.lane-caution{--acc:var(--warn)} .lane-review{--acc:var(--bad)} .lane-quiet{--acc:var(--quiet)}
+
+/* ── HERO ── */
+.sot-hero{padding:30px 0 6px;animation:sotUp .55s cubic-bezier(.2,.7,.3,1) both}
+.sot-brand{display:inline-flex;align-items:center;gap:11px;font-size:27px;font-weight:800;letter-spacing:-.022em;color:var(--text)}
+.sot-brand .gl{font-size:24px;filter:drop-shadow(0 3px 8px rgba(60,90,200,.3))}
+.sot-brand .gn{background:linear-gradient(96deg,var(--lc-broad),var(--lc-rerate) 44%,var(--lc-accel) 78%,var(--lc-prec));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sot-tag{color:var(--muted);font-size:14px;margin:5px 0 0}
+.sot-verdict{font-size:clamp(20px,3vw,29px);font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.3;margin:17px 0 6px;max-width:920px}
+.sot-verdict b{color:var(--text)}
+.sot-asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:3px}
+.sot-asof .bdot{width:7px;height:7px;border-radius:50%;background:var(--good);animation:sotBreathe 2.8s ease-in-out infinite;flex:none}
+
+/* ── what changed ── */
+.sot-changes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:20px 0 4px}
+.sot-changes .eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.chg-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;color:var(--text)}
+.chg-chip .bdot{width:6px;height:6px;border-radius:50%;background:var(--warn);animation:sotBreathe 2.2s ease-in-out infinite;flex:none}
+.chg-chip.fired .bdot{background:var(--bad)}
+.chg-chip.calm{color:var(--muted);font-weight:500}
+.chg-chip.calm .bdot{background:var(--good)}
+
+/* ── section chrome ── */
+.sec-head{display:flex;align-items:baseline;gap:10px;font-size:12px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.07em;margin:38px 0 3px}
+.sec-head .sh-dot{width:8px;height:8px;border-radius:3px;background:var(--sh-c,var(--quiet));align-self:center}
+.sec-sub{font-size:13px;color:var(--muted);margin:0 0 14px;max-width:760px}
+
+/* ── SIGNATURE: lifecycle ribbon ── */
+.ribbon{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px 26px 18px;overflow:visible;box-shadow:var(--sot-shadow);animation:sotUp .55s cubic-bezier(.2,.7,.3,1) both}
+.ribbon-track{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:6px}
+.ribbon-line{position:absolute;left:5%;right:5%;top:23px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,var(--lc-watch),var(--lc-broad) 20%,var(--lc-rerate) 40%,var(--lc-accel) 60%,var(--lc-prec) 80%,var(--lc-corr));opacity:.34}
+.ribbon-line::after{content:'';position:absolute;inset:0;border-radius:3px;
+  background:linear-gradient(90deg,transparent,#fff8,transparent);background-size:34% 100%;background-repeat:no-repeat;
+  mix-blend-mode:overlay;animation:sotSweep 4.2s linear infinite}
+.rb-node{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;z-index:1;padding-top:2px}
+.rb-dot{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:#fff;background:var(--nc);border:3px solid var(--panel);box-shadow:0 4px 12px -4px var(--nc);transition:transform .18s ease}
+.rb-node:hover .rb-dot{transform:translateY(-2px) scale(1.05)}
+.rb-node.empty .rb-dot{background:transparent;color:var(--muted);border-color:var(--line);box-shadow:none;font-weight:700}
+.rb-node.empty .rb-dot{border-style:dashed}
+.rb-lab{font-size:11.5px;font-weight:700;color:var(--text);line-height:1.2}
+.rb-node.empty .rb-lab{color:var(--muted);font-weight:600}
+.rb-s-watch{--nc:var(--lc-watch)} .rb-s-broad{--nc:var(--lc-broad)} .rb-s-rerate{--nc:var(--lc-rerate)}
+.rb-s-accel{--nc:var(--lc-accel)} .rb-s-prec{--nc:var(--lc-prec)} .rb-s-corr{--nc:var(--lc-corr)}
+.rb-node .rb-pop{display:none;position:absolute;top:58px;left:50%;transform:translateX(-50%);z-index:20;width:190px;padding:9px 12px;border-radius:11px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--sot-shadow);font-size:11.5px;font-weight:500;color:var(--muted);line-height:1.5;text-transform:none;letter-spacing:0}
+.rb-node:hover .rb-pop,.rb-node:focus-within .rb-pop{display:block}
+.rb-pop b{color:var(--text);font-weight:700}
+.ribbon-foot{font-size:11.5px;color:var(--muted);margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* ── filter bar ── */
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 2px;align-items:center}
+.fchip{padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.fchip:hover{border-color:var(--fc,var(--link));color:var(--text)}
+.fchip.on{border-color:var(--fc,var(--link));background:color-mix(in srgb,var(--fc,var(--link)) 12%,var(--panel));color:var(--fc,var(--link))}
+.fchip .fc-n{font-weight:800;font-size:12px;opacity:.85}
+.fchip .fc-sw{width:9px;height:9px;border-radius:3px;background:var(--fc)}
+
+/* ── stance lane ── */
+.lane{margin-top:26px;scroll-margin-top:14px}
+.lane.dim{display:none}
+.lane-head{display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap;margin-bottom:13px}
+.lane-badge{display:inline-flex;align-items:center;gap:9px;padding:7px 15px 7px 12px;border-radius:12px;background:color-mix(in srgb,var(--acc) 12%,var(--panel));border:1px solid color-mix(in srgb,var(--acc) 34%,var(--line))}
+.lane-badge .em{font-size:14px;line-height:1}
+.lane-badge .lb-t{font-size:14.5px;font-weight:800;color:var(--acc);letter-spacing:-.01em}
+.lane-badge .lb-n{font-size:12px;font-weight:800;color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,var(--panel));padding:1px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+.lane-stance{font-size:13px;font-weight:700;color:var(--text)}
+.lane-guide{font-size:12.5px;color:var(--muted);flex:1;min-width:200px}
+.lane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+@media(max-width:560px){.lane-grid{grid-template-columns:1fr}}
+/* mobile: the lifecycle line stays one coherent swipeable strip */
+@media(max-width:600px){
+  .ribbon{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:20px 16px 14px;scrollbar-width:thin}
+  .ribbon-track{min-width:540px}
+  .rb-dot{width:40px;height:40px;font-size:16px}
+  .ribbon-foot{min-width:540px}
+  .lane-head{gap:8px 12px}
+  .lane-guide{min-width:100%}
+}
+
+/* ── theme card ── */
+.theme-row{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;overflow:hidden;cursor:pointer;
+  transition:transform .16s ease,box-shadow .2s ease,border-color .2s ease;animation:sotUp .5s cubic-bezier(.2,.7,.3,1) both}
+.theme-row::before{content:'';position:absolute;inset:0 0 auto 0;height:3px;background:var(--acc)}
+.theme-row:hover{transform:translateY(-2px);box-shadow:var(--sot-shadow);border-color:color-mix(in srgb,var(--acc) 35%,var(--line))}
+.theme-row.hidden{display:none}
+.tc-top{padding:16px 17px 4px}
+.tc-nameline{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.tc-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.015em;line-height:1.2}
+.stage-pill{flex:none;display:inline-block;padding:3px 10px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;
+  background:color-mix(in srgb,var(--sc,var(--quiet)) 15%,var(--panel));color:var(--sc,var(--quiet));border:1px solid color-mix(in srgb,var(--sc,var(--quiet)) 30%,var(--line))}
+.stage-WATCH{--sc:var(--lc-watch)} .stage-BROADENING{--sc:var(--lc-broad)} .stage-RE-RATING{--sc:var(--lc-rerate)}
+.stage-ACCELERATING{--sc:var(--lc-accel)} .stage-PRECIPICE{--sc:var(--lc-prec)} .stage-CORRECTING{--sc:var(--lc-corr)}
+.tc-story{font-size:13px;color:var(--muted);line-height:1.5;margin:9px 0 0}
+.tc-meta{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:12px 17px 14px;margin-top:12px;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.legs-row{display:flex;gap:5px;align-items:center}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none}
+.dot.fav{background:var(--good)} .dot.mid{background:var(--warn)} .dot.caut{background:var(--bad)}
+.dot.neut{background:color-mix(in srgb,var(--quiet) 45%,transparent);border:1px solid color-mix(in srgb,var(--quiet) 55%,transparent)}
+.dot.null{background:transparent;border:1.5px dashed var(--quiet);opacity:.6}
+.health-word{font-size:12px;font-weight:700;color:var(--muted)}
+.health-word b{color:var(--good)}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.badge.opp{background:color-mix(in srgb,var(--early) 14%,var(--panel));color:var(--early)}
+.badge.crowd{background:color-mix(in srgb,var(--warn) 16%,var(--panel));color:var(--warn)}
+.badge.fired{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
+.badge.clean{background:color-mix(in srgb,var(--good) 12%,var(--panel));color:var(--good)}
+.tc-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 17px 15px}
+.tc-stance{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;font-size:12px;font-weight:700;
+  background:color-mix(in srgb,var(--acc) 11%,var(--panel));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 26%,var(--line))}
+.tc-stance .bdot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:sotBreathe 2.5s ease-in-out infinite;flex:none}
+.tc-more{font-size:11.5px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tc-more .cv{font-size:9px;transition:transform .22s}
+.theme-row.expanded .tc-more .cv{transform:rotate(90deg)}
+.theme-row.expanded{cursor:default}
+
+/* ── drawer ── */
+.drawer{display:none;padding:4px 17px 18px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--panel2) 55%,var(--panel));animation:sotFade .3s ease both}
+.theme-row.expanded{grid-column:1/-1}
+.theme-row.expanded .drawer{display:block}
+.drawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 20px;margin-top:12px}
+@media(max-width:720px){.drawer-grid{grid-template-columns:1fr}}
+.drawer-sec h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 5px;font-weight:800}
+.drawer-sec p{margin:0;font-size:13px;line-height:1.6;color:var(--text)}
+.drawer-sec.full{grid-column:1/-1}
+.pathway-flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:12.5px}
+.pnode{padding:3px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-weight:600;white-space:nowrap}
+.pnode.driver{border-color:color-mix(in srgb,var(--early) 40%,var(--line));color:var(--early)}
+.pnode.bottleneck{border-color:color-mix(in srgb,var(--warn) 40%,var(--line));color:var(--warn)}
+.pnode.winner{border-color:color-mix(in srgb,var(--good) 40%,var(--line));color:var(--good)}
+.pnode.avoid{border-color:color-mix(in srgb,var(--bad) 40%,var(--line));color:var(--bad)}
+.parrow{color:var(--muted);font-size:15px}
+.fals-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.fals-table th{text-align:left;color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line)}
+.fals-table td{padding:5px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);vertical-align:top;line-height:1.45}
+.fals-table tr:last-child td{border-bottom:none}
+.fals-state{font-size:10px;font-weight:800;padding:1px 6px;border-radius:5px;white-space:nowrap;text-transform:uppercase}
+.fals-state.FIRED{background:color-mix(in srgb,var(--bad) 18%,var(--panel));color:var(--bad)}
+.fals-state.ARMED{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:var(--warn)}
+.fals-state.qualitative,.fals-state.data_missing{background:var(--panel2);color:var(--muted)}
+.evid-list{font-size:12px;color:var(--muted);margin:4px 0 0;padding:0;list-style:none;line-height:1.6}
+.evid-list li::before{content:"· "}
+.ctx-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 30%,transparent);font-size:12.5px;line-height:1.5}
+.ctx-row:last-child{border-bottom:none}
+.ctx-row-label{color:var(--muted);flex:0 0 auto;max-width:58%;display:flex;align-items:center;gap:5px}
+.ctx-row-value{font-weight:700;text-align:right}
+.ctx-stance{font-size:12px;color:var(--muted);margin:0 0 6px;padding:0 0 5px;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+.ctx-plain{font-size:12.5px;color:var(--text);margin:0;line-height:1.6}
+.ctx-h4-wrap{display:flex;align-items:center;gap:6px;margin:0 0 5px}
+.ctx-h4-wrap h4{margin:0}
+.ctx-tip-icon,.help-q{font-size:10px;color:var(--muted);cursor:help;border:1px solid var(--line);border-radius:50%;width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;flex:none;font-weight:700}
+
+/* ── study shelf (tier 3) ── */
+.shelf{margin-top:20px}
+.shelf details{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:11px;overflow:hidden}
+.shelf summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:700;color:var(--text);transition:background .18s}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--link) 5%,var(--panel))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--link) 10%,var(--panel))}
+.shelf summary .sh-hint{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)}
+.shelf summary .sh-caret{flex:none;font-size:11px;color:var(--muted);transition:transform .25s}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:8px 20px 20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.65}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 18px;margin:8px 0 4px}
+.leg-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text)}
+.leg-item .dot{width:11px;height:11px}
+.leg-item b{color:var(--text);font-weight:700}
+.leg-def{display:flex;gap:9px;font-size:12.5px;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 35%,transparent)}
+.leg-def:last-child{border-bottom:none}
+.leg-def .k{font-weight:700;color:var(--text);flex:0 0 168px}
+.leg-def .v{color:var(--muted)}
+.shelf-note{margin-top:8px}
+.sot-disclosure{font-size:12.5px;color:var(--muted);margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line);line-height:1.6}
+
+/* ── empty state ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state h2{font-size:18px;margin:0 0 8px;color:var(--text)}
+
+/* ── bilingual ── */
+[data-lang="zh"] .l-en{display:none}
+[data-lang="zh"] .l-zh{display:inline}
+.l-zh{display:none}.l-en{display:inline}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+
+/* ── motion ── */
+@keyframes sotUp{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:none}}
+@keyframes sotFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@keyframes sotBreathe{0%,100%{opacity:.45;transform:scale(.85)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes sotFlow{to{stroke-dashoffset:0}}
+@keyframes sotSweep{0%{background-position:-40% 0}100%{background-position:140% 0}}
+.sot-spark{display:block;width:100%;height:22px;margin-top:4px}
+.sot-spark-base{fill:none;stroke:color-mix(in srgb,var(--lc-rerate) 30%,var(--line));stroke-width:2}
+.sot-spark-pulse{fill:none;stroke:var(--lc-rerate);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:18 82;stroke-dashoffset:100;animation:sotFlow 3.8s linear infinite;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--lc-rerate) 55%,transparent))}
+@media (prefers-reduced-motion:reduce){
+  .sot-hero,.ribbon,.theme-row,.drawer{animation:none}
+  .sot-spark-pulse,.sot-asof .bdot,.chg-chip .bdot,.tc-stance .bdot,.ribbon-line::after{animation:none}
+  .sot-spark-pulse{stroke-dashoffset:0;stroke-dasharray:none;opacity:.6}
+  *{transition:none!important}
+}
+
+/* ambient aurora backdrop (matches the Vector family) */
+html body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(680px 440px at 8% -8%,color-mix(in srgb,var(--lc-broad) 8%,transparent),transparent 66%),
+   radial-gradient(620px 440px at 96% 0%,color-mix(in srgb,var(--lc-accel) 7%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 116%,color-mix(in srgb,var(--lc-rerate) 6%,transparent),transparent 70%)}
+html[data-theme="dark"] body::before{
+  background:
+   radial-gradient(680px 440px at 8% -8%,color-mix(in srgb,var(--lc-broad) 15%,transparent),transparent 66%),
+   radial-gradient(620px 440px at 96% 0%,color-mix(in srgb,var(--lc-accel) 13%,transparent),transparent 70%),
+   radial-gradient(760px 520px at 50% 116%,color-mix(in srgb,var(--lc-rerate) 12%,transparent),transparent 70%)}
+</style>
 </head>
 <body>
 
@@ -182,68 +414,132 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
         
         <div class="nav-mega-feat">
-          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
-          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
-          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
-            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
-            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
-            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
-            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
-            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
-            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic research-icon research-icon-demand" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic research-icon research-icon-anticipation" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic research-icon research-icon-impulse" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
-            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
-            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
-            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
-            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
-            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
-            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic research-icon research-icon-congress" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic research-icon research-icon-ipo" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
-            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
-            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
-            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
-            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
-            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
-            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
-            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
-            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
-            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
-            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
-            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
-            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
-            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
-            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
-            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic research-icon research-icon-white-house" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic research-icon research-icon-signal-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic research-icon research-icon-technical-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic research-icon research-icon-macro-signals" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic research-icon research-icon-factors-seasonality" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
           </div>
         </div>
       </div>
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
@@ -3635,7 +3931,7 @@
 
 </div>
 
-<script src="theme.js?v=015c6c36" defer></script>
+<script src="theme.js"></script>
 <script>
 (function(){
   "use strict";

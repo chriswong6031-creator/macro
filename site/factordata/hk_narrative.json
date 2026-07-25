@@ -2,7 +2,7 @@
   "display_only": true,
   "organ": "hk_narrative",
   "as_of": "2026-07-26",
-  "generated_utc": "2026-07-25T20:53:56+00:00",
+  "generated_utc": "2026-07-25T22:22:43+00:00",
   "freshness": "stale",
   "entities": [
     {
@@ -164,5 +164,5 @@
   "n_watched": 8,
   "n_live": 2,
   "warming_up": false,
-  "is_stale": false
+  "is_stale": true
 }

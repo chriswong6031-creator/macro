@@ -7,8 +7,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fed & Policy Watch — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/71a3be39.css?v=71a3be39">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  /* callouts (this page extends report_base, not article_base) */
+  .callout { border-radius:12px; padding:14px 17px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:14px; line-height:1.6; }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.key  { border-left:4px solid #46b87a; background:color-mix(in srgb,#46b87a 8%,var(--panel2)); }
+  .callout.warn { border-left:4px solid var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel2)); }
+  .pw-hero { max-width:1060px; margin:18px auto 0; }
+  .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .pw-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .pw-hero h1 { letter-spacing:0; }
+  .pw-hero .lens { font-size:12px; color:var(--muted); }
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:30px 0 8px; padding-top:6px; display:flex; align-items:baseline; gap:9px; border-top:1px solid var(--line); padding-top:18px; }
+  h3.sub { font-size:14px; margin:16px 0 6px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .lede { font-size:14px; line-height:1.6; }
+  /* basis / status / confidence badges */
+  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .b-fact { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-inf  { color:#c77dff; background:color-mix(in srgb,#c77dff 14%,transparent); }
+  .b-prior{ color:#e0973a; background:color-mix(in srgb,#e0973a 14%,transparent); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .b-hit  { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .b-miss { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .th-fed{color:#c77dff}.th-treasury{color:#3fb6c0}.th-policy{color:#5b8def}.th-rotation{color:#46b87a}.th-debasement{color:#e0973a}.th-dollar{color:#3fb6c0}
+  .conf { font-size:11px; color:var(--muted); }
+  /* task-force + lever cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card .cn { font-weight:700; font-size:14.5px; margin:0 0 2px; }
+  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:7px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .card .cch { font-size:12.5px; line-height:1.5; margin:5px 0; }
+  .card .crp { font-size:12.5px; line-height:1.5; color:var(--text); opacity:.86; border-left:2px solid var(--link); padding-left:9px; margin-top:7px; }
+  .card .crp b { color:var(--link); font-weight:600; }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:hover td { background:var(--panel2); }
+  .prox { font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0 4px; font-size:12.5px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:16px; }
+  .monitor a { color:var(--link); }
+  .monitor li { margin:5px 0; font-size:13px; }
+  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; }
+  .srcs a { color:var(--link); }
+  /* intel staleness age chip */
+  .pw-age-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.03em; margin-top:6px; }
+  .pw-age-chip.age-ok     { background:color-mix(in srgb,#46b87a 13%,var(--panel2)); color:#46b87a; border:1px solid color-mix(in srgb,#46b87a 30%,transparent); }
+  .pw-age-chip.age-amber  { background:color-mix(in srgb,var(--warn) 13%,var(--panel2)); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 30%,transparent); }
+  .pw-age-chip.age-red    { background:color-mix(in srgb,#d23f3f 13%,var(--panel2)); color:#d23f3f; border:1px solid color-mix(in srgb,#d23f3f 30%,transparent); }
+
+</style>
 
 
 
@@ -183,68 +260,132 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
         
         <div class="nav-mega-feat">
-          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
-          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
-          <a class="nm-feat" href="research_vault.html"><span class="nm-ic">📑</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
         </div>
         <div class="nav-mega-grid">
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
-            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
-            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
-            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
-            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
-            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
-            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic research-icon research-icon-demand" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic research-icon research-icon-anticipation" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic research-icon research-icon-impulse" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
-            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
-            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
-            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
-            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
-            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
-            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic research-icon research-icon-congress" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic research-icon research-icon-ipo" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
-            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
-            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
-            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
-            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
-            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
-            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
-            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
-            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
           </div>
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
-            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
-            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
-            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
-            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic">📈</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
-            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
-            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
-            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic research-icon research-icon-white-house" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic research-icon research-icon-signal-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic research-icon research-icon-technical-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic research-icon research-icon-macro-signals" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic research-icon research-icon-factors-seasonality" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
           </div>
         </div>
       </div>
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -276,8 +417,8 @@
   
   <div>
     <span class="pw-age-chip age-amber">
-      <span class="l-en">intel 12d old</span>
-      <span class="l-zh">情报已12天未更新</span>
+      <span class="l-en">intel 13d old</span>
+      <span class="l-zh">情报已13天未更新</span>
     </span>
   </div>
   
@@ -289,7 +430,7 @@
   <div class="led-stat" style="margin-top:14px;font-size:13px">
     <span><b>44</b> <span class="l-en">predictions</span><span class="l-zh">预测</span> (1 <span class="l-en">resolved</span><span class="l-zh">已结</span>, 100% <span class="l-en">hit</span><span class="l-zh">命中</span>)</span>
     <span><span class="l-en">rotation</span><span class="l-zh">轮动</span>: <span class="r-pos">2 <span class="l-en">working</span><span class="l-zh">达标</span></span> · <span class="r-neg">3 <span class="l-en">lagging</span><span class="l-zh">落后</span></span></span>
-    <span><span class="l-en">Fed</span><span class="l-zh">美联储</span>: <b><span class="l-en">hawkish</span><span class="l-zh">鹰派</span></b> 12<span class="l-en">d</span><span class="l-zh">天</span></span>
+    <span><span class="l-en">Fed</span><span class="l-zh">美联储</span>: <b><span class="l-en">hawkish</span><span class="l-zh">鹰派</span></b> 13<span class="l-en">d</span><span class="l-zh">天</span></span>
     <span><span class="l-en">intel</span><span class="l-zh">情报</span>: <span class="l-en">fresh</span><span class="l-zh">最新</span></span>
   </div>
   
@@ -393,10 +534,22 @@
   
   <h2 class="sec">🤖 <span class="l-en">Intent Desk — accountable realpolitik leans</span><span class="l-zh">意图台 — 可问责的现实政治判断</span></h2>
   <p class="lede" style="color:var(--muted)"><span class="l-en">An LLM reads the sourced intel + live market state and emits dated, FALSIFIABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.</span><span class="l-zh">由LLM读取来源情报+实时市场状态，给出有日期、可证伪的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。</span></p>
-  <div class="callout"><span class="l-en">The Fed under Warsh maintains a hawkish credibility posture with a strict 2% target and deletion of forward guidance, while the market prices a &gt;70% September hike probability. The administration suppresses yields structurally via bill-heavy issuance and dealer reforms, aiming for lower real yields without near-term cuts. The stagflationary split (hot inflation, weak jobs) and Iran re-escalation create a two-sided environment where energy/defense bids are primed but duration assets face headwinds. The consensus narrative sees only a hawkish Fed, but revealed interest suggests the administration accepts that stance for now to set up a post-midterm pivot, while capital flows already rotate into energy and defense.</span><span class="l-zh">美联储在沃什领导下维持鹰派信誉，严守2%目标并删除前瞻指引，市场预计9月加息概率超过70%；政府通过短期国债为主的发行和交易商改革结构性压低收益率，意图在不走近期降息路线的情况下降低实际利率。滞胀分化（通胀高企、就业疲软）与伊朗冲突再升级构成两面风险，推动能源/国防板块资金流入，同时施压长久期资产。共识叙事只看到鹰派美联储，但利益驱动揭示：政府暂接受鹰派姿态以铺垫中期选举后的转向，资金已流入能源和国防。</span></div>
+  <div class="callout"><span class="l-en">The Fed has banked hawkish credibility with a strict 2% target while Treasury structurally suppresses yields via bill-heavy issuance and buybacks; a stagflationary split (hot PCE, weak payrolls) and Iran re-escalation have injected an upside inflation shock. The administration wants lower real yields without the optics of near-term cuts, holding post-midterm easing as optionality, but the weakening labor data is the primary variable that could force a dovish pivot — and consensus may underprice that catalyst.</span><span class="l-zh">美联储通过严格的2%目标储存了鹰派信誉，而财政部通过偏重国库券的发债和回购结构性压低收益率；伴随滞胀分化（PCE偏高、非农走弱）和伊朗冲突再升级，形成了上行通胀冲击。政府希望在不降息的情况下实现低实际利率，将中期选举后的宽松作为可选项，但疲弱的就业数据是可能迫使转向鸽派的主要变量——市场共识可能低估了这一催化剂。</span></div>
   
   
   <div class="cards">
+    
+    <div class="card">
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · TLT — <span class="b b-miss"><span class="l-en">underweight</span><span class="l-zh">低配</span></span></div>
+      <div class="cmeta">
+        <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-09-04</span>
+        <span class="conf"><span class="l-en">rel_return</span><span class="l-zh">相对收益核验</span></span>
+      </div>
+      <div class="cch"><span class="l-en">Bessent&#39;s yield-suppression apparatus (bill-heavy issuance, buybacks, dealer-intermediation reform) concentrates its effect on the front end, while the stagflationary split and hawkish Fed keep long-end real yields elevated; thus long-duration bonds underperform SPY.</span><span class="l-zh">Bessent的收益率压降机制（偏重国库券的发行、回购、经纪商中介改革）效应集中于短端，而滞胀分化和鹰派美联储使长端实际收益率居高不下，因此长久期债券跑输SPY。</span></div>
+      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">If the labor crack widens sharply, a data-driven September pivot could compress long-end yields and make TLT outperform.</span><span class="l-zh">若就业裂口急剧扩大，数据驱动的9月转向可能压降长端收益率，使TLT跑赢。</span></div>
+      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Fed signals a rate cut at September 2026 meeting or June payroll revisions push the 3-month average below 80k.</span><span class="l-zh">美联储在2026年9月会议上暗示降息，或6月非农下修后3个月均值跌破80k。</span></div>
+    </div>
     
     <div class="card">
       <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · XLE — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
@@ -405,33 +558,33 @@
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-09-04</span>
         <span class="conf"><span class="l-en">rel_return</span><span class="l-zh">相对收益核验</span></span>
       </div>
-      <div class="cch"><span class="l-en">The Iran ceasefire collapse and US strikes have re-primed the energy rotation; sustained conflict keeps oil prices elevated, allowing energy sector earnings to outperform the broader equity market.</span><span class="l-zh">伊朗停火崩溃及美军打击重新点燃能源板块轮动；冲突持续推高油价，能源股盈利跑赢大盘。</span></div>
-      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A sudden demand shock from stagflation or a rapid ceasefire negotiation could collapse oil prices and reverse energy outperformance quickly.</span><span class="l-zh">滞胀导致需求破坏或突然的停火谈判可能令油价暴跌，并迅速逆转能源超额收益。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Brent crude falls below $70 and holds there for five consecutive trading days.</span><span class="l-zh">布伦特原油跌破70美元并连续五个交易日维持在该水平之下。</span></div>
+      <div class="cch"><span class="l-en">The Iran ceasefire collapse (7/8) has reprimed energy inflows, which were the top ETF-inflow sector in Q1 2026; the conflict upside risk and strategic stockpile considerations keep a direct oil-price bid that lifts energy equities vs SPY.</span><span class="l-zh">伊朗停火破裂（7/8）重新激发了能源板块的资金流入（该板块是2026年Q1 ETF流入最多的行业）；冲突上行风险和战略储备考量维持油价直接买盘，推动能源股跑赢SPY。</span></div>
+      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A rapid diplomatic ceasefire or demand-crushing recession fears could deflate energy equities.</span><span class="l-zh">快速达成外交停火或衰退担忧压抑需求，可能导致能源股回调。</span></div>
+      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Brent crude falls and stays below $70/bbl on a sustained ceasefire deal or demand shock.</span><span class="l-zh">布伦特原油因持续停火协议或需求冲击跌破70美元/桶并维持。</span></div>
     </div>
     
     <div class="card">
-      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · ITA — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
-      <div class="cmeta">
-        <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
-        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-10-16</span>
-        <span class="conf"><span class="l-en">rel_return</span><span class="l-zh">相对收益核验</span></span>
-      </div>
-      <div class="cch"><span class="l-en">The NATO defense super-cycle and Iran conflict provide sustained structural demand for defense primes, shipbuilding, and missile-defense systems, driving outperformance relative to the broad market.</span><span class="l-zh">北约国防超级周期与伊朗冲突为国防龙头、造船及反导系统提供持续的结构性需求，表现跑赢大盘。</span></div>
-      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A comprehensive peace deal or fiscal consolidation push could curb defense budget momentum and erase the premium.</span><span class="l-zh">全面和平协议或财政整固可能抑制国防预算动能，消除板块溢价。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">A verifiable ceasefire framework with Iran is announced and begins implementation within 30 days.</span><span class="l-zh">30天内宣布与伊朗的可核实停火框架并开始付诸实施。</span></div>
-    </div>
-    
-    <div class="card">
-      <div class="cn"><span class="th-fed"><span class="l-en">FED</span><span class="l-zh">美联储</span></span> · TLT — <span class="b b-miss"><span class="l-en">underweight</span><span class="l-zh">低配</span></span></div>
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · XLI — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
       <div class="cmeta">
         <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-09-04</span>
         <span class="conf"><span class="l-en">rel_return</span><span class="l-zh">相对收益核验</span></span>
       </div>
-      <div class="cch"><span class="l-en">The Fed&#39;s hawkish credibility phase and oil-driven inflation spike keep real yields elevated, pressuring long-duration Treasuries vs equities as the market reprices rate trajectories higher.</span><span class="l-zh">美联储鹰派信誉阶段及油价驱动的通胀上行使实际利率高企，压制长久期国债，相较股市表现偏弱，因市场重新上修加息路径。</span></div>
-      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A sharp labor market deterioration or a clear policy pivot signal from Warsh could cause a powerful TLT rally as the easing path reopens.</span><span class="l-zh">劳动力市场急剧恶化或沃什明确释放政策转向信号，可能推动TLT强劲反弹，因宽松路径被重新打开。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Fed holds rates in September without signaling a future hike, and official communication suggests a data-dependent pause, leading to a &gt;3% rally in TLT over the subsequent 10 trading days.</span><span class="l-zh">美联储9月按兵不动且未暗示未来加息，官方沟通显示数据依赖式暂停，随后10个交易日TLT涨幅超过3%。</span></div>
+      <div class="cch"><span class="l-en">The NATO defense super-cycle plus domestic re-industrialization (chip onshoring, nuclear-for-AI, missile defense) channel capital into industrials; a structural spending cycle outruns SPY regardless of tariff handoff uncertainty.</span><span class="l-zh">北约国防超级周期叠加国内再工业化（芯片岸基地化、核能-AI、导弹防御）将资本导入工业板块；无论关税交接的不确定性如何，结构性支出周期将使其跑赢SPY。</span></div>
+      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A failed Section 301 tariff replacement or sudden fiscal austerity could sap the re-industrialization premium.</span><span class="l-zh">301条款关税替代失败或突然的财政紧缩可能削弱再工业化溢价。</span></div>
+      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Section 301 replacement is not enacted by September 30, 2026, and onshoring contract awards slow materially.</span><span class="l-zh">301条款替代方案在2026年9月30日前未生效，且岸基地化合同授予显著放缓。</span></div>
+    </div>
+    
+    <div class="card">
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · OKLO — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
+      <div class="cmeta">
+        <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
+        <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-09-04</span>
+        <span class="conf"><span class="l-en">rel_return</span><span class="l-zh">相对收益核验</span></span>
+      </div>
+      <div class="cch"><span class="l-en">The nuclear-for-AI policy push (DOE HALEU release, private-project energy demands) gives advanced-nuclear developers an asymmetric domestic policy tailwind, allowing OKLO to outperform SPY as fuel-bank milestones approach.</span><span class="l-zh">核能-AI政策推动（能源部释放HALEU、私人项目能源需求）为先进核开发商提供了不对称的国内政策顺风，随着燃料库里程碑临近，OKLO有望跑赢SPY。</span></div>
+      <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">Regulatory delays, reactor prototype setbacks, or a HALEU release snub could deflate the premium.</span><span class="l-zh">监管延迟、反应堆原型受挫或HALEU释放受阻，可能压缩溢价。</span></div>
+      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">DOE does not announce a HALEU release of at least 20 MT by November 2026, or OKLO loses its NRC design certification milestone.</span><span class="l-zh">能源部在2026年11月前未宣布至少20吨HALEU释放，或OKLO未能通过NRC设计认证里程碑。</span></div>
     </div>
     
   </div>
@@ -447,7 +600,7 @@
   
   <div class="callout">
     <span class="co-h"><span class="l-en">Reaction function (explicit, display-only)</span><span class="l-zh">反应函数（显式，仅展示）</span>
-      <span class="b b-miss"><span class="l-en">Hawkish</span><span class="l-zh">鹰派</span></span> <span class="conf"><span class="l-en">for</span><span class="l-zh">已持续</span> 12<span class="l-en">d</span><span class="l-zh">天</span> (<span class="l-en">since</span><span class="l-zh">自</span> 2026-07-13)</span></span>
+      <span class="b b-miss"><span class="l-en">Hawkish</span><span class="l-zh">鹰派</span></span> <span class="conf"><span class="l-en">for</span><span class="l-zh">已持续</span> 13<span class="l-en">d</span><span class="l-zh">天</span> (<span class="l-en">since</span><span class="l-zh">自</span> 2026-07-13)</span></span>
     <span class="l-en">market prices ~2.0 hike(s) over 12m · statement guidance on-hold · market more hawkish than the Fed (+19bp)</span><span class="l-zh">市场计入未来12个月约2.0次加息 · 声明指引按兵不动 · 市场比美联储更鹰派（+19bp）</span>. 
     <span class="conf"><span class="l-en">Explicit reaction-function read off fed_path + the FOMC-statement guidance. A market price is reactive, not a forecast; display only.</span><span class="l-zh">基于 fed_path 与 FOMC 声明指引的显式“反应函数”读数。市场价格是被动反应而非预测；仅供展示。</span></span>
   </div>
@@ -469,7 +622,7 @@
       <div class="cmeta">
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
         
-        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 159<span class="l-en">d</span><span class="l-zh">天</span></span>
+        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 158<span class="l-en">d</span><span class="l-zh">天</span></span>
         <span class="b b-fact"><span class="l-en">FACT (charter) · INFERENCE (read)</span><span class="l-zh">事实 (章程) · 推断 (解读)</span></span>
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
@@ -482,7 +635,7 @@
       <div class="cmeta">
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
         
-        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 159<span class="l-en">d</span><span class="l-zh">天</span></span>
+        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 158<span class="l-en">d</span><span class="l-zh">天</span></span>
         <span class="b b-fact"><span class="l-en">FACT (charter) · INFERENCE (read)</span><span class="l-zh">事实 (章程) · 推断 (解读)</span></span>
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
@@ -495,7 +648,7 @@
       <div class="cmeta">
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
         
-        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 159<span class="l-en">d</span><span class="l-zh">天</span></span>
+        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 158<span class="l-en">d</span><span class="l-zh">天</span></span>
         <span class="b b-fact"><span class="l-en">FACT (charter) · INFERENCE (read)</span><span class="l-zh">事实 (章程) · 推断 (解读)</span></span>
         <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span>
       </div>
@@ -508,7 +661,7 @@
       <div class="cmeta">
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
         
-        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 159<span class="l-en">d</span><span class="l-zh">天</span></span>
+        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 158<span class="l-en">d</span><span class="l-zh">天</span></span>
         <span class="b b-fact"><span class="l-en">FACT (charter) · INFERENCE (read)</span><span class="l-zh">事实 (章程) · 推断 (解读)</span></span>
         <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span>
       </div>
@@ -521,7 +674,7 @@
       <div class="cmeta">
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-12-31</span>
         
-        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 159<span class="l-en">d</span><span class="l-zh">天</span></span>
+        <span class="conf"><span class="l-en">in</span><span class="l-zh">剩</span> 158<span class="l-en">d</span><span class="l-zh">天</span></span>
         <span class="b b-fact"><span class="l-en">FACT (charter) · INFERENCE (read)</span><span class="l-zh">事实 (章程) · 推断 (解读)</span></span>
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
@@ -1238,7 +1391,7 @@
   <p class="srcs"><strong><span class="l-en">Primary sources</span><span class="l-zh">一手来源</span>:</strong>
     <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf" target="_blank" rel="noopener">[1]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcprojtabl20260617.pdf" target="_blank" rel="noopener">[2]</a> <a href="https://www.cfr.org/articles/what-kevin-warshs-confirmation-hearing-revealed-about-the-future-of-the-fed" target="_blank" rel="noopener">[3]</a> <a href="https://home.treasury.gov/news/press-releases/sb0314" target="_blank" rel="noopener">[4]</a> <a href="https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/" target="_blank" rel="noopener">[5]</a> <a href="https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy" target="_blank" rel="noopener">[6]</a> <a href="https://www.cnbc.com/2026/06/17/kevin-warsh-fed-interest-rates-risk-analysis.html" target="_blank" rel="noopener">[7]</a> <a href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener">[8]</a> <a href="https://www.whitehouse.gov/fact-sheets/2025/11/fact-sheet-president-donald-j-trump-strikes-deal-on-economic-and-trade-relations-with-china/" target="_blank" rel="noopener">[9]</a> <a href="https://www.congress.gov/crs-product/R48549" target="_blank" rel="noopener">[10]</a> <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10637/" target="_blank" rel="noopener">[11]</a> <a href="https://www.aljazeera.com/news/2026/6/14/us-iran-ceasefire-deal-announced-trump-says-strait-of-hormuz-reopening" target="_blank" rel="noopener">[12]</a> <a href="https://www.csis.org/analysis/unpacking-15-trillion-fy-2027-defense-budget-topline" target="_blank" rel="noopener">[13]</a> <a href="https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2025/06/25/the-hague-summit-declaration" target="_blank" rel="noopener">[14]</a> <a href="https://www.congress.gov/crs-product/R48891" target="_blank" rel="noopener">[15]</a> <a href="https://home.treasury.gov/news/press-releases/sb0197" target="_blank" rel="noopener">[16]</a> <a href="https://www.cfr.org/articles/mar-lago-accord-not-recipe-success" target="_blank" rel="noopener">[17]</a> <a href="https://www.ishares.com/us/insights/inside-the-market/2026-etf-market-trends-and-flows" target="_blank" rel="noopener">[18]</a> <a href="https://www.cnbc.com/2026/06/24/cnbc-transcript-us-treasury-secretary-scott-bessent-speaks-with-cnbcs-joe-kernen-on-squawk-box-today.html" target="_blank" rel="noopener">[19]</a> <a href="https://home.treasury.gov/news/press-releases/sb0539" target="_blank" rel="noopener">[20]</a> <a href="https://www.coindesk.com/markets/2026/06/24/gold-silver-and-bitcoin-tumble-as-debasement-trade-unwinds" target="_blank" rel="noopener">[21]</a> <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">[22]</a> <a href="https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy" target="_blank" rel="noopener">[23]</a> <a href="https://www.bls.gov/news.release/archives/empsit_07022026.htm" target="_blank" rel="noopener">[24]</a> <a href="https://www.cnbc.com/2026/07/01/kevin-warsh-ecb-forum-live-updates.html" target="_blank" rel="noopener">[25]</a> <a href="https://www.energy.gov/articles/us-department-energy-meets-president-trumps-goal-delivers-third-advanced-reactor" target="_blank" rel="noopener">[26]</a> <a href="https://www.congress.gov/crs-product/LSB11398" target="_blank" rel="noopener">[27]</a> <a href="https://www.supremecourt.gov/opinions/25pdf/24-1287_4gcj.pdf" target="_blank" rel="noopener">[28]</a> <a href="https://www.axios.com/2026/06/14/us-iran-ceasefire-extended-hormuz-reopen-trump" target="_blank" rel="noopener">[29]</a> <a href="https://www.cnn.com/2026/07/08/politics/trump-iran-ceasefire-over-nato-summit" target="_blank" rel="noopener">[30]</a> <a href="https://www.spglobal.com/commodity-insights/en/news-research/latest-news/oil/070826-trump-declares-iran-ceasefire-over-oil-prices-spike" target="_blank" rel="noopener">[31]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcminutes20260617.pdf" target="_blank" rel="noopener">[32]</a> <a href="https://www.perkinscole.com/en/news-and-insights/section-122-tariff-150-day-expiry-july-2026" target="_blank" rel="noopener">[33]</a> <a href="https://www.jdsupra.com/legalnews/cit-strikes-section-122-tariffs-may-7-2026/" target="_blank" rel="noopener">[34]</a> <a href="https://www.ustr.gov/about-us/policy-offices/press-office/press-releases/2026/july/ustr-section-301-replacement-tariff-proposal" target="_blank" rel="noopener">[35]</a> 
   </p>
-  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-25 20:53 UTC · <span class="l-en">display / context only — not investment advice</span><span class="l-zh">仅供展示／参考——不构成投资建议</span></p>
+  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-25 22:25 UTC · <span class="l-en">display / context only — not investment advice</span><span class="l-zh">仅供展示／参考——不构成投资建议</span></p>
 
 </div>
 
@@ -1247,6 +1400,6 @@
   <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may change.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能调整。</span>
 </footer>
 
-<script src="theme.js?v=015c6c36" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>

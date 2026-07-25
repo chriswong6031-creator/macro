@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-25T20:23:00.250268+00:00",
+  "generated_utc": "2026-07-25T21:51:30.358826+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1015,34 +1015,6 @@
       }
     },
     {
-      "ticker": "IEP",
-      "actors": [
-        {
-          "actor": "Carl Icahn",
-          "kind": "fund",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Carl Icahn",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 2,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.7,
-      "alt_channels": [
-        "affiliation",
-        "special_situation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "GOOGL",
       "actors": [
         {
@@ -1515,6 +1487,33 @@
         "title": "Institution",
         "shares": 174802084
       }
+    },
+    {
+      "ticker": "IEP",
+      "actors": [
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "ASML",
