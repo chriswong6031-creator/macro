@@ -92,12 +92,17 @@
   // which is how rate moves are read. bpsDelta needs the absolute price delta;
   // prevClose (raw yield×10) is threaded through the reading for that.
   function isTnx(el) { return (el.getAttribute("data-fmt") || "") === "tnx"; }
-  function fmtTnxPrice(price) { return (Number(price) / 10).toFixed(2) + "%"; }
+  // SCALE-AWARE (go-live 2026-07-24): the feeds disagree on ^TNX units — the
+  // relay's REST-fallback frames deliver percent directly (live-verified 4.679
+  // while the 10Y was 4.68%), whereas the ×10 index convention (46.79) exists
+  // on other paths. A 10Y above 15% or below 1.5-on-the-×10-scale hasn't traded
+  // since 1981, so the threshold cleanly separates the two encodings.
+  function tnxPct(v) { v = Number(v); return v > 15 ? v / 10 : v; }
+  function fmtTnxPrice(price) { return tnxPct(price).toFixed(2) + "%"; }
   function tnxBps(price, prevClose) {
-    // (rawPrice - rawPrev) is a change in yield×10; ÷10 => yield points; ×100
-    // => bps.  Net: (rawPrice - rawPrev) × 10.
+    // delta in yield POINTS (both sides scale-normalized) × 100 => bps
     if (prevClose == null) return null;
-    return (Number(price) - Number(prevClose)) * 10;
+    return (tnxPct(price) - tnxPct(prevClose)) * 100;
   }
   function paintChg(el, chg, stale, reading) {
     // data-fmt="tnx": render the delta in bps (from the absolute price delta),
