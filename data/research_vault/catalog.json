@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-25T19:14:38.550785+00:00",
-  "count": 85,
+  "generated_at": "2026-07-25T20:05:12.048625+00:00",
+  "count": 86,
   "institutions": [
     "Bank of America",
     "Deutsche Bank",
@@ -17,6 +17,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-o9j78a886os-fb1ea4",
+      "title": "GS Benny Qwek Weekend Thoughts FOMO",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T19:59:49Z",
+      "summary_points": [
+        "**Momentum Unwind Risk**: Fourth week of unwind; Momentum/KOSPI/Asia Tech exposure elevated vs prior years, risking extreme volatility and further position downsizing (vicious cycle).",
+        "**US Info Tech HF Net Selling Record**: HFs net sold US Info Tech stocks in 6 of past 8 weeks; cumulative outflows largest on record (-10% of sector gross market value, 8-week ending July 16).",
+        "**Factor Imbalance Risk**: Fundamental L/S below 30% vs systematic L/S near-historic highs (approaching 100% in 2025–2026), increasing vulnerability to regime shifts.",
+        "**Tech Sector Overconcentration Risk**: Info Tech allocation at 16% (vs.",
+        "Comm Svcs near 0%), driven by Taiwan/Korea Tech dominance (16% of Asia Net MV); Taiwan underweight in funds (-351 bp in Aej funds) despite tech ecosystem breadth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-nx6cq5mgqpj-dc1c75",
       "title": "BofA Michael Hartnett Bonds bringing the heat",

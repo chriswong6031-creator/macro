@@ -19,6 +19,10 @@ Invariants (RECON §2, MASTERPLAN §3 Lane T item 5; surfaceContract.ts):
   (f) the produced idx + frame validate against the ported surfaceContract.ts validators
       AND carry exactly the keys the Terminal fixtures carry (diff-of-keys is empty for
       the required set).
+  (g) date-keyed retention (M-XP a): every cycle ALSO emits date-keyed copies under
+      live_flow/surface/{ROOT}/{YYYY-MM-DD}/ plus a dates.json sessions index, the LEGACY
+      today-paths keep being written byte-identically (transition safety), and the R2
+      retention prune keeps the newest N sessions while never touching the today-paths.
 """
 from __future__ import annotations
 
@@ -28,19 +32,28 @@ from scripts.build_flow_surface import (
     GREEK_METRICS,
     METRIC_GEX,
     METRIC_NETPREM,
+    R2_SURFACE_PREFIX,
+    SURFACE_RETAIN_SESSIONS,
     append_stamp,
+    build_dates_index,
     build_index,
     build_and_stage_surfaces,
     cadence_label,
     check_index_files_contract,
+    dated_surface_keys,
     dry_run,
     extract_cycle_quotes,
     frame_for_stamp,
     greek_columns_for_stamp,
+    is_session_date,
+    is_surface_dates,
     is_surface_frame,
     is_surface_index,
+    list_surface_session_dates,
+    merge_surface_dates,
     net_prem_by_strike,
     oi_by_contract,
+    prune_surface_dates,
     resolve_surface_roots,
     validate_frame_dims,
 )
@@ -84,6 +97,21 @@ def _mk_strikes(**pairs) -> dict:
         strike = k[1:] if k.startswith("s") else k
         out[str(float(strike))] = {"call_prem": call, "put_prem": put, "vol": 10}
     return out
+
+
+def _legacy_stamp_keys(keys, root: str = "SPY") -> list[str]:
+    """The legacy today-path {HHMM}.json keys — live_flow/surface/{ROOT}/{HHMM}.json only.
+
+    Discriminates by depth: a legacy key has exactly one segment after {ROOT}, a date-keyed
+    key has two (…/{YYYY-MM-DD}/{HHMM}.json). idx.json and dates.json are excluded.
+    """
+    base = f"{R2_SURFACE_PREFIX}{root}/"
+    return sorted(
+        k for k in keys
+        if k.startswith(base)
+        and "/" not in k[len(base):]
+        and not k.endswith(("idx.json", "dates.json"))
+    )
 
 
 # ── vendored-fixture sanity: the ground truth itself validates ──────────────────────
@@ -312,16 +340,17 @@ def test_build_and_stage_surfaces_writes_files_and_keys(tmp_path, monkeypatch):
         spot_by_root={"SPY": 602.5},
     )
     # Two files staged: idx.json + one {HHMM}.json, with the exact R2 keys the Terminal
-    # flowSource.ts r2Key() resolves (live_flow/surface/{ROOT}/…).
+    # flowSource.ts r2Key() resolves (live_flow/surface/{ROOT}/…). M-XP(a) adds date-keyed
+    # copies + dates.json on top; the LEGACY today-keys below must stay exactly as they were.
     keys = {k for _, k in paths}
     assert any(k == "live_flow/surface/SPY/idx.json" for k in keys)
-    snap_keys = [k for k in keys if k != "live_flow/surface/SPY/idx.json"]
+    snap_keys = _legacy_stamp_keys(keys)
     assert len(snap_keys) == 1
     assert snap_keys[0].startswith("live_flow/surface/SPY/") and snap_keys[0].endswith(".json")
 
     # The staged idx + snapshot are valid and mutually consistent.
-    idx_local = next(p for p, k in paths if k.endswith("idx.json"))
-    snap_local = next(p for p, k in paths if k != "live_flow/surface/SPY/idx.json")
+    idx_local = next(p for p, k in paths if k == "live_flow/surface/SPY/idx.json")
+    snap_local = next(p for p, k in paths if k == snap_keys[0])
     idx = json.loads(idx_local.read_text())
     snap = json.loads(snap_local.read_text())
     assert is_surface_index(idx)
@@ -355,18 +384,20 @@ def test_second_cycle_appends_column(tmp_path, monkeypatch):
         root_strikes_by_root={"SPY": _mk_strikes(s600=(3_000.0, 0.0))},
         roots=["SPY"], session_date="2026-07-06", asof="b", cadence_sec=600, now=t2,
     )
-    idx_local = next(p for p, k in paths2 if k.endswith("idx.json"))
+    idx_local = next(p for p, k in paths2 if k == "live_flow/surface/SPY/idx.json")
     idx = json.loads(idx_local.read_text())
     assert idx["stamps"] == ["0931", "0941"]
     assert idx["latest"] == "0941"
     # The latest snapshot has 2 columns; strike 600 cumulative net = [1000, 3000].
-    snap_local = next(p for p, k in paths2 if k.endswith("0941.json"))
+    snap_local = next(p for p, k in paths2 if k == "live_flow/surface/SPY/0941.json")
     snap = json.loads(snap_local.read_text())
     assert snap["time_steps"] == ["09:31", "09:41"]
     assert snap["grids"]["netprem"][0] == [1000.0, 3000.0]
-    # Both stamp files exist on disk → idx ↔ files contract holds.
+    # Both stamp files exist on disk → idx ↔ files contract holds. ("dates" is the M-XP(a)
+    # sessions index, not a stamp file — the local staging dir stays flat, one dir per root.)
     surf_dir = tmp_path / "live_flow_out" / "surface" / "SPY"
-    on_disk = sorted(p.stem for p in surf_dir.glob("*.json") if p.stem not in ("idx", "_full"))
+    on_disk = sorted(p.stem for p in surf_dir.glob("*.json")
+                     if p.stem not in ("idx", "_full", "dates"))
     assert on_disk == ["0931", "0941"]
     assert check_index_files_contract(idx, on_disk)["ok"] is True
 
@@ -666,7 +697,8 @@ def test_build_and_stage_with_quotes_writes_greek_grids(tmp_path, monkeypatch):
         asof="2026-07-06T13:51:00Z", cadence_sec=120, spot_by_root={"SPY": 600.0},
         quotes_by_root={"SPY": quotes}, oi_by_root={"SPY": oi_map},
     )
-    snap_local = next(p for p, k in paths if k != "live_flow/surface/SPY/idx.json")
+    legacy_snap_key = _legacy_stamp_keys({k for _, k in paths})[0]
+    snap_local = next(p for p, k in paths if k == legacy_snap_key)
     snap = json.loads(snap_local.read_text())
     assert is_surface_frame(snap)
     # Greek grids present + validated dims (levels×steps), alongside netprem.
@@ -676,3 +708,344 @@ def test_build_and_stage_with_quotes_writes_greek_grids(tmp_path, monkeypatch):
     assert set(snap.get("walls", {})) >= {"flip", "callWall", "putWall"}
     cov = (snap.get("coverage") or {}).get("greeks")
     assert isinstance(cov, (int, float)) and 0.0 <= cov <= 1.0
+
+
+# ══ (g) date-keyed retention — M-XP(a) ══════════════════════════════════════════════
+# The Terminal's multi-day replay (OEU lane T-B) reads:
+#   live_flow/surface/{ROOT}/dates.json          → which sessions can be replayed
+#   live_flow/surface/{ROOT}/{DATE}/idx.json     → that session's stamps
+#   live_flow/surface/{ROOT}/{DATE}/{HHMM}.json  → that session's frames
+# while the LIVE pane keeps reading the legacy today-paths. Both must hold every cycle.
+
+
+class _FakeS3:
+    """Minimal in-memory S3/R2 double: list_objects_v2 (Prefix + Delimiter) + delete_objects.
+
+    Faithful to the two behaviors prune_surface_dates depends on: Delimiter="/" returns child
+    prefixes in CommonPrefixes (not Contents), and delete_objects takes {"Objects":[{"Key"}]}.
+    """
+
+    def __init__(self, keys):
+        self.keys = set(keys)
+        self.deleted: list[str] = []
+        self.list_calls = 0
+
+    def list_objects_v2(self, **kw):
+        self.list_calls += 1
+        prefix = kw.get("Prefix", "")
+        delim = kw.get("Delimiter")
+        contents, common = [], set()
+        for k in sorted(self.keys):
+            if not k.startswith(prefix):
+                continue
+            rest = k[len(prefix):]
+            if delim and delim in rest:
+                common.add(prefix + rest.split(delim, 1)[0] + delim)
+            else:
+                contents.append({"Key": k})
+        out = {"Contents": contents, "IsTruncated": False}
+        if delim:
+            out["CommonPrefixes"] = [{"Prefix": p} for p in sorted(common)]
+        return out
+
+    def delete_objects(self, Bucket=None, Delete=None):  # noqa: N803 — boto3 kwarg casing
+        for o in (Delete or {}).get("Objects", []):
+            self.keys.discard(o["Key"])
+            self.deleted.append(o["Key"])
+        return {"Deleted": [{"Key": o["Key"]} for o in (Delete or {}).get("Objects", [])]}
+
+
+class _BoomS3:
+    """An S3 double whose every call raises — the fail-soft contract's adversary."""
+
+    def list_objects_v2(self, **kw):
+        raise RuntimeError("R2 unreachable")
+
+    def delete_objects(self, **kw):
+        raise RuntimeError("R2 unreachable")
+
+
+def _store_keys(root="SPY", dates=(), stamps=("0931", "0941"), legacy=True):
+    """Build a realistic surface store key set: legacy today-paths + dated session prefixes."""
+    base = f"{R2_SURFACE_PREFIX}{root}/"
+    keys = set()
+    if legacy:
+        keys.add(base + "idx.json")
+        keys.add(base + "dates.json")
+        keys.update(base + f"{s}.json" for s in stamps)
+    for d in dates:
+        keys.add(f"{base}{d}/idx.json")
+        keys.update(f"{base}{d}/{s}.json" for s in stamps)
+    return keys
+
+
+# ── (g1) dated copies are emitted ALONGSIDE the legacy today-paths ──────────────────
+
+def test_dated_layout_written_alongside_legacy(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+    from datetime import datetime, timezone
+
+    t = datetime(2026, 7, 6, 13, 31, tzinfo=timezone.utc)   # 09:31 ET
+    paths = build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 400.0))},
+        roots=["SPY"], session_date="2026-07-06", asof="2026-07-06T13:31:00Z",
+        cadence_sec=120, now=t,
+    )
+    keys = {k for _, k in paths}
+    # Legacy today-paths — unchanged, still written (transition safety).
+    assert "live_flow/surface/SPY/idx.json" in keys
+    assert "live_flow/surface/SPY/0931.json" in keys
+    # Date-keyed copies + the sessions index.
+    assert "live_flow/surface/SPY/2026-07-06/idx.json" in keys
+    assert "live_flow/surface/SPY/2026-07-06/0931.json" in keys
+    assert "live_flow/surface/SPY/dates.json" in keys
+
+    # The dated copies are the SAME local file as the legacy ones — one write, two keys, so
+    # the live path and the replay path can never disagree byte-for-byte.
+    by_key = {k: p for p, k in paths}
+    assert by_key["live_flow/surface/SPY/idx.json"] == by_key["live_flow/surface/SPY/2026-07-06/idx.json"]
+    assert by_key["live_flow/surface/SPY/0931.json"] == by_key["live_flow/surface/SPY/2026-07-06/0931.json"]
+    # …and that shared file still validates as a SurfaceIndex / SurfaceFrame.
+    assert is_surface_index(json.loads(by_key["live_flow/surface/SPY/idx.json"].read_text()))
+    assert is_surface_frame(json.loads(by_key["live_flow/surface/SPY/0931.json"].read_text()))
+
+
+# ── (g2) dates.json shape ───────────────────────────────────────────────────────────
+
+def test_dates_json_shape_from_staging(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    paths = build_and_stage_surfaces(
+        root_strikes_by_root={"QQQ": _mk_strikes(s500=(9_000.0, 1_000.0))},
+        roots=["QQQ"], session_date="2026-07-06", asof="2026-07-06T13:31:00Z",
+        cadence_sec=300,
+    )
+    dates_local = next(p for p, k in paths if k.endswith("/dates.json"))
+    doc = json.loads(dates_local.read_text())
+    assert is_surface_dates(doc)
+    assert doc["root"] == "QQQ"
+    assert doc["dates"] == ["2026-07-06"]
+    assert doc["latest"] == "2026-07-06"
+    assert doc["count"] == 1
+    assert doc["retain"] == SURFACE_RETAIN_SESSIONS
+    # Cadence honesty: carried verbatim from the true write interval, same law as idx.json.
+    assert doc["cadenceSec"] == 300 and doc["cadence"] == "5-min"
+    assert doc["asof"] == "2026-07-06T13:31:00Z"
+    assert doc["source"] == "poller"
+
+
+def test_dates_index_newest_first_deduped_trimmed_and_junk_dropped():
+    doc = build_dates_index(
+        ["2026-07-01", "2026-07-03", "2026-07-02", "2026-07-03", "", None, "07/04/2026",
+         "2026-07-0", "latest"],
+        root="SPY", cadence_sec=120, asof="a", retain=2,
+    )
+    assert doc["dates"] == ["2026-07-03", "2026-07-02"]   # newest first, deduped, trimmed
+    assert doc["latest"] == "2026-07-03"
+    assert doc["count"] == 2
+    assert is_surface_dates(doc)
+
+
+def test_dates_index_empty_latest_is_null():
+    doc = build_dates_index([], root="SPY", cadence_sec=120, asof="")
+    assert doc["dates"] == [] and doc["latest"] is None and doc["count"] == 0
+    assert is_surface_dates(doc)
+
+
+def test_is_surface_dates_rejects_bad_docs():
+    good = build_dates_index(["2026-07-02", "2026-07-01"], root="SPY", cadence_sec=120, asof="")
+    assert is_surface_dates(good)
+    assert not is_surface_dates({**good, "dates": ["2026-07-01", "2026-07-02"]})  # oldest first
+    assert not is_surface_dates({**good, "latest": "2026-07-01"})                 # ≠ dates[0]
+    assert not is_surface_dates({**good, "dates": ["not-a-date"]})
+    assert not is_surface_dates({**good, "cadenceSec": "120"})
+    assert not is_surface_dates({**good, "root": None})
+    assert not is_surface_dates([])
+    assert is_session_date("2026-07-06") and not is_session_date("2026-7-6")
+
+
+def test_dated_surface_keys_rejects_malformed_date():
+    idx_key, frame_key = dated_surface_keys("spy", "2026-07-06", "0931")
+    assert idx_key == "live_flow/surface/SPY/2026-07-06/idx.json"
+    assert frame_key == "live_flow/surface/SPY/2026-07-06/0931.json"
+    # A junk date must never create a prefix the retention prune cannot recognize.
+    for bad in ("2026-7-6", "20260706", "", "today"):
+        try:
+            dated_surface_keys("SPY", bad, "0931")
+        except ValueError:
+            continue
+        raise AssertionError(f"dated_surface_keys accepted malformed date {bad!r}")
+
+
+# ── (g3) sessions accumulate across a rollover; legacy always tracks TODAY ───────────
+
+def test_second_session_accumulates_dates_and_rolls_legacy(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+    from datetime import datetime, timezone
+
+    build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 0.0))},
+        roots=["SPY"], session_date="2026-07-06", asof="d1", cadence_sec=120,
+        now=datetime(2026, 7, 6, 19, 55, tzinfo=timezone.utc),   # 15:55 ET
+    )
+    paths2 = build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(7_000.0, 0.0))},
+        roots=["SPY"], session_date="2026-07-07", asof="d2", cadence_sec=120,
+        now=datetime(2026, 7, 7, 13, 31, tzinfo=timezone.utc),   # 09:31 ET
+    )
+    keys = {k for _, k in paths2}
+    # Day 2 writes ITS dated prefix; day 1's stays untouched on the store.
+    assert "live_flow/surface/SPY/2026-07-07/0931.json" in keys
+    assert "live_flow/surface/SPY/2026-07-06/1555.json" not in keys
+    # dates.json now lists both sessions, newest first.
+    dates_local = next(p for p, k in paths2 if k.endswith("/dates.json"))
+    doc = json.loads(dates_local.read_text())
+    assert doc["dates"] == ["2026-07-07", "2026-07-06"]
+    assert doc["latest"] == "2026-07-07"
+    assert is_surface_dates(doc)
+    # Session-rollover guard still holds: the legacy idx is day 2's only (no carry-over of
+    # day 1's stamps), so the live Terminal never replays yesterday as today.
+    idx = json.loads(next(p for p, k in paths2 if k == "live_flow/surface/SPY/idx.json").read_text())
+    assert idx["date"] == "2026-07-07" and idx["stamps"] == ["0931"]
+
+
+# ── (g4) retention prune ────────────────────────────────────────────────────────────
+
+def test_prune_keeps_newest_n_and_deletes_older():
+    dates = [f"2026-07-{d:02d}" for d in range(1, 13)]      # 12 sessions
+    s3 = _FakeS3(_store_keys(dates=dates))
+    res = prune_surface_dates(s3, "bkt", "SPY", keep=10)
+    assert res["ok"] is True
+    assert res["retained"] == sorted(dates, reverse=True)[:10]
+    assert sorted(res["deleted_dates"]) == ["2026-07-01", "2026-07-02"]
+    assert res["deleted_objects"] == 6                       # 2 sessions × (idx + 2 stamps)
+    # The two oldest prefixes are gone from the store; the newest 10 survive intact.
+    assert not any("/2026-07-01/" in k or "/2026-07-02/" in k for k in s3.keys)
+    assert f"{R2_SURFACE_PREFIX}SPY/2026-07-03/idx.json" in s3.keys
+    assert f"{R2_SURFACE_PREFIX}SPY/2026-07-12/0941.json" in s3.keys
+
+
+def test_prune_never_touches_legacy_today_paths():
+    # The single most dangerous failure mode: a retention sweep blanking the live pane.
+    dates = [f"2026-07-{d:02d}" for d in range(1, 13)]
+    s3 = _FakeS3(_store_keys(dates=dates))
+    res = prune_surface_dates(s3, "bkt", "SPY", keep=1)
+    assert res["ok"] is True and len(res["deleted_dates"]) == 11
+    for legacy in ("idx.json", "dates.json", "0931.json", "0941.json"):
+        assert f"{R2_SURFACE_PREFIX}SPY/{legacy}" in s3.keys
+    # Every deleted key sat under a {ROOT}/{YYYY-MM-DD}/ prefix — nothing at the root of
+    # {ROOT}/ (where the live today-paths live) was ever a delete candidate.
+    assert s3.deleted and all(
+        is_session_date(k[len(f"{R2_SURFACE_PREFIX}SPY/"):].split("/")[0])
+        for k in s3.deleted
+    )
+
+
+def test_prune_noop_when_nothing_to_delete():
+    s3 = _FakeS3(_store_keys(dates=["2026-07-05", "2026-07-06"]))
+    res = prune_surface_dates(s3, "bkt", "SPY", keep=10)
+    assert res["ok"] is True
+    assert res["deleted_dates"] == [] and res["deleted_objects"] == 0
+    assert s3.deleted == []
+
+
+def test_prune_is_fail_soft_on_r2_error():
+    res = prune_surface_dates(_BoomS3(), "bkt", "SPY", keep=10)
+    assert res["ok"] is False              # caller retries next session
+    assert res["deleted_dates"] == [] and res["deleted_objects"] == 0
+
+
+def test_list_session_dates_ignores_legacy_and_junk_prefixes():
+    s3 = _FakeS3(
+        _store_keys(dates=["2026-07-05", "2026-07-06"])
+        | {f"{R2_SURFACE_PREFIX}SPY/notadate/idx.json",
+           f"{R2_SURFACE_PREFIX}QQQ/2026-07-06/idx.json"}    # a different root
+    )
+    assert list_surface_session_dates(s3, "bkt", "SPY") == ["2026-07-06", "2026-07-05"]
+    assert list_surface_session_dates(s3, "bkt", "QQQ") == ["2026-07-06"]
+    assert list_surface_session_dates(_BoomS3(), "bkt", "SPY") == []
+
+
+# ── (g5) ledger self-heal + fencing ─────────────────────────────────────────────────
+
+def test_merge_surface_dates_heals_ledger_from_r2_truth(tmp_path, monkeypatch):
+    # Staging-dir wipe (droplet redeploy): the local ledger knows only today, while R2 still
+    # holds 3 sessions. Merging R2 truth back must republish the full list.
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 0.0))},
+        roots=["SPY"], session_date="2026-07-06", asof="a", cadence_sec=120,
+    )
+    dates_file = tmp_path / "live_flow_out" / "surface" / "SPY" / "dates.json"
+    assert json.loads(dates_file.read_text())["dates"] == ["2026-07-06"]
+
+    retained = merge_surface_dates(
+        "SPY", ["2026-07-06", "2026-07-05", "2026-07-02"],
+        cadence_sec=120, asof="a", retain=10)
+    assert retained == ["2026-07-06", "2026-07-05", "2026-07-02"]
+    doc = json.loads(dates_file.read_text())
+    assert doc["dates"] == ["2026-07-06", "2026-07-05", "2026-07-02"]
+    assert is_surface_dates(doc)
+
+
+def test_dated_layout_failure_keeps_legacy_paths(tmp_path, monkeypatch):
+    # Fencing contract: a blow-up anywhere in the dated layout degrades to today-only
+    # (pre-M-XP behavior) and must never cost a root its legacy upload.
+    import lib.config as cfg_mod
+    import scripts.build_flow_surface as bfs
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    def _boom(*a, **kw):
+        raise RuntimeError("dated layout exploded")
+
+    monkeypatch.setattr(bfs, "dated_surface_keys", _boom)
+    paths = bfs.build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 400.0))},
+        roots=["SPY"], session_date="2026-07-06", asof="a", cadence_sec=120,
+    )
+    keys = {k for _, k in paths}
+    assert "live_flow/surface/SPY/idx.json" in keys
+    assert len(_legacy_stamp_keys(keys)) == 1
+    assert not any("2026-07-06/" in k for k in keys)   # no dated keys emitted
+    # The legacy files are on disk and still valid.
+    idx_local = next(p for p, k in paths if k == "live_flow/surface/SPY/idx.json")
+    assert is_surface_index(json.loads(idx_local.read_text()))
+
+
+def test_bad_session_date_degrades_to_legacy_only(tmp_path, monkeypatch):
+    # A malformed session_date must not create an unprunable junk prefix — the dated layout
+    # is simply skipped and the legacy paths still ship.
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    paths = build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 400.0))},
+        roots=["SPY"], session_date="07/06/2026", asof="a", cadence_sec=120,
+    )
+    keys = {k for _, k in paths}
+    assert "live_flow/surface/SPY/idx.json" in keys
+    assert len(_legacy_stamp_keys(keys)) == 1
+    assert not any(k.endswith("/dates.json") for k in keys)
+    assert all(k.count("/") == 3 for k in keys)        # nothing nested under a junk prefix
+
+
+def test_retain_sessions_override_trims_dates_index(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+    from datetime import datetime, timezone
+
+    for day in (4, 5, 6):
+        build_and_stage_surfaces(
+            root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 0.0))},
+            roots=["SPY"], session_date=f"2026-07-{day:02d}", asof="a", cadence_sec=120,
+            now=datetime(2026, 7, day, 13, 31, tzinfo=timezone.utc),
+            retain_sessions=2,
+        )
+    doc = json.loads((tmp_path / "live_flow_out" / "surface" / "SPY" / "dates.json").read_text())
+    assert doc["dates"] == ["2026-07-06", "2026-07-05"]   # oldest dropped at the cap
+    assert doc["retain"] == 2 and doc["latest"] == "2026-07-06"

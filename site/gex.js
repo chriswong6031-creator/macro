@@ -506,6 +506,22 @@
         help(lz("For single stocks the dealer-positioning math relies on an assumption that often breaks (covered-call funds, heavy retail call-buying can flip it). Indices and big ETFs are far more reliable. Top-strike OI share " + (s.top_oi_share == null ? "—" : s.top_oi_share) + " · chain depth: " + (s.tier === "full" ? "deep" : "thin") + ".",
                 "个股的做市商持仓推算依赖常被打破的假设（备兑基金、散户大量买购都可使其翻转）。指数与大型ETF可靠得多。最大行权价OI占比 " + (s.top_oi_share == null ? "—" : s.top_oi_share) + " · 链路深度：" + (s.tier === "full" ? "深" : "薄") + "。")) + "</span>";
     }
+    // Live continuation: this board is settled EOD data, the Terminal is the live view of
+    // the same name. Built through theme.js's shared MDXTerminal.url() so the &ret= stamp
+    // matches every other macro deep link and the Terminal's "← Dashboard" button returns
+    // here. location.href already carries #TICKER — selectSymbol replaceStates the hash
+    // before renderDetail runs. The literal fallback mirrors that builder exactly, for the
+    // case where theme.js has not evaluated yet.
+    var termKey = meta.key || curKey;
+    if (termKey) {
+      var termUrl = (window.MDXTerminal && window.MDXTerminal.url)
+        ? window.MDXTerminal.url(termKey)
+        : "https://app.mastermind-x.com/terminal?sym=" + encodeURIComponent(termKey) +
+          "&from=macro&ret=" + encodeURIComponent(location.href);
+      chips += '<a class="hchip gx-term" href="' + esc(termUrl) + '" rel="noopener">' +
+        esc(lz("Open live in Terminal", "在终端实时查看")) +
+        '<span class="gx-term-ar" aria-hidden="true">↗</span></a>';
+    }
     chips += '<span class="hasof"><span class="bd"></span>' + esc(lz("EOD · delayed", "延迟收盘数据")) + "</span>";
     return '<div class="card anim">' +
       '<div class="hero-top">' +
