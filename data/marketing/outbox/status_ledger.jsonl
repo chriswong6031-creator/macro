@@ -1,2 +1,3 @@
 {"id":"ob-2026-07-24-1d451a5774","from":"queued","to":"approved","at":"2026-07-25T03:52:21Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-07-25-ebdcbf1f14","from":"queued","to":"approved","at":"2026-07-25T03:52:21Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-07-24-1d451a5774","from":"approved","to":"quarantined","at":"2026-07-25T16:05:27Z","actor":"dedup-weekend","note":"near-dup ROST; keep 07-25 w/ chart","receipt":null}
