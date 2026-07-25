@@ -5,8 +5,8 @@ Contract: MNZ masterplan §3.5 + Amendment 2.
 DESIGN PRINCIPLES
 -----------------
 * TWO LANES — 'fast' (DeepSeek deepseek-chat → haiku fallback) and
-  'pro' (claude-opus-4-8 → sonnet fallback).  Lane config in config/brain.yml
-  (MNZ-R12: config-not-literals).
+  'pro' (claude-opus-5 → sonnet fallback, high-effort adaptive thinking).  Lane
+  config in config/brain.yml (MNZ-R12: config-not-literals).
 * GOVERNANCE (MNZ-R5): system prompt = read/explain over calibrated artifacts.
   NEVER originate signals/scores/escalations.  NEVER numeric probabilities.
   Post-filter reuses ask_brain._post_filter_advice + sanitize_question.
@@ -104,11 +104,13 @@ def _load_brain_config(root: Path | None = None) -> dict:
             },
             "pro": {
                 "provider_order": ["oauth", "anthropic"],
-                "opus_model": "claude-opus-4-8",
+                "opus_model": "claude-opus-5",
                 "fallback_model": "claude-sonnet-4-6",
-                "max_tokens": 4000,
+                "max_tokens": 8000,
                 "tool_budget": 10,
                 "usage_lane": "brain-pro",
+                "effort": "high",
+                "thinking": "adaptive",
             },
         },
         "quotas": {
@@ -3558,7 +3560,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
         return providers
 
     if lane == "pro":
-        opus_model = lane_cfg.get("opus_model") or "claude-opus-4-8"
+        opus_model = lane_cfg.get("opus_model") or "claude-opus-5"
         fallback_model = lane_cfg.get("fallback_model") or "claude-sonnet-4-6"
 
         pro_cfg = {
@@ -3749,6 +3751,36 @@ def _mark_provider_dead_if_auth(p: dict, exc: Exception) -> None:
         pass
 
 
+def _model_supports_effort_thinking(model: str) -> bool:
+    """True when `model` accepts `output_config.effort` + `thinking: adaptive`.
+
+    Supported: the Opus 4.5+/Opus 5 family, Sonnet 4.6/Sonnet 5, and Fable/Mythos 5.
+    NOT supported (would 400 / error): DeepSeek's Anthropic-compat endpoint (the Fast
+    primary) and Haiku 4.5 (the Fast vision/text fallback — effort + adaptive thinking
+    are both unsupported there). Keeping this gate model-based means a Fast turn that
+    borrows a Claude vision model still gets the right params, and a Pro turn that falls
+    back to Sonnet keeps them."""
+    m = str(model or "")
+    if m.startswith("claude-opus") or m.startswith("claude-fable") or m.startswith("claude-mythos"):
+        return True
+    # Sonnet 4.6 and Sonnet 5 support effort + adaptive thinking; Sonnet 4.5 and Haiku do not.
+    return m.startswith("claude-sonnet-4-6") or m.startswith("claude-sonnet-5")
+
+
+def _effort_thinking_params(model: str, effort: str | None, thinking_mode: str | None) -> dict:
+    """Extra messages.create kwargs to run `model` at higher intensity — {} when the
+    model can't take them (DeepSeek/Haiku) or neither is configured. `thinking_mode`
+    'adaptive' → adaptive thinking; `effort` in {low..max} → output_config.effort."""
+    if not (effort or thinking_mode) or not _model_supports_effort_thinking(model):
+        return {}
+    extra: dict = {}
+    if thinking_mode == "adaptive":
+        extra["thinking"] = {"type": "adaptive"}
+    if effort:
+        extra["output_config"] = {"effort": str(effort)}
+    return extra
+
+
 def _turn_providers(client: Any, model: str, providers: list[dict] | None) -> list[dict]:
     """Ordered candidate providers for a turn — the explicit list when given (enables
     failover across OAuth tokens / to the Anthropic fallback), else the single
@@ -3773,19 +3805,24 @@ def _turn_providers(client: Any, model: str, providers: list[dict] | None) -> li
     return [{"client": client, "model": model}]
 
 
-def _create_failover(cands: list[dict], **kwargs) -> tuple[Any, str]:
+def _create_failover(cands: list[dict], *, per_model_kwargs=None, **kwargs) -> tuple[Any, str]:
     """Call messages.create across candidate providers in order; on a failover-worthy
     error (429/5xx/overloaded OR a 401/403 dead credential) fall through to the next
     token/provider. Returns (resp, used_model). Raises the last error when the final
     candidate fails or the error is non-failover — so a single throttled OAuth token or
-    an expired primary key no longer fails the whole turn while a healthy fallback exists."""
+    an expired primary key no longer fails the whole turn while a healthy fallback exists.
+
+    per_model_kwargs(model) -> dict lets the caller add PER-CANDIDATE create kwargs that
+    only some models accept (e.g. effort/adaptive-thinking for Claude, omitted for
+    DeepSeek/Haiku) — merged over the shared kwargs for each candidate's own model."""
     last: Exception | None = None
     for i, p in enumerate(cands):
         cl = p.get("client")
         if cl is None:
             continue
         try:
-            resp = cl.messages.create(model=p.get("model"), **kwargs)
+            _mk = per_model_kwargs(p.get("model")) if per_model_kwargs else {}
+            resp = cl.messages.create(model=p.get("model"), **{**kwargs, **_mk})
             return resp, (p.get("model") or "")
         except Exception as exc:  # noqa: BLE001
             last = exc
@@ -3853,6 +3890,8 @@ def _run_brain_loop(
     providers: list[dict] | None = None,
     user_id: str = "",
     user_email: str = "",
+    effort: str | None = None,
+    thinking_mode: str | None = None,
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -3931,11 +3970,14 @@ def _run_brain_loop(
     tool_call_count = 0
     last_resp = None  # track to extract usage from final response
     _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
+    def _pmk(m):  # per-candidate high-intensity params — Claude-only (see _create_failover)
+        return _effort_thinking_params(m, effort, thinking_mode)
 
     while tool_call_count < tool_budget:
         try:
             resp, model = _create_failover(
                 _cands,
+                per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
                 system=system_prompt,
                 tools=tool_schemas,
@@ -4006,6 +4048,7 @@ def _run_brain_loop(
         try:
             resp, model = _create_failover(
                 _cands,
+                per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
                 system=system_prompt,
                 tools=tool_schemas,
@@ -4061,6 +4104,8 @@ def _run_brain_loop_stream(
     providers: list[dict] | None = None,
     user_id: str = "",
     user_email: str = "",
+    effort: str | None = None,
+    thinking_mode: str | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
@@ -4145,10 +4190,15 @@ def _run_brain_loop_stream(
 
     # Phase 1: tool-calling turns (blocking, no streaming)
     _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
+    # High-intensity params (effort + adaptive thinking) added PER-CANDIDATE — Claude-only,
+    # so a DeepSeek/Haiku candidate in the same failover chain never receives them.
+    def _pmk(m):
+        return _effort_thinking_params(m, effort, thinking_mode)
     while tool_call_count < tool_budget:
         try:
             resp, model = _create_failover(
                 _cands,
+                per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
                 system=system_prompt,
                 tools=tool_schemas,
@@ -4242,6 +4292,7 @@ def _run_brain_loop_stream(
                     system=system_prompt,
                     tools=tool_schemas,
                     messages=messages,
+                    **_effort_thinking_params(_p.get("model"), effort, thinking_mode),
                 ) as s:
                     for chunk in s.text_stream:
                         full_answer += chunk
@@ -4617,12 +4668,16 @@ def chat(
     max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
+    effort = lane_cfg.get("effort")
+    thinking_mode = lane_cfg.get("thinking")
 
-    # Research mode: override tool budget from config
+    # Research mode: override tool budget + intensity from config
     if mode == "research":
         research_cfg = cfg.get("research") or {}
         tool_budget = int(research_cfg.get("tool_budget") or 20)
         max_tokens = int(research_cfg.get("max_tokens") or 8000)
+        effort = research_cfg.get("effort") or effort
+        thinking_mode = research_cfg.get("thinking") or thinking_mode
 
     terminal_data_dir = Path(os.environ.get("TERMINAL_DATA_DIR", str(_TERMINAL_DATA_DIR)))
     terminal_hub_url = os.environ.get("TERMINAL_HUB_URL", _TERMINAL_HUB_URL)
@@ -4785,6 +4840,7 @@ def chat(
             client, model, max_tokens, tool_budget,
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
             user_id=user_id, user_email=user_email,
+            effort=effort, thinking_mode=thinking_mode,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -4918,12 +4974,18 @@ def chat_stream(
     max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
+    # High-intensity intent (per-lane): effort + thinking mode, applied Claude-path-only.
+    effort = lane_cfg.get("effort")
+    thinking_mode = lane_cfg.get("thinking")
 
-    # Research mode: override budget from config
+    # Research mode: force pro-lane intensity even if invoked with a different lane_cfg
+    # and raise the budget (Deep Research thinks harder + longer than plain chat).
     if mode == "research":
         research_cfg = cfg.get("research") or {}
         tool_budget = int(research_cfg.get("tool_budget") or 20)
         max_tokens = int(research_cfg.get("max_tokens") or 8000)
+        effort = research_cfg.get("effort") or effort
+        thinking_mode = research_cfg.get("thinking") or thinking_mode
 
     terminal_data_dir = Path(os.environ.get("TERMINAL_DATA_DIR", str(_TERMINAL_DATA_DIR)))
     terminal_hub_url = os.environ.get("TERMINAL_HUB_URL", _TERMINAL_HUB_URL)
@@ -5065,6 +5127,7 @@ def chat_stream(
             answer_out,
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
             user_id=user_id, user_email=user_email,
+            effort=effort, thinking_mode=thinking_mode,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)

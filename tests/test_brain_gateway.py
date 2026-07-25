@@ -120,7 +120,7 @@ def test_config_fallback_when_absent():
     cfg = gw._load_brain_config(empty_root)
     gw._BRAIN_CONFIG_CACHE = None  # reset after test
     assert cfg.get("lanes", {}).get("fast", {}).get("max_tokens") == 2000
-    assert cfg.get("lanes", {}).get("pro", {}).get("max_tokens") == 4000
+    assert cfg.get("lanes", {}).get("pro", {}).get("max_tokens") == 8000
 
 
 def test_config_token_ceilings_present():
@@ -152,11 +152,20 @@ def test_fast_lane_fallback_model_is_haiku():
 
 
 def test_pro_lane_opus_model():
-    """pro lane primary model is claude-opus-4-8."""
+    """pro lane primary model is claude-opus-5 (newest Opus)."""
     root = _make_temp_root()
     cfg = gw._load_brain_config(root)
     pro = cfg["lanes"]["pro"]
-    assert pro.get("opus_model") == "claude-opus-4-8"
+    assert pro.get("opus_model") == "claude-opus-5"
+
+
+def test_pro_lane_high_intensity_config():
+    """pro lane carries high-intensity params (effort + adaptive thinking)."""
+    root = _make_temp_root()
+    cfg = gw._load_brain_config(root)
+    pro = cfg["lanes"]["pro"]
+    assert pro.get("effort") == "high"
+    assert pro.get("thinking") == "adaptive"
 
 
 def test_pro_lane_fallback_is_sonnet():
@@ -567,7 +576,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -814,7 +823,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -846,7 +855,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -893,7 +902,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -902,7 +911,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1373,7 +1382,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1873,7 +1882,7 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1903,7 +1912,7 @@ def test_chat_no_image_stays_on_deepseek(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured["model"] = model
         captured["image_blocks"] = image_blocks
         return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -1936,7 +1945,7 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
             "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
         }[lane]
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -2130,6 +2139,42 @@ def test_create_failover_fails_over_on_insufficient_balance():
         llm_auth.clear_dead()
 
 
+def test_effort_thinking_gate_claude_only():
+    """effort + adaptive thinking attach to supported Claude models and NOTHING else."""
+    want = {"thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}}
+    for m in ["claude-opus-5", "claude-opus-4-8", "claude-sonnet-4-6", "claude-sonnet-5", "claude-fable-5"]:
+        assert gw._effort_thinking_params(m, "high", "adaptive") == want, m
+    # Must NEVER be sent to DeepSeek or Haiku (they 400 / error on these params)
+    for m in ["deepseek-chat", "claude-haiku-4-5", "claude-sonnet-4-5"]:
+        assert gw._effort_thinking_params(m, "high", "adaptive") == {}, m
+    # No config → empty; partial config → partial
+    assert gw._effort_thinking_params("claude-opus-5", None, None) == {}
+    assert gw._effort_thinking_params("claude-opus-5", "xhigh", None) == {"output_config": {"effort": "xhigh"}}
+    assert gw._effort_thinking_params("claude-opus-5", None, "adaptive") == {"thinking": {"type": "adaptive"}}
+
+
+def test_create_failover_applies_effort_only_to_claude():
+    """In a mixed failover chain, the Claude candidate gets effort/thinking; DeepSeek doesn't."""
+    captured = {}
+
+    class _Cap:
+        def __init__(self, model):
+            self.model = model
+            self.messages = self
+        def create(self, **kw):
+            captured[kw["model"]] = kw
+            return _MockResponse([_MockBlock("text", "ok")], "end_turn")
+
+    pmk = lambda m: gw._effort_thinking_params(m, "high", "adaptive")  # noqa: E731
+    gw._create_failover([{"name": "deepseek", "model": "deepseek-chat", "client": _Cap("deepseek-chat")}],
+                        per_model_kwargs=pmk, max_tokens=10, system="", tools=[], messages=[])
+    gw._create_failover([{"name": "oauth", "model": "claude-opus-5", "client": _Cap("claude-opus-5")}],
+                        per_model_kwargs=pmk, max_tokens=10, system="", tools=[], messages=[])
+    assert "output_config" not in captured["deepseek-chat"] and "thinking" not in captured["deepseek-chat"]
+    assert captured["claude-opus-5"]["output_config"] == {"effort": "high"}
+    assert captured["claude-opus-5"]["thinking"] == {"type": "adaptive"}
+
+
 def test_chat_stream_fails_over_to_fallback_on_dead_primary(tmp_path):
     """END-TO-END repro of the outage: a Fast lane whose DeepSeek key is expired must
     serve the answer from the Anthropic (Haiku) fallback — a delta with the real answer,
@@ -2197,7 +2242,7 @@ def test_chat_free_tier_image_is_gated_text_only(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         captured["image_blocks"] = image_blocks
         captured["model"] = model
         return "text answer. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -2361,7 +2406,7 @@ def test_chat_splits_suggestions_from_reply(tmp_path):
     )
     persisted = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         return reply_with_next, [], [], [], {}, [], []
 
     def _cap_append(tid, role, content, meta=None):
@@ -2390,7 +2435,7 @@ def test_chat_omits_suggestions_key_when_absent(tmp_path):
     """No [NEXT] block → no 'suggestions' key in the result."""
     root = _make_temp_root()
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email=""):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
         return "Plain answer, no marker. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
 
     mock_providers = [{"client": _MockClient([]), "model": "deepseek-chat"}]

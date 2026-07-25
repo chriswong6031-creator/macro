@@ -26,16 +26,23 @@ lanes:
     usage_lane: brain-fast
 
   pro:
-    # Primary: claude-opus-4-8.
-    # Fallback: claude-sonnet-4-6 when Opus unavailable.
+    # Primary: claude-opus-5 (newest Opus; same $5/$25 pricing as 4.8, 1M context,
+    #          adaptive thinking + effort). Fallback: claude-sonnet-4-6 when Opus unavailable.
     provider_order:
       - oauth
       - anthropic
-    opus_model: claude-opus-4-8
+    opus_model: claude-opus-5
     fallback_model: claude-sonnet-4-6
-    max_tokens: 4000
+    # Headroom for high-effort adaptive thinking (thinking tokens count against max_tokens).
+    max_tokens: 8000
     tool_budget: 10
     usage_lane: brain-pro
+    # "High intensity" (operator 2026-07-25): adaptive thinking + high effort, applied ONLY on
+    # the Claude Pro path (opus/sonnet/fable). NEVER sent to DeepSeek (Anthropic-compat 400s on
+    # output_config/thinking) or Haiku 4.5 (effort + adaptive thinking unsupported → error).
+    # See _model_supports_effort_thinking() in brain_gateway.py for the gate.
+    effort: high        # low | medium | high | xhigh | max
+    thinking: adaptive  # adaptive | off
 
 # ── Per-tier request allowances (MNZ-R12: config-not-literals) ────────────────
 # Periods: week = ISO week (UTC), month = calendar month (UTC),
