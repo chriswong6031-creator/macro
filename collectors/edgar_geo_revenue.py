@@ -43,7 +43,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -186,6 +186,10 @@ def _member_key(member_local: str, member_ns: str) -> str:
     if local.endswith("Member"):
         local = local[: -len("Member")]
     # us-gaap CountryXX style (e.g. "CountryUS") → strip the "Country" prefix to ISO2.
+    if local.startswith("Country"):
+        rest = local[len("Country"):]
+        if len(rest) == 2 and rest.isascii() and rest.isupper() and rest.isalpha():
+            return rest
     return local
 
 
@@ -460,7 +464,23 @@ def _fy_duration(ctx: dict) -> bool:
 
 def _emit(members: dict[str, float], total: float | None, concept: str,
           doc_end: str, dei: dict[str, str]) -> dict:
-    """Apply the three emission methods (§4) to classified members + optional total.
+    """Apply the emission methods (§4) to classified members + optional total.
+
+    METHODS (the emitted ``method`` receipt):
+      * ``us_member``    plain total present + a US member → foreign = (total - US)/total.
+      * ``foreign_agg``  plain total present + a foreign-aggregate member → foreign = agg/total.
+      * ``us_plus_agg``  NO usable plain total, but a foreign-aggregate AND a US member are
+                         both present → recover via the exhaustive two-way split
+                         denom = US + aggregate (granular members are color, never re-summed
+                         into the denominator — avoids double-counting the foreign side).
+      * ``member_sum``   NO usable plain total, no aggregate → denom = Σ non-excluded members.
+
+    SKIP reasons (the ``reason`` on ``{"ok": False}``):
+      ``no_geo_axis`` (no geographic members) · ``no_denominator`` (no usable total/members) ·
+      ``eliminations_no_total`` (an excluded member present with no plain total) ·
+      ``agg_no_total`` (a foreign-aggregate member present with no US member and no plain
+      total — the two-way split cannot be recovered) · ``out_of_range`` (foreign_pct escaped
+      [-0.5, 100.5]) · ``em_gt_foreign`` (EM lower bound exceeded the foreign share).
 
     Returns an emitted block on success, or {"ok": False, "reason": <skip>}.
     """
@@ -483,19 +503,33 @@ def _emit(members: dict[str, float], total: float | None, concept: str,
     elif total is not None and total > 0 and has_fa:
         method, denom, foreign_pct = "foreign_agg", total, 100.0 * fa_val / total
     else:
-        # member_sum: NO usable plain total. Require ≥2 non-excluded members incl ≥1
-        # US; no negative members; no excluded members present at all.
+        # member_sum: NO usable plain total.
         if total is None or total <= 0:
             if excluded_present:
                 return {"ok": False, "reason": "eliminations_no_total"}
-            if len(non_excl) < 2 or not has_us:
-                return {"ok": False, "reason": "no_denominator"}
-            if any(v < 0 for v in non_excl.values()):
-                return {"ok": False, "reason": "no_denominator"}
-            denom = sum(non_excl.values())
-            if denom <= 0:
-                return {"ok": False, "reason": "no_denominator"}
-            method, foreign_pct = "member_sum", 100.0 * (denom - us_val) / denom
+            if has_fa:
+                # A foreign-AGGREGATE member is present with no plain total. Summing the
+                # aggregate together with its own granular constituents (US=40, NonUs=60,
+                # GreaterChina=25) would DOUBLE-COUNT the foreign side. Recover the honest
+                # denominator from the exhaustive two-way split us + aggregate; the granular
+                # members stay in by_region as color (pcts over this same denom).
+                if not has_us:
+                    return {"ok": False, "reason": "agg_no_total"}
+                denom = us_val + fa_val
+                if denom <= 0:
+                    return {"ok": False, "reason": "no_denominator"}
+                method, foreign_pct = "us_plus_agg", 100.0 * fa_val / denom
+            else:
+                # Plain member_sum (no aggregate present): require ≥2 non-excluded members
+                # incl ≥1 US; no negative members.
+                if len(non_excl) < 2 or not has_us:
+                    return {"ok": False, "reason": "no_denominator"}
+                if any(v < 0 for v in non_excl.values()):
+                    return {"ok": False, "reason": "no_denominator"}
+                denom = sum(non_excl.values())
+                if denom <= 0:
+                    return {"ok": False, "reason": "no_denominator"}
+                method, foreign_pct = "member_sum", 100.0 * (denom - us_val) / denom
         else:
             # total present but no US and no foreign-agg member to anchor it.
             return {"ok": False, "reason": "no_denominator"}
@@ -785,8 +819,12 @@ def fetch_geo_revenue(force: bool = False, max_new: int = 60,
             if is_connection_error(e):
                 raise
             continue
+        if not filing:
+            # submissions re-fetch failed (transient): leave state untouched so the next
+            # run retries — do NOT stamp `checked` (that would defer the retry REFRESH_DAYS).
+            continue
         prev_acc = state.get(t, {}).get("accession")
-        if filing and filing["accession"] != prev_acc:
+        if filing["accession"] != prev_acc:
             _do_full(t)
         else:
             state[t]["checked"] = now_iso   # touch so it isn't re-hit next run

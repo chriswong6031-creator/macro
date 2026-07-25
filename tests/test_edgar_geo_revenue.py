@@ -418,3 +418,70 @@ def test_concept_priority_on_tie():
     assert out["ok"] is True, out
     assert out["concept"] == "RevenueFromContractWithCustomerExcludingAssessedTax"
     assert out["foreign_pct"] == 30.0   # from the winning concept (US 70)
+
+
+# --------------------------------------------- F1: foreign-aggregate + granular ---
+def test_us_plus_agg_recovers_two_way_split():
+    """F1: US 40 + NonUs 60 (aggregate) + GreaterChina 25 (a granular constituent OF the
+    aggregate), NO plain total. Naive Σ non-excluded members would double-count the foreign
+    side (40+60+25=125 → foreign 68.0). The exhaustive two-way split US + aggregate = 100 is
+    the honest denominator → foreign 60.0, method us_plus_agg. The granular EM member stays
+    in by_region and counts into em_pct over the SAME denom (subset of the aggregate)."""
+    ctxs = [
+        _ctx("c_us", dims=[("country", "US")]),
+        _ctx("c_fa", dims=[("us-gaap", "NonUsMember")]),
+        _ctx("c_cn", dims=[("us-gaap", "GreaterChinaMember")]),
+    ]
+    facts = [
+        _fact("Revenues", "c_us", 40e9),
+        _fact("Revenues", "c_fa", 60e9),
+        _fact("Revenues", "c_cn", 25e9),
+    ]
+    out = geo.parse_instance(_instance(ctxs, facts))
+    assert out["ok"] is True, out
+    assert out["method"] == "us_plus_agg"
+    assert out["foreign_pct"] == 60.0
+    assert out["em_pct"] == 25.0
+    keys = {r["key"] for r in out["by_region"]}
+    assert keys == {"US", "NonUs", "GreaterChina"}, out["by_region"]
+
+
+def test_agg_no_total_without_us_member():
+    """F1: a foreign-aggregate member (NonUs 60) + a granular member (GreaterChina 25), NO
+    US member and NO plain total → the two-way split can't be recovered → skip agg_no_total
+    (NOT a silent member_sum that would misstate the denominator)."""
+    ctxs = [
+        _ctx("c_fa", dims=[("us-gaap", "NonUsMember")]),
+        _ctx("c_cn", dims=[("us-gaap", "GreaterChinaMember")]),
+    ]
+    facts = [
+        _fact("Revenues", "c_fa", 60e9),
+        _fact("Revenues", "c_cn", 25e9),
+    ]
+    out = geo.parse_instance(_instance(ctxs, facts))
+    assert out["ok"] is False
+    assert out["reason"] == "agg_no_total"
+
+
+# ------------------------------------------------- F2: us-gaap CountryXX members ---
+def test_country_xx_usgaap_members():
+    """F2: us-gaap-namespaced CountryUSMember / CountryCNMember (NOT the SEC country
+    taxonomy) map to ISO2 US / CN after the trailing-'Member' strip + 'Country' prefix
+    strip. With a plain total 100 → us_member, foreign 30.0; CN classifies EM → em 30.0."""
+    ctxs = [
+        _ctx("c_us", dims=[("us-gaap", "CountryUSMember")]),
+        _ctx("c_cn", dims=[("us-gaap", "CountryCNMember")]),
+        _ctx("c_tot"),
+    ]
+    facts = [
+        _fact("Revenues", "c_us", 70e9),
+        _fact("Revenues", "c_cn", 30e9),
+        _fact("Revenues", "c_tot", 100e9),
+    ]
+    out = geo.parse_instance(_instance(ctxs, facts))
+    assert out["ok"] is True, out
+    assert out["method"] == "us_member"
+    assert out["foreign_pct"] == 30.0
+    assert out["em_pct"] == 30.0
+    cls = {r["key"]: r["cls"] for r in out["by_region"]}
+    assert cls == {"US": "us", "CN": "em"}, out["by_region"]
