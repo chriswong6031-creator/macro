@@ -60,11 +60,20 @@ _DEMOTION_FLOOR = 0.5
 _STANDOUT_FLOOR = 25
 
 # The Phase-C falsifiable-thesis desks (label, track_record.json path).
+#
+# Roster law: this must cover every desk in engine.desk_scorer.POOL_DESKS. A desk that grades
+# theses but is absent here is INVISIBLE to the promotion gate — it accrues a track record
+# nobody adjudicates. thematic_desk was exactly that: a live n=21 record reading hit-rate
+# 0.571 against directional accuracy 0.429 (the very not-falsified-vs-directional divergence
+# this gate exists to catch) with no health verdict emitted anywhere.
+# tests/test_calibration_hub.py::test_every_pooled_desk_is_governed pins the invariant.
 _DESKS = (
     ("AI Desk", "ai_desk"),
     ("Policy Intent", "policy_intent"),
     ("Alt-Data Brain", "altdata"),
     ("Divergence Radar", "radar"),
+    ("Thematic Desk", "thematic_desk"),
+    ("Narrative Brain", "narrative_brain"),
     ("Stock Desk", "stock_desk"),
     ("Demand Chain", "demand_chain"),
 )

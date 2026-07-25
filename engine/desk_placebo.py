@@ -245,7 +245,7 @@ def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int]:
         if row.get("id"):
             ledger[row["id"]] = row
     if not ledger:
-        return [], "none", 0
+        return [], "no_ledger", 0
 
     scored_rows = _load_jsonl(root / "data" / slug / "scored.jsonl")
     decided = [r for r in scored_rows if r.get("outcome") in ("hit", "miss")]
@@ -265,7 +265,7 @@ def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int]:
         if str(row.get("check_by") or "") <= cutoff
         and ((row.get("falsifier") or {}).get("check") or {}).get("kind") in _MACHINE_KINDS
     ]
-    return pairs, ("ledger_elapsed" if pairs else "none"), 0
+    return pairs, ("ledger_elapsed" if pairs else "no_sweepable_kind"), 0
 
 
 # --------------------------------------------------------------------------- #
@@ -300,7 +300,15 @@ def null_baseline(root, slug: str, track: dict, today) -> dict:
         out["mix_source"] = source
         out["unreconstructable"] = orphans
         if not pairs:
-            out["reason"] = "no thesis ledger to reconstruct the graded predicates from"
+            # Be exact about WHY there is no null — "no ledger" and "a ledger full of
+            # falsifier kinds this module cannot sweep" are different problems with
+            # different fixes, and a desk stays unpromoted either way.
+            out["reason"] = (
+                "no thesis ledger to reconstruct the graded predicates from"
+                if source == "no_ledger" else
+                f"the ledger holds no elapsed thesis whose falsifier kind this sweep "
+                f"supports (supported: {', '.join(_MACHINE_KINDS)})"
+            )
             return out
 
         get = _series_cache(root)

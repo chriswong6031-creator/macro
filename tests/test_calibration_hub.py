@@ -198,6 +198,34 @@ def test_health_note_never_asserts_an_untested_property():
     assert "conviction ordering holds" not in ai["health_note"]
 
 
+def test_every_pooled_desk_is_governed():
+    """A desk that grades theses but is missing from _DESKS accrues a track record no one
+    adjudicates. thematic_desk was exactly that — live n=21, hit-rate 0.571 against
+    directional accuracy 0.429, and no health verdict emitted anywhere."""
+    from engine.desk_scorer import POOL_DESKS
+
+    governed = {slug for _, slug in ch._DESKS}
+    missing = sorted(set(POOL_DESKS) - governed)
+    assert not missing, f"pooled desks invisible to the promotion gate: {missing}"
+
+
+def test_directionally_wrong_desk_is_caught_without_a_placebo():
+    """thematic_desk's live shape: its falsifier kind (theme_rel_return) is not sweepable
+    yet, so no null is measured — but dir_accuracy IS a directional metric, so the one-half
+    fallback still catches leans that point the wrong way. A missing null must never
+    upgrade a desk."""
+    track = {"scored_total": 21, "open": 0,
+             "overall": _bucket(21, 12, dir_acc=0.429),
+             "by_conviction": {"low": _bucket(21, 12)}}
+    null = _null(available=False, reason="no sweepable kind", n=0, n_decided=21,
+                 coverage=None, null_hit_rate=None, null_dir_rate=None,
+                 p_hit=None, independent_blocks=0, by_kind={})
+    health, note = ch._desk_health(track, null, None)
+    assert health == "inverted"
+    assert "a coin flip" in note          # the fallback is named honestly, not as a measurement
+    assert "no placebo baseline" in note
+
+
 def test_promotion_gate_bars_are_published_with_the_verdicts():
     """Nulls and bars get printed, not implied — a reader can audit the gate from the JSON."""
     root = _new_root()

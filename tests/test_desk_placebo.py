@@ -222,6 +222,28 @@ def test_mismatched_population_refuses_to_pair_but_still_reports_the_null():
     assert res["coverage"] is not None and res["coverage"] < 1.0
 
 
+def test_unsweepable_falsifier_kind_says_so_precisely():
+    """thematic_desk's ledger is full of `theme_rel_return`, which this module cannot sweep
+    yet. That is a different problem from an absent ledger and must not be reported as one —
+    the fix differs, and the desk stays unpromoted either way."""
+    root = _new_root()
+    _write_desk(root, "thematic_desk", [{
+        "id": "t1", "state_asof": "2021-01-04", "check_by": "2021-02-01",
+        "falsifier": {"check": {"kind": "theme_rel_return", "subject_ticker": "UP",
+                                "vs": "FLAT", "op": "<", "threshold": -0.05}}}])
+    res = dp.null_baseline(root, "thematic_desk", {"overall": {"n": 21}}, "2021-03-01")
+    assert res["available"] is False
+    assert "falsifier kind this sweep supports" in res["reason"]
+    assert "no thesis ledger" not in res["reason"]
+
+
+def test_absent_ledger_is_reported_as_an_absent_ledger():
+    root = _new_root()
+    res = dp.null_baseline(root, "ghost_desk", {"overall": {"n": 5}}, "2021-03-01")
+    assert res["available"] is False
+    assert "no thesis ledger" in res["reason"]
+
+
 def test_null_baseline_degrades_without_raising():
     root = _new_root()
     assert dp.null_baseline(root, "ai_desk", {}, "2021-01-01")["available"] is False
