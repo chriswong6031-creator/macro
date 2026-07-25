@@ -300,6 +300,31 @@ def test_auto_approve_respects_daily_cap(monkeypatch, tmp_path):
     assert len(fake.calls) == 2
 
 
+def test_auto_approve_unlimited_cap_posts_all(monkeypatch, tmp_path):
+    """Regression: cap == -1 (the unlimited sentinel) means NO limit, not a
+    literal cap of -1. Before the _at_cap() guard, ``posted_today(0) >= -1`` was
+    True, so EVERY item was skipped as 'account at daily cap (-1/day)' and NOTHING
+    posted once config lifted the caps to unlimited (max_posts_per_account_per_day
+    -1, PR #3376). This exercises both cap gates — auto-approve and post-time —
+    end to end: all three gate-clean items must approve AND post in one run."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1)
+    ids = [
+        _seed_queued_item(tmp_path, text="First queued post here."),
+        _seed_queued_item(tmp_path, text="Second queued post here."),
+        _seed_queued_item(tmp_path, text="Third queued post here."),
+    ]
+
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    # Unlimited cap → all three auto-approve AND post in the same run.
+    assert all(statuses[i] == "posted" for i in ids), statuses
+    assert len(fake.calls) == 3
+
+
 def test_auto_approve_skips_held_item(monkeypatch, tmp_path):
     """A queued item the operator put on hold is NOT auto-approved."""
     from engine.marketing.outbox import current_statuses, record_decision
