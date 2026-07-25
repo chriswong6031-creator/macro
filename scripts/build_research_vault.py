@@ -220,7 +220,8 @@ def build() -> Path:
         _smap = _rp.slug_map(catalog["items"])
         for _it in catalog["items"]:
             _it["slug"] = _smap.get(_it.get("id"), "")
-    except Exception:  # noqa: BLE001 — links degrade to none; pages still build below
+    except Exception as exc:  # noqa: BLE001 — links degrade to none; pages still build below
+        log.warning("slug injection failed (vault cards lose /research/ links): %s", exc)
         for _it in catalog["items"]:
             _it.setdefault("slug", "")
     page = render(catalog)
@@ -232,9 +233,18 @@ def build() -> Path:
     # sitemap). Rides this nightly vault build; never fatal to it.
     try:
         from scripts import build_research_pages
-        build_research_pages.build(catalog)
+        n_pages = build_research_pages.build(catalog)
+        if (catalog.get("items") or []) and not n_pages:
+            log.warning("::warning title=research_pages::catalog has %d items but ZERO "
+                        "report pages were written — /research/ SEO pages missing/stale",
+                        len(catalog["items"]))
     except Exception as exc:  # noqa: BLE001 — SEO pages must not break the vault build
-        log.warning("research report pages build failed (non-fatal): %s", exc)
+        # Fail-soft by law (the vault page ships even if the SEO pages break) but LOUD:
+        # full traceback into the builder log + a one-line ::warning that surfaces in
+        # the Actions annotations even at rc=0.
+        log.warning("research report pages build failed (non-fatal): %s", exc, exc_info=True)
+        log.warning("::warning title=research_pages::report pages build failed "
+                    "(non-fatal, vault page unaffected): %s: %s", type(exc).__name__, exc)
     return out
 
 

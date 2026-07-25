@@ -507,7 +507,8 @@ lanes:
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_reports
-            # Research Vault page (#3315 W3) — daily engine lane only.
+            # Research Vault page (#3315 W3) + /research/ report SEO pages (#3392).
+            # Also in the render/engine-render re-render lanes since the #3392 heal.
             - scripts.build_research_vault
             - scripts.build_cycle
             - scripts.build_sector_cycles
@@ -1554,6 +1555,9 @@ lanes:
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_reports
+            # RV SEO (#3392 heal): vault page + /research/ report landing pages from the
+            # committed catalog — re-renders in every lane so SEO pages never go dark.
+            - scripts.build_research_vault
             - scripts.build_policy_watch
             - scripts.build_index_changes
             # SGA page-only re-render (committed artifact); engine stays daily-only.
@@ -1668,6 +1672,9 @@ lanes:
           cl_misc:
             - scripts.build_seasonality
             - scripts.build_reports
+            # RV SEO (#3392 heal): vault page + /research/ report landing pages from the
+            # committed catalog — re-renders in every lane so SEO pages never go dark.
+            - scripts.build_research_vault
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
             - scripts.build_cycle
