@@ -161,6 +161,13 @@ mechanisms with a falsifier each; panel dedups against DNR/blocklist + the
 §3 seed list; output = ranked family shortlist (≤4 to carry into W-SIG) +
 foundry lens config. Routing: panel = opus reviewers; synthesis = main loop.
 
+*[EXECUTED 2026-07-25 — 7-lens opus panel, 33 candidates, all 12y-testable.
+Output of record: `research/PSS_WSIG_SHORTLIST_BY_FABLE.md` (W-SIG slate =
+F1 down-volume envelope decay · F2 overnight-vs-intraday decomposition flip ·
+F3 idiosyncratic residual reset · F4 downside-vol asymmetry flip · shared
+C32 decline-deceleration terminality gate as the pre-registered conditioner
+in all four preregs) + `research/foundry/LENSES.md` (foundry lens config).]*
+
 ## §5. W-LAB audit verdicts — (append here before changing the labs)
 
 ## §6. Routing & budget
