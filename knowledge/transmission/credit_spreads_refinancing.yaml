@@ -2,7 +2,7 @@
 # Seed list §7 ("credit spreads widen → refinancing-dependent smallcaps; HYG/LQD
 # collected"). Display-tier. HYG/LQD verified present in lib.store yahoo.
 chain: credit_spreads_refinancing
-rev: 0
+rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
 tier: hypothesis
 title:
   en: "Credit spreads widen → refinancing-dependent cohort de-rate"
@@ -44,22 +44,39 @@ falsifiers:
 
 null_model: "does credit-spread conditioning beat unconditional smallcap-momentum on the refinancing cohort?"
 
-exposure_screens:            # W2 — declared only
+exposure_screens:            # W2 — structured mini-form, resolved over site/stockdata/<T>.json
   refinancing_channel:
-    field_expr: "financials.raw.debt_lt / assets high AND weak interest coverage (EBIT/interest low)"
-    note: "issuers with a near-dated maturity wall and thin coverage — most exposed to a rollover at wider spreads"
+    label: {en: "Refinancing channel", zh: "再融资通道"}
+    note: {en: "issuers with high leverage — most exposed to a rollover at wider spreads. NOTE: the substrate carries no debt-maturity-wall or interest-coverage field, so this binds to the leverage ratio (debt_to_assets) as the available refinancing-exposure axis; a near-dated maturity wall is not separable here.",
+           zh: "高杠杆发行人——利差走阔时展期风险最高。注：个股数据无债务到期墙或利息覆盖率字段，故绑定至杠杆比率（debt_to_assets）作为可得的再融资敞口维度；无法单独区分近期到期墙。"}
+    all:
+      - {path: financials.debt_to_assets, op: pctile_gte, value: 0.67}   # leverage ratio, top third of evaluable universe
   floating_rate_debt:
-    field_expr: "financials floating-rate debt share high (cost rises immediately with spreads/rates)"
-    note: "issuers whose interest cost reprices with the spread move, not at maturity"
+    label: {en: "Floating-rate debt", zh: "浮动利率债务"}
+    # DROPPED CHANNEL (honest gap): no floating-rate-debt-share field exists anywhere in the
+    # per-ticker substrate (financials.raw carries only debt_lt/assets/equity/... — no
+    # fixed-vs-floating split). Declared for schema continuity; the resolver emits it
+    # resolved:false with this note rather than proxying silently (masterplan §scoping.3).
+    note: {en: "DROPPED — no field: the substrate has no fixed-vs-floating debt split; this channel cannot be resolved without a floating-rate-share field. Not proxied (a proxy would silently mislabel names).",
+           zh: "已弃用——无字段：个股数据无固定与浮动利率债务拆分；缺少浮动利率占比字段则无法解析此通道。未做代理（代理会错误标记名字）。"}
   fcf_burner:
-    field_expr: "financials.fcf_margin < 0 AND multiyear cash trend down (dependent on external capital)"
-    note: "cash-burning names that must access credit markets to fund operations"
+    label: {en: "FCF burner", zh: "现金流消耗"}
+    note: {en: "cash-burning names that must access credit markets to fund operations",
+           zh: "必须进入信贷市场为运营融资的现金消耗型名字"}
+    all:
+      - {path: financials.fcf_margin, op: "<", value: 0}   # FCF margin is a PERCENT; <0 = burning
 
 provenance:
   theory: ["refinancing / rollover risk", "credit channel of monetary policy"]
   episodes: ["2008 (GFC credit freeze)", "2015-16 (energy HY)", "2020-Q1 (dash-for-cash)"]
   added_by: "TXI-W1"
   added_on: "2026-07-24"
+
+changelog:
+  - "rev 1 (W2 2026-07-24): exposure_screens migrated to the structured {all|any} mini-form.
+     refinancing_channel + fcf_burner resolve to real fields (debt_to_assets pctile; fcf_margin).
+     floating_rate_debt is DROPPED with a bilingual note — the substrate has NO fixed-vs-floating
+     debt split field; not proxied (masterplan §scoping.3 forbids silent proxies)."
 
 validator_note: >
   No HY-OAS FRED series is present in this repo's lib.store, so spread_widen binds to the
@@ -70,3 +87,7 @@ validator_note: >
   All nodes resolve; tier=hypothesis (base rates untested until W3). This is a 2-node / 1-hop
   chain — the shortest seed — because the HYG/LQD ratio already fuses the "spreads widen"
   observation; a separate IG-confirm node would be mechanically collinear.
+  W2 SCREENS (rev 1): refinancing_channel + fcf_burner bind to verified substrate fields
+  (financials.debt_to_assets pctile, financials.fcf_margin<0). floating_rate_debt is a DROPPED
+  channel — no floating-rate-share field exists in site/stockdata; it is declared with a
+  bilingual DROPPED note and resolves:false, never silently proxied.

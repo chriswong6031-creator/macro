@@ -2,7 +2,7 @@
 # Masterplan §6 worked spec, bound to the REAL collected artifacts (see validator_note
 # for the two node→field adjustments vs the prose spec). Display-tier; never scored.
 chain: oil_inflation_duration_derate
-rev: 0
+rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
 tier: hypothesis            # every node resolves + arms, but per-hop base rates untested (W3)
 title:
   en: "Oil shock → inflation → yields → long-duration de-rate"
@@ -91,19 +91,37 @@ falsifiers:
 
 null_model: "does conditioning on the full oil→breakeven→yield chain beat unconditional yields-momentum on the same long-duration cohort?"
 
-exposure_screens:            # W2 — declared only; not resolved in W1
+exposure_screens:            # W2 — structured mini-form, resolved over site/stockdata/<T>.json
   long_duration_valuation:
-    field_expr: "macro_sensitivity.duration == 'long' OR valuation.forward_pe tier in {rich, very_rich}"
-    note: "names whose value sits in far-dated cash flows — first to de-rate on a discount-rate rise"
+    label: {en: "Long-duration valuation", zh: "长久期估值"}
+    note: {en: "names whose value sits in far-dated cash flows — first to de-rate on a discount-rate rise",
+           zh: "价值集中于远期现金流的名字——贴现率上行时最先下修"}
+    any:
+      - {path: macro_sensitivity.duration, op: "==", value: long}   # calibrated duration tier (581 names read 'long')
+      - {path: valuation.forward_pe, op: pctile_gte, value: 0.80}   # top-quintile forward P/E of the evaluable universe
   refinancing_channel:
-    field_expr: "financials.raw.debt_lt / assets high AND earnings weak (interest-cost proxy)"
-    note: "leveraged names facing a higher cost of refinancing"
+    label: {en: "Refinancing channel", zh: "再融资通道"}
+    note: {en: "leveraged names facing a higher cost of refinancing — long-term debt a large share of assets",
+           zh: "面临更高再融资成本的高杠杆名字——长期债务占资产比重高"}
+    # debt_to_assets is the LEVERAGE RATIO (percent), the right refinancing-exposure axis —
+    # NOT raw.debt_lt (absolute $, which would flag mega-caps with huge but well-covered debt
+    # books). Top-third of the evaluable universe's leverage. (Ratio present ~660 names; the
+    # rest bucket as unevaluable — a missing balance sheet is neither safe nor unsafe.)
+    all:
+      - {path: financials.debt_to_assets, op: pctile_gte, value: 0.67}
   capex_borrower:
-    field_expr: "factors.radar.investment z < -1.5 AND fcf_margin < 0"
-    note: "capex-heavy names funding growth with external capital"
+    label: {en: "Capex borrower", zh: "资本开支借款方"}
+    note: {en: "capex-heavy names funding growth with external capital (weak investment factor + negative FCF)",
+           zh: "以外部资本为增长融资的重资本开支名字（投资因子弱＋自由现金流为负）"}
+    all:
+      - {path: factors.radar_investment_z, op: "<", value: -1.5}    # investment factor z (lifted flat from factors.radar list, W2)
+      - {path: financials.fcf_margin, op: "<", value: 0}            # FCF margin is a PERCENT; <0 = burning
   fcf_burner:
-    field_expr: "financials.fcf_margin < 0 AND multiyear cash trend down"
-    note: "cash-burning names most exposed to a higher cost of capital"
+    label: {en: "FCF burner", zh: "现金流消耗"}
+    note: {en: "cash-burning names most exposed to a higher cost of capital",
+           zh: "现金消耗型名字，对更高资金成本最敏感"}
+    all:
+      - {path: financials.fcf_margin, op: "<", value: 0}
 
 provenance:
   theory: ["cost-push passthrough", "duration / discount-rate math"]
@@ -111,12 +129,25 @@ provenance:
   added_by: "operator"
   added_on: "2026-07-24"
 
+changelog:
+  - "rev 1 (W2 2026-07-24): exposure_screens migrated from prose field_expr to the structured
+     {all|any} clause mini-form, every path verified against site/stockdata substrate. All
+     four channels resolve to real fields — long_duration_valuation via macro_sensitivity.
+     duration + valuation.forward_pe pctile; refinancing_channel via debt_to_assets pctile
+     (ratio, not raw $); capex_borrower via factors.radar_investment_z (lifted from the radar
+     list) + fcf_margin; fcf_burner via fcf_margin. No dropped/proxy channel on this chain."
+
 validator_note: >
-  Two node→field adjustments vs the §6 prose, both binding to a REAL observable (never a
-  faked detector): (1) oil_shock and breakeven_rise read the raw price/level series via
-  lib.store (yahoo CL=F, yahoo T10YIE) instead of a commodity/signals_oil artifact and the
-  transmission latest.state breakeven field — the series carry the identical observable and
-  avoid a stale-snapshot dependency. (2) duration_derate uses a QQQ-vs-SPY RS_63d cohort
-  PROXY for "long-duration cohort RS" — the per-name factor-model cohort is the W2 resolver;
-  the node only needs a cohort observable. All four nodes resolve; tier stays hypothesis
-  because per-hop base rates are untested until the W3 episode miner runs.
+  NODE bindings (unchanged from rev 0): two node→field adjustments vs the §6 prose, both
+  binding to a REAL observable (never a faked detector): (1) oil_shock and breakeven_rise read
+  the raw price/level series via lib.store (yahoo CL=F, fred T10YIE) instead of a commodity/
+  signals_oil artifact and the transmission latest.state breakeven field. (2) duration_derate
+  uses a QQQ-vs-SPY RS_63d cohort PROXY for "long-duration cohort RS"; the per-name factor-
+  model cohort is the W2 resolver below.
+  W2 SCREEN bindings (rev 1): all paths verified present in site/stockdata/<T>.json.
+  long_duration_valuation.valuation.forward_pe is a BARE SCALAR (present ~1219, nonnull ~165)
+  — NOT valuation.forward_pe.v; a pctile_gte(0.80) cut over the evaluable universe with the
+  numeric cut printed. capex_borrower reads factors.radar_investment_z, a synthetic scalar the
+  resolver lifts from the factors.radar [{key,z}] list (the shipped shape). fcf_margin is a
+  PERCENT (so <0 = burning). All four channels resolve to real fields — NO dropped or proxy
+  channel on this chain. tier stays hypothesis (per-hop base rates untested until W3).

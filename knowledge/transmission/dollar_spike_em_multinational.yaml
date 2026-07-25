@@ -1,7 +1,7 @@
 # TXI seed chain — dollar spike → EM / commodity / multinational-EPS headwind.
 # Seed list §7; rides the forex_transmission dollar-channel edges. Display-tier.
 chain: dollar_spike_em_multinational
-rev: 0
+rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
 tier: hypothesis
 title:
   en: "Dollar spike → EM & multinational-EPS headwind"
@@ -63,16 +63,36 @@ falsifiers:
 
 null_model: "does dollar-channel conditioning beat unconditional dollar-momentum on the EM cohort?"
 
-exposure_screens:            # W2 — declared only
+exposure_screens:            # W2 — structured mini-form + honest gaps (see validator_note)
+  # HONEST GAP: this chain's native screens all need a per-name GEOGRAPHIC-REVENUE field
+  # (geo_revenue.*) which is ABSENT from the entire substrate (0 files). Per masterplan
+  # §scoping.3 — "the dollar chain's foreign-revenue channel has no field: note it, don't
+  # proxy silently". The two revenue/translation channels + the dollar-debt channel are
+  # therefore DROPPED (declared, resolved:false, bilingual note). ONE clearly-labeled SECTOR
+  # PROXY is offered for the commodity-dollar leg (a real field: sector membership).
   em_revenue_exposure:
-    field_expr: "geo_revenue.emerging_markets_pct high OR sector in {materials, energy} with EM demand"
-    note: "names whose revenue is EM-demand or EM-currency exposed"
+    label: {en: "EM revenue exposure", zh: "新兴市场营收敞口"}
+    note: {en: "DROPPED — no field: the substrate has no geographic-revenue breakdown (geo_revenue.emerging_markets_pct absent everywhere), so per-name EM-revenue exposure cannot be resolved. See em_commodity_sector_proxy for a clearly-labeled sector stand-in.",
+           zh: "已弃用——无字段：个股数据无地区营收拆分（geo_revenue.emerging_markets_pct全库缺失），无法解析个股新兴市场营收敞口。见em_commodity_sector_proxy的明确标注行业代理。"}
   multinational_fx_translation:
-    field_expr: "geo_revenue.foreign_pct high (dollar-translation EPS drag on a stronger USD)"
-    note: "US multinationals whose overseas EPS shrinks in dollar terms as USD firms"
+    label: {en: "Multinational FX translation", zh: "跨国汇率折算"}
+    note: {en: "DROPPED — no field: no foreign-revenue-share field (geo_revenue.foreign_pct) exists in the substrate, so the dollar-translation EPS drag cannot be resolved per name. Not proxied (no honest per-name stand-in).",
+           zh: "已弃用——无字段：个股数据无海外营收占比字段（geo_revenue.foreign_pct），无法按个股解析美元折算的每股盈利拖累。未做代理（无诚实的个股替代）。"}
   dollar_debt_burden:
-    field_expr: "financials.raw.debt in USD for a non-USD-revenue issuer (dollar-debt service up)"
-    note: "issuers servicing dollar debt against non-dollar cash flows"
+    label: {en: "Dollar-debt burden", zh: "美元债务负担"}
+    note: {en: "DROPPED — no field: the substrate carries total long-term debt (financials.raw.debt_lt) but NO currency-of-debt split, so 'dollar debt against non-dollar revenue' is not separable. Not proxied.",
+           zh: "已弃用——无字段：个股数据有长期债务总额（financials.raw.debt_lt）但无债务币种拆分，无法区分'美元债务对非美元营收'。未做代理。"}
+  em_commodity_sector_proxy:
+    label: {en: "EM/commodity sector (proxy)", zh: "新兴市场/商品行业（代理）"}
+    # PROXY CHANNEL (label + note say "proxy" in both languages, masterplan §scoping.3):
+    # a real field (GICS sector, present ~1625) stands in for the missing EM-demand revenue
+    # screen — Materials + Energy are the dollar-priced-commodity sectors whose demand and
+    # pricing carry the clearest EM/dollar sensitivity. This is a SECTOR proxy, NOT a per-name
+    # revenue measurement; named *_proxy so no consumer mistakes it for geo-revenue exposure.
+    note: {en: "PROXY (sector, not revenue): substitutes GICS sector membership for the missing per-name EM-revenue field — Materials & Energy are the dollar-priced-commodity sectors most EM/dollar-sensitive. A coarse sector stand-in, not a revenue measurement.",
+           zh: "代理（行业而非营收）：以GICS行业归属替代缺失的个股新兴市场营收字段——材料与能源是对新兴市场/美元最敏感的美元计价商品行业。粗略的行业替代，非营收测度。"}
+    any:
+      - {path: sector, op: in, value: ["Materials", "Energy"]}
 
 provenance:
   theory: ["dollar-debt channel", "commodity dollar-pricing", "EPS translation"]
@@ -80,10 +100,23 @@ provenance:
   added_by: "TXI-W1"
   added_on: "2026-07-24"
 
+changelog:
+  - "rev 1 (W2 2026-07-24): exposure_screens migrated to the structured mini-form. This
+     chain's native screens all need a per-name geographic-revenue field (geo_revenue.*) which
+     is ABSENT from the entire substrate (0 files) — so em_revenue_exposure,
+     multinational_fx_translation, and dollar_debt_burden are ALL DROPPED with bilingual notes
+     (masterplan §scoping.3: note the gap, do not proxy silently). ONE clearly-labeled sector
+     PROXY (em_commodity_sector_proxy: sector in {Materials, Energy}) is added for the
+     commodity-dollar leg using a real field (GICS sector)."
+
 validator_note: >
-  All nodes resolve against data/forex/latest.json (dollar_desk.trend / usd_pos_pctile;
-  transmission.usd_dir / headwind_for) and lib.store yahoo series (FXI vs SPY). The
-  `in_contains` op tests membership of a value inside a list-valued path (headwind_for).
-  em_derate uses FXI (the forex/rate engines' own EM proxy) as a cohort RS proxy; the
-  per-name multinational/EM-revenue resolution is the W2 blast resolver. tier=hypothesis
-  (base rates untested until W3).
+  NODE bindings (unchanged from rev 0): all nodes resolve against data/forex/latest.json
+  (dollar_desk.trend / usd_pos_pctile; transmission.usd_dir / headwind_for) and lib.store yahoo
+  series (FXI vs SPY). em_derate uses FXI as a cohort RS proxy.
+  W2 SCREENS (rev 1) — THIS CHAIN HAS THE ONLY DROPPED-BY-DESIGN NATIVE SCREENS: the substrate
+  has NO geo_revenue.* field anywhere (verified 0/1629 files), so all three native channels
+  (em_revenue_exposure, multinational_fx_translation, dollar_debt_burden) are DROPPED — declared
+  with bilingual notes, resolved:false, NEVER silently proxied (masterplan §scoping.3). One
+  clearly-labeled SECTOR proxy (em_commodity_sector_proxy) uses the real GICS `sector` field
+  (Materials/Energy, ~163 names) for the commodity-dollar leg; its label + note say "proxy" in
+  both languages. tier=hypothesis (base rates untested until W3).
