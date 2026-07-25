@@ -26,6 +26,8 @@ Tests (charter §6 W5 exit gate):
   22. Non-oracle candidate: search_width_at_scan=None (not MISSING).
   23. Queue packet carries authority='display_only'.
   24. Decide dry-run writes nothing.
+  25. The governance monkeypatch double has not drifted from the real recorder.
+  26. packet_ref reaches the governance event and the transition row (RF-5b).
 """
 from __future__ import annotations
 
@@ -598,8 +600,25 @@ def _run_decide(
             return decide_mod.main()
 
 
-def _fake_governance(tmp_path: Path, *, candidate_id, decision, actor, actor_ref, root, dry_run=False):
-    """Write a fake governance event to our tmp dir for testing."""
+def _fake_governance(
+    tmp_path: Path,
+    *,
+    candidate_id,
+    decision,
+    actor,
+    actor_ref,
+    root,
+    dry_run=False,
+    packet_ref=None,
+):
+    """Write a fake governance event to our tmp dir for testing.
+
+    Signature must stay in lockstep with the real
+    scripts.research_factory_decide._append_governance_event — the patch
+    wrapper forwards **kw straight from the real call site, so a parameter
+    this double lacks raises TypeError before any assertion runs.
+    test_fake_governance_double_matches_real_signature guards that.
+    """
     if dry_run:
         return
     gov_path = tmp_path / "data" / "neuralweb" / "governance.jsonl"
@@ -612,6 +631,8 @@ def _fake_governance(tmp_path: Path, *, candidate_id, decision, actor, actor_ref
         "actor": actor,
         "actor_ref": actor_ref,
     }
+    if packet_ref:
+        row["packet_ref"] = packet_ref
     with gov_path.open("a") as fh:
         fh.write(json.dumps(row) + "\n")
 
@@ -1328,6 +1349,96 @@ def test_real_governance_event_article_null(tmp_path):
     )
     assert row.get("article") is None, (
         f"article must be None (RF-12), got {row.get('article')!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Finding 6: the governance double must not drift from the real recorder
+# ---------------------------------------------------------------------------
+
+
+def test_fake_governance_double_matches_real_signature():
+    """_fake_governance must accept every parameter _append_governance_event takes.
+
+    Fixture-rot guard.  _run_decide patches the recorder with
+    `lambda **kw: _fake_governance(tmp_path, **kw)`, so kwargs are forwarded
+    verbatim from the real call site.  When the recorder grew `packet_ref`
+    (RF-5b/RUL-SUCC-7 adjudication-packet gate) the double did not, and the
+    lambda raised TypeError *before* the decision recorder ran — seven tests
+    went red while asserting nothing about the behaviour they name.  This test
+    fails first, and says what to fix, the next time the signatures diverge.
+    """
+    import inspect
+
+    import scripts.research_factory_decide as decide_mod
+
+    real_sig = inspect.signature(decide_mod._append_governance_event)
+    fake_sig = inspect.signature(_fake_governance)
+
+    real_params = set(real_sig.parameters)
+    # tmp_path is the double's own leading positional, bound by the lambda.
+    fake_params = set(fake_sig.parameters) - {"tmp_path"}
+
+    missing = real_params - fake_params
+    assert not missing, (
+        f"_fake_governance has drifted from _append_governance_event: missing "
+        f"{sorted(missing)}. The double receives **kw forwarded from the real "
+        f"call site, so a missing parameter raises TypeError and every decide "
+        f"test in this file fails vacuously. Add {sorted(missing)} to "
+        f"_fake_governance (and record it in the written row if it belongs in "
+        f"the audit trail)."
+    )
+
+    # Stronger than a name check: a full real-shaped call must actually bind.
+    fake_sig.bind(tmp_path=Path("/nonexistent"), **{p: None for p in real_params})
+
+
+# ---------------------------------------------------------------------------
+# Finding 6b: packet_ref reaches the governance recorder from main()
+# ---------------------------------------------------------------------------
+
+
+def test_packet_ref_reaches_governance_and_transition(tmp_path):
+    """--packet-ref is carried into both the governance event and the transition row.
+
+    Exercises the parameter whose absence from the double caused the vacuous
+    red above, through the real main() plumbing.  actor=fable is not a model
+    adjudicator, so the queue-resolution gate is skipped here and packet_ref is
+    simply recorded; the opus resolution / outcome-mismatch / validator paths
+    are covered end-to-end in tests/test_research_factory_decide_packet_gate.py.
+    """
+    cand = _make_candidate(
+        candidate_id="rf-packet-001",
+        status="human_review",
+    )
+    rf_dir, seed_path, regime_path, requeue_path, root = _setup_decide_env(
+        tmp_path, candidate=cand
+    )
+
+    rc = _run_decide(
+        tmp_path, rf_dir, seed_path, regime_path, requeue_path,
+        candidate_id="rf-packet-001",
+        decision="paper",
+        args_extra=[
+            "--expected-half-life-d", "250",
+            "--packet-ref", "adj-2026-07-06-example",
+        ],
+    )
+    assert rc == 0, "paper decision with --packet-ref should succeed"
+
+    # Governance event carries it (the drifted kwarg, end to end)
+    gov_path = tmp_path / "data" / "neuralweb" / "governance.jsonl"
+    gov_rows = rf_ledger.load_jsonl(gov_path)
+    assert any(r.get("packet_ref") == "adj-2026-07-06-example" for r in gov_rows), (
+        f"packet_ref must reach the governance recorder; got rows: {gov_rows}"
+    )
+
+    # Transition row carries it too (RF-5b: packet_ref belongs in the audit row)
+    transitions = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    paper_rows = [t for t in transitions if t.get("to") == "paper"]
+    assert len(paper_rows) == 1
+    assert paper_rows[0].get("packet_ref") == "adj-2026-07-06-example", (
+        f"Transition row missing packet_ref: {paper_rows[0]}"
     )
 
 
