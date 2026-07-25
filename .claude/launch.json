@@ -26,7 +26,7 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "admin", "--port", "8791"],
       "port": 8791,
-      "autoPort": false
+      "autoPort": true
     }
   ]
 }
