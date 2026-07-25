@@ -168,3 +168,5 @@ def regwall_check(request: Request) -> Response:
     except Exception as exc:  # noqa: BLE001 — FAIL-CLOSED: any error denies, never serves
         log.warning("regwall: check failed closed (%s)", exc)
         return _deny(ret, document=_is_document(request, ret))
+
+# CI trigger probe (scratch, PR auto-closed): boundary-only diff must select the tier-gate job (#3509).
