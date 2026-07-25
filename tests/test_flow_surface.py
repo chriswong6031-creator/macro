@@ -25,16 +25,22 @@ from __future__ import annotations
 import json
 
 from scripts.build_flow_surface import (
+    GREEK_METRICS,
+    METRIC_GEX,
+    METRIC_NETPREM,
     append_stamp,
     build_index,
     build_and_stage_surfaces,
     cadence_label,
     check_index_files_contract,
     dry_run,
+    extract_cycle_quotes,
     frame_for_stamp,
+    greek_columns_for_stamp,
     is_surface_frame,
     is_surface_index,
     net_prem_by_strike,
+    oi_by_contract,
     resolve_surface_roots,
     validate_frame_dims,
 )
@@ -389,3 +395,284 @@ def test_dry_run_all_checks_pass():
     assert len(rep["mid_frame"]["time_steps"]) < len(rep["latest_frame"]["time_steps"])
     assert rep["index"]["cadenceSec"] == 120
     assert rep["index"]["cadence"] == "2-min"
+    # Lane G: the dry-run session builds real greek grids → the greek checks are present.
+    assert rep["has_greeks"] is True
+    assert rep["checks"]["greekMetricsPresent(gex,dex,vanna,charm)"] is True
+    assert rep["checks"]["wallsPresent"] is True
+    assert rep["checks"]["coveragePresent(0..1)"] is True
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════
+# Lane G — intraday greek grids (gex/dex/vanna/charm) + walls + coverage
+# ══════════════════════════════════════════════════════════════════════════════════════
+#
+# The netprem grid is unchanged (Wave 1); these assert the ADDITIVE greek machinery:
+#   (g1) append_stamp carries gex/dex/vanna/charm as parallel levels×time grids, unioned
+#        strike rows, one column per stamp — same orientation as netprem.
+#   (g2) a netprem-only append (no greeks) is byte-identical to the Wave-1 frame (no
+#        walls_path/coverage_path keys leak in).
+#   (g3) frame_for_stamp truncates the greek grids AND surfaces per-stamp walls + coverage.
+#   (g4) extract_cycle_quotes pulls the freshest NBBO mid per (exp,strike,right) from a tape.
+#   (g5) oi_by_contract keys correctly; greek_columns_for_stamp joins quotes↔OI honestly.
+#   (g6) POLLER FENCE: a greek failure must NOT break the netprem column write.
+#   (g7) end-to-end build_and_stage_surfaces with quotes → frames carry greek grids + walls.
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from engine.intraday_greeks import bs_price  # noqa: E402
+
+
+def _bs_chain_quotes(spot=600.0, iv=0.20, T=7 / 365.0, exp_str="2026-07-13",
+                     strikes=(590.0, 595.0, 600.0, 605.0, 610.0)):
+    """Synthetic {quotes, oi_map} for the greek path: BS-priced mids + call-above/put-below OI."""
+    quotes, oi_map = [], {}
+    for K in strikes:
+        for right, isc in (("C", True), ("P", False)):
+            mid = float(bs_price(spot, np.array([K]), np.array([T]), np.array([iv]),
+                                 np.array([isc]), 0.043, 0.0)[0])
+            if mid <= 0.02:
+                continue
+            quotes.append({"exp_str": exp_str, "exp_years": T, "strike": float(K),
+                           "right": right, "mid": mid})
+            oi = 800.0 + max(0.0, K - spot) * 60.0 if isc else 800.0 + max(0.0, spot - K) * 60.0
+            oi_map[(exp_str, float(K), right)] = oi
+    return quotes, oi_map
+
+
+# ── (g1) append_stamp carries greek grids in netprem orientation ─────────────────────
+
+def test_append_stamp_carries_greek_grids():
+    greek = {
+        METRIC_GEX: {600.0: 5e6, 605.0: 3e6},
+        "dex": {600.0: 1e8, 605.0: 1.1e8},
+        "vanna": {600.0: 2e5, 605.0: 3e5},
+        "charm": {600.0: -4e5, 605.0: -5e5},
+    }
+    full = append_stamp(None, stamp="0931", time_step="09:31",
+                        net_by_strike={600.0: 1000.0, 605.0: -500.0},
+                        spot=602.0, asof="x", cadence_sec=120, session_date="d", root="SPY",
+                        greek_by_strike=greek,
+                        walls={"flip": 601.0, "callWall": 605.0, "putWall": 600.0},
+                        coverage=1.0)
+    # All five grids present, each levels×steps.
+    assert set(full["metrics"]) == {METRIC_NETPREM, *GREEK_METRICS}
+    validate_frame_dims(full)  # asserts EVERY grid is levels×steps
+    assert full["grids"][METRIC_GEX][full["price_levels"].index(600.0)] == [5000000.0]
+    # Second stamp appends a column to every grid.
+    full = append_stamp(full, stamp="0941", time_step="09:41",
+                        net_by_strike={600.0: 2000.0, 605.0: -900.0},
+                        spot=603.0, asof="y", cadence_sec=120, session_date="d", root="SPY",
+                        greek_by_strike={METRIC_GEX: {600.0: 6e6, 605.0: 3.5e6},
+                                         "dex": {}, "vanna": {}, "charm": {}},
+                        walls={"flip": 602.0, "callWall": 605.0, "putWall": 600.0},
+                        coverage=0.8)
+    validate_frame_dims(full)
+    assert full["grids"][METRIC_GEX][full["price_levels"].index(600.0)] == [5000000.0, 6000000.0]
+    # Strikes with no greek this stamp read 0.0 (honest), not forward-filled.
+    assert full["grids"]["dex"][full["price_levels"].index(600.0)] == [100000000.0, 0.0]
+
+
+# ── (g2) netprem-only frame unchanged (no greek bookkeeping leaks) ───────────────────
+
+def test_greek_column_missing_this_cycle_keeps_prior_greeks():
+    # Cross-cycle fence: a cycle whose greek path failed (greek_by_strike=None) must not
+    # crash and must PRESERVE prior greek columns; the failed cycle's greek column reads
+    # 0.0 (honest — no greek this cycle), while netprem still advances.
+    full = append_stamp(None, stamp="0931", time_step="09:31", net_by_strike={600.0: 1000.0},
+                        greek_by_strike={METRIC_GEX: {600.0: 5e6}, "dex": {}, "vanna": {}, "charm": {}},
+                        walls={"flip": 601.0, "callWall": 605.0, "putWall": 595.0}, coverage=1.0,
+                        spot=602.0, asof="x", cadence_sec=120, session_date="d", root="SPY")
+    full = append_stamp(full, stamp="0941", time_step="09:41", net_by_strike={600.0: 2000.0},
+                        greek_by_strike=None, walls=None, coverage=None,   # greek path failed
+                        spot=603.0, asof="y", cadence_sec=120, session_date="d", root="SPY")
+    validate_frame_dims(full)
+    gi = full["price_levels"].index(600.0)
+    assert full["grids"][METRIC_GEX][gi] == [5000000.0, 0.0]   # prior kept, new col 0.0
+    assert full["grids"][METRIC_NETPREM][gi] == [1000.0, 2000.0]  # netprem advanced
+    assert full["walls_path"][1] is None                        # failed cycle → no walls
+
+
+def test_netprem_only_frame_has_no_greek_keys():
+    full = append_stamp(None, stamp="0931", time_step="09:31",
+                        net_by_strike={600.0: 1000.0}, spot=602.0, asof="x",
+                        cadence_sec=120, session_date="d", root="SPY")
+    assert set(full["grids"]) == {METRIC_NETPREM}
+    assert full["metrics"] == [METRIC_NETPREM]
+    # Wave-1 frames must NOT carry walls_path/coverage_path (byte-compat with the old store).
+    assert "walls_path" not in full
+    assert "coverage_path" not in full
+    # frame_for_stamp on a netprem-only frame has no walls/coverage either.
+    snap = frame_for_stamp(full, "0931")
+    assert "walls" not in snap
+    assert "coverage" not in snap
+
+
+# ── (g3) frame_for_stamp truncates greeks + surfaces per-stamp walls/coverage ────────
+
+def test_frame_for_stamp_surfaces_walls_and_coverage():
+    full = None
+    for stamp, tstep, gv, flip, cov in [
+        ("0931", "09:31", 5e6, 601.0, 0.5),
+        ("0941", "09:41", 6e6, 602.0, 0.75),
+        ("0951", "09:51", 7e6, 603.0, 1.0),
+    ]:
+        full = append_stamp(full, stamp=stamp, time_step=tstep,
+                            net_by_strike={600.0: 1.0},
+                            greek_by_strike={METRIC_GEX: {600.0: gv}, "dex": {}, "vanna": {}, "charm": {}},
+                            walls={"flip": flip, "callWall": 610.0, "putWall": 590.0},
+                            coverage=cov, spot=602.0, asof="x", cadence_sec=120,
+                            session_date="d", root="SPY")
+    mid = frame_for_stamp(full, "0941")
+    # greek grid truncated to the realized window.
+    assert mid["grids"][METRIC_GEX][0] == [5000000.0, 6000000.0]
+    # walls + coverage are the mid stamp's OWN snapshot (point-in-time, not forward-filled).
+    assert mid["walls"] == {"flip": 602.0, "callWall": 610.0, "putWall": 590.0}
+    assert mid["coverage"] == {"greeks": 0.75}
+    latest = frame_for_stamp(full, "0951")
+    assert latest["walls"]["flip"] == 603.0
+    assert latest["coverage"] == {"greeks": 1.0}
+
+
+# ── (g4) extract_cycle_quotes: freshest NBBO per contract from the tape ──────────────
+
+def test_extract_cycle_quotes_takes_freshest_nbbo():
+    # Two fills for the same (exp,strike,right); the LATER trade_timestamp's NBBO wins.
+    calls = pd.DataFrame([
+        {"expiration": "2026-07-13", "strike": 600.0, "right": "C",
+         "trade_timestamp": "2026-07-06T10:00:00", "bid": 5.0, "ask": 5.2},
+        {"expiration": "2026-07-13", "strike": 600.0, "right": "C",
+         "trade_timestamp": "2026-07-06T10:05:00", "bid": 6.0, "ask": 6.4},  # fresher
+        {"expiration": "2026-07-13", "strike": 605.0, "right": "C",
+         "trade_timestamp": "2026-07-06T10:03:00", "bid": 3.0, "ask": 3.2},
+    ])
+    puts = pd.DataFrame([
+        {"expiration": "2026-07-13", "strike": 595.0, "right": "P",
+         "trade_timestamp": "2026-07-06T10:02:00", "bid": 2.0, "ask": 2.2},
+    ])
+    q = extract_cycle_quotes(calls, puts, session_date="2026-07-06", near_dte_cap_days=90)
+    by_key = {(d["strike"], d["right"]): d for d in q}
+    # 600C mid = (6.0+6.4)/2 = 6.2 (the fresher fill), NOT 5.1.
+    assert abs(by_key[(600.0, "C")]["mid"] - 6.2) < 1e-9
+    assert abs(by_key[(605.0, "C")]["mid"] - 3.1) < 1e-9
+    assert abs(by_key[(595.0, "P")]["mid"] - 2.1) < 1e-9
+    # exp_years > 0 for all (7 days out from session).
+    assert all(d["exp_years"] > 0 for d in q)
+
+
+def test_extract_cycle_quotes_drops_bad_quotes_and_expired():
+    tape = pd.DataFrame([
+        # zero bid → dropped
+        {"expiration": "2026-07-13", "strike": 600.0, "right": "C",
+         "trade_timestamp": "2026-07-06T10:00:00", "bid": 0.0, "ask": 5.0},
+        # expired (before session) → dropped
+        {"expiration": "2026-07-01", "strike": 600.0, "right": "C",
+         "trade_timestamp": "2026-07-06T10:00:00", "bid": 5.0, "ask": 5.2},
+        # beyond the DTE cap → dropped
+        {"expiration": "2027-07-13", "strike": 600.0, "right": "P",
+         "trade_timestamp": "2026-07-06T10:00:00", "bid": 5.0, "ask": 5.2},
+        # good
+        {"expiration": "2026-07-13", "strike": 605.0, "right": "P",
+         "trade_timestamp": "2026-07-06T10:00:00", "bid": 4.0, "ask": 4.2},
+    ])
+    q = extract_cycle_quotes(tape, None, session_date="2026-07-06", near_dte_cap_days=90)
+    assert len(q) == 1
+    assert q[0]["strike"] == 605.0 and q[0]["right"] == "P"
+
+
+def test_extract_cycle_quotes_empty_inputs():
+    assert extract_cycle_quotes(None, None, session_date="2026-07-06") == []
+    assert extract_cycle_quotes(pd.DataFrame(), pd.DataFrame(), session_date="2026-07-06") == []
+
+
+# ── (g5) oi_by_contract + greek_columns_for_stamp join ───────────────────────────────
+
+def test_oi_by_contract_keys():
+    oi_df = pd.DataFrame([
+        {"expiration": "2026-07-13", "strike": 600.0, "right": "C", "open_interest": 1500},
+        {"expiration": "2026-07-13", "strike": 600.0, "right": "P", "open_interest": 2200},
+    ])
+    m = oi_by_contract(oi_df)
+    assert m[("2026-07-13", 600.0, "C")] == 1500.0
+    assert m[("2026-07-13", 600.0, "P")] == 2200.0
+    assert oi_by_contract(None) == {}
+    assert oi_by_contract(pd.DataFrame()) == {}
+
+
+def test_greek_columns_for_stamp_joins_and_covers():
+    quotes, oi_map = _bs_chain_quotes()
+    out = greek_columns_for_stamp(quotes, oi_map=oi_map, spot=600.0)
+    assert set(out["by_strike"]) == set(GREEK_METRICS)
+    assert out["coverage"] == 1.0                       # every quoted strike had OI
+    assert set(out["walls"]) == {"flip", "callWall", "putWall"}
+    assert out["walls"]["callWall"] is not None and out["walls"]["callWall"] > 600.0
+    assert out["walls"]["putWall"] is not None and out["walls"]["putWall"] < 600.0
+    # A quote with no OI match contributes nothing → coverage drops below 1.
+    quotes2 = quotes + [{"exp_str": "2026-07-13", "exp_years": 7 / 365.0,
+                         "strike": 650.0, "right": "C", "mid": 0.5}]  # no OI for 650
+    out2 = greek_columns_for_stamp(quotes2, oi_map=oi_map, spot=600.0)
+    assert out2["coverage"] < 1.0
+    assert 650.0 not in out2["by_strike"][METRIC_GEX] or out2["by_strike"][METRIC_GEX].get(650.0, 0.0) == 0.0
+
+
+def test_greek_columns_empty_when_no_quotes():
+    out = greek_columns_for_stamp([], oi_map={}, spot=600.0)
+    assert out["coverage"] == 0.0
+    assert all(out["by_strike"][m] == {} for m in GREEK_METRICS)
+    assert out["walls"] == {"flip": None, "callWall": None, "putWall": None}
+
+
+# ── (g6) POLLER FENCE — a greek failure must not break the netprem write ─────────────
+
+def test_greek_failure_does_not_break_netprem(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    # Force the greek path to raise by monkeypatching greek_columns_for_stamp to blow up.
+    import scripts.build_flow_surface as bfs
+
+    def _boom(*a, **k):
+        raise RuntimeError("synthetic greek failure")
+
+    monkeypatch.setattr(bfs, "greek_columns_for_stamp", _boom)
+
+    rstk = {"SPY": _mk_strikes(s600=(1_000_000.0, 400_000.0))}
+    quotes = {"SPY": [{"exp_str": "2026-07-13", "exp_years": 7 / 365.0,
+                       "strike": 600.0, "right": "C", "mid": 5.0}]}
+    paths = bfs.build_and_stage_surfaces(
+        root_strikes_by_root=rstk, roots=["SPY"], session_date="2026-07-06",
+        asof="2026-07-06T13:51:00Z", cadence_sec=120, spot_by_root={"SPY": 602.0},
+        quotes_by_root=quotes, oi_by_root={"SPY": {("2026-07-13", 600.0, "C"): 1000.0}},
+    )
+    # Despite the greek explosion, the netprem frame is still written (fence held).
+    snap_local = next(p for p, k in paths if k != "live_flow/surface/SPY/idx.json")
+    snap = json.loads(snap_local.read_text())
+    assert is_surface_frame(snap)
+    assert snap["grids"]["netprem"][0] == [600000.0]     # netprem survived
+    # No greek grids (they failed) — netprem-only frame.
+    assert set(snap["grids"]) == {METRIC_NETPREM}
+
+
+# ── (g7) end-to-end: build_and_stage_surfaces with quotes → greek grids on disk ──────
+
+def test_build_and_stage_with_quotes_writes_greek_grids(tmp_path, monkeypatch):
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    quotes, oi_map = _bs_chain_quotes(spot=600.0)
+    rstk = {"SPY": _mk_strikes(s600=(1_000_000.0, 400_000.0), s605=(200_000.0, 900_000.0))}
+    paths = build_and_stage_surfaces(
+        root_strikes_by_root=rstk, roots=["SPY"], session_date="2026-07-06",
+        asof="2026-07-06T13:51:00Z", cadence_sec=120, spot_by_root={"SPY": 600.0},
+        quotes_by_root={"SPY": quotes}, oi_by_root={"SPY": oi_map},
+    )
+    snap_local = next(p for p, k in paths if k != "live_flow/surface/SPY/idx.json")
+    snap = json.loads(snap_local.read_text())
+    assert is_surface_frame(snap)
+    # Greek grids present + validated dims (levels×steps), alongside netprem.
+    assert set(GREEK_METRICS).issubset(set(snap["grids"]))
+    validate_frame_dims(snap)
+    # Walls + coverage surfaced on the per-stamp snapshot.
+    assert set(snap.get("walls", {})) >= {"flip", "callWall", "putWall"}
+    cov = (snap.get("coverage") or {}).get("greeks")
+    assert isinstance(cov, (int, float)) and 0.0 <= cov <= 1.0
