@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-25T12:04:02.924125+00:00",
-  "count": 76,
+  "generated_at": "2026-07-25T14:25:52.622656+00:00",
+  "count": 79,
   "institutions": [
     "Deutsche Bank",
     "Goldman Sachs",
@@ -15,6 +15,61 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jvdamhulfoh-9db6fe",
+      "title": "Probably the Most Bearish Chart of the Weekend",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-25T12:03:06Z",
+      "summary_points": [
+        "**Nasdaq 100 bearish momentum**: 7% July decline (worst 22y) + hedge funds aggressively selling Magnificent 7 (least long cohort, L/S ratio at 10th percentile) signals extreme positioning risk.",
+        "**Retail flow collapse**: Vanda US Retail Net Flow Index at pandemic-era lows confirms sustained retail retreat, heightening market vulnerability.",
+        "**Leveraged ETFs exposure**: Global notional exposure down ~$100B from June peak; Emini SPX non-dealer length at ~$267B—critical volatility risk factor.",
+        "**L/S Ratio Shift**: US Fundamental long/short ratio (MV) rose to 1.679 (78th percentile), indicating elevated positioning and potential market dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-1tmr0fjwz6r-40b905",
+      "title": "US Econ Notes July 24",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-25T12:01:33Z",
+      "summary_points": [
+        "**FOMC Hike Risk Amid Geopolitical Tensions**: Middle East conflict escalation and energy price spikes (post-ceasefire collapse) elevate 25bps hike probability; market expectations resurfaced as energy prices surged near mid-May highs.",
+        "**Q2 GDP Downgrade with Strong Domestic Demand**: Q2 real GDP forecast revised down to 1.9% (annualized) due to net exports, but private domestic demand remains robust at 3.3%—highest since Q3 2024.",
+        "**Inflation Outlook & Fed Stance**: June core PCE at 3.3% YoY (0.19% MoM) and ECI forecast at 3.4% YoY; Fed Chair Warsh deems inflation \"not mission accomplished\" amid US/Iran ceasefire collapse, worsening near-term outlook."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-romgvlkmfpn-86c58d",
+      "title": "Three Crosscurrents Reshaping Markets",
+      "institution": "The Market Ear",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-25T12:00:55Z",
+      "summary_points": [
+        "**Geopolitical Risk Premium**: Middle East escalation pushed Brent to $100 (only $13 above JPMorgan’s fair value), with Hormuz traffic at 50% pre-war and pipeline disruption risks.",
+        "**AI Credit Market Strain**: Hyperscaler AI capex (Meta’s $27.3B Hyperion, Google’s $195-205B 2026) causes deteriorating cash flow conversion and widening bond spreads, pressuring credit markets.",
+        "**AI Debt Crowding Out Markets**: Hyperscaler debt issuance now exceeds US Treasury supply, shifting focus from equity to credit risks as AI spending becomes a systemic credit burden."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": null,
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-nsykygenf6i-d40f04",
       "title": "MS AI Debt Financing Tracker Heat Advisory",
