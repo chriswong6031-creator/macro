@@ -786,6 +786,24 @@ on:
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"
+      # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
+      # shipping #3488: NONE of the boundary's enforcement files were listed, so a
+      # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
+      # site_access.yml, paywall) never triggered ci.yml — the drift tests the
+      # boundary docs point at only ever fired incidentally, on unrelated PRs.
+      # List every subject + test file the tier-gate job runs (app/main.py is
+      # already listed above), so the exact PRs that move the boundary are gated.
+      - "app/regwall.py"
+      - "app/paywall.py"
+      - "app/deploy/Caddyfile"
+      - "config/site_access.yml"
+      - "tests/test_site_access_boundary.py"
+      - "tests/test_regwall.py"
+      - "tests/test_regwall_json_gate.py"
+      - "tests/test_paywall.py"
+      - "tests/test_api_paywall.py"
+      - "tests/test_special_situations_gate.py"
+      - "tests/test_china_special_situations_gate.py"
   workflow_dispatch:
 
 permissions:
