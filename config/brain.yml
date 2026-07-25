@@ -16,7 +16,11 @@ lanes:
     provider_order:
       - deepseek
       - anthropic        # haiku fallback only — model overridden below
-    deepseek_model: deepseek-chat
+    # DeepSeek renamed its models: "deepseek-chat" was retired and now 400s
+    # ("supported API model names are deepseek-v4-pro or deepseek-v4-flash").
+    # v4-pro = flagship successor to deepseek-chat; switch to deepseek-v4-flash for
+    # a cheaper/faster free-tier lane. (Verified live on the VPS key 2026-07-25.)
+    deepseek_model: deepseek-v4-pro
     deepseek_key_env: DEEPSEEK_API_KEY
     deepseek_base_url: https://api.deepseek.com/anthropic
     # Fallback model when DeepSeek unavailable (operator-configurable)

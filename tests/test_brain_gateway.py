@@ -136,11 +136,11 @@ def test_config_token_ceilings_present():
 # ---------------------------------------------------------------------------
 
 def test_fast_lane_deepseek_model():
-    """fast lane config specifies deepseek-chat as primary model."""
+    """fast lane config specifies deepseek-v4-pro as primary model (deepseek-chat retired)."""
     root = _make_temp_root()
     cfg = gw._load_brain_config(root)
     fast = cfg["lanes"]["fast"]
-    assert fast["deepseek_model"] == "deepseek-chat"
+    assert fast["deepseek_model"] == "deepseek-v4-pro"
 
 
 def test_fast_lane_fallback_model_is_haiku():
