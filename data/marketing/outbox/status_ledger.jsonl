@@ -17,3 +17,5 @@
 {"id":"ob-2026-07-25-4380fdbc99","from":"posting","to":"posted","at":"2026-07-25T19:13:49Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a650aedfdcf13844f9a7158","external_url":null,"at":"2026-07-25T19:13:48Z"}}
 {"id":"ob-2026-07-25-31317374b5","from":"approved","to":"posting","at":"2026-07-25T20:49:03Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-07-25-31317374b5","from":"posting","to":"posted","at":"2026-07-25T20:49:04Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a65213fb7f6717db597e208","external_url":null,"at":"2026-07-25T20:49:03Z"}}
+{"id":"ob-2026-07-25-8431ea805e","from":"approved","to":"posting","at":"2026-07-25T22:44:21Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-07-25-8431ea805e","from":"posting","to":"posted","at":"2026-07-25T22:44:22Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a653c45351863828cebc13b","external_url":null,"at":"2026-07-25T22:44:21Z"}}
