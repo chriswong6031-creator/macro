@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine.flow_leaders import (
     BoardALegs,
     BoardBLegs,
+    INFLECT_FRESH_MAX,
     INFLECT_NEG_SESSIONS,
     MIN_Z,
     MIN_Z_HISTORY,
@@ -255,13 +256,13 @@ class TestFlowZInfSafety:
         assert legs.A2_flow_z_hot is None
 
 
-class TestFlowInflectFirstFlip:
-    """m1: days_since_inflection = bars since the FIRST positive flip event."""
+class TestFlowInflectNewestFlip:
+    """m1: days_since_inflection = bars since the NEWEST valid flip event."""
 
     def test_canonical_example(self):
         """[-1,-1,-1,5,2,3] → inflected True, days_since_inflection 2.
 
-        The flip event is index 3 (5.0): 3 negatives precede it.
+        The flip event is index 3 (5.0): 3 consecutive negatives precede it.
         Current bar (index 5) is 2 bars after the flip → days_since = 2.
         """
         s = pd.Series([-1.0, -1.0, -1.0, 5.0, 2.0, 3.0])
@@ -269,9 +270,9 @@ class TestFlowInflectFirstFlip:
         assert result["inflected"] is True
         assert result["days_since_inflection"] == 2
 
-    def test_flip_at_earliest_qualifying_event(self):
+    def test_only_one_qualifying_event_in_history(self):
         """Flip at index 3 (5.0), more positives follow; days_since is from index 3."""
-        # [-3,-2,-1,5,4,3,2] → flip at index 3, days_since = 3
+        # [-3,-2,-1,5,4,3,2] → the only [-,-,-,+] is at index 3, days_since = 3
         s = pd.Series([-3.0, -2.0, -1.0, 5.0, 4.0, 3.0, 2.0])
         result = flow_inflect(s)
         assert result["inflected"] is True
@@ -605,25 +606,176 @@ class TestFlowInflect:
         assert result["inflected"] is False
 
     def test_days_since_inflection(self):
-        # The function finds the FIRST positive bar (flip event) that follows ≥3 negatives.
+        # The function finds the NEWEST positive bar preceded by ≥3 CONSECUTIVE negatives.
         # s = [-3, -2, -1, 5, 4, 3]:
-        #   Flip event at index 3 (5.0): 3 negatives precede it → qualifies.
-        #   Current bar is index 5; days_since = 5 - 1 - 3 = 2.
+        #   Indices 4 and 5 are positive but follow positives → no run, no flip.
+        #   Flip event at index 3 (5.0): 3 consecutive negatives precede it → qualifies.
+        #   Current bar is index 5; days_since = 5 - 3 = 2.
         s = pd.Series([-3.0, -2.0, -1.0, 5.0, 4.0, 3.0])
         result = flow_inflect(s)
         assert result["inflected"] is True
         assert result["days_since_inflection"] == 2
 
     def test_days_since_inflection_older(self):
-        # Inflection at index 3 (5.0), then 2 negatives, then check
-        # positives at index 3 qualify (3 negatives before it at 0,1,2)
-        # but indices 4,5 are negative so the search finds index 3 as the most recent positive.
+        # Inflection at index 3 (5.0), then 2 negatives.  Indices 4/5 are negative
+        # so they are not flip candidates; the newest valid flip is still index 3.
         s = pd.Series([-3.0, -2.0, -1.0, 5.0, -4.0, -3.0])
         result = flow_inflect(s)
-        # latest is negative → inflected=False; but days_since still finds last inflection
+        # latest is negative → inflected=False; but days_since still reports the flip
         assert result["inflected"] is False
-        # last positive after ≥3 negatives was at index 3 → days_since = 2
+        # newest positive after ≥3 consecutive negatives was at index 3 → days_since = 2
         assert result["days_since_inflection"] == 2
+
+
+class TestFlowInflectWashoutTruth:
+    """OEU M-FIX: the washout-flip is the NEWEST *local* [-,-,-,+] pattern.
+
+    Pre-fix behaviour (the bug these tests pin closed): `inflected` counted ALL
+    negatives anywhere in the preceding history, and `days_since_inflection`
+    searched forward from the START of history for the EARLIEST qualifying
+    flip — so a broken run still fired and an old flip stayed "fresh" forever.
+    """
+
+    # ── the flip pattern itself ────────────────────────────────────────────
+    def test_three_consecutive_negatives_then_flip_fires_day_zero(self):
+        """`---+` — the canonical washout-flip, day 0."""
+        s = pd.Series([-4.0, -3.0, -2.0, 6.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is True
+        assert result["days_since_inflection"] == 0
+
+    def test_zero_session_breaks_the_run(self):
+        """`---0+` MUST fail: a flat session is not a negative session.
+
+        Three negatives ARE present, so pre-fix (cumulative count) this fired
+        True — the flat session must break the run for the test to discriminate.
+        """
+        s = pd.Series([-4.0, -3.0, -2.0, 0.0, 6.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    def test_nan_session_breaks_the_run(self):
+        """`---<gap>+` MUST fail: a missing session is not evidence of selling.
+
+        Pre-fix, dropna() compacted the series and spliced the run together.
+        """
+        s = pd.Series([-4.0, -3.0, -2.0, float("nan"), 6.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    def test_positive_session_inside_the_run_breaks_it(self):
+        """`--+-+` — only one negative immediately precedes the final flip."""
+        s = pd.Series([-4.0, -3.0, 1.0, -2.0, 5.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    def test_cumulative_negatives_do_not_qualify(self):
+        """Four negatives scattered across history, never 3 in a row → no flip.
+
+        This is the exact shape that made Board B admit nearly everyone.
+        """
+        s = pd.Series([-1.0, 2.0, -1.0, 2.0, -1.0, 2.0, -1.0, 2.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    # ── interrupted / stale flips ──────────────────────────────────────────
+    def test_interrupted_run_after_flip_reports_flip_but_not_inflected(self):
+        """`---+---` — flip is real but the tape went back in the red."""
+        s = pd.Series([-4.0, -3.0, -2.0, 6.0, -1.0, -2.0, -3.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] == 3
+
+    def test_newest_flip_wins_over_the_older_one(self):
+        """`---+---+` — days_since counts from the SECOND flip, not the first."""
+        s = pd.Series([-4.0, -3.0, -2.0, 6.0, -1.0, -2.0, -3.0, 7.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is True
+        assert result["days_since_inflection"] == 0
+
+    def test_flip_at_the_freshness_boundary_still_fires(self):
+        """A flip exactly INFLECT_FRESH_MAX sessions old is still fresh."""
+        s = pd.Series([-4.0, -3.0, -2.0] + [1.0] * (INFLECT_FRESH_MAX + 1))
+        result = flow_inflect(s)
+        assert result["days_since_inflection"] == INFLECT_FRESH_MAX
+        assert result["inflected"] is True
+
+    def test_stale_flip_beyond_window_fails(self):
+        """One session past the window → the turn is no longer news."""
+        s = pd.Series([-4.0, -3.0, -2.0] + [1.0] * (INFLECT_FRESH_MAX + 2))
+        result = flow_inflect(s)
+        assert result["days_since_inflection"] == INFLECT_FRESH_MAX + 1
+        assert result["inflected"] is False
+
+    def test_very_old_flip_never_stays_fresh(self):
+        """Pre-fix this reported days_since from the earliest flip forever."""
+        s = pd.Series([-4.0, -3.0, -2.0, 6.0] + [1.0] * 40)
+        result = flow_inflect(s)
+        assert result["days_since_inflection"] == 40
+        assert result["inflected"] is False
+
+    # ── nulls: cold-start only ─────────────────────────────────────────────
+    def test_insufficient_history_is_null_not_false(self):
+        """<4 sessions → could not observe → None, never False."""
+        s = pd.Series([-4.0, -3.0, 6.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is None
+        assert result["days_since_inflection"] is None
+
+    def test_insufficient_non_null_history_is_null(self):
+        """Length ≥4 but <4 real observations → still cold-start."""
+        s = pd.Series([-4.0, float("nan"), float("nan"), 6.0, float("nan")])
+        result = flow_inflect(s)
+        assert result["inflected"] is None
+        assert result["days_since_inflection"] is None
+
+    def test_all_positive_history_has_no_flip(self):
+        s = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    def test_all_negative_history_has_no_flip(self):
+        s = pd.Series([-1.0, -2.0, -3.0, -4.0, -5.0])
+        result = flow_inflect(s)
+        assert result["inflected"] is False
+        assert result["days_since_inflection"] is None
+
+    # ── board wiring ───────────────────────────────────────────────────────
+    def test_b5_leg_tracks_the_corrected_verdict(self):
+        """A stale flip must not light B5 (and so must not fire Board B)."""
+        stale = flow_inflect(pd.Series([-4.0, -3.0, -2.0, 6.0] + [1.0] * 10))
+        legs = board_b_legs(
+            washout_ctx={"bb_lower_reclaim_days": 2},
+            flow_inflect_val=stale,
+            failed_breakout_trap=False,
+        )
+        assert legs.B5_flow_inflect is False
+        assert board_b_fire(legs) is False
+
+        fresh = flow_inflect(pd.Series([-4.0, -3.0, -2.0, 6.0]))
+        legs_fresh = board_b_legs(
+            washout_ctx={"bb_lower_reclaim_days": 2},
+            flow_inflect_val=fresh,
+            failed_breakout_trap=False,
+        )
+        assert legs_fresh.B5_flow_inflect is True
+        assert board_b_fire(legs_fresh) is True
+
+    def test_cold_start_keeps_b5_null_not_false(self):
+        """Null ≠ False (FL-R6): too little history leaves B5 unavailable."""
+        cold = flow_inflect(pd.Series([-4.0, -3.0, 6.0]))
+        legs = board_b_legs(
+            washout_ctx={"bb_lower_reclaim_days": 2},
+            flow_inflect_val=cold,
+            failed_breakout_trap=False,
+        )
+        assert legs.B5_flow_inflect is None
+        assert board_b_fire(legs) is False
 
 
 # ── flow_z ────────────────────────────────────────────────────────────────────

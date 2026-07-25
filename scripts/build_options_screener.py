@@ -205,10 +205,18 @@ def _load_gex_summary(ticker: str) -> pd.DataFrame | None:
 
 
 def _compute_iv_rank(df: pd.DataFrame) -> tuple[float | None, int, bool]:
-    """Return (iv_rank 0-100, n_days, is_young) from a GEX summary DataFrame.
+    """Return (iv_rank 0-100, n_obs, is_young) from a GEX summary DataFrame.
 
     iv_rank = percentile of current IV30 within available history.
     is_young = True when history_depth_days < YOUNG_THRESHOLD_DAYS.
+
+    NOTE on the middle element: it is ``n_obs`` — the count of sessions with a
+    non-null IV30 — NOT a calendar-day span.  The calendar span is computed below
+    as ``depth_days`` and used only to decide ``is_young``; it is deliberately not
+    returned.  The caller aggregates the observation count into the coverage key
+    ``median_depth_days``, whose name is historical: the page copy therefore reads
+    "sessions observed", not "calendar days".  Any ticker with a gap day makes the
+    two quantities diverge, so they are not interchangeable.
     """
     if df is None or df.empty or "iv30" not in df.columns:
         return None, 0, True
@@ -340,6 +348,28 @@ def _safe_float(v: Any, ndigits: int = 2) -> float | None:
         return None
 
 
+def _safe_str(v: Any) -> str | None:
+    """Normalize a store cell to a clean string, or None when it carries no value.
+
+    Schema-boundary guard.  pandas represents a missing cell in an object/string
+    column as float NaN, and ``float('nan')`` is TRUTHY — so the idiomatic-looking
+    ``str(v or "") or None`` evaluates to the literal string ``"nan"`` and ships it
+    to the page, where a truthiness check cannot tell it from a real regime label.
+    Null in, null out.
+    """
+    if v is None:
+        return None
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    s = str(v).strip()
+    if not s or s.lower() in {"nan", "none", "nat", "<na>"}:
+        return None
+    return s
+
+
 def _net_prem_tone(net_prem: float | None, tape_tone: str | None) -> str:
     """Return a labeled heuristic tone chip — SOFT, labeled as such.
 
@@ -393,11 +423,14 @@ def build_screener_rows(
         asof_date = str(gex_df.index[-1])[:10]
 
         iv30 = _safe_float(latest.get("iv30"), 4)
-        iv_rank, n_days, is_young = _compute_iv_rank(gex_df)
+        # n_obs = sessions with a non-null IV30, not a calendar-day span (see
+        # _compute_iv_rank).  Aggregated into the historically-named coverage key
+        # `median_depth_days`, which the page reports as "sessions observed".
+        iv_rank, n_obs, is_young = _compute_iv_rank(gex_df)
         if is_young:
             n_young += 1
-        if n_days > 0:
-            depth_days_list.append(n_days)
+        if n_obs > 0:
+            depth_days_list.append(n_obs)
 
         # Implied move proxy: IV30 × sqrt(30/365) — computable from store
         implied_move_30d = None
@@ -412,14 +445,18 @@ def build_screener_rows(
         tier = str(latest.get("tier") or "")
 
         # New GEX fields
-        gamma_regime = str(latest.get("gamma_regime") or "") or None
+        gamma_regime = _safe_str(latest.get("gamma_regime"))
         dist_to_flip_pct = _safe_float(latest.get("dist_to_flip_pct"), 2)
         net_gex_bn = _safe_float(latest.get("net_gex_bn"), 3)
 
-        # Computed distances (null-safe)
+        # Computed distances (null-safe).  ALL distances on this page are quoted
+        # as a percentage of SPOT — "how far is this level from where the stock
+        # trades now" — so max-pain distance uses the same denominator as the wall
+        # distances below.  (It divided by max_pain before, which made the two
+        # columns silently non-comparable.)
         pain_dist_pct = None
-        if spot is not None and max_pain is not None and max_pain != 0:
-            pain_dist_pct = round((spot - max_pain) / max_pain * 100, 2)
+        if spot is not None and spot != 0 and max_pain is not None:
+            pain_dist_pct = round((spot - max_pain) / spot * 100, 2)
 
         wall_up_dist_pct = None
         if wall_up is not None and spot is not None and spot != 0:
@@ -490,7 +527,7 @@ def build_screener_rows(
             "asof": asof_date,
             "iv30": round(iv30 * 100, 1) if iv30 is not None else None,  # pct
             "iv_rank": iv_rank,
-            "iv_rank_n": n_days,
+            "iv_rank_n": n_obs,
             "iv_rank_young": is_young,
             "implied_move_30d": implied_move_30d,
             "pc_oi": pc_oi,
@@ -523,7 +560,9 @@ def build_screener_rows(
     # Sort: by gross_premium_mn desc (most active first), then ticker
     rows.sort(key=lambda r: (-(r["gross_premium_mn"] or 0), r["ticker"]))
 
-    # Determine overall history depth (median days)
+    # Median history depth across names, in SESSIONS OBSERVED (not calendar days —
+    # the `median_depth_days` key name is historical; the page copy says "sessions
+    # observed" so the number and its label agree).
     med_depth = int(sorted(depth_days_list)[len(depth_days_list) // 2]) if depth_days_list else 0
 
     coverage = {

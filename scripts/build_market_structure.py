@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import sys
 from datetime import datetime, timezone
@@ -162,6 +163,92 @@ def _build_gamma_block(data_dir: Path) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.warning("market_structure: gamma block failed: %s", exc)
         return null
+
+
+# ---------------------------------------------------------------------------
+# Week map (locked Friday close ±1σ/±2σ)
+# ---------------------------------------------------------------------------
+
+_WEEK_TRADING_DAYS = 5   # Mon–Fri: the horizon the weekly band covers
+
+
+def _build_week_map(closes: pd.Series | None, data_dir: Path, gamma_block: dict) -> dict | None:
+    """Weekly expected-move bands, locked at the prior Friday's close.
+
+    FORMULA (all of it — no hidden steps):
+
+      week_start          = Monday of the asof session's week
+      locked_close        = last SPX close STRICTLY BEFORE week_start
+                            (i.e. the prior week's final session — normally Friday)
+      iv30                = SPX 30-day implied vol from data/cboe/gex_SPX.parquet,
+                            taken at the locked session (last row on or before
+                            locked_at), so the band is priced off the same close
+                            it is anchored to
+      sigma_week          = iv30 * sqrt(5 / 252)
+                            — annualised vol rescaled to a 5-trading-day horizon.
+                            ASSUMES A FLAT TERM STRUCTURE: a 30-day IV is the only
+                            IV the store carries, so a true 1-week ATM IV is not
+                            available.  This is a model estimate, disclosed as one
+                            on the page.
+      band_Ksigma_{lo,hi} = locked_close * (1 ∓ K * sigma_week),  K ∈ {1, 2}
+
+    The bands are LOCKED: every run inside the same Mon–Fri week reproduces the
+    same numbers, because both inputs are read strictly before that Monday. They
+    reset when the calendar rolls into the next week.
+
+    Returns None when the inputs cannot support the section (no closes, no prior
+    week, no IV) — the caller omits the key and the page shows its warming-up
+    state honestly rather than inventing a band.
+    """
+    if closes is None or closes.empty:
+        return None
+    try:
+        asof_ts = pd.Timestamp(closes.index[-1]).normalize()
+        week_start = asof_ts - pd.Timedelta(days=int(asof_ts.weekday()))
+        week_end   = week_start + pd.Timedelta(days=4)
+
+        prior = closes[closes.index < week_start]
+        if prior.empty:
+            return None
+        locked_close = float(prior.iloc[-1])
+        locked_at_ts = pd.Timestamp(prior.index[-1])
+        if not np.isfinite(locked_close) or locked_close <= 0:
+            return None
+
+        gex = _read_parquet(data_dir / "cboe" / "gex_SPX.parquet")
+        if gex is None or gex.empty or "iv30" not in gex.columns:
+            return None
+        iv_series = gex["iv30"].astype(float).dropna()
+        # Pin the IV to the locked session itself.  The store carries weekend rows
+        # that repeat Friday's spot under a Sat/Sun stamp, so "last row before
+        # Monday" would silently pick a weekend row's IV instead of Friday's.
+        iv_at_lock = iv_series[iv_series.index <= locked_at_ts]
+        if iv_at_lock.empty:
+            return None
+        iv30 = float(iv_at_lock.iloc[-1])
+        if not np.isfinite(iv30) or iv30 <= 0:
+            return None
+
+        sigma_week = iv30 * math.sqrt(_WEEK_TRADING_DAYS / _TRADING_YEAR)
+        off1 = locked_close * sigma_week
+        off2 = 2.0 * off1
+
+        return {
+            "week_start":         str(week_start.date()),
+            "week_end":           str(week_end.date()),
+            "locked_close":       round(locked_close, 2),
+            "locked_at":          locked_at_ts.isoformat(),
+            "band_1sigma_lo":     round(locked_close - off1, 2),
+            "band_1sigma_hi":     round(locked_close + off1, 2),
+            "band_2sigma_lo":     round(locked_close - off2, 2),
+            "band_2sigma_hi":     round(locked_close + off2, 2),
+            "gamma_flip":         gamma_block.get("gamma_flip"),
+            "implied_weekly_pct": round(sigma_week * 100, 2),
+            "source":             "spx_iv30_scaled_5d",
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("market_structure: week_map failed: %s", exc)
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -579,6 +666,9 @@ def main() -> int:
     sys_block, hist_frame = _build_systematic_block(closes)
     vol_block       = _build_vol_block(closes, data_dir)
     disp_block      = _build_dispersion_block(data_dir)
+    week_map        = _build_week_map(closes, data_dir, gamma_block)
+    if week_map is None:
+        log.warning("market_structure: week_map unavailable — Weekly Range section will show its warming-up state")
 
     # --- Change feed ---
     from engine.market_structure_context import build_changes  # noqa: PLC0415
@@ -592,6 +682,7 @@ def main() -> int:
         "systematic":     sys_block,
         "vol":            vol_block,
         "dispersion":     disp_block,
+        "week_map":       week_map,
     }
     changes, prev_state = build_changes(prev_artifact, artifact_draft, artifact_draft["asof"])
 

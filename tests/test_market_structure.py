@@ -548,3 +548,162 @@ class TestLedgerLaneGate:
         out_dir = tmp_path / "data" / "market_structure"
         assert (out_dir / "latest.json").exists(), "latest.json not written (off-lane)"
         assert (out_dir / "history.parquet").exists(), "history.parquet not written (off-lane)"
+
+
+# ---------------------------------------------------------------------------
+# OEU M-FIX — week_map: the Weekly Range section's data, which the template has
+# always rendered but the builder never emitted (page stuck on "warming up").
+# ---------------------------------------------------------------------------
+
+class TestWeekMap:
+    """_build_week_map: locked prior-Friday close ±1σ/±2σ from scaled IV30."""
+
+    IV30 = 0.16          # 16% annualised
+    MON_CLOSE = 5000.0   # every session in the test week closes here
+
+    def _make_store(self, tmp_path: Path, *, iv30: float | None = None,
+                    last_date: str = "2026-07-24") -> Path:
+        """Synthetic store: daily SPX closes + a gex_SPX parquet with iv30.
+
+        Fridays close at 4900, every other session at 5000, so a band anchored to
+        the prior Friday is unmistakably distinguishable from one anchored to the
+        latest close.  Weekend rows are added to gex_SPX (the real Cboe store
+        carries them, repeating Friday's spot) so the IV-pinning is exercised.
+        """
+        iv30 = self.IV30 if iv30 is None else iv30
+        idx = pd.bdate_range("2026-05-01", last_date)
+        closes = pd.Series(
+            [4900.0 if d.weekday() == 4 else self.MON_CLOSE for d in idx],
+            index=idx, name="close",
+        )
+        yahoo_dir = tmp_path / "data" / "yahoo"
+        yahoo_dir.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({"close": closes}).to_parquet(yahoo_dir / "_GSPC.parquet")
+
+        # gex store: business days at the real IV, weekend rows at a WRONG IV so a
+        # test failure localises to "picked a weekend row" rather than to arithmetic.
+        gidx = pd.date_range("2026-05-01", last_date, freq="D")
+        gex = pd.DataFrame(
+            {
+                "spot": [5000.0] * len(gidx),
+                "net_gex_bn": [50.0] * len(gidx),
+                "gamma_flip": [4950.0] * len(gidx),
+                "dist_to_flip_pct": [1.0] * len(gidx),
+                "gamma_regime": ["long"] * len(gidx),
+                "iv30": [iv30 if d.weekday() < 5 else 0.99 for d in gidx],
+            },
+            index=gidx,
+        )
+        cboe_dir = tmp_path / "data" / "cboe"
+        cboe_dir.mkdir(parents=True, exist_ok=True)
+        gex.to_parquet(cboe_dir / "gex_SPX.parquet")
+        return tmp_path / "data"
+
+    def _closes(self, data_dir: Path) -> pd.Series:
+        from scripts.build_market_structure import _spx_closes
+        return _spx_closes(data_dir)
+
+    def _build(self, tmp_path: Path, **kw) -> dict | None:
+        from scripts.build_market_structure import _build_week_map
+        data_dir = self._make_store(tmp_path, **kw)
+        return _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0})
+
+    def test_emits_a_week_map_at_all(self, tmp_path):
+        """The regression that shipped: the key was never produced."""
+        assert self._build(tmp_path) is not None
+
+    def test_locks_to_the_prior_week_final_close(self, tmp_path):
+        """asof is Fri 2026-07-24; the anchor is Fri 2026-07-17's close, not today's."""
+        wm = self._build(tmp_path)
+        assert wm["week_start"] == "2026-07-20"
+        assert wm["week_end"] == "2026-07-24"
+        assert wm["locked_at"][:10] == "2026-07-17"
+        assert wm["locked_close"] == 4900.0
+
+    def test_band_width_is_iv30_scaled_to_five_trading_days(self, tmp_path):
+        import math
+        from scripts.build_market_structure import _TRADING_YEAR, _WEEK_TRADING_DAYS
+        wm = self._build(tmp_path)
+        sigma_week = self.IV30 * math.sqrt(_WEEK_TRADING_DAYS / _TRADING_YEAR)
+        assert wm["implied_weekly_pct"] == round(sigma_week * 100, 2)
+        off = 4900.0 * sigma_week
+        assert wm["band_1sigma_lo"] == round(4900.0 - off, 2)
+        assert wm["band_1sigma_hi"] == round(4900.0 + off, 2)
+
+    def test_two_sigma_is_twice_the_one_sigma_offset(self, tmp_path):
+        """Within the payload's 2-decimal rounding (bands are rounded, not exact)."""
+        wm = self._build(tmp_path)
+        c = wm["locked_close"]
+        assert (c - wm["band_2sigma_lo"]) == pytest.approx(2 * (c - wm["band_1sigma_lo"]), abs=0.02)
+        assert (wm["band_2sigma_hi"] - c) == pytest.approx(2 * (wm["band_1sigma_hi"] - c), abs=0.02)
+
+    def test_bands_are_ordered_and_straddle_the_anchor(self, tmp_path):
+        wm = self._build(tmp_path)
+        assert (wm["band_2sigma_lo"] < wm["band_1sigma_lo"] < wm["locked_close"]
+                < wm["band_1sigma_hi"] < wm["band_2sigma_hi"])
+
+    def test_iv_is_pinned_to_the_locked_session_not_a_weekend_row(self, tmp_path):
+        """The Cboe store stamps Sat/Sun rows; those must not price the band.
+
+        Weekend rows carry iv30=0.99 in this fixture — a band built off them would
+        be ~13% wide instead of ~2.3%.
+        """
+        wm = self._build(tmp_path)
+        assert wm["implied_weekly_pct"] < 5.0, "picked up a weekend IV row"
+
+    def test_band_is_locked_across_the_week(self, tmp_path):
+        """Every run Mon–Fri inside one week must reproduce identical numbers."""
+        import shutil
+        results = []
+        for i, last in enumerate(["2026-07-20", "2026-07-22", "2026-07-24"]):
+            sub = tmp_path / f"run{i}"
+            sub.mkdir()
+            results.append(self._build(sub, last_date=last))
+        for key in ("locked_close", "band_1sigma_lo", "band_1sigma_hi",
+                    "band_2sigma_lo", "band_2sigma_hi", "implied_weekly_pct",
+                    "week_start", "week_end"):
+            assert len({r[key] for r in results}) == 1, f"{key} drifted mid-week"
+
+    def test_none_when_no_prior_week_exists(self, tmp_path):
+        """Cold start: nothing before this Monday → no band, no invention."""
+        from scripts.build_market_structure import _build_week_map
+        data_dir = self._make_store(tmp_path)
+        closes = self._closes(data_dir)
+        week_start = pd.Timestamp("2026-07-20")
+        truncated = closes[closes.index >= week_start]
+        assert _build_week_map(truncated, data_dir, {"gamma_flip": None}) is None
+
+    def test_none_when_iv_missing(self, tmp_path):
+        from scripts.build_market_structure import _build_week_map
+        data_dir = self._make_store(tmp_path)
+        gex = pd.read_parquet(data_dir / "cboe" / "gex_SPX.parquet").drop(columns=["iv30"])
+        gex.to_parquet(data_dir / "cboe" / "gex_SPX.parquet")
+        assert _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": None}) is None
+
+    def test_none_when_closes_absent(self, tmp_path):
+        from scripts.build_market_structure import _build_week_map
+        data_dir = self._make_store(tmp_path)
+        assert _build_week_map(None, data_dir, {}) is None
+        assert _build_week_map(pd.Series(dtype=float), data_dir, {}) is None
+
+    def test_gamma_flip_carried_through(self, tmp_path):
+        wm = self._build(tmp_path)
+        assert wm["gamma_flip"] == 4950.0
+
+    def test_builder_puts_week_map_in_the_artifact(self, tmp_path, monkeypatch):
+        """End-to-end: main() must write the key the template reads."""
+        import importlib
+        import lib.config as _cfg
+        data_dir = self._make_store(tmp_path)
+        monkeypatch.setattr(_cfg, "data_dir", lambda: data_dir)
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        import scripts.build_market_structure as _bms
+        importlib.reload(_bms)
+        try:
+            _bms.main()
+            artifact = json.loads((data_dir / "market_structure" / "latest.json").read_text())
+        finally:
+            importlib.reload(_bms)
+        assert "week_map" in artifact, "template reads msp.week_map — builder must emit it"
+        assert artifact["week_map"] is not None
+        assert artifact["week_map"]["locked_close"] == 4900.0

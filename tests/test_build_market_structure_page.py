@@ -99,13 +99,36 @@ def test_dispersion_panel_present():
 
 
 def test_week_map_panel_present():
-    """Week map panel shows when fixture has week_map key."""
-    html = _render_with_fixture()
+    """Week map panel renders its data, not a warming-up placeholder.
+
+    Hardened (OEU M-FIX): this used to branch on whether the fixture happened to
+    carry `week_map` and accept either outcome, so it passed for the whole period
+    the builder emitted nothing and the section was permanently "warming up".
+    The fixture is the contract — assert against it.
+    """
     raw = json.loads(FIXTURE.read_text())
-    if raw.get("week_map"):
-        assert "locked_close" in html or "Locked Friday" in html or "锁定周五" in html
-    else:
-        assert 'class="warmup"' in html or "week_map" in html
+    wm = raw.get("week_map")
+    assert wm, "fixture must carry week_map — it is the shape the builder must emit"
+
+    html = _render_with_fixture()
+    assert "Locked Friday" in html and "锁定周五" in html
+    # the anchor price and both band edges must actually reach the page
+    assert f'{wm["locked_close"]:.1f}' in html
+    assert f'{wm["band_1sigma_lo"]:.0f}' in html
+    assert f'{wm["band_1sigma_hi"]:.0f}' in html
+    assert f'±{wm["implied_weekly_pct"]:.2f}%' in html
+
+
+def test_week_map_absent_falls_back_to_warmup(tmp_path):
+    """No week_map → the honest warming-up state, never a fabricated band."""
+    raw = json.loads(FIXTURE.read_text())
+    raw.pop("week_map", None)
+    stub = tmp_path / "market_structure_latest.json"
+    stub.write_text(json.dumps(raw), encoding="utf-8")
+
+    html = render(REPO, fixture=stub)
+    assert "Week map warming up" in html
+    assert "Locked Friday" not in html
 
 
 def test_state_changes_strip_present():
