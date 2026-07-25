@@ -297,6 +297,21 @@ jobs:
           # sole advancer of that forward ledger.
           central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
 
+          # Flow Leaders Desk — page-only re-render from COMMITTED stores (options_flow /
+          # tape_flow / polygon_gex / options_entry parquets are git-tracked; stockdata +
+          # personality JSONs come fresh from spine's build_site). Display-tier by design:
+          # zero data/ writes, absent-safe inputs, exit 0 — can never break the deploy.
+          # WHY (2026-07-25): the builder ran ONLY in daily.yml, and 3 straight dead
+          # nightlies (150m-cap cancels 07-22/23, runner loss 07-24) froze the baked page
+          # at its pre-#3224 render — banned-vocab slugs live on a doctrine surface —
+          # while every express lane refreshed the rest of the site around it (nav sweeps
+          # editing baked chrome masked the freeze). Same daily-lane-only class + heal as
+          # research_vault (#3487) / sector_central (W5a). ~27s measured on committed
+          # stores. Called AFTER band(): cl_gex's build_options_entry_state rewrites
+          # data/options_entry/state.parquet, an input here — serial post-band placement
+          # instead of cl_misc dodges that parallel read/write window.
+          flowleaders() { run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
+
           band() {
             local ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
             brun() {
@@ -412,7 +427,7 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; central; hub; us_pages; libs ;;
+              spine; band; central; flowleaders; hub; us_pages; libs ;;
             macro)
               spine; hub; us_pages ;;
             china)
