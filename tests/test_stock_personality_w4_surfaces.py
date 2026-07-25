@@ -2,16 +2,18 @@
 
 W4 operator-surface tests for the stock-personality display layer.
 
-Three surface groups:
+Surface groups:
   1. build_theme_detail._personality_slim()  — pure function, extracting slim
-     {chart, mode} from a stockdata personality block.
-  2. build_site.py board-attach logic — the per-ticker slim dict thread from
-     stock_personality.json into us_standouts buy cards.  Tested via the pure
-     helper that was added; we test the data contracts not the full build.
+     {chart, mode} from a stockdata personality block (feeds the basket_detail
+     holdings-table chips via detail_json).
+  2. RETIRED — dashboard .nb-more personality chips + the build_site board
+     attach (PR #3256 Prophet card v1 / PR #3012; see the §2 tombstone below).
   3. Template markup — basket_detail.html.j2 and stock.html.j2 contain the
      expected W4 markup (CSS classes, JS function names, guardrail comments).
      basket_detail renders the full Jinja template (detail_json is data passed
      as a JSON string to JS; Jinja itself is cheap to render).
+  4. Playbook map coverage — every closed-set personality key carries an
+     EN+ZH doctrine entry in stock.html.j2's _PLAYBOOK map.
 
 All tests are display-only surface checks per R-SP13 — never test ranking,
 gating, or sizing logic (none was added).
@@ -96,61 +98,37 @@ def test_personality_slim_partial_block_no_crash():
 
 
 # ---------------------------------------------------------------------------
-# 2. board personality-attach contracts (via unit-level dict manipulation)
-#    We reproduce the exact logic from build_site.py's W4 personality-attach
-#    block to confirm the output contract rather than importing the heavy
-#    build_site module (which triggers engine imports on load).
+# 2. RETIRED: dashboard .nb-more personality chips + the build_site board attach
+#    PR #3256 (Prophet card v1, fe7a7426c49) replaced the multi-chip standout
+#    card with the Prophet card and deleted the .nb-more nb-sp-chips block
+#    (PR #3012 had already dropped the Details dropdown). That left the W4
+#    personality attach in build_site._attach_board_display_chips enriching a
+#    key no template read — removed as dead display code 2026-07-25 in the
+#    same PR as this comment. The RLT-R6 sector-stance attach in that function
+#    stays live (tests/test_rlt_sector_stance_enrich.py). stock_personality.json
+#    production and the stock.html / basket_detail surfaces (§1/§3/§4) are
+#    unaffected. The old §2 replica-contract tests died with the attach.
 # ---------------------------------------------------------------------------
 
-def _attach_personality(buy_cards: list[dict], per_ticker: dict) -> None:
-    """Replicate the W4 board-attach block from build_site.py for testing."""
-    for card in buy_cards:
-        tk = card.get("ticker")
-        slim = per_ticker.get(tk) if tk else None
-        if slim:
-            chart_list = slim.get("chart") or []
-            modes = slim.get("modes") or []
-            mode1 = next((m for m in modes if m != "normal"), None)
-            card["personality"] = {
-                "chart": chart_list[0] if chart_list else None,
-                "mode": mode1,
-            }
 
+def test_dashboard_personality_chips_stay_retired():
+    """Tombstone (guardrail-16 successor): dashboard has NO personality chips.
 
-def test_board_attach_sets_personality_on_matching_ticker():
-    cards = [{"ticker": "NVDA", "dir": "buy"}]
-    per_ticker = {
-        "NVDA": {"arch": "momentum_compounder", "chart": ["stair_step_leader"],
-                 "modes": ["normal"], "own": [], "micro": [], "dna": None}
-    }
-    _attach_personality(cards, per_ticker)
-    assert "personality" in cards[0]
-    assert cards[0]["personality"]["chart"] == "stair_step_leader"
-    assert cards[0]["personality"]["mode"] is None  # only "normal" present
-
-
-def test_board_attach_non_normal_mode_surfaced():
-    cards = [{"ticker": "TSLA", "dir": "buy"}]
-    per_ticker = {
-        "TSLA": {"chart": ["volatile_momentum_vehicle"], "modes": ["squeeze", "normal"],
-                 "own": [], "micro": [], "dna": None}
-    }
-    _attach_personality(cards, per_ticker)
-    assert cards[0]["personality"]["mode"] == "squeeze"
-
-
-def test_board_attach_missing_ticker_no_personality_key():
-    """Card for a ticker absent from per_ticker must not get a personality key."""
-    cards = [{"ticker": "AAPL", "dir": "buy"}]
-    _attach_personality(cards, per_ticker={})
-    assert "personality" not in cards[0]
-
-
-def test_board_attach_empty_per_ticker_no_crash():
-    cards = [{"ticker": "META"}, {"ticker": "GOOG"}]
-    _attach_personality(cards, per_ticker={})
-    for c in cards:
-        assert "personality" not in c
+    If personality chips return to a board card, delete this test and write
+    real placement guards for the new home. Positive controls prove we read
+    the live template (selector-substring vacuity guard), not a stub.
+    """
+    src = (config.ROOT / "templates" / "dashboard.html.j2").read_text()
+    # Positive controls — live board markup that must be present today.
+    assert 'id="us-stocktable-data"' in src, "positive control: W8-R6 serializer"
+    assert "sector_stance" in src, "positive control: RLT-R6 fold"
+    # The retired W4 surface: markup AND its orphan CSS stay gone.
+    for _gone in ("nb-sp-chips", "nb-sp-chart", "nb-sp-mode"):
+        assert _gone not in src, (
+            f"'{_gone}' reappeared in dashboard.html.j2 — the W4 dashboard chip "
+            "surface was retired by PR #3256; if chips are being revived, replace "
+            "this tombstone with real placement guards."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +136,6 @@ def test_board_attach_empty_per_ticker_no_crash():
 #    basket_detail.html.j2 is rendered via Jinja (cheap: detail_json is opaque
 #    to Jinja; all data lives in JS).  stock.html.j2 is also rendered to confirm
 #    its W4 panel and renderPersonality() JS function are present.
-#    dashboard.html.j2 personality chips are Jinja-rendered with a buy card.
 # ---------------------------------------------------------------------------
 
 def _jinja_env() -> jinja2.Environment:
@@ -254,7 +231,7 @@ def test_basket_detail_no_validated_claims():
             # W4 markup present — confirm no "validated" in the surrounding 200 chars
             idx = html.index(marker)
             window = html[max(0, idx - 100):idx + 200].lower()
-            assert "validated" not in window or "already validated" not in window, (
+            assert "validated" not in window, (
                 f"Unexpected 'validated' near W4 marker '{marker}'"
             )
 
@@ -296,7 +273,7 @@ def test_stock_personality_panel_no_title_cjk():
     # Simple heuristic: check that the known W4 attribute 'data-tip-en' is used
     # (not title=) for bilingual tooltips in the personality panel section.
     # The authoritative check is scripts/check_title_i18n.py.
-    assert "data-tip-en" in html or "panel_personality" in html  # W4 additions present
+    assert "data-tip-en" in html, "W4 bilingual tooltips must use data-tip-en, not title="
 
 
 def test_stock_personality_fail_open_pattern():
@@ -306,45 +283,6 @@ def test_stock_personality_fail_open_pattern():
     assert "panel_personality" in html
     # The panel starts hidden (display:none) and is shown only when data present.
     assert 'style="display:none"' in html or "display:none" in html
-
-
-# dashboard.html.j2 partial check (personality chips in nb-more) ---------------
-# Full dashboard render requires extensive globals; we check only the Jinja
-# source directly for the key W4 patterns (CSS + nb-sp-chips block).
-
-def test_dashboard_template_contains_nb_sp_chip_css():
-    """W4 CSS for slim personality chips must be in dashboard.html.j2 source."""
-    src = (config.ROOT / "templates" / "dashboard.html.j2").read_text()
-    assert "nb-sp-chart" in src
-    assert "nb-sp-mode" in src
-
-
-def test_dashboard_template_nb_sp_chips_inside_nb_more():
-    """Personality chips must be inside .nb-more — never outside (guardrail 16)."""
-    src = (config.ROOT / "templates" / "dashboard.html.j2").read_text()
-    # Find the nb-sp-chips block and verify it sits inside the nb-more div.
-    nb_more_idx = src.rfind("end .nb-more")  # comment marks closure
-    nb_sp_idx = src.rfind("nb-sp-chips")
-    assert nb_sp_idx != -1, "nb-sp-chips block missing from dashboard.html.j2"
-    assert nb_sp_idx < nb_more_idx, (
-        "nb-sp-chips block appears AFTER end .nb-more — violates guardrail 16"
-    )
-
-
-def test_dashboard_template_no_title_cjk_in_personality():
-    """W4 additions in dashboard must use data-tip-en/zh not title= for bilingual."""
-    src = (config.ROOT / "templates" / "dashboard.html.j2").read_text()
-    # Extract only the nb-sp-chips block for a targeted check.
-    start = src.rfind("nb-sp-chips")
-    if start == -1:
-        pytest.skip("nb-sp-chips not found — W4 additions may not be present")
-    end = src.find("</div>", start) + len("</div>")
-    block = src[start:end]
-    # Block must use data-tip-en/data-tip-zh, not title=
-    assert "data-tip-en=" in block, "Missing data-tip-en in personality chip"
-    assert "title=" not in block or block.count("title=") == 0, (
-        "title= attribute found in personality chip block — use data-tip-en/zh instead"
-    )
 
 
 # ---------------------------------------------------------------------------

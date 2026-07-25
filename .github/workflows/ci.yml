@@ -285,6 +285,11 @@ on:
       # covered by engine/**, but a test-only re-pin must still re-run the rot-sweep
       # step that carries it (2026-07-24 born-red organ-chip re-pin).
       - "tests/test_china_act_now.py"
+      # W4 stock-personality surface suite (re-pinned 2026-07-25 after PR #3256's Prophet
+      # card removed the dashboard chips): template/engine/script sides are covered by
+      # their globs; the test file needs an explicit path so a test-only re-pin still
+      # re-runs the rot-sweep step that carries it.
+      - "tests/test_stock_personality_w4_surfaces.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -1204,6 +1209,7 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
+          tests/test_stock_personality_w4_surfaces.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
