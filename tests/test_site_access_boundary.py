@@ -115,6 +115,8 @@ def test_runtime_artifact_exemption_stays_honest():
 def test_generated_data_is_not_accidentally_public():
     public = _caddy_public_exclusions()
     intentional = {
+        # Reviewed machine-readable marketing metadata; contains no signal rows.
+        "/brand-facts.json",
         "/live/quotes.json",
         "/live/breadth.json",
         "/prophet/showcase.json",

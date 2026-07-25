@@ -1,5 +1,5 @@
 {
-  "effective_at": "2026-07-20",
+  "effective_at": "2026-07-25",
   "owner": "Mastermind Research",
   "source": "https://www.mastermind-x.com/brand-facts.json",
   "brand": {
@@ -7,62 +7,52 @@
     "url": "https://www.mastermind-x.com/",
     "languages": ["en", "zh"]
   },
-  "what_it_is": "Market-intelligence platform: nightly macro-regime, market-cycle and sector-rotation dashboards for US, China, Hong Kong, Canada and global markets, plus ~1,460 per-stock dossiers with proprietary trend, stage and confluence models.",
+  "what_it_is": "Market-intelligence platform: nightly macro-regime, market-cycle and sector-rotation dashboards for US, China, Hong Kong, Canada and global markets, plus 1,600+ per-stock dossiers with proprietary trend, stage and confluence models.",
+  "surface_scope": "public_unauthenticated",
   "surfaces": [
-    {
-      "name": "Macro Regime Dashboard",
-      "url": "https://www.mastermind-x.com/macro.html",
-      "description": "US macro regime, risk radar and market state, updated nightly."
-    },
-    {
-      "name": "US Stock Dashboard",
-      "url": "https://www.mastermind-x.com/us_stocks.html",
-      "description": "Ranked US stock board with entry, quality and context signals."
-    },
     {
       "name": "Stock Dossiers",
       "url": "https://www.mastermind-x.com/stocks/index.html",
-      "description": "~1,460 per-ticker pages with trend, stage, confluence, ownership and options context."
+      "description": "1,600+ per-ticker pages with trend, stage, confluence, ownership and options context."
     },
     {
-      "name": "China A-Share Regime",
-      "url": "https://www.mastermind-x.com/china.html",
-      "description": "China A-share macro regime and sector rotation, updated nightly."
+      "name": "Research Library",
+      "url": "https://www.mastermind-x.com/research/",
+      "description": "Public research-report landing pages and excerpts; complete reports may require a subscription."
     },
     {
-      "name": "Hong Kong Regime",
-      "url": "https://www.mastermind-x.com/hk.html",
-      "description": "Hong Kong market regime and sector rotation, updated nightly."
+      "name": "Learning Center",
+      "url": "https://www.mastermind-x.com/learn/index.html",
+      "description": "Lessons on technical analysis, risk, options mechanics and market breadth."
     },
     {
-      "name": "Canada Regime",
-      "url": "https://www.mastermind-x.com/canada.html",
-      "description": "Canadian market regime and sector rotation, updated nightly."
+      "name": "Trading Calculators",
+      "url": "https://www.mastermind-x.com/tools/index.html",
+      "description": "Free calculators for position sizing, risk, return and portfolio planning."
     },
     {
-      "name": "Thematic Baskets",
-      "url": "https://www.mastermind-x.com/baskets.html",
-      "description": "Theme performance vs benchmark with leadership health and sector context."
+      "name": "Mastermind Blog",
+      "url": "https://www.mastermind-x.com/blog/index.html",
+      "description": "Plain-English articles on trading math, risk and market mechanics."
     },
     {
-      "name": "Factor Rankings",
-      "url": "https://www.mastermind-x.com/factors.html",
-      "description": "Factor performance rankings and seasonality across US equity factors."
+      "name": "Plans",
+      "url": "https://www.mastermind-x.com/plans.html",
+      "description": "Product tiers and access to the live dashboards, ranked boards and Neural Web."
     },
     {
-      "name": "Congressional Trades",
-      "url": "https://www.mastermind-x.com/congress_trades.html",
-      "description": "Tracked congressional trading with entry-timing context and member skill ratings."
-    },
-    {
-      "name": "Methodology",
-      "url": "https://www.mastermind-x.com/methodology.html",
-      "description": "How factor labs, baskets and seasonality models are computed."
+      "name": "Homepage",
+      "url": "https://www.mastermind-x.com/",
+      "description": "Overview of Mastermind's market-intelligence product and account access."
     }
   ],
+  "account_gated_product": {
+    "includes": ["regional macro dashboards", "ranked market boards", "Neural Web", "premium signal detail"],
+    "access_url": "https://www.mastermind-x.com/"
+  },
   "coverage": {
     "markets": ["US", "China", "Hong Kong", "Canada", "International"],
-    "stock_dossiers": "~1,460 US tickers, expanding",
+    "stock_dossiers": "1,600+ US tickers, expanding",
     "update_cadence": "nightly"
   },
   "editorial": {
