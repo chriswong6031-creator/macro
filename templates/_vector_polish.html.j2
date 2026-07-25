@@ -5,6 +5,8 @@
    Accent = --blue (their primary); surfaces = --card / --grid. The red/green
    risk colours (--red etc.) are never touched. Included AFTER each page's own
    <style> so it cleanly overrides the hardcoded nav hovers in both themes. #}
+{% set icon_prefix = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
+<link rel="stylesheet" href="{{ icon_prefix }}product-nav-icons.css">
 <style>
 /* ambient aurora — fixed accents blended into transparent, pinned behind all
    content (paints over the opaque body bg, under the page). Light default gets
