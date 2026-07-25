@@ -90,6 +90,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | til-w7-hiring-intent | 3 |
 | til-w8-trade-flows | 2 |
 | til-w9-discovery-v2 | 3 |
+| transmission-intelligence | 1 |
 | turn-sensitivity | 1 |
 | us-stocks-prebreakout | 2 |
 | whitehouse-desk | 1 |
@@ -98,7 +99,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 323 |
+| display | 324 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -107,7 +108,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 471 |
+| git | 472 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -1001,6 +1002,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-github-adoption | `site/basketdata/github_adoption.json` | json | collect | display | 1 | 0 |
 | site-phrase-velocity | `site/basketdata/phrase_velocity.json` | json | collect | display | 1 | 0 |
 | neuralweb-discovery-confluence | `data/neuralweb/discovery_confluence.json` | json | collect | display | 0 | 0 |
+
+### transmission-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| transmission-chains-state | `data/transmission/chain_state.json` | json | daily-engine | display | 3 | 1 |
 
 ### turn-sensitivity
 
