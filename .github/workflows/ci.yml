@@ -1837,7 +1837,9 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow
+        # pyyaml: engine.factor_exposure loads the W6.1 factor-model charter (YAML) at
+        # import, so the test modules need it at collection time (was ModuleNotFoundError).
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
