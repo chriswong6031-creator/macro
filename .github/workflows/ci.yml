@@ -1154,7 +1154,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml numpy pandas scipy
+        # jinja2 + pyarrow are for the options-screener suite below: the builder imports
+        # jinja2 at module scope and reads its inputs from parquet.
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
