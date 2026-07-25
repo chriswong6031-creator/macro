@@ -1,3 +1,5 @@
+@import url("product-nav-icons.css?v=ad258347");
+
 /* Shared theme + common components for every page. Single source of color
    variables (dark default, light override) so the toggle works everywhere.
    Badges/pills/tags are TINTED from one base color via color-mix() so they
