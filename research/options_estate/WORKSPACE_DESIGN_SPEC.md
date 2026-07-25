@@ -377,16 +377,23 @@ footer ≤1 sentence.
 | Coverage label | covered **403**/431 names | 已覆盖 **403**/431 个标的 |
 | Tabs | Daily Brief / Scanner / Ticker / Leaders | 每日简报 / 筛选 / 个股 / 领头股 |
 
-**Stance chips (closed vocabulary):**
+**Stance chips (closed vocabulary).** ZH is **not free-choice** — three of the six already
+have canonical strings in the site-wide glossary `engine/i18n.py` (`LEX`, lines 530-532),
+which is what `td()` resolves through. Diverging would make this page inconsistent with
+every other surface *and* with `td()` output.
 
-| EN | ZH |
-|---|---|
-| Act | 行动 |
-| Get ready | 做好准备 |
-| Watch — don't chase | 观察 — 不要追高 |
-| Protect gains | 保护利润 |
-| Stand aside | 观望 |
-| Ignore | 忽略 |
+| EN | ZH | Source |
+|---|---|---|
+| Act | 立即行动 | **not in LEX — add** |
+| Get ready | 做好准备 | LEX `i18n.py:531` |
+| Watch — don't chase | 观察—勿追高 | LEX `i18n.py:530` (note: no spaces around the dash) |
+| Protect gains | 保护利润 | LEX `i18n.py:532` |
+| Stand aside | 暂时观望 | **not in LEX — add** (dominant existing house usage) |
+| Ignore | 忽略 | **not in LEX — add** |
+
+**Builder task:** add the three missing stances to `LEX` in the same block (it is commented
+"stances (doctrine six — the ones this page uses)"), so the full doctrine six resolve
+through `td()` for this and every future surface. Use exactly the strings above.
 
 ### 5.1 Daily Brief
 
