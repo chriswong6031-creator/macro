@@ -205,6 +205,8 @@ def sig_metrics(px: pd.Series, m: dict[str, np.ndarray], dates: list[pd.Timestam
     rows = []
     for t in dates:
         i = idx.searchsorted(t)
+        if i >= len(idx):
+            continue  # bar stamped past the last daily close (W-FRI tail)
         if not np.isfinite(m["mae63"][i]) or not np.isfinite(m["prox"][i]):
             continue  # outside valid-day universe (head trim; counted upstream)
         rows.append({
