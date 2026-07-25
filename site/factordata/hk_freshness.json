@@ -1,11 +1,11 @@
 {
-  "checked_at": "2026-07-25T18:12:03+00:00",
+  "checked_at": "2026-07-25T19:56:35+00:00",
   "expected_session": "2026-07-24",
   "stores": {
     "cache": {
-      "asof": null,
-      "lag_days": null,
-      "state": "missing"
+      "asof": "2026-07-24",
+      "lag_days": 0,
+      "state": "fresh"
     },
     "bellwether": {
       "asof": "2026-07-24",
@@ -38,12 +38,9 @@
   "regression": {
     "ok": true,
     "prev_cache_max": "2026-07-24",
-    "curr_cache_max": null,
+    "curr_cache_max": "2026-07-24",
     "note": null
   },
-  "verdict": "degraded",
-  "banner_message": {
-    "en": "Some background feeds are a step behind \u2014 prices and picks are current. (prices current as of 2026-07-24)",
-    "zh": "\u90e8\u5206\u540e\u53f0\u6570\u636e\u6765\u6e90\u7a0d\u6709\u6ede\u540e \u2014 \u4ef7\u683c\u548c\u9009\u80a1\u4ecd\u662f\u6700\u65b0\u7684\u3002\uff08\u4ef7\u683c\u622a\u81f3 2026-07-24 \u4e3a\u6700\u65b0\uff09"
-  }
+  "verdict": "ok",
+  "banner_message": null
 }
