@@ -56,8 +56,8 @@ LaneRow = {
     'dual_chip_zh': str | None,
     # W8-R7 rider — basket-turn organ chip
     'organ_state':  str | None,        # TURNING | CONFIRMED (from basket_turn_cn)
-    'organ_chip_en': str | None,       # "organ: TURNING (tape)"
-    'organ_chip_zh': str | None,       # "器官：转向（纸带）"
+    'organ_chip_en': str | None,       # "Turning up" (plain-word tape chip)
+    'organ_chip_zh': str | None,       # "走势转强"
     # detail-page navigation (site-root-relative href or None when page absent)
     # convention:
     #   THEME/BASKET  cid = id[2:] if id.startswith('b-') else id
@@ -372,7 +372,7 @@ def assemble_act_now(
     # states: FALLING / WASHED_OUT / BASING / TURNING / CONFIRMED.
     #
     # For bottoming_watch rows:
-    #   - TURNING or CONFIRMED state → add organ chip ("organ: TURNING (tape)")
+    #   - TURNING or CONFIRMED state → add plain-word tape chip ("Turning up" / "Trend confirmed")
     #   - Other states (WASHED_OUT, BASING) → add organ_state chip only if already in lane
     #
     # The organ ADDS chips; it does NOT remove rows. Forward_log Trough+osc

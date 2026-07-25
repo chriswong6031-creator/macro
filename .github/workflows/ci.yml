@@ -272,6 +272,10 @@ on:
       # still re-runs the rot-sweep step that carries them.
       - "tests/test_china_stocks_w1c_render.py"
       - "tests/test_china_board_track_render.py"
+      # china_act_now assembler contract tests (W8-R3/R7 organ rider): engine file is
+      # covered by engine/**, but a test-only re-pin must still re-run the rot-sweep
+      # step that carries it (2026-07-24 born-red organ-chip re-pin).
+      - "tests/test_china_act_now.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -1135,6 +1139,7 @@ jobs:
           tests/test_china_standouts_serialization.py
           tests/test_china_stocks_w1c_render.py
           tests/test_china_board_track_render.py
+          tests/test_china_act_now.py
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
