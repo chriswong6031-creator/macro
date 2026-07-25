@@ -457,6 +457,34 @@ def _benchmark_card() -> dict | None:
             "chg": round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)}
 
 
+def _commodities() -> dict:
+    """Spot last-close + 1-day change for the three commodities that drive the TSX
+    (WTI, gold, copper) — Canada is a mineral/energy market. Read straight from the
+    yahoo store (same series the overlay uses); baked as the initial paint, then
+    live.js patches each tile fresh via its data-sym. price_fmt matches live.js
+    fmtPrice for data-mkt="fut" (toLocaleString, 2dp, thousands, no "$")."""
+    out: dict[str, dict] = {}
+    specs = [("CL=F", "wti"), ("GC=F", "gold"), ("HG=F", "copper")]
+    for sym, key in specs:
+        try:
+            df = store.read("yahoo", sym)
+            if df is None:
+                continue
+            col = next((c for c in ("close", "close_price", "adj close")
+                        if c in df.columns), df.columns[-1])
+            s = df[col].dropna()
+            if len(s) < 2:
+                continue
+            px, prev = float(s.iloc[-1]), float(s.iloc[-2])
+            chg = round(100 * (px / prev - 1), 2) if prev else None
+            out[key] = {"sym": sym, "price": round(px, 4),
+                        "price_fmt": f"{px:,.2f}", "chg": chg,
+                        "asof": str(s.index.max().date())}
+        except Exception:
+            log.warning("canada commodities: %s read failed", sym, exc_info=True)
+    return out
+
+
 def _housing_note() -> dict | None:
     """Housing / household-debt fragility context from FRED real house prices
     (BIS QCAR628BIS). Display-only; degrades to None when FRED is absent."""
@@ -743,6 +771,7 @@ def main() -> int:
             # breadth read above (display-only; None when breadth is unavailable).
             "ca_sentiment": _ca_sentiment_proxy(_breadth_read),
             "benchmark": _benchmark_card(),
+            "commodities": _commodities(),
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
             "actions": _action_board(sectors),

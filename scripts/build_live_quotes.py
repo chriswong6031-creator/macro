@@ -57,6 +57,7 @@ INTL_INDEXES = [
     "510300.SS",   # CSI 300 ETF (Shanghai) — china page live tile
     "399001.SZ",   # SZSE Component (Shenzhen)
     "^GSPTSE",     # S&P/TSX Composite (Canada)
+    "^SPCDNX",     # S&P/TSX Venture Composite (Canada) — canada page live tile
     "^N225",       # Nikkei 225 (Japan)
     "^FTSE",       # FTSE 100 (UK)
     "^GDAXI",      # DAX (Germany)
