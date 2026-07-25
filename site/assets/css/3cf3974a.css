@@ -1,0 +1,43 @@
+
+  body.page-stocks .stk-ctx-strip{
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;
+    padding:9px 14px;margin-bottom:12px;
+    border:1px solid var(--line);border-left:4px solid var(--muted);
+    border-radius:8px;background:var(--panel2);
+    font-size:12.5px;line-height:1.35;color:color-mix(in srgb,var(--text) 72%,transparent);
+  }
+  body.page-stocks .stk-ctx-strip .scx-dot{
+    width:9px;height:9px;border-radius:50%;flex:none;background:var(--muted);
+  }
+  body.page-stocks .stk-ctx-strip .scx-head{display:inline-flex;align-items:baseline;gap:8px;}
+  body.page-stocks .stk-ctx-strip .scx-label{
+    font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);white-space:nowrap;
+  }
+  body.page-stocks .stk-ctx-strip .scx-state{
+    font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text);
+  }
+  body.page-stocks .stk-ctx-strip .scx-stance{color:color-mix(in srgb,var(--text) 80%,transparent);}
+  body.page-stocks .stk-ctx-strip .scx-alert{
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;
+    color:var(--warn);
+    background:color-mix(in srgb,var(--warn) 13%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 34%,var(--line));
+  }
+  body.page-stocks .stk-ctx-strip .scx-more{
+    margin-left:auto;flex:none;white-space:nowrap;
+    font-size:11px;font-weight:700;
+    color:var(--link);text-decoration:none;
+  }
+  body.page-stocks .stk-ctx-strip .scx-more:hover{text-decoration:underline;}
+  body.page-stocks .stk-ctx-strip.ctx-green{border-left-color:var(--up);}
+  body.page-stocks .stk-ctx-strip.ctx-green .scx-dot{background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent);}
+  body.page-stocks .stk-ctx-strip.ctx-green .scx-state{color:var(--up);}
+  body.page-stocks .stk-ctx-strip.ctx-yellow{border-left-color:var(--warn);}
+  body.page-stocks .stk-ctx-strip.ctx-yellow .scx-dot{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 22%,transparent);}
+  body.page-stocks .stk-ctx-strip.ctx-yellow .scx-state{color:var(--warn);}
+  body.page-stocks .stk-ctx-strip.ctx-red{border-left-color:var(--down);}
+  body.page-stocks .stk-ctx-strip.ctx-red .scx-dot{background:var(--down);box-shadow:0 0 0 3px color-mix(in srgb,var(--down) 22%,transparent);}
+  body.page-stocks .stk-ctx-strip.ctx-red .scx-state{color:var(--down);}
+  

@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +29,7 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=eeb9bebc">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
-<link rel="stylesheet" href="assets/css/4d2eb3d1.css?v=4d2eb3d1">
+<link rel="stylesheet" href="assets/css/c17a6db6.css?v=c17a6db6">
 </head>
 <body class="page-canada">
 
@@ -247,14 +248,14 @@
   <script src="live_config.js?v=52943e92" defer></script>
   <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
-    <span class="mag">🔎</span>
+    <span class="mag"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="21" y2="21"/></svg></span>
     <input type="text" autocomplete="off" aria-label="Search TSX stocks"
       placeholder="Search any stock — US, China, HK, Canada & more…" data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
-    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.4c.42 3.7 1.98 5.26 5.7 5.68-3.72.42-5.28 1.98-5.7 5.7-.42-3.72-1.98-5.28-5.7-5.7 3.72-.42 5.28-1.98 5.7-5.68Z"/><path d="M18.4 14.7c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5Z"/></svg> <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4.5" width="18" height="15" rx="2.6"/><polyline points="7.4,10 10.4,12.5 7.4,15"/><line x1="12.4" y1="15" x2="16.6" y2="15"/></svg> <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -266,21 +267,7 @@
   </div>
 </nav>
 
-<div class="panel">
-  <div class="row">
-    
-    <h1>🇨🇦 <span class="l-en">Canada — S&P/TSX Regime</span><span class="l-zh">加拿大 — 标普/TSX 周期</span></h1>
-    
-    <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-24 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-25 04:29 UTC</span>
-  </div>
-  
-  <p class="muted small" style="margin:6px 0 0"><span class="l-en">Commodity-and-bank-cycle market — the TSX is ~70% Financials, Energy & Materials. The growth/inflation quad sets the slow backdrop; the commodity / CAD / BoC-vs-Fed overlay below is the high-frequency driver.</span><span class="l-zh">大宗商品与银行周期市场 — TSX 约 70% 为金融、能源与材料。增长／通胀象限给出慢速背景；下方的大宗商品／加元／央行-美联储叠加为高频驱动。</span>
-    <a href="canada_stocks.html" style="color:var(--link);font-weight:600">→ <span class="l-en">TSX stock dashboard</span><span class="l-zh">TSX 个股看板</span></a>
-    <span style="margin:0 6px;color:var(--muted)">·</span>
-    <a href="canada_heatmap.html" style="color:var(--link);font-weight:600">🔥 <span class="l-en">Market heatmap</span><span class="l-zh">市场热力图</span></a></p>
-  
-</div>
+
 
 
 
@@ -319,8 +306,11 @@
     
     
     
-    <span class="cax-regime-pill"><span class="dot"></span>
-      <span class="l-en">Reflation</span><span class="l-zh">再通胀</span><span style="opacity:.55"> · <span class="l-en">mid</span><span class="l-zh">中期</span></span></span>
+    <div class="cax-pill-row">
+      <span class="cax-regime-pill"><span class="dot"></span>
+        <span class="l-en">Reflation</span><span class="l-zh">再通胀</span><span style="opacity:.55"> · <span class="l-en">mid</span><span class="l-zh">中期</span></span></span>
+      <span class="cax-asof"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-24</span>
+    </div>
     <div class="cax-gauge-row">
       
       
@@ -382,11 +372,11 @@
     <div class="cax-hero-btns">
       
       
-      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-signals',event)">⌁
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-signals',event)"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="3,13 7.4,13 10,6.4 14,17.6 16.5,11 18,13 21,13"/></svg>
         <span class="l-en">0 of 6 signals aligned</span><span class="l-zh">6 项中 0 项一致</span>
         <span class="n">▾</span></button>
       
-      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-risk',event)">⚠
+      <button class="cax-hbtn gbtn gbtn-pill gbtn-sm" onclick="caxTogglePop('cax-pop-risk',event)"><svg class="ic-svg ic-warn" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.3 4.2 2.4 18a2 2 0 0 0 1.72 3h15.76a2 2 0 0 0 1.72-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9.4" x2="12" y2="13.4"/><circle cx="12" cy="16.7" r="1" fill="currentColor" stroke="none"/></svg>
         <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">86</span> ▾</button>
 
       <!-- popover: factor breakdown -->
@@ -662,17 +652,9 @@
   
   
   
-
-  
-  
-  
   
 
   
-  
-  
-  
-
   
   
   
@@ -682,16 +664,42 @@
   
   
   
-
-  
-  
-  
   
 
   
   
   
   
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -712,12 +720,37 @@
         
       </div>
       
-      <div class="mx5-mkt-tile">
-        <div class="mx5-mkt-ticker">SPY</div>
-        <div class="mx5-mkt-sub"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></div>
+      <div class="mx5-mkt-tile" data-sym="^SPCDNX" data-mkt="ca">
+        <div class="mx5-mkt-ticker">^SPCDNX</div>
+        <div class="mx5-mkt-sub"><span class="l-en">TSX Venture</span><span class="l-zh">TSX 创业板</span></div>
+        <div class="mx5-mkt-price nb-px" data-sym="^SPCDNX" data-mkt="ca" data-bare>—</div>
+        <div class="mx5-mkt-delta nb-chg" data-sym="^SPCDNX" data-mkt="ca" style="color:var(--muted)">—</div>
+      </div>
+      
+      <div class="mx5-mkt-tile dn" data-sym="CL=F" data-mkt="fut" data-tip-en="Energy backdrop: supportive · +1.52σ vs 1y" data-tip-zh="能源背景：利多 · 较1年 +1.52σ">
+        <div class="mx5-mkt-ticker">WTI</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Crude oil</span><span class="l-zh">原油</span></div>
         
-        <div class="mx5-mkt-price " style="font-size:16px"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
-        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="+0.17σ vs 1y range" data-tip-zh="较1年区间 +0.17σ"><span class="l-en">US backdrop</span><span class="l-zh">美股背景</span></div>
+        <div class="mx5-mkt-price dn"><span class="mkt-cur">$</span><span class="nb-px" data-sym="CL=F" data-mkt="fut" data-bare>90.47</span></div>
+        <div class="mx5-mkt-delta dn nb-chg" data-sym="CL=F" data-mkt="fut">-1.87%</div>
+        
+      </div>
+      
+      <div class="mx5-mkt-tile up" data-sym="GC=F" data-mkt="fut" data-tip-en="Gold backdrop: neutral · +0.12σ vs 1y" data-tip-zh="黄金背景：中性 · 较1年 +0.12σ">
+        <div class="mx5-mkt-ticker">GOLD</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Bullion</span><span class="l-zh">黄金</span></div>
+        
+        <div class="mx5-mkt-price up"><span class="mkt-cur">$</span><span class="nb-px" data-sym="GC=F" data-mkt="fut" data-bare>4,055.70</span></div>
+        <div class="mx5-mkt-delta up nb-chg" data-sym="GC=F" data-mkt="fut">+0.22%</div>
+        
+      </div>
+      
+      <div class="mx5-mkt-tile up" data-sym="HG=F" data-mkt="fut" data-tip-en="Copper — global cyclical / base-metals pulse" data-tip-zh="铜 — 全球周期／基本金属脉搏">
+        <div class="mx5-mkt-ticker">COPPER</div>
+        <div class="mx5-mkt-sub"><span class="l-en">Base metal</span><span class="l-zh">基本金属</span></div>
+        
+        <div class="mx5-mkt-price up"><span class="mkt-cur">$</span><span class="nb-px" data-sym="HG=F" data-mkt="fut" data-bare>6.34</span></div>
+        <div class="mx5-mkt-delta up nb-chg" data-sym="HG=F" data-mkt="fut">+0.55%</div>
         
       </div>
       
@@ -731,11 +764,11 @@
       </div>
       
       <div class="mx5-mkt-tile">
-        <div class="mx5-mkt-ticker">XEG / WTI</div>
-        <div class="mx5-mkt-sub"><span class="l-en">Crude / Energy</span><span class="l-zh">原油/能源</span></div>
+        <div class="mx5-mkt-ticker">SPY</div>
+        <div class="mx5-mkt-sub"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></div>
         
-        <div class="mx5-mkt-price up" style="font-size:16px"><span class="l-en">Supportive</span><span class="l-zh">利多</span></div>
-        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="+1.52σ vs 1y range" data-tip-zh="较1年区间 +1.52σ"><span class="l-en">Commodity context</span><span class="l-zh">商品背景</span></div>
+        <div class="mx5-mkt-price " style="font-size:16px"><span class="l-en">Neutral</span><span class="l-zh">中性</span></div>
+        <div class="mx5-mkt-delta" style="color:var(--muted)" data-tip-en="+0.17σ vs 1y range" data-tip-zh="较1年区间 +0.17σ"><span class="l-en">US backdrop</span><span class="l-zh">美股背景</span></div>
         
       </div>
     </div>
@@ -795,10 +828,10 @@
     
     
     
-    <div class="cax-row"><span class="ic">🏃</span><div class="tx"><b><span class="l-en">On the run</span><span class="l-zh">顺势运行</span></b><span class="sub"><span class="l-en">do not chase</span><span class="l-zh">勿追高</span></span></div></div>
+    <div class="cax-row"><span class="ic"><svg class="ic-svg ic-violet" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="3,16.5 9,10.5 13,13.5 21,6"/><polyline points="15.5,6 21,6 21,11.5"/></svg></span><div class="tx"><b><span class="l-en">On the run</span><span class="l-zh">顺势运行</span></b><span class="sub"><span class="l-en">do not chase</span><span class="l-zh">勿追高</span></span></div></div>
     
     
-    <div class="cax-row"><span class="ic">🚫</span><div class="tx"><b><span class="l-en">Avoid</span><span class="l-zh">回避</span></b><span class="sub">Real Estate · Base Metals · Information Technology · Consum…</span></div></div>
+    <div class="cax-row"><span class="ic"><svg class="ic-svg ic-dn" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2"/><line x1="6.4" y1="6.4" x2="17.6" y2="17.6"/></svg></span><div class="tx"><b><span class="l-en">Avoid</span><span class="l-zh">回避</span></b><span class="sub">Real Estate · Base Metals · Information Technology · Consum…</span></div></div>
     
     
   </div>
@@ -1075,7 +1108,7 @@
       
       
       
-      <div class="cax-eyebrow"><span class="l-en">🏃 On the run — do not chase</span><span class="l-zh">顺势运行 — 勿追高</span></div>
+      <div class="cax-eyebrow"><span class="cax-pb-ic"><svg class="ic-svg ic-violet" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="3,16.5 9,10.5 13,13.5 21,6"/><polyline points="15.5,6 21,6 21,11.5"/></svg></span> <span class="l-en">On the run — do not chase</span><span class="l-zh">顺势运行 — 勿追高</span></div>
       
       <div class="cax-ledd">
         <span><b><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="rk">XUT.TO</span>
@@ -1101,7 +1134,7 @@
       
       
       
-      <div class="cax-eyebrow"><span class="l-en">💰 Take profits</span><span class="l-zh">止盈</span></div>
+      <div class="cax-eyebrow"><span class="cax-pb-ic"><svg class="ic-svg ic-warn" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><line x1="12" y1="4.5" x2="12" y2="14"/><polyline points="6.5,9.5 12,15 17.5,9.5"/><line x1="4.8" y1="19.4" x2="19.2" y2="19.4"/></svg></span> <span class="l-en">Take profits</span><span class="l-zh">止盈</span></div>
       
       <div class="cax-ledd">
         <span><b><span class="l-en">Banks</span><span class="l-zh">银行</span></b> <span class="rk">ZEB.TO</span>
@@ -1140,7 +1173,7 @@
       
       
       
-      <div class="cax-eyebrow"><span class="l-en">🚫 Avoid</span><span class="l-zh">回避</span></div>
+      <div class="cax-eyebrow"><span class="cax-pb-ic"><svg class="ic-svg ic-dn" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2"/><line x1="6.4" y1="6.4" x2="17.6" y2="17.6"/></svg></span> <span class="l-en">Avoid</span><span class="l-zh">回避</span></div>
       
       <div class="cax-ledd">
         <span><b><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></b> <span class="rk">XRE.TO</span>
@@ -1614,6 +1647,28 @@
         </div>
       </div>
       
+      
+      <div class="cax-sep"></div>
+      <div class="cax-eyebrow"><span class="l-en">Commodities — TSX drivers</span><span class="l-zh">大宗商品 — TSX 驱动</span></div>
+      <div class="cax-ihgrid">
+        
+        <div class="cax-ihcard">
+          <div class="t"><span class="l-en">WTI crude</span><span class="l-zh">WTI 原油</span></div>
+          <div class="p"><span class="mkt-cur">$</span>90.47 <span class="cax-tt-dn" style="font-size:13px">-1.87%</span></div>
+        </div>
+        
+        <div class="cax-ihcard">
+          <div class="t"><span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+          <div class="p"><span class="mkt-cur">$</span>4,055.70 <span class="cax-tt-up" style="font-size:13px">+0.22%</span></div>
+        </div>
+        
+        <div class="cax-ihcard">
+          <div class="t"><span class="l-en">Copper</span><span class="l-zh">铜</span></div>
+          <div class="p"><span class="mkt-cur">$</span>6.34 <span class="cax-tt-up" style="font-size:13px">+0.55%</span></div>
+        </div>
+        
+      </div>
+      
       <div class="cax-sep"></div>
       <div class="cax-eyebrow"><span class="l-en">Canada TSX Heatmap</span><span class="l-zh">加拿大 TSX 热力图</span></div>
       
@@ -1681,7 +1736,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-25 04:29 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-25 06:16 UTC</p>
 
 </div>
 
