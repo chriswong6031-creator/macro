@@ -756,45 +756,69 @@ def apply_decisions(
 # emit_from_content_plan
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Legacy fixed-UTC suffixes — pre-ladder items (and their tests) still resolve.
 _SLOT_SUFFIX_TIMES = {
     "AM":  "T14:00:00Z",
     "PM":  "T17:30:00Z",
     "EOD": "T20:15:00Z",
 }
 
+# The 2-hour Pacific signal ladder (cadence masterplan §5): 8 slots, 4 AM–6 PM
+# LOCAL, resolved per-date through zoneinfo so the Pacific→UTC offset tracks DST
+# — never hardcode -7/-8, it would drift the whole ladder an hour twice a year.
+_LADDER_PT_HOURS = {
+    "S1": 4, "S2": 6, "S3": 8, "S4": 10,
+    "S5": 12, "S6": 14, "S7": 16, "S8": 18,
+}
+_LADDER_TZ = "America/Los_Angeles"
+
 
 def slot_datetime(as_of: str, slot: str) -> str | None:
     """Resolve a plan slot to its advisory absolute ISO datetime (UTC), or None.
 
-    A day slot is ``D<n>-<AM|PM|EOD>``: day n runs on ``as_of + (n-1) days`` (D1
-    is as_of itself), at the suffix's time. Returns None for immediate/publish-
-    time slots (MOVER-/THEME-/CONF-, or any non-``D<n>`` prefix), an unknown time
-    suffix, or an unparseable as_of — the admin renders "immediate"/blank for None.
+    A day slot is ``D<n>-<suffix>``: day n runs on ``as_of + (n-1) days`` (D1 is
+    as_of itself). Two suffix families resolve:
+      * ladder ``S1``..``S8`` — the 2-hour Pacific clock ladder (4 AM–6 PM local),
+        converted to UTC per-date via zoneinfo so DST is handled correctly;
+      * legacy ``AM``/``PM``/``EOD`` — fixed UTC times, kept so pre-ladder items
+        (and their tests) still resolve.
+    Returns None for immediate/publish-time slots (MOVER-/THEME-/CONF-, or any
+    non-``D<n>`` prefix), an unknown suffix, an unparseable as_of, or a missing
+    tz database — the admin renders "immediate"/blank for None.
 
-    Advisory only; the W1 actuator applies jitter/spacing before actual posting.
-
-    Prior bug: every ``D<n>-AM`` mapped to ``as_of T14:00Z`` regardless of n, so
-    D2..D7 items all showed day-1's date. This offsets by (n-1) days.
+    Advisory only; the publisher applies the 10-min floor + jitter before posting.
     """
     if "-" not in slot:
         return None
     prefix, suffix = slot.split("-", 1)
-    # suffix may itself contain a "-" for exotic labels; the time key is the LAST
+    # suffix may itself contain a "-" for exotic labels; the key is the LAST
     # segment (matches the historical rsplit behaviour).
     suffix_key = suffix.rsplit("-", 1)[-1]
-    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix_key)
-    if time_suffix is None:
-        return None
     if not (len(prefix) >= 2 and prefix[0] == "D" and prefix[1:].isdigit()):
-        return None  # non-day slot with a time suffix — treat as immediate
+        return None  # non-day slot (MOVER-/THEME-/CONF-/…) — treat as immediate
     day_n = int(prefix[1:])
     try:
         base = datetime.strptime(as_of[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
     except (ValueError, TypeError):
         return None
-    offset_days = max(day_n - 1, 0)
-    date_str = (base + timedelta(days=offset_days)).strftime("%Y-%m-%d")
-    return f"{date_str}{time_suffix}"
+    day = (base + timedelta(days=max(day_n - 1, 0))).date()
+
+    # Ladder slot (Pacific clock) → UTC via zoneinfo (DST-safe).
+    pt_hour = _LADDER_PT_HOURS.get(suffix_key)
+    if pt_hour is not None:
+        try:
+            from zoneinfo import ZoneInfo  # noqa: PLC0415
+            local = datetime(day.year, day.month, day.day, pt_hour, 0,
+                             tzinfo=ZoneInfo(_LADDER_TZ))
+        except Exception:  # noqa: BLE001 — missing tz database → fail-soft to None
+            return None
+        return local.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Legacy fixed-UTC suffix (AM/PM/EOD) — pre-ladder items.
+    time_suffix = _SLOT_SUFFIX_TIMES.get(suffix_key)
+    if time_suffix is None:
+        return None
+    return f"{day.strftime('%Y-%m-%d')}{time_suffix}"
 
 
 def _scheduled_at_for_slot(slot: str, as_of: str) -> str:

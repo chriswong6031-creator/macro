@@ -1242,6 +1242,26 @@ class TestSlotDatetime:
         assert slot_datetime("2026-07-20", "D3-AM") == "2026-07-22T14:00:00Z"
         assert slot_datetime("2026-07-20", "D7-EOD") == "2026-07-26T20:15:00Z"
 
+    def test_ladder_pacific_slots_summer_pdt(self):
+        """Gate 5: the 2h ladder (S1..S8) resolves to Pacific-clock UTC. July = PDT
+        (UTC-7): 4 AM→11:00, 12 PM→19:00, 6 PM→01:00 next-day."""
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-15", "D1-S1") == "2026-07-15T11:00:00Z"  # 4 AM
+        assert slot_datetime("2026-07-15", "D1-S5") == "2026-07-15T19:00:00Z"  # 12 PM
+        assert slot_datetime("2026-07-15", "D1-S8") == "2026-07-16T01:00:00Z"  # 6 PM
+
+    def test_ladder_pacific_slots_winter_pst(self):
+        """Gate 5: the SAME local slots shift +1h in UTC under PST (winter) —
+        DST handled by zoneinfo, never a hardcoded offset."""
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-01-15", "D1-S1") == "2026-01-15T12:00:00Z"  # 4 AM PST
+        assert slot_datetime("2026-01-15", "D1-S8") == "2026-01-16T02:00:00Z"  # 6 PM PST
+
+    def test_ladder_day_offset(self):
+        """D<n> offsets by n-1 days, then resolves the Pacific slot on THAT date."""
+        from engine.marketing.outbox import slot_datetime
+        assert slot_datetime("2026-07-15", "D2-S1") == "2026-07-16T11:00:00Z"
+
     def test_immediate_and_unparseable_return_none(self):
         from engine.marketing.outbox import slot_datetime
         assert slot_datetime("2026-07-20", "MOVER-01") is None
