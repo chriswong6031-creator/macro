@@ -19,6 +19,10 @@ public:
     - /apple-touch-icon.png
     - /robots.txt
     - /sitemap.xml
+    # Public machine-readable discovery documents. They contain marketing
+    # metadata only; no generated signals or protected data.
+    - /llms.txt
+    - /brand-facts.json
     - /onboard.css
     - /onboard.js
     - /theme.css
