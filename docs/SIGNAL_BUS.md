@@ -65,6 +65,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
+| personality-timing | 1 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | prophet | 1 |
@@ -97,7 +98,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 322 |
+| display | 323 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -106,7 +107,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 470 |
+| git | 471 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -754,6 +755,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
 | oracle-ratio-lens-feed | `site/oracledata/ratio_lens.json` | json | daily-engine | display | 0 | 0 |
 | oracle-ratio-lens-ledger | `data/oracle/ratio_lens_ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### personality-timing
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| personality-timing-codex | `data/personality_timing/codex.parquet` | parquet | weekly | display | 1 | 0 |
 
 ### pick-lab
 
