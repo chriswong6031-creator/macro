@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-25T17:26:56.738842+00:00",
+  "generated_utc": "2026-07-25T19:09:59.547161+00:00",
   "as_of": "2026-07-25",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -24525,7 +24525,7 @@
         "ticker": "CRWD",
         "net_up_30d": 33,
         "breadth": 0.73,
-        "est_chg_30d": -0.05,
+        "est_chg_30d": -0.01,
         "n_analysts": 45,
         "bull_ratio": 0.87,
         "rising": true,
@@ -24547,7 +24547,7 @@
         "ticker": "CRM",
         "net_up_30d": 29,
         "breadth": 0.71,
-        "est_chg_30d": -0.1,
+        "est_chg_30d": 0.11,
         "n_analysts": 41,
         "bull_ratio": 0.85,
         "rising": true,
@@ -24646,7 +24646,7 @@
         "ticker": "CSCO",
         "net_up_30d": 22,
         "breadth": 1.0,
-        "est_chg_30d": 0.29,
+        "est_chg_30d": 0.33,
         "n_analysts": 22,
         "bull_ratio": 1.0,
         "rising": true,
@@ -24695,17 +24695,6 @@
         "bull_ratio": 0.91,
         "rising": true,
         "revision_delta": 18,
-        "hot": true
-      },
-      {
-        "ticker": "CIEN",
-        "net_up_30d": 17,
-        "breadth": 1.0,
-        "est_chg_30d": 0.2,
-        "n_analysts": 17,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 17,
         "hot": true
       },
       {
@@ -24762,168 +24751,179 @@
         "rising": true,
         "revision_delta": 17,
         "hot": true
+      },
+      {
+        "ticker": "CIEN",
+        "net_up_30d": 17,
+        "breadth": 1.0,
+        "est_chg_30d": 0.2,
+        "n_analysts": 17,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 17,
+        "hot": true
       }
     ],
     "insider_mspr": [],
     "short_interest": [
       {
-        "ticker": "MPT",
-        "days_to_cover": 16.9,
-        "si_change_pct": 5.0,
-        "short_shares": 138111712.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "JBGS",
-        "days_to_cover": 15.1,
-        "si_change_pct": 7.0,
-        "short_shares": 10659051.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
         "ticker": "OTTR",
-        "days_to_cover": 15.0,
-        "si_change_pct": 2.7,
-        "short_shares": 5265091.0,
-        "settlement": "2026-06-30",
+        "days_to_cover": 24.4,
+        "si_change_pct": 0.8,
+        "short_shares": 5308740.0,
+        "settlement": "2026-07-15",
         "hot": true
       },
       {
-        "ticker": "DEI",
-        "days_to_cover": 13.4,
-        "si_change_pct": 8.5,
-        "short_shares": 31055239.0,
-        "settlement": "2026-06-30",
+        "ticker": "MPT",
+        "days_to_cover": 22.9,
+        "si_change_pct": 0.1,
+        "short_shares": 138225896.0,
+        "settlement": "2026-07-15",
         "hot": true
       },
       {
-        "ticker": "ADC",
-        "days_to_cover": 12.2,
-        "si_change_pct": -7.8,
-        "short_shares": 14553999.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "CHH",
-        "days_to_cover": 12.0,
-        "si_change_pct": 4.9,
-        "short_shares": 7724097.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "EPR",
-        "days_to_cover": 11.9,
-        "si_change_pct": 15.4,
-        "short_shares": 7689161.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "OZK",
-        "days_to_cover": 11.7,
-        "si_change_pct": 2.1,
-        "short_shares": 14906021.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "PCRX",
-        "days_to_cover": 11.7,
-        "si_change_pct": 5.0,
-        "short_shares": 6587848.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "ABR",
-        "days_to_cover": 11.4,
-        "si_change_pct": -2.4,
-        "short_shares": 42286853.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "BHF",
-        "days_to_cover": 10.8,
-        "si_change_pct": 2.8,
-        "short_shares": 5452769.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "COLL",
-        "days_to_cover": 10.8,
-        "si_change_pct": 2.6,
-        "short_shares": 5466533.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "GME",
-        "days_to_cover": 10.8,
-        "si_change_pct": -2.1,
-        "short_shares": 55856110.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "ERIE",
-        "days_to_cover": 10.7,
-        "si_change_pct": 9.0,
-        "short_shares": 2923399.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "LIF",
-        "days_to_cover": 10.6,
-        "si_change_pct": 4.6,
-        "short_shares": 9486376.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "SBH",
-        "days_to_cover": 10.6,
-        "si_change_pct": 4.9,
-        "short_shares": 20118323.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "HTO",
-        "days_to_cover": 10.1,
-        "si_change_pct": 8.5,
-        "short_shares": 5437601.0,
-        "settlement": "2026-06-30",
-        "hot": true
-      },
-      {
-        "ticker": "TROW",
-        "days_to_cover": 10.0,
-        "si_change_pct": -0.2,
-        "short_shares": 27220284.0,
-        "settlement": "2026-06-30",
+        "ticker": "NTST",
+        "days_to_cover": 22.2,
+        "si_change_pct": -0.7,
+        "short_shares": 33134654.0,
+        "settlement": "2026-07-15",
         "hot": true
       },
       {
         "ticker": "GTY",
-        "days_to_cover": 9.7,
-        "si_change_pct": -4.5,
-        "short_shares": 7553900.0,
-        "settlement": "2026-06-30",
+        "days_to_cover": 21.8,
+        "si_change_pct": 3.0,
+        "short_shares": 7777522.0,
+        "settlement": "2026-07-15",
         "hot": true
       },
       {
-        "ticker": "LNT",
-        "days_to_cover": 9.7,
-        "si_change_pct": 9.4,
-        "short_shares": 27985561.0,
-        "settlement": "2026-06-30",
+        "ticker": "JBGS",
+        "days_to_cover": 19.9,
+        "si_change_pct": -1.9,
+        "short_shares": 10462109.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "GME",
+        "days_to_cover": 16.1,
+        "si_change_pct": -0.8,
+        "short_shares": 55426276.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "PCRX",
+        "days_to_cover": 15.8,
+        "si_change_pct": 5.7,
+        "short_shares": 6963375.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "TGTX",
+        "days_to_cover": 15.4,
+        "si_change_pct": 1.7,
+        "short_shares": 30686240.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "SBH",
+        "days_to_cover": 15.1,
+        "si_change_pct": -0.3,
+        "short_shares": 20051448.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "GIII",
+        "days_to_cover": 14.9,
+        "si_change_pct": 2.6,
+        "short_shares": 7445584.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "HASI",
+        "days_to_cover": 14.5,
+        "si_change_pct": -4.6,
+        "short_shares": 10926001.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "LIF",
+        "days_to_cover": 14.4,
+        "si_change_pct": -4.6,
+        "short_shares": 9053862.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "DCOM",
+        "days_to_cover": 14.2,
+        "si_change_pct": 0.6,
+        "short_shares": 3635432.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "ACT",
+        "days_to_cover": 14.1,
+        "si_change_pct": -0.9,
+        "short_shares": 3646871.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "ADC",
+        "days_to_cover": 13.6,
+        "si_change_pct": -1.4,
+        "short_shares": 14347872.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "XNCR",
+        "days_to_cover": 13.6,
+        "si_change_pct": -5.8,
+        "short_shares": 10842171.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "CURB",
+        "days_to_cover": 13.5,
+        "si_change_pct": 73.6,
+        "short_shares": 17571331.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "FOUR",
+        "days_to_cover": 13.4,
+        "si_change_pct": -0.5,
+        "short_shares": 15661963.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "AKR",
+        "days_to_cover": 13.3,
+        "si_change_pct": -3.6,
+        "short_shares": 17060799.0,
+        "settlement": "2026-07-15",
+        "hot": true
+      },
+      {
+        "ticker": "CHEF",
+        "days_to_cover": 13.2,
+        "si_change_pct": 4.6,
+        "short_shares": 4938879.0,
+        "settlement": "2026-07-15",
         "hot": true
       }
     ],
@@ -28593,6 +28593,13 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "CURB",
+        "next_date": "2026-07-27",
+        "days_to": 2,
+        "eps_forecast": 0.29,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "HIG",
         "next_date": "2026-07-27",
         "days_to": 2,
@@ -28604,13 +28611,6 @@
         "next_date": "2026-07-27",
         "days_to": 2,
         "eps_forecast": 1.0,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "HTO",
-        "next_date": "2026-07-27",
-        "days_to": 2,
-        "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
@@ -28712,6 +28712,13 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "ACT",
+        "next_date": "2026-07-29",
+        "days_to": 4,
+        "eps_forecast": 1.21,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "ADP",
         "next_date": "2026-07-29",
         "days_to": 4,
@@ -28747,6 +28754,13 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "CHEF",
+        "next_date": "2026-07-29",
+        "days_to": 4,
+        "eps_forecast": 0.63,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "CTSH",
         "next_date": "2026-07-29",
         "days_to": 4,
@@ -28772,13 +28786,6 @@
         "next_date": "2026-07-29",
         "days_to": 4,
         "eps_forecast": 0.81,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "EPR",
-        "next_date": "2026-07-29",
-        "days_to": 4,
-        "eps_forecast": 1.29,
         "last_surprise_pct": null
       },
       {
@@ -29216,6 +29223,13 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "TGTX",
+        "next_date": "2026-08-03",
+        "days_to": 9,
+        "eps_forecast": 0.42,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "WMB",
         "next_date": "2026-08-03",
         "days_to": 9,
@@ -29262,6 +29276,13 @@
         "next_date": "2026-08-04",
         "days_to": 10,
         "eps_forecast": 1.78,
+        "last_surprise_pct": null
+      },
+      {
+        "ticker": "AKR",
+        "next_date": "2026-08-04",
+        "days_to": 10,
+        "eps_forecast": 0.28,
         "last_surprise_pct": null
       },
       {
@@ -29321,13 +29342,6 @@
         "last_surprise_pct": null
       },
       {
-        "ticker": "DEI",
-        "next_date": "2026-08-04",
-        "days_to": 10,
-        "eps_forecast": 0.35,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "ECL",
         "next_date": "2026-08-04",
         "days_to": 10,
@@ -29339,6 +29353,13 @@
         "next_date": "2026-08-04",
         "days_to": 10,
         "eps_forecast": 1.17,
+        "last_surprise_pct": null
+      },
+      {
+        "ticker": "FOUR",
+        "next_date": "2026-08-04",
+        "days_to": 10,
+        "eps_forecast": 0.98,
         "last_surprise_pct": null
       },
       {
@@ -29559,13 +29580,6 @@
         "last_surprise_pct": null
       },
       {
-        "ticker": "CHH",
-        "next_date": "2026-08-05",
-        "days_to": 11,
-        "eps_forecast": 1.95,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "DASH",
         "next_date": "2026-08-05",
         "days_to": 11,
@@ -29671,24 +29685,17 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "XNCR",
+        "next_date": "2026-08-05",
+        "days_to": 11,
+        "eps_forecast": null,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "AMN",
         "next_date": "2026-08-06",
         "days_to": 12,
         "eps_forecast": 0.22,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "BHF",
-        "next_date": "2026-08-06",
-        "days_to": 12,
-        "eps_forecast": 5.0,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "COLL",
-        "next_date": "2026-08-06",
-        "days_to": 12,
-        "eps_forecast": 1.48,
         "last_surprise_pct": null
       },
       {
@@ -29713,13 +29720,6 @@
         "last_surprise_pct": null
       },
       {
-        "ticker": "ERIE",
-        "next_date": "2026-08-06",
-        "days_to": 12,
-        "eps_forecast": 3.35,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "EXPE",
         "next_date": "2026-08-06",
         "days_to": 12,
@@ -29727,17 +29727,17 @@
         "last_surprise_pct": null
       },
       {
+        "ticker": "HASI",
+        "next_date": "2026-08-06",
+        "days_to": 12,
+        "eps_forecast": 0.67,
+        "last_surprise_pct": null
+      },
+      {
         "ticker": "LLY",
         "next_date": "2026-08-06",
         "days_to": 12,
         "eps_forecast": 9.01,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "LNT",
-        "next_date": "2026-08-06",
-        "days_to": 12,
-        "eps_forecast": 0.67,
         "last_surprise_pct": null
       },
       {
@@ -29867,13 +29867,6 @@
         "last_surprise_pct": null
       },
       {
-        "ticker": "ABR",
-        "next_date": "2026-08-07",
-        "days_to": 13,
-        "eps_forecast": 0.09,
-        "last_surprise_pct": null
-      },
-      {
         "ticker": "ARES",
         "next_date": "2026-08-07",
         "days_to": 13,
@@ -29920,13 +29913,6 @@
         "next_date": "2026-08-07",
         "days_to": 13,
         "eps_forecast": 8.47,
-        "last_surprise_pct": null
-      },
-      {
-        "ticker": "TROW",
-        "next_date": "2026-08-07",
-        "days_to": 13,
-        "eps_forecast": 2.31,
         "last_surprise_pct": null
       },
       {
