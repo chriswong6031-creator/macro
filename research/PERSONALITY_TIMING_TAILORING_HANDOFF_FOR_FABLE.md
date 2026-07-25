@@ -45,11 +45,55 @@ are positive (+1.38 / +2.76), i.e. real personality signal, noisy rung selection
 earnings behavior, breakout trust) per name-class. It does not predict "what it does
 tomorrow." That reframe was given to the operator and should be maintained.
 
+## §1b. Operator's fuller thesis (second message) + Fable's UPDATED position
+
+Operator's articulation, core: fixed-confluence Prophet is DOUBLY rigid (requires
+alignment of two indicators at fixed timeframes — a name whose rhythm sits between
+the pinned rungs can never align); market-level personality exists (HK names need 2W
+washouts); the wardrobe extension — tailor multiple indicator FAMILIES per stock
+("pants" = momentum/washout family; shirt/shoes/jacket = other families) and combine
+for top/bottom reads; MCD's 30-year stationarity as the existence proof.
+
+**Fable's position UPDATED on this exchange (genuine concession, on the record):**
+the 15–60-events arithmetic objection applies to OUTCOME-AUDITION (backtest a grid,
+keep the winner). The operator's method, properly read, is MEASUREMENT: a stock's
+rhythm (dominant swing period, mean-reversion half-life, vol-cluster timescale,
+trend persistence) is estimated from EVERY bar (~7,500 obs), not from dip outcomes —
+well-powered, low-dimensional. Governing law for the whole program:
+
+  **MEASURE THE STOCK, DON'T AUDITION THE WARDROBE.** Indicator settings are DERIVED
+  mechanically from measured structure; historical signal events VALIDATE the derived
+  setting (single hypothesis, cheap) and never SELECT among a grid. Multi-family
+  outfits are projections of the SAME measured parameters (shared structure keeps
+  dimensionality ~4-5, not 81 combos); an outfit-grid audition is the forbidden form.
+
+  **Befriendability is a per-stock property**: codex carries a STATIONARITY score
+  (split-era stability of measured parameters). Stationary names (MCD-class) earn
+  bespoke fits; shape-shifters (META-2022, NVDA-across-eras) get class-fit + wider
+  priors. "Know its quirks" includes knowing which names cannot be known.
+
 ## §2. W1 — THE DECISIVE STUDY: persistence-of-fit (run this first; everything else
 is conditional on its answer)
 
 The whole tailoring question reduces to one measurable: **is per-stock tool-fit
-persistent out-of-sample, and at what altitude (name vs class vs global)?**
+persistent out-of-sample, and at what altitude (name vs class vs global)?** —
+now run as a HEAD-TO-HEAD of fitting METHODS (§1b):
+
+- **W1a — audition-tailoring** (the original design below): in-sample best tool per
+  name by outcome; the overfit-prone baseline.
+- **W1b — structure-tailoring (the operator's method, formalized)**: per name,
+  estimate structural parameters from BARS ONLY, no outcome peeking — dominant swing
+  period (median peak-to-trough spacing of zigzag swings ≥1×ATR-normalized threshold,
+  or spectral peak; pin ONE definition before running), AR(1)/OU mean-reversion
+  half-life on 200d-detrended series, trend persistence (pct>200d), vol-cluster
+  timescale. Map swing period → rung mechanically (choose the rung whose 14-bar
+  oscillator window spans ≈ one full swing; pin the mapping formula before running).
+  Grade the DERIVED tool out-of-sample, same ruler.
+- Comparisons OOS: W1b vs W1a vs class-best vs global vs random. Fable's prediction
+  (aligned with operator): W1b > W1a; if W1b also ≥ class, structure-fitting becomes
+  the Prophet tailoring engine (W3/W4). Add stationarity score per name (split-era
+  parameter drift) and report W1b performance stratified by it — the codex shrinkage
+  weight comes from this column.
 
 Pre-registered design (pin before running; amendments disclosed):
 - Universe: all names in `data/baskets/ohlcv` with full 2014→2026 history (~1,623;
@@ -124,7 +168,7 @@ Binding law (violations here have killed programs before):
 - **W3 — Prophet reconciliation, SHADOW FIRST:** parallel tailored-gate shadow lane
   (mirror `engine/mag7_washout_shadow.py` discipline): for names where the uniform
   confluence gate says NO but the name's class-tool says washout-entry (and vice
-  versa), log hypothetical entries + grade. This MEASURES the operator's "we lose
+  versa), log hypothetical entries + grade. The uniform gate is DOUBLY rigid (two indicators AND fixed rungs must align — §1b). This MEASURES the operator's "we lose
   access to stocks where confluence isn't possible" claim — how many good entries
   does uniform Prophet miss, net of the bad ones tailoring would add? Promotion of
   any per-class gate profile into live Prophet = its own prereg + the contamination
