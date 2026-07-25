@@ -2094,6 +2094,42 @@ def test_create_failover_reraises_when_all_creds_dead():
         llm_auth.clear_dead()
 
 
+def test_is_provider_unavailable_covers_balance_and_402():
+    """A dry primary account (402 / 'Insufficient Balance' / 'insufficient_quota') is a
+    provider-side outage → failover-worthy; a plain token-count message is NOT."""
+    class Pay(Exception):
+        status_code = 402
+    assert gw._is_provider_unavailable_error(Pay("payment required"))
+    assert gw._is_provider_unavailable_error(Exception("Error code: 402 - Insufficient Balance"))
+    assert gw._is_provider_unavailable_error(Exception("insufficient_quota"))
+    assert not gw._is_provider_unavailable_error(Exception("prompt exceeded 8500 tokens"))
+    # wires into the unified failover decision
+    assert gw._is_failover_error(Exception("Error code: 402 - Insufficient Balance"))
+
+
+def test_create_failover_fails_over_on_insufficient_balance():
+    """DeepSeek 'Insufficient Balance' (dry pay-as-you-go account) must fail over to the
+    funded fallback, not black out the lane. NOT marked dead (balance can be topped up
+    without a restart, unlike a revoked key)."""
+    from engine import llm_auth
+    llm_auth.clear_dead()
+    try:
+        ok = _MockResponse([_MockBlock("text", "served by fallback")], "end_turn")
+        cands = [
+            {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY",
+             "client": _RaiseThenClient(exc=Exception("Error code: 402 - {'error':{'message':'Insufficient Balance'}}")),
+             "model": "deepseek-chat"},
+            {"name": "anthropic", "env_var": "ANTHROPIC_API_KEY",
+             "client": _RaiseThenClient(resp=ok), "model": "claude-haiku-4-5"},
+        ]
+        resp, used = gw._create_failover(cands, max_tokens=10, system="", tools=[], messages=[])
+        assert used == "claude-haiku-4-5"
+        assert resp.content[0].text == "served by fallback"
+        assert not llm_auth.is_dead("deepseek", "DEEPSEEK_API_KEY")  # balance ≠ dead credential
+    finally:
+        llm_auth.clear_dead()
+
+
 def test_chat_stream_fails_over_to_fallback_on_dead_primary(tmp_path):
     """END-TO-END repro of the outage: a Fast lane whose DeepSeek key is expired must
     serve the answer from the Anthropic (Haiku) fallback — a delta with the real answer,
