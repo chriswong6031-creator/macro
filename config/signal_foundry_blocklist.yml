@@ -552,12 +552,12 @@ entries:
   - id: BL-G027
     match:
       any_of:
-        - 'covert.{0,30}marketing.{0,30}networks'
+        - 'undisclosed.{0,30}persona.{0,30}fleets'
     reason: >
-      FORBIDDEN — network-level platform enforcement + FTC 16 CFR 465 /
-      Endorsement-Guides exposure + brand-moat suicide for an
-      accountability product. Lawful forms remain open: disclosed
-      character/speciali
+      FORBIDDEN (lawful forms stay OPEN: disclosed character/specialist
+      personas with bio network line + X Automated label, labeled
+      utility feeds, real publications with disclosed ownership,
+      attributed aggr
     source: 'AM-R1/AM-R2, `research/agentic_media/AGENTIC_MEDIA_PROGRAM_BY_FABLE.md` (2026-07-25)'
 
   - id: BL-G028
