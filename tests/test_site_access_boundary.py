@@ -89,6 +89,20 @@ def test_public_policy_targets_exist():
         )
 
 
+def test_public_theme_imports_are_declared_public():
+    """A public stylesheet must not import an asset hidden behind the regwall."""
+    public_exact = set(POLICY["public"]["exact"])
+    theme = (SITE / "theme.css").read_text()
+    imports = re.findall(r'@import\s+url\(["\']?([^"\')?]+)', theme)
+    assert imports, "site/theme.css should expose its external dependencies"
+    for imported in imports:
+        public_path = "/" + imported.split("?", 1)[0].lstrip("/")
+        assert public_path in public_exact, (
+            f"public theme.css imports gated asset {public_path}; "
+            "declare the UI dependency in config/site_access.yml"
+        )
+
+
 def test_runtime_artifact_exemption_stays_honest():
     """The existence exemption is only legitimate for genuinely gitignored
     planes. If site/live/ ever became a committed tree, the exemption would

@@ -22,6 +22,9 @@ public:
     - /onboard.css
     - /onboard.js
     - /theme.css
+    # Public visual dependency imported by theme.css. Contains only the shared
+    # navigation icon masks; no customer data or application logic.
+    - /product-nav-icons.css
     - /theme.js
     - /account.js
     - /supabase.js
