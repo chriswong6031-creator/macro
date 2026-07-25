@@ -127,6 +127,11 @@ on:
       # perf: cycle-map payload splitter (core + lazy series chunk)
       - "scripts/_cycles_payload.py"
       - "tests/test_cycles_payload_split.py"
+      # Flow-Surface snapshot store: per-strike net-premium grids materialized in the
+      # live_flow poller loop for the Terminal surface pane (shape ↔ surfaceContract.ts).
+      - "scripts/build_flow_surface.py"
+      - "tests/test_flow_surface.py"
+      - "scripts/live_flow_poller.py"
       - "engine/grading_stats.py"
       - "tests/test_grading_stats.py"
       # W3.6 cross-page cycle-consistency gate (R3-M3): same instrument must show the
@@ -1053,6 +1058,24 @@ jobs:
         run: pip install pytest
       - name: cycles payload split contract tests (lossless recombine, no-mutate, family rules)
         run: python -m pytest tests/test_cycles_payload_split.py -q
+
+  flow-surface:
+    # Flow-Surface store: scripts/build_flow_surface materializes per-strike net-premium
+    # grids (grids[metric][levelIdx][timeIdx]) into the R2 snapshot store the Terminal
+    # surface pane replays. A regression here (grid orientation/dims, idx↔files stamp
+    # drift, dishonest cadence, non-idempotent stamp append) would corrupt or blank the
+    # pane. Shapes are asserted against a vendored copy of the Terminal contract
+    # (surfaceContract.ts). Pure-Python, no engine deps.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append)
+        run: python -m pytest tests/test_flow_surface.py -q
 
   cycle-grading-stats:
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one

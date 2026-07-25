@@ -3067,6 +3067,10 @@ live_flow:
   top_names: 100            # single-name roots appended after ETF anchors
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
+  # Flow-Surface store (scripts/build_flow_surface.py) — per-strike net-premium grids for the
+  # Terminal surface pane, materialized in the poller loop (cadence = cadence_sec above).
+  # surface_roots: [SPY, QQQ, IWM]   # base roots to materialize (defaults to these 3)
+  # surface_top_n: 0                 # +N extra roots by day gross premium (cheap; reuses cycle rollup)
 
 # Live intraday breadth poller (scripts/live_breadth_poller.py) — Phase 2 of the
 # Live Tape program (research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4, D6/D7). ONE
