@@ -813,6 +813,12 @@ on:
       # boundary docs point at only ever fired incidentally, on unrelated PRs.
       # List every subject + test file the tier-gate job runs (app/main.py is
       # already listed above), so the exact PRs that move the boundary are gated.
+      # A guard the guarded change cannot trigger is not a guard: that is the #3418
+      # lesson ("red ~17h unwatched because no workflow named it") one layer up —
+      # #3474 wired the test into a job, nothing wired the job to its inputs.
+      # The TEST files below were the other half of the same hole (a PR editing only
+      # a boundary test ran nothing either). tests/test_site_access_boundary.py now
+      # pins the whole list by parsing this job's own `run:` steps — keep in sync.
       - "app/regwall.py"
       - "app/paywall.py"
       - "app/deploy/Caddyfile"
