@@ -70,13 +70,13 @@
 	# atomic rename outside both the git work-tree and site.served. This prevents
 	# a main-branch pull/rsync from rolling a fresh tick back to the last commit.
 	#
-	# SECURITY: /live/quotes.json is an explicitly reviewed PUBLIC asset. Every
+	# SECURITY: /live/quotes.json /live/breadth.json is an explicitly reviewed PUBLIC asset. Every
 	# other /live/* artifact and the heatmap remain inside @reg_asset below and
 	# therefore pass registration + paywall checks before the external file is
 	# considered. Never add a top-level /live/* file_server: that would bypass
 	# the default-deny static boundary.
 	@vps_public_quote {
-		path /live/quotes.json
+		path /live/quotes.json /live/breadth.json
 		file {
 			root /var/lib/macro-live/public
 		}
@@ -87,7 +87,7 @@
 		file_server
 	}
 	# Zero-downtime fallback before live-setup creates the external quote.
-	handle /live/quotes.json {
+	handle /live/quotes.json /live/breadth.json {
 		header Cache-Control "public, max-age=60, must-revalidate"
 		file_server
 	}
@@ -133,7 +133,7 @@
 	# Protected HTML navigations: IP gate -> registration -> paid feature gate.
 	@reg_html {
 		path *.html
-		not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+		not path /api/* /ws/tape /index.html /plans.html /stocks/* /tools/* /learn/* /blog/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 	}
 
 	handle @reg_html {
@@ -180,7 +180,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* / /index.html /plans.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /fonts/* *.html
+		not path /api/* /ws/tape / /index.html /plans.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -252,7 +252,7 @@
 		# Protected documents fail CLOSED on gate-upstream failure.
 		@reg_html_err {
 			path *.html
-			not path /api/* /index.html /plans.html /stocks/* /tools/* /learn/* /blog/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
+			not path /api/* /ws/tape /index.html /plans.html /stocks/* /tools/* /learn/* /blog/* /_mockup_ccw_credit_desk.html /_mockup_research_vault.html /qa_bottom_sensors.html /status.html
 		}
 		handle @reg_html_err {
 			header Cache-Control "no-store"
@@ -263,7 +263,7 @@
 		# Protected assets fail CLOSED too. The JSON response is intentionally
 		# small and non-cacheable; never substitute the requested static file.
 		@reg_asset_err {
-			not path /api/* / /index.html /plans.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /fonts/* *.html
+			not path /api/* /ws/tape / /index.html /plans.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /onboard.css /onboard.js /theme.css /theme.js /account.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /tools/* /learn/* /blog/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
