@@ -1541,6 +1541,29 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             except Exception as tk_err:  # noqa: BLE001
                 log.warning("poller: ticker JSON failed for %s: %s", tick_root, tk_err)
 
+        # ── Flow-Surface snapshot store (per-strike net-premium grids) ────────
+        # Materialize the Terminal surface pane's replay store from the same
+        # tide_day_state["root_strikes"] cumulative rollup. Staged to the gitignored
+        # data/live_flow_out/surface/ dir + uploaded to R2 below (live_flow/surface/…).
+        # Cadence carried honestly = the poller's cadence_sec (this loop's true interval).
+        # Never raises for a root; a bad root is logged and skipped. See
+        # scripts/build_flow_surface.py + RECON §2 / MASTERPLAN §3 Lane T item 5.
+        surface_paths: list[tuple[Path, str]] = []
+        try:
+            from scripts.build_flow_surface import (
+                build_and_stage_surfaces, resolve_surface_roots,
+            )
+            surf_roots = resolve_surface_roots(cfg, rg_dict)
+            surface_paths = build_and_stage_surfaces(
+                root_strikes_by_root=tide_day_state.get("root_strikes", {}),
+                roots=surf_roots,
+                session_date=session_date,
+                asof=meta.get("asof", feed.get("asof", "")),
+                cadence_sec=cadence,
+            )
+        except Exception as surf_err:  # noqa: BLE001
+            log.warning("poller: flow-surface store failed: %s", surf_err)
+
         roots_ok_n    = meta.get("roots_polled", 0)
         roots_total_n = meta.get("universe_n", len(roots))
         roots_skip_n  = roots_total_n - roots_ok_n
@@ -1615,6 +1638,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             _upload_r2(s3, bucket, dte_tide_path, R2_PREFIX + "dte_tide_current.json")
             for tk_local, tk_r2_key in ticker_paths:
                 _upload_r2(s3, bucket, tk_local, tk_r2_key)
+
+            # Flow-Surface store: idx.json + {HHMM}.json per root. The r2_key is the
+            # full key (live_flow/surface/{ROOT}/…) built by build_flow_surface — no
+            # R2_PREFIX join here.
+            for surf_local, surf_r2_key in surface_paths:
+                _upload_r2(s3, bucket, surf_local, surf_r2_key)
 
             # FC-R8: upload daily summary to R2 WITHOUT the live_flow/ TTL prefix.
             # Key: live_flow_daily/<date>.json — permanent (no 48h prune).
