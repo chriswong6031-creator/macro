@@ -3691,24 +3691,48 @@ def _is_retryable_provider_error(exc: Exception) -> bool:
     return bool(re.search(r"\b(429|500|502|503|529)\b", s))
 
 
+def _is_provider_unavailable_error(exc: Exception) -> bool:
+    """True when the error means THIS provider/account cannot serve for a provider-side
+    reason (as opposed to the REQUEST being malformed): payment/quota/balance exhaustion.
+
+    Covers DeepSeek's "Insufficient Balance" (its most common outage — a pay-as-you-go
+    account that ran dry returns exactly this) and OpenAI-style "insufficient_quota" /
+    HTTP 402 Payment Required. Distinct from a 429 rate-limit (transient) and from a 400
+    bad-request (which would fail identically on the fallback, so must NOT fail over)."""
+    code = getattr(exc, "status_code", None)
+    if isinstance(code, int) and code == 402:
+        return True
+    s = str(exc).lower()
+    return ("insufficient balance" in s or "insufficient_quota" in s
+            or "insufficient funds" in s or "payment required" in s
+            or ("402" in s and "payment" in s))
+
+
 def _is_failover_error(exc: Exception) -> bool:
     """True when a provider error should trigger failover to the NEXT candidate.
 
-    Two disjoint cases both mean "this provider can't serve — try the next one":
-      • a transient 429/5xx/overloaded/timeout (see _is_retryable_provider_error), and
+    The unifying rule: fail over whenever THIS provider cannot serve for a PROVIDER-side
+    reason, and only re-raise when the REQUEST itself is bad (a 400/404/422 that would
+    fail identically on the fallback). Provider-side reasons, all covered here:
+      • transient 429/5xx/overloaded/timeout/connection (_is_retryable_provider_error),
       • a 401/403 auth failure — an EXPIRED or REVOKED credential is permanently dead
-        for THIS provider, so the waterfall must fall through to the Anthropic fallback
-        exactly as llm_auth's make_call is designed to (its whole reason to exist).
+        for THIS provider (llm_auth._is_auth_error); the waterfall falls to the fallback,
+      • a 429/529/quota/usage-limit exhaustion (llm_auth._is_rate_limit_error), and
+      • payment/balance exhaustion — 402 / DeepSeek "Insufficient Balance" / OpenAI
+        "insufficient_quota" (_is_provider_unavailable_error). A dry primary account must
+        fall over to a funded fallback, not black out the lane.
 
-    Before this covered auth errors, an expired DEEPSEEK_API_KEY (Fast) or
-    CLAUDE_CODE_OAUTH_TOKEN (Pro) raised straight out of the streaming loop and the
-    lane blacked out to an empty reply — never reaching the healthy fallback key.
+    Before this, an expired DEEPSEEK_API_KEY (Fast) or CLAUDE_CODE_OAUTH_TOKEN (Pro) — or
+    a dry DeepSeek balance — raised straight out of the streaming loop and the lane
+    blacked out to an empty reply, never reaching the healthy fallback key.
     """
     if _is_retryable_provider_error(exc):
         return True
+    if _is_provider_unavailable_error(exc):
+        return True
     try:
         from engine import llm_auth  # noqa: PLC0415
-        return llm_auth._is_auth_error(exc)
+        return llm_auth._is_auth_error(exc) or llm_auth._is_rate_limit_error(exc)
     except Exception:  # noqa: BLE001
         return False
 
