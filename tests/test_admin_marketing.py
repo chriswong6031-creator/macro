@@ -2028,3 +2028,75 @@ class TestPublisherArmStatePayload:
         pl = marketing.overview(tmp_path)["pipeline"]
         assert pl["publisher"]["kill_switch"] is True
         assert pl["publisher"]["arm_state"]["enabled"] is True
+
+
+class TestPostNow:
+    """BREAKING DISPATCH — admin.marketing.post_now(): the "Post now" button's
+    server side. Dispatches marketing-publish.yml scoped to one outbox item.
+    Every assertion here is about the GUARDS; the actual posting decisions live
+    in the runner (tests/test_marketing_publisher_autoapprove.py)."""
+
+    @staticmethod
+    def _wire(monkeypatch, *, armed=True, dispatch=None):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "token", lambda: "tkn")
+        monkeypatch.setattr(marketing, "arm_state",
+                            lambda: {"enabled": armed, "source": "github_variable",
+                                     "error": None, "note": ""})
+        calls: list[dict] = []
+
+        def fake_dispatch(workflow="daily.yml", ref="main", inputs=None):
+            calls.append({"workflow": workflow, "ref": ref, "inputs": inputs})
+            return dispatch if dispatch is not None else {"ok": True}
+
+        monkeypatch.setattr(github_api, "dispatch", fake_dispatch)
+        return calls
+
+    def test_dispatches_the_publisher_with_the_item_id(self, monkeypatch):
+        calls = self._wire(monkeypatch)
+        r = marketing.post_now("ob-2026-07-25-15098c35f1")
+        assert r["ok"] is True and r["dispatched"] is True
+        assert calls == [{
+            "workflow": "marketing-publish.yml", "ref": "main",
+            "inputs": {"post_now_item": "ob-2026-07-25-15098c35f1"},
+        }]
+
+    def test_accepts_a_short_comma_list(self, monkeypatch):
+        calls = self._wire(monkeypatch)
+        r = marketing.post_now(" ob-a , ob-b ")
+        assert r["ok"] is True
+        assert calls[0]["inputs"]["post_now_item"] == "ob-a,ob-b"
+
+    def test_rejects_an_argparse_flag_shaped_id(self, monkeypatch):
+        """The runner passes this value to argparse — a leading dash would be
+        read as a FLAG, not an item id."""
+        calls = self._wire(monkeypatch)
+        r = marketing.post_now("--live")
+        assert r["ok"] is False and "valid outbox item id" in r["error"]
+        assert calls == []
+
+    def test_rejects_empty_and_oversized_batches(self, monkeypatch):
+        calls = self._wire(monkeypatch)
+        assert marketing.post_now("")["ok"] is False
+        assert marketing.post_now("a,b,c,d,e,f")["ok"] is False
+        assert calls == []
+
+    def test_refuses_while_the_publisher_is_disarmed(self, monkeypatch):
+        """A dispatch with the kill-switch off dry-runs and posts nothing — say
+        so instead of letting the operator watch an empty green run."""
+        calls = self._wire(monkeypatch, armed=False)
+        r = marketing.post_now("ob-x")
+        assert r["ok"] is False and "DISARMED" in r["error"]
+        assert calls == []
+
+    def test_requires_a_github_token(self, monkeypatch):
+        from admin import github_api
+        self._wire(monkeypatch)
+        monkeypatch.setattr(github_api, "token", lambda: "")
+        r = marketing.post_now("ob-x")
+        assert r["ok"] is False and "GH_TOKEN" in r["error"]
+
+    def test_surfaces_a_dispatch_failure(self, monkeypatch):
+        self._wire(monkeypatch, dispatch={"ok": False, "error": "HTTP 403 — Actions: write"})
+        r = marketing.post_now("ob-x")
+        assert r["ok"] is False and "403" in r["error"]

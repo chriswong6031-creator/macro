@@ -257,6 +257,57 @@ if you would rather not expose chart images on that domain, leave
 
 ---
 
+## 13. "Post now" — breaking dispatch
+
+Normally a post waits for its slot on the 2-hour Pacific ladder, and the publisher
+sweeps every 2 hours to send whatever is due. **Post now** skips that wait.
+
+**Where:** Admin → Marketing → Outbox → the **Post now** button on any card that
+is still going out (undecided, held, or approved-and-waiting). Not offered on
+posts that already went out, were quarantined, or are out of retries.
+
+**What happens:** the admin dispatches `marketing-publish.yml` with the
+`post_now_item` input. That run:
+
+1. restricts itself to that one item — nothing else in the queue goes out with it;
+2. approves it regardless of `publish.auto_approve` (your click is the approval);
+3. skips the humanizing jitter (a breaking post should not sit out a random sleep);
+4. hands Buffer a concrete **share-now** `dueAt` instead of `addToQueue` — the
+   latter parks the post in *Buffer's own* queue at whatever slot it next offers,
+   which is exactly the latency a breaking post cannot afford.
+
+**It jumps the queue, not the checks.** Copy validation, the live tape gate, the
+channel check, the daily cap and the 10-minute global floor all still run. If a
+post went out 3 minutes ago, this one is booked for the 10-minute mark rather than
+sent immediately — breaking budges in *under* the floor, it never overrides it.
+How far ahead that booking may reach is `publish.immediate_defer_max_minutes`
+(default 60); past that horizon the item defers to the next sweep as usual.
+
+**Reading the result:** a breaking dispatch that posts nothing exits **non-zero**,
+so the run shows RED in Actions rather than a silent green no-op. Open the run log
+and read the gate lines (`held by tape gate`, `failed validation`, `no configured
+channel id`, `deferred`). The publisher must be **armed** — the admin refuses the
+dispatch outright while the kill-switch is off, because that run would dry-run and
+post nothing.
+
+**CLI equivalent** (same code path, for a local dry-run check):
+
+```
+python -m scripts.marketing_publisher --post-now ob-2026-07-25-15098c35f1
+```
+
+**Earnings auto-detect is NOT live.** The fast-lane daemon
+(`scripts/marketing_fastlane_daemon.py` → `engine/marketing/fastlane.py`) is built
+and emits `immediate` outbox items, and this dispatch path sends them the moment
+they land — but its only event provider (`earnings_feed.FreePollProvider`, a
+finviz RSS URL) now returns **HTTP 404**, and no runner is scheduled for the
+daemon. There is also no source of earnings *actuals* in the repo
+(`data/earnings/earnings.parquet` is a forward calendar: next date + EPS forecast).
+Until a working earnings-results provider is wired, breaking is operator-driven
+via the button above.
+
+---
+
 ### Where to look when something is off
 
 - **Admin → Marketing → Publisher** — arm state, status counts, recent posts +

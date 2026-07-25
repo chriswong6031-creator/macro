@@ -234,6 +234,43 @@ def _floor_minutes_cfg(pub_cfg: dict) -> int:
     return v if v > 0 else 0
 
 
+def _immediate_defer_cfg(pub_cfg: dict) -> int:
+    """publish.immediate_defer_max_minutes — how far ahead an IMMEDIATE item may
+    be Buffer-scheduled to clear the global floor (see _immediate_due_at). Past
+    this horizon the item defers to the next publisher run instead, so a long
+    backlog can never book the whole afternoon off one sweep. Absent/unparseable
+    → 60; 0 or negative → no horizon (always schedule)."""
+    if "immediate_defer_max_minutes" not in pub_cfg:
+        return 60
+    try:
+        return int(pub_cfg.get("immediate_defer_max_minutes"))
+    except (TypeError, ValueError):
+        return 60
+
+
+def _immediate_due_at(now: datetime, last_post_at: "datetime | None",
+                      floor_min: int, max_defer_min: int) -> "datetime | None":
+    """When an IMMEDIATE (breaking / operator "post now") item may go out.
+
+    Cadence masterplan gate 6: a breaking item posts immediately when the floor
+    is clear, or at ``last_post + floor`` when something posted recently — it
+    does NOT re-anchor the ladder, and it is NOT dropped. Scheduled items keep
+    the plain skip-and-retry behaviour of _within_floor(); only immediate items
+    take this path, because "retry in 2 hours" is not a breaking post.
+
+    Returns the datetime to hand Buffer, or None when the wait would exceed
+    ``max_defer_min`` (caller falls back to deferring to the next run).
+    """
+    if last_post_at is None or floor_min <= 0:
+        return now
+    earliest = last_post_at + timedelta(minutes=floor_min)
+    if earliest <= now:
+        return now
+    if max_defer_min > 0 and earliest > now + timedelta(minutes=max_defer_min):
+        return None
+    return earliest
+
+
 def _last_global_post_at(root) -> "datetime | None":
     """The most recent 'posted' transition time across ALL accounts (the floor is
     account-agnostic), or None if nothing has ever posted. Seeds the floor across
@@ -268,17 +305,28 @@ def _within_floor(last_post_at: "datetime | None", now: datetime, floor_min: int
 
 
 def _select_approved_due(state: dict, statuses: dict, items_by_id: dict,
-                         account: str | None, now: datetime) -> list[dict]:
+                         account: str | None, now: datetime,
+                         only_ids: "frozenset[str] | None" = None) -> list[dict]:
     """The APPROVED + DUE candidate set (+ optional account filter), sorted the
     canonical way: priority, then schedule, then id. Refactored out of main() so
     it can run twice (once to feed generate_slot_items a preliminary list, once
     after the auto-approve pass) without duplicating the selection logic.
+
+    ``only_ids`` is the operator "post now" override: the set collapses to those
+    ids and the DUE check is dropped (posting now is the entire point — an item
+    still sitting on a later ladder slot must be eligible). Every SAFETY gate in
+    the caller — validation, tape gate, cap, channel, floor — still runs.
     """
     out: list[dict] = []
     for iid, s in statuses.items():
         if s != "approved" or iid not in items_by_id:
             continue
         it = items_by_id[iid]
+        if only_ids is not None:
+            if iid not in only_ids:
+                continue
+            out.append(it)
+            continue
         if account is not None and it.get("account") != account:
             continue
         if not _is_due(it.get("scheduled_at"), now):
@@ -292,6 +340,7 @@ def _auto_approve_pass(
     outbox, state: dict, pub_cfg: dict, *, cap: int, now: datetime, live: bool,
     account: str | None, posted_today: dict, validate_postable, root,
     allowed_kinds: "frozenset[str] | None" = None,
+    only_ids: "frozenset[str] | None" = None,
 ) -> list[str]:
     """Auto-advance queued → approved for items passing ALL publish gates.
 
@@ -312,6 +361,11 @@ def _auto_approve_pass(
     DRY-RUN safety: when ``live`` is False this makes NO ledger writes — it only
     logs and returns the ids it WOULD approve. The queued→approved transition is
     applied via outbox.transition() ONLY when ``live`` is True.
+
+    ``only_ids`` is the operator "post now" override: the pass considers ONLY
+    those ids and drops the kind scope (the operator's click IS the approval for
+    any kind). It does NOT relax a hold, nor any of the gates above — an item
+    that fails validation, has no channel, or is at cap still will not post.
 
     Returns the list of item ids that were (or, in dry-run, would be) approved,
     in the deterministic order they were considered.
@@ -336,7 +390,7 @@ def _auto_approve_pass(
     # Kind-scope predicate. allowed_kinds None → unrestricted (global auto_approve
     # ON, legacy behavior). allowed_kinds set → ONLY publish-time-lane items of a
     # listed kind may auto-approve (the scoped exception to require_approval).
-    _scoped = allowed_kinds is not None
+    _scoped = allowed_kinds is not None and only_ids is None
     _AUTO_LANE = "publisher_live_movers"
 
     def _kind_ok(it: dict) -> bool:
@@ -349,7 +403,9 @@ def _auto_approve_pass(
     candidates = [
         items_by_id[iid] for iid, s in statuses.items()
         if s == "queued" and iid in items_by_id and iid not in held
-        and (account is None or items_by_id[iid].get("account") == account)
+        and (only_ids is None or iid in only_ids)
+        and (only_ids is not None
+             or account is None or items_by_id[iid].get("account") == account)
         and _kind_ok(items_by_id[iid])
     ]
     candidates.sort(key=lambda i: (i.get("priority", 5), i.get("scheduled_at", ""), i.get("id", "")))
@@ -445,7 +501,20 @@ def main(argv: list[str] | None = None) -> int:
                         help="Repo root directory (default: derived from script location)")
     parser.add_argument("--now", default=None,
                         help="Override 'now' as ISO8601 (testing/determinism)")
+    parser.add_argument("--post-now", default=None, metavar="ID[,ID…]",
+                        help="BREAKING DISPATCH: restrict this run to these outbox item "
+                             "ids, approve them regardless of the auto-approve config, "
+                             "and send them immediately (ignoring their ladder slot). "
+                             "Every safety gate still runs — validation, tape gate, "
+                             "channel, cap, and the global min-spacing floor.")
     args = parser.parse_args(argv)
+
+    # Operator/breaking override: a non-empty set switches the run into
+    # "post these, now" mode. Blank entries are dropped so `--post-now ""` (a
+    # workflow input that was left empty) is simply a normal sweep.
+    post_now: frozenset[str] = frozenset(
+        p.strip() for p in str(args.post_now or "").split(",") if p.strip()
+    )
 
     logging.basicConfig(
         level=logging.INFO,
@@ -551,11 +620,27 @@ def main(argv: list[str] | None = None) -> int:
     # but a kind list is configured, the pass still runs — restricted to
     # publish-time-lane items of those kinds (the descriptive tape posts above).
     # Operator-authored / nightly items of any kind still require approval.
+    #
+    # --post-now (breaking dispatch) FORCES the pass on, scoped to the requested
+    # ids: the operator clicking "Post now" IS the approval, so the run must not
+    # depend on publish.auto_approve being on — but only for those ids, and only
+    # through the same gates.
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
     scoped_on = (not auto_approve_on) and bool(allowed_kinds)
     auto_approved: list[str] = []
-    if auto_approve_on or scoped_on:
+    if post_now:
+        missing = sorted(i for i in post_now if i not in items_by_id)
+        if missing:
+            log.error("--post-now: unknown item id(s) %s — not in the outbox on this "
+                      "checkout (was the item committed to main?)", ", ".join(missing))
+        auto_approved = _auto_approve_pass(
+            _outbox, state, pub_cfg, cap=cap, now=now, live=live,
+            account=args.account, posted_today=posted_today,
+            validate_postable=validate_postable, root=root,
+            only_ids=post_now,
+        )
+    elif auto_approve_on or scoped_on:
         # allowed_kinds param: None when the global flag is ON (unrestricted,
         # legacy), the configured set when only the scoped exception is active.
         _kinds_param = None if auto_approve_on else allowed_kinds
@@ -565,23 +650,28 @@ def main(argv: list[str] | None = None) -> int:
             validate_postable=validate_postable, root=root,
             allowed_kinds=_kinds_param,
         )
-        if live and auto_approved:
-            # Re-fold so the candidate set below sees the freshly-approved items.
-            state = _outbox.fold_state(root)
-            items_by_id = state["items"]
-            statuses = state["status"]
+    if live and auto_approved:
+        # Re-fold so the candidate set below sees the freshly-approved items.
+        state = _outbox.fold_state(root)
+        items_by_id = state["items"]
+        statuses = state["status"]
 
     # ── Candidate set: APPROVED + DUE (+ optional account filter) ────────────
+    # With --post-now the set collapses to the requested ids and the DUE check
+    # is dropped (see _select_approved_due).
     approved_due = _select_approved_due(state, statuses, items_by_id,
-                                        args.account, now)
+                                        args.account, now,
+                                        only_ids=(post_now or None))
 
     mode = "LIVE" if live else "DRY-RUN"
     log.info(
-        "%s | backend=%s cap=%d/day kill_switch=%s --live=%s auto_approve=%s | "
+        "%s | backend=%s cap=%d/day kill_switch=%s --live=%s auto_approve=%s%s | "
         "approved+due=%d stuck_posting=%d auto_approved=%d "
         "pt_generated=%d pt_dropped=%d",
         mode, backend, cap, "ON" if kill_on else "off", bool(args.live),
-        ("on" if auto_approve_on else ("scoped" if scoped_on else "off")),
+        ("post-now" if post_now
+         else "on" if auto_approve_on else ("scoped" if scoped_on else "off")),
+        (f" post_now={','.join(sorted(post_now))}" if post_now else ""),
         len(approved_due), len(stuck_posting), len(auto_approved),
         pt_generated, pt_dropped,
     )
@@ -601,7 +691,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
-    tape_quarantined = tape_skipped = skipped_floor = 0
+    tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -610,7 +700,13 @@ def main(argv: list[str] | None = None) -> int:
     # holds across cron runs, then advanced in-memory after each post so ONE run
     # emits at most one item per window (the rest defer to the next slot). 0 =
     # disabled. This is the Phase-2 floor from the cadence masterplan.
+    #
+    # IMMEDIATE items take the Phase-3 path instead (_immediate_due_at): rather
+    # than deferring to the next 2-hourly sweep — which is not a breaking post —
+    # they hand Buffer a dueAt of last_post + floor and go out then. A ladder
+    # item still defers, unchanged.
     floor_min = _floor_minutes_cfg(pub_cfg)
+    immediate_defer_max = _immediate_defer_cfg(pub_cfg)
     last_post_at = _last_global_post_at(root) if floor_min else None
 
     # ── Live tape gate context: load once per run (fail-soft) ────────────────
@@ -701,13 +797,44 @@ def main(argv: list[str] | None = None) -> int:
 
         # -- global min-spacing floor: at most one post per window (any acct) --
         # Checked AFTER the tape/cap/channel gates so a held item never consumes
-        # the window. A blocked item stays approved and retries the next slot.
-        if _within_floor(last_post_at, now, floor_min):
+        # the window. A blocked LADDER item stays approved and retries the next
+        # slot. A BREAKING/immediate item instead books the first legal moment
+        # (last_post + floor) with Buffer — masterplan gate 6: breaking budges
+        # in under the floor, it does not re-anchor the ladder and is not lost.
+        is_immediate = _is_immediate(it.get("scheduled_at")) or iid in post_now
+        send_at: "datetime | None" = None
+        if is_immediate:
+            send_at = _immediate_due_at(now, last_post_at, floor_min,
+                                        immediate_defer_max)
+            if send_at is None:
+                _wait = int(((last_post_at + timedelta(minutes=floor_min)) - now)
+                            .total_seconds() // 60)
+                log.info("item %s (%s) deferred — the floor does not clear for %dm "
+                         "(> %dm immediate horizon); retries next slot",
+                         iid, account, _wait, immediate_defer_max)
+                skipped_floor += 1
+                continue
+            if send_at > now:
+                deferred_immediate += 1
+                log.info("item %s (%s) is immediate but a post went out %dm ago — "
+                         "scheduling it at %s (last post + %dm floor)",
+                         iid, account,
+                         int((now - last_post_at).total_seconds() // 60),
+                         send_at.strftime("%H:%MZ"), floor_min)
+        elif _within_floor(last_post_at, now, floor_min):
             _ago = int((now - last_post_at).total_seconds() // 60)
             log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
                      "global floor); retries next slot", iid, account, _ago, floor_min)
             skipped_floor += 1
             continue
+
+        # The wall-clock this post is booked for: an immediate item's resolved
+        # share-now/floor time, else the item's own ladder slot. Also the value
+        # the in-memory floor advances to, so a second immediate item in the same
+        # run books the NEXT window rather than piling onto this one.
+        send_scheduled_at = (send_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+                             if is_immediate else it.get("scheduled_at"))
+        floor_advance = send_at if is_immediate else now
 
         # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
         # build-time R2 upload produced one; else [] → text-only (graceful).
@@ -716,12 +843,15 @@ def main(argv: list[str] | None = None) -> int:
         # -- DRY-RUN: print, never touch the network or the ledger -----------
         if not live:
             log.info(
-                "WOULD POST | account=%s channel=%s chars=%d media=%d sched=%s\n    %s",
+                "WOULD POST | account=%s channel=%s chars=%d media=%d sched=%s "
+                "send_at=%s%s\n    %s",
                 account, channel_id, len(text), len(media_paths),
-                it.get("scheduled_at"), text.replace("\n", " ")[:200],
+                it.get("scheduled_at"), send_scheduled_at,
+                " (immediate)" if is_immediate else "",
+                text.replace("\n", " ")[:200],
             )
             would_post += 1
-            last_post_at = now   # advance the floor so a dry-run mirrors live pacing
+            last_post_at = floor_advance   # mirror live pacing in the projection
             continue
 
         # -- LIVE: approved → posting BEFORE the network call ----------------
@@ -735,8 +865,11 @@ def main(argv: list[str] | None = None) -> int:
             channel_id=channel_id,
             media_paths=media_paths or None,
             link=link,
-            scheduled_at=(None if _is_immediate(it.get("scheduled_at")) else it.get("scheduled_at")),
+            scheduled_at=send_scheduled_at,
             now=now,
+            # SHARE-NOW: never let a breaking item fall through to Buffer's own
+            # queue (addToQueue) — it must be customScheduled at a concrete time.
+            immediate=is_immediate,
         )
 
         if receipt.ok:
@@ -762,8 +895,13 @@ def main(argv: list[str] | None = None) -> int:
             )
             posted_today[account] = posted_today.get(account, 0) + 1
             posted += 1
-            last_post_at = now   # advance the global floor: next item this run defers
-            log.info("item %s POSTED via %s id=%s", iid, receipt.backend, receipt.external_id)
+            # Advance the global floor. A ladder item consumes the window from
+            # NOW; an immediate item consumes it from the time it is booked for,
+            # so a burst of breaking items lands at +0/+10/+20, never together.
+            last_post_at = floor_advance
+            log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
+                     receipt.external_id,
+                     (f" (scheduled {send_scheduled_at})" if send_at and send_at > now else ""))
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -776,9 +914,10 @@ def main(argv: list[str] | None = None) -> int:
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
+        "deferred_immediate=%d "
         "skipped_cap=%d skipped_no_channel=%d stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
-        tape_quarantined, tape_skipped, skipped_floor,
+        tape_quarantined, tape_skipped, skipped_floor, deferred_immediate,
         skipped_cap, skipped_channel, len(stuck_posting), len(auto_approved),
     )
     try:
@@ -794,6 +933,7 @@ def main(argv: list[str] | None = None) -> int:
             "tape_quarantined": tape_quarantined,
             "tape_skipped": tape_skipped,
             "skipped_floor": skipped_floor,
+            "deferred_immediate": deferred_immediate,
             "skipped_cap": skipped_cap,
             "skipped_no_channel": skipped_channel,
             "stuck_posting": len(stuck_posting),
@@ -801,9 +941,18 @@ def main(argv: list[str] | None = None) -> int:
             "pt_generated": pt_generated,
             "pt_dropped": pt_dropped,
             "account": args.account or "all",
+            **({"post_now": sorted(post_now)} if post_now else {}),
         })
     except Exception:  # noqa: BLE001
         pass
+
+    # A breaking dispatch that posted nothing exits non-zero so the operator who
+    # clicked "Post now" sees a RED run instead of a silent no-op. Dry-run (the
+    # kill-switch is off) is exempt — nothing was ever going to post.
+    if post_now and live and not posted:
+        log.error("--post-now: nothing was posted for %s — see the gate lines above",
+                  ", ".join(sorted(post_now)))
+        return 3
 
     return 0
 
@@ -901,9 +1050,10 @@ def dry_run_report(root=None, *, account: str | None = None,
 
         would_post: list[dict] = []
         quarantine: list[dict] = []
-        skipped_cap = skipped_channel = skipped_floor = 0
+        skipped_cap = skipped_channel = skipped_floor = deferred_immediate = 0
         budget = dict(posted_today)
         floor_min = _floor_minutes_cfg(pub_cfg)
+        immediate_defer_max = _immediate_defer_cfg(pub_cfg)
         last_post_at = _last_global_post_at(r) if floor_min else None
         for it in approved_due:
             iid = it["id"]
@@ -921,18 +1071,32 @@ def dry_run_report(root=None, *, account: str | None = None,
             if not channel_id:
                 skipped_channel += 1
                 continue
-            if _within_floor(last_post_at, now, floor_min):
+            # Mirror main()'s floor handling exactly: a ladder item defers, an
+            # immediate item books last_post + floor (or defers past the horizon).
+            is_immediate = _is_immediate(it.get("scheduled_at"))
+            send_at = (_immediate_due_at(now, last_post_at, floor_min,
+                                         immediate_defer_max)
+                       if is_immediate else None)
+            if is_immediate and send_at is None:
                 skipped_floor += 1
                 continue
+            if not is_immediate and _within_floor(last_post_at, now, floor_min):
+                skipped_floor += 1
+                continue
+            if send_at is not None and send_at > now:
+                deferred_immediate += 1
             media = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
             would_post.append({
                 "id": iid, "account": acct, "channel": channel_id,
                 "chars": len(text), "media": len(media),
                 "scheduled_at": it.get("scheduled_at"),
+                "send_at": (send_at or now).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "immediate": bool(is_immediate),
                 "preview": text.replace("\n", " ")[:200],
             })
             budget[acct] = budget.get(acct, 0) + 1
-            last_post_at = now   # advance the floor so the preview mirrors live pacing
+            # advance the floor so the preview mirrors live pacing
+            last_post_at = send_at if send_at is not None else now
 
         return {
             "ok": True,
@@ -949,6 +1113,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "skipped_cap": skipped_cap,
                 "skipped_no_channel": skipped_channel,
                 "skipped_floor": skipped_floor,
+                "deferred_immediate": deferred_immediate,
                 "stuck_posting": len(stuck),
                 "would_auto_approve": len(would_auto),
             },

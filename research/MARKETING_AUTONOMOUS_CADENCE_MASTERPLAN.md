@@ -4,6 +4,27 @@
 
 Author: main-loop (Opus). Operator decisions captured live in the 2026-07-24 session.
 
+### Build status (updated 2026-07-25)
+
+| Phase | State |
+|---|---|
+| 1 — unlimited caps | **MERGED** (#3376, cap-chain heal #3429) |
+| 2 — ladder + floor + cadence | **MERGED** (floor #3434, 2h Pacific ladder #3446, 9-sweep cron #3449) |
+| 3 — breaking dispatch | **BUILT 2026-07-25** — Buffer share-now (F3), floor-respecting immediate scheduling (gate 6), publisher `--post-now`, `workflow_dispatch` inputs + jitter skip, admin **Post now** button |
+| 4 — autonomy staging | superseded in part: the operator chose auto-approve for flagship signals on 2026-07-24 rather than the 2-week supervised window |
+
+**Phase 3 honest gap — earnings auto-detect has no data source.** The fast-lane
+detection plumbing exists (`engine/marketing/fastlane.py`, `scripts/marketing_fastlane_daemon.py`)
+and now emits an explicit `scheduled_at: "immediate"`, so the dispatch path sends
+its items the moment they land. But its only provider — `earnings_feed.FreePollProvider`,
+polling `https://finviz.com/rss.ashx?v=3&auth=0` — returns **HTTP 404** (verified
+2026-07-25), `PaidProviderStub` was never implemented, and **no workflow or launchd
+job runs the daemon**. The repo has no earnings *actuals* either: `data/earnings/earnings.parquet`
+is a forward calendar (next date + EPS forecast, `as_of` 2026-06-19). So §6's
+"earnings auto-detected by the fast-lane daemon (exists)" is true of the code and
+false of the data. Breaking is **operator-driven** (the Post now button) until a
+working earnings-results provider is wired — that is its own build, not this one.
+
 ---
 
 ## §0 — ACCEPTANCE GATES (a build is NOT done unless every box is true)
