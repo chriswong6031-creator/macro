@@ -5,20 +5,16 @@
 Machine-readable brand facts: https://www.mastermind-x.com/brand-facts.json
 Sitemap: https://www.mastermind-x.com/sitemap.xml
 
-## Primary surfaces
-- [Macro Regime Dashboard](https://www.mastermind-x.com/macro.html): US macro regime, risk radar and market state, updated nightly.
-- [US Stock Dashboard](https://www.mastermind-x.com/us_stocks.html): ranked US stock board with entry/quality/context signals.
-- [Stock Dossiers](https://www.mastermind-x.com/stocks/index.html): ~1,460 per-ticker pages — trend, stage, confluence, ownership and options context.
-- [China A-Share Regime](https://www.mastermind-x.com/china.html) · [Hong Kong Regime](https://www.mastermind-x.com/hk.html) · [Canada Regime](https://www.mastermind-x.com/canada.html)
-- [Thematic Baskets](https://www.mastermind-x.com/baskets.html): theme performance vs benchmark with leadership health.
-- [Factor Rankings](https://www.mastermind-x.com/factors.html) · [Sector Cycles](https://www.mastermind-x.com/sector_cycles.html) · [Market Structure](https://www.mastermind-x.com/market_structure.html)
-- [Congressional Trades](https://www.mastermind-x.com/congress_trades.html): tracked congressional trading with entry-timing context.
-- [Today's Movers](https://www.mastermind-x.com/movers.html) · [Research Reports](https://www.mastermind-x.com/reports.html) · [Learn](https://www.mastermind-x.com/learn.html)
+## Public, citable surfaces
+- [Stock Dossiers](https://www.mastermind-x.com/stocks/index.html): 1,600+ per-ticker pages — trend, stage, confluence, ownership and options context.
+- [Research Library](https://www.mastermind-x.com/research/): public report landing pages and excerpts; full reports may require a subscription.
+- [Learning Center](https://www.mastermind-x.com/learn/index.html): technical analysis, position sizing, options mechanics and market breadth.
+- [Trading Calculators](https://www.mastermind-x.com/tools/index.html): risk, return, sizing and portfolio calculators.
+- [Mastermind Blog](https://www.mastermind-x.com/blog/index.html): plain-English articles on trading math, risk and market mechanics.
 
-## Cadence & method
-- US boards update nightly after US close; Asia boards after Asia close.
-- [Methodology](https://www.mastermind-x.com/methodology.html): how factor labs, baskets and seasonality are computed.
-- Every signal panel discloses when a reading is display-only or unconfirmed; nulls are printed, not hidden.
+## Product access
+- The live regional dashboards, ranked boards, Neural Web and premium signal detail require an account. Start at [Mastermind](https://www.mastermind-x.com/) or review [Plans](https://www.mastermind-x.com/plans.html).
+- Public stock dossiers update after the relevant market close. Each page carries its own freshness and limitation labels.
 
 ## Free tools & learning
 - [Trading Calculators](https://www.mastermind-x.com/tools/index.html): position sizing, risk/reward, compounding, CAGR, drawdown recovery — free, no sign-in.

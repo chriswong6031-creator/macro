@@ -173,14 +173,18 @@ a{text-decoration:none;color:inherit;}
 .glass{background:var(--mx5-glass-bg);border:1px solid var(--mx5-glass-border);border-radius:var(--mx5-radius-card);backdrop-filter:var(--mx5-blur);-webkit-backdrop-filter:var(--mx5-blur);box-shadow:var(--mx5-glass-shadow);}
 /* Mono tabular numerals — the terminal feel */
 .num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-.01em;}
-/* ── mx5 animation keyframes (opacity-only / one-shot — perf-safe) ── */
+/* ── mx5 animation keyframes (opacity / dash-reveal — one-shot, perf-safe) ── */
 @keyframes lrRise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
 @keyframes lrGlowBreathe{0%,100%{opacity:.32;}50%{opacity:.72;}}
 @keyframes lrDrawIn{to{stroke-dashoffset:0;}}
-@keyframes lrGaugeSweep{from{transform:rotate(-118deg);}to{transform:var(--gauge-rot,rotate(0deg));}}
 @keyframes lrBarGrow{from{transform:scaleX(0);}to{transform:scaleX(1);}}
 @keyframes lrDotPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-@keyframes lrGaugeSweep{from{transform:rotate(-95deg);}}
+/* breadth gauge: the scale arc draws left→right, then the value marker fades in.
+   Rest state is the finished frame (full arc / visible marker) so the value is
+   correct even when the animation is skipped — the old needle broke precisely
+   because its resting value lived only inside a (losing) keyframe. */
+@keyframes lrArcReveal{from{stroke-dashoffset:100;}}
+@keyframes lrMarkFade{from{opacity:0;}to{opacity:1;}}
 /* ═══════════════ HERO ═══════════════ */
 .lr-hero{position:relative;display:grid;grid-template-columns:minmax(0,0.86fr) minmax(0,1.14fr);gap:0;overflow:hidden;margin-bottom:20px;padding:0;animation:lrRise .5s cubic-bezier(.22,.9,.26,1.02) both;}
 .lr-hero-read{padding:24px 26px 22px;display:flex;flex-direction:column;gap:12px;min-width:0;}
@@ -201,21 +205,31 @@ a{text-decoration:none;color:inherit;}
 .lr-count{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:9px;background:var(--tile);border:1px solid var(--hair-strong);font-size:0.74rem;font-weight:600;color:var(--text-secondary);}
 .lr-count b{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:0.95rem;font-weight:800;color:var(--text-primary);letter-spacing:-.02em;}
 .lr-count .lr-cdot{width:7px;height:7px;border-radius:50%;}
-/* ── arc gauge ── */
-.lr-gauge-wrap{display:flex;align-items:center;gap:16px;margin:2px 0 2px;}
-.lr-gauge{position:relative;width:150px;height:92px;flex-shrink:0;}
-.lr-gauge svg{width:150px;height:92px;overflow:visible;display:block;}
-.lr-gauge-track{fill:none;stroke:var(--hair-strong);stroke-width:9;stroke-linecap:round;}
-.lr-gauge-arc{fill:none;stroke-width:9;stroke-linecap:round;}
-.lr-tick{stroke:var(--text-dim);stroke-width:2;stroke-linecap:round;}
-.lr-needle{stroke:var(--text-primary);stroke-width:3;stroke-linecap:round;transform-origin:110px 110px;animation:lrGaugeSweep 1s cubic-bezier(.22,.9,.26,1.02);}
-.lr-needle-hub{fill:var(--text-primary);}
-.lr-gauge-val{position:absolute;left:0;right:0;bottom:2px;text-align:center;}
-.lr-gauge-num{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--text-primary);line-height:1;}
-.lr-gauge-cap{font-size:0.62rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin-top:2px;}
-.lr-gauge-scale{display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-dim);width:150px;margin-top:-6px;font-family:var(--num);}
+/* ── breadth arc gauge — mx5 idiom (gradient scale + value marker, no centre
+   needle). The value is a marker riding the arc + the numeral in the well;
+   nothing crosses the number, so the read is always clean. ── */
+.lr-gauge-wrap{display:flex;align-items:center;gap:20px;margin:8px 0 2px;}
+.lr-gauge{position:relative;width:158px;height:96px;flex-shrink:0;}
+.lr-gauge svg{width:158px;height:96px;overflow:visible;display:block;}
+.lr-br-track{fill:none;stroke:var(--hair-strong);stroke-width:9;stroke-linecap:round;}
+.lr-br-scale{fill:none;stroke-width:9;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0;
+  filter:drop-shadow(0 1px 5px rgba(0,0,0,.28));animation:lrArcReveal 1.05s cubic-bezier(.22,.9,.26,1.02);}
+/* Breadth is a direction read (advance/decline) → paint from --down/--up so the
+   global zh swap flips it to 红涨绿跌. Stops get their colour from a CSS rule,
+   not a stop-color="var(…)" presentation attribute (SVG can't resolve var there). */
+.lr-br-g0{stop-color:var(--down);}   /* weak / narrow breadth */
+.lr-br-gm{stop-color:var(--text-muted);}
+.lr-br-g1{stop-color:var(--up);}     /* broad advance */
+/* regime gates etched on the dial: below 40% narrows, over 61% broadens */
+.lr-br-tick{stroke:var(--text-secondary);stroke-width:2;stroke-linecap:round;opacity:.62;}
+.lr-br-halo{fill:color-mix(in srgb,var(--text-primary) 16%,transparent);animation:lrMarkFade .6s .34s both;}
+.lr-br-core{fill:var(--text-primary);stroke:var(--bg-base);stroke-width:2;
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--text-primary) 55%,transparent));animation:lrMarkFade .6s .34s both;}
+.lr-gauge-val{position:absolute;left:0;right:0;bottom:2px;text-align:center;pointer-events:none;}
+.lr-gauge-num{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--text-primary);line-height:1;}
+.lr-gauge-cap{font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;}
 .lr-gauge-side{min-width:0;}
-.lr-gauge-side .lr-gs-line{font-size:0.76rem;color:var(--text-secondary);line-height:1.45;}
+.lr-gauge-side .lr-gs-line{font-size:0.82rem;color:var(--text-secondary);line-height:1.5;}
 .lr-gauge-side .lr-gs-line b{color:var(--text-primary);font-weight:700;}
 /* ── lifecycle funnel (hero right) ── */
 .lr-funnel{position:relative;padding:22px 24px 20px;border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:center;min-width:0;background:linear-gradient(180deg,rgba(255,255,255,0.012),transparent 40%);}
@@ -253,7 +267,7 @@ a{text-decoration:none;color:inherit;}
 }
 @media(prefers-reduced-motion:reduce){
   .lr-hero,.lr-fstage{animation:none;}
-  .lr-needle{animation:none;}
+  .lr-br-scale,.lr-br-halo,.lr-br-core{animation:none;}
 }
 /* ── LANG/THEME visibility ── */
 .l-zh{display:none;}
@@ -683,21 +697,26 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         {% set _gf = 0 if _gf_raw < 0 else (1 if _gf_raw > 1 else _gf_raw) %}
         {% set _grot = ((_gf - 0.5) * 180) %}
       <div class="lr-gauge">
-        <svg viewBox="0 0 220 130" aria-hidden="true">
+        <svg viewBox="0 0 156 96" aria-hidden="true">
           <defs>
             <linearGradient id="lrGaugeGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="var(--col-crowded)"/>
-              <stop offset="38%" stop-color="var(--text-muted)"/>
-              <stop offset="62%" stop-color="var(--text-muted)"/>
-              <stop offset="100%" stop-color="var(--col-breakaway)"/>
+              <stop offset="0%" class="lr-br-g0"/>
+              <stop offset="42%" class="lr-br-gm"/>
+              <stop offset="60%" class="lr-br-gm"/>
+              <stop offset="100%" class="lr-br-g1"/>
             </linearGradient>
           </defs>
-          <path class="lr-gauge-track" d="M 22 110 A 88 88 0 0 1 198 110"/>
-          <path class="lr-gauge-arc" d="M 22 110 A 88 88 0 0 1 198 110" stroke="url(#lrGaugeGrad)"/>
-          <line class="lr-tick" x1="53.4" y1="53.4" x2="42.1" y2="42.1"/>
-          <line class="lr-tick" x1="172.8" y1="60.5" x2="185.4" y2="50.6"/>
-          <line class="lr-needle" x1="110" y1="110" x2="110" y2="34" style="--gauge-rot:{{ '%.1f'|format(_grot) }}deg;"/>
-          <circle class="lr-needle-hub" cx="110" cy="110" r="6"/>
+          {# faint base, then the red→green scale arc drawn over it #}
+          <path class="lr-br-track" d="M 14 82 A 64 64 0 0 1 142 82"/>
+          <path class="lr-br-scale" d="M 14 82 A 64 64 0 0 1 142 82" stroke="url(#lrGaugeGrad)" pathLength="100"/>
+          {# regime gates: 40% (narrows below) at rot −45°, 61% (broad thrust) at rot +49.5° #}
+          <g transform="rotate(-45 78 82)"><line class="lr-br-tick" x1="78" y1="11" x2="78" y2="25"/></g>
+          <g transform="rotate(49.5 78 82)"><line class="lr-br-tick" x1="78" y1="11" x2="78" y2="25"/></g>
+          {# value marker riding the arc (rotation is a static, server-computed transform) #}
+          <g transform="rotate({{ '%.1f'|format(_grot) }} 78 82)">
+            <circle class="lr-br-halo" cx="78" cy="18" r="8.5"/>
+            <circle class="lr-br-core" cx="78" cy="18" r="4.5"/>
+          </g>
         </svg>
         <div class="lr-gauge-val">
           <div class="lr-gauge-num">{{ '%.0f'|format(_gv) }}</div>

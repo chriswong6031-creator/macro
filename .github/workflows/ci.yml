@@ -298,6 +298,11 @@ on:
       # covered by engine/**, but a test-only re-pin must still re-run the rot-sweep
       # step that carries it (2026-07-24 born-red organ-chip re-pin).
       - "tests/test_china_act_now.py"
+      # W4 stock-personality surface suite (re-pinned 2026-07-25 after PR #3256's Prophet
+      # card removed the dashboard chips): template/engine/script sides are covered by
+      # their globs; the test file needs an explicit path so a test-only re-pin still
+      # re-runs the rot-sweep step that carries it.
+      - "tests/test_stock_personality_w4_surfaces.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -311,6 +316,12 @@ on:
       - "engine/transmission_chains.py"
       - "scripts/run_transmission_chains.py"
       - "tests/test_transmission_chains.py"
+      # TXI W3 transmission calibration: the historical episode miner, its runner, and its test
+      # file must all trigger the calibration suite (same #3357 both-halves rule). The miner
+      # imports the shared vectorized evaluator from engine/transmission_chains.py (already above).
+      - "engine/transmission_calibration.py"
+      - "scripts/run_transmission_calibration.py"
+      - "tests/test_transmission_calibration.py"
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
@@ -813,6 +824,12 @@ on:
       # boundary docs point at only ever fired incidentally, on unrelated PRs.
       # List every subject + test file the tier-gate job runs (app/main.py is
       # already listed above), so the exact PRs that move the boundary are gated.
+      # A guard the guarded change cannot trigger is not a guard: that is the #3418
+      # lesson ("red ~17h unwatched because no workflow named it") one layer up —
+      # #3474 wired the test into a job, nothing wired the job to its inputs.
+      # The TEST files below were the other half of the same hole (a PR editing only
+      # a boundary test ran nothing either). tests/test_site_access_boundary.py now
+      # pins the whole list by parsing this job's own `run:` steps — keep in sync.
       - "app/regwall.py"
       - "app/paywall.py"
       - "app/deploy/Caddyfile"
@@ -1154,7 +1171,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml numpy pandas scipy
+        # jinja2 + pyarrow are for the options-screener suite below: the builder imports
+        # jinja2 at module scope and reads its inputs from parquet.
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
@@ -1249,6 +1268,7 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
+          tests/test_stock_personality_w4_surfaces.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
@@ -1527,12 +1547,16 @@ jobs:
         run: python -m pytest tests/test_dag_conformance.py -q
 
   transmission-chains:
-    # TXI W1: the transmission chain library (knowledge/transmission/*.yaml), its compiler
-    # (engine/transmission_chains.py), and the runner (scripts/run_transmission_chains.py).
-    # The suite exercises the episode state machine (arm→propagate→express / expire / fail),
+    # TXI W1/W3: the transmission chain library (knowledge/transmission/*.yaml), its compiler
+    # (engine/transmission_chains.py), the runner (scripts/run_transmission_chains.py), AND the
+    # W3 historical episode miner (engine/transmission_calibration.py + its runner).
+    # The W1 suite exercises the episode state machine (arm→propagate→express / expire / fail),
     # idempotent same-day re-runs, the fail-loud strict validator + fail-open runtime loader,
     # and a real-artifact smoke over the four committed seeds (guarded on artifact presence).
-    # Wired here AND in pull_request.paths above (the #3357 vacuous-green trap needs both).
+    # The W3 suite exercises the vectorized-metric = point-in-time guarantee, hop-rate recovery
+    # (M/N with n), regime split (per-cell rates + thin→untested), right-censoring, the
+    # calibration merge (fill base_rates + tier promotion + rev-mismatch/absent fail-open), and
+    # null honesty. Wired here AND in pull_request.paths above (the #3357 trap needs both).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1543,6 +1567,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: transmission chains — engine + state machine + validator + smoke
         run: python -m pytest tests/test_transmission_chains.py -q
+      - name: transmission calibration — miner + regime split + merge + null honesty
+        run: python -m pytest tests/test_transmission_calibration.py -q
 
   research-factory-authority:
     # RF-11 (Research Factory W1): authority guard — no Article-2 money-path

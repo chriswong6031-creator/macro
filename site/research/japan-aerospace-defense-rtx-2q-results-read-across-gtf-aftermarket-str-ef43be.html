@@ -21,102 +21,8 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../theme.css">
-<style>
-/* ── The Vault BLUE intelligence accent (a STABLE brand token, never price dir) ── */
-:root{
-  --num: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-  --rv:#4f8ff7; --rv-2:#38bdf8; --rv-ink:#9cc2ff; --rv-dim:rgba(79,143,247,.13); --rv-glow:rgba(79,143,247,.34);
-  --gold:#d8b26a; --buy:#45b873; --sell:#dCA24a; --indep:#8c93c8;
-  --rr-glass-bg:rgba(16,22,30,.55); --rr-glass-border:rgba(255,255,255,.12);
-  --rr-shadow:0 8px 32px rgba(0,0,0,.55), 0 1.5px 0 rgba(255,255,255,.07) inset;
-}
-html[data-theme="light"]{
-  --rv:#285fff; --rv-2:#0f8fd8; --rv-ink:#1b49c8; --rv-dim:rgba(40,95,255,.10); --rv-glow:rgba(40,95,255,.26); --gold:#a9812e;
-  --buy:#1f9a55; --sell:#a9781f; --indep:#5b62a8;
-  --rr-glass-bg:rgba(255,255,255,.82); --rr-glass-border:rgba(0,0,0,.06);
-  --rr-shadow:0 4px 24px rgba(0,0,0,.09), 0 1px 0 rgba(255,255,255,.95) inset;
-}
-html[data-lang="zh"]{ --buy:#e06464; }
-html[data-theme="light"][data-lang="zh"]{ --buy:#cf4040; }
-html:not([data-lang="zh"]) .l-zh{ display:none; } html[data-lang="zh"] .l-en{ display:none; }
-
-html,body{ background:var(--bg); }
-body{ padding-top:22px; color:var(--text); min-height:100vh; }
-.rr-wrap{ max-width:760px; margin:0 auto; padding:26px 22px 96px; }
-.rr-aurora{ position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden; }
-.rr-aurora::before{ content:""; position:absolute; width:820px; height:640px; top:-220px; left:-160px; border-radius:50%;
-  filter:blur(90px); background:radial-gradient(ellipse, rgba(79,143,247,.14) 0%, transparent 70%); }
-html[data-theme="light"] .rr-aurora::before{ background:radial-gradient(ellipse, rgba(40,95,255,.06) 0%, transparent 70%); }
-
-.rr-crumb{ font-size:12.5px; color:var(--muted); margin-bottom:16px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
-.rr-crumb a{ color:var(--rv-ink); text-decoration:none; font-weight:600; }
-html[data-theme="light"] .rr-crumb a{ color:var(--rv); }
-.rr-crumb a:hover{ text-decoration:underline; }
-.rr-crumb .sep{ color:color-mix(in srgb,var(--text) 24%,transparent); }
-
-.rr{ position:relative; padding:26px 26px 22px; border-radius:18px; overflow:hidden;
-  background:var(--rr-glass-bg); border:1px solid var(--rr-glass-border); box-shadow:var(--rr-shadow);
-  -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); }
-.rr::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--rv),var(--rv-2)); }
-.rr-top{ display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:16px; }
-.rr-logo{ width:38px; height:38px; border-radius:10px; flex:none; display:grid; place-items:center;
-  font-family:var(--num); font-weight:700; font-size:14px; color:#fff; letter-spacing:-.02em;
-  background:linear-gradient(150deg,var(--rv),var(--rv-2)); box-shadow:inset 0 1px 0 rgba(255,255,255,.28); }
-.rr-inst{ font-size:14px; font-weight:800; color:var(--text); }
-.rr-desk{ font-size:12.5px; color:var(--muted); }
-.stamp{ display:inline-flex; align-items:center; gap:5px; font-family:var(--num); font-size:10px; font-weight:700;
-  letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; border:1.5px solid currentColor; }
-.stamp.buy{ color:var(--buy); } .stamp.sell{ color:var(--sell); } .stamp.indep{ color:var(--indep); }
-.stamp .dt{ width:5px; height:5px; border-radius:50%; background:currentColor; }
-
-.rr h1{ font-weight:800; font-size:clamp(23px,3.3vw,32px); line-height:1.16; letter-spacing:-.02em; color:var(--text); margin:0 0 14px; }
-.rr-meta{ display:flex; align-items:center; gap:8px 14px; flex-wrap:wrap; font-family:var(--num); font-size:12px;
-  color:var(--muted); font-variant-numeric:tabular-nums; margin-bottom:16px; }
-.rr-meta .m-ico{ display:inline-flex; align-items:center; gap:6px; } .rr-meta svg{ width:13px; height:13px; opacity:.75; }
-.rr-tks{ display:flex; gap:6px; flex-wrap:wrap; }
-.rr-tk{ font-family:var(--num); font-size:11px; font-weight:700; color:var(--rv-ink); padding:2px 8px; border-radius:6px;
-  background:var(--rv-dim); border:1px solid color-mix(in srgb,var(--rv) 22%,transparent); }
-html[data-theme="light"] .rr-tk{ color:var(--rv); }
-.rr-tag{ font-size:11px; font-weight:600; color:var(--muted); padding:2px 8px; border-radius:6px; background:color-mix(in srgb,var(--text) 6%,transparent); }
-
-.rr-teaser{ font-size:16px; line-height:1.6; color:color-mix(in srgb,var(--text) 90%,var(--muted));
-  padding:16px 0 4px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); }
-.rr-teaser .lead{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
-  color:var(--muted); display:block; margin-bottom:8px; }
-
-/* the paywall (the gated part — matches the JSON-LD hasPart cssSelector) */
-.rr-gate{ margin-top:20px; padding:22px; border-radius:14px; text-align:center;
-  background:radial-gradient(120% 130% at 50% 0%, var(--rv-dim), transparent 70%), color-mix(in srgb,var(--rr-glass-bg) 92%,transparent);
-  border:1px solid color-mix(in srgb,var(--rv) 26%,transparent); }
-.rr-gate .lk{ width:30px; height:30px; color:var(--rv); opacity:.92; }
-html[data-theme="light"] .rr-gate .lk{ color:var(--rv); }
-.rr-gate h2{ margin:8px 0 6px; font-size:18px; font-weight:800; color:var(--text); }
-.rr-gate p{ margin:0 auto 15px; font-size:13.5px; line-height:1.5; color:var(--muted); max-width:46ch; }
-.rr-cta{ display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:11px; font-weight:800; font-size:14px;
-  color:#fff; text-decoration:none; background:linear-gradient(120deg,var(--rv),color-mix(in srgb,var(--rv) 74%,var(--rv-2)));
-  box-shadow:0 8px 20px -8px var(--rv-glow); transition:.16s; }
-.rr-cta:hover{ filter:brightness(1.06); transform:translateY(-1px); }
-.rr-cta svg{ width:16px; height:16px; }
-
-.rr-rel{ margin-top:34px; }
-.rr-rel h3{ font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; }
-.rr-rel ul{ list-style:none; margin:0; padding:0; display:grid; gap:9px; }
-.rr-rel a{ display:block; padding:13px 15px; border-radius:12px; text-decoration:none; color:var(--text);
-  background:var(--rr-glass-bg); border:1px solid var(--rr-glass-border); transition:.16s; }
-.rr-rel a:hover{ border-color:color-mix(in srgb,var(--rv) 40%,var(--rr-glass-border)); transform:translateY(-1px); }
-.rr-rel .r-inst{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--rv-ink); }
-html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
-.rr-rel .r-title{ font-size:14px; font-weight:600; color:var(--text); margin-top:3px; line-height:1.35; }
-
-.rr-foot{ margin-top:38px; padding-top:20px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);
-  font-size:12px; line-height:1.6; color:var(--muted); }
-.rr-foot b{ color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:700; }
-.rr-foot a{ color:var(--rv-ink); text-decoration:none; font-weight:600; } html[data-theme="light"] .rr-foot a{ color:var(--rv); }
-.rr-foot a:hover{ text-decoration:underline; }
-
-@media (prefers-reduced-motion:reduce){ .rr-cta:hover,.rr-rel a:hover{ transform:none; } }
-</style>
+<link rel="stylesheet" href="../theme.css?v=370c3de0">
+<link rel="stylesheet" href="../assets/css/0c9ad01e.css?v=0c9ad01e">
 </head>
 <body>
 <nav class="site-nav">
@@ -258,71 +164,7 @@ html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
         <a href="../bonds.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
       </div>
     </div>
-    <style>
-    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
-       clip off the left edge. Instead anchor the mega to the full-width .nav-links
-       row (its right edge = the nav rail right): make .nav-links the positioning
-       context and the Research .nav-dd static >700px, so right:0 right-aligns the
-       panel to the rail and it stays fully on-screen. The ::before bridges the
-       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
-    @media (min-width:701px){
-      /* nav-links is the positioning context for the rail-anchored mega; desktop
-         only, so it never overrides theme.js's position:absolute hamburger flyout
-         (≤700px), which shares this specificity. */
-      .site-nav .nav-links,.topbar .nav-links{position:relative}
-      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
-      /* the base .nav-dd::after bridge would become a full-width strip once the
-         trigger is static — disable it; the mega's own ::before bridges the gap. */
-      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
-        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
-      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
-    }
-    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      padding-bottom:13px;margin-bottom:13px;
-      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
-    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
-      white-space:normal;text-decoration:none;
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
-      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
-      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
-    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
-      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
-      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
-      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
-    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
-    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
-    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
-    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
-    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
-    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
-    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
-    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
-      white-space:normal;text-decoration:none;transition:background .15s ease}
-    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
-    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
-    .nav-mega .nm-tx{min-width:0}
-    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
-    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
-      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
-    @media (max-width:1080px) and (min-width:701px){
-      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
-      .nav-mega-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:700px){
-      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
-      .nav-mega-grid{grid-template-columns:1fr;gap:0}
-      .nav-mega-h{padding-top:9px}
-      /* the hamburger accordion caps each open dropdown at max-height:600px
-         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
-         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
-         Same specificity trick overrides theme.js's generic accordion-panel
-         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
-         submenus) with symmetric sides + top breathing room, so the feature
-         cards read centered under the trigger instead of crooked. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
-    </style>
+    <link rel="stylesheet" href="../assets/css/9cfd4219.css?v=9cfd4219">
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="../intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -376,8 +218,8 @@ html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
       </div>
     </div>
   </div>
-  <script src="../live_config.js"></script>
-  <script src="../live.js"></script>  <div class="nav-search">
+  <script src="../live_config.js?v=52943e92" defer></script>
+  <script src="../live.js?v=e19f6af3" defer></script>  <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
       placeholder="Search any stock — US, China, HK, Canada &amp; more…"
@@ -418,6 +260,16 @@ html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
 
     <p class="rr-teaser"><span class="lead"><span class="l-en">From the report</span><span class="l-zh">报告摘录</span></span>RTX 2Q Results Catalyst: RTX Corp.</p>
 
+    <section class="rr-x" aria-label="First pages of the report">
+      <div class="rr-x-head">
+        <span class="rr-x-eyebrow"><span class="l-en">Inside the report</span><span class="l-zh">报告内文</span></span>
+        <span class="rr-x-src"><span class="l-en">Verbatim from the original PDF — first pages</span><span class="l-zh">原版 PDF 开篇原文 · 逐字摘录</span></span>
+      </div>
+      <div class="rr-x-body">
+<p>Equity Research 24 July 2026 | 8:19AM JST</p><p>Japan Aerospace &amp; Defense: RTX 2Q results read-across: GTF aftermarket strong; monitoring increase in OE engine shipments</p><p>After the close on July 23 JST, RTX Corp. (RTX) announced its 2Q FY12/26 results Yuichiro Isayama | (covered by Americas Aerospace &amp; Defense Analyst, Noah Poponak). Among stocks Goldman Sachs Japan Co., Ltd. in our Japan aerospace &amp; defense coverage, we summarize the read-across for IHI Takato Enoki (Neutral), Kawasaki Heavy Industries (Neutral), and Mitsubishi Heavy Industries (Buy), | which collaborate with Pratt &amp; Whitney, a division of RTX Corp., on the PW1100G Goldman Sachs Japan Co., Ltd.</p><p>and other commercial aero engine programs. Chie Hu | Goldman Sachs Japan Co., Ltd.</p><p>Goldman Sachs does and seeks to do business with companies covered in its research reports. As a result, investors should be aware that the firm may have a conflict of interest that could affect the objectivity of this report. Investors should consider this report as only a single factor in making their investment decision. For Reg AC certification and other important disclosures, see the Disclosure Appendix, or go to Analysts employed by non-US affiliates are not registered/qualified as research analysts with FINRA in the U.S.</p><p>Goldman Sachs Japan Aerospace &amp; Defense</p><p>Exhibit 1: Pratt &amp; Whitney: Adjusted operating profit and Exhibit 2: Operating margins for engine OEMs and IHI margin</p><p>(mn USD) Pratt &amp; Whitney OP OPM (rhs) GE Aerospace (CES) RTX Corp. (P&amp;W) IHI Segment adj. OPM</p><p>$1,000 10% 30% $900 9% 25% $800 8% $700 7% 20% $600 6% $500 5% 15% $400 4% 10% $300 3% $200 2% 5% $100 1% $0 0% 0% 1Q 2Q 3Q 4Q 1Q 2Q 3Q 4Q 1Q 2Q 3Q 4Q 1Q 2Q 1Q 2Q 3Q 4Q 1Q 2Q 3Q 4Q 1Q 2Q 3Q 4Q 1Q 2Q</p><p>CY2023 CY2024 CY2025 CY2026 CY2023 CY2024 CY2025 CY2026</p><p>Source: Company data, Data compiled by Goldman Sachs Global Investment The CY2026 2Q (FY3/27 1Q) IHI OPM is a GS estimate. Research Source: Company data, Goldman Sachs Global Investment Research</p><p>What happened Pratt &amp; Whitney (P&amp;W), a division of RTX, posted adjusted sales of $8,889 million (+16% yoy), adjusted operating profits of $740 million (+22% yoy), and an adjusted operating margin of 8.3% (+30 bps yoy) in 2Q. By item, sales from the commercial engine aftermarket were up +25% yoy (driven by higher MRO volume), commercial OE engine sales were down -8% yoy (due to engine mix effects), and military engine sales were up +23% yoy (driven by higher F135 volume). The P&amp;W segment did not book any customer bankruptcy-related expenses during 2Q.</p><p>Regarding the GTF (Geared Turbofan) / PW1100G engine, the company noted that AOG (Aircraft on Ground) units are down -25% year-to-date and that GTF MRO output grew more than +40% yoy. This suggests that the situation surrounding grounded aircraft is improving and that volumes of high-margin MRO work are also increasing. With respect to the full-year outlook for new (installed) engine shipments, the company commented that it expects to increase deliveries to Airbus in the second half of the year and that annual GTF unit volumes are expected to reach a record high.</p><p>The company also announced an upward revision to its FY12/26 guidance. P&amp;W’s adjusted sales growth was raised to +high-single digits (previously: +mid-single digits), and adjusted operating profit guidance was raised to $2.75 billion - $3.5 billion (previously: $2.25 billion - $3.25 billion).</p><p>Read-across for IHI/Kawasaki Heavy Industries/Mitsubishi Heavy Industries We view both the 2Q results and the second-half outlook as a modest near-term tailwind for the profit mix at IHI, Kawasaki Heavy Industries, and Mitsubishi Heavy Industries. Our Japan Industrial Team continues to monitor the increase in new (installed) engine shipments, which represent a near-term headwind to the profit mix relative to the high-margin aftermarket business, even as aircraft OEMs continue to ramp up airframe production rates. That said, in light of the latest comments on the GTF, we infer that while the outlook for installed engine shipments to aircraft OEMs remains unchanged, there appears to be a shift in the allocation of components — with materials that would otherwise have been directed toward spare…</p>        <div class="rr-x-fade" aria-hidden="true"></div>
+      </div>
+    </section>
+
     <div class="rr-gate">
       <svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <h2><span class="l-en">Read the full report + PDF</span><span class="l-zh">阅读全文与 PDF</span></h2>
@@ -447,6 +299,6 @@ html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
     <span class="l-zh"><b>非投资建议。</b>Mastermind 仅收录第三方机构研究，供参考与学习；其中评级与观点均属作者本人。<a href="../research_vault.html">浏览完整研报库 →</a></span>
   </p>
 </main>
-<script src="../theme.js"></script>
+<script src="../theme.js?v=015c6c36" defer></script>
 </body>
 </html>

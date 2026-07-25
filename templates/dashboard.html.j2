@@ -1093,9 +1093,6 @@
   .nb-stale-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;font-weight:600;color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 50%,var(--line));background:color-mix(in srgb,var(--warn) 9%,transparent)}
   /* CSP-W5 per-card muted note on expired pending rows */
   .nb-pending-expired{font-size:9.5px;padding:1px 5px;border-radius:4px;color:var(--muted);background:color-mix(in srgb,var(--muted) 8%,transparent);border:1px solid color-mix(in srgb,var(--muted) 20%,transparent);white-space:normal}
-  /* W4 stock-personality slim chips (expander only, guardrail 16) */
-  .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
-  .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
   /* B4 Conviction Delta — rows now live inside the Track-record-style dashboard. */
   .nb-delta-body{display:flex;flex-direction:column;gap:3px}
   .nb-delta-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding:2px 0;border-top:1px solid var(--line)}
@@ -5488,9 +5485,9 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 /* — 1. Radar card: pullback-odds mini bar chart (dlg-risk-scoped OVERRIDE only) —
    The .rrx partial is shared; these overrides restyle its odds ramp into a proper
    labelled bar chart WITHOUT touching its default (china/hk/canada/stocks) look. */
-#dlg-risk .rrx{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);
+#dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 5%,var(--panel));border-color:color-mix(in srgb,var(--rc) 22%,var(--line));
   box-shadow:none;border-left-width:3px;}
-[data-theme="light"] #dlg-risk .rrx{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.07);}
+[data-theme="light"] #dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 6%,var(--panel));border-color:color-mix(in srgb,var(--rc) 24%,var(--line));}
 #dlg-risk .rrx .rrx-ramp{padding-top:24px;gap:14px;max-width:none;}
 #dlg-risk .rrx .rrx-tk{height:78px;max-width:60px;}
 #dlg-risk .rrx .rrx-fill{background:linear-gradient(180deg,var(--rc),color-mix(in srgb,var(--rc) 42%,transparent));

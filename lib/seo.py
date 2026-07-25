@@ -3,22 +3,27 @@
 Provides:
   SITE_BASE          — canonical www host (single source of truth)
   page_url(path)     — construct a full canonical URL
-  discover_core_pages(site_dir) — discover public site/*.html pages
+  discover_core_pages(site_dir) — discover unauthenticated public site/*.html pages
   discover_free_pages(site_dir) — discover free-estate sub-family pages
                                   (site/blog/, site/learn/*/, site/tools/, etc.)
-  build_core_sitemap(existing_xml, site_dir) — regenerate non-/stocks/ sitemap entries
+  build_core_sitemap(existing_xml, site_dir) — regenerate the public sitemap
 """
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from pathlib import Path
-from datetime import date
+from urllib.parse import urlsplit
+
+import yaml
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
 SITE_BASE = "https://www.mastermind-x.com/"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ACCESS_POLICY = REPO_ROOT / "config" / "site_access.yml"
 
 # Apex host (no www) — used only for normalisation; never emit this in new output.
 _APEX_HOST = "https://mastermind-x.com/"
@@ -39,6 +44,36 @@ def page_url(path: str) -> str:
         return base + "/"
     path = path.lstrip("/")
     return base + "/" + path
+
+
+@lru_cache(maxsize=1)
+def _public_boundary() -> tuple[frozenset[str], tuple[str, ...]]:
+    """Return the unauthenticated serving boundary from its source of truth.
+
+    Sitemap eligibility and edge access must never be maintained as separate
+    lists. ``config/site_access.yml`` is already CI-checked against Caddy, so
+    deriving discovery from it prevents a newly gated page from remaining in
+    the sitemap after the access policy changes.
+    """
+    raw = yaml.safe_load(ACCESS_POLICY.read_text(encoding="utf-8"))
+    public = raw.get("public") if isinstance(raw, dict) else None
+    if not isinstance(public, dict):
+        raise ValueError("site access policy is missing public boundary")
+    exact = public.get("exact")
+    prefixes = public.get("prefixes")
+    if not isinstance(exact, list) or not isinstance(prefixes, list):
+        raise ValueError("site access public boundary is malformed")
+    return (
+        frozenset(str(path) for path in exact),
+        tuple(str(prefix) for prefix in prefixes),
+    )
+
+
+def is_public_path(path: str) -> bool:
+    """True only when ``path`` is reachable without registration."""
+    clean = urlsplit(path).path
+    exact, prefixes = _public_boundary()
+    return clean in exact or any(clean.startswith(prefix) for prefix in prefixes)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -76,9 +111,9 @@ _EXCLUDE_NAMES: frozenset[str] = frozenset({
     "watchlist",
     # Demo/planning
     "coming-soon",     # placeholder page
-    # D12A adjudication 2026-07-20: masterminds, advanced, signal_lab,
-    # whitehouse, vector_allocation, measurement are PUBLIC content pages
-    # (census + ratified copy table) — deliberately NOT excluded.
+    # The serving policy is the final eligibility gate. A page omitted here
+    # cannot enter the sitemap unless config/site_access.yml also makes it
+    # reachable without registration.
 })
 
 
@@ -169,7 +204,8 @@ def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]
             else:
                 freq, pri = "monthly", 0.6
             rel = f"blog/{p.name}"
-            results.append((rel, page_url(rel), freq, p.name, pri))
+            if is_public_path("/" + rel):
+                results.append((rel, page_url(rel), freq, p.name, pri))
 
     # ---- learn ----
     learn_dir = site_dir / "learn"
@@ -178,14 +214,16 @@ def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]
         learn_idx = learn_dir / "index.html"
         if learn_idx.exists():
             rel = "learn/index.html"
-            results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
+            if is_public_path("/" + rel):
+                results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
         # track subdirectories (one level deep only)
         for track_dir in sorted(learn_dir.iterdir()):
             if not track_dir.is_dir():
                 continue
             for p in sorted(track_dir.glob("*.html")):
                 rel = f"learn/{track_dir.name}/{p.name}"
-                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+                if is_public_path("/" + rel):
+                    results.append((rel, page_url(rel), "monthly", p.name, 0.6))
 
     # ---- tools ----
     tools_dir = site_dir / "tools"
@@ -194,19 +232,22 @@ def discover_free_pages(site_dir: Path) -> list[tuple[str, str, str, str, float]
         tools_idx = tools_dir / "index.html"
         if tools_idx.exists():
             rel = "tools/index.html"
-            results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
+            if is_public_path("/" + rel):
+                results.append((rel, page_url(rel), "weekly", "index.html", 0.7))
         # calculators/
         calc_dir = tools_dir / "calculators"
         if calc_dir.is_dir():
             for p in sorted(calc_dir.glob("*.html")):
                 rel = f"tools/calculators/{p.name}"
-                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+                if is_public_path("/" + rel):
+                    results.append((rel, page_url(rel), "monthly", p.name, 0.6))
         # spreadsheets/
         ss_dir = tools_dir / "spreadsheets"
         if ss_dir.is_dir():
             for p in sorted(ss_dir.glob("*.html")):
                 rel = f"tools/spreadsheets/{p.name}"
-                results.append((rel, page_url(rel), "monthly", p.name, 0.6))
+                if is_public_path("/" + rel):
+                    results.append((rel, page_url(rel), "monthly", p.name, 0.6))
 
     return results
 
@@ -216,6 +257,7 @@ def discover_core_pages(site_dir: Path) -> list[tuple[str, str, str]]:
 
     Excludes:
       - Anything under site_dir/stocks/ (those are managed by build_ticker_pages)
+      - Any root page outside the unauthenticated public serving boundary
       - Files matching _EXCLUDE_PREFIXES or _EXCLUDE_NAMES
       - index.html maps to the bare root URL "" (not "index.html")
 
@@ -227,9 +269,13 @@ def discover_core_pages(site_dir: Path) -> list[tuple[str, str, str]]:
         if _should_exclude(stem):
             continue
         if stem == "index":
+            if not (is_public_path("/") or is_public_path("/index.html")):
+                continue
             # Homepage maps to bare root
             pages.append(("", page_url(""), p.name))
         else:
+            if not is_public_path("/" + p.name):
+                continue
             pages.append((stem, page_url(p.name), p.name))
 
     # Sort: homepage ("") first, then alphabetical
@@ -242,6 +288,11 @@ def discover_core_pages(site_dir: Path) -> list[tuple[str, str, str]]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _APEX_RE = re.compile(r"https://mastermind-x\.com/", re.IGNORECASE)
+_LOC_RE = re.compile(r"<loc>([^<]+)</loc>", re.IGNORECASE)
+
+# These public page families own their own sitemap merge routines. Preserve
+# their honest, data-derived lastmod values while replacing the core/free block.
+_PRESERVED_PUBLIC_PAGE_PREFIXES = ("/stocks/", "/research/")
 
 
 def _normalize_host(text: str) -> str:
@@ -250,13 +301,13 @@ def _normalize_host(text: str) -> str:
 
 
 def build_core_sitemap(existing_xml: str, site_dir: Path) -> str:
-    """Regenerate the core (non-/stocks/) sitemap entries and preserve /stocks/ entries.
+    """Regenerate a sitemap containing only unauthenticated public pages.
 
     Strategy:
-      1. Extract /stocks/ <url> entries from existing_xml (preserving lastmod).
-         Normalize any apex-host occurrences in those preserved lines.
+      1. Preserve public /stocks/ and /research/ entries, including their
+         source-derived lastmod values, and normalize their canonical host.
       2. Discover all core pages via discover_core_pages().
-      3. Emit: XML header + core entries + preserved stocks entries + </urlset>
+      3. Emit the public core/free entries plus preserved owned-family entries.
 
     Format-compatible with build_ticker_pages.build_sitemap() which:
       - Strips /stocks/ lines from the existing XML
@@ -267,27 +318,38 @@ def build_core_sitemap(existing_xml: str, site_dir: Path) -> str:
     Calling build_ticker_pages.build_sitemap() first and then build_core_sitemap()
     also works: core discovery replaces core entries, stocks are preserved verbatim.
     """
-    # Extract /stocks/ <url> lines from existing XML, normalizing apex host.
-    stocks_lines: list[str] = []
+    # Preserve separately-managed public page families only. Any gated root URL
+    # in the old sitemap is intentionally dropped.
+    preserved_lines: list[str] = []
     for line in existing_xml.splitlines():
         stripped = line.strip()
-        if stripped.startswith("<url>") and "/stocks/" in stripped:
-            stocks_lines.append(_normalize_host(line))
+        if not stripped.startswith("<url>"):
+            continue
+        match = _LOC_RE.search(stripped)
+        if not match:
+            continue
+        path = urlsplit(match.group(1)).path
+        if (
+            any(path.startswith(prefix) for prefix in _PRESERVED_PUBLIC_PAGE_PREFIXES)
+            and is_public_path(path)
+        ):
+            preserved_lines.append(_normalize_host(line))
 
     # Discover core pages and build entries.
     core_entries: list[str] = []
-    today = date.today().isoformat()
     for name, url, _filename in discover_core_pages(site_dir):
         freq, pri = _freq_priority(name)
         pri_str = f"{pri:.1f}" if pri == int(pri) else str(pri)
-        entry = f"  <url><loc>{url}</loc><lastmod>{today}</lastmod><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
+        # Omit lastmod when there is no content-derived timestamp. A truthful
+        # omission is preferable to stamping every URL with the build date.
+        entry = f"  <url><loc>{url}</loc><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
         core_entries.append(entry)
 
     # Discover free-estate sub-family pages (blog/, learn/, tools/).
     free_entries: list[str] = []
     for _rel, url, freq, _fname, pri in discover_free_pages(site_dir):
         pri_str = f"{pri:.1f}" if pri == int(pri) else str(pri)
-        entry = f"  <url><loc>{url}</loc><lastmod>{today}</lastmod><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
+        entry = f"  <url><loc>{url}</loc><changefreq>{freq}</changefreq><priority>{pri_str}</priority></url>"
         free_entries.append(entry)
 
     # Assemble XML.
@@ -297,6 +359,6 @@ def build_core_sitemap(existing_xml: str, site_dir: Path) -> str:
     ]
     parts.extend(core_entries)
     parts.extend(free_entries)
-    parts.extend(stocks_lines)
+    parts.extend(preserved_lines)
     parts.append("</urlset>")
     return "\n".join(parts) + "\n"

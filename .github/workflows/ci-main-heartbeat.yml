@@ -147,6 +147,31 @@ jobs:
       - name: DAG conformance selftest + live conformance tests
         run: python -m pytest tests/test_dag_conformance.py -q
 
+  # ── serving boundary (mirror ci.yml: tier-gate) ────────────────────────────
+  # Added 2026-07-25. tier-gate was doubly blind: its eleven inputs were absent
+  # from ci.yml's paths filter (so a boundary-only PR ran no guard — #3488 merged
+  # that way and left the boundary test red on main), AND it was missing here, so
+  # nothing re-checked it on main either. That is the exact pair this heartbeat
+  # exists for. Hermetic by construction — no network, no engine data.
+  tier-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2 fastapi httpx
+      - name: tier-preview split contract (no paid row in the free shell)
+        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py -q
+      - name: paywall fail-closed contract (incl. enforced-early payload lane)
+        run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
+      - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)
+        run: python -m pytest tests/test_site_access_boundary.py -q
+      - name: registration wall (anonymous stage + /factordata /labdata JSON gate)
+        run: python -m pytest tests/test_regwall.py tests/test_regwall_json_gate.py -q
+
   # ── engine + render-guard contract batch (mirror ci.yml: engine-render-guards)
   # The rot-prone one: the 2026-07-02 sweep exists because these test files silently
   # broke on main when ci.yml only ran a targeted subset. ~4 min, GitHub-hosted.

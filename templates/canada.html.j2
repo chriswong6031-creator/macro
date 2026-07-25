@@ -296,7 +296,11 @@
   body.page-canada .cax-card[role="button"]{cursor:pointer}
   body.page-canada .cax-card[role="button"]:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:0 6px 28px rgba(0,0,0,.35)}
   /* hero */
-  body.page-canada .cax-hero{display:grid;grid-template-columns:3fr 2fr;position:relative;z-index:30;padding:0}
+  body.page-canada .cax-hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,7fr);position:relative;z-index:30;padding:0}
+  /* mirror US mx4 hero: ease the left column wider in the narrow 2-col band so the
+     gauge+score cluster never overflows the divider (below 1000px it goes 1-col).
+     Held to 1200px (vs US 1100) — the Canada gauge is a touch larger. */
+  @media(max-width:1200px){body.page-canada .cax-hero{grid-template-columns:minmax(0,34fr) minmax(0,66fr)}}
   body.page-canada .cax-hero-solo{grid-template-columns:1fr}
   /* until the score log accrues >=2 sessions, HIDE the empty history panel
      (1-col grid alone just reflows it below the hero) */
@@ -441,6 +445,52 @@
   body.page-canada #cax-sentiment .fg-mark-f{fill:var(--fg-col)}
   body.page-canada #cax-sentiment .fg-lab-panic{fill:var(--down)}
   body.page-canada #cax-sentiment .fg-lab-euph{fill:var(--up)}
+  /* ── Market Participation dialog — illustrated revamp. --mp-sc is the zone accent
+     routed through --up/--warn/--down so every mark flips 红涨绿跌 in zh (broad→red). ── */
+  body.page-canada .mp-broad{--mp-sc:var(--up)}
+  body.page-canada .mp-mixed{--mp-sc:var(--warn)}
+  body.page-canada .mp-thin{--mp-sc:var(--down)}
+  body.page-canada .mp-hero{display:flex;align-items:flex-start;gap:22px;margin-bottom:2px}
+  body.page-canada .mp-score-col{display:flex;flex-direction:column;flex:0 0 auto;min-width:112px}
+  body.page-canada .mp-score{font-size:56px;font-weight:800;line-height:.84;letter-spacing:-.02em;color:var(--mp-sc);font-variant-numeric:tabular-nums}
+  body.page-canada .mp-score .of{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px;letter-spacing:0}
+  body.page-canada .mp-zone{font-size:14px;font-weight:750;color:var(--mp-sc);margin-top:9px;line-height:1.2}
+  body.page-canada .mp-hero-right{flex:1 1 auto;padding-top:4px;min-width:0}
+  body.page-canada .mp-thesis{font-size:12.5px;line-height:1.5;color:var(--text);opacity:.9;margin:0 0 14px}
+  body.page-canada .mp-rail{position:relative;height:12px;border-radius:7px;overflow:hidden;display:flex;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+  body.page-canada .mp-rail .seg{height:100%}
+  body.page-canada .mp-rail .seg.s-thin{background:color-mix(in srgb,var(--down) 34%,transparent)}
+  body.page-canada .mp-rail .seg.s-mixed{background:color-mix(in srgb,var(--warn) 30%,transparent)}
+  body.page-canada .mp-rail .seg.s-broad{background:color-mix(in srgb,var(--up) 34%,transparent)}
+  body.page-canada .mp-rail-marker{position:absolute;top:-4px;width:3px;height:20px;border-radius:2px;background:var(--mp-sc);box-shadow:0 0 0 2px rgba(13,17,24,.94),0 0 10px var(--mp-sc);transform:translateX(-50%)}
+  [data-theme="light"] body.page-canada .mp-rail-marker{box-shadow:0 0 0 2px #fff,0 0 10px var(--mp-sc)}
+  body.page-canada .mp-rail-scale{position:relative;height:13px;margin-top:5px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+  body.page-canada .mp-rail-scale span{position:absolute;transform:translateX(-50%)}
+  body.page-canada .mp-rail-ends{display:flex;justify-content:space-between;font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  body.page-canada .mp-stance{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--mp-sc);border-radius:12px;padding:12px 15px;margin:16px 0 4px}
+  [data-theme="light"] body.page-canada .mp-stance{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.07);border-left-color:var(--mp-sc)}
+  body.page-canada .mp-stance .st-ico{flex:0 0 auto;width:20px;height:20px;margin-top:1px;color:var(--mp-sc)}
+  body.page-canada .mp-stance .st-tx{font-size:12.5px;line-height:1.5;color:var(--text)}
+  body.page-canada .mp-stance .st-tx b{color:var(--mp-sc);font-weight:700}
+  body.page-canada .mp-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px;margin-top:20px}
+  @media(max-width:640px){body.page-canada .mp-grid{grid-template-columns:1fr;gap:20px}}
+  body.page-canada .mp-field{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:2px 0 10px}
+  body.page-canada .mp-field i{aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,.07)}
+  [data-theme="light"] body.page-canada .mp-field i{background:rgba(0,0,0,.06)}
+  body.page-canada .mp-field i.on{background:var(--mp-sc);box-shadow:0 0 6px color-mix(in srgb,var(--mp-sc) 55%,transparent)}
+  body.page-canada .mp-field-cap{font-size:12px;line-height:1.5;color:var(--text)}
+  body.page-canada .mp-field-cap b{color:var(--mp-sc);font-weight:750;font-variant-numeric:tabular-nums}
+  body.page-canada .mp-field-sub{font-size:10.5px;color:var(--muted);margin-top:4px}
+  body.page-canada .mp-bars{display:flex;flex-direction:column;gap:12px}
+  body.page-canada .mp-bar-row .br-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;gap:8px}
+  body.page-canada .mp-bar-row .br-name{font-size:11.5px;color:var(--text)}
+  body.page-canada .mp-bar-row .br-wt{font-size:10px;color:var(--muted);border:1px solid rgba(255,255,255,.10);border-radius:5px;padding:1px 5px;margin-left:6px;font-variant-numeric:tabular-nums}
+  [data-theme="light"] body.page-canada .mp-bar-row .br-wt{border-color:rgba(0,0,0,.12)}
+  body.page-canada .mp-bar-row .br-val{font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.page-canada .mp-bar-track{height:7px;border-radius:5px;background:rgba(255,255,255,.07);overflow:hidden}
+  [data-theme="light"] body.page-canada .mp-bar-track{background:rgba(0,0,0,.06)}
+  body.page-canada .mp-bar-fill{height:100%;border-radius:5px;background:var(--mp-sc);opacity:.9}
+  body.page-canada .mp-note{font-size:10.5px;color:var(--muted);margin-top:12px;line-height:1.5}
   /* popovers */
   body.page-canada .cax-pop{position:absolute;top:calc(100% + 10px);left:0;width:300px;background:rgba(13,18,26,.97);border:1px solid rgba(255,255,255,.14);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.6);padding:16px 18px;z-index:40;display:none}
   body.page-canada .cax-pop.open{display:block}
@@ -1711,31 +1761,63 @@
   </div>
 </div>
 
-<!-- Market Participation dialog (Tier-2 receipt for the sentiment odometer) -->
+<!-- Market Participation dialog — illustrated breadth read (field + contribution bars) -->
+{% set _cs = ca_sentiment if (ca_sentiment is defined and ca_sentiment) else none %}
 <div class="cax-dlg" id="cax-dlg-sentiment">
   <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
-  <div class="cax-dlg-panel">
+  <div class="cax-dlg-panel{% if _cs %} mp-{{ _cs.zone }}{% endif %}">
     <div class="cax-dlg-head">
       <span class="cax-dlg-title">{{ t('Market Participation','市场参与度') }}</span>
       <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
     </div>
     <div class="cax-dlg-body">
-      {% set _cs = ca_sentiment if (ca_sentiment is defined and ca_sentiment) else none %}
       {% if _cs %}
-      {% set _cs_col = 'var(--up)' if _cs.zone == 'broad' else ('var(--down)' if _cs.zone == 'thin' else 'var(--warn)') %}
-      <div class="cax-pop-big"><span class="n" style="color:{{ _cs_col }}">{{ _cs.score }}</span><span class="t" style="color:{{ _cs_col }}"><span class="l-en">{{ _cs.label_en }}</span><span class="l-zh">{{ _cs.label_zh }}</span></span></div>
-      <p class="cax-thesis" style="max-width:52ch;margin:2px 0 12px">{{ t(
-        'How much of the TSX is actually moving together. This is a computed breadth read — not a fear/greed index — rolled into one 0–100 number so a glance tells you whether strength is broad or just a few names.',
-        '衡量有多少 TSX 成分股在同向运行。这是一项基于市场宽度的计算读数 — 并非恐慌／贪婪指数 — 汇总为 0–100 的单一数字，让你一眼看出走强是广泛的还是仅由少数股票带动。') }}</p>
-      {# Plain-word stance #}
-      <div class="cax-lbl">{{ t('So what do I do','该怎么做') }}</div>
-      <p style="font-size:12.5px;color:var(--text);margin:0 0 14px">{% if _cs.zone == 'broad' %}{{ t('Broad participation — the move has support under it. Trend-following is on firmer ground; still size to the regime gauge above.','参与广泛 — 上涨有基础支撑。顺势交易的立足点更稳；仍需按上方周期表盘控制仓位。') }}{% elif _cs.zone == 'thin' %}{{ t('Thin participation — a few names carrying the tape. Watch, don’t chase; wait for breadth to confirm before trusting a breakout.','参与稀薄 — 少数股票在拉动指数。观望，勿追高；等待宽度确认后再相信突破。') }}{% else %}{{ t('Mixed participation — neither broad nor thin. No edge from breadth here; let the regime gauge lead.','参与中性 — 不广也不薄。此处宽度无优势；由周期表盘主导。') }}{% endif %}</p>
-      {# Tier-2 receipt — the honest inputs and weights #}
-      <div class="cax-lbl">{{ t('How it’s measured','如何测算') }}</div>
-      <div class="cax-kv"><span class="k">{{ t('Names above 50-day line','站上50日线的成分股') }} <span style="color:var(--muted)">· 45%</span></span><span class="v">{{ _cs.pct_above_50 }}%</span></div>
-      <div class="cax-kv"><span class="k">{{ t('Names above 200-day line','站上200日线的成分股') }} <span style="color:var(--muted)">· 30%</span></span><span class="v">{{ _cs.pct_above_200 }}%</span></div>
-      <div class="cax-kv"><span class="k">{{ t('Advancers share today','当日上涨占比') }} <span style="color:var(--muted)">· 15%</span></span><span class="v">{{ _cs.ad_ratio }}%</span></div>
-      <div class="cax-kv"><span class="k">{{ t('20-day change in participation','参与度20日变化') }} <span style="color:var(--muted)">· 10%</span></span><span class="v">{{ '%+.1f'|format(_cs.chg20) }} pts</span></div>
+      {% set _lit = _cs.pct_above_50 | round | int %}
+      {% set _mom = [[50 + 2 * _cs.chg20, 0] | max, 100] | min %}
+      {# hero — score + zone label + where 62 sits on the thin/mixed/broad rail #}
+      <div class="mp-hero">
+        <div class="mp-score-col">
+          <div class="mp-score">{{ _cs.score }}<span class="of">/100</span></div>
+          <div class="mp-zone"><span class="l-en">{{ _cs.label_en }}</span><span class="l-zh">{{ _cs.label_zh }}</span></div>
+        </div>
+        <div class="mp-hero-right">
+          <p class="mp-thesis">{{ t(
+            'How much of the TSX is actually moving together — a breadth read, not a fear/greed index. A glance tells you whether strength is broad or just a few names.',
+            '衡量有多少 TSX 成分股在同向运行 — 这是市场宽度读数，并非恐慌／贪婪指数。一眼看出走强是广泛的还是仅由少数股票带动。') }}</p>
+          <div class="mp-rail">
+            <div class="seg s-thin" style="width:40%"></div>
+            <div class="seg s-mixed" style="width:20%"></div>
+            <div class="seg s-broad" style="width:40%"></div>
+            <div class="mp-rail-marker" style="left:{{ [[_cs.score, 1] | max, 99] | min }}%"></div>
+          </div>
+          <div class="mp-rail-scale"><span style="left:40%">40</span><span style="left:60%">60</span></div>
+          <div class="mp-rail-ends"><span>{{ t('Thin','稀薄') }}</span><span>{{ t('Mixed','中性') }}</span><span>{{ t('Broad','广泛') }}</span></div>
+        </div>
+      </div>
+      {# stance — Law 1 plain-word "so what do I do" #}
+      <div class="mp-stance">
+        <svg class="st-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v6c0 5 3.8 8.3 9 9 5.2-.7 9-4 9-9V7z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div class="st-tx">{% if _cs.zone == 'broad' %}<span class="l-en"><b>The move has support under it.</b> Trend-following is on firmer ground — still size to the regime gauge above.</span><span class="l-zh"><b>上涨有基础支撑。</b>顺势交易的立足点更稳 — 仍需按上方周期表盘控制仓位。</span>{% elif _cs.zone == 'thin' %}<span class="l-en"><b>Watch — don’t chase.</b> A few names are carrying the tape. Wait for breadth to confirm before trusting a breakout.</span><span class="l-zh"><b>观望，勿追高。</b>少数股票在拉动指数。等待宽度确认后再相信突破。</span>{% else %}<span class="l-en"><b>No edge from breadth here.</b> Neither broad nor thin — let the regime gauge lead and keep size modest.</span><span class="l-zh"><b>此处宽度无优势。</b>不广也不薄 — 由周期表盘主导，仓位保持温和。</span>{% endif %}</div>
+      </div>
+      {# two illustrations — the population taking part, and what builds the score #}
+      <div class="mp-grid">
+        <div>
+          <div class="cax-lbl">{{ t('Names taking part','参与的成分股') }}</div>
+          <div class="mp-field">{% for _i in range(100) %}<i{% if _i < _lit %} class="on"{% endif %}></i>{% endfor %}</div>
+          <div class="mp-field-cap"><span class="l-en">About <b>{{ _lit }}</b> of every 100 TSX names are above their 50-day line.</span><span class="l-zh">每 100 只 TSX 成分股中约 <b>{{ _lit }}</b> 只站上其 50 日均线。</span></div>
+          <div class="mp-field-sub">{% if _cs.zone == 'broad' %}{{ t('Broad — most of the market is participating.','广泛 — 多数股票在参与。') }}{% elif _cs.zone == 'thin' %}{{ t('Thin — a few names carrying the tape.','稀薄 — 少数股票在拉动指数。') }}{% else %}{{ t('Mixed — about half the market is participating.','中性 — 约半数股票在参与。') }}{% endif %}</div>
+        </div>
+        <div>
+          <div class="cax-lbl">{{ t('What builds the score','评分构成') }}</div>
+          <div class="mp-bars">
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Names above 50-day line</span><span class="l-zh">站上50日线</span><span class="br-wt">45%</span></span><span class="br-val">{{ _cs.pct_above_50 }}%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:{{ [[_cs.pct_above_50, 0] | max, 100] | min }}%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Names above 200-day line</span><span class="l-zh">站上200日线</span><span class="br-wt">30%</span></span><span class="br-val">{{ _cs.pct_above_200 }}%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:{{ [[_cs.pct_above_200, 0] | max, 100] | min }}%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Advancers today</span><span class="l-zh">当日上涨占比</span><span class="br-wt">15%</span></span><span class="br-val">{{ _cs.ad_ratio }}%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:{{ [[_cs.ad_ratio, 0] | max, 100] | min }}%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Trend (20-day change)</span><span class="l-zh">趋势（20日变化）</span><span class="br-wt">10%</span></span><span class="br-val">{{ '%+.1f'|format(_cs.chg20) }} {{ t('pts','点') }}</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:{{ _mom | round(1) }}%"></div></div></div>
+          </div>
+          <div class="mp-note">{{ t('Each input is scaled 0–100 and weighted into one read. Higher-weight rows move the number most.','每项输入归一化为 0–100 后按权重合成为单一读数。权重越高的项对数字影响越大。') }}</div>
+        </div>
+      </div>
       <div class="cax-foot">{{ t('Display-only composite of S&P/TSX Composite breadth (~220 names). Bands: broad ≥60 · mixed 40–59 · thin <40. Not scored, not a trading signal.',
         '标普/TSX 综合指数市场宽度（约220只）的仅展示合成指标。区间：广泛 ≥60 · 中性 40–59 · 稀薄 <40。不计分，非交易信号。') }}{% if _cs.asof %} · {{ t('as of','截至') }} {{ _cs.asof }}{% endif %}</div>
       {% else %}

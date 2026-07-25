@@ -15,10 +15,16 @@
 # would allow a stale-OI / fresh-EOD mismatch to slip through undetected.
 #
 # Logic:
-#   1. Ask lib/nyse_calendar.expected_last_session() for the expected date.
+#   1. Ask lib/nyse_calendar.expected_last_session() for the expected date, then
+#      require the session BEFORE it: OI is a T+1 plane (session T's open interest
+#      publishes the next morning), and the matrix engine's own OI TIMING LAW
+#      builds on OI[t-1] (delta_oi = OI[t-1] − OI[t-2]). Demanding same-evening
+#      OI[t] made this gate unsatisfiable at 16:00–18:00 local — it burned all
+#      6 retries every night from first install through 2026-07-25 (the only
+#      published artifacts were the initial manual smoke run).
 #   2. Read only the 'date' column of the current-year SPY OI parquet shard
 #      (column-pruned; never loads the full store).
-#   3. If the latest date in the OI shard >= expected_last_session → FRESH → run.
+#   3. If the latest date in the OI shard >= required (the T-1 session) → FRESH.
 #      (>= rather than == so a store that is ahead of the calendar does not
 #      false-fail; the calendar is the floor, not the ceiling.)
 #   4. Otherwise sleep 20 min and retry (max 6 attempts = 2h window).
@@ -68,6 +74,7 @@ STORE="${THETADATA_STORE:-/Users/chriswong/theta-ops-wt/data/thetadata_eod}"
 _check_freshness() {
     "$PYTHON" - "$STORE" "$REPO" <<'PYEOF'
 import sys
+from datetime import timedelta
 from pathlib import Path
 import pyarrow.parquet as pq
 
@@ -76,9 +83,12 @@ repo  = sys.argv[2]
 
 # resolve nyse_calendar from repo
 sys.path.insert(0, repo)
-from lib.nyse_calendar import expected_last_session
+from lib.nyse_calendar import expected_last_session, last_session_on_or_before
 
 expected = expected_last_session()
+# OI is T+1 and the engine builds on OI[t-1] (OI TIMING LAW) — the freshest
+# OI the store can honestly hold at run time is the session BEFORE expected.
+required = last_session_on_or_before(expected - timedelta(days=1))
 
 # Gate on the OI shard — build_matrix() resolves its published asof from
 # the OI store, so freshness of the OI store is what actually matters.
@@ -109,7 +119,7 @@ else:
 
 # >= rather than == : a store ahead of the calendar (e.g. after a holiday
 # correction) should not false-fail; the calendar date is the floor.
-if latest >= expected:
+if latest >= required:
     print("fresh")
 else:
     print("stale")
