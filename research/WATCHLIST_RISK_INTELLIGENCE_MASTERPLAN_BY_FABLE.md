@@ -149,6 +149,120 @@ have is a set of practices that survived those funerals. Each, and its verdict f
   Any future promotion of WRI states to authority (rank/gate/alert escalation) requires
   the gauntlet: pre-registered gates on a forward ledger, adjudicated separately.
 
+## 5-A. Coverage extensions charter (W6.2) — foreign-market factor models
+
+Status: **CHARTER (design + pre-registration only — NOT a build).** Referenced as "WRI §5-A"
+by `TRANSMISSION_INTELLIGENCE_MASTERPLAN_BY_FABLE.md` §10; rides WRI rulings per TXI-R9.
+Coverage extensions ride WRI's book math; this section pre-registers the *foreign-market*
+models so nobody ships an uncalibrated one. (Crypto — the sibling W6.1 item — is already
+built into the US-clock universe: it needs no separate model because BTC-USD is already the
+`btc` factor on US-session closes; see `engine/factor_exposure.py` and its tests.)
+
+**Why a new MODEL, not just new tickers (the epistemic line).** Adding crypto was a clean
+*universe* extension: the coins/ETFs regress against the **existing, calibrated** US-clock
+factor set on the same session closes as every other name, so no new stability gate was
+owed. HK/CN/CA cash equities are different: they trade on **their own session**, so a beta
+estimated against US-session factor returns is timezone-contaminated — the exact defect the
+engine docstring cites for the onshore 510300.SS proxy. A *clock-safe* foreign model is
+therefore a genuinely new estimator (new factor set, new returns clock) and, per the house
+Phase-0 discipline (`scripts/factor_exposure_phase0.py`, the out-of-sample stability gate),
+it may not display authority-tier betas until it passes a pre-registered stability test.
+**This charter designs and pre-registers; it claims no edge.**
+
+**Data-readiness audit (2026-07-24, this session).** The blocking finding that makes this
+charter-not-build even at the ticker level: every "HK/China" proxy currently cached is
+**US-listed** — EWH (7,637d), MCHI (3,851d), FXI (5,482d) all print on the *US* close, so
+they carry the same async as 510300.SS would. The Asia-session close series a clock-safe HK
+model actually needs are **not cached**: `^HSI`, HSTECH (e.g. 3067.HK / `^HSTECH`), a China
+government-bond (CGB / China-10y) series, and an Asia-close USDCNH (`CNH_X` is a 20-row
+stub; `CNH_F` is a US-hours future). **So step 0 of any HK build is a collection lane** for
+those Asia-close series, *then* the calibration study. CA is materially simpler (below).
+
+### 5-A.1 `factor_betas_hk.json` — a SEPARATE clock-safe HK/CN model
+
+- **Separate artifact, same shape.** A parallel emit `site/factor_betas_hk.json` with the
+  identical schema to `factor_betas.json` (per-name orthogonal marginal betas, `factor_cov`,
+  `idio_vol`, r², `as_of`, factor metadata + confidence tiers) so `risk_core.js` consumes it
+  unchanged. NEVER merge HK names into the US emit — the two are on different clocks and
+  mixing them re-introduces the contamination.
+- **Factor set candidates (all HK/Asia-session closes, in economic priority order for the
+  orthogonalization):**
+  1. `hk_mkt` — HSI (Hang Seng) — the dominant HK beta.
+  2. `hk_tech` — HSTECH (Hang Seng TECH) beyond market — the China-internet/long-duration
+     tilt (the HK analogue of the US `growth` factor; candidate proxy 3067.HK on HK close).
+  3. `china_onshore` — a mainland proxy on its own close (510300.SS / CSI300) beyond HSI —
+     the onshore-vs-offshore wedge (A-share access, national-team flows).
+  4. `cgb_rates` — China 10y government bond (CGB) level → duration factor (rises when
+     China long yields fall; the `rates` analogue).
+  5. `usdcnh` — offshore yuan (USDCNH) on Asia close — the FX/capital-flow channel; + beta
+     = benefits from a weaker yuan (exporters) vs a stronger (importers/HK-USD-peg dynamics).
+  - **Same orthogonalization** as the US model: sequential Gram-Schmidt in priority order
+    (`orthogonalize_fit`/`orthogonalize_apply`), market first, so each beta is the marginal
+    exposure. Same small-clean-set overfit guardrail (the US model DROPPED HYG for fitting
+    noise — a candidate here that reads as an incoherent low-beta mix gets dropped, not kept).
+  - **Universe:** the existing HK desk universe (`hk_stocks`, ~southbound-eligible names) and
+    the China-flow 1,554-name universe already collected — read their cached closes on the
+    HK/CN session, no new per-name collection beyond the factor proxies.
+- **Phase-0 stability pre-registration (the gate that must pass BEFORE authority-tier
+  display).** Identical discipline to the US model's `reports/factor-exposure-phase0.md`:
+  - **Design:** ~22 monthly rebalances; at each, fit the orthogonal transform + per-name
+    betas on the trailing in-sample window (252d), then measure **rank persistence** of each
+    factor's cross-sectional betas into the **next quarter** (out-of-sample). Report per-factor
+    in-sample→next-quarter Spearman rank persistence, exactly the `FACTOR_CONFIDENCE.persist`
+    number the US model carries. Scope each factor `single | book | low` by that number.
+  - **Pre-registered gates (fixed before running; no post-hoc tier invention):**
+    - `single`-tier (reliable per stock AND aggregated): persist ≥ 0.50.
+    - `book`-tier (trust only aggregated across a basket): 0.20 ≤ persist < 0.50.
+    - `low`-tier (context only, expect ~0 for most books): persist < 0.20 → prints muted /
+      footnoted, never leads a verdict.
+  - **Coverage honesty on failure:** any factor that comes back below `book` prints its real
+    (low/untested) tier with the measured number — never a fabricated persist, exactly as the
+    US model does today for `gold` (persist `None`, "untested"). A model whose *market* factor
+    fails single-tier does not ship at all — it has no trustworthy spine.
+  - **No edge claim.** This is MEASUREMENT (a risk lens), not a signal; like the US model it
+    does NOT enter the IC/FDR/DSR alpha gauntlet — the honest gate is out-of-sample stability,
+    not forward return. Nulls print; "validated" is banned (CI-enforced).
+
+### 5-A.2 CA — same pattern, US-session-overlapping (simpler)
+
+Canada trades ~US hours, so the timezone contamination is minimal — the harder part (a
+separate clock) largely falls away, and CA could even be evaluated as an extension of the US
+clock. Still gets its **own** small factor set + its **own** Phase-0 prereg (a factor model
+is a factor model), but no Asia-close collection lane:
+- **Factor set candidates (all trade ~US session):** `ca_mkt` — TSX Composite (or EWC, cached
+  7,637d, as the US-listed proxy) — broad Canada beta; `cad` — USDCAD FX channel; `oil` — WTI
+  crude (already the US model's `oil` factor, 26y series) since the TSX is energy/materials
+  heavy and oil is the dominant CA macro swing. Optional `ca_materials`/gold overlap (GC=F is
+  already cached) given the mining weight.
+- **Same orthogonalization; same Phase-0 gates** (5-A.1's persist thresholds), on the Canada
+  universe (`canada_standouts` + TSX names already collected). Because CA overlaps US hours,
+  the prereg should ALSO report whether CA names read acceptably in the **existing US model**
+  (they may already be adequately covered as high-`mkt`, oil-tilted idiosyncratics) — if so,
+  a separate `factor_betas_ca.json` may be unnecessary and CA folds into the US emit. That
+  comparison is part of the study, pre-registered, not assumed either way.
+
+### 5-A.3 Client: a market→model router (described, NOT built)
+
+The client already selects "modeled vs unmodeled" purely by presence in `data.betas`
+(`risk_core.js coverage()`, `watchlist_risk.js` UNMODELED map) — no ticker allowlist. The
+future change is small: a **market→model router** that, per ticker, picks which
+`factor_betas*.json` to read (US-listed/US ADRs → `factor_betas.json`; `.HK`/HK-desk names →
+`factor_betas_hk.json`; `.TO`/TSX names → `factor_betas_ca.json` or US if 5-A.2 folds it in),
+then runs the SAME book math against whichever model matches. Cross-market books read each
+sleeve in its own model and the L2 verdict composes the printed per-sleeve reads (no
+cross-clock correlation is asserted between a US name and an HK name — that pairwise ρ is
+genuinely unmeasured and must print as such, not fabricated). A name whose market has no
+calibrated model yet stays `unmodeled` with the honest chip — the coverage-honesty path
+(WRI-R6) already handles this with zero new code. **This router is a future client change; it
+is described here, not built in W6.1.**
+
+### 5-A.4 Options / dealer lane — cross-reference only
+
+The options/dealer-flow lane (per-ticker `gex`, `iv_spread`, `vol_squeeze` + the GEX desk)
+is an EXISTING come-back, gated on #1845 stabilizing (~2026-08), tracked in Risk Desk §3 and
+TXI §10 / §3. **No new work here** — listed so the one W6 roadmap is complete. It joins WRI
+L1 as a WATCH-grade lane when #1845 is stable, under WRI rulings.
+
 ## 6. The three-layer risk read (the product)
 
 - **L3 banner — the tape:** market_state / risk_radar / vol_regime crossed with the book's
@@ -226,6 +340,21 @@ sentinel extension only ever sees symbols (B6 precedent), never positions.
   extension. Come-backs: realized-corr overlay (pending W1 closes-check), downside-idio
   study, personality-conditioned thresholds (PRD-R12 study), Terminal parity, any
   authority promotion via pre-registered forward gates (WRI-R8).
+- **W6 — coverage extensions:**
+  - **W6.1 — crypto in the book model (builder/opus): BUILT.** BTC-USD/ETH-USD + IBIT/ETHA/
+    COIN added to the exposable universe in `engine/factor_exposure.py` (`CRYPTO_NAMES`,
+    "Crypto" sector tag); they ship btc-heavy, idio-heavy betas like any ETF, so a holder
+    sees a real book contribution instead of an "unmodeled" chip. No new factor/model — BTC
+    is already the `btc` factor on US-session closes, so this is clock-consistent. GBTC
+    excluded (not cached). Coverage-honesty for still-unmodeled names (HK/CN cash equities)
+    verified intact (presence-driven `risk_core.js coverage()` / `watchlist_risk.js` UNMODELED
+    — no client change). Tests extended.
+  - **W6.2 — foreign-market factor models: CHARTERED, NOT built** — see §5-A. Clock-safe
+    `factor_betas_hk.json` (HSI/HSTECH/onshore/CGB/USDCNH on Asia closes) + CA (TSX/CAD/oil,
+    US-overlapping) with per-model Phase-0 stability preregs; market→model client router
+    described. Blocked on an Asia-close proxy collection lane + the calibration study (the
+    cached HK proxies are US-listed → still contaminated). No edge claimed.
+  - **W6.3 — options/dealer lane:** existing come-back, gated on #1845 (~2026-08); §5-A.4.
 
 ## 10. Non-goals
 

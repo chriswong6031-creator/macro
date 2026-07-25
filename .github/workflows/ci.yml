@@ -113,6 +113,12 @@ on:
       - "tests/test_risk_core_js.py"
       - "templates/risk_core.js"
       - "templates/watchlist_risk.js"
+      # WRI W6.1: the factor-exposure engine bakes factor_betas.json that risk_core.js
+      # consumes; list its emit + tests so an engine/test-only edit triggers CI
+      # (ci-test-whitelist-rot guard). Run in the wri-risk-core job below.
+      - "engine/factor_exposure.py"
+      - "tests/test_factor_exposure.py"
+      - "tests/test_factor_exposure_stress.py"
       # audit #46 reliability-contract guard: a gated-out field must not render directionally.
       - "scripts/check_reliability_contract.py"
       - "engine/btc_leverage_cascade.py"
@@ -1956,9 +1962,13 @@ jobs:
         with:
           node-version: "20"
       - name: install minimal deps
-        run: pip install pytest
+        # pyyaml: engine.factor_exposure loads the W6.1 factor-model charter (YAML) at
+        # import, so the test modules need it at collection time (was ModuleNotFoundError).
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
+      - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
+        run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
   house-law-registry:
     if: ${{ false }}

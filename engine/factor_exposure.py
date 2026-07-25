@@ -29,9 +29,23 @@ verifies is that only PORTFOLIO-LEVEL aggregates are trustworthy — a single st
 oil/rate beta is noisy, but averaged across a book the idiosyncratic noise cancels.
 
 ADDITIVE / leaf — nothing in the scoring path imports it. China is intentionally
-absent: the only onshore proxy we cache (510300.SS) trades on a different clock than
-US names, so a same-day beta is timezone-contaminated; add it when an FXI/MCHI
-(US-hours) proxy is collected.
+absent as a *ticker* universe: the only onshore proxy we cache (510300.SS) trades on
+a different clock than US names, so a same-day beta is timezone-contaminated; add it
+when an FXI/MCHI (US-hours) proxy is collected. (An FXI-based `china` FACTOR is present
+— it is US-hours.) HK/CN/CA cash equities are likewise unmodeled here and read
+"unmodeled" in the watchlist; they need their own *clock-safe* factor models (own
+proxies on their own session closes) — chartered in the WRI masterplan, not built here.
+
+Crypto IS in the exposable universe: BTC-USD/ETH-USD (the coins) plus IBIT/ETHA/COIN
+(spot-crypto ETFs + the Coinbase equity) get shipped betas like SPY/QQQ, so a user
+holding them sees a real book contribution. They load btc-heavy with high idiosyncratic
+vol and low R² on the equity factors — that is correct (crypto is its own bet), not a
+bug the orthogonalization should hide. Timezone note: crypto trades ~24/7 while the
+factor returns are US-session closes, so there is some async — but BTC-USD is ALREADY
+the `btc` FACTOR, computed exactly this way (daily pct_change of the same close series),
+so exposing BTC-USD/ETH-USD as tickers is CONSISTENT with existing treatment, not a new
+source of contamination. This is why crypto is buildable now while HK/CN cash equities
+(no US-hours proxy) are not.
 """
 from __future__ import annotations
 
@@ -143,7 +157,23 @@ ETF_NAMES = {
     "HYG": "High-yield credit", "LQD": "IG credit", "EMB": "EM bonds",
     "FXI": "China large-cap",
 }
-ETF_UNIVERSE = list(ETF_NAMES)
+
+# Crypto book — the coins themselves (BTC-USD/ETH-USD, already the `btc` FACTOR series)
+# plus the spot-crypto ETFs and Coinbase equity many watchlists actually hold. Exposed
+# so a holder sees a real book contribution instead of an "unmodeled" chip; tagged with
+# a "Crypto" sector (not "ETF") so the client groups the sleeve honestly. These load
+# btc-heavy with high idio / low equity-factor R² — correct, crypto is its own bet.
+# Only the cached ones are used (GBTC is NOT cached → skipped gracefully, like the rest);
+# see the module docstring on why this is clock-consistent with the existing btc factor.
+CRYPTO_NAMES = {
+    "BTC-USD": "Bitcoin", "ETH-USD": "Ethereum",
+    "IBIT": "iShares Bitcoin (spot)", "ETHA": "iShares Ethereum (spot)",
+    "COIN": "Coinbase",
+}
+
+# Union universe read by `_etf_closes`; `compute_exposure` tags CRYPTO_NAMES → "Crypto",
+# the rest → "ETF". Keys are unique across the two maps.
+ETF_UNIVERSE = list(ETF_NAMES) + list(CRYPTO_NAMES)
 
 
 def _etf_closes() -> pd.DataFrame:
@@ -497,7 +527,12 @@ def compute_exposure(asof=None, closes: pd.DataFrame | None = None) -> dict | No
     ns = _names_sectors()
     betas = res["betas"]
     for t, rec in betas.items():
-        if t in etf_set:
+        if t in CRYPTO_NAMES:
+            # coins + spot-crypto ETFs + Coinbase: own "Crypto" sector so the sleeve
+            # groups honestly. is_etf stays False (unused by the client; the coins/COIN
+            # aren't ETFs and the sector tag already carries the grouping).
+            rec["name"], rec["sector"], rec["is_etf"] = CRYPTO_NAMES[t], "Crypto", False
+        elif t in etf_set:
             rec["name"], rec["sector"], rec["is_etf"] = ETF_NAMES.get(t, t), "ETF", True
         else:
             rec["name"], rec["sector"] = ns.get(t, (t, "—"))

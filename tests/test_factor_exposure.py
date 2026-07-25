@@ -120,3 +120,47 @@ def test_compute_exposure_covers_etfs_self_consistently():
     # every record carries the client-required fields
     rec = next(iter(b.values()))
     assert {"name", "sector", "is_etf", "raw", "r2", "idio_vol"} <= set(rec)
+
+
+def test_compute_exposure_covers_crypto_with_sane_shape():
+    """Crypto universe extension (W6.1): the cached crypto names ship betas like any ETF,
+    tagged 'Crypto' (not 'ETF'), and read the honest way — btc-heavy with a real
+    idiosyncratic-vol sleeve (crypto is its own bet, low R² on equity factors is correct).
+    Would fail if crypto were dropped from the universe, mis-tagged, or if the
+    orthogonalization mangled a near-pure-crypto name into NaNs."""
+    out = fe.compute_exposure()
+    if out is None:                                      # no store in this env — skip
+        return
+    b = out["betas"]
+    factor_keys = [f["key"] for f in out["factors"]]
+    # at least ONE cached crypto name must be modeled (BTC-USD is the deepest series and
+    # is also the `btc` factor source, so it is present whenever the emit is)
+    present = [t for t in fe.CRYPTO_NAMES if t in b]
+    assert present, "no crypto names in emit despite cached BTC-USD/ETH-USD/COIN series"
+
+    for t in present:
+        rec = b[t]
+        # (a) tagged as its own sleeve, not lumped with ETFs
+        assert rec["sector"] == "Crypto", f"{t} sector={rec['sector']!r}, expected 'Crypto'"
+        assert rec["name"] == fe.CRYPTO_NAMES[t]
+        # (b) client-required fields present + a real idio sleeve (crypto is its own bet)
+        assert {"name", "sector", "is_etf", "raw", "r2", "idio_vol"} <= set(rec)
+        assert rec["idio_vol"] is not None and rec["idio_vol"] > 0.0
+        # (c) btc beta present and substantial — a crypto name reads as the crypto bet.
+        #     Threshold 0.5 is loose: the real coins run ~0.9–1.1, COIN/ETFs ~0.9.
+        assert rec.get("btc") is not None, f"{t} has no btc beta"
+        assert rec["btc"] > 0.5, f"{t} btc beta {rec['btc']} unexpectedly low for a crypto name"
+        # btc sits among the TOP-2 |beta| non-market loadings. Not strictly #1: the
+        # ETH-side names carry a large negative usd loading (crypto weakens on a strong
+        # dollar) that can edge out btc — an honest read, so the check allows a co-leader.
+        others = sorted((abs(rec[k]) for k in factor_keys
+                         if k not in ("mkt", "btc") and rec.get(k) is not None), reverse=True)
+        second = others[1] if len(others) > 1 else 0.0
+        assert abs(rec["btc"]) >= second, \
+            f"{t}: btc beta not among the top-2 non-market loadings ({rec})"
+
+    # BTC-USD specifically: it IS the btc factor series → its btc beta must be ≈1
+    # (self-consistency, the same check SPY→mkt gets in the sibling test)
+    if "BTC-USD" in b and b["BTC-USD"].get("btc") is not None:
+        assert abs(b["BTC-USD"]["btc"] - 1.0) < 0.2, \
+            f"BTC-USD btc beta {b['BTC-USD']['btc']} should be ~1 (it is the btc factor)"
