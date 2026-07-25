@@ -1,0 +1,122 @@
+# TXI seed chain — the operator's oil→inflation→yields→duration-derate cascade.
+# Masterplan §6 worked spec, bound to the REAL collected artifacts (see validator_note
+# for the two node→field adjustments vs the prose spec). Display-tier; never scored.
+chain: oil_inflation_duration_derate
+rev: 0
+tier: hypothesis            # every node resolves + arms, but per-hop base rates untested (W3)
+title:
+  en: "Oil shock → inflation → yields → long-duration de-rate"
+  zh: "油价冲击 → 通胀 → 收益率 → 长久期估值下修"
+
+nodes:
+  oil_shock:
+    title: {en: "Oil supply shock", zh: "油价供给冲击"}
+    src: yahoo
+    # §6: "commodity/signals_oil, ret_60d > +25% AND MA50 slope up".
+    # Bound to the WTI front series (yahoo CL=F) directly — same observable, no signals
+    # artifact dependency; both legs must hold.
+    test:
+      all:
+        - {series: "CL=F", metric: ret, window: 60, op: gt, value: 25}   # +25% (ret is in PERCENT)
+        - {series: "CL=F", metric: ma_slope, window: 50, lookback: 5, op: gt, value: 0}
+  breakeven_rise:
+    title: {en: "10y breakeven rising", zh: "10年期盈亏平衡上行"}
+    src: fred
+    # §6: "transmission latest.state, T10YIE Δ30d > +15bp". Bound to the raw T10YIE
+    # series (lib.store fred/T10YIE, col breakeven_10y, the permanent FRED breakeven
+    # cache); 30d ≈ 22 trading days. Reads the true series, not the pre-binned decomp
+    # velocity block (which only carries 20d/63d). ret_bp = absolute Δ in basis points.
+    test: {series: "T10YIE", metric: ret_bp, window: 22, op: gt, value: 15}
+  yield_rise:
+    title: {en: "Real 10y yield rising fast", zh: "实际10年期收益率快速上行"}
+    src: transmission_state
+    # §6: "real_10y direction=rising AND Δ63d > +30bp". Reads data/transmission/latest.json.
+    test:
+      all:
+        - {path: "state.rates.direction", op: eq, value: rising}
+        - {path: "state.rates.real_10y_chg_63d_bp", op: gt, value: 30}
+  duration_derate:
+    title: {en: "Long-duration cohort de-rating", zh: "长久期板块相对下修"}
+    src: yahoo
+    # §6: "factor model + cohorts, long-duration cohort RS_63d < 0 vs SPY". Bound to a
+    # cheap standalone cohort proxy — QQQ (long-duration growth) relative strength vs SPY
+    # over 63d. The per-NAME long-duration resolution is the W2 blast resolver; this NODE
+    # test only needs a cohort observable, which the proxy supplies without W2.
+    test: {series: "QQQ", vs: "SPY", metric: rs, window: 63, op: lt, value: 0}
+
+hops:
+  - from: oil_shock
+    to: breakeven_rise
+    sign: "+"
+    lag_d: [5, 60]
+    condition:
+      en: "supply-driven shock (global PMI not accelerating); demand-driven oil is a different chain"
+      zh: "供给驱动的冲击（全球PMI未加速）；需求驱动的油价属于另一条链"
+    mechanism:
+      en: "energy passthrough into headline CPI, then into inflation expectations"
+      zh: "能源价格传导至整体CPI，进而影响通胀预期"
+    prior: "transmission_matrix[oil→breakevens] IC if present, else theory (cost-push passthrough)"
+  - from: breakeven_rise
+    to: yield_rise
+    sign: "+"
+    lag_d: [0, 90]
+    condition:
+      en: "Fed not capping the curve (no YCC / large-scale QE regime)"
+      zh: "美联储未压制曲线（无YCC/大规模QE环境）"
+    mechanism:
+      en: "rising inflation compensation lifts the nominal, then the real, 10y as the market reprices the policy path"
+      zh: "通胀补偿上升推高名义、进而实际10年期收益率，市场重新定价政策路径"
+    prior: "theory (Fisher decomposition) — real = nominal − breakeven"
+  - from: yield_rise
+    to: duration_derate
+    sign: "+"
+    lag_d: [0, 120]
+    condition:
+      en: "no offsetting earnings-acceleration in the long-duration cohort"
+      zh: "长久期板块无抵消性的盈利加速"
+    mechanism:
+      en: "a higher discount rate compresses the present value of far-dated cash flows first — long-duration growth de-rates relative to the market"
+      zh: "更高的贴现率首先压缩远期现金流的现值——长久期成长相对大盘估值下修"
+    prior: "stock_macro_sensitivity calibration (shipped; per-name rate beta + duration tier)"
+
+falsifiers:
+  # structured (auto-checked on an armed episode): oil shock but breakevens flat 30d
+  # while node 0 is (was) armed → the cost-push leg is not passing through.
+  - when: {series: "T10YIE", metric: ret_bp, window: 22, op: lt, value: 5}
+    src: fred
+    note: "oil +25% with breakevens near-flat over ~30d in a non-QE regime — passthrough absent"
+  # structured: yields rose but the long-duration cohort is OUTPERFORMING for 120d.
+  - when: {series: "QQQ", vs: "SPY", metric: rs, window: 120, op: gt, value: 0}
+    note: "yield_rise with long-duration cohort RS>0 over 120d — the derating leg is falsified"
+
+null_model: "does conditioning on the full oil→breakeven→yield chain beat unconditional yields-momentum on the same long-duration cohort?"
+
+exposure_screens:            # W2 — declared only; not resolved in W1
+  long_duration_valuation:
+    field_expr: "macro_sensitivity.duration == 'long' OR valuation.forward_pe tier in {rich, very_rich}"
+    note: "names whose value sits in far-dated cash flows — first to de-rate on a discount-rate rise"
+  refinancing_channel:
+    field_expr: "financials.raw.debt_lt / assets high AND earnings weak (interest-cost proxy)"
+    note: "leveraged names facing a higher cost of refinancing"
+  capex_borrower:
+    field_expr: "factors.radar.investment z < -1.5 AND fcf_margin < 0"
+    note: "capex-heavy names funding growth with external capital"
+  fcf_burner:
+    field_expr: "financials.fcf_margin < 0 AND multiyear cash trend down"
+    note: "cash-burning names most exposed to a higher cost of capital"
+
+provenance:
+  theory: ["cost-push passthrough", "duration / discount-rate math"]
+  episodes: ["1973-74", "1990", "2021-22"]
+  added_by: "operator"
+  added_on: "2026-07-24"
+
+validator_note: >
+  Two node→field adjustments vs the §6 prose, both binding to a REAL observable (never a
+  faked detector): (1) oil_shock and breakeven_rise read the raw price/level series via
+  lib.store (yahoo CL=F, yahoo T10YIE) instead of a commodity/signals_oil artifact and the
+  transmission latest.state breakeven field — the series carry the identical observable and
+  avoid a stale-snapshot dependency. (2) duration_derate uses a QQQ-vs-SPY RS_63d cohort
+  PROXY for "long-duration cohort RS" — the per-name factor-model cohort is the W2 resolver;
+  the node only needs a cohort observable. All four nodes resolve; tier stays hypothesis
+  because per-hop base rates are untested until the W3 episode miner runs.
