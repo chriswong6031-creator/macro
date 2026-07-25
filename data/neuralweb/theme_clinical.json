@@ -1,7 +1,7 @@
 {
   "schema": "theme_clinical.v1",
-  "as_of": "2026-07-24",
-  "generated_at": "2026-07-24T01:17:07.536746+00:00",
+  "as_of": "2026-07-25",
+  "generated_at": "2026-07-25T01:03:40.859581+00:00",
   "vocabulary_version": "v1",
   "authority": {
     "may_rank": false,
@@ -19,7 +19,7 @@
     "total_themes": 3,
     "themes_with_data": 3,
     "total_modalities_configured": 9,
-    "total_studies_stored": 2466,
+    "total_studies_stored": 2469,
     "parquet_absent": false
   },
   "api_note": "Source: ClinicalTrials.gov v2 API (clinicaltrials.gov/api/v2/studies). Keyless (no API key required — verified 2026-07-09). INDUSTRY filter: filter.advanced=AREA[LeadSponsorClass]INDUSTRY. Backfill from 2018-01-01 (AREA[StudyFirstPostDate]RANGE[2018-01-01,MAX]). Full fetch every run — no incremental mode (API returns only current state; state file records last-ingest date for monitoring only). Phase: API returns current phase only (non-PIT for backfill rows). vocabulary_version stamps query definition for PIT-safe history.",
@@ -28,9 +28,9 @@
       "theme_id": "diagnostics_lifesci",
       "n_modalities_configured": 6,
       "n_modalities_with_data": 6,
-      "n_studies_total": 1818,
+      "n_studies_total": 1820,
       "year_month_max": "2026-07",
-      "theme_registration_yoy_pct": 17.68,
+      "theme_registration_yoy_pct": 18.1,
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 33,
@@ -125,30 +125,30 @@
         "adc_antibody_drug_conjugate": {
           "modality_id": "adc_antibody_drug_conjugate",
           "theme_id": "diagnostics_lifesci",
-          "n_studies_total": 418,
+          "n_studies_total": 420,
           "year_month_max": "2026-07",
-          "registration_yoy_pct": 24.36,
+          "registration_yoy_pct": 26.92,
           "registration_velocity_read": "accelerating",
-          "registration_magnitude_band": "moderate",
-          "enrollment_yoy_pct": 55.56,
+          "registration_magnitude_band": "large",
+          "enrollment_yoy_pct": 56.77,
           "enrollment_velocity_read": "accelerating",
           "enrollment_magnitude_band": "large",
           "phase_distribution": {
-            "share_phase2plus_recent": 0.6186,
+            "share_phase2plus_recent": 0.6162,
             "share_phase2plus_prior": 0.5769,
             "delta_pp": null,
-            "n_total_recent": 97,
-            "n_phase2plus_recent": 60,
+            "n_total_recent": 99,
+            "n_phase2plus_recent": 61,
             "n_phase3_recent": 16,
             "n_total_prior": 78,
             "n_phase2plus_prior": 45,
             "read": "high_late_stage",
             "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
-            "coverage_note": "97 INDUSTRY studies in trailing 12m (60 Phase-2+, 16 Phase-3; phase as of ingest, near-PIT for recent registrations); 78 studies in prior window (phase upper-biased; cross-cohort delta not published)"
+            "coverage_note": "99 INDUSTRY studies in trailing 12m (61 Phase-2+, 16 Phase-3; phase as of ingest, near-PIT for recent registrations); 78 studies in prior window (phase upper-biased; cross-cohort delta not published)"
           },
           "n_phase3_trailing12m": 16,
-          "coverage_note": "418 INDUSTRY-sponsored studies; most recent registration: 2026-07; 97 months of registration data",
-          "coverage_note_zh": "共418个行业赞助研究；最近注册月份：2026-07；97个月的注册数据",
+          "coverage_note": "420 INDUSTRY-sponsored studies; most recent registration: 2026-07; 97 months of registration data",
+          "coverage_note_zh": "共420个行业赞助研究；最近注册月份：2026-07；97个月的注册数据",
           "expected_read": "rising phase-3 = nearing monetization"
         },
         "car_t_cell_therapy": {
@@ -210,16 +210,16 @@
           "expected_read": "rising registrations = mRNA platform capital commitment"
         }
       },
-      "coverage_note": "6/6 modalities have data; 1818 total INDUSTRY-sponsored studies; most recent: 2026-07",
-      "coverage_note_zh": "6个模态中6个有数据；共1818个行业赞助研究；最新月份：2026-07"
+      "coverage_note": "6/6 modalities have data; 1820 total INDUSTRY-sponsored studies; most recent: 2026-07",
+      "coverage_note_zh": "6个模态中6个有数据；共1820个行业赞助研究；最新月份：2026-07"
     },
     "glp1_obesity": {
       "theme_id": "glp1_obesity",
       "n_modalities_configured": 2,
       "n_modalities_with_data": 2,
-      "n_studies_total": 528,
+      "n_studies_total": 529,
       "year_month_max": "2026-07",
-      "theme_registration_yoy_pct": 18.96,
+      "theme_registration_yoy_pct": 19.65,
       "theme_registration_velocity_read": "accelerating",
       "theme_registration_magnitude_band": "moderate",
       "n_phase3_trailing12m": 29,
@@ -227,30 +227,30 @@
         "glp1_named_agents": {
           "modality_id": "glp1_named_agents",
           "theme_id": "glp1_obesity",
-          "n_studies_total": 437,
+          "n_studies_total": 438,
           "year_month_max": "2026-07",
-          "registration_yoy_pct": -5.56,
-          "registration_velocity_read": "decelerating",
-          "registration_magnitude_band": "small",
-          "enrollment_yoy_pct": 572.88,
+          "registration_yoy_pct": -4.17,
+          "registration_velocity_read": "neutral",
+          "registration_magnitude_band": null,
+          "enrollment_yoy_pct": 573.1,
           "enrollment_velocity_read": "accelerating",
           "enrollment_magnitude_band": "large",
           "phase_distribution": {
-            "share_phase2plus_recent": 0.6029,
+            "share_phase2plus_recent": 0.6087,
             "share_phase2plus_prior": 0.6667,
             "delta_pp": null,
-            "n_total_recent": 68,
-            "n_phase2plus_recent": 41,
+            "n_total_recent": 69,
+            "n_phase2plus_recent": 42,
             "n_phase3_recent": 21,
             "n_total_prior": 72,
             "n_phase2plus_prior": 48,
             "read": "high_late_stage",
             "phase_data_caveat": "phase_non_pit: API returns current phase only; backfill rows carry phase-as-of-ingest (upper-biased toward late phase for pre-2025 studies); cross-cohort delta is confounded and not published; read is based on trailing-12m recent-window only (near-PIT).",
-            "coverage_note": "68 INDUSTRY studies in trailing 12m (41 Phase-2+, 21 Phase-3; phase as of ingest, near-PIT for recent registrations); 72 studies in prior window (phase upper-biased; cross-cohort delta not published)"
+            "coverage_note": "69 INDUSTRY studies in trailing 12m (42 Phase-2+, 21 Phase-3; phase as of ingest, near-PIT for recent registrations); 72 studies in prior window (phase upper-biased; cross-cohort delta not published)"
           },
           "n_phase3_trailing12m": 21,
-          "coverage_note": "437 INDUSTRY-sponsored studies; most recent registration: 2026-07; 98 months of registration data",
-          "coverage_note_zh": "共437个行业赞助研究；最近注册月份：2026-07；98个月的注册数据",
+          "coverage_note": "438 INDUSTRY-sponsored studies; most recent registration: 2026-07; 98 months of registration data",
+          "coverage_note_zh": "共438个行业赞助研究；最近注册月份：2026-07；98个月的注册数据",
           "expected_read": "rising registrations = capital commitment"
         },
         "glp1_incretin_mechanism": {
@@ -283,8 +283,8 @@
           "expected_read": "rising registrations = capital commitment"
         }
       },
-      "coverage_note": "2/2 modalities have data; 528 total INDUSTRY-sponsored studies; most recent: 2026-07",
-      "coverage_note_zh": "2个模态中2个有数据；共528个行业赞助研究；最新月份：2026-07"
+      "coverage_note": "2/2 modalities have data; 529 total INDUSTRY-sponsored studies; most recent: 2026-07",
+      "coverage_note_zh": "2个模态中2个有数据；共529个行业赞助研究；最新月份：2026-07"
     },
     "medical_devices": {
       "theme_id": "medical_devices",
