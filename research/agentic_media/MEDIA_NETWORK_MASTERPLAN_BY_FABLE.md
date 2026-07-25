@@ -58,7 +58,7 @@ Full suite: fact-anchor check; **thesis-provenance check** (Editorial: every nam
 
 ## 6. Distribution
 
-Native-first on X: each piece becomes a value-complete post (the stat/chart/claim in-post), link in reply/card — per the reach-suppression + $0.20/link-post API reality. The flagship desk account carries Brief/Editorial shares; the Research Desk gets its own X account only at S3 of the persona ladder. Cross-account citation follows the umbrella §5.2 similarity rule (publication account + flagship may each share a piece once with distinct framing; personas cite asynchronously >24h, radar-checked). RSS ships day one (already in the builder); newsletter digest joins the D07/lifecycle lane later (owned audience).
+Native-first on X: each piece becomes a value-complete post (the stat/chart/claim in-post), with the link in a reply or card — link-bearing posts tend to see softer organic reach, which is a tactical reason to lead with in-post value (Buffer's subscription covers scheduled link posting, so X's per-post link pricing does not apply to us). The flagship desk account carries Brief/Editorial shares; a publication gets its own X account once it has the velocity to sustain one (Persona §2 cohort expansion). Cross-account citation follows the umbrella §5 answer 2: a publication's own account and the flagship may each share a piece once with distinct framing; everything else is asynchronous and differently worded, radar-checked. RSS ships day one (already in the builder); newsletter digest joins the D07/lifecycle lane later (owned audience).
 
 ## 7. Additional publications + domains (rev 3 — supported)
 
