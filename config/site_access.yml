@@ -69,6 +69,7 @@ free_registered:
     - /regime_timeline.json
     # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
     - /special_situations.html
+    - /china_special_situations.html
   prefixes:
     - /news/
     - /chinanews/
@@ -107,5 +108,11 @@ premium:
       # browser fetches it — engines read it off disk — so gating the URL closes a
       # direct-link leak of the same paid signal the page now gates.
       - /allocationdata/special_situations.json
+      # The China desk's raw snapshot — the same named rows the page now gates,
+      # in machine form (unlock/letter queues, the ranked boards, the by_ticker
+      # rollup). Only server-side readers touch it (engine/china_intel_hub.py and
+      # scripts/build_china_altdata.py read it off disk), so gating the URL closes
+      # a direct-link leak without breaking anything.
+      - /chinaspecialdata/special.json
     prefixes:
       - /premiumdata/

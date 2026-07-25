@@ -193,6 +193,7 @@ jobs:
           region_of() {
             case "$1" in
               templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
+              templates/china_special_situations.html.j2|templates/_china_special_situations_*.html.j2|scripts/build_china_special_situations.py) echo china;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
@@ -327,6 +328,17 @@ jobs:
           # rebuilt in the same pass as the shell it pairs with.
           sits() { [ -n "$SITS_DONE" ] && return 0; SITS_DONE=1; run_py "special situations desk, page only (build_special_situations --no-refresh)" scripts.build_special_situations --no-refresh; }
 
+          # ---- china special situations: page-only rebake, NO collector sweep ----
+          # The asia-close lane owns the collectors and the qledger claims; this lane
+          # re-renders the desk from the COMMITTED site/chinaspecialdata/special.json so a
+          # template or tier-gate fix ships in minutes. --no-refresh reuses that snapshot
+          # verbatim (countdowns and `built` included), so an untouched desk rebakes
+          # byte-for-byte and commits nothing. It also emits site/premiumdata/
+          # china_special_situations.json — the Insider+ payload behind the page's free
+          # preview (docs/TIER_PREVIEW_PATTERN.md), which MUST be rebuilt in the same pass
+          # as the shell it pairs with.
+          csits() { [ -n "$CSITS_DONE" ] && return 0; CSITS_DONE=1; run_py "china special situations desk, page only (build_china_special_situations --no-refresh)" scripts.build_china_special_situations --no-refresh; }
+
           # ---- the parallel regional/desk band (mirrors daily, MINUS special-sits) ----
           band() {
             local ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
@@ -432,13 +444,13 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; band; central; hub; us_pages; libs; sits ;;
+              spine; band; central; hub; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; us_pages; central ;;
             sits)
               sits ;;
             china)
-              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub ;;
             hk)
               run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
             markets)

@@ -6291,6 +6291,22 @@ special_situations:                # event-driven Special Situations desk (displ
   preview_rows: 3
 
 # ---------------------------------------------------------------------------
+# china_special_situations — tier gate for the A-share event-overhang desk
+# (engine/china_special_situations.py → scripts/build_china_special_situations.py).
+# Same mechanism as the US desk above (docs/TIER_PREVIEW_PATTERN.md), different
+# line: this desk's free half is the whole OVERHANG READ — every plane's state,
+# glance line, status chip and count — plus `preview_rows` of the two
+# newest-first queues (nearest unlocks, newest inquiry letters). The NAMES behind
+# it (the rest of those queues, the buyback / pledge / earnings-preview /
+# risk-warning / block-trade boards) ship as site/premiumdata/
+# china_special_situations.json, enforced Insider+ by config/site_access.yml.
+# Set gated:false to re-open the whole desk to Free without touching code.
+# ---------------------------------------------------------------------------
+china_special_situations:
+  gated: true
+  preview_rows: 3
+
+# ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies
 # (engine/qual_extraction.py, W5 §2.4 / Appendix P5).
 # Wired to the 8-K lane in collectors/special_situations.py.

@@ -1075,7 +1075,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pyyaml jinja2 fastapi httpx
       - name: tier-preview split contract (no paid row in the free shell)
-        run: python -m pytest tests/test_special_situations_gate.py -q
+        run: python -m pytest tests/test_special_situations_gate.py tests/test_china_special_situations_gate.py -q
       - name: paywall fail-closed contract (incl. enforced-early payload lane)
         run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
       - name: static serving boundary (Caddy <-> site_access.yml, no leaked artifacts)

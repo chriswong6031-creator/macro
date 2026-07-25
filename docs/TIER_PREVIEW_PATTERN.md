@@ -110,12 +110,35 @@ runs: wait for its `mdx-auth` event with a timeout fallback.
 | Surface | Free | Insider | Pro |
 |---|---|---|---|
 | Special Situations | 3 newest filings, all totals, coverage note | whole board, top setups, search/filter/sort | same as Insider |
+| China Special Situations | the whole overhang read (7 plane states, glance lines, every count) + the 3 nearest unlocks and 3 newest letters | every named row on all 7 planes | same as Insider |
 | Research Vault | newest 1 summary | newest 3 summaries | every desk, PDFs, Top Picks |
 
-(The Vault draws its line at Pro, this desk at Insider — the pattern is the
+(The Vault draws its line at Pro, these desks at Insider — the pattern is the
 mechanism, not the price point. The Vault's wall is also explicitly a *marketing*
 wall, because its paid content is the PDF, which `app/research.py` gates
 server-side; on a desk whose content is the rows, only the split works.)
+
+### Where to draw the line on a multi-panel desk
+
+The US desk is one flat feed, so "newest N rows" is the whole answer. The China
+desk is eight panels with different shapes, and the useful split turned out to be
+a different cut of the same idea: **state and totals are free, names are paid.**
+Every panel keeps its header, glance sentence, status chip, as-of and count
+("286 active buyback programs", "100 names on the risk-warning board") — a Free
+reader gets a complete, honest picture of where the pressure is — and only the
+per-name rows move behind the wall. Within that, the preview slice comes from the
+two *newest-first* queues (nearest unlocks, newest inquiry letters); the ranked
+"top N by magnitude" boards get no preview at all, because previewing a
+best-first board hands over its head, which is the part people pay for.
+
+Two traps that fall out of gating a multi-panel page:
+
+* **Empty-state branches read the sliced list.** `{% elif not bt.top_premium %}`
+  fires on the gated shell and shows "Nothing flagged" over content that exists.
+  Guard every such branch with the plane's gate state.
+* **A plane with genuinely no data must not grow a skeleton.** Pass the gate a
+  `planes` list naming only the planes that actually have withheld rows in this
+  build, and let the honest empty state stand everywhere else.
 
 Note both pages sit **behind the registration wall** — "Free" here means a signed-in
 free account. Anonymous visitors are redirected to sign in by the regwall; the
@@ -130,3 +153,12 @@ public estate is the landing/plans funnel plus `/stocks/ /tools/ /learn/ /blog/`
 - `app/paywall.py` — `enforced_early()`
 - `tests/test_special_situations_gate.py`, `tests/test_paywall.py`
 - CI: the `tier-gate` job in `.github/workflows/ci.yml`
+
+Second application (multi-panel desk):
+
+- `templates/china_special_situations.html.j2`, `templates/_china_special_situations_rows.html.j2`
+- `scripts/build_china_special_situations.py` — `_gate_cfg`, `_split`, `_write_premium_payload`
+- `tests/test_china_special_situations_gate.py`
+- `config/site_access.yml` — note the raw snapshot `/chinaspecialdata/special.json`
+  is in `enforced_early.exact` too: gating the page is theatre while the same rows
+  stay readable as JSON. Check for that emit whenever you gate a desk.
