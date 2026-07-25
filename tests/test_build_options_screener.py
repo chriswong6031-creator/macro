@@ -257,8 +257,16 @@ def test_builder_smoke(tmp_path, monkeypatch):
         return out
 
     monkeypatch.setattr(bos, "write_page", _fake_write)
+    # main() also writes the Scanner-mode rows export (M-XP c). Redirect it into tmp_path —
+    # a test must never write into the live site/ tree (MM_DATA_GUARD). Still the real
+    # writer, so the export path stays exercised end-to-end.
+    _real_export = bos.write_rows_export
+    monkeypatch.setattr(
+        bos, "write_rows_export",
+        lambda rows, coverage, out_path=None: _real_export(rows, coverage, site_dir / "rows.json"))
 
     result = bos.main()
+    assert (site_dir / "rows.json").exists(), "main() did not write the rows export"
     assert result == 0, "builder returned non-zero"
     assert "html" in captured, "write_page was never called — builder produced no output"
 
@@ -311,6 +319,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
     orig_flow  = bos.FLOW_DIR
     orig_tape  = bos.TAPE_FLOW_DIR
     orig_write = bos.write_page   # patching bos module namespace directly
+    orig_export = bos.write_rows_export
 
     written_html: dict[str, str] = {}
 
@@ -324,6 +333,10 @@ def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
         bos.FLOW_DIR      = flow_dir
         bos.TAPE_FLOW_DIR = tape_dir
         bos.write_page    = _fake_write
+        # Rows export (M-XP c) into tmp_path, never the live site/ tree (MM_DATA_GUARD).
+        bos.write_rows_export = (
+            lambda rows, coverage, out_path=None:
+            orig_export(rows, coverage, site_dir / "rows.json"))
 
         rc = bos.main()
     finally:
@@ -331,6 +344,7 @@ def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
         bos.FLOW_DIR   = orig_flow
         bos.TAPE_FLOW_DIR = orig_tape
         bos.write_page = orig_write
+        bos.write_rows_export = orig_export
 
     if rc != 0:
         pytest.skip("builder returned non-zero — may need live data; skip nav check")
@@ -353,3 +367,55 @@ def test_nav_checks_pass_on_rendered_page(tmp_path, monkeypatch):
 
     # Padding check: body tag must carry padding (nav-gap guard)
     assert "padding:" in html, "options_screener.html body appears to have no top padding (nav-gap risk)"
+
+
+# ---------------------------------------------------------------------------
+# 8.  Scanner-mode rows export — site/screenerdata/rows.json (OEU M-XP c)
+# ---------------------------------------------------------------------------
+
+def test_rows_export_carries_rows_stamp_and_counts(tmp_path):
+    """The export is the page's rows verbatim + built stamp + universe counts."""
+    rows = [
+        {"ticker": "SPY", "gross_premium_mn": 900.0, "iv30": 14.2, "net_prem_tone": "~calls"},
+        {"ticker": "NVDA", "gross_premium_mn": 410.5, "iv30": 41.0, "net_prem_tone": "~puts"},
+    ]
+    coverage = {
+        "n_names": 2, "n_young": 1, "n_mature": 1, "median_depth_days": 180,
+        "young_threshold": bos.YOUNG_THRESHOLD_DAYS, "tape_flow_present": False,
+        "n_skew": 2, "n_ivspread": 1, "n_relvol": 2,
+        "built": "2026-07-25 04:00 UTC",
+    }
+    out = bos.write_rows_export(rows, coverage, out_path=tmp_path / "screenerdata" / "rows.json")
+    assert out.exists()
+    doc = json.loads(out.read_text())
+
+    assert doc["schema"] == bos.ROWS_SCHEMA
+    assert doc["built"] == "2026-07-25 04:00 UTC"
+    assert doc["n_rows"] == 2
+    # Rows are carried verbatim, in the page's order (gross premium desc) — no re-sort,
+    # no re-derivation, so page and payload cannot drift.
+    assert doc["rows"] == rows
+    assert [r["ticker"] for r in doc["rows"]] == ["SPY", "NVDA"]
+    # Universe + feature counts ride along so a consumer can print the honest coverage
+    # line ("2 names, median 180d history, young < 252d") without scraping the HTML.
+    assert doc["coverage"]["n_names"] == 2
+    assert doc["coverage"]["n_young"] == 1
+    assert doc["coverage"]["median_depth_days"] == 180
+    assert doc["coverage"]["young_threshold"] == bos.YOUNG_THRESHOLD_DAYS
+
+
+def test_rows_export_default_path_is_screenerdata(monkeypatch, tmp_path):
+    monkeypatch.setattr(bos.config, "ROOT", tmp_path)
+    out = bos.write_rows_export([], {"built": "x"})
+    assert out == tmp_path / "site" / "screenerdata" / "rows.json"
+    assert json.loads(out.read_text())["n_rows"] == 0
+
+
+def test_rows_export_survives_non_json_native_values(tmp_path):
+    """numpy/NaN-ish leftovers must not explode the export (default=str fallback)."""
+    import datetime as _dt
+    rows = [{"ticker": "SPY", "asof": _dt.date(2026, 7, 25), "iv30": float("nan")}]
+    out = bos.write_rows_export(rows, {"built": "x"}, out_path=tmp_path / "rows.json")
+    txt = out.read_text()
+    assert "2026-07-25" in txt
+    assert json.loads(txt)["n_rows"] == 1

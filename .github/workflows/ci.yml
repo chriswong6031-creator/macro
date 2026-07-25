@@ -132,6 +132,13 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
+      # the Scanner-mode screener rows export. All three feed the Terminal/Options
+      # workspace, so a silent contract change here shows up as a 404 over there.
+      - "scripts/mirror_terminal_context_r2.py"
+      - "tests/test_mirror_terminal_context.py"
+      - "scripts/build_options_screener.py"
+      - "tests/test_build_options_screener.py"
       # Lane G: intraday BS greek engine feeding the surface gex/dex/vanna/charm grids.
       - "engine/intraday_greeks.py"
       - "tests/test_intraday_greeks.py"
@@ -1121,6 +1128,12 @@ jobs:
         run: python -m pytest tests/test_flow_surface.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
+      # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are
+      # cross-repo contracts — an unwired suite here rots silently and the consumer 404s.
+      - name: Terminal EOD-context R2 mirror (key map pinned, corrupt-file guard, fail-soft)
+        run: python -m pytest tests/test_mirror_terminal_context.py -q
+      - name: options screener (IV-rank percentile + Scanner-mode rows export shape)
+        run: python -m pytest tests/test_build_options_screener.py -q
 
   cycle-grading-stats:
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one

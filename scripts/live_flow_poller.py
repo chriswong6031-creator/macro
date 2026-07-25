@@ -1481,6 +1481,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
     day_state  = _load_day_state(session_date)
     watermarks: dict = {}
     last_archive_write = 0.0
+    # M-XP(a): session date whose Flow-Surface retention sweep has already succeeded.
+    # The sweep is a once-per-session R2 listing + delete, not a per-cycle cost; it stays
+    # None until it completes cleanly so a failed sweep retries on the next cycle.
+    last_surface_prune_date: str | None = None
     cadence   = int(cfg.get("cadence_sec", 120))
 
     # FC-R6: log two-tier + max_concurrent configuration at startup
@@ -1623,10 +1627,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         # Cadence carried honestly = the poller's cadence_sec. A greek failure never blocks
         # a root's netprem column (fenced in build_and_stage_surfaces). See
         # scripts/build_flow_surface.py + engine/intraday_greeks.py + RECON §2 / MASTERPLAN §4.
+        # M-XP(a): each cycle also stages date-keyed copies under
+        # live_flow/surface/{ROOT}/{YYYY-MM-DD}/ plus the root's dates.json, so the Terminal
+        # can replay completed sessions. Legacy today-paths are written unchanged alongside
+        # them. Retention (newest N sessions per root) is swept once per session below.
         surface_paths: list[tuple[Path, str]] = []
+        surf_roots: list[str] = []
         try:
             from scripts.build_flow_surface import (
-                build_and_stage_surfaces, resolve_surface_roots,
+                SURFACE_RETAIN_SESSIONS, build_and_stage_surfaces, resolve_surface_roots,
             )
             surf_roots = resolve_surface_roots(cfg, rg_dict)
             surf_quotes = tide_day_state.get("surface_quotes", {}) or {}
@@ -1645,6 +1654,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 quotes_by_root=surf_quotes,
                 oi_by_root=surf_oi,
                 spot_fallback_by_root=surf_spot_fb,
+                retain_sessions=int(cfg.get("surface_retain_sessions",
+                                            SURFACE_RETAIN_SESSIONS) or
+                                    SURFACE_RETAIN_SESSIONS),
             )
         except Exception as surf_err:  # noqa: BLE001
             log.warning("poller: flow-surface store failed: %s", surf_err)
@@ -1727,8 +1739,41 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             # Flow-Surface store: idx.json + {HHMM}.json per root. The r2_key is the
             # full key (live_flow/surface/{ROOT}/…) built by build_flow_surface — no
             # R2_PREFIX join here.
+            # Flow-Surface store: idx.json + {HHMM}.json per root, each under BOTH the
+            # legacy today-key and the date-keyed {YYYY-MM-DD}/ copy, plus dates.json.
             for surf_local, surf_r2_key in surface_paths:
                 _upload_r2(s3, bucket, surf_local, surf_r2_key)
+
+            # M-XP(a): Flow-Surface retention sweep — keep the newest N session prefixes
+            # per root, delete the rest. Runs ONCE per session (first successful cycle),
+            # never per-cycle. Fully fenced, and prune_surface_dates is itself fail-soft +
+            # only ever deletes under a {ROOT}/{YYYY-MM-DD}/ prefix, so a retention failure
+            # can neither break the flow cycle nor touch the legacy today-paths the live
+            # Terminal reads. Merging R2 truth back into the local ledger self-heals
+            # dates.json after a staging-dir wipe (droplet redeploy); the healed file goes
+            # up on the next cycle's surface upload (one cadence later — no extra PUT here).
+            if surf_roots and last_surface_prune_date != session_date:
+                try:
+                    from scripts.build_flow_surface import (
+                        SURFACE_RETAIN_SESSIONS as _RETAIN,
+                        merge_surface_dates as _merge_dates,
+                        prune_surface_dates as _prune_dates,
+                    )
+                    keep_n = int(cfg.get("surface_retain_sessions", _RETAIN) or _RETAIN)
+                    all_ok = True
+                    for _sr in surf_roots:
+                        res = _prune_dates(s3, bucket, _sr, keep=keep_n)
+                        all_ok = all_ok and res["ok"]
+                        if res["retained"]:
+                            dates_local = _merge_dates(
+                                _sr, res["retained"], cadence_sec=cadence,
+                                asof=meta.get("asof", ""), retain=keep_n)
+                            log.info("poller: surface retention %s → %d session(s) kept",
+                                     _sr.upper(), len(dates_local))
+                    if all_ok:
+                        last_surface_prune_date = session_date
+                except Exception as prune_err:  # noqa: BLE001
+                    log.warning("poller: surface retention sweep failed: %s", prune_err)
 
             # FC-R8: upload daily summary to R2 WITHOUT the live_flow/ TTL prefix.
             # Key: live_flow_daily/<date>.json — permanent (no 48h prune).
