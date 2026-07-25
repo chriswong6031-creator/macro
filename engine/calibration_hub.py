@@ -27,7 +27,37 @@ from engine.trial_ledger import TrialLedger
 log = logging.getLogger(__name__)
 
 SCHEMA = "calibration_hub.v1"
+
+# --------------------------------------------------------------------------- #
+# PROMOTION GATE — pre-registered constants.
+#
+# Moving a desk from "cold" to "calibrated" is a PROMOTION to authority: it is the label
+# that says the loop's track record means something. Per the house epistemics it is held to
+# the promotion standard (pre-registered bars, nulls printed, not implied) while display-tier
+# accrual is untouched — a desk that fails every bar below keeps logging and grading theses
+# exactly as before.
+#
+# The bar is the desk's OWN empirical null, not 0.5. `hit` is a NOT-FALSIFIED metric: a
+# thesis "hits" when its falsifier did not trigger, which for a typical rel_return falsifier
+# happens ~80-85% of the time by chance alone (engine/desk_placebo.py measures it per desk).
+# Calling 0.5 the "coin-flip" null for that endpoint manufactures an edge out of leniency —
+# the error condition C1 of research/macro_tx/L6_PHASE0_REPORT.md attaches to its own
+# floored favorable-excursion endpoint (~88% base rate).
+# --------------------------------------------------------------------------- #
 _MIN_SAMPLE = 10                 # below this a desk is "cold" — track record not yet meaningful
+_MIN_INDEPENDENT_BLOCKS = 10     # non-overlapping forward windows required to promote
+_PROMOTE_ALPHA = 0.05            # one-sided, Holm-adjusted across the desks tested
+_PROMOTE_MARGIN = 0.05           # observed must clear its own null by >= 5pp, not just "significantly"
+_MIN_CONVICTION_BUCKET = 5       # a conviction tier is evidence only at this many calls
+
+# NOT the null, and never the promotion bar. A not-falsified rate below one-half is so far
+# under any plausible null for this endpoint that it demotes a desk even when the placebo
+# sweep is unavailable. Used for demotion only — the asymmetry is deliberate.
+_DEMOTION_FLOOR = 0.5
+
+# SA-R10's pre-registered cluster-unit floor for the standout board tracks (see the note in
+# _standout_track_row — that endpoint's null really is ~one-half, but a floor still gates it).
+_STANDOUT_FLOOR = 25
 
 # The Phase-C falsifiable-thesis desks (label, track_record.json path).
 _DESKS = (
@@ -61,30 +91,155 @@ def _read_json(path):
         return None
 
 
+def _conviction_read(by_conv: dict) -> dict:
+    """Was conviction ordering actually TESTED, and what did the test say?
+
+    The old read returned None whenever fewer than two tiers had a sample — and every desk
+    to date logs a single tier — so the check could never fail, yet the health note asserted
+    "conviction ordering holds" regardless. A property that was never evaluated is reported
+    as untested, with the reason, and never as a property that holds.
+
+    A tier counts as evidence only at `_MIN_CONVICTION_BUCKET` calls: three medium-conviction
+    calls at 100% is not evidence that conviction orders anything.
+
+    Returns {"verdict": True | False | None, "note": str, "tiers": {tier: n}}.
+    """
+    tiers = {c: int(((by_conv.get(c) or {}).get("n") or 0)) for c in ("high", "medium", "low")}
+    eligible = [(c, (by_conv.get(c) or {}).get("hit_rate"), tiers[c])
+                for c in ("high", "medium", "low")
+                if tiers[c] >= _MIN_CONVICTION_BUCKET and (by_conv.get(c) or {}).get("hit_rate") is not None]
+    total = sum(tiers.values())
+    if len(eligible) < 2:
+        populated = [f"{c} {n}" for c, n in tiers.items() if n]
+        if len(populated) <= 1:
+            where = f"all {total} calls are single-tier ({populated[0]})" if populated else "no calls tiered"
+        else:
+            verb = "has" if len(eligible) == 1 else "have"
+            where = (f"only {len(eligible)} of 3 tiers {verb} {_MIN_CONVICTION_BUCKET}+ calls "
+                     f"({', '.join(populated)})")
+        return {"verdict": None, "tiers": tiers,
+                "note": f"conviction ordering untested — {where}"}
+    ordered = " ≥ ".join(f"{c} {_pct(r)}" for c, r, _ in eligible)
+    holds = all(a[1] >= b[1] for a, b in zip(eligible, eligible[1:]))
+    counts = ", ".join(f"{c} n={n}" for c, _, n in eligible)
+    if holds:
+        return {"verdict": True, "tiers": tiers,
+                "note": f"conviction ordering holds ({ordered}; {counts})"}
+    return {"verdict": False, "tiers": tiers,
+            "note": f"conviction inverted — higher-conviction calls hit no more than lower "
+                    f"({ordered.replace(' ≥ ', ' vs ')}; {counts})"}
+
+
 def _conviction_monotone(by_conv: dict) -> bool | None:
-    """True if hit-rate is monotone non-increasing high → medium → low (conviction means
-    something). None when too few buckets have a sample to judge."""
-    rates = [(by_conv.get(c) or {}).get("hit_rate") for c in ("high", "medium", "low")]
-    present = [r for r in rates if r is not None]
-    if len(present) < 2:
-        return None
-    return all(a >= b for a, b in zip(present, present[1:]))
+    """Back-compatible accessor for the conviction verdict (True / False / not tested)."""
+    return _conviction_read(by_conv)["verdict"]
 
 
-def _desk_health(track: dict) -> tuple[str, str]:
-    """Classify a desk from its track record → (health, note). The whole point of the
-    suite is to make these states VISIBLE rather than letting a desk silently drift."""
+def _placebo_phrase(null: dict) -> str:
+    """Plain-words statement of the measured null, or of why there isn't one."""
+    if null.get("null_hit_rate") is None:
+        return f"no placebo baseline ({null.get('reason') or 'unavailable'})"
+    kinds = null.get("by_kind") or {}
+    # The endpoint kinds have very different nulls (rel-return is lenient, level is harsh), so
+    # the mix is load-bearing whenever there is more than one of them.
+    mix = ("" if len(kinds) < 2 else ", ".join(
+        f"{v['n']} {k.replace('_', '-')}" for k, v in sorted(
+            kinds.items(), key=lambda kv: -kv[1]["n"])) + "; ")
+    n, n_dec = null.get("n") or 0, null.get("n_decided") or 0
+    scope = f"{n} graded" if n >= n_dec else f"the {n} of {n_dec} graded we could price"
+    blocks = null.get("independent_blocks") or 0
+    return (f"{_pct(null['null_hit_rate'])} of these same falsifiers go untriggered by chance "
+            f"({mix}{scope}, {blocks} independent window{'s' if blocks != 1 else ''})")
+
+
+def _desk_health(track: dict, null: dict | None = None, p_hit_adj: float | None = None,
+                 p_dir_adj: float | None = None) -> tuple[str, str]:
+    """Classify a desk from its track record → (health, note).
+
+    States, strongest demotion first:
+      cold       — too few graded outcomes to say anything.
+      inverted   — the desk points the wrong way: directional accuracy below ITS OWN null,
+                   or conviction ordering decisively inverted.
+      weak       — not-falsified rate below its own null (or below the demotion floor when
+                   no placebo could be measured).
+      unproven   — sample is there and nothing is wrong, but the promotion evidence is not:
+                   the null was not cleared, or the graded windows are not independent enough.
+      calibrated — cleared every pre-registered bar above.
+
+    Demotion and promotion carry deliberately asymmetric burdens: a point estimate on the
+    wrong side of the null demotes, while promotion needs the margin, the adjusted p-value,
+    and the independence floor together.
+    """
+    null = null or {}
     overall = track.get("overall") or {}
     n = overall.get("n") or 0
     hr = overall.get("hit_rate")
-    by_conv = track.get("by_conviction") or {}
+    dir_acc = overall.get("dir_accuracy")
+    conv = _conviction_read(track.get("by_conviction") or {})
     if n < _MIN_SAMPLE:
         return "cold", f"only {n} scored — check-by windows still maturing; treat as provisional"
-    if _conviction_monotone(by_conv) is False:
-        return "inverted", "conviction inverted — high-conviction calls hit no more than low"
-    if hr is not None and hr < 0.5:
-        return "weak", f"hit-rate {hr} below coin-flip — leans not yet a validated edge"
-    return "calibrated", f"hit-rate {hr} over {n} scored; conviction ordering holds"
+
+    # `available` gates PROMOTION (it means observed outcomes pair exactly to their nulls).
+    # A partial null still demotes — asymmetric burden, and a partial measurement is real
+    # information about the endpoint.
+    has_null = bool(null.get("available"))
+    null_hr, null_dir = null.get("null_hit_rate"), null.get("null_dir_rate")
+    # dir_accuracy IS a directional metric, so one-half is a defensible fallback null for it
+    # — the thing that is emphatically NOT true of the not-falsified rate.
+    dir_bar = null_dir if null_dir is not None else _DEMOTION_FLOOR
+    dir_bar_src = "by chance" if null_dir is not None else "a coin flip"
+
+    # Every note carries the observed reading and the null it is being judged against.
+    head = f"not-falsified {_pct(hr)} vs {_placebo_phrase(null)}"
+    if dir_acc is not None:
+        head += f"; direction called right {_pct(dir_acc)} vs {_pct(dir_bar)} {dir_bar_src}"
+
+    if dir_acc is not None and dir_acc < dir_bar:
+        return "inverted", (f"{head} — the leans point the WRONG WAY; a lenient not-falsified "
+                            f"rate cannot rescue that. {conv['note']}.")
+    if conv["verdict"] is False:
+        return "inverted", f"{conv['note']}. {head}."
+    if null_hr is not None and hr is not None and hr < null_hr:
+        return "weak", f"{head} — below its own null. {conv['note']}."
+    if null_hr is None and hr is not None and hr < _DEMOTION_FLOOR:
+        return "weak", (f"{head} — under one-half, which no honest null for a not-falsified "
+                        f"endpoint sits below. {conv['note']}.")
+
+    # --- promotion: every bar must clear ---
+    # Direction carries its own evidence, reported but never promoted on: the desk's own
+    # falsifiers define `hit`, so that is the endpoint the promotion test judges.
+    dir_tail = ""
+    if p_dir_adj is not None and p_dir_adj < _PROMOTE_ALPHA and dir_acc is not None \
+            and null_dir is not None and dir_acc > null_dir:
+        # Descriptive only, and it inherits the same overlap problem — say so, rather than
+        # replacing one overclaimed metric with another.
+        caveat = ("" if (null.get("independent_blocks") or 0) >= _MIN_INDEPENDENT_BLOCKS
+                  else ", though on windows this overlapping that is a lead to follow, not a "
+                       "result")
+        dir_tail = (f" Direction, not the not-falsified rate, is where this desk's signal "
+                    f"would be (p {p_dir_adj:.3f}{caveat}).")
+    if not has_null:
+        return "unproven", (f"{head} — cannot promote without a null covering every graded "
+                            f"call ({null.get('reason') or 'unavailable'}). "
+                            f"{conv['note']}.{dir_tail}")
+    blocks = null.get("independent_blocks") or 0
+    margin_ok = hr is not None and null_hr is not None and (hr - null_hr) >= _PROMOTE_MARGIN
+    alpha_ok = p_hit_adj is not None and p_hit_adj < _PROMOTE_ALPHA
+    if not margin_ok:
+        gap = "" if hr is None or null_hr is None else f" (gap {round((hr - null_hr) * 100):+d}pp)"
+        return "unproven", (f"{head} — no separation from its own null{gap}; needs "
+                            f"{round(_PROMOTE_MARGIN * 100)}pp. {conv['note']}.{dir_tail}")
+    if not alpha_ok:
+        pv = "not computable" if p_hit_adj is None else f"p {p_hit_adj:.2f}"
+        return "unproven", (f"{head} — lift not significant after correcting for the "
+                            f"{len(_DESKS)} desks tested ({pv}). {conv['note']}.{dir_tail}")
+    if blocks < _MIN_INDEPENDENT_BLOCKS:
+        return "unproven", (f"{head} — clears its null, but the graded theses overlap in time: "
+                            f"{blocks} independent window{'s' if blocks != 1 else ''} of "
+                            f"{_MIN_INDEPENDENT_BLOCKS} required. {conv['note']}.{dir_tail}")
+    return "calibrated", (f"{head} — clears its own null by "
+                          f"{round((hr - null_hr) * 100):+d}pp over {n} scored across {blocks} "
+                          f"independent windows (p {p_hit_adj:.3f}). {conv['note']}.")
 
 
 def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, root: Path) -> dict:
@@ -175,15 +330,26 @@ def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> d
     buy = (h21.get("buy_lane") or {}).get("vs_spy") or {}
     n = buy.get("n") or 0
     hr = buy.get("hit_rate")
-    if n < _MIN_SAMPLE:
+    # This endpoint is "beat SPY over 21 days", which — unlike the desks' not-falsified rate
+    # — genuinely does sit near one-half, so it is compared to one-half honestly. But a point
+    # estimate over one-half is still not a track record: promotion waits for the
+    # pre-registered SA-R10 cluster-unit floor. If anything one-half FLATTERS a single-name
+    # board (the median stock trails a cap-weighted index), so it demotes but cannot promote.
+    if n < _MIN_SAMPLE or hr is None:
         health = "cold"
-        note = f"only {n} matured h21 rows — ACCRUING; floor ~25 cluster-unit rows"
-    elif hr is not None and hr < 0.5:
+        note = (f"only {n} matured 21-day rows — still accruing; "
+                f"floor is {_STANDOUT_FLOOR} cluster-unit rows")
+    elif hr < _DEMOTION_FLOOR:
         health = "weak"
-        note = f"h21 hit-rate {hr:.1%} below coin-flip over {n} rows"
+        note = (f"beat SPY on {hr:.1%} of {n} 21-day windows — under the roughly half a "
+                f"coin-flip pick clears")
+    elif n < _STANDOUT_FLOOR:
+        health = "unproven"
+        note = (f"beat SPY on {hr:.1%} of {n} 21-day windows — over half, but the "
+                f"pre-registered floor of {_STANDOUT_FLOOR} cluster-unit rows is not met yet")
     else:
-        health = "calibrated" if hr is not None else "cold"
-        note = f"h21 hit-rate {hr:.1%} over {n} rows" if hr is not None else f"{n} rows"
+        health = "calibrated"
+        note = f"beat SPY on {hr:.1%} of {n} 21-day windows, past the {_STANDOUT_FLOOR}-row floor"
     return {
         "name": label, "region": region, "rel_path": rel_path,
         "board_dates": track.get("board_dates_total", 0),
@@ -193,17 +359,34 @@ def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> d
     }
 
 
-def _desk_row(label: str, slug: str, root: Path) -> dict:
-    track = _read_json(root / "data" / slug / "track_record.json") or {}
+def _desk_row(label: str, slug: str, track: dict, null: dict, p_hit_adj: float | None,
+              p_dir_adj: float | None = None) -> dict:
     overall = track.get("overall") or {}
-    health, note = _desk_health(track) if overall else ("cold", "no track record yet")
+    conv = _conviction_read(track.get("by_conviction") or {})
+    health, note = (_desk_health(track, null, p_hit_adj, p_dir_adj) if overall
+                    else ("cold", "no track record yet"))
     return {
         "name": label, "slug": slug,
         "scored": track.get("scored_total") or 0,
         "open": track.get("open") or 0,
         "hit_rate": overall.get("hit_rate"),
         "dir_accuracy": overall.get("dir_accuracy"),
-        "conviction_monotone": _conviction_monotone(track.get("by_conviction") or {}),
+        # What the SAME falsifiers score by chance — the bar `hit_rate` is judged against.
+        "null_hit_rate": null.get("null_hit_rate"),
+        "null_dir_rate": null.get("null_dir_rate"),
+        "p_hit": null.get("p_hit"),
+        "p_hit_holm": p_hit_adj,
+        "p_dir": null.get("p_dir"),
+        "p_dir_holm": p_dir_adj,
+        "independent_blocks": null.get("independent_blocks"),
+        "placebo_coverage": null.get("coverage"),
+        "placebo_available": bool(null.get("available")),
+        "placebo_note": null.get("reason") or "",
+        "placebo_mix_source": null.get("mix_source"),
+        "placebo_by_kind": null.get("by_kind") or {},
+        "conviction_monotone": conv["verdict"],
+        "conviction_note": conv["note"],
+        "conviction_tiers": conv["tiers"],
         "regimes": sorted((track.get("by_regime") or {}).keys()),
         "health": health, "health_note": note,
     }
@@ -223,11 +406,31 @@ def _trial_ledger_summary(root: Path) -> dict:
 
 
 def build(root=None) -> dict:
+    from engine import desk_placebo          # lazy — keeps calibration_hub import-light
+
     root = Path(root) if root else config.ROOT
-    desks = [_desk_row(label, slug, root) for label, slug in _DESKS]
+    today = date.today()
+    tracks = {slug: (_read_json(root / "data" / slug / "track_record.json") or {})
+              for _, slug in _DESKS}
+    # Pass 1: measure each desk's own null base rate for the falsifiers it actually graded.
+    nulls = {slug: desk_placebo.null_baseline(root, slug, tracks[slug], today)
+             for _, slug in _DESKS}
+    # Pass 2: Holm-correct across the desks tested together (two separate families — the
+    # not-falsified endpoint and the directional one), then classify.
+    p_adj = desk_placebo.holm_adjust({slug: nulls[slug].get("p_hit") for _, slug in _DESKS})
+    p_dir_adj = desk_placebo.holm_adjust({slug: nulls[slug].get("p_dir") for _, slug in _DESKS})
+    desks = [_desk_row(label, slug, tracks[slug], nulls[slug], p_adj.get(slug),
+                       p_dir_adj.get(slug))
+             for label, slug in _DESKS]
+
     live = sum(1 for d in desks if d["health"] != "cold")
     cold = len(desks) - live
-    note = (f"{live}/{len(desks)} desk loops live; {cold} still cold (windows maturing). "
+    promoted = sum(1 for d in desks if d["health"] == "calibrated")
+    unproven = sum(1 for d in desks if d["health"] == "unproven")
+    note = (f"{live}/{len(desks)} desk loops live; {cold} still cold (windows maturing); "
+            f"{promoted} promoted to calibrated. A desk is judged against the rate ITS OWN "
+            "falsifiers go untriggered by chance, not against one-half — 'not falsified' is "
+            "a lenient endpoint, and most leans clear it without any skill. "
             "Display-only — track records calibrate conviction, never size a position.")
     # SA-W5: standout board tracks (read-only; ACCRUING; separate from Phase-C desks)
     standout_tracks = [
@@ -238,7 +441,23 @@ def build(root=None) -> dict:
         "schema": SCHEMA,
         "as_of": date.today().isoformat(),
         "desks": desks,
-        "loops": {"total": len(desks), "live": live, "cold": cold},
+        "loops": {"total": len(desks), "live": live, "cold": cold,
+                  "calibrated": promoted, "unproven": unproven},
+        # The bars every desk was held to, written alongside the verdicts so a reader can
+        # check the gate rather than take the label on faith.
+        "promotion_gate": {
+            "min_sample": _MIN_SAMPLE,
+            "min_independent_blocks": _MIN_INDEPENDENT_BLOCKS,
+            "alpha": _PROMOTE_ALPHA,
+            "alpha_correction": f"Holm-Bonferroni across {len(_DESKS)} desks",
+            "min_margin_over_null": _PROMOTE_MARGIN,
+            "min_conviction_bucket": _MIN_CONVICTION_BUCKET,
+            "null": "per-desk empirical placebo (engine.desk_placebo) — the same falsifiers "
+                    "swept over every historical entry date",
+            "note": "hit_rate is a NOT-FALSIFIED rate, not a directional one; its null sits "
+                    "far above one-half. Bars are pre-registered here; display-tier accrual "
+                    "is unaffected by any of them.",
+        },
         "trial_ledger": _trial_ledger_summary(root),
         "summary_note": note,
         # SA-W5: buy-board standing track records (display-only, SA-R10 ACCRUING state)
@@ -250,7 +469,7 @@ def build(root=None) -> dict:
 # self-contained HTML (no theme/nav coupling) — one scannable observability page
 # --------------------------------------------------------------------------- #
 _HEALTH_COLOR = {"calibrated": "#1FA971", "weak": "#D98C00",
-                 "inverted": "#E5484D", "cold": "#8B8D98"}
+                 "inverted": "#E5484D", "cold": "#8B8D98", "unproven": "#5B8DEF"}
 
 
 def _pct(x) -> str:
@@ -266,10 +485,13 @@ def render_html(s: dict) -> str:
             f"<tr><td>{d['name']}</td><td style='text-align:right'>{d['scored']}</td>"
             f"<td style='text-align:right'>{d['open']}</td>"
             f"<td style='text-align:right'>{_pct(d['hit_rate'])}</td>"
+            f"<td style='text-align:right;color:#8B8D98'>{_pct(d.get('null_hit_rate'))}</td>"
             f"<td style='text-align:right'>{_pct(d['dir_accuracy'])}</td>"
+            f"<td style='text-align:right;color:#8B8D98'>{_pct(d.get('null_dir_rate'))}</td>"
             f"<td>{regimes}</td>"
             f"<td><span style='color:{c};font-weight:500'>{d['health']}</span><br>"
             f"<span style='color:#8B8D98;font-size:12px'>{d['health_note']}</span></td></tr>")
+    gate = s.get("promotion_gate") or {}
     led_rows = "".join(
         f"<tr><td>{f['family']}</td><td style='text-align:right'>{f['itemized']}</td>"
         f"<td style='text-align:right'>{f['declared'] or '—'}</td>"
@@ -315,11 +537,24 @@ th{{color:#8B8D98;font-weight:500;font-size:12px;text-transform:uppercase;letter
 <div class="chips">
 <div class="chip"><b>{lp['live']}</b><div class="sub">live loops</div></div>
 <div class="chip"><b>{lp['cold']}</b><div class="sub">cold (maturing)</div></div>
+<div class="chip"><b>{lp.get('calibrated', 0)}</b><div class="sub">cleared their null</div></div>
 <div class="chip"><b>{s['trial_ledger']['total_families']}</b><div class="sub">trial families</div></div>
 </div>
 <h2>Phase-C desks — are the falsifiable-thesis loops right?</h2>
-<table><tr><th>Desk</th><th>Scored</th><th>Open</th><th>Hit-rate</th><th>Dir.</th>
-<th>Regimes</th><th>Health</th></tr>{''.join(rows)}</table>
+<p class="sub"><b>Read the two grey columns first.</b> A thesis "hits" when its falsifier did
+<i>not</i> trigger — so most leans clear it with no skill at all. <b>By chance</b> is what
+these very same falsifiers score when swept over every historical entry date on the same
+instruments and horizons. Only the gap between the black column and the grey one next to it
+is evidence, and one-half is not the null for either.</p>
+<table><tr><th>Desk</th><th>Scored</th><th>Open</th><th>Not falsified</th><th>By chance</th>
+<th>Direction right</th><th>By chance</th><th>Regimes</th><th>Health</th></tr>{''.join(rows)}</table>
+<p class="sub">Promotion to <b>calibrated</b> is pre-registered and requires all of:
+{gate.get('min_sample')}+ graded outcomes · at least {gate.get('min_margin_over_null', 0) * 100:.0f}pp
+over the desk's own null · one-sided p &lt; {gate.get('alpha')} after {gate.get('alpha_correction')} ·
+{gate.get('min_independent_blocks')}+ non-overlapping forward windows (theses logged days apart
+grade over the same tape, so raw counts overstate the evidence) · direction not below its own
+null. Failing any bar changes the label only — every desk keeps logging and grading exactly
+as before.</p>
 <h2>Board track records — standing accuracy, all known boards (SA-W5, display-only)</h2>
 <p class="sub">ACCRUING — cluster-unit floors (SA-R10) not yet met. First US read ~2026-09-15; CN ~2026-10-15.</p>
 <table><tr><th>Board</th><th>Region</th><th>Board dates</th><th>Graded rows</th>
@@ -332,9 +567,13 @@ th{{color:#8B8D98;font-weight:500;font-size:12px;text-transform:uppercase;letter
 
 def render_markdown(s: dict) -> str:
     L = [f"# Calibration Hub — {s['as_of']}", "", s["summary_note"], "",
-         "## Phase-C desks", "", "| Desk | Scored | Hit-rate | Health |", "|---|---|---|---|"]
+         "## Phase-C desks", "",
+         "| Desk | Scored | Not falsified | By chance | Direction | By chance | Health |",
+         "|---|---|---|---|---|---|---|"]
     for d in s["desks"]:
-        L.append(f"| {d['name']} | {d['scored']} | {_pct(d['hit_rate'])} | {d['health']} — {d['health_note']} |")
+        L.append(f"| {d['name']} | {d['scored']} | {_pct(d['hit_rate'])} | "
+                 f"{_pct(d.get('null_hit_rate'))} | {_pct(d['dir_accuracy'])} | "
+                 f"{_pct(d.get('null_dir_rate'))} | {d['health']} — {d['health_note']} |")
     L += ["", "## Trial Ledger", "", "| Family | Itemized | Declared | Effective N |", "|---|---|---|---|"]
     for f in s["trial_ledger"]["families"]:
         L.append(f"| {f['family']} | {f['itemized']} | {f['declared'] or '—'} | {f['effective_n']} |")
