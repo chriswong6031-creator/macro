@@ -1,134 +1,22 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-24T03:48:06Z",
-  "as_of": "2026-07-24",
+  "produced_at": "2026-07-25T01:28:53Z",
+  "as_of": "2026-07-25",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
     "items": 27,
-    "passed": 18,
-    "quarantined": 9,
+    "passed": 27,
+    "quarantined": 0,
     "quarantined_policy": 0,
-    "quarantined_overflow": 9,
+    "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
-  "reasons_histogram": {
-    "cadence_cap_daily": 4,
-    "media_cap_daily": 5
-  },
-  "quarantined": [
-    {
-      "id": "post-flagship-003",
-      "account": "flagship",
-      "slot": "D1-EOD",
-      "type": "watchlist",
-      "cashtag": "$INTU",
-      "headline": "$INTU on my radar this week",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-flagship-012",
-      "account": "flagship",
-      "slot": "D4-EOD",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "$LKFN on my radar this week",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-flagship-015",
-      "account": "flagship",
-      "slot": "D5-EOD",
-      "type": "watchlist",
-      "cashtag": "$GPI",
-      "headline": "Keeping $GPI close this week",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-flagship-021",
-      "account": "flagship",
-      "slot": "D7-EOD",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "$KMT on my radar this week",
-      "class": "overflow",
-      "reasons": [
-        "cadence_cap_daily"
-      ]
-    },
-    {
-      "id": "post-conf-flagship-002",
-      "account": "flagship",
-      "slot": "CONF-02",
-      "type": "signal",
-      "cashtag": "$XEL",
-      "headline": "Our technical signals have resolved higher 70% of the time from this spot. $XEL is there now.",
-      "class": "overflow",
-      "reasons": [
-        "media_cap_daily"
-      ]
-    },
-    {
-      "id": "post-conf-flagship-003",
-      "account": "flagship",
-      "slot": "CONF-03",
-      "type": "signal",
-      "cashtag": "$IBM",
-      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $IBM is there now.",
-      "class": "overflow",
-      "reasons": [
-        "media_cap_daily"
-      ]
-    },
-    {
-      "id": "post-conf-flagship-004",
-      "account": "flagship",
-      "slot": "CONF-04",
-      "type": "signal",
-      "cashtag": "$WMT",
-      "headline": "Our technical signals have resolved higher 66% of the time from this spot. $WMT is there now.",
-      "class": "overflow",
-      "reasons": [
-        "media_cap_daily"
-      ]
-    },
-    {
-      "id": "post-theme-004",
-      "account": "flagship",
-      "slot": "THEME-04",
-      "type": "theme_list",
-      "cashtag": "$OTLY",
-      "headline": "Agriculture & FoodTech ripping, +1.1% avg today",
-      "class": "overflow",
-      "reasons": [
-        "media_cap_daily"
-      ]
-    },
-    {
-      "id": "post-theme-005",
-      "account": "flagship",
-      "slot": "THEME-05",
-      "type": "theme_list",
-      "cashtag": "$DOMO",
-      "headline": "Software selling off, -3.2% avg today",
-      "class": "overflow",
-      "reasons": [
-        "media_cap_daily"
-      ]
-    }
-  ],
+  "reasons_histogram": {},
+  "quarantined": [],
   "passed": [
     {
       "id": "post-flagship-001",
@@ -143,24 +31,32 @@
       "account": "flagship",
       "slot": "D1-PM",
       "type": "watchlist",
-      "cashtag": "$REZI",
-      "headline": "Circling $REZI"
+      "cashtag": "$CRM",
+      "headline": "Circling $CRM"
+    },
+    {
+      "id": "post-flagship-003",
+      "account": "flagship",
+      "slot": "D1-EOD",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "Circling $MOS"
     },
     {
       "id": "post-flagship-004",
       "account": "flagship",
       "slot": "D2-AM",
       "type": "chart",
-      "cashtag": "$PI",
-      "headline": "$PI this week"
+      "cashtag": "$FDS",
+      "headline": "FDS | worth a look"
     },
     {
       "id": "post-flagship-005",
       "account": "flagship",
       "slot": "D2-PM",
       "type": "chart",
-      "cashtag": "$FBRT",
-      "headline": "$FBRT this week"
+      "cashtag": "$SONO",
+      "headline": "SONO, one chart"
     },
     {
       "id": "post-flagship-008",
@@ -187,36 +83,52 @@
       "headline": "What flagging something actually means"
     },
     {
+      "id": "post-flagship-012",
+      "account": "flagship",
+      "slot": "D4-EOD",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "Circling $MOS"
+    },
+    {
       "id": "post-flagship-013",
       "account": "flagship",
       "slot": "D5-AM",
       "type": "chart",
-      "cashtag": "$STEP",
-      "headline": "STEP, one chart"
+      "cashtag": "$FDS",
+      "headline": "FDS | worth a look"
     },
     {
       "id": "post-flagship-014",
       "account": "flagship",
       "slot": "D5-PM",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "$MOS on my radar this week"
+      "cashtag": "$SONO",
+      "headline": "$SONO on my radar this week"
+    },
+    {
+      "id": "post-flagship-015",
+      "account": "flagship",
+      "slot": "D5-EOD",
+      "type": "watchlist",
+      "cashtag": "$LKFN",
+      "headline": "Circling $LKFN"
     },
     {
       "id": "post-flagship-017",
       "account": "flagship",
       "slot": "D6-PM",
       "type": "watchlist",
-      "cashtag": "$CVI",
-      "headline": "Keeping $CVI close this week"
+      "cashtag": "$ENOV",
+      "headline": "Circling $ENOV"
     },
     {
       "id": "post-flagship-018",
       "account": "flagship",
       "slot": "D6-EOD",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Watching $CRM, not buying yet"
+      "cashtag": "$KMT",
+      "headline": "$KMT on my radar this week"
     },
     {
       "id": "post-flagship-019",
@@ -231,8 +143,16 @@
       "account": "flagship",
       "slot": "D7-PM",
       "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "Circling $ENOV"
+      "cashtag": "$CRM",
+      "headline": "Watching $CRM, not buying yet"
+    },
+    {
+      "id": "post-flagship-021",
+      "account": "flagship",
+      "slot": "D7-EOD",
+      "type": "watchlist",
+      "cashtag": "$MOS",
+      "headline": "$MOS on my radar this week"
     },
     {
       "id": "post-conf-flagship-001",
@@ -243,36 +163,76 @@
       "headline": "Our technical signals have resolved higher 86% of the time from this spot. $VST is there now."
     },
     {
+      "id": "post-conf-flagship-002",
+      "account": "flagship",
+      "slot": "CONF-02",
+      "type": "signal",
+      "cashtag": "$XEL",
+      "headline": "Our technical signals have resolved higher 70% of the time from this spot. $XEL is there now."
+    },
+    {
+      "id": "post-conf-flagship-003",
+      "account": "flagship",
+      "slot": "CONF-03",
+      "type": "signal",
+      "cashtag": "$IBM",
+      "headline": "Our technical signals have resolved higher 67% of the time from this spot. $IBM is there now."
+    },
+    {
+      "id": "post-conf-flagship-004",
+      "account": "flagship",
+      "slot": "CONF-04",
+      "type": "signal",
+      "cashtag": "$WMT",
+      "headline": "Our technical signals have resolved higher 66% of the time from this spot. $WMT is there now."
+    },
+    {
       "id": "post-theme-003",
       "account": "flagship",
       "slot": "THEME-03",
       "type": "theme_list",
       "cashtag": "$NVVE",
-      "headline": "Electric Vehicles selling off, -1.7% avg today"
+      "headline": "Electric Vehicles selling off, -3.9% avg today"
     },
     {
       "id": "post-mover-001",
       "account": "flagship",
       "slot": "MOVER-01",
       "type": "mover",
-      "cashtag": "$SMCI",
-      "headline": "$SMCI +19.8% today"
+      "cashtag": "$TSLA",
+      "headline": "$TSLA -14.5% today"
+    },
+    {
+      "id": "post-theme-004",
+      "account": "flagship",
+      "slot": "THEME-04",
+      "type": "theme_list",
+      "cashtag": "$AAL",
+      "headline": "Transportation & Logistics selling off, -1.6% avg today"
     },
     {
       "id": "post-mover-002",
       "account": "flagship",
       "slot": "MOVER-02",
       "type": "mover",
-      "cashtag": "$WAB",
-      "headline": "$WAB +10.0% today"
+      "cashtag": "$TMUS",
+      "headline": "$TMUS -10.8% today"
+    },
+    {
+      "id": "post-theme-005",
+      "account": "flagship",
+      "slot": "THEME-05",
+      "type": "theme_list",
+      "cashtag": "$ACI",
+      "headline": "E-commerce selling off, -2.5% avg today"
     },
     {
       "id": "post-theme-006",
       "account": "flagship",
       "slot": "THEME-06",
       "type": "theme_list",
-      "cashtag": "$ASAN",
-      "headline": "Cloud Computing selling off, -1.6% avg today"
+      "cashtag": "$PI",
+      "headline": "Hardware selling off, -1.3% avg today"
     }
   ],
   "checks": {
@@ -282,7 +242,7 @@
       "shared_media_hits": 0
     },
     "cadence": {
-      "cadence_cap_daily_hits": 4,
+      "cadence_cap_daily_hits": 0,
       "cashtag_cap_hits": 0,
       "slot_collision_hits": 0,
       "reply_cap_hits": 0
@@ -295,13 +255,11 @@
     },
     "cherry_pick": {
       "status": "run",
-      "loss_tickers_in_window": [
-        "QCOM"
-      ],
+      "loss_tickers_in_window": [],
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 3,
+      "age_days": 4,
       "max": 7
     },
     "kill_switch": {
@@ -315,8 +273,8 @@
       ]
     },
     "media_cap": {
-      "max_media_posts_per_account_per_day": 1,
-      "hits": 5
+      "max_media_posts_per_account_per_day": null,
+      "hits": 0
     },
     "cashtag_breadth": {
       "max_cashtags_per_post": 3,
