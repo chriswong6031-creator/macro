@@ -1002,6 +1002,7 @@
     // Drop any cached entitlement when the account changes, so a stale plan never shows for the
     // wrong (or signed-out) user; the next dashboard render re-fetches for the current session.
     if (!_curUser || (_curUser.id && _curUser.id !== _sdPlanFor)) { _sdPlan = null; _sdPlanFor = null; }
+    if (!_curUser || (_curUser.id && _curUser.id !== _sdUsageFor)) { _sdUsage = null; _sdUsageFor = null; _sdUsageErr = false; }
     _authReady = true;
     _emitAuth({ user: _curUser, event: evt });
     _renderAcct();
@@ -1377,7 +1378,7 @@
     '.sd-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .22s ease,visibility 0s}',
     /* 100vh line first = fallback for browsers without dvh (old iOS Safari drops
        the whole min(...dvh...) declaration); the dvh line wins where supported */
-    '.sd-card{position:relative;display:flex;width:min(860px,100%);height:min(660px,calc(100vh - 48px));height:min(660px,calc(100dvh - 48px));box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 82%,transparent);border:1px solid color-mix(in srgb,var(--text,var(--ink,#e7ecf6)) 14%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);transform:translateY(14px) scale(.985);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;color:var(--text,var(--ink,#e7ecf6))}',
+    '.sd-card{position:relative;display:flex;width:min(1140px,94vw);height:min(772px,calc(100vh - 40px));height:min(772px,calc(100dvh - 40px));box-sizing:border-box;border-radius:22px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 82%,transparent);border:1px solid color-mix(in srgb,var(--text,var(--ink,#e7ecf6)) 14%,transparent);-webkit-backdrop-filter:blur(24px) saturate(1.6);backdrop-filter:blur(24px) saturate(1.6);box-shadow:0 32px 90px -20px rgba(3,7,18,.8),0 10px 28px -12px rgba(3,7,18,.5),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);transform:translateY(14px) scale(.985);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;color:var(--text,var(--ink,#e7ecf6))}',
     '.sd-overlay.open .sd-card{transform:none;opacity:1}',
     'html[data-theme="light"] .sd-card{box-shadow:0 30px 80px -22px rgba(20,30,50,.35),0 10px 26px -14px rgba(20,30,50,.22),inset 0 1px 0 rgba(255,255,255,.75)}',
     '@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sd-card{background:var(--panel,var(--card,#0e1320))}}',
@@ -1387,7 +1388,7 @@
     '@keyframes sdLaser{from{background-position:120% 0}to{background-position:0% 0}}',
     '@media (prefers-reduced-motion:reduce){.sd-overlay,.sd-card{transition:opacity .15s ease}.sd-card{transform:none}.sd-overlay.open .sd-laser{animation:none;background-position:0% 0}}',
     /* left rail */
-    '.sd-rail{flex:none;width:220px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:16px 12px 14px;border-right:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent);background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 44%,transparent)}',
+    '.sd-rail{flex:none;width:238px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;padding:20px 14px 16px;border-right:1px solid color-mix(in srgb,var(--line,var(--grid,#283042)) 70%,transparent);background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 44%,transparent)}',
     '.sd-me{display:flex;align-items:center;gap:9px;padding:4px 4px 12px}',
     '.sd-me-av{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
     '.sd-me-av.guestav{background:color-mix(in srgb,var(--muted,var(--ink-3,#8b93a7)) 30%,var(--panel2,var(--card)));color:var(--muted,var(--ink-3,#8b93a7))}',
@@ -1408,15 +1409,19 @@
     '.sd-signout:focus-visible{outline:2px solid var(--down,#ff5c6c);outline-offset:2px}',
     /* right pane */
     '.sd-pane{flex:1;min-width:0;display:flex;flex-direction:column}',
-    '.sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:20px 20px 12px 26px}',
+    '.sd-head{flex:none;display:flex;align-items:flex-start;gap:10px;padding:24px 26px 14px 30px}',
     '.sd-head-main{flex:1;min-width:0}',
-    '.sd-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.01em;line-height:1.2;color:var(--text,var(--ink))}',
-    '.sd-head .sd-sub{margin:3px 0 0;font-size:11.5px;line-height:1.45;color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-head h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.15;color:var(--text,var(--ink))}',
+    '.sd-head .sd-sub{margin:4px 0 0;font-size:12.5px;line-height:1.45;color:var(--muted,var(--ink-3,#8b93a7))}',
     '.sd-x{flex:none;width:28px;height:28px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .16s,color .16s}',
     '.sd-x:hover{background:color-mix(in srgb,var(--text,var(--ink,#fff)) 8%,transparent);color:var(--text,var(--ink))}',
     '.sd-x svg{width:15px;height:15px}',
     '.sd-x:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
-    '.sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 20px 20px 26px}',
+    '.sd-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 26px 26px 30px}',
+    /* two-column content grid — fills the enlarged card on wide panes, collapses to one column when the card narrows */
+    '.sd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;align-items:start}',
+    '.sd-grid > .sd-group{margin-bottom:6px}',
+    '.sd-span2{grid-column:1 / -1}',
     /* section switch: one-shot rise on entry */
     '.sd-sect{display:none}',
     /* flex column so the head stays fixed and ONLY .sd-body scrolls — a block here
@@ -1523,6 +1528,45 @@
     'html[data-lang="zh"] .sd-card .l-en{display:none}',
     'html[data-lang="zh"] .sd-card .l-zh{display:inline}',
     '.sd-muted{color:var(--muted,var(--ink-3,#8b93a7))}',
+    /* ---- Billing: plan hero (tier-gradient signature card) ---- */
+    '.sd-plan-hero{position:relative;overflow:hidden;border-radius:16px;padding:18px 18px 16px;margin:4px 0 14px;border:1px solid color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 26%,var(--line,var(--grid,#283042)));background:radial-gradient(130% 190% at 6% 0%,color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 16%,transparent) 0%,transparent 55%),radial-gradient(95% 150% at 72% -12%,color-mix(in srgb,#9b5cff 13%,transparent) 0%,transparent 60%),color-mix(in srgb,var(--panel2,var(--card,#141a28)) 74%,transparent)}',
+    '.sd-plan-hero.free{border-color:var(--line,var(--grid,#283042));background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 74%,transparent)}',
+    '.sd-ph-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}',
+    '.sd-ph-eyebrow{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-ph-name{display:flex;align-items:baseline;gap:9px;margin-top:6px;font-size:25px;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:var(--text,var(--ink))}',
+    '.sd-ph-int{font-size:12.5px;font-weight:700;color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-ph-price{font-size:13px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:9px}',
+    '.sd-ph-price b{color:var(--text,var(--ink));font-weight:800;font-variant-numeric:tabular-nums}',
+    '.sd-ph-meta{font-size:12px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:3px}',
+    '.sd-incl-row{display:flex;align-items:flex-start;gap:10px;padding:6px 3px;font-size:12.5px;line-height:1.35;color:var(--text,var(--ink))}',
+    '.sd-incl-row svg{flex:none;width:15px;height:15px;margin-top:1px;color:var(--up,#23c08a)}',
+    /* ---- Usage: capacity meters (draw-on-reveal instrument) ---- */
+    '.sd-meter{position:relative;border-radius:14px;border:1px solid var(--line,var(--grid,#283042));background:color-mix(in srgb,var(--panel2,var(--card,#141a28)) 78%,transparent);padding:15px 16px}',
+    '.sd-meter-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}',
+    '.sd-meter-lbl{font-size:13px;font-weight:750;color:var(--text,var(--ink))}',
+    '.sd-meter-cap{font-size:10.5px;font-weight:700;color:var(--muted,var(--ink-3,#8b93a7));text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}',
+    '.sd-meter-big{display:flex;align-items:baseline;gap:7px;margin:9px 0 11px}',
+    '.sd-meter-num{font-size:32px;font-weight:800;letter-spacing:-.025em;line-height:.95;color:var(--text,var(--ink));font-variant-numeric:tabular-nums}',
+    '.sd-meter-of{font-size:12px;color:var(--muted,var(--ink-3,#8b93a7))}',
+    '.sd-meter-bar{position:relative;height:8px;border-radius:99px;background:color-mix(in srgb,var(--text,var(--ink,#fff)) 9%,transparent);overflow:hidden}',
+    '.sd-meter-fill{position:absolute;top:0;bottom:0;left:0;border-radius:99px;background:linear-gradient(90deg,var(--link,var(--blue,#4f8cff)),#9b5cff);width:0;transition:width .95s cubic-bezier(.3,.75,.2,1)}',
+    '.sd-meter.low .sd-meter-fill{background:linear-gradient(90deg,var(--warn,#e0a53d),#e0764a)}',
+    '.sd-meter.low .sd-meter-num{color:var(--warn,#e0a53d)}',
+    '.sd-meter.out .sd-meter-fill{background:linear-gradient(90deg,var(--down,#ff5c6c),#e0764a)}',
+    '.sd-meter.out .sd-meter-num{color:var(--down,#ff5c6c)}',
+    '.sd-meter.unl .sd-meter-num{color:var(--link,var(--blue,#4f8cff));font-size:26px}',
+    '.sd-meter-foot{font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:10px;line-height:1.4}',
+    '@media (prefers-reduced-motion:reduce){.sd-meter-fill{transition:none}}',
+    /* ---- Upgrade nudge (shown when a lane runs low / a tier can climb) ---- */
+    '.sd-nudge{display:flex;align-items:center;gap:12px;border-radius:12px;padding:12px 14px;margin-top:12px;border:1px solid color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 28%,var(--line,var(--grid,#283042)));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 8%,transparent)}',
+    '.sd-nudge-main{flex:1;min-width:0}',
+    '.sd-nudge-t{font-size:12.5px;font-weight:750;color:var(--text,var(--ink))}',
+    '.sd-nudge-s{font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:1px;line-height:1.4}',
+    '.sd-nudge .sd-btn{flex:none;white-space:nowrap}',
+    /* usage skeleton + collapse the 2-col grid when the card narrows */
+    '.sd-skel{height:96px;border-radius:14px;border:1px solid var(--line,var(--grid,#283042));background:linear-gradient(100deg,color-mix(in srgb,var(--panel2,var(--card,#141a28)) 78%,transparent) 30%,color-mix(in srgb,var(--text,var(--ink,#fff)) 6%,transparent) 50%,color-mix(in srgb,var(--panel2,var(--card,#141a28)) 78%,transparent) 70%);background-size:220% 100%;animation:sdShimmer 1.3s linear infinite}',
+    '@keyframes sdShimmer{from{background-position:180% 0}to{background-position:-40% 0}}',
+    '@media (max-width:1000px){.sd-grid{grid-template-columns:1fr}}',
     /* mobile sign-out (rail hidden -> row at the end of Account) */
     '.sd-signout-m{display:none}',
     /* desktop: hide the mobile close slot */
@@ -1647,13 +1691,64 @@
     watchNote:  ['Live wherever you sign in.', '登录任意设备即可使用。'],
     openWatch:  ['Open watchlist', '打开自选'],
     errGen:     ['Something went wrong — please try again.', '出错了，请重试。'],
-    validEmail: ['Enter a valid email address.', '请输入有效的邮箱地址。']
+    validEmail: ['Enter a valid email address.', '请输入有效的邮箱地址。'],
+    // billing section
+    billingTitle:['Billing', '账单'],
+    billingSub:  ['Your plan, payment and invoices.', '你的方案、付款与发票。'],
+    currentPlan: ['Current plan', '当前方案'],
+    billedAnnual:['billed annually', '按年结算'],
+    billedMonthly:['billed monthly', '按月结算'],
+    perMo:       ['/mo', '/月'],
+    freePlanName:['Free', '免费版'],
+    freePitch:   ['Every dashboard, the Terminal and 6 signals a day. Upgrade to add the analyst and the full research desk.', '全部看板、Terminal 与每日 6 条信号。升级即可加上分析师与完整研究桌面。'],
+    manageBilling:['Payment & invoices', '付款与发票'],
+    manageBillingNote:['Update your card, download invoices, or cancel.', '更新银行卡、下载发票或取消订阅。'],
+    openPortal:  ['Open', '打开'],
+    portalErr:   ['Couldn’t open billing — please try again.', '无法打开账单页，请重试。'],
+    opening:     ['Opening…', '正在打开…'],
+    onFreePlan:  ['You’re on the free plan.', '你正在使用免费版。'],
+    planIncludes:['Your plan includes', '你的方案包含'],
+    // usage section
+    usageTitle:  ['Usage', '用量'],
+    usageSub:    ['What you’ve used this cycle, and what’s left.', '本周期已用与剩余额度。'],
+    chatLane:    ['Mastermind chat', 'Mastermind 对话'],
+    chatLaneNote:['Questions to the market analyst.', '向市场分析师提问。'],
+    deepLane:    ['Deep research', '深度研究'],
+    deepLaneNote:['Longer, higher-effort answers.', '更长、更深入的回答。'],
+    usageLeft:   ['left', '剩余'],
+    usageOfMonth:['of __N__ this month', '本月共 __N__ 次'],
+    usageOfWeek: ['of __N__ this week', '本周共 __N__ 次'],
+    usageOfTrial:['of __N__ during your trial', '试用期内共 __N__ 次'],
+    resetsOn:    ['Resets __D__', '__D__ 重置'],
+    resetsMonthly:['Resets at the start of each month.', '每月月初重置。'],
+    resetsWeekly:['Resets every Monday.', '每周一重置。'],
+    unlimited:   ['Unlimited', '无限'],
+    unlimitedNote:['No monthly cap on your plan.', '你的方案没有每月上限。'],
+    deepLockedFree:['Included with Insider and Pro.', 'Insider 与 Pro 方案包含。'],
+    usageErr:    ['Couldn’t load usage — please try again.', '无法加载用量，请重试。'],
+    capMonth:    ['This month', '本月'],
+    capWeek:     ['This week', '本周'],
+    capTrial:    ['Trial', '试用期'],
+    ofN:         ['of __N__', '共 __N__ 次'],
+    // upgrade nudges
+    nudgeLowT:   ['Running low', '额度不多了'],
+    nudgeLowS:   ['Upgrade for more questions every month.', '升级即可每月获得更多提问额度。'],
+    nudgeGetT:   ['Want deeper answers?', '想要更深入的回答？'],
+    nudgeGetS:   ['Insider and Pro add deep research questions.', 'Insider 与 Pro 提供深度研究提问。'],
+    upgrade:     ['Upgrade', '升级']
   };
   function _sdL(k) { var p = SD_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
   // bilingual dual-span (matches the site .l-en/.l-zh mechanism) for static labels
   function _sdBl(k) {
     var p = SD_L[k]; if (!p) return '';
     return '<span class="l-en">' + _escHtml(p[0]) + '</span><span class="l-zh">' + _escHtml(p[1]) + '</span>';
+  }
+  // bilingual dual-span with placeholder substitution (e.g. {'__N__': '300'}) applied to
+  // BOTH languages — placeholders are ascii tokens that survive _escHtml unchanged.
+  function _sdBlSub(k, subs) {
+    var p = SD_L[k]; if (!p) return '';
+    function rep(s) { for (var m in subs) if (subs.hasOwnProperty(m)) s = s.split(m).join(_escHtml(String(subs[m]))); return s; }
+    return '<span class="l-en">' + rep(_escHtml(p[0])) + '</span><span class="l-zh">' + rep(_escHtml(p[1])) + '</span>';
   }
 
   /* ---- inline SVG icons used only by the dashboard ------------------------ */
@@ -1666,7 +1761,23 @@
     lock:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
     ctaUser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     extlink: '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>',
-    maximize:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'
+    maximize:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
+    billing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M6.5 15H11"/></svg>',
+    usage:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19a8 8 0 1 1 15 0"/><path d="m12 14.5 3.5-3.5"/><circle cx="12" cy="19" r="1.25" fill="currentColor" stroke="none"/></svg>',
+    check:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 6.5"/></svg>'
+  };
+  // Per-month display price by tier+interval, mirroring config/plans.yml (and onboard.js
+  // CENTS). Billing-hero decoration only — never a gate; the upgrade sheet owns real pricing.
+  var SD_PRICE = {
+    insider: { monthly: 69, annual: 49, annualYr: 588 },
+    pro:     { monthly: 99, annual: 69, annualYr: 828 }
+  };
+  // Plain-word plan highlights for the Billing "what's included" summary. Kept in step
+  // with plans.html.j2 / config/plans.yml; decorative only (never a gate).
+  var SD_PLAN_FEATURES = {
+    free:    [['Every macro dashboard', '全部宏观看板'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['6 signals a day', '每日 6 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
+    insider: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
+    pro:     [['Everything in Insider', 'Insider 全部功能'], ['1,000 Mastermind questions a month', '每月 1,000 次 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
   };
   // provider mini-icon markup (Google keeps its brand colours; X/email use currentColor)
   function _sdProviderIcon(kind) {
@@ -1738,6 +1849,10 @@
           '<nav class="sd-nav" id="sd-nav" role="tablist" aria-label="Settings sections">' +
             '<button type="button" class="sd-nav-b" data-sect="account" role="tab" aria-selected="false" id="sd-tab-account">' +
               SD_ICON.account + _sdBl('acctTitle') + '</button>' +
+            '<button type="button" class="sd-nav-b" data-sect="billing" role="tab" aria-selected="false" id="sd-tab-billing">' +
+              SD_ICON.billing + _sdBl('billingTitle') + '</button>' +
+            '<button type="button" class="sd-nav-b" data-sect="usage" role="tab" aria-selected="false" id="sd-tab-usage">' +
+              SD_ICON.usage + _sdBl('usageTitle') + '</button>' +
             '<button type="button" class="sd-nav-b" data-sect="prefs" role="tab" aria-selected="false" id="sd-tab-prefs">' +
               SD_ICON.prefs + _sdBl('prefsTitle') + '</button>' +
             '<button type="button" class="sd-nav-b" data-sect="sync" role="tab" aria-selected="false" id="sd-tab-sync">' +
@@ -1750,6 +1865,8 @@
         '</aside>' +
         '<section class="sd-pane">' +
           '<div class="sd-sect" id="sd-sect-account"></div>' +
+          '<div class="sd-sect" id="sd-sect-billing"></div>' +
+          '<div class="sd-sect" id="sd-sect-usage"></div>' +
           '<div class="sd-sect" id="sd-sect-prefs"></div>' +
           '<div class="sd-sect" id="sd-sect-sync"></div>' +
         '</section>' +
@@ -1809,19 +1926,20 @@
   // switch the visible section + sync rail tab aria
   function _sdShow(sect) {
     if (!_sdOverlay) return;
-    if (sect !== 'account' && sect !== 'prefs' && sect !== 'sync') sect = 'prefs';
-    // Account hidden when auth is off — fall back to prefs
-    if (sect === 'account' && !_authEnabled) sect = 'prefs';
+    if (['account', 'billing', 'usage', 'prefs', 'sync'].indexOf(sect) < 0) sect = 'prefs';
+    // account/billing/usage need an account — fall back to prefs when auth is off
+    if ((sect === 'account' || sect === 'billing' || sect === 'usage') && !_authEnabled) sect = 'prefs';
     _sdSect = sect;
     _sdOverlay.querySelectorAll('.sd-nav-b').forEach(function (b) {
       var on = b.getAttribute('data-sect') === sect;
       b.classList.toggle('active', on);
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
-    ['account', 'prefs', 'sync'].forEach(function (s) {
+    ['account', 'billing', 'usage', 'prefs', 'sync'].forEach(function (s) {
       var el = document.getElementById('sd-sect-' + s);
       if (el) el.classList.toggle('on', s === sect);
     });
+    if (sect === 'usage') _sdAnimateMeters();
     _sdRelabelAria();
   }
 
@@ -1857,16 +1975,20 @@
     // rail sign-out only when signed in with an email
     var railSo = document.getElementById('sd-signout-rail');
     if (railSo) railSo.style.display = (state === 'in') ? '' : 'none';
-    // Account tab hidden entirely when auth off
-    var tabAcct = document.getElementById('sd-tab-account');
-    if (tabAcct) tabAcct.style.display = _authEnabled ? '' : 'none';
+    // account / billing / usage tabs need an account — hidden entirely when auth off
+    ['account', 'billing', 'usage'].forEach(function (s) {
+      var tab = document.getElementById('sd-tab-' + s);
+      if (tab) tab.style.display = _authEnabled ? '' : 'none';
+    });
 
     _renderSDAccount(state, u);
+    _renderSDBilling(state, u);
+    _renderSDUsage(state, u);
     _renderSDPrefs();
     _renderSDSync(state, u);
     _sdSyncThemeSeg();
-    // if the current section is now invalid (account tab hidden), route to prefs
-    if (_sdSect === 'account' && !_authEnabled) _sdShow('prefs');
+    // if the current section is now invalid (its tab hidden), route to prefs
+    if ((_sdSect === 'account' || _sdSect === 'billing' || _sdSect === 'usage') && !_authEnabled) _sdShow('prefs');
   }
 
   function _sdHead(titleKey, subKey) {
@@ -1928,9 +2050,9 @@
           '</span>' +
         '</div>';
 
-      // Plan group (tier + status chip + upgrade/choose CTA). Rendered from the cached
-      // /api/me payload; _wireSDAccount fetches it on first paint if the cache is cold.
-      html += _sdPlanHTML();
+      // Plan/billing moved to the dedicated Billing tab. Profile + Security sit in a
+      // two-column grid that fills the widened card and collapses to one column when narrow.
+      html += '<div class="sd-grid">';
 
       // Profile group
       html += '<div class="sd-group">' +
@@ -2004,6 +2126,8 @@
             '<button type="button" class="sd-mini" id="sd-copy-uid" data-uid="' + _escHtml(uid) + '">' + _sdBl('copy') + '</button>' +
           '</div></div>' +
         '</div>';
+
+      html += '</div>';  // end .sd-grid (Profile | Security)
 
       // mobile sign-out row
       html += '<button type="button" class="sd-signout-m" id="sd-signout-m">' + SD_ICON.signout + _sdBl('signOut') + '</button>';
@@ -2084,6 +2208,234 @@
       '</div>' +
     '</div>';
     _wireSDSync(host);
+  }
+
+  /* ---- Billing tab -------------------------------------------------------- */
+  // shared signed-out / guest CTA reused by the account-less tabs (billing, usage)
+  function _sdSignedOutCTA(state) {
+    if (state === 'guest') {
+      return '<div class="sd-cta"><span class="sd-cta-av">' + SD_ICON.lock + '</span>' +
+          '<p class="sd-cta-t">' + _sdBl('accessSess') + '</p>' +
+          '<p class="sd-cta-n">' + _sdBl('guestNote') + '</p>' +
+          '<div class="sd-cta-btns"><button type="button" class="sd-btn primary" data-sd-cta="signup">' + _sdBl('createFree') + '</button></div></div>';
+    }
+    return '<div class="sd-cta"><span class="sd-cta-av">' + SD_ICON.ctaUser + '</span>' +
+        '<p class="sd-cta-t">' + _sdBl('ctaTitle') + '</p>' +
+        '<p class="sd-cta-n">' + _sdBl('ctaNote') + '</p>' +
+        '<div class="sd-cta-btns">' +
+          '<button type="button" class="sd-btn ghost" data-sd-cta="signin">' + _sdBl('signin') + '</button>' +
+          '<button type="button" class="sd-btn primary" data-sd-cta="signup">' + _sdBl('createAcct') + '</button>' +
+        '</div></div>';
+  }
+
+  function _sdPlanHeroHTML() {
+    if (!_sdPlan) return '<div class="sd-skel" style="height:118px;margin:4px 0 14px"></div>';
+    var p = _sdPlan;
+    var tier = p.tier || 'free';
+    var interval = p.interval || null;
+    var paid = tier !== 'free';
+    var chip = _sdPlanChip(p);
+    var priceHtml = '';
+    if (paid && SD_PRICE[tier] && interval) {
+      var pr = SD_PRICE[tier];
+      var mo = interval === 'annual' ? pr.annual : pr.monthly;
+      var billed = interval === 'annual'
+        ? (_sdBl('billedAnnual') + ' <span class="sd-muted">($' + pr.annualYr + '/yr)</span>')
+        : _sdBl('billedMonthly');
+      priceHtml = '<div class="sd-ph-price"><b>$' + mo + '</b>' + _sdBl('perMo') + ' · ' + billed + '</div>';
+    }
+    return '<div class="sd-plan-hero' + (paid ? '' : ' free') + '">' +
+        '<div class="sd-ph-top">' +
+          '<div><span class="sd-ph-eyebrow">' + _sdBl('currentPlan') + '</span>' +
+            '<div class="sd-ph-name">' + _escHtml(_sdTierLabel(tier)) + '</div></div>' +
+          (chip ? '<span style="flex:none">' + chip + '</span>' : '') +
+        '</div>' +
+        (paid ? priceHtml : '<div class="sd-ph-price">' + _sdBl('freePitch') + '</div>') +
+      '</div>';
+  }
+
+  function _renderSDBilling(state, u) {
+    var host = document.getElementById('sd-sect-billing');
+    if (!host) return;
+    var html = _sdHead('billingTitle', 'billingSub') + '<div class="sd-body">';
+    if (state !== 'in') {
+      host.innerHTML = html + _sdSignedOutCTA(state) + '</div>';
+      _sdWireCta(host);
+      return;
+    }
+    html += _sdPlanHeroHTML();
+    var p = _sdPlan || {};
+    var tier = p.tier || 'free';
+    var interval = p.interval || null;
+    var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
+    if (!top) {
+      var lblKey = (tier === 'free') ? 'choosePlan' : (tier === 'insider') ? 'upgradePro' : 'switchAnnual';
+      html += '<div class="sd-plan-cta" style="margin:0 0 14px">' +
+        '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-bill-up">' + _sdBl(lblKey) + '</button></div>';
+    }
+    // what's included on the current plan (plain-word highlights)
+    var feats = SD_PLAN_FEATURES[tier] || SD_PLAN_FEATURES.free;
+    html += '<div class="sd-group"><span class="sd-group-t">' + _sdBl('planIncludes') + '</span>';
+    for (var fi = 0; fi < feats.length; fi++) {
+      html += '<div class="sd-incl-row">' + SD_ICON.check +
+        '<span><span class="l-en">' + _escHtml(feats[fi][0]) + '</span><span class="l-zh">' + _escHtml(feats[fi][1]) + '</span></span></div>';
+    }
+    html += '</div>';
+    if (tier !== 'free') {
+      html += '<div class="sd-group">' +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('manageBilling') + '</span>' +
+              '<span class="sd-row-desc">' + _sdBl('manageBillingNote') + '</span></span>' +
+            '<button type="button" class="sd-link" id="sd-portal-btn">' + _sdBl('openPortal') + SD_ICON.extlink + '</button>' +
+          '</div></div>' +
+          '<div class="sd-msg" id="sd-bill-msg" role="alert"></div>' +
+        '</div>';
+    }
+    host.innerHTML = html + '</div>';
+    _sdWireCta(host);
+    var pb = host.querySelector('#sd-portal-btn');
+    if (pb) pb.addEventListener('click', function () { _sdOpenPortal(pb); });
+  }
+
+  // Stripe customer portal — self-serve invoices / payment method / cancellation.
+  function _sdOpenPortal(btn) {
+    _sdMsg('sd-bill-msg', '');
+    _sdSetBusy(btn, true, _sdL('opening'));
+    var base = /(^|\.)mastermind-x\.com$/i.test(location.hostname || '') ? '' : (window.MM_API || '');
+    getSupabaseClient().then(function (sb) { return sb ? sb.auth.getSession() : null; })
+      .then(function (res) {
+        var tok = res && res.data && res.data.session && res.data.session.access_token;
+        var h = {}; if (tok) h['Authorization'] = 'Bearer ' + tok;
+        return fetch(base + '/api/billing/portal', { headers: h, credentials: 'include' });
+      })
+      .then(function (r) { return r && r.ok ? r.json() : null; })
+      .then(function (j) {
+        _sdSetBusy(btn, false);
+        if (j && j.url) { location.href = j.url; return; }
+        _sdMsg('sd-bill-msg', _sdL('portalErr'), 'err');
+      })
+      .catch(function () { _sdSetBusy(btn, false); _sdMsg('sd-bill-msg', _sdL('portalErr'), 'err'); });
+  }
+
+  /* ---- Usage tab ---------------------------------------------------------- */
+  // brain quota payload from GET /api/brain/me — {tier, quotas:{fast,pro:{remaining,limit,period}}}
+  var _sdUsage = null, _sdUsageFor = null, _sdUsageBusy = false, _sdUsageErr = false;
+
+  function _renderSDUsage(state, u) {
+    var host = document.getElementById('sd-sect-usage');
+    if (!host) return;
+    var html = _sdHead('usageTitle', 'usageSub') + '<div class="sd-body">';
+    if (state !== 'in') {
+      host.innerHTML = html + _sdSignedOutCTA(state) + '</div>';
+      _sdWireCta(host);
+      return;
+    }
+    // canonical source is GET /api/brain/me; fall back to /api/me's chat_budget (already
+    // fetched with the plan) so the meters paint instantly and survive a brain-endpoint miss.
+    if (!_sdUsage && !_sdUsageErr) _sdLoadUsage(u);
+    var q = (_sdUsage && _sdUsage.quotas) || (_sdPlan && _sdPlan.chat_budget) || null;
+    var tier = (_sdUsage && _sdUsage.tier) || (_sdPlan && _sdPlan.tier) || 'free';
+    if (!q) {
+      html += _sdUsageErr
+        ? '<div class="sd-note" style="text-align:center;padding:30px 10px">' + _escHtml(_sdL('usageErr')) + '</div>'
+        : '<div class="sd-grid"><div class="sd-skel"></div><div class="sd-skel"></div></div>';
+      host.innerHTML = html + '</div>';
+      return;
+    }
+    html += '<div class="sd-grid">' + _sdMeterHTML('chat', q.fast, tier) + _sdMeterHTML('deep', q.pro, tier) + '</div>';
+    html += _sdUsageNudge(q, tier);
+    host.innerHTML = html + '</div>';
+    _sdWireCta(host);
+    _sdAnimateMeters();
+  }
+
+  function _sdMeterHTML(kind, lane, tier) {
+    var isChat = kind === 'chat';
+    var lbl = _sdBl(isChat ? 'chatLane' : 'deepLane');
+    var note = _sdBl(isChat ? 'chatLaneNote' : 'deepLaneNote');
+    lane = lane || {};
+    var limit = (typeof lane.limit === 'number') ? lane.limit : 0;
+    var remaining = (typeof lane.remaining === 'number') ? lane.remaining : 0;
+    var period = lane.period || 'month';
+    // uncapped tier
+    if (limit < 0) {
+      return '<div class="sd-meter unl">' +
+          '<div class="sd-meter-h"><span class="sd-meter-lbl">' + lbl + '</span></div>' +
+          '<div class="sd-meter-big"><span class="sd-meter-num">' + _sdBl('unlimited') + '</span></div>' +
+          '<div class="sd-meter-foot">' + note + ' ' + _sdBl('unlimitedNote') + '</div>' +
+        '</div>';
+    }
+    // lane not included on this tier (e.g. deep research on Free) -> plain upsell, no bar
+    if (limit === 0) {
+      return '<div class="sd-meter">' +
+          '<div class="sd-meter-h"><span class="sd-meter-lbl">' + lbl + '</span></div>' +
+          '<div class="sd-meter-foot" style="margin-top:12px">' + note + ' ' + _sdBl('deepLockedFree') + '</div>' +
+        '</div>';
+    }
+    var pct = Math.max(0, Math.min(100, Math.round(remaining / limit * 100)));
+    var ratio = remaining / limit;
+    var cls = remaining <= 0 ? ' out' : (ratio <= 0.15 ? ' low' : '');
+    var capKey = period === 'week' ? 'capWeek' : period === 'trial' ? 'capTrial' : 'capMonth';
+    var reset = period === 'week' ? (' · ' + _sdBl('resetsWeekly')) : period === 'trial' ? '' : (' · ' + _sdBl('resetsMonthly'));
+    return '<div class="sd-meter' + cls + '">' +
+        '<div class="sd-meter-h"><span class="sd-meter-lbl">' + lbl + '</span><span class="sd-meter-cap">' + _sdBl(capKey) + '</span></div>' +
+        '<div class="sd-meter-big"><span class="sd-meter-num">' + remaining + '</span><span class="sd-meter-of">' + _sdBl('usageLeft') + '</span></div>' +
+        '<div class="sd-meter-bar"><span class="sd-meter-fill" data-pct="' + pct + '"></span></div>' +
+        '<div class="sd-meter-foot">' + _sdBlSub('ofN', { '__N__': limit }) + reset + '</div>' +
+      '</div>';
+  }
+
+  function _sdUsageNudge(q, tier) {
+    // Pro/Unlimited already carry the most questions — the annual switch (if any) lives
+    // on the Billing tab, so no "upgrade for more questions" nudge here.
+    if (tier === 'unlimited' || tier === 'pro') return '';
+    var low = ['fast', 'pro'].some(function (k) {
+      var l = q[k] || {}; return typeof l.limit === 'number' && l.limit > 0 && (l.remaining / l.limit) <= 0.15;
+    });
+    var tKey, sKey;
+    if (low) { tKey = 'nudgeLowT'; sKey = 'nudgeLowS'; }
+    else if (tier === 'free') { tKey = 'nudgeGetT'; sKey = 'nudgeGetS'; }
+    else return '';
+    return '<div class="sd-nudge"><div class="sd-nudge-main">' +
+        '<div class="sd-nudge-t">' + _sdBl(tKey) + '</div>' +
+        '<div class="sd-nudge-s">' + _sdBl(sKey) + '</div></div>' +
+        '<button type="button" class="sd-btn primary" data-sd-cta="upgrade">' + _sdBl('upgrade') + '</button>' +
+      '</div>';
+  }
+
+  // draw-on-reveal: start every meter fill at 0, then paint targets next frame so the
+  // width transition runs each time the Usage tab is shown.
+  function _sdAnimateMeters() {
+    if (!_sdOverlay) return;
+    var fills = _sdOverlay.querySelectorAll('#sd-sect-usage .sd-meter-fill');
+    if (!fills.length) return;
+    fills.forEach(function (f) { f.style.width = '0'; });
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      fills.forEach(function (f) { f.style.width = (f.getAttribute('data-pct') || '0') + '%'; });
+    }); });
+  }
+
+  // Fetch GET /api/brain/me (same-origin on mastermind-x.com, else MM_API), cache by uid,
+  // re-render once on arrival. Mirrors _sdLoadPlan's auth + host logic.
+  function _sdLoadUsage(u) {
+    var uid = (u && u.id) || null;
+    if (!uid) return;
+    if (_sdUsage && _sdUsageFor === uid) return;
+    if (_sdUsageBusy) return;
+    _sdUsageBusy = true; _sdUsageErr = false;
+    var base = /(^|\.)mastermind-x\.com$/i.test(location.hostname || '') ? '' : (window.MM_API || '');
+    getSupabaseClient().then(function (sb) { return sb ? sb.auth.getSession() : null; })
+      .then(function (res) {
+        var tok = res && res.data && res.data.session && res.data.session.access_token;
+        if (!tok) throw new Error('no-session');
+        return fetch(base + '/api/brain/me', { headers: { Authorization: 'Bearer ' + tok } });
+      })
+      .then(function (r) { if (!r || !r.ok) throw new Error('usage-' + (r && r.status)); return r.json(); })
+      .then(function (j) { _sdUsageBusy = false; _sdUsage = j || {}; _sdUsageFor = uid; if (_sdBuilt) _renderSDash(); })
+      .catch(function () {
+        _sdUsageBusy = false; _sdUsageErr = true;
+        if (_sdBuilt && _sdSect === 'usage') _renderSDUsage(_sdAuthState(), _curUser || {});
+      });
   }
 
   /* ---- section wiring ----------------------------------------------------- */
