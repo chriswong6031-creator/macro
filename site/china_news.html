@@ -7,8 +7,192 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>China Tape — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=5d000d90">
-<link rel="stylesheet" href="assets/css/b8544f6e.css?v=b8544f6e">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  body { padding-bottom:56px; }
+  @media(min-width:1220px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
+  .cn { max-width:1180px; margin:0 auto; }
+  /* channel identity hues — category, not price-direction, so no zh red/green flip */
+  .th-monetary{--ch:#5b8def}.th-inflation{--ch:#e08b45}.th-growth{--ch:#6cb85a}.th-credit{--ch:#a78bfa}
+  .th-fiscal{--ch:#e0a030}.th-policy{--ch:#d0554f}.th-politics{--ch:#c86b8a}.th-tech{--ch:#3fb6c0}
+  .th-markets{--ch:#3bb277}.th-macro{--ch:var(--muted)}
+
+  /* ---------- hero ---------- */
+  .cn-hero{ padding:26px 0 6px; animation:cnUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .cn-eyebrow{ display:flex; align-items:center; gap:9px; font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.02em; }
+  .cn-brand{ font-weight:850; font-size:20px; letter-spacing:-.01em; color:var(--text); }
+  .cn-brand .gn{ background:linear-gradient(92deg,#d0554f,#e0a030 52%,#3fb6c0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cn-live{ width:8px; height:8px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 15%,transparent); animation:cnBreathe 2.6s ease-in-out infinite; }
+  .cn-lead{ font-size:clamp(19px,2.5vw,25px); line-height:1.32; font-weight:800; color:var(--text); letter-spacing:-.018em; margin:15px 0 0; max-width:60ch; font-family:Inter,-apple-system,sans-serif; }
+  .cn-lead b{ color:var(--text); }
+  .cn-lead .q{ color:var(--muted); font-weight:800; }
+  .cn-asof{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-top:10px; }
+  .cn-glance{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .cn-gchip{ display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:999px; border:1px solid var(--line); background:var(--panel); font-size:12.5px; font-weight:600; color:var(--text); }
+  .cn-gchip b{ font-weight:850; }
+  .cn-gchip .dot{ width:7px; height:7px; border-radius:50%; background:var(--c,var(--muted)); flex:none; }
+  .cn-gchip.st-supportive{ --c:var(--up); } .cn-gchip.st-cautious{ --c:var(--warn); } .cn-gchip.st-steady,.cn-gchip.st-building{ --c:var(--muted); }
+  .cn-gchip.hot{ border-color:color-mix(in srgb,#d0554f 40%,var(--line)); color:#d0554f; } .cn-gchip.hot .dot{ background:#d0554f; }
+  .cn-gchip.led .dot{ background:var(--ch,var(--link)); }
+
+  /* ---------- overview 3-up (the dashboard) ---------- */
+  .cn-rail3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:22px 0 4px; }
+  .ov-card{ position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 18px 15px; overflow:hidden; box-shadow:var(--card-shadow); animation:cnUp .5s cubic-bezier(.2,.7,.3,1) both; }
+  .cn-rail3 .ov-card:nth-child(2){ animation-delay:.06s; } .cn-rail3 .ov-card:nth-child(3){ animation-delay:.12s; }
+  .ov-card::before{ content:''; position:absolute; inset:0 0 auto 0; height:3px; background:var(--ac,var(--link)); }
+  .ov-tone{ --ac:var(--up); } .ov-mix{ --ac:#e0a030; } .ov-next{ --ac:#3fb6c0; }
+  .ov-h{ display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; }
+  html[data-lang="zh"] .ov-h{ letter-spacing:.02em; }
+  .ov-h .ic{ font-size:13px; }
+  .ov-foot{ font-size:11px; color:var(--muted); margin-top:12px; padding-top:10px; border-top:1px solid var(--line); line-height:1.5; }
+
+  /* tone gauge */
+  .tg-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .tg-state{ font-size:20px; font-weight:850; color:var(--text); letter-spacing:-.01em; line-height:1.15; }
+  .tg-z{ font-size:24px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--ac); }
+  .tg-track{ position:relative; height:8px; border-radius:999px; background:color-mix(in srgb,var(--muted) 22%,transparent); margin:14px 0 4px; }
+  .tg-track .mid{ position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--muted); opacity:.5; }
+  .tg-fill{ position:absolute; top:0; bottom:0; border-radius:999px; background:var(--ac); animation:cnGrow .7s cubic-bezier(.2,.7,.3,1) both; }
+  .tg-scale{ display:flex; justify-content:space-between; font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:5px; }
+  .ov-empty{ font-size:13px; color:var(--muted); padding:6px 0 10px; }
+
+  /* tape mix bars */
+  .mx-row{ display:grid; grid-template-columns:74px 1fr 26px; align-items:center; gap:9px; padding:4px 0; }
+  .mx-name{ font-size:11.5px; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mx-bar{ height:7px; border-radius:999px; background:color-mix(in srgb,var(--muted) 18%,transparent); overflow:hidden; }
+  .mx-bar i{ display:block; height:100%; border-radius:999px; background:var(--ch,var(--link)); transform-origin:left; animation:cnGrow .7s cubic-bezier(.2,.7,.3,1) both; }
+  .mx-n{ font-size:11.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted); text-align:right; }
+
+  /* next catalyst */
+  .nx-when{ display:inline-flex; align-items:baseline; gap:6px; }
+  .nx-days{ font-size:30px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--text); line-height:1; letter-spacing:-.02em; }
+  .nx-unit{ font-size:12px; font-weight:700; color:var(--muted); }
+  .nx-name{ font-size:14px; font-weight:750; color:var(--text); margin:9px 0 2px; line-height:1.3; }
+  .nx-date{ font-size:11.5px; color:var(--muted); }
+
+  /* ---------- main: the tape + rail ---------- */
+  .cn-main{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start; margin-top:30px; }
+  .cn-toolbar{ position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:9px; align-items:center; padding:10px 0 12px; background:linear-gradient(180deg,var(--bg) 74%,transparent); }
+  .cn-search{ position:relative; flex:1 1 240px; min-width:190px; }
+  .cn-search input{ width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:9px 12px 9px 33px; outline:none; font-size:13px; }
+  .cn-search input:focus{ border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .cn-search .mag{ position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; }
+  .cn-filters{ display:flex; flex-wrap:wrap; gap:6px; }
+  .fbtn{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:6px 11px; font-size:11.5px; font-weight:600; cursor:pointer; }
+  .fbtn:hover{ color:var(--text); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
+  .fbtn.on{ color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 12%,var(--panel)); }
+  .fbtn .fc{ font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--muted); }
+  .fbtn.on .fc{ color:var(--link); }
+  .fbtn.hidden{ display:none; }
+  .cn-count{ margin-left:auto; color:var(--muted); font-size:12px; white-space:nowrap; }
+
+  /* the tape */
+  .tp-feed{ position:relative; }
+  .tp-item{ display:grid; grid-template-columns:56px 20px minmax(0,1fr); gap:0 13px; padding:0 0 16px; color:var(--text); position:relative; animation:cnUp .45s cubic-bezier(.2,.7,.3,1) both; }
+  .tp-when{ grid-column:1; text-align:right; font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--muted); padding-top:17px; line-height:1.3; white-space:nowrap; }
+  .tp-spine{ grid-column:2; position:relative; }
+  .tp-spine::before{ content:''; position:absolute; left:50%; transform:translateX(-50%); top:27px; bottom:-16px; width:2px; background:linear-gradient(180deg,color-mix(in srgb,var(--ch,var(--muted)) 45%,var(--line)),color-mix(in srgb,var(--muted) 22%,transparent)); }
+  .tp-item:last-child .tp-spine::before{ display:none; }
+  .tp-node{ position:absolute; left:50%; top:19px; transform:translateX(-50%); width:12px; height:12px; border-radius:50%; background:var(--ch,var(--muted)); border:3px solid var(--bg); z-index:1; }
+  .tp-node.fresh-live{ box-shadow:0 0 0 4px color-mix(in srgb,var(--ch,var(--up)) 20%,transparent); }
+  .tp-node.fresh-old{ background:color-mix(in srgb,var(--ch,var(--muted)) 45%,var(--muted)); opacity:.75; }
+  .tp-body{ grid-column:3; min-width:0; background:var(--panel); border:1px solid color-mix(in srgb,var(--ch,var(--muted)) 16%,var(--line)); border-left:3px solid color-mix(in srgb,var(--ch,var(--muted)) 62%,var(--line)); border-radius:5px 13px 13px 5px; padding:13px 15px; box-shadow:var(--card-shadow); transition:transform .16s,border-color .16s,box-shadow .16s; }
+  .tp-item:hover .tp-body{ transform:translateY(-2px); border-color:color-mix(in srgb,var(--ch,var(--link)) 45%,var(--line)); border-left-color:var(--ch,var(--link)); box-shadow:0 14px 30px -20px color-mix(in srgb,var(--ch,var(--link)) 55%,transparent); }
+  .tp-top{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  .cn-tag{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:7px; font-size:10.5px; font-weight:700; letter-spacing:.01em; color:var(--ch,var(--link)); background:color-mix(in srgb,var(--ch,var(--link)) 12%,var(--panel)); border:1px solid color-mix(in srgb,var(--ch,var(--link)) 26%,var(--line)); }
+  .cn-src{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .cn-imp{ display:inline-flex; align-items:center; gap:5px; margin-left:auto; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:7px; border:1px solid var(--line); color:var(--muted); }
+  .cn-imp b{ font-variant-numeric:tabular-nums; }
+  .cn-imp.imp-high{ color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .cn-imp.imp-medium{ color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line)); }
+  .tp-title{ font-size:15.5px; line-height:1.32; font-weight:730; margin:0; color:var(--text); }
+  .tp-item:hover .tp-title{ color:var(--ch,var(--link)); }
+  .tp-sum{ color:var(--muted); font-size:12.5px; line-height:1.5; margin:7px 0 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tp-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:9px; }
+  .cn-cchip{ font-size:10.5px; font-weight:600; color:var(--muted); background:color-mix(in srgb,var(--muted) 11%,transparent); border-radius:6px; padding:2px 8px; }
+  .cn-tk{ font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); background:color-mix(in srgb,var(--link) 11%,transparent); border-radius:6px; padding:2px 8px; }
+  /* the lead story sits larger at the head of the tape */
+  .tp-item.lead .tp-body{ border-color:color-mix(in srgb,var(--ch,var(--link)) 28%,var(--line)); border-left-color:var(--ch,var(--link)); background:linear-gradient(180deg,color-mix(in srgb,var(--ch,var(--link)) 5%,var(--panel)),var(--panel)); }
+  .tp-item.lead .tp-title{ font-size:19px; line-height:1.26; font-weight:800; letter-spacing:-.01em; }
+  .tp-item.lead .tp-sum{ -webkit-line-clamp:3; font-size:13px; }
+  .tp-item.lead .tp-node{ width:14px; height:14px; }
+
+  /* ---------- rail (context alongside the tape) ---------- */
+  .cn-side{ display:grid; gap:16px; position:sticky; top:12px; }
+  .side-card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 16px; box-shadow:var(--card-shadow); }
+  .sc-h{ display:flex; align-items:center; gap:7px; margin:0 0 11px; font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  html[data-lang="zh"] .sc-h{ letter-spacing:.02em; }
+  .cal-row{ display:grid; grid-template-columns:52px 1fr; gap:11px; align-items:start; padding:9px 0; border-bottom:1px solid var(--line); }
+  .cal-row:last-child{ border-bottom:0; padding-bottom:0; }
+  .cal-when{ text-align:center; }
+  .cal-when .cd{ font-size:16px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--text); line-height:1; }
+  .cal-when .cu{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); display:block; margin-top:2px; }
+  .cal-when.soon .cd{ color:#d0554f; }
+  .cal-name{ font-size:12px; font-weight:600; color:var(--text); line-height:1.35; min-width:0; }
+  .cal-tag{ display:inline-block; font-size:9.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); background:color-mix(in srgb,var(--muted) 13%,transparent); border-radius:5px; padding:1px 6px; margin-right:6px; vertical-align:1px; }
+  .cal-tag.hi{ color:#d0554f; background:color-mix(in srgb,#d0554f 12%,transparent); }
+  .exp-pills{ display:flex; flex-wrap:wrap; gap:6px; }
+  .exp-pill{ display:inline-flex; flex-direction:column; gap:1px; padding:6px 10px; border-radius:9px; border:1px solid var(--line); background:var(--panel2); min-width:0; }
+  .exp-pill .tk{ font-size:11.5px; font-weight:850; font-variant-numeric:tabular-nums; color:var(--link); }
+  .exp-pill .nm{ font-size:10px; color:var(--muted); }
+  .exp-pill .ct{ font-size:9.5px; font-weight:700; color:var(--muted); }
+  .sc-empty{ font-size:12px; color:var(--muted); }
+
+  /* ---------- empty state + disclaimer ---------- */
+  .cn-empty{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:34px 28px; text-align:center; box-shadow:var(--card-shadow); }
+  .cn-empty h2{ font-size:20px; color:var(--text); margin:0 0 8px; letter-spacing:-.01em; }
+  .cn-empty p{ color:var(--muted); font-size:13.5px; margin:0; }
+  .cn-none{ padding:30px 24px; text-align:center; background:var(--panel); border:1px dashed var(--line); border-radius:14px; }
+  .cn-none h3{ font-size:15px; margin:0 0 6px; color:var(--text); }
+  .cn-none p{ color:var(--muted); font-size:12.5px; margin:0; }
+  .cn-disc{ color:var(--muted); font-size:11.5px; line-height:1.6; margin:26px 0 0; padding-top:14px; border-top:1px solid var(--line); }
+  .hidden{ display:none !important; }
+
+  @keyframes cnUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @keyframes cnBreathe{ 0%,100%{ opacity:.5; transform:scale(.82); } 50%{ opacity:1; transform:scale(1.08); } }
+  @keyframes cnGrow{ from{ transform:scaleX(0); } to{ transform:scaleX(1); } }
+
+  @media(max-width:940px){ .cn-rail3{ grid-template-columns:1fr; } .cn-main{ grid-template-columns:1fr; } .cn-side{ position:static; } }
+  @media(max-width:560px){
+    .cn-toolbar{ position:static; }
+    .tp-item{ grid-template-columns:1fr; gap:0; }
+    .tp-spine{ display:none; }
+    .tp-when{ grid-column:1; text-align:left; padding:0 0 6px; }
+    .tp-body{ grid-column:1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .cn-hero,.ov-card,.tp-item,.cn-live,.tg-fill,.mx-bar i{ animation:none; }
+    *{ transition:none !important; }
+  }
+
+</style>
 
 
 
@@ -183,7 +367,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -243,8 +491,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -706,25 +954,6 @@ According to data released by the municipal statistics bureau on Monday, the rea
         </a>
         
         
-        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3139721" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium"
-           data-search="vc价格一个多月涨幅超40%，厂商限量供货  vc价格一个多月涨幅超40%，厂商限量供货 电解液添加剂碳酸亚乙烯酯（vc）又涨价了。百川盈孚数据显示，7月24日vc均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，a股vc板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数vc厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段vc厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）  电解液添加剂碳酸亚乙烯酯（vc）又涨价了。百川盈孚数据显示，7月24日vc均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，a股vc板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数vc厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段vc厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报） 华尔街见闻 markets equity market 股票市场 512880.ss">
-          <time class="tp-when" data-t="2026-07-25T05:04:53+00:00" datetime="2026-07-25T05:04:53+00:00">07-25<br>05:04</time>
-          <div class="tp-spine"><span class="tp-node" data-t="2026-07-25T05:04:53+00:00"></span></div>
-          <div class="tp-body">
-            <div class="tp-top">
-              
-              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="cn-src">华尔街见闻</span>
-              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
-            </div>
-            <h2 class="tp-title"><span class="l-en">VC价格一个多月涨幅超40%，厂商限量供货</span><span class="l-zh">VC价格一个多月涨幅超40%，厂商限量供货</span></h2>
-            <p class="tp-sum"><span class="l-en">电解液添加剂碳酸亚乙烯酯（VC）又涨价了。百川盈孚数据显示，7月24日VC均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，A股VC板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数VC厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段VC厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）</span><span class="l-zh">电解液添加剂碳酸亚乙烯酯（VC）又涨价了。百川盈孚数据显示，7月24日VC均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，A股VC板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数VC厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段VC厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）</span></p>
-            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
-          </div>
-        </a>
-        
-        
         <a class="tp-item th-markets" href="https://www.stcn.com/article/detail/4041419.html" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium"
            data-search="刚刚，沙特工业重镇遇袭！胡塞武装：以升级回应升级！中东多国出手！  刚刚，沙特工业重镇遇袭！胡塞武装：以升级回应升级！中东多国出手！    证券时报 industrial industry & manufacturing 工业与制造业 512880.ss">
@@ -797,6 +1026,25 @@ According to data released by the municipal statistics bureau on Monday, the rea
             <h2 class="tp-title"><span class="l-en">Deputy Governor Xuan Changneng Speaks with John Berrigan, Director-General for Financial Stability, Financial Services and Capital Markets Union at the European Commission</span><span class="l-zh">副行长宣昌能与欧盟委员会金融稳定、金融服务与资本市场联盟总干事约翰·贝里根会谈</span></h2>
             
             <div class="tp-chips"><span class="cn-cchip"><span class="l-en">PBOC & liquidity</span><span class="l-zh">央行与流动性</span></span><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">510300.SS</span></div>
+          </div>
+        </a>
+        
+        
+        <a class="tp-item th-markets" href="https://wallstreetcn.com/livenews/3139721" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium"
+           data-search="vc价格一个多月涨幅超40%，厂商限量供货  vc价格一个多月涨幅超40%，厂商限量供货 电解液添加剂碳酸亚乙烯酯（vc）又涨价了。百川盈孚数据显示，7月24日vc均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，a股vc板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数vc厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段vc厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）  电解液添加剂碳酸亚乙烯酯（vc）又涨价了。百川盈孚数据显示，7月24日vc均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，a股vc板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数vc厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段vc厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报） 华尔街见闻 markets equity market 股票市场 512880.ss">
+          <time class="tp-when" data-t="2026-07-25T05:04:53+00:00" datetime="2026-07-25T05:04:53+00:00">07-25<br>05:04</time>
+          <div class="tp-spine"><span class="tp-node" data-t="2026-07-25T05:04:53+00:00"></span></div>
+          <div class="tp-body">
+            <div class="tp-top">
+              
+              <span class="cn-tag"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="cn-src">华尔街见闻</span>
+              <span class="cn-imp imp-medium"><b>54</b> <span class="l-en">medium</span><span class="l-zh">中</span></span>
+            </div>
+            <h2 class="tp-title"><span class="l-en">VC价格一个多月涨幅超40%，厂商限量供货</span><span class="l-zh">VC价格一个多月涨幅超40%，厂商限量供货</span></h2>
+            <p class="tp-sum"><span class="l-en">电解液添加剂碳酸亚乙烯酯（VC）又涨价了。百川盈孚数据显示，7月24日VC均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，A股VC板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数VC厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段VC厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）</span><span class="l-zh">电解液添加剂碳酸亚乙烯酯（VC）又涨价了。百川盈孚数据显示，7月24日VC均价为20万元/吨，近一个多月涨幅超40%；其中7月23日单日跳涨2万元/吨，时隔4年多再破20万元/吨关口。受产品涨价刺激，A股VC板块迎来大涨。7月23日，孚日股份等多股涨停。“明显感觉供应紧张起来了，目前大多数VC厂商都限量供货，不再是想要多少就能拿到多少。”华中地区一位电解液企业相关负责人表示，现阶段VC厂都很强势，账款哪怕逾期一天，第二天就停止发货了。（证券时报）</span></p>
+            <div class="tp-chips"><span class="cn-cchip"><span class="l-en">equity market</span><span class="l-zh">股票市场</span></span><span class="cn-tk">512880.SS</span></div>
           </div>
         </a>
         
@@ -1027,6 +1275,6 @@ According to data released by the municipal statistics bureau on Monday, the rea
 })();
 </script>
 
-<script src="theme.js?v=16dc65dc" defer></script>
+<script src="theme.js"></script>
 </body>
 </html>
