@@ -169,6 +169,13 @@ Concepts (full copy extracted; each has an animated primitive diagram):
 Porting rule: rewrite in our voice EN/ZH, redraw as our own SVG/lib.illus diagrams (metaphors are ideas — fine; no verbatim copy).
 DNR guard: charm narratives are a KILLED signal family for *authority* on our side — educational treatment must stay display/educational tier, no signal claims.
 
+## 7.5 /api-access — their developer API product
+
+Ultra-only ($399/mo): 7,500 credits/mo included, $0.05/call after. Terms: internal use only, no redistribution/public display.
+- `GET /api/v1/strikes` (1 credit) — one metric × one expiry × one participant: `{metric:"gex", expiry:"0dte", customer_type:"mm", total, data:[[strike, gex, call_gex, put_gex, call_mid, put_mid]], fields}`; metrics GEX/DEX/VEX/CEX; participants MM/Firm/BD/Cust/PCust; per-minute historical 04:00–16:15 ET, any past date.
+- `GET /api/v1/timeline` (1 credit) — full-day intraday series `[{ts,gex,call_gex,put_gex,dex}]`.
+Wave-2+ note for us: a credit-metered read API over our R2 snapshot store is nearly free to add once the store exists (mint from macro-api entitlements), and is a clean Ultra-tier analog for Terminal Pro.
+
 ## 8. UI patterns worth stealing (catalog)
 
 1. Global replay bar time-traveling the entire workspace (frames = snapshot stamps; Space/Home/End; speeds; LIVE badge at head).
