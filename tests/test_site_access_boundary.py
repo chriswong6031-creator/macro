@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import shlex
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -21,12 +22,16 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
-# into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
-# a snapshot, so a fresh checkout may hold none of them. site/research/ is the
-# render-lane-generated research-vault SEO plane (#3392) — same class: built,
-# never committed. The policy line is still the boundary of record — only the
+# into /var/lib/macro-live/public — an OUT-OF-TREE serving root — and
+# scripts/live_breadth_poller.py force-adds a snapshot, so a fresh checkout may
+# hold none of them. The policy line is still the boundary of record — only the
 # on-disk existence check is exempt.
-RUNTIME_ARTIFACT_PREFIXES = ("/live/", "/research/")
+#
+# /research/ is deliberately NOT here. It is render-generated, but Caddy serves
+# /opt/macro/site.served, which macro-update rsyncs from the COMMITTED work-tree,
+# so an uncommitted research page is never served. It is a committed SEO estate
+# like /stocks/ and /learn/, and its existence is genuinely assertable.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
 
 
 def _caddy_public_exclusions() -> set[str]:
@@ -64,6 +69,31 @@ def test_runtime_artifact_exemption_stays_honest():
     ignored = {line.strip() for line in (ROOT / ".gitignore").read_text().splitlines()}
     for prefix in RUNTIME_ARTIFACT_PREFIXES:
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
+
+
+def test_committed_public_estates_are_not_gitignored():
+    """A public prefix served from the committed tree must stay committable.
+
+    Caddy's root is /opt/macro/site.served, which macro-update rsyncs from the
+    committed work-tree, and render.yml ships pages with `git add site/` — which
+    skips ignored NEW files. So ignoring a served estate silently freezes it:
+    the render lane keeps generating pages that never reach main, while the
+    tracked index page keeps updating and linking to them. That is exactly what
+    happened to site/research/ (#3507 classed it with site/live/, whose serving
+    root is out-of-tree at /var/lib/macro-live/public and so genuinely never
+    needs committing).
+    """
+    for prefix in POLICY["public"]["prefixes"]:
+        if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
+            continue
+        probe = f"site{prefix}_ignore_probe.html"
+        ignored = subprocess.run(
+            ["git", "check-ignore", "-q", probe], cwd=ROOT
+        ).returncode == 0
+        assert not ignored, (
+            f"public prefix {prefix} is gitignored — the render lane cannot commit "
+            f"new pages there, so they will never be served"
+        )
 
 
 def test_generated_data_is_not_accidentally_public():

@@ -50,9 +50,15 @@ site/feeds/
 # live intraday overlay — runtime artifact written by scripts/build_live_overlay (intraday
 # cron) and by the offline test path; never committed (the cron force-pushes / re-emits it).
 site/live/
-# research-vault SEO landing pages — render-lane-generated (#3392/#3487), one page per
-# report; a fresh checkout holds none, so the plane is a runtime artifact like site/live/.
-site/research/
+# NOTE: site/research/ is deliberately NOT ignored. It is render-lane-generated
+# (#3392/#3487) but it is a COMMITTED public SEO estate like site/stocks/,
+# site/learn/, site/blog/ and site/tools/ — Caddy serves /opt/macro/site.served,
+# which macro-update rsyncs from the committed work-tree, so a page that is not
+# committed is never served. It is NOT the site/live/ class: that plane has an
+# out-of-tree serving root (/var/lib/macro-live/public) and genuinely never needs
+# committing. Ignoring site/research/ silently froze the estate — render.yml
+# commits with `git add site/`, which skips ignored NEW pages while the tracked
+# research/index.html kept updating and linking to them (#3507 -> #3501 collision).
 # Polygon hourly bars for the 4H chart timeframe — regenerable + daily-changing, so
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the
 # force-tracked, shipped artifact.
