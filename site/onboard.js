@@ -1501,6 +1501,56 @@
     return "";
   }
   function loginDest() { return retTarget() || (_pfx() + "start.html"); }
+  // ── Silent wall-resume (sticky login) ───────────────────────────────────────
+  // The registration wall (app/regwall.py) verifies the ~1-hour ACCESS token
+  // server-side, but the ~390-day session cookie also carries a REFRESH token the
+  // wall cannot use. A returning signed-in visitor therefore bounces here with
+  // ?signin=1&ret=… holding a perfectly renewable session. Prompting them to log
+  // in again is wrong: getSession() transparently refreshes the expired session
+  // (rewriting the rotated cookie via theme.js COOKIE_STORAGE), after which the
+  // wall passes. So: cookie present → refresh silently → return to the gated
+  // page; open the sheet ONLY when the refresh truly fails (revoked/dead session).
+  // Loop guard: if the wall bounced us back to the SAME destination within 45s
+  // (e.g. auth upstream down → wall fails closed no matter how fresh the token),
+  // stop trampolining and show the sheet instead of ping-ponging forever.
+  var WALL_HOP_KEY = "obmWallHop";
+  function wallHopLooping(dest) {
+    try {
+      var h = JSON.parse(sessionStorage.getItem(WALL_HOP_KEY) || "null");
+      return !!h && h.d === dest && (Date.now() - h.t) < 45000;
+    } catch (e) { return false; }
+  }
+  function markWallHop(dest) {
+    try { sessionStorage.setItem(WALL_HOP_KEY, JSON.stringify({ d: dest, t: Date.now() })); } catch (e) {}
+  }
+  function silentWallResume() {
+    var dest = loginDest();
+    var settled = false;
+    // Fallback: slow/blocked auth upstream (the GFW /sb proxy path can take
+    // ~15s) — after 8s stop waiting and show the sheet so the visitor is never
+    // stranded on a bare landing.
+    var fallback = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      openSheet("signin", {}); stripOnboardParams();
+    }, 8000);
+    getAccessToken().then(function (token) {
+      if (settled) {
+        // Late refresh success while the sheet sits untouched → still honor it.
+        if (token && S.open && S.mode === "signin" && !S.email && !S.password) {
+          markWallHop(dest); location.replace(dest);
+        }
+        return;
+      }
+      settled = true; clearTimeout(fallback);
+      if (token) { markWallHop(dest); location.replace(dest); }
+      else { openSheet("signin", {}); stripOnboardParams(); }
+    }).catch(function () {
+      if (settled) return;
+      settled = true; clearTimeout(fallback);
+      openSheet("signin", {}); stripOnboardParams();
+    });
+  }
   function closeSheet() {
     if (!el.scrim) return;
     S.open = false;
@@ -1771,6 +1821,13 @@
       if (intent.resume && resumeStash) {
         if (resumeStash.pendingUpgrade) { stripOnboardParams(); openSheet("upgrade", resumeStash.upgradeOpts || {}); return; }
         if (resumeStash.mode === "signin") { stripOnboardParams(); location.href = loginDest(); return; }
+      }
+      // STICKY LOGIN: a regwall bounce (?signin=1[&ret=…]) with a session cookie
+      // present is a returning SIGNED-IN visitor whose access token expired —
+      // refresh silently and go back; never prompt for credentials they have.
+      if (intent.mode === "signin" && !intent.resume && hasSessionCookie() && !wallHopLooping(loginDest())) {
+        silentWallResume();
+        return;
       }
       openSheet(intent.mode, { plan: intent.plan || S.plan, period: intent.period || S.period, resume: intent.resume });
       stripOnboardParams();
