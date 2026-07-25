@@ -249,6 +249,32 @@ def test_buffer_publish_scheduled_sets_dueat(monkeypatch):
     assert inp["dueAt"] == "2026-07-20T15:00:00Z"
 
 
+def test_buffer_publish_past_slot_bumps_dueat_into_future(monkeypatch):
+    """Regression: a DUE item's slot time is in the PAST by post time. Buffer
+    rejects a past dueAt ("must be in the future"), which failed EVERY post — the
+    real reason the account never published. The past slot must be bumped ahead
+    of now, not sent verbatim."""
+    from engine.marketing.social_publisher import BufferPublisher
+
+    pub = BufferPublisher(token="tkn", organization_id="org-1")
+    captured: dict = {}
+
+    def fake_transport(payload):
+        captured["payload"] = payload
+        return {"data": {"createPost": {
+            "__typename": "PostActionSuccess", "post": {"id": "buf-post-8"}}}}
+
+    monkeypatch.setattr(pub, "_transport", fake_transport)
+    # slot two hours BEFORE _FIXED_NOW (2026-07-19 12:00) — the failing case.
+    receipt = pub.publish(text="hi", channel_id="c1",
+                          scheduled_at="2026-07-19T10:00:00Z", now=_FIXED_NOW)
+    assert receipt.ok is True
+    inp = captured["payload"]["variables"]["input"]
+    assert inp["mode"] == "customScheduled"
+    assert inp["dueAt"] > "2026-07-19T12:00:00Z"   # strictly after now → Buffer accepts
+    assert inp["dueAt"] != "2026-07-19T10:00:00Z"  # not the past slot
+
+
 def test_buffer_publish_appends_link_to_text(monkeypatch):
     from engine.marketing.social_publisher import BufferPublisher
 
