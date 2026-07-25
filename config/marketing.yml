@@ -175,6 +175,15 @@ publish:
   # false to return to fully-manual approval in the admin Outbox.
   auto_approve: true       # was false; flagship posts autonomously (tape-gated)
 
+  # Global post-time anti-spam floor (cadence masterplan Phase 2): no two posts
+  # go out within this many minutes of each other, across ALL accounts — enforced
+  # in scripts/marketing_publisher.py (_within_floor), seeded from the last posted
+  # ledger row so it holds across cron runs. A single run emits at most one post
+  # per window; the rest defer to the next slot, so an accumulated backlog drains
+  # gradually instead of bursting. Distinct from the sentinel's per-account
+  # PLAN-time min_minutes_between_posts. 0 = disabled.
+  min_minutes_between_any_posts: 10
+
   # Chart-image attach (D02 image pipeline). When true, content_studio renders a
   # PNG variant of each single-name signal chart at plan-build time, writes it to
   # data/marketing/outbox/media/<as_of>/<chart_id>.png, and (if R2 creds exist on

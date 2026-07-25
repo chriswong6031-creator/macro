@@ -47,7 +47,8 @@ def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day
 
 def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
                        links_allowed: bool = True, auto_approve: bool = False,
-                       cap: int = 2, auto_approve_kinds: str | None = None) -> None:
+                       cap: int = 2, auto_approve_kinds: str | None = None,
+                       floor_min: int = 0) -> None:
     """Write a minimal config/marketing.yml with publish + sentinel blocks.
 
     auto_approve_kinds: when given (e.g. "[mover, theme_list]"), adds the scoped
@@ -64,6 +65,7 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         "  backend: buffer\n"
         "  require_approval: true\n"
         f"  auto_approve: {'true' if auto_approve else 'false'}\n"
+        f"  min_minutes_between_any_posts: {floor_min}\n"
         + scoped +
         "  channels:\n"
         f"    flagship: \"{channel}\"\n"
@@ -561,3 +563,87 @@ def test_scoped_junk_config_values_ignored(monkeypatch, tmp_path):
     assert rc == 0
     # Junk was dropped, "mover" survived → the item auto-approves and posts.
     assert current_statuses(tmp_path)[qid] == "posted"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Global min-spacing floor (publish.min_minutes_between_any_posts) — the
+#    Phase-2 post-time anti-spam guard: at most one post per window, any account.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _seed_posted_at(tmp_path: Path, when: datetime, *, text: str) -> str:
+    """Seed one item already advanced to 'posted' with a controlled ledger `at`
+    (the floor reads the last posted row, so it holds across cron runs)."""
+    from engine.marketing.outbox import make_item, enqueue, transition
+    it = make_item(account="flagship", kind="signal", text=text, as_of=_AS_OF,
+                   provenance="content_studio", now=_FIXED_NOW)
+    enqueue(it, root=tmp_path, max_per_account_day=99)
+    for to in ("approved", "posting"):
+        transition(it["id"], to, actor="t", root=tmp_path, now=when)
+    transition(it["id"], "posted", actor="t", root=tmp_path, now=when,
+               receipt={"backend": "buffer", "external_id": "prev", "external_url": None})
+    return it["id"]
+
+
+def test_floor_posts_one_per_run(monkeypatch, tmp_path):
+    """Two approved+due items + a 10m floor → exactly ONE posts this run; the
+    other stays approved and retries next slot (an accumulated backlog can't
+    burst out at once)."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    ids = [
+        _seed_queued_item(tmp_path, text="First floor post here."),
+        _seed_queued_item(tmp_path, text="Second floor post here."),
+    ]
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert len([i for i in ids if statuses[i] == "posted"]) == 1, statuses
+    assert len([i for i in ids if statuses[i] == "approved"]) == 1, statuses
+    assert len(fake.calls) == 1
+
+
+def test_floor_disabled_posts_all(monkeypatch, tmp_path):
+    """floor_min=0 (the default) disables the floor — both items post in one run."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
+    ids = [
+        _seed_queued_item(tmp_path, text="Post one text here."),
+        _seed_queued_item(tmp_path, text="Post two text here."),
+    ]
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert all(statuses[i] == "posted" for i in ids), statuses
+    assert len(fake.calls) == 2
+
+
+def test_floor_blocks_when_last_post_recent(monkeypatch, tmp_path):
+    """A prior post 5m ago (read from the ledger — i.e. an earlier cron run)
+    blocks a fresh due item under a 10m floor: it auto-approves but does NOT post."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    # Run's now is 2026-07-19T13:00Z; seed a post 5 minutes earlier.
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 55, tzinfo=timezone.utc),
+                    text="Earlier post.")
+    fresh = _seed_queued_item(tmp_path, text="Fresh post now.")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    assert current_statuses(tmp_path)[fresh] == "approved"   # floored → deferred
+    assert fake.calls == []
+
+
+def test_floor_allows_after_window(monkeypatch, tmp_path):
+    """A prior post 15m ago (> the 10m floor) does not block — the fresh item posts."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 45, tzinfo=timezone.utc),
+                    text="Older post.")
+    fresh = _seed_queued_item(tmp_path, text="Fresh post now.")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    assert current_statuses(tmp_path)[fresh] == "posted"
+    assert len(fake.calls) == 1

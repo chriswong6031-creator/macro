@@ -43,7 +43,7 @@ import hashlib
 import logging
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 log = logging.getLogger("marketing_publisher")
@@ -218,6 +218,53 @@ def _at_cap(count: int, cap: int) -> bool:
     another — the cap is a FUNCTIONAL gate on posting, not just a display value.
     """
     return cap >= 0 and count >= cap
+
+
+def _floor_minutes_cfg(pub_cfg: dict) -> int:
+    """publish.min_minutes_between_any_posts — the GLOBAL post-time anti-spam
+    floor: no two posts go out within N minutes of each other, across ALL
+    accounts (distinct from the sentinel's per-account *plan-time* cadence
+    min_minutes_between_posts). 0 / absent / non-positive / unparseable → 0 =
+    disabled (fully backward-compatible)."""
+    raw = pub_cfg.get("min_minutes_between_any_posts", 0)
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return v if v > 0 else 0
+
+
+def _last_global_post_at(root) -> "datetime | None":
+    """The most recent 'posted' transition time across ALL accounts (the floor is
+    account-agnostic), or None if nothing has ever posted. Seeds the floor across
+    cron runs. Fail-soft: malformed rows / timestamps are skipped, never raises."""
+    from engine.marketing.outbox import read_ledger  # noqa: PLC0415
+    latest: "datetime | None" = None
+    for row in read_ledger(root):
+        if row.get("to") != "posted":
+            continue
+        raw = str(row.get("at") or "").strip()
+        if not raw:
+            continue
+        try:
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        if latest is None or dt > latest:
+            latest = dt
+    return latest
+
+
+def _within_floor(last_post_at: "datetime | None", now: datetime, floor_min: int) -> bool:
+    """True when posting *now* would violate the global min-spacing floor — the
+    last post was less than floor_min minutes ago. No prior post or a non-positive
+    floor → never blocks. Callers advance ``last_post_at`` in memory after each
+    post so a single run emits at most one item per window."""
+    if last_post_at is None or floor_min <= 0:
+        return False
+    return (now - last_post_at) < timedelta(minutes=floor_min)
 
 
 def _select_approved_due(state: dict, statuses: dict, items_by_id: dict,
@@ -554,7 +601,17 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
-    tape_quarantined = tape_skipped = 0
+    tape_quarantined = tape_skipped = skipped_floor = 0
+
+    # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
+    # Post-time anti-spam guard: at most one post per floor-minute window across
+    # ALL accounts, so an accumulated backlog (or a breaking item) can never
+    # burst out at once. Seeded from the last posted row in the ledger so it
+    # holds across cron runs, then advanced in-memory after each post so ONE run
+    # emits at most one item per window (the rest defer to the next slot). 0 =
+    # disabled. This is the Phase-2 floor from the cadence masterplan.
+    floor_min = _floor_minutes_cfg(pub_cfg)
+    last_post_at = _last_global_post_at(root) if floor_min else None
 
     # ── Live tape gate context: load once per run (fail-soft) ────────────────
     # The plan was written off yesterday's EOD; the tape has been open for
@@ -642,6 +699,16 @@ def main(argv: list[str] | None = None) -> int:
                                        root=root, note="expired_no_channel")
             continue
 
+        # -- global min-spacing floor: at most one post per window (any acct) --
+        # Checked AFTER the tape/cap/channel gates so a held item never consumes
+        # the window. A blocked item stays approved and retries the next slot.
+        if _within_floor(last_post_at, now, floor_min):
+            _ago = int((now - last_post_at).total_seconds() // 60)
+            log.info("item %s (%s) deferred — a post went out %dm ago (< %dm "
+                     "global floor); retries next slot", iid, account, _ago, floor_min)
+            skipped_floor += 1
+            continue
+
         # Public chart-image URLs (PNG on X) when publish.media_enabled + a plan-
         # build-time R2 upload produced one; else [] → text-only (graceful).
         media_paths = _media_paths_for(it, pub_cfg)
@@ -654,6 +721,7 @@ def main(argv: list[str] | None = None) -> int:
                 it.get("scheduled_at"), text.replace("\n", " ")[:200],
             )
             would_post += 1
+            last_post_at = now   # advance the floor so a dry-run mirrors live pacing
             continue
 
         # -- LIVE: approved → posting BEFORE the network call ----------------
@@ -694,6 +762,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             posted_today[account] = posted_today.get(account, 0) + 1
             posted += 1
+            last_post_at = now   # advance the global floor: next item this run defers
             log.info("item %s POSTED via %s id=%s", iid, receipt.backend, receipt.external_id)
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
@@ -706,10 +775,10 @@ def main(argv: list[str] | None = None) -> int:
     # ── Summary + activity row ──────────────────────────────────────────────
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
-        "tape_quarantined=%d tape_skipped=%d "
+        "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "skipped_cap=%d skipped_no_channel=%d stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
-        tape_quarantined, tape_skipped,
+        tape_quarantined, tape_skipped, skipped_floor,
         skipped_cap, skipped_channel, len(stuck_posting), len(auto_approved),
     )
     try:
@@ -724,6 +793,7 @@ def main(argv: list[str] | None = None) -> int:
             "would_post": would_post,
             "tape_quarantined": tape_quarantined,
             "tape_skipped": tape_skipped,
+            "skipped_floor": skipped_floor,
             "skipped_cap": skipped_cap,
             "skipped_no_channel": skipped_channel,
             "stuck_posting": len(stuck_posting),
@@ -831,8 +901,10 @@ def dry_run_report(root=None, *, account: str | None = None,
 
         would_post: list[dict] = []
         quarantine: list[dict] = []
-        skipped_cap = skipped_channel = 0
+        skipped_cap = skipped_channel = skipped_floor = 0
         budget = dict(posted_today)
+        floor_min = _floor_minutes_cfg(pub_cfg)
+        last_post_at = _last_global_post_at(r) if floor_min else None
         for it in approved_due:
             iid = it["id"]
             acct = it.get("account", "")
@@ -849,6 +921,9 @@ def dry_run_report(root=None, *, account: str | None = None,
             if not channel_id:
                 skipped_channel += 1
                 continue
+            if _within_floor(last_post_at, now, floor_min):
+                skipped_floor += 1
+                continue
             media = [m.get("path") for m in (it.get("media") or []) if m.get("path")]
             would_post.append({
                 "id": iid, "account": acct, "channel": channel_id,
@@ -857,6 +932,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "preview": text.replace("\n", " ")[:200],
             })
             budget[acct] = budget.get(acct, 0) + 1
+            last_post_at = now   # advance the floor so the preview mirrors live pacing
 
         return {
             "ok": True,
@@ -872,6 +948,7 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "quarantine": len(quarantine),
                 "skipped_cap": skipped_cap,
                 "skipped_no_channel": skipped_channel,
+                "skipped_floor": skipped_floor,
                 "stuck_posting": len(stuck),
                 "would_auto_approve": len(would_auto),
             },
