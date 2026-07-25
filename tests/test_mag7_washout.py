@@ -75,6 +75,25 @@ def test_stoch_rsi_bounds_and_cross_up():
     assert bool(up.fillna(False).any())
 
 
+def test_stoch_rsi_flat_rsi_window_is_nan_not_crash():
+    """A 14-bar flat-RSI stretch (hi==lo) must yield NaN, not raise: the old
+    .replace(0, pd.NA).astype(float) crashed with TypeError on NAType — hit on
+    real tapes at panel scale (PTT-W1 reviewer blocker, 2026-07-25). Vector:
+    moves establish avg gain/loss, then a long flat stretch — Wilder smoothing
+    decays both proportionally, so RSI is exactly constant (defined, non-NaN)
+    and the 14-bar stoch window sees hi==lo."""
+    n = 240
+    vals = [100.0 + (i % 2) for i in range(40)] + [100.5] * (n - 40)
+    px = pd.Series(vals, index=_days(n))
+    k, d = stoch_rsi(px)                       # old form: TypeError here
+    assert len(k) == n and str(k.dtype) == "float64"
+    v = k.dropna()
+    assert bool(((v >= -1e-9) & (v <= 100 + 1e-9)).all())
+    # the exact-flat windows (hi==lo, mid-series before float dust sets in)
+    # must come out NaN rather than crash or fabricate a level
+    assert bool(k.iloc[54:210].isna().any())
+
+
 def test_rsi_macd_deep_negative_in_crash():
     """The gate's 3D trigger arm requires line < 0 during washouts — that sign
     must be robustly negative on a crash tail. (No positive-side assertion:
