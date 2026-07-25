@@ -46,6 +46,9 @@ public:
     - /tools/
     - /learn/
     - /blog/
+    # Per-report SEO landing pages + crawl hub (#3392/#3487): public teaser with
+    # the in-page Pro gate; full summaries + PDFs stay behind /api auth.
+    - /research/
     - /fonts/
 
 # These remain account-gated, but do not require a paid entitlement when the
