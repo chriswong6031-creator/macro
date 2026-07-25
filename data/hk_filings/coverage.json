@@ -1,14 +1,14 @@
 {
-  "fetched_at": "2026-07-24T08:55:43.431013+00:00",
-  "n_events": 1130,
+  "fetched_at": "2026-07-25T08:50:39.517574+00:00",
+  "n_events": 1138,
   "earliest": "2026-04-13",
-  "latest": "2026-07-23",
-  "n_new": 6,
+  "latest": "2026-07-24",
+  "n_new": 8,
   "by_category": {
     "final_results": 536,
-    "general_mandate": 453,
-    "shareholder": 73,
-    "interim_results": 52,
-    "buyback": 16
+    "general_mandate": 457,
+    "shareholder": 75,
+    "interim_results": 53,
+    "buyback": 17
   }
 }
