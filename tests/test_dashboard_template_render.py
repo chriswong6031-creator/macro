@@ -476,3 +476,76 @@ def test_no_triggers_empty_state_preserved():
     html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
     assert "No fresh buy triggers today" in html
     assert "already on the board above" not in html
+
+
+# --------------------------------------------------------------------------- #
+# SBX compact breadth scoreboard (Phase 2, LIVE_TAPE_SCOREBOARD_MASTERPLAN §4:
+# 同花顺-style adv/dec glance bar + tiles; Size & Style removed by operator
+# ruling D5; deep tables demoted into the #sbx-dlg dialog).
+# --------------------------------------------------------------------------- #
+
+def _breadth_vm() -> dict:
+    vm = _base_vm()
+    tier = {
+        "key": "large", "label": "Large caps", "univ": "S&P 500", "n": 500,
+        "adv": 180, "dec": 300, "adv_pct": 37.5, "pa50": 42.0, "pa200": 55.0,
+        "nh": 8, "nl": 20, "net_nh": -12,
+    }
+    vm["breadth_panel"] = {
+        "asof": "2026-07-24",
+        "tiers": [tier],
+        "comp": {"n": 1500, "adv": 412, "dec": 1044, "adv_pct": 28.3,
+                 "pa50": 38.0, "pa200": 52.0, "net_nh": -37,
+                 "label": "thin", "verdict": "Few names hold their trend", "tone": "neg"},
+    }
+    return vm
+
+
+def test_sbx_glance_layer_renders_and_size_style_is_gone():
+    """The compact layer renders (counts, bar, tiles, dialog) and the Size &
+    Style section is fully removed from the dashboard (data stays upstream).
+    The three alert deep-link anchors must survive the rebuild."""
+    html = _env().get_template("dashboard.html.j2").render(**_breadth_vm(), mode="stocks")
+    assert 'id="sbx-adv"' in html and ">412<" in html
+    assert 'id="sbx-dec"' in html and ">1,044<" in html          # thousands-formatted
+    assert 'id="sbx-bar-a"' in html and 'id="sbx-bar-d"' in html
+    assert 'id="sbx-v50"' in html and ">38%<" in html
+    assert 'id="sbx-nnh"' in html and ">-37<" in html.replace("−", "-")
+    assert 'id="sbx-dlg"' in html                                 # demoted full board
+    assert ">Large caps</b>" in html                              # tier table lives in dialog
+    assert "Size &amp; style" not in html and "规模与风格" not in html
+    for anchor in ('id="size-style"', 'id="breadth"', 'id="advanced-breadth"'):
+        assert anchor in html, f"alert anchor {anchor} lost in rebuild"
+
+
+def test_sbx_momentum_tile_states():
+    """Momentum word derives from adv_breadth.mcc.summ_rising alone (mcc.band
+    is already a translated object — never branch on it); absent internals
+    degrade to an em-dash tile, never a crash."""
+    env = _env()
+    vm = _breadth_vm()
+    html = env.get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert ">—<" in html                                          # adv_breadth=None → dash
+    vm["adv_breadth"] = None  # explicit None, same path
+    vm2 = _breadth_vm()
+    # producer-shaped minimum: headline + footer keys are accessed UNGUARDED in
+    # the dialog internals section; the optional sub-blocks (thrust/hl/div/par)
+    # each guard themselves and may be absent
+    vm2["adv_breadth"] = {
+        "headline": {"tone": "muted", "label": "neutral", "verdict": "internals mixed"},
+        "mcc": {"osc": "+12", "band": "positive", "svg": "",
+                "summ_rising": True, "summ_chg20": "+120"},
+        "asof": "2026-07-24", "deep_from": "1962",
+    }
+    html2 = env.get_template("dashboard.html.j2").render(**vm2, mode="stocks")
+    assert ">Building<" in html2 and ">增强<" in html2
+
+
+def test_sbx_fail_soft_without_breadth_panel():
+    """breadth_panel=None (degraded nightly) renders the honest unavailable
+    line — no bar, no crash, and the panel itself still exists."""
+    vm = _base_vm()   # breadth_panel=None in the base fixture
+    html = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
+    assert 'id="equity-scoreboard"' in html
+    assert "Breadth data unavailable" in html
+    assert 'id="sbx-adv"' not in html

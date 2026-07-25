@@ -15034,24 +15034,107 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   <!-- ===================== US EQUITY SCOREBOARD (size + breadth + internals) ===================== -->
   <div class="panel span12" id="equity-scoreboard">
     <span id="size-style"></span><span id="breadth"></span><span id="advanced-breadth"></span>
-    <h2>{{ t('US equity scoreboard — size, breadth & internals', '美股计分板 — 规模、广度与内部结构') }}
-      {{ help("Three reads of how broad the US equity advance is, in one board. (1) SIZE & STYLE — small caps (Russell 2000) and mid caps measured against the large-cap S&P 500 (rising = participation broadening/risk-on, falling = a narrow mega-cap-led tape) plus the growth-vs-value style rotation; direction over the last 20 trading days, size ratios coloured by risk-on direction, growth/value left neutral. (2) MARKET BREADTH — across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs; the % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible. (3) MARKET INTERNALS — the classic desk internals beyond the %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history; computed on the DEEP S&P 500 breadth series (1962-). Internals are SECOND-DERIVATIVE, display-only reads — coincident with price by construction, they explain the tape, they do not forecast it (survivorship caveat: the deep series is rebuilt from today's members, so percentile context is over the mature-universe window only).", "把美股上涨的广度用三种读数汇于一板。(1) 规模与风格 —— 小盘（罗素2000）与中盘对大盘标普500衡量（上行 = 参与度扩散／风险偏好，下行 = 狭窄、由超大盘主导的盘面），并含成长对价值的风格轮动；看过去20个交易日的方向，规模比率按风险偏好方向着色，成长／价值保持中性。(2) 市场广度 —— 覆盖整个标普综合1500（大盘=标普500、中盘=标普400、小盘=标普600）：多少股票上涨、多少守在其50日与200日均线之上，以及净创52周新高；高于50日线的占比也进入周期模型的增长轴，与模型读取的是同一广度，只是更直观。(3) 市场内部结构 —— 超越「高于均线占比」快照的经典桌面内部指标：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位；基于标普500深度广度序列（1962年起）计算。内部结构是二阶、仅作展示的读数 —— 与价格同步，用于解释盘面而非预测（幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间）。") }}
+    <h2>{{ t('Market breadth — S&P 1500', '市场广度 — 标普1500') }}
+      {{ help("How broad is the tape. Advancers vs decliners, % of the S&P 1500 above their 50- and 200-day lines, and net new 52-week highs — refreshed intraday from a ~15-min-delayed feed when US markets are open, falling back to the last close otherwise (the stamp always says which you are seeing). The % above the 50-day also feeds the regime model's growth axis. The Momentum tile and the Full board (per-tier tables, McClellan internals, history) update nightly. Internals are display-only, second-derivative reads: they explain the tape, they do not forecast it.", "盘面广度一览：上涨/下跌家数、标普1500中高于50日与200日均线的占比、净新高 — 美股开盘时按约15分钟延迟数据刷新，否则回退至上一收盘（时间戳始终注明当前口径）。高于50日线的占比同时输入周期模型的增长轴。动量与完整看板（分层级表格、麦克莱伦内部结构、历史）每夜更新。内部结构仅作展示：解释盘面，不预测盘面。") }}
     </h2>
-
-    <div class="sb-section-lbl">{{ t('Size & style', '规模与风格') }}</div>
-    <table>
-      <tr><th class="l">{{ t('lens', '维度') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
-      {% for r in size_style %}
-      <tr>
-        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
-        <td class="{{ r.tone }}">{{ "%+.2f" | format(r.chg) }}%</td>
-        <td class="l muted">{{ r.verdict }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-
+    {# ⚡ SBX compact glance layer (Phase 2, research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md §4;
+       operator 2026-07-24, 同花顺 reference). Size & Style table REMOVED by ruling (D5) —
+       anchors above stay for alert deep-links. Deep tables + internals DEMOTED into the
+       #sbx-dlg dialog below. live.js patches ids sbx-* from live/breadth.json when fresh;
+       baked numbers + "last close" stamp otherwise. Stance words mirror _breadth_read
+       bands (scripts/build_site.py) — keep the two in lockstep. #}
+    <style>
+    .sbx-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+    .sbx-stamp{margin-left:auto;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .sbx-stamp .sbx-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block}
+    .sbx-stamp.live .sbx-dot{background:var(--warn)}
+    .sbx-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+    @media(max-width:900px){.sbx-grid{grid-template-columns:1fr}}
+    .sbx-bar-card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px 12px;display:flex;flex-direction:column;cursor:pointer;min-width:0}
+    .sbx-counts{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px}
+    .sbx-cnt{display:flex;align-items:baseline;gap:7px;min-width:0}
+    @media(max-width:480px){.sbx-cnt{flex-direction:column;gap:3px}.sbx-cnt.dec{align-items:flex-end}}
+    .sbx-cnt b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+    .sbx-cnt .w{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    .sbx-cnt.adv b{color:var(--up)}.sbx-cnt.dec b{color:var(--down)}
+    .sbx-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+    .sbx-bar i{display:block;height:100%}
+    .sbx-bar .a{background:var(--up)}.sbx-bar .u{background:var(--line)}.sbx-bar .d{background:var(--down)}
+    .sbx-stance{margin:10px 1px 0;font-size:12.5px;line-height:1.5}
+    .sbx-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media(max-width:900px){.sbx-tiles{grid-template-columns:repeat(2,1fr)}}
+    .sbx-tile{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px 10px;cursor:pointer;min-width:0}
+    .sbx-tile:hover,.sbx-bar-card:hover{border-color:color-mix(in srgb,var(--link) 40%,var(--line))}
+    .sbx-tl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sbx-tv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;margin-bottom:7px}
+    .sbx-tv.pos{color:var(--up)}.sbx-tv.neg{color:var(--down)}
+    .sbx-tw{font-size:11px;color:var(--muted);line-height:1.35}
+    .sbx-wl{position:relative;height:4px;border-radius:2px;background:var(--line);margin:0 0 7px}
+    .sbx-wl i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--up)}
+    .sbx-wl.low i{background:var(--down)}
+    .sbx-wl .tick{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.6}
+    .sbx-more{margin-top:12px;text-align:right;font-size:11.5px}
+    .sbx-more button{background:none;border:none;color:var(--link);font:inherit;cursor:pointer;padding:0}
+    .sbx-dlg{display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.45);padding:4vh 16px}
+    .sbx-dlg.open{display:flex}
+    .sbx-dlg-panel{margin:auto;width:min(880px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 22px 20px;position:relative}
+    .sbx-dlg-x{position:sticky;top:0;float:right;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:14px;line-height:1;padding:5px 9px;cursor:pointer}
+    </style>
+    {% if breadth_panel %}{% set _c = breadth_panel.comp %}
+    {% set _n = _c.n or 0 %}{% set _adv = _c.adv or 0 %}{% set _dec = _c.dec or 0 %}
+    {% set _unch = (_n - _adv - _dec) if (_n - _adv - _dec) > 0 else 0 %}
+    {% set _den = (_adv + _dec + _unch) or 1 %}
+    <div class="sbx-hd">
+      <span class="muted" style="font-size:11.5px">{{ t('how many stocks are actually participating', '有多少股票真正在参与行情') }}</span>
+      <span class="sbx-stamp" id="sbx-stamp"><span class="sbx-dot"></span><span class="l-en">last close · {{ breadth_panel.asof }}</span><span class="l-zh">截至收盘 · {{ breadth_panel.asof }}</span></span>
+    </div>
+    <div class="sbx-grid">
+      <div class="sbx-bar-card" role="button" tabindex="0" aria-haspopup="dialog" onclick="sbxDlg(1)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sbxDlg(1);}">
+        <div class="sbx-counts">
+          <span class="sbx-cnt adv"><b id="sbx-adv">{{ '{:,}'.format(_adv) }}</b><span class="w">{{ t('advancing', '上涨') }}</span></span>
+          <span class="sbx-cnt dec"><span class="w">{{ t('declining', '下跌') }}</span><b id="sbx-dec">{{ '{:,}'.format(_dec) }}</b></span>
+        </div>
+        <div class="sbx-bar" aria-hidden="true"><i class="a" id="sbx-bar-a" style="width:{{ (100 * _adv / _den) | round(1) }}%"></i><i class="u" id="sbx-bar-u" style="width:{{ (100 * _unch / _den) | round(1) }}%"></i><i class="d" id="sbx-bar-d" style="width:{{ (100 * _dec / _den) | round(1) }}%"></i></div>
+        <p class="sbx-stance" id="sbx-stance">{{ t('Participation looks', '参与度看起来') }} <b class="{{ _c.tone }}" id="sbx-stance-l">{{ _c.label }}</b> — <span class="muted" id="sbx-stance-v">{{ _c.verdict }}</span></p>
+      </div>
+      <div>
+        <div class="sbx-tiles">
+          <div class="sbx-tile" role="button" tabindex="0" onclick="sbxDlg(1)" data-tip-en="Share of the S&P 1500 trading above their own 50-day moving average — the regime model reads this same number on its growth axis" data-tip-zh="标普1500中高于自身50日均线的比例 — 周期模型的增长轴读取同一数字">
+            <div class="sbx-tl">{{ t('Above 50-day', '高于50日线') }}</div>
+            <div class="sbx-tv" id="sbx-v50">{{ '%.0f' | format(_c.pa50) }}%</div>
+            <div class="sbx-wl{{ ' low' if _c.pa50 < 50 else '' }}" id="sbx-wl50"><i style="width:{{ _c.pa50 | round(0) }}%"></i><span class="tick"></span></div>
+            <div class="sbx-tw" id="sbx-w50">{% if _c.pa50 >= 60 %}{{ t('healthy participation', '参与度健康') }}{% elif _c.pa50 <= 40 %}{{ t('below half — thin tape', '不足半数 — 盘面稀薄') }}{% else %}{{ t('middling', '中等水平') }}{% endif %}</div>
+          </div>
+          <div class="sbx-tile" role="button" tabindex="0" onclick="sbxDlg(1)" data-tip-en="Share above their 200-day average — the long-term trend floor" data-tip-zh="高于200日均线的比例 — 长期趋势底线">
+            <div class="sbx-tl">{{ t('Above 200-day', '高于200日线') }}</div>
+            <div class="sbx-tv" id="sbx-v200">{% if _c.pa200 is not none %}{{ '%.0f' | format(_c.pa200) }}%{% else %}—{% endif %}</div>
+            <div class="sbx-wl{{ ' low' if (_c.pa200 or 0) < 50 else '' }}" id="sbx-wl200"><i style="width:{{ (_c.pa200 or 0) | round(0) }}%"></i><span class="tick"></span></div>
+            <div class="sbx-tw" id="sbx-w200">{% if (_c.pa200 or 0) >= 50 %}{{ t('long-term trend intact', '长期趋势完好') }}{% else %}{{ t('long-term trend damaged', '长期趋势受损') }}{% endif %}</div>
+          </div>
+          <div class="sbx-tile" role="button" tabindex="0" onclick="sbxDlg(1)" data-tip-en="New 52-week highs minus new 52-week lows today, across the 1,500" data-tip-zh="今日创52周新高减去创52周新低的家数（全1500只）">
+            <div class="sbx-tl">{{ t('Net new highs', '净新高') }}</div>
+            <div class="sbx-tv {{ 'pos' if _c.net_nh >= 0 else 'neg' }}" id="sbx-nnh">{{ '%+d' | format(_c.net_nh) }}</div>
+            <div class="sbx-tw" id="sbx-nnhw">{% if _c.net_nh >= 0 %}{{ t('more breakouts than breakdowns', '创新高多于创新低') }}{% else %}{{ t('more stocks breaking down than out', '创新低多于创新高') }}{% endif %}</div>
+          </div>
+          <div class="sbx-tile" role="button" tabindex="0" onclick="sbxDlg(1)" data-tip-en="Direction of the McClellan Summation Index (the running total of daily net advances) — breadth momentum, computed nightly on the deep S&P 500 series" data-tip-zh="麦克莱伦累积指标（每日净上涨家数的累计和）的方向 — 广度动量，基于标普500深度序列每夜计算">
+            <div class="sbx-tl">{{ t('Momentum', '广度动量') }}</div>
+            {% set _mcc = adv_breadth.mcc if (adv_breadth and adv_breadth.mcc) else none %}
+            <div class="sbx-tv {{ ('pos' if _mcc.summ_rising else 'neg') if _mcc else '' }}">{% if _mcc %}{% if _mcc.summ_rising %}{{ t('Building', '增强') }}{% else %}{{ t('Fading', '减弱') }}{% endif %}{% else %}—{% endif %}</div>
+            <div class="sbx-tw">{{ t('net-advance trend · nightly', '净上涨趋势 · 每夜更新') }}</div>
+          </div>
+        </div>
+        <div class="sbx-more"><button type="button" onclick="sbxDlg(1)">{{ t('Full board — tiers, internals, history', '完整看板 — 层级、内部结构、历史') }} →</button></div>
+      </div>
+    </div>
+    {% else %}
+    <p class="muted" style="font-size:12px">{{ t('Breadth data unavailable in this build — the nightly stores have not produced it yet.', '本次构建暂无广度数据 — 夜间数据尚未生成。') }}</p>
+    {% endif %}
+    {# ── demoted detail dialog: per-tier tables + internals ── #}
+    <div class="sbx-dlg" id="sbx-dlg" role="dialog" aria-modal="true" aria-label="Market breadth — full board" onclick="if(event.target===this)sbxDlg(0)">
+      <div class="sbx-dlg-panel">
+      <button class="sbx-dlg-x" type="button" aria-label="Close" onclick="sbxDlg(0)">✕</button>
+      <h2 style="margin:0 0 4px">{{ t('Market breadth — full board', '市场广度 — 完整看板') }}</h2>
     {% if breadth_panel %}
-    <div class="sb-section-lbl">{{ t('Market breadth', '市场广度') }}</div>
     <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 10px; font-size:12.5px; line-height:1.5">
       {{ t('Participation looks', '参与度看起来') }} <b>{{ breadth_panel.comp.label }}</b> —
       <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 above their 50-day', '的 1500 只高于 50 日均线') }},
@@ -15081,14 +15164,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       </tr>
       {% endfor %}
     </table>
-    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ breadth_panel.comp.verdict }} · {{ t('as of', '截至') }} {{ breadth_panel.asof }}</p>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ breadth_panel.comp.verdict }} · {{ t('as of', '截至') }} {{ breadth_panel.asof }} · {{ t('table updates nightly; the glance bar above goes live intraday', '表格每夜更新；上方即时条盘中实时刷新') }}</p>
     {% endif %}
 
     {% if adv_breadth %}
     {% set tc = {'pos':'var(--up)','neg':'var(--down)','muted':'var(--link)'} %}
-    <div class="sb-section-lbl">{{ t('Market internals', '市场内部结构') }}</div>
-    <details class="jarg" style="margin-top:0">
-    <summary>{{ t('Show market internals — McClellan, breadth thrust, highs/lows, divergence','展开市场内部 — 麦克莱伦、广度推力、新高新低、背离') }}</summary>
+    <div class="sb-section-lbl" style="margin-top:18px">{{ t('Market internals', '市场内部结构') }}</div>
     <p class="{{ adv_breadth.headline.tone }}" style="margin:10px 2px 14px; font-size:14px; line-height:1.5">
       {{ t('The internals read', '内部结构读数为') }} <b>{{ adv_breadth.headline.label }}</b> —
       <span class="muted">{{ adv_breadth.headline.verdict }}.</span>
@@ -15185,8 +15266,20 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
     </div>
     <p class="muted" style="margin:10px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ adv_breadth.asof }} · {{ t('computed on the deep S&P 500 breadth series', '基于标普500深度广度序列计算') }} ({{ adv_breadth.deep_from }}–) · {{ t('display-only market internals, never scored', '仅作展示的市场内部结构，不计入评分') }}</p>
-    </details>
-    {% endif %}
+    {% endif %}{# /adv_breadth #}
+      </div>{# /sbx-dlg-panel #}
+    </div>{# /sbx-dlg #}
+    <script>
+    function sbxDlg(open){
+      var d = document.getElementById('sbx-dlg');
+      if (!d) return;
+      d.classList.toggle('open', !!open);
+      if (open) { d.querySelector('.sbx-dlg-x').focus(); }
+    }
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') sbxDlg(0);
+    });
+    </script>
   </div>
 
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
