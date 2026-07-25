@@ -1,0 +1,48 @@
+{# templates/_special_situations_setups.html.j2 — the "Top setups" chips, ONE source.
+   Same two-render contract as _special_situations_rows.html.j2: the free shell bakes a
+   content-free skeleton in place of this strip, and the real chips ride in the paid
+   /premiumdata/ payload (docs/TIER_PREVIEW_PATTERN.md). No tier logic lives here. #}
+    {% for s in top_setups %}
+    <div class="setup-chip">
+      <div class="setup-chip-tkr">{{ s.ticker }}</div>
+      <div class="setup-chip-co">{{ s.company }}</div>
+      <div class="setup-chip-row">
+        {% if s.grade %}
+        <span class="grade-badge grade-{{ s.grade }}" title="{{ s.grade }} · {{ s.grade_word }}">
+          <span class="grade-letter">{{ s.grade }}</span>
+          <span class="l-en">{{ s.grade_word }}</span>
+          <span class="l-zh">{{ s.grade_word_zh }}</span>
+        </span>
+        {% endif %}
+        {% if s.tier_word %}
+        <span class="ichip ichip-tier" data-tip="{{ s.tier }} — context only">
+          <span class="l-en">{{ s.tier_word }}</span>
+          <span class="l-zh">{{ s.tier_word_zh }}</span>
+        </span>
+        {% endif %}
+        {% if s.momentum_state == 'crossed' %}
+        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
+          <span class="l-en">Momentum turned up</span>
+          <span class="l-zh">周线动能转强</span>
+        </span>
+        {% elif s.momentum_state == 'near' %}
+        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
+          <span class="l-en">Momentum turning</span>
+          <span class="l-zh">动能趋转</span>
+        </span>
+        {% endif %}
+        {% if s.oversold %}
+        <span class="ichip ichip-w" data-tip="{{ s.oversold_tip }}">
+          <span class="l-en">Deeply oversold</span>
+          <span class="l-zh">深度超卖</span>
+        </span>
+        {% endif %}
+      </div>
+      {% if s.why %}
+      <div class="setup-chip-why">
+        <span class="l-en">{{ s.why[0] if s.why }}</span>
+        <span class="l-zh">{{ s.why_zh[0] if s.why_zh else (s.why[0] if s.why) }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}

@@ -129,6 +129,65 @@ def test_store_outage_graces_only_recent_positive(monkeypatch):
     assert _check().status_code == 403
 
 
+def test_enforced_early_payload_locks_free_while_switch_off(monkeypatch):
+    """/premiumdata/* is the tier-preview payload lane: gated NOW, not at launch."""
+    monkeypatch.setattr("app.main._mm_supabase_access_token", lambda request: "tok")
+    monkeypatch.setattr(paywall, "_fresh_uid", lambda token: UID)
+    monkeypatch.setattr(
+        paywall,
+        "_store_entitlement",
+        lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
+    )
+    r = _check("/premiumdata/special_situations.json", "asset")
+    assert r.status_code == 403
+    assert r.json()["locked"] is True
+    assert r.json()["upgrade_url"] == "/plans.html?upgrade=1"
+    # the same switch-off request on any other premium path still stages open
+    assert _check("/neuralwebdata/ruling_graph.json", "asset").status_code == 204
+
+
+def test_enforced_early_payload_allows_entitled_while_switch_off(monkeypatch):
+    monkeypatch.setattr("app.main._mm_supabase_access_token", lambda request: "tok")
+    monkeypatch.setattr(paywall, "_fresh_uid", lambda token: UID)
+    monkeypatch.setattr(
+        paywall,
+        "_store_entitlement",
+        lambda uid: ({"tier": "insider", "status": "trialing", "features": ["site_full"]}, True),
+    )
+    r = _check("/premiumdata/special_situations.json", "asset")
+    assert r.status_code == 204
+    assert r.headers["x-paywall"] == "allow-insider"
+
+
+def test_enforced_early_anon_payload_locks(monkeypatch):
+    monkeypatch.setattr("app.main._mm_supabase_access_token", lambda request: None)
+    assert _check("/premiumdata/special_situations.json", "asset").status_code == 403
+
+
+def test_tier_preview_shell_is_free_but_its_payload_is_not(monkeypatch):
+    """The pattern's two halves: free shell at the page URL, gated payload."""
+    _arm(monkeypatch)
+    monkeypatch.setattr(
+        paywall,
+        "_store_entitlement",
+        lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
+    )
+    assert paywall.classify_path("/special_situations.html") == "free"
+    assert _check("/special_situations.html", "document").status_code == 204
+    assert paywall.enforced_early("/premiumdata/special_situations.json") is True
+    assert _check("/premiumdata/special_situations.json", "asset").status_code == 403
+
+
+def test_malformed_enforced_early_policy_denies(monkeypatch):
+    _arm(monkeypatch)
+    monkeypatch.setattr(
+        paywall,
+        "_load_config",
+        lambda: (_ for _ in ()).throw(ValueError("premium.enforced_early must be a mapping")),
+    )
+    assert _check("/premiumdata/special_situations.json").status_code == 403
+
+
 def test_policy_load_failure_denies(monkeypatch):
     _arm(monkeypatch)
     monkeypatch.setattr(paywall, "_load_config", lambda: (_ for _ in ()).throw(ValueError("bad")))

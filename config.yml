@@ -6281,6 +6281,14 @@ special_situations:                # event-driven Special Situations desk (displ
   # UK stays OFF: no direct RNS feed wired yet, and Google-News alone yields ~0 (feed recall).
   intl_uk: false
   intl_canada: true
+  # Tier gate (docs/TIER_PREVIEW_PATTERN.md). The desk is an Insider/Pro surface:
+  # site/special_situations.html bakes only `preview_rows` (newest first) plus an
+  # upgrade wall, and the rest of the board ships as site/premiumdata/
+  # special_situations.json — which config/site_access.yml enforces as Insider+
+  # today, ahead of the site-wide PAYWALL_ENABLED switch. Set gated:false to
+  # re-open the whole desk to Free without touching code.
+  gated: true
+  preview_rows: 3
 
 # ---------------------------------------------------------------------------
 # qual_extraction — citation-verified structured extraction from filing bodies

@@ -17,7 +17,9 @@ name: render
 #   • the master / ai_desk / narrative / altdata LLM brains and their thesis
 #     ledgers + scorers                           — those APPEND to forward-accountability
 #                                                   ledgers; only the nightly may advance them
-#   • build_special_situations                    — the slow EDGAR fetch (page stays as last built)
+#   • build_special_situations' EDGAR/newswire sweep — the slow fetch stays nightly;
+#     the desk PAGE is still rebaked here via --no-refresh (scope `sits`), so a
+#     template fix ships in minutes. An unchanged desk rebakes byte-identically.
 #   • factor_series / stock_briefs                — their own isolated daily jobs
 #   • notify / archive_signals                    — side-effects that belong to the nightly
 # and it carries NO API/LLM secrets, so nothing reaches the network — pages render
@@ -36,7 +38,7 @@ on:
         description: "Which pages to rebuild from committed data (all = every page)"
         type: choice
         default: all
-        options: [all, macro, china, hk, markets, gex, baskets]
+        options: [all, macro, china, hk, markets, gex, baskets, sits]
       runner:
         description: "Runner label — re-dispatch with macstudio if the render PC (pc-render-1) is down (GHA has no automatic label fallback)"
         type: choice
@@ -196,6 +198,7 @@ jobs:
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
               templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
+              templates/special_situations.html.j2|templates/_special_situations_*.html.j2|scripts/build_special_situations.py) echo sits;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
               *) echo skip;;
             esac
@@ -215,7 +218,7 @@ jobs:
             return 1
           }
           DIRTY="" NEED_ALL=""
-          for R in macro china hk markets gex baskets; do
+          for R in macro china hk markets gex baskets sits; do
             FR=$(covering_from "$R")
             if [ -z "$FR" ]; then NEED_ALL="no from=-tagged render covers '$R' in the log window"; break; fi
             CH=$(git diff --name-only "$FR..HEAD" -- templates scripts config.yml lib 2>/dev/null)
@@ -313,6 +316,16 @@ jobs:
           # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
           # (all committed or freshly rebuilt by band/spine). Call AFTER band so its deps exist.
           central() { [ -n "$CENTRAL_DONE" ] && return 0; CENTRAL_DONE=1; run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
+
+          # ---- special situations: page-only rebake, NO EDGAR sweep ----
+          # The nightly owns the ~28m filing sweep; this lane re-renders the desk
+          # from the COMMITTED event store so a template/builder fix ships in
+          # minutes. --no-refresh reuses the last real build's `built` stamp, so an
+          # untouched desk rebakes byte-for-byte and commits nothing. It also emits
+          # site/premiumdata/special_situations.json — the Insider+ payload behind
+          # the page's free preview (docs/TIER_PREVIEW_PATTERN.md), which MUST be
+          # rebuilt in the same pass as the shell it pairs with.
+          sits() { [ -n "$SITS_DONE" ] && return 0; SITS_DONE=1; run_py "special situations desk, page only (build_special_situations --no-refresh)" scripts.build_special_situations --no-refresh; }
 
           # ---- the parallel regional/desk band (mirrors daily, MINUS special-sits) ----
           band() {
@@ -419,9 +432,11 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; band; central; hub; us_pages; libs ;;
+              spine; band; central; hub; us_pages; libs; sits ;;
             macro)
               spine; hub; us_pages; central ;;
+            sits)
+              sits ;;
             china)
               run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
             hk)

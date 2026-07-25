@@ -48,6 +48,12 @@ public:
 # premium switch is armed. They are the free-tier hook specified by the
 # monetization masterplan. Everything not public/free/deny is Insider+ by
 # default, so a newly generated engine artifact cannot silently become public.
+#
+# A page listed here may still be a PAID surface: the tier-preview pattern
+# (docs/TIER_PREVIEW_PATTERN.md) serves a free-visible preview shell at the
+# canonical URL and keeps the paid content in a separate /premiumdata/ payload
+# that this policy enforces. Listing the shell here is what lets a Free account
+# see the preview instead of the lock interstitial once the paywall is armed.
 free_registered:
   exact:
     - /macro.html
@@ -57,6 +63,8 @@ free_registered:
     - /coming-soon.html
     - /report_bessent_jun24.html
     - /regime_timeline.json
+    # Tier-preview shells (paid content lives in /premiumdata/, enforced below).
+    - /special_situations.html
   prefixes:
     - /news/
     - /chinanews/
@@ -75,3 +83,25 @@ deny:
 premium:
   default_tier: insider
   required_feature: site_full
+
+  # Paths whose premium requirement is enforced RIGHT NOW, ahead of the
+  # site-wide PAYWALL_ENABLED launch switch. `PAYWALL_ENABLED=0` keeps the rest
+  # of the estate in staging (registered users see everything); these paths do
+  # not wait for it, so a paid desk can ship one surface at a time.
+  #
+  # Rules for anything added here:
+  #   * it must be a data payload, never a whole page — the page URL keeps a
+  #     free-visible preview shell so a Free account gets product, not a wall;
+  #   * the preview shell must not contain the payload's rows (the split is the
+  #     boundary; a client-side hide is a marketing wall, not a gate);
+  #   * add the matching plans-page line in the same PR — the feature list and
+  #     the gate are one product statement.
+  # See docs/TIER_PREVIEW_PATTERN.md.
+  enforced_early:
+    exact:
+      # The desk's per-ticker context emit (setup grade/score/tier/washout). No
+      # browser fetches it — engines read it off disk — so gating the URL closes a
+      # direct-link leak of the same paid signal the page now gates.
+      - /allocationdata/special_situations.json
+    prefixes:
+      - /premiumdata/
