@@ -403,6 +403,61 @@
   .wri-foot .q { cursor:help; text-decoration:underline dotted; }
   .wri-foot .q:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
 
+  /* pre-trade check (W4) — full-width hairline row inside the hero, after the
+     sub-cards, before the footnote. Uses the .wri idiom only: mono eyebrow,
+     hairline borders, tabular mono numerals. Deltas are NEVER tinted (neutral
+     ink — a diversification delta is a measurement, not a verdict, WRI-R3). */
+  .wri-w4 { margin-top:16px; padding-top:14px;
+    border-top:1px solid color-mix(in srgb, var(--line) 72%, transparent); }
+  .wri-w4-head { display:flex; align-items:center; gap:8px; font-family:var(--wri-mono);
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    font-weight:700; margin-bottom:10px; }
+  .wri-w4-head .q { cursor:help; color:var(--muted); font-size:10px;
+    border:1px solid color-mix(in srgb, var(--line) 85%, transparent); border-radius:50%;
+    width:15px; height:15px; line-height:13px; text-align:center; flex:none;
+    font-family:var(--font-ui,inherit); }
+  .wri-w4-head .q:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
+  .wri-w4-in { display:flex; gap:9px; align-items:flex-start; flex-wrap:wrap; }
+  .wri-w4-tk { position:relative; flex:1 1 190px; min-width:160px; max-width:280px; }
+  .wri-w4-tk input { width:100%; padding:8px 12px; border-radius:9px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--text); font-size:14px; outline:none; }
+  .wri-w4-tk input:focus { border-color:var(--link); }
+  .wri-w4-amt { flex:0 0 auto; display:flex; flex-direction:column; gap:3px; }
+  .wri-w4-amtrow { position:relative; display:inline-flex; align-items:center; }
+  .wri-w4-amtrow .cur { position:absolute; left:11px; color:var(--muted); font-size:13px;
+    font-family:var(--wri-mono); pointer-events:none; }
+  .wri-w4-amt input { width:128px; padding:8px 12px 8px 22px; border-radius:9px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text);
+    font-size:14px; outline:none; font-family:var(--wri-mono); font-variant-numeric:tabular-nums; }
+  .wri-w4-amt input:focus { border-color:var(--link); }
+  .wri-w4-amt .sub { font-size:10.5px; color:var(--muted); line-height:1.4; max-width:230px; }
+  .wri-w4-clear { align-self:center; background:transparent; border:0; color:var(--link);
+    cursor:pointer; font-size:11.5px; font-weight:600; padding:4px 6px;
+    font-family:var(--font-ui,inherit); }
+  .wri-w4-clear:focus-visible { outline:2px solid var(--link); outline-offset:2px; }
+  /* suggestion dropdown — mirrors #wl_sugg but scoped to the what-if input */
+  .wri-w4-sugg { position:absolute; top:104%; left:0; right:0; background:var(--panel);
+    border:1px solid var(--line); border-radius:10px; z-index:50; max-height:280px;
+    overflow:auto; display:none; box-shadow:var(--popover-shadow); }
+  .wri-w4-sugg div { padding:7px 12px; cursor:pointer; display:flex; gap:10px; align-items:center;
+    font-size:13px; }
+  .wri-w4-sugg div:hover, .wri-w4-sugg div.sel { background:var(--panel2); }
+  .wri-w4-sugg b { min-width:52px; flex:none; font-family:var(--wri-mono); }
+  .wri-w4-sugg small { color:var(--muted); flex:1 1 auto; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* result block — neutral ink; deltas plain, numerals mono, arrows plain */
+  .wri-w4-res { margin-top:12px; }
+  .wri-w4-res .ln { font-size:13px; line-height:1.55; color:var(--text); margin:0 0 4px;
+    display:flex; align-items:baseline; gap:7px; }
+  .wri-w4-res .ln .dot { width:4px; height:4px; border-radius:50%; flex:none;
+    background:color-mix(in srgb, var(--muted) 60%, transparent); margin-top:7px; }
+  .wri-w4-res .num { font-family:var(--wri-mono); font-variant-numeric:tabular-nums; font-weight:700; }
+  .wri-w4-res .arw { color:var(--muted); font-family:var(--wri-mono); padding:0 1px; }
+  .wri-w4-res .tk { font-family:var(--wri-mono); font-weight:700; }
+  .wri-w4-res .null { color:var(--muted); font-style:normal; }
+  .wri-w4-res .wri-lanes { margin-top:9px; }
+  .wri-w4-res .wri-lanes .wri-more { display:none; }   /* the candidate shows all its chips inline */
+
   /* L1 card additions (layered over the existing .wl-card, not replacing it) */
   .wri-lanes { display:flex; gap:6px; flex-wrap:wrap; margin-top:9px; align-items:center; }
   .wri-chip { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600;
