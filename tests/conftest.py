@@ -68,6 +68,36 @@ def _set_nightly_lane(monkeypatch):
     monkeypatch.setenv("COLLECT_LANE", "nightly")
 
 
+@pytest.fixture(autouse=True)
+def _isolate_gdelt_stamps(monkeypatch):
+    """engine.gdelt_client persists two stamps under data_dir()/gdelt as call-time
+    side effects on the repo's REAL data/ tree: the cross-process throttle stamp
+    (last_request) and the rate-limit circuit-breaker stamp (rate_limit_until).
+
+    The breaker stamp is RESULT-CHANGING: a persistent-429 test
+    (test_failed_fetch_result_is_not_cached) arms it, and without isolation every
+    later GDELT test in the session then short-circuits to rate_limited (4 news_vector
+    tests failed exactly this way). Redirect both to a private per-test temp dir —
+    FUNCTION scope, so an arm in one test never leaks into the next; a SYSTEM temp
+    dir (not the shared tmp_path), so a test that audits tmp_path for leftovers
+    (test_share_cards.test_save_card_leaves_no_temp) never sees the stamp dir.
+    _penalty_path() derives from _stamp_path().parent, so patching _stamp_path
+    isolates both. Tests that patch _stamp_path themselves override this in-context.
+
+    ImportError guard: runs for EVERY pytest invocation, including the minimal-deps
+    CI jobs whose suites never import gdelt_client.
+    """
+    try:
+        from engine import gdelt_client as _gc
+    except Exception:  # noqa: BLE001 — minimal-deps job without engine deps
+        yield
+        return
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="gdelt_stamps_") as d:
+        monkeypatch.setattr(_gc, "_stamp_path", lambda: Path(d) / "last_request")
+        yield
+
+
 @pytest.fixture(autouse=True, scope="session")
 def _redirect_breadth_divergence_stamp(tmp_path_factory):
     """compute_theme_intel() stamps elevated/high breadth-divergence textures

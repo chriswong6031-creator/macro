@@ -381,5 +381,113 @@ def test_wait_turn_public_gate_spaces_calls(tmp_path):
     )
 
 
+# ── circuit breaker: keep a 429-boxed IP off the critical path ────────────────
+
+def _penalty_file(stamp_file: Path) -> Path:
+    """The breaker stamp lives beside the throttle stamp (see _penalty_path), so
+    mocking _stamp_path relocates BOTH into tmp — keeping these tests hermetic."""
+    return stamp_file.parent / "rate_limit_until"
+
+
+def test_breaker_short_circuits_when_active(tmp_path):
+    """With the breaker armed (penalty stamp in the future), get_articles returns
+    (None, 'rate_limited') INSTANTLY — no network request, no backoff sleep. This
+    is what takes build_news off the 26-29 min critical path when the IP is boxed."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    _penalty_file(stamp_file).write_text(str(time.time() + 600))  # boxed for 10 min
+
+    mock_get = MagicMock()
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", mock_get), \
+         patch("time.sleep") as mock_sleep:
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert (articles, reason) == (None, "rate_limited")
+    assert mock_get.call_count == 0, "breaker must skip the network entirely"
+    assert mock_sleep.call_count == 0, "breaker must not sleep/backoff while boxed"
+
+
+def test_persistent_429_arms_breaker(tmp_path):
+    """Three consecutive 429s (terminal rate_limited) must ARM the breaker by
+    writing a penalty stamp ~cooldown seconds into the future."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch.object(_gc, "_cooldown", return_value=900.0), \
+         patch("requests.get", side_effect=[_make_response(429)] * 3), \
+         patch("time.sleep"):
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert (articles, reason) == (None, "rate_limited")
+    pen = _penalty_file(stamp_file)
+    assert pen.exists(), "a persistent 429 must arm the breaker"
+    assert float(pen.read_text()) > time.time() + 800, "penalty must extend ~cooldown ahead"
+
+
+def test_success_clears_stale_breaker(tmp_path):
+    """A valid 200 clears the breaker stamp — the IP recovered, so later calls fetch."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    pen = _penalty_file(stamp_file)
+    pen.write_text(str(time.time() - 10))  # EXPIRED → breaker inactive, fetch proceeds
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", return_value=_make_response(200, _gdelt_body(["ok"]))), \
+         patch("time.sleep"):
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert articles and reason is None
+    assert not pen.exists(), "a successful fetch must clear the stale breaker stamp"
+
+
+def test_cache_served_even_when_breaker_active(tmp_path):
+    """A FRESH cache is still served while the breaker is armed — the breaker skips
+    only LIVE fetches; it must never suppress real cached data."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    _penalty_file(stamp_file).write_text(str(time.time() + 600))  # boxed
+    cache_file = tmp_path / "cache.json"
+    cache_file.write_text(json.dumps({"articles": [{"title": "cached"}], "degraded_reason": None}))
+
+    mock_get = MagicMock()
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("requests.get", mock_get):
+        articles, reason = _gc.get_articles(_SAMPLE_PARAMS, cache_path=cache_file,
+                                            cache_ttl_s=3600, min_interval=0.0)
+
+    assert articles == [{"title": "cached"}]
+    assert mock_get.call_count == 0, "cache hit must not touch the network even when boxed"
+
+
+def test_breaker_disabled_when_cooldown_zero(tmp_path):
+    """Cooldown 0 is the off-switch: a persistent 429 must NOT arm the breaker."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch.object(_gc, "_cooldown", return_value=0.0), \
+         patch("requests.get", side_effect=[_make_response(429)] * 3), \
+         patch("time.sleep"):
+        _gc.get_articles(_SAMPLE_PARAMS, min_interval=0.0)
+
+    assert not _penalty_file(stamp_file).exists(), "cooldown=0 must disable the breaker"
+
+
+def test_wait_turn_short_circuits_when_breaker_active(tmp_path):
+    """wait_turn() (timeline-endpoint callers) must return immediately — no pacing
+    sleep — while the IP is boxed, instead of burning 6s per doomed call."""
+    stamp_file = tmp_path / "gdelt" / "last_request"
+    stamp_file.parent.mkdir(parents=True, exist_ok=True)
+    _penalty_file(stamp_file).write_text(str(time.time() + 600))
+
+    with patch.object(_gc, "_stamp_path", return_value=stamp_file), \
+         patch("time.sleep") as mock_sleep:
+        _gc.wait_turn(5.0)
+
+    assert mock_sleep.call_count == 0, "wait_turn must not pace while the breaker is armed"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-x", "-q"])
