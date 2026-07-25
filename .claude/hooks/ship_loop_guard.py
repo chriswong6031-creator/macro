@@ -19,13 +19,16 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 LIVE_HEALTH_URL = "https://mastermind-x.com/api/health"
+GITHUB_API_HOST = "api.github.com"
 EXTERNAL_BLOCKERS = {
     "github_unreachable",
+    "github_rate_limited",
     "ci_failed",
     "render_pending",
     "render_failed",
@@ -158,40 +161,80 @@ def _github_slug(root: Path) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
-_GH_TOKEN_CACHE: list[str] | None = None
+class RateLimited(RuntimeError):
+    """A GitHub call failed because the request quota is spent, not because it was unreachable."""
 
 
-def _token_from_env() -> str:
-    """A GitHub token for the API calls below.
+_TOKEN_CACHE: str | None = None
 
-    Claude Code hooks inherit NEITHER GH_TOKEN nor GITHUB_TOKEN, so every request used
-    to go out anonymous — 60/hr shared across the whole host. A busy session burns that
-    in minutes and the guard then dies on `HTTP Error 403: rate limit exceeded`, which
-    reads as "github_unreachable" and blocks the Stop hook on work that is already
-    merged (2026-07-25: #3534 was MERGED on main while the guard reported 403 on every
-    turn). `gh auth token` is the same credential the session already uses
-    interactively, and lifts the ceiling to 5000/hr.
+
+def _github_token() -> str:
+    """Return a GitHub credential: env vars first, then the already-authenticated CLI.
+
+    Claude Code sessions set none of the token env vars, which silently dropped
+    every guard evaluation onto the anonymous 60-request/hour-per-IP quota. A
+    Stop evaluation spends up to three calls, so a busy session exhausted the
+    budget and the guard then failed closed on `github_unreachable` for the rest
+    of the hour (measured 2026-07-25: anonymous 0/60 while `gh` held 4998/5000).
+
+    The CLI fallback stores no secret — it reuses the credential `gh auth login`
+    already placed on this machine. A missing or logged-out `gh` degrades to the
+    previous anonymous behaviour rather than failing.
+
+    Cached for the process lifetime so one evaluation spawns `gh` at most once.
     """
-    global _GH_TOKEN_CACHE
+    global _TOKEN_CACHE
+    if _TOKEN_CACHE is not None:
+        return _TOKEN_CACHE
+
+    token = ""
     for key in ("GH_TOKEN", "GITHUB_TOKEN"):
         value = os.environ.get(key, "").strip()
         if value:
-            return value
-    if _GH_TOKEN_CACHE is None:
-        # Cached (including the empty result) so a gh-less host pays one failed exec,
-        # not one per API call.
+            token = value
+            break
+    if not token:
         try:
-            done = subprocess.run(
-                ["gh", "auth", "token"],
+            proc = subprocess.run(
+                ("gh", "auth", "token"),
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=5,
                 check=False,
             )
-            _GH_TOKEN_CACHE = [done.stdout.strip() if done.returncode == 0 else ""]
-        except (OSError, subprocess.SubprocessError):
-            _GH_TOKEN_CACHE = [""]
-    return _GH_TOKEN_CACHE[0]
+            if proc.returncode == 0:
+                token = proc.stdout.strip()
+        except Exception:
+            token = ""
+
+    _TOKEN_CACHE = token
+    return token
+
+
+def _http_failure(exc: urllib.error.HTTPError) -> RuntimeError:
+    """Classify an HTTP failure so a spent quota does not read as a broken repo.
+
+    `HTTP Error 403: rate limit exceeded` sent sessions hunting for network,
+    permission, and remote faults that did not exist. GitHub marks the real
+    cause in the response headers, so name it.
+    """
+    headers = exc.headers or {}
+    if exc.code in {403, 429} and headers.get("X-RateLimit-Remaining") == "0":
+        limit = headers.get("X-RateLimit-Limit") or "?"
+        reset = str(headers.get("X-RateLimit-Reset") or "")
+        when = ""
+        if reset.isdigit():
+            stamp = datetime.fromtimestamp(int(reset), timezone.utc)
+            when = f", resets {stamp.strftime('%H:%M:%SZ')}"
+        if _github_token():
+            hint = "Wait for the reset; no repository or network fault is implied."
+        else:
+            hint = (
+                "The guard is running UNAUTHENTICATED on the 60/hour per-IP quota. "
+                "Run `gh auth login` (or export GH_TOKEN) to get the 5000/hour quota."
+            )
+        return RateLimited(f"GitHub API quota spent (0/{limit}{when}). {hint}")
+    return RuntimeError(f"GitHub API request failed: HTTP {exc.code} {exc.reason}.")
 
 
 def _get_json(url: str) -> Any:
@@ -199,16 +242,24 @@ def _get_json(url: str) -> Any:
         "Accept": "application/vnd.github+json",
         "User-Agent": "macro-dashboard-ship-loop-guard",
     }
-    # Gate the credential on the HOST, never on the URL prefix: every caller below
-    # builds api.github.com URLs today, but a future caller that follows a link out of
-    # a payload must not hand the token to another origin.
-    if urllib.parse.urlsplit(url).hostname == "api.github.com":
-        token = _token_from_env()
+    # Authenticate to GitHub and nowhere else. This helper also fetches the
+    # public production health endpoint, and attaching the credential to that
+    # request would hand a repo-scoped token to an unrelated host.
+    if urllib.parse.urlsplit(url).hostname == GITHUB_API_HOST:
+        token = _github_token()
         if token:
             headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=25) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=25) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as exc:
+        raise _http_failure(exc) from exc
+
+
+def _github_block_code(exc: Exception) -> str:
+    """Spent quota and unreachable API are both external, but they are not the same problem."""
+    return "github_rate_limited" if isinstance(exc, RateLimited) else "github_unreachable"
 
 
 def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -221,6 +272,18 @@ def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | No
 
 
 def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
+    """Judge the merged pull request's OWN head commit, never main's current state.
+
+    Deliberate: main's combined status is the product of every concurrent
+    session's merges, so scoring against it would let an unrelated green main
+    mask this pull request's red check (and an unrelated red one block a clean
+    ship). The head commit is the only sha that answers "did THIS work pass".
+
+    Check runs on that sha are not frozen, though — re-running a workflow
+    publishes fresh runs against it, which is why the failure message names that
+    path. A genuinely stuck red still exits through the documented
+    `SHIP LOOP BLOCKED:` report, same as any other external blocker.
+    """
     payload = _get_json(
         f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs?per_page=100"
     )
@@ -239,7 +302,14 @@ def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
         elif run.get("conclusion") not in {"success", "neutral", "skipped"}:
             bad.append(f"{name} ({run.get('conclusion')})")
     if bad:
-        return False, "Failing CI: " + ", ".join(bad[:8])
+        return False, (
+            "Failing CI: "
+            + ", ".join(bad[:8])
+            + ". These run against the merged pull request's own head commit, so a later "
+            "fix on main does not clear them: re-run the failed job "
+            "(`gh run rerun --failed <run-id>`) once the cause is fixed, or carry the fix "
+            "through a follow-up pull request with green CI of its own."
+        )
     if pending:
         return False, "CI still running: " + ", ".join(pending[:8])
     return True, ""
@@ -258,10 +328,10 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     """Whether a push-triggered render must exist for ``merge_sha``.
 
     Scoped to THIS merge's own diff, not the whole session range.
-    ``_render_status`` accepts a successful push render at this merge or a later
-    descendant. render.yml's push trigger is path-filtered to templates/** +
-    scripts/build_*.py, so this precondition belongs only to a merge that itself
-    touched one of those paths.
+    ``_render_status`` looks for a render.yml run whose head_sha IS merge_sha
+    and whose event is ``push`` — and render.yml's push trigger is path-filtered
+    to templates/** + scripts/build_*.py. So such a run can exist if and only if
+    merge_sha ITSELF touched those paths.
 
     start_head..head was the wrong basis on a shared main: this repo runs many
     concurrent sessions, and a session that syncs its worktree to origin/main
@@ -272,7 +342,8 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     template/builder files from concurrent merges set needs_render.)
 
     This TIGHTENS alignment rather than loosening the gate: a PR that does touch
-    templates/ still needs a successful covering render before it may pass.
+    templates/ still gets a push render on its merge sha, and that run must still
+    conclude ``success`` to pass.
     """
     try:
         changed = _run(
@@ -285,64 +356,22 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     return _render_triggering_paths(changed)
 
 
-def _same_or_descendant(root: Path, merge_sha: str, candidate_sha: str) -> bool:
-    """Whether ``candidate_sha`` contains ``merge_sha`` in the local git graph."""
-    if candidate_sha == merge_sha:
-        return True
-    if not candidate_sha:
-        return False
-    try:
-        _run(root, "git", "merge-base", "--is-ancestor", merge_sha, candidate_sha)
-    except Exception:
-        return False
-    return True
-
-
-def _render_status(root: Path, owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
-    """Return the state of a push render that covers ``merge_sha``.
-
-    render.yml deliberately coalesces a merge burst: it keeps one in-flight run,
-    supersedes redundant pending runs, and the survivor unions every dirty scope
-    since the last covering watermark. Requiring the exact merge's run to succeed
-    contradicts that design and caused agents to cancel/re-run healthy shared
-    renders merely to clear their own Stop hook. A successful main descendant is
-    therefore the correct proof that this merge's render inputs were covered.
-    """
+def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
     query = urllib.parse.urlencode(
-        {"event": "push", "branch": "main", "per_page": "100"}
+        {"event": "push", "head_sha": merge_sha, "per_page": "20"}
     )
     payload = _get_json(
         f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
     )
-    covering = [
-        run
-        for run in payload.get("workflow_runs", [])
-        if _same_or_descendant(root, merge_sha, str(run.get("head_sha") or ""))
-    ]
-    if not covering:
-        return "pending", "No render covering this merge has started yet."
-
-    covering.sort(key=lambda item: item.get("created_at") or "", reverse=True)
-    if any(
-        run.get("status") == "completed" and run.get("conclusion") == "success"
-        for run in covering
-    ):
-        return "success", ""
-
-    pending = [run for run in covering if run.get("status") != "completed"]
-    if pending:
-        state = pending[0].get("status") or "pending"
-        return (
-            "pending",
-            f"A shared render covering this merge is {state}; monitor it without cancelling or re-running it.",
-        )
-
-    newest = covering[0]
-    return (
-        "failed",
-        "Covering render concluded "
-        f"{newest.get('conclusion') or 'unknown'}; diagnose the cause before one controlled retry.",
-    )
+    runs = payload.get("workflow_runs", [])
+    if not runs:
+        return "pending", "The required render workflow has not started yet."
+    run = max(runs, key=lambda item: item.get("created_at") or "")
+    if run.get("status") != "completed":
+        return "pending", f"Render workflow is {run.get('status') or 'pending'}."
+    if run.get("conclusion") != "success":
+        return "failed", f"Render workflow concluded {run.get('conclusion') or 'unknown'}."
+    return "success", ""
 
 
 def _find_commit(value: Any) -> str:
@@ -467,7 +496,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         owner, repo = _github_slug(root)
         pull = _latest_merged_pr(owner, repo, branch)
     except Exception as exc:
-        _block(path, state, payload, "github_unreachable", str(exc))
+        _block(path, state, payload, _github_block_code(exc), str(exc))
         return
     if not pull:
         _block(path, state, payload, "unmerged", f"No merged main pull request found for {branch}.")
@@ -477,7 +506,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         ci_ok, ci_reason = _check_ci(owner, repo, head_sha)
     except Exception as exc:
-        _block(path, state, payload, "github_unreachable", str(exc))
+        _block(path, state, payload, _github_block_code(exc), str(exc))
         return
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
@@ -495,9 +524,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(root, owner, repo, merge_sha)
+            status, detail = _render_status(owner, repo, merge_sha)
         except Exception as exc:
-            _block(path, state, payload, "github_unreachable", str(exc))
+            _block(path, state, payload, _github_block_code(exc), str(exc))
             return
         if status != "success":
             _block(
