@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-24T23:39:48.874709+00:00",
+  "generated_utc": "2026-07-25T01:19:15.893406+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1096,12 +1096,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 4,
+      "alt_weighted": 1.6,
       "alt_channels": [
         "affiliation",
         "gov_contract",
-        "retail_buzz"
+        "retail_buzz",
+        "trump"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1309,6 +1310,31 @@
       "top_holder": null
     },
     {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
+      "alt_channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 651076825
+      }
+    },
+    {
       "ticker": "UBER",
       "actors": [
         {
@@ -1321,13 +1347,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.25,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "special_situation",
-        "stocktwits_bull"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
@@ -1428,27 +1453,6 @@
         "title": "Institution",
         "shares": 66622798
       }
-    },
-    {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.0,
-      "alt_channels": [
-        "affiliation",
-        "trump"
-      ],
-      "top_holder": null
     },
     {
       "ticker": "ABTC",
@@ -1600,30 +1604,6 @@
       "top_holder": null
     },
     {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 651076825
-      }
-    },
-    {
       "ticker": "CVI",
       "actors": [
         {
@@ -1662,11 +1642,39 @@
         "affiliation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
     }
   ],
   "recent": [],
   "n_candidates": 0,
   "filings": [
+    {
+      "date": "2026-07-24",
+      "form": "S-1/A",
+      "company": "Cryptex Digital Market Cap ETF",
+      "ticker": "BAGZ",
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/2115027/000121390026081379/ea0299142-s1a2_cryptex.htm"
+    },
     {
       "date": "2026-07-20",
       "form": "8-K",
@@ -1754,14 +1762,6 @@
       "ticker": "ABTC",
       "items": "3.03,5.03,8.01,9.01",
       "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex99_1.htm"
-    },
-    {
-      "date": "2026-07-01",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126027019/ef20077163_425.htm"
     }
   ]
 }
