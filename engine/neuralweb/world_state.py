@@ -3531,6 +3531,58 @@ def _compose_mag7_washout(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_personality_codex(root: "Path | str | None" = None) -> dict:
+    """Compose the personality_codex context lobe from data/personality_timing/codex.parquet.
+
+    PSS-W2 (research/PERSONALITY_SIGNAL_SUITE_MASTERPLAN_BY_FABLE.md §3): the
+    Personality Timing Codex is a per-name measured-structure store. This lobe
+    exposes an AGGREGATE view ONLY — the per-name rows live in the parquet, not
+    in world_state. Follows the mag7_washout / darkpool-lobe discipline: all IO
+    here, _clean() every scalar, display_only=True + is_context_only=True ALWAYS
+    (incl. the null fallback), absent parquet → honest-null block (caller
+    appends NO gap), never fatal.
+
+    Copy law R-W1T-3 (charter §7/§8): the codex's derived-rung tool CONFIRMS
+    RESETS — it does not call bottoms. med_tdt is the reset-confirmation
+    lateness (negative = trough already in before entry); it is context, never
+    a call to act. Display-tier: no rank, no size, no gate.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "personality_timing" / "codex.parquet"
+    null_out = {
+        "as_of": None, "n_names": None, "rung_distribution": None,
+        "n_no_reversion": None, "median_lateness_tdt": None,
+        "n_slow_defensive": None,
+        "display_only": True, "is_context_only": True,
+    }
+    try:
+        if not path.exists():
+            return null_out
+        import pandas as pd  # noqa: PLC0415 — only import when the artifact exists
+        df = pd.read_parquet(path)
+        if df.empty:
+            return null_out
+        rung_dist = {str(k): int(v) for k, v in
+                     df["rung_derived"].value_counts().to_dict().items()}
+        med_lat = (float(df["med_tdt"].dropna().median())
+                   if df["med_tdt"].notna().any() else None)
+        return {
+            "as_of": _clean(df["as_of"].iloc[0]) if "as_of" in df.columns else None,
+            "n_names": int(len(df)),
+            "rung_distribution": rung_dist,
+            "n_no_reversion": _clean(df["no_reversion"].sum()),
+            # median reset-confirmation lateness across measured names (td_to_
+            # trough; negative = confirmed reset — trough in before entry)
+            "median_lateness_tdt": _clean(med_lat),
+            "n_slow_defensive": _clean(df["slow_defensive"].sum()),
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("personality_codex: compose failed — %s", exc)
+        return null_out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Liquidity Plumbing lobe (neuralweb.liquidity_plumbing.v1)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -4287,6 +4339,25 @@ def build_world_state(
     # producer (scripts/build_darkpool_desk.py → engine.darkpool_context) is optional
     # until its first nightly run. Matches the stage_analysis optional-artifact pattern.
 
+    # PSS-W2 — personality timing codex context lobe (aggregate view; display-only;
+    # honest-null when absent). Per-name rows live in the parquet, not here.
+    _pcx_path = data_dir / "personality_timing" / "codex.parquet"
+    try:
+        personality_codex_block: dict = _compose_personality_codex(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: personality_codex lobe failed — %s", exc)
+        gaps.append(f"personality_codex: {exc}")
+        personality_codex_block = {
+            "as_of": None, "n_names": None, "rung_distribution": None,
+            "n_no_reversion": None, "median_lateness_tdt": None,
+            "n_slow_defensive": None, "display_only": True, "is_context_only": True,
+        }
+    sources[str(_pcx_path.relative_to(repo))] = (personality_codex_block or {}).get("as_of")
+    # No gap appended when absent: the honest-null block communicates absence; the
+    # producer (scripts/build_personality_codex.py) runs MANUAL/WEEKLY, OFF the
+    # render path — it is not a nightly artifact. Matches the mag7_washout
+    # optional-artifact pattern.
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "verdict": verdict_block,
@@ -4334,6 +4405,7 @@ def build_world_state(
         "stage_analysis": stage_analysis_block,  # SGA-W2 stage_context.v1 lobe (display-only, None-fields until first run)
         "darkpool_flow": darkpool_flow_block,  # darkpool_context.v1 off-exchange positioning lobe (display-only)
         "mag7_washout": mag7_washout_block,  # MWR §7 W1c re-entry gate lobe (display-only; Use-B un-ratified)
+        "personality_codex": personality_codex_block,  # PSS-W2 codex aggregate lobe (display-only; reset-confirmation context)
         "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)
         "gaps": gaps,
         "sources": sources,

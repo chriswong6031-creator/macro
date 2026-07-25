@@ -990,6 +990,46 @@ artifacts:
       vs gate state" natural experiment, graded jointly with board-ledger
       outcomes only at gauntlet time (§7 amendment fixes that ruler first).
 
+  # PSS-W2: Personality Timing Codex — per-name measured-structure store.
+  # OFF THE RENDER PATH: manual/weekly regen only; NOT wired into nightly
+  # dag.yml or engine/run.py (nightly wiring is a later wave).  Display-tier
+  # measurement store over the mwr_phase1 universe (~1,63x names).
+  # Masterplan: research/PERSONALITY_SIGNAL_SUITE_MASTERPLAN_BY_FABLE.md §3 (W2).
+  personality-timing-codex:
+    path: data/personality_timing/codex.parquet
+    format: parquet
+    producer: scripts/build_personality_codex.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: weekly
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 400
+    schema: personality_timing.codex.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+    - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      PSS-W2 DISPLAY-TIER measurement store, one row per name over the
+      mwr_phase1 universe (≥2900 closes, first bar ≤2014-06-30, last+median
+      ≥$2; NO W1-eligibility gate — the codex measures everyone, ~1,63x names).
+      Columns: reversion-by-scale ρ-ladder (full + last-756d windows) → derived
+      rung PER RULER (charter §8: rungs are ruler-dependent — both stored,
+      both labeled); reset-behavior profile of the derived-rung Stoch-RSI tool
+      under the TIMING ruler (MAE / within-5%-of-low / td_to_trough shares);
+      stationarity, vol/trend/beta, no_reversion + slow_defensive flags; W1/W1-T
+      study-evidence joins; PIT personality label. MANUAL/WEEKLY regen, OFF the
+      render path — NOT in nightly dag.yml or engine/run.py (freshness_sla_hours
+      set to 400 to reflect the weekly-or-slower cadence). Copy law R-W1T-3:
+      the derived-rung tool CONFIRMS RESETS, it does not call bottoms. The
+      rung_best_* columns are STUDY-ERA HINDSIGHT (audition-tier, DNR §2
+      two-ruler kill) — display context ONLY, NEVER selection inputs.
+      Deterministic arithmetic; display-tier; nothing here promotes to authority.
+
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py
   # (called in-process by engine/run.py); no new collectors required.
