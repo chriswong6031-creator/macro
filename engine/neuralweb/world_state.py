@@ -3477,6 +3477,83 @@ def _compose_darkpool_flow(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_transmission_chains(root: "Path | str | None" = None) -> dict:
+    """Compose the transmission_chains lobe from data/transmission/chain_state.json.
+
+    Staged macro→micro cascade context (transmission_chains.v1): per-chain episode state
+    (dormant → arming → propagating → expressed | failed | expired), hop confirmations, and
+    the per-name blast radius via named channels with counts + the unevaluable bucket.
+    Mirrors the _compose_darkpool_flow discipline exactly: all IO here, _clean() every
+    scalar, display_only=True + is_context_only=True ALWAYS (incl. the null fallback),
+    absent artifact → honest-null block (caller appends NO gap).
+
+    Standing law (masterplan §4; DNR row 45 / TXI Article 1/2): a chain state is a WATCH
+    item with (eventually) printed conditional base rates — it NEVER scores, ranks, sizes,
+    or escalates. LLM consumers read this and may only de-escalate, never originate.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "transmission" / "chain_state.json"
+
+    null_out: dict = {
+        "as_of": None, "n_active": None, "n_dormant": None, "chains": None,
+        "display_only": True, "is_context_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        _ARMED = {"arming", "propagating", "expressed"}
+        chains_in = raw.get("chains") or []
+        chains_out: list[dict] = []
+        n_dormant = 0
+        for c in chains_in:
+            if not isinstance(c, dict):
+                continue
+            state = c.get("state")
+            if state not in _ARMED:
+                n_dormant += 1
+                continue
+            hops = c.get("hops") or []
+            n_hops = c.get("n_hops") or (len(hops) if isinstance(hops, list) else 0)
+            confirmed = sum(1 for h in hops if isinstance(h, dict) and h.get("confirmed"))
+            # blast — per channel keep n + unevaluable + up to 8 names (rebuild client-side)
+            blast_raw = c.get("blast") or {}
+            blast_out: dict = {}
+            if isinstance(blast_raw, dict):
+                for flag, entry in blast_raw.items():
+                    if not isinstance(entry, dict):
+                        continue
+                    blast_out[flag] = {
+                        "n": _clean(entry.get("n")),
+                        "unevaluable": _clean(entry.get("unevaluable")),
+                        "names": [str(n) for n in (entry.get("names") or [])[:8]],
+                    }
+            title = c.get("title") or {}
+            chains_out.append({
+                "chain": _clean(c.get("chain")),
+                "title_en": (title.get("en") if isinstance(title, dict) else None),
+                "state": _clean(state),
+                "tier": _clean(c.get("tier")),
+                "links_confirmed": _clean(confirmed),
+                "n_hops": _clean(n_hops),
+                "base_rates": c.get("base_rates"),   # null in W1 — honest "untested"
+                "blast": blast_out,
+            })
+        return {
+            "as_of": _clean(raw.get("asof")),
+            "n_active": _clean(len(chains_out)),
+            "n_dormant": _clean(n_dormant),
+            "chains": chains_out,
+            "display_only": True,
+            "is_context_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("transmission_chains: compose failed — %s", exc)
+        return null_out
+
+
 def _compose_mag7_washout(root: "Path | str | None" = None) -> dict:
     """Compose the mag7_washout gate lobe from data/mag7_washout/latest.json.
 
@@ -4322,6 +4399,21 @@ def build_world_state(
             "venue_mover": None, "changes": None, "display_only": True, "is_context_only": True,
         }
     sources[str(_dpf_path.relative_to(repo))] = (darkpool_flow_block or {}).get("as_of")
+    # TXI W4 — transmission chains staged-cascade context lobe (transmission_chains.v1,
+    # display-only, fail-open; honest-null when the artifact is absent — the producer
+    # engine.transmission_chains runs AFTER build_site in the nightly, so a fresh checkout
+    # may not have it yet). Matches the darkpool_flow / stage_analysis optional-artifact pattern.
+    _txc_path = data_dir / "transmission" / "chain_state.json"
+    try:
+        transmission_chains_block: dict = _compose_transmission_chains(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: transmission_chains lobe failed — %s", exc)
+        gaps.append(f"transmission_chains: {exc}")
+        transmission_chains_block = {
+            "as_of": None, "n_active": None, "n_dormant": None, "chains": None,
+            "display_only": True, "is_context_only": True,
+        }
+    sources[str(_txc_path.relative_to(repo))] = (transmission_chains_block or {}).get("as_of")
     # MWR §7 W1c — mag7 washout re-entry gate lobe (display-only; honest-null when absent)
     _mwr_path = data_dir / "mag7_washout" / "latest.json"
     try:
@@ -4404,6 +4496,7 @@ def build_world_state(
         "market_structure": market_structure_block,  # MSP-W3 market-structure context lobe (display-only)
         "stage_analysis": stage_analysis_block,  # SGA-W2 stage_context.v1 lobe (display-only, None-fields until first run)
         "darkpool_flow": darkpool_flow_block,  # darkpool_context.v1 off-exchange positioning lobe (display-only)
+        "transmission_chains": transmission_chains_block,  # transmission_chains.v1 staged-cascade lobe (TXI W4; display-only)
         "mag7_washout": mag7_washout_block,  # MWR §7 W1c re-entry gate lobe (display-only; Use-B un-ratified)
         "personality_codex": personality_codex_block,  # PSS-W2 codex aggregate lobe (display-only; reset-confirmation context)
         "rates_command": rates_command_block,  # RCB Forward Path board lobe (display-only)

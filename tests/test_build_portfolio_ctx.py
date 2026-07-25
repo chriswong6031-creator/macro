@@ -120,7 +120,7 @@ def test_schema_invariants():
     assert p["asof"] == ASOF
     assert isinstance(p["built"], str) and p["built"].endswith("+00:00")
     assert set(p["coverage"]) == {"tickers", "stage", "themes", "earnings",
-                                  "insider", "congress", "f13", "entry"}
+                                  "insider", "congress", "f13", "entry", "chains"}
     assert isinstance(p["tickers"], dict)
     assert "gate_go" in p
     # top-level key set is FIXED (contract stability): full and empty bakes match
@@ -157,8 +157,8 @@ def test_full_ticker_join():
                                   "label_en": "Risk-on",
                                   "label_zh": "风险偏好",
                                   "color": "green"}}
-    # coverage counts everything present
-    assert p["coverage"] == {"tickers": 1, "stage": 1, "themes": 1, "earnings": 1,
+    # coverage counts everything present (chains: 0 — _full_sources has no chain_state)
+    assert p["coverage"] == {"tickers": 1, "stage": 1, "themes": 1, "earnings": 1, "chains": 0,
                              "insider": 1, "congress": 1, "f13": 1, "entry": 1}
 
 
@@ -364,7 +364,7 @@ def test_integration_smoke_real_files(tmp_path):
     assert payload["v"] == 1
     assert payload["asof"] == ASOF
     assert set(payload["coverage"]) == {"tickers", "stage", "themes", "earnings",
-                                        "insider", "congress", "f13", "entry"}
+                                        "insider", "congress", "f13", "entry", "chains"}
     # the artifact must serialize without NaN
     json.dumps(payload, allow_nan=False)
 

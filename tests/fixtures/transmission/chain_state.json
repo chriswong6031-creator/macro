@@ -1,0 +1,185 @@
+{
+  "schema": "transmission_chains.v1",
+  "asof": "2026-07-23",
+  "built": "2026-07-24 06:12 UTC",
+  "display_only": true,
+  "chains": [
+    {
+      "chain": "dollar_spike_em_multinational",
+      "rev": 3,
+      "tier": "hypothesis",
+      "title": {"en": "Dollar spike → EM & multinational-EPS headwind", "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"},
+      "state": "propagating",
+      "state_label": {"en": "Propagating", "zh": "传导中"},
+      "hop": 1,
+      "n_hops": 2,
+      "armable": true,
+      "episode_id": "dollar_spike_em_multinational@r3:2026-07-18",
+      "hops": [
+        {"id": "dollar_spike->usd_transmission_on", "from": "dollar_spike", "to": "usd_transmission_on",
+         "label": {"en": "Dollar firms → transmission channel turns on", "zh": "美元走强 → 传导通道启动"},
+         "lag_d": [0, 20], "confirmed": true, "asof": "2026-07-21",
+         "value_receipt": [{"path": "transmission.usd_dir", "op": "eq", "threshold": "strengthening", "value": "strengthening", "passed": true}]},
+        {"id": "usd_transmission_on->em_derate", "from": "usd_transmission_on", "to": "em_derate",
+         "label": {"en": "Channel on → EM cohort de-rates", "zh": "通道启动 → 新兴市场板块下修"},
+         "lag_d": [0, 90], "confirmed": false, "asof": null,
+         "value_receipt": [{"series": "FXI", "vs": "SPY", "metric": "rs_pp", "window": 63, "value": 1.42, "op": "lt", "threshold": 0, "passed": false}]}
+      ],
+      "nodes": [
+        {"id": "dollar_spike", "resolved": true, "confirmed": true, "receipts": []},
+        {"id": "usd_transmission_on", "resolved": true, "confirmed": true, "receipts": []},
+        {"id": "em_derate", "resolved": true, "confirmed": false, "receipts": []}
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {
+        "em_revenue_exposure": {
+          "label": {"en": "EM revenue exposure", "zh": "新兴市场营收敷口"},
+          "n": 0, "cuts": {}, "unevaluable": 1603, "names": [], "resolved": true
+        },
+        "multinational_fx_translation": {
+          "label": {"en": "Multinational FX translation", "zh": "跨国汇率折算"},
+          "n": 2, "cuts": {}, "unevaluable": 1590, "names": ["AAPL", "NVDA"], "resolved": true
+        },
+        "dollar_debt_burden": {
+          "label": {"en": "Dollar-debt burden", "zh": "美元债务负担"},
+          "n": 0, "cuts": {"financials.debt_to_assets": 0.61}, "unevaluable": 1601, "names": [], "resolved": true
+        },
+        "em_commodity_sector_proxy": {
+          "label": {"en": "EM/commodity sector (proxy)", "zh": "新兴市场/商品行业（代理）"},
+          "n": 163, "cuts": {}, "unevaluable": 12, "names": ["XOM", "CVX", "FCX", "SLB", "NVDA", "COP", "HAL", "MOS", "DVN"], "resolved": true,
+          "note": {"en": "PROXY (sector, not revenue): GICS sector membership stands in for EM-demand exposure — Materials & Energy.", "zh": "代理（行业而非营收）：以GICS行业归属代表新兴市场需求敷口——材料与能源。"}
+        }
+      },
+      "display_only": true
+    },
+    {
+      "chain": "oil_inflation_duration_derate",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {"en": "Oil shock → inflation → yields → long-duration de-rate", "zh": "油价冲击 → 通胀 → 收益率 → 长久期估值下修"},
+      "state": "arming",
+      "state_label": {"en": "Arming", "zh": "触发中"},
+      "hop": 0,
+      "n_hops": 3,
+      "armable": true,
+      "episode_id": "oil_inflation_duration_derate@r2:2026-07-23",
+      "hops": [
+        {"id": "oil_shock->breakeven_rise", "from": "oil_shock", "to": "breakeven_rise",
+         "label": {"en": "Oil shock → breakevens rise", "zh": "油价冲击 → 盈亏平衡上行"},
+         "lag_d": [5, 60], "confirmed": false, "asof": null, "value_receipt": []},
+        {"id": "breakeven_rise->yield_rise", "from": "breakeven_rise", "to": "yield_rise",
+         "label": {"en": "Breakevens rise → real yields rise", "zh": "盈亏平衡上行 → 实际收益率上行"},
+         "lag_d": [0, 90], "confirmed": false, "asof": null, "value_receipt": []},
+        {"id": "yield_rise->duration_derate", "from": "yield_rise", "to": "duration_derate",
+         "label": {"en": "Real yields rise → long-duration de-rates", "zh": "实际收益率上行 → 长久期下修"},
+         "lag_d": [0, 120], "confirmed": false, "asof": null, "value_receipt": []}
+      ],
+      "nodes": [
+        {"id": "oil_shock", "resolved": true, "confirmed": true, "receipts": []},
+        {"id": "breakeven_rise", "resolved": true, "confirmed": false, "receipts": []},
+        {"id": "yield_rise", "resolved": true, "confirmed": false, "receipts": []},
+        {"id": "duration_derate", "resolved": true, "confirmed": false, "receipts": []}
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {
+        "long_duration_valuation": {
+          "label": {"en": "Long-duration valuation", "zh": "长久期估值"},
+          "n": 214, "cuts": {"valuation.forward_pe": 38.2}, "unevaluable": 44, "names": ["NVDA", "PLTR", "CRWD", "SNOW", "TSLA", "AVGO", "NOW"], "resolved": true
+        },
+        "capex_borrower": {
+          "label": {"en": "Capex borrower", "zh": "资本开支借款方"},
+          "n": 18, "cuts": {}, "unevaluable": 940, "names": ["PLTR", "RIVN", "LCID"], "resolved": true
+        },
+        "fcf_burner": {
+          "label": {"en": "FCF burner", "zh": "现金流消耗"},
+          "n": 61, "cuts": {}, "unevaluable": 938, "names": ["PLTR", "RIVN", "LCID", "SNOW"], "resolved": true
+        },
+        "refinancing_channel": {
+          "label": {"en": "Refinancing channel", "zh": "再融资通道"},
+          "n": 220, "cuts": {"financials.debt_to_assets": 0.61}, "unevaluable": 940, "names": ["T", "VZ", "CCL", "AAL"], "resolved": true
+        }
+      },
+      "display_only": true
+    },
+    {
+      "chain": "credit_spreads_refinancing",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {"en": "Credit spreads widen → refinancing-dependent cohort de-rate", "zh": "信用利差走阔 → 依赖再融资的板块下修"},
+      "state": "expressed",
+      "state_label": {"en": "Expressed", "zh": "已兑现"},
+      "hop": 1,
+      "n_hops": 1,
+      "armable": true,
+      "episode_id": "credit_spreads_refinancing@r2:2026-07-10",
+      "hops": [
+        {"id": "spread_widen->refi_cohort_derate", "from": "spread_widen", "to": "refi_cohort_derate",
+         "label": {"en": "Spreads widen → refi cohort de-rates", "zh": "利差走阔 → 再融资板块下修"},
+         "lag_d": [0, 90], "confirmed": true, "asof": "2026-07-19",
+         "value_receipt": [{"series": "IWM", "vs": "SPY", "metric": "rs_pp", "window": 63, "value": -3.1, "op": "lt", "threshold": 0, "passed": true}]}
+      ],
+      "nodes": [
+        {"id": "spread_widen", "resolved": true, "confirmed": true, "receipts": []},
+        {"id": "refi_cohort_derate", "resolved": true, "confirmed": true, "receipts": []}
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {
+        "refinancing_channel": {
+          "label": {"en": "Refinancing channel", "zh": "再融资通道"},
+          "n": 220, "cuts": {"financials.debt_to_assets": 0.61}, "unevaluable": 940, "names": ["CCL", "AAL", "T", "CVNA"], "resolved": true
+        },
+        "floating_rate_debt": {
+          "label": {"en": "Floating-rate debt", "zh": "浮动利率债务"},
+          "n": 0, "cuts": {}, "unevaluable": 1615, "names": [], "resolved": false,
+          "note": {"en": "DROPPED — no field: the substrate has no fixed-vs-floating debt split.", "zh": "已弃用——无字段：个股数据无固定与浮动利率债务拆分。"}
+        },
+        "fcf_burner": {
+          "label": {"en": "FCF burner", "zh": "现金流消耗"},
+          "n": 61, "cuts": {}, "unevaluable": 938, "names": ["CVNA", "RIVN", "LCID"], "resolved": true
+        }
+      },
+      "display_only": true
+    },
+    {
+      "chain": "vol_regime_deleveraging",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {"en": "Vol-regime shift → systematic deleveraging → high-beta unwind", "zh": "波动率状态转变 → 系统性去杠杆 → 高贝塔平仓"},
+      "state": "dormant",
+      "state_label": {"en": "Dormant", "zh": "休眠"},
+      "hop": 0,
+      "n_hops": 2,
+      "armable": true,
+      "episode_id": null,
+      "hops": [
+        {"id": "vol_expansion->systematic_delever", "from": "vol_expansion", "to": "systematic_delever",
+         "label": {"en": "Vol stress → books cut gross", "zh": "波动率压力 → 策略削减总敷口"},
+         "lag_d": [0, 21], "confirmed": false, "asof": null, "value_receipt": []},
+        {"id": "systematic_delever->highbeta_unwind", "from": "systematic_delever", "to": "highbeta_unwind",
+         "label": {"en": "Deleveraging → high-beta unwinds", "zh": "去杠杆 → 高贝塔平仓"},
+         "lag_d": [0, 42], "confirmed": false, "asof": null, "value_receipt": []}
+      ],
+      "nodes": [
+        {"id": "vol_expansion", "resolved": true, "confirmed": false, "receipts": []},
+        {"id": "systematic_delever", "resolved": true, "confirmed": false, "receipts": []},
+        {"id": "highbeta_unwind", "resolved": true, "confirmed": false, "receipts": []}
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {},
+      "display_only": true
+    }
+  ],
+  "caveats": [
+    {"en": "Display-only context — never scored, never a call. A chain state is a WATCH item; it never gates, sizes, ranks, or escalates anything (masterplan §4).", "zh": "仅供展示的上下文——从不计入评分，从不作为交易指令。"},
+    {"en": "Per-hop base rates are UNTESTED in W1 (base_rates=null) — the episode miner and the forward ledger fill them in W3. A propagating chain is not a forecast.", "zh": "W1中各跳的基础发生率尚未检验（base_rates=null）。"},
+    {"en": "Per-name blast radius (`blast`) is a WATCH-grade membership screen with a field receipt. Counts always include the unevaluable (missing-field) bucket: a missing field is neither safe nor unsafe. Only ARMED chains resolve; dormant chains carry blast={}.", "zh": "个股层面的传导范围（blast）是带字段凭证的观察级成员筛选。"}
+  ],
+  "substrate": {
+    "universe": 1615,
+    "substrate_asof": {"min": "2026-05-30", "max": "2026-07-22"}
+  }
+}

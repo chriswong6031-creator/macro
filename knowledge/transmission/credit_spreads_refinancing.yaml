@@ -2,7 +2,7 @@
 # Seed list §7 ("credit spreads widen → refinancing-dependent smallcaps; HYG/LQD
 # collected"). Display-tier. HYG/LQD verified present in lib.store yahoo.
 chain: credit_spreads_refinancing
-rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
+rev: 2                      # W4: hop display labels (see changelog)
 tier: hypothesis
 title:
   en: "Credit spreads widen → refinancing-dependent cohort de-rate"
@@ -29,6 +29,9 @@ hops:
     to: refi_cohort_derate
     sign: "+"
     lag_d: [0, 90]
+    label:
+      en: "Spreads widen → refi cohort de-rates"
+      zh: "利差走阔 → 再融资板块下修"
     condition:
       en: "widening driven by credit risk / financing stress, not a pure rates move (a rate-driven HYG move without IG divergence is a different chain)"
       zh: "由信用风险/融资压力驱动的走阔，而非纯利率变动（无IG分化的利率型HYG变动属于另一条链）"
@@ -77,6 +80,8 @@ changelog:
      refinancing_channel + fcf_burner resolve to real fields (debt_to_assets pctile; fcf_margin).
      floating_rate_debt is DROPPED with a bilingual note — the substrate has NO fixed-vs-floating
      debt split field; not proxied (masterplan §scoping.3 forbids silent proxies)."
+  - "rev 2 (W4 2026-07-25): added a bilingual hop display label (label:{en,zh}) to the single hop
+     for the W4 Cascade Monitor + site publication subset. No node/screen/tier change."
 
 validator_note: >
   No HY-OAS FRED series is present in this repo's lib.store, so spread_widen binds to the

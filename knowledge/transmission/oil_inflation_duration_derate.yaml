@@ -2,7 +2,7 @@
 # Masterplan §6 worked spec, bound to the REAL collected artifacts (see validator_note
 # for the two node→field adjustments vs the prose spec). Display-tier; never scored.
 chain: oil_inflation_duration_derate
-rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
+rev: 2                      # W4: hop display labels (see changelog)
 tier: hypothesis            # every node resolves + arms, but per-hop base rates untested (W3)
 title:
   en: "Oil shock → inflation → yields → long-duration de-rate"
@@ -49,6 +49,9 @@ hops:
     to: breakeven_rise
     sign: "+"
     lag_d: [5, 60]
+    label:
+      en: "Oil shock → breakevens rise"
+      zh: "油价冲击 → 盈亏平衡上行"
     condition:
       en: "supply-driven shock (global PMI not accelerating); demand-driven oil is a different chain"
       zh: "供给驱动的冲击（全球PMI未加速）；需求驱动的油价属于另一条链"
@@ -60,6 +63,9 @@ hops:
     to: yield_rise
     sign: "+"
     lag_d: [0, 90]
+    label:
+      en: "Breakevens rise → real yields rise"
+      zh: "盈亏平衡上行 → 实际收益率上行"
     condition:
       en: "Fed not capping the curve (no YCC / large-scale QE regime)"
       zh: "美联储未压制曲线（无YCC/大规模QE环境）"
@@ -71,6 +77,9 @@ hops:
     to: duration_derate
     sign: "+"
     lag_d: [0, 120]
+    label:
+      en: "Real yields rise → long-duration de-rates"
+      zh: "实际收益率上行 → 长久期下修"
     condition:
       en: "no offsetting earnings-acceleration in the long-duration cohort"
       zh: "长久期板块无抵消性的盈利加速"
@@ -136,6 +145,8 @@ changelog:
      duration + valuation.forward_pe pctile; refinancing_channel via debt_to_assets pctile
      (ratio, not raw $); capex_borrower via factors.radar_investment_z (lifted from the radar
      list) + fcf_margin; fcf_burner via fcf_margin. No dropped/proxy channel on this chain."
+  - "rev 2 (W4 2026-07-25): added bilingual hop display labels (label:{en,zh}) to all three hops
+     for the W4 Cascade Monitor + site publication subset. No node/screen/tier change."
 
 validator_note: >
   NODE bindings (unchanged from rev 0): two node→field adjustments vs the §6 prose, both

@@ -1417,6 +1417,105 @@ def _summarize_darkpool_flow(repo: Path) -> tuple[dict, str | None]:
         return {}, f"darkpool_flow summarize failed: {exc}"
 
 
+# Non-dormant chain states, worst/most-progressed first for the summary ordering.
+_CHAIN_STATE_RANK = {"expressed": 0, "propagating": 1, "arming": 2}
+
+
+def _summarize_transmission_chains(repo: Path) -> tuple[dict, str | None]:
+    """Distil transmission_chains.v1 into the transmission_chains lobe (staged macro→micro
+    cascade context). Mirrors _summarize_darkpool_flow exactly.
+
+    Source: data/transmission/chain_state.json (transmission_chains.v1). Written by
+    engine.transmission_chains.run (scripts nightly, AFTER build_site — so the site JSON
+    lags but this NW read is fresh). Absent until the first chains run → empty lobe + gap.
+
+    Standing laws (masterplan §4; DNR row 45 / TXI Article 1/2):
+    - 100% deterministic re-projection of already-computed display-tier state; no LLM.
+    - A chain state is a WATCH item — nothing here gates, ranks, sizes, or escalates. The
+      summary text carries the tier honesty ("early monitor; base rates untested") and uses
+      NO escalation language.
+    - The word 'validated' is banned; is_context_only=True + display_only=True always.
+    """
+    cs_path = repo / "data" / "transmission" / "chain_state.json"
+    raw = _read_json(cs_path)
+    if raw is None:
+        return {}, "data/transmission/chain_state.json absent or unreadable"
+
+    try:
+        chains = raw.get("chains") or []
+        active: list[dict] = []
+        n_dormant = 0
+        for c in chains:
+            if not isinstance(c, dict):
+                continue
+            state = c.get("state")
+            if state not in _CHAIN_STATE_RANK:
+                n_dormant += 1
+                continue
+            hops = c.get("hops") or []
+            n_hops = c.get("n_hops") or (len(hops) if isinstance(hops, list) else 0)
+            confirmed = sum(1 for h in hops if isinstance(h, dict) and h.get("confirmed"))
+            # blast: per-channel {n, unevaluable, top names} — trim, keep the honesty bucket
+            blast = c.get("blast") or {}
+            channels: dict = {}
+            if isinstance(blast, dict):
+                for flag, entry in blast.items():
+                    if not isinstance(entry, dict):
+                        continue
+                    channels[flag] = {
+                        "n": entry.get("n"),
+                        "unevaluable": entry.get("unevaluable"),
+                        "names": [str(x) for x in (entry.get("names") or [])[:8]],
+                    }
+            title = c.get("title") or {}
+            active.append({
+                "chain": c.get("chain"),
+                "title_en": title.get("en") if isinstance(title, dict) else None,
+                "state": state,
+                "tier": c.get("tier"),
+                "links_confirmed": confirmed,
+                "n_hops": n_hops,
+                "base_rates": c.get("base_rates"),   # null in W1 — honest "untested"
+                "channels": channels,
+            })
+        active.sort(key=lambda a: (_CHAIN_STATE_RANK.get(a["state"], 9), -(a["links_confirmed"] or 0)))
+
+        # one plain, non-escalating headline per active chain, tier honesty inline
+        def _driver(chain_id: str | None) -> str:
+            s = str(chain_id or "")
+            if s.startswith("dollar"):
+                return "dollar-spike"
+            if s.startswith("oil"):
+                return "oil→rates"
+            if s.startswith("credit"):
+                return "credit-spread"
+            if s.startswith("vol"):
+                return "vol-regime"
+            return s.replace("_", " ")
+
+        lines: list[str] = []
+        for a in active[:4]:
+            lines.append(
+                "%s cascade %s (%d/%d links; early monitor, base rates untested)"
+                % (_driver(a["chain"]), a["state"], a["links_confirmed"] or 0, a["n_hops"] or 0)
+            )
+
+        lobe: dict = {
+            "is_context_only": True,
+            "display_only": True,
+            "asof": raw.get("asof"),
+            "n_active": len(active),
+            "n_dormant": n_dormant,
+            "chains": active,
+            "summary": "; ".join(lines) if lines else "no cascade armed — all chains dormant",
+            "honesty_note": "context only — staged macro→micro cascade WATCH items; per-hop base "
+                            "rates untested (W1), never a signal, forecast, or sizing input",
+        }
+        return lobe, None
+    except Exception as exc:  # noqa: BLE001
+        return {}, f"transmission_chains summarize failed: {exc}"
+
+
 def _summarize_theme_rotation(repo: Path) -> tuple[dict, str | None]:
     """Distil world_state.theme_rotation into the theme_rotation lobe.
 
@@ -1582,6 +1681,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "special_sits": _summarize_special_sits,  # SS-NW-W1 special-situations event context lobe
     "stage_analysis": _summarize_stage_analysis,  # SGA-W2 Weinstein stage classification context lobe
     "darkpool_flow": _summarize_darkpool_flow,  # darkpool_context.v1 off-exchange positioning context lobe
+    "transmission_chains": _summarize_transmission_chains,  # transmission_chains.v1 staged-cascade context lobe (TXI W4)
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
     "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
@@ -1606,6 +1706,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "special_sits": ["special-sits-context-latest"],  # SS-NW-W1: reads context artifact directly
     "stage_analysis": ["stage-analysis-context-latest"],  # SGA-W2: reads context artifact directly
     "darkpool_flow": ["darkpool-context-latest"],  # reads darkpool_context.v1 artifact directly
+    "transmission_chains": ["transmission-chains-state"],  # reads transmission_chains.v1 artifact directly (TXI W4)
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
     "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)

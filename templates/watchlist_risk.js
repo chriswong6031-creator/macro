@@ -250,6 +250,151 @@
   function timeWordZh(t) { return t === 'pre-market' ? '盘前' : t === 'after-hours' ? '盘后' : ''; }
 
   // =========================================================================
+  //  Transmission CHAINS lane (TXI W4) — INFO-tier context from
+  //  transmission_chains.json. A name that sits in an ARMED chain's blast radius
+  //  gets a deliberately COOL info chip + a drawer read. Display-only WATCH
+  //  context: never a signal, size, or call. All logic below is pure + DOM-free
+  //  (exported for node tests); the wiring lives in loadChains / paintLanes / rail.
+  // =========================================================================
+  var CHAIN_ARMED = { arming: 1, propagating: 1, expressed: 1 };
+  // most-progressed first (a name in several chains leads with the furthest along)
+  var CHAIN_RANK = { expressed: 0, propagating: 1, arming: 2 };
+  var CHAIN_STATE_WORD = {
+    arming: { en: 'arming', zh: '触发中' }, propagating: { en: 'propagating', zh: '传导中' },
+    expressed: { en: 'expressed', zh: '已兑现' }
+  };
+
+  // plain driver word for a chain id (the "{driver} risk building" chip). Falls back to
+  // the chain's EN label's first word so a new chain id still reads sensibly.
+  function chainDriver(m) {
+    var id = (m && m.id) || '';
+    if (/^dollar/.test(id)) return { en: 'Dollar', zh: '美元' };
+    if (/^oil/.test(id)) return { en: 'Oil→rates', zh: '油价利率' };
+    if (/^credit/.test(id)) return { en: 'Credit-spread', zh: '信用利差' };
+    if (/^vol/.test(id)) return { en: 'Volatility', zh: '波动率' };
+    var lab = (m && m.label) || {};
+    var en = String(lab.en || id).split(' ')[0];
+    return { en: en, zh: String(lab.zh || en).slice(0, 4) };
+  }
+
+  // invert the published subset ({chains:[{id,label,state,hops,blast:{ch:{names,...}}}]})
+  // into { TICKER: [membership,...] } — ARMED chains only. A membership carries the chain
+  // id/label/state, its confirmed/total hop counts, and the channel it was caught by (with
+  // the channel label + coverage counts for the drawer read). Deduped per chain×channel.
+  function chainIndex(subset) {
+    var idx = {};
+    var chains = (subset && subset.chains) || [];
+    for (var i = 0; i < chains.length; i++) {
+      var c = chains[i] || {};
+      if (!CHAIN_ARMED[c.state]) continue;
+      var hops = c.hops || [];
+      var nh = hops.length, conf = 0;
+      for (var h = 0; h < hops.length; h++) if (hops[h] && hops[h].confirmed) conf++;
+      var blast = c.blast || {};
+      for (var flag in blast) {
+        if (!Object.prototype.hasOwnProperty.call(blast, flag)) continue;
+        var ch = blast[flag] || {}, names = ch.names || [];
+        for (var n = 0; n < names.length; n++) {
+          var tk = String(names[n] || '').toUpperCase();
+          if (!tk) continue;
+          var bucket = idx[tk] || (idx[tk] = []);
+          var dup = false;
+          for (var b = 0; b < bucket.length; b++) if (bucket[b].id === c.id && bucket[b].channel === flag) { dup = true; break; }
+          if (dup) continue;
+          bucket.push({
+            id: c.id, label: c.label || {}, state: c.state,
+            links_confirmed: conf, n_hops: nh,
+            channel: flag, channel_label: ch.label || {},
+            channel_n: ch.n, unevaluable: ch.unevaluable
+          });
+        }
+      }
+    }
+    return idx;
+  }
+
+  // the furthest-progressed chain membership for a name (expressed > propagating > arming;
+  // ties broken by more links confirmed). null when the name is in no armed chain.
+  function furthestChain(memberships) {
+    if (!memberships || !memberships.length) return null;
+    var best = null;
+    for (var i = 0; i < memberships.length; i++) {
+      var m = memberships[i];
+      if (best === null) { best = m; continue; }
+      var rm = CHAIN_RANK[m.state], rb = CHAIN_RANK[best.state];
+      if (rm < rb || (rm === rb && (m.links_confirmed || 0) > (best.links_confirmed || 0))) best = m;
+    }
+    return best;
+  }
+
+  // the ONE hero-rail sentence: fires only when some chain is propagating|expressed AND at
+  // least one of the book's names sits in that chain's blast. Returns {en,zh,id} or null.
+  // Picks the most-progressed such chain; m = count of the book's names downstream of it.
+  function railChainSentence(idx, bookTickers) {
+    if (!idx || !bookTickers || !bookTickers.length) return null;
+    var perChain = {};   // id -> {state, label, names:Set-ish}
+    for (var i = 0; i < bookTickers.length; i++) {
+      var tk = String(bookTickers[i] || '').toUpperCase();
+      var ms = idx[tk]; if (!ms) continue;
+      for (var j = 0; j < ms.length; j++) {
+        var m = ms[j];
+        if (m.state !== 'propagating' && m.state !== 'expressed') continue;
+        var e = perChain[m.id] || (perChain[m.id] = { state: m.state, label: m.label, names: {} });
+        e.names[tk] = 1;
+      }
+    }
+    var pick = null;
+    for (var id in perChain) {
+      if (!Object.prototype.hasOwnProperty.call(perChain, id)) continue;
+      var c = perChain[id];
+      if (pick === null || CHAIN_RANK[c.state] < CHAIN_RANK[pick.state]) pick = { id: id, state: c.state, label: c.label, m: Object.keys(c.names).length };
+    }
+    if (!pick) return null;
+    var nm = (pick.label && pick.label.en) || pick.id;
+    var nmz = (pick.label && pick.label.zh) || nm;
+    return {
+      id: pick.id,
+      en: 'A ' + nm + ' cascade is propagating — ' + pick.m + ' of your names sit downstream',
+      zh: nmz + '传导推进中——你的 ' + pick.m + ' 只持仓位于下游'
+    };
+  }
+
+  // the drawer read for every armed chain a name sits downstream of (most-progressed first).
+  // A plain review line + a coverage note; receipts ride data-tip-*, never title=. Returns an
+  // HTML string of .wri-lrow rows (empty when the name is in no armed chain). PURE.
+  function chainDrawerRows(memberships) {
+    if (!memberships || !memberships.length) return '';
+    var ms = memberships.slice().sort(function (a, b) {
+      var r = CHAIN_RANK[a.state] - CHAIN_RANK[b.state];
+      return r !== 0 ? r : (b.links_confirmed || 0) - (a.links_confirmed || 0);
+    });
+    var out = '';
+    for (var i = 0; i < ms.length; i++) {
+      var m = ms[i];
+      var nm = (m.label && m.label.en) || m.id, nmz = (m.label && m.label.zh) || nm;
+      var chn = (m.channel_label && m.channel_label.en) || m.channel;
+      var chnz = (m.channel_label && m.channel_label.zh) || chn;
+      var k = m.links_confirmed || 0, n = m.n_hops || 0;
+      var cov = isNum(m.channel_n) ? (m.channel_n + ' names' + (isNum(m.unevaluable) ? ', ' + m.unevaluable + ' unevaluable' : '')) : 'coverage partial';
+      var covz = isNum(m.channel_n) ? (m.channel_n + ' 只' + (isNum(m.unevaluable) ? '，' + m.unevaluable + ' 只无法评估' : '')) : '口径部分覆盖';
+      var sw = CHAIN_STATE_WORD[m.state] || { en: m.state, zh: m.state };
+      var readEn = 'Sits downstream of the ' + esc(nm) + ' cascade — ' + k + ' of ' + n +
+        ' links confirmed (' + esc(chn) + ', ' + esc(cov) + '). Early monitor — not a signal.';
+      var readZh = '处于' + esc(nmz) + '传导下游——已确认 ' + k + '/' + n + ' 环节（' + esc(chnz) +
+        '，' + esc(covz) + '）。早期监测——非信号。';
+      var tipEn = 'The chain is ' + esc(sw.en) + '. A named channel screen (' + esc(chn) +
+        ') places this name in the blast radius; a missing field is neither in nor out. Display-only WATCH context — never a signal, size, or call.';
+      var tipZh = '该链' + esc(sw.zh) + '。命名通道筛选（' + esc(chnz) +
+        '）将此股纳入波及范围；字段缺失既不纳入也不排除。仅供观察的上下文——绝非信号、仓位或指令。';
+      out += '<div class="wri-lrow"><span class="ln">' + te('Transmission', '传导链') +
+        '<span class="wri-q" tabindex="0" data-tip-en="' + tipEn + '" data-tip-zh="' + tipZh + '">?</span></span>' +
+        '<span class="st info">' + te('WATCH', '关注') + '</span>' +
+        '<span class="rs">' + te(readEn, readZh) + '</span></div>';
+    }
+    return out;
+  }
+
+  // =========================================================================
   //  L3 — regime rail (window.WRI_REGIME crossed with the book's market beta)
   // =========================================================================
   // state ramp tint (never --up/--down; zh-flip trap). state from risk_radar.
@@ -273,10 +418,20 @@
     host.style.display = 'flex';
     host.style.setProperty('--wri-rail-tint', 'var(--wri-' + tint + ')');
     host.className = 'wri-rail wri-rail-' + tint;
+    // ONE appended chain sentence — only when a chain is propagating|expressed AND ≥1 book
+    // name sits downstream of it. Links to the Cascade Monitor. The rail's single-line law
+    // wins: this rides at the end, after the base state + beta, so the base read always shows.
+    var chainFrag = '';
+    var cs = railChainSentence(CHAINS_IDX, Object.keys(BOOK_SHARES));
+    if (cs) {
+      chainFrag = '<span class="sep">·</span><span class="wri-rail-chain">' +
+        te(esc(cs.en), esc(cs.zh)) + ' <a href="transmission.html">' +
+        te('cascade →', '传导链 →') + '</a></span>';
+    }
     host.innerHTML =
       '<span class="dot"></span>' +
       '<b>' + te(esc(domEn) + ' — market on ' + esc(stateEn), esc(domZh) + '——市场' + esc(stateZh)) + '</b>' +
-      betaFrag +
+      betaFrag + chainFrag +
       '<a href="macro.html">' + te('market state →', '市场状态 →') + '</a>';
   }
   function stateWord(s, l) {
@@ -1067,6 +1222,16 @@
         te(esc(L.chip.en), esc(L.chip.zh)) + '</span>');
     });
     var tkr = card.getAttribute('data-t');
+    // transmission chain chip (INFO tier — deliberately NOT hot/red): the furthest-progressed
+    // armed chain this name sits downstream of. At-rest cap = 1 chain chip; the rest live in
+    // the drawer. Display-only WATCH context, never a signal.
+    var chainMs = CHAINS_IDX[tkr];
+    var chainLead = furthestChain(chainMs);
+    if (chainLead) {
+      var drv = chainDriver(chainLead);
+      chips.push('<span class="wri-chip info">' +
+        te(esc(drv.en) + ' risk building', esc(drv.zh) + '风险酝酿') + '</span>');
+    }
     // book-risk share chip (info, from L2) if we have it for this name
     var shareChip = BOOK_SHARES[tkr];
     if (shareChip != null) {
@@ -1098,6 +1263,9 @@
         '<span class="st ' + stCls + '">' + stTok + '</span>' +
         '<span class="rs">' + te(esc(L.en), esc(L.zh)) + '</span></div>';
     }).join('');
+    // chain drawer rows — ALL armed chains this name sits downstream of (the chip shows only
+    // the furthest along; the drawer carries the rest). Each is a plain review read, never a call.
+    rows += chainDrawerRows(chainMs);
     var asof = j && j.asof ? ('<div class="asof">' + te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>') : '';
     var drawerHtml = '<div class="wri-drawer">' + rows + asof + '</div>';
     // insert after .wl-enrich (or .wl-sig)
@@ -1202,6 +1370,19 @@
     return DATA_LOADING;
   }
 
+  // transmission chains subset — fetched once, 404 => the whole chain lane stays silently
+  // absent (no chips, no drawer line, no rail sentence). Never blocks the book render.
+  var CHAINS_IDX = {}, CHAINS_LOADED = false, CHAINS_LOADING = null;
+  function loadChains() {
+    if (CHAINS_LOADED) return Promise.resolve(CHAINS_IDX);
+    if (CHAINS_LOADING) return CHAINS_LOADING;
+    CHAINS_LOADING = fetch('transmission_chains.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { CHAINS_IDX = j ? chainIndex(j) : {}; CHAINS_LOADED = true; return CHAINS_IDX; })
+      .catch(function () { CHAINS_IDX = {}; CHAINS_LOADED = true; return CHAINS_IDX; });
+    return CHAINS_LOADING;
+  }
+
   function recomputeBook(weights) {
     loadData().then(function (data) {
       if (!data) { var h = document.getElementById('wri_hero'); if (h) h.style.display = 'none'; return; }
@@ -1241,6 +1422,14 @@
 
   function init() {
     if (!document.getElementById('wri_hero')) return;   // page without the WRI host
+    // 0) load the transmission chains subset once; when it resolves, re-decorate cards +
+    //    re-render the rail so the chain chips/drawer/rail sentence appear (404 => silent).
+    loadChains().then(function () {
+      repaintCards();
+      var hero = document.getElementById('wri_hero');
+      if (hero && hero.__wri && hero.__wri.RR.calm.ok) renderRail(hero.__wri.RR.calm.bookBeta.mkt);
+      else renderRail(null);
+    });
     // 1) recompute the book whenever the FX layer republishes weights
     document.addEventListener('fx-weights', function (e) { recomputeBook(e.detail); });
     // 2) first read: pull current weights if the FX panel already resolved them
@@ -1274,18 +1463,33 @@
     if (hero && hero.__wri && hero.__wri.RR.calm.ok) renderRail(hero.__wri.RR.calm.bookBeta.mkt);
   }
 
-  // lens toggle (delegated — buttons are re-created each paint)
-  document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest ? e.target.closest('#wri_lensCalm, #wri_lensStress') : null;
-    if (!btn) return;
-    var hero = document.getElementById('wri_hero'); if (!hero || !hero.__wri) return;
-    var lens = btn.getAttribute('data-lens');
-    hero.setAttribute('data-lens', lens);
-    paintHero(hero, lens);
-  });
   // keyboard: Enter/Space on a ? tip is a no-op focus target; tips are CSS/hover +
   // focus. (data-tip-en/zh consumed by the page's shared tooltip, no title=.)
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  // Browser bootstrap — guarded so `require()` under node (the unit-test shell) never
+  // touches the DOM at load. In node `document` is undefined; we skip straight to the export.
+  if (typeof document !== 'undefined') {
+    // lens toggle (delegated — buttons are re-created each paint)
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('#wri_lensCalm, #wri_lensStress') : null;
+      if (!btn) return;
+      var hero = document.getElementById('wri_hero'); if (!hero || !hero.__wri) return;
+      var lens = btn.getAttribute('data-lens');
+      hero.setAttribute('data-lens', lens);
+      paintHero(hero, lens);
+    });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+  }
+
+  // Node-test surface (TXI W4): expose the PURE chain-lane helpers so the node-shelled
+  // unit tests can exercise the furthest-progressed selection, the 404-empty path, and the
+  // rail-sentence condition without a DOM. No-op in the browser (module is undefined).
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      chainIndex: chainIndex, furthestChain: furthestChain,
+      railChainSentence: railChainSentence, chainDrawerRows: chainDrawerRows,
+      chainDriver: chainDriver
+    };
+  }
 })();
