@@ -353,6 +353,10 @@ jobs:
               # last nightly's brief until the nightly `daily` (which HAS the key) refreshes it.
               brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
               brun reports       "research reports section (build_reports)"     scripts.build_reports
+              # RV SEO (#3392 heal): vault page + per-report /research/ landing pages re-render
+              # from the COMMITTED catalog (research-ingest commits it). Was daily-engine-only,
+              # so the SEO pages stayed dark whenever the nightly died. Keep in render.yml too.
+              brun research_vault "research vault page + report SEO pages (build_research_vault)" scripts.build_research_vault
               brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
               brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
               # SGA: page-only re-render from the committed data/stage_analysis/context/latest.json

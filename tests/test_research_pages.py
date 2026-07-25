@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from jinja2 import Environment, FileSystemLoader
 
 from scripts import build_research_pages as rp
@@ -89,3 +90,43 @@ def test_sitemap_merge_preserves_other_sections():
     assert "/research/OLD.html" not in out     # stale /research/ replaced
     assert "/research/new.html" in out         # fresh /research/ added
     assert out.count("</urlset>") == 1         # well-formed
+
+
+# --- end-to-end build: a non-empty catalog MUST produce pages ---------------
+def _redirect_out(monkeypatch, tmp_path):
+    """Point the builder's outputs at tmp_path (never write the live site/ tree)."""
+    monkeypatch.setattr(rp, "RESEARCH_DIR", tmp_path / "research")
+    monkeypatch.setattr(rp, "SITEMAP", tmp_path / "sitemap.xml")
+
+
+def test_build_writes_pages_hub_and_sitemap_for_nonempty_catalog(monkeypatch, tmp_path):
+    _redirect_out(monkeypatch, tmp_path)
+    other = dict(_ITEM, id="ubs-xyz789-99aa11", title="Second Report", institution="UBS")
+    n = rp.build({"items": [_ITEM, other]})
+    assert n == 2
+    names = {p.name for p in (tmp_path / "research").glob("*.html")}
+    assert "index.html" in names               # crawl hub emitted
+    assert len(names) == 3                     # 2 report pages + hub
+    xml = (tmp_path / "sitemap.xml").read_text(encoding="utf-8")
+    assert xml.count("<url>") == 3             # hub + 2 reports merged into sitemap
+
+
+def test_build_on_committed_catalog_never_yields_zero_pages(monkeypatch, tmp_path):
+    """#3392 regression: the production catalog must always yield landing pages.
+
+    Guards the failure class that shipped dark: a non-empty committed catalog
+    with zero site/research/*.html produced. Runs the REAL committed
+    data/research_vault/catalog.json through the vault build's own projection,
+    so any data-shape drift that breaks the builder fails HERE — not silently
+    inside the nightly's fail-soft wrapper.
+    """
+    from scripts.build_research_vault import _public_catalog, load_catalog
+    catalog = _public_catalog(load_catalog())
+    if not catalog["items"]:
+        pytest.skip("committed catalog is empty — empty state is the honest render")
+    _redirect_out(monkeypatch, tmp_path)
+    written = rp.build(catalog)
+    assert written > 0                         # the alarm: non-empty catalog, zero pages
+    renderable = [it for it in catalog["items"] if it.get("id")]
+    assert written == len(renderable)          # one landing page per id-bearing report
+    assert (tmp_path / "research" / "index.html").exists()
