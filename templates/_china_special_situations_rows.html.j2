@@ -1,0 +1,249 @@
+{# templates/_china_special_situations_rows.html.j2 — the China desk's per-name
+   markup, ONE source. Rendered twice by scripts/build_china_special_situations.py:
+     * inlined into site/china_special_situations.html for the free preview slice, and
+     * as the paid remainder inside site/premiumdata/china_special_situations.json.
+   The split IS the paywall (docs/TIER_PREVIEW_PATTERN.md), so this file must stay
+   free of any tier logic — it only ever renders the rows/blocks it is handed.
+
+   `t`, `tw` and `yi` are byte-identical copies of the page's own macros: an
+   imported template gets its own namespace, and the paid remainder has to render
+   without the page around it. `td` is an env global (engine.i18n) and needs no copy. #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{# Dual-emit a pre-built {en, zh} twin dict (engine note/glance/stance objects). #}
+{% macro tw(d, key_en='en', key_zh='zh') -%}
+{%- if d %}<span class="l-en">{{ d.get(key_en, '') }}</span><span class="l-zh">{{ d.get(key_zh, d.get(key_en, '')) }}</span>{%- endif %}
+{%- endmacro %}
+{# Render a 亿-denominated (¥100M) money value: EN in $B/$M, ZH in 亿. v is in units of 100M. #}
+{% macro yi(v) -%}
+{%- if v is not none -%}
+<span class="l-en">{%- if v >= 10 %}¥{{ '%.1f'|format(v / 10.0) }}B{%- elif v >= 0.1 %}¥{{ '%.0f'|format(v * 100.0) }}M{%- else %}¥{{ '%.1f'|format(v * 100.0) }}M{%- endif %}</span><span class="l-zh">¥{{ '%.1f'|format(v) }}亿</span>
+{%- else -%}—{%- endif -%}
+{%- endmacro %}
+
+{% macro empty(msg) %}
+<div class="ssx-card" style="padding:0;background:none;border:none;box-shadow:none;margin-bottom:14px">
+  <div class="ssx-empty"><span class="ec">○</span>{{ msg }}</div>
+</div>
+{% endmacro %}
+
+{# ── A · unlock supply — one .ssx-row per scheduled unlock ── #}
+{% macro unlock_rows(events) %}
+    {%- for ev in events %}
+    <div class="ssx-row">
+      <div class="rlead">
+        <span class="ssx-tkr">{{ ev.ticker }}</span>
+        {%- if ev.large_flag %}<span class="ssx-lg">{{ t('supply event', '供给事件') }}</span>{%- endif %}
+      </div>
+      <div class="rbody">
+        <div class="rnote {{ 'e' if ev.large_flag else 'q' }}">{{ tw(ev.note) }}</div>
+        <div class="rmeta">
+          <b class="rname">{{ ev.name }}</b>
+          {%- if ev.lock_type %} · <span data-tip-en="Exchange share-class label, verbatim" data-tip-zh="交易所股份类型标签，原文">{{ ev.lock_type }}</span>{%- endif %}
+          {%- if ev.float_pct is not none %} · <span data-tip-en="Share of pre-unlock free float this tranche represents" data-tip-zh="本批次占解禁前流通市值比例">{{ '%.1f'|format(ev.float_pct) }}% {{ t('of float', '流通占比') }}</span>{%- endif %}
+        </div>
+        {%- if ev.get('regime_chip') %}{%- set _rc = ev.regime_chip %}
+        <div class="ssx-rg"><span>{{ td(_rc.quad_name) }}</span><span>{{ td(_rc.liquidity) }}</span><span>{{ td(_rc.cycle) }}-{{ t('cycle', '周期') }}</span></div>
+        {%- endif %}
+      </div>
+      <div class="rright">
+        {%- if ev.unlock_date %}
+        {%- set _d = ev.days_to %}
+        <span class="ssx-cd {{ 'soon' if _d is not none and _d <= 3 else ('wk' if _d is not none and _d <= 7 else '') }}" data-tip-en="{{ ev.unlock_date }}" data-tip-zh="{{ ev.unlock_date }}">
+          {%- if _d is not none and _d == 0 %}{{ t('today', '今日') }}
+          {%- elif _d is not none and _d == 1 %}{{ t('tomorrow', '明日') }}
+          {%- elif _d is not none and _d > 0 %}{{ t('in ' ~ _d ~ 'd', _d ~ '天后') }}
+          {%- else %}{{ ev.unlock_date }}{%- endif %}
+        </span>
+        {%- endif %}
+      </div>
+    </div>
+    {%- endfor %}
+{%- endmacro %}
+
+{# ── B · open questions — one .ssx-row per exchange inquiry letter ── #}
+{% macro inquiry_rows(letters) %}
+    {%- for ltr in letters %}
+    <div class="ssx-row">
+      <div class="rlead">
+        <span class="ssx-tkr">{{ ltr.secCode }}</span>
+        {%- if ltr.has_reply %}<span class="ssx-tag replied">{{ t('replied', '已回复') }}</span>{%- else %}<span class="ssx-tag open">{{ t('open', '待回复') }}</span>{%- endif %}
+      </div>
+      <div class="rbody">
+        <div class="rnote {{ 'e' if not ltr.has_reply else 'q' }}">{{ tw(ltr.note) }}</div>
+        <div class="rmeta">
+          <b class="rname">{{ ltr.secName }}</b>
+          {%- if ltr.title %} · {{ ltr.title }}{%- endif %}
+          {%- if ltr.pdf_url %}
+            {%- set _href = ('https://static.cninfo.com.cn' + ltr.pdf_url) if ltr.pdf_url.startswith('/') else ('https://static.cninfo.com.cn/' + ltr.pdf_url) %}
+             · <a class="ssx-pdf" href="{{ _href }}" target="_blank" rel="noopener noreferrer">{{ t('letter PDF ↗', '问询函 PDF ↗') }}</a>
+          {%- endif %}
+        </div>
+        {%- if ltr.get('regime_chip') %}{%- set _rc = ltr.regime_chip %}
+        <div class="ssx-rg"><span>{{ td(_rc.quad_name) }}</span><span>{{ td(_rc.liquidity) }}</span><span>{{ td(_rc.cycle) }}-{{ t('cycle', '周期') }}</span></div>
+        {%- endif %}
+      </div>
+      <div class="rright"><span class="ssx-asof">{{ ltr.date }}</span></div>
+    </div>
+    {%- endfor %}
+{%- endmacro %}
+
+{# ── B · the "showing N newest of M" receipt — one sentence, both tiers ── #}
+{% macro inquiry_note(n_shown, n_total) -%}
+<span class="l-en">Showing the {{ n_shown }} newest of {{ n_total }}</span><span class="l-zh">显示最新{{ n_shown }}条，共{{ n_total }}条</span>
+{%- endmacro %}
+
+{# ── C · earnings previews — the ranked "largest changes" drill-down ── #}
+{% macro preannounce_movers(pa) %}
+    {%- if pa.top_movers %}
+    <details class="ssx-more"><summary>{{ t('Largest changes by magnitude ▸', '按幅度排序的最大变动 ▸') }}</summary>
+      <table class="ssx-t">
+        <thead><tr>
+          <th>{{ t('Name', '名称') }}</th><th>{{ t('Forecast', '预告类型') }}</th>
+          <th class="r">{{ t('Change', '变动') }}</th><th>{{ t('Period', '报告期') }}</th>
+        </tr></thead>
+        <tbody>
+        {%- for r in pa.top_movers %}
+        <tr>
+          <td><span class="ssx-tkr" style="margin-right:6px">{{ r.ticker }}</span>{{ r.name }}</td>
+          <td>{{ r.type }}</td>
+          <td class="r {{ 'up' if r.pct_change is not none and r.pct_change >= 0 else 'dn' }}">{{ '%+.1f'|format(r.pct_change) if r.pct_change is not none else '—' }}%</td>
+          <td class="ssx-asof">{{ r.quarter }}</td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+    </details>
+    {%- endif %}
+{%- endmacro %}
+
+{# ── D · buybacks — whole section body, empty states included ── #}
+{% macro buyback_body(bb) %}
+  {%- if not bb or bb.status == 'missing' %}
+    {{ empty(t('No buyback data yet — it populates after the first collect.', '暂无回购数据——将在首次采集后填充。')) }}
+  {%- elif not bb.top %}
+    {{ empty(t('Nothing flagged — no active buyback programs.', '无标记——当前无进行中的回购。')) }}
+  {%- else %}
+  <div class="ssx-card">
+    {%- for r in bb.top %}
+    {%- set _pct = ((r.done_amt_yi / r.plan_amt_yi * 100.0) if (r.plan_amt_yi and r.done_amt_yi is not none and r.plan_amt_yi > 0) else none) %}
+    <div class="ssx-row">
+      <div class="rlead"><span class="ssx-tkr">{{ r.ticker }}</span></div>
+      <div class="rbody">
+        <div class="rnote">
+          <b class="rname">{{ r.name }}</b>
+          {%- if r.plan_amt_yi is not none %} — {{ t('buying back up to', '计划回购至多') }} <span class="em" style="color:var(--ink-1)">{{ yi(r.plan_amt_yi) }}</span> {{ t('of its own shares', '自家股份') }}{%- endif %}
+          {%- if _pct is not none %}, <span data-tip-en="Completed / planned buyback value" data-tip-zh="已完成/计划回购金额">{{ '%.0f'|format(_pct) }}% {{ t('done', '已完成') }}</span>{%- endif %}
+        </div>
+        {%- if _pct is not none %}<div class="ssx-prog"><i style="width:{{ [_pct, 100]|min }}%"></i></div>{%- endif %}
+      </div>
+      <div class="rright"><span class="ssx-asof">{{ r.progress or '—' }}</span></div>
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+{%- endmacro %}
+
+{# ── E · pledge stress — whole section body, empty states included ── #}
+{% macro pledge_body(pl) %}
+  {%- if not pl or pl.status == 'missing' %}
+    {{ empty(t('No pledge data yet — it populates after the first collect.', '暂无质押数据——将在首次采集后填充。')) }}
+  {%- elif not pl.top %}
+    {{ empty(t('Nothing flagged — no pledge readings available.', '无标记——暂无质押数据。')) }}
+  {%- else %}
+  <div class="ssx-card">
+    {%- for r in pl.top %}
+    <div class="ssx-row">
+      <div class="rlead"><span class="ssx-tkr">{{ r.ticker }}</span>
+        {%- if r.pledge_ratio is not none and r.pledge_ratio >= 50 %}<span class="ssx-lg">{{ t('heavy', '较重') }}</span>{%- endif %}
+      </div>
+      <div class="rbody">
+        <div class="rnote {{ 'e' if r.pledge_ratio is not none and r.pledge_ratio >= 50 else 'q' }}">
+          <b class="rname">{{ r.name }}</b> —
+          {%- if r.pledge_ratio is not none %}{{ t('founders have pledged', '大股东已质押') }} <span class="em">{{ '%.0f'|format(r.pledge_ratio) }}%</span> {{ t('of shares as loan collateral', '股份作为贷款抵押') }}{%- else %}{{ t('pledge ratio unavailable', '质押比例不可用') }}{%- endif %}
+        </div>
+        {%- if r.pledge_mktcap_yi is not none %}<div class="rmeta"><span data-tip-en="Market value of pledged shares" data-tip-zh="质押股份市值">≈ {{ yi(r.pledge_mktcap_yi) }} {{ t('pledged', '质押市值') }}</span></div>{%- endif %}
+      </div>
+      <div class="rright">{%- if r.pledge_ratio is not none %}<span class="ssx-cd">{{ '%.0f'|format(r.pledge_ratio) }}%</span>{%- endif %}</div>
+    </div>
+    {%- endfor %}
+    {%- if pl.quarter %}<p class="ssx-asof" style="margin-top:8px">{{ t('Latest disclosed quarter', '最新披露报告期') }}: {{ pl.quarter }}</p>{%- endif %}
+  </div>
+  {%- endif %}
+{%- endmacro %}
+
+{# ── F · risk warnings — the named part (newly flagged / cleared / board table) ── #}
+{% macro st_named(st) %}
+    {%- if st.additions %}
+    <div class="ssx-row">
+      <div class="rlead"><span class="ssx-lg">{{ t('newly flagged', '新增') }} · {{ st.additions|length }}</span></div>
+      <div class="rbody"><div class="rnote e">
+        {%- for a in st.additions %}<span class="ssx-tkr" style="margin:0 6px 4px 0">{{ a.ticker }}</span>{%- if a.name %}<span style="color:var(--ink-2);margin-right:12px">{{ a.name }}</span>{%- endif %}{%- endfor %}
+      </div></div>
+    </div>
+    {%- endif %}
+    {%- if st.removals %}
+    <div class="ssx-row">
+      <div class="rlead"><span class="ssx-tag replied">{{ t('cleared', '移除') }} · {{ st.removals|length }}</span></div>
+      <div class="rbody"><div class="rnote q">
+        {%- for r in st.removals %}<span class="ssx-tkr" style="margin:0 6px 4px 0">{{ r.ticker }}</span>{%- endfor %}
+      </div></div>
+    </div>
+    {%- endif %}
+    {%- if st.top_current %}
+    <details class="ssx-more"><summary>{{ t('Board names, biggest moves ▸', '风险警示板个股 ▸') }}</summary>
+      <table class="ssx-t">
+        <thead><tr><th>{{ t('Name', '名称') }}</th><th class="r">{{ t('Day move', '当日涨跌') }}</th></tr></thead>
+        <tbody>
+        {%- for r in st.top_current %}
+        <tr>
+          <td><span class="ssx-tkr" style="margin-right:6px">{{ r.ticker }}</span>{{ r.name }}</td>
+          <td class="r {{ 'up' if r.pct_chg is not none and r.pct_chg >= 0 else 'dn' }}">{{ '%+.2f'|format(r.pct_chg) if r.pct_chg is not none else '—' }}%</td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+    </details>
+    {%- endif %}
+{%- endmacro %}
+
+{# ── G · block trades — the two ranked premium/discount tables ── #}
+{% macro block_tables(bt) %}
+    {%- if bt.top_premium %}
+    <details class="ssx-more" open><summary>{{ t('Biggest premiums ▸', '最大溢价 ▸') }}</summary>
+      <table class="ssx-t">
+        <thead><tr><th>{{ t('Ticker', '代码') }}</th><th class="r">{{ t('Premium', '溢价') }}</th><th class="r">{{ t('¥ (00M)', '金额（亿）') }}</th><th class="r">{{ t('Deals', '笔数') }}</th><th>{{ t('Last', '最近') }}</th></tr></thead>
+        <tbody>
+        {%- for r in bt.top_premium %}
+        <tr>
+          <td><span class="ssx-tkr">{{ r.ticker }}</span></td>
+          <td class="r up">+{{ '%.1f'|format(r.avg_premium_pct) if r.avg_premium_pct is not none else '—' }}%</td>
+          <td class="r">{{ '%.2f'|format(r.block_amt_yi) if r.block_amt_yi is not none else '—' }}</td>
+          <td class="r">{{ r.n_blocks }}</td>
+          <td class="ssx-asof">{{ r.last_date }}</td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+    </details>
+    {%- endif %}
+    {%- if bt.top_discount %}
+    <details class="ssx-more"><summary>{{ t('Biggest discounts ▸', '最大折价 ▸') }}</summary>
+      <table class="ssx-t">
+        <thead><tr><th>{{ t('Ticker', '代码') }}</th><th class="r">{{ t('Discount', '折价') }}</th><th class="r">{{ t('¥ (00M)', '金额（亿）') }}</th><th class="r">{{ t('Deals', '笔数') }}</th><th>{{ t('Last', '最近') }}</th></tr></thead>
+        <tbody>
+        {%- for r in bt.top_discount %}
+        <tr>
+          <td><span class="ssx-tkr">{{ r.ticker }}</span></td>
+          <td class="r dn">{{ '%.1f'|format(r.avg_premium_pct) if r.avg_premium_pct is not none else '—' }}%</td>
+          <td class="r">{{ '%.2f'|format(r.block_amt_yi) if r.block_amt_yi is not none else '—' }}</td>
+          <td class="r">{{ r.n_blocks }}</td>
+          <td class="ssx-asof">{{ r.last_date }}</td>
+        </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+    </details>
+    {%- endif %}
+{%- endmacro %}
