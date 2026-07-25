@@ -278,6 +278,7 @@
 {% endblock %}
 
 {% block content %}
+{%- import "_china_special_situations_rows.html.j2" as rows %}
 {%- set ss = special %}
 {%- set hero = (ss.hero if ss else none) %}
 {%- set _state = (hero.state if hero else 'quiet') %}
@@ -343,41 +344,12 @@
   {%- set u = ss.unlocks %}
   {{ sec_head('🔓', t('Unlock Supply', '解禁供给'), u) }}
   {%- if not u or u.status == 'missing' %}
-    {{ empty(t('No unlock data yet — it populates after the first collect.', '暂无解禁数据——将在首次采集后填充。')) }}
+    {{ rows.empty(t('No unlock data yet — it populates after the first collect.', '暂无解禁数据——将在首次采集后填充。')) }}
   {%- elif not u.events %}
-    {{ empty(t('Nothing flagged — no unlocks scheduled in the next 30 days.', '无标记——未来30天内无解禁安排。')) }}
+    {{ rows.empty(t('Nothing flagged — no unlocks scheduled in the next 30 days.', '无标记——未来30天内无解禁安排。')) }}
   {%- else %}
   <div class="ssx-card">
-    {%- for ev in u.events %}
-    <div class="ssx-row">
-      <div class="rlead">
-        <span class="ssx-tkr">{{ ev.ticker }}</span>
-        {%- if ev.large_flag %}<span class="ssx-lg">{{ t('supply event', '供给事件') }}</span>{%- endif %}
-      </div>
-      <div class="rbody">
-        <div class="rnote {{ 'e' if ev.large_flag else 'q' }}">{{ tw(ev.note) }}</div>
-        <div class="rmeta">
-          <b class="rname">{{ ev.name }}</b>
-          {%- if ev.lock_type %} · <span data-tip-en="Exchange share-class label, verbatim" data-tip-zh="交易所股份类型标签，原文">{{ ev.lock_type }}</span>{%- endif %}
-          {%- if ev.float_pct is not none %} · <span data-tip-en="Share of pre-unlock free float this tranche represents" data-tip-zh="本批次占解禁前流通市值比例">{{ '%.1f'|format(ev.float_pct) }}% {{ t('of float', '流通占比') }}</span>{%- endif %}
-        </div>
-        {%- if ev.get('regime_chip') %}{%- set _rc = ev.regime_chip %}
-        <div class="ssx-rg"><span>{{ td(_rc.quad_name) }}</span><span>{{ td(_rc.liquidity) }}</span><span>{{ td(_rc.cycle) }}-{{ t('cycle', '周期') }}</span></div>
-        {%- endif %}
-      </div>
-      <div class="rright">
-        {%- if ev.unlock_date %}
-        {%- set _d = ev.days_to %}
-        <span class="ssx-cd {{ 'soon' if _d is not none and _d <= 3 else ('wk' if _d is not none and _d <= 7 else '') }}" data-tip-en="{{ ev.unlock_date }}" data-tip-zh="{{ ev.unlock_date }}">
-          {%- if _d is not none and _d == 0 %}{{ t('today', '今日') }}
-          {%- elif _d is not none and _d == 1 %}{{ t('tomorrow', '明日') }}
-          {%- elif _d is not none and _d > 0 %}{{ t('in ' ~ _d ~ 'd', _d ~ '天后') }}
-          {%- else %}{{ ev.unlock_date }}{%- endif %}
-        </span>
-        {%- endif %}
-      </div>
-    </div>
-    {%- endfor %}
+    {{- rows.unlock_rows(u.events) }}
     {%- if u.weekly_strip %}
     <details class="ssx-more"><summary>{{ t('Supply by week ▸', '按周供给 ▸') }}</summary>
       <div class="ssx-pills" style="margin-top:8px">
@@ -394,34 +366,12 @@
   {%- set inq = ss.inquiry %}
   {{ sec_head('📬', t('Open Questions', '监管问询'), inq) }}
   {%- if not inq or inq.status == 'missing' %}
-    {{ empty(t('No inquiry data yet — it populates after the first collect.', '暂无问询数据——将在首次采集后填充。')) }}
+    {{ rows.empty(t('No inquiry data yet — it populates after the first collect.', '暂无问询数据——将在首次采集后填充。')) }}
   {%- elif not inq.letters %}
-    {{ empty(t('Nothing flagged — no exchange letters in the past 14 days.', '无标记——过去14天内无交易所问询函。')) }}
+    {{ rows.empty(t('Nothing flagged — no exchange letters in the past 14 days.', '无标记——过去14天内无交易所问询函。')) }}
   {%- else %}
   <div class="ssx-card">
-    {%- for ltr in inq.letters %}
-    <div class="ssx-row">
-      <div class="rlead">
-        <span class="ssx-tkr">{{ ltr.secCode }}</span>
-        {%- if ltr.has_reply %}<span class="ssx-tag replied">{{ t('replied', '已回复') }}</span>{%- else %}<span class="ssx-tag open">{{ t('open', '待回复') }}</span>{%- endif %}
-      </div>
-      <div class="rbody">
-        <div class="rnote {{ 'e' if not ltr.has_reply else 'q' }}">{{ tw(ltr.note) }}</div>
-        <div class="rmeta">
-          <b class="rname">{{ ltr.secName }}</b>
-          {%- if ltr.title %} · {{ ltr.title }}{%- endif %}
-          {%- if ltr.pdf_url %}
-            {%- set _href = ('https://static.cninfo.com.cn' + ltr.pdf_url) if ltr.pdf_url.startswith('/') else ('https://static.cninfo.com.cn/' + ltr.pdf_url) %}
-             · <a class="ssx-pdf" href="{{ _href }}" target="_blank" rel="noopener noreferrer">{{ t('letter PDF ↗', '问询函 PDF ↗') }}</a>
-          {%- endif %}
-        </div>
-        {%- if ltr.get('regime_chip') %}{%- set _rc = ltr.regime_chip %}
-        <div class="ssx-rg"><span>{{ td(_rc.quad_name) }}</span><span>{{ td(_rc.liquidity) }}</span><span>{{ td(_rc.cycle) }}-{{ t('cycle', '周期') }}</span></div>
-        {%- endif %}
-      </div>
-      <div class="rright"><span class="ssx-asof">{{ ltr.date }}</span></div>
-    </div>
-    {%- endfor %}
+    {{- rows.inquiry_rows(inq.letters) }}
     {%- if inq.n_letters > inq.letters|length %}
     <p class="ssx-asof" style="margin-top:8px"><span class="l-en">Showing the {{ inq.letters|length }} newest of {{ inq.n_letters }}</span><span class="l-zh">显示最新{{ inq.letters|length }}条，共{{ inq.n_letters }}条</span></p>
     {%- endif %}
@@ -432,9 +382,9 @@
   {%- set pa = ss.preannounce %}
   {{ sec_head('📋', t('Earnings Previews', '业绩预告'), pa) }}
   {%- if not pa or pa.status == 'missing' %}
-    {{ empty(t('No pre-announcement data yet — it populates after the first collect.', '暂无业绩预告数据——将在首次采集后填充。')) }}
+    {{ rows.empty(t('No pre-announcement data yet — it populates after the first collect.', '暂无业绩预告数据——将在首次采集后填充。')) }}
   {%- elif not pa.by_type and not pa.top_movers %}
-    {{ empty(t('Nothing flagged — no pre-announcements this season.', '无标记——本季度无业绩预告。')) }}
+    {{ rows.empty(t('Nothing flagged — no pre-announcements this season.', '无标记——本季度无业绩预告。')) }}
   {%- else %}
   <div class="ssx-card">
     {%- if pa.by_type %}
@@ -445,89 +395,25 @@
     </div>
     <p class="ssx-asof" style="margin-top:8px">{{ t('Counts by exchange-reported forecast label, verbatim.', '按交易所公布的预告类型统计，原文标签。') }}</p>
     {%- endif %}
-    {%- if pa.top_movers %}
-    <details class="ssx-more"><summary>{{ t('Largest changes by magnitude ▸', '按幅度排序的最大变动 ▸') }}</summary>
-      <table class="ssx-t">
-        <thead><tr>
-          <th>{{ t('Name', '名称') }}</th><th>{{ t('Forecast', '预告类型') }}</th>
-          <th class="r">{{ t('Change', '变动') }}</th><th>{{ t('Period', '报告期') }}</th>
-        </tr></thead>
-        <tbody>
-        {%- for r in pa.top_movers %}
-        <tr>
-          <td><span class="ssx-tkr" style="margin-right:6px">{{ r.ticker }}</span>{{ r.name }}</td>
-          <td>{{ r.type }}</td>
-          <td class="r {{ 'up' if r.pct_change is not none and r.pct_change >= 0 else 'dn' }}">{{ '%+.1f'|format(r.pct_change) if r.pct_change is not none else '—' }}%</td>
-          <td class="ssx-asof">{{ r.quarter }}</td>
-        </tr>
-        {%- endfor %}
-        </tbody>
-      </table>
-    </details>
-    {%- endif %}
+    {{- rows.preannounce_movers(pa) }}
   </div>
   {%- endif %}
 
   {# ═══════════════ D · BUYBACKS ═══════════════ #}
   {%- set bb = ss.buyback %}
   {{ sec_head('🔄', t('Buybacks', '股份回购'), bb) }}
-  {%- if not bb or bb.status == 'missing' %}
-    {{ empty(t('No buyback data yet — it populates after the first collect.', '暂无回购数据——将在首次采集后填充。')) }}
-  {%- elif not bb.top %}
-    {{ empty(t('Nothing flagged — no active buyback programs.', '无标记——当前无进行中的回购。')) }}
-  {%- else %}
-  <div class="ssx-card">
-    {%- for r in bb.top %}
-    {%- set _pct = ((r.done_amt_yi / r.plan_amt_yi * 100.0) if (r.plan_amt_yi and r.done_amt_yi is not none and r.plan_amt_yi > 0) else none) %}
-    <div class="ssx-row">
-      <div class="rlead"><span class="ssx-tkr">{{ r.ticker }}</span></div>
-      <div class="rbody">
-        <div class="rnote">
-          <b class="rname">{{ r.name }}</b>
-          {%- if r.plan_amt_yi is not none %} — {{ t('buying back up to', '计划回购至多') }} <span class="em" style="color:var(--ink-1)">{{ yi(r.plan_amt_yi) }}</span> {{ t('of its own shares', '自家股份') }}{%- endif %}
-          {%- if _pct is not none %}, <span data-tip-en="Completed / planned buyback value" data-tip-zh="已完成/计划回购金额">{{ '%.0f'|format(_pct) }}% {{ t('done', '已完成') }}</span>{%- endif %}
-        </div>
-        {%- if _pct is not none %}<div class="ssx-prog"><i style="width:{{ [_pct, 100]|min }}%"></i></div>{%- endif %}
-      </div>
-      <div class="rright"><span class="ssx-asof">{{ r.progress or '—' }}</span></div>
-    </div>
-    {%- endfor %}
-  </div>
-  {%- endif %}
+  {{- rows.buyback_body(bb) }}
 
   {# ═══════════════ E · PLEDGE STRESS ═══════════════ #}
   {%- set pl = ss.pledge %}
   {{ sec_head('⛓️', t('Pledge Stress', '质押压力'), pl) }}
-  {%- if not pl or pl.status == 'missing' %}
-    {{ empty(t('No pledge data yet — it populates after the first collect.', '暂无质押数据——将在首次采集后填充。')) }}
-  {%- elif not pl.top %}
-    {{ empty(t('Nothing flagged — no pledge readings available.', '无标记——暂无质押数据。')) }}
-  {%- else %}
-  <div class="ssx-card">
-    {%- for r in pl.top %}
-    <div class="ssx-row">
-      <div class="rlead"><span class="ssx-tkr">{{ r.ticker }}</span>
-        {%- if r.pledge_ratio is not none and r.pledge_ratio >= 50 %}<span class="ssx-lg">{{ t('heavy', '较重') }}</span>{%- endif %}
-      </div>
-      <div class="rbody">
-        <div class="rnote {{ 'e' if r.pledge_ratio is not none and r.pledge_ratio >= 50 else 'q' }}">
-          <b class="rname">{{ r.name }}</b> —
-          {%- if r.pledge_ratio is not none %}{{ t('founders have pledged', '大股东已质押') }} <span class="em">{{ '%.0f'|format(r.pledge_ratio) }}%</span> {{ t('of shares as loan collateral', '股份作为贷款抵押') }}{%- else %}{{ t('pledge ratio unavailable', '质押比例不可用') }}{%- endif %}
-        </div>
-        {%- if r.pledge_mktcap_yi is not none %}<div class="rmeta"><span data-tip-en="Market value of pledged shares" data-tip-zh="质押股份市值">≈ {{ yi(r.pledge_mktcap_yi) }} {{ t('pledged', '质押市值') }}</span></div>{%- endif %}
-      </div>
-      <div class="rright">{%- if r.pledge_ratio is not none %}<span class="ssx-cd">{{ '%.0f'|format(r.pledge_ratio) }}%</span>{%- endif %}</div>
-    </div>
-    {%- endfor %}
-    {%- if pl.quarter %}<p class="ssx-asof" style="margin-top:8px">{{ t('Latest disclosed quarter', '最新披露报告期') }}: {{ pl.quarter }}</p>{%- endif %}
-  </div>
-  {%- endif %}
+  {{- rows.pledge_body(pl) }}
 
   {# ═══════════════ F · RISK WARNINGS (ST) ═══════════════ #}
   {%- set st = ss.st %}
   {{ sec_head('🚨', t('Risk Warnings', '风险警示'), st) }}
   {%- if not st or st.status == 'missing' %}
-    {{ empty(t('No risk-warning data yet — it populates after the first collect.', '暂无风险警示数据——将在首次采集后填充。')) }}
+    {{ rows.empty(t('No risk-warning data yet — it populates after the first collect.', '暂无风险警示数据——将在首次采集后填充。')) }}
   {%- else %}
   <div class="ssx-card">
     <div class="ssx-row" style="border-bottom:1px solid var(--hair)">
@@ -539,37 +425,7 @@
         </div>
       </div>
     </div>
-    {%- if st.additions %}
-    <div class="ssx-row">
-      <div class="rlead"><span class="ssx-lg">{{ t('newly flagged', '新增') }} · {{ st.additions|length }}</span></div>
-      <div class="rbody"><div class="rnote e">
-        {%- for a in st.additions %}<span class="ssx-tkr" style="margin:0 6px 4px 0">{{ a.ticker }}</span>{%- if a.name %}<span style="color:var(--ink-2);margin-right:12px">{{ a.name }}</span>{%- endif %}{%- endfor %}
-      </div></div>
-    </div>
-    {%- endif %}
-    {%- if st.removals %}
-    <div class="ssx-row">
-      <div class="rlead"><span class="ssx-tag replied">{{ t('cleared', '移除') }} · {{ st.removals|length }}</span></div>
-      <div class="rbody"><div class="rnote q">
-        {%- for r in st.removals %}<span class="ssx-tkr" style="margin:0 6px 4px 0">{{ r.ticker }}</span>{%- endfor %}
-      </div></div>
-    </div>
-    {%- endif %}
-    {%- if st.top_current %}
-    <details class="ssx-more"><summary>{{ t('Board names, biggest moves ▸', '风险警示板个股 ▸') }}</summary>
-      <table class="ssx-t">
-        <thead><tr><th>{{ t('Name', '名称') }}</th><th class="r">{{ t('Day move', '当日涨跌') }}</th></tr></thead>
-        <tbody>
-        {%- for r in st.top_current %}
-        <tr>
-          <td><span class="ssx-tkr" style="margin-right:6px">{{ r.ticker }}</span>{{ r.name }}</td>
-          <td class="r {{ 'up' if r.pct_chg is not none and r.pct_chg >= 0 else 'dn' }}">{{ '%+.2f'|format(r.pct_chg) if r.pct_chg is not none else '—' }}%</td>
-        </tr>
-        {%- endfor %}
-        </tbody>
-      </table>
-    </details>
-    {%- endif %}
+    {{- rows.st_named(st) }}
   </div>
   {%- endif %}
 
@@ -577,48 +433,13 @@
   {%- set bt = ss.block_trades %}
   {{ sec_head('📦', t('Block Trades', '大宗交易'), bt) }}
   {%- if not bt or bt.status == 'missing' %}
-    {{ empty(t('No block-trade data yet — it populates after the first collect.', '暂无大宗交易数据——将在首次采集后填充。')) }}
+    {{ rows.empty(t('No block-trade data yet — it populates after the first collect.', '暂无大宗交易数据——将在首次采集后填充。')) }}
   {%- elif not bt.top_premium and not bt.top_discount %}
-    {{ empty(t('Nothing flagged — no block-trade price gaps.', '无标记——无大宗交易价差异常。')) }}
+    {{ rows.empty(t('Nothing flagged — no block-trade price gaps.', '无标记——无大宗交易价差异常。')) }}
   {%- else %}
   <div class="ssx-card">
     <p class="ssx-asof" style="margin:0 0 4px">{{ t('Off-market block deals struck well above (premium) or below (discount) the tape — who is buying or selling size.', '成交价明显高于（溢价）或低于（折价）市价的场外大宗交易——谁在大额买卖。') }}</p>
-    {%- if bt.top_premium %}
-    <details class="ssx-more" open><summary>{{ t('Biggest premiums ▸', '最大溢价 ▸') }}</summary>
-      <table class="ssx-t">
-        <thead><tr><th>{{ t('Ticker', '代码') }}</th><th class="r">{{ t('Premium', '溢价') }}</th><th class="r">{{ t('¥ (00M)', '金额（亿）') }}</th><th class="r">{{ t('Deals', '笔数') }}</th><th>{{ t('Last', '最近') }}</th></tr></thead>
-        <tbody>
-        {%- for r in bt.top_premium %}
-        <tr>
-          <td><span class="ssx-tkr">{{ r.ticker }}</span></td>
-          <td class="r up">+{{ '%.1f'|format(r.avg_premium_pct) if r.avg_premium_pct is not none else '—' }}%</td>
-          <td class="r">{{ '%.2f'|format(r.block_amt_yi) if r.block_amt_yi is not none else '—' }}</td>
-          <td class="r">{{ r.n_blocks }}</td>
-          <td class="ssx-asof">{{ r.last_date }}</td>
-        </tr>
-        {%- endfor %}
-        </tbody>
-      </table>
-    </details>
-    {%- endif %}
-    {%- if bt.top_discount %}
-    <details class="ssx-more"><summary>{{ t('Biggest discounts ▸', '最大折价 ▸') }}</summary>
-      <table class="ssx-t">
-        <thead><tr><th>{{ t('Ticker', '代码') }}</th><th class="r">{{ t('Discount', '折价') }}</th><th class="r">{{ t('¥ (00M)', '金额（亿）') }}</th><th class="r">{{ t('Deals', '笔数') }}</th><th>{{ t('Last', '最近') }}</th></tr></thead>
-        <tbody>
-        {%- for r in bt.top_discount %}
-        <tr>
-          <td><span class="ssx-tkr">{{ r.ticker }}</span></td>
-          <td class="r dn">{{ '%.1f'|format(r.avg_premium_pct) if r.avg_premium_pct is not none else '—' }}%</td>
-          <td class="r">{{ '%.2f'|format(r.block_amt_yi) if r.block_amt_yi is not none else '—' }}</td>
-          <td class="r">{{ r.n_blocks }}</td>
-          <td class="ssx-asof">{{ r.last_date }}</td>
-        </tr>
-        {%- endfor %}
-        </tbody>
-      </table>
-    </details>
-    {%- endif %}
+    {{- rows.block_tables(bt) }}
   </div>
   {%- endif %}
 
@@ -676,11 +497,5 @@
     <span class="ssx-chip {{ blk.status if blk.status in ['ok','stale','missing'] else 'missing' }}">{{ blk.status or '—' }}</span>
     {%- if blk.asof %}<span class="ssx-asof">{{ blk.asof }}</span>{%- endif %}
   {%- endif %}
-</div>
-{% endmacro %}
-
-{% macro empty(msg) %}
-<div class="ssx-card" style="padding:0;background:none;border:none;box-shadow:none;margin-bottom:14px">
-  <div class="ssx-empty"><span class="ec">○</span>{{ msg }}</div>
 </div>
 {% endmacro %}
