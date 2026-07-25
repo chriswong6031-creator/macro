@@ -24,6 +24,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # Only the newest commit on a PR (or newest descendant on main) needs to prove
+  # these read-only fences.  This coalesces agent push bursts before they consume
+  # hosted runner slots.
+  group: fences-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   self-mod-fence:
     # F2 (R-AUT-5): loop-authored PRs touching the IMMUTABLE set are blocked;
