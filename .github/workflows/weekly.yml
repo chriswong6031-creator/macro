@@ -193,6 +193,7 @@ jobs:
           python -m scripts.check_template_site_sync --fix || true
       - name: commit weekly outputs
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
@@ -238,9 +239,11 @@ jobs:
           # preferring our freshly-built outputs on any conflict.
           # --autostash: parity with daily.yml (#1823 fix); prevents an "unstaged changes"
           # rebase halt when builders leave stray tracked writes outside staged paths
-          # (e.g. reports/*.md graders, site/qledger/) — without it, the push dies after
-          # 5 attempts and the weekly commit is silently discarded.
-          for i in 1 2 3 4 5; do
+          # (e.g. reports/*.md graders, site/qledger/) — without it, the push dies on
+          # every attempt and the weekly commit is silently discarded.
+          PUSH_BUDGET_SECS=600   # the weekly data day exists only on this runner (job timeout 300 min — ample headroom)
+          push_retry_init "weekly outputs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -260,14 +263,15 @@ jobs:
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
-            if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && git push; then
-              echo "pushed weekly outputs on attempt $i"; exit 0
+            if git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; then
+              if push_do; then echo "pushed weekly outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "weekly push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::error title=weekly outputs NOT pushed::5 rebase/push attempts failed — the weekly data/ outputs exist only on this runner and are lost at the next checkout (the site still deploys via artifact). See scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ❌ weekly outputs NOT pushed after 5 attempts — weekly data day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
+          push_lost
+          echo "::error title=weekly outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the weekly data/ outputs exist only on this runner and are lost at the next checkout (the site still deploys via artifact). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ weekly outputs NOT pushed after $PUSH_ATTEMPT attempts — weekly data day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |

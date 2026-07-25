@@ -598,6 +598,16 @@ lanes:
           outputs: [data/polygon_universe/reference.parquet]
       - id: mirror_flow_idx
         module: scripts.mirror_flow_idx
+      - id: mirror_terminal_context_r2
+        module: scripts.mirror_terminal_context_r2
+        note: >-
+          OEU M-XP b: mirrors the Terminal EOD-context artifacts
+          (site/darkpool_eod.json → darkpool/eod.json, site/vol/regime.json →
+          vol/regime.json) for the Terminal's Dark Pool mini-panel + Structure
+          strip (lane T-E). Shares the flow_idx mirror step, so it inherits its
+          R2-creds gate, continue-on-error, and non-fatal `|| echo ::warning`.
+          Declared here 2026-07-25 — it was live in daily.yml but undeclared, and
+          reddened dag-conformance on every PR that touches .github/workflows/**.
       - id: build_flow_signals
         module: scripts.build_flow_signals
         note: >-
