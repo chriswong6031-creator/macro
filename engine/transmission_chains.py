@@ -11,8 +11,10 @@ the regime engine write. It emits two artifacts:
   * ``data/transmission/chain_episodes.jsonl`` — an append-only FORWARD LEDGER of state
     transitions (nightly-advanced only; ledger law).
   * ``data/transmission/chain_state.json`` — ``transmission_chains.v1``: the current
-    per-chain state, hop confirmations with value receipts, tier, and the W2/W3 fields
-    declared now for forward-compatibility (``blast`` filled in W2, ``base_rates`` in W3).
+    per-chain state, hop confirmations with value receipts, tier, the per-name blast radius
+    (``blast`` — W2: armed chains resolve WHICH NAMES are downstream via which named channel,
+    each channel carrying its universe count + percentile cuts + full ticker array + an
+    unevaluable bucket), and ``base_rates`` (W3).
 
 DISCIPLINE — display / LLM-context ONLY, NEVER scored (masterplan §4; DNR row 45 / TXI
 Article 1/2). A chain state is a WATCH item with (eventually) printed conditional base
@@ -65,6 +67,19 @@ _VALID_TIERS = {"hypothesis", "probe", "calibrated"}
 _VALID_OPS = {"gt", "gte", "lt", "lte", "eq", "ne", "is_true", "is_false", "in", "in_contains"}
 _VALID_METRICS = {"ret", "ret_bp", "ma_slope", "rs", "ratio_ret"}
 
+# W2 — exposure-screen mini-form ops (TXI-R1 extension). A screen clause is a structured,
+# deterministic dict `{path, op, value}` read against the per-ticker substrate JSON — NO
+# string eval (masterplan §scoping.1). `pctile_gte`/`pctile_lte` cut on the universe
+# percentile of the field (computed over the evaluable universe at resolve time; the numeric
+# cut is printed in the emit). `exists` is a unary presence test. The `<,<=,>,>=,==,!=`
+# spellings are the operator's mini-form; they map onto the same comparators as the node
+# grammar's gt/lt/... — a screen clause and a node test share the `_apply_op` engine.
+_SCREEN_OP_ALIASES = {"<": "lt", "<=": "lte", ">": "gt", ">=": "gte", "==": "eq", "!=": "ne"}
+_SCREEN_UNARY_OPS = {"exists"}
+_SCREEN_PCTILE_OPS = {"pctile_gte", "pctile_lte"}
+# the full whitelisted screen-op surface (spellings the YAML may use)
+_VALID_SCREEN_OPS = (set(_SCREEN_OP_ALIASES) | {"in"} | _SCREEN_UNARY_OPS | _SCREEN_PCTILE_OPS)
+
 
 # --------------------------------------------------------------------------- #
 # schema validation (fail-loud at load)
@@ -110,6 +125,46 @@ def _validate_test(t: Any, where: str) -> None:
         _require("window" in t, f"{where}: series metric requires a 'window'")
 
 
+def _validate_screen_clause(c: Any, where: str) -> None:
+    """Validate one exposure-screen clause `{path, op, value}` (W2 mini-form)."""
+    _require(isinstance(c, dict), f"{where}: screen clause must be a dict, got {type(c).__name__}")
+    _require(isinstance(c.get("path"), str) and c["path"],
+             f"{where}: screen clause needs a string 'path'")
+    op = c.get("op")
+    _require(op in _VALID_SCREEN_OPS,
+             f"{where}: unknown/absent screen op {op!r} (allowed: {sorted(_VALID_SCREEN_OPS)})")
+    if op in _SCREEN_UNARY_OPS:
+        return  # `exists` takes no value
+    _require("value" in c, f"{where}: screen op {op!r} requires a 'value'")
+    if op in _SCREEN_PCTILE_OPS:
+        v = c["value"]
+        _require(isinstance(v, (int, float)) and 0.0 <= float(v) <= 1.0,
+                 f"{where}: {op} 'value' must be a fraction in [0,1], got {v!r}")
+
+
+def _validate_screen(screen: Any, where: str) -> None:
+    """Validate one exposure_screens entry: a bilingual label + exactly one `all`/`any`
+    list of clauses (the structured mini-form). A prose-only legacy screen (no all/any) is
+    tolerated as UNRESOLVED-in-W2 (documentary) — but if the structured form is present it
+    must be well-formed."""
+    _require(isinstance(screen, dict), f"{where}: screen must be a mapping")
+    if "label" in screen:
+        lbl = screen["label"]
+        _require(isinstance(lbl, dict) and "en" in lbl and "zh" in lbl,
+                 f"{where}: screen 'label' must be a bilingual {{en, zh}} mapping")
+    has_all = "all" in screen
+    has_any = "any" in screen
+    if not (has_all or has_any):
+        return  # legacy/prose screen (documentary) — W2 skips it, prints it unresolved
+    _require(not (has_all and has_any),
+             f"{where}: screen must have exactly one of 'all' or 'any', not both")
+    key = "all" if has_all else "any"
+    _require(isinstance(screen[key], list) and screen[key],
+             f"{where}: screen '{key}' must be a non-empty list of clauses")
+    for i, clause in enumerate(screen[key]):
+        _validate_screen_clause(clause, f"{where}.{key}[{i}]")
+
+
 def validate_chain(chain: dict, filename: str) -> None:
     """Full structural validation of one loaded chain dict. Raises ChainSchemaError."""
     _require(isinstance(chain, dict), f"{filename}: top-level YAML must be a mapping")
@@ -153,6 +208,8 @@ def validate_chain(chain: dict, filename: str) -> None:
             _validate_test(fx["when"], f"{filename}:falsifier[{i}].when")
     screens = chain.get("exposure_screens", {})
     _require(isinstance(screens, dict), f"{filename}: 'exposure_screens' must be a mapping")
+    for flag, screen in screens.items():
+        _validate_screen(screen, f"{filename}:exposure_screens[{flag}]")
 
 
 def load_chains(root: Path | None = None, *, include_killed: bool = False,
@@ -689,17 +746,313 @@ CAVEATS = [
     {"en": "Per-hop base rates are UNTESTED in W1 (base_rates=null) — the episode miner and the "
            "forward ledger fill them in W3. A propagating chain is not a forecast.",
      "zh": "W1中各跳的基础发生率尚未检验（base_rates=null）——由W3的回溯挖掘与前瞻账本填充。传导中的链并非预测。"},
-    {"en": "Per-name blast radius (blast=[]) is resolved in W2 — W1 tracks the cascade state only.",
-     "zh": "个股层面的传导范围（blast=[]）在W2解析——W1仅追踪级联状态。"},
+    {"en": "Per-name blast radius (`blast`) is a WATCH-grade membership screen with a field "
+           "receipt, resolved over the per-ticker substrate — never a call and never a size. "
+           "Counts always include the unevaluable (missing-field) bucket: a missing field is "
+           "neither safe nor unsafe. Only ARMED chains resolve; dormant chains carry blast={}.",
+     "zh": "个股层面的传导范围（blast）是带字段凭证的观察级成员筛选，基于个股数据解析——绝非交易指令、绝非仓位。"
+           "计数始终包含无法评估（字段缺失）的桶：字段缺失既不安全也不危险。仅已触发的链解析；休眠链的blast为空。"},
 ]
 
 
+# --------------------------------------------------------------------------- #
+# W2 — BLAST-RADIUS RESOLVER (TXI-R3). An ARMED chain (arming|propagating|expressed)
+# resolves WHICH NAMES are downstream, via which named channel, with field receipts. The
+# universe is the baked per-ticker substrate `site/stockdata/<T>.json` (~1.6k names); the
+# resolver sweeps the dir ONCE, loads each JSON once, precomputes per-field universe
+# percentiles, and evaluates every armed chain's structured screens together. Server stores
+# TICKERS + numeric cuts only (no per-name receipts — consumers rebuild them client-side
+# from the same per-ticker JSON). Counts ALWAYS include an `unevaluable` bucket: a name
+# whose screen fields are missing is NEVER silently safe or unsafe.
+#
+# DISCIPLINE: display-only, deterministic, LLM-free. A screen never scores/ranks/sizes; it
+# is a WATCH-grade membership flag with the field receipt (masterplan §4; DNR row 45).
+# --------------------------------------------------------------------------- #
+_ARMED_STATES = {"arming", "propagating", "expressed"}
+
+
+def _is_iso_date(s: Any) -> bool:
+    """True iff `s` is a well-formed YYYY-MM-DD prefix (rejects 'NaT', None, junk)."""
+    if not isinstance(s, str) or len(s) < 10:
+        return False
+    try:
+        datetime.strptime(s[:10], "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
+
+def _normalize_substrate_doc(d: dict) -> None:
+    """Lift a few list-shaped substrate fields into flat, dotted-addressable synthetic paths
+    so the screen mini-form stays pure `{path, op, value}` (no list-indexing grammar).
+
+    Currently: ``factors.radar`` (the known-good `[{key, z}, ...]` factor list — masterplan
+    field map) → ``factors.radar_<key>_z`` scalars. A null z is dropped (unevaluable, not 0).
+    Idempotent and in-place; a doc missing the field is left untouched."""
+    factors = d.get("factors")
+    if isinstance(factors, dict):
+        radar = factors.get("radar")
+        if isinstance(radar, list):
+            for leg in radar:
+                if isinstance(leg, dict) and isinstance(leg.get("key"), str):
+                    z = leg.get("z")
+                    if isinstance(z, (int, float)) and not isinstance(z, bool):
+                        factors[f"radar_{leg['key']}_z"] = z
+
+
+class SubstrateStore:
+    """The per-ticker substrate universe, loaded once. Each entry is the parsed JSON of one
+    `site/stockdata/<T>.json`. Precomputes, lazily and per (field-path), the sorted vector
+    of that field's numeric values across the evaluable universe so `pctile_*` cuts are O(log
+    n) and the numeric cut is printable. ROOT-AWARE + hermetic (a tmp dir of synthetic
+    tickers drives the tests)."""
+
+    def __init__(self, docs: dict[str, dict], *, asofs: list[str] | None = None):
+        self.docs = docs                                  # ticker -> parsed JSON
+        self._sorted_cache: dict[str, list[float]] = {}   # path -> sorted numeric values
+        self.asofs = asofs or []
+
+    # ---- construction -----------------------------------------------------
+    @classmethod
+    def from_dir(cls, substrate_dir: Path) -> "SubstrateStore":
+        """Load every `*.json` in the substrate dir EXCEPT index.json. A file that isn't a
+        per-ticker doc (no ticker + not parseable as one) is skipped, not fatal. The ticker
+        id is the doc's `ticker` field, else the filename stem."""
+        docs: dict[str, dict] = {}
+        asofs: list[str] = []
+        if not substrate_dir.exists():
+            log.warning("substrate dir absent: %s", substrate_dir)
+            return cls(docs)
+        for path in sorted(substrate_dir.glob("*.json")):
+            if path.name == "index.json":
+                continue
+            try:
+                d = json.loads(path.read_text())
+            except Exception as e:  # noqa: BLE001 — one bad substrate file is not fatal
+                log.warning("skipping unreadable substrate file %s: %s", path.name, e)
+                continue
+            if not isinstance(d, dict):
+                continue
+            tkr = d.get("ticker") or path.stem
+            if not isinstance(tkr, str):
+                continue
+            _normalize_substrate_doc(d)
+            docs[tkr] = d
+            a = d.get("asof")
+            # only a well-formed ISO date counts toward the substrate_asof stamp — some files
+            # carry a serialized 'NaT'/None (verified: MMC, FI, fund_flows) which must not
+            # pollute the min/max.
+            if _is_iso_date(a):
+                asofs.append(a)
+        return cls(docs, asofs=asofs)
+
+    def substrate_asof(self) -> dict[str, str | None]:
+        """The min/max per-file `asof` — stamped in the emit so a one-render-stale sweep is
+        honest (fundamentals-grade fields don't move intraday; masterplan §scoping.2)."""
+        if not self.asofs:
+            return {"min": None, "max": None}
+        return {"min": min(self.asofs), "max": max(self.asofs)}
+
+    # ---- percentile support ----------------------------------------------
+    def _sorted_values(self, path: str) -> list[float]:
+        """The sorted vector of numeric values of `path` across the evaluable universe
+        (missing / non-numeric names excluded). Cached per path."""
+        if path not in self._sorted_cache:
+            vals = []
+            for d in self.docs.values():
+                v = _dig(d, path)
+                if isinstance(v, bool):
+                    continue  # a bool is not a percentile-able number
+                if isinstance(v, (int, float)):
+                    vals.append(float(v))
+            vals.sort()
+            self._sorted_cache[path] = vals
+        return self._sorted_cache[path]
+
+    def pctile_cut(self, path: str, frac: float) -> float | None:
+        """The numeric value at the `frac` quantile of `path`'s universe (nearest-rank). This
+        value IS the membership boundary printed in the emit — a consumer holding the per-ticker
+        JSON rebuilds the exact ticker set client-side by comparing its field to this cut
+        (masterplan §scoping.4). None if the field has no numeric values anywhere (the pctile
+        clause is then unevaluable for every name)."""
+        vals = self._sorted_values(path)
+        if not vals:
+            return None
+        idx = min(int(frac * len(vals)), len(vals) - 1)   # nearest-rank; frac in [0,1]
+        return vals[idx]
+
+
+_MISSING = object()   # distinct from a present-but-null field (both are "unevaluable")
+
+
+def _dig(doc: Any, dotted: str) -> Any:
+    """A dotted path into a substrate JSON. Returns _MISSING sentinel if any hop is absent."""
+    cur = doc
+    for part in dotted.split("."):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return _MISSING
+    return cur
+
+
+def _eval_screen_clause(clause: dict, doc: dict, store: SubstrateStore,
+                        cuts: dict[str, float]) -> bool | None:
+    """Evaluate ONE screen clause against one ticker doc.
+
+    Returns:
+      * True / False  — the clause is evaluable for this name (field present + comparable)
+      * None          — UNEVALUABLE: the field is missing or null (or a pctile field with no
+                        universe). None is neither pass nor fail — the caller buckets it.
+    """
+    path = clause["path"]
+    op = clause["op"]
+    raw = _dig(doc, path)
+    present = raw is not _MISSING and raw is not None
+
+    if op == "exists":
+        return present
+    if not present:
+        return None                       # can't compare a missing/null field
+    if op in _SCREEN_PCTILE_OPS:
+        if not isinstance(raw, (int, float)) or isinstance(raw, bool):
+            return None
+        cut = cuts.get(path)
+        if cut is None:                   # no universe for this field → unevaluable
+            return None
+        # Membership is decided by the PRINTED NUMERIC CUT (not by recomputing each name's
+        # percentile) so a consumer holding the per-ticker JSON can rebuild the exact same
+        # ticker set client-side from the emitted `cuts` value alone (masterplan §scoping.4:
+        # "receipts rebuild client-side from the same fields; server stores tickers + cuts
+        # only"). pctile_gte → value >= cut (the frac-quantile value); pctile_lte → value <= cut.
+        return float(raw) >= cut if op == "pctile_gte" else float(raw) <= cut
+    # scalar comparators — reuse the node grammar's engine (raises _Unresolvable on a
+    # non-numeric lhs for a numeric op; we translate that to "unevaluable").
+    concrete = _SCREEN_OP_ALIASES.get(op, op)   # "<" -> "lt", "==" -> "eq", ...
+    try:
+        return _apply_op(concrete, raw, clause.get("value"))
+    except _Unresolvable:
+        return None
+
+
+def _eval_screen(screen: dict, doc: dict, store: SubstrateStore,
+                 cuts: dict[str, float]) -> bool | None:
+    """Evaluate one structured screen (`all`/`any` of clauses) against one ticker doc.
+
+    `all`:  every clause must be True. If ANY clause is unevaluable (None), the whole screen
+            is UNEVALUABLE (we cannot assert membership with a missing field — masterplan:
+            missing-field names are NEVER silently safe/unsafe).
+    `any`:  True if any clause is True. If no clause is True but AT LEAST ONE is unevaluable,
+            the screen is UNEVALUABLE (a present field could have flipped it). Only when
+            every clause is evaluable-and-False is the screen a clean False.
+    A prose-only (no all/any) screen returns None (not resolved in W2)."""
+    if "all" in screen:
+        results = [_eval_screen_clause(c, doc, store, cuts) for c in screen["all"]]
+        if any(r is None for r in results):
+            return None
+        return all(results)
+    if "any" in screen:
+        results = [_eval_screen_clause(c, doc, store, cuts) for c in screen["any"]]
+        if any(r is True for r in results):
+            return True
+        if any(r is None for r in results):
+            return None
+        return False
+    return None
+
+
+def _dropped_channel_entry(screen: Any, universe: int, *, note_override=None) -> dict:
+    """The emit for a declared-but-not-resolved channel (prose-only / dropped / a malformed
+    clause skipped at resolve time). n:0, whole universe unevaluable, resolved:false, with the
+    bilingual note carried through so a dropped/proxy channel is HONEST, never silently absent."""
+    lbl = screen.get("label") if isinstance(screen, dict) else None
+    note = note_override if note_override is not None else (
+        screen.get("note") if isinstance(screen, dict) else None)
+    return {"label": lbl, "n": 0, "cuts": {}, "unevaluable": universe,
+            "names": [], "resolved": False, "note": note}
+
+
+def _resolve_channel(screen: dict, store: SubstrateStore) -> dict:
+    """Resolve ONE structured channel over the whole substrate → the blast entry. Precomputes
+    the pctile cuts (printed), then buckets every name into member / unevaluable."""
+    # precompute the numeric cut for each pctile clause (printed in the emit)
+    cuts: dict[str, float] = {}
+    for key in ("all", "any"):
+        for c in screen.get(key, []):
+            if isinstance(c, dict) and c.get("op") in _SCREEN_PCTILE_OPS:
+                cut = store.pctile_cut(c["path"], float(c["value"]))
+                if cut is not None:
+                    cuts[c["path"]] = round(cut, 4)
+    names: list[str] = []
+    unevaluable = 0
+    for tkr, doc in store.docs.items():
+        res = _eval_screen(screen, doc, store, cuts)
+        if res is None:
+            unevaluable += 1
+        elif res:
+            names.append(tkr)
+    entry = {
+        "label": screen.get("label"),
+        "n": len(names),
+        "cuts": cuts,
+        "unevaluable": unevaluable,
+        "names": sorted(names),   # full ticker array — tickers are cheap (cap nothing)
+        "resolved": True,
+    }
+    if screen.get("note"):
+        entry["note"] = screen["note"]
+    return entry
+
+
+def resolve_blast(chain: dict, per_chain: dict, store: SubstrateStore) -> dict:
+    """Resolve one chain's blast radius over the substrate universe.
+
+    Returns the `blast` block for chain_state.json: `{}` when the chain is DORMANT (state not
+    in arming|propagating|expressed), else `{flag: {label, n, cuts, unevaluable, names,
+    resolved, note?}}` per channel. A prose-only / DROPPED channel (no all/any) still emits —
+    resolved:false, n:0, whole universe unevaluable — so a dropped/proxy channel is HONEST,
+    never silently absent. Bilingual notes on dropped/proxy channels live in the YAML and are
+    echoed here.
+
+    ROBUST: a malformed clause that slips past load-time validation (or any per-channel
+    error) SKIPS just that channel with a resolved:false + note marker — one bad screen never
+    crashes the sweep or the other channels (masterplan §Tests: "malformed clause → channel
+    skipped with note, never crashes")."""
+    if per_chain.get("state") not in _ARMED_STATES:
+        return {}
+    screens = chain.get("exposure_screens", {}) or {}
+    universe = len(store.docs)
+    blast: dict[str, Any] = {}
+    for flag, screen in screens.items():
+        if not isinstance(screen, dict) or not ("all" in screen or "any" in screen):
+            # prose-only / legacy / dropped screen — declared, not resolvable in W2.
+            blast[flag] = _dropped_channel_entry(screen, universe)
+            continue
+        try:
+            blast[flag] = _resolve_channel(screen, store)
+        except Exception as e:  # noqa: BLE001 — a malformed clause skips THIS channel, not the chain
+            log.error("chain %s screen %s failed to resolve (skipped): %s",
+                      chain.get("chain"), flag, e)
+            note = screen.get("note") if isinstance(screen.get("note"), dict) else None
+            blast[flag] = _dropped_channel_entry(
+                screen, universe,
+                note_override={"en": f"unresolved (screen error): {e}",
+                               "zh": f"未解析（筛选错误）：{e}"} if note is None else note)
+    return blast
+
+
 def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
-                      ledger_rows: list[dict] | None = None) -> tuple[dict, list[dict]]:
+                      ledger_rows: list[dict] | None = None,
+                      substrate: SubstrateStore | None = None) -> tuple[dict, list[dict]]:
     """Evaluate every chain → (chain_state.json dict, all NEW transitions to append).
     `ledger_rows` is the existing chain_episodes.jsonl content; each chain is advanced
     from its own prior rows (temporal state machine). A chain that raises during
-    evaluation is logged and SKIPPED (fail-open)."""
+    evaluation is logged and SKIPPED (fail-open).
+
+    When a `substrate` store is supplied (W2), each ARMED chain's blast radius is resolved
+    over the per-ticker universe and merged into its `blast` block; dormant chains keep
+    `blast: {}`. Substrate resolution NEVER crashes the nightly — a resolver error on one
+    chain is logged and that chain keeps `blast: {}`."""
     ledger_rows = ledger_rows or []
     by_chain: dict[str, list[dict]] = {}
     for r in ledger_rows:
@@ -714,7 +1067,15 @@ def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
         except Exception as e:  # noqa: BLE001 — one bad chain never crashes the nightly
             log.error("chain %s failed to evaluate (skipped): %s", chain.get("chain"), e)
             continue
-        per_chains.append(res["per_chain"])
+        per_chain = res["per_chain"]
+        if substrate is not None:
+            try:
+                per_chain["blast"] = resolve_blast(chain, per_chain, substrate)
+            except Exception as e:  # noqa: BLE001 — a resolver error keeps blast:{}, never fatal
+                log.error("chain %s blast-radius resolution failed (blast={}): %s",
+                          chain.get("chain"), e)
+                per_chain["blast"] = {}
+        per_chains.append(per_chain)
         all_transitions.extend(res["transitions"])
     state = {
         "schema": SCHEMA_ID,
@@ -724,16 +1085,29 @@ def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
         "caveats": CAVEATS,
         "display_only": True,
     }
+    if substrate is not None:
+        state["substrate"] = {
+            "universe": len(substrate.docs),
+            "substrate_asof": substrate.substrate_asof(),
+        }
     return state, all_transitions
 
 
-def run(root: Path | None = None, *, write: bool = True) -> dict:
-    """Load the chain library, evaluate current state from artifacts, and (if write) emit
-    chain_state.json + append chain_episodes.jsonl. Returns the chain_state dict.
+SUBSTRATE_RELDIR = ("site", "stockdata")   # per-ticker universe (W2 blast resolver)
+
+
+def run(root: Path | None = None, *, write: bool = True,
+        substrate_dir: Path | None = None, resolve_blast_radius: bool = True) -> dict:
+    """Load the chain library, evaluate current state from artifacts, resolve armed-chain
+    blast radius over the per-ticker substrate (W2), and (if write) emit chain_state.json +
+    append chain_episodes.jsonl. Returns the chain_state dict.
 
     ADDITIVE / FAIL-OPEN: absent upstream artifacts leave chains unresolvable (dormant),
-    never raising. `write=False` is the dry-run path (used by the runner's --dry-run and
-    by tests, which pass a tmp root so no data/ write escapes)."""
+    never raising; an absent substrate dir leaves every `blast` empty (armed chains get
+    `{}`), never raising. `write=False` is the dry-run path (used by the runner's --dry-run
+    and by tests, which pass a tmp root so no data/ write escapes). `substrate_dir` overrides
+    the default `<root>/site/stockdata`; `resolve_blast_radius=False` skips the sweep
+    entirely (W1-compatible: `blast` stays `[]`)."""
     base = Path(root) if root else ROOT
     data_dir = base / "data"
     chains = load_chains(base)  # FAIL-LOUD: a malformed file raises here
@@ -741,7 +1115,11 @@ def run(root: Path | None = None, *, write: bool = True) -> dict:
     asof = _resolve_asof(adapters)
     ledger_path = data_dir / "transmission" / "chain_episodes.jsonl"
     ledger_rows = _read_ledger(ledger_path)   # advance episodes from their history
-    state, transitions = build_chain_state(chains, adapters, asof, ledger_rows)
+    substrate: SubstrateStore | None = None
+    if resolve_blast_radius:
+        sdir = Path(substrate_dir) if substrate_dir else base.joinpath(*SUBSTRATE_RELDIR)
+        substrate = SubstrateStore.from_dir(sdir)
+    state, transitions = build_chain_state(chains, adapters, asof, ledger_rows, substrate=substrate)
     if write:
         outdir = data_dir / "transmission"
         outdir.mkdir(parents=True, exist_ok=True)

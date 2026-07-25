@@ -2,7 +2,7 @@
 # Seed list §7 ("vol-regime shift → systematic deleveraging → high-beta unwind;
 # vol_regime + positioning"). Display-tier. Reads data/regime/latest.json.
 chain: vol_regime_deleveraging
-rev: 0
+rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
 tier: hypothesis
 title:
   en: "Vol-regime shift → systematic deleveraging → high-beta unwind"
@@ -66,22 +66,47 @@ falsifiers:
 
 null_model: "does vol-regime conditioning beat unconditional low-vol-factor momentum on the high-beta cohort?"
 
-exposure_screens:            # W2 — declared only
-  high_beta:
-    field_expr: "factors beta high (market beta > ~1.3) — sold hardest in a deleveraging"
-    note: "highest-beta names, cut pro-rata to beta when gross comes down"
+exposure_screens:            # W2 — structured mini-form, resolved over site/stockdata/<T>.json
+  high_beta_proxy:
+    label: {en: "High-beta (vol proxy)", zh: "高贝塔（波动率代理）"}
+    # PROXY CHANNEL (label says "proxy" in both languages, masterplan §scoping.3): the
+    # substrate carries NO market/equity beta field (only macro_sensitivity.rate_beta, which
+    # is RATE sensitivity, not market beta). Annualized realized vol (risk_sizing.vol_ann_pct,
+    # present ~1610) is the available proxy for "sold hardest in a deleveraging" — high-vol
+    # names take the largest pro-rata cut when gross comes down. Named *_proxy so no consumer
+    # mistakes it for a true beta screen.
+    note: {en: "PROXY (not true beta): the substrate has no market-beta field, so this uses annualized realized volatility (risk_sizing.vol_ann_pct) top-quintile as the deleveraging-exposure proxy — high-vol names are cut hardest pro-rata to risk.",
+           zh: "代理（非真实贝塔）：个股数据无市场贝塔字段，故使用年化已实现波动率（risk_sizing.vol_ann_pct）前五分位作为去杠杆敞口代理——高波动名字按风险比例被最先削减。"}
+    any:
+      - {path: risk_sizing.vol_ann_pct, op: pctile_gte, value: 0.80}   # top-quintile realized vol
   crowded_positioning:
-    field_expr: "positioning / smart_money HHI high (concentrated ownership → forced-seller risk)"
-    note: "crowded names with concentrated holders — the positioning to unwind FROM"
+    label: {en: "Crowded positioning", zh: "拥挤持仓"}
+    note: {en: "crowded names with concentrated holders or a heavy short — the positioning to unwind FROM",
+           zh: "持有人集中或空头沉重的拥挤名字——可平仓的仓位来源"}
+    any:
+      - {path: smart_money.ownership_hhi, op: pctile_gte, value: 0.80}   # concentrated institutional ownership (HHI)
+      - {path: positioning.short.pct_float, op: pctile_gte, value: 0.80} # heavy short interest (forced-cover fuel)
   low_liquidity:
-    field_expr: "median dollar-volume low relative to float (impact cost amplifies the unwind)"
-    note: "thin names where a deleveraging sale moves the price most"
+    label: {en: "Low liquidity", zh: "低流动性"}
+    # DROPPED CHANNEL (honest gap): no median-dollar-volume / ADV / float-turnover field
+    # exists in the per-ticker substrate. Declared for schema continuity; resolver emits it
+    # resolved:false with this note rather than proxying silently (masterplan §scoping.3).
+    note: {en: "DROPPED — no field: the substrate carries no dollar-volume / ADV / float-turnover field, so impact-cost / liquidity exposure cannot be resolved. Not proxied.",
+           zh: "已弃用——无字段：个股数据无成交额/日均成交量/流通换手率字段，无法解析冲击成本/流动性敞口。未做代理。"}
 
 provenance:
   theory: ["vol-targeting mechanics", "beta-proportional deleveraging", "crowding unwind"]
   episodes: ["2018-Q1 (volmageddon)", "2020-Q1 (risk-parity unwind)", "2024-08 (carry/vol unwind)"]
   added_by: "TXI-W1"
   added_on: "2026-07-24"
+
+changelog:
+  - "rev 1 (W2 2026-07-24): exposure_screens migrated to the structured {all|any} mini-form.
+     crowded_positioning resolves to REAL fields (smart_money.ownership_hhi pctile OR
+     positioning.short.pct_float pctile). high_beta renamed high_beta_proxy and bound to a
+     LABELED proxy — no market-beta field exists, so risk_sizing.vol_ann_pct pctile stands in
+     (label + note say 'proxy' in both languages, masterplan §scoping.3). low_liquidity DROPPED
+     with a bilingual note (no ADV/dollar-volume field)."
 
 validator_note: >
   All nodes resolve against data/regime/latest.json (vol_regime.regime / vix /
@@ -94,3 +119,8 @@ validator_note: >
   RS proxy for the high-beta cohort; the per-name crowding/beta resolution is the W2
   resolver (froth_fragility.unwind_risk is the co-signal, surfaced there). tier=hypothesis
   (base rates untested until W3).
+  W2 SCREENS (rev 1): crowded_positioning resolves to real substrate fields
+  (smart_money.ownership_hhi, positioning.short.pct_float — both verified present). high_beta_
+  proxy is a LABELED PROXY on risk_sizing.vol_ann_pct (no market-beta field exists in the
+  substrate — only macro_sensitivity.rate_beta, a different quantity); low_liquidity is a
+  DROPPED channel (no ADV/dollar-volume field), declared with a bilingual note, resolves:false.
