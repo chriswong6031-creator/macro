@@ -158,10 +158,110 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — sparklines are decorative; never break the build
         def _spark_svg(*_a, **_k):
             return ""
+    # ---- World Risk Appetite v2 inputs (US/CN/HK closes + full-universe states) --
+    # The v2 dial (engine.intl_performance.risk_appetite) weighs the US, China and
+    # Hong Kong alongside the 7 intl markets. We load each extra market's LOCAL
+    # close (fail-open per market — a miss just lowers coverage_pct) and compute
+    # turn states over the FULL universe (7 intl + 3 extras) ONCE, here, so both
+    # the risk dial and the turn board reuse the same states.
+    #
+    # SCOPE GUARD: these extra closes/states feed ONLY the risk dial and the turn
+    # board's US/CN/HK rows. They are NEVER added to _itr_closes (rotation rank),
+    # latest["records"], the RRG, the correlation map or the USD leaderboard —
+    # those loops stay cc-keyed to intl.countries() and naturally skip US/CN/HK.
+    _wr_extra_closes: dict[str, "pd.Series"] = {}
+    try:
+        from lib import store as _wr_store
+
+        def _wr_close(group: str, sym: str) -> "pd.Series | None":
+            _df = _wr_store.read(group, sym)
+            if _df is not None and "close" in _df.columns:
+                _s = _df["close"].dropna()
+                return _s if not _s.empty else None
+            return None
+
+        # US: reuse the freshness-checked ^GSPC/SPY bench from performance_panel
+        # below (added after perf is computed); CN + HK from their group stores.
+        for _wcc, (_wgrp, _wsym) in {"CN": ("china", "000001.SS"),
+                                     "HK": ("hk", "^HSI")}.items():
+            try:
+                _ws = _wr_close(_wgrp, _wsym)
+                if _ws is not None:
+                    _wr_extra_closes[_wcc] = _ws
+                else:
+                    log.warning("world_risk: %s (%s/%s) close missing — dropped from dial",
+                                _wcc, _wgrp, _wsym)
+            except Exception as _we:  # noqa: BLE001 — fail-open per market
+                log.warning("world_risk: %s close read failed (%s) — dropped from dial", _wcc, _we)
+
+        # USD/CNY (onshore, china store) so the Shanghai Composite momentum leg is
+        # expressed in USD terms. Passed under the reserved "_CNY" key: it is NOT a
+        # market (never enters states / per_market / drags — those key off cap_share),
+        # only the CN→USD conversion inside risk_appetite reads it. Fail-open: absent,
+        # CN scores in local terms.
+        try:
+            _cny = _wr_close("china", "CNY=X")
+            if _cny is not None:
+                _wr_extra_closes["_CNY"] = _cny
+            else:
+                log.warning("world_risk: CNY=X missing — CN momentum leg falls back to local terms")
+        except Exception as _we2:  # noqa: BLE001 — fail-open
+            log.warning("world_risk: CNY=X read failed (%s) — CN local-terms fallback", _we2)
+    except Exception as _wr_e:  # noqa: BLE001 — never break the build
+        log.warning("world_risk extra-close block failed (fail-open): %s", _wr_e)
+
     perf, rates = None, None
+    _world_states: dict[str, dict] = {}
+    # ITR-R7 (render budget is law): the intl close frame + the fresh benchmark are
+    # each read ONCE here and reused across the world-risk block below, the ITR block
+    # (turn board + rotation) and performance_panel — _intl_closes() reads ~14 parquet
+    # files uncached, so hoisting removes ~28 redundant reads. Initialised to None so
+    # the ITR block can fail-open if this try never runs.
+    _wr_intl_raw: "pd.DataFrame | None" = None
+    _wr_bench: "pd.Series | None" = None
     try:
         from engine import intl_performance
-        perf = intl_performance.performance_panel(records=latest["records"])
+        from engine import intl_inputs as _wr_inputs
+        from engine.intl_market_state import market_states as _wr_market_states
+
+        _wr_intl_raw = _wr_inputs._intl_closes()
+        _wr_countries = _wr_inputs.countries()
+        # US bench (already USD, ^GSPC/SPY fallback) for the momentum leg + as a
+        # turn-state input for the US row.
+        _wr_bench, _ = intl_performance._bench_series_fresh(intl_closes=_wr_intl_raw)
+        if _wr_bench is not None and not _wr_bench.empty:
+            _wr_extra_closes["US"] = _wr_bench.dropna()
+
+        # Full-universe turn states: 7 intl primary indices + US/CN/HK locals.
+        _wr_state_closes: dict[str, "pd.Series"] = {}
+        for _wcc2, _wc2 in _wr_countries.items():
+            _wcol = _wc2["index"]
+            if _wcol in _wr_intl_raw:
+                _wser = _wr_intl_raw[_wcol].dropna()
+                if not _wser.empty:
+                    _wr_state_closes[_wcc2] = _wser
+        for _wcc3, _wser3 in _wr_extra_closes.items():
+            if _wcc3.startswith("_"):    # reserved (e.g. _CNY conversion series) — not a market
+                continue
+            _wr_state_closes[_wcc3] = _wser3
+        try:
+            _world_states = _wr_market_states(_wr_state_closes, bench=_wr_bench)
+        except Exception as _wse:  # noqa: BLE001 — fail-open
+            log.warning("world_risk market_states failed (fail-open): %s", _wse)
+            _world_states = {}
+
+        # US is its own benchmark (rs20 = px/bench), so its relative-strength read is
+        # ~0 by construction, not a signal — blank it rather than show a spurious 0.0%.
+        _us_state = _world_states.get("US")
+        if isinstance(_us_state, dict):
+            _us_state["rs20_pct"] = None
+
+        perf = intl_performance.performance_panel(
+            closes=_wr_intl_raw,               # reuse the hoisted close frame (ITR-R7)
+            records=latest["records"],
+            extra_closes=_wr_extra_closes,
+            states=_world_states,
+        )
         for b in (perf.get("leaderboard") or []):
             h = next((b["returns"][k] for k in ("12m", "6m", "3m", "ytd", "1m")
                       if k in b["returns"]), None)
@@ -501,7 +601,9 @@ def main() -> int:
 
     try:
         from engine import intl_inputs as _itr_inputs
-        _itr_closes_raw = _itr_inputs._intl_closes()
+        # ITR-R7: reuse the close frame hoisted for the world-risk block above (same
+        # _intl_closes() content); only re-read if that hoist never ran (fail-open).
+        _itr_closes_raw = _wr_intl_raw if _wr_intl_raw is not None else _itr_inputs._intl_closes()
         _itr_countries = _itr_inputs.countries()
 
         # Build a cc->Series dict (primary index only) for the rotation engine
@@ -518,6 +620,9 @@ def main() -> int:
         if perf is not None:
             _itr_bench = perf.get("bench")
             bench_note = perf.get("bench_note")
+        elif _wr_bench is not None:
+            # ITR-R7: reuse the bench hoisted for the world-risk block (same helper).
+            _itr_bench = _wr_bench
         else:
             try:
                 from engine.intl_performance import _bench_series_fresh as _itr_bf
@@ -525,13 +630,20 @@ def main() -> int:
             except Exception as _e:
                 log.warning("ITR bench freshness helper failed (fail-open): %s", _e)
 
-        # Compute per-market turn states
-        _itr_states: dict[str, dict] = {}
-        try:
-            from engine.intl_market_state import market_states as _itr_ms
-            _itr_states = _itr_ms(_itr_closes, bench=_itr_bench)
-        except Exception as _e:
-            log.warning("intl_market_state.market_states failed (fail-open): %s", _e)
+        # Compute per-market turn states. Reuse the World Risk Appetite v2 states
+        # (_world_states, computed once above) when present — it is a SUPERSET of
+        # the 7 intl markets plus US/CN/HK, so the turn board gets US/CN/HK rows
+        # for free. rotation_ranks / record['turn'] / leaderboard attach below all
+        # look up states BY CC over the 7-market _itr_closes / latest.records, so
+        # the superset never leaks US/CN/HK into rank, records, RRG, corr or the
+        # USD leaderboard.
+        _itr_states: dict[str, dict] = dict(_world_states) if _world_states else {}
+        if not _itr_states:
+            try:
+                from engine.intl_market_state import market_states as _itr_ms
+                _itr_states = _itr_ms(_itr_closes, bench=_itr_bench)
+            except Exception as _e:
+                log.warning("intl_market_state.market_states failed (fail-open): %s", _e)
 
         # Compute rotation ranks
         try:
@@ -556,27 +668,37 @@ def main() -> int:
             if isinstance(_r.get("risk_radar"), dict)
         }
 
+        # Display-name lookup for turn-board rows: the 7 intl markets come from
+        # intl.countries(); US/CN/HK from the world_risk.extra_markets config
+        # block (they are outside intl.countries).
+        _wr_extra_meta = (config.load()["intl"].get("world_risk", {}) or {}).get("extra_markets", {}) or {}
+
+        def _tb_meta(cc: str) -> dict:
+            if cc in _itr_countries:
+                return _itr_countries[cc]
+            return _wr_extra_meta.get(cc, {})
+
         # Build turn_board: urgency-sorted (desc), ties by dd_pct ascending
         if _itr_states:
             _tb_rows = []
             for _cc3, _st in _itr_states.items():
-                _meta3 = _itr_countries.get(_cc3, {})
+                _meta3 = _tb_meta(_cc3)
                 _row = dict(_st)
                 _row["cc"]       = _cc3
                 _row["name"]     = _meta3.get("name", _cc3)
                 _row["name_zh"]  = _meta3.get("name_zh", _cc3)
                 _row["flag"]     = _meta3.get("flag", "")
-                _row["risk_radar"] = _radar_by_cc.get(_cc3)
+                _row["risk_radar"] = _radar_by_cc.get(_cc3)   # US/CN/HK: None (tile is None-safe)
                 _tb_rows.append(_row)
             turn_board = sorted(
                 _tb_rows,
                 key=lambda r: (-r.get("urgency", 0), r.get("dd_pct", 0) or 0),
             )
 
-        # Build turn_events: top 10 newest cross-market events
+        # Build turn_events: top 10 newest cross-market events (US/CN/HK included)
         _all_events = []
         for _cc4, _st4 in _itr_states.items():
-            _meta4 = _itr_countries.get(_cc4, {})
+            _meta4 = _tb_meta(_cc4)
             for _ev in (_st4.get("events") or []):
                 _all_events.append({
                     "date":     _ev.get("date"),
