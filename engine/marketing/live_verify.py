@@ -63,6 +63,12 @@ _DEFAULTS: dict[str, Any] = {
     # tomorrow pre-market. Posting a technical entry into a binary print is how
     # the desk ends up wearing the gap.
     "earnings_guard": True,
+    # When the market is CLOSED (weekend), no session has traded since the plan
+    # was built off the last close, so the wall-clock staleness skip is a false
+    # positive — the last close IS the current price. In that mode level-claim
+    # kinds (signal/chart/watchlist/receipt) verify against the last close and
+    # post instead of skipping. Set false to force the strict every-day gate.
+    "market_closed_mode": True,
 }
 
 _SNAPSHOT_REL = Path("data") / "marketing" / "live_quotes_snapshot.json"
@@ -74,6 +80,41 @@ _CASHTAG_RE = re.compile(r"\$([A-Z]{1,5})\b")
 
 # Kinds that carry a single-name live-price claim worth gating.
 _PRICE_KINDS = frozenset({"signal", "chart", "watchlist", "receipt", "mover", "theme_list"})
+
+# Level/technical/retrospective kinds whose claim is valid against the LAST
+# CLOSE, so they may post on a closed (weekend) day. Same-day MOVE claims
+# (mover / theme_list — "today's biggest mover", "the group moving today")
+# are deliberately excluded: those need a live session and are correctly held
+# on a non-trading day.
+_CLOSED_LEVEL_KINDS = frozenset({"signal", "chart", "watchlist", "receipt"})
+
+try:
+    from zoneinfo import ZoneInfo  # noqa: PLC0415
+
+    _ET = ZoneInfo("America/New_York")
+except Exception:  # pragma: no cover - tzdata missing
+    _ET = None
+
+
+def _market_is_closed(now: datetime) -> bool:
+    """True when the US equity market holds NO session on *now*'s date — a weekend.
+
+    The whole gate exists to catch price action BETWEEN plan-build and post. On a
+    weekend no session trades, so a signal written off the prior close cannot have
+    been invalidated by intervening tape — the last close is the current price.
+
+    Deliberately scoped to weekends only. Weekday pre-/post-market is NOT treated
+    as closed: a full session trades on a weekday, so a stale pre-open quote
+    genuinely cannot verify today's tape. Full-day holidays are also not covered
+    here — on a holiday the gate simply stays strict (the pre-fix behaviour),
+    which is the safe direction (never wrongly open). Fail-soft: any timezone
+    error returns False, keeping the strict weekday gate.
+    """
+    try:
+        et = now.astimezone(_ET) if _ET is not None else now
+    except Exception:  # noqa: BLE001
+        return False
+    return et.weekday() >= 5  # Saturday=5, Sunday=6
 
 
 def gate_cfg(cfg: dict | None) -> dict[str, Any]:
@@ -298,6 +339,25 @@ def verify_item(
         stale = age is None or age > g["max_quote_age_min"]
         change_pct = _f(quote.get("change_pct")) if quote else None
         price = _f(quote.get("price")) if quote else None
+
+        # Market closed (weekend): no session has traded since the plan was built
+        # off the last close, so a PRESENT quote (Friday's close) is not "stale" —
+        # it is the last print. Neutralize the wall-clock staleness skip for
+        # level-claim kinds so they verify against the last close instead of being
+        # held. Everything else is deliberately unchanged: the adverse-move,
+        # entry-distance and earnings checks below all still run (against the last
+        # close), a MISSING quote still falls through to the normal hold (we won't
+        # post a name we cannot verify at all), and same-day MOVE kinds
+        # (mover/theme_list) are excluded so "today's mover" is never posted on a
+        # non-trading day.
+        if (
+            quote is not None
+            and stale
+            and g.get("market_closed_mode", True)
+            and kind in _CLOSED_LEVEL_KINDS
+            and _market_is_closed(nowdt)
+        ):
+            stale = False
 
         if quote is None or (stale and change_pct is None):
             if kind in ("signal", "mover", "theme_list"):

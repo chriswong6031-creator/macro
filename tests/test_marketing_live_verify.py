@@ -262,3 +262,97 @@ def test_earnings_guard_set_reads_parquet(tmp_path):
     # GOOG reports today; AAPL tomorrow pre-market; MSFT tomorrow AH is out of
     # scope; AMZN is next week.
     assert got == frozenset({"GOOG", "AAPL"})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Market-closed (weekend) mode — the tape can't move when the market is shut, so
+# a signal written off Friday's close must POST on Sat/Sun instead of skipping
+# on "stale quote". Weekday behaviour must stay exactly as the tests above.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SAT = datetime(2026, 7, 25, 15, 0, tzinfo=timezone.utc)   # Saturday 11:00 ET
+SUN = datetime(2026, 7, 26, 17, 0, tzinfo=timezone.utc)   # Sunday
+# A quote timestamped to Friday's close — ~19h old on Saturday: "stale" to the
+# wall-clock gate, but it IS the last print.
+FRI_CLOSE_MS = int(datetime(2026, 7, 24, 20, 0, tzinfo=timezone.utc).timestamp() * 1000)
+
+
+def test_market_is_closed_weekend_vs_weekday():
+    assert lv._market_is_closed(SAT) is True
+    assert lv._market_is_closed(SUN) is True
+    assert lv._market_is_closed(NOW) is False           # Thursday
+    assert lv._market_is_closed(datetime(2026, 7, 24, 15, 0, tzinfo=timezone.utc)) is False  # Friday
+    # Saturday after midnight UTC is still Friday evening in ET → open-day rules.
+    assert lv._market_is_closed(datetime(2026, 7, 25, 1, 0, tzinfo=timezone.utc)) is False
+
+
+def test_signal_stale_quote_posts_on_weekend():
+    # Same stale quote that SKIPS on a weekday (test_signal_stale_quote_skips)
+    # must POST on Saturday: Friday's close is the last print, nothing moved.
+    item = {"kind": "signal", "text": "$ROST at 235.8",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    live = _live({"ROST": _q(price=238.9, prev=242.0, pct=-1.3, ts_ms=FRI_CLOSE_MS)},
+                 asof="2026-07-24T20:00:00+00:00")
+    v = lv.verify_item(item, live=live, now=SAT)
+    assert v["action"] == "post"
+
+
+def test_signal_no_quote_still_holds_on_weekend():
+    # A name we cannot verify AT ALL (not in the weekend snapshot) is still held,
+    # even on a weekend — we only relax staleness for a PRESENT last-close quote,
+    # never post a signal with zero price verification.
+    item = {"kind": "signal", "text": "$ROST",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    v = lv.verify_item(item, live=_live({}), now=SAT)
+    assert v["action"] == "skip"
+
+
+def test_signal_adverse_move_still_quarantines_on_weekend():
+    # The adverse-move safety still fires against the LAST close: a BULL signal on
+    # a name that closed -7% Friday must never post over the weekend.
+    item = {"kind": "signal", "text": "$ROST",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    live = _live({"ROST": _q(price=219.3, pct=-7.0, ts_ms=FRI_CLOSE_MS)},
+                 asof="2026-07-24T20:00:00+00:00")
+    v = lv.verify_item(item, live=live, now=SAT)
+    assert v["action"] == "quarantine"
+
+
+def test_signal_runaway_still_quarantines_on_weekend():
+    # Safety preserved: if Friday's close already ran +15% past the entry, the
+    # entry is stale even on a weekend → quarantine, not post.
+    item = {"kind": "signal", "text": "$ROST",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    live = _live({"ROST": _q(price=271.2, pct=2.0, ts_ms=FRI_CLOSE_MS)},
+                 asof="2026-07-24T20:00:00+00:00")
+    v = lv.verify_item(item, live=live, now=SAT)
+    assert v["action"] == "quarantine"
+
+
+def test_signal_earnings_guard_still_skips_on_weekend():
+    # A Monday pre-market print is a real forward risk — the earnings guard fires
+    # even on the weekend, ahead of the market-closed bypass.
+    item = {"kind": "signal", "text": "$ROST",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    live = _live({"ROST": _q(price=238.9, pct=-1.3, ts_ms=FRI_CLOSE_MS)})
+    v = lv.verify_item(item, live=live, earnings=frozenset({"ROST"}), now=SAT)
+    assert v["action"] == "skip"
+
+
+def test_mover_still_skips_on_weekend():
+    # Same-day MOVE claim ("today's biggest mover") can't be true on a non-trading
+    # day — held, not posted.
+    item = {"kind": "mover", "text": "$ROST biggest mover today",
+            "source": {"ticker": "ROST", "baseline_pct": 5.0}}
+    v = lv.verify_item(item, live=_live({}), now=SAT)
+    assert v["action"] == "skip"
+
+
+def test_market_closed_mode_disabled_by_config_reverts_to_skip():
+    item = {"kind": "signal", "text": "$ROST",
+            "source": {"ticker": "ROST", "direction": "BULL", "entry": 235.8}}
+    live = _live({"ROST": _q(price=238.9, pct=-1.3, ts_ms=FRI_CLOSE_MS)},
+                 asof="2026-07-24T20:00:00+00:00")
+    cfg = {"publish": {"live_gate": {"market_closed_mode": False}}}
+    v = lv.verify_item(item, live=live, now=SAT, cfg=cfg)
+    assert v["action"] == "skip"   # strict wall-clock gate restored
