@@ -123,15 +123,49 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
     assert '<span class="nm-ic">' not in research
 
 
-def test_all_rendered_research_menus_have_no_legacy_emoji_icons() -> None:
+def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
+    partial = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
+    families = {
+        name.removeprefix("research-icon-")
+        for name in re.findall(
+            r'class="nm-ic research-icon (research-icon-[a-z-]+)"',
+            partial,
+        )
+    }
+
+    assert families == EXPECTED_RESEARCH_ICON_FAMILIES
+    assert partial.count('class="nm-ic research-icon ') == 31
+    assert '<span class="nm-ic">' not in partial
+
+
+def test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender() -> None:
+    partial = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
+    menu = _requested_menu(partial)
+    families = {
+        name.removeprefix("submenu-icon-")
+        for name in re.findall(
+            r'class="submenu-icon (submenu-icon-[a-z]+)"',
+            menu,
+        )
+    }
+
+    assert families == EXPECTED_ICON_FAMILIES
+    assert menu.count('class="submenu-icon ') == 65
+    assert not any(mark in menu for mark in LEGACY_SUBMENU_MARKS)
+
+
+def test_all_rendered_menus_preserve_custom_icon_markup() -> None:
     rendered = 0
     for page in (ROOT / "site").rglob("*.html"):
         html = page.read_text(encoding="utf-8")
         if '<div class="nav-dd nav-mega-dd">' not in html:
             continue
         rendered += 1
+        submenu = _requested_menu(html)
         research = _research_menu(html)
+        assert submenu.count('class="submenu-icon ') >= 51, page
+        assert not any(mark in submenu for mark in LEGACY_SUBMENU_MARKS), page
         assert '<span class="nm-ic">' not in research, page
         assert 'class="nm-ic research-icon ' in research, page
 
-    assert rendered == 3001
+    assert rendered >= 3000

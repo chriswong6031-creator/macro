@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-24",
-  "generated_utc": "2026-07-25T18:11:45Z",
+  "generated_utc": "2026-07-25T19:55:10Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -56,9 +56,9 @@
         },
         {
           "ticker": "WWD",
-          "combined": 0.3907,
+          "combined": 0.3786,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.3907,
+          "factor_cosine": 0.3786,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": true
@@ -233,7 +233,7 @@
     "LPG": {
       "verdict": "duplicate",
       "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.14<0.2",
+      "basis": "membership-only:r2=0.13<0.2",
       "nearest": [
         {
           "ticker": "INSW",
@@ -251,7 +251,7 @@
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "factor_basis": "beta-read-thin:r2=0.13<0.2",
           "shared_groups": [],
           "same_earnings_week": false
         },
@@ -278,23 +278,23 @@
     },
     "WWD": {
       "verdict": "duplicate",
-      "max_similarity": 0.9852,
+      "max_similarity": 0.9835,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
           "ticker": "EVR",
-          "combined": 0.9852,
+          "combined": 0.9835,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.9852,
+          "factor_cosine": 0.9835,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": true
         },
         {
           "ticker": "SO",
-          "combined": 0.3907,
+          "combined": 0.3786,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.3907,
+          "factor_cosine": 0.3786,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": true
@@ -320,28 +320,28 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as EVR \u2014 shared factor profile (similarity 99%).",
-      "why_zh": "\u4e0e EVR \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 99%\uff09\u3002"
+      "why_en": "Same bet as EVR \u2014 shared factor profile (similarity 98%).",
+      "why_zh": "\u4e0e EVR \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
     },
     "EVR": {
       "verdict": "duplicate",
-      "max_similarity": 0.9852,
+      "max_similarity": 0.9835,
       "basis": "membership+high-tier-factor",
       "nearest": [
         {
           "ticker": "WWD",
-          "combined": 0.9852,
+          "combined": 0.9835,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.9852,
+          "factor_cosine": 0.9835,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": true
         },
         {
           "ticker": "SO",
-          "combined": 0.3132,
+          "combined": 0.3124,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.3132,
+          "factor_cosine": 0.3124,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": true
@@ -367,8 +367,8 @@
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as WWD \u2014 shared factor profile (similarity 99%).",
-      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 99%\uff09\u3002"
+      "why_en": "Same bet as WWD \u2014 shared factor profile (similarity 98%).",
+      "why_zh": "\u4e0e WWD \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
     }
   },
   "pair_basis": {
@@ -403,20 +403,20 @@
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.13<0.2",
       "shared_groups": []
     },
     "SO__WWD": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.3907,
-      "combined": 0.3907,
+      "factor_cosine": 0.3786,
+      "combined": 0.3786,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
     "SO__EVR": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.3132,
-      "combined": 0.3132,
+      "factor_cosine": 0.3124,
+      "combined": 0.3124,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -513,20 +513,20 @@
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.13<0.2",
       "shared_groups": []
     },
     "LPG__EVR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.13<0.2",
       "shared_groups": []
     },
     "WWD__EVR": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.9852,
-      "combined": 0.9852,
+      "factor_cosine": 0.9835,
+      "combined": 0.9835,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
@@ -546,7 +546,7 @@
     "factor_betas": {
       "path": "site/factor_betas.json",
       "found": true,
-      "as_of": "2026-07-17"
+      "as_of": "2026-07-24"
     },
     "us_standouts_v2": {
       "path": "site/factordata/us_standouts_v2.json",

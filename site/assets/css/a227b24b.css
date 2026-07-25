@@ -1,0 +1,55 @@
+
+  .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
+  .act-item { font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .act-item:last-child { border-bottom: none; }
+  .act-item .an { font-weight: 600; color: var(--text); }
+  .act-item .at { font-size: 10.5px; color: var(--muted); }
+  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
+  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+  /* ---- HKRV-W3: leadership banner + turn chip ---- */
+  .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
+    border-left: 4px solid var(--warn);
+    background: color-mix(in srgb, var(--warn) 9%, var(--panel));
+    border-top: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-right: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    border-bottom: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+    display: flex; flex-direction: column; gap: 6px; }
+  .hkrv-banner-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .hkrv-banner-icon { font-size: 18px; flex: none; }
+  .hkrv-banner-title { font-size: 14px; font-weight: 800;
+    color: color-mix(in srgb, var(--warn) 90%, var(--text)); }
+  .hkrv-banner-line { font-size: 12.5px; color: var(--text); line-height: 1.5;
+    flex: 1; min-width: 200px; }
+  .hkrv-stance-chip { display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;
+    letter-spacing: .02em;
+    background: color-mix(in srgb, var(--warn) 20%, var(--panel));
+    color: color-mix(in srgb, var(--warn) 92%, var(--text));
+    border: 1px solid color-mix(in srgb, var(--warn) 46%, var(--line));
+    margin-left: auto; white-space: nowrap; flex: none; }
+  .hkrv-why-toggle { font-size: 11.5px; color: var(--link); cursor: pointer;
+    background: none; border: none; padding: 0; font: inherit;
+    text-decoration: underline; text-decoration-style: dotted; }
+  .hkrv-pop { display: none; margin-top: 6px; padding: 11px 14px;
+    background: var(--panel2);
+    border: 1px solid color-mix(in srgb, var(--warn) 30%, var(--line));
+    border-radius: 9px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .hkrv-pop.hkrv-pop-open { display: block; }
+  .hkrv-pop-row { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .hkrv-pop-row:last-child { border-bottom: none; }
+  .hkrv-pop-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); display: block; margin-bottom: 1px; }
+  .hkrv-history-note { display: inline-block; margin-top: 5px; font-size: 11.5px;
+    font-weight: 600; color: var(--muted); padding: 4px 9px; border-radius: 7px;
+    background: color-mix(in srgb, var(--muted) 8%, var(--panel2));
+    border: 1px solid var(--line); }
+  .act-turn-chip { display: inline-block; font-size: 9.5px; font-weight: 800;
+    padding: 1px 6px; border-radius: 7px; margin-left: 5px; vertical-align: middle;
+    color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 16%, var(--panel2));
+    border: 1px solid color-mix(in srgb, var(--warn) 36%, var(--line));
+    letter-spacing: .03em; }
+  
