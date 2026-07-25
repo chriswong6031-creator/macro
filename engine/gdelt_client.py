@@ -39,6 +39,18 @@ RETRY POLICY (bounded to stay under render budget)
   Worst-case total wait per call: ~6s throttle + 30s + 75s < 2.5 minutes.
   Never raises.
 
+CIRCUIT BREAKER (keeps a boxed IP off the critical path)
+--------------------------------------------------------
+When a call exhausts its retries with a persistent 429, the shared IP is in
+GDELT's rate-limit penalty box (it has 429'd on every request since 2026-06-20).
+Paying the ~2-minute backoff on EVERY subsequent call is what turned the nightly
+news sweep into a 26-29 min critical-path stall (build_news alone). So a terminal
+429 arms a cross-process breaker (data/gdelt/rate_limit_until, a wall-clock
+stamp): for the next gdelt.rate_limit_cooldown_s seconds (default 900) every live
+fetch short-circuits to (None, 'rate_limited') WITHOUT throttling or touching the
+network. A fresh cache is still served during the cooldown; a single successful
+fetch clears the breaker at once. Off-switch: set the cooldown to 0.
+
 CACHE SEMANTICS
 ---------------
 If cache_path is given and a fresh file (age < cache_ttl_s) exists, the cached
@@ -85,6 +97,66 @@ def _stamp_path() -> Path:
     return p
 
 
+# ── circuit breaker: skip live fetches while the shared IP is 429-boxed ───────
+
+
+def _cooldown() -> float:
+    """Circuit-breaker cooldown in seconds — how long to short-circuit live GDELT
+    fetches after a persistent 429 proves the shared IP is in the penalty box.
+    Reads config.yml gdelt.rate_limit_cooldown_s; falls back to 900 (15 min).
+    Return 0 to disable the breaker entirely."""
+    try:
+        gdelt_cfg = config.load().get("gdelt") or {}
+        v = gdelt_cfg.get("rate_limit_cooldown_s")
+        if v is not None:
+            return max(0.0, float(v))
+    except Exception:  # noqa: BLE001 — config unavailable; use default
+        pass
+    return 900.0
+
+
+def _penalty_path() -> Path:
+    """Circuit-breaker stamp — a wall-clock unix timestamp; while now < it, the
+    shared IP is treated as boxed.  Lives beside the throttle stamp so any test
+    that relocates _stamp_path() relocates this too (keeps them hermetic)."""
+    return _stamp_path().parent / "rate_limit_until"
+
+
+def _penalty_active() -> bool:
+    """True when a prior call armed the breaker and its cooldown has not elapsed.
+    Fail-OPEN: any error returns False, so a bad/leftover stamp can never
+    permanently suppress GDELT."""
+    try:
+        p = _penalty_path()
+        if not p.exists():
+            return False
+        return time.time() < float(p.read_text().strip() or "0")
+    except Exception:  # noqa: BLE001 — the breaker must never block on its own error
+        return False
+
+
+def _arm_penalty() -> None:
+    """Open the breaker: a persistent 429 proved the IP is boxed, so suppress
+    live fetches for _cooldown() seconds.  Cooldown 0 disables it.  Never raises."""
+    cd = _cooldown()
+    if cd <= 0:
+        return
+    try:
+        _penalty_path().write_text(str(time.time() + cd))
+    except Exception as e:  # noqa: BLE001
+        log.debug("gdelt_client: could not arm rate-limit breaker (non-fatal): %s", e)
+
+
+def _clear_penalty() -> None:
+    """Close the breaker after a valid response — the IP recovered.  Never raises."""
+    try:
+        p = _penalty_path()
+        if p.exists():
+            p.unlink()
+    except Exception as e:  # noqa: BLE001
+        log.debug("gdelt_client: could not clear rate-limit breaker (non-fatal): %s", e)
+
+
 def _throttle(min_interval: float) -> None:
     """Cross-process rate limiter.  Acquires an exclusive lock on the stamp file,
     sleeps until >= min_interval seconds since the last stamped request, writes a
@@ -124,6 +196,8 @@ def wait_turn(min_interval: "float | None" = None) -> None:
     since the LAST GDELT request made by ANY module/process on this machine,
     then claims the slot. The budget is per IP — pacing only yourself while
     eight other modules hit the same endpoint still trips 429s. Never raises."""
+    if _penalty_active():
+        return   # IP is 429-boxed — don't burn the pacing interval on a doomed call
     _throttle(min_interval if min_interval is not None else _min_interval())
 
 
@@ -214,6 +288,15 @@ def get_articles(
             except Exception:  # noqa: BLE001 — stale/corrupt cache: fall through to fetch
                 pass
 
+    # ── circuit breaker ──────────────────────────────────────────────────────
+    # A prior call proved the shared IP is 429-boxed, so a live fetch would burn
+    # ~2 min (6s throttle + 30s + 75s) only to return rate_limited. Short-circuit
+    # to that same result instantly — a FRESH cache was already served above, so
+    # only a genuine network fetch is skipped. This is the fix for the 26-29 min
+    # build_news critical-path stall.
+    if _penalty_active():
+        return None, "rate_limited"
+
     # ── fetch with throttle + bounded retry ─────────────────────────────────
     import requests  # local import — requests is a runtime dep, not always present at import time
 
@@ -259,6 +342,7 @@ def get_articles(
                 if attempt < len(RETRY_SLEEPS):
                     time.sleep(RETRY_SLEEPS[attempt])
                     continue
+                _arm_penalty()   # persistent 429 (as rate-limit text) → open the breaker
                 return None, reason
             # success path
             try:
@@ -267,6 +351,7 @@ def get_articles(
                 log.warning("gdelt_client: JSON parse failed: %s", e)
                 return None, "fetch_error"
             articles = _parse_articles(data)
+            _clear_penalty()   # a valid 200 → the IP recovered; close the breaker
             if not articles:
                 reason = "no_articles"
             else:
@@ -287,7 +372,8 @@ def get_articles(
             if attempt < len(RETRY_SLEEPS):
                 time.sleep(RETRY_SLEEPS[attempt])
                 continue
-            # final attempt also 429
+            # final attempt also 429 → the shared IP is boxed; open the breaker
+            _arm_penalty()
             return None, reason
 
         # other non-200
