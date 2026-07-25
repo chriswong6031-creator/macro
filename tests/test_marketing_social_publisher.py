@@ -275,6 +275,66 @@ def test_buffer_publish_past_slot_bumps_dueat_into_future(monkeypatch):
     assert inp["dueAt"] != "2026-07-19T10:00:00Z"  # not the past slot
 
 
+def test_buffer_publish_immediate_uses_share_now_not_queue(monkeypatch):
+    """SHARE-NOW (cadence masterplan F3): a breaking item with no readable
+    schedule must go out as customScheduled at now+lead. addToQueue would park it
+    in *Buffer's own* queue — arbitrary latency on the one post whose entire
+    value is speed."""
+    from engine.marketing.social_publisher import BufferPublisher
+
+    pub = BufferPublisher(token="tkn", organization_id="org-1")
+    captured: dict = {}
+
+    def fake_transport(payload):
+        captured["payload"] = payload
+        return {"data": {"createPost": {
+            "__typename": "PostActionSuccess", "post": {"id": "buf-post-9"}}}}
+
+    monkeypatch.setattr(pub, "_transport", fake_transport)
+    receipt = pub.publish(text="breaking", channel_id="c1", scheduled_at=None,
+                          now=_FIXED_NOW, immediate=True)
+    assert receipt.ok is True
+    inp = captured["payload"]["variables"]["input"]
+    assert inp["mode"] == "customScheduled"
+    assert inp["dueAt"] > "2026-07-19T12:00:00Z"     # strictly in the future
+    assert "addToQueue" not in str(captured["payload"])
+
+
+def test_buffer_publish_immediate_honours_a_real_future_schedule(monkeypatch):
+    """immediate=True is a floor, not an override: an explicitly future send time
+    (the floor-respecting last_post+10m the publisher computes) is still used."""
+    from engine.marketing.social_publisher import BufferPublisher
+
+    pub = BufferPublisher(token="tkn", organization_id="org-1")
+    captured: dict = {}
+
+    def fake_transport(payload):
+        captured["payload"] = payload
+        return {"data": {"createPost": {
+            "__typename": "PostActionSuccess", "post": {"id": "buf-post-10"}}}}
+
+    monkeypatch.setattr(pub, "_transport", fake_transport)
+    receipt = pub.publish(text="breaking", channel_id="c1",
+                          scheduled_at="2026-07-19T12:08:00Z",
+                          now=_FIXED_NOW, immediate=True)
+    assert receipt.ok is True
+    assert captured["payload"]["variables"]["input"]["dueAt"] == "2026-07-19T12:08:00Z"
+
+
+def test_effective_due_at_immediate_flag():
+    """Unit: only the immediate flag turns a blank/garbage schedule into a
+    share-now time — the default stays None (addToQueue), unchanged."""
+    from engine.marketing.social_publisher import _effective_due_at
+
+    assert _effective_due_at(None, _FIXED_NOW) is None
+    assert _effective_due_at("not-a-date", _FIXED_NOW) is None
+    assert _effective_due_at("", _FIXED_NOW, immediate=True) == "2026-07-19T12:03:00Z"
+    assert _effective_due_at("immediate", _FIXED_NOW, immediate=True) == "2026-07-19T12:03:00Z"
+    # a genuinely future time is honoured either way
+    assert (_effective_due_at("2026-07-19T18:00:00Z", _FIXED_NOW, immediate=True)
+            == "2026-07-19T18:00:00Z")
+
+
 def test_buffer_publish_appends_link_to_text(monkeypatch):
     from engine.marketing.social_publisher import BufferPublisher
 

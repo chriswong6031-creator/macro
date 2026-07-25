@@ -18,7 +18,7 @@ Auto-approve contract under test:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -73,6 +73,22 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         f"    flagship: {'true' if links_allowed else 'false'}\n",
         encoding="utf-8",
     )
+
+
+def _append_publish_key(tmp_path: Path, key: str, value) -> None:
+    """Add one key to the publish: block of an already-written marketing.yml.
+
+    Inserted directly after the `publish:` line so it lands inside that block
+    regardless of what _write_publish_cfg emitted below it.
+    """
+    p = tmp_path / "config" / "marketing.yml"
+    lines = p.read_text(encoding="utf-8").splitlines()
+    out: list[str] = []
+    for line in lines:
+        out.append(line)
+        if line.strip() == "publish:":
+            out.append(f"  {key}: {value}")
+    p.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 def _seed_queued_kind(tmp_path: Path, *, kind: str, provenance: str,
@@ -585,14 +601,20 @@ def _seed_posted_at(tmp_path: Path, when: datetime, *, text: str) -> str:
 
 
 def test_floor_posts_one_per_run(monkeypatch, tmp_path):
-    """Two approved+due items + a 10m floor → exactly ONE posts this run; the
-    other stays approved and retries next slot (an accumulated backlog can't
-    burst out at once)."""
+    """Two approved+due LADDER items + a 10m floor → exactly ONE posts this run;
+    the other stays approved and retries next slot (an accumulated backlog can't
+    burst out at once).
+
+    The items carry an explicit past ladder slot: a slotless ("immediate") item
+    takes the Phase-3 breaking path instead and is Buffer-scheduled at
+    last_post + floor rather than deferred (test_immediate_* below)."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     ids = [
-        _seed_queued_item(tmp_path, text="First floor post here."),
-        _seed_queued_item(tmp_path, text="Second floor post here."),
+        _seed_queued_item(tmp_path, text="First floor post here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
+        _seed_queued_item(tmp_path, text="Second floor post here.",
+                          scheduled_at="2026-07-19T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
@@ -621,13 +643,15 @@ def test_floor_disabled_posts_all(monkeypatch, tmp_path):
 
 def test_floor_blocks_when_last_post_recent(monkeypatch, tmp_path):
     """A prior post 5m ago (read from the ledger — i.e. an earlier cron run)
-    blocks a fresh due item under a 10m floor: it auto-approves but does NOT post."""
+    blocks a fresh due LADDER item under a 10m floor: it auto-approves but does
+    NOT post."""
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     # Run's now is 2026-07-19T13:00Z; seed a post 5 minutes earlier.
     _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 55, tzinfo=timezone.utc),
                     text="Earlier post.")
-    fresh = _seed_queued_item(tmp_path, text="Fresh post now.")
+    fresh = _seed_queued_item(tmp_path, text="Fresh post now.",
+                              scheduled_at="2026-07-19T12:30:00Z")
     fake = _FakePublisher(ok=True)
     rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
     assert rc == 0
@@ -647,3 +671,161 @@ def test_floor_allows_after_window(monkeypatch, tmp_path):
     assert rc == 0
     assert current_statuses(tmp_path)[fresh] == "posted"
     assert len(fake.calls) == 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. Phase 3 — breaking dispatch: immediate items budge in under the floor
+#    (cadence masterplan gate 6) instead of waiting out a 2-hourly sweep.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_immediate_due_at_unit():
+    """_immediate_due_at: clear floor → now; inside the floor → last + floor;
+    past the horizon → None (caller defers as before)."""
+    from scripts.marketing_publisher import _immediate_due_at
+    now = datetime(2026, 7, 19, 13, 0, tzinfo=timezone.utc)
+
+    # nothing posted yet, or the floor is disabled → post now
+    assert _immediate_due_at(now, None, 10, 60) == now
+    assert _immediate_due_at(now, now, 0, 60) == now
+    # last post 15m ago, 10m floor → clear → now
+    assert _immediate_due_at(now, now - timedelta(minutes=15), 10, 60) == now
+    # last post 4m ago → book the 10m mark (6m out), not now, not never
+    assert (_immediate_due_at(now, now - timedelta(minutes=4), 10, 60)
+            == now + timedelta(minutes=6))
+    # a 120m floor with a 60m horizon → too far out → defer to the next run
+    assert _immediate_due_at(now, now - timedelta(minutes=1), 120, 60) is None
+    # horizon 0 = no horizon → always schedule, however far
+    assert (_immediate_due_at(now, now - timedelta(minutes=1), 120, 0)
+            == now + timedelta(minutes=119))
+
+
+def test_immediate_item_schedules_at_floor_instead_of_deferring(monkeypatch, tmp_path):
+    """A BREAKING item inside the floor window posts — booked at last_post + 10m
+    via Buffer — where a ladder item would have deferred to the next sweep."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 55, tzinfo=timezone.utc),
+                    text="Earlier post.")
+    breaking = _seed_queued_item(tmp_path, text="Breaking post now.",
+                                 scheduled_at="immediate")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    assert current_statuses(tmp_path)[breaking] == "posted"
+    assert len(fake.calls) == 1
+    # 12:55 + 10m floor = 13:05, five minutes after the run's 13:00 "now".
+    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:05:00Z"
+    assert fake.calls[0]["immediate"] is True
+
+
+def test_immediate_item_past_horizon_still_defers(monkeypatch, tmp_path):
+    """The floor-booking is bounded: when the wait exceeds
+    publish.immediate_defer_max_minutes the item defers to the next run, so one
+    sweep can never book hours of future posts."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    # 5m horizon vs a floor that clears in 9m → past the horizon.
+    _append_publish_key(tmp_path, "immediate_defer_max_minutes", 5)
+    _seed_posted_at(tmp_path, datetime(2026, 7, 19, 12, 59, tzinfo=timezone.utc),
+                    text="Earlier post.")
+    breaking = _seed_queued_item(tmp_path, text="Breaking post now.",
+                                 scheduled_at="immediate")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    assert current_statuses(tmp_path)[breaking] == "approved"
+    assert fake.calls == []
+
+
+def test_two_immediate_items_ladder_by_the_floor(monkeypatch, tmp_path):
+    """A burst of breaking items goes out spaced by the floor (+0, +10), not all
+    at once and not one-per-two-hours."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
+    ids = [
+        _seed_queued_item(tmp_path, text="Breaking one here.", scheduled_at="immediate"),
+        _seed_queued_item(tmp_path, text="Breaking two here.", scheduled_at="immediate"),
+    ]
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live"], fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert all(statuses[i] == "posted" for i in ids), statuses
+    sent = [c["scheduled_at"] for c in fake.calls]
+    assert sent == ["2026-07-19T13:00:00Z", "2026-07-19T13:10:00Z"], sent
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. Phase 3 — --post-now (the admin "Post now" button's runner side)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_post_now_sends_a_future_slotted_item_without_auto_approve(monkeypatch, tmp_path):
+    """--post-now posts a queued item whose ladder slot is HOURS away, with
+    publish.auto_approve OFF: the operator's click is the approval."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=10)
+    later = _seed_queued_item(tmp_path, text="Scheduled for tonight.",
+                              scheduled_at="2026-07-19T23:00:00Z")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", later],
+                        fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    assert current_statuses(tmp_path)[later] == "posted"
+    assert len(fake.calls) == 1
+    assert fake.calls[0]["immediate"] is True
+    assert fake.calls[0]["scheduled_at"] == "2026-07-19T13:00:00Z"   # now, not 23:00
+
+
+def test_post_now_does_not_touch_other_items(monkeypatch, tmp_path):
+    """--post-now scopes the whole run: another approved+due item does NOT go out
+    on the back of a breaking dispatch."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
+    target = _seed_queued_item(tmp_path, text="Send this one now.")
+    other = _seed_queued_item(tmp_path, text="Leave this one alone.")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", target],
+                        fake_publisher=fake, kill_switch=True)
+    assert rc == 0
+    statuses = current_statuses(tmp_path)
+    assert statuses[target] == "posted"
+    assert statuses[other] == "queued"      # untouched — not even auto-approved
+    assert len(fake.calls) == 1
+
+
+def test_post_now_still_runs_the_safety_gates(monkeypatch, tmp_path):
+    """--post-now jumps the QUEUE, not the CHECKS: an over-length item is not
+    approved, nothing posts, and the run exits non-zero so the operator sees red."""
+    from engine.marketing.outbox import current_statuses
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    bad = _seed_queued_item(tmp_path, text="$PLTR " + ("x" * 400))
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", bad],
+                        fake_publisher=fake, kill_switch=True)
+    assert rc == 3
+    assert current_statuses(tmp_path)[bad] == "queued"
+    assert fake.calls == []
+
+
+def test_post_now_unknown_id_exits_nonzero(monkeypatch, tmp_path):
+    """An id that is not in this checkout's outbox fails loudly rather than
+    reporting a green no-op run."""
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
+    _seed_queued_item(tmp_path, text="Unrelated queued post.")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", "ob-does-not-exist"],
+                        fake_publisher=fake, kill_switch=True)
+    assert rc == 3
+    assert fake.calls == []
+
+
+def test_post_now_dry_run_exits_zero(monkeypatch, tmp_path):
+    """With the kill-switch OFF the dispatch is a dry-run — no post was ever
+    going to happen, so it must not masquerade as a failed breaking send."""
+    _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
+    target = _seed_queued_item(tmp_path, text="Would be sent now.")
+    fake = _FakePublisher(ok=True)
+    rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", target],
+                        fake_publisher=fake, kill_switch=False)
+    assert rc == 0
+    assert fake.calls == []

@@ -44,6 +44,23 @@ on:
     # but it is NOT done here because a failed post-commit push double-posts.
     - cron: "0 1,3,11,13,15,17,19,21,23 * * *"
   workflow_dispatch:          # manual runs (still dark unless the secret is set)
+    inputs:
+      post_now_item:
+        description: >-
+          BREAKING DISPATCH — outbox item id(s), comma-separated. Restricts the
+          run to those items, approves them regardless of publish.auto_approve,
+          and sends them immediately (ignoring their ladder slot). Every safety
+          gate still runs. Leave blank for a normal sweep. The admin Outbox
+          "Post now" button fills this in.
+        required: false
+        default: ""
+      skip_jitter:
+        description: >-
+          Skip the humanizing jitter sleep. Automatic for a post_now_item
+          dispatch — a breaking post should not wait out a random delay.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write             # commit changed outbox ledgers back to main
@@ -95,6 +112,19 @@ jobs:
         # 10m): now that the ladder runs 9 sweeps/day, a big per-sweep sleep is
         # wasted runner time AND the 10-min global floor already paces posting, so
         # 2m is plenty of de-sync. Well clear of the 25m job timeout.
+        #
+        # SKIPPED on a breaking dispatch (masterplan §6): a "post now" click must
+        # not sit out a random sleep. Any post_now_item implies skip_jitter.
+        #
+        # The event_name guard is deliberate belt-and-braces: on a `schedule` run
+        # the `inputs` context is empty, and rather than depend on how GitHub
+        # coerces a missing property against '' (it compares as equal, so the
+        # bare form also works), this makes the scheduled lane provably identical
+        # to before this input existed. The scheduled lane is not a place to be
+        # clever about expression semantics we cannot run locally.
+        if: >-
+          ${{ !(github.event_name == 'workflow_dispatch'
+                && (inputs.skip_jitter || inputs.post_now_item != '')) }}
         run: sleep $((RANDOM % 120))
 
       - name: fetch full-universe live quotes (tape gate input)
@@ -116,10 +146,19 @@ jobs:
           fi
 
       - name: run publisher (dark until the kill-switch secret is set)
+        env:
+          # Breaking dispatch: empty on every scheduled sweep, so the normal
+          # ladder run is byte-identical to before this input existed.
+          POST_NOW_ITEM: ${{ inputs.post_now_item }}
         run: |
           # --live is safe here: with MARKETING_PUBLISH_ENABLED unset the runner
           # runs DRY-RUN, posts nothing, and writes no status transitions.
-          python -m scripts.marketing_publisher --live
+          if [ -n "${POST_NOW_ITEM:-}" ]; then
+            echo "breaking dispatch — restricting this run to: $POST_NOW_ITEM"
+            python -m scripts.marketing_publisher --live --post-now "$POST_NOW_ITEM"
+          else
+            python -m scripts.marketing_publisher --live
+          fi
 
       - name: poll post metrics (dark until BUFFER_TOKEN is set)
         # Reads back per-post analytics (impressions/likes/reposts/… + the x.com

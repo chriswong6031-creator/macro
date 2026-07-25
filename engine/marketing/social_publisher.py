@@ -255,23 +255,32 @@ def _iso_now(now: datetime | None = None) -> str:
 _MIN_DUE_LEAD = timedelta(minutes=3)
 
 
-def _effective_due_at(scheduled_at: str | None, now: datetime | None = None) -> str | None:
+def _effective_due_at(scheduled_at: str | None, now: datetime | None = None,
+                      *, immediate: bool = False) -> str | None:
     """Resolve the dueAt to send Buffer, or None to fall back to addToQueue.
 
     - blank/unparseable scheduled_at → None (Buffer slots it into the queue);
     - a scheduled_at at/before now + lead → now + lead (post ~now, in the future);
     - a genuinely future scheduled_at → itself (honour the schedule).
+
+    ``immediate=True`` is the SHARE-NOW contract (cadence masterplan F3): a
+    breaking / immediate item must never fall through to ``addToQueue``, which
+    parks it in *Buffer's own* queue and posts it at whatever slot that queue
+    next offers — arbitrary latency on the one class of post whose whole value
+    is being fast. With the flag set, a missing or unreadable schedule resolves
+    to ``now + lead`` (customScheduled) instead of None.
     """
     s = (scheduled_at or "").strip()
+    floor = (now if now is not None else datetime.now(timezone.utc)) + _MIN_DUE_LEAD
+    _share_now = floor.strftime("%Y-%m-%dT%H:%M:%SZ") if immediate else None
     if not s:
-        return None
+        return _share_now
     try:
         dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
     except ValueError:
-        return None
-    floor = (now if now is not None else datetime.now(timezone.utc)) + _MIN_DUE_LEAD
+        return _share_now
     return (floor if dt < floor else dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -340,6 +349,7 @@ class SocialPublisher(Protocol):
         link: str | None = None,
         scheduled_at: str | None = None,
         now: datetime | None = None,
+        immediate: bool = False,
     ) -> Receipt:
         ...
 
@@ -565,13 +575,16 @@ class BufferPublisher:
         link: str | None = None,
         scheduled_at: str | None = None,
         now: datetime | None = None,
+        immediate: bool = False,
     ) -> Receipt:
         """Create (optionally schedule) one post on `channel_id`.
 
         `link`, when given, is appended to the post body (Buffer has no separate
         link field on CreatePostInput — the URL lives in the text). `media_paths`
         with public URLs become `assets`. `scheduled_at` (iso8601) schedules the
-        post; omitting it adds to the account's queue.
+        post; omitting it adds to the account's queue — UNLESS `immediate` is
+        set, in which case a missing/unreadable schedule still posts share-now
+        (customScheduled at now + lead) rather than parking in Buffer's queue.
 
         NEVER raises: any failure returns Receipt(ok=False, error=...).
         """
@@ -586,7 +599,7 @@ class BufferPublisher:
                 "channelId": channel_id,
                 "schedulingType": "automatic",
             }
-            eff_due = _effective_due_at(scheduled_at, now)
+            eff_due = _effective_due_at(scheduled_at, now, immediate=immediate)
             if eff_due:
                 create_input["mode"] = "customScheduled"
                 create_input["dueAt"] = eff_due

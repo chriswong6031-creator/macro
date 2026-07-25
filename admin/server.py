@@ -1158,6 +1158,19 @@ class Handler(BaseHTTPRequestHandler):
                 res = marketing.arm_publisher(b.get("enabled"))
                 return self._json(res, 200 if res.get("ok") else 400)
 
+            # BREAKING DISPATCH ("Post now"): start a marketing-publish run scoped
+            # to one outbox item, which the runner approves and sends immediately
+            # instead of waiting for its 2-hourly ladder slot. Works deployed
+            # (github_api dispatches with a PAT — no local shell). Every safety
+            # gate still runs inside that run; see marketing.post_now().
+            if path == "/api/marketing/publish/post_now":
+                iid = b.get("item_id") or b.get("id")
+                if not isinstance(iid, str) or not iid.strip():
+                    return self._json({"ok": False,
+                                       "error": "item_id required"}, 400)
+                res = marketing.post_now(iid)
+                return self._json(res, 200 if res.get("ok") else 400)
+
             # Buffer token paste-box: set the BUFFER_TOKEN repo SECRET via
             # `gh secret set` (stdin — the token is NEVER in argv, logs, or the
             # response). Local-only (gh login lives on the operator's Mac): refused

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -400,6 +401,84 @@ def arm_publisher(enabled) -> dict:
         log.warning("marketing.arm_publisher failed: %s", exc)
         return {"ok": False, "enabled": None, "error": str(exc),
                 "note": "arm write failed"}
+
+
+_PUBLISH_WORKFLOW = "marketing-publish.yml"
+# Outbox ids are machine-generated slugs (ob-2026-07-25-15098c35f1, or a fastlane
+# TICKER-quarter-source triple). Anything outside this alphabet is not an id we
+# produced. The leading-dash rejection matters on its own: the runner passes the
+# value to argparse, where "-x" would be read as a FLAG, not an id.
+_ITEM_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+_MAX_POST_NOW_IDS = 5
+
+
+def post_now(item_id) -> dict:
+    """BREAKING DISPATCH — send one (or a few) outbox items right now.
+
+    Dispatches marketing-publish.yml with the `post_now_item` input, which makes
+    that run: restrict itself to these ids, approve them regardless of the
+    auto-approve config, skip the humanizing jitter, and hand Buffer a concrete
+    share-now dueAt instead of parking them in Buffer's queue. Every SAFETY gate
+    still runs in the runner — copy validation, the live tape gate, the channel
+    check, the daily cap, and the 10-minute global floor (a breaking item that
+    lands inside the floor is booked at last_post + 10m rather than dropped).
+
+    Fail-soft: returns {ok: False, error, note} with an actionable message and
+    never raises. Requires a GH token with Actions: write.
+    """
+    try:
+        raw = str(item_id or "").strip()
+        ids = [p.strip() for p in raw.split(",") if p.strip()]
+        if not ids:
+            return {"ok": False, "error": "no item id given", "note": "nothing to post"}
+        if len(ids) > _MAX_POST_NOW_IDS:
+            return {"ok": False,
+                    "error": f"too many ids ({len(ids)}) — post now takes at most "
+                             f"{_MAX_POST_NOW_IDS} at a time",
+                    "note": "breaking dispatch is for one or two posts, not a batch"}
+        bad = [i for i in ids if not _ITEM_ID_RE.match(i) or len(i) > 120]
+        if bad:
+            return {"ok": False, "error": f"not a valid outbox item id: {bad[0]!r}",
+                    "note": "id rejected"}
+
+        from . import github_api  # noqa: PLC0415
+        if not github_api.token():
+            return {
+                "ok": False,
+                "error": "No GitHub token configured. Set GH_TOKEN in "
+                         "/etc/macro-admin.env (needs Actions: read & write) to "
+                         "dispatch a breaking post.",
+                "note": "GitHub token required",
+            }
+
+        # An unarmed publisher would run this dispatch as a dry-run and post
+        # nothing. Say so up front rather than letting the operator watch a run
+        # go green having sent nothing.
+        arm = arm_state()
+        if arm.get("enabled") is False:
+            return {"ok": False,
+                    "error": "The publisher is DISARMED — a dispatch now would "
+                             "dry-run and post nothing. Arm it in the Publisher "
+                             "panel first.",
+                    "note": "kill-switch off"}
+
+        res = github_api.dispatch(workflow=_PUBLISH_WORKFLOW, ref="main",
+                                  inputs={"post_now_item": ",".join(ids)})
+        if not res.get("ok"):
+            return {"ok": False, "error": res.get("error") or "dispatch failed",
+                    "note": "could not start the publisher run"}
+        return {
+            "ok": True,
+            "item_ids": ids,
+            "dispatched": True,
+            "note": ("Breaking run dispatched. The item posts within a couple of "
+                     "minutes unless a safety gate holds it — check the run in "
+                     "Actions. A post that went out in the last 10 minutes pushes "
+                     "this one to that mark."),
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.post_now failed: %s", exc)
+        return {"ok": False, "error": str(exc), "note": "post-now dispatch failed"}
 
 
 # Cap on the accepted Buffer token length. A Buffer personal token is short

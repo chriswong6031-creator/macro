@@ -6292,20 +6292,31 @@ function obxItemCard(it, acctId) {
      decision is reversible, so it keeps a quiet "Hold instead" pull-back; once
      the actuator folds it to 'approved' it is locked. Undecided/held items get
      the full Approve/Hold pair; failures get retry / spent-attempts states. */
+  /* Breaking dispatch: skip the wait and send this one now. Offered wherever the
+     post is still going out (undecided, held, or cleared-and-waiting) — never on
+     something already posted, quarantined, or out of retries. */
+  const postNowBtn = `<button class="btn obx-btn-postnow" onclick="obxPostNow('${esc(it.id)}',this)" title="Send this post now instead of at its slot — all safety checks still run">Post now</button>`;
+
   let controls = "";
   if (obxIsCleared(it)) {
     const flippable = obxIsDecidable(it);   /* queued + approve → still reversible */
     controls = flippable
       ? `<div class="obx-controls obx-cleared-ctrl" data-item="${esc(it.id)}">
           <span class="obx-lock-note">Cleared — will post at the next slot.</span>
+          ${postNowBtn}
           <button class="btn obx-btn-hold obx-pullback" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold instead</button>
           <span class="obx-ctrl-msg"></span>
         </div>`
-      : `<div class="obx-controls obx-locked"><span class="obx-lock-note">Cleared — waiting for the actuator.</span></div>`;
+      : `<div class="obx-controls obx-cleared-ctrl" data-item="${esc(it.id)}">
+          <span class="obx-lock-note">Cleared — waiting for the actuator.</span>
+          ${postNowBtn}
+          <span class="obx-ctrl-msg"></span>
+        </div>`;
   } else if (obxIsDecidable(it)) {
     controls = `<div class="obx-controls" data-item="${esc(it.id)}">
       <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve</button>
       <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold</button>
+      ${postNowBtn}
       <span class="obx-ctrl-msg"></span>
     </div>`;
   } else if (isFailed && !spent) {
@@ -6475,6 +6486,31 @@ async function obxDecide(id, decision, btn) {
     /* Refetch in place so tiles + counts + state chips re-fold consistently
        without a full-page flash, media re-download, or losing the filter. */
     await obxRefreshInPlace();
+  } catch (e) {
+    btns.forEach(b => { b.disabled = false; });
+    if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }
+  }
+}
+
+/* BREAKING DISPATCH — send this post now instead of at its ladder slot. Starts a
+   marketing-publish run scoped to this one item; that run approves it, skips the
+   humanizing jitter, and hands Buffer a share-now time. Every safety gate still
+   runs inside the run, so this is "jump the queue", NOT "bypass the checks".
+   Irreversible (it publishes to the live account) → confirm first. */
+async function obxPostNow(id, btn) {
+  const ctrl = btn ? btn.closest(".obx-controls") : null;
+  const msg = ctrl ? ctrl.querySelector(".obx-ctrl-msg") : null;
+  const btns = ctrl ? ctrl.querySelectorAll("button") : [];
+  if (!confirm("Post this now?\n\nIt goes out within a couple of minutes — or at "
+             + "the 10-minute mark if something posted very recently. This is live "
+             + "and cannot be pulled back once it sends.")) return;
+  btns.forEach(b => { b.disabled = true; });
+  if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = "dispatching…"; }
+  try {
+    const r = await post("/api/marketing/publish/post_now", { item_id: id });
+    if (!r || !r.ok) throw new Error((r && r.error) || "dispatch failed");
+    toast("Sending now — the publisher run is starting");
+    if (msg) { msg.className = "obx-ctrl-msg"; msg.textContent = r.note || "dispatched"; }
   } catch (e) {
     btns.forEach(b => { b.disabled = false; });
     if (msg) { msg.className = "obx-ctrl-msg obx-ctrl-err"; msg.textContent = (e && e.message) || "failed — try again"; }

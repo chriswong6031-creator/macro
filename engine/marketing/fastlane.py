@@ -390,6 +390,11 @@ def _write_outbox(
         "text": {"headline": headline, "body": body},
         "media": [media_rel],
         "immediate": True,
+        # Explicit sentinel, not an absent key: the publisher decides the breaking
+        # path off scheduled_at (_is_immediate), and the admin renders it. Missing
+        # already meant "immediate" by fallback — saying it is what makes an
+        # earnings item legible as a share-now post everywhere it is read.
+        "scheduled_at": "immediate",
         "priority": "high",
         "provenance": {
             **{k: v for k, v in event.items() if not k.startswith("_")},

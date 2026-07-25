@@ -184,6 +184,16 @@ publish:
   # PLAN-time min_minutes_between_posts. 0 = disabled.
   min_minutes_between_any_posts: 10
 
+  # Breaking dispatch (cadence masterplan Phase 3). An IMMEDIATE item — a fastlane
+  # earnings post, an operator "Post now" click, a publish-time mover — does NOT
+  # defer to the next 2-hourly sweep when it lands inside the floor above: that is
+  # not a breaking post. It is handed to Buffer with a dueAt of last_post + floor
+  # and goes out then (masterplan gate 6: breaking budges in under the floor, it
+  # never re-anchors the ladder). This caps how far ahead that booking may reach,
+  # so one sweep can never book hours of future posts; past the horizon the item
+  # defers as a ladder item would. 0 = no horizon.
+  immediate_defer_max_minutes: 60
+
   # Chart-image attach (D02 image pipeline). When true, content_studio renders a
   # PNG variant of each single-name signal chart at plan-build time, writes it to
   # data/marketing/outbox/media/<as_of>/<chart_id>.png, and (if R2 creds exist on
