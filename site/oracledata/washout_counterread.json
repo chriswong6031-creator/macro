@@ -1,32 +1,32 @@
 {
  "schema": "washout_counterread.v1",
- "as_of": "2026-07-23",
+ "as_of": "2026-07-24",
  "show": false,
- "growth_score": 68.0,
+ "growth_score": 65.7,
  "growth_band": "caution",
  "growth_extreme": false,
  "price_depths": [
   {
    "index": "SPY",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -2.57,
-   "depth_pctile": 67.7,
+   "drawdown_pct": -2.47,
+   "depth_pctile": 66.8,
    "extreme": false,
    "n_hist": 2520
   },
   {
    "index": "QQQ",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -7.16,
-   "depth_pctile": 81.1,
+   "drawdown_pct": -8.2,
+   "depth_pctile": 84.0,
    "extreme": false,
    "n_hist": 2520
   },
   {
    "index": "XLK",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -9.86,
-   "depth_pctile": 86.3,
+   "drawdown_pct": -11.16,
+   "depth_pctile": 88.8,
    "extreme": false,
    "n_hist": 2520
   }
