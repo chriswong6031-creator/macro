@@ -89,6 +89,13 @@ _URL_MAP: frozenset[str] = frozenset({
     "/learn/risk/position-sizing.html",
     "/learn/risk/risk-reward-expectancy.html",
     "/learn/ownership/insider-filings-form-4.html",
+    "/learn/options/zero-dte-regime.html",
+    "/learn/options/market-makers-middleman.html",
+    "/learn/options/open-interest-limits.html",
+    "/learn/options/dealer-hedging-mechanics.html",
+    "/learn/options/gamma-regimes.html",
+    "/learn/options/charm-and-time-drift.html",
+    "/learn/options/gamma-flip-levels.html",
     "/blog/index.html",
     "/blog/the-math-of-losing-streaks.html",
     "/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html",
@@ -101,17 +108,18 @@ _URL_MAP: frozenset[str] = frozenset({
 })
 
 # valid track values (CONTRACT §3)
-_VALID_TRACKS: frozenset[str] = frozenset({"technical", "risk", "ownership"})
+_VALID_TRACKS: frozenset[str] = frozenset({"technical", "risk", "ownership", "options"})
 
 # valid family values
 _VALID_FAMILIES: frozenset[str] = frozenset({"article", "lesson", "page"})
 
 # Track ordering and display labels (CONTRACT §5 / learn hub)
-_TRACK_ORDER = ["technical", "risk", "ownership"]
+_TRACK_ORDER = ["technical", "risk", "ownership", "options"]
 _TRACK_LABELS = {
     "technical": "Technical Analysis",
     "risk": "Risk & Position Management",
     "ownership": "Ownership & Filings",
+    "options": "Options & Dealer Positioning",
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

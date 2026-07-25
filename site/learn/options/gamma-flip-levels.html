@@ -1,0 +1,720 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Gamma Flip and Walls: Reading Regime Boundaries — Mastermind</title>
+
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script><meta name="description" content="The gamma flip is where dealer hedging switches from stabilising to amplifying. Learn what crossing it means and how to read a levels map on our GEX page.">
+<link rel="canonical" href="https://www.mastermind-x.com/learn/options/gamma-flip-levels.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="The Gamma Flip and Walls: Reading Regime Boundaries">
+<meta property="og:description" content="The gamma flip is where dealer hedging switches from stabilising to amplifying. Learn what crossing it means and how to read a levels map on our GEX page.">
+<meta property="og:url" content="https://www.mastermind-x.com/learn/options/gamma-flip-levels.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Gamma Flip and Walls: Reading Regime Boundaries">
+<meta name="twitter:description" content="The gamma flip is where dealer hedging switches from stabilising to amplifying. Learn what crossing it means and how to read a levels map on our GEX page.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"><style>
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
+</style>
+
+<link rel="stylesheet" href="../../theme.css"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.mastermind-x.com/"},{"@type":"ListItem","position":2,"name":"Learn","item":"https://www.mastermind-x.com/learn/index.html"},{"@type":"ListItem","position":3,"name":"Options \u0026 Dealer Positioning","item":"https://www.mastermind-x.com/learn/options/"},{"@type":"ListItem","position":4,"name":"The Gamma Flip and Walls: Reading Regime Boundaries"}]}</script><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "The Gamma Flip and Walls: Reading Regime Boundaries",
+  "description": "The gamma flip is where dealer hedging switches from stabilising to amplifying. Learn what crossing it means and how to read a levels map on our GEX page.",
+  "datePublished": "2026-07-25",
+  "dateModified": "2026-07-25",
+  "author": {
+    "@type": "Organization",
+    "name": "Mastermind Research"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Mastermind Research"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.mastermind-x.com/learn/options/gamma-flip-levels.html"
+  }
+}</script>
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
+   The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
+   deep canvas, hairline-precise panels, tabular mono numerals, Inter UI, and a
+   regime-rail section-header system. All tokens are SCOPED to body.estate so
+   the rest of the site is byte-untouched; theme.css (shared/global) is never
+   edited. Colour routes through house vars so dark/light + the zh red/green
+   swap propagate at paint. Aesthetic north star: reads in 2 seconds; colour
+   spent only on signal.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* --font-ui local definition (#2647 tripwire pattern, commodities.html.j2
+   precedent): theme.css defines the same token, but its href here is
+   Jinja-prefixed (../../) so the guard cannot see the link — and a local
+   definition keeps the estate off Times even if theme.css ever fails to load.
+   Value mirrors theme.css verbatim. The _interfonts.html.j2 include (head)
+   completes the #2647 pattern; note its page-relative fonts/ URLs don't
+   resolve at estate depths — inert, because theme.css re-declares the same
+   Inter faces later (last-defined face wins) with stylesheet-relative URLs. */
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+}
+*{box-sizing:border-box;}
+body.estate{
+  /* deepened terminal canvas — richer "screen" black, scoped to the estate */
+  --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+  /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+  --num:ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "JetBrains Mono",
+        "Roboto Mono", Menlo, Consolas, monospace;
+  /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+     genuine captions only (highest-leverage readability fix, per macro) */
+  --ink-1: var(--text);
+  --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+  --ink-3: var(--muted);
+  /* hairlines + inset surface material */
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --hair-strong: var(--line);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --rule: var(--hair-strong);                    /* legacy alias — section rules */
+  --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+        0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
+     --fs-md/15px reading copy since /learn + /blog are long-form) */
+  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
+  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* spacing grid (4px) + radii + eyebrow tracking */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+  /* the single regime/accent rail on every section header */
+  --rail: var(--link);
+  --measure: 70ch;                               /* long-form reading line length */
+}
+html[data-theme="light"] body.estate{
+  /* restore the airy light canvas (mirrors macro's light override) */
+  --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
+  --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+        0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+html body.estate{
+  background:var(--bg); color:var(--ink-1);
+  font-family:var(--font-ui); font-size:var(--fs-md); line-height:1.6;
+  margin:0; padding:0 0 72px;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+html,body{overflow-x:clip;}                                 /* 390px bleed guard */
+body.estate a{color:var(--link); text-decoration:none;}
+body.estate a:hover{text-decoration:underline; text-underline-offset:3px;}
+.mono,body.estate .mono{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;}
+.est-wrap{max-width:1120px; margin:0 auto; padding:0 24px;}
+
+/* ── the section-header signature: the REGIME RAIL ──────────────────────────
+   Every section title in the estate wears the macro rail — a 3px gradient bar
+   before a strong sentence-case title, a mono eyebrow above, a hairline rule to
+   the edge. This single shared rhythm is the motif that unifies hub, calculator
+   and article (it replaces the old plotted-line underline). Applied to the
+   estate section-header classes below. */
+.est-sec-rule{border:none; height:1px; background:var(--hair-strong); margin:0;}
+
+/* ── glyph family (.egl) — bespoke per-calculator line-art, macro idiom ──────
+   Hairline strokes, monochrome + one --link accent, draw-on reveal. Geometry
+   lives in _estate_glyphs.html.j2; styling is here so both variants share it. */
+.egl{color:var(--ink-2); overflow:visible;}
+.egl [class^="egl-"], .egl [class*=" egl-"]{
+  stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.egl path.egl-still, .egl path.egl-draw, .egl path.egl-draw2,
+.egl path.egl-mark, .egl path.egl-up, .egl path.egl-down{fill:none;}
+.egl .egl-still{stroke:var(--ink-3); stroke-width:1.5; opacity:.6;}
+.egl .egl-still-dot{fill:var(--ink-3); opacity:.7;}
+.egl .egl-draw, .egl .egl-draw2{stroke:var(--ink-1); stroke-width:1.7;}
+.egl .egl-fill{fill:color-mix(in srgb,var(--ink-2) 22%,transparent);
+  stroke:var(--ink-2); stroke-width:1.4;}
+/* the single accent — the --link mark (node, arrow, cap, ramp arc) */
+.egl .egl-mark, .egl .egl-mark-dot, .egl .egl-draw-fill{stroke:var(--link);}
+.egl .egl-mark{stroke-width:1.7;}
+.egl .egl-mark-dot{fill:var(--link); stroke:none;}
+.egl .egl-draw-fill{fill:color-mix(in srgb,var(--link) 22%,transparent); stroke-width:1.5;}
+.egl .egl-up{stroke:var(--up); stroke-width:1.7;}
+.egl .egl-down{stroke:var(--down); stroke-width:1.7;}
+.egl .egl-down-dot{fill:var(--down); stroke:none;}
+/* draw-on-reveal ink (traced lines) */
+.egl .egl-draw, .egl .egl-draw2{stroke-dasharray:120; stroke-dashoffset:120;
+  animation:eglDraw 1000ms cubic-bezier(.33,.62,.26,1) 140ms forwards;}
+.egl .egl-draw2{animation-delay:260ms;}
+.egl .egl-mark-dot, .egl .egl-down-dot{opacity:0;
+  animation:eglPop .01s linear 1140ms forwards;}
+@keyframes eglDraw{to{stroke-dashoffset:0;}}
+@keyframes eglPop{to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){
+  .egl .egl-draw, .egl .egl-draw2{animation:none; stroke-dashoffset:0;}
+  .egl .egl-mark-dot, .egl .egl-down-dot{animation:none; opacity:1;}
+}
+
+/* ── Signal-Ink teaching diagram (.sig-fig) — the lesson-body figure idiom ─────
+   One hand-authored SVG per lesson explains a mechanic. Same terminal line-art
+   language as .egl: hairline furniture in --ink-3, the signed options duality in
+   --up (stabilising / calls / long-gamma / dealer-buys) vs --down (accelerating /
+   puts / short-gamma / dealer-sells), and the single --link accent for the pivot
+   the lesson turns on (the flip / zero / break-even). SVG carries paths + shapes
+   ONLY; every label is a positioned HTML <span> (inherits Inter/mono + theme/ZH
+   swap, never an svg <text>). The shared dashed zero-line is the motif that
+   threads all seven diagrams — in options, the zero-line is where meaning inverts.
+   Static by design (reduced-motion-safe, deterministic render). */
+.est-prose figure.sig-fig{margin:22px 0; max-width:var(--measure);}
+.sig-stage{position:relative; width:100%; border:1px solid var(--hair-strong);
+  border-left:3px solid var(--rail); border-radius:var(--r-md); background:
+    linear-gradient(180deg, color-mix(in srgb,var(--link) 4%,transparent), transparent 60%),
+    var(--tile); box-shadow:var(--ms); padding:16px 18px; overflow:hidden;}
+.sig-stage svg{display:block; width:100%; height:auto; color:var(--ink-3);
+  overflow:visible;}
+/* stroke roles — mirror the .egl vocabulary so both line-art families read as one */
+.sig-stage svg [class^="sg-"], .sig-stage svg [class*=" sg-"]{
+  fill:none; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke;}
+.sig-stage .sg-axis{stroke:var(--ink-3); stroke-width:1.3; opacity:.62;}
+.sig-stage .sg-grid{stroke:var(--ink-3); stroke-width:1; opacity:.24;}
+.sig-stage .sg-zero{stroke:var(--ink-3); stroke-width:1.3; opacity:.7; stroke-dasharray:4 4;}
+.sig-stage .sg-line{stroke:var(--ink-2); stroke-width:1.6;}
+.sig-stage .sg-up{stroke:var(--up); stroke-width:1.9;}
+.sig-stage .sg-down{stroke:var(--down); stroke-width:1.9;}
+.sig-stage .sg-pivot{stroke:var(--link); stroke-width:1.7;}
+.sig-stage .sg-pivot-dash{stroke:var(--link); stroke-width:1.5; stroke-dasharray:5 4;}
+.sig-stage .fill-up{fill:color-mix(in srgb,var(--up) 17%,transparent); stroke:none;}
+.sig-stage .fill-down{fill:color-mix(in srgb,var(--down) 17%,transparent); stroke:none;}
+.sig-stage .fill-mut{fill:color-mix(in srgb,var(--ink-3) 20%,transparent); stroke:none;}
+.sig-stage .fill-pivot{fill:color-mix(in srgb,var(--link) 16%,transparent); stroke:none;}
+.sig-stage .dot-up{fill:var(--up); stroke:none;}
+.sig-stage .dot-down{fill:var(--down); stroke:none;}
+.sig-stage .dot-pivot{fill:var(--link); stroke:none;}
+.sig-stage .dot-mut{fill:var(--ink-3); stroke:none;}
+/* HTML labels positioned over the stage (percent coords set inline per diagram) */
+.sig-stage .sig-lbl{position:absolute; transform:translate(-50%,-50%);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:10.5px;
+  line-height:1.15; letter-spacing:.02em; color:var(--ink-2); text-align:center;
+  white-space:nowrap; pointer-events:none;
+  /* faint theme-aware halo so labels stay legible where they sit over strokes */
+  text-shadow:0 0 3px var(--tile), 0 0 3px var(--tile), 0 0 5px var(--tile);}
+.sig-stage .sig-lbl.up{color:var(--up);} .sig-stage .sig-lbl.down{color:var(--down);}
+.sig-stage .sig-lbl.pivot{color:var(--link);}
+.sig-stage .sig-lbl.big{font-size:12.5px; font-weight:700; letter-spacing:0;}
+.sig-stage .sig-lbl.axis{color:var(--ink-3); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;}
+.sig-stage .sig-lbl.lead{text-align:left; transform:translate(0,-50%);}
+.sig-fig figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3);
+  margin-top:9px; line-height:1.5;}
+/* two-up split stage (e.g. long-gamma vs short-gamma) shares one zero-line motif */
+.sig-stage .sg-split{stroke:var(--hair-strong); stroke-width:1;}
+@media (max-width:600px){
+  .sig-stage{padding:12px 12px;}
+  .sig-stage .sig-lbl{font-size:9.5px;}
+  .sig-stage .sig-lbl.big{font-size:11px;}
+}
+
+/* ── estate top bar (slim; own toggles reuse house .theme-switch/.lang-toggle) ── */
+.est-bar{position:sticky; top:0; z-index:60; background:color-mix(in srgb,var(--bg) 84%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(16px); backdrop-filter:saturate(180%) blur(16px);
+  border-bottom:1px solid var(--line);}
+.est-bar-in{max-width:1120px; margin:0 auto; padding:9px 24px;
+  display:flex; align-items:center; gap:16px;}
+.est-brand{display:inline-flex; align-items:center; gap:9px; flex:none; text-decoration:none;
+  padding:3px 8px 3px 4px; border-radius:10px; transition:background .18s;}
+.est-brand:hover{background:color-mix(in srgb,var(--link) 10%,transparent); text-decoration:none;}
+.est-brand .glyph{width:26px; height:26px; flex:none; filter:drop-shadow(0 2px 6px rgba(40,56,128,.30));}
+.est-brand .word{font-family:var(--font-ui); font-weight:900; font-size:13px; letter-spacing:.06em;
+  color:var(--text); white-space:nowrap;}
+.est-brand .word .sub{display:block; font-weight:600; font-size:9px; letter-spacing:.14em;
+  color:var(--muted); margin-top:1px;}
+.est-nav{display:flex; align-items:center; gap:2px; margin-left:6px; flex-wrap:wrap; min-width:0;}
+.est-nav a{font-family:var(--font-ui); font-size:13.5px; font-weight:500; color:var(--muted);
+  padding:6px 10px; border-radius:8px; text-decoration:none; white-space:nowrap;
+  transition:color .16s,background .16s;}
+.est-nav a:hover,.est-nav a[aria-current="page"]{color:var(--text);
+  background:color-mix(in srgb,var(--link) 11%,var(--panel2)); text-decoration:none;}
+.est-ctrls{margin-left:auto; display:flex; align-items:center; gap:9px; flex:none;}
+.est-ctrls .est-cta{font-family:var(--font-ui);}
+.est-ctrls .est-cta .cta-short{display:none;}
+/* the house animated toggles are styled by theme.css? No — those visuals live in
+   nav CSS the estate doesn't load. Give .theme-switch / .lang-toggle a compact,
+   self-contained skin here so the class-bound theme.js listeners still fire. */
+.est-ctrls .theme-switch{font:600 12px/1 var(--font-ui); cursor:pointer;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); color:var(--muted);
+  border-radius:999px; padding:6px 10px; display:inline-flex; align-items:center; gap:5px;
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); transition:color .16s,border-color .16s;}
+.est-ctrls .theme-switch:hover{color:var(--text); border-color:var(--gbtn-brd-hover);}
+.est-ctrls .theme-switch .ic{font-size:13px; line-height:1;}
+.est-ctrls .theme-switch .sun{display:none;} .est-ctrls .theme-switch .moon{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .sun{display:inline;}
+html[data-theme="light"] .est-ctrls .theme-switch .moon{display:none;}
+.est-ctrls .theme-switch .knob{display:none;}
+.est-ctrls .lang-toggle{position:relative; display:inline-flex; cursor:pointer; user-select:none;
+  border:1px solid var(--gbtn-brd); background:var(--gbtn-bg); border-radius:999px; overflow:hidden;
+  font:600 11.5px/1 var(--font-ui);}
+.est-ctrls .lang-toggle .opt{padding:6px 9px; color:var(--muted); transition:color .16s;}
+.est-ctrls .lang-toggle .pill{display:none;}
+html:not([data-lang="zh"]) .est-ctrls .lang-toggle .en-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+html[data-lang="zh"] .est-ctrls .lang-toggle .zh-opt{color:var(--text);
+  background:color-mix(in srgb,var(--link) 16%,transparent);}
+:where(.est-brand,.est-nav a,.est-ctrls .theme-switch,.est-ctrls .lang-toggle,.est-cta):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--link) 70%,transparent); outline-offset:2px;}
+@media (max-width:720px){
+  .est-bar-in{flex-wrap:wrap; gap:8px 12px; padding:8px 16px;}
+  .est-nav{order:3; width:100%; margin-left:0; gap:1px;}
+  .est-nav a{padding:6px 9px; font-size:13px;}
+  .est-ctrls{gap:7px;}
+  /* compact CTA on phones: hide the long label, show the short bilingual one */
+  .est-ctrls .est-cta .cta-long{display:none;}
+  .est-ctrls .est-cta .cta-short{display:inline;}
+}
+
+/* ── breadcrumb ─────────────────────────────────────────────────────────────── */
+.est-crumb{max-width:1120px; margin:18px auto 0; padding:0 24px;
+  font-family:var(--font-ui); font-size:12.5px; color:var(--muted);}
+.est-crumb ol{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:7px;}
+.est-crumb a{color:var(--muted);} .est-crumb a:hover{color:var(--text);}
+.est-crumb .sep{opacity:.4;}
+.est-crumb li[aria-current="page"]{color:var(--text);}
+
+/* ── shared prose vocabulary (CONTRACT §4 body classes) — terminal, not serif ── */
+.est-prose{font-size:var(--fs-md); line-height:1.72; color:var(--ink-1);}
+.est-prose > *{max-width:var(--measure);}
+/* h2 wears the REGIME RAIL — the estate-wide section signature. A 3px gradient
+   bar leads a strong sentence-case title with a hairline rule to the edge; the
+   mono "01/02" mark sits after the rail. This is the macro header idiom. */
+.est-prose h2{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 4px); font-weight:700;
+  line-height:1.28; letter-spacing:-.01em; margin:38px 0 14px; scroll-margin-top:76px;
+  display:flex; align-items:center; gap:11px; padding:0 0 var(--sp-3);
+  border-bottom:1px solid var(--hair-strong);}
+.est-prose h2::before{content:""; flex:none; align-self:center; width:3px; height:19px;
+  border-radius:2px; background:linear-gradient(180deg, var(--rail),
+    color-mix(in srgb, var(--rail) 35%, transparent));}
+.est-prose h2 .est-h2-mark{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--ink-3); flex:none;}
+html[data-lang="zh"] .est-prose h2{letter-spacing:0;}
+.est-prose h3{font-family:var(--font-ui); font-size:var(--fs-md); font-weight:700;
+  margin:26px 0 6px; color:var(--ink-1); letter-spacing:-.005em;}
+.est-prose p{margin:12px 0; color:var(--ink-1);}
+.est-prose ul,.est-prose ol{margin:12px 0; padding-left:24px;}
+.est-prose li{margin:7px 0;}
+.est-prose li::marker{color:var(--ink-3);}
+.est-prose strong{font-weight:700; color:var(--ink-1);}
+.est-prose em{font-style:italic;}
+.est-prose code{font-family:var(--num); font-size:.88em; background:var(--panel2);
+  border:1px solid var(--hair-strong); border-radius:5px; padding:1px 6px;}
+.est-prose a{border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-prose a:hover{border-bottom-color:var(--link); text-decoration:none;}
+.est-prose blockquote{margin:18px 0; padding:4px 0 4px 20px; border-left:3px solid var(--rail);
+  color:var(--ink-1); font-style:italic; opacity:.94;}
+
+/* callouts — lead / warn / key (house colours, mono heading label) */
+.est-prose .callout{border-radius:var(--r-md); padding:15px 18px; margin:18px 0;
+  border:1px solid var(--hair-strong); background:var(--panel2); position:relative; max-width:var(--measure);}
+.est-prose .callout .co-h{display:block; margin-bottom:4px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+.est-prose .callout p{margin:6px 0;} .est-prose .callout > :first-child.co-h + p{margin-top:0;}
+.est-prose .callout.lead{border-left:4px solid var(--link);}
+.est-prose .callout.lead .co-h{color:var(--link);}
+.est-prose .callout.warn{border-left:4px solid var(--warn);
+  background:color-mix(in srgb,var(--warn) 8%,var(--panel2));}
+.est-prose .callout.warn .co-h{color:var(--warn);}
+.est-prose .callout.key{border-left:4px solid var(--ok);
+  background:color-mix(in srgb,var(--ok) 9%,var(--panel2));}
+.est-prose .callout.key .co-h{color:var(--ok);}
+
+/* formula — the desk's chalk line. Mono, on a faint tile with an accent edge. */
+.est-prose .formula{font-family:var(--num); font-variant-numeric:tabular-nums;
+  font-size:var(--fs-md); line-height:1.7; background:var(--tile);
+  border:1px solid var(--hair-strong); border-left:3px solid var(--rail);
+  border-radius:var(--r-md); padding:16px 18px; margin:18px 0; overflow-x:auto;
+  max-width:var(--measure); color:var(--ink-1); letter-spacing:.005em;}
+.est-prose .formula strong{color:var(--link); font-weight:700;}
+
+/* worked example — a machined tile with a mono heading + top hairline. */
+.est-prose .worked{border:1px solid var(--hair-strong); border-radius:var(--r-md); margin:18px 0;
+  padding:16px 18px; max-width:var(--measure); box-shadow:var(--ms);
+  background:linear-gradient(var(--hair-strong),var(--hair-strong)) 0 0/100% 1px no-repeat, var(--panel);}
+.est-prose .worked .co-h{display:block; margin-bottom:6px; font-family:var(--num);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3);}
+.est-prose .worked .num,.est-prose .worked code{font-family:var(--num); font-variant-numeric:tabular-nums;}
+
+/* data table — the terminal ruled column (mono body, mono caps head) */
+.est-prose table.data{border-collapse:collapse; width:100%; max-width:var(--measure);
+  font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm); margin:18px 0;}
+.est-prose table.data th{text-align:left; padding:9px 12px; background:var(--panel2);
+  color:var(--ink-3); font-family:var(--num); font-weight:700; font-size:var(--fs-micro);
+  letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid var(--hair-strong);}
+.est-prose table.data td{padding:8px 12px; border-bottom:1px solid var(--hair); vertical-align:top; color:var(--ink-1);}
+.est-prose table.data tr:hover td{background:color-mix(in srgb,var(--link) 6%,transparent);}
+.est-prose table.data .num{font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right;}
+.est-tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:18px 0; max-width:var(--measure);}
+.est-tbl-scroll table.data{margin:0;}
+
+.est-prose figure{margin:20px 0; max-width:var(--measure);}
+.est-prose figcaption{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin-top:8px;}
+
+/* ── related rail + CTA (shared by article + calculator layouts) ────────────── */
+.est-related{margin:34px 0 0; padding:20px 0 0; border-top:1px solid var(--hair-strong);}
+.est-related .rel-h{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin:0 0 12px;}
+.est-related .rel-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px;}
+.est-relcard{display:block; border:1px solid var(--hair-strong); border-radius:var(--r-md); padding:13px 15px;
+  background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+  transition:transform .18s,border-color .18s,box-shadow .18s;}
+.est-relcard:hover{transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--hair-strong));
+  box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 40%,transparent); text-decoration:none;}
+.est-relcard .rc-kind{font-family:var(--num); font-size:var(--fs-micro); letter-spacing:.09em;
+  text-transform:uppercase; color:var(--link);}
+.est-relcard .rc-title{display:block; margin-top:4px; font-family:var(--font-ui); font-size:var(--fs-md);
+  font-weight:700; color:var(--ink-1); line-height:1.32; letter-spacing:-.005em;}
+
+.est-cta-block{margin:32px 0 0; border:1px solid color-mix(in srgb,var(--link) 30%,var(--hair-strong));
+  border-radius:var(--r-lg); padding:22px 24px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--link) 10%,transparent), transparent 60%),
+    var(--panel); box-shadow:var(--ms); display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.est-cta-block .cta-copy{flex:1 1 260px; min-width:0;}
+.est-cta-block .cta-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--link);}
+.est-cta-block .cta-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+  margin:3px 0 0; line-height:1.3; letter-spacing:-.01em; color:var(--ink-1);}
+.est-cta-block .gbtn{flex:none; font-family:var(--font-ui);}
+
+/* ── estate footer ──────────────────────────────────────────────────────────── */
+.est-footer{max-width:1120px; margin:56px auto 0; padding:24px 24px 8px;
+  border-top:1px solid var(--hair-strong); font-family:var(--font-ui);}
+.est-foot-links{display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:14px;}
+.est-foot-col{display:flex; flex-direction:column; gap:5px; min-width:150px;}
+.est-foot-col .fh{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+.est-foot-col a{font-size:var(--fs-sm); color:var(--ink-2); text-decoration:none;}
+.est-foot-col a:hover{color:var(--ink-1);}
+.est-foot-disc{font-size:var(--fs-sm); color:var(--ink-3); line-height:1.6;
+  border-top:1px solid var(--hair-strong); padding-top:13px; margin-top:6px;}
+.est-foot-disc .mono{opacity:.85;}
+
+/* ── page header — the estate hero: mono kicker + terminal title + dek ────────
+   The plotted-line signature is retired (the regime rail is the new motif);
+   .est-kicker-plot / .plot-line are hidden so the inlined SVGs collapse cleanly
+   without touching every template. The eyebrow now wears a short accent rule. */
+.plot-line, .est-kicker-plot{display:none !important;}
+.est-head{max-width:1120px; margin:20px auto 0; padding:0 24px;}
+.est-kicker{font-family:var(--num); font-size:var(--fs-label); font-weight:700; letter-spacing:var(--trk);
+  text-transform:uppercase; color:var(--link); display:inline-flex; align-items:center; gap:9px;
+  margin:0 0 12px;}
+.est-kicker::before{content:""; width:22px; height:2px; border-radius:1px;
+  background:linear-gradient(90deg, var(--link), color-mix(in srgb,var(--link) 20%,transparent));}
+.est-title{font-family:var(--font-ui); font-size:clamp(28px,4.4vw,var(--fs-display)); font-weight:800;
+  line-height:1.06; letter-spacing:-.025em; margin:0; color:var(--ink-1);}
+html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
+.est-dek{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); line-height:1.5; color:var(--ink-2);
+  margin:14px 0 0; max-width:62ch;}
+.est-meta{font-family:var(--num); font-size:var(--fs-sm); color:var(--ink-3); margin:16px 0 0;
+  display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;}
+.est-meta .dot{opacity:.4;}
+
+@media (max-width:600px){
+  html body.estate{font-size:var(--fs-body);}
+  .est-wrap,.est-head,.est-crumb,.est-footer{padding-left:16px; padding-right:16px;}
+  .est-prose{font-size:var(--fs-md);}
+  .est-prose h2{font-size:var(--fs-h2); margin:30px 0 10px;}
+  .est-prose h3{font-size:var(--fs-body);}
+  .est-dek{font-size:var(--fs-md);}
+  .est-cta-block{padding:18px; gap:14px;}
+}
+
+  .art-layout{max-width:1120px; margin:24px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:210px minmax(0,1fr); gap:44px; align-items:start;}
+  /* sticky TOC rail — inherits the house spy idiom (see body_scripts) */
+  .art-toc{position:sticky; top:76px; font-family:var(--font-ui); font-size:12.5px;
+    border-left:1px solid var(--line); padding-left:15px;}
+  .art-toc .toc-h{font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); margin:0 0 9px;}
+  .art-toc a{display:block; color:var(--muted); padding:5px 0 5px 14px; margin-left:-15px;
+    line-height:1.35; border-left:2px solid transparent; transition:color .15s,border-color .15s;}
+  .art-toc a:hover{color:var(--text);}
+  .art-toc a.active{color:var(--text); border-left-color:var(--link); font-weight:600;}
+  .art-main{min-width:0;}
+
+  /* self-check (lessons) — details/summary, ledger-ruled */
+  .est-prose .selfcheck{border:1px solid var(--rule); border-radius:13px; margin:26px 0 0;
+    padding:0; overflow:hidden; max-width:var(--measure); background:var(--panel);}
+  .est-prose .selfcheck > summary{list-style:none; cursor:pointer; padding:14px 18px;
+    font-family:var(--font-ui); font-size:13.5px; font-weight:600; color:var(--text);
+    display:flex; align-items:center; gap:9px;}
+  .est-prose .selfcheck > summary::-webkit-details-marker{display:none;}
+  .est-prose .selfcheck > summary::before{content:"?"; font-family:var(--font-mono); font-weight:700;
+    color:var(--link); width:20px; height:20px; border:1px solid color-mix(in srgb,var(--link) 40%,var(--line));
+    border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; flex:none;}
+  .est-prose .selfcheck[open] > summary{border-bottom:1px solid var(--line);}
+  .est-prose .selfcheck .sc-body{padding:6px 18px 16px;}
+
+  .art-objective{font-family:var(--font-ui); font-size:13px; color:var(--muted);
+    border:1px dashed var(--rule); border-radius:10px; padding:11px 14px; margin:16px 0 0;
+    max-width:var(--measure); display:flex; gap:9px; align-items:baseline;}
+  .art-objective .ob-k{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--link); flex:none;}
+
+  @media (max-width:900px){
+    .art-layout{grid-template-columns:1fr; gap:12px;}
+    .art-toc{position:static; top:auto; border-left:none; padding:12px 14px; margin:6px 0 2px;
+      display:flex; flex-wrap:wrap; gap:6px; border:1px solid var(--line); border-radius:12px; background:var(--panel2);}
+    .art-toc .toc-h{flex-basis:100%; margin:0 0 2px;}
+    .art-toc a{border:1px solid var(--line); border-radius:999px; padding:6px 11px; margin:0; color:var(--muted);}
+    .art-toc a.active{border-color:var(--link); color:var(--text);}
+  }
+
+</style>
+
+</head>
+<body class="estate est-article fam-lesson">
+
+<header class="est-bar">
+  <div class="est-bar-in">
+    <a class="est-brand" href="../../index.html" aria-label="Mastermind home">
+      <svg class="glyph" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--panel2)" stroke="var(--line)"/>
+        
+        <path d="M7 21 L12 15 L17 18 L21 10 L25 13" stroke="var(--link)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="25" cy="13" r="2" fill="var(--link)"/>
+      </svg>
+      <span class="word">MASTERMIND<span class="sub"><span class="l-en">FREE TERMINAL</span><span class="l-zh">免费终端</span></span></span>
+    </a>
+    <nav class="est-nav" aria-label="Estate sections">
+      <a href="../../tools/index.html"><span class="l-en">Tools</span><span class="l-zh">工具</span></a>
+      <a href="../../learn/index.html" aria-current="page"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </nav>
+    <div class="est-ctrls">
+      <a class="gbtn gbtn-cta est-cta" href="../../index.html"><span class="cta-long"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></span><span class="cta-short"><span class="l-en">Dashboard →</span><span class="l-zh">仪表盘 →</span></span></a>
+      <button class="theme-switch" type="button" aria-label="Toggle dark / light mode">
+        <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+      </button>
+      <div class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language English / 中文">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<nav class="est-crumb" aria-label="Breadcrumb">
+  <ol>
+    
+    <li>
+      <a href="../../">Home</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../learn/index.html">Learn</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li>
+      <a href="../../learn/options/">Options &amp; Dealer Positioning</a>
+    </li>
+    <li class="sep" aria-hidden="true">/</li>
+    
+    <li aria-current="page">
+      The Gamma Flip and Walls: Reading Regime Boundaries
+    </li>
+    
+    
+  </ol>
+</nav>
+
+
+<main id="main">
+
+<header class="est-head">
+  <span class="est-kicker"><span class="l-en">Lesson</span><span class="l-zh">课程</span> · <span class="l-en">Options &amp; dealer positioning</span><span class="l-zh">期权与做市商持仓</span></span>
+  
+  <svg class="plot-line est-kicker-plot" viewBox="0 0 220 14" preserveAspectRatio="none" aria-hidden="true" style="--pl-len:230;">
+    <path d="M2 11 C 40 11, 55 4, 90 7 S 150 3, 178 5 S 210 4, 218 3"/>
+    <circle class="dot" cx="218" cy="3" r="2.6"/>
+  </svg>
+  <h1 class="est-title">The Gamma Flip and Walls: Reading Regime Boundaries</h1>
+  <p class="est-dek">The gamma flip is where dealer hedging switches from stabilising to amplifying. Learn what crossing it means and how to read a levels map on our GEX page.</p>
+  <div class="est-meta">
+    <span><span class="l-en">Published</span><span class="l-zh">发布</span> <span class="mono">2026-07-25</span></span>
+    
+  </div>
+</header>
+
+<div class="art-layout">
+  
+  <nav class="art-toc" id="toc" aria-label="On this page">
+    <p class="toc-h"><span class="l-en">On this page</span><span class="l-zh">本页目录</span></p>
+    <a href="#the-gamma-flip-where-the-sign-changes">The gamma flip: where the sign changes</a><a href="#walls-where-gamma-concentrates">Walls: where gamma concentrates</a><a href="#how-to-read-the-gex-levels-map">How to read the GEX levels map</a><a href="#putting-the-track-together">Putting the track together</a>
+  </nav>
+  
+
+  <div class="art-main">
+    <article class="est-prose">
+      <div class="callout lead">
+<span class="co-h">Learning objective</span>
+Understand the gamma flip as the price level where modelled dealer hedging switches sign — from stabilising to amplifying — understand what call and put "walls" represent, and learn to read our GEX levels map as a display-tier map rather than a set of trade signals.
+</div>
+
+<p>The <a href="/learn/options/gamma-regimes.html">gamma regimes lesson</a> established two opposite states: long gamma, where dealer hedging dampens moves, and short gamma, where it amplifies them. Which state the market is in is not fixed — it depends on where price sits relative to the structure of dealer positioning. This lesson is about the specific price levels where that structure changes, because those levels are the most-watched output of any dealer-positioning model.</p>
+
+<h2 id="the-gamma-flip-where-the-sign-changes">The gamma flip: where the sign changes</h2>
+
+<p>The <strong>gamma flip</strong> (also called the flip point or zero-gamma level) is the price at which modelled net dealer gamma crosses zero. Above it, the model has dealers net long gamma — hedging that leans against moves, a stabilising regime. Below it, the model has dealers net short gamma — hedging that leans with moves, an amplifying regime. The flip is the boundary between the two.</p>
+
+<p>Crossing it is mechanically meaningful. As price falls through the flip, the same dealer hedging that was cushioning dips can invert into selling that extends them. Picture a hill whose slope reverses at one line: on the upper side, gravity rolls a ball back toward the crest; a step below that line, the identical ball accelerates away downhill. Nothing about the ball changed — only which side of the line it sits on. That is the flip: the market's behaviour around price can change character not because of news, but because the sign of the hedging flipped.</p>
+
+<figure class="sig-fig">
+<div class="sig-stage">
+<svg viewBox="0 0 640 190" preserveAspectRatio="none" role="img" aria-label="A vertical price rail with three horizontal levels: a call wall near the top, a dashed gamma-flip line in the middle separating a stabilising zone above from an amplifying zone below, and a put wall near the bottom.">
+  <!-- price rail -->
+  <line class="sg-axis" x1="150" y1="16" x2="150" y2="176"/>
+  <!-- stabilising zone tint (above flip) -->
+  <rect class="fill-up" x="152" y="30" width="300" height="66" opacity="0.5"/>
+  <!-- amplifying zone tint (below flip) -->
+  <rect class="fill-down" x="152" y="96" width="300" height="66" opacity="0.5"/>
+  <!-- call wall (upper) -->
+  <line class="sg-up" x1="152" y1="40" x2="452" y2="40"/>
+  <circle class="dot-up" cx="150" cy="40" r="5"/>
+  <!-- gamma flip (middle, dashed pivot) -->
+  <line class="sg-pivot-dash" x1="120" y1="96" x2="470" y2="96"/>
+  <circle class="dot-pivot" cx="150" cy="96" r="6"/>
+  <!-- put wall (lower) -->
+  <line class="sg-down" x1="152" y1="152" x2="452" y2="152"/>
+  <circle class="dot-down" cx="150" cy="152" r="5"/>
+  <!-- current price marker -->
+  <circle class="dot-mut" cx="150" cy="72" r="5"/>
+</svg>
+<span class="sig-lbl axis" style="left:12%; top:8%;">price</span>
+<span class="sig-lbl up" style="left:47%; top:21%;">call wall — resistance</span>
+<span class="sig-lbl up" style="left:47%; top:38%;">stabilising zone (long gamma)</span>
+<span class="sig-lbl pivot big" style="left:63%; top:45%;">gamma flip</span>
+<span class="sig-lbl down" style="left:47%; top:63%;">amplifying zone (short gamma)</span>
+<span class="sig-lbl down" style="left:47%; top:80%;">put wall — support</span>
+<span class="sig-lbl" style="left:9%; top:38%;">now</span>
+</div>
+<figcaption>A dealer-positioning levels map: the dashed flip line splits a stabilising (long-gamma) zone above from an amplifying (short-gamma) zone below. The call wall is the strike with the largest modelled positive gamma above price (often acts as resistance); the put wall is its counterpart below (often acts as support). All three are modelled levels, not guaranteed price barriers.</figcaption>
+</figure>
+
+<h2 id="walls-where-gamma-concentrates">Walls: where gamma concentrates</h2>
+
+<p>Around the flip, positioning is not evenly spread — it clusters at specific strikes with large open interest. The two most-watched clusters get names. The <strong>call wall</strong> is the strike with the largest concentration of modelled positive gamma above the current price; because dealer hedging there leans against upward moves, it often behaves like resistance. The <strong>put wall</strong> is the equivalent concentration below price and often behaves like support. Think of them as the strikes where the stabilising force is strongest — price tends to slow as it approaches them, because that is where the most hedging pushes back.</p>
+
+<p>"Often behaves like" is doing deliberate work in those sentences. Walls are places where mechanical hedging concentrates, which makes them plausible inflection points — not walls in any literal sense. Price passes through them regularly. They are a map of where pushback is likely to be strongest, not a fence.</p>
+
+<h2 id="how-to-read-the-gex-levels-map">How to read the GEX levels map</h2>
+
+<p>Our GEX page plots exactly these levels: the flip, the call wall, and the put wall, against current price. Read it as a structural context map:</p>
+
+<ul>
+<li><strong>Price relative to the flip</strong> tells you which regime the model currently places you in — expect a fade-friendly, range-bound tape above it; expect amplification and trend/squeeze risk below it.</li>
+<li><strong>Distance to the nearest wall</strong> tells you where the strongest modelled hedging pushback sits — a nearby call wall overhead is a plausible drag on a rally; a nearby put wall below is a plausible cushion under a dip.</li>
+<li><strong>How the levels move day to day</strong> tells you how positioning is migrating, especially into expirations, when the flip and walls can shift as short-dated open interest rolls off.</li>
+</ul>
+
+<div class="callout warn">
+<span class="co-h">The essential caveat</span>
+<p>These levels are a display-tier map, not trade signals. Every one of them is derived from a model of dealer positioning built on open interest plus assumptions — not from an exchange-tagged dealer book (see the <a href="/learn/options/open-interest-limits.html">open-interest lesson</a>). They describe where mechanical pressure is likely to concentrate; they do not tell you to buy at the put wall or sell at the call wall. Use them to understand the terrain and set expectations, not as entry or exit triggers.</p>
+</div>
+
+<h2 id="putting-the-track-together">Putting the track together</h2>
+
+<p>You now have the whole chain. Options grew large and short-dated enough to move markets (<a href="/learn/options/zero-dte-regime.html">the 0DTE regime</a>); market makers absorb the other side and must hedge to stay neutral (<a href="/learn/options/market-makers-middleman.html">the middleman</a>); open interest cannot sign their position, so a dealer read is a model (<a href="/learn/options/open-interest-limits.html">open-interest limits</a>); the hedge is concrete share flow driven by drifting delta (<a href="/learn/options/dealer-hedging-mechanics.html">hedging mechanics</a>); the sign of dealer gamma splits the market into a dampening and an amplifying regime (<a href="/learn/options/gamma-regimes.html">gamma regimes</a>); slower second-order forces exist but are mechanics, not signals (<a href="/learn/options/charm-and-time-drift.html">charm and vanna</a>); and the flip and walls are the price levels where the regime structure lives. See it all on the map:</p>
+
+<details>
+<summary>Self-check: 3 questions</summary>
+<ol>
+<li><strong>What defines the gamma flip level, and what changes when price crosses it?</strong><br>It is the price where modelled net dealer gamma crosses zero. Above it, dealers are modelled net long gamma and hedge against moves (a stabilising regime); below it, they are modelled net short gamma and hedge with moves (an amplifying regime). Crossing it flips the sign of the hedging, so the market's character around price can change without any news.</li>
+<li><strong>What is the call wall, and why does it often act like resistance? Why "often" rather than "always"?</strong><br>The call wall is the strike with the largest concentration of modelled positive gamma above the current price. Dealer hedging there leans against upward moves, so rallies tend to slow near it — resistance-like behaviour. It is "often" not "always" because it marks where hedging pushback concentrates, not a literal barrier; price passes through walls regularly.</li>
+<li><strong>How should the GEX levels map be used, and what is it explicitly not?</strong><br>As a display-tier structural context map: price versus the flip sets the expected regime, distance to a wall shows where hedging pushback concentrates, and day-to-day shifts show positioning migrating. It is explicitly not a set of trade signals — the levels come from a model built on open interest plus assumptions and describe terrain, not entry or exit points.</li>
+</ol>
+</details>
+    </article>
+
+    
+    
+    <aside class="est-related" aria-label="Related">
+      <p class="rel-h"><span class="l-en">Keep going</span><span class="l-zh">继续</span></p>
+      <div class="rel-grid">
+        
+        <a class="est-relcard" href="../../learn/options/gamma-regimes.html"><span class="rc-kind"><span class="l-en">Lesson</span><span class="l-zh">课程</span></span><span class="rc-title">Long Gamma vs Short Gamma: Two Market Regimes</span></a>
+        
+        <a class="est-relcard" href="../../gex.html"><span class="rc-kind"><span class="l-en">On the dashboard</span><span class="l-zh">仪表盘</span></span><span class="rc-title">GEX levels map — flip, call wall, put wall</span></a>
+      </div>
+    </aside>
+    
+    
+
+    
+    
+    <aside class="est-cta-block">
+      <div class="cta-copy">
+        <span class="cta-k"><span class="l-en">Next step</span><span class="l-zh">下一步</span></span>
+        <p class="cta-t">See the live GEX levels map: flip, call wall, and put wall</p>
+      </div>
+      <a class="gbtn gbtn-lg gbtn-cta" href="../../gex.html">See the live GEX levels map: flip, call wall, and put wall</a>
+    </aside>
+    
+    
+  </div>
+</div>
+
+</main>
+
+<footer class="est-footer">
+  <div class="est-foot-links">
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Free tools</span><span class="l-zh">免费工具</span></span>
+      <a href="../../tools/index.html"><span class="l-en">Calculator Lab</span><span class="l-zh">计算器实验室</span></a>
+      <a href="../../learn/index.html"><span class="l-en">Learning Center</span><span class="l-zh">学习中心</span></a>
+      <a href="../../blog/index.html"><span class="l-en">Blog</span><span class="l-zh">博客</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">The desk</span><span class="l-zh">工作台</span></span>
+      <a href="../../about-research.html"><span class="l-en">About the research</span><span class="l-zh">关于研究</span></a>
+      <a href="../../reports.html"><span class="l-en">Research reports</span><span class="l-zh">研究报告</span></a>
+      <a href="../../movers.html"><span class="l-en">Daily movers</span><span class="l-zh">每日异动</span></a>
+      <a href="../../congress_trades.html"><span class="l-en">Congress trades</span><span class="l-zh">国会交易</span></a>
+    </div>
+    <div class="est-foot-col">
+      <span class="fh"><span class="l-en">Go deeper</span><span class="l-zh">深入了解</span></span>
+      <a href="../../index.html"><span class="l-en">Open the dashboard</span><span class="l-zh">打开仪表盘</span></a>
+    </div>
+  </div>
+  <p class="est-foot-disc">
+    <span class="l-en">Educational content — not investment advice. Markets involve risk.</span><span class="l-zh">教育内容，非投资建议。市场存在风险。</span>
+  </p>
+</footer>
+
+
+
+<script>
+  (function(){ var ls=[].slice.call(document.querySelectorAll('.art-toc a')),
+      hs=ls.map(function(a){return document.querySelector(a.getAttribute('href'));});
+    if(!ls.length)return;
+    function spy(){ var y=window.scrollY+96, act=0; hs.forEach(function(h,i){ if(h&&h.offsetTop<=y) act=i; });
+      ls.forEach(function(a,i){ a.classList.toggle('active',i===act); }); }
+    window.addEventListener('scroll',spy,{passive:true}); spy(); })();
+</script>
+
+
+<script src="../../theme.js"></script>
+</body>
+</html>
