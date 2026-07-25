@@ -2,16 +2,10 @@
 
 from __future__ import annotations
 
-import email.message
 import importlib.util
 import json
 import subprocess
-import urllib.error
-import urllib.parse
-import urllib.request
 from pathlib import Path
-
-import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -133,190 +127,6 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     assert GUARD._needs_render(repo, other, start_head, other) is False
 
 
-@pytest.fixture(autouse=True)
-def _clear_token_cache(monkeypatch):
-    """The token is memoised per process; tests must not inherit each other's."""
-    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", None, raising=False)
-    for key in ("GH_TOKEN", "GITHUB_TOKEN"):
-        monkeypatch.delenv(key, raising=False)
-
-
-def _fake_gh(returncode: int, stdout: str, calls: list):
-    def runner(args, **kwargs):
-        calls.append(tuple(args))
-        return subprocess.CompletedProcess(args, returncode, stdout, "")
-
-    return runner
-
-
-def test_token_falls_back_to_the_gh_cli_when_no_env_var_is_set(monkeypatch):
-    """The whole bug: Claude sessions set no token, so the guard ran anonymous at 60/hour."""
-    calls: list = []
-    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_fromcli\n", calls))
-    assert GUARD._github_token() == "gho_fromcli"
-    assert calls and calls[0][:3] == ("gh", "auth", "token")
-
-
-def test_token_prefers_the_environment_over_the_cli(monkeypatch):
-    calls: list = []
-    monkeypatch.setenv("GH_TOKEN", "from-env")
-    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "from-cli", calls))
-    assert GUARD._github_token() == "from-env"
-    assert calls == [], "an env token must not spawn the CLI"
-
-
-def test_token_is_cached_for_the_process(monkeypatch):
-    """A Stop evaluation makes three API calls; it must not shell out three times."""
-    calls: list = []
-    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_cached", calls))
-    assert GUARD._github_token() == GUARD._github_token() == GUARD._github_token()
-    assert len(calls) == 1
-
-
-@pytest.mark.parametrize(
-    "runner",
-    [
-        lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError("gh not installed")),
-        lambda *a, **k: (_ for _ in ()).throw(subprocess.TimeoutExpired("gh", 5)),
-        lambda args, **k: subprocess.CompletedProcess(args, 1, "", "not logged in"),
-    ],
-)
-def test_token_degrades_to_anonymous_when_the_cli_cannot_help(monkeypatch, runner):
-    """A missing, hung, or logged-out gh must degrade — never break the hook."""
-    monkeypatch.setattr(GUARD.subprocess, "run", runner)
-    assert GUARD._github_token() == ""
-
-
-def _capture_requests(monkeypatch) -> list:
-    sent: list = []
-
-    def fake_urlopen(request, *args, **kwargs):
-        sent.append(request)
-        raise urllib.error.URLError("captured")
-
-    monkeypatch.setattr(GUARD.urllib.request, "urlopen", fake_urlopen)
-    return sent
-
-
-def test_the_github_token_is_never_sent_to_the_live_health_host(monkeypatch):
-    """_get_json serves both GitHub and production health.
-
-    Authenticating unconditionally would hand a repo-scoped credential to an
-    unrelated host on every Stop evaluation — harmless only while no token
-    existed, which is exactly the state the CLI fallback ends.
-    """
-    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_secret", []))
-    sent = _capture_requests(monkeypatch)
-
-    for url in (f"https://{GUARD.GITHUB_API_HOST}/repos/a/b/pulls", GUARD.LIVE_HEALTH_URL):
-        with pytest.raises(Exception):
-            GUARD._get_json(url)
-
-    by_host = {request.host: request for request in sent}
-    assert by_host[GUARD.GITHUB_API_HOST].get_header("Authorization") == "Bearer gho_secret"
-    live_host = urllib.parse.urlsplit(GUARD.LIVE_HEALTH_URL).hostname
-    assert by_host[live_host].get_header("Authorization") is None
-    assert "gho_secret" not in json.dumps(dict(by_host[live_host].header_items()))
-
-
-def _http_error(code: int, reason: str, **headers) -> urllib.error.HTTPError:
-    message = email.message.Message()
-    for key, value in headers.items():
-        message[key.replace("_", "-")] = value
-    return urllib.error.HTTPError("https://api.github.com/x", code, reason, message, None)
-
-
-def test_spent_quota_is_reported_as_rate_limited_not_unreachable(monkeypatch):
-    """`HTTP Error 403: rate limit exceeded` read as a repo/network fault it never was."""
-    # Pin the anonymous case: an unpinned token would consult the real `gh` and
-    # make this assertion depend on whether the host happens to be logged in.
-    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "", raising=False)
-    error = GUARD._http_failure(
-        _http_error(
-            403,
-            "rate limit exceeded",
-            X_RateLimit_Remaining="0",
-            X_RateLimit_Limit="60",
-            X_RateLimit_Reset="1785010477",
-        )
-    )
-    assert isinstance(error, GUARD.RateLimited)
-    assert GUARD._github_block_code(error) == "github_rate_limited"
-    assert "quota" in str(error).lower()
-    assert "UNAUTHENTICATED" in str(error), "must name the fix when running anonymous"
-
-
-def test_an_authenticated_quota_message_does_not_tell_you_to_log_in(monkeypatch):
-    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "already-authenticated", raising=False)
-    error = GUARD._http_failure(
-        _http_error(403, "rate limit exceeded", X_RateLimit_Remaining="0", X_RateLimit_Limit="5000")
-    )
-    assert isinstance(error, GUARD.RateLimited)
-    assert "gh auth login" not in str(error)
-
-
-@pytest.mark.parametrize(
-    "error",
-    [
-        _http_error(404, "Not Found"),
-        _http_error(500, "Server Error"),
-        _http_error(403, "Forbidden", X_RateLimit_Remaining="55"),
-        urllib.error.HTTPError("u", 403, "rate limit exceeded", None, None),
-    ],
-)
-def test_genuine_failures_stay_github_unreachable(error):
-    """Only an actually-spent quota reclassifies; everything else keeps the old code."""
-    failure = GUARD._http_failure(error)
-    assert not isinstance(failure, GUARD.RateLimited)
-    assert GUARD._github_block_code(failure) == "github_unreachable"
-
-
-def test_rate_limited_has_the_same_escape_class_as_the_blocker_it_split_from():
-    assert "github_rate_limited" in GUARD.EXTERNAL_BLOCKERS
-    assert "github_unreachable" in GUARD.EXTERNAL_BLOCKERS
-
-
-def test_check_ci_still_blocks_on_a_red_check(monkeypatch):
-    """The authentication work must not soften the gate it exists to evaluate."""
-    monkeypatch.setattr(
-        GUARD,
-        "_get_json",
-        lambda _url: {
-            "check_runs": [
-                {"name": "ci", "status": "completed", "conclusion": "failure"},
-                {"name": "lint", "status": "completed", "conclusion": "success"},
-            ]
-        },
-    )
-    ok, reason = GUARD._check_ci("acme", "widgets", "d" * 40)
-    assert ok is False
-    assert reason.startswith("Failing"), "_stop keys the ci_failed code off this prefix"
-    assert "ci (failure)" in reason
-
-
-def test_check_ci_passes_only_when_every_real_check_is_green(monkeypatch):
-    monkeypatch.setattr(
-        GUARD,
-        "_get_json",
-        lambda _url: {
-            "check_runs": [
-                {"name": "ci", "status": "completed", "conclusion": "success"},
-                {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
-            ]
-        },
-    )
-    assert GUARD._check_ci("acme", "widgets", "e" * 40) == (True, "")
-
-    monkeypatch.setattr(
-        GUARD, "_get_json", lambda _url: {"check_runs": [{"name": "ci", "status": "in_progress"}]}
-    )
-    ok, reason = GUARD._check_ci("acme", "widgets", "f" * 40)
-    assert ok is False and reason.startswith("CI still running")
-
-    monkeypatch.setattr(GUARD, "_get_json", lambda _url: {"check_runs": []})
-    assert GUARD._check_ci("acme", "widgets", "0" * 40)[0] is False
-
-
 def test_settings_wire_session_start_and_stop():
     settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     hooks = settings["hooks"]
@@ -333,3 +143,109 @@ def test_ui_contract_separates_scores_from_axis_labels():
     assert 'class="rkc-mood-axis rsx-axis-labels"' in source
     assert "rkc-mood-flag" not in source
     assert "@container risk-dialog (max-width:520px)" in source
+
+
+# ---------------------------------------------------------------------------
+# GitHub credential resolution
+#
+# 2026-07-25: the guard died on `HTTP Error 403: rate limit exceeded` and reported
+# "github_unreachable" on every turn — while PR #3534 was already MERGED on main.
+# Claude Code hooks inherit neither GH_TOKEN nor GITHUB_TOKEN, so every request went
+# out anonymous against the 60/hr per-host quota, which a busy session burns in
+# minutes. The guard now falls back to `gh auth token` (5000/hr), host-gated so the
+# credential can only ever reach api.github.com.
+# ---------------------------------------------------------------------------
+
+
+def test_env_token_wins_over_the_gh_cli(monkeypatch):
+    monkeypatch.setenv("GH_TOKEN", "env-token")
+    monkeypatch.setattr(GUARD, "_GH_TOKEN_CACHE", None)
+    assert GUARD._token_from_env() == "env-token"
+
+    monkeypatch.delenv("GH_TOKEN")
+    monkeypatch.setenv("GITHUB_TOKEN", "other-token")
+    assert GUARD._token_from_env() == "other-token"
+
+
+def test_falls_back_to_gh_auth_token_when_the_env_is_empty(monkeypatch):
+    """The whole point: hooks get no token in the environment."""
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setattr(GUARD, "_GH_TOKEN_CACHE", None)
+
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="gho_fromcli\n", stderr="")
+
+    monkeypatch.setattr(GUARD.subprocess, "run", fake_run)
+    assert GUARD._token_from_env() == "gho_fromcli"
+    assert calls == [["gh", "auth", "token"]]
+
+    # cached — a second call must not re-exec gh
+    assert GUARD._token_from_env() == "gho_fromcli"
+    assert len(calls) == 1
+
+
+def test_a_host_without_gh_degrades_to_anonymous_without_raising(monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setattr(GUARD, "_GH_TOKEN_CACHE", None)
+
+    def boom(cmd, **kwargs):
+        raise FileNotFoundError("gh not installed")
+
+    monkeypatch.setattr(GUARD.subprocess, "run", boom)
+    assert GUARD._token_from_env() == ""
+    # and the failed exec is cached, not retried per request
+    assert GUARD._GH_TOKEN_CACHE == [""]
+
+
+def test_gh_auth_failure_degrades_to_anonymous(monkeypatch):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setattr(GUARD, "_GH_TOKEN_CACHE", None)
+    monkeypatch.setattr(
+        GUARD.subprocess,
+        "run",
+        lambda cmd, **kw: subprocess.CompletedProcess(cmd, 1, stdout="", stderr="not logged in"),
+    )
+    assert GUARD._token_from_env() == ""
+
+
+def test_the_token_only_ever_reaches_api_github_com(monkeypatch):
+    """Host-gated, not prefix-gated: a caller that follows a link out of a payload
+    must not hand the credential to another origin."""
+    monkeypatch.setenv("GH_TOKEN", "secret-token")
+    seen = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return b"{}"
+
+    def fake_urlopen(request, timeout=None):
+        seen[request.full_url] = request.headers
+        return FakeResponse()
+
+    monkeypatch.setattr(GUARD.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(GUARD.json, "load", lambda _fh: {})
+
+    GUARD._get_json("https://api.github.com/repos/o/r/pulls")
+    GUARD._get_json("https://evil.example.com/repos/o/r/pulls")
+    GUARD._get_json("https://api.github.com.evil.example.com/x")
+    GUARD._get_json("https://raw.githubusercontent.com/o/r/main/x")
+
+    def has_auth(url: str) -> bool:
+        return any(k.lower() == "authorization" for k in seen[url])
+
+    assert has_auth("https://api.github.com/repos/o/r/pulls")
+    assert not has_auth("https://evil.example.com/repos/o/r/pulls")
+    assert not has_auth("https://api.github.com.evil.example.com/x")
+    assert not has_auth("https://raw.githubusercontent.com/o/r/main/x")

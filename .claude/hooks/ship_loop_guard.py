@@ -19,16 +19,13 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 
 LIVE_HEALTH_URL = "https://mastermind-x.com/api/health"
-GITHUB_API_HOST = "api.github.com"
 EXTERNAL_BLOCKERS = {
     "github_unreachable",
-    "github_rate_limited",
     "ci_failed",
     "render_pending",
     "render_failed",
@@ -161,80 +158,40 @@ def _github_slug(root: Path) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
-class RateLimited(RuntimeError):
-    """A GitHub call failed because the request quota is spent, not because it was unreachable."""
+_GH_TOKEN_CACHE: list[str] | None = None
 
 
-_TOKEN_CACHE: str | None = None
+def _token_from_env() -> str:
+    """A GitHub token for the API calls below.
 
-
-def _github_token() -> str:
-    """Return a GitHub credential: env vars first, then the already-authenticated CLI.
-
-    Claude Code sessions set none of the token env vars, which silently dropped
-    every guard evaluation onto the anonymous 60-request/hour-per-IP quota. A
-    Stop evaluation spends up to three calls, so a busy session exhausted the
-    budget and the guard then failed closed on `github_unreachable` for the rest
-    of the hour (measured 2026-07-25: anonymous 0/60 while `gh` held 4998/5000).
-
-    The CLI fallback stores no secret — it reuses the credential `gh auth login`
-    already placed on this machine. A missing or logged-out `gh` degrades to the
-    previous anonymous behaviour rather than failing.
-
-    Cached for the process lifetime so one evaluation spawns `gh` at most once.
+    Claude Code hooks inherit NEITHER GH_TOKEN nor GITHUB_TOKEN, so every request used
+    to go out anonymous — 60/hr shared across the whole host. A busy session burns that
+    in minutes and the guard then dies on `HTTP Error 403: rate limit exceeded`, which
+    reads as "github_unreachable" and blocks the Stop hook on work that is already
+    merged (2026-07-25: #3534 was MERGED on main while the guard reported 403 on every
+    turn). `gh auth token` is the same credential the session already uses
+    interactively, and lifts the ceiling to 5000/hr.
     """
-    global _TOKEN_CACHE
-    if _TOKEN_CACHE is not None:
-        return _TOKEN_CACHE
-
-    token = ""
+    global _GH_TOKEN_CACHE
     for key in ("GH_TOKEN", "GITHUB_TOKEN"):
         value = os.environ.get(key, "").strip()
         if value:
-            token = value
-            break
-    if not token:
+            return value
+    if _GH_TOKEN_CACHE is None:
+        # Cached (including the empty result) so a gh-less host pays one failed exec,
+        # not one per API call.
         try:
-            proc = subprocess.run(
-                ("gh", "auth", "token"),
+            done = subprocess.run(
+                ["gh", "auth", "token"],
                 capture_output=True,
                 text=True,
-                timeout=5,
+                timeout=10,
                 check=False,
             )
-            if proc.returncode == 0:
-                token = proc.stdout.strip()
-        except Exception:
-            token = ""
-
-    _TOKEN_CACHE = token
-    return token
-
-
-def _http_failure(exc: urllib.error.HTTPError) -> RuntimeError:
-    """Classify an HTTP failure so a spent quota does not read as a broken repo.
-
-    `HTTP Error 403: rate limit exceeded` sent sessions hunting for network,
-    permission, and remote faults that did not exist. GitHub marks the real
-    cause in the response headers, so name it.
-    """
-    headers = exc.headers or {}
-    if exc.code in {403, 429} and headers.get("X-RateLimit-Remaining") == "0":
-        limit = headers.get("X-RateLimit-Limit") or "?"
-        reset = str(headers.get("X-RateLimit-Reset") or "")
-        when = ""
-        if reset.isdigit():
-            stamp = datetime.fromtimestamp(int(reset), timezone.utc)
-            when = f", resets {stamp.strftime('%H:%M:%SZ')}"
-        if _github_token():
-            hint = "Wait for the reset; no repository or network fault is implied."
-        else:
-            hint = (
-                "The guard is running UNAUTHENTICATED on the 60/hour per-IP quota. "
-                "Run `gh auth login` (or export GH_TOKEN) to get the 5000/hour quota."
-            )
-        return RateLimited(f"GitHub API quota spent (0/{limit}{when}). {hint}")
-    return RuntimeError(f"GitHub API request failed: HTTP {exc.code} {exc.reason}.")
+            _GH_TOKEN_CACHE = [done.stdout.strip() if done.returncode == 0 else ""]
+        except (OSError, subprocess.SubprocessError):
+            _GH_TOKEN_CACHE = [""]
+    return _GH_TOKEN_CACHE[0]
 
 
 def _get_json(url: str) -> Any:
@@ -242,24 +199,16 @@ def _get_json(url: str) -> Any:
         "Accept": "application/vnd.github+json",
         "User-Agent": "macro-dashboard-ship-loop-guard",
     }
-    # Authenticate to GitHub and nowhere else. This helper also fetches the
-    # public production health endpoint, and attaching the credential to that
-    # request would hand a repo-scoped token to an unrelated host.
-    if urllib.parse.urlsplit(url).hostname == GITHUB_API_HOST:
-        token = _github_token()
+    # Gate the credential on the HOST, never on the URL prefix: every caller below
+    # builds api.github.com URLs today, but a future caller that follows a link out of
+    # a payload must not hand the token to another origin.
+    if urllib.parse.urlsplit(url).hostname == "api.github.com":
+        token = _token_from_env()
         if token:
             headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(request, timeout=25) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        raise _http_failure(exc) from exc
-
-
-def _github_block_code(exc: Exception) -> str:
-    """Spent quota and unreachable API are both external, but they are not the same problem."""
-    return "github_rate_limited" if isinstance(exc, RateLimited) else "github_unreachable"
+    with urllib.request.urlopen(request, timeout=25) as response:
+        return json.load(response)
 
 
 def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -272,18 +221,6 @@ def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | No
 
 
 def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
-    """Judge the merged pull request's OWN head commit, never main's current state.
-
-    Deliberate: main's combined status is the product of every concurrent
-    session's merges, so scoring against it would let an unrelated green main
-    mask this pull request's red check (and an unrelated red one block a clean
-    ship). The head commit is the only sha that answers "did THIS work pass".
-
-    Check runs on that sha are not frozen, though — re-running a workflow
-    publishes fresh runs against it, which is why the failure message names that
-    path. A genuinely stuck red still exits through the documented
-    `SHIP LOOP BLOCKED:` report, same as any other external blocker.
-    """
     payload = _get_json(
         f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs?per_page=100"
     )
@@ -302,14 +239,7 @@ def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
         elif run.get("conclusion") not in {"success", "neutral", "skipped"}:
             bad.append(f"{name} ({run.get('conclusion')})")
     if bad:
-        return False, (
-            "Failing CI: "
-            + ", ".join(bad[:8])
-            + ". These run against the merged pull request's own head commit, so a later "
-            "fix on main does not clear them: re-run the failed job "
-            "(`gh run rerun --failed <run-id>`) once the cause is fixed, or carry the fix "
-            "through a follow-up pull request with green CI of its own."
-        )
+        return False, "Failing CI: " + ", ".join(bad[:8])
     if pending:
         return False, "CI still running: " + ", ".join(pending[:8])
     return True, ""
@@ -496,7 +426,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         owner, repo = _github_slug(root)
         pull = _latest_merged_pr(owner, repo, branch)
     except Exception as exc:
-        _block(path, state, payload, _github_block_code(exc), str(exc))
+        _block(path, state, payload, "github_unreachable", str(exc))
         return
     if not pull:
         _block(path, state, payload, "unmerged", f"No merged main pull request found for {branch}.")
@@ -506,7 +436,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         ci_ok, ci_reason = _check_ci(owner, repo, head_sha)
     except Exception as exc:
-        _block(path, state, payload, _github_block_code(exc), str(exc))
+        _block(path, state, payload, "github_unreachable", str(exc))
         return
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
@@ -526,7 +456,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         try:
             status, detail = _render_status(owner, repo, merge_sha)
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
+            _block(path, state, payload, "github_unreachable", str(exc))
             return
         if status != "success":
             _block(
