@@ -1,11 +1,11 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-07-25T09:06:43.799571+00:00",
+  "generated_at": "2026-07-25T15:06:47.241149+00:00",
   "global": {
-    "n_claims": 25798,
+    "n_claims": 25801,
     "n_grades": 24459,
     "n_with_falsifier": 371,
-    "falsifier_coverage": 0.014381,
+    "falsifier_coverage": 0.014379,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
   },
   "by_desk": {
@@ -68,7 +68,7 @@
       }
     },
     "china_special_sits": {
-      "n_claims": 47,
+      "n_claims": 50,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
       "hit_gradeable_share": 0.0,
@@ -76,7 +76,7 @@
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 9,
-        "graded_5d_share": 0.191489,
+        "graded_5d_share": 0.18,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -621,7 +621,7 @@
       }
     },
     "cn_special_sits": {
-      "n_claims": 47,
+      "n_claims": 50,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
       "hit_gradeable_share": 0.0,
@@ -629,7 +629,7 @@
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 9,
-        "graded_5d_share": 0.191489,
+        "graded_5d_share": 0.18,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -883,7 +883,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-07-25T09:06:09.624602+00:00",
+    "generated_at": "2026-07-25T15:06:09.440936+00:00",
     "grade_horizons": [
       5,
       21,

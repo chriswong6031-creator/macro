@@ -1,21 +1,21 @@
 {
  "schema": "dead_name_coverage.v1",
- "generated_utc": "2026-07-18T14:56:48.549746+00:00",
+ "generated_utc": "2026-07-25T15:12:42.432947+00:00",
  "n_dead_universe": 1083,
- "n_cik_resolved": 58,
- "n_with_fundamentals": 53,
- "coverage_frac": 0.0489,
+ "n_cik_resolved": 105,
+ "n_with_fundamentals": 97,
+ "coverage_frac": 0.0896,
  "resolved_by_method": {
-  "edgar_fts": 43,
+  "edgar_fts": 90,
   "seed": 15
  },
  "fts_funnel": {
-  "no_dominant": 120,
-  "reject_still_active": 5,
-  "resolved": 43,
-  "reject_no_name_corroboration": 7,
-  "reject_live_mismatch": 9,
-  "out_of_range": 16
+  "no_dominant": 238,
+  "reject_still_active": 7,
+  "resolved": 90,
+  "reject_no_name_corroboration": 17,
+  "reject_live_mismatch": 14,
+  "out_of_range": 34
  },
  "note": "OPTIMISTIC de-bias bound \u2014 dead-name PRICES are still ~absent (yfinance survivor-only), so factor ICs over the merged panel are fundamentals-de-biased but price-join-limited. Stamp on every output."
 }

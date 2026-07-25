@@ -1,9 +1,9 @@
 {
-  "built": "2026-07-22T03:19:43.165665+00:00",
+  "built": "2026-07-25T18:04:52.412741+00:00",
   "timing_sec": 1.62,
   "em_stress": {
     "state": "strained",
-    "thermometer": 46.3,
+    "thermometer": 45.4,
     "lead_lag": "coincident thermometer — not leading",
     "n_legs_available": 6,
     "n_legs_total": 6,
@@ -13,38 +13,38 @@
     ],
     "legs": {
       "em_hy_oas": {
-        "value": 3.11,
+        "value": 3.06,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.624,
-        "pctile": 8.3,
-        "asof": "2026-07-20",
+        "vel_20d_z": 0.09,
+        "pctile": 5.6,
+        "asof": "2026-07-23",
         "stale": false,
         "window_days": 504,
         "source": "BAMLEMHBHYCRPIOAS",
         "note": "IRD-R9: BAML cap ~3y from first fetch; window_days discloses depth"
       },
       "vxeem": {
-        "value": 39.29,
+        "value": 37.79,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": 0.045,
-        "pctile": 96.2,
-        "asof": "2026-07-20",
+        "vel_20d_z": -1.184,
+        "pctile": 95.6,
+        "asof": "2026-07-23",
         "stale": false,
-        "window_days": 3858,
+        "window_days": 3861,
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -1.02,
-        "rvol_20d": 2.99,
-        "dd_pctile": 27.0,
-        "rvol_pctile": 1.7,
-        "pctile": 14.4,
+        "value": -1.29,
+        "rvol_20d": 2.94,
+        "dd_pctile": 32.5,
+        "rvol_pctile": 1.5,
+        "pctile": 17.0,
         "vel_5d_z": null,
-        "vel_20d_z": 0.704,
+        "vel_20d_z": 0.095,
         "z": null,
-        "asof": "2026-07-22",
+        "asof": "2026-07-25",
         "stale": false,
         "window_days": 504,
         "pairs_used": [
@@ -67,7 +67,7 @@
         "z": null,
         "above": 4,
         "total": 7,
-        "asof": "2026-07-21",
+        "asof": "2026-07-24",
         "stale": false,
         "window_days": 200,
         "tickers": [
@@ -97,18 +97,18 @@
         "value": 1.02,
         "z": null,
         "vel_5d_z": null,
-        "vel_20d_z": -0.576,
-        "pctile": 97.8,
-        "asof": "2026-07-21",
+        "vel_20d_z": -0.399,
+        "pctile": 92.9,
+        "asof": "2026-07-24",
         "stale": false,
         "window_days": 504,
-        "dd_60d_pct": -0.29,
-        "dd_adversity_pctile": 21.4
+        "dd_60d_pct": -0.77,
+        "dd_adversity_pctile": 37.3
       }
     },
     "gaps": [],
-    "as_of": "2026-07-22",
-    "built": "2026-07-22T03:19:41.617632+00:00",
+    "as_of": "2026-07-25",
+    "built": "2026-07-25T18:04:50.857766+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,265 +725,265 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-07-22T03:19:41.719305+00:00"
+    "built": "2026-07-25T18:04:50.932778+00:00"
   },
   "spillover": {
-    "total_connectedness": 82.1,
+    "total_connectedness": 82.4,
     "to_others": {
-      "EWJ": 96.6,
-      "EWG": 113.5,
-      "EWU": 101.0,
-      "EWC": 101.9,
-      "EWA": 135.0,
-      "EWL": 126.4,
-      "EWZ": 51.2,
-      "EWW": 33.1,
-      "INDA": 27.5,
-      "EIDO": 73.5,
-      "EZA": 110.2,
-      "EWY": 80.1,
-      "EEM": 69.8,
-      "SPY": 29.7
+      "EWJ": 94.9,
+      "EWG": 118.9,
+      "EWU": 95.2,
+      "EWC": 106.0,
+      "EWA": 136.5,
+      "EWL": 122.1,
+      "EWZ": 52.4,
+      "EWW": 31.5,
+      "INDA": 21.6,
+      "EIDO": 68.3,
+      "EZA": 114.6,
+      "EWY": 84.3,
+      "EEM": 73.8,
+      "SPY": 33.6
     },
     "from_others": {
-      "EWJ": 88.7,
-      "EWG": 87.3,
-      "EWU": 87.6,
-      "EWC": 90.2,
-      "EWA": 86.3,
-      "EWL": 85.0,
-      "EWZ": 86.9,
-      "EWW": 75.9,
-      "INDA": 93.5,
-      "EIDO": 75.7,
-      "EZA": 88.5,
-      "EWY": 78.5,
-      "EEM": 55.2,
-      "SPY": 70.1
+      "EWJ": 88.9,
+      "EWG": 86.7,
+      "EWU": 88.1,
+      "EWC": 89.8,
+      "EWA": 86.2,
+      "EWL": 85.6,
+      "EWZ": 86.5,
+      "EWW": 76.9,
+      "INDA": 94.7,
+      "EIDO": 78.5,
+      "EZA": 88.1,
+      "EWY": 78.7,
+      "EEM": 56.1,
+      "SPY": 69.0
     },
     "top_transmitters": [
       {
         "ticker": "EWA",
-        "to_others_pct": 135.0
+        "to_others_pct": 136.5
       },
       {
         "ticker": "EWL",
-        "to_others_pct": 126.4
+        "to_others_pct": 122.1
       },
       {
         "ticker": "EWG",
-        "to_others_pct": 113.5
+        "to_others_pct": 118.9
       }
     ],
-    "us_from_others": 70.1,
+    "us_from_others": 69.0,
     "history_weekly": [
       {
-        "date": "2025-07-15",
+        "date": "2025-07-18",
         "total": 90.3
       },
       {
-        "date": "2025-07-22",
-        "total": 90.2
+        "date": "2025-07-25",
+        "total": 90.5
       },
       {
-        "date": "2025-07-29",
+        "date": "2025-08-01",
         "total": 90.3
       },
       {
-        "date": "2025-08-05",
-        "total": 90.3
-      },
-      {
-        "date": "2025-08-12",
-        "total": 90.7
-      },
-      {
-        "date": "2025-08-19",
-        "total": 90.9
-      },
-      {
-        "date": "2025-08-26",
-        "total": 90.7
-      },
-      {
-        "date": "2025-09-03",
-        "total": 90.7
-      },
-      {
-        "date": "2025-09-10",
-        "total": 90.4
-      },
-      {
-        "date": "2025-09-17",
+        "date": "2025-08-08",
         "total": 90.6
       },
       {
-        "date": "2025-09-24",
-        "total": 90.6
-      },
-      {
-        "date": "2025-10-01",
+        "date": "2025-08-15",
         "total": 90.8
       },
       {
-        "date": "2025-10-08",
-        "total": 90.4
+        "date": "2025-08-22",
+        "total": 90.8
       },
       {
-        "date": "2025-10-15",
-        "total": 90.1
+        "date": "2025-08-29",
+        "total": 90.7
       },
       {
-        "date": "2025-10-22",
-        "total": 89.9
-      },
-      {
-        "date": "2025-10-29",
+        "date": "2025-09-08",
         "total": 90.2
       },
       {
-        "date": "2025-11-05",
-        "total": 88.6
+        "date": "2025-09-15",
+        "total": 90.5
       },
       {
-        "date": "2025-11-12",
-        "total": 87.9
+        "date": "2025-09-22",
+        "total": 90.6
       },
       {
-        "date": "2025-11-19",
+        "date": "2025-09-29",
+        "total": 90.6
+      },
+      {
+        "date": "2025-10-06",
+        "total": 90.4
+      },
+      {
+        "date": "2025-10-13",
+        "total": 90.3
+      },
+      {
+        "date": "2025-10-20",
+        "total": 90.0
+      },
+      {
+        "date": "2025-10-27",
+        "total": 90.3
+      },
+      {
+        "date": "2025-11-03",
+        "total": 88.1
+      },
+      {
+        "date": "2025-11-10",
+        "total": 88.1
+      },
+      {
+        "date": "2025-11-17",
+        "total": 88.4
+      },
+      {
+        "date": "2025-11-24",
         "total": 88.5
       },
       {
-        "date": "2025-11-26",
-        "total": 87.9
+        "date": "2025-12-02",
+        "total": 84.9
       },
       {
-        "date": "2025-12-04",
-        "total": 80.8
+        "date": "2025-12-09",
+        "total": 71.9
       },
       {
-        "date": "2025-12-11",
-        "total": 73.2
+        "date": "2025-12-16",
+        "total": 74.4
       },
       {
-        "date": "2025-12-18",
-        "total": 74.6
+        "date": "2025-12-23",
+        "total": 76.4
       },
       {
-        "date": "2025-12-26",
-        "total": 76.6
+        "date": "2025-12-31",
+        "total": 78.1
       },
       {
-        "date": "2026-01-05",
-        "total": 77.6
-      },
-      {
-        "date": "2026-01-12",
-        "total": 82.2
-      },
-      {
-        "date": "2026-01-20",
-        "total": 82.8
-      },
-      {
-        "date": "2026-01-27",
-        "total": 83.1
-      },
-      {
-        "date": "2026-02-03",
+        "date": "2026-01-08",
         "total": 80.5
       },
       {
-        "date": "2026-02-10",
-        "total": 80.3
+        "date": "2026-01-15",
+        "total": 82.7
       },
       {
-        "date": "2026-02-18",
-        "total": 81.2
-      },
-      {
-        "date": "2026-02-25",
-        "total": 81.7
-      },
-      {
-        "date": "2026-03-04",
-        "total": 82.3
-      },
-      {
-        "date": "2026-03-11",
-        "total": 82.9
-      },
-      {
-        "date": "2026-03-18",
+        "date": "2026-01-23",
         "total": 82.8
       },
       {
-        "date": "2026-03-25",
-        "total": 82.2
+        "date": "2026-01-30",
+        "total": 81.6
       },
       {
-        "date": "2026-04-01",
-        "total": 82.2
+        "date": "2026-02-06",
+        "total": 79.8
       },
       {
-        "date": "2026-04-09",
-        "total": 81.1
+        "date": "2026-02-13",
+        "total": 80.9
       },
       {
-        "date": "2026-04-16",
-        "total": 80.8
+        "date": "2026-02-23",
+        "total": 81.5
       },
       {
-        "date": "2026-04-23",
-        "total": 79.9
+        "date": "2026-03-02",
+        "total": 81.5
       },
       {
-        "date": "2026-04-30",
-        "total": 83.5
+        "date": "2026-03-09",
+        "total": 85.7
       },
       {
-        "date": "2026-05-07",
-        "total": 83.6
+        "date": "2026-03-16",
+        "total": 82.9
       },
       {
-        "date": "2026-05-14",
-        "total": 83.3
+        "date": "2026-03-23",
+        "total": 82.9
       },
       {
-        "date": "2026-05-21",
-        "total": 82.1
+        "date": "2026-03-30",
+        "total": 81.8
       },
       {
-        "date": "2026-05-29",
-        "total": 82.4
+        "date": "2026-04-07",
+        "total": 82.7
       },
       {
-        "date": "2026-06-05",
-        "total": 82.4
-      },
-      {
-        "date": "2026-06-12",
-        "total": 81.7
-      },
-      {
-        "date": "2026-06-22",
+        "date": "2026-04-14",
         "total": 81.0
       },
       {
-        "date": "2026-06-29",
-        "total": 79.6
-      },
-      {
-        "date": "2026-07-07",
+        "date": "2026-04-21",
         "total": 80.2
       },
       {
-        "date": "2026-07-14",
+        "date": "2026-04-28",
+        "total": 82.4
+      },
+      {
+        "date": "2026-05-05",
+        "total": 84.0
+      },
+      {
+        "date": "2026-05-12",
+        "total": 84.1
+      },
+      {
+        "date": "2026-05-19",
+        "total": 82.4
+      },
+      {
+        "date": "2026-05-27",
+        "total": 82.2
+      },
+      {
+        "date": "2026-06-03",
+        "total": 83.1
+      },
+      {
+        "date": "2026-06-10",
+        "total": 82.3
+      },
+      {
+        "date": "2026-06-17",
+        "total": 81.5
+      },
+      {
+        "date": "2026-06-25",
+        "total": 79.9
+      },
+      {
+        "date": "2026-07-02",
+        "total": 79.3
+      },
+      {
+        "date": "2026-07-10",
         "total": 81.9
       },
       {
-        "date": "2026-07-21",
-        "total": 82.1
+        "date": "2026-07-17",
+        "total": 81.9
+      },
+      {
+        "date": "2026-07-24",
+        "total": 82.4
       }
     ],
     "n_series": 14,
@@ -1007,9 +1007,9 @@
       "EEM: OHLC absent — using close-return vol proxy",
       "SPY: OHLC absent — using close-return vol proxy"
     ],
-    "as_of": "2026-07-21",
-    "built": "2026-07-22T03:19:41.837899+00:00",
-    "timing_sec": 0.11,
+    "as_of": "2026-07-24",
+    "built": "2026-07-25T18:04:51.052104+00:00",
+    "timing_sec": 0.12,
     "params": {
       "window": 150,
       "var_lag": 2,
@@ -1034,34 +1034,34 @@
     }
   },
   "corr_tightening": {
-    "eem_emfx_corr_60d": -0.157,
-    "pairwise_avg_corr": 0.554,
-    "pairwise_vel_20d_z": -1.262,
+    "eem_emfx_corr_60d": -0.123,
+    "pairwise_avg_corr": 0.556,
+    "pairwise_vel_20d_z": -0.955,
     "tightening": false,
     "gaps": [],
-    "as_of": "2026-07-21",
-    "built": "2026-07-22T03:19:42.695730+00:00"
+    "as_of": "2026-07-24",
+    "built": "2026-07-25T18:04:51.936222+00:00"
   },
   "two_tier": {
     "state": "contained",
     "tier1": {
       "em_stress_state": "strained",
-      "hottest_region": "emea",
+      "hottest_region": "asia",
       "regional_oas": {
         "asia": {
-          "value": 0.83,
-          "vel_20d_z": 0.556,
-          "asof": "2026-07-20"
+          "value": 0.82,
+          "vel_20d_z": 0.061,
+          "asof": "2026-07-23"
         },
         "latam": {
-          "value": 2.28,
-          "vel_20d_z": 0.584,
-          "asof": "2026-07-20"
+          "value": 2.26,
+          "vel_20d_z": -0.02,
+          "asof": "2026-07-23"
         },
         "emea": {
-          "value": 1.48,
-          "vel_20d_z": 0.753,
-          "asof": "2026-07-20"
+          "value": 1.46,
+          "vel_20d_z": 0.039,
+          "asof": "2026-07-23"
         }
       }
     },
@@ -1069,46 +1069,46 @@
       "hot_count": 0,
       "legs": {
         "us_hy_oas_vel": {
-          "value": 2.69,
-          "vel_20d_z": 0.2,
+          "value": 2.77,
+          "vel_20d_z": 0.05,
           "hot": false,
           "threshold": "vel_20d_z >= 2"
         },
         "kre_spy_rs": {
-          "value": 5.0,
-          "kre_ret_20d": 5.54,
-          "spy_ret_20d": 0.52,
+          "value": 0.7,
+          "kre_ret_20d": 1.28,
+          "spy_ret_20d": 0.63,
           "hot": false,
           "threshold": "KRE-SPY 20d RS < -5%",
           "note": "EUFN/KBWB absent from yahoo store — only KRE included"
         },
         "move_pctile": {
-          "value": 74.671,
-          "pctile": 41.9,
+          "value": 76.817,
+          "pctile": 45.0,
           "hot": false,
           "threshold": "pctile >= 85 (full history)",
-          "asof": "2026-07-21"
+          "asof": "2026-07-24"
         },
         "sofr_iorb_corridor": {
-          "value": -0.08,
+          "value": -0.01,
           "last5_all_positive": false,
           "hot": false,
           "threshold": "SOFR-IORB > 0 for 5 consecutive days",
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": 0.692,
-          "dgs2_5d_chg": -5.0,
-          "safety_bid": true,
+          "dxy_5d_chg": 0.694,
+          "dgs2_5d_chg": 21.0,
+          "safety_bid": false,
           "hot": false,
           "note": "DXY up & 2y yield down = safe-haven demand, not hot for K-of-N"
         }
       }
     },
-    "safety_bid": true,
+    "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-07-22T03:19:42.731054+00:00"
+    "built": "2026-07-25T18:04:51.967561+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1133,19 +1133,19 @@
         },
         "trend_3m": "hiking",
         "bs_impulse": {
-          "impulse_13w": 0.56,
-          "impulse_52w": 1.26,
-          "level": 6743028.0,
-          "asof": "2026-07-15",
+          "impulse_13w": 0.6,
+          "impulse_52w": 1.35,
+          "level": 6747378.0,
+          "asof": "2026-07-22",
           "unit": "USD billions (×1, raw WALCL is in billions)",
           "series": "WALCL",
           "gap_note": null
         },
         "next_meeting": {
           "date": "2026-07-29",
-          "days": 7
+          "days": 4
         },
-        "asof": "2026-07-20",
+        "asof": "2026-07-23",
         "stale": false
       },
       {
@@ -1178,10 +1178,10 @@
           "gap_note": null
         },
         "next_meeting": {
-          "date": "2026-07-23",
-          "days": 1
+          "date": "2026-09-10",
+          "days": 47
         },
-        "asof": "2026-07-21",
+        "asof": "2026-07-24",
         "stale": false
       },
       {
@@ -1215,7 +1215,7 @@
         },
         "next_meeting": {
           "date": "2026-07-31",
-          "days": 9
+          "days": 6
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1243,7 +1243,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-07-30",
-          "days": 8
+          "days": 5
         },
         "asof": "2026-01-01",
         "stale": true
@@ -1271,7 +1271,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-17",
-          "days": 57
+          "days": 54
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1299,7 +1299,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-09-02",
-          "days": 42
+          "days": 39
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1327,7 +1327,7 @@
         "bs_impulse": null,
         "next_meeting": {
           "date": "2026-08-11",
-          "days": 20
+          "days": 17
         },
         "asof": "2026-06-01",
         "stale": false
@@ -1340,49 +1340,25 @@
       "BOC: balance-sheet series not available (honest null)",
       "RBA: balance-sheet series not available (honest null)"
     ],
-    "as_of": "2026-07-21",
-    "built": "2026-07-22T03:19:43.116287+00:00",
+    "as_of": "2026-07-24",
+    "built": "2026-07-25T18:04:52.370646+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
-  "smile": {
-    "beta": 0.0161,
-    "r2": 0.053,
-    "residual_20d": -0.00755,
-    "residual_20d_z": -0.575,
-    "regime": "rates-driven",
-    "regime_60d": "rates-driven",
-    "safety_bid_today": false,
-    "ols_window_days": 120,
-    "z_window_days": 252,
-    "regime_thresholds": {
-      "rates_driven": "|z| < 1",
-      "safety_driven": "z >= 1 (positive residual — DXY up more than rates explain)",
-      "mixed": "z <= -1 (negative residual — risk-appetite, DXY soft vs rates)"
-    },
-    "weights_used": {
-      "eur2y": 0.693,
-      "jpy2y": 0.164,
-      "gbp2y": 0.143
-    },
-    "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
-    "gaps": [],
-    "display_only": true,
-    "built": "2026-07-22T02:42:23.266690+00:00"
-  },
+  "smile": null,
   "inversion_board": {
     "n_inverted": 0,
     "n_total": 6,
     "countries": [
       {
         "cc": "US",
-        "slope_bp": 39.0,
+        "slope_bp": 34.0,
         "inverted": false,
         "since_days": null
       },
       {
         "cc": "DE",
-        "slope_bp": 45.8,
+        "slope_bp": 42.4,
         "inverted": false,
         "since_days": null
       },
@@ -1412,86 +1388,86 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-07-22T03:19:43.157804+00:00"
+    "built": "2026-07-25T18:04:52.405238+00:00"
   },
-  "swap_lines_bn": 0.1,
+  "swap_lines_bn": 0.4,
   "top_transmitters_display": [
     {
       "ticker": "EWA",
-      "to_others_pct": 135.0,
+      "to_others_pct": 136.5,
       "name_en": "Australia",
       "name_zh": "澳大利亚",
       "flag": "🇦🇺"
     },
     {
       "ticker": "EWL",
-      "to_others_pct": 126.4,
+      "to_others_pct": 122.1,
       "name_en": "Switzerland",
       "name_zh": "瑞士",
       "flag": "🇨🇭"
     },
     {
       "ticker": "EWG",
-      "to_others_pct": 113.5,
+      "to_others_pct": 118.9,
       "name_en": "Germany",
       "name_zh": "德国",
       "flag": "🇩🇪"
     }
   ],
-  "emb_ief_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 220 38\" preserveAspectRatio=\"none\" width=\"100%\" height=\"38\"><polyline points=\"0,38 0.0,19.8 1.8,20.3 3.7,20.5 5.5,20.1 7.4,20.6 9.2,20.2 11.1,22.2 12.9,20.6 14.8,20.6 16.6,21.6 18.5,19.9 20.3,21.9 22.2,23.2 24.0,21.9 25.9,20.4 27.7,21.7 29.6,21.0 31.4,22.8 33.3,23.1 35.1,22.0 37.0,24.0 38.8,26.1 40.7,25.3 42.5,27.3 44.4,24.1 46.2,25.3 48.1,28.8 49.9,29.4 51.8,27.5 53.6,26.7 55.5,29.8 57.3,32.0 59.2,32.4 61.0,31.2 62.9,33.1 64.7,31.4 66.6,35.4 68.4,31.5 70.3,32.5 72.1,30.3 73.9,31.6 75.8,34.9 77.6,38.0 79.5,33.9 81.3,31.9 83.2,32.6 85.0,31.2 86.9,32.4 88.7,26.7 90.6,24.0 92.4,23.0 94.3,21.1 96.1,20.3 98.0,20.3 99.8,21.1 101.7,19.9 103.5,19.8 105.4,20.0 107.2,19.1 109.1,21.0 110.9,20.5 112.8,20.2 114.6,20.1 116.5,20.1 118.3,19.3 120.2,19.3 122.0,20.1 123.9,18.2 125.7,16.5 127.6,17.0 129.4,17.0 131.3,16.1 133.1,15.6 135.0,16.8 136.8,16.4 138.7,16.8 140.5,17.2 142.4,17.2 144.2,17.0 146.1,16.9 147.9,16.3 149.7,15.9 151.6,14.0 153.4,13.8 155.3,13.3 157.1,12.8 159.0,11.7 160.8,12.4 162.7,11.9 164.5,13.2 166.4,13.3 168.2,12.5 170.1,13.9 171.9,12.3 173.8,10.7 175.6,9.1 177.5,10.9 179.3,10.2 181.2,9.5 183.0,9.3 184.9,10.9 186.7,12.9 188.6,13.4 190.4,15.0 192.3,13.4 194.1,12.7 196.0,11.9 197.8,11.3 199.7,10.7 201.5,10.2 203.4,9.9 205.2,10.2 207.1,9.5 208.9,11.1 210.8,11.6 212.6,12.1 214.5,12.6 216.3,13.7 218.2,12.8 220.0,11.3 220,38\" fill=\"var(--info)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,19.8 1.8,20.3 3.7,20.5 5.5,20.1 7.4,20.6 9.2,20.2 11.1,22.2 12.9,20.6 14.8,20.6 16.6,21.6 18.5,19.9 20.3,21.9 22.2,23.2 24.0,21.9 25.9,20.4 27.7,21.7 29.6,21.0 31.4,22.8 33.3,23.1 35.1,22.0 37.0,24.0 38.8,26.1 40.7,25.3 42.5,27.3 44.4,24.1 46.2,25.3 48.1,28.8 49.9,29.4 51.8,27.5 53.6,26.7 55.5,29.8 57.3,32.0 59.2,32.4 61.0,31.2 62.9,33.1 64.7,31.4 66.6,35.4 68.4,31.5 70.3,32.5 72.1,30.3 73.9,31.6 75.8,34.9 77.6,38.0 79.5,33.9 81.3,31.9 83.2,32.6 85.0,31.2 86.9,32.4 88.7,26.7 90.6,24.0 92.4,23.0 94.3,21.1 96.1,20.3 98.0,20.3 99.8,21.1 101.7,19.9 103.5,19.8 105.4,20.0 107.2,19.1 109.1,21.0 110.9,20.5 112.8,20.2 114.6,20.1 116.5,20.1 118.3,19.3 120.2,19.3 122.0,20.1 123.9,18.2 125.7,16.5 127.6,17.0 129.4,17.0 131.3,16.1 133.1,15.6 135.0,16.8 136.8,16.4 138.7,16.8 140.5,17.2 142.4,17.2 144.2,17.0 146.1,16.9 147.9,16.3 149.7,15.9 151.6,14.0 153.4,13.8 155.3,13.3 157.1,12.8 159.0,11.7 160.8,12.4 162.7,11.9 164.5,13.2 166.4,13.3 168.2,12.5 170.1,13.9 171.9,12.3 173.8,10.7 175.6,9.1 177.5,10.9 179.3,10.2 181.2,9.5 183.0,9.3 184.9,10.9 186.7,12.9 188.6,13.4 190.4,15.0 192.3,13.4 194.1,12.7 196.0,11.9 197.8,11.3 199.7,10.7 201.5,10.2 203.4,9.9 205.2,10.2 207.1,9.5 208.9,11.1 210.8,11.6 212.6,12.1 214.5,12.6 216.3,13.7 218.2,12.8 220.0,11.3\" fill=\"none\" stroke=\"var(--info)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"220.0\" cy=\"11.3\" r=\"2.6\" fill=\"var(--info)\"/></svg>",
-  "spillover_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 200 34\" preserveAspectRatio=\"none\" width=\"100%\" height=\"34\"><polyline points=\"0,34 0.0,9.0 3.9,9.2 7.8,9.0 11.8,9.0 15.7,8.5 19.6,8.2 23.5,8.5 27.5,8.5 31.4,8.9 35.3,8.6 39.2,8.6 43.1,8.3 47.1,8.9 51.0,9.3 54.9,9.6 58.8,9.2 62.7,11.5 66.7,12.5 70.6,11.7 74.5,12.5 78.4,22.9 82.4,34.0 86.3,32.0 90.2,29.0 94.1,27.6 98.0,20.9 102.0,20.0 105.9,19.5 109.8,23.3 113.7,23.6 117.6,22.3 121.6,21.6 125.5,20.7 129.4,19.8 133.3,20.0 137.3,20.9 141.2,20.9 145.1,22.5 149.0,22.9 152.9,24.2 156.9,19.0 160.8,18.8 164.7,19.3 168.6,21.0 172.5,20.6 176.5,20.6 180.4,21.6 184.3,22.6 188.2,24.7 192.2,23.8 196.1,21.3 200.0,21.0 200,34\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,9.0 3.9,9.2 7.8,9.0 11.8,9.0 15.7,8.5 19.6,8.2 23.5,8.5 27.5,8.5 31.4,8.9 35.3,8.6 39.2,8.6 43.1,8.3 47.1,8.9 51.0,9.3 54.9,9.6 58.8,9.2 62.7,11.5 66.7,12.5 70.6,11.7 74.5,12.5 78.4,22.9 82.4,34.0 86.3,32.0 90.2,29.0 94.1,27.6 98.0,20.9 102.0,20.0 105.9,19.5 109.8,23.3 113.7,23.6 117.6,22.3 121.6,21.6 125.5,20.7 129.4,19.8 133.3,20.0 137.3,20.9 141.2,20.9 145.1,22.5 149.0,22.9 152.9,24.2 156.9,19.0 160.8,18.8 164.7,19.3 168.6,21.0 172.5,20.6 176.5,20.6 180.4,21.6 184.3,22.6 188.2,24.7 192.2,23.8 196.1,21.3 200.0,21.0\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"200.0\" cy=\"21.0\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
+  "emb_ief_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 220 38\" preserveAspectRatio=\"none\" width=\"100%\" height=\"38\"><polyline points=\"0,38 0.0,20.1 1.8,20.6 3.7,20.2 5.5,22.2 7.4,20.6 9.2,20.6 11.1,21.6 12.9,19.9 14.8,21.9 16.6,23.2 18.5,21.9 20.3,20.4 22.2,21.7 24.0,21.0 25.9,22.8 27.7,23.1 29.6,22.0 31.4,24.0 33.3,26.1 35.1,25.3 37.0,27.3 38.8,24.1 40.7,25.3 42.5,28.8 44.4,29.4 46.2,27.5 48.1,26.7 49.9,29.8 51.8,32.0 53.6,32.4 55.5,31.2 57.3,33.1 59.2,31.4 61.0,35.4 62.9,31.5 64.7,32.5 66.6,30.3 68.4,31.6 70.3,34.9 72.1,38.0 73.9,33.9 75.8,31.9 77.6,32.6 79.5,31.2 81.3,32.4 83.2,26.7 85.0,24.0 86.9,23.0 88.7,21.1 90.6,20.3 92.4,20.3 94.3,21.1 96.1,19.9 98.0,19.8 99.8,20.0 101.7,19.1 103.5,21.0 105.4,20.5 107.2,20.2 109.1,20.1 110.9,20.1 112.8,19.3 114.6,19.3 116.5,20.1 118.3,18.2 120.2,16.5 122.0,17.0 123.9,17.0 125.7,16.1 127.6,15.6 129.4,16.8 131.3,16.4 133.1,16.8 135.0,17.2 136.8,17.2 138.7,17.0 140.5,16.9 142.4,16.3 144.2,15.9 146.1,14.0 147.9,13.8 149.7,13.3 151.6,12.8 153.4,11.7 155.3,12.4 157.1,11.9 159.0,13.2 160.8,13.3 162.7,12.5 164.5,13.9 166.4,12.3 168.2,10.7 170.1,9.1 171.9,10.9 173.8,10.2 175.6,9.5 177.5,9.3 179.3,10.9 181.2,12.9 183.0,13.4 184.9,15.0 186.7,13.4 188.6,12.7 190.4,11.9 192.3,11.3 194.1,10.7 196.0,10.2 197.8,9.9 199.7,10.2 201.5,9.5 203.4,11.1 205.2,11.6 207.1,12.1 208.9,12.6 210.8,13.7 212.6,12.8 214.5,11.3 216.3,11.7 218.2,13.7 220.0,14.2 220,38\" fill=\"var(--info)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,20.1 1.8,20.6 3.7,20.2 5.5,22.2 7.4,20.6 9.2,20.6 11.1,21.6 12.9,19.9 14.8,21.9 16.6,23.2 18.5,21.9 20.3,20.4 22.2,21.7 24.0,21.0 25.9,22.8 27.7,23.1 29.6,22.0 31.4,24.0 33.3,26.1 35.1,25.3 37.0,27.3 38.8,24.1 40.7,25.3 42.5,28.8 44.4,29.4 46.2,27.5 48.1,26.7 49.9,29.8 51.8,32.0 53.6,32.4 55.5,31.2 57.3,33.1 59.2,31.4 61.0,35.4 62.9,31.5 64.7,32.5 66.6,30.3 68.4,31.6 70.3,34.9 72.1,38.0 73.9,33.9 75.8,31.9 77.6,32.6 79.5,31.2 81.3,32.4 83.2,26.7 85.0,24.0 86.9,23.0 88.7,21.1 90.6,20.3 92.4,20.3 94.3,21.1 96.1,19.9 98.0,19.8 99.8,20.0 101.7,19.1 103.5,21.0 105.4,20.5 107.2,20.2 109.1,20.1 110.9,20.1 112.8,19.3 114.6,19.3 116.5,20.1 118.3,18.2 120.2,16.5 122.0,17.0 123.9,17.0 125.7,16.1 127.6,15.6 129.4,16.8 131.3,16.4 133.1,16.8 135.0,17.2 136.8,17.2 138.7,17.0 140.5,16.9 142.4,16.3 144.2,15.9 146.1,14.0 147.9,13.8 149.7,13.3 151.6,12.8 153.4,11.7 155.3,12.4 157.1,11.9 159.0,13.2 160.8,13.3 162.7,12.5 164.5,13.9 166.4,12.3 168.2,10.7 170.1,9.1 171.9,10.9 173.8,10.2 175.6,9.5 177.5,9.3 179.3,10.9 181.2,12.9 183.0,13.4 184.9,15.0 186.7,13.4 188.6,12.7 190.4,11.9 192.3,11.3 194.1,10.7 196.0,10.2 197.8,9.9 199.7,10.2 201.5,9.5 203.4,11.1 205.2,11.6 207.1,12.1 208.9,12.6 210.8,13.7 212.6,12.8 214.5,11.3 216.3,11.7 218.2,13.7 220.0,14.2\" fill=\"none\" stroke=\"var(--info)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"220.0\" cy=\"14.2\" r=\"2.6\" fill=\"var(--info)\"/></svg>",
+  "spillover_spark_svg": "<svg class=\"nch\" viewBox=\"0 0 200 34\" preserveAspectRatio=\"none\" width=\"100%\" height=\"34\"><polyline points=\"0,34 0.0,8.8 3.9,8.6 7.8,8.8 11.8,8.4 15.7,8.2 19.6,8.2 23.5,8.3 27.5,9.0 31.4,8.6 35.3,8.4 39.2,8.4 43.1,8.7 47.1,8.8 51.0,9.3 54.9,8.8 58.8,11.9 62.7,11.9 66.7,11.4 70.6,11.3 74.5,16.2 78.4,34.0 82.4,30.6 86.3,27.8 90.2,25.5 94.1,22.2 98.0,19.2 102.0,19.1 105.9,20.7 109.8,23.2 113.7,21.7 117.6,20.9 121.6,20.9 125.5,15.1 129.4,19.0 133.3,19.0 137.3,20.5 141.2,19.2 145.1,21.6 149.0,22.7 152.9,19.6 156.9,17.5 160.8,17.3 164.7,19.6 168.6,19.9 172.5,18.7 176.5,19.8 180.4,20.9 184.3,23.1 188.2,23.9 192.2,20.3 196.1,20.3 200.0,19.6 200,34\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,8.8 3.9,8.6 7.8,8.8 11.8,8.4 15.7,8.2 19.6,8.2 23.5,8.3 27.5,9.0 31.4,8.6 35.3,8.4 39.2,8.4 43.1,8.7 47.1,8.8 51.0,9.3 54.9,8.8 58.8,11.9 62.7,11.9 66.7,11.4 70.6,11.3 74.5,16.2 78.4,34.0 82.4,30.6 86.3,27.8 90.2,25.5 94.1,22.2 98.0,19.2 102.0,19.1 105.9,20.7 109.8,23.2 113.7,21.7 117.6,20.9 121.6,20.9 125.5,15.1 129.4,19.0 133.3,19.0 137.3,20.5 141.2,19.2 145.1,21.6 149.0,22.7 152.9,19.6 156.9,17.5 160.8,17.3 164.7,19.6 168.6,19.9 172.5,18.7 176.5,19.8 180.4,20.9 184.3,23.1 188.2,23.9 192.2,20.3 196.1,20.3 200.0,19.6\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"200.0\" cy=\"19.6\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
   "contagion_links": {
-    "as_of": "2026-07-22",
+    "as_of": "2026-07-25",
     "pressure": {
       "us": {
-        "pct": 0.8829,
+        "pct": 0.7956,
         "level": "moderate"
       },
       "cn": {
-        "pct": 0.7579,
-        "level": "moderate"
+        "pct": 0.744,
+        "level": "low"
       },
       "hk": {
-        "pct": 0.8968,
+        "pct": 0.871,
         "level": "moderate"
       },
       "ca": {
-        "pct": 0.8313,
+        "pct": 0.8155,
         "level": "moderate"
       },
       "kr": {
-        "pct": 0.9028,
-        "level": "high"
+        "pct": 0.8254,
+        "level": "moderate"
       },
       "jp": {
-        "pct": 0.877,
+        "pct": 0.8294,
         "level": "moderate"
       },
       "tw": {
-        "pct": 0.9067,
+        "pct": 0.9048,
         "level": "high"
       },
       "in": {
-        "pct": 0.8135,
+        "pct": 0.8056,
         "level": "moderate"
       },
       "au": {
-        "pct": 0.9067,
-        "level": "high"
+        "pct": 0.8829,
+        "level": "moderate"
       },
       "gb": {
-        "pct": 0.8552,
+        "pct": 0.8274,
         "level": "moderate"
       },
       "ez": {
-        "pct": 0.8492,
+        "pct": 0.8274,
         "level": "moderate"
       }
     },
     "top_stressed": [
       "tw",
       "au",
-      "kr"
+      "hk"
     ]
   }
 }

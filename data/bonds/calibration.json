@@ -9,32 +9,32 @@
   "signals": {
     "recession": {
       "desc": "Recession-risk composite (0-100)",
-      "span": "1967-06-01..2026-04-21",
-      "n": 15364,
+      "span": "1967-06-01..2026-04-28",
+      "n": 15369,
       "ic_dd_full": 0.149,
       "ic_dd_pre": 0.179,
-      "ic_dd_post": 0.037,
+      "ic_dd_post": 0.038,
       "ic_recession": 0.506,
       "verdict": "DIRECTIONAL",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 5122,
+            "n": 5123,
             "p_dd10": 0.05,
             "mean_dd_depth_pct": 3.7,
             "p_recession": 0.091
           },
           "mid": {
-            "n": 5121,
+            "n": 5123,
             "p_dd10": 0.097,
             "mean_dd_depth_pct": 4.2,
             "p_recession": 0.103
           },
           "high": {
-            "n": 5121,
+            "n": 5123,
             "p_dd10": 0.22,
             "mean_dd_depth_pct": 6.2,
-            "p_recession": 0.562
+            "p_recession": 0.561
           }
         },
         "base_p_dd10": 0.122,
@@ -42,35 +42,35 @@
         "high_p_dd10_ci": [
           0.153,
           0.219,
-          0.289
+          0.288
         ]
       }
     },
     "drawdown": {
       "desc": "Drawdown-risk gauge (0-100, already MEASURED)",
-      "span": "1969-07-31..2026-04-21",
-      "n": 14799,
+      "span": "1969-07-31..2026-04-28",
+      "n": 14804,
       "ic_dd_full": 0.225,
       "ic_dd_pre": 0.261,
-      "ic_dd_post": 0.103,
+      "ic_dd_post": 0.104,
       "ic_recession": 0.538,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 4933,
+            "n": 4935,
             "p_dd10": 0.029,
             "mean_dd_depth_pct": 3.5,
             "p_recession": 0.022
           },
           "mid": {
-            "n": 4933,
+            "n": 4934,
             "p_dd10": 0.103,
             "mean_dd_depth_pct": 3.9,
             "p_recession": 0.182
           },
           "high": {
-            "n": 4933,
+            "n": 4935,
             "p_dd10": 0.243,
             "mean_dd_depth_pct": 6.8,
             "p_recession": 0.552
@@ -81,44 +81,44 @@
         "high_p_dd10_ci": [
           0.178,
           0.242,
-          0.312
+          0.313
         ]
       }
     },
     "credit": {
       "desc": "HY-OAS credit stress (0-100)",
-      "span": "1996-12-31..2026-04-21",
-      "n": 7646,
-      "ic_dd_full": 0.177,
+      "span": "1996-12-31..2026-04-28",
+      "n": 7651,
+      "ic_dd_full": 0.178,
       "ic_dd_pre": 0.287,
-      "ic_dd_post": -0.078,
+      "ic_dd_post": -0.076,
       "ic_recession": 0.285,
       "verdict": "DIRECTIONAL",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 2549,
+            "n": 2551,
             "p_dd10": 0.101,
             "mean_dd_depth_pct": 4.4,
             "p_recession": 0.085
           },
           "mid": {
-            "n": 2548,
+            "n": 2550,
             "p_dd10": 0.084,
             "mean_dd_depth_pct": 3.9,
             "p_recession": 0.108
           },
           "high": {
-            "n": 2549,
+            "n": 2550,
             "p_dd10": 0.288,
             "mean_dd_depth_pct": 7.4,
-            "p_recession": 0.348
+            "p_recession": 0.347
           }
         },
         "base_p_dd10": 0.158,
         "high_edge_pp": 13.0,
         "high_p_dd10_ci": [
-          0.188,
+          0.186,
           0.286,
           0.39
         ]
@@ -126,8 +126,8 @@
     },
     "rates_vol": {
       "desc": "MOVE rates-vol stress (0-100)",
-      "span": "2002-11-12..2026-04-21",
-      "n": 6116,
+      "span": "2002-11-12..2026-04-28",
+      "n": 6121,
       "ic_dd_full": 0.167,
       "ic_dd_pre": 0.244,
       "ic_dd_post": 0.08,
@@ -136,19 +136,19 @@
       "conditional": {
         "terciles": {
           "low": {
-            "n": 2039,
+            "n": 2041,
             "p_dd10": 0.06,
             "mean_dd_depth_pct": 3.8,
             "p_recession": 0.134
           },
           "mid": {
-            "n": 2038,
+            "n": 2040,
             "p_dd10": 0.132,
             "mean_dd_depth_pct": 4.3,
             "p_recession": 0.088
           },
           "high": {
-            "n": 2039,
+            "n": 2040,
             "p_dd10": 0.204,
             "mean_dd_depth_pct": 6.2,
             "p_recession": 0.247
@@ -158,36 +158,36 @@
         "high_edge_pp": 7.2,
         "high_p_dd10_ci": [
           0.105,
-          0.202,
+          0.201,
           0.321
         ]
       }
     },
     "plumbing": {
       "desc": "SOFR-IORB funding stress (0-100)",
-      "span": "2021-07-29..2026-04-21",
-      "n": 1234,
-      "ic_dd_full": -0.046,
+      "span": "2021-07-29..2026-04-28",
+      "n": 1239,
+      "ic_dd_full": -0.055,
       "ic_dd_pre": NaN,
-      "ic_dd_post": -0.046,
+      "ic_dd_post": -0.055,
       "ic_recession": null,
       "verdict": "CONTEXT",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 412,
-            "p_dd10": 0.282,
+            "n": 413,
+            "p_dd10": 0.281,
             "mean_dd_depth_pct": 7.2,
             "p_recession": 0.0
           },
           "mid": {
-            "n": 411,
+            "n": 413,
             "p_dd10": 0.002,
             "mean_dd_depth_pct": 2.8,
             "p_recession": 0.0
           },
           "high": {
-            "n": 411,
+            "n": 413,
             "p_dd10": 0.148,
             "mean_dd_depth_pct": 4.8,
             "p_recession": 0.0
@@ -197,36 +197,36 @@
         "high_edge_pp": 0.4,
         "high_p_dd10_ci": [
           0.0,
-          0.139,
+          0.138,
           0.38
         ]
       }
     },
     "composite": {
       "desc": "Bond-stress composite = 100 - health score (the headline)",
-      "span": "1967-06-01..2026-04-21",
-      "n": 15364,
+      "span": "1967-06-01..2026-04-28",
+      "n": 15369,
       "ic_dd_full": 0.208,
       "ic_dd_pre": 0.242,
-      "ic_dd_post": 0.073,
+      "ic_dd_post": 0.074,
       "ic_recession": 0.546,
       "verdict": "CONFIRMED",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 5122,
+            "n": 5123,
             "p_dd10": 0.029,
             "mean_dd_depth_pct": 3.6,
             "p_recession": 0.057
           },
           "mid": {
-            "n": 5121,
+            "n": 5123,
             "p_dd10": 0.1,
             "mean_dd_depth_pct": 3.9,
             "p_recession": 0.112
           },
           "high": {
-            "n": 5121,
+            "n": 5123,
             "p_dd10": 0.238,
             "mean_dd_depth_pct": 6.7,
             "p_recession": 0.585
@@ -237,7 +237,7 @@
         "high_p_dd10_ci": [
           0.176,
           0.239,
-          0.303
+          0.305
         ]
       }
     }
@@ -245,36 +245,36 @@
   "diagnostics": {
     "ny_fed_prob": {
       "desc": "NY-Fed 3m10y recession probit",
-      "span": "1962-01-02..2026-04-21",
-      "n": 16776,
+      "span": "1962-01-02..2026-04-28",
+      "n": 16781,
       "ic_dd_full": 0.053,
       "ic_dd_pre": 0.079,
       "ic_dd_post": -0.019,
-      "ic_recession": 0.336,
+      "ic_recession": 0.335,
       "verdict": "DIRECTIONAL",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 5592,
+            "n": 5594,
             "p_dd10": 0.126,
             "mean_dd_depth_pct": 4.8,
             "p_recession": 0.114
           },
           "mid": {
-            "n": 5592,
+            "n": 5593,
             "p_dd10": 0.082,
             "mean_dd_depth_pct": 4.0,
             "p_recession": 0.157
           },
           "high": {
-            "n": 5592,
+            "n": 5594,
             "p_dd10": 0.153,
             "mean_dd_depth_pct": 5.2,
             "p_recession": 0.432
           }
         },
-        "base_p_dd10": 0.121,
-        "high_edge_pp": 3.2,
+        "base_p_dd10": 0.12,
+        "high_edge_pp": 3.3,
         "high_p_dd10_ci": [
           0.103,
           0.153,
@@ -284,29 +284,29 @@
     },
     "neg_ntfs": {
       "desc": "Near-term forward spread (sign-flipped: low = stress)",
-      "span": "1976-06-01..2026-04-21",
-      "n": 13016,
+      "span": "1976-06-01..2026-04-28",
+      "n": 13021,
       "ic_dd_full": -0.02,
       "ic_dd_pre": 0.073,
-      "ic_dd_post": -0.198,
-      "ic_recession": 0.238,
+      "ic_dd_post": -0.197,
+      "ic_recession": 0.237,
       "verdict": "CONTEXT",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 4339,
+            "n": 4341,
             "p_dd10": 0.083,
             "mean_dd_depth_pct": 4.3,
             "p_recession": 0.122
           },
           "mid": {
-            "n": 4338,
+            "n": 4340,
             "p_dd10": 0.164,
             "mean_dd_depth_pct": 5.2,
             "p_recession": 0.189
           },
           "high": {
-            "n": 4339,
+            "n": 4340,
             "p_dd10": 0.103,
             "mean_dd_depth_pct": 4.3,
             "p_recession": 0.341
@@ -315,7 +315,7 @@
         "base_p_dd10": 0.117,
         "high_edge_pp": -1.4,
         "high_p_dd10_ci": [
-          0.058,
+          0.057,
           0.103,
           0.16
         ]
@@ -323,38 +323,38 @@
     },
     "hy_oas": {
       "desc": "High-yield OAS level (%)",
-      "span": "1996-12-31..2026-04-21",
-      "n": 7646,
-      "ic_dd_full": 0.177,
+      "span": "1996-12-31..2026-04-28",
+      "n": 7651,
+      "ic_dd_full": 0.178,
       "ic_dd_pre": 0.288,
-      "ic_dd_post": -0.078,
+      "ic_dd_post": -0.076,
       "ic_recession": 0.285,
       "verdict": "DIRECTIONAL",
       "conditional": {
         "terciles": {
           "low": {
-            "n": 2549,
+            "n": 2551,
             "p_dd10": 0.101,
             "mean_dd_depth_pct": 4.4,
             "p_recession": 0.085
           },
           "mid": {
-            "n": 2548,
+            "n": 2550,
             "p_dd10": 0.084,
             "mean_dd_depth_pct": 3.9,
             "p_recession": 0.108
           },
           "high": {
-            "n": 2549,
+            "n": 2550,
             "p_dd10": 0.288,
             "mean_dd_depth_pct": 7.4,
-            "p_recession": 0.348
+            "p_recession": 0.347
           }
         },
         "base_p_dd10": 0.158,
         "high_edge_pp": 13.0,
         "high_p_dd10_ci": [
-          0.188,
+          0.186,
           0.286,
           0.39
         ]
@@ -395,9 +395,9 @@
       },
       {
         "bin": "0.2-0.4",
-        "n": 3347,
+        "n": 3352,
         "pred": 0.278,
-        "obs": 0.417
+        "obs": 0.416
       },
       {
         "bin": "0.4-0.6",
@@ -418,7 +418,7 @@
         "obs": 1.0
       }
     ],
-    "n": 16587,
+    "n": 16592,
     "base_rate": 0.232
   }
 }

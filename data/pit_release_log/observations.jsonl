@@ -6761,3 +6761,8 @@
 {"series": "hk_cbbc", "group": "hk_cbbc", "fetch_ts": "2026-07-25T08:53:28.488935+00:00", "last_obs_date": "2026-07-24"}
 {"series": "hk_cbbc_sld", "group": "hk_cbbc", "fetch_ts": "2026-07-25T08:54:19.973647+00:00", "last_obs_date": "2026-07-25"}
 {"series": "china_filings", "group": "china_filings", "fetch_ts": "2026-07-25T09:01:28.850304+00:00", "last_obs_date": "2026-07-25"}
+{"series": "sentiment_naaim", "group": "sentiment", "fetch_ts": "2026-07-25T14:58:35.320666+00:00", "last_obs_date": "2026-07-22"}
+{"series": "sentiment_aaii", "group": "sentiment", "fetch_ts": "2026-07-25T14:58:36.485687+00:00", "last_obs_date": "2026-07-22"}
+{"series": "fundamentals", "group": "fundamentals", "fetch_ts": "2026-07-25T14:58:42.633740+00:00", "last_obs_date": "2026-07-25"}
+{"series": "stock_fundamentals", "group": "stock_fundamentals", "fetch_ts": "2026-07-25T15:01:13.100325+00:00", "last_obs_date": "2026-07-25"}
+{"series": "cot", "group": "cot", "fetch_ts": "2026-07-25T15:01:32.083172+00:00", "last_obs_date": "2026-07-21"}

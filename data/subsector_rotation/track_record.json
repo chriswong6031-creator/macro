@@ -1,97 +1,97 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-22",
-  "generated_at": "2026-07-22T02:09:02.355627+00:00",
+  "as_of": "2026-07-25",
+  "generated_at": "2026-07-25T16:04:17.070634+00:00",
   "is_context_only": true,
-  "n_snapshots": 4832,
-  "n_days": 18,
+  "n_snapshots": 5101,
+  "n_days": 19,
   "horizons": {
     "5": {
-      "n_matured": 3114,
-      "score_ic": 0.2048,
-      "score_ic_t_hac": 2.631,
+      "n_matured": 3596,
+      "score_ic": 0.1417,
+      "score_ic_t_hac": 1.612,
       "score_ic_detail": {
-        "mean_ic": 0.2048,
-        "ic_vol": 0.4106,
-        "ic_ir": 0.499,
-        "ic_ir_ann": 1.577,
-        "t_hac": 2.631,
-        "p_hac": 0.0085,
-        "hit": 0.769,
-        "n": 13
+        "mean_ic": 0.1417,
+        "ic_vol": 0.4174,
+        "ic_ir": 0.339,
+        "ic_ir_ann": 1.073,
+        "t_hac": 1.612,
+        "p_hac": 0.1069,
+        "hit": 0.667,
+        "n": 15
       },
       "by_stage": {
         "emerging": {
-          "n": 122,
-          "mean_fwd_rel": 0.0044,
-          "hit_rate": 0.582
+          "n": 136,
+          "mean_fwd_rel": 0.0027,
+          "hit_rate": 0.559
         },
         "neutral": {
-          "n": 2849,
-          "mean_fwd_rel": -0.0022,
+          "n": 3295,
+          "mean_fwd_rel": -0.0027,
           "hit_rate": null
         },
         "fading": {
-          "n": 143,
-          "mean_fwd_rel": -0.0251,
-          "hit_rate": 0.755
+          "n": 165,
+          "mean_fwd_rel": -0.0145,
+          "hit_rate": 0.655
         }
       }
     },
     "10": {
-      "n_matured": 2391,
-      "score_ic": 0.2374,
-      "score_ic_t_hac": 2.885,
+      "n_matured": 2873,
+      "score_ic": 0.2533,
+      "score_ic_t_hac": 3.405,
       "score_ic_detail": {
-        "mean_ic": 0.2374,
-        "ic_vol": 0.3135,
-        "ic_ir": 0.757,
-        "ic_ir_ann": 3.386,
-        "t_hac": 2.885,
-        "p_hac": 0.0039,
-        "hit": 0.8,
-        "n": 10
+        "mean_ic": 0.2533,
+        "ic_vol": 0.2903,
+        "ic_ir": 0.872,
+        "ic_ir_ann": 3.902,
+        "t_hac": 3.405,
+        "p_hac": 0.0007,
+        "hit": 0.833,
+        "n": 12
       },
       "by_stage": {
         "emerging": {
-          "n": 90,
-          "mean_fwd_rel": 0.0013,
-          "hit_rate": 0.567
+          "n": 110,
+          "mean_fwd_rel": 0.005,
+          "hit_rate": 0.573
         },
         "neutral": {
-          "n": 2191,
-          "mean_fwd_rel": -0.0072,
+          "n": 2631,
+          "mean_fwd_rel": -0.0081,
           "hit_rate": null
         },
         "fading": {
-          "n": 110,
-          "mean_fwd_rel": -0.0403,
-          "hit_rate": 0.764
+          "n": 132,
+          "mean_fwd_rel": -0.039,
+          "hit_rate": 0.788
         }
       }
     },
     "21": {
-      "n_matured": 717,
+      "n_matured": 1195,
       "score_ic": null,
       "score_ic_t_hac": null,
       "score_ic_detail": {
-        "n_days": 3
+        "n_days": 5
       },
       "by_stage": {
         "emerging": {
-          "n": 25,
-          "mean_fwd_rel": 0.0188,
-          "hit_rate": 0.6
+          "n": 43,
+          "mean_fwd_rel": -0.0094,
+          "hit_rate": 0.419
         },
         "neutral": {
-          "n": 659,
-          "mean_fwd_rel": -0.0099,
+          "n": 1097,
+          "mean_fwd_rel": -0.0136,
           "hit_rate": null
         },
         "fading": {
-          "n": 33,
-          "mean_fwd_rel": -0.0989,
-          "hit_rate": 1.0
+          "n": 55,
+          "mean_fwd_rel": -0.0583,
+          "hit_rate": 0.818
         }
       }
     },
@@ -106,9 +106,9 @@
     }
   },
   "lead_time_d": 10,
-  "peak_score_ic": 0.2374,
+  "peak_score_ic": 0.2533,
   "proven": {
-    "5": true,
+    "5": false,
     "10": true,
     "21": false,
     "63": false
@@ -119,75 +119,75 @@
   "note_zh": "\u5347\u6e29\u8bc4\u5206\u7684\u4fe1\u606f\u7cfb\u6570\u5728 10 \u5929\u5468\u671f\u4e0a\u663e\u8457\uff08\u5df2\u6d4b\u5f97\uff09\u3002\u4ec5\u4f9b\u53c2\u8003\u2014\u2014\u8f85\u52a9\u7814\u5224\uff0c\u4ece\u4e0d\u7528\u4e8e\u4ed3\u4f4d\u3002",
   "recent_misses": [
     {
-      "date": "2026-06-30",
-      "key": "healthcaremetabolic",
-      "name": "Metabolic",
-      "theme": "Healthcare & Biotech",
+      "date": "2026-07-02",
+      "key": "telecomsatcom",
+      "name": "Satcom",
+      "theme": "Telecommunications",
       "stage": "emerging",
-      "fwd_rel": -0.0196,
+      "fwd_rel": -0.143,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "key": "healthcaregenomics",
-      "name": "Genomics",
-      "theme": "Healthcare & Biotech",
-      "stage": "emerging",
-      "fwd_rel": -0.008,
+      "date": "2026-07-02",
+      "key": "hardwarestorage",
+      "name": "Storage",
+      "theme": "Hardware",
+      "stage": "fading",
+      "fwd_rel": 0.1152,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-29",
-      "key": "transportationaircargo",
-      "name": "Air Cargo",
-      "theme": "Transportation & Logistics",
-      "stage": "emerging",
-      "fwd_rel": -0.0488,
+      "date": "2026-07-02",
+      "key": "blockchainmining",
+      "name": "Mining",
+      "theme": "Crypto & Blockchain",
+      "stage": "fading",
+      "fwd_rel": 0.1046,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-29",
-      "key": "healthcaregenomics",
-      "name": "Genomics",
-      "theme": "Healthcare & Biotech",
+      "date": "2026-07-02",
+      "key": "socialadvertising",
+      "name": "Advertising",
+      "theme": "Social Media",
       "stage": "emerging",
-      "fwd_rel": -0.0387,
+      "fwd_rel": -0.0883,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-29",
-      "key": "healthcaremetabolic",
-      "name": "Metabolic",
-      "theme": "Healthcare & Biotech",
-      "stage": "emerging",
-      "fwd_rel": -0.0351,
+      "date": "2026-07-02",
+      "key": "hardwaredatacenters",
+      "name": "Data Centers",
+      "theme": "Hardware",
+      "stage": "fading",
+      "fwd_rel": 0.0807,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-29",
-      "key": "longevityagingpharma",
-      "name": "Aging Pharma",
-      "theme": "Aging Population & Longevity",
-      "stage": "emerging",
-      "fwd_rel": -0.0214,
+      "date": "2026-07-02",
+      "key": "semismemory",
+      "name": "Memory",
+      "theme": "Semiconductors",
+      "stage": "fading",
+      "fwd_rel": 0.0637,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-28",
-      "key": "transportationaircargo",
-      "name": "Air Cargo",
-      "theme": "Transportation & Logistics",
+      "date": "2026-07-02",
+      "key": "softwarevsaas",
+      "name": "V-SaaS",
+      "theme": "Software",
       "stage": "emerging",
-      "fwd_rel": -0.0466,
+      "fwd_rel": -0.0581,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-28",
-      "key": "healthcaremetabolic",
-      "name": "Metabolic",
-      "theme": "Healthcare & Biotech",
+      "date": "2026-07-02",
+      "key": "cybersecuritycloud",
+      "name": "Cloud",
+      "theme": "Cybersecurity",
       "stage": "emerging",
-      "fwd_rel": -0.0152,
+      "fwd_rel": -0.0483,
       "horizon_d": 21
     }
   ],
