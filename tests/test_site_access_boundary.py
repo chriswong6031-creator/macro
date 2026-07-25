@@ -22,9 +22,11 @@ NON_POLICY_ROUTES = {"/api/*", "/ws/tape"}
 # Public policy entries whose target is a RUNTIME artifact, not a committed
 # file. site/live/ is gitignored: the systemd lanes publish by atomic rename
 # into /var/lib/macro-live/public and scripts/live_breadth_poller.py force-adds
-# a snapshot, so a fresh checkout may hold none of them. The policy line is
-# still the boundary of record — only the on-disk existence check is exempt.
-RUNTIME_ARTIFACT_PREFIXES = ("/live/",)
+# a snapshot, so a fresh checkout may hold none of them. site/research/ is the
+# render-lane-generated research-vault SEO plane (#3392) — same class: built,
+# never committed. The policy line is still the boundary of record — only the
+# on-disk existence check is exempt.
+RUNTIME_ARTIFACT_PREFIXES = ("/live/", "/research/")
 
 
 def _caddy_public_exclusions() -> set[str]:
