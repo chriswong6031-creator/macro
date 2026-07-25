@@ -108,7 +108,14 @@
     // data-fmt="tnx": render the delta in bps (from the absolute price delta),
     // not percent. Falls back to percent if prevClose is unavailable.
     if (isTnx(el) && reading && reading.price != null) {
-      var bps = tnxBps(reading.price, reading.prevClose);
+      // ws tape frames carry {price, chgPct} but no prevClose — derive it so the
+      // 10Y delta reads in bps on the live socket too (go-live DOM check showed
+      // the percent fallback engaging on every ws tick)
+      var _pc = reading.prevClose;
+      if (_pc == null && chg != null && isFinite(chg) && Number(chg) > -100) {
+        _pc = Number(reading.price) / (1 + Number(chg) / 100);
+      }
+      var bps = tnxBps(reading.price, _pc);
       if (bps != null) {
         var upB = bps >= 0;
         el.textContent = (upB ? "+" : "") + Number(bps).toFixed(0) + " bps";
@@ -118,6 +125,7 @@
         return;
       }
     }
+    if (Math.abs(Number(chg)) < 0.005) chg = 0;   // never render "-0.00%"
     var up = chg >= 0;
     el.textContent = (up ? "+" : "") + Number(chg).toFixed(2) + "%";
     // "dn" is the render-time twin of "down" on mx5 tiles — drop it too, or a tile
