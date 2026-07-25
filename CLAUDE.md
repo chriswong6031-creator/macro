@@ -8,6 +8,7 @@ Signal-engine + static-site repo (engines in `engine/`, builders in `scripts/`, 
 - Macro Dashboard and `/Users/chriswong/Documents/Cluade/charting-app` are one connected product. Check cross-repo authentication, subscriptions, data contracts, APIs, and deployment effects when relevant.
 - A substantive verified change is not done until **commit → push → PR → CI → same-day squash-merge → live verification**. Do this automatically without asking the operator to finish it. Hold only on an explicit operator request, a genuine non-spurious failing check, or a real deployment blocker.
 - Account-local Claude memory is not automatically shared with Codex or other accounts. Durable operating rules belong in both repository `CLAUDE.md` and `AGENTS.md`; update both when the standard changes.
+- `.claude/hooks/ship_loop_guard.py` makes this contract executable: SessionStart snapshots pre-existing dirt and Stop refuses session-created uncommitted, unpushed, unmerged, unrendered, or not-live work. Only a repeated genuine external blocker may exit through an explicit `SHIP LOOP BLOCKED:` report; local cleanup, authentication setup, and waiting do not qualify.
 
 ## Model routing (STANDING — token economy)
 

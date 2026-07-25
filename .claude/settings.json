@@ -1,5 +1,18 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
+            "timeout": 30,
+            "statusMessage": "Loading the mandatory ship loop"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Agent|Task|Workflow",
@@ -22,6 +35,18 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blocklist_regen_guard.py\"",
             "timeout": 30,
             "statusMessage": "Recompiling kill-registry blocklists"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
+            "timeout": 180,
+            "statusMessage": "Verifying commit, PR, merge, deploy, and live state"
           }
         ]
       }

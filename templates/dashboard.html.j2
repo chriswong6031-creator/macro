@@ -5473,6 +5473,18 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
    = --isle-risk. All animation reduced-motion guarded. Scoped to #dlg-risk so the
    SHARED radar-card partial keeps its default look on every other consumer. */
 
+/* The dialog is also embedded in narrow Moon Check shells. Its layout therefore
+   responds to the panel, not the browser viewport. This prevents desktop media
+   queries from leaving mobile-width content in a desktop-shaped layout. */
+#dlg-risk .mx5-dlg-panel{
+  container: risk-dialog / inline-size;
+  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+}
+#dlg-risk .mx5-dlg-body,#dlg-risk .mx5-dlg-body *{min-width:0;}
+#dlg-risk .mx5-dlg-title,#dlg-risk .mx5-dlg-eyebrow,#dlg-risk .mx5-dlg-driver-label{
+  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+}
+
 /* — 1. Radar card: pullback-odds mini bar chart (dlg-risk-scoped OVERRIDE only) —
    The .rrx partial is shared; these overrides restyle its odds ramp into a proper
    labelled bar chart WITHOUT touching its default (china/hk/canada/stocks) look. */
@@ -5696,50 +5708,87 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
   #dlg-risk.mx5-dlg-in .scare-row:nth-child(5) .sc-bar-fill{transition-delay:.20s;}
   #dlg-risk.mx5-dlg-in .scare-row:nth-child(n+6) .sc-bar-fill{transition-delay:.25s;}
 }
-@media(max-width:700px){body.page-macro #dlg-risk .scare-row{grid-template-columns:24px 1fr 40px 54px;}
-  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}}
+@container risk-dialog (max-width:700px){
+  body.page-macro #dlg-risk .scare-row{grid-template-columns:24px minmax(0,1fr) 42px 58px;}
+  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}
+}
+@container risk-dialog (max-width:390px){
+  body.page-macro #dlg-risk .scare-row{
+    grid-template-columns:24px minmax(0,1fr) auto;
+    grid-template-areas:"icon copy score" "icon copy band";
+    align-items:start;gap:3px 9px;padding:10px;
+  }
+  body.page-macro #dlg-risk .rkc-sc-ico{grid-area:icon;}
+  body.page-macro #dlg-risk .sc-name{grid-area:copy;}
+  body.page-macro #dlg-risk .sc-score{grid-area:score;text-align:right;}
+  body.page-macro #dlg-risk .sc-band{grid-area:band;justify-self:end;}
+}
 
-/* — 6. Mood check: enlarged two-lens track with labelled needle markers — */
-.rkc-mood-track-wrap{position:relative;margin:26px 0 6px;padding-top:8px;}
-.rkc-mood-track{position:relative;height:14px;border-radius:8px;
+/* — 6. Mood check: two independent instruments.
+   Labels, values and status chips live outside the rails, so a score near 50 can
+   never collide with the Neutral axis label (the original 48/Neutral bug). — */
+.rkc-mood-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px;}
+.rkc-mood-lens{padding:11px 12px 12px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.075);}
+[data-theme="light"] .rkc-mood-lens{background:rgba(0,0,0,.022);border-color:rgba(0,0,0,.07);}
+.rkc-mood-lens-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.rkc-mood-lens-name{font:700 10px/1.25 var(--font-ui,inherit);letter-spacing:.055em;text-transform:uppercase;
+  color:var(--ink-2,rgba(255,255,255,.68));padding-top:3px;}
+.rkc-mood-scoreline{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;text-align:right;}
+.rkc-mood-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;
+  color:var(--ink-1,rgba(255,255,255,.94));letter-spacing:-.02em;}
+.rkc-mood-unit{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));}
+.rkc-mood-scoreline .chip{font-size:9px;line-height:1;padding:3px 7px;}
+.rkc-mood-mini-track{position:relative;height:9px;border-radius:999px;
   background:linear-gradient(90deg,var(--down,#ef4444) 0%,var(--warn,#f59e0b) 50%,var(--up,#22c55e) 100%);
-  opacity:.72;box-shadow:inset 0 1px 3px rgba(0,0,0,.25);}
-.rkc-mood-needle{position:absolute;top:-5px;width:4px;height:24px;border-radius:3px;
-  background:var(--text,#fff);border:2px solid var(--panel,#0f1420);z-index:2;
-  box-shadow:0 1px 4px rgba(0,0,0,.4);}
-[data-theme="light"] .rkc-mood-needle{border-color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);}
-.rkc-mood-needle.n-b{opacity:.85;height:20px;top:-3px;}
-.rkc-mood-flag{position:absolute;transform:translateX(-50%);white-space:nowrap;z-index:3;
-  display:flex;flex-direction:column;align-items:center;gap:1px;}
-.rkc-mood-flag.f-above{bottom:22px;}
-.rkc-mood-flag.f-below{top:26px;}
-.rkc-mood-flag-name{font:600 9px/1 var(--font-ui,inherit);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.5));}
-.rkc-mood-flag-val{font:800 13px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-mood-axis{display:flex;justify-content:space-between;font:600 9px/1 var(--font-ui,inherit);
-  color:var(--muted);margin-top:8px;letter-spacing:.02em;}
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.24);}
+.rkc-mood-mini-track::after{content:"";position:absolute;left:50%;top:-2px;width:1px;height:13px;
+  background:color-mix(in srgb,var(--ink-1,#fff) 40%,transparent);}
+.rkc-mood-pin{position:absolute;left:var(--rkc-pos,50%);top:50%;width:13px;height:13px;border-radius:50%;
+  transform:translate(-50%,-50%);background:var(--text,#fff);border:3px solid var(--panel,#0f1420);
+  box-shadow:0 1px 5px rgba(0,0,0,.45);z-index:2;}
+[data-theme="light"] .rkc-mood-pin{border-color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.23);}
+.rkc-mood-axis{display:grid;grid-template-columns:repeat(5,1fr);align-items:start;
+  font:600 9px/1.25 var(--font-ui,inherit);color:var(--muted);margin-top:7px;letter-spacing:.01em;}
+.rkc-mood-axis span{text-align:center;}
+.rkc-mood-axis span:first-child{text-align:left;}
+.rkc-mood-axis span:last-child{text-align:right;}
+.rkc-mood-note{font:500 10.5px/1.45 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));margin-top:9px;}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rkc-mood-needle,#dlg-risk .rkc-mood-flag{left:50%;transition:left 760ms cubic-bezier(.34,1.28,.5,1) .2s;}
-  #dlg-risk.mx5-dlg-in .rkc-mood-needle,#dlg-risk.mx5-dlg-in .rkc-mood-flag{left:var(--rkc-pos,50%);}
+  #dlg-risk .rkc-mood-pin{left:50%;transition:left 760ms cubic-bezier(.34,1.28,.5,1) .2s;}
+  #dlg-risk.mx5-dlg-in .rkc-mood-pin{left:var(--rkc-pos,50%);}
 }
 @media(prefers-reduced-motion:reduce){
-  #dlg-risk .rkc-mood-needle,#dlg-risk .rkc-mood-flag{left:var(--rkc-pos,50%);}
+  #dlg-risk .rkc-mood-pin{left:var(--rkc-pos,50%);}
   #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill,#dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:none;}
   #dlg-risk .rkc-sig{opacity:1;transform:none;}
   #dlg-risk .rkc-ov-ring{--rkc-anim:var(--rkc-v,0);}
 }
 
-/* — 390px bleed check — */
-@media(max-width:430px){
+/* Froth header: a title cluster and a score cluster, never four loose flex items. */
+#dlg-risk .rsx-froth-hd{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px;margin-bottom:8px;}
+.rsx-froth-title{display:flex;align-items:center;gap:7px;min-width:0;font:700 13px/1.3 var(--font-ui,inherit);}
+.rsx-froth-scoreline{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
+.rsx-froth-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.rsx-froth-provisional{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.4));}
+
+/* — narrow embedded-panel bleed checks — */
+@container risk-dialog (max-width:520px){
   .rkc-sig-grid{grid-template-columns:1fr;}
+  .rkc-mood-board{grid-template-columns:1fr;}
   .rkc-ov-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
   .rkc-ov-ring{width:46px;height:46px;}
   .rkc-ov-val{font-size:14px;}
   .rkc-ldr-row{grid-template-columns:46px 1fr 42px;gap:7px;}
-  /* mood flags: give the below-flag room from the axis words + keep edge flags on-track */
-  .rkc-mood-track-wrap{margin-top:30px;}
-  .rkc-mood-flag.f-below{top:22px;}
-  .rkc-mood-axis{margin-top:46px;}
-  .rkc-mood-flag-name{font-size:8px;}
+  #dlg-risk .rsx-froth-bar-lbl{width:92px;}
+}
+@container risk-dialog (max-width:340px){
+  .rkc-mood-axis span:nth-child(2),.rkc-mood-axis span:nth-child(4){visibility:hidden;}
+  #dlg-risk .rsx-froth-hd{grid-template-columns:1fr;}
+  .rsx-froth-scoreline{justify-content:flex-start;}
+  #dlg-risk .rsx-froth-bar-row{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:5px 8px;}
+  #dlg-risk .rsx-froth-bar-lbl{width:auto;}
+  #dlg-risk .rsx-froth-bar-track{grid-column:1/-1;grid-row:2;}
 }
 
 /* ═══ WAVE D — Market Sentiment dialog (sg-* classes) ══════════════════════
@@ -11718,31 +11767,43 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             {{ help('Two sentiment lenses on one 0-100 scale: risk appetite (5-yr percentile of the risk-on/risk-off composite) and the broader sentiment mix. Internal name: Fear ↔ Euphoria: regime synthesis. Display-only.','同一0-100刻度上的两把情绪尺：风险偏好（风险偏好/避险合成的5年百分位）与广义情绪合成。内部名称：恐惧 ↔ 欣喜：周期综合。仅供展示。') }}
           </div>
 
-          {# Wave C: enlarged two-lens track — labelled needle markers (lens name + value),
-             risk appetite above / sentiment mix below; needles settle on dialog open. #}
+          {# Two independent instruments. Keeping the labels and numerals outside the rails
+             is a deliberate collision-proof contract for narrow embedded Moon Check panels. #}
           {% if _fe_sc is not none or _fg_val is not none %}
-          <div class="rkc-mood-track-wrap">
-            <div class="rkc-mood-track">
-              {% if _fe_sc is not none %}
-              {# Marker A: Risk appetite (flag above) #}
-              <span class="rkc-mood-needle n-a" style="--rkc-pos:calc({{ _fe_sc }}% - 2px)"></span>
-              <span class="rkc-mood-flag f-above" style="--rkc-pos:{{ _fe_sc }}%">
-                <span class="rkc-mood-flag-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
-                <span class="rkc-mood-flag-val">{{ _fe_sc }}</span>
-              </span>
-              {% endif %}
-              {% if _fg_val is not none %}
-              {# Marker B: Sentiment mix (flag below) #}
-              <span class="rkc-mood-needle n-b" style="--rkc-pos:calc({{ _fg_val }}% - 2px)"></span>
-              <span class="rkc-mood-flag f-below" style="--rkc-pos:{{ _fg_val }}%">
-                <span class="rkc-mood-flag-val">{{ _fg_val }}</span>
-                <span class="rkc-mood-flag-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
-              </span>
-              {% endif %}
+          <div class="rkc-mood-board">
+            {% if _fe_sc is not none %}
+            <div class="rkc-mood-lens" data-tip-en="5-year percentile of the risk-on/risk-off composite. Display-only — not a signal."
+                 data-tip-zh="风险偏好/避险合成的5年百分位。仅供展示，非信号。">
+              <div class="rkc-mood-lens-top">
+                <span class="rkc-mood-lens-name"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
+                <span class="rkc-mood-scoreline">
+                  <strong class="rkc-mood-score">{{ _fe_sc }}</strong><span class="rkc-mood-unit">/100</span>
+                  <span class="chip {{ 'c-down' if _fe_band in ('Panic','Fear') else ('c-up' if _fe_band in ('Greed','Euphoria') else 'c-muted') }}">{{ t(_fe_band, _bandzh.get(_fe_band, _fe_band)) if _fe_band else t('—','—') }}</span>
+                </span>
+              </div>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Risk appetite {{ _fe_sc }} out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:{{ _fe_sc }}%"></span>
+              </div>
             </div>
+            {% endif %}
+            {% if _fg_val is not none %}
+            <div class="rkc-mood-lens" id="fear-greed"
+                 data-tip-en="Fear / Greed sentiment context — equal-weight composite of {{ fg.n_legs_qualifying if (fg.n_legs_qualifying is defined) else '' }} qualifying indicators.{% if fg.young_tiles is defined and fg.young_tiles %} Context tiles still collecting (too young to count): {{ fg.young_tiles | map(attribute='name_en') | join(', ') }}.{% endif %} Display-only — not a signal."
+                 data-tip-zh="恐惧/贪婪情绪参考——{{ fg.n_legs_qualifying if (fg.n_legs_qualifying is defined) else '' }}项合格指标的等权合成。{% if fg.young_tiles is defined and fg.young_tiles %}以下指标数据尚短、暂不计入：{{ fg.young_tiles | map(attribute='name_zh') | join('、') }}。{% endif %}仅供展示，非信号。">
+              <div class="rkc-mood-lens-top">
+                <span class="rkc-mood-lens-name"><span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span></span>
+                <span class="rkc-mood-scoreline">
+                  <strong class="rkc-mood-score">{{ _fg_val }}</strong><span class="rkc-mood-unit">/100</span>
+                  <span class="chip {{ 'c-down' if _fg_val < 30 else ('c-up' if _fg_val >= 65 else 'c-muted') }}">{{ t(_fg_label, _bandzh.get(_fg_label, _fg_label)) if _fg_label else t('—','—') }}</span>
+                </span>
+              </div>
+              <div class="rkc-mood-mini-track" role="img" aria-label="Sentiment mix {{ _fg_val }} out of 100">
+                <span class="rkc-mood-pin" style="--rkc-pos:{{ _fg_val }}%"></span>
+              </div>
+            </div>
+            {% endif %}
           </div>
-          {# all 5 instrument bands, both langs — a band-word contract (tests assert it),
-             and the markers land between them so the finer scale earns its place #}
+          {# all 5 instrument bands, both langs — a band-word contract (tests assert it) #}
           <div class="rkc-mood-axis rsx-axis-labels">
             <span>{{ t('Panic','恐慌') }}</span>
             <span>{{ t('Fear','恐惧') }}</span>
@@ -11750,24 +11811,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span>{{ t('Greed','贪婪') }}</span>
             <span>{{ t('Euphoria','欣喜') }}</span>
           </div>
-          {# Marker A band chip row #}
-          {% if _fe_sc is not none %}
-          <div style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"
-               data-tip-en="5-year percentile of the risk-on/risk-off composite. Display-only — not a signal."
-               data-tip-zh="风险偏好/避险合成的5年百分位。仅供展示，非信号。">
-            <span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span>
-            <span class="chip {{ 'c-down' if _fe_band in ('Panic','Fear') else ('c-up' if _fe_band in ('Greed','Euphoria') else 'c-muted') }}">{{ t(_fe_band, _bandzh.get(_fe_band, _fe_band)) if _fe_band else t('—','—') }}</span>
-          </div>
-          {% endif %}
-          {# Marker B band chip row — id="fear-greed" is a test-contract anchor #}
-          {% if _fg_val is not none %}
-          <div id="fear-greed" style="font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"
-               data-tip-en="Fear / Greed sentiment context — equal-weight composite of {{ fg.n_legs_qualifying if (fg.n_legs_qualifying is defined) else '' }} qualifying indicators.{% if fg.young_tiles is defined and fg.young_tiles %} Context tiles still collecting (too young to count): {{ fg.young_tiles | map(attribute='name_en') | join(', ') }}.{% endif %} Display-only — not a signal."
-               data-tip-zh="恐惧/贪婪情绪参考——{{ fg.n_legs_qualifying if (fg.n_legs_qualifying is defined) else '' }}项合格指标的等权合成。{% if fg.young_tiles is defined and fg.young_tiles %}以下指标数据尚短、暂不计入：{{ fg.young_tiles | map(attribute='name_zh') | join('、') }}。{% endif %}仅供展示，非信号。">
-            <span class="l-en">Sentiment mix</span><span class="l-zh">情绪合成</span>
-            <span class="chip {{ 'c-down' if _fg_val < 30 else ('c-up' if _fg_val >= 65 else 'c-muted') }}">{{ t(_fg_label, _bandzh.get(_fg_label, _fg_label)) if _fg_label else t('—','—') }}</span>
-          </div>
-          {% endif %}
+          <div class="rkc-mood-note">{{ t('Use both lenses to size risk — neither is a trade signal.','用两把尺共同控制仓位——两者都不是交易信号。') }}</div>
           {# Disagreement line (only when both present and |A-B| >= 25) #}
           {% if _fe_sc is not none and _fg_val is not none and (_fe_sc - _fg_val)|abs >= 25 %}
           <div class="rsx-disagree">
@@ -11789,8 +11833,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {% set bx = ((ff.face_b.score | round | int) if (ff.face_b is defined and ff.face_b.score is defined and ff.face_b.score is not none) else none) if ff is not none else none %}
           <div class="rsx-froth" id="froth-fragility">
             <div class="rsx-froth-hd">
-              <span style="color:{{ _ffc }}">{{ t('Top-risk gauge','顶部风险表') }}</span>
-              <span class="lens-q" data-lens-kind="caution" tabindex="0" role="button" aria-label="Top-risk gauge — what it measures">?<span class="lens-src" data-lens-kind="caution" hidden>
+              <span class="rsx-froth-title" style="color:{{ _ffc }}">
+                <span>{{ t('Top-risk gauge','顶部风险表') }}</span>
+                <span class="lens-q" data-lens-kind="caution" tabindex="0" role="button" aria-label="Top-risk gauge — what it measures">?<span class="lens-src" data-lens-kind="caution" hidden>
                 <div class="lens-hd">
                   <span class="lens-ill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15a8 8 0 0116 0"/><path d="M12 15l4.2-4.2"/><circle cx="12" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg></span>
                   <span class="lens-hgroup">
@@ -11809,13 +11854,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   </div>
                 </div>
                 <div class="lens-receipt"><span class="l-en">display context · not a signal</span><span class="l-zh">展示背景 · 非信号</span></div>
-              </span></span>
-              <span style="font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;color:{{ _ffc }}">{{ _ff_score|round|int }}</span>
-              <span class="chip {{ 'c-down' if (ff.band is defined and ff.band in ('high','extreme')) else ('c-warn' if (ff.band is defined and ff.band in ('watch','elevated')) else 'c-muted') }}">
-                <span class="l-en">{{ ff.band|capitalize if ff.band is defined and ff.band else '—' }}</span>
-                <span class="l-zh">{{ ff.band_zh if (ff.band_zh is defined and ff.band_zh) else (ff.band|capitalize if ff.band is defined and ff.band else '—') }}</span>
               </span>
-              {% if ff.provisional is defined and ff.provisional %}<span style="font-size:10px;color:var(--ink-3,rgba(255,255,255,.36))">{{ t('provisional','暂定') }}</span>{% endif %}
+              </span>
+              <span class="rsx-froth-scoreline">
+                <strong class="rsx-froth-score" style="color:{{ _ffc }}">{{ _ff_score|round|int }}</strong>
+                <span class="chip {{ 'c-down' if (ff.band is defined and ff.band in ('high','extreme')) else ('c-warn' if (ff.band is defined and ff.band in ('watch','elevated')) else 'c-muted') }}">
+                  <span class="l-en">{{ ff.band|capitalize if ff.band is defined and ff.band else '—' }}</span>
+                  <span class="l-zh">{{ ff.band_zh if (ff.band_zh is defined and ff.band_zh) else (ff.band|capitalize if ff.band is defined and ff.band else '—') }}</span>
+                </span>
+                {% if ff.provisional is defined and ff.provisional %}<span class="rsx-froth-provisional">{{ t('provisional','暂定') }}</span>{% endif %}
+              </span>
             </div>
             {% if ff.quadrant_en is defined and ff.quadrant_en %}
             <div class="rsx-froth-quad">
