@@ -1967,6 +1967,18 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
    = --isle-risk. All animation reduced-motion guarded. Scoped to #dlg-risk so the
    SHARED radar-card partial keeps its default look on every other consumer. */
 
+/* The dialog is also embedded in narrow Moon Check shells. Its layout therefore
+   responds to the panel, not the browser viewport. This prevents desktop media
+   queries from leaving mobile-width content in a desktop-shaped layout. */
+#dlg-risk .mx5-dlg-panel{
+  container: risk-dialog / inline-size;
+  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+}
+#dlg-risk .mx5-dlg-body,#dlg-risk .mx5-dlg-body *{min-width:0;}
+#dlg-risk .mx5-dlg-title,#dlg-risk .mx5-dlg-eyebrow,#dlg-risk .mx5-dlg-driver-label{
+  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+}
+
 /* — 1. Radar card: pullback-odds mini bar chart (dlg-risk-scoped OVERRIDE only) —
    The .rrx partial is shared; these overrides restyle its odds ramp into a proper
    labelled bar chart WITHOUT touching its default (china/hk/canada/stocks) look. */
@@ -2190,50 +2202,87 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
   #dlg-risk.mx5-dlg-in .scare-row:nth-child(5) .sc-bar-fill{transition-delay:.20s;}
   #dlg-risk.mx5-dlg-in .scare-row:nth-child(n+6) .sc-bar-fill{transition-delay:.25s;}
 }
-@media(max-width:700px){body.page-macro #dlg-risk .scare-row{grid-template-columns:24px 1fr 40px 54px;}
-  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}}
+@container risk-dialog (max-width:700px){
+  body.page-macro #dlg-risk .scare-row{grid-template-columns:24px minmax(0,1fr) 42px 58px;}
+  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}
+}
+@container risk-dialog (max-width:390px){
+  body.page-macro #dlg-risk .scare-row{
+    grid-template-columns:24px minmax(0,1fr) auto;
+    grid-template-areas:"icon copy score" "icon copy band";
+    align-items:start;gap:3px 9px;padding:10px;
+  }
+  body.page-macro #dlg-risk .rkc-sc-ico{grid-area:icon;}
+  body.page-macro #dlg-risk .sc-name{grid-area:copy;}
+  body.page-macro #dlg-risk .sc-score{grid-area:score;text-align:right;}
+  body.page-macro #dlg-risk .sc-band{grid-area:band;justify-self:end;}
+}
 
-/* — 6. Mood check: enlarged two-lens track with labelled needle markers — */
-.rkc-mood-track-wrap{position:relative;margin:26px 0 6px;padding-top:8px;}
-.rkc-mood-track{position:relative;height:14px;border-radius:8px;
+/* — 6. Mood check: two independent instruments.
+   Labels, values and status chips live outside the rails, so a score near 50 can
+   never collide with the Neutral axis label (the original 48/Neutral bug). — */
+.rkc-mood-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px;}
+.rkc-mood-lens{padding:11px 12px 12px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.075);}
+[data-theme="light"] .rkc-mood-lens{background:rgba(0,0,0,.022);border-color:rgba(0,0,0,.07);}
+.rkc-mood-lens-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.rkc-mood-lens-name{font:700 10px/1.25 var(--font-ui,inherit);letter-spacing:.055em;text-transform:uppercase;
+  color:var(--ink-2,rgba(255,255,255,.68));padding-top:3px;}
+.rkc-mood-scoreline{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;text-align:right;}
+.rkc-mood-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;
+  color:var(--ink-1,rgba(255,255,255,.94));letter-spacing:-.02em;}
+.rkc-mood-unit{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));}
+.rkc-mood-scoreline .chip{font-size:9px;line-height:1;padding:3px 7px;}
+.rkc-mood-mini-track{position:relative;height:9px;border-radius:999px;
   background:linear-gradient(90deg,var(--down,#ef4444) 0%,var(--warn,#f59e0b) 50%,var(--up,#22c55e) 100%);
-  opacity:.72;box-shadow:inset 0 1px 3px rgba(0,0,0,.25);}
-.rkc-mood-needle{position:absolute;top:-5px;width:4px;height:24px;border-radius:3px;
-  background:var(--text,#fff);border:2px solid var(--panel,#0f1420);z-index:2;
-  box-shadow:0 1px 4px rgba(0,0,0,.4);}
-[data-theme="light"] .rkc-mood-needle{border-color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);}
-.rkc-mood-needle.n-b{opacity:.85;height:20px;top:-3px;}
-.rkc-mood-flag{position:absolute;transform:translateX(-50%);white-space:nowrap;z-index:3;
-  display:flex;flex-direction:column;align-items:center;gap:1px;}
-.rkc-mood-flag.f-above{bottom:22px;}
-.rkc-mood-flag.f-below{top:26px;}
-.rkc-mood-flag-name{font:600 9px/1 var(--font-ui,inherit);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.5));}
-.rkc-mood-flag-val{font:800 13px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-mood-axis{display:flex;justify-content:space-between;font:600 9px/1 var(--font-ui,inherit);
-  color:var(--muted);margin-top:8px;letter-spacing:.02em;}
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.24);}
+.rkc-mood-mini-track::after{content:"";position:absolute;left:50%;top:-2px;width:1px;height:13px;
+  background:color-mix(in srgb,var(--ink-1,#fff) 40%,transparent);}
+.rkc-mood-pin{position:absolute;left:var(--rkc-pos,50%);top:50%;width:13px;height:13px;border-radius:50%;
+  transform:translate(-50%,-50%);background:var(--text,#fff);border:3px solid var(--panel,#0f1420);
+  box-shadow:0 1px 5px rgba(0,0,0,.45);z-index:2;}
+[data-theme="light"] .rkc-mood-pin{border-color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.23);}
+.rkc-mood-axis{display:grid;grid-template-columns:repeat(5,1fr);align-items:start;
+  font:600 9px/1.25 var(--font-ui,inherit);color:var(--muted);margin-top:7px;letter-spacing:.01em;}
+.rkc-mood-axis span{text-align:center;}
+.rkc-mood-axis span:first-child{text-align:left;}
+.rkc-mood-axis span:last-child{text-align:right;}
+.rkc-mood-note{font:500 10.5px/1.45 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));margin-top:9px;}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rkc-mood-needle,#dlg-risk .rkc-mood-flag{left:50%;transition:left 760ms cubic-bezier(.34,1.28,.5,1) .2s;}
-  #dlg-risk.mx5-dlg-in .rkc-mood-needle,#dlg-risk.mx5-dlg-in .rkc-mood-flag{left:var(--rkc-pos,50%);}
+  #dlg-risk .rkc-mood-pin{left:50%;transition:left 760ms cubic-bezier(.34,1.28,.5,1) .2s;}
+  #dlg-risk.mx5-dlg-in .rkc-mood-pin{left:var(--rkc-pos,50%);}
 }
 @media(prefers-reduced-motion:reduce){
-  #dlg-risk .rkc-mood-needle,#dlg-risk .rkc-mood-flag{left:var(--rkc-pos,50%);}
+  #dlg-risk .rkc-mood-pin{left:var(--rkc-pos,50%);}
   #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill,#dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:none;}
   #dlg-risk .rkc-sig{opacity:1;transform:none;}
   #dlg-risk .rkc-ov-ring{--rkc-anim:var(--rkc-v,0);}
 }
 
-/* — 390px bleed check — */
-@media(max-width:430px){
+/* Froth header: a title cluster and a score cluster, never four loose flex items. */
+#dlg-risk .rsx-froth-hd{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px;margin-bottom:8px;}
+.rsx-froth-title{display:flex;align-items:center;gap:7px;min-width:0;font:700 13px/1.3 var(--font-ui,inherit);}
+.rsx-froth-scoreline{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
+.rsx-froth-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+.rsx-froth-provisional{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.4));}
+
+/* — narrow embedded-panel bleed checks — */
+@container risk-dialog (max-width:520px){
   .rkc-sig-grid{grid-template-columns:1fr;}
+  .rkc-mood-board{grid-template-columns:1fr;}
   .rkc-ov-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
   .rkc-ov-ring{width:46px;height:46px;}
   .rkc-ov-val{font-size:14px;}
   .rkc-ldr-row{grid-template-columns:46px 1fr 42px;gap:7px;}
-  /* mood flags: give the below-flag room from the axis words + keep edge flags on-track */
-  .rkc-mood-track-wrap{margin-top:30px;}
-  .rkc-mood-flag.f-below{top:22px;}
-  .rkc-mood-axis{margin-top:46px;}
-  .rkc-mood-flag-name{font-size:8px;}
+  #dlg-risk .rsx-froth-bar-lbl{width:92px;}
+}
+@container risk-dialog (max-width:340px){
+  .rkc-mood-axis span:nth-child(2),.rkc-mood-axis span:nth-child(4){visibility:hidden;}
+  #dlg-risk .rsx-froth-hd{grid-template-columns:1fr;}
+  .rsx-froth-scoreline{justify-content:flex-start;}
+  #dlg-risk .rsx-froth-bar-row{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:5px 8px;}
+  #dlg-risk .rsx-froth-bar-lbl{width:auto;}
+  #dlg-risk .rsx-froth-bar-track{grid-column:1/-1;grid-row:2;}
 }
 
 /* ═══ WAVE D — Market Sentiment dialog (sg-* classes) ══════════════════════
@@ -2681,4 +2730,3 @@ body.page-macro .hm-ov .hm-tm-wrap{background:transparent;border:none;border-rad
 body.page-macro .mx5-dlg-hm-mobile-link{display:none;margin-top:10px;text-align:center;}
 body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97a);font-weight:600;}
 @media(max-width:700px){body.page-macro .mx5-dlg-hm-mobile-link{display:block;}}
-
