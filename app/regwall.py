@@ -57,7 +57,9 @@ PUBLIC_PATHS = {"/", "/index.html", "/plans.html"}
 # sitemap.xml prefix:
 #   /stocks/  ~1.6k per-ticker SEO dossiers    /learn/  learning center
 #   /tools/   tools hub + calculators + sheets  /blog/   blog + feed
-PUBLIC_PREFIXES = ("/stocks/", "/tools/", "/learn/", "/blog/")
+#   /research/ per-report SEO landing pages + crawl hub (#3392/#3487 — public
+#   teaser + in-page paywall; the PDFs stay in private R2 behind /api auth)
+PUBLIC_PREFIXES = ("/stocks/", "/tools/", "/learn/", "/blog/", "/research/")
 
 
 def _enabled() -> bool:
