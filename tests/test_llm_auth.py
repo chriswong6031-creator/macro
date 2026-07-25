@@ -546,7 +546,7 @@ def test_build_providers_pool_expansion(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
     monkeypatch.setattr(llm_auth, "_oauth_pool_candidates",
-                        lambda lane: [("claude_code_oauth_1", "POOL_ENV_1"),
+                        lambda lane, ceiling_pct=None: [("claude_code_oauth_1", "POOL_ENV_1"),
                                       ("claude_code_oauth_2", "POOL_ENV_2")])
     monkeypatch.setenv("POOL_ENV_1", "tok1")
     monkeypatch.delenv("POOL_ENV_2", raising=False)  # discovered but env vanished
@@ -568,7 +568,7 @@ def test_build_providers_pool_expansion_no_pool_keys_uses_legacy(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
     # No pool candidates available
-    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
     # Stub is_enabled so legacy is enabled
     try:
@@ -594,7 +594,7 @@ def test_build_providers_without_pool_lane_is_legacy(monkeypatch):
 
     called = []
     monkeypatch.setattr(llm_auth, "_oauth_pool_candidates",
-                        lambda lane: called.append(lane) or [])
+                        lambda lane, ceiling_pct=None: called.append(lane) or [])
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
 
     provs = llm_auth.build_providers({"provider_order": ["oauth"]})
@@ -608,7 +608,7 @@ def test_build_providers_pool_dedups_legacy_env(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
     monkeypatch.setattr(llm_auth, "_oauth_pool_candidates",
-                        lambda lane: [("claude_code_oauth_1", "CLAUDE_CODE_OAUTH_TOKEN")])
+                        lambda lane, ceiling_pct=None: [("claude_code_oauth_1", "CLAUDE_CODE_OAUTH_TOKEN")])
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
 
     cfg = {"provider_order": ["oauth"], "oauth_pool_lane": "metabolism-agenda"}
@@ -895,7 +895,7 @@ def test_build_providers_injects_usage_lane(monkeypatch):
     monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok0")
     # _oauth_pool_candidates is called with oauth_pool_lane from cfg; disable it
-    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane: [])
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
 
     cfg = {
         "provider_order": ["oauth"],

@@ -176,6 +176,45 @@ def test_pro_lane_fallback_is_sonnet():
     assert "sonnet" in (pro.get("fallback_model") or "").lower()
 
 
+def test_pro_lane_degraded_models_config():
+    """pro lane carries degraded-capacity fallbacks (DeepSeek + Haiku) so a fully
+    rate-capped OAuth pool still yields a real answer, plus the 95% weekly ceiling."""
+    root = _make_temp_root()
+    cfg = gw._load_brain_config(root)
+    pro = cfg["lanes"]["pro"]
+    dm = pro.get("degraded_models") or []
+    assert any("deepseek" in str(m).lower() for m in dm), dm
+    assert any("haiku" in str(m).lower() for m in dm), dm
+    assert pro.get("weekly_ceiling_pct") == 95
+
+
+def test_pro_degraded_providers_builds_deepseek_and_haiku():
+    """_pro_degraded_providers appends a metered DeepSeek rung AND reuses each OAuth
+    client with Haiku swapped in (cap_id preserved so the load-balancer still tracks it)."""
+    from engine import llm_auth
+    lane_cfg = {"degraded_models": ["deepseek-v4-pro", "claude-haiku-4-5"],
+                "deepseek_key_env": "DEEPSEEK_API_KEY",
+                "deepseek_base_url": "https://api.deepseek.com/anthropic"}
+    oauth = [
+        {"name": "oauth", "env_var": "CLAUDE_CODE_OAUTH_TOKEN_3", "cap_id": "claude_code_oauth_3",
+         "client": object(), "model": "claude-opus-5"},
+        {"name": "oauth", "env_var": "CLAUDE_CODE_OAUTH_TOKEN_4", "cap_id": "claude_code_oauth_4",
+         "client": object(), "model": "claude-opus-5"},
+    ]
+    ds_prov = {"name": "deepseek", "env_var": "DEEPSEEK_API_KEY", "client": object(),
+               "model": "deepseek-v4-pro"}
+    with patch.object(llm_auth, "build_providers", return_value=[ds_prov]) as bp:
+        out = gw._pro_degraded_providers(lane_cfg, oauth, "brain-pro", _make_temp_root())
+    # DeepSeek first (config order), then one Haiku rung per distinct OAuth key
+    assert out[0]["model"] == "deepseek-v4-pro"
+    haiku = [p for p in out if p.get("model") == "claude-haiku-4-5"]
+    assert len(haiku) == 2
+    assert {p["cap_id"] for p in haiku} == {"claude_code_oauth_3", "claude_code_oauth_4"}
+    # Haiku reuses the SAME client object (no new client built)
+    assert haiku[0]["client"] is oauth[0]["client"]
+    bp.assert_called_once()  # DeepSeek built via build_providers, Haiku reused
+
+
 def test_brain_tools_allowlist_contains_both_families():
     """_BRAIN_TOOLS includes both ask_brain read tools and brain-only tools."""
     assert "read_world_state" in gw._BRAIN_TOOLS   # inherited
@@ -2137,6 +2176,79 @@ def test_create_failover_fails_over_on_insufficient_balance():
         assert not llm_auth.is_dead("deepseek", "DEEPSEEK_API_KEY")  # balance ≠ dead credential
     finally:
         llm_auth.clear_dead()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Load-balancing: the streaming brain path (via _create_failover) must feed the
+# shared key-pool ledger — record a success on the serving key, cool a key that
+# 429s — so cross-turn/cross-process pool selection rotates off a hot token.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_create_failover_records_pool_success_and_cools_429():
+    """A pool key that 429s is cooled; the key that then serves is recorded ok."""
+    class Rate(Exception):
+        status_code = 429
+    ok = _MockResponse([_MockBlock("text", "served")], "end_turn")
+    hot = {"name": "oauth", "env_var": "CLAUDE_CODE_OAUTH_TOKEN_3", "cap_id": "claude_code_oauth_3",
+           "client": _RaiseThenClient(exc=Rate("429")), "model": "claude-opus-5"}
+    good = {"name": "oauth", "env_var": "CLAUDE_CODE_OAUTH_TOKEN_4", "cap_id": "claude_code_oauth_4",
+            "client": _RaiseThenClient(resp=ok), "model": "claude-opus-5"}
+    cooled, recorded = [], []
+    with patch.object(gw, "_pool_cool_for_exc", side_effect=lambda p, e: cooled.append(p.get("cap_id"))), \
+         patch.object(gw, "_pool_record_success", side_effect=lambda p, r=None: recorded.append(p.get("cap_id"))):
+        resp, used = gw._create_failover([hot, good], max_tokens=10, system="", tools=[], messages=[])
+    assert used == "claude-opus-5"
+    assert cooled == ["claude_code_oauth_3"]      # the 429'd key cooled
+    assert recorded == ["claude_code_oauth_4"]    # the serving key recorded ok
+
+
+def test_pool_helpers_delegate_to_keypool():
+    """_pool_record_success / _pool_cool_for_exc delegate to key_pool by cap_id, and are
+    no-ops for a non-pool provider (no cap_id)."""
+    from engine.neuralweb import key_pool as kp
+    rec, cool = [], []
+    with patch.object(kp, "record_session", side_effect=lambda cap_id, **k: rec.append((cap_id, k.get("outcome")))), \
+         patch.object(kp, "mark_cooling", side_effect=lambda cap_id, **k: cool.append((cap_id, k.get("cool_kind")))):
+        gw._pool_record_success({"cap_id": "claude_code_oauth_5"}, _MockResponse([], "end_turn"))
+        class Rate(Exception):
+            status_code = 429
+        gw._pool_cool_for_exc({"cap_id": "claude_code_oauth_5"}, Rate("429"))
+        # non-pool provider (no cap_id) → no ledger writes
+        gw._pool_record_success({"name": "anthropic"}, None)
+        gw._pool_cool_for_exc({"name": "anthropic"}, Rate("429"))
+    assert rec == [("claude_code_oauth_5", "ok")]
+    assert cool == [("claude_code_oauth_5", "window")]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mastermind weekly ceiling: brain lanes lean on a key up to 95% (build loop 85%).
+# Soft ordering only — an over-ceiling key sorts last but is never excluded.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_lane_weekly_ceiling_pct_brain_only():
+    from engine import llm_auth
+    assert llm_auth._lane_weekly_ceiling_pct("brain-pro") == 95.0
+    assert llm_auth._lane_weekly_ceiling_pct("brain-fast") == 95.0
+    assert llm_auth._lane_weekly_ceiling_pct("metabolism") is None
+    assert llm_auth._lane_weekly_ceiling_pct("") is None
+
+
+def test_oauth_pool_candidates_deprioritizes_over_ceiling():
+    """A brain-pro key over the 95% weekly ceiling sorts AFTER an under-ceiling key,
+    but is still returned (fail-open)."""
+    from engine import llm_auth
+    from engine.neuralweb import key_pool as kp
+    from engine.neuralweb import capability_broker as cb
+    order = ["claude_code_oauth_3", "claude_code_oauth_4"]  # 3 is "hot" (over ceiling)
+    with patch.object(kp, "discover_present_keys", return_value=order), \
+         patch.object(kp, "is_cooling", return_value=False), \
+         patch.object(kp, "window_load", return_value=0), \
+         patch.object(cb, "resolve", side_effect=lambda cap_id, lane: {"allowed": True, "ref_name": cap_id.upper()}), \
+         patch.object(llm_auth, "_weekly_pct", side_effect=lambda cap_id: 96.0 if cap_id.endswith("_3") else 40.0):
+        cands = llm_auth._oauth_pool_candidates("brain-pro")
+    ids = [c[0] for c in cands]
+    assert ids == ["claude_code_oauth_4", "claude_code_oauth_3"]  # under-ceiling first
+    assert len(ids) == 2  # over-ceiling key NOT dropped (fail-open)
 
 
 def test_effort_thinking_gate_claude_only():
