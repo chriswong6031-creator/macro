@@ -145,6 +145,13 @@ jobs:
           run_py "build bonds" scripts.build_bonds
           run_py "calibrate rate/inflation transmission" scripts.calibrate_rate_inflation
           run_py "build transmission" scripts.build_transmission
+          # TXI W3: historical episode miner + regime-conditional hop calibration. WEEKLY
+          # cadence (heavy full-history scan, off the render path — masterplan §W3). Runs
+          # AFTER build_transmission (reads the same transmission/regime latest.json + the
+          # parquet store). Writes data/transmission/chain_calibration.json; the nightly
+          # transmission_chains read picks it up to fill hop base_rates + promote the display
+          # tier. Display-only, additive, no-ops gracefully on absent history. ~1s wall.
+          run_py "calibrate transmission chains (TXI W3 episode miner)" scripts.run_transmission_calibration
           run_py "forward path board (build_rates_command)" scripts.build_rates_command
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "validate gex (forward-RV gate)" scripts.validate_gex
