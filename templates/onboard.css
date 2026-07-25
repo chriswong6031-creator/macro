@@ -5,6 +5,18 @@
    Billing → Done, in the LANDING's design language (light Swiss, Archivo
    Expanded display, --blue, hairlines) — NOT the Terminal's dark chart idiom.
 
+   THE STAGE (left column, 2026-07-25 rebuild). The left column is no longer a
+   fixed marketing card: it is a STAGE that plays the desk coming online, one
+   step at a time. Its spine is a 3×3 lattice whose ROWS ARE THE TIERS
+   (Free / Insider / Pro) — so the structure encodes the actual pricing truth,
+   and choosing a plan literally lights up what you bought (a staggered cascade;
+   locked rows keep their lock). Picking Dark in Preferences flips the whole
+   stage to the product's dark skin — the stage is a live preview, not
+   decoration. Billing slides a 7-day trial meter over it; Done lights the desk.
+   Motion is CSS-only (transform/opacity), two ambient loops max, parked on
+   tab-hide / idle / close and disabled under prefers-reduced-motion — the
+   thermal law from the start.html hero guard applies here too.
+
    Paired asset: templates/onboard.css MUST byte-match site/onboard.css
    (scripts/check_template_site_sync). All rules are namespaced `.obm-` so this
    file can never collide with the landing's own inline CSS. Tokens (--bg, --ink,
@@ -13,13 +25,12 @@
 
 .obm-root{
   /* local tokens layered on the landing's palette */
-  --obm-pad:38px;
-  --obm-field-h:44px;
+  --obm-pad:40px;
+  --obm-field-h:46px;
   --obm-radius:14px;
   --ob-free:#5d6b7e;      /* muted     */
   --ob-insider:#0f9d8f;   /* teal      */
-  --ob-pro:#285fff;       /* blue      */
-  --obm-pane-bg:linear-gradient(158deg,#f4f7ff 0%,#eef2fb 46%,#f3eefb 100%);
+  --ob-pro:#7862e0;       /* violet    */
   color:var(--ink);
   font-family:'Inter',system-ui,-apple-system,sans-serif;
 }
@@ -42,22 +53,24 @@
   --sh-plate:0 24px 60px -20px rgba(18,26,45,.34),0 6px 16px -6px rgba(18,26,45,.14);
   --r-sm:6px; --r:12px; --r-lg:16px;
   position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
-  padding:clamp(12px,3vh,40px);
-  background:rgba(16,22,34,.44);
+  padding:clamp(10px,2.6vh,36px);
+  background:rgba(16,22,34,.46);
   -webkit-backdrop-filter:saturate(120%) blur(3px);backdrop-filter:saturate(120%) blur(3px);
   opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s .2s;
 }
 .obm-scrim.obm-open{opacity:1;visibility:visible;transition:opacity .2s ease}
 
 .obm-sheet{
-  position:relative;display:grid;grid-template-columns:44% 1fr;
-  width:min(1080px,100%);height:min(724px,92vh);
+  position:relative;display:grid;grid-template-columns:minmax(340px,45%) 1fr;
+  width:min(1180px,100%);height:min(792px,94vh);
   background:var(--panel);border:1px solid var(--hair-2);border-radius:20px;
   box-shadow:var(--sh-deep);overflow:hidden;
   transform:translateY(14px) scale(.99);opacity:0;
   transition:transform .22s cubic-bezier(.22,.8,.3,1),opacity .22s ease;
 }
 .obm-scrim.obm-open .obm-sheet{transform:none;opacity:1}
+/* narrow desktop / tablet: the stage keeps its place but yields width */
+@media (max-width:1080px){ .obm-sheet{grid-template-columns:minmax(300px,40%) 1fr} }
 
 /* ── close ───────────────────────────────────────────────────────────────── */
 .obm-close{
@@ -69,95 +82,282 @@
 .obm-close:hover{color:var(--ink);background:#fff;transform:translateY(-1px)}
 .obm-close svg{width:16px;height:16px}
 
-/* ══════════════════════ LEFT — marketing / preview pane ═════════════════════ */
+/* ══════════════════════ LEFT — THE STAGE ════════════════════════════════════
+   Tone tokens live here so ONE attribute (data-tone) flips the whole column to
+   the product's dark skin when the visitor picks Dark in Preferences.        */
 .obm-pane{
-  position:relative;overflow:hidden;padding:34px 30px 0;
-  background:var(--obm-pane-bg);border-right:1px solid var(--hair);
+  --st-bg:linear-gradient(157deg,#eff3fd 0%,#e8eefb 46%,#f2ecfb 100%);
+  --st-card:#ffffff; --st-card-2:#fbfcff;
+  --st-hair:#e2e8f4; --st-hair-2:#d5dcec;
+  --st-ink:#141c29; --st-soft:#54627a; --st-faint:#93a0b4;
+  --st-grid:rgba(28,36,48,.05);
+  --st-tint:rgba(40,95,255,.07);
+  --st-shadow:0 12px 30px -16px rgba(20,30,50,.30),0 2px 6px rgba(20,30,50,.05);
+  --st-beam:rgba(40,95,255,.16);
+  position:relative;overflow:hidden;min-height:0;min-width:0;
+  padding:34px 0 0 34px;
+  background:var(--st-bg);border-right:1px solid var(--hair);
   display:flex;flex-direction:column;
+  transition:background .55s ease,border-color .55s ease;
 }
-.obm-pane::before{                       /* faint grid wash, mirrors the pyramid idiom */
+.obm-pane[data-tone="dark"]{
+  --st-bg:linear-gradient(157deg,#0e1424 0%,#0a0f1a 48%,#160f28 100%);
+  --st-card:#151c2c; --st-card-2:#111827;
+  --st-hair:#26304a; --st-hair-2:#313c58;
+  --st-ink:#eaf0fb; --st-soft:#a3b1c8; --st-faint:#8493ad;
+  --st-grid:rgba(255,255,255,.05);
+  --st-tint:rgba(90,140,255,.13);
+  --st-shadow:0 14px 34px -18px rgba(0,0,0,.8),0 2px 6px rgba(0,0,0,.3);
+  --st-beam:rgba(120,170,255,.20);
+  border-right-color:#20283c;
+}
+.obm-pane::before{                       /* graph-paper wash — the desk's surface */
   content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
   background:
-    radial-gradient(60% 44% at 26% 12%,rgba(40,95,255,.10),transparent 72%),
-    radial-gradient(50% 40% at 92% 84%,rgba(120,98,224,.09),transparent 74%),
-    linear-gradient(rgba(28,36,48,.035) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(28,36,48,.035) 1px,transparent 1px);
-  background-size:auto,auto,42px 42px,42px 42px;
-  -webkit-mask-image:radial-gradient(120% 100% at 40% 20%,#000 60%,transparent 100%);
-  mask-image:radial-gradient(120% 100% at 40% 20%,#000 60%,transparent 100%);
+    radial-gradient(58% 42% at 24% 10%,var(--st-tint),transparent 72%),
+    radial-gradient(50% 40% at 94% 88%,var(--st-tint),transparent 74%),
+    linear-gradient(var(--st-grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--st-grid) 1px,transparent 1px);
+  background-size:auto,auto,44px 44px,44px 44px;
+  -webkit-mask-image:radial-gradient(128% 104% at 36% 16%,#000 58%,transparent 100%);
+  mask-image:radial-gradient(128% 104% at 36% 16%,#000 58%,transparent 100%);
 }
 .obm-pane>*{position:relative;z-index:1}
 
-.obm-brand{display:flex;align-items:center;gap:9px;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:14px;letter-spacing:.01em;color:var(--ink)}
-.obm-brand svg{width:30px;height:30px;flex:none;border-radius:9px;box-shadow:0 4px 12px -4px rgba(40,95,255,.5)}
+/* the one ambient loop: a slow light bar crossing the desk */
+.obm-beam{
+  position:absolute;top:-20%;left:-40%;width:34%;height:150%;z-index:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent,var(--st-beam),transparent);
+  filter:blur(18px);transform:translateX(0) rotate(8deg);
+  animation:obmBeam 17s linear infinite;
+}
+@keyframes obmBeam{from{transform:translateX(-10%) rotate(8deg)}to{transform:translateX(430%) rotate(8deg)}}
 
-.obm-pane-copy{margin-top:26px;max-width:30ch}
-.obm-pane-h{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.06;font-size:clamp(1.5rem,2.4vw,1.95rem);color:var(--ink);margin:0}
-.obm-pane-sub{color:var(--muted);font-size:14px;line-height:1.55;margin:12px 0 0}
+.obm-brand{display:flex;align-items:center;gap:9px;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:13.5px;letter-spacing:.02em;color:var(--st-ink);padding-right:34px;transition:color .55s ease}
+.obm-brand svg{width:29px;height:29px;flex:none;border-radius:9px;box-shadow:0 4px 12px -4px rgba(40,95,255,.5)}
 
-/* ── the desk — a miniature Mastermind chart card that materializes as the
-   user moves through the wizard. Nameplate ← typed first name; ticker + watch
-   chips ← market picks; capability rows ← the chosen plan. Nothing echoes a
-   form field back; the pane shows the product coming online for THEM. ── */
-.obm-desk{margin-top:22px;background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:var(--sh-lift);max-width:312px;overflow:hidden}
-.obm-desk-plate{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--hair);background:#fbfcfe;min-width:0}
-.obm-desk-ava{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;color:#fff;background:linear-gradient(135deg,#3f82f6,#6366f1);box-shadow:0 3px 8px -3px rgba(40,95,255,.55)}
-.obm-desk-name{font-family:'Archivo',sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.14em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.obm-desk-trial{margin-left:auto;flex:none;font-family:'Archivo',sans-serif;font-weight:800;font-size:8.5px;letter-spacing:.08em;color:var(--q-green);background:var(--green-wash);border:1px solid rgba(31,139,65,.35);border-radius:99px;padding:2px 8px}
-.obm-desk-chart{position:relative;height:124px;background:#fff}
-.obm-desk-chart svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-.obm-desk-tkr{position:absolute;top:8px;left:10px;z-index:1;display:flex;align-items:center;gap:6px}
-.obm-desk-tkr b{font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;letter-spacing:.02em;color:var(--ink)}
-.obm-desk-tf{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--faint);border:1px solid var(--hair-2);border-radius:5px;padding:1px 5px;background:#fff}
-.obm-desk-zone{position:absolute;right:10px;bottom:14px;z-index:1;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue-ink);opacity:.75}
+.obm-pane-copy{margin-top:24px;max-width:27ch;padding-right:28px}
+.obm-pane-h{
+  font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.022em;
+  line-height:1.08;font-size:clamp(1.4rem,2.05vw,1.8rem);color:var(--st-ink);margin:0;
+  transition:color .55s ease;
+}
+.obm-pane-sub{color:var(--st-soft);font-size:13.5px;line-height:1.55;margin:11px 0 0;transition:color .55s ease}
+/* the copy re-sets itself on every step change */
+.obm-pane-copy.obm-swap .obm-pane-h,.obm-pane-copy.obm-swap .obm-pane-sub{animation:obmCopyIn .42s cubic-bezier(.22,.8,.3,1) both}
+.obm-pane-copy.obm-swap .obm-pane-sub{animation-delay:.06s}
+@keyframes obmCopyIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+
+/* ── THE DESK ──────────────────────────────────────────────────────────────
+   Bleeds 30px past the pane's right edge: what you see is a fragment of a
+   bigger desk, cropped by the sheet — depth without perspective tricks.   */
+.obm-stage{position:relative;flex:1;min-height:0;margin-top:22px;display:flex;flex-direction:column}
+.obm-desk{
+  position:relative;width:calc(100% + 30px);flex:1;min-height:0;
+  border:1px solid var(--st-hair);border-radius:16px 0 0 16px;border-right:0;
+  background:color-mix(in srgb,var(--st-card) 62%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:var(--st-shadow);overflow:hidden;
+  display:flex;flex-direction:column;
+  transition:background .55s ease,border-color .55s ease;
+}
+
+/* nameplate — right padding keeps the state chip inside the desk's cropped edge */
+.obm-plate{display:flex;align-items:center;gap:9px;flex:none;padding:10px 44px 10px 14px;border-bottom:1px solid var(--st-hair);background:color-mix(in srgb,var(--st-card-2) 82%,transparent);min-width:0}
+.obm-plate-ava{flex:none;width:23px;height:23px;border-radius:7px;display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;color:#fff;background:linear-gradient(135deg,#3f82f6,#7862e0);box-shadow:0 3px 8px -3px rgba(40,95,255,.55);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+.obm-plate-ava.obm-pop{transform:scale(1.14)}
+.obm-plate-nm{font-family:'Archivo',sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.15em;color:var(--st-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .55s ease}
+.obm-plate-st{
+  margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:5px;
+  font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.12em;
+  text-transform:uppercase;border-radius:99px;padding:3px 9px;white-space:nowrap;
+  color:var(--st-faint);background:color-mix(in srgb,var(--st-hair) 60%,transparent);
+  transition:color .3s,background .3s;
+}
+.obm-plate-st i{width:5px;height:5px;border-radius:50%;background:currentColor;display:none}
+.obm-plate-st[data-st="live"]{color:#17a34a;background:rgba(23,163,74,.13)}
+.obm-plate-st[data-st="live"] i{display:block;animation:obmBlink 2.4s ease-in-out infinite}
+.obm-plate-st[data-st="trial"]{color:#b07d05;background:rgba(176,125,5,.13)}
+.obm-plate-st[data-st="insider"]{color:var(--ob-insider);background:rgba(15,157,143,.14)}
+.obm-plate-st[data-st="pro"]{color:#8b76ea;background:rgba(120,98,224,.16)}
+@keyframes obmBlink{0%,100%{opacity:1}50%{opacity:.28}}
+
+/* hero — the annotated signal chart (an illustration, and labelled as one) */
+.obm-hero{position:relative;height:118px;flex:none;margin:12px 14px 0;border:1px solid var(--st-hair);border-radius:11px;background:var(--st-card);overflow:hidden;transition:background .55s ease,border-color .55s ease}
+.obm-hero svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.obm-hero-hd{position:absolute;top:8px;left:11px;right:11px;z-index:2;display:flex;align-items:center;gap:7px}
+.obm-hero-hd b{font-family:'Archivo',sans-serif;font-weight:800;font-size:11.5px;letter-spacing:.02em;color:var(--st-ink);transition:color .55s ease}
+.obm-hero-tf{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--st-faint);border:1px solid var(--st-hair-2);border-radius:5px;padding:1px 5px}
+.obm-hero-sig{margin-left:auto;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.12em;color:#fff;background:var(--blue);border-radius:5px;padding:2.5px 7px;opacity:0;transform:translateY(-4px);transition:opacity .35s,transform .35s}
+.obm-desk.obm-armed .obm-hero-sig{opacity:1;transform:none}
+.obm-hero-zone{position:absolute;right:11px;bottom:14px;z-index:2;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue);opacity:.8}
+.obm-hero-note{position:absolute;left:11px;bottom:6px;z-index:2;font-family:'Archivo',sans-serif;font-weight:700;font-size:7px;letter-spacing:.11em;color:var(--st-faint)}
 /* the line draws itself in (pathLength=1 → one normalized dashoffset sweep) */
-.obm-desk-line{stroke-dasharray:1;stroke-dashoffset:0}
-.obm-draw .obm-desk-line{animation:obmDeskDraw .9s cubic-bezier(.3,.6,.2,1) both}
-.obm-draw .obm-desk-area{animation:obmDeskFade .5s ease .55s both}
-@keyframes obmDeskDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
-@keyframes obmDeskFade{from{opacity:0}to{opacity:1}}
-.obm-desk-ring{opacity:.5;transform-origin:292px 27px;animation:obmDeskPulse 2.4s ease-out infinite}
-@keyframes obmDeskPulse{0%{transform:scale(1);opacity:.5}70%{transform:scale(3.1);opacity:0}100%{transform:scale(3.1);opacity:0}}
-.obm-desk-chips{display:flex;flex-wrap:wrap;gap:5px;padding:10px 12px 0}
-.obm-desk-chip{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.04em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2.5px 8px}
-.obm-desk-caps{display:flex;flex-direction:column;padding:8px 6px 10px}
-.obm-desk-cap{display:flex;align-items:center;gap:8px;padding:5.5px 6px;border-radius:8px;font-size:12px;color:var(--ink-soft)}
-.obm-desk-cap.obm-off{color:var(--faint)}
-.obm-desk-ci{flex:none;width:16px;height:16px;display:grid;place-items:center}
-.obm-desk-ck{width:13px;height:13px;stroke:var(--blue);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.obm-desk-lk{width:12px;height:12px;color:var(--faint)}
-.obm-desk-dot2{width:5px;height:5px;border-radius:50%;background:var(--hair-2);display:block}
-.obm-desk-cl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.obm-desk-cap.obm-off .obm-desk-cl{font-weight:500}
-.obm-desk-tag{flex:none;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.1em;color:#7862e0;background:rgba(120,98,224,.10);border-radius:5px;padding:2px 6px}
+.obm-hero-line{stroke-dasharray:1;stroke-dashoffset:0}
+.obm-draw .obm-hero-line{animation:obmDraw 1s cubic-bezier(.3,.6,.2,1) both}
+.obm-draw .obm-hero-area{animation:obmFadeIn .5s ease .6s both}
+@keyframes obmDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes obmFadeIn{from{opacity:0}to{opacity:1}}
+.obm-hero-ring{opacity:.5;transform-origin:292px 27px;animation:obmPulse 2.6s ease-out infinite}
+@keyframes obmPulse{0%{transform:scale(1);opacity:.5}70%{transform:scale(3.1);opacity:0}100%{transform:scale(3.1);opacity:0}}
+
+/* ── the tier lattice — 3 rows (Free / Insider / Pro) × 3 tiles ─────────── */
+.obm-lat{padding:12px 0 10px 14px;display:flex;flex-direction:column;gap:7px;min-height:0;overflow:hidden}
+.obm-row{
+  position:relative;display:grid;grid-template-columns:56px repeat(3,minmax(0,1fr));
+  align-items:stretch;gap:7px;padding-left:9px;
+}
+.obm-row::before{                    /* the tier's spine — fills when the row lights */
+  content:"";position:absolute;left:0;top:3px;bottom:3px;width:2px;border-radius:2px;
+  background:var(--st-hair-2);transform:scaleY(.42);transform-origin:top;
+  transition:transform .45s cubic-bezier(.22,.8,.3,1),background .35s;
+}
+.obm-row.obm-on::before{background:var(--row-hue);transform:scaleY(1)}
+.obm-row-lbl{
+  display:flex;align-items:center;font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:8px;letter-spacing:.14em;color:var(--st-faint);white-space:nowrap;
+  transition:color .35s;
+}
+.obm-row.obm-on .obm-row-lbl{color:var(--row-hue)}
+.obm-row[data-tier="free"]{--row-hue:var(--blue)}
+.obm-row[data-tier="insider"]{--row-hue:var(--ob-insider)}
+.obm-row[data-tier="pro"]{--row-hue:#8b76ea}
+
+.obm-tile{
+  position:relative;overflow:hidden;min-width:0;
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:9px 9px 9px 10px;border:1px solid var(--st-hair);border-radius:10px;
+  background:color-mix(in srgb,var(--st-card) 78%,transparent);
+  transition:background .34s ease,border-color .34s ease,opacity .34s ease,box-shadow .34s ease;
+  opacity:.62;
+}
+.obm-tile-i{width:15px;height:15px;color:var(--st-faint);flex:none;transition:color .34s}
+.obm-tile-i svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.obm-tile-l{font-size:9.5px;line-height:1.25;font-weight:600;color:var(--st-soft);transition:color .34s;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.obm-tile-lk{position:absolute;top:8px;right:8px;width:11px;height:11px;color:var(--st-faint);opacity:.85;transition:opacity .3s}
+.obm-tile-lk svg{width:11px;height:11px;display:block;fill:none;stroke:currentColor;stroke-width:2}
+/* lit */
+.obm-tile.obm-on{
+  opacity:1;border-color:color-mix(in srgb,var(--row-hue) 42%,var(--st-hair));
+  background:color-mix(in srgb,var(--row-hue) 9%,var(--st-card));
+}
+.obm-tile.obm-on .obm-tile-i{color:var(--row-hue)}
+.obm-tile.obm-on .obm-tile-l{color:var(--st-ink)}
+.obm-tile.obm-on .obm-tile-lk{opacity:0}
+/* the pinned ring — what you told us you trade */
+.obm-tile.obm-pin{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--blue) 55%,transparent)}
+/* signature: the light sweep that runs across a tile the moment it unlocks */
+.obm-tile::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(105deg,transparent 30%,color-mix(in srgb,var(--row-hue) 26%,transparent) 50%,transparent 70%);
+  transform:translateX(-110%);
+}
+.obm-tile.obm-flare::after{animation:obmFlare .78s cubic-bezier(.3,.7,.3,1) both;animation-delay:calc(var(--i,0) * 62ms)}
+.obm-tile.obm-flare{animation:obmLift .5s cubic-bezier(.3,.9,.3,1) both;animation-delay:calc(var(--i,0) * 62ms)}
+@keyframes obmFlare{0%{opacity:0;transform:translateX(-110%)}18%{opacity:1}100%{opacity:0;transform:translateX(115%)}}
+@keyframes obmLift{0%{transform:translateY(0)}42%{transform:translateY(-3px)}100%{transform:translateY(0)}}
+
+/* ── the tape (the second, slower ambient loop) ─────────────────────────── */
+.obm-tape{margin-top:auto;flex:none;overflow:hidden;border-top:1px solid var(--st-hair);padding:8px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 88%,transparent)}
+.obm-tape-in{display:flex;gap:0;width:max-content;animation:obmTape 30s linear infinite}
+.obm-tape-in span{display:inline-flex;align-items:center;gap:6px;padding:0 14px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.11em;color:var(--st-soft);white-space:nowrap}
+.obm-tape-in span::before{content:"";width:4px;height:4px;border-radius:50%;background:color-mix(in srgb,var(--blue) 70%,transparent)}
+@keyframes obmTape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── billing overlay: the 7-day trial meter ────────────────────────────── */
+.obm-meter{
+  position:absolute;left:0;right:30px;bottom:0;z-index:3;
+  border:1px solid var(--st-hair);border-radius:14px 14px 0 0;border-bottom:0;
+  background:color-mix(in srgb,var(--st-card) 94%,transparent);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 -14px 34px -20px rgba(18,26,45,.4);
+  padding:14px 16px 18px;
+  transform:translateY(112%);opacity:0;pointer-events:none;
+  transition:transform .5s cubic-bezier(.22,.9,.3,1),opacity .3s ease;
+}
+.obm-pane[data-step="4"] .obm-meter{transform:none;opacity:1;pointer-events:auto}
+.obm-meter-hd{font-family:'Archivo',sans-serif;font-weight:800;font-size:9px;letter-spacing:.13em;color:var(--st-ink);margin:0 0 11px;transition:color .55s ease}
+.obm-meter-track{display:flex;align-items:flex-end;gap:5px;height:30px}
+.obm-meter-track i{
+  flex:1;border-radius:3px;background:color-mix(in srgb,var(--st-hair-2) 90%,transparent);
+  height:9px;transition:height .45s cubic-bezier(.22,.8,.3,1),background .45s;
+  transition-delay:calc(var(--i,0) * 55ms);
+}
+.obm-pane[data-step="4"] .obm-meter-track i{height:calc(10px + var(--h,0) * 1px);background:color-mix(in srgb,var(--blue) calc(20% + var(--h,0) * 3%),var(--st-hair-2))}
+.obm-pane[data-step="4"] .obm-meter-track i:last-child{background:var(--q-gold)}
+.obm-meter-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px}
+.obm-meter-day{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--blue)}
+.obm-meter-chg{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--q-gold);text-align:right}
+.obm-meter-note{margin:9px 0 0;font-size:11px;line-height:1.45;color:var(--st-soft);transition:color .55s ease}
+
+/* ── step-conditional stage states ─────────────────────────────────────── */
+/* Account + Preferences: the desk is still asleep — no locks, a slow breath. */
+.obm-pane[data-step="1"] .obm-tile-lk,.obm-pane[data-step="2"] .obm-tile-lk{opacity:0}
+.obm-pane[data-step="1"] .obm-lat,.obm-pane[data-step="2"] .obm-lat{animation:obmBreathe 7s ease-in-out infinite}
+@keyframes obmBreathe{0%,100%{opacity:.84}50%{opacity:1}}
+/* Done: the desk is lit */
+.obm-pane[data-step="5"] .obm-desk{border-color:color-mix(in srgb,var(--blue) 34%,var(--st-hair))}
+
+/* park every ambient loop: tab hidden, sheet closed, or 30s idle */
+.obm-pane.obm-park .obm-beam,.obm-pane.obm-park .obm-tape-in,.obm-pane.obm-park .obm-lat,
+.obm-pane.obm-park .obm-hero-ring,.obm-pane.obm-park .obm-plate-st i{animation-play-state:paused}
 
 /* ══════════════════════ RIGHT — form pane ══════════════════════════════════ */
-.obm-form-pane{position:relative;display:flex;flex-direction:column;min-width:0;background:var(--panel)}
+/* min-height:0 is load-bearing: without it this grid item sizes to its content,
+   pushes .obm-foot past the sheet's clipped bottom edge and the primary button
+   becomes unreachable (the Plan step could not be completed at all). */
+.obm-form-pane{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--panel)}
 
-/* slim numbered stepper */
-.obm-steps{display:flex;align-items:center;gap:6px;padding:26px var(--obm-pad) 0;flex-wrap:wrap}
-.obm-step{display:flex;align-items:center;gap:6px;font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.08em;color:var(--faint);white-space:nowrap}
-.obm-step .obm-step-n{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;border:1px solid var(--hair-2);background:#fff;font-size:9.5px;color:var(--muted);transition:background .18s,color .18s,border-color .18s}
-.obm-step.obm-cur{color:var(--blue-ink)}
-.obm-step.obm-cur .obm-step-n{background:var(--blue);border-color:var(--blue);color:#fff}
-.obm-step.obm-done .obm-step-n{background:var(--blue-wash);border-color:var(--blue);color:var(--blue)}
-.obm-step.obm-done .obm-step-ck{display:block}
-.obm-step .obm-step-ck{display:none;width:11px;height:11px;stroke:var(--blue);stroke-width:3;fill:none}
-.obm-step-sep{width:14px;height:1px;background:var(--hair-2);flex:none}
-.obm-step.obm-hidden{display:none}
+/* ── stepper: a progress rail, not five loose chips ─────────────────────── */
+/* the right padding is the close button's landing zone — the rail may never run under it */
+.obm-steps{display:flex;align-items:center;gap:0;padding:25px 58px 0 var(--obm-pad);min-width:0}
+.obm-step{display:flex;align-items:center;gap:8px;min-width:0;flex:none}
+.obm-step-n{
+  position:relative;display:grid;place-items:center;flex:none;
+  width:27px;height:27px;border-radius:50%;
+  border:1.5px solid var(--hair-2);background:#fff;
+  font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;line-height:1;
+  color:var(--faint);
+  transition:background .28s,color .28s,border-color .28s,box-shadow .28s;
+}
+.obm-step-num{transition:opacity .18s}
+.obm-step-ck{position:absolute;width:12px;height:12px;stroke:currentColor;stroke-width:3;fill:none;opacity:0;transform:scale(.6);transition:opacity .22s,transform .22s}
+.obm-step-lbl{font-size:11px;font-weight:600;letter-spacing:.004em;color:var(--faint);white-space:nowrap;transition:color .28s}
+.obm-step.obm-cur .obm-step-n{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-wash)}
+.obm-step.obm-cur .obm-step-lbl{color:var(--ink);font-weight:650}
+.obm-step.obm-past .obm-step-n{background:var(--blue-wash);border-color:var(--blue);color:var(--blue)}
+.obm-step.obm-past .obm-step-num{opacity:0}
+.obm-step.obm-past .obm-step-ck{opacity:1;transform:none}
+.obm-step.obm-past .obm-step-lbl{color:var(--muted)}
+.obm-step-sep{flex:1 1 auto;min-width:10px;height:2px;margin:0 9px;border-radius:2px;background:var(--hair-2);overflow:hidden}
+.obm-step-sep i{display:block;height:100%;width:100%;background:var(--blue);border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.22,.8,.3,1)}
+.obm-step-sep.obm-on i{transform:scaleX(1)}
+/* tighter sheets: only the step you are on keeps its name */
+@media (max-width:1120px){
+  .obm-step:not(.obm-cur) .obm-step-lbl{display:none}
+}
+/* compact rail — phones: one bar + "3 of 5 · Plan" */
+.obm-steps-mini{display:none;padding:18px 20px 0}
+.obm-mini-bar{height:3px;border-radius:3px;background:var(--hair-2);overflow:hidden}
+.obm-mini-bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .45s cubic-bezier(.22,.8,.3,1)}
+.obm-mini-lbl{display:flex;align-items:baseline;gap:7px;margin-top:9px;font-size:12px;color:var(--muted)}
+.obm-mini-lbl b{font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;letter-spacing:.12em;color:var(--blue)}
+.obm-mini-lbl span{font-weight:650;color:var(--ink)}
 
-/* the scrolling content region */
-.obm-body{flex:1;overflow-y:auto;padding:22px var(--obm-pad) 8px;-webkit-overflow-scrolling:touch}
-.obm-body::-webkit-scrollbar{width:9px}
-.obm-body::-webkit-scrollbar-thumb{background:var(--hair-2);border-radius:6px;border:2px solid var(--panel)}
+/* ── the scrolling content region ──────────────────────────────────────── */
+.obm-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:22px var(--obm-pad) 14px;-webkit-overflow-scrolling:touch}
+.obm-body::-webkit-scrollbar{width:10px}
+.obm-body::-webkit-scrollbar-thumb{background:var(--hair-2);border-radius:6px;border:3px solid var(--panel)}
+.obm-body::-webkit-scrollbar-thumb:hover{background:#c9d2e0}
 
 /* one motion moment: step crossfade + 6px rise */
-.obm-fade{animation:obm-fade .18s cubic-bezier(.22,.8,.3,1)}
+.obm-fade{animation:obm-fade .2s cubic-bezier(.22,.8,.3,1)}
 @keyframes obm-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.obm-h1{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.08;font-size:1.55rem;color:var(--ink);margin:0}
+.obm-h1{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.022em;line-height:1.08;font-size:1.55rem;color:var(--ink);margin:0}
 .obm-h1:focus{outline:none}
-.obm-sub{color:var(--muted);font-size:14px;line-height:1.55;margin:8px 0 20px}
+.obm-sub{color:var(--muted);font-size:13.5px;line-height:1.55;margin:8px 0 20px}
 
 /* ── forms ───────────────────────────────────────────────────────────────── */
 .obm-form{display:flex;flex-direction:column}
@@ -199,7 +399,7 @@
 /* quiet secondary — transparent, muted, hover blue-wash */
 .obm-quiet{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;
-  min-height:40px;border-radius:10px;padding:0 16px;background:transparent;border:0;
+  min-height:42px;border-radius:10px;padding:0 16px;background:transparent;border:0;
   font-weight:600;font-size:13.5px;color:var(--muted);transition:background .15s,color .15s;
 }
 .obm-quiet:hover:not(:disabled){background:var(--blue-wash);color:var(--blue-ink)}
@@ -218,46 +418,58 @@
 .obm-terms a:hover{color:var(--ink)}
 
 /* ── preferences: chips + theme thumbnails ───────────────────────────────── */
-.obm-section-lbl{font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
-.obm-section-lbl:first-child{margin-top:4px}
+.obm-section-lbl{font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.obm-section-lbl:first-child{margin-top:2px}
 .obm-chips{display:flex;flex-wrap:wrap;gap:8px}
+/* The check slot is ALWAYS in the layout (an empty ring when off) — selecting a
+   chip may never change its box, or every click reflows the step ("the stutter"). */
 .obm-chip{
-  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--hair-2);border-radius:10px;
-  background:#fff;padding:9px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);
-  box-shadow:var(--sh-card);transition:border-color .15s,background .15s,color .15s,box-shadow .15s;
+  display:inline-flex;align-items:center;gap:8px;border:1px solid var(--hair-2);border-radius:11px;
+  background:#fff;padding:10px 15px;font-size:13px;font-weight:600;color:var(--ink-soft);
+  min-height:42px;box-shadow:var(--sh-card);
+  transition:border-color .16s,background .16s,color .16s,box-shadow .16s,transform .12s;
 }
 .obm-chip:hover{border-color:var(--faint)}
+.obm-chip:active{transform:scale(.985)}
 .obm-chip.obm-on{border-color:var(--blue);background:var(--blue-wash);color:var(--blue-ink)}
-.obm-chip-ck{width:14px;height:14px;stroke:var(--blue);stroke-width:3;fill:none;flex:none}
+.obm-chip-box{
+  position:relative;flex:none;width:16px;height:16px;border-radius:50%;
+  border:1.5px solid var(--hair-2);background:#fff;display:grid;place-items:center;
+  transition:border-color .18s,background .18s;
+}
+.obm-chip.obm-on .obm-chip-box{border-color:var(--blue);background:var(--blue)}
+.obm-chip-box svg{width:9px;height:9px;stroke:#fff;stroke-width:3.6;fill:none;opacity:0;transform:scale(.5);transition:opacity .16s,transform .18s cubic-bezier(.3,1.4,.5,1)}
+.obm-chip.obm-on .obm-chip-box svg{opacity:1;transform:none}
 
 .obm-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .obm-thumb{
-  position:relative;display:flex;flex-direction:column;gap:8px;text-align:left;
+  position:relative;display:flex;flex-direction:column;gap:9px;text-align:left;
   border:1px solid var(--hair-2);border-radius:12px;background:#fff;padding:10px;
-  box-shadow:var(--sh-card);transition:border-color .15s,box-shadow .15s;
+  box-shadow:var(--sh-card);transition:border-color .16s,box-shadow .16s,transform .12s;
 }
 .obm-thumb:hover{border-color:var(--faint)}
+.obm-thumb:active{transform:scale(.99)}
 .obm-thumb.obm-on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
-.obm-thumb-prev{height:52px;border-radius:8px;overflow:hidden;border:1px solid var(--hair)}
+.obm-thumb-prev{height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--hair)}
 .obm-thumb-prev.obm-light{background:#f7f8fa}
 .obm-thumb-prev.obm-dark{background:#0b0e14}
-.obm-thumb-prev.obm-auto{background:linear-gradient(120deg,#f7f8fa 0 50%,#0b0e14 50% 100%)}
+.obm-thumb-prev.obm-auto{background:linear-gradient(90deg,#f7f8fa 0 50%,#0b0e14 50% 100%)}
 .obm-thumb-prev i{display:block;height:5px;border-radius:2px;margin:8px 8px 0}
 .obm-thumb-prev.obm-light i{background:#dfe3e9}.obm-thumb-prev.obm-light i:nth-child(2){width:60%;background:#cdd6e4}
 .obm-thumb-prev.obm-dark i{background:#212a3a}.obm-thumb-prev.obm-dark i:nth-child(2){width:60%;background:#2c3750}
-.obm-thumb-prev.obm-auto i{background:linear-gradient(90deg,#dfe3e9 0 50%,#212a3a 50% 100%)}
-.obm-thumb-prev.obm-auto i:nth-child(2){width:60%}
+.obm-thumb-prev.obm-auto i{background:linear-gradient(90deg,#dfe3e9 0 50%,#2c3750 50% 100%)}
+.obm-thumb-prev.obm-auto i:nth-child(2){width:60%;background:linear-gradient(90deg,#cdd6e4 0 83%,#2c3750 83% 100%)}
 .obm-thumb-foot{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .obm-thumb-nm{font-size:12.5px;font-weight:600;color:var(--ink)}
-.obm-radio{width:17px;height:17px;flex:none;border-radius:50%;border:1.5px solid var(--hair-2);background:#fff;display:grid;place-items:center;transition:border-color .15s,background .15s}
+.obm-radio{width:18px;height:18px;flex:none;border-radius:50%;border:1.5px solid var(--hair-2);background:#fff;display:grid;place-items:center;transition:border-color .16s,background .16s}
 .obm-thumb.obm-on .obm-radio,.obm-plan.obm-on .obm-radio{border-color:var(--blue);background:var(--blue)}
-.obm-radio svg{width:10px;height:10px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0;transition:opacity .12s}
-.obm-thumb.obm-on .obm-radio svg,.obm-plan.obm-on .obm-radio svg{opacity:1}
-.obm-caption{margin:9px 0 0;font-size:11.5px;color:var(--faint);line-height:1.5}
+.obm-radio svg{width:10px;height:10px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0;transform:scale(.5);transition:opacity .14s,transform .18s cubic-bezier(.3,1.4,.5,1)}
+.obm-thumb.obm-on .obm-radio svg,.obm-plan.obm-on .obm-radio svg{opacity:1;transform:none}
+.obm-caption{margin:10px 0 0;font-size:11.5px;color:var(--faint);line-height:1.5}
 
 /* ── plan step ───────────────────────────────────────────────────────────── */
-.obm-toggle{display:inline-flex;margin:2px 0 18px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:#fff;box-shadow:var(--sh-card)}
-.obm-toggle button{padding:7px 16px;border-radius:99px;color:var(--muted);transition:background .15s,color .15s}
+.obm-toggle{display:inline-flex;margin:2px 0 16px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:#fff;box-shadow:var(--sh-card)}
+.obm-toggle button{padding:8px 16px;border-radius:99px;color:var(--muted);transition:background .18s,color .18s}
 .obm-toggle button[aria-pressed="true"]{background:var(--blue);color:#fff}
 .obm-toggle .obm-save{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.05em;margin-left:5px;color:#bff2cf}
 .obm-toggle button[aria-pressed="false"] .obm-save{color:var(--q-green)}
@@ -266,9 +478,10 @@
 .obm-plan{
   position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
   border:1px solid var(--hair-2);border-radius:12px;background:#fff;padding:15px 16px;text-align:left;
-  box-shadow:var(--sh-card);transition:border-color .15s,box-shadow .15s;
+  box-shadow:var(--sh-card);transition:border-color .16s,box-shadow .16s,transform .12s;
 }
 .obm-plan:hover{border-color:var(--faint)}
+.obm-plan:active{transform:scale(.995)}
 .obm-plan.obm-on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
 .obm-plan.obm-hot.obm-on{background:linear-gradient(150deg,rgba(15,157,143,.05),rgba(40,95,255,.055) 55%,rgba(120,98,224,.045)),#fff}
 .obm-plan-l{min-width:0}
@@ -284,24 +497,26 @@
 }
 html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 
-/* plan summary switcher panel */
-.obm-summary{margin-top:14px;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:15px 16px}
-.obm-sum-hd{font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
+/* plan readout — what the stage just lit up. Three lines, never a wall: the
+   full feature story is the lattice on the left, not a list on the right. */
+.obm-summary{margin-top:14px;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:14px 16px}
+.obm-sum-hd{display:flex;align-items:center;gap:7px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
+.obm-sum-hd::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor;flex:none}
 .obm-sum-list{list-style:none;margin:0;padding:0}
-.obm-sum-list li{position:relative;padding:6px 0 6px 22px;font-size:13px;color:var(--ink-soft);line-height:1.45}
-.obm-sum-list li::before{content:"";position:absolute;left:2px;top:12px;width:9px;height:2px;border-radius:2px;background:var(--blue)}
-.obm-sum-list li b{color:var(--ink);font-weight:600}
-.obm-sum-miss{margin-top:12px;border-top:1px dashed var(--hair-2);padding-top:11px}
+.obm-sum-list li{position:relative;padding:5px 0 5px 22px;font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+.obm-sum-list li::before{content:"";position:absolute;left:2px;top:11px;width:9px;height:2px;border-radius:2px;background:var(--blue)}
+.obm-sum-list li b{color:var(--ink);font-weight:650}
+.obm-sum-miss{margin-top:11px;border-top:1px dashed var(--hair-2);padding-top:10px}
 .obm-sum-miss .obm-sum-mhd{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
-.obm-sum-mrow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;color:var(--muted)}
+.obm-sum-mrow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;color:var(--muted)}
 .obm-mchip{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;flex:none;white-space:nowrap}
 .obm-mchip.obm-ins{background:linear-gradient(90deg,#e7f3f1,#e9eefc) padding-box,linear-gradient(90deg,rgba(15,157,143,.6),rgba(40,95,255,.55)) border-box;color:#0d7f74}
 .obm-mchip.obm-pro{background:linear-gradient(90deg,#f0eafb,#f6efdf) padding-box,linear-gradient(90deg,rgba(120,98,224,.65),rgba(176,125,5,.55)) border-box;color:#6a48d7}
 .obm-mchip.obm-soon{background:var(--gold-wash);color:var(--q-gold);border-color:transparent}
-.obm-wedge{display:flex;align-items:center;gap:10px;margin-top:12px;border-top:1px dashed var(--hair-2);padding-top:11px;font-size:12.5px;color:var(--ink-soft)}
+.obm-wedge{display:flex;align-items:center;gap:10px;margin-top:11px;border-top:1px dashed var(--hair-2);padding-top:10px;font-size:12.5px;color:var(--ink-soft)}
 .obm-wedge b{color:var(--ink);font-weight:700}
-.obm-wedge .obm-wedge-cta{margin-left:auto}
-.obm-fineprint{margin:11px 0 0;font-size:11px;color:var(--faint);line-height:1.5}
+.obm-wedge .obm-wedge-cta{margin-left:auto;flex:none}
+.obm-fineprint{margin:10px 0 0;font-size:11px;color:var(--faint);line-height:1.5}
 .obm-compare{margin:14px 0 2px;display:inline-flex;align-items:center;gap:5px}
 
 /* ── billing (order card + stripe host) ──────────────────────────────────── */
@@ -356,32 +571,108 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-done-line b{color:var(--ink);font-weight:600}
 
 /* ── pinned footer action bar ────────────────────────────────────────────── */
-.obm-foot{display:flex;align-items:center;gap:12px;padding:14px var(--obm-pad);border-top:1px solid var(--hair);background:var(--panel)}
+.obm-foot{
+  display:flex;align-items:center;gap:12px;flex:none;
+  padding:14px var(--obm-pad);border-top:1px solid var(--hair);background:var(--panel);
+  transition:box-shadow .2s ease;
+}
+/* raised while the body still has content below the fold */
+.obm-foot.obm-lift{box-shadow:0 -12px 26px -20px rgba(18,26,45,.55)}
 .obm-foot-spacer{flex:1}
 .obm-back{display:inline-flex;align-items:center;gap:5px;background:none;border:0;font:inherit;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer;transition:color .15s}
 .obm-back:hover{color:var(--ink)}
-.obm-foot .obm-btn,.obm-foot .obm-btn-out{width:auto;min-width:160px}
+.obm-foot .obm-btn,.obm-foot .obm-btn-out{width:auto;min-width:168px}
 .obm-dots{display:flex;gap:6px}
 .obm-dots i{width:6px;height:6px;border-radius:50%;background:var(--hair-2);transition:background .18s,width .18s}
 .obm-dots i.obm-on{background:var(--blue);width:16px;border-radius:3px}
 
-/* ══════════════════════ mobile: full-screen sheet ══════════════════════════ */
-@media (max-width:720px){
+/* ══════════════════════ mobile: full-screen sheet ══════════════════════════
+   The stage does not disappear on a phone — it becomes a band above the form
+   that keeps the nameplate and, on the Plan and Billing steps, the tier
+   lattice, so "what am I buying" stays a visual answer there too.          */
+@media (max-width:860px){
   .obm-scrim{padding:0}
-  .obm-sheet{grid-template-columns:1fr;width:100%;height:100%;max-height:100%;border-radius:0;border:0}
-  /* left pane collapses to a slim brand band */
-  .obm-pane{padding:16px 20px;border-right:0;border-bottom:1px solid var(--hair);flex-direction:row;align-items:center;gap:14px}
-  .obm-pane::before{-webkit-mask-image:none;mask-image:none;opacity:.7}
-  .obm-pane-copy{margin:0;flex:1;max-width:none}
-  .obm-pane-h{font-size:1.05rem;line-height:1.15}
-  .obm-pane-sub,.obm-desk{display:none}
-  .obm-steps{padding-top:16px}
-  .obm-body{padding:18px 20px 8px}
-  .obm-foot{padding:12px 20px calc(12px + env(safe-area-inset-bottom))}
-  .obm-foot .obm-btn,.obm-foot .obm-btn-out{min-width:120px}
-  .obm-h1{font-size:1.35rem}
-  .obm-close{top:16px;right:16px}
+  .obm-sheet{
+    grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);
+    width:100%;height:100%;max-height:100%;border-radius:0;border:0;
+  }
+  .obm-close{top:calc(10px + env(safe-area-inset-top));right:12px;width:32px;height:32px}
+  /* on a phone the close button sits ON the stage — follow the stage's skin */
+  .obm-sheet:has(.obm-pane[data-tone="dark"]) .obm-close{background:rgba(21,28,44,.88);border-color:#313c58;color:#a3b1c8}
+  .obm-sheet:has(.obm-pane[data-tone="dark"]) .obm-close:hover{background:#151c2c;color:#eaf0fb}
+
+  .obm-pane{
+    padding:calc(14px + env(safe-area-inset-top)) 16px 12px;
+    border-right:0;border-bottom:1px solid var(--hair);
+    max-height:42vh;
+  }
+  .obm-pane::before{-webkit-mask-image:none;mask-image:none;opacity:.85}
+  .obm-beam{display:none}                    /* one less loop on battery */
+  .obm-brand{font-size:12px;padding-right:44px}
+  .obm-brand svg{width:24px;height:24px}
+  .obm-pane-copy{margin-top:12px;max-width:none;padding-right:38px}
+  .obm-pane-h{font-size:1.16rem;line-height:1.14}
+  .obm-pane-sub{display:none}
+  .obm-stage{margin-top:11px}
+  .obm-desk{width:calc(100% + 16px);border-radius:12px 0 0 12px}
+  .obm-hero{height:74px;margin:9px 10px 0}
+  .obm-hero-note,.obm-hero-zone{display:none}
+  .obm-lat{padding:9px 0 8px 10px;gap:5px}
+  .obm-row{grid-template-columns:42px repeat(3,minmax(0,1fr));gap:5px;padding-left:7px}
+  .obm-row-lbl{font-size:7px;letter-spacing:.09em}
+  .obm-tile{padding:7px;border-radius:8px;gap:4px}
+  .obm-tile-l{font-size:8px}
+  .obm-tile-i,.obm-tile-i svg{width:13px;height:13px}
+  .obm-tile-lk,.obm-tile-lk svg{width:9px;height:9px;top:6px;right:6px}
+  .obm-tape{padding:6px 0}
+  .obm-tape-in span{font-size:8px;padding:0 10px}
+  .obm-meter{right:16px;padding:11px 13px 14px}
+  .obm-meter-track{height:22px}
+  .obm-meter-note{font-size:10.5px}
+  /* on the steps where the lattice isn't the point, the desk collapses to the
+     nameplate + chart and the form gets the height back */
+  .obm-pane:not([data-step="3"]):not([data-step="4"]) .obm-lat,
+  .obm-pane:not([data-step="3"]):not([data-step="4"]) .obm-tape{display:none}
+  .obm-pane[data-step="3"],.obm-pane[data-step="4"]{max-height:50vh}
+  .obm-pane[data-step="3"] .obm-hero,.obm-pane[data-step="4"] .obm-hero{display:none}
+
+  .obm-steps{display:none}
+  .obm-steps-mini{display:block}
+  .obm-body{padding:16px 20px 12px}
+  .obm-foot{padding:12px 20px calc(12px + env(safe-area-inset-bottom));gap:8px}
+  .obm-foot .obm-btn,.obm-foot .obm-btn-out{min-width:0;flex:1 1 auto;padding:0 14px}
+  .obm-foot .obm-quiet{width:auto;flex:none;padding:0 12px}
+  .obm-dots{display:none}
+  .obm-h1{font-size:1.3rem}
   .obm-row2{grid-template-columns:1fr}
+  .obm-chip{flex:1 1 auto;justify-content:flex-start;min-width:44%}
+  .obm-plan{padding:14px}
+  .obm-plan-nm{font-size:15px}
+  .obm-plan-price{font-size:21px}
+  .obm-toggle{width:100%;justify-content:center}
+}
+/* very short viewports (landscape phones): the form wins every pixel, and the
+   only stage worth its height is the Plan step's lattice */
+@media (max-width:860px) and (max-height:540px){
+  .obm-pane{max-height:32vh;padding-top:10px}
+  .obm-pane-copy{display:none}
+  .obm-pane:not([data-step="3"]) .obm-stage{display:none}
+  .obm-pane[data-step="3"]{max-height:58vh}
+  .obm-pane[data-step="3"] .obm-tape,.obm-pane[data-step="4"] .obm-tape{display:none}
+  .obm-lat{padding:7px 0 6px 10px;gap:4px}
+  .obm-tile{padding:5px 7px;gap:3px}
+  .obm-tile-l{font-size:7.5px;-webkit-line-clamp:1}
+  .obm-plate{padding-top:7px;padding-bottom:7px}
+}
+@media (max-width:420px){
+  .obm-body{padding:14px 16px 10px}
+  .obm-foot{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .obm-steps-mini{padding:14px 16px 0}
+  .obm-thumbs{gap:7px}
+  .obm-thumb{padding:8px;gap:7px}
+  .obm-thumb-prev{height:44px}
+  .obm-thumb-nm{font-size:11.5px}
+  .obm-plan-price{font-size:19px}
 }
 
 /* ══════════════════════ accessibility / reduced motion ═════════════════════ */
@@ -390,8 +681,15 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 @media (prefers-reduced-motion:reduce){
-  .obm-scrim,.obm-sheet,.obm-fade,.obm-close,.obm-btn,.obm-btn-out,.obm-chip,.obm-plan,.obm-thumb,.obm-quiet,.obm-dots i{transition:opacity .12s ease !important;animation:none !important;transform:none !important}
-  .obm-draw .obm-desk-line,.obm-draw .obm-desk-area,.obm-desk-ring{animation:none !important}
+  .obm-scrim,.obm-sheet,.obm-fade,.obm-close,.obm-btn,.obm-btn-out,.obm-chip,.obm-plan,.obm-thumb,.obm-quiet,.obm-dots i,
+  .obm-pane-copy.obm-swap .obm-pane-h,.obm-pane-copy.obm-swap .obm-pane-sub{
+    transition:opacity .12s ease !important;animation:none !important;transform:none !important;
+  }
+  .obm-beam,.obm-tape-in,.obm-lat,.obm-hero-ring,.obm-plate-st i,
+  .obm-draw .obm-hero-line,.obm-draw .obm-hero-area,.obm-tile.obm-flare,.obm-tile.obm-flare::after{animation:none !important}
+  .obm-beam{display:none}
+  .obm-tile,.obm-row::before,.obm-meter,.obm-meter-track i{transition:opacity .12s ease,background .12s ease,border-color .12s ease !important}
+  .obm-meter{transform:none}
   .obm-scrim.obm-open .obm-sheet{transform:none}
   .obm-spin{animation:obm-spin .7s linear infinite !important}
 }

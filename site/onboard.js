@@ -67,14 +67,36 @@
     paneDoneH:     ["Welcome to the desk.", "欢迎来到你的台席。"],
     paneDoneS:     ["Everything is live. Open the dashboard and pick up where the market is right now.", "一切已就绪。打开看板，从当下的市场接手。"],
 
-    // desk pane (the materializing mini-desk in the left rail)
+    // ── the stage (left column): nameplate, chart, tier lattice, trial meter ──
     asmTrial:  ["7-DAY TRIAL", "7天试用"],
     deskYour:  ["YOUR DESK", "你的工作台"],
     deskTf:    ["DAILY", "日线"],
     deskZone:  ["ENTRY ZONE", "入场区间"],
-    capRead:   ["Daily read · 6 signals a day", "每日研判 · 每天 6 条信号"],
-    capFlow:   ["Intraday options flow", "日内期权流"],
-    capAI:     ["Pro AI research dives", "Pro AI 深度研究"],
+    deskSample:["SAMPLE VIEW", "示意视图"],
+    deskSignal:["BUY SIGNAL", "买入信号"],
+    plateSetup:["SETTING UP", "配置中"],
+    plateLive: ["LIVE", "已上线"],
+    // lattice rows = the three tiers, so the picture IS the pricing truth
+    rowFree:   ["FREE", "免费版"],
+    rowInsider:["INSIDER", "INSIDER"],
+    rowPro:    ["PRO", "PRO"],
+    tlRead:    ["Daily market read", "每日市场研判"],
+    tlSignals: ["Stock signals", "股票信号"],
+    tlCharts:  ["Live charts", "实时图表"],
+    tlFlow:    ["Options flow", "期权资金流"],
+    tlDesks:   ["Insider & Congress", "内部人与国会"],
+    tlFlash:   ["Unlimited Flash AI", "无限 Flash AI"],
+    tlReports: ["Research reports", "研究报告"],
+    // the quota, not the feature: Insider already includes 20 dives a month, so a
+    // bare "Pro AI dives" lock on this row would overstate what Pro adds
+    tlDives:   ["50 AI dives a month", "每月 50 次 AI 深度分析"],
+    tlBots:    ["Bot portfolios", "机器人组合"],
+    meterHd:   ["7-DAY FREE TRIAL", "7 天免费试用"],
+    meterToday:["TODAY · YOU'RE IN", "今天 · 已开通"],
+    meterChg:  ["FIRST CHARGE __D__", "首次扣款 __D__"],
+    meterNote: ["Cancel any time before then and you pay nothing.", "在此之前随时取消，分文不收。"],
+    // compact mobile stepper
+    stepOf:    ["Step __N__ of __T__", "第 __N__ 步，共 __T__ 步"],
 
     // stepper
     stAccount: ["Account", "账户"],
@@ -331,8 +353,8 @@
   function svgCheck(cls) { return '<svg class="' + (cls || "") + '" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>'; }
   var GLYPH = '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="obmTile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/><stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient><linearGradient id="obmSheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient><radialGradient id="obmGlow" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient><linearGradient id="obmInk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient></defs><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmTile)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmGlow)"/><rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#obmSheen)"/><rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3"><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/><path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#obmInk)"/></g></svg>';
   var GOOGLE = '<svg viewBox="0 0 18 18" width="16" height="16" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
-  var LOCK = '<svg class="obm-desk-lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-  // The desk pane's annotated mini-chart: an uptrend that pulls back INTO the
+  var LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  // The stage's annotated mini-chart: an uptrend that pulls back INTO the
   // buy-zone band and resumes — the product's own entry story, not a skeleton.
   // pathLength=1 lets CSS draw the line with a single dashoffset animation.
   var DESK_CHART =
@@ -341,20 +363,76 @@
     '<linearGradient id="obmDL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#285fff"/><stop offset="1" stop-color="#7862e0"/></linearGradient>' +
     '<linearGradient id="obmDA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#285fff" stop-opacity=".14"/><stop offset="1" stop-color="#285fff" stop-opacity="0"/></linearGradient>' +
     '</defs>' +
-    '<g stroke="rgba(28,36,48,.06)" stroke-width="1"><path d="M0 33H300"/><path d="M0 64H300"/><path d="M0 95H300"/></g>' +
+    '<g stroke="currentColor" stroke-opacity=".07" stroke-width="1"><path d="M0 33H300"/><path d="M0 64H300"/><path d="M0 95H300"/></g>' +
     '<rect x="0" y="78" width="300" height="26" fill="rgba(40,95,255,.07)"/>' +
     '<path d="M0 78H300" stroke="rgba(40,95,255,.30)" stroke-width="1" stroke-dasharray="3 4" fill="none"/>' +
     '<path d="M0 104H300" stroke="rgba(40,95,255,.30)" stroke-width="1" stroke-dasharray="3 4" fill="none"/>' +
-    '<path class="obm-desk-area" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27 L292 124 L8 124 Z" fill="url(#obmDA)"/>' +
-    '<path class="obm-desk-line" pathLength="1" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27" fill="none" stroke="url(#obmDL)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
-    '<circle class="obm-desk-pt" cx="292" cy="27" r="3.2" fill="#285fff"/>' +
-    '<circle class="obm-desk-ring" cx="292" cy="27" r="3.2" fill="none" stroke="#285fff" stroke-width="1.4"/>' +
+    '<path class="obm-hero-area" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27 L292 124 L8 124 Z" fill="url(#obmDA)"/>' +
+    '<path class="obm-hero-line" pathLength="1" d="M8 68 L40 60 L66 66 L92 46 L118 52 L148 84 L172 90 L198 68 L232 50 L262 40 L292 27" fill="none" stroke="url(#obmDL)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="292" cy="27" r="3.2" fill="#285fff"/>' +
+    '<circle class="obm-hero-ring" cx="292" cy="27" r="3.2" fill="none" stroke="#285fff" stroke-width="1.4"/>' +
     '</svg>';
-  var DESK =
-    '<div class="obm-desk-plate"><span class="obm-desk-ava" data-desk="ava">M</span><span class="obm-desk-name" data-desk="name"></span><span class="obm-desk-trial" data-desk="trial" hidden></span></div>' +
-    '<div class="obm-desk-chart"><div class="obm-desk-tkr"><b data-desk="tkr">SPY</b><span class="obm-desk-tf" data-k="deskTf"></span></div>' + DESK_CHART + '<span class="obm-desk-zone" data-k="deskZone"></span></div>' +
-    '<div class="obm-desk-chips" data-desk="mkts"></div>' +
-    '<div class="obm-desk-caps" data-desk="caps"></div>';
+
+  // ── the tier lattice ────────────────────────────────────────────────────────
+  // Nine capability tiles in three rows, and the ROWS ARE THE TIERS. Picking a
+  // plan lights every row up to it, in a staggered cascade; the rows above your
+  // plan keep their lock. The picture and the price list can never disagree,
+  // because they are generated from the same table.
+  var TILE_ICON = {
+    read:    '<path d="M4 19h16"/><path d="M4 15l4.5-5 3.5 3 4-6 4 5"/>',
+    signals: '<path d="M12 3v3"/><path d="M12 18v3"/><circle cx="12" cy="12" r="4"/><path d="M3 12h3"/><path d="M18 12h3"/>',
+    charts:  '<path d="M7 4v16"/><rect x="4.5" y="8" width="5" height="7" rx="1"/><path d="M17 4v16"/><rect x="14.5" y="6" width="5" height="9" rx="1"/>',
+    flow:    '<path d="M3 9h12l-3-3"/><path d="M21 15H9l3 3"/>',
+    desks:   '<path d="M3 20h18"/><path d="M5 20V10"/><path d="M10 20V10"/><path d="M14 20V10"/><path d="M19 20V10"/><path d="M3.5 10 12 4l8.5 6"/>',
+    flash:   '<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>',
+    reports: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12h6"/><path d="M9 16h4"/>',
+    dives:   '<path d="M12 3 4 8l8 5 8-5z"/><path d="M4 14l8 5 8-5"/>',
+    bots:    '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>'
+  };
+  var LATTICE = [
+    { tier: "free",    lbl: "rowFree",    tiles: [["read", "tlRead"], ["signals", "tlSignals"], ["charts", "tlCharts"]] },
+    { tier: "insider", lbl: "rowInsider", tiles: [["flow", "tlFlow"], ["desks", "tlDesks"], ["flash", "tlFlash"]] },
+    { tier: "pro",     lbl: "rowPro",     tiles: [["reports", "tlReports"], ["dives", "tlDives"], ["bots", "tlBots"]] }
+  ];
+  // which tile each "what you trade" answer pins — the pick has a visible consequence
+  var TRADE_PIN = { stocks: "signals", options: "flow", crypto: "charts" };
+
+  function latticeHtml() {
+    var out = "", i = 0;
+    LATTICE.forEach(function (row) {
+      out += '<div class="obm-row" data-tier="' + row.tier + '">' +
+             '<span class="obm-row-lbl" data-k="' + row.lbl + '">' + tx(row.lbl) + '</span>';
+      row.tiles.forEach(function (t) {
+        out += '<div class="obm-tile" data-tile="' + t[0] + '" style="--i:' + (i++) + '">' +
+               '<span class="obm-tile-i"><svg viewBox="0 0 24 24" aria-hidden="true">' + TILE_ICON[t[0]] + '</svg></span>' +
+               '<span class="obm-tile-l" data-k="' + t[1] + '">' + tx(t[1]) + '</span>' +
+               '<span class="obm-tile-lk">' + LOCK + '</span></div>';
+      });
+      out += '</div>';
+    });
+    return out;
+  }
+  function meterHtml() {
+    var ticks = "";
+    for (var d = 0; d < 7; d++) ticks += '<i style="--i:' + d + ';--h:' + (d * 3) + '"></i>';
+    return '<p class="obm-meter-hd" data-k="meterHd">' + tx("meterHd") + '</p>' +
+           '<div class="obm-meter-track">' + ticks + '</div>' +
+           '<div class="obm-meter-foot"><span class="obm-meter-day" data-k="meterToday">' + tx("meterToday") + '</span>' +
+           '<span class="obm-meter-chg" data-stage="charge"></span></div>' +
+           '<p class="obm-meter-note" data-k="meterNote">' + tx("meterNote") + '</p>';
+  }
+  function deskHtml() {
+    return '<div class="obm-plate"><span class="obm-plate-ava" data-stage="ava">M</span>' +
+           '<span class="obm-plate-nm" data-stage="name"></span>' +
+           '<span class="obm-plate-st" data-stage="state"><i></i><b data-stage="statetxt"></b></span></div>' +
+           '<div class="obm-hero"><div class="obm-hero-hd"><b data-stage="tkr">SPY</b>' +
+           '<span class="obm-hero-tf" data-k="deskTf"></span>' +
+           '<span class="obm-hero-sig" data-k="deskSignal"></span></div>' + DESK_CHART +
+           '<span class="obm-hero-zone" data-k="deskZone"></span>' +
+           '<span class="obm-hero-note" data-k="deskSample"></span></div>' +
+           '<div class="obm-lat">' + latticeHtml() + '</div>' +
+           '<div class="obm-tape"><div class="obm-tape-in" data-stage="tape"></div></div>';
+  }
 
   // ── build the sheet DOM once ──────────────────────────────────────────────
   function build() {
@@ -369,22 +447,33 @@
     close.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     close.addEventListener("click", requestClose);
 
-    // ── LEFT pane ──
-    var pane = h("div", "obm-pane");
+    // ── LEFT — the stage ──
+    var pane = h("div", "obm-pane", { "data-step": "1", "data-tone": "light", "aria-hidden": "true" });
+    pane.appendChild(h("div", "obm-beam"));
     var brand = h("div", "obm-brand"); brand.innerHTML = GLYPH + '<span>MASTERMIND</span>';
     var paneCopy = h("div", "obm-pane-copy");
     var paneH = h("h2", "obm-pane-h"); var paneS = h("p", "obm-pane-sub");
     paneCopy.appendChild(paneH); paneCopy.appendChild(paneS);
-    var asm = h("div", "obm-desk");
-    asm.innerHTML = DESK;
-    pane.appendChild(brand); pane.appendChild(paneCopy); pane.appendChild(asm);
+    var stage = h("div", "obm-stage");
+    var desk = h("div", "obm-desk");
+    desk.innerHTML = deskHtml();
+    var meter = h("div", "obm-meter");
+    meter.innerHTML = meterHtml();
+    stage.appendChild(desk); stage.appendChild(meter);
+    pane.appendChild(brand); pane.appendChild(paneCopy); pane.appendChild(stage);
 
     // ── RIGHT form pane ──
     var formPane = h("div", "obm-form-pane");
     var steps = h("div", "obm-steps");
+    var mini = h("div", "obm-steps-mini");
+    mini.innerHTML = '<div class="obm-mini-bar"><i style="width:0"></i></div>' +
+                     '<div class="obm-mini-lbl"><b data-stage="miniN"></b><span data-stage="miniT"></span></div>';
     var body = h("div", "obm-body");
     var foot = h("div", "obm-foot");
-    formPane.appendChild(steps); formPane.appendChild(body); formPane.appendChild(foot);
+    formPane.appendChild(steps); formPane.appendChild(mini); formPane.appendChild(body); formPane.appendChild(foot);
+    // footer lifts while there is still content below the fold (the Plan step's
+    // list used to be silently clipped — now it is visibly scrollable)
+    body.addEventListener("scroll", syncFootLift, { passive: true });
 
     sheet.appendChild(close); sheet.appendChild(pane); sheet.appendChild(formPane);
     scrim.appendChild(sheet);
@@ -392,8 +481,20 @@
 
     // scrim click closes (but not clicks inside the sheet)
     scrim.addEventListener("mousedown", function (e) { if (e.target === scrim) requestClose(); });
+    // any interaction wakes the stage's ambient motion back up (see nudgeIdle)
+    sheet.addEventListener("pointerdown", nudgeIdle, { passive: true });
+    sheet.addEventListener("keydown", nudgeIdle, { passive: true });
 
-    el = { scrim: scrim, sheet: sheet, pane: pane, paneH: paneH, paneS: paneS, asm: asm, steps: steps, body: body, foot: foot };
+    el = { scrim: scrim, sheet: sheet, pane: pane, paneH: paneH, paneS: paneS, paneCopy: paneCopy,
+           desk: desk, meter: meter, steps: steps, mini: mini, body: body, foot: foot };
+
+    // Ambient motion is a battery cost, not a feature: park every loop the
+    // moment the tab is hidden (same law as the start.html hero guard).
+    try {
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) parkStage(true); else if (S.open) parkStage(false);
+      });
+    } catch (e) {}
 
     // subscribe to language changes → re-apply our subtree
     if (window.LANG && typeof window.LANG.onChange === "function") window.LANG.onChange(applyLang);
@@ -418,8 +519,9 @@
     var keyed = el.sheet.querySelectorAll("[data-k]");
     for (var j = 0; j < keyed.length; j++) keyed[j].innerHTML = tx(keyed[j].getAttribute("data-k"));
     el.sheet.setAttribute("aria-label", tx("dialogLbl"));
-    // the desk nameplate builds its possessive per-language in code, not via [data-k]
-    renderAssembly();
+    // the nameplate builds its possessive per-language in code, not via [data-k]
+    renderStage();
+    renderMini();
   }
 
   // helper: create a node whose text is a LEX key, re-applied on lang change
@@ -439,17 +541,34 @@
     var shown = defs.filter(function (d) { return !(d.paidOnly && !paidSelected()); });
     shown.forEach(function (d, idx) {
       var s = h("div", "obm-step");
+      var done = isStepDone(d.n);
       if (d.n === S.step) s.classList.add("obm-cur");
-      else if (isStepDone(d.n)) s.classList.add("obm-done");
-      var num = ("0" + d.n).slice(-2);
-      s.innerHTML = '<span class="obm-step-n">' + svgCheck("obm-step-ck") + '<span class="obm-step-num">' + num + '</span></span>';
-      // hide the number when done-check shows
-      var nEl = s.querySelector(".obm-step-n");
-      if (s.classList.contains("obm-done")) { var numSpan = nEl.querySelector(".obm-step-num"); if (numSpan) numSpan.style.display = "none"; }
-      var lbl = T("span", "obm-step-lbl", d.key); s.appendChild(lbl);
+      else if (done) s.classList.add("obm-past");   /* not "obm-done": that class is the Done VIEW (a column flexbox) */
+      // single digits: "01" never fit its 19px ring — that was the padding defect
+      s.innerHTML = '<span class="obm-step-n">' + svgCheck("obm-step-ck") +
+                    '<span class="obm-step-num">' + d.n + '</span></span>';
+      s.appendChild(T("span", "obm-step-lbl", d.key));
       el.steps.appendChild(s);
-      if (idx < shown.length - 1) el.steps.appendChild(h("span", "obm-step-sep"));
+      if (idx < shown.length - 1) {
+        var sep = h("span", "obm-step-sep" + (done ? " obm-on" : ""));
+        sep.innerHTML = "<i></i>";
+        el.steps.appendChild(sep);
+      }
     });
+    renderMini();
+  }
+  // phone stepper: one rail + "Step 3 of 5 · Plan" (five chips never fit a 375px screen)
+  function renderMini() {
+    if (!el.mini) return;
+    var order = paidSelected() ? [1, 2, 3, 4, 5] : [1, 2, 3, 5];
+    var keys = { 1: "stAccount", 2: "stPrefs", 3: "stPlan", 4: "stBilling", 5: "stDone" };
+    var idx = Math.max(0, order.indexOf(S.step));
+    var bar = el.mini.querySelector(".obm-mini-bar i");
+    if (bar) bar.style.width = Math.round(((idx + 1) / order.length) * 100) + "%";
+    var n = el.mini.querySelector('[data-stage="miniN"]');
+    var t = el.mini.querySelector('[data-stage="miniT"]');
+    if (n) n.textContent = escLine(LEX.stepOf, { "__N__": String(idx + 1), "__T__": String(order.length) });
+    if (t) { t.setAttribute("data-k", keys[S.step] || "stAccount"); t.textContent = tx(keys[S.step] || "stAccount"); }
   }
   function isStepDone(n) {
     // signin mode has no stepper progression; treat all as neutral
@@ -457,8 +576,45 @@
     if (S.step === STEP_DONE) return n < STEP_DONE;
     return n < S.step;
   }
+  // the footer floats once the body has more below the fold
+  function syncFootLift() {
+    if (!el.body || !el.foot) return;
+    var more = (el.body.scrollHeight - el.body.scrollTop - el.body.clientHeight) > 4;
+    el.foot.classList.toggle("obm-lift", more);
+  }
 
-  // ══════════════════════════ left-pane content ══════════════════════════════
+  // ══════════════════════════ THE STAGE ══════════════════════════════════════
+  // The left column plays the desk coming online. Nothing here echoes a form
+  // field back; every element is a piece of the product responding to a choice
+  // the visitor actually made:
+  //   nameplate  ← the typed first name (default "YOUR DESK")
+  //   chart+tape ← the market picks (the first pick drives the chart's ticker)
+  //   lattice    ← the chosen plan: rows ARE the tiers, so picking one lights
+  //                exactly what it buys and locks exactly what it doesn't
+  //   meter      ← billing: the seven trial days and the date of first charge
+  // Upgrade mode plays the same stage off /api/me — the locked rows are then
+  // literally what the upgrade would light up.
+  var MKD = {
+    us:     { t: "NVDA",    c: ["NVDA", "SPY", "TSLA", "AAPL", "MSFT"] },
+    cn:     { t: "600519",  c: ["600519", "300750", "BABA", "000858", "601318"] },
+    hk:     { t: "0700.HK", c: ["0700", "9988", "3690", "1810", "0388"] },
+    ca:     { t: "SHOP.TO", c: ["SHOP", "RY", "ENB", "CNQ", "BN"] },
+    global: { t: "SPY",     c: ["SPY", "ASML", "0700", "NVDA", "TSM"] }
+  };
+  var RANK = { free: 0, insider: 1, pro: 2, unlimited: 2 };
+
+  function stageStep() {
+    if (S.mode === "upgrade") return 3;
+    if (S.mode === "signin") return 1;
+    return S.step;
+  }
+  // the tone the stage previews: the visitor's theme pick (auto → time of day)
+  function stageTone() {
+    var p = S.prefs.theme_pref;
+    if (p === "dark") return "dark";
+    if (p === "auto") { var hh = new Date().getHours(); return (hh >= 7 && hh < 19) ? "light" : "dark"; }
+    return "light";
+  }
   function renderPane() {
     var map = {
       1: ["paneAccountH", "paneAccountS"], 2: ["panePrefsH", "panePrefsS"],
@@ -466,82 +622,135 @@
     };
     // upgrade mode borrows the billing pane copy ("7 days free · cancel in one click")
     var m = (S.mode === "upgrade") ? ["paneBillH", "paneBillS"] : (map[S.step] || map[1]);
+    var changed = el.paneH.getAttribute("data-k") !== m[0];
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
     el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
-    renderAssembly();
+    if (changed && el.paneCopy) {           // re-set the copy on a real step change only
+      el.paneCopy.classList.remove("obm-swap");
+      void el.paneCopy.offsetWidth;
+      el.paneCopy.classList.add("obm-swap");
+    }
+    renderStage();
   }
-  // The desk pane — a miniature Mastermind desk that materializes as the user
-  // progresses. Nothing here echoes form fields back; every element is a piece
-  // of the product responding to a choice the user actually made:
-  //   nameplate  ← the typed first name (default "YOUR DESK")
-  //   chart+chips← the market picks (first pick drives the chart's ticker)
-  //   cap rows   ← the chosen plan (lock/check; untouched plan = neutral list)
-  // Upgrade mode shows the SAME desk read off /api/me — locked rows are exactly
-  // what the upgrade buys.
-  var MKD = {
-    us:     { t: "NVDA",    c: ["NVDA", "SPY", "TSLA"] },
-    cn:     { t: "600519",  c: ["600519", "300750", "BABA"] },
-    hk:     { t: "0700.HK", c: ["0700", "9988", "3690"] },
-    ca:     { t: "SHOP.TO", c: ["SHOP", "RY", "ENB"] },
-    global: { t: "SPY",     c: ["SPY", "ASML", "0700"] }
-  };
-  function renderAssembly() {
-    if (!el.asm) return;
-    var q = function (s) { return el.asm.querySelector(s); };
+
+  function renderStage() {
+    if (!el.desk || !el.pane) return;
+    var q = function (s) { return el.desk.querySelector(s); };
     var zh = lang() === "zh";
-    // nameplate — becomes THEIRS the moment they type a first name
+    var step = stageStep();
+    el.pane.setAttribute("data-step", String(step));
+    el.pane.setAttribute("data-tone", stageTone());
+
+    // ── nameplate ──
     var first = (S.mode === "upgrade") ? (fullNameFromMeta().split(" ")[0] || "") : S.firstName.trim();
-    var plate = q('[data-desk="name"]');
-    if (first) {
-      var up = first.toUpperCase();
-      plate.textContent = zh ? up + " 的工作台" : up + (/S$/.test(up) ? "’ DESK" : "’S DESK");
-    } else { plate.textContent = tx("deskYour"); }
-    q('[data-desk="ava"]').textContent = first ? first.charAt(0).toUpperCase() : "M";
-    // chart ticker + watch chips follow the market picks
-    var picks = S.prefs.market_focus;
-    var tkr = q('[data-desk="tkr"]');
-    var newT = (picks.length ? (MKD[picks[0]] || MKD.us) : MKD.global).t;
-    if (tkr.textContent !== newT) { tkr.textContent = newT; redrawDesk(); }
-    var chips = [];
-    (picks.length ? picks : ["global"]).forEach(function (k) {
-      (MKD[k] || MKD.us).c.forEach(function (t) { if (chips.indexOf(t) === -1) chips.push(t); });
-    });
-    var mk = q('[data-desk="mkts"]'); mk.innerHTML = "";
-    chips.slice(0, 4).forEach(function (t) { var c = h("span", "obm-desk-chip"); c.textContent = t; mk.appendChild(c); });
-    // capability rows — neutral until the user actually reaches the plan step
-    // (the preselected default is not THEIR choice yet; honesty law unchanged)
+    var plate = q('[data-stage="name"]');
+    var want = first
+      ? (zh ? first.toUpperCase() + " 的工作台"
+            : first.toUpperCase() + (/S$/.test(first.toUpperCase()) ? "’ DESK" : "’S DESK"))
+      : tx("deskYour");
+    if (plate.textContent !== want) plate.textContent = want;
+    var ava = q('[data-stage="ava"]');
+    var initial = first ? first.charAt(0).toUpperCase() : "M";
+    if (ava.textContent !== initial) {       // the initial lands with a small pop
+      ava.textContent = initial;
+      ava.classList.add("obm-pop");
+      setTimeout(function () { ava.classList.remove("obm-pop"); }, 260);
+    }
+
+    // ── plate state: what the desk is doing right now ──
     var tier = null;
     if (S.mode === "upgrade") tier = (S.me && S.me.tier) || "free";
     else if (S.planTouched) tier = S.plan;
-    var RANK = { free: 0, insider: 1, pro: 2, unlimited: 2 };
-    var caps = q('[data-desk="caps"]'); caps.innerHTML = "";
-    [["capRead", 0], ["capFlow", 1], ["capAI", 2]].forEach(function (cp) {
-      var row = h("div", "obm-desk-cap");
-      var have = tier == null ? null : (RANK[tier] != null ? RANK[tier] : 0);
-      var ic = h("span", "obm-desk-ci");
-      if (have == null) ic.innerHTML = '<i class="obm-desk-dot2"></i>';
-      else if (have >= cp[1]) { row.classList.add("obm-on"); ic.innerHTML = svgCheck("obm-desk-ck"); }
-      else { row.classList.add("obm-off"); ic.innerHTML = LOCK; }
-      row.appendChild(ic);
-      row.appendChild(T("span", "obm-desk-cl", cp[0]));
-      if (have != null && have < cp[1]) { var tag = h("span", "obm-desk-tag"); tag.textContent = cp[1] === 2 ? "PRO" : "INSIDER"; row.appendChild(tag); }
-      caps.appendChild(row);
+    var stBox = q('[data-stage="state"]'), stTxt = q('[data-stage="statetxt"]');
+    var st = "setup", stKey = "plateSetup";
+    if (step === 5) { st = "live"; stKey = "plateLive"; }
+    else if (step === 4) { st = "trial"; stKey = "asmTrial"; }
+    else if (step === 3 && tier && tier !== "free") { st = tier === "pro" ? "pro" : "insider"; stKey = tier === "pro" ? "planPro" : "planInsider"; }
+    else if (step === 3 && tier === "free") { st = "setup"; stKey = "planFree"; }
+    stBox.setAttribute("data-st", st);
+    stTxt.setAttribute("data-k", stKey); stTxt.textContent = tx(stKey);
+
+    // ── chart ticker + tape follow the market picks ──
+    var picks = S.prefs.market_focus;
+    var mk = picks.length ? (MKD[picks[0]] || MKD.us) : MKD.global;
+    var tkr = q('[data-stage="tkr"]');
+    if (tkr.textContent !== mk.t) { tkr.textContent = mk.t; redrawDesk(); }
+    var syms = [];
+    (picks.length ? picks : ["global"]).forEach(function (k) {
+      (MKD[k] || MKD.us).c.forEach(function (t) { if (syms.indexOf(t) === -1) syms.push(t); });
     });
-    // trial chip on the plate once a paid plan is the user's actual choice
-    var trial = q('[data-desk="trial"]');
-    var paidChosen = S.mode !== "upgrade" && S.planTouched && (S.plan === "insider" || S.plan === "pro");
-    trial.hidden = !paidChosen;
-    if (paidChosen) trial.textContent = tx("asmTrial");
-    // keep keyed labels (timeframe/zone chips) fresh
-    var keys = el.asm.querySelectorAll("[data-k]");
+    syms = syms.slice(0, 8);
+    var tape = q('[data-stage="tape"]');
+    var sig = syms.join(",");
+    if (tape.__sig !== sig) {                 // rebuild only when the picks change
+      tape.__sig = sig;
+      var run = syms.map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("");
+      tape.innerHTML = run + run;             // doubled → the marquee loops seamlessly
+    }
+    // the chart earns its BUY SIGNAL chip once the desk is actually provisioned
+    el.desk.classList.toggle("obm-armed", step >= 3);
+
+    // ── the lattice: light every row up to the chosen tier ──
+    var have = tier == null ? null : (RANK[tier] != null ? RANK[tier] : 0);
+    var pins = pinnedTiles();
+    var rows = el.desk.querySelectorAll(".obm-row");
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r];
+      var lit = have != null && have >= r;
+      row.classList.toggle("obm-on", lit);
+      var tiles = row.querySelectorAll(".obm-tile");
+      for (var c = 0; c < tiles.length; c++) {
+        var tile = tiles[c];
+        var was = tile.classList.contains("obm-on");
+        tile.classList.toggle("obm-on", lit);
+        if (lit && !was) flare(tile);        // the cascade — only on a real change
+        // "what you trade" pins its tile, so that answer has a visible consequence
+        tile.classList.toggle("obm-pin", pins.indexOf(tile.getAttribute("data-tile")) !== -1);
+      }
+    }
+
+    // ── the trial meter's charge date ──
+    var chg = el.meter && el.meter.querySelector('[data-stage="charge"]');
+    if (chg) chg.textContent = escLine(LEX.meterChg, { "__D__": fmtDate(trialChargeDate()).toUpperCase() });
+
+    // keep keyed labels (row names, tile names, chips) in the current language
+    var keys = el.pane.querySelectorAll("[data-k]");
     for (var i = 0; i < keys.length; i++) keys[i].innerHTML = tx(keys[i].getAttribute("data-k"));
+  }
+  function pinnedTiles() {
+    var out = [];
+    S.prefs.trade_types.forEach(function (t) { if (TRADE_PIN[t]) out.push(TRADE_PIN[t]); });
+    return out;
+  }
+  // one-shot light sweep across a tile the moment it unlocks
+  function flare(tile) {
+    tile.classList.remove("obm-flare");
+    void tile.offsetWidth;
+    tile.classList.add("obm-flare");
+    setTimeout(function () { tile.classList.remove("obm-flare"); }, 1400);
   }
   // restart the chart's draw-in (used on open + when the ticker swaps)
   function redrawDesk() {
-    if (!el.asm) return;
-    el.asm.classList.remove("obm-draw");
-    void el.asm.offsetWidth;
-    el.asm.classList.add("obm-draw");
+    if (!el.desk) return;
+    el.desk.classList.remove("obm-draw");
+    void el.desk.offsetWidth;
+    el.desk.classList.add("obm-draw");
+  }
+  // ── ambient-motion budget ────────────────────────────────────────────────
+  // Two looping animations run on the stage (the light beam and the tape). Both
+  // are transform-only, and both stop whenever nobody is watching: tab hidden,
+  // sheet closed, or 40s without an interaction. Same law as the start.html
+  // hero guard — a signup sheet must never be why a phone gets hot.
+  var _idleTimer = null;
+  function parkStage(on) {
+    if (!el.pane) return;
+    el.pane.classList.toggle("obm-park", !!on);
+  }
+  function nudgeIdle() {
+    if (!el.pane) return;
+    parkStage(false);
+    if (_idleTimer) clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(function () { parkStage(true); }, 40000);
   }
 
   // ══════════════════════════ router ═════════════════════════════════════════
@@ -550,7 +759,9 @@
     if (!el.sheet) return;
     renderSteps();
     // signin + upgrade are compact single-panel variants — hide the multi-step stepper
-    el.steps.style.display = (S.mode === "signin" || S.mode === "upgrade") ? "none" : "";
+    var solo = (S.mode === "signin" || S.mode === "upgrade");
+    el.steps.style.display = solo ? "none" : "";
+    if (el.mini) el.mini.style.display = solo ? "none" : "";
     renderPane();
     el.body.innerHTML = "";
     el.foot.innerHTML = "";
@@ -564,7 +775,11 @@
     else view = viewDone();
     if (view === null) return;   // a nested render() (upgrade→free handoff) already owns the DOM
     el.body.appendChild(view);
+    el.body.scrollTop = 0;
     applyLang();
+    nudgeIdle();
+    // a step may be taller than the pane — say so, and never clip the footer
+    requestAnimationFrame(syncFootLift);
     // focus the heading (a11y)
     var head = el.body.querySelector("[data-ob-heading]");
     if (head) { try { head.focus(); } catch (e) {} }
@@ -604,11 +819,11 @@
     var form = h("form", "obm-form");
     if (!signin) {
       var row = h("div", "obm-row2");
-      row.appendChild(field("firstName", "ob-fn", "text", S.firstName, "Jordan", "given-name", function (v) { S.firstName = v; renderAssembly(); }));
-      row.appendChild(field("lastName", "ob-ln", "text", S.lastName, "Wei", "family-name", function (v) { S.lastName = v; renderAssembly(); }));
+      row.appendChild(field("firstName", "ob-fn", "text", S.firstName, "Jordan", "given-name", function (v) { S.firstName = v; renderStage(); }));
+      row.appendChild(field("lastName", "ob-ln", "text", S.lastName, "Wei", "family-name", function (v) { S.lastName = v; renderStage(); }));
       form.appendChild(row);
     }
-    form.appendChild(field("email", "ob-email", "email", S.email, "you@example.com", "email", function (v) { S.email = v; renderAssembly(); }, true));
+    form.appendChild(field("email", "ob-email", "email", S.email, "you@example.com", "email", function (v) { S.email = v; renderStage(); }, true));
     var pwWrap = field("password", "ob-pw", "password", S.password, "••••••••", signin ? "current-password" : "new-password", function (v) { S.password = v; refreshPwHint(); }, true, 8);
     form.appendChild(pwWrap);
     if (!signin) { var hint = h("p", "obm-hint", { "data-obm-hint": "" }); hint.style.display = "none"; form.appendChild(hint); }
@@ -734,7 +949,7 @@
     root.appendChild(T("div", "obm-section-lbl", "marketFocus"));
     var mkWrap = h("div", "obm-chips", { role: "group" });
     [["us", "mktUs"], ["cn", "mktCn"], ["hk", "mktHk"], ["ca", "mktCa"], ["global", "mktGlobal"]].forEach(function (m) {
-      mkWrap.appendChild(chip(m[0], m[1], S.prefs.market_focus, function () { toggleArr(S.prefs.market_focus, m[0]); render(); }));
+      mkWrap.appendChild(chip(m[0], m[1], S.prefs.market_focus));
     });
     root.appendChild(mkWrap);
 
@@ -751,7 +966,7 @@
     root.appendChild(T("div", "obm-section-lbl", "trade"));
     var trWrap = h("div", "obm-chips", { role: "group" });
     [["stocks", "tradeStocks"], ["options", "tradeOptions"], ["crypto", "tradeCrypto"]].forEach(function (tr) {
-      trWrap.appendChild(chip(tr[0], tr[1], S.prefs.trade_types, function () { toggleArr(S.prefs.trade_types, tr[0]); render(); }));
+      trWrap.appendChild(chip(tr[0], tr[1], S.prefs.trade_types));
     });
     root.appendChild(trWrap);
 
@@ -762,11 +977,23 @@
     el.foot.insertBefore(skip, el.foot.firstChild);
     return root;
   }
-  function chip(key, lblKey, arr, onClick) {
+  // A selection may NEVER change a control's box. The check slot is always in
+  // the layout (an empty ring when off), and the click updates classes in place
+  // instead of re-rendering the step — a full re-render replayed the step's
+  // entrance animation and reset the scroll position on every tap, which is
+  // exactly what read as "the page stutters".
+  function chip(key, lblKey, arr) {
     var on = arr.indexOf(key) !== -1;
     var b = h("button", "obm-chip" + (on ? " obm-on" : ""), { type: "button", "aria-pressed": on ? "true" : "false" });
-    b.innerHTML = (on ? svgCheck("obm-chip-ck") : "") + '<span data-k="' + lblKey + '">' + tx(lblKey) + '</span>';
-    b.addEventListener("click", onClick);
+    b.innerHTML = '<span class="obm-chip-box">' + svgCheck("") + '</span>' +
+                  '<span data-k="' + lblKey + '">' + tx(lblKey) + '</span>';
+    b.addEventListener("click", function () {
+      toggleArr(arr, key);
+      var now = arr.indexOf(key) !== -1;
+      b.classList.toggle("obm-on", now);
+      b.setAttribute("aria-pressed", now ? "true" : "false");
+      renderStage(); nudgeIdle(); stashSave();
+    });
     return b;
   }
   function thumb(key, lblKey) {
@@ -776,7 +1003,16 @@
       '<span class="obm-thumb-prev obm-' + key + '"><i></i><i></i></span>' +
       '<span class="obm-thumb-foot"><span class="obm-thumb-nm" data-k="' + lblKey + '">' + tx(lblKey) + '</span>' +
       '<span class="obm-radio">' + svgCheck("") + '</span></span>';
-    b.addEventListener("click", function () { S.prefs.theme_pref = key; applyThemeChoice(key); render(); });
+    b.addEventListener("click", function () {
+      S.prefs.theme_pref = key; applyThemeChoice(key);
+      var sibs = b.parentNode ? b.parentNode.querySelectorAll(".obm-thumb") : [];
+      for (var i = 0; i < sibs.length; i++) {
+        var on2 = sibs[i] === b;
+        sibs[i].classList.toggle("obm-on", on2);
+        sibs[i].setAttribute("aria-pressed", on2 ? "true" : "false");
+      }
+      renderStage(); nudgeIdle(); stashSave();   // the stage flips to the picked skin
+    });
     return b;
   }
   function toggleArr(arr, k) { var i = arr.indexOf(k); if (i === -1) arr.push(k); else arr.splice(i, 1); }
@@ -827,10 +1063,10 @@
 
     // period toggle
     var tog = h("div", "obm-toggle", { role: "group" });
-    var bA = h("button", "", { type: "button", "aria-pressed": S.period === "annual" ? "true" : "false" }); bA.setAttribute("data-obm-zh", LEX.togAnnual[1]); bA.innerHTML = LEX.togAnnual[0];
-    var bM = T("button", "", "togMonthly", { type: "button", "aria-pressed": S.period === "monthly" ? "true" : "false" });
-    bA.addEventListener("click", function () { S.period = "annual"; render(); stashSave(); });
-    bM.addEventListener("click", function () { S.period = "monthly"; render(); stashSave(); });
+    var bA = h("button", "", { type: "button", "data-obm-per": "annual", "aria-pressed": S.period === "annual" ? "true" : "false" }); bA.setAttribute("data-obm-zh", LEX.togAnnual[1]); bA.innerHTML = LEX.togAnnual[0];
+    var bM = T("button", "", "togMonthly", { type: "button", "data-obm-per": "monthly", "aria-pressed": S.period === "monthly" ? "true" : "false" });
+    bA.addEventListener("click", function () { S.period = "annual"; updatePlanUI(); });
+    bM.addEventListener("click", function () { S.period = "monthly"; updatePlanUI(); });
     tog.appendChild(bA); tog.appendChild(bM);
     root.appendChild(tog);
 
@@ -842,49 +1078,78 @@
     root.appendChild(plans);
 
     // summary switcher
-    root.appendChild(planSummary());
+    var sum = h("div", "obm-summary", { "data-obm-sum": "" });
+    fillSummary(sum);
+    root.appendChild(sum);
 
     // compare link
     var cmp = T("button", "obm-link obm-brand-link obm-compare", "compareAll", { type: "button" });
     cmp.addEventListener("click", function () { closeSheet(); setTimeout(function () { location.hash = "#pricing"; }, 60); });
     root.appendChild(cmp);
 
-    // footer: back + primary (Free → done, paid → billing)
+    planFoot();
+    return root;
+  }
+  // footer: back + primary (Free → done, paid → billing). Rebuilt on a plan
+  // switch because the step count itself changes (Free skips Billing).
+  function planFoot() {
+    el.foot.innerHTML = "";
     footNav({
       back: true, onBack: function () { go(STEP_PREFS); },
       primaryKey: S.plan === "free" ? "contFree" : "contBilling",
       onPrimary: onPlanContinue, dots: true
     });
-    return root;
+  }
+  function priceHtml(key) {
+    if (key === "free") return "$0";
+    var annual = S.period === "annual";
+    var was = annual ? ('<span class="obm-was">$' + monthlyPrice(key) + '</span>') : "";
+    var perK = annual ? "perMoAnnual" : "perMo";
+    return was + '$' + perMonth(key, S.period) + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
   }
   function planCard(key) {
     var on = S.plan === key, hot = key === "pro";
-    var card = h("button", "obm-plan" + (on ? " obm-on" : "") + (hot ? " obm-hot" : ""), { type: "button", "aria-pressed": on ? "true" : "false" });
+    var nmKey = key === "free" ? "planFree" : key === "pro" ? "planPro" : "planInsider";
+    var card = h("button", "obm-plan" + (on ? " obm-on" : "") + (hot ? " obm-hot" : ""), { type: "button", "data-obm-plan": key, "aria-pressed": on ? "true" : "false" });
     var left = h("div", "obm-plan-l");
     var nm = h("div", "obm-plan-nm");
-    nm.innerHTML = '<span data-k="' + (key === "free" ? "planFree" : key === "pro" ? "planPro" : "planInsider") + '">' + tx(key === "free" ? "planFree" : key === "pro" ? "planPro" : "planInsider") + '</span>';
+    nm.innerHTML = '<span data-k="' + nmKey + '">' + tx(nmKey) + '</span>';
     var who = T("div", "obm-plan-who", key === "free" ? "whoFree" : key === "pro" ? "whoPro" : "whoInsider");
     left.appendChild(nm); left.appendChild(who);
     var right = h("div", "obm-plan-r");
     var price = h("div", "obm-plan-price");
-    if (key === "free") {
-      price.innerHTML = '$0';
-    } else {
-      var annual = S.period === "annual";
-      var mo = perMonth(key, S.period);
-      var was = annual ? ('<span class="obm-was">$' + monthlyPrice(key) + '</span>') : "";
-      var perK = annual ? "perMoAnnual" : "perMo";
-      price.innerHTML = was + '$' + mo + '<span class="obm-per" data-k="' + perK + '">' + tx(perK) + '</span>';
-    }
+    price.innerHTML = priceHtml(key);
     var radio = h("span", "obm-radio"); radio.innerHTML = svgCheck("");
     right.appendChild(price); right.appendChild(radio);
     card.appendChild(left); card.appendChild(right);
     if (hot) { var rb = h("span", "obm-ribbon", { "data-k": "ribbon" }); rb.textContent = tx("ribbon"); card.appendChild(rb); }
-    card.addEventListener("click", function () { S.plan = key; render(); stashSave(); });
+    card.addEventListener("click", function () { if (S.plan === key) return; S.plan = key; updatePlanUI(); });
     return card;
   }
-  function planSummary() {
-    var box = h("div", "obm-summary");
+  // Switch plans without rebuilding the step: the cards, the prices, the
+  // readout, the footer and the stage all update in place, so the lattice
+  // cascade is the only thing that moves.
+  function updatePlanUI() {
+    S.planTouched = true;
+    var cards = el.body.querySelectorAll("[data-obm-plan]");
+    for (var i = 0; i < cards.length; i++) {
+      var k = cards[i].getAttribute("data-obm-plan"), on = k === S.plan;
+      cards[i].classList.toggle("obm-on", on);
+      cards[i].setAttribute("aria-pressed", on ? "true" : "false");
+      var pr = cards[i].querySelector(".obm-plan-price");
+      if (pr) pr.innerHTML = priceHtml(k);
+    }
+    var pers = el.body.querySelectorAll("[data-obm-per]");
+    for (var j = 0; j < pers.length; j++) pers[j].setAttribute("aria-pressed", pers[j].getAttribute("data-obm-per") === S.period ? "true" : "false");
+    var sum = el.body.querySelector("[data-obm-sum]");
+    if (sum) { sum.innerHTML = ""; fillSummary(sum); }
+    planFoot();
+    renderSteps();
+    applyLang();          // re-paints [data-k] + the stage (cascade + plate chip)
+    stashSave();
+    syncFootLift();
+  }
+  function fillSummary(box) {
     function list(items) { var ul = h("ul", "obm-sum-list"); items.forEach(function (k) { var li = h("li"); li.setAttribute("data-obm-zh", LEX[k][1]); li.innerHTML = LEX[k][0]; ul.appendChild(li); }); return ul; }
     if (S.plan === "free") {
       box.appendChild(hd("sumGetFree"));
@@ -904,7 +1169,7 @@
       var wedge = h("div", "obm-wedge");
       var wtxt = h("span"); wtxt.setAttribute("data-obm-zh", LEX.wedge[1]); wtxt.innerHTML = LEX.wedge[0];
       var wcta = T("button", "obm-link obm-brand-link obm-wedge-cta", "switchPro", { type: "button" });
-      wcta.addEventListener("click", function () { S.plan = "pro"; render(); stashSave(); });
+      wcta.addEventListener("click", function () { S.plan = "pro"; updatePlanUI(); });
       wedge.appendChild(wtxt); wedge.appendChild(wcta);
       box.appendChild(wedge);
     } else {
@@ -1485,6 +1750,7 @@
     document.documentElement.style.overflow = "hidden";
     render();
     redrawDesk();
+    nudgeIdle();
     stashSave();
   }
   // Post-login landing: the ?ret= share/deep-link target if the registration
@@ -1557,6 +1823,8 @@
     if (!el.scrim) return;
     S.open = false;
     el.scrim.classList.remove("obm-open");
+    parkStage(true);                       // nothing animates behind a closed sheet
+    if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
     document.documentElement.style.overflow = "";
     // keep stash unless cleared by Done; hide after transition
     setTimeout(function () { if (!S.open) el.scrim.style.display = "none"; }, 220);
