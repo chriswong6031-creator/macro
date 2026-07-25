@@ -1,12 +1,15 @@
 """Pick Lab frozen candidate book registry.
 
-23 frozen book definitions: 20 entry books (plab_*) + 3 long-hold grids
-(plab_lh_*) per spec §3, plus LH-2b (plab_lh_edge_durability_b) per §A5.
+Frozen book definitions: entry books (plab_*) across families A–H per spec §3
+(+ FL-R8 Family G, LR W2a Family H), plus long-hold grids (plab_lh_*) and the
+LH-2b gated pair per §A5. The authoritative count lives in the module-load
+assert at the bottom of this file and tests/test_pick_lab_core.py::TestRegistry
+— keep prose here count-free so it cannot rot.
 
 Each entry:
   engine_id              : canonical identifier, never changes
   name_en / name_zh      : display names (bilingual)
-  family                 : family label (A–F or LH)
+  family                 : family label (A–H or LH)
   ruler                  : primary measurement ruler per PL-R3
   horizon_role           : 'entry' | 'hold_thesis'
   max_picks              : 12 (entry) | 10 (LH)
