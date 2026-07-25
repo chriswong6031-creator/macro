@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-24T09:13:24.171986+00:00",
+  "generated_at": "2026-07-25T00:30:11.301665+00:00",
   "grade_horizons": [
     5,
     21,
@@ -459,13 +459,13 @@
     }
   },
   "counts": {
-    "n_claims": 25634,
-    "n_grades": 24450,
+    "n_claims": 25696,
+    "n_grades": 24459,
     "n_placebo": 700,
     "n_rejected": 1,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 21670
+      "next_bar": 21679
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -935,7 +935,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-24T09:13:40.954637+00:00",
+  "ladder_states_at": "2026-07-25T00:30:25.022390+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -1842,5 +1842,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-07-24T09:14:06.320695+00:00"
+  "promotion_readiness_at": "2026-07-25T00:30:46.822945+00:00"
 }

@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-24",
+ "as_of": "2026-07-25",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -44,12 +44,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "MRVL",
-     "name": "Marvell Technology Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
     },
     {
      "ticker": "NXPI",
@@ -86,12 +86,12 @@
      "name": "Cadence Design Systems Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "INTU",
@@ -110,12 +110,12 @@
      "name": "Roper Technologies Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     }
    ]
   },
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -334,12 +334,12 @@
    "sector": "Software & Cloud",
    "members": [
     {
-     "ticker": "RKLB",
-     "name": "Rocket Lab Corp"
-    },
-    {
      "ticker": "AXON",
      "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
     },
     {
      "ticker": "KTOS",
@@ -398,12 +398,12 @@
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "MRVL",
-     "name": "Marvell Technology Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
     },
     {
      "ticker": "NXPI",
@@ -528,12 +528,12 @@
      "name": "Cadence Design Systems Inc"
     },
     {
-     "ticker": "DDOG",
-     "name": "Datadog Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
     },
     {
      "ticker": "INTU",
@@ -552,12 +552,12 @@
      "name": "Roper Technologies Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "CTAS",
@@ -572,12 +572,12 @@
      "name": "Copart Inc"
     },
     {
-     "ticker": "RKLB",
-     "name": "Rocket Lab Corp"
-    },
-    {
      "ticker": "AXON",
      "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
     },
     {
      "ticker": "KTOS",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
