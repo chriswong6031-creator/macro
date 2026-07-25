@@ -60,15 +60,18 @@ jobs:
           python -m scripts.ingest_research
           echo "rc=$?" >> "$GITHUB_OUTPUT"
           exit 0
-      # Salvage-push the catalog snapshot regardless of the ingest step's rc
+      # Salvage-push the repo snapshots regardless of the ingest step's rc
       # (never-raise: the CLI exits 0 even on internal error). Commit ONLY the
-      # catalog snapshot — the PDFs + corpus.sqlite live in R2, never in git.
+      # catalog + first-pages-excerpt snapshots (both are what the nightly render
+      # reads) — the PDFs + corpus.sqlite live in R2, never in git. The excerpts
+      # payload is deterministic + timestamp-free, so an hour with no new/changed
+      # reports produces no diff and no commit.
       - name: commit catalog snapshot (salvage-push)
         if: always()
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/research_vault/catalog.json 2>/dev/null || true
+          git add data/research_vault/catalog.json data/research_vault/excerpts.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "no catalog change"; exit 0; fi
           git commit -m "research_vault: catalog $(date -u +%FT%H:%MZ)"
           for i in 1 2 3 4 5; do

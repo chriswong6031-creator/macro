@@ -9,6 +9,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ n.title }} — {{ n.inst }}{% if n.date_disp %} · {{ n.date_disp }}{% endif %} | Mastermind Research Vault</title>
 <meta name="description" content="{{ meta_desc }}">
+<!-- noarchive blocks cache read-around of the public excerpt; max-snippet lets Google MATCH the full excerpt but only DISPLAY a bounded snippet. -->
+<meta name="robots" content="noarchive, max-snippet:280, max-image-preview:large">
 <link rel="canonical" href="{{ canonical }}">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Mastermind">
@@ -88,6 +90,18 @@ html[data-theme="light"] .rr-tk{ color:var(--rv); }
 .rr-teaser .lead{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
   color:var(--muted); display:block; margin-bottom:8px; }
 
+/* the public excerpt zone — OUTSIDE .rr-gate, so the JSON-LD paywall markup stays
+   truthful (public part public, gated part gated) */
+.rr-x{ margin-top:18px; padding-top:16px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); }
+.rr-x-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.rr-x-eyebrow{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--rv-ink); }
+html[data-theme="light"] .rr-x-eyebrow{ color:var(--rv); }
+.rr-x-src{ font-size:11.5px; color:var(--muted); }
+.rr-x-body{ position:relative; font-size:13.5px; line-height:1.66; color:color-mix(in srgb,var(--text) 82%,var(--muted)); }
+.rr-x-body p{ margin:0 0 10px; }
+.rr-x-fade{ position:absolute; left:0; right:0; bottom:0; height:110px; pointer-events:none;
+  background:linear-gradient(180deg, transparent, color-mix(in srgb,var(--bg) 92%,transparent)); }
+
 /* the paywall (the gated part — matches the JSON-LD hasPart cssSelector) */
 .rr-gate{ margin-top:20px; padding:22px; border-radius:14px; text-align:center;
   background:radial-gradient(120% 130% at 50% 0%, var(--rv-dim), transparent 70%), color-mix(in srgb,var(--rr-glass-bg) 92%,transparent);
@@ -151,6 +165,19 @@ html[data-theme="light"] .rr-rel .r-inst{ color:var(--rv); }
     {% if n.teaser %}
     <p class="rr-teaser"><span class="lead">{{ t('From the report', '报告摘录') }}</span>{{ n.teaser }}</p>
     {% endif %}
+
+{% if excerpt_paras %}
+    <section class="rr-x" aria-label="First pages of the report">
+      <div class="rr-x-head">
+        <span class="rr-x-eyebrow">{{ t('Inside the report', '报告内文') }}</span>
+        <span class="rr-x-src">{{ t('Verbatim from the original PDF — first pages', '原版 PDF 开篇原文 · 逐字摘录') }}</span>
+      </div>
+      <div class="rr-x-body">
+        {% for p in excerpt_paras %}<p>{{ p }}</p>{% endfor %}
+        <div class="rr-x-fade" aria-hidden="true"></div>
+      </div>
+    </section>
+{% endif %}
 
     <div class="rr-gate">
       <svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
