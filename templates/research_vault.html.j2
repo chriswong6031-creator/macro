@@ -446,7 +446,17 @@ html[data-theme="light"] .vstage{ background:radial-gradient(600px 400px at 50% 
 .vcanvas-wrap{ position:relative; align-self:flex-start; }
 .vcanvas-wrap canvas{ display:block; background:#fff;
   border-radius:3px; box-shadow:0 20px 60px -20px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.3); }
-.vstage.inverted .vcanvas-wrap canvas{ filter:invert(1) hue-rotate(180deg); }
+/* continuous-scroll page column: pages stacked vertically, each with its own
+   canvas that renders lazily as it nears the viewport. margin:auto centers a
+   narrow column but resolves to 0 when zoomed wider than the stage (so the left
+   edge stays reachable via horizontal scroll — a plain justify-content:center
+   would clip it). */
+.vscroll{ display:flex; flex-direction:column; align-items:center; gap:18px; margin:auto; }
+.vpage{ position:relative; flex:none; background:#fff; border-radius:3px;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.3); }
+.vpage canvas{ display:block; width:100%; height:100%; border-radius:3px; }
+.vstage.inverted .vcanvas-wrap canvas,
+.vstage.inverted .vpage canvas{ filter:invert(1) hue-rotate(180deg); }
 /* gate / message panel shown in place of the canvas (401/402/429/error) */
 .vgate{ align-self:center; max-width:420px; text-align:center; padding:34px 26px; border-radius:16px;
   background:var(--mx5-glass-bg); border:1px solid var(--mx5-glass-border); color:var(--text); }
