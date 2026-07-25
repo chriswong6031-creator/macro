@@ -49,6 +49,7 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     # SEC EDGAR — fair-access <10 req/s shared across data.sec.gov / www.sec.gov / efts.sec.gov
     "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
     "beneficial_ownership": "sec", "edgar_dilution": "sec",
+    "geo_revenue": "sec",  # TXI W2: per-ticker 10-K XBRL instance fetch (data.sec.gov + www.sec.gov/Archives)
     # LHB-R8: Nasdaq Trader symbol-dir (nasdaqtrader.com) + SEC company_tickers.json;
     # both GETs are small/fast; grouped under 'sec' to keep out of the serial loop.
     "symbol_directory": "sec",
@@ -166,6 +167,7 @@ def all_adapters() -> dict:
         ("symbol_directory", "collectors.symbol_directory", "SymbolDirectoryAdapter"),  # LHB-R8: daily exchange symbol-directory archival (nasdaqlisted+otherlisted) + weekly CIK map -> data/symbol_directory/
         ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
         ("edgar_dilution", "collectors.edgar_dilution", "EdgarDilutionAdapter"),  # S-3/S-3ASR/424B* daily-index sweep -> data/edgar/dilution_events.parquet (nwqs-c dilution context; display-only)
+        ("geo_revenue", "collectors.edgar_geo_revenue", "GeoRevenueAdapter"),  # TXI W2 (PR #3431 blast channels): per-ticker revenue-by-geography from 10-K XBRL instances -> data/edgar/geo_revenue.json (display-only, bounded SEC drip)
         ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
         ("huggingface", "collectors.huggingface", "HuggingFaceAdapter"),  # HF model-download velocity -> hf_model_momentum channel (AI adoption blind spot)
         ("grants_gov", "collectors.grants_gov", "GrantsGovAdapter"),      # Simpler Grants.gov pre-award FOA flow (theme_event radar leg); GATED on free GRANTS_GOV_API_KEY -> 'blocked' without it
@@ -329,6 +331,7 @@ _CRYPTO = {"coinmetrics", "bgeo", "coinbase", "okx", "deribit", "feargreed",
 _SLOW = set(_QUIVER_KEYS) | {
     "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership",
     "edgar_dilution",  # nwqs-c: S-3/424B daily-index sweep; nightly-only
+    "geo_revenue",  # TXI W2: per-ticker 10-K XBRL geo-revenue drip; bounded network, nightly-only
     "cot",
     "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
     "finnhub_transcripts",   # altdata-W1: transcript metadata catalog (same-day; plan-gated no-op on free tier)

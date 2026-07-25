@@ -1,7 +1,7 @@
 # TXI seed chain — dollar spike → EM / commodity / multinational-EPS headwind.
 # Seed list §7; rides the forex_transmission dollar-channel edges. Display-tier.
 chain: dollar_spike_em_multinational
-rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
+rev: 2                      # W2 re-enable: geo_revenue.* channels live (see changelog)
 tier: hypothesis
 title:
   en: "Dollar spike → EM & multinational-EPS headwind"
@@ -63,34 +63,51 @@ falsifiers:
 
 null_model: "does dollar-channel conditioning beat unconditional dollar-momentum on the EM cohort?"
 
-exposure_screens:            # W2 — structured mini-form + honest gaps (see validator_note)
-  # HONEST GAP: this chain's native screens all need a per-name GEOGRAPHIC-REVENUE field
-  # (geo_revenue.*) which is ABSENT from the entire substrate (0 files). Per masterplan
-  # §scoping.3 — "the dollar chain's foreign-revenue channel has no field: note it, don't
-  # proxy silently". The two revenue/translation channels + the dollar-debt channel are
-  # therefore DROPPED (declared, resolved:false, bilingual note). ONE clearly-labeled SECTOR
-  # PROXY is offered for the commodity-dollar leg (a real field: sector membership).
+exposure_screens:            # W2 — structured mini-form; geo_revenue channels re-enabled at rev 2
+  # rev 2: the three native channels are LIVE — collectors/edgar_geo_revenue.py parses 10-K
+  # XBRL geographic disclosures (srt:StatementGeographicalAxis) into a per-ticker geo_revenue
+  # block {foreign_pct, em_pct?, by_region?, ...} baked into site/stockdata/<T>.json
+  # (PERCENT 0-100; emit-only-when-parseable, never estimated). Coverage is PARTIAL by
+  # design (large caps mostly; skip histogram in data/edgar/geo_revenue.json meta) — names
+  # without the block bucket as unevaluable in the resolver, never silently safe/unsafe.
   em_revenue_exposure:
     label: {en: "EM revenue exposure", zh: "新兴市场营收敞口"}
-    note: {en: "DROPPED — no field: the substrate has no geographic-revenue breakdown (geo_revenue.emerging_markets_pct absent everywhere), so per-name EM-revenue exposure cannot be resolved. See em_commodity_sector_proxy for a clearly-labeled sector stand-in.",
-           zh: "已弃用——无字段：个股数据无地区营收拆分（geo_revenue.emerging_markets_pct全库缺失），无法解析个股新兴市场营收敞口。见em_commodity_sector_proxy的明确标注行业代理。"}
+    # geo_revenue.em_pct is an explicit LOWER BOUND: only unambiguously-EM-classified
+    # disclosed regions count (MSCI-EM-ish country codes + regions like Greater China /
+    # Latin America); mixed aggregates (Asia-Pacific, EMEA, "International") never do.
+    # Absolute cut (not pctile) so membership doesn't drift as coverage accrues.
+    note: {en: "names with >=15% of revenue from explicitly-EM-classified regions in their 10-K geographic note (measured per-name; em_pct is a conservative lower bound — mixed aggregates never counted). Names without a parseable disclosure bucket as unevaluable.",
+           zh: "10-K地区披露中明确属新兴市场的营收占比≥15%的名字（逐名实测；em_pct为保守下限——混合地区聚合不计入）。无可解析披露的名字归入无法评估桶。"}
+    all:
+      - {path: geo_revenue.em_pct, op: ">=", value: 15}   # PERCENT 0-100
   multinational_fx_translation:
     label: {en: "Multinational FX translation", zh: "跨国汇率折算"}
-    note: {en: "DROPPED — no field: no foreign-revenue-share field (geo_revenue.foreign_pct) exists in the substrate, so the dollar-translation EPS drag cannot be resolved per name. Not proxied (no honest per-name stand-in).",
-           zh: "已弃用——无字段：个股数据无海外营收占比字段（geo_revenue.foreign_pct），无法按个股解析美元折算的每股盈利拖累。未做代理（无诚实的个股替代）。"}
+    note: {en: "US multinationals with >=40% foreign revenue (10-K geographic note, measured per-name) — overseas EPS shrinks in dollar terms as USD firms. PERCENT 0-100; unparseable names bucket as unevaluable.",
+           zh: "海外营收占比≥40%的美国跨国企业（10-K地区披露，逐名实测）——美元走强时海外每股盈利以美元计缩水。百分比0-100；无法解析的名字归入无法评估桶。"}
+    all:
+      - {path: geo_revenue.foreign_pct, op: ">=", value: 40}   # PERCENT 0-100
   dollar_debt_burden:
     label: {en: "Dollar-debt burden", zh: "美元债务负担"}
-    note: {en: "DROPPED — no field: the substrate carries total long-term debt (financials.raw.debt_lt) but NO currency-of-debt split, so 'dollar debt against non-dollar revenue' is not separable. Not proxied.",
-           zh: "已弃用——无字段：个股数据有长期债务总额（financials.raw.debt_lt）但无债务币种拆分，无法区分'美元债务对非美元营收'。未做代理。"}
+    # STATED ASSUMPTION (not a silent proxy): a US filer's balance-sheet debt is treated as
+    # USD-denominated (no currency-of-debt split exists in the substrate — unchanged from
+    # rev 1). What rev 2 adds is the other leg, MEASURED: majority-foreign revenue. High
+    # leverage + majority non-US revenue ≈ servicing dollar debt against non-dollar cash flows.
+    note: {en: "leveraged names (top-third debt_to_assets) whose revenue is majority non-US (>=50%, 10-K geographic note) — dollar-debt service against non-dollar cash flows. Assumes US filers' debt is USD-denominated (stated assumption; no currency-of-debt field exists).",
+           zh: "高杠杆（debt_to_assets前三分之一）且营收过半来自美国以外（≥50%，10-K地区披露）的名字——以非美元现金流偿付美元债务。假设美国申报者的债务以美元计价（明示假设；无债务币种字段）。"}
+    all:
+      - {path: geo_revenue.foreign_pct, op: ">=", value: 50}            # PERCENT 0-100
+      - {path: financials.debt_to_assets, op: pctile_gte, value: 0.67}  # top-third leverage of evaluable universe
   em_commodity_sector_proxy:
     label: {en: "EM/commodity sector (proxy)", zh: "新兴市场/商品行业（代理）"}
     # PROXY CHANNEL (label + note say "proxy" in both languages, masterplan §scoping.3):
-    # a real field (GICS sector, present ~1625) stands in for the missing EM-demand revenue
-    # screen — Materials + Energy are the dollar-priced-commodity sectors whose demand and
-    # pricing carry the clearest EM/dollar sensitivity. This is a SECTOR proxy, NOT a per-name
-    # revenue measurement; named *_proxy so no consumer mistakes it for geo-revenue exposure.
-    note: {en: "PROXY (sector, not revenue): substitutes GICS sector membership for the missing per-name EM-revenue field — Materials & Energy are the dollar-priced-commodity sectors most EM/dollar-sensitive. A coarse sector stand-in, not a revenue measurement.",
-           zh: "代理（行业而非营收）：以GICS行业归属替代缺失的个股新兴市场营收字段——材料与能源是对新兴市场/美元最敏感的美元计价商品行业。粗略的行业替代，非营收测度。"}
+    # a real field (GICS sector, present ~1625) stood in (rev 1) for the then-missing
+    # EM-demand revenue screen; from rev 2 it COMPLEMENTS em_revenue_exposure — sector
+    # coverage is ~full while geo disclosure is partial. Materials + Energy are the
+    # dollar-priced-commodity sectors whose demand and pricing carry the clearest EM/dollar
+    # sensitivity. A SECTOR proxy, NOT a per-name revenue measurement; named *_proxy so no
+    # consumer mistakes it for geo-revenue exposure.
+    note: {en: "PROXY (sector, not revenue): GICS sector membership stands in for EM-demand exposure — Materials & Energy are the dollar-priced-commodity sectors most EM/dollar-sensitive. Complements em_revenue_exposure (rev 2): sector coverage is ~full, so it also catches names whose 10-K discloses no parseable geography. A coarse sector stand-in, not a revenue measurement.",
+           zh: "代理（行业而非营收）：以GICS行业归属代表新兴市场需求敞口——材料与能源是对新兴市场/美元最敏感的美元计价商品行业。与rev 2的em_revenue_exposure互补：行业覆盖近乎全库，故也覆盖10-K无可解析地区披露的名字。粗略的行业替代，非营收测度。"}
     any:
       - {path: sector, op: in, value: ["Materials", "Energy"]}
 
@@ -108,15 +125,30 @@ changelog:
      (masterplan §scoping.3: note the gap, do not proxy silently). ONE clearly-labeled sector
      PROXY (em_commodity_sector_proxy: sector in {Materials, Energy}) is added for the
      commodity-dollar leg using a real field (GICS sector)."
+  - "rev 2 (TXI geo_revenue re-enable 2026-07-25): the three DROPPED native channels are LIVE.
+     collectors/edgar_geo_revenue.py (new) parses 10-K XBRL geographic disclosures
+     (srt:StatementGeographicalAxis) → per-ticker geo_revenue {foreign_pct, em_pct?, by_region?}
+     baked into site/stockdata (PERCENT 0-100; emit-only-when-parseable, never estimated;
+     partial coverage by design — unparseable names bucket unevaluable). em_revenue_exposure
+     binds geo_revenue.em_pct>=15 (explicit-EM lower bound); multinational_fx_translation
+     binds geo_revenue.foreign_pct>=40; dollar_debt_burden binds foreign_pct>=50 AND
+     debt_to_assets top-third (USD-debt as a STATED assumption — currency-of-debt split still
+     absent). Absolute cuts (not pctile) so membership does not drift as coverage accrues.
+     em_commodity_sector_proxy retained as the labeled sector complement for names without
+     parseable disclosure."
 
 validator_note: >
   NODE bindings (unchanged from rev 0): all nodes resolve against data/forex/latest.json
   (dollar_desk.trend / usd_pos_pctile; transmission.usd_dir / headwind_for) and lib.store yahoo
   series (FXI vs SPY). em_derate uses FXI as a cohort RS proxy.
-  W2 SCREENS (rev 1) — THIS CHAIN HAS THE ONLY DROPPED-BY-DESIGN NATIVE SCREENS: the substrate
-  has NO geo_revenue.* field anywhere (verified 0/1629 files), so all three native channels
-  (em_revenue_exposure, multinational_fx_translation, dollar_debt_burden) are DROPPED — declared
-  with bilingual notes, resolved:false, NEVER silently proxied (masterplan §scoping.3). One
-  clearly-labeled SECTOR proxy (em_commodity_sector_proxy) uses the real GICS `sector` field
-  (Materials/Energy, ~163 names) for the commodity-dollar leg; its label + note say "proxy" in
-  both languages. tier=hypothesis (base rates untested until W3).
+  W2 SCREENS (rev 2): the three native channels are re-enabled against the NEW geo_revenue
+  block (collectors/edgar_geo_revenue.py → data/edgar/geo_revenue.json → build_stock_library
+  bake; fields are PERCENT 0-100). Coverage is PARTIAL by design (large caps mostly; the skip
+  histogram = the printed null, in the store's meta.skips): a name without the block is
+  UNEVALUABLE in every geo_revenue clause — never silently safe/unsafe. em_pct is a
+  conservative lower bound (only unambiguously-EM regions count; mixed aggregates excluded).
+  Cuts are ABSOLUTE (15/40/50), not percentile, so membership is stable as coverage accrues;
+  dollar_debt_burden carries the stated USD-debt assumption (no currency-of-debt field). One
+  labeled SECTOR proxy (em_commodity_sector_proxy) is retained for the commodity-dollar leg
+  and for names without parseable geographic disclosure.
+  tier=hypothesis (base rates untested until W3).

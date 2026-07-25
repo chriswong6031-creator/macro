@@ -1582,6 +1582,18 @@ def main() -> int:
         beneficial_ownership = load_regime()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("beneficial_ownership regime unreadable (%s)", e)
+    # per-stock revenue-by-geography (foreign_pct / em_pct / by_region) from 10-K XBRL
+    # segment disclosures — see collectors/edgar_geo_revenue.py. TXI W2 (PR #3431):
+    # the dollar-chain blast channels need geo_revenue.*. Reads the collector's own
+    # store directly (beneficial_ownership read-data idiom). Coverage is PARTIAL by
+    # design (large caps mostly tag the geo note); absent ticker => no block.
+    geo_rev_map: dict[str, dict] = {}
+    try:
+        _geo_p = config.data_dir() / "edgar" / "geo_revenue.json"
+        if _geo_p.exists():
+            geo_rev_map = (json.loads(_geo_p.read_text()) or {}).get("by_ticker", {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("geo_revenue.json unreadable (%s)", e)
     # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex). PRIMARY =
     # the pre-built site/gex board payloads (rich: walls + vol_hole + consistent units), which
     # already cover the curated optionable universe. The live compute_gex path is only used as a
@@ -2164,6 +2176,9 @@ def main() -> int:
             rec["smart_money"] = smart_money[ticker]
         if beneficial_ownership.get(ticker):
             rec["beneficial_ownership"] = beneficial_ownership[ticker]
+        # revenue-by-geography block (collectors/edgar_geo_revenue.py; TXI W2 #3431)
+        if geo_rev_map.get(ticker):
+            rec["geo_revenue"] = geo_rev_map[ticker]
         # ---- richer OHLCV technical snapshot + single-stock volatility black hole ------
         # Supersede the thin close-only snapshot with the research-vetted read (ATR/ADX/
         # squeeze/volume where full OHLCV exists; momentum / 52w-proximity / realized-vol
