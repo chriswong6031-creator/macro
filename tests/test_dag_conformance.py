@@ -484,3 +484,45 @@ class TestLiveConformance:
         assert missing_evidence == [], (
             f"Documented divergences missing 'evidence' field: {missing_evidence}"
         )
+
+
+class TestBrunOrderVisibility:
+    """Every `brun` slug must appear in its lane's ORDER string.
+
+    `brun` records each builder's log/rc into $ART, but the ORDER loop is what
+    prints that log and raises `::error title=<label> failed (rc=N)`. A slug
+    brun'd but absent from ORDER is a builder that RUNS UNWATCHED: it can fail
+    every night with no annotation and no step-summary line.
+
+    Found the hard way 2026-07-25. #3487 added `brun research_vault` to the
+    cl_misc band of render.yml + engine-render.yml — the fix whose entire point
+    was that the /research/ SEO pages must stop going dark silently — but not to
+    their ORDER strings, so the builder was invisible in exactly the lanes it
+    was added to. Auditing for that found daily.yml's transmission_chains in the
+    same state. The reverse direction is deliberately NOT asserted: a stale slug
+    in ORDER is harmless (the loop skips any slug with no $ART/<slug>.log).
+    """
+
+    LANES = ("daily.yml", "render.yml", "engine-render.yml",
+             "closing-bell.yml", "asia-close.yml")
+
+    def test_every_brun_slug_is_in_its_lane_order(self):
+        import re
+        unwatched: dict[str, list[str]] = {}
+        for wf in self.LANES:
+            path = REPO_ROOT / ".github" / "workflows" / wf
+            if not path.exists():  # lane retired — not this test's business
+                continue
+            text = path.read_text()
+            slugs = set(re.findall(r"^\s*brun\s+([A-Za-z0-9_]+)\s", text, flags=re.M))
+            assert slugs, f"{wf}: no brun calls parsed — did the lane change shape?"
+            ordered: set[str] = set()
+            for order in re.findall(r'ORDER="([^"]*)"', text):
+                ordered |= set(order.split())
+            missing = sorted(slugs - ordered)
+            if missing:
+                unwatched[wf] = missing
+        assert unwatched == {}, (
+            "builders that run but are never reported (add the slug to that lane's "
+            f"ORDER string): {unwatched}"
+        )
