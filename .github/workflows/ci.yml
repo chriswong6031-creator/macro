@@ -3118,6 +3118,7 @@ jobs:
         run: python -m pytest tests/test_state_of_themes.py -q -k "theme_lanes or byte_identical"
 
   options-estate-guards:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
     # OEU M-FIX wiring (2026-07-25): the flow-leaders / market-structure /
     # options-screener engine+builder suites (plus the neural-web support-map
     # suite, surfaced unwired by the same audit) were run by ZERO GitHub

@@ -258,10 +258,10 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     """Whether a push-triggered render must exist for ``merge_sha``.
 
     Scoped to THIS merge's own diff, not the whole session range.
-    ``_render_status`` looks for a render.yml run whose head_sha IS merge_sha
-    and whose event is ``push`` — and render.yml's push trigger is path-filtered
-    to templates/** + scripts/build_*.py. So such a run can exist if and only if
-    merge_sha ITSELF touched those paths.
+    ``_render_status`` accepts a successful push render at this merge or a later
+    descendant. render.yml's push trigger is path-filtered to templates/** +
+    scripts/build_*.py, so this precondition belongs only to a merge that itself
+    touched one of those paths.
 
     start_head..head was the wrong basis on a shared main: this repo runs many
     concurrent sessions, and a session that syncs its worktree to origin/main
@@ -272,8 +272,7 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     template/builder files from concurrent merges set needs_render.)
 
     This TIGHTENS alignment rather than loosening the gate: a PR that does touch
-    templates/ still gets a push render on its merge sha, and that run must still
-    conclude ``success`` to pass.
+    templates/ still needs a successful covering render before it may pass.
     """
     try:
         changed = _run(
@@ -286,22 +285,64 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     return _render_triggering_paths(changed)
 
 
-def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
+def _same_or_descendant(root: Path, merge_sha: str, candidate_sha: str) -> bool:
+    """Whether ``candidate_sha`` contains ``merge_sha`` in the local git graph."""
+    if candidate_sha == merge_sha:
+        return True
+    if not candidate_sha:
+        return False
+    try:
+        _run(root, "git", "merge-base", "--is-ancestor", merge_sha, candidate_sha)
+    except Exception:
+        return False
+    return True
+
+
+def _render_status(root: Path, owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
+    """Return the state of a push render that covers ``merge_sha``.
+
+    render.yml deliberately coalesces a merge burst: it keeps one in-flight run,
+    supersedes redundant pending runs, and the survivor unions every dirty scope
+    since the last covering watermark. Requiring the exact merge's run to succeed
+    contradicts that design and caused agents to cancel/re-run healthy shared
+    renders merely to clear their own Stop hook. A successful main descendant is
+    therefore the correct proof that this merge's render inputs were covered.
+    """
     query = urllib.parse.urlencode(
-        {"event": "push", "head_sha": merge_sha, "per_page": "20"}
+        {"event": "push", "branch": "main", "per_page": "100"}
     )
     payload = _get_json(
         f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
     )
-    runs = payload.get("workflow_runs", [])
-    if not runs:
-        return "pending", "The required render workflow has not started yet."
-    run = max(runs, key=lambda item: item.get("created_at") or "")
-    if run.get("status") != "completed":
-        return "pending", f"Render workflow is {run.get('status') or 'pending'}."
-    if run.get("conclusion") != "success":
-        return "failed", f"Render workflow concluded {run.get('conclusion') or 'unknown'}."
-    return "success", ""
+    covering = [
+        run
+        for run in payload.get("workflow_runs", [])
+        if _same_or_descendant(root, merge_sha, str(run.get("head_sha") or ""))
+    ]
+    if not covering:
+        return "pending", "No render covering this merge has started yet."
+
+    covering.sort(key=lambda item: item.get("created_at") or "", reverse=True)
+    if any(
+        run.get("status") == "completed" and run.get("conclusion") == "success"
+        for run in covering
+    ):
+        return "success", ""
+
+    pending = [run for run in covering if run.get("status") != "completed"]
+    if pending:
+        state = pending[0].get("status") or "pending"
+        return (
+            "pending",
+            f"A shared render covering this merge is {state}; monitor it without cancelling or re-running it.",
+        )
+
+    newest = covering[0]
+    return (
+        "failed",
+        "Covering render concluded "
+        f"{newest.get('conclusion') or 'unknown'}; diagnose the cause before one controlled retry.",
+    )
 
 
 def _find_commit(value: Any) -> str:
@@ -454,7 +495,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(owner, repo, merge_sha)
+            status, detail = _render_status(root, owner, repo, merge_sha)
         except Exception as exc:
             _block(path, state, payload, "github_unreachable", str(exc))
             return

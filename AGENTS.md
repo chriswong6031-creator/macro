@@ -49,6 +49,21 @@ not “live” until the VPS/render path and live marker are verified.
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 
+### Shared render-lane safety
+
+`render.yml` is one shared, coalescing deploy lane. A successful push render at
+a merge SHA or any later main descendant covers the earlier merge because the
+workflow unions every dirty scope since its last covering watermark. Monitor
+that shared covering run; do not demand a dedicated successful run for every
+merge SHA.
+
+Never cancel or manually re-run an in-progress `render`, `engine-render`, or
+`daily` solely to unblock a session. A long job inside its declared timeout is
+not wedged evidence. Re-run only after the job has concluded unsuccessfully,
+the cause has been identified or corrected, and one session owns the recovery.
+Parallel sessions must reuse that recovery instead of launching retries of
+their own.
+
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,

@@ -91,9 +91,8 @@ def _commit(repo: Path, rel: str, body: str, message: str) -> str:
 def test_needs_render_only_when_the_merge_itself_touched_render_inputs(tmp_path):
     """The render precondition must match render.yml's push path filter.
 
-    _render_status looks for a `push` render run whose head_sha IS the merge sha,
-    and render.yml only fires on templates/** + scripts/build_*.py. A merge that
-    touched neither can never have such a run, so demanding one is an
+    render.yml only fires on templates/** + scripts/build_*.py. A merge that
+    touched neither cannot require a covering run, so demanding one is an
     unsatisfiable block rather than a real gap.
     """
     repo = _repo(tmp_path)
@@ -125,6 +124,101 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     # A sibling script that is not a build_* entrypoint must not trigger one.
     other = _commit(repo, "scripts/check_thing.py", "print(2)\n", "chore: checker")
     assert GUARD._needs_render(repo, other, start_head, other) is False
+
+
+def test_render_status_accepts_a_successful_descendant_after_exact_run_was_cancelled(
+    monkeypatch, tmp_path
+):
+    """Coalesced descendant renders cover earlier merges via render.yml's scope union."""
+    repo = _repo(tmp_path)
+    merge_sha = _commit(repo, "templates/macro.html.j2", "{{ x }}\n", "feat: template")
+    descendant = _commit(repo, "templates/china.html.j2", "{{ y }}\n", "feat: later template")
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: {
+            "workflow_runs": [
+                {
+                    "head_sha": descendant,
+                    "status": "completed",
+                    "conclusion": "success",
+                    "created_at": "2026-07-25T02:00:00Z",
+                },
+                {
+                    "head_sha": merge_sha,
+                    "status": "completed",
+                    "conclusion": "cancelled",
+                    "created_at": "2026-07-25T01:00:00Z",
+                },
+            ]
+        },
+    )
+
+    assert GUARD._render_status(repo, "acme", "widgets", merge_sha) == ("success", "")
+
+
+def test_render_status_ignores_success_from_an_unrelated_history(monkeypatch, tmp_path):
+    repo = _repo(tmp_path)
+    merge_sha = _commit(repo, "templates/macro.html.j2", "{{ x }}\n", "feat: template")
+    _git(repo, "checkout", "-b", "unrelated", f"{merge_sha}^")
+    unrelated = _commit(repo, "templates/other.html.j2", "{{ z }}\n", "other history")
+    _git(repo, "checkout", "main")
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: {
+            "workflow_runs": [
+                {
+                    "head_sha": unrelated,
+                    "status": "completed",
+                    "conclusion": "success",
+                    "created_at": "2026-07-25T02:00:00Z",
+                },
+                {
+                    "head_sha": merge_sha,
+                    "status": "completed",
+                    "conclusion": "cancelled",
+                    "created_at": "2026-07-25T01:00:00Z",
+                },
+            ]
+        },
+    )
+
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge_sha)
+    assert status == "failed"
+    assert "diagnose the cause" in detail
+
+
+def test_render_status_waits_for_covering_run_without_inviting_another_retry(
+    monkeypatch, tmp_path
+):
+    repo = _repo(tmp_path)
+    merge_sha = _commit(repo, "templates/macro.html.j2", "{{ x }}\n", "feat: template")
+    descendant = _commit(repo, "templates/china.html.j2", "{{ y }}\n", "feat: later template")
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: {
+            "workflow_runs": [
+                {
+                    "head_sha": descendant,
+                    "status": "in_progress",
+                    "conclusion": None,
+                    "created_at": "2026-07-25T02:00:00Z",
+                },
+                {
+                    "head_sha": merge_sha,
+                    "status": "completed",
+                    "conclusion": "cancelled",
+                    "created_at": "2026-07-25T01:00:00Z",
+                },
+            ]
+        },
+    )
+
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge_sha)
+    assert status == "pending"
+    assert "without cancelling or re-running" in detail
 
 
 def test_settings_wire_session_start_and_stop():
