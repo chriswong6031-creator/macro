@@ -483,9 +483,12 @@
 
 <!-- ===== WORLD COMMAND — hero scorecard (mx5 glass) ===== -->
 {% set _rk_score = (RK.score|round|int) if (RK and RK.score is not none) else None %}
-{% set _rk_state = ('up' if _rk_score is not none and _rk_score >= 60 else 'down' if _rk_score is not none and _rk_score < 40 else 'warn') %}
-{% set _verdict_en = ('Risk-on' if _rk_state=='up' else 'Risk-off' if _rk_state=='down' else 'Mixed') %}
-{% set _verdict_zh = ('偏好风险' if _rk_state=='up' else '规避风险' if _rk_state=='down' else '涨跌互现') %}
+{# verdict + tone come from ENGINE truth (World Risk Appetite v2), never recomputed
+   here: RK.tone maps up→up, down→down, warn/flat→warn. The score is engine-owned
+   and is never floored or overridden by the verdict. #}
+{% set _rk_state = (('up' if RK.tone=='up' else 'down' if RK.tone=='down' else 'warn') if (RK and RK.tone) else ('up' if _rk_score is not none and _rk_score >= 60 else 'down' if _rk_score is not none and _rk_score < 40 else 'warn')) %}
+{% set _verdict_en = (RK.label_en if (RK and RK.label_en) else ('Risk-on' if _rk_state=='up' else 'Risk-off' if _rk_state=='down' else 'Neutral')) %}
+{% set _verdict_zh = (RK.label_zh if (RK and RK.label_zh) else ('风险偏好' if _rk_state=='up' else '风险规避' if _rk_state=='down' else '中性')) %}
 {% set _aur = ('aur-on' if _rk_state=='up' else 'aur-on aur-warn' if _rk_state=='warn' else 'aur-on aur-risk') %}
 {# gauge: true semicircle radius 82 (chord 164 = endpoints 18↔182) → arc length π·82 ≈ 257.6 #}
 {% set _circ = 257.6 %}
@@ -507,10 +510,19 @@
             <text class="wc-gnum-sub" x="100" y="102" text-anchor="middle">/ 100</text>
           </svg>
         </div>
-        <div class="wc-gside">
+        {# hover receipt: what the dial actually weighs (cap-weighted, US counts most).
+           data-tip-en/zh only — CI forbids translated text in title= attributes. #}
+        {% set _rk_cov = (RK.coverage_pct|round|int) if (RK and RK.coverage_pct is not none) else None %}
+        {% set _rk_receipt_en = ('Weighs ' ~ RK.n_available ~ ' markets by size — the US counts most. Covers ~' ~ _rk_cov ~ '% of world market value. ' ~ (RK.breadth_above_200d ~ ' above their 200-day line' if RK.breadth_above_200d is not none else '') ~ (' · median 3-mo move ' ~ RK.median_mom_3m ~ '%' if RK.median_mom_3m is not none else '')) if (RK and _rk_cov is not none) else '' %}
+        {% set _rk_receipt_zh = ('按市值加权覆盖 ' ~ RK.n_available ~ ' 个市场（美国权重最大），约占全球市值 ' ~ _rk_cov ~ '%。' ~ (RK.breadth_above_200d ~ ' 站上200日线' if RK.breadth_above_200d is not none else '') ~ (' · 3个月中位涨跌 ' ~ RK.median_mom_3m ~ '%' if RK.median_mom_3m is not none else '')) if (RK and _rk_cov is not none) else '' %}
+        <div class="wc-gside"{% if _rk_receipt_en %} data-tip-en="{{ _rk_receipt_en }}" data-tip-zh="{{ _rk_receipt_zh }}"{% endif %}>
           <div class="wc-verdict v-{{ _rk_state }}"><span class="l-en">{{ _verdict_en }}</span><span class="l-zh">{{ _verdict_zh }}</span></div>
           <div class="wc-gauge-cap">{{ t('World risk appetite', '全球风险偏好') }}</div>
-          {% if RK and RK.breadth_above_200d is not none %}<div class="wc-substance"><span class="l-en">{{ RK.breadth_above_200d }} of markets above their 200-day line</span><span class="l-zh">{{ RK.breadth_above_200d }} 个市场站上200日线</span></div>{% endif %}
+          {% if RK and RK.top_drags %}
+          <div class="wc-substance"><span class="l-en">Dragged by {% for d in RK.top_drags %}{{ d.flag }} {{ d.name }}{% if not loop.last %} · {% endif %}{% endfor %}</span><span class="l-zh">拖累：{% for d in RK.top_drags %}{{ d.name_zh }}{% if not loop.last %} · {% endif %}{% endfor %}</span></div>
+          {% elif RK %}
+          <div class="wc-substance"><span class="l-en">Broad strength — no major market breaking down</span><span class="l-zh">普涨——无主要市场破位</span></div>
+          {% endif %}
         </div>
       </div>
     </div>

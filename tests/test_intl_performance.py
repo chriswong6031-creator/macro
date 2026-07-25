@@ -142,8 +142,173 @@ def test_risk_appetite_bounds():
     ra = P.risk_appetite(_synth_closes())
     assert ra is not None
     assert 0 <= ra["score"] <= 100
-    assert ra["label_en"] in {"Risk-on", "Neutral", "Risk-off"}
-    assert ra["tone"] in {"up", "flat", "down"}
+    assert ra["label_en"] in {"Risk-on", "Split tape", "Neutral", "Risk-off"}
+    assert ra["tone"] in {"up", "warn", "flat", "down"}
+    # v2 contract keys present
+    for k in ("coverage_pct", "n_available", "n_universe", "breakdown_share_pct",
+              "top_drags", "per_market", "breadth_above_200d", "median_mom_3m"):
+        assert k in ra, k
+
+
+# ===== World Risk Appetite v2 =====
+
+def _wr_trend(start: float, daily_ret: float, n: int = 400, seed: int = 0,
+              noise: float = 0.0) -> pd.Series:
+    """Geometric price with an optional tail crash: daily_ret compounds for the
+    whole window unless `noise` is used for small jitter."""
+    idx = pd.bdate_range("2023-06-01", periods=n)
+    rng = np.random.default_rng(seed)
+    lr = np.full(n, np.log(1 + daily_ret)) + (rng.normal(0, noise, n) if noise else 0.0)
+    return pd.Series(start * np.exp(np.cumsum(lr)), index=idx)
+
+
+def _wr_crash(start: float, up_ret: float, crash_frac: float, seed: int = 0,
+              n: int = 400, crash_days: int = 40) -> pd.Series:
+    """Rise for most of the window then decline crash_frac over the final
+    crash_days sessions (a fresh KOSPI-style drawdown)."""
+    idx = pd.bdate_range("2023-06-01", periods=n)
+    lr = np.full(n, np.log(1 + up_ret))
+    lr[-crash_days:] = np.log(1 - crash_frac / crash_days)
+    return pd.Series(start * np.exp(np.cumsum(lr)), index=idx)
+
+
+# intl 7-market synthetic closes (index + FX), all mild-uptrend by default
+_INTL_SPECS = {
+    "^N225": ("JP", "USDJPY=X"), "^KS11": ("KR", "USDKRW=X"),
+    "^TWII": ("TW", "USDTWD=X"), "^FTSE": ("GB", "GBPUSD=X"),
+    "^STOXX": ("EZ", "EURUSD=X"), "^NSEI": ("IN", "USDINR=X"),
+    "^AXJO": ("AU", "AUDUSD=X"),
+}
+
+
+def _wr_intl_frame(index_specs: dict[str, float] | None = None) -> pd.DataFrame:
+    """Build the 7-market index+FX frame. index_specs overrides a ticker's daily
+    drift (default 0.0006 up); all FX held flat so the USD leg tracks the index."""
+    index_specs = index_specs or {}
+    cols: dict[str, pd.Series] = {}
+    for i, (idx_t, (cc, fx_t)) in enumerate(_INTL_SPECS.items()):
+        dr = index_specs.get(idx_t, 0.0006)
+        cols[idx_t] = _wr_trend(100.0, dr, seed=i)
+        cols[fx_t] = _wr_trend(100.0, 0.0, seed=50 + i)
+    return pd.DataFrame(cols)
+
+
+_ALL_CCS = ["JP", "KR", "TW", "GB", "EZ", "IN", "AU", "US", "CN", "HK"]
+
+
+def test_wr_all_healthy_is_risk_on():
+    """Test 1: an all-healthy 10-market universe reads Risk-on, score >=70, no drags."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_trend(4000.0, 0.0006, seed=20),
+             "CN": _wr_trend(3000.0, 0.0006, seed=21),
+             "HK": _wr_trend(18000.0, 0.0006, seed=22)}
+    states = {cc: {"state": "uptrend"} for cc in _ALL_CCS}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    assert ra["score"] >= 70, ra["score"]
+    assert ra["label_en"] == "Risk-on"
+    assert ra["top_drags"] == []
+    assert ra["n_available"] == 10
+    assert ra["coverage_pct"] == 100.0
+
+
+def test_wr_heavy_crash_beats_equal_weight_and_leads_with_big_markets():
+    """Test 2: US + CN (heavy caps) in crash, small markets healthy → score drops
+    materially vs an equal-weight read; drags lead with US/CN; label != Risk-on when
+    the breakdown share is >=20%."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_trend(4000.0, -0.001, seed=20),
+             "CN": _wr_trend(3000.0, -0.001, seed=21),
+             "HK": _wr_trend(18000.0, 0.0006, seed=22)}
+    states = {cc: {"state": "uptrend"} for cc in _ALL_CCS}
+    states["US"] = {"state": "crash"}
+    states["CN"] = {"state": "crash"}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    # equal-weight sanity: if every market counted the same, 8/10 healthy would
+    # dominate; the cap weighting must pull the score down instead.
+    assert ra["score"] < 60, ra["score"]
+    assert ra["top_drags"][0]["cc"] in {"US", "CN"}
+    assert ra["breakdown_share_pct"] >= 20
+    assert ra["label_en"] != "Risk-on"
+
+
+def test_wr_missing_cn_hk_renormalises():
+    """Test 3: missing CN/HK series → coverage_pct < 100, still returns a dict."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_trend(4000.0, 0.0006, seed=20)}   # no CN, no HK
+    states = {cc: {"state": "uptrend"} for cc in ["JP", "KR", "TW", "GB", "EZ", "IN", "AU", "US"]}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None                                # no raise
+    assert ra["coverage_pct"] < 100.0
+    assert "CN" not in ra["per_market"] and "HK" not in ra["per_market"]
+    assert ra["n_available"] == 8
+
+
+def test_wr_regression_todays_failure_scores_below_60():
+    """Test 4: the exact scenario that gave the old dial 75/100 while KR was in a
+    crash — 6-of-7 small markets above 200d, KR crashing, US below 50d/above 200d,
+    CN + HK breaking. The v2 dial must read < 60."""
+    # KR crashes; the other 6 intl markets healthy above 200d
+    closes = _wr_intl_frame()
+    closes["^KS11"] = _wr_crash(100.0, 0.0006, 0.25, seed=99)   # KR ~-25%
+    # US: rose all year then a mild late decline → above 200d but under 50d (rollover)
+    us = np.full(400, np.log(1.0006))
+    us[-40:] = np.log(0.9990)
+    us_s = pd.Series(4000.0 * np.exp(np.cumsum(us)),
+                     index=pd.bdate_range("2023-06-01", periods=400))
+    extra = {"US": us_s,
+             "CN": _wr_crash(3000.0, 0.0004, 0.14, seed=21),
+             "HK": _wr_crash(18000.0, 0.0004, 0.14, seed=22)}
+    states = {"JP": {"state": "uptrend"}, "TW": {"state": "uptrend"},
+              "GB": {"state": "uptrend"}, "EZ": {"state": "uptrend"},
+              "IN": {"state": "uptrend"}, "AU": {"state": "uptrend"},
+              "KR": {"state": "crash"}, "US": {"state": "downtrend"},
+              "CN": {"state": "breaking"}, "HK": {"state": "breaking"}}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    assert ra["score"] < 60, f"v2 score {ra['score']} should be < 60 (old dial gave ~75)"
+    assert ra["label_en"] != "Risk-on"
+    drag_ccs = {d["cc"] for d in ra["top_drags"]}
+    assert drag_ccs & {"US", "CN", "HK", "KR"}
+
+
+def test_wr_split_tape_verdict_is_label_not_score_floor():
+    """A high score with a concentrated (>=20% cap) breakdown reads 'Split tape' —
+    verdict-label semantics on the display dial; the score itself is untouched."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_trend(4000.0, 0.0006, seed=20),
+             "CN": _wr_trend(3000.0, 0.0006, seed=21),
+             "HK": _wr_trend(18000.0, 0.0006, seed=22)}
+    states = {cc: {"state": "uptrend"} for cc in _ALL_CCS}
+    # break EZ (9) + JP (5.5) + HK (3.5) + CN (6.5) = 24.5% of covered cap
+    for cc in ("EZ", "JP", "HK", "CN"):
+        states[cc] = {"state": "breaking"}
+    ra = P.risk_appetite(closes, extra_closes=extra, states=states)
+    assert ra is not None
+    assert ra["breakdown_share_pct"] >= 20
+    if ra["score"] >= 60:
+        assert ra["label_en"] == "Split tape"
+        assert ra["tone"] == "warn"
+
+
+def test_wr_state_health_map_matches_market_state_keys():
+    """Test 5 (drift guard): the state-health map's keys == the STATES catalogue."""
+    from engine.intl_market_state import STATES
+    assert set(P._STATE_HEALTH.keys()) == set(STATES.keys())
+
+
+def test_wr_no_state_renormalises_over_trend_and_mom():
+    """A market with no turn state must still contribute via trend+mom (leg weights
+    renormalise over the present legs), not be dropped."""
+    closes = _wr_intl_frame()
+    extra = {"US": _wr_trend(4000.0, 0.0006, seed=20)}
+    ra = P.risk_appetite(closes, extra_closes=extra, states={})   # NO states at all
+    assert ra is not None
+    assert ra["n_available"] >= 8                                 # 7 intl + US
+    # per-market health computed from trend+mom only (state leg absent)
+    assert ra["per_market"]["US"]["state"] is None
+    assert 0.0 <= ra["per_market"]["US"]["h"] <= 1.0
 
 
 def test_degrade_on_empty():

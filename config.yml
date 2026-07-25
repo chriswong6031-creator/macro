@@ -6210,6 +6210,23 @@ intl:
         gdp: CLVMNACSCAB1GQEA19
         # MYAGM2EZM196N discontinued 2017-03 — removed (M2 not displayed on intl page).
 
+  # -- World Risk Appetite v2 (engine.intl_performance.risk_appetite) ----------
+  # A DESCRIPTIVE display-tier dial (0-100): how risk-on is the WORLD tape, not
+  # just the 7 ex-US intl markets. Widens the universe to include the US, China
+  # and Hong Kong, weights each market by (sqrt-dampened) share of world equity
+  # market cap so the US counts most and a single small market can't dominate.
+  # Hand-pinned weights + descriptive only — never a forecast, never feeds sizing
+  # or gating (consistent with the rest of the intl performance desk).
+  world_risk:
+    # Hand-pinned approx shares of world equity market capitalisation (free-float
+    # basis, mid-2026). Descriptive display weights, sqrt-dampened at compose time
+    # so the dial is world-shaped rather than a pure US mirror. Not live data.
+    cap_share: {US: 62, EZ: 9, CN: 6.5, JP: 5.5, IN: 4, GB: 3.5, HK: 3.5, TW: 2.5, AU: 2, KR: 1.5}
+    extra_markets:                   # US/CN/HK are outside intl.countries — display fields for the turn board + drags
+      US: {name: "United States", name_zh: "美国", flag: "🇺🇸"}
+      CN: {name: "China", name_zh: "中国", flag: "🇨🇳"}
+      HK: {name: "Hong Kong", name_zh: "香港", flag: "🇭🇰"}
+
   # -- Engine (uniform across countries) --------------------------------------
   engine:
     scoring: {slope_window: 20, baseline_window: 60, z_threshold: 0.45, min_components: 2}
