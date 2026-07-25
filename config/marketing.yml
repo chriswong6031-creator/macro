@@ -163,7 +163,17 @@ sentinel:
 publish:
   backend: buffer          # only "buffer" is implemented today
   require_approval: true   # only outbox items an operator approved may post
-  auto_approve: false      # the runner NEVER approves on its own
+  # Operator decision 2026-07-24 ("auto-approve flagship signals"): the runner
+  # auto-advances queued→approved for EVERY item clearing all publish gates
+  # (validate_postable, a channel id configured for its account, under the daily
+  # cap, not operator-held), then the live tape gate below re-verifies each one
+  # against fresh quotes before it actually posts. Flagship-only in practice:
+  # only `flagship` has a channel id + enabled:true, and the auto-approve pass
+  # skips any account without a configured channel. Note: this is the ONLY lever
+  # that clears nightly content_studio signals — auto_approve_kinds is locked to
+  # the publish-time mover lane (provenance publisher_live_movers). Set back to
+  # false to return to fully-manual approval in the admin Outbox.
+  auto_approve: true       # was false; flagship posts autonomously (tape-gated)
 
   # Chart-image attach (D02 image pipeline). When true, content_studio renders a
   # PNG variant of each single-name signal chart at plan-build time, writes it to

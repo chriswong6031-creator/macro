@@ -209,6 +209,17 @@ def _auto_approve_kinds_cfg(pub_cfg: dict) -> frozenset[str]:
     return frozenset(out)
 
 
+def _at_cap(count: int, cap: int) -> bool:
+    """True when ``count`` has reached a REAL per-account daily cap. A negative
+    cap is the UNLIMITED sentinel (config ``max_posts_per_account_per_day: -1``,
+    surfaced by ``outbox.effective_cap`` as ``-1``): it means NO limit, so this
+    is always False. Every daily-cap gate routes through here so the -1 trap
+    (``0 >= -1`` → skip everything) can never re-appear at one site and not
+    another — the cap is a FUNCTIONAL gate on posting, not just a display value.
+    """
+    return cap >= 0 and count >= cap
+
+
 def _select_approved_due(state: dict, statuses: dict, items_by_id: dict,
                          account: str | None, now: datetime) -> list[dict]:
     """The APPROVED + DUE candidate set (+ optional account filter), sorted the
@@ -311,7 +322,7 @@ def _auto_approve_pass(
         if not _channel_id_for(pub_cfg, acct):
             log.info("auto-approve SKIP %s (%s): no channel id configured", iid, acct)
             continue
-        if budget.get(acct, 0) >= cap:
+        if _at_cap(budget.get(acct, 0), cap):
             log.info("auto-approve SKIP %s (%s): account at daily cap (%d/day)", iid, acct, cap)
             continue
 
@@ -604,7 +615,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         # -- per-account daily cap -------------------------------------------
-        if posted_today.get(account, 0) >= cap:
+        if _at_cap(posted_today.get(account, 0), cap):
             log.info("item %s (%s) skipped — account at daily cap (%d/day)",
                      iid, account, cap)
             skipped_cap += 1
@@ -831,7 +842,7 @@ def dry_run_report(root=None, *, account: str | None = None,
             if problems:
                 quarantine.append({"id": iid, "account": acct, "reasons": problems})
                 continue
-            if budget.get(acct, 0) >= cap:
+            if _at_cap(budget.get(acct, 0), cap):
                 skipped_cap += 1
                 continue
             channel_id = _channel_id_for(pub_cfg, acct)
