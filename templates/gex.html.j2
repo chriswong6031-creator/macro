@@ -151,6 +151,20 @@
   .hchip .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
   .hchip b{font-weight:800}
   .hchip.warn{color:var(--orange);border-color:color-mix(in srgb,var(--orange) 42%,var(--line));background:color-mix(in srgb,var(--orange) 7%,var(--panel2))}
+  /* deep link to the live view of the same name in the Terminal (built in gex.js
+     via theme.js MDXTerminal.url — carries &from=macro and the &ret= return stamp).
+     Deliberately --info, NOT the regime accent --rg: this is navigation, and a chip
+     that turned red on a jumpy name would read as a market warning it is not. */
+  a.hchip.gx-term{text-decoration:none;color:var(--info);gap:6px;
+    border-color:color-mix(in srgb,var(--info) 34%,var(--line));
+    background:color-mix(in srgb,var(--info) 8%,var(--panel2));
+    transition:background .16s ease,border-color .16s ease,transform .16s ease}
+  a.hchip.gx-term:hover{background:color-mix(in srgb,var(--info) 15%,var(--panel2));
+    border-color:color-mix(in srgb,var(--info) 55%,var(--line))}
+  a.hchip.gx-term:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+  a.hchip.gx-term .gx-term-ar{font-size:11px;opacity:.75;transition:transform .16s ease}
+  a.hchip.gx-term:hover .gx-term-ar{transform:translate(1px,-1px)}
+  @media (prefers-reduced-motion:reduce){a.hchip.gx-term,a.hchip.gx-term .gx-term-ar{transition:none}}
   .hasof{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
   .hasof .bd{width:6px;height:6px;border-radius:50%;background:var(--up);animation:gxBreathe 2.8s ease-in-out infinite}
 

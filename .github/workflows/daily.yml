@@ -1335,6 +1335,9 @@ jobs:
         # Mirror site/flow/index.json → R2 key live_flow/flow_idx.json so the live
         # options-flow heatmap layer can read a fresh manifest without a full site deploy.
         # Runs AFTER the parallel band (cl_gex → build_options_flow produced the file).
+        # Also mirrors the Terminal EOD-context artifacts (OEU M-XP b): site/darkpool_eod.json
+        # → darkpool/eod.json and site/vol/regime.json → vol/regime.json, for the Terminal's
+        # Dark Pool mini-panel + Structure strip (lane T-E).
         # Graceful: skips silently when R2 creds are absent. Never fails the build.
         continue-on-error: true
         env:
@@ -1346,6 +1349,7 @@ jobs:
           python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --leaders || echo "::warning::flow leaders R2 mirror failed (non-fatal)"
           python -m scripts.mirror_flow_idx --radar || echo "::warning::leader radar R2 mirror failed (non-fatal)"
+          python -m scripts.mirror_terminal_context_r2 || echo "::warning::terminal-context R2 mirror failed (non-fatal)"
       - name: flow-signal ledger harvest + outcome grader (FS-0)
         # FS-0 (FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE §5): append-only per-event
         # flow ledger (collectors/flow_signals.py) + outcome grader

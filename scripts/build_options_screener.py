@@ -29,6 +29,12 @@ Columns assembled:
 Feature flag: config.yml key `options_screener.enabled` (default true).  If false,
 this script returns 0 immediately, emitting a noindex stub — same darkpool precedent.
 
+Also emits (OEU_MASTERPLAN §4 M-XP c): site/screenerdata/rows.json — the same rows payload
+the page inlines, plus the built stamp and universe counts, as a plain fetchable artifact
+for the Options workspace Scanner mode (lane M-CMD). Same rows, one source of truth: the
+export is written from the identical `rows`/`coverage` objects the template receives, so
+page and payload can never drift. Fenced in main() — an export failure never breaks the page.
+
 Run: python -m scripts.build_options_screener
 """
 from __future__ import annotations
@@ -536,6 +542,40 @@ def build_screener_rows(
 
 
 # ---------------------------------------------------------------------------
+# Scanner-mode rows export (M-XP c)
+# ---------------------------------------------------------------------------
+
+ROWS_SCHEMA    = "options_screener_rows.v1"
+ROWS_JSON_REL  = Path("screenerdata") / "rows.json"
+
+
+def write_rows_export(rows: list[dict], coverage: dict,
+                      out_path: Path | None = None) -> Path:
+    """Write the Scanner-mode rows export → site/screenerdata/rows.json.
+
+    Carries the SAME rows the page inlines (no re-derivation, no re-sort), the built stamp,
+    and the universe counts the page stamps on its coverage line — so a consumer can render
+    the honest "n names, median Xd history, young<252d" disclosure without scraping HTML.
+    Display-tier only: no scores, no ranks; row order is the page's (gross premium desc).
+    """
+    payload = {
+        "schema": ROWS_SCHEMA,
+        "built": coverage.get("built"),
+        "n_rows": len(rows),
+        # Universe + feature coverage, verbatim from the builder (n_names, n_young,
+        # n_mature, median_depth_days, young_threshold, n_skew, n_ivspread, n_relvol).
+        "coverage": coverage,
+        "rows": rows,
+    }
+    out = out_path or (config.ROOT / "site" / ROWS_JSON_REL)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":"),
+                              default=str), encoding="utf-8")
+    log.info("wrote %s (%d KB, %d rows)", out, len(out.read_text()) // 1024, len(rows))
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Builder main
 # ---------------------------------------------------------------------------
 
@@ -607,6 +647,13 @@ def main() -> int:
     out = site / "options_screener.html"
     write_page(out, html)
     log.info("wrote %s (%d KB, %d rows)", out, len(html) // 1024, len(rows))
+
+    # M-XP(c): Scanner-mode rows export. Additive + fenced — a failure writing the payload
+    # must NEVER cost us the page (same guard the darkpool pane writer uses).
+    try:
+        write_rows_export(rows, coverage)
+    except Exception as e:  # noqa: BLE001
+        log.warning("rows export failed (page still written): %s", e)
     return 0
 
 
