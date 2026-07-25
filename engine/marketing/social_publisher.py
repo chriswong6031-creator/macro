@@ -42,7 +42,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
@@ -243,6 +243,36 @@ def _normalize_metrics(raw: list[dict]) -> dict[str, Any]:
 def _iso_now(now: datetime | None = None) -> str:
     ts = now if now is not None else datetime.now(timezone.utc)
     return ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# Buffer rejects a customScheduled post whose dueAt is not in the future
+# ("Invalid post input: dueAt must be in the future"). The publisher only ever
+# posts DUE items, whose scheduled_at (their ladder slot) is in the PAST by post
+# time — so a naive dueAt=scheduled_at fails EVERY post (the real reason the
+# account had never published). Bump any past/near-now slot to a small margin
+# ahead of now, which Buffer accepts and publishes promptly; the margin also
+# absorbs runner↔Buffer clock skew.
+_MIN_DUE_LEAD = timedelta(minutes=3)
+
+
+def _effective_due_at(scheduled_at: str | None, now: datetime | None = None) -> str | None:
+    """Resolve the dueAt to send Buffer, or None to fall back to addToQueue.
+
+    - blank/unparseable scheduled_at → None (Buffer slots it into the queue);
+    - a scheduled_at at/before now + lead → now + lead (post ~now, in the future);
+    - a genuinely future scheduled_at → itself (honour the schedule).
+    """
+    s = (scheduled_at or "").strip()
+    if not s:
+        return None
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+    floor = (now if now is not None else datetime.now(timezone.utc)) + _MIN_DUE_LEAD
+    return (floor if dt < floor else dt).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -556,9 +586,10 @@ class BufferPublisher:
                 "channelId": channel_id,
                 "schedulingType": "automatic",
             }
-            if scheduled_at and scheduled_at.strip():
+            eff_due = _effective_due_at(scheduled_at, now)
+            if eff_due:
                 create_input["mode"] = "customScheduled"
-                create_input["dueAt"] = scheduled_at.strip()
+                create_input["dueAt"] = eff_due
             else:
                 create_input["mode"] = "addToQueue"
 
