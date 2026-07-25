@@ -4,7 +4,7 @@ Contract: MNZ masterplan §3.5 + Amendment 2.
 
 DESIGN PRINCIPLES
 -----------------
-* TWO LANES — 'fast' (DeepSeek deepseek-chat → haiku fallback) and
+* TWO LANES — 'fast' (DeepSeek deepseek-v4-pro → haiku fallback) and
   'pro' (claude-opus-5 → sonnet fallback, high-effort adaptive thinking).  Lane
   config in config/brain.yml (MNZ-R12: config-not-literals).
 * GOVERNANCE (MNZ-R5): system prompt = read/explain over calibrated artifacts.
@@ -94,7 +94,7 @@ def _load_brain_config(root: Path | None = None) -> dict:
         "lanes": {
             "fast": {
                 "provider_order": ["deepseek", "anthropic"],
-                "deepseek_model": "deepseek-chat",
+                "deepseek_model": "deepseek-v4-pro",
                 "deepseek_key_env": "DEEPSEEK_API_KEY",
                 "deepseek_base_url": "https://api.deepseek.com/anthropic",
                 "fallback_model": "claude-haiku-4-5",
@@ -3542,7 +3542,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
 
     if lane == "fast":
         # Primary: DeepSeek; fallback: haiku via anthropic key
-        deepseek_model = lane_cfg.get("deepseek_model") or "deepseek-chat"
+        deepseek_model = lane_cfg.get("deepseek_model") or "deepseek-v4-pro"
         fallback_model = lane_cfg.get("fallback_model") or "claude-haiku-4-5"
 
         ds_cfg = {
