@@ -50,7 +50,12 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest    # OFF the render path — never the macstudio pool
-    timeout-minutes: 15
+    # 25m, not 15m: the full-history checkout (fetch-depth:0) of this
+    # heavy-churn repo alone runs ~7m and grows nightly; + deps install (~2m)
+    # + humanizing jitter (≤5m) + publish/poll left NO margin under a 15m cap,
+    # so high-jitter draws blew the wall and the whole run was CANCELLED before
+    # the publisher step ever ran (2026-07-24 regression: 4 consecutive kills).
+    timeout-minutes: 25
     env:
       BUFFER_TOKEN: ${{ secrets.BUFFER_TOKEN }}
       # Kill-switch: a repo VARIABLE (single source of truth), NOT a secret. The
@@ -78,9 +83,13 @@ jobs:
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
-        # best-effort ~0-15m late; this adds up to 10 more minutes of scatter so
-        # the account never posts on the exact same wall-clock minute).
-        run: sleep $((RANDOM % 600))
+        # best-effort ~0-15m late; this adds up to 5 more minutes of scatter so
+        # the account never posts on the exact same wall-clock minute). Capped at
+        # 5m (was 10m): combined with the ~7m full-history checkout + deps install
+        # a high draw ran past the job timeout and the run was cancelled before the
+        # publisher step (see timeout-minutes note above). 5m still de-syncs the
+        # wall-clock minute; the cron itself already adds ~0-15m of natural scatter.
+        run: sleep $((RANDOM % 300))
 
       - name: fetch full-universe live quotes (tape gate input)
         # AFTER the jitter sleep so the snapshot is as fresh as possible at post
