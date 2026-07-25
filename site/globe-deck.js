@@ -28,7 +28,14 @@
   var inView = true;             // set by IntersectionObserver; keeps frame loop cheap when off-screen
   var _skipSizeRender = false;   // governor tier changes: frame() renders next, skip size()'s repaint
   var lastScrollT = -1e4;        // timestamp of last scroll event (performance.now())
-  window.addEventListener("scroll", function () { lastScrollT = performance.now(); }, { passive: true });
+  window.addEventListener("scroll", function () { lastScrollT = performance.now(); _wake(); }, { passive: true });
+  // ---- thermal guard -------------------------------------------------------
+  // Ambient (no-interaction) repaints are capped to ~30fps: ProMotion phones
+  // otherwise run this full-canvas repaint at 120Hz and cook in minutes. After
+  // PARK_MS with no real user input the loop, the auto-tour and the decorative
+  // CSS animations park entirely on the last frame; any touch/scroll/key wakes them.
+  var AMBIENT_MS = 30, PARK_MS = 120000;
+  var _lastRenderT = 0, _parked = false, _parkCss = null;
 
   // Quality tier: 2=high dpr≤2, 1=mid dpr≤1.5, 0=low dpr≤1.15
   // _tierPinned: set by __gdSetTier(); prevents the auto-governor from overriding the manual choice.
@@ -162,6 +169,9 @@
     W = Math.max(200, Math.floor(rect.width)); H = Math.max(240, Math.floor(rect.height));
     // Q-governed dpr: tier 2=full, 1=mid, 0=low
     dpr = Math.min(Q === 2 ? 2 : Q === 1 ? 1.5 : 1.15, window.devicePixelRatio || 1);
+    // phone-width stage: cap at 1.5 — under the glow/halo the extra pixels are
+    // invisible, but 2.0 is 78% more raster area per frame (thermals)
+    if (W < 560) dpr = Math.min(dpr, 1.5);
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     // half-res glow canvas (dominant shadowBlur cost lives here)
@@ -861,9 +871,16 @@
     // scroll pause: frozen globe during scroll (imperceptible, kills scroll jank).
     // _lastFrameT resets so the pause gap never lands in the governor's dt window.
     if (t - lastScrollT < 120) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
-    // quality governor: push dt sample every frame
-    if (_lastFrameT > 0) _pushDt(t - _lastFrameT);
+    var interacting = !!flying || dragging || !!sweep || Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02;
+    // thermal park: nothing but the tour has happened for PARK_MS — freeze on this frame
+    if (!interacting && !selected && t - lastInteract > PARK_MS) { _park(); return; }
+    // thermal cap: ambient repaints at ~30fps; interaction keeps the native rate
+    if (!interacting && t - _lastRenderT < AMBIENT_MS) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+    // quality governor: sample only uncapped frames (capped dt would read as jank)
+    if (interacting && _lastFrameT > 0) _pushDt(t - _lastFrameT);
     _lastFrameT = t;
+    var rdt = _lastRenderT > 0 ? Math.min(100, t - _lastRenderT) : 16.7;   // real time between painted frames
+    _lastRenderT = t;
     if (sweep && t - sweep.t0 > sweep.dur + 500) sweep = null;
     var tgt = (hovering && !dragging) ? 0.5 : 1; spd += (tgt - spd) * 0.05;   // fade slowdown / fade speedup on hover
     if (flying) {
@@ -879,7 +896,7 @@
     } else if (Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02) {
       rot[0] += velX; rot[1] = clampLat(rot[1] + velY); velX *= 0.94; velY *= 0.94; apply();
     } else if (motionOK && !selected && !_tour.hold && (t - lastInteract) > 1500) {
-      rot[0] += 0.12 * spd; apply();   // idle auto-rotate, eased to half-speed while hovered; parked mid-tour-step
+      rot[0] += 0.12 * spd * (rdt / 16.7); apply();   // idle auto-rotate (dt-scaled: same visual speed at 30 or 120fps), eased to half-speed while hovered; parked mid-tour-step
     }
     render(t);
     raf = requestAnimationFrame(frame);
@@ -910,6 +927,36 @@
       });
     }, { threshold: 0, rootMargin: "80px" }).observe(stage);
   }
+
+  // ---- thermal park / wake -------------------------------------------------
+  // _park: cancel the frame loop on the current frame, tuck away any tour tooltip,
+  // and pause the page's decorative infinite CSS animations (sun-ray spin, island
+  // float/breathe, chevron drift) — canvas is frozen, compositor goes idle.
+  function _park() {
+    if (_parked) return;
+    _parked = true;
+    if (raf) cancelAnimationFrame(raf);
+    raf = null; _lastFrameT = 0;
+    if (_tour.phase === "show" && !selected) { tip.hidden = true; tip.style.pointerEvents = ""; }
+    _tour.phase = "wait"; _tour.hold = false;
+    if (!_parkCss) {
+      _parkCss = document.createElement("style");
+      _parkCss.textContent = "html.gd-parked #sky *,html.gd-parked .globe-deck *{animation-play-state:paused!important}";
+      document.head.appendChild(_parkCss);
+    }
+    document.documentElement.classList.add("gd-parked");
+  }
+  // _wake: any real user input — restart the loop and CSS animations, reset the timer.
+  function _wake() {
+    lastInteract = performance.now();
+    if (!_parked) return;
+    _parked = false;
+    document.documentElement.classList.remove("gd-parked");
+    if (motionOK && ready && inView && !raf) raf = requestAnimationFrame(frame);
+  }
+  ["pointerdown", "keydown", "touchstart"].forEach(function (ev) {
+    window.addEventListener(ev, _wake, { passive: true });
+  });
 
   // ---- interaction ---------------------------------------------------------
   var px = 0, py = 0, moved = 0, lastMoveT = 0;
@@ -1498,6 +1545,7 @@
     // After the fly, show the tip at the stage centre (isTour=true).
     setTimeout(function () {
       if (!_tour.active) return;
+      if (_parked) { _tour.hold = false; return; }    // thermal park landed during the fly — bail
       if (selected) { _tour.hold = false; return; }   // user pinned something during the fly — bail
       if (_tour.pauseUntil > performance.now()) { _tour.hold = false; return; }   // paused during fly
       var sr = stage.getBoundingClientRect();
@@ -1511,6 +1559,7 @@
     // After show duration, hide the tip, glide the zoom back out and resume rotation
     setTimeout(function () {
       if (!_tour.active) return;
+      if (_parked) { _tour.hold = false; return; }
       if (selected) { _tour.hold = false; return; }
       if (_tour.pauseUntil > performance.now()) { _tour.hold = false; return; }
       tip.hidden = true;
@@ -1531,6 +1580,7 @@
   var _tourInterval = null;
   function _tourTick() {
     if (!_tour.active) return;
+    if (_parked) return;    // thermal park: tour sleeps with the globe
     if (!motionOK) return;
     if (!inView) return;
     if (document.hidden) return;

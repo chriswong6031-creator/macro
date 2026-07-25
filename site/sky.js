@@ -32,6 +32,10 @@
   if (!SAT_ENABLED && satEl) satEl.style.opacity = '0';   // hide once; frame() will skip placeSat
   var W = 0, H = 0, dpr = 1, stars = [];
   var raf = 0, running = false, lastT = 0;
+  // thermal park: after PARK_MS with no user input the twinkle loop stops on the
+  // current frame (frozen stars are imperceptible) — the canvas otherwise redraws
+  // full-screen forever, even scrolled away behind content. Input restarts it.
+  var PARK_MS = 120000, lastActT = nowMs();
   var starAlpha = 0, starTarget = 0;   // global star opacity (eased toward target)
   var entry = 1, entryTarget = 1;       // 0..1 "fly in from all directions" progress
 
@@ -190,6 +194,7 @@
   var _moonScrollRaf = 0;
   window.addEventListener('scroll', function () {
     lastScrollT = performance.now();
+    if (!running && motionOK && starTarget > 0) run();   // thermal wake on scroll
     if (_moonScrollRaf) return;
     _moonScrollRaf = requestAnimationFrame(function () {
       _moonScrollRaf = 0;
@@ -210,9 +215,9 @@
 
     // --- scroll skip: canvas is position:fixed; frozen stars during scroll are imperceptible ---
     var scrolling = (t - lastScrollT) < 120;
-    // --- twinkle throttle: once animation has settled, cap redraws to ~30fps ---
+    // --- twinkle throttle: once animation has settled, cap redraws to ~25fps ---
     var settled = entry > 0.996 && Math.abs(starAlpha - starTarget) < 0.004;
-    var throttled = settled && (t - lastDrawT) < 28;
+    var throttled = settled && (t - lastDrawT) < 38;
     if (!scrolling && !throttled) {
       drawStars(t);
       lastDrawT = t;
@@ -222,6 +227,8 @@
     if (!motionOK) { running = false; raf = 0; return; }   // static single frame
     var fullySettled = Math.abs(starAlpha - starTarget) < 0.004 && Math.abs(entry - entryTarget) < 0.004;
     if (starTarget === 0 && fullySettled) { running = false; raf = 0; cx.clearRect(0, 0, W, H); return; }
+    // thermal park: settled + no user input for PARK_MS — freeze on this frame
+    if (fullySettled && t - Math.max(lastActT, lastScrollT) > PARK_MS) { running = false; raf = 0; return; }
     raf = requestAnimationFrame(frame);
   }
   function run() { if (!running) { running = true; lastT = 0; if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); } }
@@ -255,6 +262,12 @@
   }
 
   // --- wiring --------------------------------------------------------------
+  // thermal wake: any real user input restarts a parked twinkle loop
+  function _activity() { lastActT = nowMs(); if (!running && motionOK && starTarget > 0) run(); }
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+    window.addEventListener(ev, _activity, { passive: true });
+  });
+
   var rz;
   window.addEventListener('resize', function () {
     clearTimeout(rz);
