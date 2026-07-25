@@ -384,6 +384,10 @@ jobs:
             cl_misc() {
               brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
               brun reports       "research reports section (build_reports)"     scripts.build_reports
+              # RV SEO (#3392 heal): vault page + per-report /research/ landing pages re-render
+              # from the COMMITTED catalog (research-ingest commits it). Was daily-engine-only,
+              # so the SEO pages stayed dark whenever the nightly died. Keep in engine-render too.
+              brun research_vault "research vault page + report SEO pages (build_research_vault)" scripts.build_research_vault
               brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
               brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
               brun cycle         "cycle intelligence shell (build_cycle)"        scripts.build_cycle
