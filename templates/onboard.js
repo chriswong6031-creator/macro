@@ -206,7 +206,7 @@
     // free → start a trial
     upFreeSub:    ["Start a 7-day free trial of Insider or Pro — your card starts the trial and we tell you exactly when the first charge lands.", "开启 Insider 或 Pro 的 7 天免费试用——绑卡即开始试用，我们会明确告知首次扣款时间。"],
     // annual-discount subheads
-    upToAnnualSub:["Switch to annual and save up to " + bestSavePct() + "%.", "切换为年付，最高可省 " + bestSavePct() + "%。"],
+    upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Insider time is credited toward it.", "升级到 Pro 年付——以月均最低价获得完整台席。剩余的 Insider 时长将折算抵扣。"],
     upProAnnualSub:["Move up to Pro Annual — everything in Pro, at the lowest per-month price.", "升级到 Pro 年付——Pro 全部功能，月均价格最低。"],
     // lane cards
     laneInsAnnual:["Insider Annual", "Insider 年付"],
@@ -221,7 +221,7 @@
     lanePopular:  ["MOST POPULAR", "最受欢迎"],
     laneProAnnualPitch:["$__A__/yr instead of $__M__ — save __P__%.", "$__A__/年，而非 $__M__——省 __P__%。"],
     // inline confirm
-    upConfirmProrate:["You'll be charged the prorated difference now.", "现在将按比例向你收取差额。"],
+    upConfirmProrate:["Your unused time is credited — you pay only the prorated difference today.", "未使用时长将折算为抵扣——今天只需支付按比例计算的差额。"],
     upConfirmTrial:["Your trial continues — billing switches when it ends.", "试用继续——结算将在试用结束时切换。"],
     upConfirmGo:  ["Confirm upgrade", "确认升级"],
     upConfirmGoBusy:["Upgrading…", "正在升级…"],
@@ -1062,10 +1062,12 @@
   function upgradeLanes(tier, interval) {
     var monthly = (interval === "monthly" || !interval);
     if (tier === "insider" && monthly) {
+      // Lead with Pro Annual — the recommended, largest-step upgrade (tier + annual),
+      // then the alternatives. Order = persuasion order; `popular` drives the ribbon.
       return [
-        { tier: "insider", interval: "annual" },
+        { tier: "pro", interval: "annual", popular: true },
         { tier: "pro", interval: "monthly" },
-        { tier: "pro", interval: "annual", popular: true }
+        { tier: "insider", interval: "annual" }
       ];
     }
     if (tier === "insider") return [{ tier: "pro", interval: "annual", proPitch: true }];   // insider-annual

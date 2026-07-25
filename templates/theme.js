@@ -1444,6 +1444,7 @@
     '.sd-row-line{display:flex;align-items:center;gap:11px;min-height:24px}',
     '.sd-row-main{flex:1;min-width:0}',
     '.sd-row-lbl{display:block;font-size:12.5px;font-weight:700;color:var(--text,var(--ink))}',
+    '.sd-mailv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.sd-row-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3,#8b93a7));margin-top:2px;line-height:1.4}',
     '.sd-row-val{flex:none;max-width:45%;font-size:13px;color:var(--muted,var(--ink-3,#8b93a7));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.sd-row-val.strong{color:var(--text,var(--ink))}',
@@ -1950,11 +1951,10 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          // email
+          // email — the address itself is the row's primary text (no redundant "Email" label)
           '<div class="sd-row" id="sd-row-email">' +
             '<div class="sd-row-line">' +
-              '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('email') + '</span></span>' +
-              '<span class="sd-row-val strong">' + _escHtml(email) + '</span>' +
+              '<span class="sd-row-main"><span class="sd-row-lbl sd-mailv">' + _escHtml(email) + '</span></span>' +
               '<button type="button" class="sd-edit" data-sd-edit="email">' + _sdBl('edit') + '</button>' +
             '</div>' +
             '<div class="sd-form">' +
@@ -2191,10 +2191,11 @@
     var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
     var cta = '';
     if (!top) {
+      // Insider (any interval) → lead with the Pro upgrade (the recommended move);
+      // Pro monthly → the annual switch. Free → choose a plan.
       var lblKey = !paid ? 'choosePlan'
-                 : (tier === 'pro') ? 'switchAnnual'
-                 : (interval === 'monthly' || !interval) ? 'upgradeAnnual'
-                 : 'upgradePro';
+                 : (tier === 'insider') ? 'upgradePro'
+                 : 'switchAnnual';
       cta = '<div class="sd-plan-cta">' +
           '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl(lblKey) + '</button>' +
         '</div>';
