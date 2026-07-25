@@ -56,3 +56,5 @@
 {"date": "2026-07-24", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 0.292, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
 {"date": "2026-07-24", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.524, "tone_pctile": 7.1, "narrative_state": "tone_negative_shift", "asof_freshness": "degraded", "organ": "hk_narrative"}
 {"date": "2026-07-24", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -0.472, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-07-25", "ticker": "1810.HK", "slug": "xiaomi", "name_en": "Xiaomi", "attention_shock_z": -1.338, "tone_pctile": 0.0, "narrative_state": "tone_negative_shift", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-07-25", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -0.472, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}

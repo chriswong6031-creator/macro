@@ -23,10 +23,17 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=24ca655a">
+<link rel="stylesheet" href="theme.css?v=eeb9bebc">
 <link rel="stylesheet" href="cycle.css?v=4">
-<link rel="stylesheet" href="sector_cycles.css?v=53d45064">
-<link rel="stylesheet" href="assets/css/572ee1f6.css?v=572ee1f6">
+<link rel="stylesheet" href="sector_cycles.css?v=8d6b401d">
+
+<link rel="preload" href="sector_cycles_china_data.js?v=da376dff" as="script">
+<link rel="preload" href="mm_charts.js?v=244eb769" as="script">
+<link rel="preload" href="sector_cycles.js?v=bc35b288" as="script">
+<link rel="prefetch" href="sector_cycles_china_series_data.js?v=0f86d5fd" as="script">
+<link rel="prefetch" href="sector_cycles_china_narr_data.js?v=fbfe9e12" as="script">
+<link rel="prefetch" href="sector_cycles_china_dna_data.js?v=ea6c6a47" as="script">
+<link rel="stylesheet" href="assets/css/43352729.css?v=43352729">
 </head>
 <body>
 
@@ -243,8 +250,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=0add7ac4" defer></script>
-  <script src="live.js?v=5cbadd26" defer></script>
+  <script src="live_config.js?v=52943e92" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -371,7 +378,7 @@
   </footer>
 </div>
 
-<script src="sector_central_china_data.js?v=944dab3e" defer></script>
+<script src="sector_central_china_data.js?v=1b1745f6" defer></script>
 <script>
 (function(){
   "use strict";
@@ -741,18 +748,17 @@
 <script>
 (function(){
   window.SC_EXTRA_DATA=['sector_cycles_china_narr_data.js','sector_cycles_china_dna_data.js'];
-  var files=['sector_cycles_china_data.js','mm_charts.js?v=4','sector_cycles.js'];
+  window.SC_SERIES_DATA='sector_cycles_china_series_data.js';  // heavy arrays, hydrated after first paint
+  function vUrl(name){try{var l=document.querySelector('link[rel="preload"][href^="'+name+'"],link[rel="prefetch"][href^="'+name+'"]');if(l){var h=l.getAttribute('href');if(h)return h;}}catch(e){}return name;}
+  var files=['sector_cycles_china_data.js','mm_charts.js','sector_cycles.js'];
   var head=document.head;
-  function loadNext(i){
-    if(i>=files.length) return;
-    var s=document.createElement('script'); s.async=false; s.src=files[i];
+  files.forEach(function(f,i){
+    var s=document.createElement('script'); s.async=false; s.src=vUrl(f);
     if(i===0) s.addEventListener('load',function(){ document.dispatchEvent(new CustomEvent('sc:cycles-data')); });
-    s.addEventListener('load',function(){ loadNext(i+1); });
     head.appendChild(s);
-  }
-  loadNext(0);
+  });
 })();
 </script>
-<script src="theme.js?v=0d075e00" defer></script>
+<script src="theme.js?v=16dc65dc" defer></script>
 </body>
 </html>

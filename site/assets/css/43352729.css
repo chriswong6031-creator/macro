@@ -95,6 +95,9 @@
   .mini-cyc { margin: 7px 0 5px; position: relative; }
   .mini-cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 2px; letter-spacing: .02em; }
   .mini-cyc svg { display: block; width: 100%; height: 52px; }
+  /* empty basket slots reserve a rendered .mini-cyc's height (cap ~14px + svg 52px) so the card
+     doesn't reflow when the series arrays hydrate and the sparkline fills in (sc:cycles-data). */
+  .mini-cyc-slot { margin: 7px 0 5px; min-height: 66px; }
   .mc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
   .mc-read { position: absolute; font-size: 8px; font-variant-numeric: tabular-nums; pointer-events: none; transform: translateY(-50%); white-space: nowrap; }
   .mc-x { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); opacity: 0.5; pointer-events: none; display: none; }

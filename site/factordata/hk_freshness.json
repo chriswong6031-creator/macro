@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-07-25T07:18:29+00:00",
+  "checked_at": "2026-07-25T09:43:20+00:00",
   "expected_session": "2026-07-24",
   "stores": {
     "cache": {
@@ -23,8 +23,8 @@
       "state": "fresh"
     },
     "southbound": {
-      "asof": "2026-07-23",
-      "lag_days": 1,
+      "asof": "2026-07-24",
+      "lag_days": 0,
       "state": "fresh"
     }
   },

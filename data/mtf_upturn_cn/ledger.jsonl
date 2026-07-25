@@ -69,3 +69,4 @@
 {"session": "2026-07-24", "symbol": "603979.SS", "state": "UPTURN_CONFIRMED", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_buy"], "hysteresis_sessions_held": 1}
 {"session": "2026-07-24", "symbol": "688303.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_buy"], "hysteresis_sessions_held": 0}
 {"session": "2026-07-24", "symbol": "688599.SS", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_buy"], "hysteresis_sessions_held": 0}
+{"session": "2026-07-24", "symbol": "002036.SZ", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": true, "w_macd": "none", "w2_macd": false}, "sources": ["board_buy"], "hysteresis_sessions_held": 0}

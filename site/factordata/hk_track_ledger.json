@@ -10,7 +10,7 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 265,
+  "n_calls": 266,
   "n_logged": 235,
   "n_matured": 0,
   "n_beat": 0,
@@ -24,8 +24,8 @@
  "rows": [
   {
    "t": "1208.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "MMG",
+   "sec": "Materials",
    "grp": "entry_open",
    "d": "2026-07-23",
    "e": null,
@@ -879,8 +879,8 @@
   },
   {
    "t": "1208.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "MMG",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -2361,8 +2361,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-20",
    "e": null,
@@ -3121,8 +3121,8 @@
   },
   {
    "t": "9999.HK",
-   "nm": "NetEase",
-   "sec": "Internet & Tech",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-17",
    "e": null,

@@ -86,7 +86,7 @@
     "label": "deteriorating",
     "name": "Consumer Electronics",
     "name_zh": "\u6d88\u8d39\u7535\u5b50",
-    "rank": 17,
+    "rank": 18,
     "reco": "avoid",
     "score": 32
   },
@@ -94,9 +94,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 20,
+    "rank": 17,
     "reco": "avoid",
-    "score": 28
+    "score": 33
   },
   "cn_food_bev": {
     "label": "neutral",
@@ -158,7 +158,7 @@
     "label": "deteriorating",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 19,
+    "rank": 20,
     "reco": "avoid",
     "score": 29
   },
@@ -190,7 +190,7 @@
     "label": "deteriorating",
     "name": "Solar / Photovoltaics",
     "name_zh": "\u5149\u4f0f",
-    "rank": 18,
+    "rank": 19,
     "reco": "avoid",
     "score": 29
   }
