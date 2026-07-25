@@ -876,6 +876,10 @@ ENTRY_READ_NONE = "none"
 # Caveat keys (appended, never replace the verdict)
 ENTRY_CAVEAT_EARNINGS = "earnings_window"   # Cremers: post/pre-earnings gap unreliable
 ENTRY_CAVEAT_EXTENDED = "extended"          # turnaround name ALSO stretched (bear-rally class)
+# OEU M-PRO options caveats — same de-escalation idiom as earnings_window: a boolean
+# lookup appended to `caveats`, never a state condition, never a chip, never a rank.
+ENTRY_CAVEAT_PIN_RISK = "gex_pin_risk"      # scorable call wall sits just overhead
+ENTRY_CAVEAT_IV_ELEVATED = "iv_rank_elevated"  # options priced high vs the name's own history
 
 
 def entry_read(
@@ -883,6 +887,7 @@ def entry_read(
     evidence: dict[str, bool | None],
     de_escalations: dict[str, bool | None] | None = None,
     extension_pct_50d: float | None = None,
+    options_context: dict[str, bool | None] | None = None,
 ) -> dict:
     """Synthesize the display-tier entry-quality read for one name.
 
@@ -907,6 +912,18 @@ def entry_read(
           two-week pop off a flat 13w) — which is not a stretch read.
        c. otherwise the clean staged read for the state.
     3. Caveat ``earnings_window`` whenever the Cremers de-escalation chip is True.
+    4. Caveats ``gex_pin_risk`` / ``iv_rank_elevated`` (OEU M-PRO) whenever the
+       corresponding ``options_context`` boolean is True. Same idiom as (3): a
+       pre-computed evidence flag appended to the caveat list. These NEVER reach
+       ``key`` — a name does not change its stance because options are expensive;
+       the reader is simply told the option market is charging more, or that
+       there is dealer structure just overhead.
+
+    Args:
+        options_context: optional evidence-only booleans
+            {"wall_overhead": bool|None, "iv_elevated": bool|None}, derived by
+            lib/options_context.py from already-built EOD stores. Absent or None
+            → no options caveats, output byte-identical to the pre-M-PRO read.
 
     Returns {"key": str, "caveats": list[str], "basis": list[str],
     "extension_pct_50d": float|None}. ``basis`` lists the already-True chips
@@ -914,10 +931,15 @@ def entry_read(
     name the actual driver instead of guessing.
     """
     de_escalations = de_escalations or {}
+    options_context = options_context or {}
     caveats: list[str] = []
     basis: list[str] = []
     if de_escalations.get("earnings_within_14d") is True:
         caveats.append(ENTRY_CAVEAT_EARNINGS)
+    if options_context.get("wall_overhead") is True:
+        caveats.append(ENTRY_CAVEAT_PIN_RISK)
+    if options_context.get("iv_elevated") is True:
+        caveats.append(ENTRY_CAVEAT_IV_ELEVATED)
 
     _down_chips = [
         k for k in ("below_200dma_12m", "rs_slope_negative_3m", "drawdown_25pct")
