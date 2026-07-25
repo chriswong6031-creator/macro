@@ -1,0 +1,3 @@
+{"ticker":"QQQ","date":"2026-07-24","view":"zero",
+ "rows":[["040012",[[355,-459,-2889],[360,-19,-119],[375,-726,-4231],[400,263,134685],[430,-9560,22839],[450,-131842,-395205],[485,-38654,2676004],[530,23351,4966407],[550,67483,10788362],[560,53423,7704030]]]],
+ "_note":"per-snapshot per-strike [strike, a, b] pairs (exposure + $-notional-ish); powers Strike Gamma — Session + strike evolution popups; view=zero|all"}

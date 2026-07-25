@@ -1,0 +1,2 @@
+{"indices":{"DJX":{"value":519.47,"ts":1784928403397},"XSP":{"value":741.2,"ts":1784928980432},"SPX":{"value":7411.98,"ts":1784928395964,"bid":7375.54,"ask":7439.83},"OEX":{"value":3636.53,"ts":1784928396293,"bid":3630.19,"ask":3639.81},"XEO":{"value":3636.53,"ts":1784924400010},"NANOS":{"value":741.2,"ts":1784928980432},"DJS":{"value":518.05,"ts":1784903552008}},
+ "uncategorized":{"SPESG":{"value":652.13},"XSPBX":{"value":741.2},"DXL":{"value":5194.73},"_note":"dozens of CBOE special indices; cgif = Cboe Global Index Feed relay w/ stream-token endpoint for live"}}
