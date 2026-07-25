@@ -11,6 +11,18 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
 CADDY = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
 SITE = ROOT / "site"
+CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
+
+# Non-test inputs of the tier-gate job that no `run:` line names, so the
+# reachability test below cannot derive them: the two halves of the boundary this
+# module diffs, and the two routers the regwall/paywall suites exercise. Editing
+# any of them is exactly the change tier-gate exists to catch.
+TIER_GATE_SOURCE_INPUTS = (
+    "config/site_access.yml",
+    "app/deploy/Caddyfile",
+    "app/regwall.py",
+    "app/paywall.py",
+)
 
 # Caddy exclusions that have no home in config/site_access.yml. The policy
 # schema classifies static FILE paths under site/; these are reverse-proxied
@@ -64,6 +76,57 @@ def test_runtime_artifact_exemption_stays_honest():
     ignored = {line.strip() for line in (ROOT / ".gitignore").read_text().splitlines()}
     for prefix in RUNTIME_ARTIFACT_PREFIXES:
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
+
+
+def _gh_path_filter_to_re(pattern: str) -> re.Pattern:
+    """GitHub filter-pattern semantics: `*` stops at `/`, `**` crosses it."""
+    out: list[str] = []
+    i = 0
+    while i < len(pattern):
+        if pattern[i] == "*":
+            if pattern[i + 1:i + 2] == "*":
+                out.append(".*")
+                i += 2
+            else:
+                out.append("[^/]*")
+                i += 1
+        elif pattern[i] == "?":
+            out.append("[^/]")
+            i += 1
+        else:
+            out.append(re.escape(pattern[i]))
+            i += 1
+    return re.compile("^" + "".join(out) + "$")
+
+
+def test_tier_gate_is_reachable_from_its_own_inputs():
+    """A guard the guarded change cannot trigger is not a guard.
+
+    tier-gate runs every serving-boundary suite, but ci.yml is `on: pull_request`
+    with a ~530-entry `paths:` filter. Until 2026-07-25 not one of the job's
+    inputs was in that list, so the job only ever fired incidentally — when a PR
+    happened to also touch site/** or templates/**. #3488 changed ONLY
+    site_access.yml + Caddyfile + regwall.py, triggered no workflow at all, and
+    merged with the boundary test never executed (it then sat red on main). This
+    pins the trigger to the job: every test file tier-gate runs, plus the source
+    inputs above, must be named in the filter.
+    """
+    ci = yaml.safe_load(CI_WORKFLOW.read_text())
+    # PyYAML resolves the bare key `on` to True (YAML 1.1 booleans).
+    triggers = ci.get("on") or ci.get(True)
+    paths = triggers["pull_request"]["paths"]
+    matchers = [_gh_path_filter_to_re(p) for p in paths]
+
+    steps = ci["jobs"]["tier-gate"]["steps"]
+    run_tests = set(re.findall(r"tests/test_[A-Za-z0-9_]+\.py", "\n".join(
+        s["run"] for s in steps if "run" in s)))
+    assert run_tests, "tier-gate runs no pytest targets — did the job change shape?"
+
+    required = run_tests | set(TIER_GATE_SOURCE_INPUTS)
+    unreachable = sorted(t for t in required if not any(m.match(t) for m in matchers))
+    assert unreachable == [], (
+        "tier-gate inputs missing from ci.yml pull_request paths (a PR touching "
+        f"only these would run no boundary guard): {unreachable}")
 
 
 def test_generated_data_is_not_accidentally_public():
