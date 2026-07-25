@@ -1927,6 +1927,12 @@ jobs:
         run: pip install pytest pyyaml
       - name: self-mod-fence selftest (all four cases proven)
         run: python3 scripts/check_self_mod_fence.py --selftest
+      - name: ship-loop guard contract (baseline dirt, render precondition scoping)
+        # The Stop hook that enforces commit->merge->render->live had NO CI at all,
+        # which is how its render precondition shipped scoped to the whole session
+        # range: on a shared main that sweeps in concurrent sessions' templates/
+        # merges and demands a render on a merge commit that can never have one.
+        run: python -m pytest tests/test_ship_loop_guard.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
