@@ -248,10 +248,13 @@ jobs:
       - name: push data (survives a job-cap cancel; alarm-bounded git ops)
         if: always() && steps.commitdata.outputs.committed == 'true'
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           # best-effort push: losing a race with a concurrent push must NOT fail the
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
           # preferring our freshly-collected data on any conflict.
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "collected data"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -266,13 +269,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed data on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed data on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push collected data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
       # Last-ditch publish if the job was CANCELLED mid-push (cap timeout): one bounded
       # attempt inside the post-cancel grace window. The commit already exists locally;
       # losing it costs the whole night's collections (2026-07-16 incident).
@@ -583,6 +587,7 @@ jobs:
             || echo "::warning::audit_earnings_freshness crashed (non-fatal)"
       - name: commit tail data
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Everything this job writes is under data/ (tape_flow, trade_flows,
@@ -606,20 +611,23 @@ jobs:
           # best-effort push: same 5-retry rebase loop as the collect job's
           # "commit data" (see the pre-sync collision-sweep rationale there —
           # render.yml / #2252). -X theirs prefers THIS job's freshly-accrued
-          # data on any conflict; losing all 5 races is non-fatal (the stores
-          # are state-resumable and re-accrue next night).
-          for i in 1 2 3 4 5; do
+          # data on any conflict; exhausting the retry budget is non-fatal (the
+          # stores are state-resumable and re-accrue next night).
+          PUSH_ALARM=420
+          push_retry_init "tail data"
+          while push_attempt; do
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed tail data on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed tail data on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "tail data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push collect-tail data after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push collect-tail data after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   engine:
     needs: collect
@@ -2215,6 +2223,7 @@ jobs:
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # pre-commit template↔site re-sync (ui.template_site_sync): the shim/externalize
@@ -2294,7 +2303,12 @@ jobs:
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          PUSH_BUDGET_SECS=600   # a dropped push here costs the nightly's forward-ledger DAY (sole-advancer law) — worth waiting 10 min for the ref
+          PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
+                                 # retries burn only ~2 min, so the raised budget above would never bind
+          push_retry_init "engine outputs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2333,16 +2347,17 @@ jobs:
                 git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
-              if perl -e 'alarm 420; exec @ARGV or die' -- git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
+              if push_do; then echo "pushed engine outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
+          push_lost
           # Loud but non-fatal: publish/oracle/tech-lab/briefs jobs `needs: engine`, so a
           # hard fail here would cascade-skip the deploy. The real loss is the data/
           # forward-ledger day (sole-advancer law) — surface it where eyes are.
-          echo "::error title=nightly engine outputs NOT pushed::5 rebase/push attempts failed — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ❌ nightly engine outputs NOT pushed after 5 attempts — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=nightly engine outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the nightly's data/ forward ledgers + rendered site/ exist only on this runner and are lost at the next checkout (the site still deploys via artifact, the LEDGER DAY does not). See scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ nightly engine outputs NOT pushed after $PUSH_ATTEMPT attempts ($PUSH_STOP) — forward-ledger day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
       - name: assemble machine-consumable feeds (site/feeds -> R2)
         if: always()
         # Handoff H4 (2026-07-02 incident): risk_radar snapshot, froth/dislocation
@@ -2438,13 +2453,16 @@ jobs:
         run: python -m scripts.build_factor_series || echo "factor series skipped (additive)"
       - name: commit factor series
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add site/factordata/factor_series.json
           if git diff --cached --quiet; then echo "no factor-series changes"; exit 0; fi
           git commit -m "factor-series: month-end walk $(date -u +%F)"
           # best-effort push (different file from engine's outputs → rebases clean)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "factor series"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2457,13 +2475,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed factor series on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed factor series on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "factor-series push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push factor series after 5 attempts (non-fatal — daily reads the last committed json)"
+          push_lost
+          echo "::warning::could not push factor series after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — daily reads the last committed json)"
 
   # Factor Intelligence panel — incremental nightly append (RULING-C).
   #
@@ -2533,6 +2552,7 @@ jobs:
       # job's commit step runs in a different tree where they never exist.
       - name: commit factor intelligence outputs
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/neuralweb/factor_intelligence_state.json
@@ -2545,7 +2565,9 @@ jobs:
           if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
           git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
           # best-effort push (own files -> rebases clean against engine/factor_series)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "factor intelligence"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2558,13 +2580,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed factor intelligence outputs on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed factor intelligence outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "factor-intelligence push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push factor intelligence after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push factor intelligence after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # ── Oracle Rotation Time Machine feed (OFF-RENDER) ─────────────────────────
   # The Time Machine (site/subsector_rotation.html) reads site/oracledata/tm_*.json.
@@ -2657,6 +2680,7 @@ jobs:
           PY
       - name: commit oracle Time Machine feed + ratio lens
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add site/oracledata/ data/oracle/ratio_lens_ledger.jsonl
@@ -2669,7 +2693,9 @@ jobs:
           if git diff --cached --quiet; then echo "no oracle Time Machine or ratio lens changes"; exit 0; fi
           git commit -m "oracle-tm: nightly Time Machine feed + ratio lens refresh $(date -u +%F)"
           # best-effort push (own files -> rebases clean; no other job writes site/oracledata/)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "oracle Time Machine feed"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2682,13 +2708,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed oracle Time Machine feed on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed oracle Time Machine feed on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "oracle-tm push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push oracle Time Machine feed after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push oracle Time Machine feed after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # ── TLT-R2: Technical Lab data refresh (off-render) ─────────────────────
   # build_tech_lab_data.py is heavy (~219 tickers × 64 signals, a few minutes)
@@ -2749,6 +2776,7 @@ jobs:
           exit 0
       - name: commit Technical Lab artifacts
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add site/factordata/tech_screener.json site/factordata/tech_lab.json
@@ -2771,7 +2799,9 @@ jobs:
           if git diff --cached --quiet; then echo "no tech-lab artifact changes"; exit 0; fi
           git commit -m "tech-lab: nightly 64-signal screener + lab refresh $(date -u +%F)"
           # best-effort rebase-push (own files → clean rebases; no other job writes these paths)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "tech-lab artifacts"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2784,13 +2814,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed tech-lab artifacts on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed tech-lab artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "tech-lab push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push tech-lab artifacts after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push tech-lab artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # SA-W1 — US standout attribution organ (off-render, ~40 min budget)
   # Reads the committed retro_grades.parquet produced by the engine job, runs
@@ -2866,6 +2897,7 @@ jobs:
           exit 0
       - name: commit standout audit US artifacts
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/standout_audit/us_attribution.parquet 2>/dev/null || true
@@ -2889,18 +2921,21 @@ jobs:
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "standout audit US artifacts"
+          while push_attempt; do
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed standout audit US artifacts on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed standout audit US artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "standout-audit-us push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push standout audit US artifacts after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push standout audit US artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
@@ -2951,6 +2986,7 @@ jobs:
         run: python -m scripts.build_stock_briefs || echo "stock briefs skipped (additive)"
       - name: commit stock briefs
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # site/stockbrief is gitignored for local-dev cleanliness but must be TRACKED
@@ -2967,7 +3003,9 @@ jobs:
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "stock briefs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -2980,13 +3018,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed stock briefs on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed stock briefs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "stock-briefs push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push stock briefs after 5 attempts (non-fatal — the stock page falls back to the last committed briefs)"
+          push_lost
+          echo "::warning::could not push stock briefs after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — the stock page falls back to the last committed briefs)"
       - name: sync stock_briefs stockdata writes to R2 (post-flip freshness)
         if: always()
         env:
@@ -3143,6 +3182,7 @@ jobs:
           exit 0
       - name: commit cortex outputs
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
@@ -3176,7 +3216,9 @@ jobs:
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "cortex outputs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -3193,13 +3235,14 @@ jobs:
             # on shared JSONL paths (trial_ledger, governance, machine_registry)
             # surfaces as a conflict → the retry re-runs cleanly instead of
             # silently dropping the causal job's committed rows.
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed cortex outputs on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+              if push_do; then echo "pushed cortex outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "cortex push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push cortex after 5 attempts (non-fatal — downstream reads last committed)"
+          push_lost
+          echo "::warning::could not push cortex after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — downstream reads last committed)"
 
   # ──────────────────────────────────────────────────────────────────────────
   # CHF W3 — Causal Hypothesis Factory: nightly drift + weekly bounded battery
@@ -3310,6 +3353,7 @@ jobs:
           exit 0
       - name: commit causal outputs (CHF-R11 narrow git-add)
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # CHF-R11 narrow git-add block (pre-written in masterplan)
@@ -3324,7 +3368,9 @@ jobs:
           if git diff --cached --quiet; then echo "no causal output changes"; exit 0; fi
           git commit -m "causal: frontier drift + lab state $(date -u +%F)"
           # Retry-rebase push loop with --autostash (stranded-data law #1823)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "causal outputs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -3337,13 +3383,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed causal outputs on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+              if push_do; then echo "pushed causal outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "causal push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push causal outputs after 5 attempts (non-fatal — downstream reads last committed)"
+          push_lost
+          echo "::warning::could not push causal outputs after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal — downstream reads last committed)"
 
       - name: signal foundry forward accrual (SF-R4, nightly-ledger law)
         # Accrues realized (feature, target) rows for every registered Foundry spec
@@ -3359,6 +3406,7 @@ jobs:
 
       - name: commit signal foundry forward outputs (SF-R10 narrow git-add)
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # SF-R10 narrow git-add: only data/signal_foundry/forward and lane_status
@@ -3367,7 +3415,9 @@ jobs:
           if git diff --cached --quiet; then echo "no signal foundry forward changes"; exit 0; fi
           git commit -m "signal-foundry: forward accrual $(date -u +%F)"
           # Retry-rebase push loop with --autostash (stranded-data law #1823)
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "sf forward outputs"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -3380,13 +3430,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed sf forward outputs on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+              if push_do; then echo "pushed sf forward outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "sf push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push sf forward outputs after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push sf forward outputs after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
           exit 0
 
   # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
@@ -3415,12 +3466,15 @@ jobs:
           python -m scripts.build_active_build_map || echo "::warning::active_build_map generation failed (non-fatal — fail-open)"
       - name: commit active build map outputs
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json
           if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
           git commit -m "docs: active build map $(date -u +%F)"
-          for i in 1 2 3 4 5; do
+          PUSH_ALARM=420
+          push_retry_init "active build map"
+          while push_attempt; do
             # pre-sync collision sweep (render.yml / #2252): a mid-run commit on origin/main can
             # TRACK a path this job wrote as an UNTRACKED side-effect — the rebase checkout then
             # refuses ("untracked working tree files would be overwritten") and --autostash can't
@@ -3433,13 +3487,14 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && perl -e 'alarm 420; exec @ARGV or die' -- git push; then
-              echo "pushed active build map on attempt $i"; exit 0
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed active build map on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "active-build-map push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push active build map after 5 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push active build map after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
@@ -3489,17 +3544,22 @@ jobs:
       - name: commit ledger heartbeat state
         if: always()
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ci/ledger_heartbeat_state.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "no heartbeat state change"; exit 0; fi
           git commit -m "ops: ledger heartbeat state $(date -u +%F)"
-          for i in 1 2 3; do
+          PUSH_ALARM=120
+          PUSH_MAX_ATTEMPTS=6      # a one-line ops state file, non-fatal — a shorter budget than the render lanes is right, but 3 was not enough to outlast main's commit rate
+          push_retry_init "ledger heartbeat state"
+          while push_attempt; do
             perl -e 'alarm 60; exec @ARGV or die' -- git fetch origin main || true
             if perl -e 'alarm 120; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
-              if perl -e 'alarm 120; exec @ARGV or die' -- git push; then echo "heartbeat state pushed on attempt $i"; exit 0; fi
+              if push_do; then echo "heartbeat state pushed on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "heartbeat push attempt $i lost a race; re-syncing"; sleep $((i * 5))
+            push_abort_rebase
+            push_backoff
           done
-          echo "::warning::could not push heartbeat state after 3 attempts (non-fatal)"
+          push_lost
+          echo "::warning::could not push heartbeat state after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
