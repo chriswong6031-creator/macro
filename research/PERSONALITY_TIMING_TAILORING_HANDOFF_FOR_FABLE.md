@@ -260,3 +260,44 @@ controlled test better than the audition form the house arithmetic condemned —
 measurement beat audition on every point estimate, exactly as §1b predicted —
 but nothing here clears a CI. The falsifiable next step is W3's forward shadow,
 which accrues new evidence instead of re-slicing the same twelve years.
+
+## §7. RULER AMENDMENT — bottom-picking, not hold-returns (operator correction
+2026-07-25; BINDING on all further PTT grading)
+
+Operator, verbatim core: *"are you assessing based on the accuracy of this signal in
+picking bottoms? … our memory files specifically have this recorded — backtests on
+the ability to find bottoms, NOT long-term hold success."* He is right, and the law
+already existed: DO_NOT_REBUILD §3 — "63d factor apparatus applied to Oracle
+reversion signals: WRONG RULER — score as reversion-capture (~20-25d time-exit)"
+(#1458). Washout/bottom signals are reversion-class. The W1/census/panel PRIMARY
+statistics ran on fwd63-excess (hold-return apparatus); timing metrics (adverse,
+td_to_trough) were printed but carried no inferential weight. Corrections:
+
+1. **Primary ruler set for ALL further PTT grading (pin before re-running):**
+   - **MAE** (max adverse excursion, entry→trough within horizon) — primary;
+   - **price proximity**: entry price vs local trough (±31td window) in %, and the
+     "entered within Y% of the low" rate (report Y ∈ {3%, 5%});
+   - **time proximity**: td_to_trough distribution; % within ±10td of trough;
+   - **reversion-capture** per the Oracle law: entry → subsequent swing-high capture
+     with ~20-25d time-exit (NOT 63d factor horizons);
+   - fwd63-excess DEMOTED to secondary/confirmatory.
+   - **Random-day nulls recomputed for EACH metric** (bottom-proximity has its own
+     base rate in a rising tape — the 69%-class trap applies here too).
+2. **Re-grade the existing estate under this ruler BEFORE any new verdicts**: the
+   W1 arms (data + scripts all on main; cheap re-run), the MWR census, and the
+   timeframe ladder. Note W1's verdicts are construction+RULER-scoped: the audition
+   kill row stands as registered; a timing-ruler re-examination is a NEW
+   pre-registerable question, not a revival of the killed construction.
+3. **Expected discrimination**: proximity rulers are far tighter than fwd63 (3-month
+   market noise ≈ ±8-10% swamps timing edges) — the wide W1 CIs may be ruler
+   artifacts. Also expected: the census's adverse≈0 rows often fired 5-30td AFTER
+   the trough — the re-grade must separate "calls the low" from "confirms the
+   reset" (both useful; different products; different honest copy).
+4. **MWR live gate**: Amendment-2 HIT/FAIL stays pinned for the live gate (no
+   ruler churn mid-flight), BUT zero forward triggers are graded yet, so per prereg
+   §1 an additive timing scorecard (MAE, proximity, reversion-capture) is lawful
+   NOW on the shadow book — grade both rulers side-by-side and present both at the
+   first forward ruling.
+5. Sessions keep making this mistake (this is at least the second instance —
+   #1458 precedent): the receiving session should add the wrong-ruler check to any
+   new signal study header BEFORE choosing statistics.
