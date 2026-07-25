@@ -192,6 +192,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Per-name timing-tool selection by OUTCOME AUDITION (in-sample best-of-grid per name; PTT-W1a)'
+    verdict: 'KILLED — zero OOS persistence at panel scale: FIT-best tool lands in TEST top-2 at 33.2% vs 33.3% chance, per-name tool-rank Spearman −0.03, audition arm at/below the random floor ((a)−(d) −0.26% [−0.79, +0.11]); n=1,300 names / 109,974 TEST signals. Closes the audition CONSTRUCTION only — structure-MEASUREMENT tailoring (PTT-W1b reversion-by-scale) stays OPEN (only arm above the random floor on every point estimate; all CIs include 0; W3 Prophet shadow is the evidence vehicle), and W4 per-class gate profiles are UNLICENSED (vol×trend class lens degenerated to the global tool; archetype secondary Δ+0.11% descriptive). Any audition-derived per-name gate/rank/size anywhere is this row''s construction'
+    source: 'PTT-W1 verdict, `PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md` §6 + `reports/ptt_w1_persistence_of_fit.md` (family `personality_timing_w1`, 2026-07-25)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
