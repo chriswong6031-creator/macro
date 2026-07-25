@@ -9,8 +9,11 @@
       is editorial amber (--sell), not alarm red. Blue must never read as up/down.
    ═════════════════════════════════════════════════════════════════════════════ */
 :root{
-  /* --num : the macro data face. Every count / date / page-no / quota figure rides it. */
-  --num: var(--font-mono, ui-monospace,"SF Mono",SFMono-Regular,"Cascadia Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace);
+  /* --num : the macro data face. Every count / date / page-no / quota figure rides it.
+     Self-contained (verbatim from macro_signals.html.j2 #mx5-css) — NOT via var(--font-mono)
+     — so the vault matches macro.html's mono byte-for-byte and is immune to any theme.css
+     drift. ui-monospace leads (Chrome renders a literal "SF Mono"-first stack as SERIF). */
+  --num: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
 
   /* ── mx5 glass recipe (verbatim from dashboard.html.j2 #mx5-css) ───────────── */
   --mx5-glass-bg:      rgba(16,22,30,.55);
@@ -115,20 +118,59 @@ html[data-theme="light"] .rv-stance b{ color:var(--rv); }
 .rv-fig .n.sm{ font-size:17px; letter-spacing:0; }
 .rv-fig .k{ font-size:11.5px; font-weight:600; color:var(--muted); margin-top:5px; letter-spacing:.01em; }
 
-/* ── signature: the Publishing Beam (blue Fed-beam / arc echo, DESCRIPTIVE) ── */
-.rv-beam{ position:relative; align-self:stretch; min-height:230px; border-radius:16px; overflow:hidden;
-  background:color-mix(in srgb, var(--panel2) 40%, transparent); border:1px solid var(--mx5-glass-border);
-  padding:18px 18px 16px; display:flex; flex-direction:column; }
-.rv-beam-hd{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-.rv-beam-hd .lb{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
-.rv-beam-hd .big{ font-family:var(--num); font-size:19px; font-weight:700; color:var(--rv-ink); font-variant-numeric:tabular-nums; }
-html[data-theme="light"] .rv-beam-hd .big{ color:var(--rv); }
-.rv-beam-stage{ position:relative; flex:1; margin-top:6px; }
-.rv-beam-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-.rv-beam-cap{ margin-top:8px; font-size:11.5px; line-height:1.45; color:var(--muted); }
-.rv-beam-cap b{ color:color-mix(in srgb,var(--text) 82%,var(--muted)); font-weight:700; }
-@keyframes rvPulse{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
-.rv-beam-svg .pulse{ animation:rvPulse 3.4s ease-in-out infinite; transform-origin:center; }
+/* ═══ signature: THE DESK CONSTELLATION — a neural web of institutions ════════
+   One node per research desk in the vault, placed on a golden-angle spiral so the
+   web reads well from a handful of desks to 40+. Nearest-desk strands weave the
+   web; a spotlight cycles the roster one name at a time (held on hover); a signal
+   mote glides between desks. DESCRIPTIVE — who publishes into the vault, never a
+   market call. The BLUE --rv accent is brand/intelligence, never price direction. */
+.rv-web{ position:relative; align-self:stretch; min-height:230px; margin:0; border-radius:16px; overflow:hidden;
+  background:radial-gradient(122% 98% at 50% 40%, var(--rv-dim), transparent 68%),
+             color-mix(in srgb, var(--panel2) 40%, transparent);
+  border:1px solid var(--mx5-glass-border); padding:16px 18px 14px; display:flex; flex-direction:column; }
+.rv-web-hd{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; z-index:2; }
+.rv-web-hd .lb{ font-family:var(--num); font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+.rv-web-hd .big{ font-family:var(--num); font-size:19px; font-weight:700; color:var(--rv-ink); font-variant-numeric:tabular-nums; }
+html[data-theme="light"] .rv-web-hd .big{ color:var(--rv); }
+.rv-web-stage{ position:relative; flex:1; min-height:120px; margin:8px 0 4px; }
+.rv-web-svg{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+
+/* strands — faint peer-to-peer web at rest; brighten to cyan when their desk is lit */
+.rv-web-svg .thread{ fill:none; stroke:var(--rv); stroke-linecap:round; opacity:.18;
+  transition:opacity .55s ease, stroke .55s ease; }
+.rv-web-svg .thread.lit{ opacity:.68; stroke:var(--rv-2); }
+html[data-theme="light"] .rv-web-svg .thread{ opacity:.24; }
+
+/* desk nodes — the group scales on spotlight; opacity carries the entrance */
+.rv-web-node{ cursor:pointer; transform-box:fill-box; transform-origin:center;
+  transition:transform .42s cubic-bezier(.34,1.42,.5,1); }
+.rv-web-node .glow{ fill:url(#rvwGlow); opacity:.5; transition:opacity .4s ease; }
+.rv-web-node .dot{ fill:var(--rv); stroke:color-mix(in srgb,var(--bg) 62%,transparent); stroke-width:1.1; transition:fill .32s ease, stroke .32s ease; }
+.rv-web-node .mono{ font-family:var(--num); font-weight:700; fill:#fff; text-anchor:middle; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+.rv-web-node.on{ transform:scale(1.32); }
+.rv-web-node.on .glow{ opacity:1; }
+.rv-web-node.on .dot{ fill:var(--rv-2); stroke:color-mix(in srgb,#fff 55%,transparent); }
+.rv-web-node.on .mono{ opacity:1; }
+.rv-web-node:hover .glow{ opacity:.92; }
+html[data-theme="light"] .rv-web-node .dot{ stroke:color-mix(in srgb,#fff 80%,transparent); }
+
+/* entrance — staggered fade only (transform is reserved for the spotlight) */
+@keyframes rvwIn{ from{ opacity:0; } to{ opacity:1; } }
+.rv-web-node.enter{ animation:rvwIn .55s ease backwards; }
+.rv-web-svg .thread.enter{ animation:rvwIn .9s ease backwards; }
+
+/* the signal mote gliding along a lit strand */
+.rv-web-svg .mote{ fill:var(--rv-2); }
+
+/* rotating spotlight readout — the one-name-at-a-time display */
+.rv-web-spot{ display:flex; align-items:center; gap:9px; min-height:20px; margin-top:2px; z-index:2; }
+.rv-web-spot .sdot{ width:8px; height:8px; border-radius:50%; background:var(--rv);
+  box-shadow:0 0 0 4px var(--rv-dim); flex:none; transition:background .4s ease; }
+.rv-web-spot .sname{ font-size:13.5px; font-weight:700; color:var(--text); letter-spacing:-.004em;
+  transition:opacity .34s ease, transform .34s ease; }
+.rv-web-spot .sname.swap{ opacity:0; transform:translateY(4px); }
+.rv-web-cap{ margin-top:8px; font-size:11.5px; line-height:1.45; color:var(--muted); z-index:2; }
+.rv-web-cap b{ color:color-mix(in srgb,var(--text) 82%,var(--muted)); font-weight:700; }
 
 /* ═══════════════ 2 · LANE TABS (segmented, unread badges) ═══════════════════ */
 .rv-lanes{ display:flex; align-items:center; gap:8px; margin-top:30px; flex-wrap:wrap; }
@@ -143,6 +185,10 @@ html[data-theme="light"] .rv-beam-hd .big{ color:var(--rv); }
   font-variant-numeric:tabular-nums; }
 .rv-lane.on .badge{ background:rgba(255,255,255,.24); color:#fff; }
 .rv-lane svg{ width:15px; height:15px; }
+/* Top Picks is Pro-only for non-Pro: show a small lock (replacing the count badge) */
+.rv-lane .rv-lane-lock{ display:none; width:12px; height:12px; flex:none; opacity:.8; }
+.rv-lane.locked .rv-lane-lock{ display:inline-block; }
+.rv-lane.locked .badge{ display:none; }
 .rv-unread{ margin-left:auto; font-size:12.5px; color:var(--muted); font-family:var(--num); font-variant-numeric:tabular-nums; }
 .rv-unread b{ color:var(--rv-ink); font-weight:700; }
 html[data-theme="light"] .rv-unread b{ color:var(--rv); }
@@ -170,7 +216,9 @@ html[data-theme="light"] .rv-tw.sel{ color:var(--rv); }
 .rv-leaf .rv-tw{ font-size:13px; }
 .rv-leaf .rv-tw .dotinst{ width:6px; height:6px; border-radius:50%; background:var(--rv); opacity:.6; flex:none; }
 
-.rv-filter{ position:sticky; top:60px; z-index:40; padding:13px 15px; margin-bottom:16px; }
+/* static (not sticky) — the sticky filter floated with a see-through empty top
+   that read as messy on scroll. It now scrolls in-flow with the feed. */
+.rv-filter{ padding:13px 15px; margin-bottom:16px; }
 .rv-search{ display:flex; align-items:center; }
 .rv-search input[type="search"]{
   appearance:none; -webkit-appearance:none; flex:1 1 auto; min-width:0; box-sizing:border-box;
@@ -201,6 +249,14 @@ html[data-theme="light"] .rv-tw.sel{ color:var(--rv); }
 .chiptag button:hover{ background:var(--rv); color:#fff; }
 .rv-clear{ appearance:none; border:0; background:none; color:var(--rv); font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; padding:2px; }
 .rv-clear:hover{ text-decoration:underline; }
+
+/* "Show more" pager button (reveals the next page of already-loaded cards) */
+.rv-more{ align-self:center; appearance:none; display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  margin-top:4px; min-width:220px; padding:12px 22px; border-radius:12px; cursor:pointer; font:inherit; font-size:13.5px; font-weight:700;
+  color:var(--rv-ink); background:var(--rv-dim); border:1px solid color-mix(in srgb,var(--rv) 30%,transparent); transition:.16s; }
+html[data-theme="light"] .rv-more{ color:var(--rv); }
+.rv-more:hover{ background:color-mix(in srgb,var(--rv) 16%,transparent); border-color:var(--rv); transform:translateY(-1px); }
+.rv-more .rv-more-rem{ font-family:var(--num); font-weight:600; color:var(--muted); font-size:12px; }
 .rv-searching{ font-size:12px; color:var(--muted); font-family:var(--num); }
 
 .rv-browse-btn{ display:none; }
@@ -241,6 +297,10 @@ html[data-theme="light"] .rep-pin{ color:var(--rv); }
 .rep-savebtn.on{ color:var(--rv); background:var(--rv-dim); border-color:color-mix(in srgb,var(--rv) 40%,transparent); }
 .rep-savebtn.on svg{ fill:var(--rv); }
 .rep h3{ font-weight:700; font-size:17.5px; line-height:1.28; margin:0 0 10px; letter-spacing:-.012em; color:var(--text); }
+/* title links to its research/<slug>.html SEO page; looks like the heading */
+.rep h3 .rep-titlelink{ color:inherit; text-decoration:none; }
+.rep h3 .rep-titlelink:hover{ color:var(--rv-ink); }
+html[data-theme="light"] .rep h3 .rep-titlelink:hover{ color:var(--rv); }
 .rep-points{ list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:6px; }
 .rep-points li{ position:relative; padding-left:18px; font-size:13.5px; line-height:1.5; color:color-mix(in srgb,var(--text) 88%,var(--muted)); }
 .rep-points li::before{ content:""; position:absolute; left:2px; top:8px; width:6px; height:6px; border-radius:2px; background:var(--rv); transform:rotate(45deg); }
@@ -284,10 +344,27 @@ a.rep-ticker:hover{ border-color:var(--rv); }
 .rv-empty svg{ width:34px; height:34px; color:var(--muted); opacity:.6; margin-bottom:12px; }
 .rv-empty h3{ margin:0 0 6px; font-size:16px; font-weight:800; color:var(--text); }
 .rv-empty p{ margin:0; font-size:13px; color:var(--muted); max-width:40ch; margin-inline:auto; }
+.rv-empty.rv-gate svg{ color:var(--rv); opacity:.92; }   /* Top Picks Pro-gate panel */
+html[data-theme="light"] .rv-empty.rv-gate svg{ color:var(--rv); }
 
 .rv-foot{ margin-top:44px; padding-top:22px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);
   font-size:12px; line-height:1.6; color:var(--muted); max-width:78ch; }
 .rv-foot b{ color:color-mix(in srgb,var(--text) 80%,var(--muted)); font-weight:700; }
+
+/* ── teaser: non-Pro sees the latest 3 summaries; the rest sit blurred under an
+      upgrade card. Summaries are already public via the catalog API — this is a
+      marketing wall, not a security boundary (PDF viewing is server-gated). ── */
+.rv-lockwrap{ position:relative; margin-top:14px; }
+.rv-lockghosts{ display:flex; flex-direction:column; gap:14px; filter:blur(6px) saturate(.85);
+  opacity:.5; pointer-events:none; user-select:none; -webkit-user-select:none; max-height:440px; overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,#000,#000 30%,transparent 92%);
+  mask-image:linear-gradient(180deg,#000,#000 30%,transparent 92%); }
+.rv-lockover{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+  width:min(460px,92%); text-align:center; padding:28px 26px; }
+.rv-lockover svg{ width:30px; height:30px; color:var(--rv); opacity:.92; margin-bottom:10px; }
+.rv-lockover h3{ margin:0 0 7px; font-size:19px; font-weight:800; letter-spacing:-.015em; color:var(--text); }
+.rv-lockover p{ margin:0 0 16px; font-size:13px; line-height:1.5; color:var(--muted); }
+.rv-lockover .btn.upgrade{ padding:10px 20px; font-size:13px; margin:0 auto; }
 
 /* ═══════════════ 5 · PDF VIEWER modal (clones the auth-overlay) ══════════════ */
 .rv-overlay{ position:fixed; inset:0; z-index:100001; display:flex; align-items:center; justify-content:center;
@@ -296,7 +373,7 @@ a.rep-ticker:hover{ border-color:var(--rv); }
   opacity:0; visibility:hidden; pointer-events:none; transition:opacity .26s ease, visibility 0s linear .26s; }
 .rv-overlay.open{ opacity:1; visibility:visible; pointer-events:auto; transition:opacity .26s ease, visibility 0s; }
 html.rv-lock{ overflow:hidden; }
-.rv-modal{ position:relative; width:min(1060px,97vw); height:min(90vh,900px); box-sizing:border-box;
+.rv-modal{ position:relative; width:min(1500px,97vw); height:95vh; box-sizing:border-box;
   border-radius:20px; overflow:hidden; isolation:isolate; display:grid; grid-template-columns:96px 1fr; grid-template-rows:auto 1fr auto auto;
   background:var(--mx5-pop-bg); border:1px solid var(--mx5-glass-border);
   -webkit-backdrop-filter:blur(20px) saturate(1.4); backdrop-filter:blur(20px) saturate(1.4);
@@ -349,11 +426,24 @@ html[data-theme="light"] .rv-modal{ box-shadow:0 32px 88px -26px rgba(20,30,50,.
   background:radial-gradient(600px 400px at 50% 0%, var(--rv-dim), transparent 70%), color-mix(in srgb,var(--bg) 60%,#000);
   padding:24px; display:flex; justify-content:center; align-items:flex-start; }
 html[data-theme="light"] .vstage{ background:radial-gradient(600px 400px at 50% 0%, var(--rv-dim), transparent 70%), #dfe3ea; }
-/* real pdf.js canvas host */
-.vcanvas-wrap{ position:relative; align-self:flex-start; transition:transform .3s ease; transform-origin:top center; }
-.vcanvas-wrap canvas{ display:block; max-width:100%; height:auto; background:#fff;
+/* real pdf.js canvas host — the canvas is rendered by pdf.js at exact fit/zoom
+   dimensions (inline width+height); the stage scrolls when zoomed past its width.
+   NO max-width/height:auto here — clamping width while the inline height stays
+   fixed is what distorted (vertically stretched) the page before. */
+.vcanvas-wrap{ position:relative; align-self:flex-start; }
+.vcanvas-wrap canvas{ display:block; background:#fff;
   border-radius:3px; box-shadow:0 20px 60px -20px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.3); }
-.vstage.inverted .vcanvas-wrap canvas{ filter:invert(1) hue-rotate(180deg); }
+/* continuous-scroll page column: pages stacked vertically, each with its own
+   canvas that renders lazily as it nears the viewport. margin:auto centers a
+   narrow column but resolves to 0 when zoomed wider than the stage (so the left
+   edge stays reachable via horizontal scroll — a plain justify-content:center
+   would clip it). */
+.vscroll{ display:flex; flex-direction:column; align-items:center; gap:18px; margin:auto; }
+.vpage{ position:relative; flex:none; background:#fff; border-radius:3px;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,.6), 0 4px 14px rgba(0,0,0,.3); }
+.vpage canvas{ display:block; width:100%; height:100%; border-radius:3px; }
+.vstage.inverted .vcanvas-wrap canvas,
+.vstage.inverted .vpage canvas{ filter:invert(1) hue-rotate(180deg); }
 /* gate / message panel shown in place of the canvas (401/402/429/error) */
 .vgate{ align-self:center; max-width:420px; text-align:center; padding:34px 26px; border-radius:16px;
   background:var(--mx5-glass-bg); border:1px solid var(--mx5-glass-border); color:var(--text); }
@@ -415,7 +505,7 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
 /* ═══════════════ responsive ═══════════════════════════════════════════════ */
 @media (max-width:980px){
   .rv-hero{ grid-template-columns:1fr; gap:22px; }
-  .rv-beam{ min-height:190px; }
+  .rv-web{ min-height:200px; }
   .rv-work{ grid-template-columns:1fr; }
   .rv-rail{ display:none; }
   .rv-browse-btn{ display:inline-flex; align-items:center; gap:7px; appearance:none; font:inherit; font-size:12.5px; font-weight:700;
@@ -449,5 +539,10 @@ html[data-theme="light"] .btn.upgrade{ color:#fff; }
   .rv-scope *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.12s !important; }
   .rv-overlay,.rv-modal{ transition:opacity .12s ease; } .rv-modal{ transform:none; }
   .rep:hover,.btn:hover,.vc-btn:hover,.vr-chip:hover,.vthumb:hover{ transform:none; }
-  .vshim::before{ animation:none; } .rv-beam-svg .pulse{ animation:none; opacity:.85; }
+  .vshim::before{ animation:none; }
+  /* constellation: no entrance/scale motion; nodes rest lit-legible, spotlight cycle
+     is halted in JS (matchMedia). Hover still lights a desk (a user action). */
+  .rv-web-node,.rv-web-node.enter,.rv-web-svg .thread.enter{ animation:none; }
+  .rv-web-node.on{ transform:none; }
+  .rv-web-node.on .dot{ fill:var(--rv-2); } .rv-web-node.on .glow{ opacity:1; }
 }

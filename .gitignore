@@ -50,6 +50,12 @@ site/feeds/
 # live intraday overlay — runtime artifact written by scripts/build_live_overlay (intraday
 # cron) and by the offline test path; never committed (the cron force-pushes / re-emits it).
 site/live/
+# NOTE: site/research/ is deliberately NOT ignored. #3507 ignored it as "a runtime
+# plane like site/live/", but the estate is 87 TRACKED files (#3501/#3512) that reach
+# the edge by being committed. Ignoring a tracked tree is the worst of both: `git add
+# site/` still stages edits to existing pages and silently skips every NEW report page,
+# freezing the estate while research-ingest keeps growing catalog.json. If this ever
+# does need ignoring, render.yml must force-add it (as it does site/stockbrief).
 # Polygon hourly bars for the 4H chart timeframe — regenerable + daily-changing, so
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the
 # force-tracked, shipped artifact.

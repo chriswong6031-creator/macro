@@ -289,12 +289,18 @@ def _sanitize_thesis_text_zh(text: str) -> str:
     return text
 
 
-def _build_thesis(ticker: str, b: dict) -> str:
+def _build_thesis(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
     """
     OURS: Build a 2-3 sentence deterministic thesis woven from the candidate's
     actual drivers, cautions, and technical flags (above200, weekly_bull, coiled,
     washout_ctx, dc phase).  Mechanical, specific, no predictive claims, no
     "validated".  Display-only.
+
+    OEU M-PRO: when ``opt_ctx`` carries dealer-positioning context for this name
+    (lib.options_context.load_gex_walls), ONE template sentence about the wall
+    overhead is appended before the honesty footer.  Template string, no LLM,
+    past tense + as-of stamp (a thesis is written once and read for weeks).
+    ``opt_ctx=None`` → byte-identical to the pre-M-PRO thesis.
     """
     conv = b.get("conviction") or {}
     es = b.get("entry_signal") or {}
@@ -353,6 +359,9 @@ def _build_thesis(ticker: str, b: dict) -> str:
         parts.append(sentence2)
     if sentence3:
         parts.append(sentence3)
+    _dealer = _dealer_sentence(opt_ctx, b)
+    if _dealer:
+        parts.append(_dealer[0])
     parts.append(
         "DISPLAY-ONLY: machine-generated from factor scores; no forward return"
         " guarantee; display-tier artifact."
@@ -360,9 +369,32 @@ def _build_thesis(ticker: str, b: dict) -> str:
     return " ".join(parts)
 
 
-def _build_thesis_zh(ticker: str, b: dict) -> str:
+def _dealer_sentence(opt_ctx: dict | None, b: dict) -> tuple[str, str] | None:
+    """(en, zh) dealer-positioning sentence for the thesis, or None.
+
+    Thin wrapper over lib.options_context.dealer_context_sentence so both thesis
+    builders share ONE string and can never drift apart.  Never raises: a missing
+    store, an unimportable lib, or a name with no options coverage all return None
+    and the thesis reads exactly as it did before.
+    """
+    if not opt_ctx:
+        return None
+    try:
+        from lib.options_context import dealer_context_sentence  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return None
+    entry = (b.get("entry_signal") or {}).get("spot")
+    try:
+        return dealer_context_sentence(opt_ctx, entry=entry)
+    except Exception:  # noqa: BLE001 — display context is never fatal
+        return None
+
+
+def _build_thesis_zh(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
     """ZH counterpart of _build_thesis — same deterministic template, translated strings.
-    Data interpolation (ticker, score, prices) is unchanged; no LLM at runtime."""
+    Data interpolation (ticker, score, prices) is unchanged; no LLM at runtime.
+    ``opt_ctx`` carries the same M-PRO dealer-positioning context; the ZH sentence is
+    the paired half of the EN one (lib.options_context.dealer_context_sentence)."""
     conv = b.get("conviction") or {}
     es = b.get("entry_signal") or {}
     hold = b.get("hold") or {}
@@ -421,6 +453,9 @@ def _build_thesis_zh(ticker: str, b: dict) -> str:
         parts.append(sentence2)
     if sentence3:
         parts.append(sentence3)
+    _dealer = _dealer_sentence(opt_ctx, b)
+    if _dealer:
+        parts.append(_dealer[1])
     parts.append("仅供展示：由因子分数机器生成；无前瞻收益保证；展示层级输出。")
     return " ".join(parts)
 
@@ -773,6 +808,80 @@ def _load_eod(ticker: str, thetadata_store: str, asof: str) -> pd.DataFrame | No
         return None
 
 
+def _lookup_open_interest(
+    ticker: str,
+    thetadata_store: str,
+    asof: str,
+    expiry: "date",
+    strike: float,
+    right: str,
+) -> int | None:
+    """Open interest for ONE resolved contract, or None (OEU M-PRO receipt).
+
+    Reads {store}/oi/{TICKER}/{YYYY}.parquet — the same store tier the OI timing law
+    governs.  OPRA publishes OI once a day for the PREVIOUS session, so the row dated
+    `asof` describes positions as of the prior close; the receipt labels that vintage
+    rather than pretending the number is live.  Display-only: this never reaches a
+    signal, a gate, or a size.  Never raises.
+    """
+    path = Path(thetadata_store) / "oi" / ticker / f"{asof[:4]}.parquet"
+    if not path.exists():
+        return None
+    try:
+        df = pd.read_parquet(path)
+        if df.empty or "open_interest" not in df.columns:
+            return None
+        mask = (
+            (df["expiration"] == pd.Timestamp(expiry))
+            & (df["right"] == right)
+            & (df["strike"].astype(float) == float(strike))
+            & (df["date"] <= pd.Timestamp(asof))
+        )
+        sub = df[mask]
+        if sub.empty:
+            return None
+        sub = sub.sort_values("date")
+        oi = sub["open_interest"].dropna()
+        return int(oi.iloc[-1]) if len(oi) else None
+    except Exception as e:  # noqa: BLE001 — receipt is garnish, never fatal
+        log.debug("prophet_bridge: OI lookup failed for %s %s: %s", ticker, strike, e)
+        return None
+
+
+def _structure_receipt(
+    ticker: str,
+    bid: float | None,
+    ask: float | None,
+    thetadata_store: str,
+    asof: str,
+    expiry: "date",
+    strike: float,
+    right: str,
+    implied_vol: float | None = None,
+) -> dict | None:
+    """Display-tier structure receipt for the resolved contract, or None (M-PRO hook 4).
+
+    Answers "is this contract actually tradeable, and is it expensive for THIS name?"
+    with a plain word (liquid / workable / wide / thin) plus the numbers behind it.
+    Every input is independently nullable and the whole thing is fail-open: a receipt
+    that cannot be built is simply absent, and the plan card renders as it always did.
+    """
+    try:
+        from lib.options_context import load_iv_rank, structure_receipt  # noqa: PLC0415
+    except Exception:  # noqa: BLE001
+        return None
+    try:
+        oi = _lookup_open_interest(ticker, thetadata_store, asof, expiry, strike, right)
+        iv_ctx = (load_iv_rank([ticker]) or {}).get(ticker)
+        return structure_receipt(
+            bid=bid, ask=ask, open_interest=oi,
+            implied_vol=implied_vol, iv_rank_ctx=iv_ctx,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.debug("prophet_bridge: structure receipt failed for %s: %s", ticker, e)
+        return None
+
+
 def resolve_option(
     ticker: str,
     direction: str,
@@ -836,6 +945,7 @@ def resolve_option(
             bid = float(row.get("bid", 0) or 0)
             ask = float(row.get("ask", 0) or 0)
             premium = round((bid + ask) / 2, 4) if (bid or ask) else None
+            _iv = row.get("implied_vol")
             return {
                 "right": right,
                 "strike": strike,
@@ -844,6 +954,13 @@ def resolve_option(
                 "freshness": "EOD mark",
                 "delta_approx": round(float(row["delta"]), 4),
                 "note": f"delta-targeted ({TARGET_DELTA:.2f})",
+                # OEU M-PRO display-tier receipt (spread / open interest / IV vs the
+                # name's own recent range). None when the inputs are unavailable.
+                "structure": _structure_receipt(
+                    ticker, bid, ask, thetadata_store, asof,
+                    target_expiry, strike, right,
+                    implied_vol=(None if _iv is None else float(_iv)),
+                ),
             }
 
     # --- Fallback: first OTM strike from EOD ---
@@ -887,6 +1004,12 @@ def resolve_option(
                         "freshness": "EOD mark",
                         "delta_approx": None,
                         "note": "greeks unavailable; first-OTM strike from EOD",
+                        # M-PRO receipt — no greeks here, so no contract IV; the
+                        # spread + open-interest half still stands on its own.
+                        "structure": _structure_receipt(
+                            ticker, bid, ask, thetadata_store, asof,
+                            target_expiry, strike, right,
+                        ),
                     }
 
     log.info(
@@ -1139,6 +1262,19 @@ def originate_plans(
                     "(%s) — all picks default to leash 1.0", e)
         _tilt_inputs = None
 
+    # ── OEU M-PRO: dealer-positioning context for the thesis prose (display-tier) ──
+    # Loaded ONCE per run and STRICTLY AFTER select_candidates, exactly like the
+    # stage-tilt inputs above: the selected id set and their order are byte-identical
+    # whether this map is populated or empty. It reaches thesis STRINGS only — never
+    # geometry, never the option choice, never a score. One file read; {} on absence.
+    try:
+        from lib.options_context import load_gex_walls  # noqa: PLC0415
+        _wall_map = load_gex_walls()
+    except Exception as e:  # noqa: BLE001
+        log.info("prophet_bridge: dealer-positioning context unavailable (%s); "
+                 "theses render without it", e)
+        _wall_map = {}
+
     plans: list[dict] = []
     for b in candidates:
         ticker: str = b["ticker"]
@@ -1267,8 +1403,8 @@ def originate_plans(
             "asof": asof,
             "asset": ticker,
             "direction": direction,
-            "thesis": _build_thesis(ticker, b),
-            "thesis_zh": _build_thesis_zh(ticker, b),
+            "thesis": _build_thesis(ticker, b, _wall_map.get(ticker)),
+            "thesis_zh": _build_thesis_zh(ticker, b, _wall_map.get(ticker)),
             "source_engines": ["us_standouts_buy_lane", "neural_web"],
             "trigger": round(trigger, 4),
             "entry": round(entry, 4),

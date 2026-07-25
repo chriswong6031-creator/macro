@@ -213,6 +213,47 @@ def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
     return True, ""
 
 
+def _render_triggering_paths(changed: list[str]) -> bool:
+    """True when these paths match render.yml's push trigger filter."""
+    return any(
+        item.startswith("templates/")
+        or (item.startswith("scripts/") and Path(item).name.startswith("build_"))
+        for item in changed
+    )
+
+
+def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
+    """Whether a push-triggered render must exist for ``merge_sha``.
+
+    Scoped to THIS merge's own diff, not the whole session range.
+    ``_render_status`` looks for a render.yml run whose head_sha IS merge_sha
+    and whose event is ``push`` — and render.yml's push trigger is path-filtered
+    to templates/** + scripts/build_*.py. So such a run can exist if and only if
+    merge_sha ITSELF touched those paths.
+
+    start_head..head was the wrong basis on a shared main: this repo runs many
+    concurrent sessions, and a session that syncs its worktree to origin/main
+    sweeps every OTHER session's merges into that range. One unrelated
+    templates/ merge then demanded a render on a merge commit that could never
+    have produced one — an unsatisfiable block, not a real gap. (Observed
+    2026-07-25: PR #3481 changed only .github/workflows/ci.yml, yet five
+    template/builder files from concurrent merges set needs_render.)
+
+    This TIGHTENS alignment rather than loosening the gate: a PR that does touch
+    templates/ still gets a push render on its merge sha, and that run must still
+    conclude ``success`` to pass.
+    """
+    try:
+        changed = _run(
+            root, "git", "diff", "--name-only", f"{merge_sha}^", merge_sha
+        ).splitlines()
+    except Exception:
+        # Root/orphan merge or unavailable parent — fall back to the session
+        # range, which over-requires rather than under-requires a render.
+        changed = _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
+    return _render_triggering_paths(changed)
+
+
 def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
     query = urllib.parse.urlencode(
         {"event": "push", "head_sha": merge_sha, "per_page": "20"}
@@ -378,19 +419,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         _block(path, state, payload, "github_unreachable", f"Merge is not confirmed on origin/main: {exc}")
         return
 
-    changed = _run(
-        root,
-        "git",
-        "diff",
-        "--name-only",
-        str(state.get("start_head")),
-        head,
-    ).splitlines()
-    needs_render = any(
-        item.startswith("templates/")
-        or (item.startswith("scripts/") and Path(item).name.startswith("build_"))
-        for item in changed
-    )
+    needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
             status, detail = _render_status(owner, repo, merge_sha)

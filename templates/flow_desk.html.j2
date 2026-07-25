@@ -174,6 +174,26 @@
     background:color-mix(in srgb,var(--warn) 10%,var(--tile)); color:var(--ink-1); }
   .callout .ci { color:var(--warn); }
 
+  /* ══ HOW THE DAY UNFOLDED — live intraday tide curve (client-fetched) ═══════
+     Hidden until the R2 live_flow store returns real minutes; see the fetch block
+     at the foot of this file. Direction colours come from --up/--down so the
+     Chinese 红涨绿跌 swap applies automatically (theme.css html[data-lang="zh"]). */
+  .fdu[hidden] { display:none; }
+  .fdu { margin-bottom:16px; }
+  .fdu-row { display:grid; grid-template-columns:minmax(150px,210px) 1fr; gap:16px; align-items:center; }
+  @media (max-width:640px){ .fdu-row { grid-template-columns:1fr; gap:10px; } }
+  .fdu-read { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .fdu-lean { align-self:flex-start; }
+  .fdu-net { font-family:var(--num); font-size:21px; font-weight:800; letter-spacing:-.01em;
+    color:var(--ink-1); line-height:1.05; }
+  .fdu-net.up { color:var(--up); }
+  .fdu-net.dn { color:var(--down); }
+  .fdu-shape { font-size:11.5px; color:var(--ink-3); line-height:1.35; }
+  .fdu-cv { position:relative; height:64px; min-width:0; }
+  #fdu-spark { width:100%; height:64px; display:block; }
+  .fdu-foot { margin-top:11px; padding-top:10px; border-top:1px solid var(--hair);
+    font-size:11px; color:var(--ink-3); line-height:1.45; }
+
   /* ══ LAYOUT ═══════════════════════════════════════════════════════════════ */
   .fd-grid { display:grid; gap:16px; }
   @media (min-width:940px){ .fd-grid { grid-template-columns:1.55fr 1fr; align-items:start; } }
@@ -458,6 +478,41 @@
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════════════════════════
+   HOW THE DAY UNFOLDED — the completed session's cumulative ~net-premium curve.
+   This page is baked after the close, so the intraday SHAPE exists only in the live
+   tape store. Fetched client-side from R2 via window.DATA_BASE (intraday_flow
+   precedent); the panel ships hidden and reveals itself only when real minutes come
+   back. No data → it stays hidden and the page reads exactly as it did before.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+<section class="panel fdu" id="fd-unfold" hidden style="--rail:var(--flow)">
+  <div class="p-head">
+    <h2>{{ t('How the day unfolded','当日资金流演变') }}</h2>
+    {{ help(
+      'The finished session minute by minute: running net call premium minus net put premium, both signed from the tape (~approximate). Above the line means calls were bought and puts sold on balance; below the line, the reverse. Read the shape, not the level — where the lean built, faded, or turned. Source is the live tape store, refreshed about every 2 minutes while the market is open.',
+      '已收盘交易时段的逐分钟走势：累计净看涨权利金减净看跌权利金，方向由盘面推断（~近似）。在零轴上方表示整体买入看涨、卖出看跌；下方则相反。请看形态而非绝对水平 — 关注倾向在何时加强、回落或转向。数据来自实时盘面存储，开市期间约每2分钟更新一次。'
+    ) }}
+    <span class="p-sub num" id="fdu-asof"></span>
+  </div>
+  <div class="fdu-row">
+    <div class="fdu-read">
+      <span class="lean-chip fdu-lean" id="fdu-lean"></span>
+      <div class="fdu-net" id="fdu-net"></div>
+      <div class="fdu-shape" id="fdu-shape"></div>
+    </div>
+    <div class="fdu-cv">
+      <canvas id="fdu-spark" role="img"
+              aria-label="Cumulative net options premium through the completed session"></canvas>
+    </div>
+  </div>
+  <div class="fdu-foot">
+    <span class="l-en">Shape only. Direction is approximate<span class="softmk"> ~</span> and this is
+      <b>never a buy or sell signal</b>. Watch — don't chase.</span>
+    <span class="l-zh">仅供观察形态。方向为近似值<span class="softmk"> ~</span>，
+      <b>从不构成买卖信号</b>。观望 — 别追高。</span>
+  </div>
+</section>
+
+{# ══════════════════════════════════════════════════════════════════════════════
    BODY — two columns
    ══════════════════════════════════════════════════════════════════════════════ #}
 <div class="fd-grid">
@@ -683,6 +738,182 @@
   }
   draw();
   var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(draw,120); });
+})();
+
+/* ── How the day unfolded — the completed session's ~net-premium tide curve ─────
+   Its own IIFE on purpose: the block above returns early when the 30-session spark
+   is empty, and this panel must not depend on that.
+
+   Data: live_flow/tide_current.json from the R2 tape store, reached through
+   window.DATA_BASE (injected site-wide by scripts/inject_data_base.py). Fetch
+   discipline copied verbatim from templates/intraday_flow.html.j2: r2Url() yields
+   null when DATA_BASE is unset, {cache:'no-cache'}, an .ok check, and .catch(→null).
+   Every failure path lands in the same place — the panel stays hidden and the page
+   is byte-for-byte what it was before. Nothing here can throw into the page.
+
+   minutes[] carries CUMULATIVE ncp/npp (engine/live_flow.build_tide_current), so the
+   directional lean at each minute is ncp − npp: net call premium bought minus net put
+   premium bought. Direction is tape-inferred and SOFT — every readout carries ~.
+
+   Colour: --up/--down are re-read from computed style on every draw and the canvas
+   redraws on 'langchange', because those vars swap to 红涨绿跌 in Chinese
+   (theme.css html[data-lang="zh"]). A cached colour would be wrong after a swap. */
+(function () {
+  var panel = document.getElementById('fd-unfold');
+  if (!panel) return;
+
+  function lz(en, zh) {
+    return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>';
+  }
+  function r2Url(path) {
+    var base = (window.DATA_BASE || '').replace(/\/+$/, '');
+    return base ? base + '/' + path : null;
+  }
+  function money(v) {
+    var a = Math.abs(v), sign = v < 0 ? '−' : '+';
+    if (a >= 1e9) return sign + '$' + (a / 1e9).toFixed(1) + 'B';
+    if (a >= 1e6) return sign + '$' + Math.round(a / 1e6) + 'M';
+    if (a >= 1e3) return sign + '$' + Math.round(a / 1e3) + 'K';
+    return sign + '$' + Math.round(a);
+  }
+
+  var SERIES = [];           // [{t:'HH:MM', net:<cumulative ncp-npp>}]
+
+  function draw() {
+    var cv = document.getElementById('fdu-spark');
+    if (!cv || SERIES.length < 2) return;
+    var W = cv.offsetWidth, H = cv.offsetHeight;
+    if (!W) return;
+    var dpr = window.devicePixelRatio || 1;
+    var ctx = cv.getContext('2d');
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+
+    var cs = getComputedStyle(document.body);
+    var up = (cs.getPropertyValue('--up') || '#45b873').trim();
+    var dn = (cs.getPropertyValue('--down') || '#e06464').trim();
+    var hair = (cs.getPropertyValue('--ink-3') || '#8a8a8a').trim();
+
+    var vals = SERIES.map(function (d) { return d.net; });
+    // Zero-anchored: the baseline is 0, never the series minimum — the sign is the read.
+    var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+    var top = Math.max(mx, 0), bot = Math.min(mn, 0), rng = (top - bot) || 1;
+    var pad = 4;
+    function X(i) { return (i / (vals.length - 1)) * W; }
+    function Y(v) { return H - pad - ((v - bot) / rng) * (H - pad * 2); }
+    var zeroY = Y(0);
+
+    // Waterline fill, tinted per side of zero (doctrine's zero-anchored dual-tint).
+    function band(above) {
+      ctx.save();
+      ctx.beginPath();
+      if (above) ctx.rect(0, 0, W, zeroY); else ctx.rect(0, zeroY, W, H - zeroY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(X(0), zeroY);
+      vals.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+      ctx.lineTo(X(vals.length - 1), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = (above ? up : dn) + '33';
+      ctx.fill();
+      ctx.restore();
+    }
+    band(true); band(false);
+
+    // Zero line.
+    ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(W, zeroY);
+    ctx.strokeStyle = hair; ctx.globalAlpha = .45; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+    // The curve, coloured by where it closed.
+    var last = vals[vals.length - 1];
+    ctx.beginPath();
+    vals.forEach(function (v, i) { i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v)); });
+    ctx.strokeStyle = last >= 0 ? up : dn;
+    ctx.lineWidth = 1.7; ctx.lineJoin = 'round'; ctx.stroke();
+
+    // Close marker.
+    ctx.beginPath(); ctx.arc(X(vals.length - 1), Y(last), 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = last >= 0 ? up : dn; ctx.fill();
+  }
+
+  function render(tide) {
+    var mins = (tide && tide.minutes) || [];
+    if (mins.length < 2) return;                     // nothing honest to draw
+
+    var grossSum = 0;
+    SERIES = mins.map(function (m) {
+      grossSum += Math.abs(m.gross || 0);
+      return { t: m.t || '', net: (m.ncp || 0) - (m.npp || 0) };
+    });
+
+    var vals = SERIES.map(function (d) { return d.net; });
+    var last = vals[vals.length - 1];
+    // Peak = the day's largest absolute lean, whichever side it was on.
+    var peak = 0;
+    vals.forEach(function (v) { if (Math.abs(v) > Math.abs(peak)) peak = v; });
+    var peakAbs = Math.abs(peak);
+
+    // "Two-way" is an honest state, not a rounding artefact: a close inside 2% of the
+    // day's gross premium is noise, not a lean.
+    var flat = grossSum > 0 && Math.abs(last) < grossSum * 0.02;
+
+    var leanEl = document.getElementById('fdu-lean');
+    var netEl = document.getElementById('fdu-net');
+    var shapeEl = document.getElementById('fdu-shape');
+    var asofEl = document.getElementById('fdu-asof');
+
+    if (leanEl) {
+      leanEl.className = 'lean-chip fdu-lean ' +
+        (flat ? 'lean-bal' : (last > 0 ? 'lean-buy' : 'lean-sell'));
+      leanEl.innerHTML = '<span class="softmk">~</span>' + (
+        flat ? lz('Two-way', '多空均衡')
+             : (last > 0 ? lz('Calls led', '看涨主导') : lz('Puts led', '看跌主导')));
+    }
+    if (netEl) {
+      netEl.className = 'fdu-net' + (flat ? '' : (last > 0 ? ' up' : ' dn'));
+      netEl.textContent = money(last);
+    }
+    if (shapeEl) {
+      var shape;
+      if (peakAbs > 0 && !flat && (last > 0) !== (peak > 0)) {
+        shape = lz('turned the other way during the day', '盘中方向反转');
+      } else if (peakAbs > 0 && Math.abs(last) >= peakAbs * 0.95) {
+        shape = lz('the lean built right into the close', '倾向持续加强至收盘');
+      } else if (peakAbs > 0 && Math.abs(last) < peakAbs * 0.6) {
+        shape = lz('it faded well off the day\'s peak', '较当日峰值明显回落');
+      } else {
+        shape = lz('it held one side most of the day', '全天基本维持单边');
+      }
+      shapeEl.innerHTML = shape;
+    }
+    if (asofEl) {
+      var d = (tide.session_date || '').toString();
+      var lastT = SERIES[SERIES.length - 1].t;
+      asofEl.innerHTML = lz('live tape', '实时盘面') + ' · ' +
+        (d ? d + ' · ' : '') + lz('to ', '至 ') + lastT;
+    }
+
+    panel.hidden = false;
+    panel.classList.add('rise');
+    draw();
+  }
+
+  var url = r2Url('live_flow/tide_current.json');
+  if (!url) return;                                  // no store configured — stay hidden
+  fetch(url, { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (tide) {
+      if (!tide) return;                             // unreachable / empty — stay hidden
+      try { render(tide); } catch (e) { /* never break the page for a side panel */ }
+    });
+
+  var rt2;
+  window.addEventListener('resize', function () { clearTimeout(rt2); rt2 = setTimeout(draw, 120); });
+  // --up/--down swap in Chinese — repaint or the curve keeps the wrong direction colour.
+  document.addEventListener('langchange', function () { setTimeout(draw, 0); });
 })();
 </script>
 <script src="theme.js"></script>

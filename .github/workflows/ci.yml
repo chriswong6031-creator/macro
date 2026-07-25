@@ -132,6 +132,13 @@ on:
       - "scripts/build_flow_surface.py"
       - "tests/test_flow_surface.py"
       - "scripts/live_flow_poller.py"
+      # OEU M-XP: date-keyed surface retention + the Terminal EOD-context R2 mirror +
+      # the Scanner-mode screener rows export. All three feed the Terminal/Options
+      # workspace, so a silent contract change here shows up as a 404 over there.
+      - "scripts/mirror_terminal_context_r2.py"
+      - "tests/test_mirror_terminal_context.py"
+      - "scripts/build_options_screener.py"
+      - "tests/test_build_options_screener.py"
       # Lane G: intraday BS greek engine feeding the surface gex/dex/vanna/charm grids.
       - "engine/intraday_greeks.py"
       - "tests/test_intraday_greeks.py"
@@ -588,6 +595,13 @@ on:
       - "scripts/build_leader_radar.py"
       - "tests/test_leader_lifecycle.py"
       - "tests/test_build_leader_radar.py"
+      # OEU M-PRO display-tier options context: the shared loader/vocabulary, the two
+      # Prophet-side consumers, and the fence suite. A change to any of them must
+      # retrigger the fence tests even when nothing else in this filter moved.
+      - "lib/options_context.py"
+      - "engine/prophet_bridge.py"
+      - "scripts/build_prophet.py"
+      - "tests/test_prophet_options_context.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -786,6 +800,24 @@ on:
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"
+      # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
+      # shipping #3488: NONE of the boundary's enforcement files were listed, so a
+      # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
+      # site_access.yml, paywall) never triggered ci.yml — the drift tests the
+      # boundary docs point at only ever fired incidentally, on unrelated PRs.
+      # List every subject + test file the tier-gate job runs (app/main.py is
+      # already listed above), so the exact PRs that move the boundary are gated.
+      - "app/regwall.py"
+      - "app/paywall.py"
+      - "app/deploy/Caddyfile"
+      - "config/site_access.yml"
+      - "tests/test_site_access_boundary.py"
+      - "tests/test_regwall.py"
+      - "tests/test_regwall_json_gate.py"
+      - "tests/test_paywall.py"
+      - "tests/test_api_paywall.py"
+      - "tests/test_special_situations_gate.py"
+      - "tests/test_china_special_situations_gate.py"
   workflow_dispatch:
 
 permissions:
@@ -1116,11 +1148,19 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pyyaml numpy pandas scipy
+        # jinja2 + pyarrow are for the options-screener suite below: the builder imports
+        # jinja2 at module scope and reads its inputs from parquet.
+        run: pip install pytest pyyaml numpy pandas scipy jinja2 pyarrow
       - name: flow-surface store contract tests (idx↔snapshot, grid dims, cadence honesty, idempotent append, greek grids + walls + coverage + poller fence)
         run: python -m pytest tests/test_flow_surface.py -q
       - name: intraday greek engine tests (IV solve round-trip, greek parity vs engine/greeks, dealer-sign parity vs engine/gex_engine, coverage honesty)
         run: python -m pytest tests/test_intraday_greeks.py -q
+      # OEU M-XP(b)+(c): the two payloads the Terminal / Options workspace fetch. Both are
+      # cross-repo contracts — an unwired suite here rots silently and the consumer 404s.
+      - name: Terminal EOD-context R2 mirror (key map pinned, corrupt-file guard, fail-soft)
+        run: python -m pytest tests/test_mirror_terminal_context.py -q
+      - name: options screener (IV-rank percentile + Scanner-mode rows export shape)
+        run: python -m pytest tests/test_build_options_screener.py -q
 
   cycle-grading-stats:
     # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one
@@ -1184,6 +1224,7 @@ jobs:
           tests/test_board_ledger_lane_gates.py
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
+          tests/test_prophet_options_context.py
           tests/test_pick_autopsy_selection.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
           tests/test_news_page_render.py tests/test_china_lens_hub.py
@@ -1927,6 +1968,12 @@ jobs:
         run: pip install pytest pyyaml
       - name: self-mod-fence selftest (all four cases proven)
         run: python3 scripts/check_self_mod_fence.py --selftest
+      - name: ship-loop guard contract (baseline dirt, render precondition scoping)
+        # The Stop hook that enforces commit->merge->render->live had NO CI at all,
+        # which is how its render precondition shipped scoped to the whole session
+        # range: on a shared main that sweeps in concurrent sessions' templates/
+        # merges and demands a render on a merge commit that can never have one.
+        run: python -m pytest tests/test_ship_loop_guard.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}

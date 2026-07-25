@@ -318,6 +318,8 @@ a{text-decoration:none;color:inherit;}
 .entry-flag{display:inline-block;font-size:0.66rem;font-weight:600;padding:3px 9px;border-radius:5px;margin-top:7px;letter-spacing:0.01em;}
 .entry-flag.late{background:color-mix(in srgb,var(--col-crowded) 12%,transparent);color:var(--col-crowded);}
 .entry-flag.turn{background:rgba(255,255,255,0.04);color:var(--text-muted);}
+/* OEU M-PRO options caveat — quietest of the three: context, not a verdict. */
+.entry-flag.opt{background:rgba(255,255,255,0.03);color:var(--text-muted);font-weight:500;}
 .cooled-list{font-size:0.68rem;color:var(--text-dim);font-family:var(--num);letter-spacing:.01em;}
 /* ── FIRE RECEIPTS ── */
 .fire-receipts-section{margin-bottom:20px;}
@@ -928,6 +930,15 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
   {%- set _bs = _er.basis if _er.basis is defined and _er.basis is not none else [] -%}
   <span class="move-read">{% if 'below_200dma_12m' in _bs %}{{ t('below its 200-day for a year', '低于200日线已一年') }}{% else %}{{ t('still in a deep drawdown', '仍处深度回撤') }}{% endif %}</span>
 {%- endmacro %}
+{# OEU M-PRO — options caveats from entry_read().caveats, plain words only. This is
+   CONTEXT hanging off the verdict, never the verdict: the stance above it is set by
+   the same chips it always was. Renders nothing for names without options coverage. #}
+{% macro _opt_cav(er) -%}
+  {%- set _cv = er.caveats if (er is defined and er is not none and er.caveats is defined and er.caveats is not none) else [] -%}
+  {%- if 'gex_pin_risk' in _cv or 'iv_rank_elevated' in _cv -%}
+  <div class="entry-flag opt">{% if 'gex_pin_risk' in _cv %}{{ t('Options ceiling just above — price tends to stall there', '上方紧邻期权天花板——价格倾向在此停滞') }}{% endif %}{% if 'gex_pin_risk' in _cv and 'iv_rank_elevated' in _cv %} · {% endif %}{% if 'iv_rank_elevated' in _cv %}{{ t('Options pricing a bigger move than usual', '期权定价高于平常的波动') }}{% endif %}</div>
+  {%- endif -%}
+{%- endmacro %}
 <section class="tonight-section">
   <div class="section-header">
     <span class="section-title">{{ t("Tonight's focus", '今夜焦点') }}</span>
@@ -1116,6 +1127,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
         {% elif _er_cw.key is defined and _er_cw.key == 'turnaround_watch' %}
         <div class="entry-flag turn">{{ t('Downtrend intact — turnaround attempt only', '下行趋势未改——仅为反转尝试') }}</div>
         {% endif %}
+        {{ _opt_cav(_er_cw) }}
       </div>
       {% endfor %}
       {% endif %}
@@ -1230,6 +1242,7 @@ html[data-lang="zh"] .leg-chip.green{background:rgba(239,68,68,0.12);color:#f871
           {% elif _er_qa.key is defined and _er_qa.key == 'turnaround_watch' %}
           <div class="entry-flag turn">{{ t('Downtrend intact — turnaround attempt only', '下行趋势未改——仅为反转尝试') }}</div>
           {% endif %}
+          {{ _opt_cav(_er_qa) }}
         </div>
         {% set ns_qa_shown.n = ns_qa_shown.n + 1 %}
       {% endif %}

@@ -7,13 +7,27 @@ This is the DATA half of the feature; the renderer half already shipped.
 Store contract (RECON.md §2, MASTERPLAN §3 Lane T item 5; shapes pinned by the
 Terminal fixtures public/data/surface_idx_fixture.json + surface_fixture.json):
 
-  R2 key  live_flow/surface/{ROOT}/idx.json        → SurfaceIndex
-          live_flow/surface/{ROOT}/{HHMM}.json     → SurfaceFrame
+  R2 key  live_flow/surface/{ROOT}/idx.json        → SurfaceIndex   (today, legacy)
+          live_flow/surface/{ROOT}/{HHMM}.json     → SurfaceFrame   (today, legacy)
+          live_flow/surface/{ROOT}/{DATE}/idx.json    → SurfaceIndex (date-keyed)
+          live_flow/surface/{ROOT}/{DATE}/{HHMM}.json → SurfaceFrame (date-keyed)
+          live_flow/surface/{ROOT}/dates.json      → SurfaceDates
 
   SurfaceIndex = {date, stamps:["HHMM",…] ascending, latest, cadenceSec, cadence?, root?, source?}
   SurfaceFrame = {spot, price_levels:[…] ascending, time_steps:["HH:MM",…],
                   grids:{netprem:[[levelIdx][timeIdx]]}, asof, cadence,
                   metrics?, session_date?, root?}
+  SurfaceDates = {root, dates:["YYYY-MM-DD",…] NEWEST FIRST, latest, count, retain,
+                  cadenceSec, cadence, asof, source}
+
+Multi-day replay (M-XP a, OEU_MASTERPLAN §4): each cycle writes BOTH the legacy today-paths
+  (which the live Terminal reads — never changed) and a date-keyed copy under {DATE}/, plus a
+  small dates.json listing the retained sessions newest-first. The dated copies are the SAME
+  bytes as the legacy ones, uploaded under a second key — no extra local IO, no divergence.
+  When the session rolls over, the legacy idx/frames are overwritten by the new session while
+  each prior date's copy stays frozen at that session's final state. Retention: newest
+  SURFACE_RETAIN_SESSIONS (10) date prefixes per root; older prefixes are deleted from R2 by
+  prune_surface_dates() (called once per session from the poller's fenced surface block).
 
   Grid orientation (surfaceContract.ts buildHeatBars): grids[metric][levelIdx][timeIdx].
   Rows = price_levels (one per strike, ascending); columns = time_steps realized so far
@@ -54,6 +68,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -73,6 +88,19 @@ SURFACE_OUT_SUBDIR = "surface"
 
 # Default roots for the store (config live_flow.surface_roots overrides / extends).
 DEFAULT_SURFACE_ROOTS = ["SPY", "QQQ", "IWM"]
+
+# Date-keyed retention (M-XP a): how many completed sessions to keep per root under the
+# {DATE}/ prefix. Config live_flow.surface_retain_sessions overrides. 10 sessions ≈ 2 weeks
+# of trading — enough for the Terminal's multi-day replay without unbounded R2 growth.
+SURFACE_RETAIN_SESSIONS = 10
+
+# Public dates-index filename (staged locally AND uploaded; doubles as the local ledger of
+# which sessions this poller has written, so the write path needs no R2 read per cycle).
+SURFACE_DATES_NAME = "dates.json"
+
+# Session-date prefix shape under live_flow/surface/{ROOT}/ — exactly YYYY-MM-DD. Used both
+# to validate ledger entries and to tell a date prefix apart from a stamp file in R2 keys.
+_SESSION_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # Wave 1 fills netprem; Wave 2 (Lane G) adds the intraday dealer-exposure greek grids.
 # The grids map stays OPEN (named keys) — the Terminal surface pane feature-detects which
@@ -533,6 +561,40 @@ def build_index(frame: dict, *, session_date: str, cadence_sec: int, root: str,
     }
 
 
+def is_session_date(s: object) -> bool:
+    """True for an exact YYYY-MM-DD session-date string (the dated-prefix shape)."""
+    return isinstance(s, str) and bool(_SESSION_DATE_RE.match(s))
+
+
+def build_dates_index(dates, *, root: str, cadence_sec: int, asof: str,
+                      retain: int = SURFACE_RETAIN_SESSIONS,
+                      source: str = "poller") -> dict:
+    """Build the SurfaceDates index for a root — retained sessions NEWEST FIRST.
+
+    Consumed by the Terminal's multi-day replay (T-B) to discover which sessions can be
+    replayed; `latest` is dates[0] (or null when empty), matching the SurfaceIndex `latest`
+    convention. Non-date entries are dropped and duplicates collapsed, so a corrupt ledger
+    can never publish a bogus session. The list is trimmed to `retain` — dates.json never
+    promises a session the retention prune has already deleted.
+
+    Cadence is carried verbatim from the true write interval (same honesty law as
+    build_index): the index never claims a cadence the poller loop doesn't have.
+    """
+    clean = sorted({d for d in (dates or []) if is_session_date(d)}, reverse=True)
+    clean = clean[: max(0, int(retain))]
+    return {
+        "root": root,
+        "dates": clean,
+        "latest": clean[0] if clean else None,
+        "count": len(clean),
+        "retain": int(retain),
+        "cadenceSec": int(cadence_sec),
+        "cadence": cadence_label(cadence_sec),
+        "asof": asof,
+        "source": source,
+    }
+
+
 def frame_for_stamp(full_frame: dict, stamp: str) -> dict:
     """Truncate a full-day frame to the realized-so-far window for `stamp` (replay view).
 
@@ -601,6 +663,33 @@ def is_surface_frame(x: object) -> bool:
         and isinstance(x.get("grids"), dict)
         and isinstance(x.get("asof"), str)
         and isinstance(x.get("cadence"), str)
+    )
+
+
+def is_surface_dates(x: object) -> bool:
+    """Validator for the SurfaceDates index (dates.json).
+
+    Contract: `dates` is a list of YYYY-MM-DD strings sorted NEWEST FIRST, `latest` is
+    dates[0] (null when empty), and cadenceSec is an honest int. The Terminal lane checks
+    the same three things before trusting a session list.
+    """
+    if not isinstance(x, dict):
+        return False
+    dates = x.get("dates")
+    if not isinstance(dates, list) or not all(is_session_date(d) for d in dates):
+        return False
+    if dates != sorted(dates, reverse=True):
+        return False
+    latest = x.get("latest")
+    if dates:
+        if latest != dates[0]:
+            return False
+    elif latest is not None:
+        return False
+    return (
+        isinstance(x.get("cadenceSec"), int)
+        and not isinstance(x.get("cadenceSec"), bool)
+        and isinstance(x.get("root"), str)
     )
 
 
@@ -681,6 +770,151 @@ def _load_prior_full_frame(root: str) -> dict | None:
     return None
 
 
+# ── date-keyed retention: keys, local ledger, R2 prune (M-XP a) ────────────────────
+
+def dated_surface_keys(root: str, session_date: str, stamp: str) -> tuple[str, str]:
+    """R2 keys for the date-keyed copies: (idx_key, frame_key).
+
+    live_flow/surface/{ROOT}/{YYYY-MM-DD}/idx.json and .../{HHMM}.json — the same bytes as
+    the legacy today-paths, under a prefix that survives session rollover.
+    Raises ValueError on a malformed session_date so a bad date can never create a junk
+    prefix that the retention prune would then refuse to recognize (and never clean up).
+    """
+    root_u = root.upper()
+    if not is_session_date(session_date):
+        raise ValueError(f"session_date {session_date!r} is not YYYY-MM-DD")
+    base = f"{R2_SURFACE_PREFIX}{root_u}/{session_date}/"
+    return base + "idx.json", base + f"{stamp}.json"
+
+
+def _load_dates_ledger(root: str) -> list[str]:
+    """Session dates this poller has recorded locally for a root (newest first); [] if none.
+
+    The public dates.json doubles as the ledger, so the per-cycle write path needs no R2
+    read. A wiped staging dir (droplet redeploy) simply restarts the ledger — the first
+    retention prune of the session heals it from R2 truth via merge_surface_dates.
+    """
+    try:
+        f = _surface_out_dir(root) / SURFACE_DATES_NAME
+        if f.exists():
+            doc = json.loads(f.read_text())
+            return [d for d in (doc.get("dates") or []) if is_session_date(d)]
+    except Exception as e:  # noqa: BLE001
+        log.debug("surface: dates ledger load failed for %s: %s", root, e)
+    return []
+
+
+def stage_dates_index(root: str, dates, *, cadence_sec: int, asof: str,
+                      retain: int = SURFACE_RETAIN_SESSIONS) -> Path:
+    """Write the public dates.json for a root from `dates`; return its local path."""
+    doc = build_dates_index(dates, root=root.upper(), cadence_sec=cadence_sec,
+                            asof=asof, retain=retain)
+    return _write_json_atomic(_surface_out_dir(root) / SURFACE_DATES_NAME, doc)
+
+
+def merge_surface_dates(root: str, dates, *, cadence_sec: int, asof: str,
+                        retain: int = SURFACE_RETAIN_SESSIONS) -> list[str]:
+    """Union `dates` into the local ledger, rewrite dates.json, return the retained list.
+
+    Used two ways: the per-cycle write path merges in today's session date, and the
+    once-per-session retention prune merges back R2 truth (self-healing after a staging
+    wipe). Never raises — a ledger failure must not cost the caller its surface columns;
+    on failure the previously-recorded list is returned unchanged.
+    """
+    try:
+        merged = set(_load_dates_ledger(root)) | {d for d in (dates or []) if is_session_date(d)}
+        stage_dates_index(root, merged, cadence_sec=cadence_sec, asof=asof, retain=retain)
+        return sorted(merged, reverse=True)[: max(0, int(retain))]
+    except Exception as e:  # noqa: BLE001
+        log.warning("surface: dates ledger merge failed for %s: %s", root, e)
+        return _load_dates_ledger(root)
+
+
+def list_surface_session_dates(s3, bucket: str, root: str) -> list[str]:
+    """Session-date prefixes present in R2 for a root, newest first. [] on any failure.
+
+    Lists live_flow/surface/{ROOT}/ with Delimiter="/" so R2 returns the child prefixes
+    directly (one cheap call per root) instead of paging every stamp object. Only
+    YYYY-MM-DD prefixes count — the legacy today-files sit at the root of this prefix and
+    are never treated as sessions.
+    """
+    out: list[str] = []
+    try:
+        prefix = f"{R2_SURFACE_PREFIX}{root.upper()}/"
+        tok = None
+        while True:
+            kw: dict = {"Bucket": bucket, "Prefix": prefix, "Delimiter": "/"}
+            if tok:
+                kw["ContinuationToken"] = tok
+            r = s3.list_objects_v2(**kw)
+            for cp in r.get("CommonPrefixes", []) or []:
+                name = (cp.get("Prefix") or "")[len(prefix):].rstrip("/")
+                if is_session_date(name):
+                    out.append(name)
+            if not r.get("IsTruncated"):
+                break
+            tok = r.get("NextContinuationToken")
+    except Exception as e:  # noqa: BLE001
+        log.warning("surface: list session dates failed for %s: %s", root, e)
+        return []
+    return sorted(set(out), reverse=True)
+
+
+def _list_keys_under(s3, bucket: str, prefix: str) -> list[str]:
+    """Every object key under `prefix` (paged). [] on failure."""
+    out: list[str] = []
+    tok = None
+    while True:
+        kw: dict = {"Bucket": bucket, "Prefix": prefix}
+        if tok:
+            kw["ContinuationToken"] = tok
+        r = s3.list_objects_v2(**kw)
+        for o in r.get("Contents", []) or []:
+            out.append(o["Key"])
+        if not r.get("IsTruncated"):
+            return out
+        tok = r.get("NextContinuationToken")
+
+
+def prune_surface_dates(s3, bucket: str, root: str,
+                        *, keep: int = SURFACE_RETAIN_SESSIONS) -> dict:
+    """Delete R2 objects under date prefixes older than the newest `keep` sessions.
+
+    Returns {ok, retained, deleted_dates, deleted_objects}. NEVER raises and never touches
+    the legacy today-paths (those live at the root of live_flow/surface/{ROOT}/, not under a
+    YYYY-MM-DD prefix) — a retention sweep must not be able to blank the live Terminal.
+    `ok` is False when the listing or a delete failed, so the caller can retry next session.
+    """
+    res = {"ok": False, "retained": [], "deleted_dates": [], "deleted_objects": 0}
+    try:
+        keep_n = max(0, int(keep))
+        dates = list_surface_session_dates(s3, bucket, root)
+        if not dates:
+            # Nothing dated in the store yet (or listing failed) — nothing to prune.
+            return res
+        res["retained"] = dates[:keep_n]
+        stale = dates[keep_n:]
+        for d in stale:
+            prefix = f"{R2_SURFACE_PREFIX}{root.upper()}/{d}/"
+            keys = _list_keys_under(s3, bucket, prefix)
+            # Belt-and-braces: only ever delete keys that really sit under the dated prefix.
+            keys = [k for k in keys if k.startswith(prefix)]
+            for i in range(0, len(keys), 1000):   # S3/R2 delete_objects caps at 1000
+                batch = keys[i:i + 1000]
+                s3.delete_objects(Bucket=bucket,
+                                  Delete={"Objects": [{"Key": k} for k in batch]})
+                res["deleted_objects"] += len(batch)
+            res["deleted_dates"].append(d)
+        res["ok"] = True
+        if stale:
+            log.info("surface: pruned %d stale session(s) for %s (%d objects); retained %s",
+                     len(res["deleted_dates"]), root.upper(), res["deleted_objects"],
+                     res["retained"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("surface: retention prune failed for %s: %s", root, e)
+    return res
+
+
 def build_and_stage_surfaces(
     *,
     root_strikes_by_root: dict,
@@ -693,6 +927,7 @@ def build_and_stage_surfaces(
     quotes_by_root: dict | None = None,
     oi_by_root: dict | None = None,
     spot_fallback_by_root: dict | None = None,
+    retain_sessions: int = SURFACE_RETAIN_SESSIONS,
 ) -> list[tuple[Path, str]]:
     """Build + stage the surface store for each root; return [(local_path, r2_key), …].
 
@@ -712,6 +947,11 @@ def build_and_stage_surfaces(
       oi_by_root           : {ROOT → {(exp_str,strike,right) → open_interest}} from the OI
                              snapshot (EOD t-1 positions).
       spot_fallback_by_root: {ROOT → prev_close} used only when parity spot can't resolve.
+
+    Date-keyed retention (M-XP a): every cycle ALSO returns the date-keyed keys for the same
+    two local files (live_flow/surface/{ROOT}/{DATE}/…) plus the root's dates.json. The
+    legacy today-keys are emitted first and unchanged — the live Terminal reads those, and a
+    failure in the dated layout is fenced so it can never cost a root its legacy upload.
 
     Roots with an empty strike rollup this cycle are skipped (no column written) so an
     empty cycle never blanks a good prior frame — mirrors the ticker "skip empty" guard.
@@ -800,6 +1040,29 @@ def build_and_stage_surfaces(
 
             out.append((idx_path, f"{R2_SURFACE_PREFIX}{root_u}/idx.json"))
             out.append((snap_path, f"{R2_SURFACE_PREFIX}{root_u}/{stamp}.json"))
+
+            # ── date-keyed copies + dates index (M-XP a) ───────────────────────
+            # Fenced exactly like the Lane-G greek path: the legacy today-keys are already
+            # queued above, so a failure here degrades to today-only (the pre-M-XP
+            # behavior) and never costs the live Terminal its upload. Same local files,
+            # second set of keys — no extra disk, no chance of the two copies diverging.
+            try:
+                d_idx_key, d_snap_key = dated_surface_keys(root_u, session_date, stamp)
+                out.append((idx_path, d_idx_key))
+                out.append((snap_path, d_snap_key))
+                merge_surface_dates(root_u, [session_date], cadence_sec=cadence_sec,
+                                    asof=asof, retain=retain_sessions)
+                # merge_surface_dates is fail-soft: only queue the upload when the file is
+                # really on disk, so a degraded ledger doesn't log an upload warning a
+                # cycle (every 2 min) for a path that was never written.
+                dates_local = out_dir / SURFACE_DATES_NAME
+                if dates_local.exists():
+                    out.append((dates_local,
+                                f"{R2_SURFACE_PREFIX}{root_u}/{SURFACE_DATES_NAME}"))
+            except Exception as de:  # noqa: BLE001 — legacy paths must still upload
+                log.warning("surface: dated layout failed for %s (legacy paths still "
+                            "written): %s", root_u, de)
+
             log.info("surface: staged %s stamp=%s levels=%d steps=%d metrics=%d",
                      root_u, stamp, len(full["price_levels"]), len(full["time_steps"]),
                      len(full.get("metrics") or []))
