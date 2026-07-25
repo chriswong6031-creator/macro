@@ -852,14 +852,11 @@ class Handler(BaseHTTPRequestHandler):
                 res = marketing.sentinel_allow(item_id, reason)
                 return self._json(res, 200 if res.get("ok") else 400)
 
-            # Desk on/off: merge-write the override file, then try to commit+push it.
-            # Refused in deployed mode (same as /api/git/commit — the VPS admin has
-            # no working tree to commit from; the file must land via a local push).
+            # Desk on/off: merge-write data/marketing/account_overrides.json. Local
+            # checkout commits+pushes it; the deployed VPS admin (no git auth) commits
+            # it to main via the GitHub Contents API — handled in marketing.accounts_
+            # toggle, so this route no longer refuses in deployed mode.
             if path == "/api/marketing/accounts/toggle":
-                if settings.deployed():
-                    return self._json({"ok": False, "error":
-                                       "not available in deployed mode — the override file is "
-                                       "committed from a local checkout, not the VPS"}, 400)
                 account_id = b.get("account_id")
                 if not isinstance(account_id, str) or not account_id.strip():
                     return self._json({"ok": False, "error": "account_id required"}, 400)

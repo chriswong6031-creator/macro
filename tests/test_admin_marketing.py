@@ -1619,12 +1619,43 @@ class TestAccountsToggle:
         r2 = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
         assert r2["ok"] is True
 
-    def test_refused_in_deployed_mode(self, tmp_path, monkeypatch):
+    def test_deployed_mode_commits_override_via_github_api(self, tmp_path, monkeypatch):
+        # Deployed VPS admin has no git auth: the toggle must PERSIST via the
+        # GitHub Contents API rather than refuse (the old dead-end behaviour).
         monkeypatch.setenv("ADMIN_DEPLOYED", "1")
-        r = marketing.accounts_toggle("flagship", False, root=tmp_path, push=False)
-        assert r["ok"] is False
-        assert "deployed" in r["error"].lower()
+        from admin import github_api
+        captured: dict = {}
+        monkeypatch.setattr(github_api, "get_file", lambda rel, ref="main": {
+            "ok": True, "content": '{"receipts": {"enabled": false}}', "sha": "s0"})
+
+        def fake_put(rel, content, msg, sha=None, branch="main"):
+            captured.update(rel=rel, content=content, sha=sha, msg=msg)
+            return {"ok": True, "commit_sha": "c0ffee"}
+        monkeypatch.setattr(github_api, "put_file", fake_put)
+
+        r = marketing.accounts_toggle("theme_desk", False, root=tmp_path)
+        assert r["ok"] is True
+        assert r["via"] == "github_api" and r["pushed"] is True
+        assert r["commit_sha"] == "c0ffee"
+        # read-modify-write on the ON-MAIN copy: preserves receipts, adds theme_desk
+        merged = json.loads(captured["content"])
+        assert merged["receipts"] == {"enabled": False}
+        assert merged["theme_desk"]["enabled"] is False
+        assert captured["sha"] == "s0"                    # updates existing file
+        assert "data/marketing/account_overrides.json" in captured["rel"]
+        # nothing written to the local (VPS) checkout
         assert not (tmp_path / "data" / "marketing" / "account_overrides.json").exists()
+
+    def test_deployed_mode_surfaces_api_commit_error(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+        from admin import github_api
+        monkeypatch.setattr(github_api, "get_file",
+                            lambda rel, ref="main": {"ok": True, "content": None, "sha": None})
+        monkeypatch.setattr(github_api, "put_file",
+                            lambda *a, **k: {"ok": False, "error": "HTTP 403 — needs Contents: write"})
+        r = marketing.accounts_toggle("flagship", False, root=tmp_path)
+        assert r["ok"] is False
+        assert "commit failed" in r["error"].lower() and "403" in r["error"]
 
     def test_note_and_reason_length_capped(self, tmp_path):
         marketing.accounts_toggle("flagship", True, note="n" * 2000,
