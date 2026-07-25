@@ -25,6 +25,13 @@ ruler). Grades from store closes at maturity: ret21, ret63, adverse63 (worst
 close within 63td). Frozen ruler: HIT = ret63 > +8.9 (census all-days median,
 pinned) AND adverse63 > −10; FAIL = ret63 < 0 OR adverse63 ≤ −15; else MIXED.
 Basket ('EW') rows are the §4 gauntlet rows; member rows are diagnostic only.
+
+Matured rows additionally carry the §7-item-4 timing scorecard (bottom-picking
+ruler): prox_pct + within_3/within_5 (entry close vs the ±31td local trough),
+signed td_to_trough with timing_label called_low/confirmed_reset/early, and
+mfe21/rc21 (21td reversion-capture, Oracle-law time-exit). The Amendment-2
+HIT/FAIL ruler above stays the live-gate ruler — both rulers are presented
+side-by-side at the first forward ruling.
 """
 from __future__ import annotations
 
@@ -32,6 +39,7 @@ import json
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from engine.ledger_lane import nightly_advance_enabled
@@ -45,6 +53,8 @@ BASELINE_FWD63 = 8.9      # frozen census all-days median (prereg §7 — never 
 HIT_ADVERSE_FLOOR = -10.0
 FAIL_ADVERSE_FLOOR = -15.0
 HORIZON = 63
+PROX = 31    # ±31td local-trough proximity window (charter §7 timing ruler)
+TEXIT = 21   # reversion-capture time-exit (Oracle law ~20-25d; pinned 21)
 INSTRUMENTS = ["EW", *M7]
 
 
@@ -69,6 +79,39 @@ def _grade(ret63: float, adverse: float) -> str:
     if ret63 > BASELINE_FWD63 and adverse > HIT_ADVERSE_FLOOR:
         return "HIT"
     return "MIXED"
+
+
+def _timing_scorecard(s: pd.Series, e: int, entry_px: float) -> dict:
+    """Additive §7-item-4 bottom-picking-ruler fields for a matured entry at
+    positional index e. Arithmetic mirrors ptt_w1_timing_regrade.metric_arrays
+    (closes only; first-hit argmin; PROX=31, TEXIT=21). Maturity guarantees
+    e+HORIZON exists, so the forward windows (e+TEXIT) are always in-bounds."""
+    # mfe21: max close in the NEXT 21td (entry bar EXCLUDED, window [e+1, e+21]).
+    mfe21 = round((float(s.iloc[e + 1: e + TEXIT + 1].max()) / entry_px - 1) * 100, 1)
+    # rc21: close at t+21 vs entry — arithmetically == ret21, kept under its own
+    # timing-ruler name so the scorecard is self-contained (do NOT alias ret21).
+    rc21 = round((float(s.iloc[e + TEXIT]) / entry_px - 1) * 100, 1)
+    if e < PROX:
+        # head-of-store trim: fewer than 31 prior sessions → the ±31td trough
+        # window is undefined. Nulls printed, not hidden.
+        return {"prox_pct": None, "td_to_trough": None, "within_3": None,
+                "within_5": None, "timing_label": None, "mfe21": mfe21, "rc21": rc21}
+    w = s.iloc[e - PROX: e + PROX + 1].to_numpy(dtype=float)  # 63-wide, centered on e
+    lo = w.min()
+    prox_raw = (entry_px / lo - 1) * 100  # entry premium over the local trough; ≥0 (window includes e)
+    td_to_trough = int(np.argmin(w)) - PROX  # first-hit argmin tie-break; negative = trough BEFORE entry
+    # flags read the RAW value before rounding
+    within_3 = bool(prox_raw <= 3.0)
+    within_5 = bool(prox_raw <= 5.0)
+    if -2 <= td_to_trough <= 5:
+        timing_label = "called_low"
+    elif td_to_trough < -2:
+        timing_label = "confirmed_reset"
+    else:
+        timing_label = "early"
+    return {"prox_pct": round(prox_raw, 2), "td_to_trough": td_to_trough,
+            "within_3": within_3, "within_5": within_5,
+            "timing_label": timing_label, "mfe21": mfe21, "rc21": rc21}
 
 
 def _load_triggers(root: Path | None) -> list[dict]:
@@ -132,6 +175,7 @@ def _positions(root: Path | None) -> tuple[list[dict], list[dict]]:
                     "grade": _grade(ret63, adverse),
                     "gauntlet_row": inst == "EW",  # §7: basket rows carry §4; members diagnostic
                     **env,
+                    **_timing_scorecard(s, e, entry_px),  # §7 item 4: additive timing ruler
                 })
             else:
                 mtm = round((float(s.iloc[-1]) / entry_px - 1) * 100, 1)
@@ -230,6 +274,12 @@ def update(root: Path | None = None, gate: dict | None = None) -> dict | None:
                 "gauntlet_rows": len(gauntlet),
                 "gauntlet_hits": sum(1 for r in gauntlet if r.get("grade") == "HIT"),
                 "gauntlet_fails": sum(1 for r in gauntlet if r.get("grade") == "FAIL"),
+                "timing": {
+                    "called_low": sum(1 for r in gauntlet if r.get("timing_label") == "called_low"),
+                    "confirmed_reset": sum(1 for r in gauntlet if r.get("timing_label") == "confirmed_reset"),
+                    "early": sum(1 for r in gauntlet if r.get("timing_label") == "early"),
+                    "within_5": sum(1 for r in gauntlet if r.get("within_5")),
+                },
             },
             "confluence_stamped": _stamp_prophet_confluence(root, gate or {}),
             "note": "shadow tier (MWR §7 W1a/W1d) — measurement only; never gates, "
