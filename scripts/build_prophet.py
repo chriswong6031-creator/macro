@@ -256,6 +256,12 @@ def derive_showcase_card(row: dict) -> dict | None:
         ])
     if (row.get("hold") or {}).get("state") == "broken":
         flags.append(["Base broken — thesis void level hit", "筑底破位 — 失效价已触发"])
+    # DELIBERATE OMISSION (OEU M-PRO): the live board's options flags (call wall
+    # overhead / options priced for a bigger move) are NOT folded here. This showcase
+    # replays a snapshot that matured ~2 weeks ago; today's dealer positioning and
+    # today's IV percentile describe a different day, and stamping them onto an old
+    # card would misdate the claim. If options context is ever wanted here it must be
+    # read from the snapshot's own date, not from the live store.
 
     # ── zone footer ──────────────────────────────────────────────────────────
     bz = es.get("buy_zone") or {}
@@ -883,6 +889,10 @@ def main() -> None:
             "what_to_do_now": what_to_do_now,
             "profit_plan": profit_plan,
             "thesis": plan.get("thesis") or "",  # originated by prophet_bridge.py
+            # ZH half of the thesis — whitelisted by OEU M-PRO so the bilingual pair
+            # the originator already writes actually reaches the payload (house law:
+            # every EN string ships with its ZH pair). Older plans lack the key → "".
+            "thesis_zh": plan.get("thesis_zh") or "",
             # PSQ-TILT W1 provenance (whitelisted so the Terminal can consume it).
             "horizon_days": plan.get("horizon_days"),
             "stage_tilt": plan.get("stage_tilt"),

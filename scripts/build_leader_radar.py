@@ -823,6 +823,36 @@ def _load_options_skew(
     return result
 
 
+# ── OEU M-PRO options context loaders (display-tier evidence only) ────────────
+# Same shape as _load_options_skew above: read an already-built EOD store, hand the
+# builder a per-ticker dict, never raise. What makes these DIFFERENT from every other
+# loader in this file is where their output is allowed to go — into entry_read()'s
+# caveat list and nowhere else. They must never be joined into `chips`, counted in
+# k_true/n_avail, read by a state condition, or used as a sort key. The fence and the
+# thresholds live in lib/options_context.py; these wrappers only adapt the interface.
+
+def _load_gex_walls() -> dict[str, dict]:
+    """Dealer-positioning context per name from the GEX board manifest (one file read).
+
+    Returns {ticker: {spot, call_wall, call_wall_band, call_wall_dist_pct, ...}}.
+    Empty dict when site/gex/index.json is absent — every name then reads exactly as
+    it did before M-PRO.
+    """
+    from lib.options_context import load_gex_walls  # noqa: PLC0415
+    return load_gex_walls()
+
+
+def _load_iv_rank_ctx(tickers, data_root: Path) -> dict[str, dict]:
+    """IV percentile within each name's OWN history, options-screener convention.
+
+    Returns {ticker: {rank_pct, n_obs, history_days, young}} for covered names only.
+    Reads data/polygon_gex/summary_<T>.parquet (one small columnar read per requested
+    ticker); names with no store entry are simply absent.
+    """
+    from lib.options_context import load_iv_rank  # noqa: PLC0415
+    return load_iv_rank(tickers, data_root)
+
+
 # ── Basket correlation (LRV-R1d) ──────────────────────────────────────────────
 
 def _compute_basket_correlations(
@@ -2152,6 +2182,26 @@ def build(
     except Exception as e:  # noqa: BLE001
         log.warning("build_leader_radar: options_skew load failed: %s", e)
 
+    # OEU M-PRO — dealer-positioning + own-history IV context, EVIDENCE ONLY.
+    # Feeds entry_read()'s caveat list (gex_pin_risk / iv_rank_elevated) exactly the way
+    # the Cremers earnings chip does. DISPLAY-ONLY FENCE: never enters chips{}, k_true,
+    # n_avail, any state condition, any fire rule, or the rows[] sort — see the fence
+    # docstring in lib/options_context.py. Both loads are fail-open: no store, no caveat.
+    from lib.options_context import iv_elevated as _iv_elev  # noqa: PLC0415
+    from lib.options_context import wall_overhead as _wall_over  # noqa: PLC0415
+    gex_wall_map: dict[str, dict] = {}
+    iv_rank_map: dict[str, dict] = {}
+    try:
+        gex_wall_map = _load_gex_walls()
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: gex wall context load failed: %s", e)
+    try:
+        iv_rank_map = _load_iv_rank_ctx(universe, data_root)
+    except Exception as e:  # noqa: BLE001
+        log.warning("build_leader_radar: iv-rank context load failed: %s", e)
+    log.info("build_leader_radar: options context — %d wall rows, %d IV histories "
+             "(display-tier caveats only)", len(gex_wall_map), len(iv_rank_map))
+
     # LRV-R1e — analyst buy-share: {ticker: {consensus_pct, n_analysts, ...}}
     # Use price data-through date for staleness check (not runner-local wall clock)
     analyst_store: dict[str, dict] = {}
@@ -2379,9 +2429,17 @@ def build(
                 _ext_pct = _ext_50(close_series)
             except Exception:  # noqa: BLE001
                 _ext_pct = None
+            # OEU M-PRO: options evidence enters HERE and only here — as two booleans
+            # handed to entry_read()'s caveat lookup. `confirmed_state`, `assessment`,
+            # k_true/n_avail and the artifact sort are all already fixed by this point.
+            _opt_ctx = {
+                "wall_overhead": _wall_over(gex_wall_map.get(ticker)),
+                "iv_elevated": _iv_elev(iv_rank_map.get(ticker)),
+            }
             _eread = _entry_read(
                 confirmed_state, assessment.evidence,
                 assessment.de_escalation_chips, _ext_pct,
+                options_context=_opt_ctx,
             )
 
             rows.append({

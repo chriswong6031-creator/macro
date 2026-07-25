@@ -4133,6 +4133,33 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                     _card["sector_stance_zh"] = _lbl_zh
         except Exception as _rlt6e:  # noqa: BLE001 — additive, never fatal
             log.warning("RLT-R6 sector-stance enrich failed (%s)", _rlt6e)
+    # OEU M-PRO: display-tier options context → up to two extra ⚠ popover rows per
+    # Prophet card (a call wall just overhead / options priced for a bigger move than
+    # usual). DISPLAY-ONLY FENCE (lib/options_context.py): these strings never enter a
+    # K-of-N set, a state condition, a fire rule, a sort key, select_candidates or any
+    # conviction score — they are caution copy folded into the existing `flags` list.
+    # Most of the universe has no options coverage; those cards render byte-identically
+    # to before (absent = no flag, never a placeholder).
+    try:
+        from lib import options_context as _oc
+        _buy_rows = doc.get("buy") or []
+        _tks = [r.get("ticker") for r in _buy_rows if r.get("ticker")]
+        if _tks:
+            _walls = _oc.load_gex_walls(site)
+            _ivr = _oc.load_iv_rank(_tks)
+            _n_flagged = 0
+            for _card in _buy_rows:
+                _of = _oc.board_flags(_card.get("ticker"), _walls, _ivr)
+                if _of:
+                    # list-of-lists (not tuples) so the shape matches the JSON-derived
+                    # cautions the card already folds, and survives serialisation.
+                    _card["options_flags"] = [[en, zh] for en, zh in _of]
+                    _n_flagged += 1
+            log.info("OEU M-PRO options context: %d/%d buy cards flagged "
+                     "(%d wall rows, %d IV histories)",
+                     _n_flagged, len(_buy_rows), len(_walls), len(_ivr))
+    except Exception as _oce:  # noqa: BLE001 — additive, never fatal
+        log.warning("options context board attach failed (%s)", _oce)
     return doc
 
 
