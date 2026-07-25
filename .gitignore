@@ -60,9 +60,6 @@ data/intraday/
 data/financial_news/
 # GDELT cross-process throttle stamp (runtime-only; written by engine/gdelt_client._throttle)
 data/gdelt/
-data/breadth/_closes_cache.parquet
-data/smallcap_breadth/_closes_cache.parquet
-data/midcap_breadth/_closes_cache.parquet
 data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
