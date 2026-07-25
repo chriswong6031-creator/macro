@@ -604,7 +604,13 @@ def _build_ticker_record(
                 gross_hist = summary_df[col].dropna().astype(float)
                 break
         if "net_premium_mn" in summary_df.columns:
-            net_hist = summary_df["net_premium_mn"].dropna().astype(float)
+            # NO dropna() here: flow_inflect needs to SEE the gaps.  A missing
+            # session must break a negative run (it is not evidence of selling),
+            # and dropping it would splice the run back together at the call
+            # site — exactly the defect the detector was fixed to avoid.
+            # (Sessions absent from the frame entirely are still invisible; the
+            # detector can only break on gaps the store actually records.)
+            net_hist = summary_df["net_premium_mn"].astype(float)
 
     # Recurrence count and leg (for non-stale sessions)
     ticker_membership = (
@@ -935,8 +941,15 @@ def build(
             # the "turned back up" board — only names that actually inflected (a
             # real washout-turn) belong there, not the whole universe. A name may
             # qualify for both; a name that never flipped belongs on neither's turn list.
+            #
+            # Admission is the corrected detector's verdict (B5 = flow_inflect
+            # `inflected`): a NEWEST-flip washout pattern [-,-,-,+] with the run
+            # unbroken, the flip ≤INFLECT_FRESH_MAX sessions old, and the latest
+            # session still positive.  `days_since_inflection is not None` is NOT
+            # sufficient — it stays populated for stale flips so the "how fresh"
+            # read can stay honest, which is exactly why it must not gate the board.
             board_a_rows.append(rec)
-            if rec.get("days_since_inflection") is not None:
+            if rec.get("B5_flow_inflect") is True:
                 board_b_rows.append(rec)
         except Exception as e:  # noqa: BLE001
             log.warning("build_flow_leaders: ticker %s failed (skipped): %s", ticker, e)

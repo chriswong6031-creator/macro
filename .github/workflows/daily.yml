@@ -896,6 +896,15 @@ jobs:
           # site/news/calibration.json which build_site also reads (W3 side-artifact).
           run_py "news suite (build_news)" scripts.build_news
           run_py "news event calibration (grade_news_events)" scripts.grade_news_events
+          # OEU M-FIX (same class as the NWS-01 fix above): MSP W1 data spine must
+          # run BEFORE build_site, because build_site renders market_structure.html
+          # from data/market_structure/latest.json. It used to sit in the parallel
+          # cl_gex band AFTER build_site, so the page was always one generation
+          # stale — the Weekly Range / gamma / systematic blocks described the
+          # previous night. Cheap (<10s wall); reads gex_SPX.parquet + _GSPC.parquet,
+          # both committed by the collect job, so it has no dependency on the band.
+          # Lane-gated ledger (COLLECT_LANE=nightly) is unaffected by the move.
+          run_py "MSP W1 — market structure data spine (build_market_structure)" scripts.build_market_structure
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # Ticker dossier pages (v2) — engine-internal, reads fresh site/stockdata/*.json
           # written by build_site above; rides the engine "commit engine outputs" git add.
@@ -1139,10 +1148,12 @@ jobs:
           cl_gex() {
             brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
-            # MSP W1: market-structure data spine (VC/CTA systematic flows + gamma + dispersion).
-            # Runs AFTER vol_regime so gex_SPX.parquet is guaranteed present from collect.
-            # Cheap (<10s wall). Lane-gated ledger (COLLECT_LANE=nightly).
-            brun market_structure "MSP W1 — market structure data spine (build_market_structure)" scripts.build_market_structure
+            # build_market_structure MOVED OUT of this band to just BEFORE build_site
+            # (OEU M-FIX). It ran here, i.e. AFTER build_site had already rendered
+            # market_structure.html from build_site.py's MSP block — so the page
+            # always shipped the PREVIOUS run's data/market_structure/latest.json.
+            # Its only inputs (data/cboe/gex_SPX.parquet, data/yahoo/_GSPC.parquet)
+            # come from the collect job, so nothing in this band feeds it.
             # W4 EVW: event-window snapshot + forward-log stamp (RIC program, P3).
             # Runs AFTER vol_regime so site/vol/regime.json (gamma_regime proxy) is present.
             # No ThetaData reads; cheap committed-artifact join (~15s wall).

@@ -16,6 +16,7 @@ Compliance:
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -40,7 +41,8 @@ MIN_Z: float = 2.0
 
 # pre-registered-arbitrary
 MIN_Z_HISTORY: int = 20       # build_flow_desk.py precedent
-INFLECT_NEG_SESSIONS: int = 3 # B5 soft-path: flip after ≥3 negative sessions
+INFLECT_NEG_SESSIONS: int = 3 # B5 soft-path: flip after ≥3 CONSECUTIVE negative sessions
+INFLECT_FRESH_MAX: int = 5    # B5 freshness window: flip at most 5 sessions old
 
 # FL-R5 — OI confirmation (arbitrary but self-consistent)
 OI_CONFIRM_VOL_MULT: float = 3.0  # flow-day volume ≥ 3× prior OI
@@ -390,52 +392,103 @@ def ts_breadth(tape_row: pd.Series | None) -> int | None:
 
 # ── Flow inflection ───────────────────────────────────────────────────────────
 
+def _consecutive_neg_run_before(vals: list[float | None], i: int) -> int:
+    """Count negative sessions in the unbroken run immediately before index ``i``.
+
+    Only a strictly-negative session extends the run.  A zero, a gap (NaN /
+    non-finite / missing session) or a positive value BREAKS it — so
+    ``[-1, -1, 0, +5]`` has a run of 0 before the flip at index 3, and
+    ``[-1, -1, -1, +5, -1, -1, -1]`` has a run of 3 before index 3 only.
+    """
+    run = 0
+    j = i - 1
+    while j >= 0:
+        v = vals[j]
+        if v is None or v >= 0:
+            break
+        run += 1
+        j -= 1
+    return run
+
+
 def flow_inflect(net_prem_history: pd.Series) -> dict:
-    """B5 soft-path: flow flips positive after ≥INFLECT_NEG_SESSIONS negative sessions.
+    """B5 soft-path: the NEWEST washout-flip — ``[-,-,-,+]`` — in the history.
+
+    A washout-flip is a LOCAL pattern: ≥INFLECT_NEG_SESSIONS **consecutive**
+    negative sessions immediately followed by a positive one.  The detector
+    scans backwards and reports the most recent such event, so an old flip
+    cannot stay "fresh" forever.
 
     Args:
-        net_prem_history: Time-ordered Series of net_premium_mn values (most recent last).
-            ~-soft signed per FL-R3.
+        net_prem_history: Time-ordered Series of net_premium_mn values (most
+            recent last).  ~-soft signed per FL-R3.  Gaps are NOT compacted:
+            a NaN/non-finite session breaks a negative run exactly like a zero
+            does, because a missing session is not evidence of selling.
 
     Returns:
         dict with keys:
-          ``inflected``            : bool | None — True when latest bar > 0 and
-                                     ≥3 of the preceding bars were negative.
-          ``days_since_inflection``: int | None — bars since the FIRST positive
-                                     session that ended the most recent ≥3-negative
-                                     run (the flip event itself), not since the most
-                                     recent positive bar.  For [-1,-1,-1,5,2,3]
-                                     the flip event is index 3 (5.0), so
-                                     days_since_inflection = 2 (the current bar is
-                                     2 steps after the flip).
-        Both are None when history < 4 sessions (cold-start).
+          ``days_since_inflection``: int | None — sessions from the NEWEST valid
+                                     flip event to the latest bar (0 when the
+                                     latest bar IS the flip).  None when no valid
+                                     flip exists anywhere in the history.
+          ``inflected``            : bool | None — True only when a valid flip
+                                     exists, it is at most INFLECT_FRESH_MAX
+                                     sessions old, AND the latest bar is still
+                                     positive.  A stale flip, an interrupted run
+                                     (``---+---``) or a latest bar back in the
+                                     red all yield False.
+        Both are None when the history has fewer than 4 sessions (cold-start),
+        i.e. when the pattern could not be observed either way.
+
+    Examples:
+        ``[-1,-1,-1,5]``          → days_since 0,  inflected True
+        ``[-1,-1,0,5]``           → days_since None, inflected False (zero breaks)
+        ``[-1,-1,-1,5,-1,-1]``    → days_since 2,  inflected False (back in the red)
+        ``[-1,-1,-1,5,-1,-1,-1,5]`` → days_since 0 (the NEWEST flip, not the old one)
     """
     null = {"inflected": None, "days_since_inflection": None}
     if net_prem_history is None or len(net_prem_history) < 4:
         return null
 
-    vals = net_prem_history.dropna()
-    if len(vals) < 4:
+    # Positional list preserving gaps as None.  dropna() would COMPACT the
+    # series and silently splice a broken run back together, which is the bug
+    # this detector exists to avoid.
+    vals: list[float | None] = []
+    for raw in net_prem_history.tolist():
+        try:
+            f = float(raw)
+        except (TypeError, ValueError):
+            vals.append(None)
+            continue
+        vals.append(f if math.isfinite(f) else None)
+
+    if sum(1 for v in vals if v is not None) < 4:
         return null
 
-    latest = float(vals.iloc[-1])
-    preceding = vals.iloc[:-1]
-    neg_count = int((preceding < 0).sum())
-
-    inflected = bool(latest > 0 and neg_count >= INFLECT_NEG_SESSIONS)
-
-    # days_since_inflection: find the FIRST positive bar that followed the most
-    # recent run of ≥INFLECT_NEG_SESSIONS consecutive/cumulative negatives.
-    # Search forward from the start to find the earliest qualifying flip event.
-    days_since: int | None = None
+    # Newest valid flip: scan backwards for the first positive bar preceded by
+    # an unbroken run of ≥INFLECT_NEG_SESSIONS negatives.
     n = len(vals)
-    for i in range(1, n):
-        if float(vals.iloc[i]) > 0:
-            neg_before = int((vals.iloc[:i] < 0).sum())
-            if neg_before >= INFLECT_NEG_SESSIONS:
-                # i is the flip event; days_since = distance from i to end of series
-                days_since = n - 1 - i
-                break
+    flip_idx: int | None = None
+    for i in range(n - 1, 0, -1):
+        v = vals[i]
+        if v is None or v <= 0:
+            continue
+        if _consecutive_neg_run_before(vals, i) >= INFLECT_NEG_SESSIONS:
+            flip_idx = i
+            break
+
+    if flip_idx is None:
+        # Enough history to look, and no washout-flip in it: a definite False,
+        # not a null.  Nulls are reserved for "could not observe" (cold-start).
+        return {"inflected": False, "days_since_inflection": None}
+
+    days_since = n - 1 - flip_idx
+    latest = vals[-1]
+    inflected = bool(
+        latest is not None
+        and latest > 0
+        and days_since <= INFLECT_FRESH_MAX
+    )
 
     return {"inflected": inflected, "days_since_inflection": days_since}
 

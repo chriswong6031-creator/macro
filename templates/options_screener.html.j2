@@ -547,8 +547,8 @@
           </th>
           <th class="col-pos sc-hide-xs">
             {{ t('Max pain','最大痛点') }}<span class="help">?<span class="tip">{{ t(
-              'Strike where total options value at expiry is minimised — gravitational pull near expiry.',
-              '到期时期权总价值最小的行权价——临近到期有引力效应。') }}</span></span>
+              'Strike where total options value at expiry is minimised — gravitational pull near expiry. The % beside it is how far spot sits above (+) or below (−) that strike, as % of spot — the same denominator the wall distances use.',
+              '到期时期权总价值最小的行权价——临近到期有引力效应。旁边的百分比表示现价高于（+）或低于（−）该行权价的距离，以现价为分母——与Gamma墙距离所用分母一致。') }}</span></span>
           </th>
           <th class="sortable col-pos sc-hide-xs" data-col="skew_pp">
             {{ t('Skew pp','认沽溢价pp') }}<span class="help">?<span class="tip">{{ t(
@@ -572,7 +572,7 @@
       coverage.n_names|string ~ ' names · ' ~ coverage.n_young|string ~ ' with young IV-rank (< '
       ~ coverage.young_threshold|string ~ 'd history) · '
       ~ coverage.n_mature|string ~ ' mature · median history '
-      ~ coverage.median_depth_days|string ~ ' calendar days · skew '
+      ~ coverage.median_depth_days|string ~ ' sessions observed · skew '
       ~ coverage.n_skew|string ~ ' · IV-spread ' ~ coverage.n_ivspread|string
       ~ ' · rel-vol ' ~ coverage.n_relvol|string,
 
@@ -580,7 +580,7 @@
       ~ coverage.n_young|string ~ ' 个IV分位偏年轻（历史不足'
       ~ coverage.young_threshold|string ~ '日） · '
       ~ coverage.n_mature|string ~ ' 个历史充足 · 历史中位数 '
-      ~ coverage.median_depth_days|string ~ ' 个日历日 · 偏斜 '
+      ~ coverage.median_depth_days|string ~ ' 个已观测交易日 · 偏斜 '
       ~ coverage.n_skew|string ~ ' · IV价差 ' ~ coverage.n_ivspread|string
       ~ ' · 相对成交量 ' ~ coverage.n_relvol|string
     ) }}
@@ -672,7 +672,10 @@
     return '<span class="tone tone-neu l-en">neutral</span><span class="tone tone-neu l-zh">中性</span>';
   }
   function fmtGammaRegime(v){
-    if(!v) return na();
+    // The builder now nulls missing regimes at the schema boundary, but a stale
+    // payload can still carry a stringified NaN — and "nan" is truthy in JS, so
+    // it would slip past the null check and render as a literal word. Show "—".
+    if(!v || v==='nan' || v==='none') return na();
     if(v==='long')  return '<span class="grec grec-long l-en">Long</span><span class="grec grec-long l-zh">多</span>';
     if(v==='short') return '<span class="grec grec-short l-en">Short</span><span class="grec grec-short l-zh">空</span>';
     return '<span class="muted">'+v+'</span>';
