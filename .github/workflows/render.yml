@@ -318,6 +318,17 @@ jobs:
           # (all committed or freshly rebuilt by band/spine). Call AFTER band so its deps exist.
           central() { [ -n "$CENTRAL_DONE" ] && return 0; CENTRAL_DONE=1; run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
 
+          # ---- flow leaders desk: page-only re-render from committed stores ----
+          # Inputs are git-tracked parquet stores + build_site's JSONs; zero data/
+          # writes, absent-safe, exit 0 — can never break the deploy. Daily-lane-only
+          # until 2026-07-25: 3 dead nightlies (150m-cap cancels 07-22/23, runner loss
+          # 07-24) froze the baked page at its pre-#3224 render (banned-vocab slugs
+          # live on a doctrine surface) while express lanes refreshed everything else —
+          # same class + heal as research_vault (#3487). ~27s. Called AFTER band():
+          # cl_gex's build_options_entry_state rewrites data/options_entry/state.parquet
+          # (an input here); serial post-band dodges the parallel read/write window.
+          flowleaders() { [ -n "$FLOWLEADERS_DONE" ] && return 0; FLOWLEADERS_DONE=1; run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
+
           # ---- special situations: page-only rebake, NO EDGAR sweep ----
           # The nightly owns the ~28m filing sweep; this lane re-renders the desk
           # from the COMMITTED event store so a template/builder fix ships in
@@ -448,7 +459,7 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; band; central; hub; us_pages; libs; sits; csits ;;
+              spine; band; central; flowleaders; hub; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; us_pages; central ;;
             sits)

@@ -49,7 +49,14 @@ intraday flow, #3224 flow leaders, #3314 darkpool, all this week). The estate-le
 3. **Cadence unsignposted.** EOD desks and a ≤15-min tracker sit side by side with no family-level
    freshness story.
 4. **One page violates doctrine:** flow_leaders.html ships raw research slugs (LEGS chips `FlowZ`,
-   `TSBrd`, `NotTrap`) — banned vocab on a glance surface.
+   `TSBrd`, `NotTrap`) — banned vocab on a glance surface. *Root-caused 2026-07-25: STALE RENDER,
+   not a template defect. The template has been compliant since #3224 (dot-ladder signature +
+   plain-word EN/ZH legs), but build_flow_leaders ran only in daily.yml and 3 straight dead
+   nightlies (150m-cap cancels 07-22/23, runner loss 07-24) froze the baked page at its pre-#3224
+   render; nav-icon sweeps editing baked chrome in place masked the freeze. Healed by adding the
+   builder to the render.yml + engine-render.yml express lanes (serial post-band, 2026-07-25) —
+   no template work needed. The M-FIX washout-flip correctness item below is unaffected and
+   still open.*
 5. **Real correctness bugs** (verified on main 07-25): flow_leaders washout-flip counts cumulative
    not consecutive negatives and back-searches to the earliest flip ever (Board B admits ~everyone);
    market_structure `week_map` never emitted (Weekly Range perpetually warming up) + DAG renders
