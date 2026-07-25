@@ -2,37 +2,100 @@
 
 # Active Build Map
 
-Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window): 500  |  base: `17a7d7153b08d2e8503fbad0fb6971eb1144f5ce`
+Generated: 2026-07-25T00:57:28.249460+00:00  |  Open PRs: 2  |  Merged (window): 500  |  base: `b442ef92ed554be4473afa8ddeeae40b1a465e0f`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #3344 | feat(landing): the onboarding sheet — landing-native signup/trial flow (§0 primary surface) | `feat/landing-onboarding-sheet` | 2026-07-24 | — |
-| #3341 | fix(gex): Options Desk remaster — repair shipped UI bugs, rebuild layout & levels map | `claude/gex-desk-fable` | 2026-07-24 | ⚠ CONFLICTING |
-| #3323 | feat(portfolio): W1 — brief composer + GET /api/portfolio/brief + Brain get_portfolio_brief tool | `claude/portfolio-brief-composer` | 2026-07-23 | ⚠ protected:2 |
-| #3313 | feat(portfolio): W1 — full-universe portfolio_ctx nightly bake (sector unification + theme lanes) | `claude/portfolio-ctx-w1` | 2026-07-23 | ⚠ protected:3 |
-| #3303 | feat(case): winner autopsy SG 2023 | `codex/case-sg-2023` | 2026-07-23 | — |
-| #3301 | feat(case): winner autopsy TSM 2000 | `codex/case-tsm-2000` | 2026-07-23 | — |
-| #3300 | feat(case): winner autopsy ASPI 2025 | `codex/case-aspi-2025` | 2026-07-23 | — |
-| #3298 | feat(case): winner autopsy CENX 2024 | `codex/case-cenx-2024` | 2026-07-23 | — |
-| #3282 | feat(baskets): Rotation Map revamp — verdict hero + act board + strength×momentum quadrant | `claude/cool-faraday-e81de2` | 2026-07-23 | ⚠ CONFLICTING |
+| #3418 | ops(caddy): open /ws/tape + /live/breadth.json through the access gate | `claude/gate-ws-tape-breadth` | 2026-07-25 | — |
+| #3417 | research(personality): handoff v2 — W1b structure-tailoring arm (operator's measurement thesis formalized) | `research/personality-handoff-v2` | 2026-07-25 | — |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
 ## File Collisions
 
-| PR A | PR B | Shared files | Files |
-|------|------|-------------|-------|
-| #3344 | #3313 | 1 | `scripts/build_site.py` |
-| #3323 | #3313 | 1 ⚠ | `.github/workflows/ci.yml` |
+_No file collisions detected among open PRs._
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #3416 | ops(caddy): route /ws/tape to macro-api — arm the live tape relay | 2026-07-25 |
+| #3415 | feat(us_stocks): compact live breadth scoreboard — glance bar + tiles, full board demoted to dialog (Phase 2 surface) | 2026-07-25 |
+| #3414 | feat(live-tape): live intraday breadth poller → site/live/breadth.json (Phase 2 engine lane) | 2026-07-25 |
+| #3413 | research(personality): timing-tailoring handoff charter — W1 persistence study pinned + roadmap | 2026-07-25 |
+| #3412 | test(china): re-pin rotted copy_w09 suite to Prophet h2 tooltip + wire into CI | 2026-07-25 |
+| #3411 | fix(china): re-pin act_now organ-chip tests to plain-word copy + CI-wire suite | 2026-07-25 |
+| #3410 | research(mag7): MWR §2d — timeframe×personality ladder (MCD-rung confirmed; basket 2W home robust) | 2026-07-24 |
+| #3409 | feat(mag7): MWR Amendment 2 — operator override, Use-B conditional-live behind the accelerating-tightening veto | 2026-07-24 |
+| #3408 | Fix landing pricing responsiveness and compact hero cards | 2026-07-24 |
+| #3407 | research(txi): charter Transmission Intelligence — cascade tracking + blast radius + self-improving chain ledger (W0) | 2026-07-24 |
+| #3406 | watchlist: fix double-escaped ampersand in page h1 | 2026-07-24 |
+| #3405 | feat(wri): W3 — wire the book-structure risk read into watchlist.html | 2026-07-24 |
+| #3404 | feat: move live macro orchestration to VPS | 2026-07-24 |
+| #3403 | fix(deploy): reconcile security config on no-op updates | 2026-07-24 |
+| #3402 | research(mag7): MWR phase-1 adjudication — census cannot ratify Use-B (base-rate 69%) | 2026-07-24 |
+| #3401 | Prophet: move daily changes into dashboard popup | 2026-07-24 |
+| #3400 | feat(live-tape): six-instrument futures tape + same-origin /ws/tape relay (Phase 1) | 2026-07-24 |
+| #3399 | test(china): re-pin w1c render suite to Prophet-card markup + wire into CI | 2026-07-24 |
+| #3398 | feat(mag7): MWR-W1 — shadow book, Prophet confluence sidecar, NW lobe, operator trigger ping | 2026-07-24 |
+| #3397 | security(site): protect static data and stage paid wall | 2026-07-24 |
+| #3396 | design(wri): W2 — pinned design spec + patch-bay mockup + reference crops | 2026-07-24 |
+| #3395 | feat(us_stocks): Prophet × Top-setups presentation merge — ⚡ trigger chip + residual-only sub-board | 2026-07-24 |
+| #3394 | feat(wri): W1 — stress-conditioned factor covariance in factor_betas.json | 2026-07-24 |
+| #3393 | feat(regwall): gate paid JSON payloads (/factordata + /labdata) at the edge | 2026-07-24 |
+| #3392 | feat(research-vault): programmatic SEO — one indexable landing page per report | 2026-07-24 |
+| #3391 | feat(landing): Prophet teaser → 2-week-delayed winners, never the live board | 2026-07-24 |
+| #3390 | fix(landing): prophet belt keeps drifting on hover (0.7x), no full stop | 2026-07-24 |
+| #3389 | research(wri): charter Watchlist Risk Intelligence — risk-detecting watchlist revamp (W0) | 2026-07-24 |
+| #3388 | feat(mag7): washout re-entry gate — prereg + background engine + phase-0 census (MWR-W0) | 2026-07-24 |
+| #3387 | feat(regwall): open the SEO estate to crawlers + faster/smarter login | 2026-07-24 |
+| #3386 | feat(research-vault): static filter bar + show-more pagination | 2026-07-24 |
+| #3385 | fix(ci): heal contract-drift — canada_standouts conditional fields reclassified as optional_fields | 2026-07-24 |
+| #3384 | feat(research-vault): lock glyph on the Pro-only Top Picks tab | 2026-07-24 |
+| #3383 | Hub welcome: a refresh isn't a visit (gap-based counting + clearer recall) | 2026-07-24 |
+| #3382 | Regime dynamics: never emit a regime label without its trajectory | 2026-07-24 |
+| #3381 | Hub welcome: market-aware conversation + slower dissolve (fix dropped greeting) | 2026-07-24 |
+| #3380 | feat(research-vault): desk constellation, macro fonts, publish times, full-page reader, Pro tiering | 2026-07-24 |
+| #3379 | feat(mastermind): log all Mastermind AI responses to an admin eval corpus | 2026-07-24 |
+| #3378 | Personal dashboard: fix stuck "Loading your plan…" + tier/expiry + upgrade CTA | 2026-07-24 |
+| #3377 | Landing login persistence (CORS fix) + start.html personal welcome & home globe | 2026-07-24 |
+| #3376 | feat(marketing): autonomous cadence Phase 1 — lift daily post/media cap to unlimited | 2026-07-24 |
+| #3375 | fix(admin): Outbox — approved posts leave the review list into a collapsed "awaiting publish" shelf | 2026-07-24 |
+| #3374 | ci(render-lanes): heal template↔site pairs BEFORE the first commit in all 6 externalizing lanes | 2026-07-24 |
+| #3373 | ops(daily): engine timeout 150→200m — nightly engine cancelled at the cap 5 of last 8 nights | 2026-07-24 |
+| #3372 | perf(cycles): split cycle payloads + parallel preloaded loader + immutable-cacheable URLs + skeleton | 2026-07-24 |
+| #3371 | fix(fonts): "SF Mono"-first --num stacks render numerals as serif in Chrome — lead with ui-monospace sitewide | 2026-07-24 |
+| #3370 | fix(leader-radar): LRV-O9 — entry-read stance layer, parabolic sign guard, Tonight's Focus stance shelves | 2026-07-24 |
+| #3369 | China track record: log ticker names + fix vs-CSI300 nulls-last sort | 2026-07-24 |
+| #3367 | onboard: materializing desk pane replaces the assembly-card rail | 2026-07-24 |
+| #3366 | authfe: post-login redirect, upgrade sheet, landing auth chrome + gear parity | 2026-07-24 |
+| #3365 | feat(landing): Prophet showcase section — real card belt below the Terminal | 2026-07-24 |
+| #3364 | feat(billing): generalize upgrade matrix + expose plan interval | 2026-07-24 |
+| #3363 | docs(marketing): masterplan go-live reflects the panel toggle (#3361) | 2026-07-24 |
+| #3362 | fix(tests): heal test_seo_meta_rollout (12 reds) + wire it into the ci.yml whitelist | 2026-07-24 |
+| #3361 | feat(admin): publisher Arm/Disarm toggle + token paste-box — kill-switch moves to repo variable | 2026-07-24 |
+| #3360 | feat(admin): revenue analytics + projections — live Stripe MRR/ARR/cash/forecast | 2026-07-24 |
+| #3359 | fix(us_stocks/macro): remove forced Mag-7 'Big Seven' board + demote Ignition Radar to background-only | 2026-07-24 |
+| #3358 | fix(sync): re-sync site/index.html + site/chat.html from templates/ — heal template-site-sync red on main | 2026-07-24 |
+| #3357 | fix(tests): anchor W-OVC fixture expiries to the frozen chain date — front7 keying test was vacuous | 2026-07-24 |
+| #3356 | chore(admin): drop token-rotation prompts from go-live checklist | 2026-07-24 |
+| #3355 | feat(billing): prorated Insider→Pro upgrade + plan/expiry in the personal dashboard | 2026-07-24 |
+| #3354 | feat(admin): users/subscribers suite — per-tier roster, comps, trials, passes | 2026-07-24 |
+| #3353 | feat(regwall): registration lockdown — all dashboard pages require an account | 2026-07-24 |
+| #3352 | fix(tests): UTC-midnight fixture-bomb audit — pin test_symbol_directory to the engine's UTC clock | 2026-07-24 |
+| #3351 | fix(auth): the onboarding sheet is SITE-WIDE on www — no auth entry navigates to app.* | 2026-07-24 |
+| #3350 | fix(ci): parquet-reader guard on PLTR load_closes test (heals marketing-engine lane) | 2026-07-24 |
+| #3349 | docs(marketing): suite audit masterplan + forward roadmap | 2026-07-24 |
+| #3348 | feat(admin): marketing operator console — pipeline hero, controls, go-live checklist | 2026-07-24 |
+| #3347 | fix(marketing): engine correctness — per-day caps, account liveness, receipts, slot times (1/3) | 2026-07-24 |
+| #3346 | feat(marketing): per-post metrics poller + chart-image pipeline (Buffer) | 2026-07-24 |
+| #3345 | fix(tests): de-flake marketing sentinel UTC-midnight fixture bomb + whitelist suite in CI | 2026-07-24 |
+| #3344 | feat(landing): the onboarding sheet — landing-native signup/trial flow (§0 primary surface) | 2026-07-24 |
 | #3343 | fix(marketing): publisher daily-cap counts ledger-based, not as_of-based | 2026-07-24 |
 | #3342 | docs(onboarding): §0 surface ruling — sheet belongs to the landing, not the terminal app | 2026-07-24 |
+| #3341 | fix(gex): Options Desk remaster — repair shipped UI bugs, rebuild layout & levels map | 2026-07-24 |
 | #3340 | fix(flow_desk): nav dropdown painted behind the hero | 2026-07-24 |
 | #3339 | feat(auth): every login/signup entry routes to the Terminal onboarding sheet | 2026-07-23 |
 | #3338 | docs(claude): Spawn-handoff law — binding context for commissioned build sessions | 2026-07-23 |
@@ -49,6 +112,7 @@ Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window):
 | #3326 | feat(marketing): fintwit voice v3 + post-time tape gate + outbox persistence heal | 2026-07-23 |
 | #3325 | feat(landing): pricing-tier CTAs deep-link into the Terminal onboarding sheet (?plan= params) | 2026-07-23 |
 | #3324 | fix(gex): restore body top padding — heal repo-wide nav-gap red | 2026-07-23 |
+| #3323 | feat(portfolio): W1 — brief composer + GET /api/portfolio/brief + Brain get_portfolio_brief tool | 2026-07-24 |
 | #3322 | feat(china-altdata): trading-intensity waterline in the tape hero | 2026-07-23 |
 | #3321 | feat(research-vault): separate-account R2 credentials (R2_RESEARCH_*) | 2026-07-23 |
 | #3320 | feat(flow-velocity): rotation/momentum/confluence dashboard + glance engine | 2026-07-23 |
@@ -58,6 +122,7 @@ Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window):
 | #3316 | ops(billing): deliver Stripe secrets to VPS via deploy-api-secrets (W0) | 2026-07-23 |
 | #3315 | feat(research-vault): W3 flagship page + gated pdf.js viewer (blue mx5) | 2026-07-23 |
 | #3314 | feat(darkpool): actionable Fable revamp + darkpool_context.v1 Neural Web lobe | 2026-07-23 |
+| #3313 | feat(portfolio): W1 — full-universe portfolio_ctx nightly bake (sector unification + theme lanes) | 2026-07-24 |
 | #3312 | feat(news-translate): translate fresh titles on render lanes (render_lanes on) | 2026-07-23 |
 | #3311 | feat(committee): mx5 revamp — living-brain hero, chapter tabs, curated IA | 2026-07-23 |
 | #3310 | feat(subsectors): answer-first mx5 revamp — rotation hero, confluence ribbon, buy/avoid board | 2026-07-23 |
@@ -65,8 +130,12 @@ Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window):
 | #3306 | feat(portfolio): W0 — portfolio_ctx.v1 contract + stubbed 3-ticker bake + tests | 2026-07-23 |
 | #3305 | feat(pricing): v2 ladder + onboarding/subscription-flow masterplan | 2026-07-23 |
 | #3304 | docs(research): Portfolio-Aware Intelligence masterplan (Pro-pillar handoff) | 2026-07-23 |
+| #3303 | feat(case): winner autopsy SG 2023 | 2026-07-24 |
 | #3302 | ci(heartbeat): schedule pure guards against main so silent rot is visible | 2026-07-23 |
+| #3301 | feat(case): winner autopsy TSM 2000 | 2026-07-24 |
+| #3300 | feat(case): winner autopsy ASPI 2025 | 2026-07-24 |
 | #3299 | feat(case): winner autopsy MNSO 2021 | 2026-07-23 |
+| #3298 | feat(case): winner autopsy CENX 2024 | 2026-07-24 |
 | #3297 | feat(landing): hero whitespace fix + tier ladder rebalance (Flash AI / Pro AI) | 2026-07-23 |
 | #3296 | harden(font-ui): guard recognizes Jinja-prefixed theme.css hrefs ({{ rel }}theme.css) | 2026-07-23 |
 | #3295 | fix(ci): declare asia/weekly template-site-sync steps in dag.yml — heal dag-conformance lane | 2026-07-23 |
@@ -82,6 +151,7 @@ Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window):
 | #3285 | fix(landing): re-sync plain-copy index/chat + heal the two render lanes that diverge them | 2026-07-23 |
 | #3284 | chore(marketing): wire flagship Buffer channel id (@mastermindx001) | 2026-07-23 |
 | #3283 | feat(research-vault): W2 serving API + download gate | 2026-07-23 |
+| #3282 | feat(baskets): Rotation Map revamp — verdict hero + act board + strength×momentum quadrant | 2026-07-24 |
 | #3281 | fix(workflows): autoresolve hashed-css rename/rename in push-rebase loops; asia-close fails loudly | 2026-07-23 |
 | #3280 | perf(tools): Risk of Ruin Monte-Carlo runs in a Web Worker (UI never blocks) | 2026-07-23 |
 | #3279 | fix(nav): restore the 18px top gap the topbar→site-nav sweep dropped (nav-gap CI red) | 2026-07-23 |
@@ -451,86 +521,6 @@ Generated: 2026-07-24T01:11:40.629044+00:00  |  Open PRs: 9  |  Merged (window):
 | #2885 | fix(ci): engine-render-guards red was a real-tree ca_board write — not pytest 9 | 2026-07-18 |
 | #2880 | research: Mag 7 Q2 earnings capex dilemma | 2026-07-18 |
 | #2878 | fix(smart-money): land classification fix + SM3 amendment stranded by #2876 | 2026-07-18 |
-| #2876 | fix(smart-money): apply 9 adjudicated review fixes to follow desk | 2026-07-18 |
-| #2873 | feat(case): winner autopsy ZBRA 2016 | 2026-07-18 |
-| #2872 | feat(case): winner autopsy LDOS 2019 | 2026-07-18 |
-| #2871 | feat(case): winner autopsy RDW 2025 | 2026-07-18 |
-| #2870 | feat(nav): aurora-glass menus — unified frosted glass, animated hover, breathing carets | 2026-07-18 |
-| #2869 | feat(case): winner autopsy EWZ 2016 | 2026-07-18 |
-| #2868 | Add Grey Home smart-home reverse proxy | 2026-07-18 |
-| #2867 | feat(case): winner autopsy FCX 2020 | 2026-07-18 |
-| #2866 | feat(special-sits): intelligence layer + Neural Web wiring + living-glass desk revamp | 2026-07-18 |
-| #2865 | feat(case): winner autopsy TAN 2020 | 2026-07-18 |
-| #2864 | fix(nav): align sub-menu descriptions under the emoji | 2026-07-18 |
-| #2863 | feat(macro-signals): MSX-2 — full doctrine revamp + currencies section (Plotly retired) | 2026-07-18 |
-| #2862 | feat(case): winner autopsy A 2000 | 2026-07-18 |
-| #2861 | fix(til): plainify theme options-witness leg notes to Tier-2 receipts | 2026-07-18 |
-| #2860 | fix(flow-desk): wire never-called sector ETF proxy appender into nightly build | 2026-07-18 |
-| #2859 | fix(hk): retarget alert anchors to surviving hkx-dlg panels | 2026-07-18 |
-| #2857 | feat(forex): fx context layer + NW integration + full doctrine revamp of forex.html | 2026-07-18 |
-| #2856 | feat(prophet-w2): Prophet NW lobe — cross-market governor, per-pick autopsies, Master Brain suggestions, HK/CA ledger lane gates | 2026-07-18 |
-| #2855 | feat(crossasset): Wave-3 — flows.v2, shadow escalator, NW wiring, doctrine UI revamp | 2026-07-18 |
-| #2854 | feat(factors): Factor Weather & Seasonality Surfacing — momentum + monthly climate + NW context (FWS wave) | 2026-07-18 |
-| #2853 | research: assess Grade A Q1 13F adds through 60 days | 2026-07-18 |
-| #2851 | feat(congress): entry-timing ranking leg, indicator/recency filters, member skill recolor | 2026-07-18 |
-| #2850 | feat(fx-context): MSX-1 — forex context bus (smile_decomp fix, state-change stamps, NW deepening, CN/HK attach) | 2026-07-18 |
-| #2849 | macro: adaptive Risk/Upturn button + Risk-dialog reorganization + Ignition dialog + flip-panel rewrite | 2026-07-18 |
-| #2848 | feat(case): winner autopsy ISRG 2009 | 2026-07-18 |
-| #2847 | feat(case): winner autopsy XME 2016 | 2026-07-18 |
-| #2846 | feat(commodities): P5 living-glass revamp — aurora hero, live prices, plain-language + ZH parity sweep | 2026-07-18 |
-| #2845 | feat(transmission): dollar channel + change feed + NW fx_dollar lobe + full page revamp | 2026-07-18 |
-| #2844 | feat(nw): cross-asset context v2 — FX+commodity deltas, streaks, and confluence into the Neural Web (display-tier) | 2026-07-18 |
-| #2841 | feat(til): wire the 4 unread Thematic-Intelligence site legs — theme-page drawer sections + ask_brain read tools + registry truth-up | 2026-07-18 |
-| #2840 | fix(ruling-graph): sync HOUSE-U2 to #2836 FABLE-WHY enforcement text — heal main-carried red | 2026-07-18 |
-| #2839 | fix(bottom-sensors): labels_v2 — DEAD_MONEY_RISK binds signed ret_since_anchor_pct | 2026-07-18 |
-| #2838 | feat(rotation): Rotation Events v2 — cross-sector + into-strength + contagion detection, event health, velocity board, doctrine UI overhaul | 2026-07-18 |
-| #2836 | feat(routing): gate fable spawns behind orchestrator + FABLE-WHY triple | 2026-07-18 |
-| #2835 | feat(case): winner autopsy MARA 2023 | 2026-07-18 |
-| #2834 | fix(committee): rename synapse-map's four visual "lobes" → "regions" | 2026-07-18 |
-| #2833 | feat(prophet-w1): US Track Record sub-page — off-render history rollup + Tier-3 page + glance-chip strip | 2026-07-18 |
-| #2832 | feat(vector): plainify engine-composed hero copy + time-machine chip (doctrine Law 2) | 2026-07-18 |
-| #2831 | feat(case): winner autopsy TCOM 2015 | 2026-07-18 |
-| #2830 | refactor(build_site): drop dead double-read of us_board_outcomes.json | 2026-07-18 |
-| #2829 | fix(build_site): kill the one-build staleness-banner lag on us_stocks/macro | 2026-07-18 |
-| #2828 | research: Prophet masterplan (W0) — standout governance, per-pick autopsies, Fable grants | 2026-07-18 |
-| #2827 | feat(case): winner autopsy MP 2020 | 2026-07-18 |
-| #2826 | fix(nw-spine): unfreeze neural-web spine — normalise personality-stamp merge dtype | 2026-07-18 |
-| #2825 | feat(case): winner autopsy IREN 2023 | 2026-07-18 |
-| #2824 | feat(crx): autonomous case-PR resolution (operator-ordered CRX-R6 amendment) | 2026-07-18 |
-| #2823 | perf(macro): drop dead 3.5MB Plotly bundle from macro/us_stocks/commodities + dedupe live.js | 2026-07-18 |
-| #2822 | tests(regime-snap): drop dead relief-radar card-render tests (panel deleted in #2670) | 2026-07-18 |
-| #2821 | feat(case): winner autopsy CF 2020 | 2026-07-18 |
-| #2820 | feat(case): winner autopsy EDU 2019 | 2026-07-18 |
-| #2819 | feat(case): winner autopsy ANET 2020 | 2026-07-18 |
-| #2818 | macro: declutter hero + revamp Policy/AI-Brief dialogs + alert re-rank + sentiment needle fix | 2026-07-18 |
-| #2817 | feat(case): winner autopsy CIFR 2024 | 2026-07-18 |
-| #2815 | feat(case): winner autopsy STX 2012 | 2026-07-18 |
-| #2814 | fix(nw): judge confluence-graph site mirror on produced_at — heal structural false-stale + prose gaps | 2026-07-18 |
-| #2813 | feat(case): winner autopsy FN 2025 | 2026-07-18 |
-| #2812 | refactor(ledgers)+fix(registry+admin): wave-2 audit backlog — single ledger-gate definition + storage-truth census + escape sweep + smoke tests | 2026-07-18 |
-| #2811 | feat(case): winner autopsy MARA 2021 | 2026-07-18 |
-| #2810 | feat(case): winner autopsy ILMN 2025 | 2026-07-18 |
-| #2809 | feat(case): winner autopsy AMAT 2020 | 2026-07-18 |
-| #2808 | feat(case): winner autopsy NVDA 2017 | 2026-07-18 |
-| #2807 | feat(case): winner autopsy APLD 2024 | 2026-07-18 |
-| #2806 | feat(case): winner autopsy LNG 2013 | 2026-07-18 |
-| #2805 | feat(case): winner autopsy TSM 2025 | 2026-07-18 |
-| #2804 | feat(case): winner autopsy MP 2025 | 2026-07-18 |
-| #2803 | feat(case): winner autopsy QBTS 2025 | 2026-07-18 |
-| #2802 | feat(case): winner autopsy NRG 2017 | 2026-07-18 |
-| #2801 | feat(case): winner autopsy SE 2024 | 2026-07-18 |
-| #2800 | feat(case): winner autopsy NVDA 2004 | 2026-07-18 |
-| #2799 | feat(case): winner autopsy NNE 2024 | 2026-07-18 |
-| #2798 | feat(case): winner autopsy CF 2021 | 2026-07-18 |
-| #2797 | feat(case): winner autopsy TLN 2024 | 2026-07-18 |
-| #2796 | feat(case): winner autopsy CCJ 2025 | 2026-07-18 |
-| #2795 | feat(case): winner autopsy SOUN 2024 | 2026-07-18 |
-| #2794 | feat(case): winner autopsy ATI 2025 | 2026-07-18 |
-| #2793 | feat(case): winner autopsy ILMN 2007 | 2026-07-18 |
-| #2792 | feat(case): winner autopsy TAL 2017 | 2026-07-18 |
-| #2791 | feat(case): winner autopsy CLSK 2020 | 2026-07-18 |
-| #2790 | feat(case): winner autopsy FUTU 2024 | 2026-07-18 |
-| #2789 | feat(case): winner autopsy XYZ 2017 | 2026-07-18 |
 
 ---
 
