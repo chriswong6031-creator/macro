@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import email.message
 import importlib.util
 import json
 import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,6 +131,190 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     # A sibling script that is not a build_* entrypoint must not trigger one.
     other = _commit(repo, "scripts/check_thing.py", "print(2)\n", "chore: checker")
     assert GUARD._needs_render(repo, other, start_head, other) is False
+
+
+@pytest.fixture(autouse=True)
+def _clear_token_cache(monkeypatch):
+    """The token is memoised per process; tests must not inherit each other's."""
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", None, raising=False)
+    for key in ("GH_TOKEN", "GITHUB_TOKEN"):
+        monkeypatch.delenv(key, raising=False)
+
+
+def _fake_gh(returncode: int, stdout: str, calls: list):
+    def runner(args, **kwargs):
+        calls.append(tuple(args))
+        return subprocess.CompletedProcess(args, returncode, stdout, "")
+
+    return runner
+
+
+def test_token_falls_back_to_the_gh_cli_when_no_env_var_is_set(monkeypatch):
+    """The whole bug: Claude sessions set no token, so the guard ran anonymous at 60/hour."""
+    calls: list = []
+    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_fromcli\n", calls))
+    assert GUARD._github_token() == "gho_fromcli"
+    assert calls and calls[0][:3] == ("gh", "auth", "token")
+
+
+def test_token_prefers_the_environment_over_the_cli(monkeypatch):
+    calls: list = []
+    monkeypatch.setenv("GH_TOKEN", "from-env")
+    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "from-cli", calls))
+    assert GUARD._github_token() == "from-env"
+    assert calls == [], "an env token must not spawn the CLI"
+
+
+def test_token_is_cached_for_the_process(monkeypatch):
+    """A Stop evaluation makes three API calls; it must not shell out three times."""
+    calls: list = []
+    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_cached", calls))
+    assert GUARD._github_token() == GUARD._github_token() == GUARD._github_token()
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "runner",
+    [
+        lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError("gh not installed")),
+        lambda *a, **k: (_ for _ in ()).throw(subprocess.TimeoutExpired("gh", 5)),
+        lambda args, **k: subprocess.CompletedProcess(args, 1, "", "not logged in"),
+    ],
+)
+def test_token_degrades_to_anonymous_when_the_cli_cannot_help(monkeypatch, runner):
+    """A missing, hung, or logged-out gh must degrade — never break the hook."""
+    monkeypatch.setattr(GUARD.subprocess, "run", runner)
+    assert GUARD._github_token() == ""
+
+
+def _capture_requests(monkeypatch) -> list:
+    sent: list = []
+
+    def fake_urlopen(request, *args, **kwargs):
+        sent.append(request)
+        raise urllib.error.URLError("captured")
+
+    monkeypatch.setattr(GUARD.urllib.request, "urlopen", fake_urlopen)
+    return sent
+
+
+def test_the_github_token_is_never_sent_to_the_live_health_host(monkeypatch):
+    """_get_json serves both GitHub and production health.
+
+    Authenticating unconditionally would hand a repo-scoped credential to an
+    unrelated host on every Stop evaluation — harmless only while no token
+    existed, which is exactly the state the CLI fallback ends.
+    """
+    monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_secret", []))
+    sent = _capture_requests(monkeypatch)
+
+    for url in (f"https://{GUARD.GITHUB_API_HOST}/repos/a/b/pulls", GUARD.LIVE_HEALTH_URL):
+        with pytest.raises(Exception):
+            GUARD._get_json(url)
+
+    by_host = {request.host: request for request in sent}
+    assert by_host[GUARD.GITHUB_API_HOST].get_header("Authorization") == "Bearer gho_secret"
+    live_host = urllib.parse.urlsplit(GUARD.LIVE_HEALTH_URL).hostname
+    assert by_host[live_host].get_header("Authorization") is None
+    assert "gho_secret" not in json.dumps(dict(by_host[live_host].header_items()))
+
+
+def _http_error(code: int, reason: str, **headers) -> urllib.error.HTTPError:
+    message = email.message.Message()
+    for key, value in headers.items():
+        message[key.replace("_", "-")] = value
+    return urllib.error.HTTPError("https://api.github.com/x", code, reason, message, None)
+
+
+def test_spent_quota_is_reported_as_rate_limited_not_unreachable(monkeypatch):
+    """`HTTP Error 403: rate limit exceeded` read as a repo/network fault it never was."""
+    # Pin the anonymous case: an unpinned token would consult the real `gh` and
+    # make this assertion depend on whether the host happens to be logged in.
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "", raising=False)
+    error = GUARD._http_failure(
+        _http_error(
+            403,
+            "rate limit exceeded",
+            X_RateLimit_Remaining="0",
+            X_RateLimit_Limit="60",
+            X_RateLimit_Reset="1785010477",
+        )
+    )
+    assert isinstance(error, GUARD.RateLimited)
+    assert GUARD._github_block_code(error) == "github_rate_limited"
+    assert "quota" in str(error).lower()
+    assert "UNAUTHENTICATED" in str(error), "must name the fix when running anonymous"
+
+
+def test_an_authenticated_quota_message_does_not_tell_you_to_log_in(monkeypatch):
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "already-authenticated", raising=False)
+    error = GUARD._http_failure(
+        _http_error(403, "rate limit exceeded", X_RateLimit_Remaining="0", X_RateLimit_Limit="5000")
+    )
+    assert isinstance(error, GUARD.RateLimited)
+    assert "gh auth login" not in str(error)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        _http_error(404, "Not Found"),
+        _http_error(500, "Server Error"),
+        _http_error(403, "Forbidden", X_RateLimit_Remaining="55"),
+        urllib.error.HTTPError("u", 403, "rate limit exceeded", None, None),
+    ],
+)
+def test_genuine_failures_stay_github_unreachable(error):
+    """Only an actually-spent quota reclassifies; everything else keeps the old code."""
+    failure = GUARD._http_failure(error)
+    assert not isinstance(failure, GUARD.RateLimited)
+    assert GUARD._github_block_code(failure) == "github_unreachable"
+
+
+def test_rate_limited_has_the_same_escape_class_as_the_blocker_it_split_from():
+    assert "github_rate_limited" in GUARD.EXTERNAL_BLOCKERS
+    assert "github_unreachable" in GUARD.EXTERNAL_BLOCKERS
+
+
+def test_check_ci_still_blocks_on_a_red_check(monkeypatch):
+    """The authentication work must not soften the gate it exists to evaluate."""
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: {
+            "check_runs": [
+                {"name": "ci", "status": "completed", "conclusion": "failure"},
+                {"name": "lint", "status": "completed", "conclusion": "success"},
+            ]
+        },
+    )
+    ok, reason = GUARD._check_ci("acme", "widgets", "d" * 40)
+    assert ok is False
+    assert reason.startswith("Failing"), "_stop keys the ci_failed code off this prefix"
+    assert "ci (failure)" in reason
+
+
+def test_check_ci_passes_only_when_every_real_check_is_green(monkeypatch):
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: {
+            "check_runs": [
+                {"name": "ci", "status": "completed", "conclusion": "success"},
+                {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
+            ]
+        },
+    )
+    assert GUARD._check_ci("acme", "widgets", "e" * 40) == (True, "")
+
+    monkeypatch.setattr(
+        GUARD, "_get_json", lambda _url: {"check_runs": [{"name": "ci", "status": "in_progress"}]}
+    )
+    ok, reason = GUARD._check_ci("acme", "widgets", "f" * 40)
+    assert ok is False and reason.startswith("CI still running")
+
+    monkeypatch.setattr(GUARD, "_get_json", lambda _url: {"check_runs": []})
+    assert GUARD._check_ci("acme", "widgets", "0" * 40)[0] is False
 
 
 def test_settings_wire_session_start_and_stop():

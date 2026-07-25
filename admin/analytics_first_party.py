@@ -205,16 +205,70 @@ def _bot_cte() -> str:
     )
 
 
-def _cte(include_ident: bool = False) -> str:
-    """Full `with …` prefix: the excluded-visitor + bot chains, optionally preceded by `ident`."""
+_IDENT_CTE = (
+    "ident as (select visitor_id, max(user_id::text) as uid "
+    "from public.analytics_events where visitor_id is not null and user_id is not null "
+    "group by visitor_id having count(distinct user_id) = 1)")
+
+
+def _candidate_cte(window_minutes: int | None = None) -> str:
+    """CTE (`uanchor`, `cand_fp`, `cand_ip`, `cand`) that links an ANONYMOUS cookie to the
+    registered user it MOST LIKELY belongs to, via a device fingerprint or routable IP it shares
+    with that user's login-attributed events.
+
+    This is SOFT attribution — a heuristic suggestion, never a merge: `cand` is only left-joined at
+    read time to annotate a row, and the PEOPLE/session/event counts are never computed from it. A
+    cookie is linked to a uid only when the shared anchor maps to EXACTLY ONE registered user
+    (count(distinct uid)=1); a fingerprint/IP shared by two accounts is ambiguous and dropped,
+    mirroring the `ident` 2+-accounts rule so one person's activity is never mis-attributed. A
+    fingerprint match ('device') is stronger than an IP match ('ip') and wins when both exist; IPs
+    are used only when routable (loopback/tunnel/unknown never link — same `_routable` guard the
+    operator-exclusion linker uses). Requires the `ident` CTE to precede it in the `with` chain.
+
+    `window_minutes` bounds every analytics_events scan here to the same period the calling surface
+    shows (via the created_at index), so this linkage never adds an unbounded full-table scan to
+    the panel query — matching is within the displayed window on BOTH the cookie and anchor sides."""
+    win = (f" and e.created_at > now() - interval '{int(window_minutes)} minutes'"
+           if window_minutes else "")
+    wwin = (f" where e.created_at > now() - interval '{int(window_minutes)} minutes'"
+            if window_minutes else "")
+    return (
+        # Anchors: the distinct (uid, fp, ip) points where a KNOWN user has been seen (their
+        # stitched events). `distinct` keeps the fan-out into the two joins below bounded.
+        "uanchor as (select distinct i.uid, e.fp, e.ip from public.analytics_events e "
+        f"  join ident i on i.visitor_id = e.visitor_id{wwin}), "
+        # A cookie sharing a fingerprint with exactly one user → that user (device-strength link).
+        "cand_fp as (select e.visitor_id, min(a.uid) as uid "
+        "  from public.analytics_events e join uanchor a on a.fp = e.fp and e.fp is not null "
+        f"  where e.visitor_id is not null{win} "
+        "  group by e.visitor_id having count(distinct a.uid) = 1), "
+        # A cookie sharing a routable IP with exactly one user → that user (IP-strength link).
+        "cand_ip as (select e.visitor_id, min(a.uid) as uid "
+        f"  from public.analytics_events e join uanchor a on a.ip = e.ip "
+        f"    and {_routable('e.ip')} and {_routable('a.ip')} "
+        f"  where e.visitor_id is not null{win} "
+        "  group by e.visitor_id having count(distinct a.uid) = 1), "
+        # Collapse to one candidate per cookie: fingerprint wins over IP; carry the basis for display.
+        "cand as (select v.visitor_id, coalesce(f.uid, p.uid) as uid, "
+        "    case when f.uid is not null then 'device' else 'ip' end as basis "
+        "  from (select visitor_id from cand_fp union select visitor_id from cand_ip) v "
+        "  left join cand_fp f on f.visitor_id = v.visitor_id "
+        "  left join cand_ip p on p.visitor_id = v.visitor_id)"
+    )
+
+
+def _cte(include_ident: bool = False, include_candidate: bool = False,
+         candidate_window: int | None = None) -> str:
+    """Full `with …` prefix: the excluded-visitor + bot chains, optionally preceded by `ident`
+    and followed by the soft candidate-identity chain (which requires `ident`). `candidate_window`
+    (minutes) bounds the candidate scans to the surface's window."""
     parts = []
-    if include_ident:
-        parts.append(
-            "ident as (select visitor_id, max(user_id::text) as uid "
-            "from public.analytics_events where visitor_id is not null and user_id is not null "
-            "group by visitor_id having count(distinct user_id) = 1)")
+    if include_ident or include_candidate:
+        parts.append(_IDENT_CTE)
     parts.append(_excluded_cte())
     parts.append(_bot_cte())
+    if include_candidate:
+        parts.append(_candidate_cte(candidate_window))
     return "with " + ", ".join(parts) + " "
 
 
@@ -431,20 +485,27 @@ def sessions(limit=100, q="", include_bots=False, minutes=None, days=None) -> di
     n = _limit(limit, 100, 2000)
     m = _win(minutes, days, 43200)
     qq = _sanitize_q(q)
-    # Filter clauses, applied AFTER the geo join and BEFORE the limit so they see full history.
+    # Filter clauses, applied AFTER the user+geo joins and BEFORE the limit so they see full
+    # history — `email` is the login-attributed user of the session's cookie, `candidate_email`
+    # the soft device/IP guess, so the operator can search Sessions by either.
     conds = []
     if qq:
-        cols = ("s.visitor_id", "s.ip", "s.site", "g.city", "g.region", "g.country_code")
+        cols = ("s.visitor_id", "s.ip", "s.site", "g.city", "g.region", "g.country_code",
+                "hu.email", "cu.email")
         conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
     if not include_bots:
         conds.append("s.is_bot = 0")          # crawlers hidden unless explicitly revealed
     where = ("where " + " and ".join(conds) + " ") if conds else ""
     def run():
-        rows = _query(_cte() +
+        rows = _query(_cte(include_candidate=True, candidate_window=m) +
             "select s.session_id, s.visitor_id, s.site, s.events, s.pages, "
             "to_char(s.started,'YYYY-MM-DD HH24:MI') as started, "
             "round(extract(epoch from (s.ended - s.started)))::int as duration_s, "
-            "s.ip, s.is_bot, g.city, g.region, g.country_code "
+            "s.ip, s.is_bot, g.city, g.region, g.country_code, "
+            # hard: the verified user this session's cookie is stitched to (email shown as-is).
+            "hu.email as email, "
+            # soft: the registered user this anonymous cookie most likely belongs to (device/IP).
+            "cu.email as candidate_email, c.basis as candidate_basis "
             "from (select session_id, max(visitor_id) as visitor_id, max(site) as site, "
             "  count(*)::int as events, count(*) filter (where type in ('pageview','route'))::int as pages, "
             "  min(created_at) as started, max(created_at) as ended, "
@@ -454,6 +515,10 @@ def sessions(limit=100, q="", include_bots=False, minutes=None, days=None) -> di
             f"  and created_at > now() - interval '{m} minutes' "
             "  group by session_id) s "
             "left join public.ip_geo g on g.ip = s.ip "
+            "left join ident hi on hi.visitor_id = s.visitor_id "
+            "left join auth.users hu on hu.id::text = hi.uid "
+            "left join cand c on c.visitor_id = s.visitor_id "
+            "left join auth.users cu on cu.id::text = c.uid "
             f"{where}"
             f"order by s.started desc limit {n}") or []
         return {"sessions": _apply_geo_overrides(rows), "q": qq, "include_bots": include_bots}
@@ -474,7 +539,7 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
     # Filters, applied AFTER the user+geo joins and BEFORE the limit so they see the whole roster.
     conds = []
     if qq:
-        cols = ("u.email", "v.canon", "v.last_ip", "g.city", "g.region", "g.country", "g.country_code")
+        cols = ("u.email", "cu.email", "v.canon", "v.last_ip", "g.city", "g.region", "g.country", "g.country_code")
         conds.append("(" + " or ".join(f"{c} ilike '%{qq}%'" for c in cols) + ")")
     if not include_bots:
         conds.append("v.is_bot = 0")           # crawlers hidden unless explicitly revealed
@@ -485,12 +550,8 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
             # A cookie signed into by 2+ DIFFERENT accounts (shared/kiosk device) is
             # AMBIGUOUS — excluded from the auto-merge so one person's activity is never
             # silently reassigned to another; those events stay under the cookie.
-            "with ident as ("
-            "  select visitor_id, max(user_id::text) as uid "
-            "  from public.analytics_events "
-            "  where visitor_id is not null and user_id is not null "
-            "  group by visitor_id having count(distinct user_id) = 1"
-            "), " + _excluded_cte() + ", " + _bot_cte() +
+            "with " + _IDENT_CTE +
+            ", " + _excluded_cte() + ", " + _bot_cte() + ", " + _candidate_cte(m) +
             # ev: every (non-hidden) event tagged with its canonical identity (uid if known, else mm_aid)
             ", ev as ("
             "  select e.session_id, e.ip, e.created_at, e.visitor_id, i.uid, "
@@ -501,6 +562,9 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
             f"    and e.created_at > now() - interval '{m} minutes'"
             ") "
             "select v.canon as visitor_id, (v.uid is not null) as is_user, u.email, "
+            # candidate: for an ANONYMOUS row (canon is a cookie, not a uid), the registered user
+            # it most likely belongs to via a shared device/IP — a suggestion, never merged.
+            "  cu.email as candidate_email, c.basis as candidate_basis, "
             "  v.events, v.sessions, v.identities, v.ips, v.last_ip, v.is_bot, "
             "  to_char(v.first_seen,'YYYY-MM-DD HH24:MI') as first_seen, "
             "  to_char(v.last_seen,'YYYY-MM-DD HH24:MI') as last_seen, "
@@ -513,6 +577,8 @@ def visitors(limit=250, q="", include_bots=False, minutes=None, days=None) -> di
             "  max(case when visitor_id in (select visitor_id from bots) then 1 else 0 end) as is_bot "
             "  from ev group by canon) v "
             "left join auth.users u on u.id::text = v.uid "
+            "left join cand c on c.visitor_id = v.canon "
+            "left join auth.users cu on cu.id::text = c.uid "
             "left join public.ip_geo g on g.ip = v.last_ip "
             f"{where}"
             f"order by v.sessions desc, v.last_seen desc limit {n}") or []
@@ -613,18 +679,43 @@ def visitor(visitor_id: str) -> dict:
             "g.is_vpn, g.is_proxy, g.is_hosting, count(*)::int as events "
             "from public.analytics_events e left join public.ip_geo g on g.ip = e.ip "
             f"where e.{inaids} group by 1,2,3,4,5,6,7,8,9 order by events desc") or [])
-        # OTHER anon visitors sharing a fingerprint or IP with this person (not yet merged by login)
+        # OTHER visitors sharing a fingerprint or IP with this person (not yet merged by login).
+        # Each linked cookie is resolved to its registered email when it is itself login-stitched,
+        # so a shared device/IP surfaces WHO the other identity is — not just an opaque cookie.
         linked = _query(cte +
             "select e2.visitor_id, count(*)::int as shared_events, "
             "max(case when e2.fp = k.e1fp then 1 else 0 end) as via_fp, "
-            "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip "
+            "max(case when e2.ip = k.e1ip then 1 else 0 end) as via_ip, "
+            "max(lu.email) as email "
             "from public.analytics_events e2 "
             "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
             f"      where {inaids}) k "
             "  on (e2.fp = k.e1fp and e2.fp is not null) "
             f"  or (e2.ip = k.e1ip and {_routable('e2.ip')}) "
+            "left join ident li on li.visitor_id = e2.visitor_id "
+            "left join auth.users lu on lu.id::text = li.uid "
             "where e2.visitor_id not in (select visitor_id from myaids) "
-            "group by 1 order by shared_events desc limit 50") or []
+            "group by 1 order by max(lu.email) is null, shared_events desc limit 50") or []
+        # If THIS profile is an anonymous cookie, name the registered user it most likely belongs
+        # to: the account owning a fingerprint/routable-IP it shares — but only when exactly one
+        # account matches (ambiguous shared device/IP → no guess). Suggestion only, never a merge.
+        candidate = None
+        if not email:
+            crows = _query(cte +
+                "select i2.uid, "
+                "  max(case when e2.fp = k.e1fp and e2.fp is not null then 1 else 0 end) as via_fp, "
+                f"  max(case when e2.ip = k.e1ip and {_routable('e2.ip')} then 1 else 0 end) as via_ip "
+                "from public.analytics_events e2 "
+                "join (select distinct fp as e1fp, ip as e1ip from public.analytics_events "
+                f"      where {inaids}) k "
+                "  on (e2.fp = k.e1fp and e2.fp is not null) "
+                f"  or (e2.ip = k.e1ip and {_routable('e2.ip')} and {_routable('k.e1ip')}) "
+                "join ident i2 on i2.visitor_id = e2.visitor_id "   # e2 is a KNOWN user's cookie
+                "group by i2.uid") or []
+            if len(crows) == 1 and crows[0].get("uid"):
+                er2 = _query(f"select email from auth.users where id::text = '{crows[0]['uid']}'") or []
+                candidate = {"uid": crows[0]["uid"], "email": (er2[0].get("email") if er2 else None),
+                             "via_fp": crows[0].get("via_fp"), "via_ip": crows[0].get("via_ip")}
         recent = _query(cte +
             "select type, coalesce(path,'') as path, ticker, "
             "to_char(created_at,'YYYY-MM-DD HH24:MI') as t "
@@ -641,8 +732,9 @@ def visitor(visitor_id: str) -> dict:
             "select ticker, count(*)::int as n "
             f"from public.analytics_events where {inaids} and type='ticker_view' and ticker is not null "
             "group by 1 order by n desc limit 50") or []
-        return {"visitor_id": v, "email": email, "profile": profile, "ips": ips, "linked": linked,
-                "recent": recent, "searches": searches, "tickers_viewed": tickers_viewed}
+        return {"visitor_id": v, "email": email, "candidate": candidate, "profile": profile,
+                "ips": ips, "linked": linked, "recent": recent, "searches": searches,
+                "tickers_viewed": tickers_viewed}
     return _guard(run)
 
 

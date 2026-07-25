@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import shlex
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -112,9 +113,67 @@ def test_runtime_artifact_exemption_stays_honest():
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
 
 
+def test_public_estates_stay_committable():
+    """The inverse guard: a NON-exempt public path must not be gitignored.
+
+    Everything above is about the exemption being honest. This is about the 87%
+    of the boundary that takes no exemption: those paths reach the edge only by
+    being committed ("the VPS serves committed main; there is no Pages-artifact
+    fallback" -- render.yml), and the render lane ships them with `git add site/`,
+    which SKIPS ignored new files. So ignoring a served estate does not fail --
+    it freezes. Edits to already-tracked pages keep staging, so the nightly diff
+    still looks alive, while every new page silently never lands and the tracked
+    index keeps linking to them.
+
+    That is not hypothetical: #3507 ignored site/research/ hours after #3501
+    committed 86 pages there, and the pair merged 32s apart. #3522 reverted it;
+    this is the tripwire neither had. The existence check alone cannot catch it
+    (the directory is present -- it is the NEXT file that vanishes), which is why
+    it needs its own probe.
+    """
+    probes: dict[str, str] = {}
+    for path in POLICY["public"]["exact"]:
+        if path == "/" or path.startswith(RUNTIME_ARTIFACT_PREFIXES):
+            continue
+        probes[f"site{path}"] = path
+    for prefix in POLICY["public"]["prefixes"]:
+        if prefix.startswith(RUNTIME_ARTIFACT_PREFIXES):
+            continue
+        # A path that cannot exist, so this asks the ignore RULES rather than
+        # the index -- exactly the question `git add site/` asks of a new page.
+        probes[f"site{prefix}_ignore_probe.html"] = prefix
+
+    proc = subprocess.run(
+        ["git", "check-ignore", "--stdin"],
+        cwd=ROOT,
+        input="\n".join(probes) + "\n",
+        capture_output=True,
+        text=True,
+    )
+    # 0 = at least one path matched an ignore rule, 1 = none did. Anything else
+    # (128 = not a git repo / git missing) must NOT be read as "nothing is
+    # ignored" -- that is precisely how this guard would go vacuously green off
+    # a checkout, reporting safety it never checked.
+    assert proc.returncode in (0, 1), (
+        f"git check-ignore unusable (rc={proc.returncode}), so this guard cannot "
+        f"vouch for anything: {proc.stderr.strip()}"
+    )
+    offenders = sorted({probes[ln] for ln in proc.stdout.splitlines() if ln in probes})
+    assert not offenders, (
+        f"public path(s) {offenders} are gitignored. They are served from the "
+        "committed tree, so the render lane's `git add site/` will silently skip "
+        "every NEW file under them -- the estate freezes at whatever is tracked "
+        "today while the builder keeps emitting pages that never ship. Either "
+        "un-ignore them, or force-add them in render.yml the way site/stockbrief "
+        "is. See #3501/#3507/#3522."
+    )
+
+
 def test_generated_data_is_not_accidentally_public():
     public = _caddy_public_exclusions()
     intentional = {
+        # Reviewed machine-readable marketing metadata; contains no signal rows.
+        "/brand-facts.json",
         "/live/quotes.json",
         "/live/breadth.json",
         "/prophet/showcase.json",

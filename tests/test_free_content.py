@@ -1171,4 +1171,5 @@ class TestGracefulEmpty:
         )
         result = build_core_sitemap(empty, site)
         ET.fromstring(result)  # valid XML
-        assert "https://www.mastermind-x.com/macro.html" in result
+        assert "<loc>https://www.mastermind-x.com/</loc>" in result
+        assert "https://www.mastermind-x.com/macro.html" not in result

@@ -63,7 +63,14 @@ STATE_LABELS: dict[str, dict[str, str]] = {
     "expired":     {"en": "Expired", "zh": "已过期"},
 }
 
+# YAML-declarable tiers (what a chain file may set). `calibrated_context` is NOT declarable —
+# it is a RUNTIME DISPLAY tier the compiler assigns when the W3 miner has measured ≥1 hop
+# (see `_merge_calibration`); it is still display-only, still no authority (that stays gauntlet-
+# gated). Keeping it out of `_VALID_TIERS` means a file cannot self-declare "calibrated_context".
 _VALID_TIERS = {"hypothesis", "probe", "calibrated"}
+# the runtime display tier the compiler promotes a hypothesis chain to once the calibration
+# artifact carries a real (n>=floor) base rate for ≥1 of its hops. Display-only; never authority.
+CALIBRATED_CONTEXT_TIER = "calibrated_context"
 _VALID_OPS = {"gt", "gte", "lt", "lte", "eq", "ne", "is_true", "is_false", "in", "in_contains"}
 _VALID_METRICS = {"ret", "ret_bp", "ma_slope", "rs", "ratio_ret"}
 
@@ -387,6 +394,96 @@ def _series_metric(adapter: _SeriesAdapter, t: dict) -> tuple[float, dict]:
         val = float(ma.iloc[-1] - ma.iloc[-1 - lookback])
         return val, {"series": t["series"], "metric": f"ma{window}_slope{lookback}", "value": round(val, 4)}
     raise ChainSchemaError(f"unhandled metric {metric!r}")  # pragma: no cover (validated at load)
+
+
+# --------------------------------------------------------------------------- #
+# VECTORIZED metric evaluation (W3 shared surface). `_series_metric` above computes a
+# node's series metric at the LAST bar (nightly point-in-time). The W3 episode miner needs
+# the SAME metric at EVERY historical bar — so the formula must live in exactly one place.
+# `series_metric_timeseries` re-expresses each `_series_metric` branch as a full pd.Series
+# over the aligned index; `series_test_timeseries` applies the whitelisted comparator to
+# yield the node's boolean history. The miner (engine/transmission_calibration.py) imports
+# these — it never re-derives a threshold or a metric (masterplan §W3: "REUSE the node-
+# evaluation logic, do not duplicate the threshold parser"). A `_series_metric` at index -1
+# and `series_metric_timeseries().iloc[-1]` are the same number by construction.
+# --------------------------------------------------------------------------- #
+def series_metric_timeseries(get_series, t: dict) -> pd.Series:
+    """The value of a series-metric `test` at EVERY bar → a float pd.Series (NaN where the
+    window has insufficient lookback). `get_series(name)` returns the raw close series for a
+    ticker (the miner passes a store-backed reader). Mirrors `_series_metric` exactly:
+      * ret        pct change over `window` trading days (×100)
+      * ret_bp     absolute Δ of a level series over `window`, in basis points (×100)
+      * ma_slope   change of the `window`-day MA over `lookback` days (raw units)
+      * rs         own `window`-return minus `vs`-return, in percentage points
+      * ratio_ret  pct return of the `series/ratio` price ratio (×100)
+    """
+    metric = t["metric"]
+    window = int(t["window"])
+    s = get_series(t["series"])
+    if metric == "rs":
+        v = get_series(t["vs"])
+        own, oth = s.align(v, join="inner")
+        own_ret = own / own.shift(window) - 1.0
+        oth_ret = oth / oth.shift(window) - 1.0
+        return ((own_ret - oth_ret) * 100.0).dropna()
+    if metric == "ratio_ret":
+        den = get_series(t["ratio"])
+        num, den = s.align(den, join="inner")
+        ratio = (num / den).dropna()
+        return ((ratio / ratio.shift(window) - 1.0) * 100.0).dropna()
+    if metric == "ret":
+        return ((s / s.shift(window) - 1.0) * 100.0).dropna()
+    if metric == "ret_bp":
+        return ((s - s.shift(window)) * 100.0).dropna()
+    if metric == "ma_slope":
+        lookback = int(t.get("lookback", 5))
+        ma = s.rolling(window).mean()
+        return (ma - ma.shift(lookback)).dropna()
+    raise ChainSchemaError(f"unhandled metric {metric!r}")  # pragma: no cover (validated at load)
+
+
+def _apply_op_vec(op: str, lhs: pd.Series, value: Any) -> pd.Series:
+    """Vectorized twin of `_apply_op` for the numeric comparators a series metric can use
+    (gt/gte/lt/lte/eq/ne). Returns a boolean pd.Series aligned to `lhs`. Non-numeric ops
+    (is_true/in/...) never appear on a series metric (load-time validation guarantees a
+    series test carries a numeric-metric value), so they are not handled here."""
+    y = float(value)
+    if op == "gt":
+        return lhs > y
+    if op == "gte":
+        return lhs >= y
+    if op == "lt":
+        return lhs < y
+    if op == "lte":
+        return lhs <= y
+    if op == "eq":
+        return lhs == y
+    if op == "ne":
+        return lhs != y
+    raise ChainSchemaError(f"non-numeric op {op!r} on a series metric")  # pragma: no cover
+
+
+def series_test_timeseries(get_series, t: dict) -> pd.Series:
+    """The boolean history of a (possibly `all`/`any`-combined) SERIES test → a bool
+    pd.Series on the intersection of its leg indices. Every leaf must be a series metric
+    (the miner only calls this for series-adapter nodes); a path leaf raises. Mirrors
+    `eval_test`'s combinator semantics with vectorized leaves."""
+    if "all" in t:
+        legs = [series_test_timeseries(get_series, sub) for sub in t["all"]]
+        out = legs[0]
+        for leg in legs[1:]:
+            out = out & leg
+        return out.dropna().astype(bool)
+    if "any" in t:
+        legs = [series_test_timeseries(get_series, sub) for sub in t["any"]]
+        out = legs[0]
+        for leg in legs[1:]:
+            out = out | leg
+        return out.dropna().astype(bool)
+    if "series" not in t:
+        raise _Unresolvable("series_test_timeseries requires a series leaf (got a path test)")
+    vals = series_metric_timeseries(get_series, t)
+    return _apply_op_vec(t["op"], vals, t.get("value")).dropna().astype(bool)
 
 
 def _apply_op(op: str, lhs: Any, value: Any) -> bool:
@@ -743,9 +840,13 @@ CAVEATS = [
     {"en": "Display-only context — never scored, never a call. A chain state is a WATCH item; "
            "it never gates, sizes, ranks, or escalates anything (masterplan §4).",
      "zh": "仅供展示的上下文——从不计入评分，从不作为交易指令。链状态是观察项；不做任何门控、仓位、排名或升级。"},
-    {"en": "Per-hop base rates are UNTESTED in W1 (base_rates=null) — the episode miner and the "
-           "forward ledger fill them in W3. A propagating chain is not a forecast.",
-     "zh": "W1中各跳的基础发生率尚未检验（base_rates=null）——由W3的回溯挖掘与前瞻账本填充。传导中的链并非预测。"},
+    {"en": "Per-hop base rates come from the WEEKLY historical episode miner (W3) when its "
+           "artifact is present: pooled + per-regime P(hop confirms | upstream fired) with n. "
+           "A hop with n below the floor prints \"untested\" WITH its n — never a fabricated "
+           "rate. Absent the artifact, base_rates is null. A propagating chain is not a forecast; "
+           "a base rate is a printed conditional frequency, not a signal.",
+     "zh": "各跳基础发生率来自每周历史情景挖掘（W3）——存在其产物时：汇总＋分regime的P(跳确认|上游触发)并附n。"
+           "样本量低于下限的跳打印“未检验”并附其n——绝不编造发生率。无该产物时base_rates为null。传导中的链并非预测；基础发生率是打印的条件频率，而非信号。"},
     {"en": "Per-name blast radius (`blast`) is a WATCH-grade membership screen with a field "
            "receipt, resolved over the per-ticker substrate — never a call and never a size. "
            "Counts always include the unevaluable (missing-field) bucket: a missing field is "
@@ -1041,9 +1142,93 @@ def resolve_blast(chain: dict, per_chain: dict, store: SubstrateStore) -> dict:
     return blast
 
 
+# --------------------------------------------------------------------------- #
+# W3 — CALIBRATION MERGE. The nightly read fills each hop's `base_rates` slot (the W1 null
+# placeholder) from the WEEKLY-mined chain_calibration.json when present, and promotes a
+# chain from `hypothesis` to the `calibrated_context` DISPLAY tier once ≥1 hop carries a real
+# (n>=floor) base rate. DISPLAY-ONLY: this only enriches printed context — never a score,
+# gate, size, rank, or escalation (masterplan §4). A missing/mismatched-rev calibration
+# artifact leaves base_rates null and the tier untouched (fail-open — W1 behavior).
+# --------------------------------------------------------------------------- #
+def load_calibration(data_dir: Path) -> dict | None:
+    """Read data/transmission/chain_calibration.json if present → the parsed dict, else None
+    (fail-open: absent artifact = base_rates stays the W1 null placeholder)."""
+    p = data_dir / "transmission" / "chain_calibration.json"
+    if not p.exists():
+        return None
+    try:
+        doc = json.loads(p.read_text())
+        return doc if isinstance(doc, dict) else None
+    except Exception as e:  # noqa: BLE001 — a corrupt calibration file must not break the read
+        log.warning("chain_calibration.json unreadable (%s) — base_rates null", e)
+        return None
+
+
+def _calibration_index(calibration: dict | None) -> dict[str, dict]:
+    """Index the calibration doc's chains by slug for O(1) hop lookup."""
+    if not isinstance(calibration, dict):
+        return {}
+    return {c.get("chain"): c for c in calibration.get("chains", []) if isinstance(c, dict)}
+
+
+def _merge_calibration(per_chain: dict, chain: dict, cal_entry: dict | None) -> None:
+    """In place: fill `per_chain['base_rates']` from `cal_entry` (the calibration for this
+    chain, matched by slug) and promote the tier to `calibrated_context` if ≥1 hop is measured.
+
+    base_rates shape (per hop, keyed by the hop id `from->to`): {p_confirm, n, lag_d, method,
+    per_regime, regime_split, ...} — a straight copy of the miner's per-hop dict (pooled +
+    per-regime). An untested hop keeps its "untested"+n honesty. When `cal_entry` is absent OR
+    its rev does not match the live chain rev, base_rates stays null and the tier is untouched
+    (a stale calibration from a prior chain revision must NOT be shown against new thresholds).
+    """
+    if not isinstance(cal_entry, dict):
+        return  # no calibration for this chain → null placeholder, tier unchanged (W1)
+    if cal_entry.get("rev") != chain.get("rev"):
+        # rev mismatch: the mined rates were measured against a DIFFERENT chain revision's
+        # thresholds — showing them would be dishonest. Leave null + record why.
+        per_chain["base_rates"] = None
+        per_chain["base_rates_note"] = {
+            "en": f"calibration is for rev {cal_entry.get('rev')} but the live chain is rev "
+                  f"{chain.get('rev')}; base rates withheld until re-mined against this revision.",
+            "zh": f"校准针对rev {cal_entry.get('rev')}，而当前链为rev {chain.get('rev')}；"
+                  f"在按此修订重新挖掘前暂不展示基础发生率。"}
+        return
+    hops_cal = cal_entry.get("hops", [])
+    by_id: dict[str, dict] = {}
+    measured = 0
+    for h in hops_cal:
+        if not isinstance(h, dict):
+            continue
+        hid = f"{h.get('from')}->{h.get('to')}"
+        by_id[hid] = h
+        if h.get("p_confirm") != "untested" and isinstance(h.get("n"), int) and h.get("n", 0) > 0:
+            measured += 1
+    per_chain["base_rates"] = {
+        "asof": cal_entry.get("asof"),
+        "n_floor": None,   # filled by caller from the doc-level floor
+        "calibrated_hops": cal_entry.get("calibrated_hops", measured),
+        "n_hops": cal_entry.get("n_hops", len(hops_cal)),
+        "by_hop": by_id,
+        "cohort_event_study": cal_entry.get("cohort_event_study"),
+    }
+    # also mirror the base rate onto each hop_view entry for consumers reading hops[] directly
+    for hv in per_chain.get("hops", []):
+        hid = hv.get("id")
+        if hid in by_id:
+            h = by_id[hid]
+            hv["base_rate"] = {"p_confirm": h.get("p_confirm"), "n": h.get("n"),
+                               "regime_split": h.get("regime_split"),
+                               "per_regime": h.get("per_regime", {})}
+    # tier promotion (display-only): hypothesis → calibrated_context when ≥1 hop measured.
+    # A chain that declared `probe`/`calibrated` in YAML keeps its (higher) declared tier.
+    if measured >= 1 and per_chain.get("tier") == "hypothesis":
+        per_chain["tier"] = CALIBRATED_CONTEXT_TIER
+
+
 def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
                       ledger_rows: list[dict] | None = None,
-                      substrate: SubstrateStore | None = None) -> tuple[dict, list[dict]]:
+                      substrate: SubstrateStore | None = None,
+                      calibration: dict | None = None) -> tuple[dict, list[dict]]:
     """Evaluate every chain → (chain_state.json dict, all NEW transitions to append).
     `ledger_rows` is the existing chain_episodes.jsonl content; each chain is advanced
     from its own prior rows (temporal state machine). A chain that raises during
@@ -1052,8 +1237,15 @@ def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
     When a `substrate` store is supplied (W2), each ARMED chain's blast radius is resolved
     over the per-ticker universe and merged into its `blast` block; dormant chains keep
     `blast: {}`. Substrate resolution NEVER crashes the nightly — a resolver error on one
-    chain is logged and that chain keeps `blast: {}`."""
+    chain is logged and that chain keeps `blast: {}`.
+
+    When a `calibration` dict is supplied (W3 — the parsed chain_calibration.json), each
+    chain's `base_rates` slot is filled from its matching (slug+rev) mined entry and the tier
+    is promoted hypothesis→calibrated_context if ≥1 hop is measured (n>=floor). Absent /
+    mismatched calibration leaves base_rates null + tier unchanged (fail-open). Display-only."""
     ledger_rows = ledger_rows or []
+    cal_index = _calibration_index(calibration)
+    cal_floor = calibration.get("n_floor") if isinstance(calibration, dict) else None
     by_chain: dict[str, list[dict]] = {}
     for r in ledger_rows:
         by_chain.setdefault(r.get("chain"), []).append(r)
@@ -1075,6 +1267,15 @@ def build_chain_state(chains: list[dict], adapters: dict[str, Any], asof: str,
                 log.error("chain %s blast-radius resolution failed (blast={}): %s",
                           chain.get("chain"), e)
                 per_chain["blast"] = {}
+        # W3: fill base_rates from the weekly calibration + promote tier (fail-open — a merge
+        # error leaves base_rates null and the tier unchanged, never crashing the nightly).
+        try:
+            _merge_calibration(per_chain, chain, cal_index.get(chain.get("chain")))
+            if isinstance(per_chain.get("base_rates"), dict) and cal_floor is not None:
+                per_chain["base_rates"]["n_floor"] = cal_floor
+        except Exception as e:  # noqa: BLE001
+            log.error("chain %s calibration merge failed (base_rates null): %s",
+                      chain.get("chain"), e)
         per_chains.append(per_chain)
         all_transitions.extend(res["transitions"])
     state = {
@@ -1119,7 +1320,10 @@ def run(root: Path | None = None, *, write: bool = True,
     if resolve_blast_radius:
         sdir = Path(substrate_dir) if substrate_dir else base.joinpath(*SUBSTRATE_RELDIR)
         substrate = SubstrateStore.from_dir(sdir)
-    state, transitions = build_chain_state(chains, adapters, asof, ledger_rows, substrate=substrate)
+    # W3: the weekly-mined base rates (absent → base_rates stays the W1 null placeholder).
+    calibration = load_calibration(data_dir)
+    state, transitions = build_chain_state(chains, adapters, asof, ledger_rows,
+                                           substrate=substrate, calibration=calibration)
     if write:
         outdir = data_dir / "transmission"
         outdir.mkdir(parents=True, exist_ok=True)
