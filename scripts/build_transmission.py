@@ -99,10 +99,26 @@ def main() -> int:
         log.error("transmission_context (changes) failed: %s", e)
         changes = None
 
+    # TXI W4 — Cascade Monitor: read the transmission chains state (transmission_chains.v1)
+    # and derive its display subset for the page. Additive + fail-open: absent (a runner drop
+    # before the chains step ever ran, or a fresh checkout) → chains=None and the section
+    # simply does not render. NOTE: build_site/build_transmission run BEFORE the chains step in
+    # the nightly, so this reads the PRIOR nightly's state — one render stale (the section
+    # surfaces lag via the shared subset's asof).
+    chains = None
+    try:
+        cs_path = outdir / "chain_state.json"
+        if cs_path.exists():
+            from engine.transmission_publish import derive_display_subset
+            chains = derive_display_subset(json.loads(cs_path.read_text(encoding="utf-8")))
+    except Exception as e:  # noqa: BLE001 — additive, never break the page
+        log.error("transmission chains subset failed: %s", e)
+        chains = None
+
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("transmission.html.j2").render(
         C=C, as_of=as_of, built=built, span=span, tx=tx, gate=gate, yc=yc,
-        dx=dx, hero=hero, changes=changes)
+        dx=dx, hero=hero, changes=changes, chains=chains)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     site.mkdir(parents=True, exist_ok=True)
     write_page(site / "transmission.html", html)

@@ -289,6 +289,19 @@ def load_congress(root: Path) -> "object | None":
         return None
 
 
+def load_chain_state(root: Path) -> dict:
+    """data/transmission/chain_state.json → the transmission_chains.v1 state (TXI W4).
+
+    Fail-open to {}. Absent (a runner drop before the chains step ever ran, or a fresh
+    checkout) → {} so the per-ticker chains block is simply omitted, never fabricated.
+    NOTE: build_site (which invokes this bake path in the nightly) runs BEFORE the chains
+    step, so this reads the PRIOR nightly's state — one render stale, matching the site
+    subset's lag_note.
+    """
+    d = _read_json(root / "data" / "transmission" / "chain_state.json")
+    return d if isinstance(d, dict) else {}
+
+
 def load_sources(root: Path) -> dict:
     """Load every source once. Each loader fails open; the dict is always well-formed."""
     return {
@@ -304,6 +317,7 @@ def load_sources(root: Path) -> dict:
         "membership": load_membership(root),
         "theme_lanes": load_theme_lanes(root),
         "congress": load_congress(root),
+        "chain_state": load_chain_state(root),
     }
 
 
@@ -408,6 +422,67 @@ def _themes_block(ticker: str, membership: dict, baskets: dict,
         entry["lane"] = lane if isinstance(lane, str) else None
         themes.append(entry)
     return themes or None
+
+
+_ARMED_CHAIN_STATES = {"arming", "propagating", "expressed"}
+
+
+def _chains_index(chain_state: dict) -> dict[str, list[dict]]:
+    """Invert the transmission_chains.v1 blast lists ONCE into {ticker: [membership, ...]}.
+
+    A membership row is display-tier context (TXI-R3/R7): which ARMED chain this ticker sits
+    downstream of, via which named channel, with the chain's plain state + bilingual label —
+    NEVER a score, size, or call. Only chains in an armed state (arming|propagating|expressed)
+    resolve a blast radius; dormant chains contribute nothing. A ticker may appear in several
+    chains and several channels — each is a separate membership row (dedup identical
+    chain×channel pairs). Pure — no IO.
+    """
+    idx: dict[str, list[dict]] = {}
+    if not isinstance(chain_state, dict):
+        return idx
+    for c in (chain_state.get("chains") or []):
+        if not isinstance(c, dict) or c.get("state") not in _ARMED_CHAIN_STATES:
+            continue
+        chain_id = c.get("chain")
+        title = c.get("title") if isinstance(c.get("title"), dict) else {}
+        state = c.get("state")
+        tier = c.get("tier")
+        blast = c.get("blast") or {}
+        if not isinstance(blast, dict):
+            continue
+        for flag, entry in blast.items():
+            if not isinstance(entry, dict):
+                continue
+            names = entry.get("names") or []
+            if not isinstance(names, list) or not names:
+                continue
+            lbl = entry.get("label") if isinstance(entry.get("label"), dict) else {}
+            for tkr in names:
+                tk = _valid_ticker(tkr)
+                if tk is None:
+                    continue
+                row = {
+                    "id": chain_id,
+                    "label": {"en": title.get("en"), "zh": title.get("zh")},
+                    "state": state,
+                    "tier": tier,
+                    "channel": flag,
+                    "channel_label": {"en": lbl.get("en"), "zh": lbl.get("zh")},
+                }
+                bucket = idx.setdefault(tk, [])
+                # dedup identical chain×channel (a ticker is listed once per channel)
+                if not any(r["id"] == chain_id and r["channel"] == flag for r in bucket):
+                    bucket.append(row)
+    return idx
+
+
+def _chains_block(ticker: str, chains_index: dict[str, list[dict]]) -> list[dict] | None:
+    """Ticker → the ARMED transmission chains it sits downstream of (display-tier WATCH
+    context; TXI-R7 per-ticker merge). None when the name is in no armed chain's blast — so
+    the block is OMITTED for the vast majority of names (avoids the top-level contract-drift
+    trap by living entirely inside tickers.<T>). Never a signal, size, or call."""
+    rows = chains_index.get(ticker)
+    return rows or None
 
 
 def _stage_block(screener_row: dict | None) -> dict | None:
@@ -654,6 +729,8 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
     membership = sources.get("membership") or {}
     theme_lanes = sources.get("theme_lanes") or {}
     congress_rows = _congress_iter(sources.get("congress"))
+    # TXI W4 — invert the transmission chains blast lists ONCE into a per-ticker index.
+    chains_index = _chains_index(sources.get("chain_state") or {})
 
     # ONE pass over the congress rows → window-filtered ticker→rows index (W1 perf:
     # replaces the W0 per-ticker full scan that went quadratic on the real universe).
@@ -683,7 +760,7 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
                      if tk is not None]
     ticker_out: dict[str, dict] = {}
     cov = {"tickers": 0, "stage": 0, "themes": 0, "earnings": 0,
-           "insider": 0, "congress": 0, "f13": 0, "entry": 0}
+           "insider": 0, "congress": 0, "f13": 0, "entry": 0, "chains": 0}
 
     for t in tick_list:
         screener_row = screener.get(t)
@@ -728,10 +805,17 @@ def build_ctx(sources: dict, tickers: list[str] | None, asof: str) -> dict:
             block["f13"] = f13
             cov["f13"] += 1
 
+        # TXI W4 — the armed transmission chains this ticker sits downstream of (per-ticker,
+        # display-tier WATCH context). Omitted for names in no armed chain's blast.
+        chains = _chains_block(t, chains_index)
+        if chains is not None:
+            block["chains"] = chains
+            cov["chains"] += 1
+
         # A ticker with zero coverage anywhere is omitted entirely (sector alone is
         # metadata, not desk coverage — require at least one desk block to include).
         desk_blocks = ("themes", "stage", "entry", "earnings", "insider",
-                       "congress", "f13")
+                       "congress", "f13", "chains")
         if any(k in block for k in desk_blocks):
             ticker_out[t] = block
             cov["tickers"] += 1

@@ -10490,6 +10490,43 @@ artifacts:
       is_context_only=true, display_only=true. Absent until scripts/build_darkpool_desk.py
       first runs; all consumers fail-open (block=None or honest-null).
 
+  transmission-chains-state:
+    path: data/transmission/chain_state.json
+    format: json
+    producer: engine/transmission_chains.py
+    known_extra_writers: []
+    owner_program: transmission-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 36
+    schema: transmission_chains.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - scripts/build_site.py
+      - scripts/build_portfolio_ctx.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      TXI staged macro→micro cascade state, built by engine/transmission_chains.run
+      (nightly, AFTER build_site — so the site-published subset site/transmission_chains.json
+      lags one nightly and stamps lag_note; this NW/portfolio read is fresh). Each chain in
+      knowledge/transmission/*.yaml compiles to a deterministic episode tracker
+      (dormant → arming → propagating(hop k) → expressed | failed | expired); an armed chain
+      resolves its per-name blast radius via named channels over the per-ticker substrate,
+      each channel carrying its universe count + numeric cuts + full ticker array + an
+      unevaluable (missing-field) bucket. Distributed (TXI-R7, darkpool_context pattern):
+      world_state transmission_chains lobe + synapse + mastermind _summarize + portfolio_ctx
+      per-ticker merge + baked display subset. A chain state is a WATCH item with (eventually)
+      printed conditional base rates — display/context tier ONLY, NEVER a signal, rank, size,
+      or escalation (masterplan §4; DNR row 45 / TXI Article 1/2). Per-hop base rates are
+      UNTESTED in W1 (base_rates=null). is_context_only=true, display_only=true. Absent until
+      the first chains run; all consumers fail-open (block=None / honest-null / no emit).
+
   special-sits-context-latest:
     path: data/special_situations/context/latest.json
     format: json

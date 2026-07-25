@@ -4307,6 +4307,26 @@ def main() -> int:
             log.info("wrote factor_betas.json (%d names)", exp.get("n", 0))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("factor_betas.json failed: %s", e)
+    # Transmission CHAINS display subset (TXI W4 — site/transmission_chains.json). Derived
+    # from data/transmission/chain_state.json (transmission_chains.v1) when present; the
+    # client (watchlist chain lane) + the Cascade Monitor read it. ABSENT (first run, or a
+    # runner drop before the chains step ever ran) => skip silently, publish nothing.
+    # NOTE: build_site runs BEFORE run_transmission_chains in daily.yml, so the published
+    # subset lags one nightly — the emit stamps lag_note so consumers are honest about it.
+    try:
+        _cs_path = config.data_dir() / "transmission" / "chain_state.json"
+        if _cs_path.exists():
+            from engine.transmission_publish import derive_display_subset
+            _cs = json.loads(_cs_path.read_text(encoding="utf-8"))
+            _subset = derive_display_subset(_cs)
+            if _subset.get("chains"):
+                (site / "transmission_chains.json").write_text(
+                    json.dumps(_subset, separators=(",", ":"), ensure_ascii=False, default=str),
+                    encoding="utf-8")
+                log.info("wrote transmission_chains.json (%d chains, asof=%s)",
+                         len(_subset["chains"]), _subset.get("asof"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("transmission_chains.json failed: %s", e)
     # broad "Top setups" board (selection × timing across the full S&P 1500),
     # written by build_stock_library at the END of the prior build_site run —
     # additive + graceful: absent (first run) => the board simply doesn't render.

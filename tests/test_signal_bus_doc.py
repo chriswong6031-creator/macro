@@ -73,9 +73,10 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 493, (
-        f"Expected 493 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 494, (
+        f"Expected 494 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        "(TXI W4 #3527 added transmission-chains-state = 493->494;"
         "(Personality Codex W2 #3460 added personality-timing-codex = 492->493;"
         "(MWR-W1 added shadow-book, shadow-state, prophet-confluence = 489->492;"
         "(MWR-W0 added mag7-washout-latest, mag7-washout-triggers = 487->489;"

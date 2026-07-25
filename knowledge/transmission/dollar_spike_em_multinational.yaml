@@ -1,7 +1,7 @@
 # TXI seed chain — dollar spike → EM / commodity / multinational-EPS headwind.
 # Seed list §7; rides the forex_transmission dollar-channel edges. Display-tier.
 chain: dollar_spike_em_multinational
-rev: 2                      # W2 re-enable: geo_revenue.* channels live (see changelog)
+rev: 3                      # W4: hop display labels (see changelog)
 tier: hypothesis
 title:
   en: "Dollar spike → EM & multinational-EPS headwind"
@@ -37,6 +37,9 @@ hops:
     to: usd_transmission_on
     sign: "+"
     lag_d: [0, 20]
+    label:
+      en: "Dollar firms → transmission channel turns on"
+      zh: "美元走强 → 传导通道启动"
     condition:
       en: "real-rate-driven strength (carry/haven bid), not a risk-on reflation dollar"
       zh: "实际利率驱动的走强（套息/避险买盘），而非风险偏好型再通胀美元"
@@ -48,6 +51,9 @@ hops:
     to: em_derate
     sign: "+"
     lag_d: [0, 90]
+    label:
+      en: "Channel on → EM cohort de-rates"
+      zh: "通道启动 → 新兴市场板块下修"
     condition:
       en: "EM without a domestic-policy offset (no local easing cushioning the FX drag)"
       zh: "新兴市场无国内政策抵消（无本地宽松缓冲汇率拖累）"
@@ -136,6 +142,8 @@ changelog:
      absent). Absolute cuts (not pctile) so membership does not drift as coverage accrues.
      em_commodity_sector_proxy retained as the labeled sector complement for names without
      parseable disclosure."
+  - "rev 3 (W4 2026-07-25): added bilingual hop display labels (label:{en,zh}) to both hops for
+     the W4 Cascade Monitor + site publication subset. No node/screen/tier change."
 
 validator_note: >
   NODE bindings (unchanged from rev 0): all nodes resolve against data/forex/latest.json

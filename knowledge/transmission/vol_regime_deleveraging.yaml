@@ -2,7 +2,7 @@
 # Seed list §7 ("vol-regime shift → systematic deleveraging → high-beta unwind;
 # vol_regime + positioning"). Display-tier. Reads data/regime/latest.json.
 chain: vol_regime_deleveraging
-rev: 1                      # W2: exposure_screens → structured mini-form (see changelog)
+rev: 2                      # W4: low_liquidity re-bound + hop display labels (see changelog)
 tier: hypothesis
 title:
   en: "Vol-regime shift → systematic deleveraging → high-beta unwind"
@@ -40,6 +40,9 @@ hops:
     to: systematic_delever
     sign: "+"
     lag_d: [0, 21]
+    label:
+      en: "Vol stress → books cut gross"
+      zh: "波动率压力 → 策略削减总敞口"
     condition:
       en: "realized-vol expansion (not just an implied-vol bid) — vol-target books resize on realized"
       zh: "已实现波动率扩张（而非仅隐含波动率买盘）——波动率目标策略按已实现波动率调整"
@@ -51,6 +54,9 @@ hops:
     to: highbeta_unwind
     sign: "+"
     lag_d: [0, 42]
+    label:
+      en: "Deleveraging → high-beta unwinds"
+      zh: "去杠杆 → 高贝塔平仓"
     condition:
       en: "crowded high-beta leadership (an unwind needs positioning to unwind FROM)"
       zh: "拥挤的高贝塔领导地位（平仓需要有可平的仓位）"
@@ -88,11 +94,19 @@ exposure_screens:            # W2 — structured mini-form, resolved over site/s
       - {path: positioning.short.pct_float, op: pctile_gte, value: 0.80} # heavy short interest (forced-cover fuel)
   low_liquidity:
     label: {en: "Low liquidity", zh: "低流动性"}
-    # DROPPED CHANNEL (honest gap): no median-dollar-volume / ADV / float-turnover field
-    # exists in the per-ticker substrate. Declared for schema continuity; resolver emits it
-    # resolved:false with this note rather than proxying silently (masterplan §scoping.3).
-    note: {en: "DROPPED — no field: the substrate carries no dollar-volume / ADV / float-turnover field, so impact-cost / liquidity exposure cannot be resolved. Not proxied.",
-           zh: "已弃用——无字段：个股数据无成交额/日均成交量/流通换手率字段，无法解析冲击成本/流动性敞口。未做代理。"}
+    # RE-BOUND (W4): the substrate DOES carry a 20-day average dollar-volume field
+    # (tech.dollar_vol_20d = 20d-avg volume × price, written by engine/stock_technicals.py).
+    # It is a LEVEL-OF-LIQUIDITY screen — the names most exposed to impact cost when a
+    # deleveraging forces sales into a thin book — bottom-quintile 20d dollar volume of the
+    # evaluable universe. Distinct from the DNR-104-killed volume-SPIKE / abnormal-volume
+    # constructions: this is a standing liquidity level (how thick is the book), not a
+    # detection of an unusual volume event. Absolute-vs-pctile: a pctile cut so membership
+    # tracks the universe's own liquidity distribution; the numeric cut is printed. Names
+    # without tech.dollar_vol_20d bucket as unevaluable — never silently safe/unsafe.
+    note: {en: "names in the bottom quintile of 20-day average dollar volume (tech.dollar_vol_20d, a level-of-liquidity screen) — a deleveraging forces sales into a thinner book, so the least-liquid names take the largest impact-cost hit. A liquidity LEVEL, not a volume-spike detection (distinct from the killed abnormal-volume constructions). Names without the field bucket as unevaluable.",
+           zh: "20日平均成交额（tech.dollar_vol_20d，流动性水平筛选）处于最低五分位的名字——去杠杆迫使卖单进入更薄的盘口，流动性最差的名字承受最大的冲击成本。这是流动性“水平”，而非成交量异动检测（区别于已弃用的异常成交量构造）。无该字段的名字归入无法评估桶。"}
+    any:
+      - {path: tech.dollar_vol_20d, op: pctile_lte, value: 0.20}   # bottom-quintile 20d avg dollar volume (level, not spike)
 
 provenance:
   theory: ["vol-targeting mechanics", "beta-proportional deleveraging", "crowding unwind"]
@@ -107,6 +121,14 @@ changelog:
      LABELED proxy — no market-beta field exists, so risk_sizing.vol_ann_pct pctile stands in
      (label + note say 'proxy' in both languages, masterplan §scoping.3). low_liquidity DROPPED
      with a bilingual note (no ADV/dollar-volume field)."
+  - "rev 2 (W4 2026-07-25): (a) low_liquidity RE-BOUND — the rev-1 DROP note was wrong; the
+     substrate DOES carry tech.dollar_vol_20d (20d avg volume × price, engine/stock_technicals.py).
+     Bound to pctile_lte 0.20 = bottom-quintile 20d dollar volume, a LEVEL-of-liquidity screen
+     (impact-cost exposure when a deleveraging forces sales into a thin book). Explicitly distinct
+     from the DNR-104-killed volume-SPIKE / abnormal-volume constructions: this is a standing
+     liquidity level, not an unusual-volume detection. Names without the field bucket unevaluable.
+     (b) Added bilingual hop display labels (label:{en,zh}) to both hops for the W4 Cascade Monitor
+     + site publication subset."
 
 validator_note: >
   All nodes resolve against data/regime/latest.json (vol_regime.regime / vix /

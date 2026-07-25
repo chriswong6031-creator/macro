@@ -108,6 +108,7 @@ reads `fred`).
 | key | meaning |
 |---|---|
 | `from`, `to` | node ids (must exist in `nodes`). |
+| `label` | `{en, zh}` short bilingual DISPLAY label for the transition (optional; W4). Names the hop for the Cascade Monitor + site-published subset (e.g. "Oil shock → breakevens rise"). Distinct from `mechanism` (the long causal prose) and from the node `title`s. |
 | `sign` | `+` \| `-` — expected co-movement direction (documentation; the node tests carry the actual thresholds). |
 | `lag_d` | `[lo, hi]` — the confirmation window in **calendar days**: `to` must confirm within `hi` days of `from`'s confirmation, else the episode `expires`. `lo` is documentary (earliest plausible). |
 | `condition` | plain-word regime gate (`{en, zh}` or str) — the regime where the hop SHOULD work (TXI-R6). W1 records it; regime-conditional calibration is W3. |

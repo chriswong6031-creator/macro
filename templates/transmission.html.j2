@@ -300,6 +300,49 @@ html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
 .cx-quiet .q .nm .em{margin-right:9px;opacity:.8}
 .cx-quiet .q .tag{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 
+/* ---------- cascade monitor (TXI W4 — staged chain episode watch) ---------- */
+.cm-eyebrow{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 3px}
+.cm-card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:6px 22px;margin-top:4px;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.cm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:16px 0}
+.cm-row+.cm-row{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+@media(max-width:640px){.cm-row{grid-template-columns:auto 1fr;gap:10px}}
+.cm-dot{width:11px;height:11px;border-radius:50%;margin-top:4px;flex:none;background:var(--faint)}
+.cm-dot.arming{background:var(--amber);box-shadow:0 0 0 4px color-mix(in srgb,var(--amber) 18%,transparent)}
+.cm-dot.propagating{background:#e07a2f;box-shadow:0 0 0 4px color-mix(in srgb,#e07a2f 18%,transparent)}
+.cm-dot.expressed{background:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 15%,transparent)}
+.cm-dot.muted{background:var(--faint)}
+.cm-dot.live{animation:txBreathe 2.6s ease-in-out infinite}
+.cm-main{min-width:0}
+.cm-name{font-size:14.5px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.25}
+.cm-hops{display:flex;align-items:center;gap:6px;margin:9px 0 8px}
+.cm-hops .hh{display:inline-flex;align-items:center;gap:6px}
+.cm-hops i{width:9px;height:9px;border-radius:50%;background:var(--grid);border:1px solid color-mix(in srgb,var(--faint) 55%,transparent);flex:none;cursor:help}
+.cm-hops i.on{background:var(--accent,#e07a2f);border-color:var(--accent,#e07a2f)}
+.cm-hops .lnk{width:16px;height:2px;border-radius:2px;background:var(--grid)}
+.cm-hops .lnk.on{background:color-mix(in srgb,var(--accent,#e07a2f) 55%,var(--grid))}
+.cm-line{font-size:12.5px;color:var(--text);line-height:1.5}
+.cm-line b{color:var(--ink);font-weight:700}
+.cm-tier{display:inline-block;margin-top:6px;font-size:11px;color:var(--faint);line-height:1.4}
+.cm-state-tag{justify-self:end;align-self:start;margin-top:2px;display:inline-block;padding:4px 11px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.cm-state-tag.arming{background:color-mix(in srgb,var(--amber) 14%,var(--card));color:#9a6a10}
+.cm-state-tag.propagating{background:color-mix(in srgb,#e07a2f 14%,var(--card));color:#c25c1a}
+.cm-state-tag.expressed{background:color-mix(in srgb,var(--red) 12%,var(--card));color:var(--red)}
+html[data-theme="dark"] .cm-state-tag.arming{color:var(--amber)}
+html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
+@media(max-width:640px){.cm-state-tag{grid-column:2;justify-self:start;margin-top:8px}}
+.cm-quiet{padding:12px 0 13px;font-size:12.5px;color:var(--muted);line-height:1.5;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+.cm-quiet b{color:var(--text);font-weight:600}
+/* the ? receipt tip — CSS-only bilingual popover; data-tip-* consumed here, never title= */
+.cmq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:10px;font-weight:700;cursor:help;flex:none;margin-left:3px;vertical-align:middle}
+.cmq .cmq-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:30;width:230px;padding:9px 11px;
+  border-radius:11px;background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.35);
+  font-size:11.5px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
+.cmq:hover .cmq-tip,.cmq:focus .cmq-tip{display:block}
+
 /* ---------- scenarios (if this holds for three months) ---------- */
 .sx-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:820px){.sx-grid{grid-template-columns:1fr}}
@@ -572,6 +615,63 @@ html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
     <div class="q"><span class="nm"><span class="em">{{ '💧' if ch.id=='policy_easing' else '🧭' if ch.id=='expectations' else '•' }}</span>{{ b(meta.ti) }}</span><span class="tag">{{ t('quiet now', '暂时静默') }}</span></div>
     {% endfor %}
   </div>
+  {% endif %}
+
+  <!-- ===================== CASCADE MONITOR (TXI W4) ===================== -->
+  {# staged macro→micro chain episodes. Renders ONLY when the chain state artifact is present
+     AND at least one chain is non-dormant. Every chain is a display-only WATCH item — no
+     scores, no calls, no escalation language; base rates print as "accrue nightly" (untested). #}
+  {% if chains and chains.chains %}
+  {% set armed = chains.chains|selectattr('state','in',['arming','propagating','expressed'])|list %}
+  {% set dorm = chains.chains|rejectattr('state','in',['arming','propagating','expressed'])|list %}
+  {% if armed or dorm %}
+  {% set STATE_ORD = {'expressed':0,'propagating':1,'arming':2} %}
+  {% set STATE_WORD = {'arming':{'en':'Arming','zh':'触发中'},'propagating':{'en':'Propagating','zh':'传导中'},'expressed':{'en':'Expressed','zh':'已兑现'}} %}
+  <div class="sec-head"><span class="sh-dot" style="--sh-c:#e07a2f"></span>{{ t('Cascade monitor', '传导链监测') }}</div>
+  <p class="cm-eyebrow">CASCADE MONITOR / 传导链监测</p>
+  <p class="sec-sub">{{ t('Multi-step macro→stock chains being tracked as they arm and travel. Early-monitor context — not a forecast, not a signal.', '正在跟踪的多环节宏观→个股传导链，随其触发与推进而更新。早期监测背景——非预测、非信号。') }}</p>
+  <div class="cm-card">
+    {# most-progressed first: expressed → propagating → arming (not alphabetical) #}
+    {% set ordered = (armed|selectattr('state','equalto','expressed')|list)
+                   + (armed|selectattr('state','equalto','propagating')|list)
+                   + (armed|selectattr('state','equalto','arming')|list) %}
+    {% for ch in ordered %}
+    {% set st = ch.state %}
+    {% set conf = ch.hops|selectattr('confirmed')|list|length %}
+    {% set nh = ch.hops|length %}
+    {# widest single named channel = the headline blast; per-channel detail in the ? tip #}
+    {% set wide_ch = namespace(flag=none, label=none, n=-1, un=0) %}
+    {% for flag, chan in ch.blast.items() %}{% if (chan.n or 0) > wide_ch.n %}{% set wide_ch.flag = flag %}{% set wide_ch.label = chan.label %}{% set wide_ch.n = chan.n or 0 %}{% set wide_ch.un = chan.unevaluable or 0 %}{% endif %}{% endfor %}
+    <div class="cm-row" style="--accent:{{ '#e07a2f' if st=='propagating' else ('var(--red)' if st=='expressed' else 'var(--amber)') }}">
+      <span class="cm-dot {{ st }} live" aria-hidden="true"></span>
+      <div class="cm-main">
+        <div class="cm-name">{{ b(ch.label) }}</div>
+        <div class="cm-hops" aria-label="{{ conf }} of {{ nh }} links confirmed">
+          {% for h in ch.hops %}
+          {% if not loop.first %}<span class="lnk {{ 'on' if h.confirmed }}"></span>{% endif %}
+          <span class="hh"><i class="{{ 'on' if h.confirmed }}" tabindex="0"
+            data-tip-en="{{ h.label.en }}{{ ' — confirmed ' ~ h.asof if h.confirmed and h.asof else ' — not yet confirmed' }}"
+            data-tip-zh="{{ h.label.zh }}{{ '——已确认 ' ~ h.asof if h.confirmed and h.asof else '——尚未确认' }}"></i></span>
+          {% endfor %}
+        </div>
+        <div class="cm-line">
+          <span class="l-en"><b>{{ conf }} of {{ nh }} links confirmed</b>{% if wide_ch.n and wide_ch.n > 0 %} — {{ wide_ch.n }} names in the {{ (wide_ch.label.en|lower) if wide_ch.label else 'named' }} blast radius{% endif %}.</span>
+          <span class="l-zh"><b>已确认 {{ conf }}/{{ nh }} 环节</b>{% if wide_ch.n and wide_ch.n > 0 %}——{{ wide_ch.n }} 只个股处于{{ wide_ch.label.zh if wide_ch.label else '相关' }}波及范围{% endif %}。</span>
+          <span class="cmq" tabindex="0">?<span class="cmq-tip">
+            <span class="l-en">Blast channels: {% for flag, chan in ch.blast.items() %}{{ chan.label.en if chan.label else flag }} {{ chan.n or 0 }}{% if chan.unevaluable %} ({{ chan.unevaluable }} unevaluable){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}. A missing field is neither in nor out of the blast radius — never a call.</span>
+            <span class="l-zh">波及通道：{% for flag, chan in ch.blast.items() %}{{ chan.label.zh if chan.label else flag }} {{ chan.n or 0 }}{% if chan.unevaluable %}（{{ chan.unevaluable }} 无法评估）{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}。字段缺失的名字既不在也不排除于波及范围——绝非交易指令。</span>
+          </span></span>
+        </div>
+        <div class="cm-tier">{{ t('Early monitor — base rates accrue nightly.', '早期监测——基准率逐夜累积。') }}</div>
+      </div>
+      <span class="cm-state-tag {{ st }}">{{ b(STATE_WORD.get(st, ch.label)) }}</span>
+    </div>
+    {% endfor %}
+    {% if dorm %}
+    <div class="cm-quiet">{{ t('Quiet:', '静默：') }} {% for ch in dorm %}<b>{{ b(ch.label) }}</b>{% if not loop.last %} · {% endif %}{% endfor %}</div>
+    {% endif %}
+  </div>
+  {% endif %}
   {% endif %}
 
   <!-- ===================== SCENARIOS ===================== -->

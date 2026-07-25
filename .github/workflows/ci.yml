@@ -113,6 +113,10 @@ on:
       - "tests/test_risk_core_js.py"
       - "templates/risk_core.js"
       - "templates/watchlist_risk.js"
+      # TXI W4 watchlist chain lane: the node-shelled chain-lane helper tests (furthest chain
+      # selection, 404-empty, rail-sentence condition). Same ci-test-whitelist-rot guard.
+      - "tests/test_watchlist_chains_js.py"
+      - "tests/fixtures/transmission/transmission_chains.json"
       # WRI W6.1: the factor-exposure engine bakes factor_betas.json that risk_core.js
       # consumes; list its emit + tests so an engine/test-only edit triggers CI
       # (ci-test-whitelist-rot guard). Run in the wri-risk-core job below.
@@ -316,6 +320,20 @@ on:
       - "engine/transmission_chains.py"
       - "scripts/run_transmission_chains.py"
       - "tests/test_transmission_chains.py"
+      # TXI W4 distribution: the site-publication adapter, the Cascade Monitor page + its
+      # render entry, and the two W4 test files must all trigger the chain suite too
+      # (#3357 vacuous-green trap — paths here AND the run command in the job below).
+      - "engine/transmission_publish.py"
+      - "scripts/build_transmission.py"
+      - "scripts/build_site.py"
+      - "scripts/build_portfolio_ctx.py"
+      - "templates/transmission.html.j2"
+      - "engine/neuralweb/world_state.py"
+      - "engine/neuralweb/mastermind_context.py"
+      - "tests/test_transmission_publish.py"
+      - "tests/test_transmission_cascade_monitor.py"
+      - "tests/test_transmission_chains_nw.py"
+      - "tests/fixtures/transmission/**"
       # TXI W3 transmission calibration: the historical episode miner, its runner, and its test
       # file must all trigger the calibration suite (same #3357 both-halves rule). The miner
       # imports the shared vectorized evaluator from engine/transmission_chains.py (already above).
@@ -432,6 +450,7 @@ on:
       # (page-byte-identity invariant) all run on any change.
       - "scripts/build_portfolio_ctx.py"
       - "tests/test_build_portfolio_ctx.py"
+      - "tests/test_portfolio_ctx_chains.py"   # TXI W4 per-ticker chains merge
       - "scripts/build_state_of_themes.py"
       - "tests/test_state_of_themes.py"
       - "engine/portfolio_brief.py"
@@ -1699,9 +1718,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: transmission chains — engine + state machine + validator + smoke
         run: python -m pytest tests/test_transmission_chains.py -q
+      - name: transmission chains — W4 distribution (publish subset + Cascade Monitor + NW lobes)
+        run: python -m pytest tests/test_transmission_publish.py tests/test_transmission_cascade_monitor.py tests/test_transmission_chains_nw.py -q
       - name: transmission calibration — miner + regime split + merge + null honesty
         run: python -m pytest tests/test_transmission_calibration.py -q
 
@@ -1989,6 +2010,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
+      - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
+        run: python -m pytest tests/test_watchlist_chains_js.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
@@ -3108,7 +3131,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas pyarrow jinja2 fastapi httpx pydantic
       - name: portfolio-ctx bake unit tests
-        run: python -m pytest tests/test_build_portfolio_ctx.py -q
+        run: python -m pytest tests/test_build_portfolio_ctx.py tests/test_portfolio_ctx_chains.py -q
       - name: portfolio-brief composer + endpoint tests
         run: python -m pytest tests/test_portfolio_brief.py -q
       - name: theme_lanes side-write contract (source of truth for the Portfolio brief)
