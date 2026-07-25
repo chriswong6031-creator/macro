@@ -10,6 +10,11 @@ Public/free/premium classification comes from ``config/site_access.yml``.
 Unknown paths are premium by default.  Config/auth/store errors deny.  A recent
 positive entitlement may survive an entitlement-store outage for at most
 ``PAYWALL_GRACE_SECONDS`` (24h default); auth failures never receive grace.
+
+``premium.enforced_early`` is the per-path escape from the global switch: those
+paths require the entitlement even while ``PAYWALL_ENABLED=0``, so a single paid
+surface can ship ahead of the site-wide launch.  They are payload paths whose
+page keeps a free-visible preview shell (docs/TIER_PREVIEW_PATTERN.md).
 """
 from __future__ import annotations
 
@@ -89,6 +94,15 @@ def _load_config() -> dict[str, Any]:
         premium = raw.get("premium")
         if not isinstance(premium, dict) or not premium.get("required_feature"):
             raise ValueError("premium.required_feature is required")
+        early = premium.get("enforced_early")
+        if early is not None:
+            # Absent is allowed (nothing enforced ahead of launch); present-but-
+            # malformed denies, like every other policy defect in this module.
+            if not isinstance(early, dict):
+                raise ValueError("premium.enforced_early must be a mapping")
+            for field in ("exact", "prefixes"):
+                if not isinstance(early.get(field), list):
+                    raise ValueError(f"premium.enforced_early.{field} must be a list")
         _CONFIG_CACHE = (raw, stamp)
         return raw
 
@@ -125,6 +139,12 @@ def classify_path(path: str) -> str:
     if _matches(path, cfg["free_registered"]):
         return "free"
     return "premium"
+
+
+def enforced_early(path: str) -> bool:
+    """True when this premium path is gated regardless of PAYWALL_ENABLED."""
+    early = (_load_config()["premium"].get("enforced_early")) or {}
+    return _matches(path, early)
 
 
 def _is_document(request: Request, path: str) -> bool:
@@ -308,8 +328,11 @@ def paywall_check(request: Request) -> Response:
                     headers=_headers("not-found"),
                 )
             return JSONResponse({"error": "not_found"}, status_code=404, headers=_headers("not-found"))
-        if access in {"public", "free"} or not _enabled():
-            return Response(status_code=204, headers=_headers("off" if not _enabled() else access))
+        if access in {"public", "free"}:
+            return Response(status_code=204, headers=_headers(access))
+        early = enforced_early(path)
+        if not (_enabled() or early):
+            return Response(status_code=204, headers=_headers("off"))
 
         from app.main import _mm_supabase_access_token  # noqa: PLC0415
 

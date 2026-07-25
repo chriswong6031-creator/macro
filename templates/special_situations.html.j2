@@ -136,6 +136,54 @@ html[data-theme="dark"] .hero::before{background:radial-gradient(620px 320px at 
 .grade-C{color:var(--amber)}
 .setup-chip-why{margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+/* ---- tier gate (preview shell only; hydration removes every trace) ----
+   Skeletons are content-free by construction: the shell never receives the paid
+   rows, so there is nothing here to un-blur or read out of the DOM. */
+.gate-pill{margin-left:2px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  color:#8b5cf6;background:color-mix(in srgb,#8b5cf6 13%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 34%,transparent)}
+@keyframes gh-pulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.gh{border-radius:6px;background:linear-gradient(90deg,var(--grid),color-mix(in srgb,var(--grid) 45%,transparent));animation:gh-pulse 2.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.gh{animation:none}}
+.setup-ghost{pointer-events:none}
+.setup-ghost .gh-tkr{width:52px;height:15px;margin-bottom:8px}
+.setup-ghost .gh-co{width:100%;height:10px;margin-bottom:10px}
+.setup-ghost .gh-row{display:flex;gap:6px;margin-bottom:10px}
+.setup-ghost .gh-chip{width:64px;height:18px;border-radius:999px}
+.setup-ghost .gh-why{width:88%;height:9px}
+.filter-bar.gated{opacity:.42;pointer-events:none;user-select:none}
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:26px 0 -2px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+.tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
+.tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tw-ghost{border:1px solid var(--grid);border-radius:14px;background:color-mix(in srgb,var(--card) 55%,transparent);padding:18px 20px}
+.tw-ghost .gh-tkr{width:64px;height:14px;margin-bottom:11px}
+.tw-ghost .gh-line{width:70%;height:10px;margin-bottom:8px}
+.tw-ghost .gh-line.short{width:38%;margin-bottom:0}
+.tw-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94%);text-align:center;
+  padding:30px 30px 26px;border-radius:20px;background:var(--surface);border:1px solid var(--surface-brd);
+  box-shadow:var(--surface-shadow);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.tw-lock{width:28px;height:28px;color:#8b5cf6;margin-bottom:12px}
+.tw-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.25;margin-bottom:9px}
+.tw-p{font-size:13px;line-height:1.6;color:var(--muted);max-width:440px;margin:0 auto 18px}
+.tw-acts{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 26px;border-radius:12px;text-decoration:none;
+  font-size:13.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--blue),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent);transition:transform .16s ease,box-shadow .2s}
+.tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
+.tw-note{font-size:11px;color:var(--faint)}
+.tw-signed{margin-top:12px;font-size:12px}
+.tw-signed a{color:var(--blue);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--blue) 40%,transparent)}
+@media(max-width:640px){
+  /* No overlap on a phone: the ghosts buy nothing at this width and the card in
+     normal flow can never collide with the sticky bar. The inert filter bar also
+     gives up its sticky slot — hydration restores it with .gated. */
+  .tw-ghosts{display:none}
+  .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
+  .filter-bar.gated{position:static}
+}
+
 /* ---- filter bar (sticky glass) ---- */
 .filter-bar{position:sticky;top:57px;z-index:20;background:var(--bg);padding:12px 0 8px;margin:0 -20px 12px;padding-left:20px;padding-right:20px;border-bottom:1px solid var(--grid)}
 .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
@@ -325,59 +373,43 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
     </div>
   </div>
 
-  {# ---- top setups strip ---- #}
-  {% if top_setups %}
-  <div class="setups-strip-label">{{ t('Top setups', '精选设置') }}</div>
-  <div class="setups-strip">
-    {% for s in top_setups %}
-    <div class="setup-chip">
-      <div class="setup-chip-tkr">{{ s.ticker }}</div>
-      <div class="setup-chip-co">{{ s.company }}</div>
-      <div class="setup-chip-row">
-        {% if s.grade %}
-        <span class="grade-badge grade-{{ s.grade }}" title="{{ s.grade }} · {{ s.grade_word }}">
-          <span class="grade-letter">{{ s.grade }}</span>
-          <span class="l-en">{{ s.grade_word }}</span>
-          <span class="l-zh">{{ s.grade_word_zh }}</span>
-        </span>
-        {% endif %}
-        {% if s.tier_word %}
-        <span class="ichip ichip-tier" data-tip="{{ s.tier }} — context only">
-          <span class="l-en">{{ s.tier_word }}</span>
-          <span class="l-zh">{{ s.tier_word_zh }}</span>
-        </span>
-        {% endif %}
-        {% if s.momentum_state == 'crossed' %}
-        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
-          <span class="l-en">Momentum turned up</span>
-          <span class="l-zh">周线动能转强</span>
-        </span>
-        {% elif s.momentum_state == 'near' %}
-        <span class="ichip ichip-m" data-tip="{{ s.momentum_tip }}">
-          <span class="l-en">Momentum turning</span>
-          <span class="l-zh">动能趋转</span>
-        </span>
-        {% endif %}
-        {% if s.oversold %}
-        <span class="ichip ichip-w" data-tip="{{ s.oversold_tip }}">
-          <span class="l-en">Deeply oversold</span>
-          <span class="l-zh">深度超卖</span>
-        </span>
-        {% endif %}
-      </div>
-      {% if s.why %}
-      <div class="setup-chip-why">
-        <span class="l-en">{{ s.why[0] if s.why }}</span>
-        <span class="l-zh">{{ s.why_zh[0] if s.why_zh else (s.why[0] if s.why) }}</span>
-      </div>
-      {% endif %}
+  {# ---- top setups strip ----
+     Gated build: the real chips ship in the paid payload, so the shell bakes a
+     content-free skeleton the hydration step replaces. #}
+  {% if top_setups or gate %}
+  <div class="setups-strip-label">{{ t('Top setups', '精选设置') }}
+    {% if gate %}<span class="gate-pill">{{ t('Insider', 'Insider') }}</span>{% endif %}
+  </div>
+  <div class="setups-strip" id="ss-setups">
+    {% if gate %}
+    {% for _ in range(4) %}
+    <div class="setup-chip setup-ghost" aria-hidden="true">
+      <div class="gh gh-tkr"></div><div class="gh gh-co"></div>
+      <div class="gh-row"><div class="gh gh-chip"></div><div class="gh gh-chip"></div></div>
+      <div class="gh gh-why"></div>
     </div>
     {% endfor %}
+    {% else %}
+    {% include "_special_situations_setups.html.j2" %}
+    {% endif %}
   </div>
   {% endif %}
 
-  {# ---- filter bar (sticky) ---- #}
-  <div class="filter-bar" id="ss-filter-bar">
+  {# ---- filter bar (sticky) ----
+     Gated build: filters would only ever search the preview slice, so the shell
+     ships them inert — fully baked, because hydration hands the SAME controls a
+     full board a moment later. The note says so instead of leaving dead buttons. #}
+  {% if gate %}
+  <div class="gate-note" id="ss-gate-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <span class="l-en">Search, filters and sorting run across all {{ total }} situations on Insider. This preview
+      is the {{ gate.preview }} most recent filings.</span>
+    <span class="l-zh">搜索、筛选与排序在 Insider 下覆盖全部 {{ total }} 起事件。此预览为最新 {{ gate.preview }} 份申报。</span>
+  </div>
+  {% endif %}
+  <div class="filter-bar{% if gate %} gated{% endif %}" id="ss-filter-bar">
     {# row 1: search + category chips ---- #}
     <div class="filter-row">
       <input type="text" id="ss-search"
@@ -500,228 +532,46 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
 
   {# ---- flat feed ---- #}
   <div id="ss-feed">
-    {% for r in rows %}
-    <div class="ss-row-card"
-         data-ticker="{{ r.ticker | lower }}"
-         data-company="{{ r.company | lower }}"
-         data-cat="{{ r.cat }}"
-         data-grade="{{ r.grade or '' }}"
-         data-mc="{{ r.mc_bucket }}"
-         data-sector="{{ r.sector }}"
-         data-themes="{{ r.themes | join(',') }}"
-         data-age="{{ r.age_days if r.age_days is not none else '' }}"
-         data-tokens="{{ r.tech_tokens | join(',') }}"
-         data-score="{{ r.score or 0 }}"
-         data-date="{{ r.date }}"
-         data-mcval="{{ r.mc }}"
-    >
-      {# main row (click to expand) #}
-      <div class="rc-main" onclick="ssToggle(this.closest('.ss-row-card'))">
-        {# left: ticker + company + mc #}
-        <div class="rc-col">
-          <a class="rc-ticker"
-             href="https://app.mastermind-x.com/terminal?sym={{ r.ticker }}&from=macro"
-             target="_blank" rel="noopener"
-             onclick="event.stopPropagation()">{{ r.ticker }}</a>
-          {% if r.cross_border %}<span class="xb-mark" title="Cross-border / ADR / foreign issuer">&#x1F310;</span>{% endif %}
-          {% if r.live %}<span class="live-mark" title="Confirmed in our EDGAR feed">&#x2713; {{ t('live','实时') }}</span>{% endif %}
-          <div class="rc-company">{{ r.company }}</div>
-          <div class="rc-mc">{{ r.mc }}</div>
-        </div>
-        {# middle: category chip + stage + summary #}
-        <div class="rc-col rc-col-mid">
-          <div>
-            <span class="rc-cat-chip" style="color:{{ r.cat_color }};border-color:color-mix(in srgb,{{ r.cat_color }} 40%,transparent);background:color-mix(in srgb,{{ r.cat_color }} 9%,transparent)">
-              <span class="l-en">{{ r.cat }}</span>
-              <span class="l-zh">{{ r.cat_zh }}</span>
-            </span>
-          </div>
-          <div class="rc-stage">
-            <span class="l-en">{{ r.stage }}</span>
-            <span class="l-zh">{{ r.stage_zh }}</span>
-          </div>
-          {% if r.summary_short %}
-          <div class="rc-summ">{{ r.summary_short }}</div>
-          {% endif %}
-        </div>
-        {# right: grade badge + context chips + date + filing link #}
-        <div class="rc-col">
-          <div class="rc-right">
-            {% if r.grade %}
-            <span class="grade-badge grade-{{ r.grade }}">
-              <span class="grade-letter">{{ r.grade }}</span>
-              <span class="l-en">{{ r.grade_word }}</span>
-              <span class="l-zh">{{ r.grade_word_zh }}</span>
-            </span>
-            {% endif %}
-            <div class="rc-chips">
-              {# tier chip (plain word, no raw T1/T2/T3 visible) #}
-              {% if r.tier_word %}
-              <span class="ichip ichip-tier"
-                    data-tip="{{ r.tier }} — context only; not an entry signal">
-                <span class="l-en">{{ r.tier_word }}</span>
-                <span class="l-zh">{{ r.tier_word_zh }}</span>
-              </span>
-              {% endif %}
-              {# oversold: ONE chip (specifics in data-tip) #}
-              {% if r.oversold %}
-              <span class="ichip ichip-w"
-                    data-tip="{{ r.oversold_tip }}">
-                <span class="l-en">Deeply oversold</span>
-                <span class="l-zh">深度超卖</span>
-              </span>
-              {% endif %}
-              {# momentum: ONE merged chip, no MACD/Stoch visible at rest #}
-              {% if r.momentum_state == 'crossed' %}
-              <span class="ichip ichip-m"
-                    data-tip="{{ r.momentum_tip }}">
-                <span class="l-en">Momentum turned up</span>
-                <span class="l-zh">周线动能转强</span>
-              </span>
-              {% elif r.momentum_state == 'near' %}
-              <span class="ichip ichip-m"
-                    data-tip="{{ r.momentum_tip }}">
-                <span class="l-en">Momentum turning</span>
-                <span class="l-zh">动能趋转</span>
-              </span>
-              {% endif %}
-              {# sector stance: ONLY Accumulate->Sector favored / Constructive->Sector supportive #}
-              {% if r.sector_stance == 'Accumulate' %}
-              <span class="ichip ichip-acc"
-                    data-tip="Sector stance: Accumulate — from rotation model, context only">
-                <span class="l-en">Sector favored</span>
-                <span class="l-zh">板块获看好</span>
-              </span>
-              {% elif r.sector_stance == 'Constructive' %}
-              <span class="ichip ichip-con"
-                    data-tip="Sector stance: Constructive — from rotation model, context only">
-                <span class="l-en">Sector supportive</span>
-                <span class="l-zh">板块偏支持</span>
-              </span>
-              {% endif %}
-              {# standout: plain 'On buy list', never raw buy_now/partial #}
-              {% if r.standout in ('buy_now', 'partial') %}
-              <span class="ichip ichip-so"
-                    data-tip="On current buy list (display context — not a recommendation)">
-                <span class="l-en">On buy list</span>
-                <span class="l-zh">已在买入名单</span>
-              </span>
-              {% endif %}
-            </div>
-            <div class="rc-date">{{ r.date }}</div>
-            {% if r.url %}
-            <a class="rc-src" href="{{ r.url }}" target="_blank" rel="noopener"
-               onclick="event.stopPropagation()">
-              {{ t('SEC ↗', 'SEC ↗') }}
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
+    {% include "_special_situations_rows.html.j2" %}
+  </div>
 
-      {# expandable detail panel (Tier 2/3 — jargon allowed) #}
-      <div class="rc-detail">
-        <div class="det-grid">
-          {# full summary #}
-          {% if r.summary %}
-          <div style="grid-column:1/-1">
-            <div class="det-label">{{ t('Summary', '摘要') }}</div>
-            <div class="det-val">{{ r.summary }}</div>
-          </div>
-          {% endif %}
-          {# arb line (spread numbers OK in detail) #}
-          {% if r.arb %}
-          <div style="grid-column:1/-1">
-            <div class="det-label">{{ t('Deal / arb context', '交易套利背景') }}</div>
-            <div><span class="arb-line" title="Merger-arb context only — not a sizing input">&#x2696; {{ r.arb }}</span></div>
-          </div>
-          {% endif %}
-          {# prior: plain sentence only — compact stats string (n=) in data-tip/title only #}
-          {% if r.prior_plain %}
-          <div style="grid-column:1/-1">
-            <div class="det-label">{{ t('Historical context', '历史参考') }}</div>
-            <div class="prior-sentence">
-              <span class="l-en">{{ r.prior_plain }}</span>
-              <span class="l-zh">{{ r.prior_plain_zh }}</span>
-              {% if r.prior %}
-              <span class="prior-receipt"
-                    data-tip="{{ r.prior }}"
-                    title="{{ r.prior }}"
-                    style="cursor:help;margin-left:6px;font-size:11px;color:var(--faint)">[?]</span>
-              {% endif %}
-            </div>
-          </div>
-          {% endif %}
-          <hr class="det-sep">
-          {# form + filing info #}
-          <div>
-            <div class="det-label">{{ t('Form', '申报表') }}</div>
-            <div class="det-val">{{ r.form }}
-              {% if r.low_conf %}<span class="heur-mark" title="Keyword-heuristic detection — unverified; LLM/digest lane upgrades it">~</span>{% endif %}
-              {% if r.n_amend %}<span class="amend-mark" title="Amendments tracked">{{ r.n_amend }}× /A</span>{% endif %}
-            </div>
-          </div>
-          <div>
-            <div class="det-label">{{ t('Filed', '申报日') }}</div>
-            <div class="det-val">{{ r.date }}</div>
-          </div>
-          {# tech tier (raw ID here) #}
-          {% if r.tier %}
-          <div>
-            <div class="det-label">{{ t('Entry tier', '入场层级') }}</div>
-            <div class="det-val">{{ r.tier }}
-              {% if r.tier_word %}— <span class="l-en">{{ r.tier_word }}</span><span class="l-zh">{{ r.tier_word_zh }}</span>{% endif %}
-            </div>
-          </div>
-          {% endif %}
-          {# momentum with indicator names visible here #}
-          {% if r.momentum_tip %}
-          <div>
-            <div class="det-label">{{ t('Momentum', '动能') }}</div>
-            <div class="det-val">{{ r.momentum_tip }}</div>
-          </div>
-          {% endif %}
-          {# oversold detail #}
-          {% if r.oversold %}
-          <div>
-            <div class="det-label">{{ t('Oversold', '超卖') }}</div>
-            <div class="det-val">{{ r.oversold_tip }}</div>
-          </div>
-          {% endif %}
-          {# sector/source/confidence #}
-          {% if r.sector %}
-          <div>
-            <div class="det-label">{{ t('Sector', '行业') }}</div>
-            <div class="det-val">{{ r.sector }}</div>
-          </div>
-          {% endif %}
-          {% if r.source_lane %}
-          <div>
-            <div class="det-label">{{ t('Source lane', '数据来源') }}</div>
-            <div class="det-val">{{ r.source_lane }}</div>
-          </div>
-          {% endif %}
-          {% if r.confidence %}
-          <div>
-            <div class="det-label">{{ t('Confidence', '置信度') }}</div>
-            <div class="det-val">{{ r.confidence }}</div>
-          </div>
-          {% endif %}
-          {# setup why lines #}
-          {% if r.why %}
-          <div style="grid-column:1/-1">
-            <div class="det-label">{{ t('Setup notes', '设置说明') }}</div>
-            <div class="det-val">
-              <span class="l-en">{% for w in r.why %}<div>• {{ w }}</div>{% endfor %}</span>
-              <span class="l-zh">{% for w in (r.why_zh or r.why) %}<div>• {{ w }}</div>{% endfor %}</span>
-            </div>
-          </div>
-          {% endif %}
-        </div>
+  {# ---- tier wall (gated build only) ----
+     The rows behind this panel are NOT in this document: they live in the paid
+     payload the hydration step below asks the server for. This panel is what a
+     Free account keeps when that request comes back 403. #}
+  {% if gate %}
+  <div class="tier-wall" id="ss-tier-wall">
+    <div class="tw-ghosts" aria-hidden="true">
+      {% for _ in range(3) %}
+      <div class="tw-ghost"><div class="gh gh-tkr"></div><div class="gh gh-line"></div><div class="gh gh-line short"></div></div>
+      {% endfor %}
+    </div>
+    <div class="tw-card">
+      <svg class="tw-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <div class="tw-h">
+        <span class="l-en">{{ gate.locked }} more situations are open to members</span>
+        <span class="l-zh">另有 {{ gate.locked }} 起事件向会员开放</span>
+      </div>
+      <div class="tw-p">
+        <span class="l-en">You’re reading the {{ gate.preview }} most recent filings. Insider and Pro open the
+          whole board — all {{ total }} situations across {{ n_cats }} categories, the top-setup strip,
+          and search, filters and sorting over every name.</span>
+        <span class="l-zh">你正在阅读最新 {{ gate.preview }} 份申报。Insider 与 Pro 可查看完整看板 ——
+          {{ n_cats }} 个类别共 {{ total }} 起事件、精选设置条，以及对全部标的的搜索、筛选与排序。</span>
+      </div>
+      <div class="tw-acts">
+        <a class="tw-btn" href="plans.html">{{ t('See plans', '查看方案') }}</a>
+        <span class="tw-note">{{ t('7-day trial · cancel anytime', '7 天试用 · 随时取消') }}</span>
+      </div>
+      <div class="tw-signed" id="ss-tw-signin" hidden>
+        <a href="#" data-act="signin">{{ t('Already a member? Sign in', '已是会员？登录') }}</a>
       </div>
     </div>
-    {% endfor %}
   </div>
+  {% endif %}
 
   {# show-more button (JS populates) #}
   <div class="show-more-wrap" id="ss-show-more-wrap" style="display:none">
@@ -941,12 +791,95 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
   relabelAll(); /* run at boot */
 
   /* === tooltip (data-tip) for ichips — basic title= fallback === */
-  document.querySelectorAll('[data-tip]').forEach(function(el){
-    el.title = el.dataset.tip;
-  });
+  function wireTips(root){
+    root.querySelectorAll('[data-tip]').forEach(function(el){ el.title = el.dataset.tip; });
+  }
+  wireTips(document);
 
   /* === initial render === */
   applyFilters();
+
+  /* ══════════ tier gate — attempt-hydrate ══════════
+     On the gated build this document holds only the preview slice; the rest of
+     the board lives in GATE.payload, which config/site_access.yml enforces as
+     Insider+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the
+     SERVER decides who sees the desk — nothing here is load-bearing. We simply
+     ask, and keep the wall when the answer is 403.
+     See docs/TIER_PREVIEW_PATTERN.md. */
+  var GATE = {{ (gate or None) | tojson }};
+
+  /* Session trampoline: the shared cookie carries a 1h access token, so a
+     long-idle member can be signed in with a token the server will reject.
+     getSession() refreshes and rewrites the cookie before we ask (same fix as
+     the onboarding wall, PR #3454). No-op when signed out. */
+  function freshSession(){
+    try{
+      if(window.MDXAuth && window.MDXAuth.client && window.MDXAuth.hasSession && window.MDXAuth.hasSession()){
+        return window.MDXAuth.client()
+          .then(function(sb){ return sb.auth.getSession(); })
+          .catch(function(){});
+      }
+    }catch(e){}
+    return Promise.resolve();
+  }
+
+  /* theme.js is deferred, so MDXAuth does not exist while this inline script
+     runs. Wait for its first auth broadcast, with a timeout so a missing or
+     broken auth layer still lets the request through (the server re-decides). */
+  function whenAuthSettled(){
+    return new Promise(function(resolve){
+      var done = false;
+      function go(){ if(done) return; done = true; resolve(); }
+      if(window.MDXAuth) { go(); return; }
+      window.addEventListener('mdx-auth', go);
+      setTimeout(go, 3000);
+    });
+  }
+
+  function hydrate(payload){
+    var wall = document.getElementById('ss-tier-wall');
+    if(payload.rows_html) feed.insertAdjacentHTML('beforeend', payload.rows_html);
+    var strip = document.getElementById('ss-setups');
+    if(strip && payload.setups_html){
+      strip.innerHTML = payload.setups_html;
+      var pill = document.querySelector('.setups-strip-label .gate-pill');
+      if(pill) pill.remove();
+    }
+    if(wall) wall.remove();
+    var note = document.getElementById('ss-gate-note');
+    if(note) note.remove();
+    var bar = document.getElementById('ss-filter-bar');
+    if(bar) bar.classList.remove('gated');
+    _allCards = Array.from(document.querySelectorAll('.ss-row-card'));
+    wireTips(feed);
+    if(strip) wireTips(strip);
+    relabelAll();
+    applyFilters();
+  }
+
+  if(GATE && GATE.payload){
+    whenAuthSettled()
+      .then(freshSession)
+      .then(function(){ return fetch(GATE.payload, { credentials: 'same-origin', cache: 'no-store' }); })
+      .then(function(r){ if(!r || !r.ok) throw new Error('locked'); return r.json(); })
+      .then(hydrate)
+      .catch(function(){
+        /* Locked (or offline): the wall stays exactly as rendered. Offer sign-in
+           when there is no session at all — a member on a fresh browser would
+           otherwise only see an upgrade CTA. */
+        var si = document.getElementById('ss-tw-signin');
+        var signedIn = false;
+        try{ signedIn = !!(window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user()); }catch(e){}
+        if(si && !signedIn){
+          si.hidden = false;
+          var a = si.querySelector('[data-act="signin"]');
+          if(a) a.addEventListener('click', function(ev){
+            ev.preventDefault();
+            try{ window.MDXAuth.open('signin'); }catch(e){ location.href = 'plans.html'; }
+          });
+        }
+      });
+  }
 })();
 </script>
 {% include "_vector_polish.html.j2" %}

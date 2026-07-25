@@ -27,6 +27,25 @@ PAYWALL_ENABLED=0
 This immediately closes anonymous direct-file bypasses without launching the
 paid product before its operational prerequisites are complete.
 
+### Paths already gated ahead of that switch
+
+`premium.enforced_early` in `config/site_access.yml` lists paths that require the
+`site_full` entitlement **whatever `PAYWALL_ENABLED` says**, so one paid surface
+can ship before the site-wide launch. Currently:
+
+| Prefix | Surface | Free account sees |
+|---|---|---|
+| `/premiumdata/` | tier-preview payloads (Special Situations desk) | the page's free preview shell + an upgrade wall |
+
+Anything added there must keep a free-visible preview at its page URL rather than
+a bare wall — see `docs/TIER_PREVIEW_PATTERN.md`. Probe it exactly like the paid
+switch (a signed-in free account gets 403 lock JSON; an active/trialing
+`site_full` account gets 200):
+
+```sh
+curl -i 'https://www.mastermind-x.com/premiumdata/special_situations.json?probe=UNIQUE'
+```
+
 ## Paid launch checklist
 
 Do not set `PAYWALL_ENABLED=1` until all of these are true:

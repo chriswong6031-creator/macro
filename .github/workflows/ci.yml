@@ -1046,6 +1046,27 @@ jobs:
       - name: forward-log writer contract tests (keep-FIRST, cone edges, never-raise)
         run: python -m pytest tests/test_cycle_forward_log.py -q
 
+  tier-gate:
+    # Revenue boundary. A paid desk ships as a free preview shell at the page URL
+    # plus a separate /premiumdata/ payload that app/paywall.py gates as Insider+
+    # ahead of the site-wide PAYWALL_ENABLED switch (docs/TIER_PREVIEW_PATTERN.md).
+    # Two regressions this catches: the shell quietly regaining the paid rows (the
+    # split IS the gate — a client-side hide is not), and /premiumdata/ dropping
+    # out of premium.enforced_early, which would re-open the desk to every
+    # registered account. Hermetic — no network, no engine data.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2 fastapi httpx
+      - name: tier-preview split contract (no paid row in the free shell)
+        run: python -m pytest tests/test_special_situations_gate.py -q
+      - name: paywall fail-closed contract (incl. enforced-early payload lane)
+        run: python -m pytest tests/test_paywall.py tests/test_api_paywall.py -q
+
   cycles-payload-split:
     # Perf: split_cycles_payload peels the heavy per-entity arrays (price/osc/turns/fx/
     # usd_record) off the cycle-map payload into a lazy-hydrated series chunk. A regression

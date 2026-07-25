@@ -265,6 +265,66 @@ def _oversold_tip(row: dict) -> str:
     return " · ".join(parts) if parts else "Deeply oversold reading on weekly timeframe"
 
 
+# Paid payload for the tier gate. /premiumdata/ is Insider+ at the edge —
+# config/site_access.yml `premium.enforced_early` gates the whole prefix today,
+# without waiting for the site-wide PAYWALL_ENABLED switch.
+PAYLOAD_DIR = "premiumdata"
+PAYLOAD_NAME = "special_situations.json"
+PAYLOAD_URL = f"/{PAYLOAD_DIR}/{PAYLOAD_NAME}"
+
+
+def _write_premium_payload(env, gate, locked_rows, top_setups, built, total) -> None:
+    """Render the paid remainder of the desk into site/premiumdata/.
+
+    Written on every build — including the ungated one, where it is an empty
+    payload — so flipping `gated` off never leaves a stale full board readable
+    at a path the page no longer asks for.
+    """
+    path = config.ROOT / "site" / PAYLOAD_DIR / PAYLOAD_NAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if gate is None:
+        payload = {"schema": "tier_payload.v1", "page": "special_situations",
+                   "gated": False, "built": built, "rows_html": "", "setups_html": ""}
+    else:
+        payload = {
+            "schema": "tier_payload.v1",
+            "page": "special_situations",
+            "gated": True,
+            "required_tier": gate["tier"],
+            "built": built,
+            "total": total,
+            "preview": gate["preview"],
+            "locked": gate["locked"],
+            # SAME templates the page uses — one source for the row markup, so the
+            # hydrated board and the preview slice can never drift apart.
+            "rows_html": env.get_template("_special_situations_rows.html.j2").render(rows=locked_rows),
+            "setups_html": env.get_template("_special_situations_setups.html.j2").render(top_setups=top_setups),
+        }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    log.info("special_situations: premium payload %s (%d locked rows)",
+             PAYLOAD_URL, len(locked_rows))
+
+
+def _prior_built() -> str | None:
+    """The `built` stamp of the last full build, from its landing-hub snapshot."""
+    try:
+        snap = json.loads((config.data_dir() / "regime" / "special_situations_latest.json").read_text())
+        stamp = snap.get("built")
+        return str(stamp) if stamp else None
+    except Exception:  # noqa: BLE001 — first run / unreadable: fall back to now()
+        return None
+
+
+def _gate_cfg() -> tuple[bool, int]:
+    """(gated, preview_rows) from config.yml — the desk's tier-gate switch."""
+    ss = config.load().get("special_situations", {}) or {}
+    try:
+        preview = max(0, int(ss.get("preview_rows", 3)))
+    except (TypeError, ValueError):
+        preview = 3
+    return bool(ss.get("gated", False)), preview
+
+
 def build(refresh: bool = True) -> str:
     if refresh:
         from collectors import special_situations as col
@@ -290,6 +350,15 @@ def build(refresh: bool = True) -> str:
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 
     snap = sse.desk_payload()
+
+    # A pure re-render (refresh=False, e.g. the render.yml express lane after a
+    # template fix) must not claim fresher data than it has: reuse the stamp the
+    # last real build published. That also keeps the rebake BYTE-STABLE, so a
+    # template-only render commits nothing when the desk itself did not move.
+    if not refresh:
+        prior = _prior_built()
+        if prior:
+            snap["built"] = prior
 
     # Intelligence enrichment (display-tier: tech/ident/favor/setup)
     intel_cov: dict = {}
@@ -448,8 +517,38 @@ def build(refresh: bool = True) -> str:
     grade_a    = sum(1 for r in all_rows if r.get("grade") == "A")
     new_today  = int((intel_ctx.get("counts") or {}).get("new_today", 0))
 
+    # ---- tier gate (docs/TIER_PREVIEW_PATTERN.md) ------------------------------
+    # The desk is Insider/Pro. The page keeps a free-visible preview — the newest
+    # `preview_n` filings, honest totals, the coverage note — and the paid board
+    # (every other row + the top-setup strip) is rendered into a SEPARATE payload
+    # under site/premiumdata/, which config/site_access.yml gates as Insider+.
+    # The split is the boundary: the shell literally does not contain the rows,
+    # so there is nothing for a Free viewer to un-hide in devtools.
+    gated, preview_n = _gate_cfg()
+    gate = None
+    preview_rows, locked_rows = all_rows, []
+    if gated and len(all_rows) > preview_n:
+        # Newest-first, not best-first: the free slice shows the desk working
+        # without handing over the ranked board. Prefer rows that actually read
+        # as product (a real ticker + a summary) — the raw newest filing is often
+        # a ticker-less shell whose card teaches a visitor nothing.
+        by_date = sorted(all_rows, key=lambda r: r.get("date") or "", reverse=True)
+        readable = [r for r in by_date
+                    if (r.get("ticker") or "—") not in ("", "—") and r.get("summary_short")]
+        seen = {id(r) for r in readable}
+        newest = (readable + [r for r in by_date if id(r) not in seen])[:preview_n]
+        preview_ids = {id(r) for r in newest}
+        preview_rows = newest
+        locked_rows = [r for r in all_rows if id(r) not in preview_ids]
+        gate = {
+            "tier": "insider",
+            "payload": PAYLOAD_URL,
+            "preview": len(preview_rows),
+            "locked": len(locked_rows),
+        }
+
     vm = {
-        "rows": all_rows,          # flat sorted list for the feed
+        "rows": preview_rows,      # flat sorted list for the feed (preview slice when gated)
         "groups": groups,          # kept for coverage section
         "cat_chips": cat_chips,
         "cat_chips_more": cat_chips_more,
@@ -460,10 +559,11 @@ def build(refresh: bool = True) -> str:
         "counts": snap.get("counts", {}),
         "coverage": snap.get("coverage", {}),
         "built": snap.get("built"),
-        "top_setups": top_setups,
+        "top_setups": [] if gate else top_setups,   # gated: the strip rides in the payload
         "grade_a": grade_a,
         "new_today": new_today,
         "intel_cov": intel_cov,
+        "gate": gate,
         # feed_rows_json intentionally removed — dead payload replaced by server-rendered rows
     }
 
@@ -477,6 +577,8 @@ def build(refresh: bool = True) -> str:
     html = env.get_template("special_situations.html.j2").render(**vm, C=C)
     out = config.ROOT / "site" / "special_situations.html"
     write_page(out, html)
+
+    _write_premium_payload(env, gate, locked_rows, top_setups, snap.get("built"), len(sits))
 
     # landing-hub snapshot
     cov = snap.get("coverage", {})
@@ -550,11 +652,21 @@ def _mc_bucket(mc_musd) -> str:
     return "micro"
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     # production entry (daily.yml): sweep new filings + text-classify + render.
-    # For a quick dev re-render from the existing store, call build(refresh=False).
+    # --no-refresh re-renders from the committed event store with NO network: the
+    # render.yml express lane uses it so a template/builder fix reaches the baked
+    # page in minutes instead of waiting for the nightly EDGAR sweep. It reuses
+    # the last real build's `built` stamp, so an unchanged desk rebakes byte-for-
+    # byte and the render lane commits nothing.
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Build the Special Situations desk page.")
+    ap.add_argument("--no-refresh", action="store_true",
+                    help="skip the EDGAR/newswire sweep; re-render from committed data only")
+    args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    out = build(refresh=True)
+    out = build(refresh=not args.no_refresh)
     print(f"[built] {out}")
     return 0
 
