@@ -230,22 +230,29 @@ def _load_jsonl(path) -> list:
         return []
 
 
-def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int]:
+def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int, str]:
     """The theses whose outcomes make up the track record → [(ledger_row, outcome_row|None)].
 
     Preferred source is data/<slug>/scored.jsonl joined to theses.jsonl by id (exact, and
-    carries per-thesis outcomes). That file is untracked for some desks, so we fall back to
-    the ledger's machine-checkable theses whose check_by has elapsed — the same population
-    the scorer grades. The fallback carries no per-thesis outcome, so the caller must take
-    observed counts from the aggregate track record and may only do so when the counts line
-    up exactly.
+    carries per-thesis outcomes). That file is untracked for some desks — and some desks
+    (thematic_desk) never write one at all — so we fall back to the ledger's
+    machine-checkable theses whose check_by has elapsed. The fallback carries no per-thesis
+    outcome, so the caller must take observed counts from the aggregate track record and may
+    only do so when the counts line up exactly.
+
+    Returns (pairs, source, orphans, empty_reason). `empty_reason` is populated only when
+    `pairs` is empty, and names WHY in plain words. It exists because "no null" was
+    previously disclosed as "no thesis ledger" in every empty case — a statement that is
+    simply false for a desk like thematic_desk, which has a 141-row ledger whose predicates
+    are of a kind (`theme_rel_return`) this module has no placebo sweep for. A null we cannot
+    measure has to say what actually stopped us.
     """
     ledger = {}
     for row in _load_jsonl(root / "data" / slug / "theses.jsonl"):
         if row.get("id"):
             ledger[row["id"]] = row
     if not ledger:
-        return [], "none", 0
+        return [], "none", 0, "no thesis ledger to reconstruct the graded predicates from"
 
     scored_rows = _load_jsonl(root / "data" / slug / "scored.jsonl")
     decided = [r for r in scored_rows if r.get("outcome") in ("hit", "miss")]
@@ -257,15 +264,30 @@ def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int]:
                 orphans += 1
                 continue
             pairs.append((led, r))
-        return pairs, "scored", orphans
+        if pairs:
+            return pairs, "scored", orphans, ""
+        return [], "none", orphans, (f"all {orphans} graded outcomes carry ids absent from the "
+                                     f"thesis ledger — no predicate to sweep")
 
     cutoff = str(today)
+    elapsed = [row for row in ledger.values() if str(row.get("check_by") or "") <= cutoff]
     pairs = [
-        (row, None) for row in ledger.values()
-        if str(row.get("check_by") or "") <= cutoff
-        and ((row.get("falsifier") or {}).get("check") or {}).get("kind") in _MACHINE_KINDS
+        (row, None) for row in elapsed
+        if ((row.get("falsifier") or {}).get("check") or {}).get("kind") in _MACHINE_KINDS
     ]
-    return pairs, ("ledger_elapsed" if pairs else "none"), 0
+    if pairs:
+        return pairs, "ledger_elapsed", 0, ""
+    if not elapsed:
+        return [], "none", 0, ("the thesis ledger's check_by dates have not elapsed — nothing "
+                               "graded to reconstruct")
+    kinds: dict = {}
+    for row in elapsed:
+        k = ((row.get("falsifier") or {}).get("check") or {}).get("kind") or "unset"
+        kinds[k] = kinds.get(k, 0) + 1
+    mix = ", ".join(f"{n} {k}" for k, n in sorted(kinds.items(), key=lambda kv: -kv[1]))
+    return [], "none", 0, (
+        f"no placebo sweep exists for this desk's predicate kind — its elapsed theses are "
+        f"{mix}, and only {' / '.join(_MACHINE_KINDS)} can be swept")
 
 
 # --------------------------------------------------------------------------- #
@@ -296,11 +318,11 @@ def null_baseline(root, slug: str, track: dict, today) -> dict:
             out["reason"] = "no decided outcomes yet"
             return out
 
-        pairs, source, orphans = _decided_mix(root, slug, today)
+        pairs, source, orphans, empty_reason = _decided_mix(root, slug, today)
         out["mix_source"] = source
         out["unreconstructable"] = orphans
         if not pairs:
-            out["reason"] = "no thesis ledger to reconstruct the graded predicates from"
+            out["reason"] = empty_reason or "the graded predicates could not be reconstructed"
             return out
 
         get = _series_cache(root)

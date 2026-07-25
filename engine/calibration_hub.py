@@ -60,6 +60,13 @@ _DEMOTION_FLOOR = 0.5
 _STANDOUT_FLOOR = 25
 
 # The Phase-C falsifiable-thesis desks (label, track_record.json path).
+#
+# This list is the governed set: a desk absent from it gets no null, no verdict, and no row —
+# it accrues a track record that nobody grades. It therefore mirrors engine.desk_scorer's
+# POOL_DESKS (the desks the system already treats as first-class) plus master_brain, whose
+# durability loop is graded by engine/master_brain_scorer.py. thematic_desk in particular was
+# invisible here while running 57% not-falsified against 43% directional — the
+# lenient-endpoint-vs-wrong-direction divergence this gate exists to catch.
 _DESKS = (
     ("AI Desk", "ai_desk"),
     ("Policy Intent", "policy_intent"),
@@ -67,6 +74,9 @@ _DESKS = (
     ("Divergence Radar", "radar"),
     ("Stock Desk", "stock_desk"),
     ("Demand Chain", "demand_chain"),
+    ("Thematic Desk", "thematic_desk"),
+    ("Narrative Brain", "narrative_brain"),
+    ("Master Brain", "master_brain"),
 )
 
 # SA-W5: Standout Board tracks — read-only entries surfacing board accountability
@@ -153,7 +163,7 @@ def _placebo_phrase(null: dict) -> str:
 
 
 def _desk_health(track: dict, null: dict | None = None, p_hit_adj: float | None = None,
-                 p_dir_adj: float | None = None) -> tuple[str, str]:
+                 p_dir_adj: float | None = None, family_n: int | None = None) -> tuple[str, str]:
     """Classify a desk from its track record → (health, note).
 
     States, strongest demotion first:
@@ -169,6 +179,11 @@ def _desk_health(track: dict, null: dict | None = None, p_hit_adj: float | None 
     Demotion and promotion carry deliberately asymmetric burdens: a point estimate on the
     wrong side of the null demotes, while promotion needs the margin, the adjusted p-value,
     and the independence floor together.
+
+    `family_n` is the size of the Holm family `p_hit_adj` was actually corrected against —
+    the desks eligible for the promotion test, NOT the desks tracked. Quoting len(_DESKS)
+    there claimed more multiplicity correction than was applied (6 tracked, 1 tested), which
+    overstates rigor in exactly the direction the gate is supposed to police.
     """
     null = null or {}
     overall = track.get("overall") or {}
@@ -231,8 +246,10 @@ def _desk_health(track: dict, null: dict | None = None, p_hit_adj: float | None 
                             f"{round(_PROMOTE_MARGIN * 100)}pp. {conv['note']}.{dir_tail}")
     if not alpha_ok:
         pv = "not computable" if p_hit_adj is None else f"p {p_hit_adj:.2f}"
-        return "unproven", (f"{head} — lift not significant after correcting for the "
-                            f"{len(_DESKS)} desks tested ({pv}). {conv['note']}.{dir_tail}")
+        family = ("the desks tested alongside it" if family_n is None
+                  else f"the {family_n} desk{'s' if family_n != 1 else ''} eligible for the test")
+        return "unproven", (f"{head} — lift not significant after correcting across "
+                            f"{family} ({pv}). {conv['note']}.{dir_tail}")
     if blocks < _MIN_INDEPENDENT_BLOCKS:
         return "unproven", (f"{head} — clears its null, but the graded theses overlap in time: "
                             f"{blocks} independent window{'s' if blocks != 1 else ''} of "
@@ -240,6 +257,18 @@ def _desk_health(track: dict, null: dict | None = None, p_hit_adj: float | None 
     return "calibrated", (f"{head} — clears its own null by "
                           f"{round((hr - null_hr) * 100):+d}pp over {n} scored across {blocks} "
                           f"independent windows (p {p_hit_adj:.3f}). {conv['note']}.")
+
+
+def _promotion_eligible(track: dict, null: dict) -> bool:
+    """Is this desk actually up for promotion this run — i.e. does the alpha bar get consulted?
+
+    Both conditions are pre-registered and independent of the observed p-value: the sample
+    floor and a null that covers every graded call. `_desk_health` returns 'cold' below the
+    floor and 'unproven' without a null, in both cases before reading `p_hit_adj`. This is
+    the Holm family (see `build`).
+    """
+    n = ((track or {}).get("overall") or {}).get("n") or 0
+    return n >= _MIN_SAMPLE and bool((null or {}).get("available"))
 
 
 def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, root: Path) -> dict:
@@ -360,10 +389,10 @@ def _standout_track_row(label: str, rel_path: str, region: str, root: Path) -> d
 
 
 def _desk_row(label: str, slug: str, track: dict, null: dict, p_hit_adj: float | None,
-              p_dir_adj: float | None = None) -> dict:
+              p_dir_adj: float | None = None, family_n: int | None = None) -> dict:
     overall = track.get("overall") or {}
     conv = _conviction_read(track.get("by_conviction") or {})
-    health, note = (_desk_health(track, null, p_hit_adj, p_dir_adj) if overall
+    health, note = (_desk_health(track, null, p_hit_adj, p_dir_adj, family_n) if overall
                     else ("cold", "no track record yet"))
     return {
         "name": label, "slug": slug,
@@ -417,10 +446,26 @@ def build(root=None) -> dict:
              for _, slug in _DESKS}
     # Pass 2: Holm-correct across the desks tested together (two separate families — the
     # not-falsified endpoint and the directional one), then classify.
-    p_adj = desk_placebo.holm_adjust({slug: nulls[slug].get("p_hit") for _, slug in _DESKS})
-    p_dir_adj = desk_placebo.holm_adjust({slug: nulls[slug].get("p_dir") for _, slug in _DESKS})
+    #
+    # The family is the desks ELIGIBLE for the promotion test, not every desk tracked.
+    # Holm-Bonferroni controls the chance of any false promotion across simultaneous tests;
+    # a desk that cannot be promoted this run makes no such test and cannot contribute a
+    # false one. Including it would only cost the eligible desks power — and would mean that
+    # merely adding a cold desk to _DESKS silently tightens the bar on desks whose evidence
+    # did not change. Eligibility is the pre-registered pair (`_MIN_SAMPLE` reached, null
+    # measurable), decided without reference to any p-value, so scoping the family this way
+    # does not relax FWER control.
+    elig = {slug for _, slug in _DESKS if _promotion_eligible(tracks[slug], nulls[slug])}
+    p_hit_raw = {slug: (nulls[slug].get("p_hit") if slug in elig else None)
+                 for _, slug in _DESKS}
+    p_dir_raw = {slug: (nulls[slug].get("p_dir") if slug in elig else None)
+                 for _, slug in _DESKS}
+    p_adj = desk_placebo.holm_adjust(p_hit_raw)
+    p_dir_adj = desk_placebo.holm_adjust(p_dir_raw)
+    hit_family_n = sum(1 for v in p_hit_raw.values() if v is not None)
+    dir_family_n = sum(1 for v in p_dir_raw.values() if v is not None)
     desks = [_desk_row(label, slug, tracks[slug], nulls[slug], p_adj.get(slug),
-                       p_dir_adj.get(slug))
+                       p_dir_adj.get(slug), hit_family_n)
              for label, slug in _DESKS]
 
     live = sum(1 for d in desks if d["health"] != "cold")
@@ -449,7 +494,13 @@ def build(root=None) -> dict:
             "min_sample": _MIN_SAMPLE,
             "min_independent_blocks": _MIN_INDEPENDENT_BLOCKS,
             "alpha": _PROMOTE_ALPHA,
-            "alpha_correction": f"Holm-Bonferroni across {len(_DESKS)} desks",
+            # The family is the desks ELIGIBLE for promotion this run, not the desks tracked.
+            "alpha_correction": (f"Holm-Bonferroni across the {hit_family_n} of "
+                                 f"{len(_DESKS)} desks eligible for the test"),
+            "desks_tracked": len(_DESKS),
+            "holm_family_hit": hit_family_n,
+            "holm_family_dir": dir_family_n,
+            "holm_family": "desks with a measured null over at least min_sample graded calls",
             "min_margin_over_null": _PROMOTE_MARGIN,
             "min_conviction_bucket": _MIN_CONVICTION_BUCKET,
             "null": "per-desk empirical placebo (engine.desk_placebo) — the same falsifiers "

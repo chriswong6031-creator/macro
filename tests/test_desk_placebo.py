@@ -222,6 +222,66 @@ def test_mismatched_population_refuses_to_pair_but_still_reports_the_null():
     assert res["coverage"] is not None and res["coverage"] < 1.0
 
 
+def _theme_thesis(tid, asof, check_by):
+    """thematic_desk's shape: a `theme_rel_return` predicate, which this module has no
+    placebo sweep for (its scorer prices region-aware stores and reads the exit close at or
+    AFTER check_by, so the rel_return sweep would not be measuring the graded endpoint)."""
+    return {"id": tid, "state_asof": asof, "check_by": check_by,
+            "falsifier": {"check": {"kind": "theme_rel_return", "theme_id": "ai_compute",
+                                    "subject_ticker": "UP", "vs": "FLAT", "group": "yahoo",
+                                    "op": "<", "threshold": -0.05}}}
+
+
+def test_unsweepable_predicate_kind_is_named_not_reported_as_a_missing_ledger():
+    """thematic_desk has a 141-row ledger, writes no scored.jsonl, and grades a kind with no
+    placebo sweep. The old disclosure for every empty case was 'no thesis ledger to
+    reconstruct the graded predicates from' — false here, and a null we cannot measure has to
+    say what actually stopped us."""
+    root = _new_root()
+    _write_desk(root, "thematic_desk", [
+        _theme_thesis("a", "2021-01-04", "2021-02-01"),
+        _theme_thesis("b", "2021-01-05", "2021-02-02"),
+        {"id": "c", "state_asof": "2021-01-06", "check_by": "2021-02-03",
+         "falsifier": {"check": {"kind": "soft", "reason": "no scalar etf_proxy"}}},
+    ])
+    track = {"overall": {"n": 21, "hits": 12, "hit_rate": 0.571, "dir_accuracy": 0.429}}
+    res = dp.null_baseline(root, "thematic_desk", track, "2021-04-01")
+    assert res["available"] is False                       # fails closed
+    assert res["null_hit_rate"] is None                    # nothing measured to print
+    assert "no placebo sweep exists" in res["reason"]
+    # itemised by kind, so the reader can see what would need a sweep (and what never will)
+    assert "2 theme_rel_return" in res["reason"] and "1 soft" in res["reason"]
+    assert "rel_return / level can be swept" in res["reason"]
+    assert "no thesis ledger" not in res["reason"]
+
+
+def test_ledger_elapsed_population_larger_than_the_track_record_fails_closed():
+    """thematic_desk's live divergence: 30 elapsed theses against 21 decided outcomes, because
+    its scorer expires the ones it cannot price. Even with a sweep for its kind, the extra
+    rows must never be paired to the track record's hits."""
+    root = _new_root()
+    _write_prices(root, "UP", [100 * (1.001 ** i) for i in range(500)])
+    _write_prices(root, "FLAT", [100.0] * 500)
+    _write_desk(root, "stock_desk", [_thesis("a", "2021-01-04", "2021-02-01"),
+                                     _thesis("b", "2021-02-08", "2021-03-08"),
+                                     _thesis("c", "2021-03-09", "2021-03-29")])
+    track = {"overall": {"n": 2, "hits": 2, "hit_rate": 1.0, "dir_accuracy": 1.0}}
+    res = dp.null_baseline(root, "stock_desk", track, "2021-04-01")
+    assert res["mix_source"] == "ledger_elapsed" and res["n"] == 3
+    assert res["available"] is False and "cannot pair" in res["reason"]
+    assert res["p_hit"] is None                            # no test on a mismatched pairing
+    assert res["null_hit_rate"] is not None                # but the measured null still prints
+
+
+def test_scored_rows_orphaned_from_the_ledger_say_so():
+    root = _new_root()
+    _write_desk(root, "ai_desk", [_thesis("a", "2021-01-04", "2021-02-01")],
+                scored=[{"id": "gone", "outcome": "hit", "directionally_correct": True}])
+    res = dp.null_baseline(root, "ai_desk", {"overall": {"n": 1, "hits": 1}}, "2021-04-01")
+    assert res["available"] is False
+    assert "absent from the thesis ledger" in res["reason"]
+
+
 def test_null_baseline_degrades_without_raising():
     root = _new_root()
     assert dp.null_baseline(root, "ai_desk", {}, "2021-01-01")["available"] is False

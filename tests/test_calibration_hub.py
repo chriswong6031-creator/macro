@@ -218,6 +218,154 @@ def test_loops_live_vs_cold_count():
     assert s["loops"]["cold"] == len(s["desks"]) - 1   # radar + the 4 absent desks
 
 
+# --------------------------------------------------------------------------- #
+# desk family — a desk absent from _DESKS is ungoverned: no null, no verdict, no row
+# --------------------------------------------------------------------------- #
+def test_every_pooled_desk_is_governed_by_the_gate():
+    """The regression this guards: thematic_desk and narrative_brain were first-class in
+    engine.desk_scorer.POOL_DESKS — pooled into desk weights — while being invisible on the
+    Calibration Hub, so the promotion gate computed no null and emitted no verdict for them.
+    A desk the system trusts enough to pool is a desk the gate must judge."""
+    from engine.desk_scorer import POOL_DESKS
+
+    governed = {slug for _, slug in ch._DESKS}
+    assert set(POOL_DESKS) - governed == set()
+    assert "master_brain" in governed          # graded by engine/master_brain_scorer.py
+    assert len({slug for _, slug in ch._DESKS}) == len(ch._DESKS)     # no duplicate slugs
+    assert all(label and label[0].isupper() for label, _ in ch._DESKS)
+
+
+def test_thematic_desks_directional_divergence_is_caught():
+    """thematic_desk's live shape, and the reason it had to be governed: 57% not-falsified
+    (a lenient endpoint) alongside 43% directional accuracy. The lean points the wrong way,
+    and no placebo is available to soften it — one-half is the fallback bar for direction
+    precisely because dir_accuracy IS directional."""
+    root = _new_root()
+    _write_track(root, "thematic_desk", {
+        "scored_total": 21, "open": 98,
+        "overall": _bucket(21, 12, dir_acc=0.429),
+        "by_conviction": {"high": _bucket(0, 0), "medium": _bucket(0, 0),
+                          "low": _bucket(21, 12, dir_acc=0.429)}})
+    s = ch.build(root)
+    td = next(d for d in s["desks"] if d["slug"] == "thematic_desk")
+    assert td["name"] == "Thematic Desk"
+    assert td["health"] == "inverted"
+    assert "WRONG WAY" in td["health_note"]
+    # the lenient endpoint must not be allowed to rescue it
+    assert "57%" in td["health_note"] and "43%" in td["health_note"]
+    assert td["health"] != "calibrated"
+
+
+def test_cold_desk_is_visible_rather_than_absent():
+    """master_brain is n=2 — far too cold to mean anything, which is exactly why it belongs
+    on the surface saying so, rather than being silently omitted."""
+    root = _new_root()
+    _write_track(root, "master_brain", {"scored_total": 2, "open": 7,
+                                        "overall": _bucket(2, 2, dir_acc=1.0)})
+    s = ch.build(root)
+    mb = next(d for d in s["desks"] if d["slug"] == "master_brain")
+    assert mb["name"] == "Master Brain" and mb["health"] == "cold"
+    assert "only 2 scored" in mb["health_note"]
+    # a desk that produces nothing at all still gets an honest row
+    nb = next(d for d in s["desks"] if d["slug"] == "narrative_brain")
+    assert nb["health"] == "cold" and nb["scored"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# Holm family — the correction reported must be the correction applied
+# --------------------------------------------------------------------------- #
+def test_promotion_eligibility_is_the_holm_family():
+    assert ch._promotion_eligible({"overall": _bucket(20, 15)}, _null()) is True
+    # below the sample floor the alpha bar is never consulted → not a test
+    assert ch._promotion_eligible({"overall": _bucket(2, 2)}, _null()) is False
+    # no null covering every graded call → 'unproven' before alpha → not a test
+    assert ch._promotion_eligible({"overall": _bucket(20, 15)},
+                                  _null(available=False, reason="partial")) is False
+    assert ch._promotion_eligible({}, _null()) is False
+
+
+def test_a_cold_desk_does_not_inflate_the_correction_on_a_tested_one():
+    """Holm controls the chance of a false PROMOTION. A cold desk cannot be promoted, so it
+    makes no test and must not cost an eligible desk power — otherwise merely adding a desk
+    to _DESKS tightens the bar on desks whose evidence did not change.
+
+    Built end-to-end so master_brain really does carry a p-value: prices, a ledger, and a
+    scored file, differing from ai_desk only in sample size."""
+    import pandas as pd
+
+    root = _new_root()
+    d = root / "data" / "yahoo"
+    d.mkdir(parents=True, exist_ok=True)
+    idx = pd.bdate_range("2020-01-01", periods=500)
+    pd.DataFrame({"close": [100 * (1.001 ** i) for i in range(500)]},
+                 index=idx).to_parquet(d / "UP.parquet")
+    pd.DataFrame({"close": [100.0] * 500}, index=idx).to_parquet(d / "FLAT.parquet")
+
+    def _desk(slug, n):
+        p = root / "data" / slug
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "theses.jsonl").write_text("".join(json.dumps(
+            {"id": f"{slug}{i}", "state_asof": "2021-01-04", "check_by": "2021-02-01",
+             "falsifier": {"check": {"kind": "rel_return", "subject_ticker": "UP",
+                                     "vs": "FLAT", "op": "<", "threshold": -0.05}}}) + "\n"
+            for i in range(n)))
+        (p / "scored.jsonl").write_text("".join(json.dumps(
+            {"id": f"{slug}{i}", "outcome": "hit", "directionally_correct": True}) + "\n"
+            for i in range(n)))
+        _write_track(root, slug, {"scored_total": n, "open": 0,
+                                  "overall": _bucket(n, n, dir_acc=1.0)})
+
+    _desk("ai_desk", 20)                 # eligible: clears _MIN_SAMPLE
+    _desk("master_brain", 2)             # cold: below it
+    s = ch.build(root)
+    ai = next(x for x in s["desks"] if x["slug"] == "ai_desk")
+    mb = next(x for x in s["desks"] if x["slug"] == "master_brain")
+
+    assert mb["health"] == "cold" and mb["p_hit"] is not None   # a real p-value exists...
+    assert mb["p_hit_holm"] is None                             # ...but it is not in the family
+    assert s["promotion_gate"]["holm_family_hit"] == 1
+    # the tested desk is corrected as a family of one — unchanged by the cold desk's presence
+    assert ai["p_hit_holm"] == ai["p_hit"]
+
+
+def test_gate_reports_the_correction_actually_applied_not_the_desk_count():
+    """The note said 'correcting for the 6 desks tested' while Holm's family was 1 — claiming
+    more multiplicity correction than was applied overstates rigor, which is the one direction
+    this gate exists to police."""
+    root = _new_root()
+    s = ch.build(root)                                    # nothing present → no desk eligible
+    gate = s["promotion_gate"]
+    assert gate["desks_tracked"] == len(ch._DESKS)
+    assert gate["holm_family_hit"] == 0 and gate["holm_family_dir"] == 0
+    assert str(len(ch._DESKS)) in gate["alpha_correction"] and "eligible" in gate["alpha_correction"]
+
+    # and the per-desk note quotes the family size, not len(_DESKS)
+    track = {"scored_total": 20, "open": 0, "overall": _bucket(20, 17, dir_acc=0.7),
+             "by_conviction": {"high": _bucket(10, 9), "low": _bucket(10, 8)}}
+    _, note = ch._desk_health(track, _null(p_hit=0.3), p_hit_adj=0.30, family_n=3)
+    assert "3 desks eligible for the test" in note
+    assert f"{len(ch._DESKS)} desks tested" not in note
+
+
+def test_holm_stays_monotone_across_the_larger_family():
+    """Sanity on the corrected p-values themselves once every tracked desk is in play: the
+    untested desks drop out, and the tested ones step down monotonically under the cap."""
+    from engine import desk_placebo as dp
+
+    pvals = {slug: None for _, slug in ch._DESKS}
+    pvals.update({"ai_desk": 0.001, "stock_desk": 0.01, "thematic_desk": 0.02,
+                  "master_brain": 0.04, "altdata": 0.5, "radar": 0.9})
+    adj = dp.holm_adjust(pvals)
+    assert adj.keys() == pvals.keys()                            # every desk still keyed
+    tested = [adj[s] for s, p in sorted(pvals.items(), key=lambda kv: (kv[1] is None, kv[1]))
+              if p is not None]
+    assert tested == sorted(tested)                              # monotone step-down
+    assert all(0.0 <= v <= 1.0 for v in tested)                  # capped
+    assert adj["ai_desk"] == 0.006                               # 6 in the family x 0.001
+    assert adj["radar"] == 1.0                                   # capped, not 0.9 x 1
+    assert adj["policy_intent"] is None                          # never tested → no adjusted p
+
+
 def test_trial_ledger_rollup():
     root = _new_root()
     led = TrialLedger(root / "data" / "trial_ledger.jsonl", family="vector")
