@@ -15,6 +15,10 @@ so identical blocks still share one file via the content hash. Tiny blocks stay
 inline (a round-trip isn't worth a few hundred bytes). Orphaned hash files (from
 a CSS change) are pruned each run — scoped strictly to site/assets/css/*.css.
 
+The two plain-copy PAIRS (index.html, chat.html) are deliberately EXCLUDED — see
+_paired_page_names. Their CSS is worth externalizing on the numbers, but not by
+this sweep: it would move the source of truth out of templates/.
+
 Runs after all builders + inject_data_base, before optimize_assets. Idempotent +
 never raises. Core rewrite: lib.pages.externalize_css_text.
 
@@ -40,6 +44,47 @@ _CSS_SUBDIR = ("assets", "css")
 _REF_RE = re.compile(r"assets/css/([0-9a-f]{6,64})\.css")  # hash refs in final pages
 
 
+def _paired_page_names(site_dir: Path) -> Set[str]:
+    """Basenames of the plain-copy HTML PAIRS this sweep must not touch.
+
+    A pair is templates/<name>.html shipping byte-identically as site/<name>.html
+    (today: index.html + chat.html). The render lanes run
+    `check_template_site_sync --fix` AFTER this sweep and BEFORE `git add site/`,
+    and that fix re-copies the site page FROM templates/ — so anything written
+    only site-side is reverted before it reaches main, every render, forever.
+    #3625 (the data-base shim) fixed its own sweep by ALSO writing templates/.
+    That resolution is wrong here, and the difference is where the bytes land.
+
+    The shim is a one-line tag: writing it into templates/index.html leaves the
+    template complete. Externalizing does not move a tag, it moves the CONTENT —
+    70KB of the landing page's styling, into site/assets/css/<content-hash>.css.
+    Writing that through to templates/index.html would leave the hand-edited
+    source holding nothing but a <link> to a hash-named file in the DERIVED tree,
+    inverting the repo's core invariant ("site copies are derived — edit
+    templates/<name>"). Worse, _prune_orphans below is entitled to delete that
+    file the moment no page links it, and its content-derived name goes stale on
+    the first human edit. So these two pages keep their inline <style>.
+
+    The win is real and measured (see the PR): externalizing index.html cuts
+    16.5KB per repeat visit (-26%) and ~94ms off first paint on a 3G profile,
+    and never costs first paint at any speed. Capturing it needs a HUMAN-authored
+    paired stylesheet (the existing templates/onboard.css pattern) so the source
+    of truth stays in templates/ — not a content-hashed file this sweep emits.
+
+    Pair definition is imported from the guard that enforces it, so the two can't
+    drift; falls back to a local glob when the guard isn't importable.
+    """
+    root = site_dir.parent
+    try:
+        from scripts.check_template_site_sync import find_pairs
+        names = {name for name, _tpl, _site in find_pairs(root)}
+    except Exception:  # noqa: BLE001 — mirror the guard's rule: direct children, no .j2
+        tdir = root / "templates"
+        names = {p.name for p in tdir.glob("*.html")
+                 if p.is_file() and (site_dir / p.name).is_file()} if tdir.is_dir() else set()
+    return {n for n in names if n.lower().endswith(".html")}
+
+
 def externalize(site_dir: Path) -> int:
     """Externalize inline CSS across every page under site_dir; prune orphaned
     hash files. Returns the number of pages modified. Never raises."""
@@ -49,8 +94,13 @@ def externalize(site_dir: Path) -> int:
     css_root = site_dir.joinpath(*_CSS_SUBDIR)
     referenced: Set[str] = set()  # hashes still linked by some page
     pages_changed = 0
+    # Pairs always ship at the site ROOT, so match on the full path — a sub-dir
+    # page that happens to be named index.html is a normal page and IS swept.
+    skip = {site_dir / name for name in _paired_page_names(site_dir)}
 
     for html in sorted(site_dir.rglob("*.html")):
+        if html in skip:
+            continue
         try:
             text = html.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
@@ -87,7 +137,8 @@ def externalize(site_dir: Path) -> int:
                 log.warning("write page %s failed: %s", html.name, e)
 
     pruned = _prune_orphans(css_root, referenced)
-    log.info("externalized CSS on %d page(s); pruned %d orphan file(s)", pages_changed, pruned)
+    log.info("externalized CSS on %d page(s); skipped %d plain-copy pair(s); "
+             "pruned %d orphan file(s)", pages_changed, len(skip), pruned)
     return pages_changed
 
 
