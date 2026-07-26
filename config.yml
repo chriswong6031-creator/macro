@@ -110,9 +110,12 @@ fred:
   # exactly that way (891/876 rows present at #809, zero by 2026-07-16), which left the
   # claims cards with no point forecast and NFP with a permanently absent
   # claims_survey_week_ccsa leg; both are restored below.
-  # STILL MISSING vs DEFAULT_VINTAGE_SERIES: PPIFES, ECIALLCIV, ECIWAG (lost the same
-  # way — PPIFES holds the CPI bridge's core_goods_pipeline block off the PIT path).
-  # Restoring them changes shipped inflation-lane numbers, so it is that lane's call.
+  # PPIFES/ECIALLCIV/ECIWAG were lost the same way and are restored below too (#3735) — the
+  # override is once again a full superset of DEFAULT_VINTAGE_SERIES. That invariant is
+  # no longer prose: tests/test_mri_config_spine.py asserts it, and config.yml is now in
+  # ci.yml's on.pull_request.paths so that guard actually runs when THIS file changes.
+  # It could not before — config.yml matched no path pattern in ci.yml, so a PR editing
+  # only this file got no ci run and no guard anywhere could have caught either round.
   vintage_series: [PAYEMS, INDPRO, M2SL, WEI, GDPNOW, RECPROUSM156N, THREEFYTP10,
     SAHMREALTIME, STICKCPIM157SFRBATL, CORESTICKM157SFRBATL, FLEXCPIM157SFRBATL,
     MEDCPIM158SFRBCLE, STLFSI4, UMCSENT, MICH,
@@ -121,6 +124,17 @@ fred:
     # scripts/audit_alfred_depth.py; a keyed collect run backfills them so the base-effect
     # inflation legs upgrade from latest-revision (revised=True) to point-in-time.
     CPIAUCSL, CPILFESL, PCEPILFE, PCEPI, PPIFIS,
+    # Restored (see the superset note above) — DEFAULT_VINTAGE_SERIES members that this
+    # override had silently dropped, so the wholesale rewrite deleted them from the store.
+    # PPIFES: second leg of the CPI bridge's core_goods_pipeline block, which is specified
+    #   as an equal-weight PPIFIS+PPIFES average but had been running on PPIFIS alone; also
+    #   engine/release_forecast_v3.py's ppi_fes_mom_lag1, which falls back to the
+    #   latest-revised parquet (revision_optimistic) when the vintage rows are absent, and
+    #   engine/release_targets_v11.py's ppifes_mom_lag1, which goes absent outright.
+    # ECIALLCIV/ECIWAG: engine/pit.py's eci_comp/eci_wages. Without vintages these serve
+    #   off the modelled-lag calendar over latest-revised values — the largest look-ahead
+    #   in the inflation axis (~121/120 calendar days, research/PIT_LEAKAGE_TAX.md).
+    PPIFES, ECIALLCIV, ECIWAG,
     # W3a: bottleneck/power series for the PIT foresight cascade backtest (§3.3).
     # ALFRED vintage coverage for NAICS-detail CAPUTLG/PPI series is plausible but
     # unverified — some detail series have short or no vintage history. On a keyed
