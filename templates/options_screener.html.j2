@@ -174,6 +174,9 @@
 {% set nav_search_placeholder_zh = '搜索任意股票 - 美股、A股、港股、加股等...' %}
 {% include "_site_nav.html.j2" ignore missing %}
 
+{# OEU M-CMD — this table is now Scanner mode of the Options workspace. #}
+{% set oew_mode = 'scanner' %}{% include "_options_workspace_banner.html.j2" %}
+
 <div class="toprow">
   <h1>{{ t('Options Screener', '期权筛选台') }}</h1>
   {{ chip('EOD · display-only', 'EOD · 仅供展示') }}

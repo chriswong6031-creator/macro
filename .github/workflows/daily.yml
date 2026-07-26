@@ -1291,6 +1291,17 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python -m scripts.check_builder_failstreaks --art-dir "$RUNNER_TEMP/band" --lane nightly || echo "::warning::builder fail-streak check failed (non-fatal)"
+      - name: OEU M-CMD — the Options workspace (build_options_command)
+        # OEU M-CMD: options.html, the canonical options surface (4 modes). It is a
+        # pure re-serialisation of stores four OTHER builders write, and those deps
+        # straddle both phases — build_market_structure and build_flow_leaders are
+        # serial-spine steps above, while build_flow_desk and build_options_screener
+        # live inside cl_gex in the parallel band. Cross-phase deps ⇒ this MUST be a
+        # serial step AFTER the band `wait` barrier (same reasoning as
+        # build_sector_central below). O(seconds): JSON reads only, no engine work.
+        # Additive — the builder catches its own render failures and exits 0, so the
+        # last committed options.html stands and the deploy is never broken.
+        run: python -m scripts.build_options_command || echo "::warning::build_options_command non-fatal failure"
       - name: XSR W1 — US fast-sector rotation lens (build_us_sector_rotation)
         # XSR W1 (XSR-R2): display-tier fast rotation score for the 11 SPDR sector ETFs and
         # named US thematic baskets. Ported from China #2634. Reads sector_cycles

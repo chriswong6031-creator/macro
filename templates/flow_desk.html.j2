@@ -308,6 +308,9 @@
   </div>
 </nav>
 
+{# OEU M-CMD — this desk's close read is now the Daily Brief of the Options workspace. #}
+{% set oew_mode = 'brief' %}{% include "_options_workspace_banner.html.j2" %}
+
 {% set fd = flow_desk %}
 {% set read = fd.read if fd else None %}
 {% set tide = fd.market_tide if fd else {} %}
