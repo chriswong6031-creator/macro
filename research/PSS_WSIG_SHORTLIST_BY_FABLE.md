@@ -35,6 +35,8 @@ rising into every 2022 leg). Lens: flows. Panel id C6.
 
 **2022-class containment.** This is the explicit anti-2022 candidate: in the 2022 catastrophes down-volume was ELEVATING into each new low (fresh forced supply per leg), so a contracting envelope is absent and the detector is SILENT there by design. The contraction requirement IS the discriminator against early fires in sustained downtrends — the failure class cannot trigger it.
 
+> **VERDICT (executed 2026-07-25, `reports/pss_f1_downvol.md`, family `pss_f1_downvol`): KILLED as a standalone timer — falsifier not cleared.** Coverage 943/1300 eligible. F1's near-low rate is real (U_W5 vs all-days +23..+35pp, both eras) but GENERIC to new-low conditioning: the treatment-disjoint complement of ordinary new-low bars gets the SAME +23..+34pp, and F1−complement straddles 0 on both U_MAE and U_W5 in both eras (gated and ungated). The contracting envelope carries no incremental MAE/proximity information. The 2022-containment prediction also did not hold per-name (JPM 7 / META 9 H1-2022 fires vs 2–3 near the Oct low). Down-volume persistence half-life is RETAINED as a codex measurement axis and a candidate W-CONF confluence input; the volume-exhaustion search space is not closed. DNR §2 row added (scoped to the standalone construction). Errata E1 (per-name-first estimator conformance — the initial −7pp U_W5 was a pooled-median-of-a-binary artifact) and E2 (RNL null decontamination) applied post-review; deterministic rerun reproduces byte-identical.
+
 
 ### F2 — Overnight-vs-intraday return decomposition flip (who is selling)
 Rank 2: a genuinely new decomposition axis nothing in the estate reads
