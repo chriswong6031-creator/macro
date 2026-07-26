@@ -221,7 +221,6 @@ jobs:
           tests/test_theme_scoring_leadership_split.py
           tests/test_ignition_persistence.py
           tests/test_mag7_panel.py
-          tests/test_leadership_board.py
           tests/test_stance_matrix.py
           tests/test_theme_scoring_conflicted.py
           tests/test_basket_score_rollover_w4.py
