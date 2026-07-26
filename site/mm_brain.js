@@ -35,6 +35,15 @@
   /* Optional qualifier on an event (a server-sanitized symbol) — trimmed and capped. */
   function evDetail(j) { return j.detail ? String(j.detail).trim().slice(0, 24) : ''; }
 
+  /* ── send shortcut ───────────────────────────────────────────────────────────
+     Enter writes a new line (the composer is a multi-line box first, operator order);
+     sending is ⌘/Ctrl+Enter, Shift+Enter, or the button. Spell the modifier the way the
+     user's own keyboard spells it — ⌘ on Apple hardware, Ctrl everywhere else. */
+  var SEND_KEYS = (function () {
+    try { return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '') ? '⌘↵' : 'Ctrl+↵'; }
+    catch (e) { return 'Ctrl+↵'; }
+  })();
+
 
   /* ── CSS ─────────────────────────────────────────────────────────────── */
   var CSS = `
@@ -339,6 +348,10 @@
   .mmb-ta::placeholder{color:color-mix(in srgb,var(--mmb-muted) 92%,transparent)}
   .mmb-tools{display:flex;align-items:center;gap:8px;padding:6px 10px 10px}
   .mmb-tools .sp{flex:1}
+  /* send-shortcut hint: earns its space only once there is something to send, which is
+     also the moment the user is about to press Enter and expect it to go. */
+  .mmb-hint{display:none;font:11px/1 var(--mmb-font);color:var(--mmb-muted);white-space:nowrap;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .mmb-box.mmb-typing .mmb-hint{display:inline}
   .mmb-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
   .mmb-seg button{border:none;background:transparent;color:var(--mmb-muted);font:600 11.5px/1 var(--mmb-font);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
   .mmb-seg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
@@ -393,6 +406,8 @@
     #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{display:none}
     /* iOS: composer font MUST be ≥16px or Safari zooms the viewport on focus */
     .mmb-ta{font-size:16px}
+    /* no hardware modifier on a phone — the hint would be a lie AND a squeeze */
+    .mmb-box.mmb-typing .mmb-hint{display:none}
     .mmb-comp{padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
   /* follow-up suggestion chips (rendered under the latest reply) */
   .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
@@ -460,6 +475,8 @@
             '<input type="file" id="mmb-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>' +
             '<div class="mmb-tools">' +
               '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + LB('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
+              /* aria-hidden: the send button's own label already says it — one announcement, not two */
+              '<span class="mmb-hint" id="mmb-hint" aria-hidden="true">' + LB(SEND_KEYS + ' to send', SEND_KEYS + ' 发送') + '</span>' +
               '<div class="sp"></div>' +
               '<span class="mmb-q" id="mmb-q"></span>' +
               '<button class="mmb-tbtn" data-act="attach" title="Attach image">' + ic('<path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3l8-8"/>') + '</button>' +
@@ -477,7 +494,7 @@
       ta = $('#mmb-ta'), sendBtn = $('#mmb-send'), qEl = $('#mmb-q'), ctxEl = $('#mmb-ctx'),
       upgradeEl = $('#mmb-upgrade'), tlist = $('#mmb-tlist'), launch = $('#mmb-launch'),
       researchBtn = $('.mmb-rpill'), thumbsEl = $('#mmb-thumbs'), fileEl = $('#mmb-file'),
-      searchWrap = $('#mmb-search'), searchIn = $('#mmb-search-in');
+      searchWrap = $('#mmb-search'), searchIn = $('#mmb-search-in'), boxEl = $('.mmb-box');
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
@@ -1037,6 +1054,7 @@
     if ($('#mmb-emptystate')) renderEmpty();
     paintThreads();   /* self-routes to the guest sign-in prompt when in guest mode */
     renderQuota();     /* refresh the meter's title in the new language sense */
+    setBusy(streaming);   /* send↔stop label carries the shortcut — re-say it in the new language */
   }
 
   /* ── send (SSE) ──────────────────────────────────────────────────────────────
@@ -1044,6 +1062,7 @@
      hands off to runStream(). runStream() is payload-only so Regenerate and Retry can
      replay the exact same turn (text + images + lane + thread) with no backend change. */
   var lastTurn = null;   // { text, imgs, lane, mode } — last user turn, for regenerate
+  var priorTurn = null;  // the one before it — a retract rolls `lastTurn` back to this
   function send(text) {
     text = (text || ta.value).trim();
     var imgs = pendingImages.slice();
@@ -1058,6 +1077,7 @@
     /* an "explain this panel" request carries the panel key once, then clears */
     if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
     var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
+    priorTurn = lastTurn;   /* retracting this turn must not leave Regenerate replaying it */
     lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
     pendingImages = []; renderThumbs();
     ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
@@ -1223,8 +1243,11 @@
   }
 
   function newTurn(payload, typing) {
-    return { payload: payload, typing: typing, bub: null, stream: null, tl: null,
-             suggestions: null, sawDelta: false, doneSeen: false, stopped: false,
+    /* `ub` is the user row THIS turn drew (null for a replay — regenerate/retry/resume
+       paint no question of their own), so a retract can take back exactly what it put on
+       screen and never a row that belongs to an earlier exchange. */
+    return { payload: payload, typing: typing, bub: null, ub: null, stream: null, tl: null,
+             suggestions: null, sawDelta: false, doneSeen: false, stopped: false, retracted: false,
              runId: null, threadId: null, cursor: 0, tries: 0, parks: 0 };
   }
   function ensureBub(T) {
@@ -1236,6 +1259,10 @@
     return T.bub;
   }
   function endTurn(T) {
+    /* A retract hands the prompt straight back to a focused composer, so "Stop, edit,
+       send again" happens in a keystroke — and the aborted fetch's rejection lands AFTER
+       that. Never let a straggler from a finished turn free the composer of the live one. */
+    if (T && activeStream && activeStream !== T) return;
     streaming = false; streamAbort = null;
     if (activeStream === T) activeStream = null;
     setBusy(false); syncSend();
@@ -1401,8 +1428,9 @@
   function runStream(payload, showUser) {
     /* only the latest reply carries follow-up chips — clear any stale rows */
     root.querySelectorAll('.mmb-sugg').forEach(function (n) { n.remove(); });
+    var ub = null;
     if (showUser) {
-      var ub = appendMsg('user', payload.text);
+      ub = appendMsg('user', payload.text);
       if (payload.imgs && payload.imgs.length) {
         var iw = el('div', 'mmb-imgs');
         payload.imgs.forEach(function (s) { var im = el('img'); im.src = s; im.alt = ''; im.addEventListener('load', stickAfter); iw.appendChild(im); });
@@ -1415,6 +1443,7 @@
     typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span></div>';
     scroll.appendChild(typing); stick();
     var T = newTurn(payload, typing);
+    T.ub = ub;   /* what a retract may take back (see retractTurn) */
     /* the bouncing dots are replaced by the reasoning strip: it lives in the placeholder
        bubble until the real one exists, then moves across in ensureBub(). */
     T.tl = thinkInit(typing.querySelector('.mmb-bub'));
@@ -1439,8 +1468,17 @@
   }
   var activeStream = null;
   var recapSeq = 0;   /* unique ids so each receipt chip can aria-controls its own list */
-  /* Stop: abort the reader, keep partial text, append a muted "· stopped" tag, finalize.
-     Also cancels the run server-side so nothing re-attaches to a turn the user abandoned. */
+  /* ── Stop = RETRACT (operator order) ─────────────────────────────────────────
+     Before any of the answer has landed, Stop does not mean "halt and keep the scraps" —
+     it UN-SENDS the turn. The run is cancelled server-side, everything this turn drew comes
+     off the transcript (the placeholder/streaming bubble AND the user's own row), and the
+     prompt goes back into the composer exactly as it was typed — text, images, caret at the
+     end — because a user who stops this early is stopping to edit, not to read a fragment.
+     The thread is left as if the turn had never been sent.
+
+     Once text HAS arrived the answer belongs to the user: stopping then keeps what landed
+     and tags it "· stopped" (the behaviour before this change), because silently deleting
+     a reply someone is mid-way through reading would be the worse surprise. */
   function stopStream() {
     if (!streaming) return;
     var a = activeStream;
@@ -1453,13 +1491,57 @@
     }
     clearRun();
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
-    if (a && a.stream && a.bub) {
+    /* "landed" = at least one delta made it into a real bubble; a bubble that holds only
+       the reasoning strip is not an answer and is retracted with the rest. */
+    var landed = !!(a && a.bub && a.stream && (a.sawDelta || a.bub._raw));
+    if (landed) {
       a.stream.stop();
       var txt = a.bub.querySelector('.mmb-txt') || a.bub;
       var s = el('span', 'mmb-stopped'); s.textContent = L(' · stopped', ' · 已停止'); txt.appendChild(s);
       bumpTime(a.bub); markLastAssistant();
-    } else if (a && a.typing && a.typing.parentNode) { a.typing.remove(); }
+    } else if (a) {
+      retractTurn(a);
+    }
     streaming = false; streamAbort = null; activeStream = null; setBusy(false); syncSend(); stickAfter();
+  }
+  /* Take one turn back off the screen. Idempotent (a second Stop, or a straggling abort
+     handler, finds `retracted` already set and does nothing), and it only ever removes
+     nodes THIS turn created: a replayed turn (regenerate / retry / resumed run) owns no
+     user row, so its question stays exactly where it was. */
+  function retractTurn(T) {
+    if (!T || T.retracted) return;
+    T.retracted = true;
+    if (T.stream) { try { T.stream.cancel(); } catch (e) {} }   /* drop the caret + any pending rAF */
+    thinkTeardown(T.tl);                                        /* belt and braces: never leak the 1s clock */
+    dropRow(T.typing);
+    dropRow(T.bub);
+    if (T.ub) {
+      dropRow(T.ub);
+      restoreComposer(T.payload);
+      lastTurn = priorTurn; priorTurn = null;   /* Regenerate points at the previous turn again */
+    }
+    markLastAssistant();
+    /* first turn of a fresh chat retracted → give the hero back rather than a blank panel */
+    if (!scroll.querySelector('.mmb-msg')) renderEmpty();
+  }
+  /* Remove a message row from the transcript. Takes either the row itself or the bubble
+     inside it, and is a no-op on anything already detached. */
+  function dropRow(node) {
+    if (!node) return;
+    var row = (node.closest && node.closest('.mmb-msg')) || node;
+    if (row && row.parentNode) row.parentNode.removeChild(row);
+  }
+  /* Put a retracted prompt back where it came from, ready to edit. A draft the user has
+     ALREADY started typing while the turn was in flight is newer than the retracted one
+     and wins — restoring over it would delete work they can see. */
+  function restoreComposer(payload) {
+    if (!payload) return;
+    if (!ta.value.trim()) ta.value = payload.text || '';
+    if (!pendingImages.length && payload.imgs && payload.imgs.length) {
+      pendingImages = payload.imgs.slice(0, MAX_IMAGES); renderThumbs();
+    }
+    autosize(); syncSend(); updateCounter(); saveDraft();
+    try { ta.focus(); var n = ta.value.length; ta.setSelectionRange(n, n); } catch (e) {}
   }
 
   /* ── pick a turn back up after the page went away ────────────────────────────
@@ -1526,13 +1608,18 @@
     if (parked) { var p = parked; parked = null; p.tries = 0; if (!p.doneSeen && !p.stopped) attachRun(p); return; }
     resumeStoredRun();
   });
-  /* Header busy dot + send↔stop button morph. */
+  /* Header busy dot + send↔stop button morph. The labels teach the two things that are
+     not obvious from the glyph: how to send from the keyboard, and that Stop hands the
+     message back rather than throwing it away. (title= stays English-only — house i18n
+     law: a translated tooltip cannot follow the language toggle.) */
   function setBusy(on) {
     var dot = root.querySelector('.mmb-head .dot'); if (dot) dot.classList.toggle('busy', on);
     sendBtn.classList.toggle('mmb-stop', on);
     sendBtn.disabled = on ? false : ((!ta.value.trim() && !pendingImages.length));
-    sendBtn.title = on ? 'Stop' : 'Send';
-    sendBtn.setAttribute('aria-label', on ? L('Stop', '停止') : L('Send', '发送'));
+    sendBtn.title = on ? 'Stop — puts your message back in the box' : ('Send (' + SEND_KEYS + ') — Enter starts a new line');
+    sendBtn.setAttribute('aria-label', on
+      ? L('Stop and put my message back', '停止并把消息退回输入框')
+      : L('Send — ' + SEND_KEYS + '; Enter starts a new line', '发送 — ' + SEND_KEYS + '；回车换行'));
   }
   function bumpTime(bub) { var t = bub && bub.querySelector('.mmb-time'); if (t) t.textContent = relTime(t._ts); }
   /* Inline error card in the assistant slot with a Retry that replays the same payload. */
@@ -1817,10 +1904,21 @@
   /* Send button doubles as Stop mid-stream (the arrow morphs to a square). */
   sendBtn.addEventListener('click', function () { if (streaming) stopStream(); else send(); });
   ta.addEventListener('input', function () { autosize(); syncSend(); updateCounter(); slashSync(); saveDraft(); });
+  /* ── composer keys ───────────────────────────────────────────────────────────
+     Enter writes a NEW LINE (operator order: the box is for multi-line prompts first);
+     sending is ⌘/Ctrl+Enter, Shift+Enter, or the button.
+     IME first, before every other branch: a Chinese/Japanese/Korean user presses Enter to
+     ACCEPT a candidate, and that keystroke must never reach send() — `isComposing` is the
+     modern signal, keyCode 229 the legacy one that older WebKit/Android IMEs still use.
+     A composition Enter is not ours at all: we do not preventDefault it either, we simply
+     hand it back to the input method. */
+  function composing(e) { return !!(e.isComposing || e.keyCode === 229 || e.which === 229); }
   ta.addEventListener('keydown', function (e) {
+    if (composing(e)) return;                                // the IME candidate window owns this key
     if (slashKeydown(e)) return;                             // palette owns ↑/↓/Enter/Esc while open
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); return; }   // Cmd/Ctrl+Enter always sends
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    if (e.key !== 'Enter') return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey) { e.preventDefault(); send(); return; }
+    /* plain Enter: fall through untouched — the textarea inserts its own newline */
   });
   ta.addEventListener('paste', function (e) { /* paste a screenshot straight in */
     var items = (e.clipboardData && e.clipboardData.items) || []; var files = [];
@@ -1885,7 +1983,12 @@
     syncSend();
   }
   /* send is enabled when there's text OR at least one attached image (and not mid-stream) */
-  function syncSend() { sendBtn.disabled = (!ta.value.trim() && !pendingImages.length) || streaming; }
+  function syncSend() {
+    sendBtn.disabled = (!ta.value.trim() && !pendingImages.length) || streaming;
+    /* the ⌘↵ hint shows exactly while there is something to send — which is also the
+       moment a user is about to press Enter and expect it to go. */
+    if (boxEl) boxEl.classList.toggle('mmb-typing', !!ta.value.trim() && !streaming);
+  }
 
   /* ── voice (best-effort Web Speech) ── */
   function voiceSupported() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
@@ -1977,6 +2080,7 @@
     else ctxEl.className = 'mmb-ctx';
   }
   refreshCtx(); renderEmpty();
+  setBusy(false);   /* bake the send button's shortcut label once at boot, not on first stream */
 
   /* ── "explain this panel" — public entry + card affordance ── */
   /* opens the widget compact (never forced to max) and asks the Brain to read the panel.
