@@ -754,6 +754,47 @@ def load_ohlcv(
         return None
 
 
+# House-standard visible window + indicator warm-up lead-in for a SHAREABLE card.
+# A daily MACD needs ~34 bars (26-EMA slow leg + 9-bar signal) before its line
+# exists; SMA50 needs 50. Loading only the visible window (the old publish path
+# did: load_ohlcv(n=90), warmup=0) therefore drew MACD/SMA starting ~1/3 across
+# the panel — the "cut off" the operator saw (2026-07-26). The fix is to load a
+# lead-in the indicators warm up on but that is never drawn.
+MKT_VIS, MKT_WARM = 90, 60
+
+
+def load_ohlcv_windowed(
+    ticker: str,
+    root: Path | str,
+    *,
+    vis: int = MKT_VIS,
+    warm: int = MKT_WARM,
+) -> tuple[tuple[list[str], list[float], list[float], list[float], list[float], list[float]], int] | None:
+    """``load_ohlcv`` with a warm-up lead-in, for feeding ``render_chart_v2``.
+
+    Returns ``(bars, warmup)`` where *bars* has up to ``vis + warm`` rows and
+    *warmup* is how many leading rows to pass as ``render_chart_v2(warmup=…)`` so
+    SMA50/MACD are already "warm" at the first DRAWN bar and their lines span the
+    whole visible window. Returns ``None`` when no bars are available.
+
+    This is the ONE seam every shareable-card caller should use — the brain chart
+    ( ``brain_gateway._chart_for_chat`` ) hand-rolled this VIS/WARM idiom while the
+    marketing publish path did not, and the two drifted (marketing shipped the
+    squashed-MACD, cut-off card). Routing every caller through here keeps them
+    from drifting apart again.
+    """
+    bars = load_ohlcv(ticker, root, n=vis + warm)
+    if not bars or not bars[0]:
+        return None
+    warmup = max(0, len(bars[0]) - vis)
+    return bars, warmup
+
+
+# A "since setup" return chip is suppressed below this move — a fresh signal has
+# barely moved, so a "-0.72 (-0.22%)" chip is noise, not news (operator, 2026-07-26).
+_CALLOUT_MIN_PCT = 3.0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # v2: Internal indicator computation helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1577,44 +1618,45 @@ def render_chart_v2(
                     anchor_up=True, leader_to_y=_sma_end_y,
                 )
 
-    # ── % Change callout box ─────────────────────────────────────────────────
+    # ── "Since setup" return chip ─────────────────────────────────────────────
+    # The move from the highlighted setup bar to the last close. Two rules learned
+    # from a confusing "-0.72 (-0.22%) / 5 bars" card (operator, 2026-07-26):
+    #   1. It must SAY what it measures. A naked signed number floating over the
+    #      candles reads as noise — the caption ("since setup") ties it to the SETUP
+    #      mark below it, so the reader knows it is return-since-entry, not today's move.
+    #   2. A tiny move is noise, not news. A fresh signal has barely travelled, so the
+    #      chip stays hidden until the move is material (|Δ| ≥ _CALLOUT_MIN_PCT). A
+    #      matured winner ("+14% since setup") still earns its trophy; a just-fired
+    #      card stays clean. Suppression is symmetric (gains AND losses), so it hides
+    #      noise, never a loss the LIVE gate would otherwise let through.
     pct_callout_svg = ""
     anchor_close = c[eff_pct_from] if eff_pct_from is not None else None
     if anchor_close and anchor_close != 0:
         pct_chg = (last_close - anchor_close) / anchor_close * 100.0
-        abs_chg = last_close - anchor_close
         bars_elapsed = n - 1 - eff_pct_from
-        sign = "+" if pct_chg >= 0 else ""
-        box_color = "#4CAF50" if pct_chg >= 0 else "#E23B3B"
-        line1 = f"{sign}{abs_chg:.2f} ({sign}{pct_chg:.2f}%)"
-        # Duration wording: bars → approximate week/month label
-        if bars_elapsed <= 0:
-            dur_str = "0 bars"
-        elif bars_elapsed < 5:
-            dur_str = f"{bars_elapsed} bar{'s' if bars_elapsed != 1 else ''}"
-        elif bars_elapsed < 22:
-            weeks = bars_elapsed / 5
-            dur_str = f"{bars_elapsed} bars (~{weeks:.1f}wk)"
-        elif bars_elapsed < 65:
-            months = bars_elapsed / 21
-            dur_str = f"{bars_elapsed} bars (~{months:.1f}mo)"
-        else:
-            months = bars_elapsed / 21
-            dur_str = f"{bars_elapsed} bars (~{months:.0f}mo)"
-        box_w, box_h = 165, 42
-        # Anchor box near top-right of price panel
-        box_x = PAD_L + chart_w - box_w - 4
-        box_y = PAD_TOP + 10
-        pct_callout_svg = (
-            f'<rect x="{box_x}" y="{box_y}" width="{box_w}" height="{box_h}" '
-            f'rx="4" fill="{box_color}" opacity="0.92"/>'
-            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 16:.1f}" '
-            f'fill="#ffffff" font-size="12" font-weight="bold" '
-            f'text-anchor="middle">{_xesc(line1)}</text>'
-            f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 32:.1f}" '
-            f'fill="#ffffffcc" font-size="10" text-anchor="middle">'
-            f'{_xesc(dur_str)}</text>'
-        )
+        if bars_elapsed >= 5 and abs(pct_chg) >= _CALLOUT_MIN_PCT:
+            sign = "+" if pct_chg >= 0 else "-"
+            box_color = "#4CAF50" if pct_chg >= 0 else "#E23B3B"
+            line1 = f"{sign}{abs(pct_chg):.1f}%"
+            # Plain-language duration (doctrine: no "bars" jargon on the glance).
+            if bars_elapsed < 21:
+                dur_str = f"since setup · ~{max(1, round(bars_elapsed / 5))}w"
+            else:
+                dur_str = f"since setup · ~{max(1, round(bars_elapsed / 21))}mo"
+            box_w, box_h = 132, 40
+            # Anchor box near top-right of price panel
+            box_x = PAD_L + chart_w - box_w - 4
+            box_y = PAD_TOP + 10
+            pct_callout_svg = (
+                f'<rect x="{box_x}" y="{box_y}" width="{box_w}" height="{box_h}" '
+                f'rx="4" fill="{box_color}" opacity="0.92"/>'
+                f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 18:.1f}" '
+                f'fill="#ffffff" font-size="15" font-weight="bold" '
+                f'text-anchor="middle">{_xesc(line1)}</text>'
+                f'<text x="{box_x + box_w / 2:.1f}" y="{box_y + 32:.1f}" '
+                f'fill="#ffffffcc" font-size="9" text-anchor="middle">'
+                f'{_xesc(dur_str)}</text>'
+            )
 
     # ── Highlight zone + SETUP pill ──────────────────────────────────────────
     highlight_svg = ""

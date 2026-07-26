@@ -539,11 +539,14 @@ def build_card(
     went out as bare text.
     """
     try:
-        from engine.marketing.chart_render import load_ohlcv, render_chart_v2  # noqa: PLC0415
+        from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2  # noqa: PLC0415
         from engine.marketing.media_publish import publish_card  # noqa: PLC0415
 
         r = Path(root) if root is not None else Path(".")
-        ohlcv = load_ohlcv(ticker, r, n=n)
+        # Windowed load: warm-up lead-in so SMA50/MACD span the whole visible window
+        # (paneless volume + tall MACD; see load_ohlcv_windowed).
+        _windowed = load_ohlcv_windowed(ticker, r, vis=n)
+        ohlcv, _warmup = _windowed if _windowed else (None, 0)
         if ohlcv is None:
             return None
         dates, o, h, l, c, v = ohlcv
@@ -553,11 +556,16 @@ def build_card(
             ticker=ticker, dates=dates, o=o, h=h, l=l, c=c, volume=v,
             timeframe="DAILY",
             # Weekend levels is a watchlist read, not a fired signal: no SETUP
-            # pill and no entry marker, or the card would imply a call the copy
-            # explicitly does not make.
+            # pill, no entry marker, and no "since setup" return chip — the card
+            # must never imply a call the copy explicitly does not make.
             marker_index=None, highlight_index=None,
-            pct_from_index=(len(c) - 6 if len(c) >= 6 else None),
+            pct_from_index=None,
             show_indicators=True,
+            indicators=("volume", "macd"),
+            warmup=_warmup,
+            volume_overlay=True,   # volume embedded in the price pane
+            subpanel_h=190,        # tall, legible MACD pane
+            height=880,
             logo_root=r,
             # footer_cta unset → the full marketing bar (URL + trial button).
         )
