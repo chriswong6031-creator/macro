@@ -782,6 +782,7 @@ def content_plan(
         macd_cross,
         render_signal_chart,
         load_ohlcv,
+        load_ohlcv_windowed,
         render_chart_v2,
     )
 
@@ -942,7 +943,10 @@ def content_plan(
                 # ── v2 chart: attempt OHLCV load for candlestick render ──────
                 svg: str | None = None
                 if _ohlcv_root:
-                    ohlcv = load_ohlcv(ticker, _ohlcv_root, n=90)
+                    # Windowed load: a warm-up lead-in so SMA50/MACD span the whole
+                    # visible window (paneless volume + tall MACD; see load_ohlcv_windowed).
+                    _windowed = load_ohlcv_windowed(ticker, _ohlcv_root)
+                    ohlcv, _warmup = _windowed if _windowed else (None, 0)
                     if ohlcv is not None:
                         ohlcv_dates, ohlcv_o, ohlcv_h, ohlcv_l, ohlcv_c, ohlcv_v = ohlcv
                         # Re-compute marker_index against the OHLCV date list
@@ -987,6 +991,10 @@ def content_plan(
                             pct_from_index=(ohlcv_marker if (len(ohlcv_c) - 1 - (ohlcv_marker or 0)) >= 5 else None),
                             show_indicators=True,
                             indicators=("volume", "macd"),
+                            warmup=_warmup,
+                            volume_overlay=True,   # volume embedded in the price pane
+                            subpanel_h=190,        # tall, legible MACD pane
+                            height=880,
                             company_name=ticker,
                             logo_root=_ohlcv_root,
                             avwap_overlay=_m2_ovl.get("avwap_overlay"),
@@ -1116,8 +1124,9 @@ def content_plan(
                 # Attempt v2 chart for this confluence ticker
                 # Only if we have headroom under the total cap
                 if len(featured_charts) < _TOTAL_CHART_CAP and _ohlcv_root_conf:
-                    from engine.marketing.chart_render import load_ohlcv, render_chart_v2
-                    ohlcv = load_ohlcv(conf_ticker, _ohlcv_root_conf, n=90)
+                    from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2
+                    _windowed = load_ohlcv_windowed(conf_ticker, _ohlcv_root_conf)
+                    ohlcv, _warmup = _windowed if _windowed else (None, 0)
                     if ohlcv is not None:
                         ohlcv_dates, ohlcv_o, ohlcv_h, ohlcv_l, ohlcv_c, ohlcv_v = ohlcv
                         # Marker at last_fire date if in window, else latest
@@ -1179,6 +1188,10 @@ def content_plan(
                             pct_from_index=(conf_marker if (len(ohlcv_c) - 1 - (conf_marker or 0)) >= 5 else None),
                             show_indicators=True,
                             indicators=("volume", "macd"),
+                            warmup=_warmup,
+                            volume_overlay=True,   # volume embedded in the price pane
+                            subpanel_h=190,        # tall, legible MACD pane
+                            height=880,
                             company_name=conf_ticker,
                             logo_root=_ohlcv_root_conf,
                             avwap_overlay=_m2_ovl_conf.get("avwap_overlay"),
@@ -1464,7 +1477,7 @@ def content_plan(
 
             # mover items: attempt v2 chart (same as Prophet signal flow)
             if closes_loader is not None:
-                from engine.marketing.chart_render import load_ohlcv, render_chart_v2, render_signal_chart
+                from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2, render_signal_chart
                 for _mv_item in _mover_items_for_queue:
                     _mv_ticker = _mv_item["ticker"]
                     if len(featured_charts) >= _TOTAL_CHART_CAP:
@@ -1477,7 +1490,8 @@ def content_plan(
                         continue
                     chart_id = f"chart-{chart_id_counter:03d}"
                     svg: str | None = None
-                    ohlcv = load_ohlcv(_mv_ticker, _ohlcv_root_mv, n=90)
+                    _windowed = load_ohlcv_windowed(_mv_ticker, _ohlcv_root_mv)
+                    ohlcv, _warmup = _windowed if _windowed else (None, 0)
                     if ohlcv is not None:
                         od, oo, oh, ol, oc, ov = ohlcv
                         svg = render_chart_v2(
@@ -1492,7 +1506,11 @@ def content_plan(
                             marker_index=len(od) - 1,
                             highlight_index=len(od) - 1,
                             show_indicators=True,
-                            indicators=("volume",),
+                            indicators=("volume", "macd"),
+                            warmup=_warmup,
+                            volume_overlay=True,   # volume embedded in the price pane
+                            subpanel_h=190,        # tall, legible MACD pane
+                            height=880,
                             company_name=_mv_ticker,
                             logo_root=_ohlcv_root_mv,
                         )
