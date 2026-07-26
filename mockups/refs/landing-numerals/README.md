@@ -1,5 +1,20 @@
 # Landing + onboarding numerals — the figure face
 
+> ## ⚠️ SUPERSEDED — the Newsreader serif no longer ships
+>
+> **#3700 retired this face**, hours after it landed. The landing sets ONE face,
+> **Outfit**, on words *and* figures; `templates/fonts/Newsreader-figures.woff2` is
+> **deleted** and `--fig` is now an alias of `--display`. Current reference,
+> measurements and build script: **`mockups/refs/landing-modern-sans/`**.
+>
+> The operator's next look at it: *"we're a modern SaaS company … this weird serif
+> font."* The **diagnosis** below is still correct and its measurements still hold —
+> Archivo Expanded really does set figures 21–35% wider at the same height. The
+> **prescription** was the error: it answered "squashed" with a serif, which pointed at
+> editorial print rather than product, and it moved 8 numerals while leaving the
+> expanded-width grotesque that caused the squashing on 105 other rules. Read this dir
+> for the selection method, not for what the page currently wears.
+
 Reference for the display-figure typography on `templates/index.html` and
 `templates/onboard.css`. Operator brief, 2026-07-26: *"i don't like the number fonts…
 they're kinda squashed… can we try another bold font that is more beautiful than this?"*
