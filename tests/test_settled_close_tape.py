@@ -43,7 +43,11 @@ def _membership_file(tmp_path, baskets: dict[str, list[str]]) -> object:
 
 @pytest.fixture(autouse=True)
 def _hermetic(monkeypatch):
-    monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg: None)
+    # Signature must track bp._cum_2d(basket_id, live_ew_chg_pct, market="us") —
+    # call sites pass `market` positionally.  A stub that drops the third
+    # parameter raises TypeError deep inside the builder, which is how this
+    # suite sat red-but-unrun: it is named by no workflow, so nothing noticed.
+    monkeypatch.setattr(bp, "_cum_2d", lambda bid, chg, market="us": None)
     # the fastpath workflow exports LIVE_QUOTES_PATH — it must never leak into
     # these tests (_load_quotes prefers it over quotes_path candidates)
     monkeypatch.delenv("LIVE_QUOTES_PATH", raising=False)
@@ -168,7 +172,11 @@ class TestDayFlow:
                     "label_zh": "净流入（吸筹）", "as_of": "2026-07-09"}}
 
     def test_attached_on_settled_build(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(bp, "_load_theme_flow", lambda path=None: (self._FLOW, "2026-07-09"))
+        # bp._attach_day_flow calls _load_theme_flow(market=...) — a stub without
+        # `market` raises TypeError, which _attach_day_flow swallows, so day_flow
+        # silently never attaches and the assertion below reads as a missing key.
+        monkeypatch.setattr(bp, "_load_theme_flow",
+                            lambda path=None, market="us": (self._FLOW, "2026-07-09"))
         qs = {"AAA": _q(1.0), "BBB": _q(2.0), "CCC": _q(-3.0)}
         res = bp.build(
             quotes_path=_quotes_file(tmp_path, qs),
@@ -181,7 +189,7 @@ class TestDayFlow:
         assert "day_flow" not in side["baskets"][0]
 
     def test_absent_flow_is_graceful(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(bp, "_load_theme_flow", lambda path=None: ({}, None))
+        monkeypatch.setattr(bp, "_load_theme_flow", lambda path=None, market="us": ({}, None))
         qs = {"AAA": _q(1.0), "BBB": _q(2.0), "CCC": _q(-3.0)}
         res = bp.build(
             quotes_path=_quotes_file(tmp_path, qs),
