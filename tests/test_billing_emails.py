@@ -694,6 +694,10 @@ def test_sweep_query_selects_only_trialing_inside_the_window(monkeypatch, ledger
     assert "status=eq.trialing" in path
     assert f"current_period_end=gte.{NOW.isoformat()}" in path
     assert f"current_period_end=lte.{(NOW + timedelta(hours=48)).isoformat()}" in path
+    # deterministic cap: soonest-expiring first, so a window bigger than the LIMIT still
+    # serves the most urgent rows every wake instead of an arbitrary slice
+    assert "order=current_period_end.asc" in path
+    assert f"limit={be._SWEEP_LIMIT}" in path
 
 
 def test_sweep_sends_the_reminder_with_catalog_pricing(monkeypatch, ledger, smtp, sweeper):

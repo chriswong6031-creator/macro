@@ -948,7 +948,13 @@ def _sweep_pricing(customer_id: str | None, tier: str | None,
 
 
 def trial_ending_candidates(now: datetime, window_hours: int = TRIAL_WINDOW_HOURS) -> list[dict]:
-    """Trialing entitlement rows whose period ends inside the window (never in the past)."""
+    """Trialing entitlement rows whose period ends inside the window (never in the past).
+
+    Ordered soonest-first so the LIMIT is deterministic: an unordered cap would let
+    PostgREST return an arbitrary 500 every wake, which could starve the same rows
+    forever if the window ever held more than that. Soonest-first means the most urgent
+    reminders are always the ones that make the cut, and the rest are picked up next wake.
+    """
     lo = now.isoformat()
     hi = (now + timedelta(hours=window_hours)).isoformat()
     path = (
@@ -956,6 +962,7 @@ def trial_ending_candidates(now: datetime, window_hours: int = TRIAL_WINDOW_HOUR
         f"&current_period_end=gte.{urllib.parse.quote(lo, safe='')}"
         f"&current_period_end=lte.{urllib.parse.quote(hi, safe='')}"
         "&select=user_id,stripe_customer_id,tier,plan_interval,current_period_end"
+        "&order=current_period_end.asc"
         f"&limit={_SWEEP_LIMIT}"
     )
     return billing._pg("GET", path) or []
