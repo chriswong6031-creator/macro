@@ -38,23 +38,23 @@ modules on the nightly/render publish path, then forward-ledger writers, then th
 | tier | before | after | meaning |
 |---|---|---|---|
 | **P0** | **30** | **0** | unrun + untriggerable + on a publish pipeline |
-| P1 | 142 | 142 | unrun, on a publish pipeline (triggerable) |
+| P1 | 142 | 139 | unrun, on a publish pipeline (triggerable) |
 | **P2** | **42** | **0** | unrun + untriggerable + writes a `data/` ledger |
-| **P3** | **60** | **2** | unrun + untriggerable (other) |
-| P4 | 415 | 415 | unrun, writes a `data/` ledger (triggerable) |
-| P5 | 446 | 446 | unrun (remainder) |
-| **total unrun** | **1135** / 1491 | **1005** / 1495 | |
-| **strictly dark** | **132** | **2** | |
+| **P3** | **60** | **0** | unrun + untriggerable (other) |
+| P4 | 415 | 416 | unrun, writes a `data/` ledger (triggerable) |
+| P5 | 446 | 445 | unrun (remainder) |
+| **total unrun** | **1135** / 1491 | **1000** / 1497 | |
+| **strictly dark** | **132** | **0** | |
 
-This PR closes the strictly-dark subset — the class where no signal was possible — and leaves
-the 1003 triggerable-but-unrun suites staged below. Wiring all of them would blow the ci-pack
+#3636 closes the strictly-dark subset — the class where no signal was possible — and leaves
+the 1000 triggerable-but-unrun suites staged below. Wiring all of them would blow the ci-pack
 budget, so the remainder is deliberate backlog, not oversight. (The "before" column was
-measured at 1491 suites; the total grew to 1495 across a rebase, and those four arrived
-already wired, so the unrun count is unchanged by them.)
+measured at 1491 suites; the total is 1497 on current `main` as other PRs land, and the
+arrivals came already wired, so they do not move the unrun count.)
 
-The two remaining dark suites are excluded on purpose; see *Red on arrival* below.
-Measured in CI, the nine jobs cost **~9 min** of pack wall (pack 0 ran 12:36→13:00, pack 1
-12:36→13:05, both well inside the 180-min timeout).
+#3636 left two dark; #3645 closed them the same day, so the strictly-dark set is now **empty**.
+Measured in CI, the nine jobs cost **~3 min** of pack wall — pack 1 ran its five lanes
+13:36→13:37 and pack 0 its four 13:40→13:42 — against a 180-min timeout.
 
 ### What P0 was
 
@@ -112,7 +112,7 @@ An **eighth** was found only once CI ran it, and is platform-dependent rather th
 | `test_btc_vector_w1.py` | asserted a frozen literal `dof_cost == 3`; `config.yml` legitimately declares **6** (W2 confirm window +1, W4 staged re-entry +2). | **fixed** — now asserts the ledger's charged dof equals the registry's declared dof, which cannot rot |
 | `test_import_equitydesk_backfill.py` | the seed artifact moved to `data/stage_analysis/backfill/earnings_seed.parquet`; the test still read `data/earnings_calls/scores.parquet`. The importer's own docstring was stale too. | **fixed** — both repointed |
 | `test_build_measurement_evidence_gap.py` | asserted the literal word *"overlapping"*; the §0.5.8 caveat now says *"correlated"*. Substance intact. | **fixed** — asserts the disclosed dependence, not one synonym |
-| the two FTR template-markup suites | assert markers (`Strategic horizon`, `ftr-dtp-full`) that exist **nowhere** in `templates/` or `site/`, and `basketdata/baskets.json` moved from `allocation.html.j2` to `dashboard.html.j2`. | **NOT wired** — whether the feature or the assertion is wrong is a product decision, not test rot |
+| the two FTR template-markup suites | assert markers (`Strategic horizon`, `ftr-dtp-full`) that exist **nowhere** in `templates/` or `site/`, and `basketdata/baskets.json` moved from `allocation.html.j2` to `dashboard.html.j2`. | left unwired by #3636 — whether the feature or the assertion was wrong is a product decision. **Resolved by #3645**, which re-pinned the three assertions to the shipped surface and wired both suites; they pass on `main` |
 
 ### Green on macOS, red on ubuntu — a platform-dependent contract
 
@@ -159,7 +159,7 @@ recomputed, never edited by hand.
 
 ## Staged remainder
 
-`P1` (142) is the next lane: unrun suites on the publish path that *are* triggerable. A
+`P1` (139 on current `main`) is the next lane: unrun suites on the publish path that *are* triggerable. A
 29-suite probe of its highest-value modules ran **4 red out of 29** (14%), against 7/144 (5%)
 for the dark set — so P1 needs its own repair pass before wiring, not a bulk add:
 
