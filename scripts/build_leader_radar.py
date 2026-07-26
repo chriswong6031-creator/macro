@@ -113,7 +113,13 @@ def _write_noindex_stub(site_root: Path) -> None:
     (out_dir / "radar.json").write_text(
         json.dumps({"schema": "leader_radar.v1", "enabled": False, "stale": True})
     )
-    log.info("build_leader_radar: kill-switch active — wrote noindex stub")
+    # The stub must REPLACE the live page — writing only the JSON left the
+    # last-baked site/leader_radar.html serving as if the program were still on.
+    (site_root / "leader_radar.html").write_text(stub)
+    log.info(
+        "build_leader_radar: kill-switch active — wrote noindex stub "
+        "(leaderradar/radar.json + leader_radar.html)"
+    )
 
 
 # ── Universe resolution (LR-R12) ─────────────────────────────────────────────
@@ -576,14 +582,17 @@ def _extract_valuation(sd: dict) -> dict:
     }
 
 
-def _extract_earnings(sd: dict) -> dict:
+def _extract_earnings(sd: dict, today: date) -> dict:
     earnings = sd.get("earnings") or {}
     next_date = earnings.get("next_date")
     dte = None
     if next_date:
         try:
             nd = pd.Timestamp(next_date).date()
-            dte = (nd - date.today()).days
+            # PIT: dte is anchored to the price data-through date passed in by build(),
+            # never date.today() (runner-local wall clock) — it feeds earnings_within_14d
+            # → de-escalation → entry_read caveats.
+            dte = (nd - today).days
         except Exception:  # noqa: BLE001
             pass
     return {"days_to_earnings": dte}
@@ -1644,8 +1653,15 @@ def _build_freshness(
     regime_raw: dict,
     revisions_df: pd.DataFrame,
     state_df: pd.DataFrame,
+    rs_series_through: date | None = None,
 ) -> dict:
-    """Build the freshness block for the artifact (Item 2)."""
+    """Build the freshness block for the artifact (Item 2).
+
+    rs_series_through is the data-through date of data/rs_series (max across the
+    universe, computed by build()); None when no RS series loaded. It only
+    advances at nightly, so a dead nightly leaves it behind price_through — the
+    lag the degraded list discloses (LR-EXP).
+    """
     # breadth_through
     breadth_through: str | None = None
     if not breadth_df.empty:
@@ -1687,6 +1703,7 @@ def _build_freshness(
     return {
         "price_through": price_through.isoformat() if price_through else None,
         "breadth_through": breadth_through,
+        "rs_series_through": rs_series_through.isoformat() if rs_series_through else None,
         "regime_as_of": regime_as_of,
         "revisions_asof": revisions_asof,
         "state_history_through": state_history_through,
@@ -1707,6 +1724,7 @@ def _build_degraded(
       - state_history lags price_through by >2 NYSE sessions
       - regime_as_of lags price_through by >0 sessions
       - breadth lags price_through by >0 sessions
+      - rs_series lags price_through by >0 sessions
     """
     msgs_en: list[str] = []
     msgs_zh: list[str] = []
@@ -1752,6 +1770,20 @@ def _build_degraded(
                 if n_lag > 0:
                     msgs_en.append(f"breadth {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
                     msgs_zh.append(f"广度数据落后价格数据{n_lag}个交易日")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # rs_series lag
+    rs_str = freshness.get("rs_series_through")
+    if rs_str:
+        try:
+            rs_th = date.fromisoformat(rs_str[:10])
+            if rs_th < price_through:
+                gap = _nyse_sessions_between(rs_th + timedelta(days=1), price_through)
+                n_lag = len(gap)
+                if n_lag > 0:
+                    msgs_en.append(f"relative strength {n_lag} session{'s' if n_lag > 1 else ''} behind price data")
+                    msgs_zh.append(f"相对强度数据落后价格数据{n_lag}个交易日")
         except Exception:  # noqa: BLE001
             pass
 
@@ -2039,6 +2071,11 @@ def build(
     universe, basket_membership = _resolve_universe(data_root, cfg)
     if not universe:
         log.warning("build_leader_radar: empty universe — writing cold-start artifact")
+        # GitHub parses "::warning" only when it starts the line, so every annotation
+        # below is a BARE print() — log.warning() would prefix it with the logging
+        # format ("%(levelname)s %(name)s ...") and the annotation would never parse.
+        print("::warning title=leader_radar::empty universe — cold-start artifact "
+              "(membership stores absent/unreadable); page bakes with zero rows", flush=True)
 
     # ── SPY close ─────────────────────────────────────────────────────────────
     spy = _load_spy(data_root)
@@ -2108,7 +2145,22 @@ def build(
     revisions_uncovered: list[str] = [t for t in universe if t not in (revisions_df.index.tolist() if not revisions_df.empty else [])]
 
     # ── State history ─────────────────────────────────────────────────────────
-    state_df = _load_state_history(data_root)
+    state_df_full = _load_state_history(data_root)
+    # PIT view cap (LR-EXP): tonight's bake must see the stores as they stood
+    # BEFORE today. Once a nightly has committed today's rows, an uncapped rebake
+    # (nightly rerun, express lane) reads today's own row as the "prior" state:
+    # fire transitions vanish (prior == current), the refire lockout trips on the
+    # fire it just logged, tracked_sessions inflates by one, and state_entry_date
+    # re-stamps None over the entry the first run recorded. Capping at < today
+    # makes every rebake reproduce the first bake; the nightly append is
+    # unaffected (_merge_history_frame drops today's rows before appending).
+    # READS use the capped view; the nightly WRITE re-merges onto state_df_full —
+    # a regressed price store (today < store max, e.g. SPY.parquet truncated or
+    # restored from an older vintage) would otherwise let the cap silently drop
+    # the newer rows and rewrite the forward ledger without them.
+    state_df = state_df_full
+    if not state_df_full.empty and "date" in state_df_full.columns:
+        state_df = state_df_full[pd.to_datetime(state_df_full["date"]).dt.date < today].copy()
 
     # ── Winner autopsy watch states ───────────────────────────────────────────
     watch_states_map: dict[str, str | None] = {}
@@ -2134,7 +2186,7 @@ def build(
         else:
             revisions_store[ticker] = _extract_revisions(sd)
         valuation_store[ticker] = _extract_valuation(sd)
-        earnings_store[ticker] = _extract_earnings(sd)
+        earnings_store[ticker] = _extract_earnings(sd, today)
         personality_store[ticker] = _extract_personality(sd)
         mktcap_map[ticker] = _extract_mktcap(sd)
 
@@ -2163,6 +2215,20 @@ def build(
                 rs_map[ticker] = rs
             except Exception as e:  # noqa: BLE001
                 log.debug("build_leader_radar: rs_series/%s failed: %s", ticker, e)
+
+    # rs_series data-through (freshness + degraded disclosure): the RS store only
+    # advances at nightly; when nightlies die the page keeps baking
+    # rs_top_decile_weeks / peer_divergence on frozen RS next to same-day chips
+    # (live 2026-07-22..24: rs through 07-21 vs price through 07-24, silent).
+    # Max across tickers: a store-wide accrual stall moves every series at once,
+    # while a single dead ticker must not trip a store-level lag message.
+    rs_series_through: date | None = None
+    for _rs in rs_map.values():
+        if _rs is not None and not _rs.empty:
+            _d = _rs.index[-1]
+            _d = _d.date() if hasattr(_d, "date") else pd.Timestamp(_d).date()
+            if rs_series_through is None or _d > rs_series_through:
+                rs_series_through = _d
 
     # ── LRV-W1: New loaders (insider, skew, RS-rank, basket-corr, peer-medians) ──
     t_lrv_w1 = time.monotonic()
@@ -2285,7 +2351,18 @@ def build(
     rows: list[dict] = []
 
     # Load prior fire dates from fire_log (real per-ticker last fire date)
-    fire_log_df = _load_fire_log(data_root)
+    fire_log_df_full = _load_fire_log(data_root)
+    # Same PIT view cap as state_df: without it a rebake sees tonight's own fire
+    # rows, so _last_fire_dates reports last_fire == today and the refire lockout
+    # suppresses the very fires the first run baked (and fire_history would gain
+    # today's rows only on the rebake, breaking byte-parity). Reads take the
+    # capped view; the nightly write re-merges onto fire_log_df_full so a
+    # regressed price store can never truncate the store through the cap.
+    fire_log_df = fire_log_df_full
+    if not fire_log_df_full.empty and "date" in fire_log_df_full.columns:
+        fire_log_df = fire_log_df_full[
+            pd.to_datetime(fire_log_df_full["date"]).dt.date < today
+        ].copy()
     fire_dates: dict[str, date | None] = _last_fire_dates(fire_log_df)
 
     # Build NYSE session calendar from state_df dates (Item 5 — hysteresis contiguity)
@@ -2500,30 +2577,43 @@ def build(
             continue
 
     # ── Persist data/ stores (nightly lane only — HOUSE-U5) ───────────────────
+    # Writes merge onto the UNCAPPED frames (state_df_full / fire_log_df_full):
+    # the PIT cap is a read-side view, and _merge_history_frame already drops
+    # today's rows before appending. Merging the capped view would delete any row
+    # dated after `today` whenever the price store regresses.
     if nightly_lane:
         # state_history
         if new_state_rows:
             try:
-                updated = _merge_history_frame(state_df, new_state_rows, today)
+                updated = _merge_history_frame(state_df_full, new_state_rows, today)
                 _write_state_history(updated, data_root)
                 log.info("build_leader_radar: state_history: %d total rows", len(updated))
             except Exception as e:  # noqa: BLE001
                 log.warning("build_leader_radar: state_history write failed: %s", e)
+                print(f"::warning title=leader_radar::state_history write FAILED "
+                      f"(nightly lane) — forward store frozen at its last vintage: "
+                      f"{type(e).__name__}: {e}", flush=True)
 
         # fire_log (same merge — the mixed-dtype crash would hit its first APPEND)
         if new_fire_rows:
             try:
-                updated_fire = _merge_history_frame(fire_log_df, new_fire_rows, today)
+                updated_fire = _merge_history_frame(fire_log_df_full, new_fire_rows, today)
                 _write_fire_log(updated_fire, data_root)
                 log.info("build_leader_radar: fire_log: %d total rows", len(updated_fire))
             except Exception as e:  # noqa: BLE001
                 log.warning("build_leader_radar: fire_log write failed: %s", e)
+                print(f"::warning title=leader_radar::fire_log write FAILED "
+                      f"(nightly lane) — forward store frozen at its last vintage: "
+                      f"{type(e).__name__}: {e}", flush=True)
 
         # revisions_history
         try:
             _append_revisions_history(data_root)
         except Exception as e:  # noqa: BLE001
             log.warning("build_leader_radar: revisions_history append error: %s", e)
+            print(f"::warning title=leader_radar::revisions_history write FAILED "
+                  f"(nightly lane) — forward store frozen at its last vintage: "
+                  f"{type(e).__name__}: {e}", flush=True)
     else:
         log.debug(
             "build_leader_radar: COLLECT_LANE!=nightly — skipping data/ writes (HOUSE-U5)",
@@ -2671,6 +2761,7 @@ def build(
         regime_raw=regime_raw,
         revisions_df=revisions_df,
         state_df=state_df,
+        rs_series_through=rs_series_through,
     )
     degraded, degraded_zh = _build_degraded(latest_date, freshness, state_df)
 
@@ -2730,8 +2821,32 @@ def build(
         "fire_history": fire_history,
     }
 
-    # ── Write artifact ────────────────────────────────────────────────────────
     out_path = out_dir / "radar.json"
+
+    # ── Express byte-stability (LR-EXP) ──────────────────────────────────────
+    # Express lanes bake this artifact several times a day from committed inputs.
+    # built_at/elapsed_s alone would churn the ~300KB radar.json (and the page
+    # rendered from it) on every run — committing noise and defeating the
+    # dead-man reading of built_at (a dead nightly would look alive). When the
+    # payload is byte-identical to the committed artifact apart from those
+    # stamps, carry them over so the rebake writes identical bytes and the lane
+    # commits nothing. Any real input change still gets a fresh built_at.
+    if not nightly_lane and out_path.exists():
+        try:
+            prev_raw = out_path.read_text()
+            prev = json.loads(prev_raw)
+            trial = dict(payload)
+            trial["built_at"] = prev.get("built_at")
+            trial["elapsed_s"] = prev.get("elapsed_s")
+            _tf = dict(freshness)
+            _tf["built_at"] = prev.get("built_at")
+            trial["freshness"] = _tf
+            if json.dumps(trial, separators=(",", ":"), default=_json_default) == prev_raw:
+                payload = trial
+        except Exception as e:  # noqa: BLE001
+            log.debug("build_leader_radar: byte-stability carry skipped: %s", e)
+
+    # ── Write artifact ────────────────────────────────────────────────────────
     out_path.write_text(
         json.dumps(payload, separators=(",", ":"), default=_json_default)
     )
@@ -2754,9 +2869,15 @@ def build(
             html_out.write_text(rendered)
             log.info("build_leader_radar: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001
-            log.warning("build_leader_radar: HTML render failed: %s", e)
+            log.warning("build_leader_radar: HTML render failed: %s", e, exc_info=True)
+            print(f"::warning title=leader_radar::HTML render failed (non-fatal) — "
+                  f"radar.json updated but site/leader_radar.html was NOT re-rendered "
+                  f"and stays on its last-committed vintage: "
+                  f"{type(e).__name__}: {e}", flush=True)
     else:
         log.info("build_leader_radar: template %s absent — skipping HTML", tpl_path)
+        print("::warning title=leader_radar::template leader_radar.html.j2 absent — "
+              "HTML skipped; baked page stays on its last-committed vintage", flush=True)
 
     return payload
 
@@ -2775,6 +2896,10 @@ def main() -> int:
             )
     except Exception as e:  # noqa: BLE001
         log.error("build_leader_radar: unexpected error: %s", e, exc_info=True)
+        print(f"::warning title=leader_radar::builder crashed (non-fatal, exit 0) — "
+              f"site/leaderradar/radar.json + leader_radar.html NOT rewritten this run, "
+              f"baked page stays on its last-committed vintage: "
+              f"{type(e).__name__}: {e}", flush=True)
     return 0
 
 

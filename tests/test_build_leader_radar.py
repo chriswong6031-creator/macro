@@ -22,6 +22,18 @@ Coverage:
   - state_entry_date: old-schema fixture merges without dtype crash
   - changed_today / near_trigger shapes on synthetic states
     keys + banner render (incl. old-shape payload missing-key safety)
+  LR-EXP (express-lane admission) additions:
+  - pick_lab provenance gate: radar.json whose as_of != price data-through is
+    treated as absent (nightly-sole-advancer); fails open with no SPY store
+  - rs_series_through in freshness + "relative strength N sessions behind" degraded
+  - express byte-stability: an unchanged rebake writes identical bytes (built_at
+    carried); a real input change still gets a fresh built_at
+  - nightly rerun idempotence: state_entry_date survives a rerun; radar.json is
+    identical across reruns apart from built_at/elapsed_s (PIT view cap on the
+    state/fire stores)
+  - kill-switch stub replaces BOTH radar.json and the baked leader_radar.html
+  - _extract_earnings dte anchored to the price data-through date (PIT)
+  - fail-soft annotations are bare line-start ::warning prints, not logger lines
 """
 from __future__ import annotations
 
@@ -2344,3 +2356,404 @@ class TestNearTriggerMissingChips:
             "Chip outside state's set must not appear in missing_chips"
         )
         assert "bw_emerging" in missing
+
+
+# ── LR-EXP: express-lane admission (2026-07-25 vetting) ──────────────────────
+
+
+def _run_build_no_lane(root: Path) -> dict:
+    """Run the builder with COLLECT_LANE/US_LANE unset (express / read-only lane)."""
+    import os
+    from scripts.build_leader_radar import build
+    with patch("lib.config.ROOT", root), \
+         patch("lib.config.data_dir", lambda: root / "data"), \
+         patch("lib.config.load", lambda: {
+             "storage": {"data_dir": "data", "site_dir": "site"},
+             "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
+         }):
+        saved = {}
+        for k in ("COLLECT_LANE", "US_LANE"):
+            if k in os.environ:
+                saved[k] = os.environ.pop(k)
+        try:
+            return build(data_root=root / "data", site_root=root / "site")
+        finally:
+            os.environ.update(saved)
+
+
+def _run_build_nightly(root: Path) -> dict:
+    """Run the builder with COLLECT_LANE=nightly (data/ stores advance)."""
+    import os
+    from scripts.build_leader_radar import build
+    with patch("lib.config.ROOT", root), \
+         patch("lib.config.data_dir", lambda: root / "data"), \
+         patch("lib.config.load", lambda: {
+             "storage": {"data_dir": "data", "site_dir": "site"},
+             "leader_radar": {"enabled": True, "basket_keys": ["mag7"], "dow30": []},
+         }), \
+         patch.dict(os.environ, {"COLLECT_LANE": "nightly"}):
+        return build(data_root=root / "data", site_root=root / "site")
+
+
+class TestRadarProvenanceGate:
+    """LR-EXP: express lanes commit radar.json too, so pick_lab must check provenance.
+
+    The forward pick ledger may only advance on fires computed at tonight's price
+    vintage (nightly-sole-advancer). An artifact whose as_of != the price store's
+    data-through date is a stale bake and must read as absent.
+    """
+
+    def _row(self) -> dict:
+        return {
+            "ticker": "NVDA", "fire_precipice": True, "fire_onset": False,
+            "state": "CATALYST_WINDOW", "raw_state": "CATALYST_WINDOW",
+            "days_in_state": 2, "breakaway_watch_state": None,
+        }
+
+    def _write_radar(self, root: Path, as_of: str) -> None:
+        p = root / "site" / "leaderradar" / "radar.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({
+            "schema": "leader_radar.v2",
+            "as_of": as_of,
+            "stale": False,
+            "rows": [self._row()],
+        }))
+
+    def _spy_through(self, root: Path) -> date:
+        spy = pd.read_parquet(root / "data" / "yahoo" / "SPY.parquet")
+        return pd.to_datetime(spy.index).max().date()
+
+    def _load(self, root: Path) -> list[dict]:
+        from engine.pick_lab.candidates import _load_radar_json
+        with patch("lib.config.ROOT", root), \
+             patch("lib.config.load", lambda: {
+                 "storage": {"data_dir": "data", "site_dir": "site"},
+             }):
+            return _load_radar_json()
+
+    def test_stale_as_of_gated_to_empty(self, tmp_path):
+        """as_of behind the price store's data-through date → rows gated to []."""
+        _write_spy(tmp_path, n=400)
+        stale_as_of = (self._spy_through(tmp_path) - timedelta(days=4)).isoformat()
+        self._write_radar(tmp_path, stale_as_of)
+        assert self._load(tmp_path) == [], (
+            "Stale-vintage radar.json must not advance the forward pick ledger"
+        )
+
+    def test_fresh_as_of_passes(self, tmp_path):
+        """as_of == price data-through date → rows consumed normally."""
+        _write_spy(tmp_path, n=400)
+        self._write_radar(tmp_path, self._spy_through(tmp_path).isoformat())
+        rows = self._load(tmp_path)
+        assert [r["ticker"] for r in rows] == ["NVDA"]
+        assert rows[0]["fire_precipice"] is True
+
+    def test_gate_fails_open_without_spy_store(self, tmp_path):
+        """No price store at all (cold start / fixture root) → gate must not fire."""
+        self._write_radar(tmp_path, "2020-01-01")
+        assert not (tmp_path / "data").exists()
+        rows = self._load(tmp_path)
+        assert [r["ticker"] for r in rows] == ["NVDA"], (
+            "Gate must fail open when the anchor store is unavailable"
+        )
+
+
+class TestRsSeriesFreshness:
+    """LR-EXP: rs_series data-through is disclosed and its lag degrades the page.
+
+    Live 2026-07-22..24: nightlies died, rs_series froze at 07-21 while the page
+    kept baking rs_top_decile_weeks / peer_divergence beside same-day chips.
+    """
+
+    def _write_rs_store(self, root: Path, ticker: str, drop_last: int) -> date:
+        """Write data/rs_series/<T>.parquet from the ticker's close index.
+
+        drop_last truncates the tail so the RS store ends before price_through.
+        Returns the store's data-through date.
+        """
+        ohlcv = pd.read_parquet(root / "data" / "baskets" / "ohlcv" / f"{ticker}.parquet")
+        idx = pd.to_datetime(ohlcv["close"].dropna().sort_index().index)
+        if drop_last:
+            idx = idx[:-drop_last]
+        rs = pd.DataFrame({"rs": np.linspace(0.9, 1.1, len(idx))}, index=idx)
+        p = root / "data" / "rs_series" / f"{ticker}.parquet"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        rs.to_parquet(p, index=True)
+        return idx[-1].date()
+
+    def test_rs_lag_disclosed(self, tmp_path):
+        """RS store 3 sessions short of price → freshness + EN/ZH degraded message."""
+        root = _build_fixture_root(tmp_path, ["AAPL"])
+        rs_through = self._write_rs_store(root, "AAPL", drop_last=3)
+
+        payload = _run_build_no_lane(root)
+
+        assert payload["freshness"]["rs_series_through"] == rs_through.isoformat()
+        degraded = payload["degraded"]
+        degraded_zh = payload["degraded_zh"]
+        assert any("relative strength" in m for m in degraded), (
+            f"Expected an RS-lag degradation message, got: {degraded}"
+        )
+        assert any("相对强度" in m for m in degraded_zh), (
+            f"Expected ZH RS-lag degradation message, got: {degraded_zh}"
+        )
+        assert len(degraded) == len(degraded_zh), (
+            f"EN/ZH degraded lists must be parallel; {len(degraded)} vs {len(degraded_zh)}"
+        )
+
+    def test_rs_fresh_no_message(self, tmp_path):
+        """RS store covering the full price index → no RS-lag message."""
+        root = _build_fixture_root(tmp_path, ["AAPL"])
+        rs_through = self._write_rs_store(root, "AAPL", drop_last=0)
+
+        payload = _run_build_no_lane(root)
+
+        assert payload["freshness"]["rs_series_through"] == rs_through.isoformat()
+        assert payload["freshness"]["rs_series_through"] == payload["freshness"]["price_through"]
+        assert not any("relative strength" in m for m in payload["degraded"]), (
+            f"Fresh RS store must not degrade: {payload['degraded']}"
+        )
+
+
+class TestExpressByteStability:
+    """LR-EXP: an unchanged express rebake writes byte-identical radar.json.
+
+    built_at/elapsed_s alone would churn the artifact on every express run,
+    committing noise and making a dead nightly look alive.
+    """
+
+    def test_second_bake_byte_identical(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL", "MSFT"])
+        artifact = root / "site" / "leaderradar" / "radar.json"
+
+        _run_build_no_lane(root)
+        first_bytes = artifact.read_text()
+        first_built_at = json.loads(first_bytes)["built_at"]
+
+        _run_build_no_lane(root)
+        second_bytes = artifact.read_text()
+
+        assert second_bytes == first_bytes, (
+            "Unchanged express rebake must write identical bytes (no commit churn)"
+        )
+        assert json.loads(second_bytes)["built_at"] == first_built_at
+        assert json.loads(second_bytes)["freshness"]["built_at"] == first_built_at
+
+    def test_input_change_gets_fresh_stamp(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL", "MSFT"])
+        artifact = root / "site" / "leaderradar" / "radar.json"
+
+        _run_build_no_lane(root)
+        first_bytes = artifact.read_text()
+        first_built_at = json.loads(first_bytes)["built_at"]
+
+        # Real input change: MSFT loses its price history → universe shrinks
+        (root / "data" / "baskets" / "ohlcv" / "MSFT.parquet").unlink()
+        _run_build_no_lane(root)
+        second_bytes = artifact.read_text()
+
+        assert second_bytes != first_bytes, "A real input change must rewrite the artifact"
+        assert json.loads(second_bytes)["built_at"] != first_built_at, (
+            "A real input change must carry a fresh built_at (dead-man sentinel)"
+        )
+
+
+class TestNightlyRerunIdempotent:
+    """LR-EXP: a rebake after the nightly committed today's rows reproduces it.
+
+    Without the PIT view cap on state_history/fire_log, a rerun reads today's own
+    row as the 'prior' state: state_entry_date re-derives None over the entry the
+    first run stamped, fire transitions vanish, and tracked_sessions inflates.
+    """
+
+    def _today_rows(self, hist_p: Path) -> tuple[pd.DataFrame, date]:
+        """Return (rows stamped with the store's max date, that date)."""
+        df = pd.read_parquet(hist_p)
+        d = pd.to_datetime(df["date"]).max().date()
+        return df[pd.to_datetime(df["date"]).dt.date == d].copy(), d
+
+    def test_rerun_preserves_state_entry_date(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL", "MSFT"])
+        hist_p = root / "data" / "leader_radar" / "state_history.parquet"
+
+        _run_build_nightly(root)
+        rows1, today = self._today_rows(hist_p)
+        assert len(rows1) >= 1, "First run wrote no state_history rows"
+        assert rows1["state_entry_date"].notna().all(), (
+            "Seed run has no prior history — every today-row must stamp state_entry_date"
+        )
+        assert all(pd.Timestamp(v).date() == today for v in rows1["state_entry_date"])
+
+        # Rerun (nightly rerun or express rebake over the committed store)
+        _run_build_nightly(root)
+        rows2, today2 = self._today_rows(hist_p)
+        assert today2 == today
+        assert len(rows2) == len(rows1)
+        assert rows2["state_entry_date"].notna().all(), (
+            "Rerun must NOT overwrite state_entry_date with None "
+            "(pre-fix: prior state re-derived from today's own row)"
+        )
+        assert all(pd.Timestamp(v).date() == today for v in rows2["state_entry_date"])
+
+    def test_rerun_radar_parity(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL", "MSFT"])
+        artifact = root / "site" / "leaderradar" / "radar.json"
+
+        _run_build_nightly(root)
+        run1 = json.loads(artifact.read_text())
+        _run_build_nightly(root)
+        run2 = json.loads(artifact.read_text())
+
+        for d in (run1, run2):
+            d.pop("built_at", None)
+            d.pop("elapsed_s", None)
+            (d.get("freshness") or {}).pop("built_at", None)
+
+        assert run1 == run2, (
+            "A nightly rerun must reproduce the first bake "
+            "(fires / days_in_state / tracked_sessions parity)"
+        )
+
+
+class TestForwardLedgerWriteUncapped:
+    """LR-EXP: the PIT cap is a READ-side view — it must not reach the write path.
+
+    If the nightly write merged onto the CAPPED frame, a regressed price store
+    (SPY.parquet truncated or restored from an older vintage, so today < the
+    store's max date) would let the cap silently delete every newer row and
+    rewrite the forward ledger without them — a nightly-sole-advancer store
+    losing committed rows behind a fail-soft.
+    """
+
+    def test_regressed_price_store_does_not_truncate_forward_ledger(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL", "MSFT"])
+        spy = pd.read_parquet(root / "data" / "yahoo" / "SPY.parquet")
+        price_through = pd.to_datetime(spy.index).max().date()
+        # Store is AHEAD of the price store — the regressed-price-store shape
+        future = price_through + timedelta(days=5)
+
+        hist_p = root / "data" / "leader_radar" / "state_history.parquet"
+        hist_p.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({
+            "date": pd.to_datetime([future]),
+            "ticker": ["AAPL"],
+            "raw_state": ["QUIET_ACCUMULATION"],
+            "confirmed_state": ["QUIET_ACCUMULATION"],
+            "state_entry_date": [future],
+        }).to_parquet(hist_p, index=False)
+
+        _run_build_nightly(root)
+
+        back = pd.read_parquet(hist_p)
+        dates = set(pd.to_datetime(back["date"]).dt.date)
+        assert future in dates, (
+            "Row dated after price-through was dropped — the read-side PIT cap "
+            "must never reach the nightly write path "
+            "(_merge_history_frame drops only rows dated == today)"
+        )
+        assert price_through in dates, "Tonight's rows were not appended"
+        survivor = back[pd.to_datetime(back["date"]).dt.date == future]
+        assert list(survivor["ticker"]) == ["AAPL"]
+        assert list(survivor["confirmed_state"]) == ["QUIET_ACCUMULATION"]
+
+    def test_future_row_excluded_from_tonights_reads(self, tmp_path):
+        """The same future row must stay invisible to tonight's assessment.
+
+        Write-side preservation must not re-open the read-side hole the cap
+        exists to close: freshness reports the store as of BEFORE today, so a
+        row dated after price-through cannot become the 'prior' state.
+        """
+        root = _build_fixture_root(tmp_path, ["AAPL"])
+        spy = pd.read_parquet(root / "data" / "yahoo" / "SPY.parquet")
+        price_through = pd.to_datetime(spy.index).max().date()
+        future = price_through + timedelta(days=5)
+
+        hist_p = root / "data" / "leader_radar" / "state_history.parquet"
+        hist_p.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({
+            "date": pd.to_datetime([future]),
+            "ticker": ["AAPL"],
+            "raw_state": ["QUIET_ACCUMULATION"],
+            "confirmed_state": ["QUIET_ACCUMULATION"],
+            "state_entry_date": [future],
+        }).to_parquet(hist_p, index=False)
+
+        payload = _run_build_nightly(root)
+
+        assert payload["freshness"]["state_history_through"] is None, (
+            "A row dated after price-through must not be reported as the store's "
+            "data-through date"
+        )
+        # Seed-run semantics: no prior state visible → no tracked sessions accrued
+        aapl = [r for r in payload["rows"] if r["ticker"] == "AAPL"]
+        assert len(aapl) == 1
+        assert aapl[0]["tracked_sessions"] is None
+
+
+class TestKillSwitchStub:
+    """LR-EXP: the kill switch must replace the live page, not just the JSON."""
+
+    def test_killswitch_writes_html_and_json_stub(self, tmp_path):
+        root = _build_fixture_root(tmp_path, ["AAPL"])
+        # A live page exists from a prior bake
+        (root / "site" / "leader_radar.html").write_text("<html>LIVE RADAR</html>")
+
+        from scripts.build_leader_radar import build
+        with patch("lib.config.ROOT", root), \
+             patch("lib.config.data_dir", lambda: root / "data"), \
+             patch("lib.config.load", lambda: {
+                 "storage": {"data_dir": "data", "site_dir": "site"},
+                 "leader_radar": {"enabled": False, "basket_keys": ["mag7"], "dow30": []},
+             }):
+            result = build(data_root=root / "data", site_root=root / "site")
+
+        assert result == {}
+        d = json.loads((root / "site" / "leaderradar" / "radar.json").read_text())
+        assert d.get("enabled") is False
+
+        html_p = root / "site" / "leader_radar.html"
+        assert html_p.exists(), "Kill switch must write the noindex HTML stub"
+        html = html_p.read_text()
+        assert "noindex" in html
+        assert "LIVE RADAR" not in html, "Stale live page must be replaced by the stub"
+
+
+class TestPitEarnings:
+    """LR-EXP: days_to_earnings is anchored to the price data-through date (PIT)."""
+
+    def test_dte_anchored_to_price_through(self):
+        from scripts.build_leader_radar import _extract_earnings
+
+        sd = {"earnings": {"next_date": "2026-07-30"}}
+        assert _extract_earnings(sd, date(2026, 7, 24))["days_to_earnings"] == 6
+        # Same input, a different data-through anchor → a different dte
+        assert _extract_earnings(sd, date(2026, 7, 20))["days_to_earnings"] == 10
+
+    def test_malformed_date_is_null(self):
+        from scripts.build_leader_radar import _extract_earnings
+
+        assert _extract_earnings(
+            {"earnings": {"next_date": "not-a-date"}}, date(2026, 7, 24)
+        )["days_to_earnings"] is None
+        assert _extract_earnings({}, date(2026, 7, 24))["days_to_earnings"] is None
+
+
+class TestLoudFailSoft:
+    """LR-EXP: fail-soft paths emit a PARSEABLE GitHub annotation.
+
+    log.warning("::warning ...") never parses — the logging format prefixes the
+    line and GitHub only reads ::warning at line start (#3487/#3515 postmortem).
+    """
+
+    def test_main_crash_emits_line_start_annotation(self, capsys):
+        import scripts.build_leader_radar as blr
+
+        with patch.object(blr, "build", side_effect=RuntimeError("boom")):
+            rc = blr.main()
+
+        assert rc == 0, "builder must stay fail-soft (exit 0)"
+        out_lines = capsys.readouterr().out.splitlines()
+        assert any(line.startswith("::warning title=leader_radar::") for line in out_lines), (
+            f"Annotation must start the line (bare print, not a logger call): {out_lines}"
+        )
