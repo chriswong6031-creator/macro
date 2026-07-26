@@ -405,29 +405,64 @@ details.sec-fold>summary:focus-visible{outline-offset:-2px}
 .fmore{font-size:11.5px;color:var(--muted);white-space:nowrap;text-decoration:none}
 .fmore:hover{color:var(--btc)}
 
-/* ---------- deep-dive shelf: lift the existing <details.sec-fold> to a real shelf ---------- */
-.ddshelf{margin-top:20px}
-.ddshelf-head{display:flex;align-items:center;gap:11px;margin:0 4px 12px}
-.ddshelf-head .vsec-tick{background:var(--btc-soft);color:var(--btc)}
-.ddshelf-head .lab{font-size:12px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
-.ddshelf-head .hint{font-size:12.5px;color:var(--muted)}
-details.sec-fold{background:var(--surface);border:1px solid var(--surface-brd);border-radius:14px;margin:0 0 12px;
-  overflow:hidden;box-shadow:var(--surface-shadow);transition:border-color .18s}
-details.sec-fold:hover{border-color:var(--surface-hover-brd)}
-details.sec-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:11px;
-  padding:15px 20px;font-size:13.5px;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
+/* ============================================================================
+   DEEP-DIVE SHELF — <details.sec-fold> as a real panel, ported from the macro
+   dashboard fold idiom (dashboard.html.j2 "details.fold"): accent-bar marker,
+   sentence-case bold title, a live state readout in the COLLAPSED header, and a
+   right-edge caret that rotates on open. The state readout is the point — the
+   user must learn where BTC stands without opening seven panels (doctrine Law 1).
+   Vector's marker is Bitcoin-orange rather than macro's link-blue: orange is this
+   page's ambient brand energy and an inert structural rule is the sanctioned use
+   (it is never a direction colour, and it does not swap in zh).
+   This block is the ONLY home for .sec-fold styling — a second, older copy used to
+   live in the in-body <style> and silently won the cascade (later, equal
+   specificity), which is what shipped the cramped uppercase rows. Do not re-add one.
+   ============================================================================ */
+details.sec-fold{background:var(--surface);border:1px solid var(--surface-brd);border-radius:16px;margin:0 0 10px;
+  overflow:hidden;box-shadow:var(--surface-shadow);transition:border-color .18s,box-shadow .2s}
+details.sec-fold:hover{border-color:var(--surface-hover-brd);box-shadow:var(--surface-shadow-hover)}
+details.sec-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:15px 20px;font-size:14.5px;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0;
+  line-height:1.35;user-select:none}
 details.sec-fold>summary::-webkit-details-marker{display:none}
-/* caret moves to the right edge and rotates on open (overrides the base ▸ rule) */
-details.sec-fold>summary::before{content:"▸";order:9;margin-left:auto;font-size:11px;color:var(--faint);transition:transform .2s;flex:none}
-details.sec-fold[open]>summary::before{transform:rotate(90deg)}
-details.sec-fold>summary .hint{margin-left:0;font-weight:500;color:var(--muted);font-size:12.5px;letter-spacing:0;text-transform:none}
+/* accent bar — the structural marker that replaced a row of decorative emoji */
+details.sec-fold>summary::before{content:"";flex:none;width:3px;height:15px;border-radius:2px;background:var(--btc)}
+/* caret — pseudo-element so a newly added panel can never forget it */
+details.sec-fold>summary::after{content:"▾";order:9;flex:none;font-size:12px;color:var(--muted);
+  transition:transform .22s ease,color .18s}
+details.sec-fold[open]>summary::after{transform:rotate(180deg)}
+details.sec-fold>summary:hover::after{color:var(--btc)}
+details.sec-fold>summary .hint{font-weight:500;color:var(--muted);font-size:12.5px;letter-spacing:0;text-transform:none}
+/* the live reading — right-zone, so 11 stacked panels share one scan line */
+details.sec-fold>summary .fold-stat{margin-left:auto;font-weight:600;font-size:12.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;text-align:right}
+details.sec-fold>summary .fold-stat b{color:var(--ink);font-weight:700}
 details.sec-fold>summary:hover{color:var(--btc)}
 details.sec-fold[open]>summary{border-bottom:1px solid var(--grid)}
 details.sec-fold>*:not(summary){padding-left:20px;padding-right:20px}
+details.sec-fold>summary+*{padding-top:18px}
 details.sec-fold>*:not(summary):last-child{padding-bottom:20px}
+/* narrow: title / hint / reading stack. The caret leaves the flex flow entirely —
+   as a wrapped flex item it was landing alone on a fourth line. */
+@media(max-width:640px){
+  details.sec-fold>summary{position:relative;gap:4px 10px;padding:13px 34px 13px 16px;font-size:14px}
+  details.sec-fold>summary .hint,
+  details.sec-fold>summary .fold-stat{flex-basis:100%;margin-left:13px;text-align:left}
+  details.sec-fold>summary::after{position:absolute;top:14px;right:15px;order:0}
+}
 /* nested section-titles inside a shelf body sit tighter (they're already grouped under one panel) */
 details.sec-fold .section-title{margin:22px 4px 12px}
 details.sec-fold .section-title:first-of-type{margin-top:16px}
+
+/* ---------- inside an open shelf the PANEL carries the elevation, so its cards
+   flatten to sections of it — nested card-on-card chrome was reading as mush.
+   Same move as the macro dashboard, where a fold panel holds flat content. ---------- */
+details.sec-fold .card{background:var(--card);border-radius:12px;box-shadow:none}
+details.sec-fold .card::before{display:none}
+details.sec-fold .card:hover{transform:none;box-shadow:none;border-color:var(--surface-brd)}
+/* a short card must not stretch to a tall neighbour's height — that void was the
+   600px of dead space beside the BFI chart */
+details.sec-fold .grid{align-items:start}
 
 /* ---------- keep the vector charts from clashing: shelf Plotly gets calm chrome ---------- */
 details.sec-fold .js-plotly-plot{border-radius:10px}
@@ -610,16 +645,10 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
     .cone-stat{width:84px;flex:none;text-align:right;font-size:10.5px;color:var(--faint);line-height:1.3}
     .cone-stat b{display:block;font-size:14px;font-weight:800;color:var(--ink)}
     .cone-stat b.bull{color:var(--bull)} .cone-stat b.bear{color:var(--bear)}
-    /* collapsed section fold */
-    details.sec-fold{margin-top:18px}
-    details.sec-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px;
-      font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
-      padding:10px 4px;border-radius:8px;user-select:none}
-    details.sec-fold>summary::-webkit-details-marker{display:none}
-    details.sec-fold>summary::before{content:"▸";font-size:11px;transition:transform .15s;color:var(--muted)}
-    details.sec-fold[open]>summary::before{transform:rotate(90deg)}
-    details.sec-fold>summary:hover{color:var(--ink)}
-    details.sec-fold>summary .hint{font-weight:600;text-transform:none;letter-spacing:0;font-size:12px;color:var(--faint, var(--muted))}
+    {# collapsed section folds are styled once, in <style id="vec-revamp"> (head).
+       The pre-revamp copy that used to live here overrode it from later in the
+       cascade — cramped 4px padding, uppercase muted labels, baseline alignment.
+       Do not restore it; extend the head block instead. #}
   </style>
   {% set tone_col = {'bull':'var(--blue)','bear':'var(--r3)','neutral':'var(--muted)'} %}
   {% set mcol = tone_col.get(master.tone,'var(--muted)') %}
@@ -769,7 +798,8 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   .rgc-dot{width:7px;height:7px;border-radius:50%;flex:none}
   </style>
   <details class="sec-fold" id="macro-regime-scorecard">
-  <summary>🧭 {{ t('Macro backdrop · advanced', '宏观背景 · 进阶') }} <span class="hint">{{ t('Five market dimensions · context only, does not drive position size', '五个市场维度 · 仅供参考，不决定仓位') }}</span></summary>
+  <summary>{{ t('Macro backdrop · advanced', '宏观背景 · 进阶') }} <span class="hint">{{ t('five market dimensions · context only, does not drive position size', '五个市场维度 · 仅供参考，不决定仓位') }}</span>
+    <span class="fold-stat"><b>{{ t(regime.band|capitalize, regime.band_zh) }}</b> · {{ regime.index|round|int }}/100</span></summary>
   <div class="card" style="padding:18px 22px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:baseline;gap:12px">
@@ -1052,7 +1082,8 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   {% set lad_col = {'quiet':'var(--muted)','coiled':'var(--blue)','warning':'var(--warn)','trigger':'var(--red)'} %}
   {% set lad_lab = {'quiet':'Calm','coiled':'Building','warning':'Alert','trigger':'Act'} %}
   {% set lad_zh = {'quiet':'平静','coiled':'蓄势','warning':'警告','trigger':'触发'} %}
-  <details class="sec-fold" id="impulse-radar"><summary>📡 {{ t('Impulse radar','脉冲雷达') }} <span class="hint">{{ t('forward pressure — watch, don\'t act on it alone','前瞻压力 — 观察即可，勿单独行动') }}</span></summary>
+  <details class="sec-fold" id="impulse-radar"><summary>{{ t('Impulse radar','脉冲雷达') }} <span class="hint">{{ t('forward pressure — watch, don\'t act on it alone','前瞻压力 — 观察即可，勿单独行动') }}</span>
+    <span class="fold-stat">{{ t('Down','下行') }} <b>{{ t(lad_lab.get(ir.down.ladder, ir.down.ladder), lad_zh.get(ir.down.ladder, ir.down.ladder)) }}</b> · {{ t('up','上行') }} <b>{{ t(lad_lab.get(ir.up.ladder, ir.up.ladder), lad_zh.get(ir.up.ladder, ir.up.ladder)) }}</b></span></summary>
   <div class="card" id="impulse" style="margin-bottom:18px">
     <h2>{{ t('Impulse Radar · forward pressure','脉冲雷达 · 前瞻压力') }}</h2>
     <div class="sub" style="margin-top:2px">{{ t('Early warning tracker — shows whether pressure is building or fading. Watch; don\'t act on background readings alone.','早期预警追踪 — 显示压力是否正在积累或消退。观察即可，仅凭背景读数不宜行动。') }}</div>
@@ -1186,7 +1217,8 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   </div>
 
   <!-- ===================== RISK INDEX vs STRATEGY ===================== -->
-  <details class="sec-fold" id="backtest"><summary>📈 {{ t('Risk index vs strategy','风险指数 vs 策略') }} <span class="hint">{{ t('backtested — how the model would have traded','已回测 — 模型历史上如何操作') }}</span></summary>
+  <details class="sec-fold" id="backtest"><summary>{{ t('Risk index vs strategy','风险指数 vs 策略') }} <span class="hint">{{ t('backtested — how the model would have traded','已回测 — 模型历史上如何操作') }}</span>
+    <span class="fold-stat"><b>{{ cards.optimal.cagr }}%</b>/{{ t('yr','年') }} · {{ t('holding','买入持有') }} {{ cards.optimal.hodl_cagr }}%</span></summary>
   <div class="card">
     <h3>{{ t('BTC price, Risk Index & allocation', 'BTC 价格、风险指数与仓位') }} <span class="faint" style="font-size:13px;font-weight:600" id="vrc-variant-label">{{ t('· Optimal variant','· 最优变体') }}</span></h3>
     <div id="vec-risk-chart" class="vchart-wrap" style="--vchart-h:500px"><div class="sub faint" style="padding:18px 0">{{ t('Loading interactive chart…','加载交互图表…') }}</div></div>
@@ -1292,7 +1324,14 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
 
   <div class="vsec" id="deepdive"><span class="vsec-tick">⋯</span><span class="vsec-lab">{{ t('Deep dive','深入细节') }}</span><span class="vsec-hint">{{ t('the full signal stack — open any panel','完整信号栈 — 展开任意面板') }}</span></div>
   <!-- ===================== CORE SIGNALS (merged: momentum, structure, impulse, BFI) ===================== -->
-  <details class="sec-fold" id="core-signals"><summary>🧮 {{ t('Core signals','核心信号') }} <span class="hint">{{ t('momentum · structure · impulse · fundamentals','动量 · 结构 · 脉冲 · 基本面') }}</span></summary>
+  {# collapsed-header reading — same vocabulary the cards below use, so the word
+     never changes between the shelf row and the panel it opens #}
+  {% set _ms_en = {'bull':'with us','bear':'against us','neutral':'neutral'} %}
+  {% set _ms_zh = {'bull':'顺势','bear':'逆势','neutral':'中性'} %}
+  {% set _ss_en = {'constructive':'supportive','broken':'broken','neutral':'neutral'} %}
+  {% set _ss_zh = {'constructive':'支撑','broken':'走坏','neutral':'中性'} %}
+  <details class="sec-fold" id="core-signals"><summary>{{ t('Core signals','核心信号') }} <span class="hint">{{ t('momentum · structure · impulse · fundamentals','动量 · 结构 · 脉冲 · 基本面') }}</span>
+    <span class="fold-stat">{{ t('Momentum','动量') }} <b>{{ t(_ms_en.get(momentum_state,'neutral'), _ms_zh.get(momentum_state,'中性')) }}</b> · {{ t('structure','结构') }} <b>{{ t(_ss_en.get(structure_state,'neutral'), _ss_zh.get(structure_state,'中性')) }}</b></span></summary>
   <div class="grid cols-2">
     <div class="card"><h3>{{ t('Momentum', '动量') }} <span class="faint" style="font-size:14px">{{ momentum }}</span></h3>{{ charts.momentum|safe }}
       <div class="sub">{{ t('Above +0.5 = momentum is with us · Below −0.5 = momentum is against us · Now:', '高于 +0.5 = 动量顺势 · 低于 −0.5 = 动量逆势 · 当前：') }} <b>{{ td(momentum_state) }}</b></div></div>
@@ -1323,7 +1362,9 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   </details>
 
   <!-- ===================== CYCLE & VALUATION (merged) ===================== -->
-  <details class="sec-fold" id="cycle-valuation"><summary>🌗 {{ t('Cycle & valuation','周期与估值') }} <span class="hint">{{ t('halving clock, valuation anchors, miner cycle, positioning','减半时钟、估值锚点、矿工周期、持仓') }}</span></summary>
+  {% set _ph_zh = {'accumulation':'累积','markup':'上涨','markdown':'下跌','recovery':'复苏'} %}
+  <details class="sec-fold" id="cycle-valuation"><summary>{{ t('Cycle & valuation','周期与估值') }} <span class="hint">{{ t('halving clock, valuation anchors, miner cycle, positioning','减半时钟、估值锚点、矿工周期、持仓') }}</span>
+    <span class="fold-stat">{% if cycle.phase %}<b>{{ t(cycle.phase|capitalize, _ph_zh.get(cycle.phase, cycle.phase)) }}</b>{% endif %}{% if cycle.pct is not none %}{% if cycle.phase %} · {% endif %}{# t() falls back to EN on an empty zh arg — both sides must be complete strings #}{{ t((cycle.pct|round|int)|string ~ '% through cycle', '周期进度 ' ~ (cycle.pct|round|int)|string ~ '%') }}{% endif %}</span></summary>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Valuation anchors', '估值锚点') }}
@@ -1424,14 +1465,16 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   </details>
 
   <!-- ===================== DERIVATIVES (merged: options + leverage) ===================== -->
+  {# Tier-1: Option-market mood summary — hoisted so the collapsed shelf row and the
+     card below always read the same word. All z-scores/percentiles stay in hover. #}
+  {% set iv_mood = 'Expensive options' if (options.vrp_state=='vol_rich') else ('Cheap options' if (options.vrp_state=='vol_cheap') else ('High fear' if (options.dvol is not none and options.dvol > 70) else 'Calm')) %}
+  {% set iv_mood_zh = '期权偏贵' if (options.vrp_state=='vol_rich') else ('期权偏便宜' if (options.vrp_state=='vol_cheap') else ('高度恐慌' if (options.dvol is not none and options.dvol > 70) else '平静')) %}
   <details class="sec-fold" id="derivatives">
-  <summary>⚙ {{ t('Options & leverage · advanced', '期权与杠杆 · 进阶') }} <span class="hint">{{ t('volatility, skew, funding, open interest', '波动率、偏斜、资金费率、持仓') }}</span></summary>
+  <summary>{{ t('Options & leverage · advanced', '期权与杠杆 · 进阶') }} <span class="hint">{{ t('volatility, skew, funding, open interest', '波动率、偏斜、资金费率、持仓') }}</span>
+    <span class="fold-stat"><b>{{ t(iv_mood, iv_mood_zh) }}</b>{% if options.em_pct is not none %} · ±{{ options.em_pct }}% {{ t('priced (30d)','（30 天预期）') }}{% endif %}</span></summary>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Implied volatility', '隐含波动率') }}</h3>
-      {# Tier-1: Option-market mood summary. All z-scores/percentiles in hover. #}
-      {% set iv_mood = 'Expensive options' if (options.vrp_state=='vol_rich') else ('Cheap options' if (options.vrp_state=='vol_cheap') else ('High fear' if (options.dvol is not none and options.dvol > 70) else 'Calm')) %}
-      {% set iv_mood_zh = '期权偏贵' if (options.vrp_state=='vol_rich') else ('期权偏便宜' if (options.vrp_state=='vol_cheap') else ('高度恐慌' if (options.dvol is not none and options.dvol > 70) else '平静')) %}
       <div style="font-size:18px;font-weight:800;color:{{ 'var(--r3)' if options.vrp_state=='vol_rich' or (options.dvol and options.dvol>70) else ('var(--amber)' if options.vrp_state=='vol_cheap' else 'var(--muted)') }};margin:8px 0">{{ t(iv_mood, iv_mood_zh) }}</div>
       {% if options.em_pct is not none %}
       <div class="sub">{{ t('Options are pricing a ±','期权定价的未来 30 天波幅约为 ±') }}{{ options.em_pct }}% {{ t('move over 30 days','波幅（30 天）') }} ({{ options.em_lower|money }} – {{ options.em_upper|money }})</div>{% endif %}
@@ -1494,7 +1537,10 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   </details>
 
   <!-- ===================== THE BACKDROP · LIQUIDITY & BREADTH ===================== -->
-  <details class="sec-fold" id="backdrop"><summary>🌊 {{ t('Liquidity & breadth','流动性与广度') }} <span class="hint">{{ t('the macro money tide + how broad the move is','宏观资金潮 + 涨势广度') }}</span></summary>
+  {% set _mr_zh = {'tailwind':'顺风','headwind':'逆风','neutral':'中性'} %}
+  {% set _bk_zh = {'Alt season':'山寨季','BTC season':'BTC 季','Mixed':'混合'} %}
+  <details class="sec-fold" id="backdrop"><summary>{{ t('Liquidity & breadth','流动性与广度') }} <span class="hint">{{ t('the macro money tide + how broad the move is','宏观资金潮 + 涨势广度') }}</span>
+    <span class="fold-stat">{{ t('Liquidity','流动性') }} <b>{{ t((macro.regime or 'neutral'), _mr_zh.get(macro.regime,'中性')) }}</b>{% if breadth and breadth.bucket and breadth.bucket != '—' %} · {{ t('breadth','广度') }} <b>{{ t(breadth.bucket, _bk_zh.get(breadth.bucket, breadth.bucket)) }}</b>{% endif %}</span></summary>
   <div class="grid cols-2">
     <div class="card">
       {% set mr = macro.regime %}
@@ -1545,7 +1591,12 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   </details>
 
   <!-- ===================== ON-CHAIN & ETF DEMAND ===================== -->
-  <details class="sec-fold" id="onchain"><summary>⛓ {{ t('On-chain & ETF demand','链上与 ETF 需求') }} <span class="hint">{{ t('US premium, ETF net flows, per-issuer detail','美国溢价、ETF 净流入、按发行人明细') }}</span></summary>
+  {% set _pr_en = {'overheated':'overheated','premium':'paying up','neutral':'neutral','discount':'discount','deep_discount':'deep discount'} %}
+  {% set _pr_zh = {'overheated':'过热','premium':'溢价买入','neutral':'中性','discount':'折价','deep_discount':'深度折价'} %}
+  {% set _etf_en = {'accumulation':'buying','distribution':'selling','neutral':'flat'} %}
+  {% set _etf_zh = {'accumulation':'买入','distribution':'卖出','neutral':'持平'} %}
+  <details class="sec-fold" id="onchain"><summary>{{ t('On-chain & ETF demand','链上与 ETF 需求') }} <span class="hint">{{ t('US premium, ETF net flows, per-issuer detail','美国溢价、ETF 净流入、按发行人明细') }}</span>
+    <span class="fold-stat">{% if onchain.premium_state %}{{ t('US buyers','美国买家') }} <b>{{ t(_pr_en.get(onchain.premium_state, onchain.premium_state), _pr_zh.get(onchain.premium_state, onchain.premium_state)) }}</b>{% endif %}{% if etf.state %}{% if onchain.premium_state %} · {% endif %}ETF <b>{{ t(_etf_en.get(etf.state,'flat'), _etf_zh.get(etf.state,'持平')) }}</b>{% endif %}</span></summary>
   <div class="grid cols-2">
     <div class="card">
       {% set ps = {'overheated':['OVERHEATED','过热','var(--r3)'],'premium':['PREMIUM · US bid','溢价 · 美国买盘','var(--blue)'],'neutral':['NEUTRAL','中性','var(--muted)'],'discount':['DISCOUNT','折价','var(--amber)'],'deep_discount':['DEEP DISCOUNT','深度折价','var(--r3)']} %}
@@ -1625,8 +1676,13 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
 
   <!-- ===================== MASTERMIND FACTORS (new) ===================== -->
   {% if newf %}
+  {% set _mn_en = {'capitulation':'capitulating','stress':'squeezed','healthy':'healthy','euphoria':'euphoric'} %}
+  {% set _mn_zh = {'capitulation':'投降','stress':'承压','healthy':'健康','euphoria':'亢奋'} %}
+  {% set _cb_en = {'drawdown_amplifier':'falls harder','diversifier':'holds up better','mixed':'mixed'} %}
+  {% set _cb_zh = {'drawdown_amplifier':'跌得更多','diversifier':'相对抗跌','mixed':'混合'} %}
   <details class="sec-fold" id="mastermind-factors">
-  <summary>{{ t('Advanced factors · miners, beta, holders, attention, flow', '高阶因子 · 矿工·贝塔·持有者·关注度·主动盘') }}</summary>
+  <summary>{{ t('Advanced factors', '高阶因子') }} <span class="hint">{{ t('miners, beta, holders, attention, flow', '矿工、贝塔、持有者、关注度、主动盘') }}</span>
+    <span class="fold-stat">{% if newf.miner.state %}{{ t('Miners','矿工') }} <b>{{ t(_mn_en.get(newf.miner.state, newf.miner.state), _mn_zh.get(newf.miner.state, newf.miner.state)) }}</b>{% endif %}{% if newf.cbeta.regime %}{% if newf.miner.state %} · {% endif %}{{ t('vs stocks','对比股市') }} <b>{{ t(_cb_en.get(newf.cbeta.regime, newf.cbeta.regime), _cb_zh.get(newf.cbeta.regime, newf.cbeta.regime)) }}</b>{% endif %}</span></summary>
   <div class="grid cols-2">
     <!-- Miner economics (deep 2010-> margin anchor) -->
     <div class="card">
@@ -1698,7 +1754,9 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
   {% endif %}
 
   <!-- ===================== CROSS-ASSET MAP ===================== -->
-  <details class="sec-fold" id="crossasset"><summary>🗺 {{ t('Markets at a glance','市场一览') }} <span class="hint">{{ t('3-day direction across assets','跨资产 3 天方向') }}</span></summary>
+  {% set _cx_rows = cross|map(attribute='rows')|sum(start=[]) %}
+  <details class="sec-fold" id="crossasset"><summary>{{ t('Markets at a glance','市场一览') }} <span class="hint">{{ t('3-day direction across assets','跨资产 3 天方向') }}</span>
+    <span class="fold-stat"><b>{{ _cx_rows|selectattr('trend','equalto','Bull')|list|length }}</b> {{ t('rising','上行') }} · <b>{{ _cx_rows|selectattr('trend','equalto','Bear')|list|length }}</b> {{ t('falling','下行') }}</span></summary>
   <div class="grid cols-3">
     {% for g in cross %}
     <div class="card">
@@ -1761,7 +1819,12 @@ details.sec-fold .js-plotly-plot{border-radius:10px}
 
   <!-- ===================== CALIBRATION TRANSPARENCY ===================== -->
   <details class="sec-fold" id="calibration">
-  <summary>{{ t('How much to trust this · measured records', '可信度如何 · 实测记录') }} <span class="hint">{{ t('Signal verdicts & ensemble test', '信号评定与集成检验') }}</span></summary>
+  {% set _cal = namespace(ok=0) %}
+  {% for _sig, _e in calib.signals.items() %}{% if 'CONFIRMED' in _e.verdict %}{% set _cal.ok = _cal.ok + 1 %}{% endif %}{% endfor %}
+  <summary>{{ t('How much to trust this', '可信度如何') }} <span class="hint">{{ t('measured records — signal verdicts & ensemble test', '实测记录 — 信号评定与集成检验') }}</span>
+    {# calibration.json is optional — the builder falls back to an empty signals dict,
+       and "0/0 signals proven" would read as a result rather than as absent data #}
+    {% if calib.signals %}<span class="fold-stat"><b>{{ _cal.ok }}</b>/{{ calib.signals|length }} {{ t('signals proven','项信号实测有效') }}</span>{% endif %}</summary>
   <div class="card">
     <h3>{{ t('Signal verdicts', '信号评定') }} <span class="faint" style="font-size:13px;font-weight:600">{{ calib.meta.span }}</span></h3>
     <table class="catbl">
