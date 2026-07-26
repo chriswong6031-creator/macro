@@ -780,15 +780,24 @@ def _build_theme_tiles(themes_raw: dict, cm_path: Path | None = None) -> list[di
         tip_en, tip_zh = _THEME_TIPS.get(slug, ("", ""))
         tdata = themes_raw.get(slug) or {}
         spread = (tdata.get("spread") or {})
-        level = spread.get("level")
-        d21 = spread.get("d21")
+        # UNIT CONTRACT: credit_momentum.json carries the theme g-spread in BASIS
+        # POINTS, while _theme_stance and the tile copy both expect PERCENT (see
+        # that docstring: "in %-fraction units, converted from bp") and the
+        # theme_daily fallback below already divides by 100. Normalize on the way
+        # in — otherwise a 692bp neocloud spread renders as "+692.0%" and clears
+        # every stance threshold at once. This stayed latent while the momentum
+        # organ was crashing and emitting level=None for every theme.
+        level_bp = spread.get("level")
+        level = (level_bp / 100.0) if level_bp is not None else None
+        d21_bp = spread.get("d21")
+        d21 = (d21_bp / 100.0) if d21_bp is not None else None
         vel = (spread.get("velocity") or {})
         pctile = vel.get("vel21_pctile")
         state = spread.get("state", "accruing")
 
         # Defect 1 fix: when the velocity organ hasn't yet accumulated 21+ dates,
-        # the cm level is None.  Fall back to theme_daily point-in-time level so
-        # glance tiles show the actual g-spread even during accrual.
+        # the cm level is None.  Fall back to theme_daily point-in-time level
+        # (already percent) so glance tiles show the actual g-spread during accrual.
         if level is None and slug in td_levels:
             level = td_levels[slug]
 

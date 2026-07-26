@@ -649,16 +649,23 @@ class TestLevelDrivenTiles:
         assert levels == {}
 
     def test_live_data_level_not_overridden_when_present(self) -> None:
-        """When cm has a live level, it takes precedence over theme_daily fallback."""
-        # themes_raw with a live level (cm level takes priority)
+        """When cm has a live level, it takes precedence over theme_daily fallback.
+
+        UNIT NOTE: cm spread levels are BASIS POINTS — verified against live data,
+        where every themes.<slug>.spread.level equals theme_daily.g_spread_bp_pw
+        exactly (engine.credit_momentum builds the series from that bp column).
+        This fixture previously used level=1.5 expecting "+1.5%", which only held
+        because it was synthetic; real values (87.85, 691.97) would have rendered
+        as "+87.9%" / "+692.0%".
+        """
         themes_raw = {
             "hyperscaler_credit": {
-                "spread": {"state": "live", "level": 1.5, "d21": 0.05, "velocity": {"vel21_pctile": 60.0}}
+                "spread": {"state": "live", "level": 150.0, "d21": 5.0, "velocity": {"vel21_pctile": 60.0}}
             }
         }
         tiles = _build_theme_tiles(themes_raw, cm_path=None)
         hyp = next(t for t in tiles if t["slug"] == "hyperscaler_credit")
-        assert "+1.5%" in hyp["level_disp"]
+        assert "+1.5%" in hyp["level_disp"], "150bp must render as +1.5%"
         # d21 present → accruing=False
         assert hyp["accruing"] is False
 
@@ -1038,3 +1045,68 @@ class TestFinraNanCoercionM2Regression:
         serialized = _json.dumps(bh)
         parsed = _json.loads(serialized)
         assert parsed["breadth"]["finra_advance_share"] is None
+
+
+# ---------------------------------------------------------------------------
+# Theme tile UNIT CONTRACT — credit_momentum levels are bp, tiles render percent
+# ---------------------------------------------------------------------------
+# Regression: credit_momentum.json carries the theme g-spread in BASIS POINTS,
+# while _theme_stance and the tile copy expect PERCENT. _build_theme_tiles used
+# the cm value raw, so a 692bp neocloud spread rendered as "+692.0%" and cleared
+# every stance threshold. Latent for as long as the momentum organ crashed and
+# emitted level=None for every theme (the theme_daily fallback, which divides by
+# 100, was masking it). Surfaced the moment the organ was repaired.
+
+class TestThemeTileUnitContract:
+    @staticmethod
+    def _cm_with_theme_levels(**levels_bp: float) -> dict:
+        return {
+            "organ": "credit_momentum.v1",
+            "as_of": "2026-07-26",
+            "authority": {"rank": False, "size": False, "gate": False, "escalate": False},
+            "themes": {
+                slug: {"theme": slug, "n_dates": 8,
+                       "spread": {"level": bp, "d21": None, "state": "accruing", "velocity": {}}}
+                for slug, bp in levels_bp.items()
+            },
+        }
+
+    def test_bp_level_renders_as_percent(self) -> None:
+        """692bp must render "+6.9%", never "+692.0%"."""
+        cm = self._cm_with_theme_levels(neocloud_credit=691.97, hyperscaler_credit=87.85)
+        tiles = {t["slug"]: t for t in _build_theme_tiles(cm["themes"])}
+        assert tiles["neocloud_credit"]["level_disp"] == "+6.9%"
+        assert tiles["hyperscaler_credit"]["level_disp"] == "+0.9%"
+
+    def test_stance_thresholds_read_percent_not_bp(self) -> None:
+        """58bp is below the 75bp amber boundary → Ignore, not Watch closely."""
+        cm = self._cm_with_theme_levels(ai_power_credit=56.78, dc_reit_credit=60.41,
+                                        hyperscaler_credit=87.85, memory_credit=180.60)
+        tiles = {t["slug"]: t for t in _build_theme_tiles(cm["themes"])}
+        # Below 75bp → calm. Raw-bp handling would have made these red.
+        assert tiles["ai_power_credit"]["stance_en"] == "Ignore"
+        assert tiles["dc_reit_credit"]["stance_en"] == "Ignore"
+        # Between 75bp and 400bp → amber.
+        assert tiles["hyperscaler_credit"]["stance_en"] == "Watch"
+        assert tiles["memory_credit"]["stance_en"] == "Watch"
+
+    def test_d21_delta_also_converted(self) -> None:
+        """d21 is bp in the organ; the tile prints percent-per-21d."""
+        cm = {
+            "themes": {
+                "hyperscaler_credit": {
+                    "theme": "hyperscaler_credit", "n_dates": 30,
+                    "spread": {"level": 87.85, "d21": 25.0, "state": "widening", "velocity": {}},
+                }
+            }
+        }
+        tiles = {t["slug"]: t for t in _build_theme_tiles(cm["themes"])}
+        assert tiles["hyperscaler_credit"]["d21_disp"] == "+0.25%/21d"
+
+    def test_theme_daily_fallback_still_percent(self) -> None:
+        """A None cm level must still fall back without double-converting."""
+        cm = self._cm_with_theme_levels(hyperscaler_credit=None)
+        tiles = {t["slug"]: t for t in _build_theme_tiles(cm["themes"])}
+        # No theme_daily on disk here (cm_path=None) → no level, no crash.
+        assert tiles["hyperscaler_credit"]["level_disp"] is None
+        assert tiles["hyperscaler_credit"]["stance_en"] == "Building history"
