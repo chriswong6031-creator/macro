@@ -1655,7 +1655,15 @@ def _build_foundry_block(repo_root: Path | None = None) -> dict:
         return {"present": False}
 
     # ---- 2. Load results/*.json -------------------------------------------
-    from engine.signal_foundry.results import load_results, promotion_docket
+    # Guarded import: engine.signal_foundry pulls in the frozen battery, which needs
+    # scipy. The minimal CI lanes install pandas/numpy only, so an unguarded import
+    # turned "no foundry panel" into a hard build failure — breaking this function's
+    # own contract (additive, graceful, never fatal). A missing DEPENDENCY degrades
+    # exactly like missing DATA does: no panel, not a crash.
+    try:
+        from engine.signal_foundry.results import load_results, promotion_docket
+    except ImportError:
+        return {"present": False}
 
     all_results: list[dict] = []
     try:
