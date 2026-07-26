@@ -10,6 +10,7 @@ Public API (v2 — TrendSpider-grade terminal chart):
     render_chart_v2(...)           -> str          (self-contained SVG, < 60 KB)
     render_earnings_card(...)      -> str          (branded earnings card SVG)
     resolve_logo(ticker, root)     -> str | None   (whitened data URI, cached)
+    rasterize_svg(svg)             -> bytes        (PNG of that exact SVG; X rejects SVG)
 
 v1 spec constraints (§2.2):
   - NO matplotlib, NO external deps beyond pandas/pyarrow for parquet reading.
@@ -28,10 +29,169 @@ v2 spec constraints (§2 anatomy + §3 decision):
 """
 from __future__ import annotations
 
+import logging
 import math
+import re
+import shutil
+import subprocess
+import tempfile
 import zlib
 from pathlib import Path
 from typing import Any
+
+log = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SVG → PNG rasterizer (X rejects SVG; the POSTED image must be the SAME artwork
+# the Content Studio preview shows)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# WHY THIS EXISTS (2026-07-26 incident)
+# The publish path used to raster a SEPARATE hand-drawn PIL reimplementation of
+# the v1 line chart (render_signal_chart_png) while the admin preview and the
+# outbox artifact showed the v2 candlestick SVG. The two drifted: v2 grew
+# candles, volume/MACD subpanels, the logo overlay and the footer marketing bar
+# (mastermind-x.com + "Start free 14-day trial"); the PNG never followed. The
+# account therefore posted a plain line chart with no URL and no CTA while the
+# mockup promised the full card. Rasterizing the EXACT SVG we already rendered
+# removes the second renderer, so preview and post cannot diverge again.
+#
+# Rasteriser = headless Chrome, matching scripts/make_favicon.py (the house
+# choice; cairosvg/rsvg are not installed on the render hosts). It is also the
+# right choice on the merits here: the admin preview IS browser-rendered SVG, so
+# a Chrome raster is pixel-faithful to the mockup by construction.
+#
+# FAIL-SOFT: no Chrome (CI, ubuntu publish runner) → returns b"" and the caller
+# falls back to the legacy PIL PNG. A missing rasteriser must never break the
+# nightly or turn a post text-only.
+
+_CHROME_CANDIDATES: tuple[str, ...] = (
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "google-chrome",
+    "chromium",
+    "chromium-browser",
+    "chrome",
+)
+
+_SVG_DIM_RE = re.compile(r'<svg[^>]*?\bwidth="(\d+(?:\.\d+)?)"[^>]*?\bheight="(\d+(?:\.\d+)?)"')
+_SVG_VIEWBOX_RE = re.compile(r'<svg[^>]*?\bviewBox="\s*[\d.+-]+\s+[\d.+-]+\s+([\d.]+)\s+([\d.]+)')
+
+
+def find_chrome() -> str | None:
+    """First usable Chrome/Chromium binary, or None. Never raises."""
+    for cand in _CHROME_CANDIDATES:
+        try:
+            if "/" in cand:
+                if Path(cand).exists():
+                    return cand
+            else:
+                found = shutil.which(cand)
+                if found:
+                    return found
+        except Exception:  # noqa: BLE001 — probing must never raise
+            continue
+    return None
+
+
+def svg_dimensions(svg: str) -> tuple[int, int] | None:
+    """(width, height) from the <svg> root — explicit attrs first, then viewBox."""
+    m = _SVG_DIM_RE.search(svg)
+    if not m:
+        m = _SVG_VIEWBOX_RE.search(svg)
+    if not m:
+        return None
+    try:
+        w, h = int(float(m.group(1))), int(float(m.group(2)))
+    except (TypeError, ValueError):
+        return None
+    return (w, h) if w > 0 and h > 0 else None
+
+
+def rasterize_svg(
+    svg: str,
+    *,
+    width: int | None = None,
+    height: int | None = None,
+    scale: int = 2,
+    timeout_s: int = 45,
+) -> bytes:
+    """Rasterize an SVG string to PNG bytes via headless Chrome. Fail-soft.
+
+    width/height default to the SVG root's own dimensions, so the raster is the
+    artwork at its designed size. `scale` is the device pixel ratio: 2 gives a
+    retina-crisp 2000x1700 PNG from the 1000x850 v2 chart, which is what a phone
+    timeline actually needs (X downscales; it never upscales).
+
+    Deterministic for a given (svg, width, height, scale) — no clock, no
+    randomness — so a re-run of the nightly rewrites identical bytes.
+
+    Returns b"" on ANY failure (no Chrome, timeout, no output). The caller must
+    treat b"" as "no PNG" and fall back; this never raises.
+    """
+    if not svg or "<svg" not in svg:
+        return b""
+
+    dims = svg_dimensions(svg)
+    w = int(width or (dims[0] if dims else 1000))
+    h = int(height or (dims[1] if dims else 850))
+    if w <= 0 or h <= 0:
+        return b""
+
+    chrome = find_chrome()
+    if not chrome:
+        log.warning("rasterize_svg: no Chrome/Chromium binary — falling back to the legacy PNG")
+        return b""
+
+    # Strip anything before the root element so the wrapper holds a clean <svg>.
+    try:
+        svg_markup = svg[svg.index("<svg"):]
+    except ValueError:
+        return b""
+
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            wrapper = tdp / "w.html"
+            out = tdp / "out.png"
+            # Force the SVG to exactly w×h CSS px: some roots carry only a
+            # viewBox, and an unsized inline SVG defaults to 300x150 in Chrome.
+            wrapper.write_text(
+                "<!doctype html><meta charset=utf-8>"
+                "<style>html,body{margin:0;padding:0;background:transparent}"
+                f"svg{{display:block;width:{w}px;height:{h}px}}</style>{svg_markup}",
+                encoding="utf-8",
+            )
+            cmd = [
+                chrome, "--headless=new", "--disable-gpu", "--no-sandbox",
+                "--hide-scrollbars",
+                f"--force-device-scale-factor={int(scale)}",
+                "--virtual-time-budget=4000",
+                "--default-background-color=00000000",
+                f"--screenshot={out}",
+                f"--window-size={w},{h}",
+                f"--user-data-dir={tdp / 'cr'}",
+                wrapper.as_uri(),
+            ]
+            # Chrome writes the screenshot BEFORE it sometimes hangs on exit, so
+            # cap the wait and check for the file rather than trust a clean exit
+            # (same handling as scripts/make_favicon.py).
+            try:
+                subprocess.run(cmd, timeout=timeout_s,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except subprocess.TimeoutExpired:
+                subprocess.run(["pkill", "-9", "-f", str(tdp / "cr")],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                               check=False)
+            if not out.exists():
+                log.warning("rasterize_svg: Chrome produced no screenshot (%dx%d)", w, h)
+                return b""
+            data = out.read_bytes()
+            return data if data.startswith(b"\x89PNG") else b""
+    except Exception as exc:  # noqa: BLE001 — rasterizing is best-effort
+        log.warning("rasterize_svg failed: %s", exc)
+        return b""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1147,8 +1307,21 @@ def render_chart_v2(
             v += chosen_step
         return levels or [lo, hi]
 
+    # Last-price pill geometry is needed BEFORE the tick loop: a round level that
+    # falls under the pill must be suppressed, or the two numbers overprint each
+    # other (e.g. a 381.70 pill sitting on the 380.00 label). The pill already
+    # states the price, so a hidden tick costs the reader nothing.
+    last_close = c[-1]
+    prev_close = c[-2] if n >= 2 else last_close
+    pill_color = "#4CAF50" if last_close >= prev_close else "#E23B3B"
+    pill_y = py_price(last_close)
+    pill_label = _fmt_thousands(last_close)
+    _PILL_HALF_H = 11.0  # pill is 18px tall; +2px so glyphs never kiss
+
     for tick_price in _round_axis_levels(y_min, y_max, target=6):
         ty = py_price(tick_price)
+        if abs(ty - pill_y) < _PILL_HALF_H + 4:
+            continue
         axis_parts.append(
             f'<text x="{axis_x + 2:.1f}" y="{ty + 4:.1f}" '
             f'fill="#6b7a99" font-size="10" font-family="monospace">'
@@ -1156,11 +1329,6 @@ def render_chart_v2(
         )
 
     # Last-price pill — rx=2 (rounded corners), bold
-    last_close = c[-1]
-    prev_close = c[-2] if n >= 2 else last_close
-    pill_color = "#4CAF50" if last_close >= prev_close else "#E23B3B"
-    pill_y = py_price(last_close)
-    pill_label = _fmt_thousands(last_close)
     pill_w = max(58, len(pill_label) * 7 + 12)
     pill_x = PAD_L + chart_w + 4
     axis_parts.append(
@@ -1467,11 +1635,17 @@ def render_chart_v2(
         logo_x = PAD_L + (chart_w - logo_w) / 2
         logo_y = PAD_TOP + PRICE_H * 0.08
         logo_h = logo_w * 0.5  # reasonable aspect; SVG preserveAspectRatio handles it
+        # WATERMARK, not a sticker. This was 0.88, which is opaque: a logo like
+        # MSFT's (four solid squares) painted a white block straight over the
+        # candles and buried the price action. It only ever looked acceptable on
+        # low-contrast marks. It matters now because this SVG is rasterized and
+        # POSTED (2026-07-26) — before, the posted PNG carried no logo at all.
+        # 0.10 reads as brand texture behind the chart and never competes with it.
         logo_svg = (
             f'<image href="{logo_datauri}" '
             f'x="{logo_x:.1f}" y="{logo_y:.1f}" '
             f'width="{logo_w:.1f}" height="{logo_h:.1f}" '
-            f'opacity="0.88" preserveAspectRatio="xMidYMid meet"/>'
+            f'opacity="0.10" preserveAspectRatio="xMidYMid meet"/>'
         )
 
     # ── Ghost watermark (fallback when no logo) ──────────────────────────────

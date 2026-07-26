@@ -121,6 +121,21 @@ _LEAN = {
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy (honest, terse, watchlist voice — no calls)
 # ─────────────────────────────────────────────────────────────────────────────
+#
+# VOICE (2026-07-26 incident fix). The first version of this lane was ONE
+# f-string skeleton — "Closed {px}, {week}, {trend}. {position}. Into next week,
+# {level}. {tail}" — so eight consecutive flagship posts were the same sentence
+# with the numbers swapped, each stacking three raw technical clauses (the 20-,
+# the 50-, % off highs, range position). It read exactly like what it was: a bot.
+#
+# Two changes:
+#  1. The LLM copywriter is now the PRIMARY writer for this lane (write_copy →
+#     copywriter.write_posts_llm, the same persona/voice lane content_studio
+#     uses). This lane used to be the one queue that never touched it.
+#  2. Everything below is now only the DETERMINISTIC FLOOR for when the LLM is
+#     off or fails. Even the floor obeys the design doctrine: lead with the plain
+#     state, name at most ONE level, vary the sentence shape per state so a run
+#     of posts does not share a skeleton.
 
 def _week_clause(wk: float) -> str:
     if abs(wk) < 0.5:
@@ -172,28 +187,95 @@ def _watch_level(lv: dict[str, Any]) -> str:
 
 
 # Rotated honest tails — all say the same true thing (watching, not advising).
+# No em dashes: copywriter.validate_copy rejects U+2014 as a model tell, and the
+# floor must clear the same bar as the LLM lane it stands in for.
 _TAILS: tuple[str, ...] = (
     "On the watch list, not a call.",
     "Watching, no position.",
-    "On the radar — tracking it, not touching it.",
+    "On the radar, tracking it, not touching it.",
     "Levels, not advice.",
 )
 
 # X hard limit. A post over this is never emitted (caller skips it).
 _MAX_LEN: int = 280
 
+# Per-state sentence shapes for the deterministic floor. Each state gets its own
+# opener AND its own read, so a weekend run (which spans several states) does not
+# read as one template. {wk}=week clause, {s20}/{s50}/{lo}=levels, {px}=close.
+# One level per post: the doctrine demotes technicals, and a post that names the
+# 20-, the 50-, the high and the range position is a data dump, not a read.
+_FRAMES: dict[str, tuple[str, ...]] = {
+    "leading": (
+        "Up at 52-week highs, {wk}. Nothing broken here, and I'd rather respect "
+        "that than argue with it. {s20} is the line I want it to keep.",
+        "{wk_cap} and pressing new highs. Strength worth respecting, not chasing "
+        "up here. First thing I'd watch on a pullback is {s20}.",
+    ),
+    "uptrend": (
+        "{wk_cap}, still above both its moving averages. Constructive without "
+        "being stretched. {s20} is the first line that matters.",
+        "Holding its trend, {wk}. Not much to fix. I'm watching {s20} as the "
+        "first sign that changes.",
+    ),
+    "cooling": (
+        "Lost its 20-day this week, {wk}. Looks like a pause rather than a break "
+        "so far. Getting back over {s20} is what settles it.",
+        "{wk_cap} but it slipped under the 20-day. Still above the 50, so I'm "
+        "giving it room. {s20} is the number to get back.",
+    ),
+    "reclaiming": (
+        "Back above its 20-day after a rough stretch, {wk}. Early, and I've been "
+        "burned by early. {s50} is the level that would make it real.",
+        "{wk_cap} and it's clawed back the 20-day. The 50 at {s50} is the actual "
+        "test, so I'm waiting on that.",
+    ),
+    "basing": (
+        "Down near the low end of the year, {wk}. Watching for a bottom setup, "
+        "not catching it yet. {lo} is the line that matters.",
+        "{wk_cap}, sitting near its 52-week low. No interest until it stops going "
+        "down. {lo} is where I find out.",
+    ),
+    "downtrend": (
+        "{wk_cap}, under both moving averages. No reason to be early in something "
+        "going the wrong way. {s20} is the first hurdle back.",
+        "Still heavy, {wk}. I'm not fighting this one. It has to reclaim {s20} "
+        "before it's even a conversation.",
+    ),
+}
+
 
 def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0) -> tuple[str, str]:
-    """(headline, body) for one ticker. Deterministic given (ticker, variant).
+    """(headline, body) for one ticker — the DETERMINISTIC FLOOR.
 
-    The cashtag appears once (headline); the body carries the substance so the
-    post never reads like a cashtag-stuffed bot. Adaptive length: the 52-week
-    position sentence is context, so it is dropped first if the full post would
-    exceed the X limit — the essentials (trend, the level to watch, the honest
-    tail) always stay."""
+    Used when the LLM copywriter is unavailable (see write_copy). Deterministic
+    given (ticker, lv, variant). The cashtag appears once (headline); the body
+    carries the substance so the post never reads like a cashtag-stuffed bot.
+
+    Shape is chosen by the ticker's structural state, so consecutive posts in a
+    weekend run differ in more than their numbers. Falls back to the legacy
+    single-frame body only if the state-specific frame would breach the X limit.
+    """
     headline = f"${ticker} into the week"
     tail = _TAILS[variant % len(_TAILS)]
+    state = classify_state(lv)
 
+    wk = _week_clause(lv["wk_pct"])
+    fields = {
+        "wk": wk,
+        "wk_cap": wk[0].upper() + wk[1:] if wk else wk,
+        "px": _fmt(lv["last"]),
+        "s20": _fmt(lv["sma20"]),
+        "s50": _fmt(lv["sma50"]),
+        "lo": _fmt(lv["lo52"]),
+    }
+    frames = _FRAMES.get(state) or ()
+    if frames:
+        frame = frames[variant % len(frames)]
+        body = f"{frame.format(**fields)} {tail}"
+        if len(headline) + 2 + len(body) <= _MAX_LEN:
+            return headline, body
+
+    # Legacy floor-of-the-floor: always fits, always compliant.
     def _body(with_position: bool) -> str:
         pos = f" {_position_clause(lv).capitalize()}." if with_position else ""
         return (
@@ -205,6 +287,163 @@ def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0) -> tuple[s
     if len(headline) + 2 + len(body) > _MAX_LEN:
         body = _body(False)
     return headline, body
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LLM voice lane (primary) — the same copywriter every other queue goes through
+# ─────────────────────────────────────────────────────────────────────────────
+
+def write_copy(
+    specs: list[dict[str, Any]],
+    cfg: dict | None,
+    *,
+    account: str = "flagship",
+) -> list[tuple[str, str]]:
+    """Rewrite each spec's floor copy in the account's real voice. Fail-soft.
+
+    specs: [{"ticker", "lv", "dates", "o","h","l","c","v", "headline", "body"}]
+           — "headline"/"body" are the deterministic floor from render_post().
+
+    Returns one (headline, body) per spec, in order. The floor is returned
+    unchanged for any post the LLM lane does not produce clean copy for, so this
+    can only ever improve the copy, never drop a post.
+
+    Gating is the copywriter's own (config copywriter.llm.enabled AND the
+    MARKETING_LLM_ENABLED env var), so tests and local runs never hit the network.
+    """
+    floor = [(str(s.get("headline") or ""), str(s.get("body") or "")) for s in specs]
+    if not specs:
+        return floor
+
+    try:
+        from engine.marketing.copywriter import build_context, write_posts_llm  # noqa: PLC0415
+        from engine.marketing import chart_facts as _cf  # noqa: PLC0415
+
+        cw_cfg = ((cfg or {}).get("copywriter") or {})
+        personas = (cw_cfg.get("personas") or {})
+        persona = personas.get(account) or {}
+
+        contexts: list[dict] = []
+        for s in specs:
+            ticker = str(s.get("ticker") or "")
+            facts: dict = {}
+            try:
+                if s.get("c"):
+                    facts = _cf.compute_facts(
+                        ticker, s.get("dates") or [], s.get("o") or [],
+                        s.get("h") or [], s.get("l") or [], s.get("c") or [],
+                        s.get("v") or [])
+            except Exception as exc:  # noqa: BLE001 — facts are a bonus, not a gate
+                log.warning("weekend_levels: chart facts failed for %s: %s", ticker, exc)
+            lv = s.get("lv") or {}
+            item = {
+                "ticker": ticker,
+                "type": "watchlist",
+                "account": account,
+                "direction": _LEAN.get(classify_state(lv), "NEUTRAL") if lv else "NEUTRAL",
+                "headline": s.get("headline", ""),
+                "body": s.get("body", ""),
+            }
+            ctx = build_context(item, persona=persona, facts=facts or None)
+            ctx["type"] = "watchlist"
+            ctx["voice"] = persona.get("voice_notes", "") or ctx.get("voice", "")
+            contexts.append(ctx)
+
+        posts = write_posts_llm(contexts, cw_cfg)
+        if not posts or len(posts) != len(specs):
+            return floor
+
+        out: list[tuple[str, str]] = []
+        for i, post in enumerate(posts):
+            # mode "llm_fallback" means the LLM output failed validation and the
+            # copywriter substituted its own generic template. OUR floor is
+            # purpose-built for this lane and known compliant, so prefer it.
+            if str(post.get("mode")) != "llm":
+                out.append(floor[i])
+                continue
+            hl = str(post.get("headline") or "").strip()
+            bd = str(post.get("body") or "").strip()
+            if not hl or not bd:
+                out.append(floor[i])
+                continue
+            try:
+                _assert_clean(f"{hl}\n\n{bd}", str(specs[i].get("ticker") or ""))
+            except ValueError as exc:
+                log.warning("weekend_levels: LLM copy rejected (%s) — using the floor", exc)
+                out.append(floor[i])
+                continue
+            out.append((hl, bd))
+        return out
+    except Exception as exc:  # noqa: BLE001 — voice is an upgrade, never a gate
+        log.warning("weekend_levels: LLM copy lane unavailable (%s) — using the floor", exc)
+        return floor
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chart card — every post ships the SAME card the Content Studio preview shows
+# ─────────────────────────────────────────────────────────────────────────────
+
+def build_card(
+    ticker: str,
+    root: Path | str | None,
+    *,
+    chart_id: str,
+    as_of: str,
+    n: int = 90,
+) -> dict[str, Any] | None:
+    """Render the v2 candlestick card for *ticker* and publish it. Fail-soft.
+
+    Returns an outbox media entry ({kind, path, chart_id, ticker, media_url,
+    media_png_path}) or None when the chart cannot be built. Goes through
+    media_publish.publish_card, so the PNG X receives is a raster of this exact
+    SVG — footer marketing bar (mastermind-x.com + "Start free 14-day trial")
+    included. Before 2026-07-26 this lane attached NO media at all: every post
+    went out as bare text.
+    """
+    try:
+        from engine.marketing.chart_render import load_ohlcv, render_chart_v2  # noqa: PLC0415
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        r = Path(root) if root is not None else Path(".")
+        ohlcv = load_ohlcv(ticker, r, n=n)
+        if ohlcv is None:
+            return None
+        dates, o, h, l, c, v = ohlcv
+        if not c:
+            return None
+        svg = render_chart_v2(
+            ticker=ticker, dates=dates, o=o, h=h, l=l, c=c, volume=v,
+            timeframe="DAILY",
+            # Weekend levels is a watchlist read, not a fired signal: no SETUP
+            # pill and no entry marker, or the card would imply a call the copy
+            # explicitly does not make.
+            marker_index=None, highlight_index=None,
+            pct_from_index=(len(c) - 6 if len(c) >= 6 else None),
+            show_indicators=True,
+            logo_root=r,
+            # footer_cta unset → the full marketing bar (URL + trial button).
+        )
+        if not svg:
+            return None
+        stamped = publish_card(svg, chart_id=chart_id, as_of=str(as_of), root=r)
+        if not stamped.get("svg_path"):
+            return None
+        entry: dict[str, Any] = {
+            "kind": "chart_svg",
+            "path": stamped["svg_path"],
+            "chart_id": chart_id,
+            "ticker": ticker,
+        }
+        if stamped.get("media_png_path"):
+            entry["media_png_path"] = stamped["media_png_path"]
+        if stamped.get("media_url"):
+            entry["media_url"] = stamped["media_url"]
+        if stamped.get("media_render"):
+            entry["media_render"] = stamped["media_render"]
+        return entry
+    except Exception as exc:  # noqa: BLE001
+        log.warning("weekend_levels: card build failed for %s: %s", ticker, exc)
+        return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -266,14 +505,17 @@ def load_closes(root: Path | str | None, ticker: str) -> list[float] | None:
 
 
 def _assert_clean(text: str, ticker: str) -> None:
-    """Guard: no advice lexicon, exactly one cashtag. Raises on violation so a
-    non-compliant post can never be emitted (caller skips it)."""
+    """Guard: no advice lexicon, no em dash, exactly one cashtag. Raises on
+    violation so a non-compliant post can never be emitted (caller skips it)."""
     if len(text) > _MAX_LEN:
         raise ValueError(f"{ticker} copy is {len(text)} chars (max {_MAX_LEN})")
     low = text.lower()
     for bad in _BANNED_SUBSTRINGS:
         if bad in low:
             raise ValueError(f"banned phrase {bad!r} in {ticker} copy")
+    # Mirrors copywriter.validate_copy: the em dash is the loudest model tell.
+    if "—" in text:
+        raise ValueError(f"em dash (U+2014) in {ticker} copy")
     distinct = set(_CASHTAG_RE.findall(text))
     if distinct != {ticker.upper()}:
         raise ValueError(f"{ticker} copy cashtags {distinct or '∅'}, want exactly {{{ticker.upper()}}}")
@@ -289,11 +531,18 @@ def build_items(
     now: datetime | None = None,
     schedule: list[tuple[str, str]] | None = None,
     max_items: int = 8,
+    cfg: dict | None = None,
+    with_media: bool = True,
 ) -> list[dict[str, Any]]:
     """Build outbox item dicts (via outbox.make_item) for the reach tickers.
 
     schedule: optional list of (slot_label, scheduled_at_iso) assigned in order;
     when omitted, items are scheduled "immediate" with no slot (caller schedules).
+    cfg: parsed config/marketing.yml — enables the LLM voice lane (write_copy).
+         Without it the deterministic floor copy ships.
+    with_media: render + attach the v2 chart card per post (default on). Set
+         False in tests to skip chart rendering entirely.
+
     Returns at most *max_items* items, one per ticker that has usable data and
     compliant copy. Never raises — a bad ticker is skipped with a warning.
     """
@@ -301,10 +550,11 @@ def build_items(
 
     ts_now = now if now is not None else datetime.now(timezone.utc)
     picks = [t.upper() for t in (tickers or _DEFAULT_REACH_TICKERS)]
-    out: list[dict[str, Any]] = []
 
+    # ── Pass 1: level math + floor copy + OHLCV for the writer's facts ────────
+    specs: list[dict[str, Any]] = []
     for idx, ticker in enumerate(picks):
-        if len(out) >= max_items:
+        if len(specs) >= max_items:
             break
         closes = load_closes(root, ticker)
         lv = compute_levels(closes) if closes else None
@@ -312,12 +562,57 @@ def build_items(
             log.info("weekend_levels: skip %s (insufficient data)", ticker)
             continue
         headline, body = render_post(ticker, lv, variant=idx)
-        text = f"{headline}\n\n{body}"
         try:
-            _assert_clean(text, ticker)
+            _assert_clean(f"{headline}\n\n{body}", ticker)
         except ValueError as exc:
             log.warning("weekend_levels: %s", exc)
             continue
+        spec: dict[str, Any] = {
+            "ticker": ticker, "lv": lv, "headline": headline, "body": body,
+            "variant": idx,
+        }
+        # OHLCV feeds chart_facts (what the writer is allowed to cite). Optional:
+        # a ticker with closes but no OHLCV still posts, just with thinner facts.
+        try:
+            from engine.marketing.chart_render import load_ohlcv  # noqa: PLC0415
+            ohlcv = load_ohlcv(ticker, Path(root) if root is not None else Path("."), n=90)
+            if ohlcv is not None:
+                d, o, h, l, c, v = ohlcv
+                spec.update({"dates": d, "o": o, "h": h, "l": l, "c": c, "v": v})
+        except Exception as exc:  # noqa: BLE001
+            log.warning("weekend_levels: OHLCV unavailable for %s: %s", ticker, exc)
+        specs.append(spec)
+
+    if not specs:
+        return []
+
+    # ── Pass 2: real voice (falls back to the floor per post) ────────────────
+    copy = write_copy(specs, cfg, account=account)
+
+    # ── Pass 3: assemble items, each with its chart card ─────────────────────
+    out: list[dict[str, Any]] = []
+    for i, spec in enumerate(specs):
+        ticker = str(spec["ticker"])
+        lv = spec["lv"]
+        headline, body = copy[i] if i < len(copy) else (spec["headline"], spec["body"])
+        text = f"{headline}\n\n{body}"
+        try:
+            _assert_clean(text, ticker)
+        except ValueError as exc:  # belt-and-braces; write_copy already checked
+            log.warning("weekend_levels: %s", exc)
+            continue
+
+        media: list[dict] = []
+        if with_media:
+            entry = build_card(
+                ticker, root,
+                chart_id=f"wl-{as_of}-{ticker.lower()}", as_of=as_of,
+            )
+            if entry is not None:
+                media.append(entry)
+            else:
+                log.warning("weekend_levels: no chart card for %s — post would be "
+                            "text-only", ticker)
 
         slot_label: str | None = None
         scheduled_at = "immediate"
@@ -332,9 +627,15 @@ def build_items(
             "wk_pct": round(lv["wk_pct"], 1),
             "lane": "weekend_levels",
         }
+        # The publisher reads source.media_url to attach without unpacking the
+        # media list (scripts/marketing_publisher._media_urls), so mirror it.
+        if media and media[0].get("media_url"):
+            source["media_url"] = media[0]["media_url"]
+
         try:
             item = make_item(
                 account=account, kind="watchlist", text=text, as_of=as_of,
+                media=media or None,
                 scheduled_at=scheduled_at, slot=slot_label, priority=5,
                 provenance=provenance, source=source, now=ts_now,
             )
