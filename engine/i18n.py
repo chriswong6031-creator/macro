@@ -526,10 +526,15 @@ LEX: dict[str, str] = {
     "Fresh breakout": "新突破",
     "Recaptured line": "重回均线",
     "Resumed": "回踩后回升",
-    # stances (doctrine six — the ones this page uses)
+    # stances (the doctrine six, complete since OEU M-CMD — the Options
+    # workspace uses all of them, so every stance now resolves through td()
+    # for this and every future surface)
     "Watch — don't chase": "观察—勿追高",
     "Get ready": "做好准备",
     "Protect gains": "保护利润",
+    "Act": "立即行动",
+    "Stand aside": "暂时观望",
+    "Ignore": "忽略",
     # earnings-call tone words (finite vocab — engine/earnings_qual._TONE_WORDS
     # ∪ engine/stage_analysis._tone_word outputs; every one needs a ZH twin)
     "confident": "信心十足",

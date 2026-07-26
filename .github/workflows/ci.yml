@@ -901,6 +901,12 @@ on:
       - "tests/test_build_options_screener.py"
       - "tests/test_support_map.py"
       - "data/neuralweb/confluence_graph.json"
+      # OEU M-CMD (2026-07-26): the Options workspace builder + its suite. A guard
+      # the guarded change cannot trigger is not a guard — list the subject files
+      # so a PR touching ONLY the workspace reaches options-estate-guards.
+      # (templates/** and lib/** already trigger above.)
+      - "scripts/build_options_command.py"
+      - "tests/test_build_options_command.py"
   workflow_dispatch:
 
 permissions:
@@ -3213,5 +3219,7 @@ jobs:
         run: python -m pytest tests/test_market_structure.py tests/test_market_structure_nw.py tests/test_build_market_structure_page.py -q
       - name: options-screener builder suite (denominator pins)
         run: python -m pytest tests/test_build_options_screener.py -q
+      - name: options workspace suite (OEU M-CMD — 4 modes, close-line honesty, payload law)
+        run: python -m pytest tests/test_build_options_command.py -q
       - name: neural-web support-map suite (real-synapse census bands)
         run: python -m pytest tests/test_support_map.py -q

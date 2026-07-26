@@ -147,6 +147,13 @@ _EXPLICIT: dict[str, tuple[str, float]] = {
     "congress_trades":  ("weekly",  0.7),
     "learn":            ("weekly",  0.7),
     "movers":           ("daily",   0.7),
+    # OEU M-CMD — the canonical options workspace. Like "movers" above, this
+    # entry is DORMANT until options.html enters config/site_access.yml's public
+    # boundary: discover_core_pages() only emits pages that is_public_path()
+    # accepts, so a gated page is correctly kept out of the sitemap. Pinning the
+    # priority here means the chartered 0.6 lands the moment the boundary moves,
+    # instead of silently riding _DEFAULT.
+    "options":          ("daily",   0.6),
     "methodology":      ("monthly", 0.6),
     "reports":          ("weekly",  0.6),
 }

@@ -546,6 +546,22 @@ lanes:
           nights and pings Telegram/Discord on a streak. Observability only —
           always exits 0, never blocks the deploy, writes no data/ artifacts.
           Declared here to match daily.yml (engine job, post-band serial step).
+      # OEU M-CMD — options.html, the canonical options surface. Its four inputs
+      # straddle both phases (build_market_structure + build_flow_leaders are
+      # serial-spine steps; build_flow_desk + build_options_screener live in the
+      # cl_gex band), so it must sit AFTER the band barrier — the same reasoning
+      # that puts build_sector_central here.
+      - id: build_options_command
+        module: scripts.build_options_command
+        note: >
+          OEU M-CMD Options workspace (4 modes: Daily Brief / Scanner / Ticker /
+          Leaders). Pure O(seconds) re-serialisation of site/flow_desk.json,
+          site/screenerdata/rows.json, site/flowleaders/leaders.json,
+          data/market_structure/latest.json, site/vol/regime.json and
+          site/gex/{SPX,SPY,QQQ,IWM}.json + index.json — no new derivations, no
+          scores, no fused composites. Absent stores degrade one section each to
+          an honest empty state; always exits 0. DISPLAY-ONLY.
+          outputs: [site/options.html]
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
