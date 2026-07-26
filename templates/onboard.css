@@ -23,6 +23,19 @@
    --blue, --hair, --sh-*, --r*) are inherited from index.html's :root.
    ========================================================================== */
 
+/* Self-carried control reset. The sheet was authored against the LANDING, which
+   resets `button{font:inherit;color:inherit;background:none;border:0;padding:0}`
+   globally — macro pages (theme.css) do not, so every unstyled button in here
+   picked up the UA's buttonface fill and outset border: a grey slab behind the
+   period toggle, a black ring around it, and black `buttontext` inside the plan
+   cards. Zero-specificity `:where()` so every .obm-* rule below still wins. */
+:where(.obm-scrim) :where(button){font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:where(.obm-scrim) :where(input,select,textarea){font:inherit}
+/* the step headings take focus for screen readers only — they are not controls,
+   so the sheet's generic focus ring must not land on them */
+.obm-scrim .obm-h1:focus,.obm-scrim .obm-h1:focus-visible,
+.obm-scrim .obm-cmp-h:focus,.obm-scrim .obm-cmp-h:focus-visible{outline:none;box-shadow:none}
+
 .obm-root{
   /* local tokens layered on the landing's palette */
   --obm-pad:40px;
@@ -52,13 +65,43 @@
   --sh-deep:0 30px 60px -22px rgba(18,26,45,.35),0 8px 18px -8px rgba(18,26,45,.12);
   --sh-plate:0 24px 60px -20px rgba(18,26,45,.34),0 6px 16px -6px rgba(18,26,45,.14);
   --r-sm:6px; --r:12px; --r-lg:16px;
-  position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:100100;display:flex;align-items:center;justify-content:center;
   padding:clamp(10px,2.6vh,36px);
   background:rgba(16,22,34,.46);
   -webkit-backdrop-filter:saturate(120%) blur(3px);backdrop-filter:saturate(120%) blur(3px);
   opacity:0;visibility:hidden;transition:opacity .2s ease,visibility 0s .2s;
 }
 .obm-scrim.obm-open{opacity:1;visibility:visible;transition:opacity .2s ease}
+/* z-index 100100 clears everything the HOST pages float: row popovers (12000),
+   the account modal (100060) and the settings dashboard (100001) — the sheet is
+   opened FROM those surfaces and must sit above them. The one thing that still
+   outranks it is the Brain launcher (max-int by design), which used to sit on
+   top of this sheet's primary button; park it while the sheet owns the screen. */
+html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s ease}
+
+/* ── DARK SKIN ──────────────────────────────────────────────────────────────
+   The sheet is SITE-WIDE: it opens over the light landing AND over the dark
+   macro pages (theme.css). A light sheet punched over a dark desk read as a
+   different product — and as a flashbang at night — so the skin follows the
+   HOST: onboard.js stamps data-obm-skin="dark" on the scrim when the page is
+   theme-capable (a theme.css link) and html[data-theme] is dark, and keeps it
+   in sync while the sheet is open. The landing carries no theme.css, so it
+   stays light exactly as before. Only TOKENS change here; every component
+   below already paints from them (component-level dark fixes — the few places
+   a token can't reach — live in the DARK SKIN OVERRIDES block at the end). */
+.obm-scrim[data-obm-skin="dark"]{
+  --bg:#0b0f19; --panel:#141b2b; --panel-2:#111726;
+  --hair:#232d43; --hair-2:#2f3b55;
+  --ink:#e9eef8; --ink-soft:#c6cfe0; --muted:#93a1b8; --faint:#6f7e98;
+  --blue:#5b8cff; --blue-ink:#8bb0ff; --blue-wash:rgba(91,140,255,.16);
+  --q-green:#3ecf8e; --q-gold:#e3b950; --q-red:#ff7b7b;
+  --green-wash:rgba(62,207,142,.13); --red-wash:rgba(255,123,123,.11); --gold-wash:rgba(227,185,80,.13);
+  --sh-card:0 1px 3px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.32);
+  --sh-lift:0 14px 34px -14px rgba(0,0,0,.7),0 3px 8px rgba(0,0,0,.4);
+  --sh-deep:0 30px 60px -22px rgba(0,0,0,.8),0 8px 18px -8px rgba(0,0,0,.55);
+  --sh-plate:0 24px 60px -20px rgba(0,0,0,.8),0 6px 16px -6px rgba(0,0,0,.5);
+  background:rgba(4,7,14,.62);
+}
 
 .obm-sheet{
   position:relative;display:grid;grid-template-columns:minmax(340px,45%) 1fr;
@@ -76,10 +119,10 @@
 .obm-close{
   position:absolute;top:14px;right:14px;z-index:20;width:34px;height:34px;
   display:grid;place-items:center;border-radius:9px;border:1px solid var(--hair-2);
-  background:rgba(255,255,255,.86);color:var(--muted);box-shadow:var(--sh-card);
+  background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--muted);box-shadow:var(--sh-card);
   transition:color .15s,background .15s,transform .15s;
 }
-.obm-close:hover{color:var(--ink);background:#fff;transform:translateY(-1px)}
+.obm-close:hover{color:var(--ink);background:var(--panel);transform:translateY(-1px)}
 .obm-close svg{width:16px;height:16px}
 
 /* ══════════════════════ LEFT — THE STAGE ════════════════════════════════════
@@ -316,7 +359,7 @@
 .obm-step-n{
   position:relative;display:grid;place-items:center;flex:none;
   width:27px;height:27px;border-radius:50%;
-  border:1.5px solid var(--hair-2);background:#fff;
+  border:1.5px solid var(--hair-2);background:var(--panel);
   font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;line-height:1;
   color:var(--faint);
   transition:background .28s,color .28s,border-color .28s,box-shadow .28s;
@@ -366,7 +409,7 @@
 .obm-form label{font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:14px 0 6px}
 .obm-row2 label{margin-top:0}
 .obm-field{
-  height:var(--obm-field-h);border:1px solid var(--hair-2);border-radius:10px;background:#fff;
+  height:var(--obm-field-h);border:1px solid var(--hair-2);border-radius:10px;background:var(--panel);
   padding:0 13px;font:inherit;font-size:14px;color:var(--ink);width:100%;
   transition:border-color .15s,box-shadow .15s;
 }
@@ -390,7 +433,7 @@
 .obm-btn-out{
   display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;
   min-height:var(--obm-field-h);border-radius:10px;padding:0 20px;
-  font-weight:600;font-size:14px;background:#fff;border:1px solid var(--hair-2);color:var(--ink);
+  font-weight:600;font-size:14px;background:var(--panel);border:1px solid var(--hair-2);color:var(--ink);
   box-shadow:var(--sh-card);transition:border-color .16s,box-shadow .16s,transform .16s,background .16s;
 }
 .obm-btn-out:hover:not(:disabled){border-color:var(--faint);box-shadow:var(--sh-lift);transform:translateY(-1px)}
@@ -425,7 +468,7 @@
    chip may never change its box, or every click reflows the step ("the stutter"). */
 .obm-chip{
   display:inline-flex;align-items:center;gap:8px;border:1px solid var(--hair-2);border-radius:11px;
-  background:#fff;padding:10px 15px;font-size:13px;font-weight:600;color:var(--ink-soft);
+  background:var(--panel);padding:10px 15px;font-size:13px;font-weight:600;color:var(--ink-soft);
   min-height:42px;box-shadow:var(--sh-card);
   transition:border-color .16s,background .16s,color .16s,box-shadow .16s,transform .12s;
 }
@@ -434,7 +477,7 @@
 .obm-chip.obm-on{border-color:var(--blue);background:var(--blue-wash);color:var(--blue-ink)}
 .obm-chip-box{
   position:relative;flex:none;width:16px;height:16px;border-radius:50%;
-  border:1.5px solid var(--hair-2);background:#fff;display:grid;place-items:center;
+  border:1.5px solid var(--hair-2);background:var(--panel);display:grid;place-items:center;
   transition:border-color .18s,background .18s;
 }
 .obm-chip.obm-on .obm-chip-box{border-color:var(--blue);background:var(--blue)}
@@ -444,7 +487,7 @@
 .obm-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .obm-thumb{
   position:relative;display:flex;flex-direction:column;gap:9px;text-align:left;
-  border:1px solid var(--hair-2);border-radius:12px;background:#fff;padding:10px;
+  border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);padding:10px;color:var(--ink);
   box-shadow:var(--sh-card);transition:border-color .16s,box-shadow .16s,transform .12s;
 }
 .obm-thumb:hover{border-color:var(--faint)}
@@ -461,15 +504,15 @@
 .obm-thumb-prev.obm-auto i:nth-child(2){width:60%;background:linear-gradient(90deg,#cdd6e4 0 83%,#2c3750 83% 100%)}
 .obm-thumb-foot{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .obm-thumb-nm{font-size:12.5px;font-weight:600;color:var(--ink)}
-.obm-radio{width:18px;height:18px;flex:none;border-radius:50%;border:1.5px solid var(--hair-2);background:#fff;display:grid;place-items:center;transition:border-color .16s,background .16s}
+.obm-radio{width:18px;height:18px;flex:none;border-radius:50%;border:1.5px solid var(--hair-2);background:var(--panel);display:grid;place-items:center;transition:border-color .16s,background .16s}
 .obm-thumb.obm-on .obm-radio,.obm-plan.obm-on .obm-radio{border-color:var(--blue);background:var(--blue)}
 .obm-radio svg{width:10px;height:10px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0;transform:scale(.5);transition:opacity .14s,transform .18s cubic-bezier(.3,1.4,.5,1)}
 .obm-thumb.obm-on .obm-radio svg,.obm-plan.obm-on .obm-radio svg{opacity:1;transform:none}
 .obm-caption{margin:10px 0 0;font-size:11.5px;color:var(--faint);line-height:1.5}
 
 /* ── plan step ───────────────────────────────────────────────────────────── */
-.obm-toggle{display:inline-flex;margin:2px 0 16px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:#fff;box-shadow:var(--sh-card)}
-.obm-toggle button{padding:8px 16px;border-radius:99px;color:var(--muted);transition:background .18s,color .18s}
+.obm-toggle{display:inline-flex;margin:2px 0 16px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:var(--panel);box-shadow:var(--sh-card)}
+.obm-toggle button{padding:8px 16px;border-radius:99px;background:transparent;color:var(--muted);transition:background .18s,color .18s}
 .obm-toggle button[aria-pressed="true"]{background:var(--blue);color:#fff}
 .obm-toggle .obm-save{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.05em;margin-left:5px;color:#bff2cf}
 .obm-toggle button[aria-pressed="false"] .obm-save{color:var(--q-green)}
@@ -477,13 +520,13 @@
 .obm-plans{display:flex;flex-direction:column;gap:10px}
 .obm-plan{
   position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
-  border:1px solid var(--hair-2);border-radius:12px;background:#fff;padding:15px 16px;text-align:left;
+  border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);padding:15px 16px;text-align:left;color:var(--ink);
   box-shadow:var(--sh-card);transition:border-color .16s,box-shadow .16s,transform .12s;
 }
 .obm-plan:hover{border-color:var(--faint)}
 .obm-plan:active{transform:scale(.995)}
 .obm-plan.obm-on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
-.obm-plan.obm-hot.obm-on{background:linear-gradient(150deg,rgba(15,157,143,.05),rgba(40,95,255,.055) 55%,rgba(120,98,224,.045)),#fff}
+.obm-plan.obm-hot.obm-on{background:linear-gradient(150deg,rgba(15,157,143,.05),rgba(40,95,255,.055) 55%,rgba(120,98,224,.045)),var(--panel)}
 .obm-plan-l{min-width:0}
 .obm-plan-nm{display:flex;align-items:baseline;gap:8px;font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:16px;color:var(--ink)}
 .obm-plan-who{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.4}
@@ -520,7 +563,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-compare{margin:14px 0 2px;display:inline-flex;align-items:center;gap:5px}
 
 /* ── billing (order card + stripe host) ──────────────────────────────────── */
-.obm-order{margin:2px 0 16px;border:1px solid var(--hair);border-radius:12px;background:#fff;box-shadow:var(--sh-card);padding:15px 16px;--obm-accent:var(--blue)}
+.obm-order{margin:2px 0 16px;border:1px solid var(--hair);border-radius:12px;background:var(--panel);box-shadow:var(--sh-card);padding:15px 16px;--obm-accent:var(--blue)}
 .obm-order-hd{display:flex;align-items:center;gap:9px}
 .obm-order-dot{width:9px;height:9px;border-radius:3px;background:var(--obm-accent);flex:none}
 .obm-order-nm{font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:16px;color:var(--ink)}
@@ -531,7 +574,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-order-trial{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink-soft)}
 .obm-order-trial b{color:var(--ink);font-weight:600}
 .obm-order-cancel{margin:6px 0 0;font-size:12px;color:var(--muted)}
-.obm-bill-el{margin-top:4px;border:1px solid var(--hair-2);border-radius:10px;background:#fff;padding:13px}
+.obm-bill-el{margin-top:4px;border:1px solid var(--hair-2);border-radius:10px;background:var(--panel);padding:13px}
 .obm-bill-state{margin:6px 0 0;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:18px 16px;text-align:center}
 .obm-bill-state-hd{font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:15px;color:var(--ink);margin-bottom:6px}
 .obm-bill-state-msg{margin:0 0 12px;font-size:13px;line-height:1.5;color:var(--muted)}
@@ -545,7 +588,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-up-lanes{margin-top:16px}
 .obm-up-lane{cursor:pointer;text-align:left}
 .obm-up-lane:hover{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
-.obm-up-lane.obm-confirming{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card);background:linear-gradient(150deg,rgba(40,95,255,.045),rgba(120,98,224,.03)),#fff}
+.obm-up-lane.obm-confirming{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card);background:linear-gradient(150deg,rgba(40,95,255,.045),rgba(120,98,224,.03)),var(--panel)}
 /* computed savings badge — small blue-wash chip (never a hardcoded claim) */
 .obm-up-save{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.05em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2px 7px;margin-left:2px}
 .obm-up-pitch{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:var(--ink-soft)}
@@ -675,6 +718,139 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
   .obm-plan-price{font-size:19px}
 }
 
+/* ══════════════════════ COMPARE PANEL ══════════════════════════════════════
+   "Compare every feature" used to CLOSE the sheet and drop the visitor at the
+   landing's #pricing anchor — mid-signup, with everything they had typed left
+   behind a scroll jump. The full matrix now opens as a layer OVER the form
+   column: the stage, the stepper and the wizard state all stay exactly where
+   they were, and the tier headers double as the picker, so comparing is a way
+   to CHOOSE a plan rather than a way to leave. Back returns to the same step. */
+.obm-cmp{
+  position:absolute;inset:0;z-index:14;display:flex;flex-direction:column;
+  background:var(--panel);animation:obmCmpIn .22s cubic-bezier(.22,.8,.3,1);
+}
+@keyframes obmCmpIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.obm-cmp-hd{flex:none;display:flex;align-items:center;gap:12px;padding:22px var(--obm-pad) 12px}
+.obm-cmp-h{font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:1.15rem;color:var(--ink);margin:0}
+.obm-cmp-h:focus{outline:none}
+/* the tier header IS the picker — three columns, the live one ringed */
+.obm-cmp-tiers{
+  flex:none;display:grid;grid-template-columns:1fr repeat(3,minmax(0,74px));gap:6px;
+  align-items:end;padding:0 var(--obm-pad) 10px;border-bottom:1px solid var(--hair);
+}
+.obm-cmp-tiers-lbl{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);padding-bottom:6px}
+.obm-cmp-tier{
+  display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;
+  border:1px solid var(--hair-2);border-radius:10px;background:var(--panel);
+  transition:border-color .16s,background .16s,box-shadow .16s;
+}
+.obm-cmp-tier:hover{border-color:var(--faint)}
+.obm-cmp-tier.obm-on{border-color:var(--blue);background:var(--blue-wash);box-shadow:0 0 0 1px var(--blue)}
+.obm-cmp-tier b{font-family:'Archivo Expanded',sans-serif;font-weight:800;font-size:11.5px;color:var(--ink);letter-spacing:-.01em}
+.obm-cmp-tier span{font-size:9.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.obm-cmp-tier.obm-on b,.obm-cmp-tier.obm-on span{color:var(--blue-ink)}
+
+.obm-cmp-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px var(--obm-pad) 12px}
+.obm-cmp-grp{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blue);margin:16px 0 4px;padding-top:8px;
+  border-top:1px solid var(--hair);
+}
+.obm-cmp-grp:first-child{border-top:0;margin-top:8px;padding-top:0}
+.obm-cmp-row{
+  display:grid;grid-template-columns:1fr repeat(3,minmax(0,74px));gap:6px;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--hair);
+}
+.obm-cmp-row:last-child{border-bottom:0}
+.obm-cmp-ft{font-size:12.5px;line-height:1.35;color:var(--ink-soft);min-width:0}
+.obm-cmp-cell{display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:650;color:var(--ink);line-height:1.25}
+.obm-cmp-cell svg{width:14px;height:14px;stroke:var(--blue);stroke-width:2.6;fill:none}
+.obm-cmp-cell.obm-cmp-no{color:var(--faint)}
+.obm-cmp-cell.obm-cmp-no::before{content:"–";font-weight:600}
+.obm-cmp-soon{font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.08em;color:var(--q-gold);background:var(--gold-wash);border-radius:5px;padding:2px 5px}
+/* the live column gets a soft rail so the eye never loses which plan it is reading */
+.obm-cmp-row .obm-cmp-cell.obm-cmp-live,.obm-cmp-tier.obm-on{position:relative}
+.obm-cmp-cell.obm-cmp-live{background:color-mix(in srgb,var(--blue) 6%,transparent);border-radius:6px;padding:4px 0}
+
+/* phone tab strip (hidden on desktop, where all three columns are visible) */
+.obm-cmp-tabs{display:none;gap:6px;padding:0 var(--obm-pad) 10px}
+.obm-cmp-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:8px 6px;border:1px solid var(--hair-2);border-radius:9px;background:var(--panel);
+  font-size:12.5px;font-weight:700;color:var(--muted);transition:border-color .16s,background .16s,color .16s;
+}
+.obm-cmp-tab i{font-style:normal;font-size:10px;font-weight:600;opacity:.8}
+.obm-cmp-tab.obm-on{border-color:var(--blue);background:var(--blue-wash);color:var(--blue-ink);box-shadow:0 0 0 1px var(--blue)}
+
+@media (max-width:560px){
+  /* three tier columns never fit a phone: a tab strip picks the plan you are
+     reading, and the table narrows to that one column. */
+  .obm-cmp-hd{flex-wrap:wrap;padding:16px 20px 6px;gap:6px 10px}
+  .obm-cmp-h{flex:1 0 100%;order:2;font-size:1.06rem}
+  .obm-cmp-hd .obm-back{order:1;white-space:nowrap}
+  .obm-cmp-tabs{display:flex;padding:10px 20px 12px;border-bottom:1px solid var(--hair)}
+  .obm-cmp-tiers{display:none}
+  .obm-cmp-body{padding:4px 20px 12px}
+  .obm-cmp-row{grid-template-columns:1fr minmax(0,92px)}
+  .obm-cmp[data-only] .obm-cmp-tier{display:none}
+  .obm-cmp[data-only="free"] .obm-cmp-tier[data-tier="free"],
+  .obm-cmp[data-only="insider"] .obm-cmp-tier[data-tier="insider"],
+  .obm-cmp[data-only="pro"] .obm-cmp-tier[data-tier="pro"]{display:flex}
+  .obm-cmp[data-only] .obm-cmp-cell{display:none}
+  .obm-cmp[data-only="free"] .obm-cmp-cell[data-col="free"],
+  .obm-cmp[data-only="insider"] .obm-cmp-cell[data-col="insider"],
+  .obm-cmp[data-only="pro"] .obm-cmp-cell[data-col="pro"]{display:flex}
+  .obm-cmp .obm-foot{padding:12px 20px calc(12px + env(safe-area-inset-bottom))}
+}
+
+/* ══════════════════════ UPGRADE — free-tier plan step ══════════════════════
+   A signed-in free user pressing "Choose a plan" used to be dropped back into
+   the SIGNUP wizard (Account · Preferences · Plan · Billing · Done) — an
+   account they already have and preferences they already set, with a Back
+   button into them. Upgrade mode now owns its own two-step lane (plan →
+   billing), so nothing on screen is a step they have already completed. */
+.obm-up-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.obm-up-cur{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);
+  border-radius:6px;padding:3px 8px;
+}
+/* the upgrade lane's own two-dot rail (Plan · Billing) — never the 5-step one */
+.obm-up-rail{display:flex;align-items:center;gap:8px;margin:0 0 16px}
+.obm-up-rail i{width:22px;height:3px;border-radius:2px;background:var(--hair-2);transition:background .3s}
+.obm-up-rail i.obm-on{background:var(--blue)}
+.obm-up-rail span{font-size:11px;font-weight:600;color:var(--muted)}
+
+/* ══════════════════════ DARK SKIN OVERRIDES ════════════════════════════════
+   The handful of places a token cannot reach: white-on-blue affordances need a
+   deeper blue at night (a #5b8cff fill under white text fails contrast), and
+   three chips/washes were authored as light-only gradients.               */
+.obm-scrim[data-obm-skin="dark"] .obm-btn{background:#2f6cf5;border-color:#2f6cf5}
+.obm-scrim[data-obm-skin="dark"] .obm-btn:hover:not(:disabled){background:#4a80ff;border-color:#4a80ff}
+.obm-scrim[data-obm-skin="dark"] .obm-step.obm-cur .obm-step-n,
+.obm-scrim[data-obm-skin="dark"] .obm-toggle button[aria-pressed="true"],
+.obm-scrim[data-obm-skin="dark"] .obm-ribbon{background:#2f6cf5;border-color:#2f6cf5}
+.obm-scrim[data-obm-skin="dark"] .obm-hero-sig{background:#2f6cf5}
+.obm-scrim[data-obm-skin="dark"] .obm-chip.obm-on .obm-chip-box,
+.obm-scrim[data-obm-skin="dark"] .obm-thumb.obm-on .obm-radio,
+.obm-scrim[data-obm-skin="dark"] .obm-plan.obm-on .obm-radio{background:#2f6cf5;border-color:#2f6cf5}
+.obm-scrim[data-obm-skin="dark"] .obm-body::-webkit-scrollbar-thumb:hover{background:#42506d}
+.obm-scrim[data-obm-skin="dark"] .obm-err{border-color:rgba(255,123,123,.3)}
+.obm-scrim[data-obm-skin="dark"] .obm-done-mark{border-color:rgba(62,207,142,.32)}
+.obm-scrim[data-obm-skin="dark"] .obm-mchip.obm-ins{
+  background:linear-gradient(90deg,rgba(15,157,143,.18),rgba(40,95,255,.16)) padding-box,
+             linear-gradient(90deg,rgba(24,197,180,.6),rgba(91,140,255,.55)) border-box;color:#4fd6c6;
+}
+.obm-scrim[data-obm-skin="dark"] .obm-mchip.obm-pro{
+  background:linear-gradient(90deg,rgba(120,98,224,.2),rgba(176,125,5,.14)) padding-box,
+             linear-gradient(90deg,rgba(155,133,255,.6),rgba(227,185,80,.5)) border-box;color:#b6a3ff;
+}
+.obm-scrim[data-obm-skin="dark"] .obm-plan.obm-hot.obm-on{
+  background:linear-gradient(150deg,rgba(24,197,180,.09),rgba(91,140,255,.09) 55%,rgba(155,133,255,.08)),var(--panel);
+}
+.obm-scrim[data-obm-skin="dark"] .obm-foot.obm-lift{box-shadow:0 -12px 26px -18px rgba(0,0,0,.9)}
+.obm-scrim[data-obm-skin="dark"] .obm-meter{box-shadow:0 -14px 34px -20px rgba(0,0,0,.8)}
+
 /* ══════════════════════ accessibility / reduced motion ═════════════════════ */
 .obm-root :focus-visible,
 .obm-scrim :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px;box-shadow:0 0 0 4px var(--blue-wash)}
@@ -685,6 +861,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
   .obm-pane-copy.obm-swap .obm-pane-h,.obm-pane-copy.obm-swap .obm-pane-sub{
     transition:opacity .12s ease !important;animation:none !important;transform:none !important;
   }
+  .obm-cmp{animation:none !important}
   .obm-beam,.obm-tape-in,.obm-lat,.obm-hero-ring,.obm-plate-st i,
   .obm-draw .obm-hero-line,.obm-draw .obm-hero-area,.obm-tile.obm-flare,.obm-tile.obm-flare::after{animation:none !important}
   .obm-beam{display:none}

@@ -1488,6 +1488,17 @@
     '.sd-seg-b.active{background:var(--link,var(--blue,#4f8cff));color:#fff}',
     '.sd-seg-b:hover:not(.active){background:color-mix(in srgb,var(--text,var(--ink,#fff)) 9%,transparent);color:var(--text,var(--ink))}',
     '.sd-seg-b:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    /* multi-select preference chips (markets · what you trade). The check slot is
+       ALWAYS in the layout so selecting one never reflows the row. */
+    '.sd-pchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}',
+    '.sd-pchip{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;border:1px solid var(--line,var(--grid,#283042));background:var(--bg,var(--card));color:var(--muted,var(--ink-3,#8b93a7));font:650 12px/1.2 inherit;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}',
+    '.sd-pchip:hover{border-color:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,var(--line,var(--grid,#283042)))}',
+    '.sd-pchip[aria-pressed="true"]{border-color:var(--link,var(--blue,#4f8cff));background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 13%,transparent);color:var(--text,var(--ink))}',
+    '.sd-pchip:focus-visible{outline:2px solid var(--link,var(--blue,#4f8cff));outline-offset:2px}',
+    '.sd-pchip .box{position:relative;flex:none;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line,var(--grid,#283042));display:grid;place-items:center;transition:border-color .15s,background .15s}',
+    '.sd-pchip[aria-pressed="true"] .box{border-color:var(--link,var(--blue,#4f8cff));background:var(--link,var(--blue,#4f8cff))}',
+    '.sd-pchip .box svg{width:8px;height:8px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0;transform:scale(.5);transition:opacity .14s,transform .16s cubic-bezier(.3,1.4,.5,1)}',
+    '.sd-pchip[aria-pressed="true"] .box svg{opacity:1;transform:none}',
     '.sd-toggle{position:relative;width:44px;height:24px;border-radius:999px;border:1px solid var(--line,var(--grid,#283042));background:var(--bg,var(--card));cursor:pointer;padding:0;flex:none;transition:background .25s,border-color .25s}',
     '.sd-toggle[aria-checked="true"]{background:var(--link,var(--blue,#4f8cff));border-color:var(--link,var(--blue,#4f8cff))}',
     '.sd-toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.4,.5,1)}',
@@ -1604,7 +1615,7 @@
     acctTitle:  ['Account', '账户'],
     acctSub:    ['One identity across the dashboard and the Terminal.', '一个账户，通用于仪表盘与终端。'],
     prefsTitle: ['Preferences', '偏好'],
-    prefsSub:   ['How the dashboard looks and behaves on this device.', '仪表盘在此设备上的外观与行为。'],
+    prefsSub:   ['Which markets you follow, and how the dashboard looks.', '你关注哪些市场，以及仪表盘的外观。'],
     syncTitle:  ['Sync', '同步'],
     syncSub:    ['What follows your account across devices.', '跟随账户同步到各设备的内容。'],
     // rail me-card
@@ -1679,6 +1690,23 @@
     themeDark:  ['Dark', '深色'],
     language:   ['Language', '语言'],
     langNote:   ['Applies to every page.', '应用于所有页面。'],
+    // desk preferences — the answers given at signup, editable ever after
+    deskGroup:  ['Your desk', '你的台席'],
+    markets:    ['Markets you follow', '你关注的市场'],
+    marketsNote:['The markets you actually watch. Carried with your account.', '你真正关注的市场，随账户同步。'],
+    mktUs:      ['United States', '美国'],
+    mktCn:      ['China', '中国'],
+    mktHk:      ['Hong Kong', '香港'],
+    mktCa:      ['Canada', '加拿大'],
+    mktGlobal:  ['Global', '全球'],
+    trades:     ['What you trade', '你交易什么'],
+    tradesNote: ['Stocks, options, crypto — pick any.', '股票、期权、加密货币——可多选。'],
+    trStocks:   ['Stocks', '股票'],
+    trOptions:  ['Options', '期权'],
+    trCrypto:   ['Crypto', '加密货币'],
+    prefSaved:  ['Saved', '已保存'],
+    prefLocal:  ['Saved on this device — sign in to sync.', '已保存在本设备——登录后同步。'],
+    prefErr:    ['Couldn’t save — please try again.', '保存失败，请重试。'],
     // sync section
     syncOn:     ['Sync is on', '同步已开启'],
     syncOff:    ['Sync is off', '同步未开启'],
@@ -2138,11 +2166,108 @@
     _wireSDAccount(host, state, u);
   }
 
+  /* ---- desk preferences (markets · what you trade) ------------------------
+     Signup asks these two questions and writes them to user_metadata
+     (market_focus / trade_types) — the SAME shape templates/onboard.js persists,
+     and the same localStorage key ('mm.pendingPrefs') it stashes into before a
+     session exists. Until now there was nowhere to change the answers: the only
+     way back to that screen was the signup wizard itself. These read from the
+     account when there is one and from the pending stash when there isn't, so a
+     preference set before sign-up is never lost and never asked for twice. */
+  var SD_MARKETS = [['us', 'mktUs'], ['cn', 'mktCn'], ['hk', 'mktHk'], ['ca', 'mktCa'], ['global', 'mktGlobal']];
+  var SD_TRADES = [['stocks', 'trStocks'], ['options', 'trOptions'], ['crypto', 'trCrypto']];
+  var LS_PENDING_PREFS = 'mm.pendingPrefs';
+  var _sdDesk = null;            // { market_focus:[], trade_types:[] } — live edit buffer
+  var _sdDeskTimer = null;
+
+  function _sdPendingPrefs() {
+    try { var o = JSON.parse(localStorage.getItem(LS_PENDING_PREFS) || 'null'); return (o && typeof o === 'object') ? o : null; } catch (e) { return null; }
+  }
+  function _sdArr(v) {
+    if (!v || Object.prototype.toString.call(v) !== '[object Array]') return [];
+    var out = []; for (var i = 0; i < v.length; i++) if (typeof v[i] === 'string' && out.indexOf(v[i]) === -1) out.push(v[i]);
+    return out;
+  }
+  // account first, then the pre-sign-up stash — a signed-in user's server answer wins
+  function _sdLoadDesk() {
+    var meta = (_curUser && _curUser.user_metadata) || {};
+    var pend = _sdPendingPrefs() || {};
+    var mf = _sdArr(meta.market_focus), tt = _sdArr(meta.trade_types);
+    if (!mf.length) mf = _sdArr(pend.market_focus);
+    if (!tt.length) tt = _sdArr(pend.trade_types);
+    _sdDesk = { market_focus: mf, trade_types: tt };
+    return _sdDesk;
+  }
+  // Local mirror always; the account too when there is one. The local write
+  // MERGES into the existing stash so it never drops the name signup put there.
+  function _sdSaveDesk(msgEl) {
+    clearTimeout(_sdDeskTimer);
+    var signedIn = !!(_curUser && _authEnabled && _curUser.email);
+    _sdDeskTimer = setTimeout(function () {
+      var payload = { market_focus: _sdDesk.market_focus, trade_types: _sdDesk.trade_types };
+      try {
+        var pend = _sdPendingPrefs() || {};
+        pend.market_focus = payload.market_focus; pend.trade_types = payload.trade_types;
+        localStorage.setItem(LS_PENDING_PREFS, JSON.stringify(pend));
+      } catch (e) {}
+      if (!signedIn) { _sdDeskMsg(msgEl, 'prefLocal', 'ok'); return; }
+      getSupabaseClient().then(function (sb) {
+        if (!sb || !_curUser) { _sdDeskMsg(msgEl, 'prefLocal', 'ok'); return null; }
+        return sb.auth.updateUser({ data: payload }).then(function (r) {
+          if (r && r.error) { _sdDeskMsg(msgEl, 'prefErr', 'err'); return; }
+          // keep the in-memory user in step so a re-render shows the saved answer
+          if (_curUser) {
+            _curUser.user_metadata = _curUser.user_metadata || {};
+            _curUser.user_metadata.market_focus = payload.market_focus;
+            _curUser.user_metadata.trade_types = payload.trade_types;
+          }
+          _sdDeskMsg(msgEl, 'prefSaved', 'ok');
+        });
+      }).catch(function () { _sdDeskMsg(msgEl, 'prefErr', 'err'); });
+    }, 500);
+  }
+  var _sdDeskMsgTimer = null;
+  function _sdDeskMsg(el, key, kind) {
+    if (!el) return;
+    el.className = 'sd-msg show ' + (kind === 'err' ? 'err' : 'ok');
+    el.innerHTML = _sdBl(key);
+    clearTimeout(_sdDeskMsgTimer);
+    if (kind !== 'err') _sdDeskMsgTimer = setTimeout(function () { el.className = 'sd-msg'; }, 2600);
+  }
+  function _sdChipsHTML(list, sel, group) {
+    var out = '<div class="sd-pchips" role="group" aria-label="' + _escHtml(_sdL(group === 'market_focus' ? 'markets' : 'trades')) + '">';
+    for (var i = 0; i < list.length; i++) {
+      var on = sel.indexOf(list[i][0]) !== -1;
+      out += '<button type="button" class="sd-pchip" data-sd-pref="' + group + '" data-val="' + list[i][0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+             '<span class="box">' + SD_ICON.check + '</span>' + _sdBl(list[i][1]) + '</button>';
+    }
+    return out + '</div>';
+  }
+
   function _renderSDPrefs() {
     var host = document.getElementById('sd-sect-prefs');
     if (!host) return;
+    var desk = _sdLoadDesk();
     host.innerHTML = _sdHead('prefsTitle', 'prefsSub') + '<div class="sd-body">' +
+      // ── your desk: the two questions signup asked, now changeable ──
       '<div class="sd-group" style="margin-top:4px">' +
+        '<span class="sd-group-t">' + _sdBl('deskGroup') + '</span>' +
+        '<div class="sd-row">' +
+          '<div class="sd-row-line"><span class="sd-row-main">' +
+            '<span class="sd-row-lbl">' + _sdBl('markets') + '</span>' +
+            '<span class="sd-row-desc">' + _sdBl('marketsNote') + '</span></span></div>' +
+          _sdChipsHTML(SD_MARKETS, desk.market_focus, 'market_focus') +
+        '</div>' +
+        '<div class="sd-row">' +
+          '<div class="sd-row-line"><span class="sd-row-main">' +
+            '<span class="sd-row-lbl">' + _sdBl('trades') + '</span>' +
+            '<span class="sd-row-desc">' + _sdBl('tradesNote') + '</span></span></div>' +
+          _sdChipsHTML(SD_TRADES, desk.trade_types, 'trade_types') +
+          '<p class="sd-msg" id="sd-desk-msg"></p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sd-group">' +
+        '<span class="sd-group-t">' + _sdBl('themeLang') + '</span>' +
         // appearance
         '<div class="sd-row"><div class="sd-row-line">' +
           '<span class="sd-row-main">' +
@@ -2724,6 +2849,20 @@
     });
     host.querySelectorAll('[data-sd-lang]').forEach(function (b) {
       b.addEventListener('click', function () { setLang(b.getAttribute('data-sd-lang')); });
+    });
+    // desk chips — toggle in place (never re-render the section: that would
+    // replay the entrance animation and drop the scroll position on every tap)
+    var msg = host.querySelector('#sd-desk-msg');
+    host.querySelectorAll('[data-sd-pref]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!_sdDesk) _sdLoadDesk();
+        var group = b.getAttribute('data-sd-pref'), val = b.getAttribute('data-val');
+        var arr = _sdDesk[group] || (_sdDesk[group] = []);
+        var i = arr.indexOf(val);
+        if (i === -1) arr.push(val); else arr.splice(i, 1);
+        b.setAttribute('aria-pressed', i === -1 ? 'true' : 'false');
+        _sdSaveDesk(msg);
+      });
     });
   }
   function _wireSDSync(host) { _sdWireCta(host); }
