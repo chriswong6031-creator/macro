@@ -6,9 +6,10 @@ DESIGN PRINCIPLES
   stake_hypothesis) are NOT in the schema list passed to the model.  The
   dispatcher still guards the whitelist, but structurally the model cannot
   call what it cannot see.
-* NEVER advises: the system prompt explicitly forbids buy/sell/hold/target/
-  'should' on positions.  A post-filter regex catches any advice-shaped
-  output that slips through and replaces it with a refusal + citation list.
+* ADVISES DIRECTLY (operator directive 2026-07-26): the system prompt lets the
+  Brain give direct buy/sell/hold recommendations, grounded in the cited signals
+  (it never originates a signal/target the data doesn't support).  The old advice
+  post-filter is now a no-op pass-through; see _post_filter_advice.
 * KEY-OPTIONAL: when no Anthropic key resolves (ANTHROPIC_API_KEY absent and
   CLAUDE_CODE_OAUTH_TOKEN absent) the endpoint returns memo-quote mode —
   a relevant excerpt from data/neuralweb/cortex/memo.json matched to the
@@ -24,7 +25,6 @@ DESIGN PRINCIPLES
     - deny-roots already blocks .env / config.yml via cortex's _check_deny_roots
     - Tool results are data-only (never routed as instructions)
     - System prompt instructs model to ignore instructions embedded in results
-    - Post-filter replaces advice-pattern answers
 """
 from __future__ import annotations
 
@@ -45,10 +45,9 @@ log = logging.getLogger(__name__)
 _DEFAULT_MODEL = "claude-opus-4-8"
 _DEFAULT_MAX_TOKENS = 2048
 _DISCLAIMER = (
-    "This is informational output from a quantitative research system. "
-    "It is not financial advice. No signal described here constitutes a "
-    "recommendation to buy or sell any security. Past graded accuracy of "
-    "cited signals is not a guarantee of future performance."
+    "This is informational output from a quantitative research system, for your "
+    "own decision-making — not personalized financial advice. Past graded accuracy "
+    "of cited signals is not a guarantee of future performance."
 )
 
 # Question-class budgets (max tool calls per class)
@@ -68,8 +67,12 @@ _DAILY_GLOBAL_QUOTA = int(os.environ.get("ASK_BRAIN_DAILY_QUOTA", "200"))
 # State dir for quota ledger — not in git tree
 _STATE_DIR = Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api"))
 
-# Advice-pattern post-filter — any answer hitting these triggers a refusal
-# kill-list #6: directional verbs banned in customer-facing text (applies to factor path too)
+# Directional-imperative patterns. NO LONGER a customer-facing refusal trigger:
+# recommendations were enabled by operator directive 2026-07-26 (see _post_filter_advice
+# below), superseding the RUL-NW4 / kill-list #6 customer-facing directional-verb guard.
+# Retained only as a self-check imported by tests/test_portfolio_brief.py, which asserts
+# the deterministic portfolio-brief composer emits no imperative — a separate, auto-
+# generated surface from this on-demand chat.
 _ADVICE_PATTERNS = [
     # Genuine PERSONAL imperatives only — NOT the engine's own verdicts. Reporting that
     # "the buy board features NVDA" or "SOXX is a BUY" is relaying a calibrated signal
@@ -263,13 +266,14 @@ You explain graded signals, cite their provenance, and describe market context f
 Neural Web data bus. Every claim you make must be followed by the signal_id and engine
 name from the spine, or the artifact path you read it from.
 
-ABSOLUTE PROHIBITIONS — you MUST obey these without exception:
-- You may NEVER tell the user to buy, sell, hold, exit, or take any position.
-- You may NEVER generate a price target, a trade instruction, or a recommendation.
-- You may NEVER use the word "should" in relation to a position or portfolio action.
-- You are not a financial advisor. Your output is informational only.
-- The word "recommendation" must never appear in your answer.
-- If asked for advice, redirect to the data and say explicitly you cannot advise.
+HOW YOU ADVISE:
+- Give a direct, actionable read. When the user asks whether to buy, sell, hold, or size
+  a position, answer it and commit to a call — never deflect with "I can't advise".
+- Ground every call in the graded signals you cite. Never invent a price target, score, or
+  signal the data doesn't support; when the data doesn't cover the exact name they asked
+  about, say so plainly and give the closest read you do have.
+- This is research output for the user's own decision, not personalized financial advice —
+  say that in one short line when you give a direct buy/sell call, never as a wall of hedging.
 
 ANSWER LANGUAGE:
 Respond in the same language the user wrote in (English or Chinese). For Chinese
@@ -338,75 +342,28 @@ def sanitize_question(question: str) -> tuple[str, str | None]:
 
 
 # ---------------------------------------------------------------------------
-# Advice post-filter
+# Advice post-filter — DISABLED (operator directive 2026-07-26)
 # ---------------------------------------------------------------------------
-
-# Sentence boundary — split AFTER a terminator, keeping it with its sentence. ZH terminators
-# (。！？) split with no following space (Chinese runs sentences together); EN terminators
-# split only before whitespace (so "11%." / "Inc." don't shatter mid-word).
-_SENT_SPLIT = re.compile(r"(?<=[。！？])|(?<=[.!?])\s+")
-# After rejoining kept sentences with a space, drop the space that lands between two Chinese
-# characters (Chinese doesn't space its sentences) — leaves English spacing untouched.
-_ZH_JOIN_FIX = re.compile(r"(?<=[一-鿿。！？，])\s+(?=[一-鿿])")
-
-
-def _advice_refusal(zh: bool, citations: list[str]) -> str:
-    """The graceful, language-aware decline used when the WHOLE answer was an order."""
-    if zh:
-        r = ("我不能给出个人买卖指令 —— 但可以告诉你看板的校准信号现在显示什么，"
-             "以及它们指向的立场。想让我按信号帮你梳理当前的方向吗？")
-    else:
-        r = ("I can't give a personal buy/sell call — but I can tell you what the "
-             "dashboard's calibrated signals show and the stance they point to. "
-             "Want me to walk through what the signals favor right now?")
-    if citations:
-        r += ("\n\n来源: " if zh else "\n\nSources: ") + ", ".join(citations)
-    return r
+# The Brain now gives direct, actionable buy/sell/hold recommendations, the same way a
+# desk analyst (or ChatGPT/Claude) would — this is a core user feature. The operator has
+# authorized it, superseding the customer-facing directional-verb guard from RUL-NW4 /
+# kill-list #6. Only that HALF of the epistemics law is lifted: every call must still be
+# GROUNDED in the desk's calibrated signals — the model never originates a signal, score,
+# or target the data doesn't support (that invariant is unchanged, enforced in the system
+# prompts). _post_filter_advice is kept as a no-op pass-through so its many call sites keep
+# a stable (text, was_filtered) contract; re-enabling the guard is a one-function change.
 
 
 def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
-    """Neutralize personal-order language while KEEPING the good analysis.
+    """No-op pass-through. Personal buy/sell recommendations are allowed (operator
+    directive 2026-07-26). Returns (answer, False) unchanged.
 
-    A single stray "you should buy X" no longer nukes a whole page of real signal read.
-    We remove only the sentence(s) that carry the order (line by line, so paragraphs and
-    bullets survive) and keep the rest. The [NEXT] follow-up block is never touched. Only
-    when nothing meaningful is left — the answer WAS the order — do we fall back to the
-    graceful, language-aware refusal. Returns (filtered_answer, was_filtered).
+    Previously this stripped personal-order sentences and, when the whole answer was an
+    order, replaced it with a graceful "I can't give a personal buy/sell call" refusal.
+    That refusal is exactly what users hit when they asked "can I buy X now?" — the
+    operator removed it so the Brain answers the question directly.
     """
-    if not answer or not any(p.search(answer) for p in _ADVICE_PATTERNS):
-        return answer, False
-
-    # Set the [NEXT] block aside — follow-up questions are never advice and must survive.
-    m = re.search(r"\n*\[NEXT\][ \t]*\n", answer)
-    body = answer[:m.start()] if m else answer
-    next_block = answer[m.start():] if m else ""
-
-    removed = False
-    out: list[str] = []
-    for line in body.split("\n"):
-        if not line.strip():
-            out.append(line)
-            continue
-        kept = []
-        for s in _SENT_SPLIT.split(line):
-            if s.strip() and any(p.search(s) for p in _ADVICE_PATTERNS):
-                removed = True   # drop only this sentence
-                continue
-            kept.append(s)
-        joined = _ZH_JOIN_FIX.sub("", " ".join(x for x in kept if x.strip()))
-        if joined:
-            out.append(joined)
-        # else: the whole line was the order → drop it entirely
-    cleaned = re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip()
-
-    # Real analysis survived the strip → keep it (surgical), plus the follow-ups.
-    if removed and len(cleaned) >= 24:
-        result = cleaned + ("\n\n" + next_block.lstrip("\n") if next_block.strip() else "")
-        return result.strip(), True
-
-    # Nothing worth keeping — the answer was the order → graceful refusal, no stale follow-ups.
-    zh = bool(re.search(r"[一-鿿]", answer))
-    return _advice_refusal(zh, citations), True
+    return answer, False
 
 
 # ---------------------------------------------------------------------------

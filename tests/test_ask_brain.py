@@ -346,34 +346,36 @@ def test_quota_fail_open_on_bad_state_dir():
 
 
 # ---------------------------------------------------------------------------
-# 5. Advice post-filter positive-control
+# 5. Advice post-filter DISABLED (operator directive 2026-07-26) — recommendations
+#    now pass through untouched. _post_filter_advice is a no-op (answer, False).
 # ---------------------------------------------------------------------------
 
-def test_advice_filter_buy_should():
-    """'you should buy NVDA' is SURGICALLY removed — the real signal read is kept, not nuked."""
+def test_advice_filter_buy_should_passes_through():
+    """'you should buy NVDA' is a real recommendation now — it must survive verbatim."""
     answer = "Based on the signals, you should buy NVDA now. The radar shows a strong divergence."
     filtered, was_filtered = ab._post_filter_advice(answer, ["signal_id_123"])
-    assert was_filtered is True
-    assert "you should buy" not in filtered.lower()          # the order is gone
-    assert "radar shows a strong divergence" in filtered      # the analysis survives
+    assert was_filtered is False
+    assert filtered == answer                                 # nothing stripped
 
 
-def test_advice_filter_recommendation():
-    """'I recommend' triggers the filter."""
+def test_advice_filter_recommendation_passes_through():
+    """'I recommend' is allowed — no longer filtered."""
     answer = "I recommend selling your position in tech ETFs given the current regime."
     filtered, was_filtered = ab._post_filter_advice(answer, [])
-    assert was_filtered is True
+    assert was_filtered is False
+    assert filtered == answer
 
 
-def test_advice_filter_price_target():
-    """'price target' triggers the filter."""
+def test_advice_filter_price_target_passes_through():
+    """A price target is allowed — no longer filtered."""
     answer = "The price target for NVDA is $300 based on our analysis."
     filtered, was_filtered = ab._post_filter_advice(answer, [])
-    assert was_filtered is True
+    assert was_filtered is False
+    assert filtered == answer
 
 
 def test_advice_filter_passes_factual():
-    """Pure factual narration should pass without filtering."""
+    """Pure factual narration passes untouched (unchanged behavior)."""
     answer = (
         "The spine shows signal_id=us_board:2026-06-17:NVDA:buy:5 (engine: us_board, "
         "shrunken_ic=0.009527, kernel_armed=True). The world_state verdict is RISK_OFF. "
@@ -385,27 +387,24 @@ def test_advice_filter_passes_factual():
 
 
 def test_advice_filter_passes_regime_description():
-    """'regime' description without position advice passes."""
+    """'regime' description passes untouched (unchanged behavior)."""
     answer = "The current macro regime is Q1 (growth-up, inflation-down). Risk radar shows caution."
     filtered, was_filtered = ab._post_filter_advice(answer, [])
     assert was_filtered is False
 
 
-def test_advice_filter_mocked_answer_nvda_buy():
-    """Simulate the exact scenario: mocked model says 'you should buy NVDA' → refused."""
-    # This is the positive-control test: even if the model returns advice, the filter catches it
+def test_advice_filter_full_order_passes_through():
+    """A whole-answer buy order + sizing is a direct recommendation now — it survives intact,
+    no refusal substitution."""
     mocked_model_output = (
         "Given the us_board signal and radar divergence, you should buy NVDA "
         "and hold through Q3. My recommendation is to add 5% to your position."
     )
     citations = ["us_board:2026-06-17:NVDA:buy:5", "radar:NVDA:divergence"]
     filtered, was_filtered = ab._post_filter_advice(mocked_model_output, citations)
-    assert was_filtered is True
-    # The refusal should contain the citations
-    assert "us_board:2026-06-17:NVDA:buy:5" in filtered
-    assert "buy/sell call" in filtered
-    # The original advice text must not appear
-    assert "you should buy" not in filtered.lower()
+    assert was_filtered is False
+    assert filtered == mocked_model_output                    # the recommendation is kept
+    assert "buy/sell call" not in filtered                    # no refusal substituted
 
 
 # ---------------------------------------------------------------------------
@@ -755,13 +754,13 @@ def test_memo_quote_nested_world_state_score_extracted():
 # 12. Streaming advice filter fires BEFORE bytes reach the client
 # ---------------------------------------------------------------------------
 
-def test_stream_advice_filter_fires_before_emit():
-    """_run_ask_loop_stream must NOT emit advice text in a delta before filtering.
+def test_stream_recommendation_emitted_in_full():
+    """_run_ask_loop_stream streams a direct recommendation through to the client.
 
-    The bug: raw text was yielded chunk-by-chunk inside the stream loop; the
-    filter only ran after all bytes had been yielded (too late).  After the fix,
-    the full text is buffered first, filtered, and only the clean/refused text
-    is emitted.
+    Recommendations are allowed (operator directive 2026-07-26): the advice post-filter
+    is a no-op, so a "you should buy NVDA" answer reaches the client in the delta instead
+    of being stripped or replaced by a refusal. (The full text is still buffered before
+    emit — the streaming structure is unchanged, only the filter is disabled.)
     """
     root = _make_temp_root(with_world_state=True)
 
@@ -823,17 +822,17 @@ def test_stream_advice_filter_fires_before_emit():
         if "delta" in data:
             emitted_text += data["delta"]
 
-    # The raw advice text must NOT appear in any emitted delta
-    assert "you should buy" not in emitted_text.lower(), (
-        f"Advice leaked to client before filter. Emitted: {emitted_text!r}"
+    # The recommendation text IS emitted to the client (no longer stripped/refused)
+    assert "you should buy" in emitted_text.lower(), (
+        f"Recommendation was not emitted. Emitted: {emitted_text!r}"
     )
-    # At least one chunk must carry filtered=True
+    # No chunk may carry filtered=True — the advice post-filter is a no-op now
     filter_events = [
         json.loads(c[len("data: "):].strip())
         for c in chunks if "filtered" in c
     ]
-    assert any(e.get("filtered") is True for e in filter_events), (
-        "Expected a filtered=True event but none found"
+    assert not any(e.get("filtered") is True for e in filter_events), (
+        "No filtered=True event should be emitted when recommendations are allowed"
     )
 
 
@@ -928,7 +927,7 @@ def test_sanitize_rejects_forget_instructions():
 
 
 # ---------------------------------------------------------------------------
-# 14. Factor Intelligence path (RUL-NW4) — classifier, tools, advice guard
+# 14. Factor Intelligence path (RUL-NW4) — classifier, tools (advice guard now disabled)
 # ---------------------------------------------------------------------------
 
 def _make_factor_root() -> pathlib.Path:
@@ -1059,24 +1058,25 @@ def test_dispatch_read_tool_refuses_factor_write_tool(tmp_path):
     assert "not allowed" in result["error"]
 
 
-def test_advice_filter_covers_factor_path():
-    """Advice-pattern filter is applied to factor-path answers too.
+def test_advice_filter_disabled_on_factor_path():
+    """Recommendations pass through on the factor path too (operator directive 2026-07-26).
 
-    The filter patterns include Chinese directional verbs (kill-list #6 / RUL-NW4).
+    Both English and Chinese directional calls survive untouched — the old RUL-NW4 /
+    kill-list #6 customer-facing directional-verb guard is lifted.
     """
     # English directional verb
     answer_en = "Based on the factor state, you should buy AAPL immediately."
     filtered, was_filtered = ab._post_filter_advice(answer_en, [])
-    assert was_filtered, "English buy-advice must be filtered on factor path"
+    assert was_filtered is False and filtered == answer_en
 
     # Chinese directional verbs
     answer_zh = "根据因子状态，建议加仓AAPL。"
     filtered_zh, was_filtered_zh = ab._post_filter_advice(answer_zh, [])
-    assert was_filtered_zh, "Chinese 加仓 must be filtered (kill-list #6)"
+    assert was_filtered_zh is False and filtered_zh == answer_zh
 
     answer_zh2 = "分析显示，应该卖出这只股票。"
     filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
-    assert was_filtered_zh2, "Chinese 卖出 must be filtered (kill-list #6)"
+    assert was_filtered_zh2 is False and filtered_zh2 == answer_zh2
 
 
 def test_explain_factor_context_absent_data_returns_structured_gap(tmp_path):
@@ -1570,29 +1570,28 @@ def test_factor_branch_checked_before_options_branch():
 
 # --- 15h. Advice filter on options path ---
 
-def test_advice_filter_covers_options_path():
-    """Advice-pattern filter is applied to options-path answers too (RO-7).
+def test_advice_filter_disabled_on_options_path():
+    """Recommendations pass through on the options path too (operator directive 2026-07-26).
 
-    Mirrors test_advice_filter_covers_factor_path: the filter is path-agnostic,
-    so options-shaped answers with directional advice must be replaced by the
-    refusal text, including Chinese directional verbs (kill-list #6 / RUL-NW4).
+    Path-agnostic no-op: options-shaped directional calls survive untouched, in both
+    English and Chinese — no refusal substitution.
     """
     # English directional verb
     answer_en = "Given the dealer positioning into opex, you should buy the straddle."
     filtered, was_filtered = ab._post_filter_advice(answer_en, [])
-    assert was_filtered, "English buy-advice must be filtered on options path"
-    assert "buy/sell call" in filtered
+    assert was_filtered is False and filtered == answer_en
+    assert "buy/sell call" not in filtered
 
     # Chinese directional verbs
     answer_zh = "根据期权流数据，建议买入跨式组合。"
     filtered_zh, was_filtered_zh = ab._post_filter_advice(answer_zh, [])
-    assert was_filtered_zh, "Chinese 买入 must be filtered (kill-list #6)"
-    assert "买卖指令" in filtered_zh
+    assert was_filtered_zh is False and filtered_zh == answer_zh
+    assert "买卖指令" not in filtered_zh
 
     answer_zh2 = "GEX 显示挤压风险，应平仓。"
     filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
-    assert was_filtered_zh2, "Chinese 平仓 must be filtered (kill-list #6)"
-    assert "买卖指令" in filtered_zh2
+    assert was_filtered_zh2 is False and filtered_zh2 == answer_zh2
+    assert "买卖指令" not in filtered_zh2
 
 
 # ---------------------------------------------------------------------------
@@ -2001,48 +2000,44 @@ if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 
 
-def test_advice_refusal_is_language_aware():
-    """A Chinese answer that trips the advice filter must be refused IN CHINESE, never
-    replaced with an English refusal (multilingual robustness)."""
+def test_advice_recommendation_language_preserved():
+    """Recommendations pass through in the language they were written — no refusal, no
+    language swap (operator directive 2026-07-26)."""
     import engine.neuralweb.ask_brain as _ab
     zh_ans, zh_flag = _ab._post_filter_advice("根据信号，建议加仓AAPL。", ["s1"])
-    assert zh_flag is True
-    assert any("一" <= c <= "鿿" for c in zh_ans), "Chinese answer got an English refusal"
-    assert "买卖指令" in zh_ans and "来源" in zh_ans
+    assert zh_flag is False and zh_ans == "根据信号，建议加仓AAPL。"
+    assert "买卖指令" not in zh_ans                       # no ZH refusal substituted
     en_ans, en_flag = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
-    assert en_flag is True and "buy/sell call" in en_ans and "Sources" in en_ans
+    assert en_flag is False and en_ans == "You should buy NVDA now."
+    assert "buy/sell call" not in en_ans                 # no EN refusal substituted
 
 
-def test_advice_filter_surgical_keeps_analysis_en():
-    """A single stray order is stripped; the surrounding analysis + stance + [NEXT] survive."""
+def test_advice_full_answer_recommendation_survives_en():
+    """A direct order embedded in analysis + stance + [NEXT] survives verbatim — nothing stripped."""
     import engine.neuralweb.ask_brain as _ab
     ans = ("Semis are getting hit — SMH down 11% in 20 days. You should buy NVDA now. "
            "Software is picking up the slack and it's broad.\n\nWatch — don't chase\n\n"
            "[NEXT]\nWhat's leading?\nShow me SMH\nIs credit calm?")
     out, flagged = _ab._post_filter_advice(ans, ["s1"])
-    assert flagged is True
-    assert "you should buy" not in out.lower()          # order removed
-    assert "SMH down 11%" in out and "picking up the slack" in out   # analysis kept
-    assert "Watch — don't chase" in out                 # stance kept
-    assert "[NEXT]" in out and "Show me SMH" in out      # follow-ups kept
+    assert flagged is False
+    assert out == ans                                    # whole answer kept, order included
 
 
-def test_advice_filter_surgical_keeps_analysis_zh():
-    """Chinese: strip the order sentence (no spaces between 。), keep the rest in clean Chinese."""
+def test_advice_full_answer_recommendation_survives_zh():
+    """Chinese: the whole answer including the 加仓 call passes through unchanged."""
     import engine.neuralweb.ask_brain as _ab
     ans = "半导体今天很弱，SMH跌了11%。建议加仓AAPL。软件在接棒，而且广度不错。\n\nWatch — don't chase"
     out, flagged = _ab._post_filter_advice(ans, [])
-    assert flagged is True
-    assert "建议加仓" not in out                          # order removed
-    assert "半导体今天很弱" in out and "软件在接棒" in out   # analysis kept
-    assert "11%。软件" in out                             # no stray space between ZH sentences
+    assert flagged is False
+    assert out == ans                                    # order kept, no refusal
 
 
-def test_advice_filter_whole_order_falls_back_to_refusal():
-    """When the WHOLE answer is just the order, fall back to the graceful refusal."""
+def test_advice_whole_order_passes_through():
+    """When the WHOLE answer is just the order, it is a valid recommendation now — kept as-is."""
     import engine.neuralweb.ask_brain as _ab
     out, flagged = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
-    assert flagged is True and "buy/sell call" in out and "Sources" in out
+    assert flagged is False and out == "You should buy NVDA now."
+    assert "buy/sell call" not in out                    # no refusal substituted
 
 
 # ---------------------------------------------------------------------------

@@ -458,11 +458,15 @@ def test_annotate_chart_in_chat_response(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# 9. Post-filter applied to final text
+# 9. Recommendations pass through the (now no-op) advice post-filter
 # ---------------------------------------------------------------------------
 
-def test_post_filter_applied_to_brain_output(tmp_path):
-    """Advice patterns in model output are caught by the post-filter."""
+def test_recommendation_passes_through_brain_output(tmp_path):
+    """Direct buy/sell recommendations survive untouched (operator directive 2026-07-26).
+
+    The advice post-filter is a no-op pass-through — the Brain answers "Should I buy NVDA?"
+    with a real call instead of the old canned refusal.
+    """
     root = _make_temp_root()
     advice_text = "You should buy NVDA right now. is_context_only: true — all signals are display-tier pending FDR."
     text_response = _MockResponse([_MockBlock("text", advice_text)], "end_turn")
@@ -475,9 +479,9 @@ def test_post_filter_applied_to_brain_output(tmp_path):
                     with patch("lib.ai_costs.record_usage", return_value=True):
                         result = gw.chat("Should I buy NVDA?", "user1", lane="fast", root=root)
 
-    # Post-filter surgically removes the personal order; the reply no longer commands a trade.
-    assert result.get("filtered") is True
-    assert "you should buy nvda" not in result["reply"].lower()
+    # The recommendation is kept — no filtering, no refusal substitution.
+    assert result.get("filtered") is False
+    assert "you should buy nvda" in result["reply"].lower()
 
 
 # ---------------------------------------------------------------------------
@@ -1562,8 +1566,9 @@ def test_research_mode_consumes_pro_quota(tmp_path):
     assert data.get("count") == 1, f"Expected count=1, got {data}"
 
 
-def test_research_mode_post_filter_still_applies(tmp_path):
-    """Research mode output still goes through the post-filter (governance unchanged)."""
+def test_research_mode_recommendation_passes_through(tmp_path):
+    """Research mode gives direct recommendations too (operator directive 2026-07-26):
+    the advice post-filter is a no-op, so the call survives untouched."""
     root = _make_temp_root()
     advice_text = "You should buy NVDA immediately. is_context_only: true — all signals are display-tier pending FDR."
     text_response = _MockResponse([_MockBlock("text", advice_text)], "end_turn")
@@ -1580,7 +1585,8 @@ def test_research_mode_post_filter_still_applies(tmp_path):
                             root=root,
                         )
 
-    assert result.get("filtered") is True
+    assert result.get("filtered") is False
+    assert "you should buy nvda" in result["reply"].lower()
     assert result.get("is_context_only") is True
 
 
