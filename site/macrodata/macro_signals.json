@@ -1,6 +1,6 @@
 {
   "date": "2026-07-24",
-  "generated_utc": "2026-07-26 01:15",
+  "generated_utc": "2026-07-26 05:46",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4953,11 +4953,10 @@
         "name_zh": "CBOE SKEW\uff08\u5c3e\u90e8\u98ce\u9669\u5b9a\u4ef7\uff09",
         "orientation": "lower=greed",
         "unit": "SKEW index",
-        "value": 145.9,
-        "z": -1.958,
-        "pct": 6,
+        "value": 147.3,
+        "z": -2.071,
+        "pct": 5,
         "pct_hist": [
-          12.2,
           8.5,
           7.3,
           9.0,
@@ -5016,11 +5015,12 @@
           5.6,
           2.8,
           3.5,
-          5.7
+          5.7,
+          4.9
         ],
         "freshness": "fresh",
-        "obs_count": 9190,
-        "last_date": "2026-07-23"
+        "obs_count": 9191,
+        "last_date": "2026-07-24"
       },
       {
         "key": "naaim",
@@ -5178,11 +5178,11 @@
       {
         "key": "putcall",
         "freshness": "young",
-        "obs_count": 36,
+        "obs_count": 37,
         "name_en": "CBOE put/call ratio",
         "name_zh": "CBOE \u770b\u8dcc/\u770b\u6da8\u6bd4\u7387",
-        "value": 1.269,
-        "as_of": "2026-07-24",
+        "value": 1.327,
+        "as_of": "2026-07-25",
         "note_en": "Series too young to z-score (< 252 obs); shown as raw context.",
         "note_zh": "\u5e8f\u5217\u8fc7\u77ed\uff0c\u65e0\u6cd5\u8ba1\u7b97 z \u5206\u6570\uff08< 252 \u6761\uff09\uff1b\u663e\u793a\u4e3a\u539f\u59cb\u53c2\u8003\u3002"
       },
@@ -5200,7 +5200,7 @@
     ],
     "n_legs_qualifying": 11,
     "as_of": "2026-07-24",
-    "generated_utc": "2026-07-25T23:53:09Z",
+    "generated_utc": "2026-07-26T01:55:40Z",
     "disclaimer_en": "Sentiment context only \u2014 display-only composite of public market indicators. Never scored, never feeds the regime engine, no forward claim. Greed/fear readings are not contrarian signals without regime context.",
     "disclaimer_zh": "\u4ec5\u4e3a\u60c5\u7eea\u53c2\u8003 \u2014 \u516c\u5f00\u5e02\u573a\u6307\u6807\u7684\u4ec5\u5c55\u793a\u5408\u6210\u3002\u4e0d\u8ba1\u5206\uff0c\u4e0d\u8fdb\u5165\u5468\u671f\u5f15\u64ce\uff0c\u65e0\u524d\u77bb\u6027\u5224\u65ad\u3002\u8d2a\u5a6a/\u6050\u60e7\u8bfb\u6570\u82e5\u65e0\u5468\u671f\u80cc\u666f\uff0c\u4e0d\u6784\u6210\u53cd\u5411\u4fe1\u53f7\u3002"
   },
@@ -5821,7 +5821,7 @@
       }
     ],
     "as_of": "2026-07-24",
-    "generated_utc": "2026-07-25T23:53:10Z",
+    "generated_utc": "2026-07-26T01:55:41Z",
     "n_young": 0,
     "disclaimer_en": "Display-only context \u2014 volatility surface indicators from public CBOE / Yahoo data. Never scored, no forward claim. These chips describe the current vol environment; they do not predict direction.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\u7684\u80cc\u666f \u2014 \u6765\u81ea\u516c\u5f00 CBOE / Yahoo \u6570\u636e\u7684\u6ce2\u52a8\u7387\u66f2\u9762\u6307\u6807\u3002\u4e0d\u8ba1\u5206\uff0c\u65e0\u524d\u77bb\u5224\u65ad\u3002\u8fd9\u4e9b\u82af\u7247\u63cf\u8ff0\u5f53\u524d\u6ce2\u52a8\u7387\u73af\u5883\uff0c\u4e0d\u9884\u6d4b\u65b9\u5411\u3002"
@@ -5952,14 +5952,14 @@
         2.4,
         -11.1,
         -2.3,
-        -2.5,
+        -2.3,
         -8.9,
         -21.9,
         -13.1,
         -25.7,
         -18.2,
-        -13.2,
-        -16.9,
+        -13.0,
+        -16.7,
         -25.5,
         -12.7,
         -19.6,
@@ -5968,7 +5968,7 @@
         -29.4,
         -26.6,
         -23.9,
-        -19.7,
+        -19.4,
         -30.0
       ]
     },
@@ -5982,7 +5982,7 @@
   },
   "evw_snap": {
     "schema": "event_window.snapshot.v1",
-    "asof": "2026-07-21",
+    "asof": "2026-07-25",
     "available": true,
     "is_context_only": true,
     "phase": "quiet",
@@ -6001,50 +6001,50 @@
     "read": "quiet: no statistically robust calendar edge measured (display context).",
     "read_zh": "quiet\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
     "phase_stats": {
-      "mean_fwd_pct": 0.263,
+      "mean_fwd_pct": 0.262,
       "excess_pct": 0.031,
       "fwd_vol": 14.6,
-      "t_hac": 0.603,
-      "n": 6656,
+      "t_hac": 0.601,
+      "n": 6659,
       "sign_stable": false,
       "significant": false,
-      "post_2021_excess_pct": 0.047,
-      "post_2021_n": 999
+      "post_2021_excess_pct": 0.043,
+      "post_2021_n": 1002
     },
     "ex_ante": null,
     "seasonality": {
       "available": true,
       "fwd_days": 5,
-      "base_fwd_pct": 0.232,
-      "n": 8420,
+      "base_fwd_pct": 0.231,
+      "n": 8423,
       "phases": {
         "fomc_day": {
           "mean_fwd_pct": -0.075,
-          "excess_pct": -0.307,
+          "excess_pct": -0.306,
           "fwd_vol": 17.14,
-          "t_hac": -2.155,
+          "t_hac": -2.151,
           "n": 216,
           "sign_stable": true,
           "significant": true,
-          "post_2021_excess_pct": 0.037,
+          "post_2021_excess_pct": 0.038,
           "post_2021_n": 44
         },
         "fomc_week": {
           "mean_fwd_pct": 0.168,
-          "excess_pct": -0.064,
+          "excess_pct": -0.063,
           "fwd_vol": 17.06,
-          "t_hac": -0.454,
+          "t_hac": -0.45,
           "n": 864,
           "sign_stable": false,
           "significant": false,
-          "post_2021_excess_pct": -0.018,
+          "post_2021_excess_pct": -0.017,
           "post_2021_n": 176
         },
         "post_fomc_3d": {
           "mean_fwd_pct": 0.096,
-          "excess_pct": -0.136,
+          "excess_pct": -0.135,
           "fwd_vol": 15.97,
-          "t_hac": -1.05,
+          "t_hac": -1.047,
           "n": 648,
           "sign_stable": false,
           "significant": false,
@@ -6052,15 +6052,15 @@
           "post_2021_n": 132
         },
         "quiet": {
-          "mean_fwd_pct": 0.263,
+          "mean_fwd_pct": 0.262,
           "excess_pct": 0.031,
           "fwd_vol": 14.6,
-          "t_hac": 0.603,
-          "n": 6656,
+          "t_hac": 0.601,
+          "n": 6659,
           "sign_stable": false,
           "significant": false,
-          "post_2021_excess_pct": 0.047,
-          "post_2021_n": 999
+          "post_2021_excess_pct": 0.043,
+          "post_2021_n": 1002
         }
       },
       "pre_fomc_drift_note": "Pre-FOMC drift (Lucca-Moench) expected DEAD post-2016 \u2014 house ruling. Null printed, not hidden."
@@ -6253,19 +6253,19 @@
     }
   },
   "fx": {
-    "asof": "2026-07-22",
+    "asof": "2026-07-26",
     "dollar_desk": {
-      "lean": "mixed backdrop",
-      "lean_zh": "\u5206\u5316\u80cc\u666f",
-      "lean_net": 1,
-      "lean_n": 3,
+      "lean": "dollar-supportive backdrop",
+      "lean_zh": "\u504f\u591a\u7f8e\u5143\u80cc\u666f",
+      "lean_net": 2,
+      "lean_n": 4,
       "real_rate_regime": "Restrictive real yields",
-      "real_rate_z": 0.93,
-      "fed_path_bps": 47.0,
-      "fed_path_lean": "steady",
-      "usd_pos_pctile": 75.0,
+      "real_rate_z": 1.0,
+      "fed_path_bps": 53.0,
+      "fed_path_lean": "hawkish_repricing",
+      "usd_pos_pctile": 78.0,
       "usd_pos_state": "neutral",
-      "usd_reer_gap_pct": 0.3,
+      "usd_reer_gap_pct": 0.8,
       "usd_valuation": "fair",
       "trend": "up",
       "trend_n_up": 4,
@@ -6279,13 +6279,13 @@
         "current": "US growth premium",
         "prev": "Global reflation",
         "changed_on": "2026-04-20",
-        "days_in_state": 94
+        "days_in_state": 98
       },
       "lean": {
-        "current": "mixed backdrop",
-        "prev": null,
-        "changed_on": null,
-        "days_in_state": null
+        "current": "dollar-supportive backdrop",
+        "prev": "mixed backdrop",
+        "changed_on": "2026-07-22",
+        "days_in_state": 5
       },
       "risk": {
         "current": "risk-on",
@@ -6294,10 +6294,10 @@
         "days_in_state": null
       },
       "fed_path_lean": {
-        "current": "steady",
-        "prev": null,
-        "changed_on": null,
-        "days_in_state": null
+        "current": "hawkish_repricing",
+        "prev": "steady",
+        "changed_on": "2026-07-22",
+        "days_in_state": 5
       },
       "liquidity_dir": {
         "current": "soft",
@@ -6324,22 +6324,24 @@
         "days_in_state": null
       },
       "regime_radar_dominant": {
-        "current": null,
+        "current": "intervention_risk",
         "prev": null,
-        "changed_on": null,
-        "days_in_state": null
+        "changed_on": "2026-07-22",
+        "days_in_state": 5
       }
     },
     "regime_radar": {
-      "dominant": null,
-      "active": [],
+      "dominant": "intervention_risk",
+      "active": [
+        "intervention_risk"
+      ],
       "intensity": {
-        "carry_unwind": 10.3,
-        "dollar_wrecking_ball": 3.7,
-        "em_crisis_capital_flight": 33.1,
-        "haven_flight_risk_off": 0.8,
-        "reflation_risk_on": 21.0,
-        "intervention_risk": 15.5
+        "carry_unwind": 12.1,
+        "dollar_wrecking_ball": 8.7,
+        "em_crisis_capital_flight": 10.2,
+        "haven_flight_risk_off": 3.2,
+        "reflation_risk_on": 7.0,
+        "intervention_risk": 24.4
       }
     },
     "strength": {
@@ -6348,15 +6350,15 @@
         "ccy": "BRL",
         "ccy_zh": "\u5df4\u897f\u96f7\u4e9a\u5c14",
         "em": true,
-        "strength": 0.671,
-        "vs_usd_pct": 1.9
+        "strength": 0.752,
+        "vs_usd_pct": 2.1
       },
       "bottom": {
         "ccy": "JPY",
         "ccy_zh": "\u65e5\u5143",
         "em": false,
-        "strength": -0.657,
-        "vs_usd_pct": -0.9
+        "strength": -0.675,
+        "vs_usd_pct": -1.3
       }
     }
   }
