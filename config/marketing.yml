@@ -28,6 +28,39 @@ settings:
   north_star_window_days: 90
   radar_tiers_enabled: false           # D06: Movers Desk drops T3 (dead-attention) cashtags when true; off until first nightly verified
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Ad Central — creative fan-out, split tests, budget allocation.
+# research/AD_CENTRAL_MASTERPLAN.md; engine/marketing/ad_{creative,matrix,arena,stats,allocator}.py
+#
+# G-A TRIPLE GATE: no adapter spends a cent unless ALL THREE are true —
+#   settings.paid_enabled: true   ·   ad_central.envelope.daily_usd > 0   ·   operator arm
+# Any one off ⇒ the allocator returns a dry-run plan. Do not "simplify" this to
+# one switch; three independent arms is the point (masterplan §0 G-A).
+# ─────────────────────────────────────────────────────────────────────────────
+ad_central:
+  envelope:
+    daily_usd: 0                 # Phase 1 ships at zero. Raising this alone spends nothing.
+    per_arm_daily_cap_usd: 20    # hard ceiling per ad per day
+    min_daily_usd: 5             # platform floor — below this a budget buys nothing
+
+  arena:
+    # Assignments per arm before ANY verdict, promotion, kill, or scale-up.
+    # Matches engine/marketing/telemetry.py's n-floor law. Lowering this does not
+    # make a test conclude sooner; it makes it conclude wrongly.
+    n_floor: 100
+    credible_level: 0.90         # interval width on every reported rate
+    decisive: 0.95               # P(best) required before an arm is declared a winner
+    practical_pp: 0.5            # differences inside ±this read as "these are the same"
+    # Beta prior. (1,1) is uniform — conservative at small n, which is the safe
+    # direction. Printed in every verdict so a reader can see what was assumed.
+    prior_alpha: 1
+    prior_beta: 1
+    exploration_floor_share: 0.10  # min budget share an arm holds until it clears n_floor
+
+  matrix:
+    max_creatives: 24            # cap on one fan-out
+    jaccard_ceiling: 0.7         # same near-dup ceiling the organic lane flags at
+
 radar:
   # megacap/meme always-liquid attention list, operator-editable
   t1_always: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, TSLA, AVGO, AMD, NFLX, PLTR, COIN, HOOD, MSTR, SMCI, GME, AMC]

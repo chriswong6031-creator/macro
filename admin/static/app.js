@@ -155,6 +155,8 @@ const ICONS = {
   marketing_channels:    NAV_ICO('<path d="M5.5 14.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 9.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 19.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M7.4 13.4l9.1-3.9M7.4 10.6l9.1 3.9"/>'),
   marketing_campaigns:   NAV_ICO('<path d="M3 12a9 9 0 1 0 18 0M12 3v5M12 3l-3 3M12 3l3 3M7 8.5l1.5 1.5M17 8.5l-1.5 1.5M12 8v4l3 3"/>'),
   marketing_experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/><circle cx="10.5" cy="16.5" r="1"/><circle cx="14" cy="15" r="1"/>'),
+  /* Ad Central: an A/B fork — one input splitting into two measured branches. */
+  marketing_ads:         NAV_ICO('<path d="M4 12h4l3-6 3 6h4"/><circle cx="4" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><path d="M4 16v3M18 16v3"/><path d="M11 3v3"/>'),
   marketing_lobes:       NAV_ICO('<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="10" y="3" width="5" height="5" rx="1.2"/><rect x="17" y="3" width="4" height="5" rx="1.2"/><rect x="3" y="10" width="5" height="5" rx="1.2"/><rect x="10" y="10" width="5" height="5" rx="1.2"/><path d="M5.5 15v2a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-2"/>'),
   marketing_content:     NAV_ICO('<path d="M4 12a8 8 0 1 1 16 0"/><path d="M4 12a8 8 0 0 0 16 0"/><path d="M12 4v4M12 16v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="2" fill="currentColor"/>'),
   marketing_lab:         NAV_ICO('<path d="M9 3h6M10 3v6L5.2 17.4A2 2 0 0 0 7 20.4h10a2 2 0 0 0 1.8-3L14 9V3"/><path d="M7.5 15h9"/><circle cx="10.5" cy="17" r=".9" fill="currentColor"/><circle cx="13.5" cy="16" r=".9" fill="currentColor"/>'),
@@ -170,7 +172,7 @@ const ICONS = {
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -4360,6 +4362,120 @@ async function chanToggle(btn, id, nextEnabled) {
 function cssEsc(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&"); }
 
 /* ---- EXPERIMENTS ---------------------------------------------------------- */
+/* ---- AD CENTRAL ----------------------------------------------------------- */
+/* research/AD_CENTRAL_MASTERPLAN.md — creative fan-out, split tests, budget.
+   Glance tier is the spend gate and one plain sentence per test; the statistics
+   (prior, credible interval, P(best)) sit in the detail row underneath. A test
+   that found nothing prints its null — it must never render as an empty panel. */
+const AD_VERDICT = {
+  separated:  { pill: "s-ok",   label: "winner" },
+  equivalent: { pill: "s-mut",  label: "no difference" },
+  seeding:    { pill: "s-warn", label: "gathering data" },
+  null:       { pill: "s-mut",  label: "no difference" },
+};
+
+RENDER.marketing_ads = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/ad-central");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Ad Central unavailable", (d && d.error) || "panel error"); return; }
+
+  const gate = d.gate || {};
+  const arms = gate.arms || {};
+  const cfg  = d.config || {};
+  const env  = cfg.envelope || {};
+  const arenaCfg = cfg.arena || {};
+  const counts = d.counts || {};
+
+  /* The spend gate — three independent switches, all required. */
+  const gateRow = (on, label) =>
+    `<div class="kv"><span>${esc(label)}</span>
+       <span class="statpill ${on ? "s-ok" : "s-mut"}">${on ? "on" : "off"}</span></div>`;
+
+  const gateHtml = `<div class="section">Can this spend money?</div>
+    <div class="grid">
+      ${card("Spend gate", `
+        <div class="big" style="color:${gate.spend_permitted ? "var(--warn)" : "var(--ok)"}">
+          ${gate.spend_permitted ? "LIVE" : "no spend"}</div>
+        ${gateRow(arms.paid_enabled, "Paid ads enabled")}
+        ${gateRow(arms.envelope_set, "Daily budget set")}
+        ${gateRow(arms.operator_armed, "Armed by operator")}
+        <div class="note muted">${esc(gate.plain || "")}</div>`)}
+      ${card("Budget ceiling", `
+        <div class="kv"><span>Per day</span><b>$${Number(env.daily_usd || 0).toFixed(2)}</b></div>
+        <div class="kv"><span>Per ad, per day</span><b>$${Number(env.per_arm_daily_cap_usd || 0).toFixed(2)}</b></div>
+        <div class="kv"><span>Platform minimum</span><b>$${Number(env.min_daily_usd || 0).toFixed(2)}</b></div>
+        <div class="note muted">Read-only · config/marketing.yml</div>`)}
+      ${card("Split tests", `
+        <div class="kv"><span>Tests</span><b>${Number(counts.arenas || 0)}</b></div>
+        <div class="kv"><span>Gathering data</span><b>${Number(counts.seeding || 0)}</b></div>
+        <div class="kv"><span>Found a winner</span><b style="color:var(--ok)">${Number(counts.separated || 0)}</b></div>
+        <div class="kv"><span>Found no difference</span><b>${Number(counts.null || 0)}</b></div>
+        <div class="note muted">A test needs ${Number(arenaCfg.n_floor || 100)} people per ad before any result counts.</div>`)}
+    </div>`;
+
+  /* One card per split test. */
+  const arenas = d.arenas || [];
+  const arenaHtml = arenas.length ? arenas.map(row => {
+    const a = row.arena || {}, r = row.readout || {}, b = row.budget || {};
+    const creatives = row.creatives || {};
+    const vd = AD_VERDICT[r.verdict] || AD_VERDICT.null;
+    const armRows = (r.arms || []).map(arm => {
+      const alloc = (b.allocations || []).find(x => x.arm_id === arm.arm_id) || {};
+      const cr = creatives[arm.creative_id] || {};
+      const diff = arm.diff_pp == null ? "—"
+        : `${arm.diff_pp > 0 ? "+" : ""}${arm.diff_pp.toFixed(2)}pp
+           <span class="muted">(${arm.diff_pp_low.toFixed(2)} to ${arm.diff_pp_high.toFixed(2)})</span>`;
+      /* Show the ad, not its id — the id is the tooltip. */
+      const name = arm.label || cr.headline || arm.creative_id || arm.arm_id;
+      return `<tr>
+        <td class="sub" style="max-width:300px" title="${esc(arm.creative_id || "")}">${esc(name)}${arm.is_control ? ` <span class="statpill s-mut">current</span>` : ""}${
+          cr.body ? `<div class="muted" style="font-size:11px;margin-top:2px">${esc(cr.body)}</div>` : ""}</td>
+        <td>${Number(arm.assigned || 0).toLocaleString()}</td>
+        <td>${arm.assigned > 0
+             ? `${(arm.rate * 100).toFixed(2)}%
+                <span class="muted">(${(arm.ci_low * 100).toFixed(2)}–${(arm.ci_high * 100).toFixed(2)})</span>`
+             /* With nobody assigned the posterior IS the prior — printing its
+                50% mean here would read as a 50% conversion rate. */
+             : `<span class="muted">no data yet</span>`}</td>
+        <td>${arm.assigned > 0 ? diff : `<span class="muted">—</span>`}</td>
+        <td>${arm.assigned > 0 ? `${(arm.prob_best * 100).toFixed(0)}%` : `<span class="muted">—</span>`}</td>
+        <td>${alloc.amount_usd > 0 ? `$${Number(alloc.amount_usd).toFixed(2)}`
+             : `<span class="muted">${esc(alloc.status || "—").replace(/_/g, " ")}</span>`}</td>
+      </tr>`;
+    }).join("");
+
+    const anomalies = Object.entries(r.anomalies || {});
+    const hold = r.holdout || {};
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="statpill ${vd.pill}">${vd.label}</span>
+        <b>${esc(a.hypothesis || a.arena_id || "—")}</b>
+        <span class="cnt">${esc(a.plane || "")} · ${esc(a.unit || "")}</span>
+      </div>
+      <div class="note" style="margin:8px 0 12px">${esc(row.headline || "")}</div>
+      <table><thead><tr>
+        <th>Ad</th><th>People</th><th>Signed up</th><th>vs control</th><th>Best?</th><th>Budget</th>
+      </tr></thead><tbody>${armRows}</tbody></table>
+      <div class="note muted" style="margin-top:8px">${esc(row.budget_plain || "")}</div>
+      ${hold.assigned ? `<div class="note muted">Holdout: ${hold.converted} of ${hold.assigned} shown nothing signed up anyway.</div>` : ""}
+      ${anomalies.length ? `<div class="note" style="color:var(--warn)">Data problems: ${
+        anomalies.map(([k, n]) => `${esc(k.replace(/_/g, " "))} ×${n}`).join(", ")}</div>` : ""}
+      <div class="note muted">Measured on ${esc(r.primary_metric || "—")}, frozen when the test started.
+        Ranges are ${Math.round((r.credible_level || 0.9) * 100)}% credible intervals on a
+        Beta(${(r.prior || {}).alpha ?? 1},${(r.prior || {}).beta ?? 1}) prior.
+        Rates divide by everyone assigned, not by everyone who stayed.</div>
+    </div>`;
+  }).join("") : nwEmpty(
+    "No split tests yet",
+    "Ad Central is built and idle. The first test runs on our own pages, where it costs nothing.");
+
+  /* counts_plain, not plain — the gate sentence is already in the card above. */
+  v.innerHTML = gateHtml
+    + `<div class="section">Split tests <span class="cnt">${esc(d.counts_plain || "")}</span></div>`
+    + arenaHtml;
+};
+
 RENDER.marketing_experiments = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
