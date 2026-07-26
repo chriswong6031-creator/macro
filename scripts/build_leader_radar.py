@@ -2871,9 +2871,9 @@ def build(
             # write_page, not write_text: the template carries no data-base shim,
             # so a raw write ships the page with its per-ticker fetches pointed at
             # Pages instead of R2 whenever this builder runs outside the render
-            # lane's inject_data_base sweep. (The variable target is invisible to
-            # the source guard in tests/test_site_shim.py — the literal-path stub
-            # above is what it can see, so this one has to be held by hand.)
+            # lane's inject_data_base sweep. This variable target is exactly the
+            # shape the old line-regex guard could not see; layer 3b of
+            # tests/test_site_shim.py now holds it.
             html_out = write_page(site_root / "leader_radar.html", rendered)
             log.info("build_leader_radar: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001

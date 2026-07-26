@@ -837,8 +837,11 @@ def _render_html(payload: dict, site_dir: Path) -> None:
         log.error("flow_desk: template not found: %s", e)
         return
     rendered = tpl.render(flow_desk=payload)
-    out = site_dir / "flow_desk.html"
-    out.write_text(rendered)
+    # write_page, not write_text: flow_desk.html.j2 carries no data-base shim of
+    # its own, so a raw write ships the page with its per-ticker fetches pointed
+    # at Pages instead of R2 in any run outside the render lane's
+    # inject_data_base sweep. The kill-switch stub above already writes this way.
+    out = write_page(site_dir / "flow_desk.html", rendered)
     log.info("flow_desk: rendered %s (%d bytes)", out, out.stat().st_size)
 
 

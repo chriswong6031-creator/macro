@@ -1082,8 +1082,10 @@ def build(
             env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
             tpl = env.get_template("flow_leaders.html.j2")
             rendered = tpl.render(flow_leaders=payload)
-            html_out = site_root / "flow_leaders.html"
-            html_out.write_text(rendered)
+            # write_page, not write_text — the template carries no data-base shim,
+            # so a raw write drops the R2 reroute in any standalone builder run
+            # (the stub write above already goes through write_page).
+            html_out = write_page(site_root / "flow_leaders.html", rendered)
             log.info("build_flow_leaders: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001
             # Fail-soft by law but LOUD (#3487 pattern): full traceback into the

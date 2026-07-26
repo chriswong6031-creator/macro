@@ -36,6 +36,8 @@ if str(_REPO_ROOT) not in sys.path:
 
 import jinja2
 
+from lib.pages import write_page
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -1428,7 +1430,10 @@ def main(argv: list[str] | None = None) -> int:
         ctx = compose(root)
         html = render(root, ctx)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(html, encoding="utf-8")
+        # write_page, not write_text — state_of_themes.html.j2 carries no
+        # data-base shim, so a raw write ships the page pointed at Pages instead
+        # of R2 outside the render lane's inject_data_base sweep.
+        write_page(out_path, html, encoding="utf-8")
         log.info("wrote %s", out_path)
         write_theme_lanes(ctx, root)  # never raises; page already written
         return 0

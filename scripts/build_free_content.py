@@ -970,6 +970,13 @@ def render_all(out_dir: Path) -> None:
             sys.exit(2)
 
         html = tmpl.render(**ctx)
+        # write_page, not write_text — the seo_* templates carry no data-base
+        # shim, so a raw write ships these pages pointed at Pages instead of R2
+        # outside the render lane's inject_data_base sweep. NOTE: this target
+        # comes from _output_path(), whose ".html" lives in the content
+        # frontmatter rather than in any source literal — no static guard can see
+        # it, so the committed-page tripwire in tests/test_site_shim.py is the
+        # only backstop for this one. Keep it on write_page.
         write_page(out_path, html, encoding="utf-8")
 
     # ---- Render hubs ----

@@ -68,11 +68,16 @@ on:
       - "tests/test_asset_stamp_refresh.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
-      # data-base shim guard: every builder writes site/**/*.html via lib.pages.write_page,
-      # or the page's per-ticker fetches miss the R2 reroute in a standalone run. Unwired
-      # until now, which let build_leader_radar's raw write_text sit red on main.
+      # data-base shim guard: every builder must write site/**/*.html through
+      # lib.pages.write_page, or the page's per-ticker fetches miss the R2 reroute
+      # in a standalone run. Unwired until #3635 — which is how nine builders shipped
+      # shim-less pages under a green guard (the render lane's inject_data_base
+      # sweep healed the committed copies, hiding it everywhere but a direct run).
       - "lib/pages.py"
       - "tests/test_site_shim.py"
+      # ...and the suite that RUNS each builder against a fixture root (#3652) —
+      # the only layer that can catch a target whose ".html" is never a source literal.
+      - "tests/test_builder_shim_writes.py"
       - "scripts/inject_data_base.py"
       # inline-CSS externalization units (same lib/pages page-rewrite family).
       - "tests/test_externalize_css.py"
@@ -3016,6 +3021,42 @@ jobs:
         run: pip install pytest pyyaml
       - name: externalize-css sweep must skip the plain-copy pairs
         run: python -m pytest tests/test_externalize_css.py -q
+
+  data-base-shim:
+    if: ${{ false }}
+    # ui.data_base_shim: every builder must write site/**/*.html through
+    # lib.pages.write_page, which injects the depth-aware R2 fetch shim. A raw
+    # write_text drops it, so a standalone builder run ships the page with its
+    # per-ticker fetches pointed at Pages instead of R2.
+    #
+    # This had NO CI lane anywhere, and the source guard it did have only matched
+    # a LITERAL *.html target on the write line — blind to the two-line form
+    # (`out = site_dir / "x.html"` then `out.write_text(...)`) that nine builders
+    # actually used. The committed pages looked fine because the render lane's
+    # inject_data_base sweep heals them after the fact, so nothing anywhere failed.
+    #
+    # Its own job rather than a few more steps on template-site-sync: the builder
+    # suite RUNS each builder against a fixture root, so it needs the data stack
+    # (jinja2/pandas/numpy/pyarrow) that the light sync job deliberately avoids —
+    # and a differing install command would split that job's shared venv anyway.
+    #
+    # NOTE on trigger breadth: the source guard scans scripts/**+engine/**, but
+    # listing those globs under `paths:` would run this pack on nearly every Python
+    # PR — a CI-cost call for the operator (same reasoning as the gh-annotation
+    # guard above). ci-main-heartbeat.yml runs this job on a schedule against main
+    # with NO path filter, which is what keeps it from rotting red invisibly.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps (the builder suite runs real builders)
+        run: pip install pytest pyyaml jinja2 pandas numpy pyarrow
+      - name: data-base shim guard (lib.pages units + committed-page tripwire + source guard)
+        run: python -m pytest tests/test_site_shim.py -q
+      - name: every page builder emits the shim (runs each against a fixture root)
+        run: python -m pytest tests/test_builder_shim_writes.py -q
 
   grader-manifest:
     if: ${{ false }}

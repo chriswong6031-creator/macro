@@ -107,13 +107,17 @@ def main(argv: list[str] | None = None) -> int:
         log.error("render failed: %s", exc, exc_info=True)
         return 1
 
-    try:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        from lib.pages import write_page  # noqa: PLC0415
-        write_page(out_path, html)
-    except Exception:  # noqa: BLE001
-        # Fallback: plain write (for use outside the site pipeline)
-        out_path.write_text(html, encoding="utf-8")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # write_page is the ONLY write path. The raw-write fallback that used to sit
+    # here caught every exception and silently shipped the page without the
+    # data-base shim — its per-ticker fetches pointed at Pages instead of R2, and
+    # the render lane's inject_data_base sweep healed the committed copy, so the
+    # regression was invisible except in a standalone builder run. It was also
+    # unreachable in practice: render() above already imports engine.i18n and
+    # reads templates/ from this same root, so `lib.pages` cannot fail to import
+    # where render() succeeded.
+    from lib.pages import write_page  # noqa: PLC0415
+    write_page(out_path, html)
 
     kb = len(html) // 1024
     log.info("wrote %s (%d KB)", out_path, kb)
