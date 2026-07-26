@@ -32,8 +32,15 @@
    An explicit `markets` object always wins, or a preference narrowed in settings
    would be silently reverted by the signup-time array on the next load.
 
-   NO HOME MARKET => NO CHANGE. Anonymous visitors, crawlers, users who skipped
-   the question, and "global" users all keep today's full rail. */
+   EVERY followed market stays on the rail — not just the home one. enabled[] is
+   the source of truth: pick two or three markets and all of them keep their rail
+   slot; only the markets you don't follow fold into International. (An earlier cut
+   kept solely the home market, so a two- or three-market trader still lost the
+   rest to the dropdown — the bug this fixes.)
+
+   NO MARKETS TO FOLD => NO CHANGE. Anonymous visitors, crawlers, users who skipped
+   the question, "global" users, and anyone following all four markets keep today's
+   full rail. */
 (function () {
   'use strict';
 
@@ -54,22 +61,36 @@
   }
 
   /* ---- preference ------------------------------------------------------- */
-  var MARKETS = { us: 1, cn: 1, hk: 1, ca: 1, intl: 1, crypto: 1 };
+  // The four country dropdowns the rail can fold. intl/crypto ride along in the
+  // stored preference (enabled[] carries them) but are not country markets, so
+  // they never fold and never count toward "kept".
+  var COUNTRY_SET = { us: 1, cn: 1, hk: 1, ca: 1 };
   // The onboarding chips. "global" means "I trade everywhere" — it is NOT the
   // `intl` bucket, and it must leave the rail alone rather than fold anything.
   var LEGACY = { us: 'us', cn: 'cn', china: 'cn', hk: 'hk', ca: 'ca', canada: 'ca',
                  intl: 'intl', international: 'intl', global: 'all' };
 
-  // Home market, or null when we must not touch the nav.
-  function homeMarketOf(user) {
+  // The country markets to KEEP on the rail, or null when we must not touch the
+  // nav. One pick keeps one and folds the other three; two or three picks keep
+  // exactly those and fold the rest; four picks (or "global", or nothing set)
+  // return null so the full rail is left alone.
+  function keptMarketsOf(user) {
     var meta = (user && user.user_metadata) || null;
     if (!meta) return null;
 
+    // Canonical shape wins. enabled[] is the source of truth — every market the
+    // user follows, not just the home one — so all of them keep their rail slot.
+    // home is only a fallback for old rows written before enabled[] existed.
     var m = meta.markets;
     if (m && typeof m === 'object') {
-      return (typeof m.home === 'string' && MARKETS[m.home]) ? m.home : null;
+      var src = (Object.prototype.toString.call(m.enabled) === '[object Array]' && m.enabled.length)
+        ? m.enabled
+        : (typeof m.home === 'string' ? [m.home] : []);
+      return countriesFrom(src);
     }
 
+    // Legacy signup array: every recognised pick is kept (mirrors enabled[]),
+    // not just the first. "global" anywhere means trade-everywhere → leave whole.
     var focus = meta.market_focus;
     if (Object.prototype.toString.call(focus) === '[object Array]' && focus.length) {
       var mapped = [];
@@ -78,10 +99,22 @@
         if (hit === 'all') return null;      // trades everywhere — leave the rail whole
         if (hit) mapped.push(hit);
       }
-      // The first pick is the home market, mirroring readMarketPrefs() in the Terminal.
-      if (mapped.length) return mapped[0];
+      return countriesFrom(mapped);
     }
     return null;
+  }
+
+  // Reduce an enabled/focus list to the DISTINCT country markets on the rail
+  // (us/cn/hk/ca), dropping intl/crypto and duplicates. Returns null — "leave the
+  // rail whole" — when nothing is recognised or when all four are kept (there is
+  // then nothing to fold).
+  function countriesFrom(list) {
+    var kept = [], seen = {};
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (COUNTRY_SET[s] && !seen[s]) { seen[s] = 1; kept.push(s); }
+    }
+    return (kept.length && kept.length < 4) ? kept : null;
   }
 
   /* ---- DOM ---------------------------------------------------------------- */
@@ -154,24 +187,32 @@
   // nothing (theme.js emits several) does not needlessly rebuild the DOM.
   var applied = false;
 
-  function apply(home) {
+  function apply(kept) {
     var links = document.querySelector('.site-nav .nav-links, .topbar .nav-links');
     if (!links) return;
     capture(links);
 
+    // `kept` is the 1–3 country markets to keep on the rail (fold the rest), or
+    // null to leave the full rail alone.
+    var folding = !!(kept && kept.length);
+
     // Nothing to fold and nothing folded — leave the DOM completely alone so an
     // anonymous page never pays a rebuild.
-    if ((!home || home === 'intl') && !applied) return;
+    if (!folding && !applied) return;
 
     // Restore pristine, then fold from scratch. Every transition (fold, refold on
-    // a home change, unfold on sign-out) is the same code path.
+    // a preference change, unfold on sign-out) is the same code path.
     links.innerHTML = ORIGINAL_HTML;
     applied = false;
     // The restored nodes are brand new, so the per-node accordion handlers
     // theme.js bound at DOMContentLoaded are gone. Re-bind before a tap can land.
     rebindAccordion(links);
 
-    if (!home || home === 'intl') { remarkActive(links); return; }   // nothing to fold
+    if (!folding) { remarkActive(links); return; }   // nothing to fold
+
+    // Keep every followed country on the rail; fold only the ones not in the set.
+    var keptSet = {};
+    for (var i = 0; i < kept.length; i++) keptSet[kept[i]] = 1;
 
     var intlMenu = null, countries = [];
     var top = links.querySelectorAll(':scope > .nav-dd');
@@ -179,7 +220,7 @@
       var trig = top[j].querySelector(':scope > a');
       var file = fileOf(trig);
       if (file === INTL_HREF) intlMenu = top[j].querySelector(':scope > .nav-dd-menu');
-      else if (COUNTRY_BY_HREF[file] && COUNTRY_BY_HREF[file] !== home) countries.push(top[j]);
+      else if (COUNTRY_BY_HREF[file] && !keptSet[COUNTRY_BY_HREF[file]]) countries.push(top[j]);
     }
     if (!intlMenu || !countries.length) { remarkActive(links); return; }
 
@@ -251,7 +292,7 @@
   function boot() {
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
     window.MDXAuth.onChange(function (user) {
-      try { apply(homeMarketOf(user)); } catch (e) { /* nav must never break a page */ }
+      try { apply(keptMarketsOf(user)); } catch (e) { /* nav must never break a page */ }
     });
   }
 
