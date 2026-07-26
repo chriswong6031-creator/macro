@@ -45,6 +45,30 @@ def _data(*parts: str) -> Path:
     return config.data_dir().joinpath(*parts)
 
 
+def _board_breadth(market: str) -> dict | None:
+    """Newest whole-board adv/dec row for *market*, as a plain dict (or None).
+
+    Only China has a whole-board feed (collectors/china_board_breadth). The engine
+    gates the row against the map's own as-of date, so a store that stopped
+    advancing degrades to the tile-derived count instead of printing a stale board.
+    """
+    if market != "china":
+        return None
+    p = _data("china_board_breadth", "breadth.parquet")
+    if not p.exists():
+        return None
+    try:
+        df = pd.read_parquet(p).sort_index()
+    except Exception as e:  # noqa: BLE001 — a corrupt side-store must not break the map
+        log.warning("china board breadth unreadable (%s) — tile-derived count stands", e)
+        return None
+    if df.empty:
+        return None
+    row = df.iloc[-1].to_dict()
+    row["date"] = pd.Timestamp(df.index[-1]).strftime("%Y-%m-%d")
+    return row
+
+
 # --------------------------------------------------------------------------- #
 #  China
 # --------------------------------------------------------------------------- #
@@ -254,6 +278,7 @@ def build(market: str, site: Path | None = None, *, generated_utc: str | None = 
         weights=weights or None,
         names_zh=names_zh or None,
         generated_utc=generated_utc,
+        board_breadth=_board_breadth(market),
     )
 
     outdir = site / "marketdata"

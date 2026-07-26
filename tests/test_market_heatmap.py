@@ -127,3 +127,66 @@ def test_hk_names_zh_applied_to_tiles():
     p = mh.build_market_heatmap("hk", _constituents(), _closes(), names_zh=names_zh)
     icbc = next(t for t in p["tiles"] if t["t"] == "601398.SS")
     assert icbc["name_zh"] == "工商银行"
+
+
+# --------------------------------------------------------------------------- #
+#  Whole-board breadth block (the 涨跌家数 the card quotes)
+# --------------------------------------------------------------------------- #
+def _board_row(**over):
+    """A well-formed whole-board row for the session _closes() ends on."""
+    row = {"date": "2025-07-11", "n": 5197, "adv": 534, "dec": 4631,
+           "med_pct": -2.805, "source": "sina"}
+    row.update(over)
+    return row
+
+
+def _asof_of(payload):
+    return payload["asof"]
+
+
+def test_board_breadth_emitted_when_session_matches():
+    p0 = mh.build_market_heatmap("china", _constituents(), _closes())
+    p = mh.build_market_heatmap("china", _constituents(), _closes(),
+                                board_breadth=_board_row(date=_asof_of(p0)))
+    b = p["board_breadth"]
+    assert (b["n"], b["adv"], b["dec"]) == (5197, 534, 4631)
+    assert b["flat"] == 5197 - 534 - 4631
+    assert b["pct_up"] == round(100 * 534 / 5197, 2)
+    assert b["med_pct"] == -2.81                 # rounded for display
+    assert b["scope_zh"] == "沪深全市场"
+    assert b["source"] == "sina"
+    # the block NEVER replaces the tiles — per-name detail still comes from the map
+    assert p["n_tiles"] == 3
+
+
+def test_board_breadth_dropped_when_session_is_stale():
+    """A board count from another session beside a fresh map would silently mix two
+    days; the front-end's tile-derived count is at least internally consistent."""
+    p = mh.build_market_heatmap("china", _constituents(), _closes(),
+                                board_breadth=_board_row(date="1999-01-04"))
+    assert "board_breadth" not in p
+
+
+def test_board_breadth_dropped_when_malformed_or_absent():
+    asof = _asof_of(mh.build_market_heatmap("china", _constituents(), _closes()))
+    for bad in (None, {}, _board_row(date=asof, n=0),
+                _board_row(date=asof, adv=4000, dec=4000),   # adv+dec > n
+                _board_row(date=asof, n="many"),
+                {"date": asof, "adv": 1}):                   # missing n/dec
+        p = mh.build_market_heatmap("china", _constituents(), _closes(), board_breadth=bad)
+        assert "board_breadth" not in p, bad
+
+
+def test_board_breadth_is_china_only():
+    """HK/CA carry no whole-board feed — a row must not leak a China scope label onto them."""
+    asof = _asof_of(mh.build_market_heatmap("hk", _constituents(), _closes()))
+    for mkt in ("hk", "canada"):
+        p = mh.build_market_heatmap(mkt, _constituents(), _closes(),
+                                    board_breadth=_board_row(date=asof))
+        assert "board_breadth" not in p
+
+
+def test_board_breadth_absent_by_default():
+    """Every existing caller passes nothing — the payload must be unchanged for them."""
+    p = mh.build_market_heatmap("china", _constituents(), _closes())
+    assert "board_breadth" not in p
