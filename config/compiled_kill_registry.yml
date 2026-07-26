@@ -210,6 +210,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Idiosyncratic-residual reset (beta-stripped vs sector ETF) as a STANDALONE entry-timing signal (PSS-F3)'
+    verdict: 'KILLED — the pre-stated MECHANISM falsifier failed in the OPPOSITE direction. Fires CONCENTRATE in HIGH-R² (systemic) windows 42% vs LOW-R² (idiosyncratic) 24% (mid 34%; n=6708 fires) — the charter''s explicit mechanism-dead signature (the thesis required low-R² concentration). The residualization also does NOT beat the raw-return analog on MAE: F3 − raw-analog U_MAE [−2.00,+0.02] full-TEST includes 0, 2021+ [−2.01,−0.02] excludes 0 DOWN (residual is WORSE). The one positive — near-low rate (U_W5 vs all-days [+6.68,+15.60]; vs raw-analog [+7.28,+15.55]) — comes from the WRONG (systemic) regime, i.e. it is the systemic-low signal the incumbent already catches, not an idiosyncratic edge. F3 IS strictly earlier than the incumbent (+4.5td) and the raw analog (+8td) — but earliness without the idiosyncratic mechanism = early into systemic drawdowns (TSLA 7 / NVDA 8 / PG 7 H1-2022 fires at high regime-R²; +C32 suppresses to ~0). Closes this residual-DD-z-extreme+turn construction only — residual-return autocorrelation stays OPEN as a candidate codex descriptor; the cross-sectional-residual search space is not fully closed. F1-class bugs verified ABSENT (per-name-first self-check U_W5 +12.91pp matches direct; raw-analog is a matched-construction placebo, 100% mutual-exclusion is a real "residual leads while price still falls" property). Deviations verified pre-outcome: sector-map re-pin (`data/sector_holdings` resolved only 164/1300 → `data/breadth/ticker_sectors.parquet` 799/1300) is in the prereg commit; the mech_mid arithmetic fix touches only the MIDDLE tercile, not the high-vs-low verdict.'
+    source: 'PSS-F3, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F3; `reports/pss_f3_residual.md` (family `pss_f3_residual`, 2026-07-26)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
