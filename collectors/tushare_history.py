@@ -2,21 +2,27 @@
 
 The snapshot collectors overwrite a single day; the predictive-validation harness
 (engine/china_validation) needs a GRID of historical cross-sections to compute forward-return
-rank-IC. This maintains a compact history — for only the names in the china_search panel (the
-names that have forward returns to validate against) — backfilling any missing grid dates from
-Tushare on first run and adding the newest each build, deduped on ticker+date. So the
+rank-IC. This maintains a compact ~1y DAILY grid history — for only the names in the china_search
+panel (the names that have forward returns to validate against) — backfilling any missing grid
+dates from Tushare on first run and adding the newest each build, deduped on ticker+date. So the
 ``fundflow`` / ``chips`` validation families compute a REAL verdict immediately (using the history
 the ¥-tier already paid for) instead of waiting months to accrue forward.
 
-CADENCE — the store is DAILY, not weekly, despite the weekly `_grid_dates` stride. The grid is
-tail-anchored (``idx[-260:][::5]``), so every build whose panel gained a trading day emits a
-stride shifted one day from the last one; the store is append-only, so it has accreted every
-phase. Measured 2026-07-25: 273 distinct dates over ~14 months, median gap 1 trading day. This
-is harmless-to-good for the collector (more cross-sections, still capped at _MAX_BACKFILL/build)
-but it INVALIDATED the overlap assumptions downstream — engine/china_validation sized its HAC
-lags and its N gate for a weekly step. That harness now measures the cadence instead of assuming
-it; see its module docstring. Do not "fix" the stride here without re-reading that note: the
-dense history is an asset, and anchoring the grid now would not undo the dates already stored.
+CADENCE — the store is DAILY, and now says so. It was written as a strided "weekly" grid
+(``idx[-260:][::5]``), but a tail-anchored stride has no fixed origin: the freshest bar sat
+PERMANENTLY 4 trading days behind the newest close (the flow page printed an as-of 4 days older
+than the southbound card beside it, every day), and the phase walked one trading day per build,
+so the append-only store accreted every phase and went daily regardless — measured 2026-07-25,
+273 distinct dates over ~14 months, median gap 1 trading day. ``_grid_dates`` is now a CONTIGUOUS
+daily tail anchored on the newest close (#3596): that fixes the staleness and removes the phase
+while KEEPING the dense history — anchoring drops nothing already stored, it only fills the holes
+the drifting phase left.
+
+The dense cadence INVALIDATED the overlap assumptions downstream — engine/china_validation had
+sized its HAC lags and its N gate for a weekly step. That harness now measures the cadence
+instead of assuming it (#3597); see its module docstring. It reads this contiguous grid correctly
+with no further change, and gates on distinct weeks + non-overlapping windows, never on the raw
+cross-section count.
 
 GATED: no-ops unless ``TUSHARE_TOKEN`` is set. Both queries are leakage-irrelevant (raw signal
 snapshots; the harness does the leak-guarded forward alignment).
@@ -39,9 +45,8 @@ log = logging.getLogger("tushare_history")
 
 FLOW_HIST = config.data_dir() / "tushare" / "flow_hist.parquet"
 CHIPS_HIST = config.data_dir() / "tushare" / "chips_hist.parquet"
-_GRID_WEEKS = 52          # ~1y of history. NOTE: the emitted grid is daily in practice (see the
-                          # module CADENCE note); china_validation gates on distinct weeks +
-                          # non-overlapping windows, never on the raw cross-section count.
+_GRID_DAYS = 260          # ~1y of DAILY cross-sections. NOTE: china_validation gates on distinct
+                          # weeks + non-overlapping forward windows, never on this row count.
 _MAX_BACKFILL = 60        # safety cap on fetches per build (first run backfills the grid, then ~1/build)
 
 
@@ -60,17 +65,31 @@ def _panel_tickers() -> set[str]:
         return set()
 
 
-def _grid_dates(n_weeks: int = _GRID_WEEKS) -> list[str]:
-    """Weekly-STRIDE trading-day grid (YYYYMMDD) from the china_search close-panel index, newest
-    last. Tail-anchored, so the stride phase shifts one trading day whenever the panel grows —
-    the accreted store is therefore daily, not weekly (module CADENCE note)."""
+def _grid_dates(n_days: int = _GRID_DAYS) -> list[str]:
+    """The last `n_days` trading days (YYYYMMDD) from the china_search close-panel index, newest last.
+
+    CONTIGUOUS and anchored on the NEWEST close — deliberately not a strided sample. The grid was
+    ``idx[-(52*5):][::5]``, commented "every ~5th trading day = weekly", which a tail-anchored
+    slice cannot deliver because the stride has no fixed origin:
+
+      * the newest element a stride-5 walk over the last 260 rows keeps is always position -5, so
+        the freshest bar was PERMANENTLY 4 trading days behind the newest close. The flow page
+        printed an as-of 4 days older than the southbound card beside it, every single day, and it
+        read as a collector outage when it was arithmetic;
+      * the whole phase shifted one trading day per build, so the append-only store accreted all
+        five phases and became a ~daily panel anyway (verified: 210 dates, median gap 1 trading
+        day) — the shape engine/flow_velocity's 20/65-BAR windows were resized for in #3561.
+
+    Contiguous kills both at once: no stride ⇒ no phase to drift, and the last element IS the last
+    close. `_MAX_BACKFILL` still bounds fetches per build and takes the NEWEST missing dates first,
+    so freshness never queues behind a backlog of old holes.
+    """
     try:
         cp = config.data_dir() / "china_search" / "closes.parquet"
         if not cp.exists():
             return []
         idx = pd.read_parquet(cp).sort_index().index
-        grid = list(idx[-(n_weeks * 5):][::5])          # every ~5th trading day = weekly
-        return [pd.Timestamp(d).strftime("%Y%m%d") for d in grid]
+        return [pd.Timestamp(d).strftime("%Y%m%d") for d in idx[-n_days:]]
     except Exception as e:  # noqa: BLE001
         log.debug("tushare_history grid dates failed (%s)", e)
         return []
@@ -128,7 +147,7 @@ def _accrue(path, api: str, fields: str, value_attr, col: str, panel: set[str],
 
 
 def refresh() -> int:
-    """Maintain the fund-flow + chips cross-section history. Gated; returns #dates backfilled."""
+    """Maintain the fund-flow + chips daily-grid history. Gated; returns #dates backfilled."""
     if not tc.enabled():
         return 0
     panel = _panel_tickers()

@@ -38,7 +38,7 @@ _MODULES = (
     "tushare_chips",       # chip distribution
     "tushare_broker",      # broker seats
     "tushare_forecast",    # earnings guidance
-    "tushare_history",     # grid backfill (bounded by _GRID_WEEKS)
+    "tushare_history",     # grid backfill (bounded by _GRID_DAYS)
 )
 
 

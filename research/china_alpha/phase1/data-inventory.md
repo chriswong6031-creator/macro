@@ -128,8 +128,8 @@ These all require a Tushare API token. The `tushare_client.py` says it no-ops gr
 | Per-name money flow | `data/tushare/moneyflow.parquet` | ticker, name, close, pct_change, net_amount, net_amount_rate, **main_net**, main_net_rate | daily snapshot | 5,970 names | 2026-07-01 | 2026-07-03 04:45 | Yes | `china_extras.fundflow()`, `flow_velocity.py:201`, `china_radar.py:198` (sector version) |
 | Per-name money flow (sector) | `data/tushare/moneyflow_sector.parquet` | sector_code, name, net_amount, net_amount_rate, content_type, rank | daily snapshot | 1,022 rows (sector × type) | 2026-07-01 | 2026-07-03 04:45 | Yes | `china_radar.py:198` |
 | Per-name chip distribution | `data/tushare/chips.parquet` | ticker, winner_rate, weight_avg, cost_50pct, cost_5pct, cost_95pct, his_low, his_high | daily snapshot | 5,511 names | 2026-07-01 | 2026-07-03 04:45 | Yes | `china_extras.chips()` |
-| Chip/flow history | `data/tushare/chips_hist.parquet` | ticker, date, winner | weekly grid | 1,522 names | 2026-05-26 → 2026-06-26 (~13 months) | 2026-07-03 04:45 | Yes | `tushare_history.py` (validation only) |
-| Fund flow history | `data/tushare/flow_hist.parquet` | ticker, date, flow | weekly grid | 1,523 names | 2025-05-26 → 2026-06-26 (~13 months) | 2026-07-03 04:45 | Yes | `tushare_history.py` (validation only) |
+| Chip/flow history | `data/tushare/chips_hist.parquet` | ticker, date, winner | daily grid | 1,522 names | 2026-05-26 → 2026-06-26 (~13 months) | 2026-07-03 04:45 | Yes | `tushare_history.py` (validation only) |
+| Fund flow history | `data/tushare/flow_hist.parquet` | ticker, date, flow | daily grid | 1,523 names | 2025-05-26 → 2026-06-26 (~13 months) | 2026-07-03 04:45 | Yes | `tushare_history.py` (validation only) |
 | Sell-side forecast | `data/tushare/forecast.parquet` | ticker, type, p_change_min, p_change_max, guidance_score, end_date, ann_date | drip | 3,124 names | ann_date 2026-07-02 | 2026-07-03 04:45 | Yes | `china_extras.forecast_guidance()` |
 | Forecast history | `data/tushare/forecast_hist.parquet` | ticker, ann_date, guidance_score | drip | 3,563 names | 2026-07-02 | 2026-07-03 04:45 | Yes | validation |
 | Broker gold picks | `data/tushare/broker.parquet` | ticker, name, n_brokers, brokers, month | monthly | 234 picks | asof 2026-07-02 | 2026-07-03 04:45 | Yes | `china_extras.broker_gold()` |
@@ -230,7 +230,7 @@ Collector: `collectors/china_pledge.py` via `ak.stock_gpzy_pledge_ratio_em()`. O
 | `tushare_moneyflow.py` | `tushare/moneyflow.parquet`, `tushare/moneyflow_sector.parquet` | main-force (超大+大单) net |
 | `tushare_margin.py` | `tushare/margin.parquet` | per-name with percentile |
 | `tushare_chips.py` | `tushare/chips.parquet` | winner_rate, cost basis |
-| `tushare_history.py` | `tushare/chips_hist.parquet`, `tushare/flow_hist.parquet` | 13-month weekly grid |
+| `tushare_history.py` | `tushare/chips_hist.parquet`, `tushare/flow_hist.parquet` | ~1y daily grid |
 | `tushare_broker.py` | `tushare/broker.parquet` | monthly broker gold picks |
 | `tushare_forecast.py` | `tushare/forecast.parquet`, `tushare/forecast_hist.parquet` | earnings guidance |
 
