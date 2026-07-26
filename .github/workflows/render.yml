@@ -329,6 +329,47 @@ jobs:
           # (an input here); serial post-band dodges the parallel read/write window.
           flowleaders() { [ -n "$FLOWLEADERS_DONE" ] && return 0; FLOWLEADERS_DONE=1; run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
 
+          # ---- thematic foresight desk: page-only re-render from committed stores ----
+          # Express-safe via two sentinels this step already arms: RENDER_NO_DRIP=1 skips
+          # the three keyless collector drips (EDGAR guidance/emergence, openFDA — the FDA
+          # one fetched on EVERY run) AND the analyst LLM call — this step's env carries
+          # DEEPSEEK_API_KEY for the news-title exception, so env starvation alone would
+          # NOT stop a real model call; the page replays the last COMMITTED theses instead
+          # (marked from_ledger, disclosed PARTIAL by foresight_health). And with
+          # COLLECT_LANE unset, every foresight ledger appender self-gates
+          # (engine.ledger_lane, the #2598 sweep gap closed 2026-07-25), so the baked
+          # track/grade/monitor/ENB numbers derive from COMMITTED rows only — the nightly
+          # stays the sole forward-ledger advancer, and this lane's `git add site/` has
+          # nothing to discard. WHY: the builder ran ONLY in daily.yml as the LAST of 22
+          # serial builders; the 07-22..24 dead nightlies froze foresight.html at its
+          # pre-revamp render while express lanes refreshed everything around it (same
+          # class + heal as research_vault #3487 / flow_leaders #3515). ~11s measured on
+          # committed stores (was ~83s with the drips). Serial post-band: same slot and
+          # race posture as flowleaders above; also rewrites
+          # site/basketdata/foresight_cascade.json in the same pass as the page it pairs
+          # with.
+          foresightpage() { [ -n "$FORESIGHT_DONE" ] && return 0; FORESIGHT_DONE=1; run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
+
+          # DELIBERATELY omitted from this lane (vetted 2026-07-25):
+          #  • build_odds — a collector wearing a builder's name: refetches all 119
+          #    universe tickers from yfinance on EVERY run (odds.stale_trading_days: 0)
+          #    with no timeout, and its data/odds_ohlcv store is gitignored → wiped by
+          #    this job's clean checkout, so every express run would COLD-START a
+          #    full-history backfill (5-15+ min of third-party network on the render
+          #    path — the gdelt-stall class). Its site/oddsmatrix payloads are gitignored
+          #    and R2-published by daily.yml only, so advancing catalog.json here would
+          #    silence the page's staleness banner over stale R2 matrices. Same class as
+          #    the gex_board omission in engine-render; odds.html keeps the last
+          #    nightly's values.
+          #  • build_leader_radar — its data/ writes are already lane-gated (HOUSE-U5,
+          #    CI-pinned) and would be safe here; the BAKE is not: pick_lab consumes
+          #    site/leaderradar/radar.json fires verbatim with no as_of guard (an
+          #    express-committed artifact + one silently-failed nightly would let
+          #    express-computed fires advance the forward pick ledger), the 295KB payload
+          #    churns built_at/elapsed_s on every run (defeats its own dead-man
+          #    sentinel), and rs_series-vs-closes vintage skew bakes undisclosed
+          #    mixed-vintage state. Hardening tracked separately; until then daily-only.
+
           # ---- special situations: page-only rebake, NO EDGAR sweep ----
           # The nightly owns the ~28m filing sweep; this lane re-renders the desk
           # from the COMMITTED event store so a template/builder fix ships in
@@ -410,6 +451,20 @@ jobs:
               # SGA: page-only re-render from the committed data/stage_analysis/context/latest.json.
               # The stage ENGINE is daily-only (forward-ledger single-writer law) — never add it here.
               brun stage_analysis_page "Stage Analysis page (build_stage_analysis_page)" scripts.build_stage_analysis_page
+              # TLT: page-only rebake from the COMMITTED site/factordata/tech_screener.json +
+              # tech_lab.json — the page is a shell (tables fetch those JSONs client-side), so
+              # this is ~0.5s and site/-only. The DATA generator (build_tech_lab_data,
+              # ~219 tickers × 64 signals, + the ~8m confluence miner) is daily-offrender by
+              # budget — NEVER add it here. Was engine-job-only, so the #3371 numeral fix sat
+              # unbaked whenever the nightly died (07-22..25 freeze class).
+              brun tech_lab "technical lab hub (build_tech_lab)" scripts.build_tech_lab
+              # Impulse tracker: pure recompute from the tier close/volume caches (closes come
+              # from this job's actions/cache restore, volume caches are git-tracked) + the
+              # committed regime read; ZERO data/ writes; ~10-40s. The builder self-truncates
+              # both panels to their common last session (::warns on skew), so a
+              # fresher-than-git closes cache can never pair positionally against stale
+              # volume rows. Nothing else in the band writes its inputs.
+              brun impulse "impulse tracker (build_impulse)" scripts.build_impulse
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
@@ -419,7 +474,7 @@ jobs:
             # fail silently in the very lanes it added (its own /research/ SEO pages
             # going dark again with no annotation). Band membership without ORDER
             # membership is a builder that runs unwatched.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -465,7 +520,7 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; band; central; flowleaders; hub; us_pages; libs; sits; csits ;;
+              spine; band; central; flowleaders; foresightpage; hub; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; us_pages; central ;;
             sits)

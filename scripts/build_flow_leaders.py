@@ -1087,15 +1087,16 @@ def build(
             log.info("build_flow_leaders: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001
             # Fail-soft by law but LOUD (#3487 pattern): full traceback into the
-            # builder log + a one-line ::warning that surfaces in the Actions
-            # annotations even at rc=0 — a silent miss here freezes the baked page
-            # on its last-committed vintage while leaders.json moves on.
+            # builder log + a one-line ::warning annotation at rc=0. Bare print, NOT
+            # log.warning: Actions parses a workflow command only when the emitted
+            # line STARTS with "::warning", and this module's logging format prefixes
+            # every line ("WARNING scripts.build_flow_leaders ...").
             log.warning("build_flow_leaders: HTML render failed: %s", e, exc_info=True)
-            log.warning(
-                "::warning title=flow_leaders::HTML render failed (non-fatal) — "
-                "leaders.json updated but site/flow_leaders.html was NOT re-rendered "
-                "and stays on its last-committed vintage: %s: %s",
-                type(e).__name__, e,
+            print(
+                f"::warning title=flow_leaders::HTML render failed (non-fatal) — "
+                f"leaders.json updated but site/flow_leaders.html was NOT re-rendered "
+                f"and stays on its last-committed vintage: {type(e).__name__}: {e}",
+                flush=True,
             )
     else:
         log.info("build_flow_leaders: template %s absent — skipping HTML", tpl_path)
@@ -1120,13 +1121,15 @@ def main() -> int:
         # annotation at rc=0. A silent crash here means NEITHER leaders.json nor
         # flow_leaders.html is rewritten — the baked page freezes on its
         # last-committed vintage with no red anywhere (how the pre-#3224 render
-        # survived live for 3 days, 2026-07-22..25).
+        # survived live for 3 days, 2026-07-22..25). Bare print, NOT log.warning:
+        # Actions parses a workflow command only when the line STARTS with
+        # "::warning", and this module's logging format prefixes every line.
         log.error("build_flow_leaders: unexpected error: %s", e, exc_info=True)
-        log.warning(
-            "::warning title=flow_leaders::builder crashed (non-fatal, exit 0) — "
-            "site/flow_leaders.html + leaders.json NOT rewritten this run, baked "
-            "page stays on its last-committed vintage: %s: %s",
-            type(e).__name__, e,
+        print(
+            f"::warning title=flow_leaders::builder crashed (non-fatal, exit 0) — "
+            f"site/flow_leaders.html + leaders.json NOT rewritten this run, baked "
+            f"page stays on its last-committed vintage: {type(e).__name__}: {e}",
+            flush=True,
         )
     return 0
 
