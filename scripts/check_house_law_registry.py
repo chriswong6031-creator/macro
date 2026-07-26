@@ -77,27 +77,33 @@ def _load_registry(root: Path) -> dict[str, Any]:
 
 
 def _load_workflow_jobs(workflow_path: Path) -> dict[str, str]:
-    """Return {job_key: concatenated run-command text} from a workflow YAML.
+    """Return logical CI jobs and concatenated run commands.
 
     PyYAML parses the workflow's `on:` key as boolean True — harmless here,
     since we only read the `jobs:` section. Only each step's `run:` body is
     kept for matching: a script named in a step *name* or comment must not
     satisfy the wiring pass — the guarantee is "invoked", not "mentioned".
+
+    The production ``ci.yml`` has two real pack allocations. Its logical job
+    definitions live outside ``.github/workflows`` so GitHub does not create
+    roughly one hundred skipped check runs per PR. Merge that manifest into
+    the logical view used by the registry, while preserving standalone fixture
+    workflows used by this script's self-test.
     """
-    with open(workflow_path) as f:
-        raw = f.read()
+    sources = [workflow_path]
+    manifest_path = workflow_path.parent.parent / "ci" / "legacy-jobs.yml"
+    if workflow_path.name == "ci.yml" and manifest_path.exists():
+        sources.append(manifest_path)
 
-    try:
-        data = yaml.safe_load(raw)
-    except yaml.YAMLError:
-        return {}
-
-    if not isinstance(data, dict):
-        return {}
-
-    jobs = data.get("jobs", {})
-    if not isinstance(jobs, dict):
-        return {}
+    jobs: dict[str, object] = {}
+    for source in sources:
+        try:
+            data = yaml.safe_load(source.read_text())
+        except (OSError, yaml.YAMLError):
+            return {}
+        if not isinstance(data, dict) or not isinstance(data.get("jobs"), dict):
+            return {}
+        jobs.update(data["jobs"])
 
     result: dict[str, str] = {}
     for job_key, job_val in jobs.items():
@@ -413,8 +419,8 @@ the PR can merge (the meta-guard blocks unregistered check_*.py files):
 
 3. **Wire the CI job** — add a step to the appropriate `ci_wiring` workflow/job that calls
    your script. Match the style of neighboring guard steps (same runner, checkout, pip
-   install pattern). If you need a new job, append it to ci.yml without reordering or
-   reformatting existing jobs.
+   install pattern). If you need a new logical CI job, append it to
+   `.github/ci/legacy-jobs.yml` without reordering or reformatting existing jobs.
 
 4. **Run the meta-guard locally** to verify:
    ```

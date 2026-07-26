@@ -12,6 +12,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
+MANIFEST = ROOT / ".github" / "ci" / "legacy-jobs.yml"
 FENCES = ROOT / ".github" / "workflows" / "fences.yml"
 
 SPEC = importlib.util.spec_from_file_location(
@@ -28,13 +29,13 @@ def _yaml(path: Path) -> dict:
 
 
 def test_all_legacy_jobs_are_disabled_and_packable() -> None:
-    jobs = PACK.load_legacy_jobs(WORKFLOW)
+    jobs = PACK.load_legacy_jobs(MANIFEST)
     assert len(jobs) >= 86
     assert all(job.definition["if"] == PACK.DISABLED_IF for job in jobs)
 
 
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
-    jobs = PACK.load_legacy_jobs(WORKFLOW)
+    jobs = PACK.load_legacy_jobs(MANIFEST)
     packs = PACK.partition_jobs(jobs, 2)
     flattened = [job.job_id for pack in packs for job in pack]
     assert sorted(flattened) == sorted(job.job_id for job in jobs)
@@ -45,7 +46,7 @@ def test_two_packs_are_complete_disjoint_and_balanced() -> None:
 
 
 def test_legacy_expressions_are_supported() -> None:
-    for job in PACK.load_legacy_jobs(WORKFLOW):
+    for job in PACK.load_legacy_jobs(MANIFEST):
         for step in job.definition["steps"]:
             if "run" not in step:
                 continue
@@ -147,10 +148,20 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
 
 def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
     workflow = _yaml(WORKFLOW)
+    assert set(workflow["jobs"]) == {"ci-pack"}
     pack = workflow["jobs"]["ci-pack"]
     assert pack["strategy"]["matrix"]["pack"] == [0, 1]
     assert pack["runs-on"] == "ubuntu-latest"
     assert pack["strategy"]["fail-fast"] is False
+    run_text = "\n".join(
+        str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
+    )
+    assert "--workflow .github/ci/legacy-jobs.yml" in run_text
+
+    # A manifest edit must trigger CI even though GitHub does not interpret the
+    # manifest itself as a workflow.
+    triggers = workflow.get("on") or workflow.get(True)
+    assert ".github/ci/legacy-jobs.yml" in triggers["pull_request"]["paths"]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
@@ -203,11 +214,12 @@ _TEST_PATH_RE = re.compile(r'(?<![\w/-])(tests/[A-Za-z0-9_][A-Za-z0-9_./-]*\.py)
 def test_every_workflow_test_path_exists() -> None:
     """No workflow may name a tests/*.py file that is not on disk."""
     missing: list[str] = []
-    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
-        text = workflow.read_text(encoding="utf-8")
+    checked = sorted((ROOT / ".github" / "workflows").glob("*.yml")) + [MANIFEST]
+    for workflow_or_manifest in checked:
+        text = workflow_or_manifest.read_text(encoding="utf-8")
         for rel in sorted(set(_TEST_PATH_RE.findall(text))):
             if not (ROOT / rel).exists():
-                missing.append(f"{workflow.name} -> {rel}")
+                missing.append(f"{workflow_or_manifest.name} -> {rel}")
 
     assert not missing, (
         "Workflow steps name test files that do not exist:\n  "
