@@ -54,9 +54,14 @@ that is mail-off mode, not an error.
 | `MAIL_REPLY_TO` | no | where user replies land, e.g. `support@mastermind-x.com` |
 | `MAIL_SUPPORT_TO` | no | where NEW-ticket alerts go. Unset → no operator alert (tickets still file) |
 | `MAIL_UNSUB_SECRET` | no | HMAC key for one-click unsubscribe tokens. **Also keys the ticket IP hash** — set it: without it the stored `meta.ip_hash` is a bare SHA-256 of an IPv4, which is a 2^32 brute force, i.e. not anonymisation |
+| `MAIL_BILLING_ENABLED` | no | **default ON**, so receipts work the moment the relay lands. `0` silences billing receipts + the trial reminder **without** stopping support/ticket mail — the kill switch for a misbehaving receipt |
 | `MAIL_LIFECYCLE_ENABLED` | no | **default OFF.** `1` arms the in-process trial-ending sweeper (§5b). Leave unset until the relay is verified — the billing receipts do not need it |
 | `MAIL_LIFECYCLE_INTERVAL_SEC` | no | sweeper wake interval, default `21600` (6h). Floor 60s. Only for a smoke test — the reminder window is 48h wide, so four wakes a day is plenty |
 | `MAIL_SITE_BASE` | no | public host used in email links, default `https://www.mastermind-x.com`. Only set this if the public host moves |
+
+All four SEE W3 switches ride the same **deploy-api-secrets** lane as the relay creds —
+they are in the workflow's env block, its `_add` list, and its strip regex, so re-running
+it replaces rather than duplicates their lines in `/etc/macro-api.env`.
 
 Prefer a **bare address** for `MAIL_FROM` / `MAIL_REPLY_TO`. A display-name form
 (`Mastermind <hello@…>`) is delivered intact — the workflow's `_addv` helper preserves inner
@@ -128,7 +133,7 @@ With no relay credentials the whole estate still works:
 | Operator alert | `email_log` row with `status='skipped_no_smtp'`; no send attempted |
 | Console reply | message appended, thread shows a **"not emailed"** pill, toast says so |
 | Billing webhook | `POST /api/billing/webhook` still returns **200**, entitlement still written; one `email_log` row per event at `status='skipped_no_smtp'` |
-| Trial sweeper | ledgers every candidate as `skipped_no_smtp` — the period is then "already handled", so turning the relay on later does NOT backfill that period |
+| Trial sweeper | ledgers every candidate as `skipped_no_smtp` — the period is then "already handled", so turning the relay on later does NOT backfill that period. This is why `MAIL_LIFECYCLE_ENABLED` stays off until the relay is verified |
 | `send()` return | `'skipped_no_smtp'` — never an exception, never a 500 at a caller |
 
 One asymmetry to know about once campaigns exist (W4): **marketing mail is fail-closed on the
@@ -167,9 +172,32 @@ currencies and dates come off the Stripe objects, plan names and the tier orderi
 | Stripe event | Email | Notes |
 |---|---|---|
 | `customer.subscription.created` | purchase / trial confirmation | plan, price, trial end, first-charge date + amount, the period it covers |
-| `customer.subscription.updated` | plan upgrade | only when the tier RANK rose or the cadence moved monthly → annual, and only from an already-paid tier |
-| `invoice.payment_failed` | payment failed | amount, what still works and until when, the retry date if Stripe gave one |
-| `customer.subscription.deleted` | cancellation | access-until date, no further charges, how to come back |
+| `customer.subscription.updated` (`cancel_at_period_end` true) | **cancellation scheduled** | the portal is configured `mode = at_period_end`, so this — not `deleted` — is what a user pressing *Cancel* actually emits. Access-until date + how to undo |
+| `customer.subscription.updated` (tier/cadence up) | plan upgrade | only when the tier RANK rose or the cadence moved monthly → annual, and only from an already-paid tier |
+| `invoice.payment_failed` | payment failed | **first attempt only** — see below. Amount, what still works and until when, the retry schedule |
+| `customer.subscription.deleted` | **access ended** | the day the cancellation took effect. Distinct copy from the scheduled email, and how to resubscribe |
+
+**Two cancellation emails is correct, not a bug.** A customer who cancels in the portal
+gets "your plan is cancelled, you keep access until 1 Dec" on the day they press the
+button, and "your access has ended" on 1 Dec. They are different facts at different
+times. Both are keyed on the subscription (`…:cancel_sched:{date}` and `…:cancel_final`),
+so the dozens of unrelated `subscription.updated` events in between send nothing, and an
+un-cancel is silent.
+
+**Dunning mails once per invoice, not once per retry.** Stripe emits
+`invoice.payment_failed` again for every Smart Retry, each with its own event id, so the
+event-scoped key cannot collapse them. We send on `attempt_count == 1` only, key the
+ledger row on the **invoice** id, and the copy states the whole retry schedule up front —
+so a customer with a dead card gets one honest message, not four identical ones. The
+terminal outcome arrives as the cancellation email above.
+
+**Upgrade copy never asserts an immediate charge.** `POST /api/billing/upgrade` bills the
+proration on the spot (`always_invoice`); the customer portal is configured
+`create_prorations`, where the same arithmetic settles on the NEXT invoice
+(`scripts/stripe_bootstrap.py`, docs/ops/stripe-setup.md §5). Both arrive as the same
+webhook event, so the email states *what* happens to the money and points at billing
+history for the exact adjustment — it only says "charged … today" when the event carries
+an expanded, paid, non-zero invoice proving it.
 
 **`checkout.session.completed` deliberately sends nothing.** The estate has two buy lanes —
 hosted Checkout and the Elements sheet (`POST /api/billing/subscribe/complete`) — and only the
@@ -194,8 +222,19 @@ same period. It is **behaviour-triggered**, not a drip: no calendar chain, no fo
 
 1. Set `MAIL_LIFECYCLE_ENABLED=1` as a repository secret and run **deploy-api-secrets** (§2). The
    value is read at mount time, so the workflow's `systemctl restart macro-api` is what arms it.
-2. Confirm: `journalctl -u macro-api -n 50 | grep lifecycle` → `lifecycle sweeper armed (every
-   21600s)`. Nothing in the log means it is still off, which is a safe state.
+2. Confirm — the log says which state it booted in, so "off by choice" and "the env never
+   reached the droplet" are never confused:
+   ```
+   journalctl -u macro-api -n 200 | grep 'lifecycle sweeper'
+   ```
+   | What you see | What it means |
+   |---|---|
+   | `lifecycle sweeper armed (every 21600s)` | armed — you are done |
+   | `lifecycle sweeper OFF (MAIL_LIFECYCLE_ENABLED not set)` | the code is deployed and the switch is off. If you meant to arm it, the secret did not land — check step 1 |
+   | **no line at all** | this build predates SEE W3, or macro-api did not restart. `systemctl restart macro-api` and look again |
+
+   Belt-and-braces, confirm the value actually reached the box:
+   `ssh root@<vps> "grep -c '^MAIL_LIFECYCLE_ENABLED=' /etc/macro-api.env"` → `1`.
 3. Watch it work: `journalctl -u macro-api | grep 'trial sweep'` prints a per-wake census
    (`scanned / sent / duplicate / skipped / failed`).
 4. To run one sweep by hand at any time (it is the same function, and the ledger makes it safe to

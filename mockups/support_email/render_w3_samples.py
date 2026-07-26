@@ -86,17 +86,26 @@ SAMPLES.append(("billing_upgrade", be.spec_upgrade(
      "current_period_end": "2026-08-14T00:00:00+00:00"},
     datetime(2026, 7, 26, tzinfo=timezone.utc))))
 
-# 4 — payment failed (Stripe will retry), access already paused by the reducer
+# 4 — payment failed, FIRST attempt (the only one that mails); access already paused
 SAMPLES.append(("billing_payment_failed", be.spec_payment_failed(
     {"id": "in_1", "object": "invoice", "customer": "cus_9F3A", "amount_due": 9900,
-     "currency": "usd", "created": ep(2026, 7, 26),
+     "currency": "usd", "created": ep(2026, 7, 26), "attempt_count": 1,
      "next_payment_attempt": ep(2026, 7, 29), "customer_email": "reader@example.com"},
     {"tier": "pro", "status": "active", "interval": "monthly",
      "current_period_end": "2026-08-14T00:00:00+00:00"},
     {"tier": "free", "status": "past_due", "plan_interval": None, "current_period_end": None},
     datetime(2026, 7, 26, tzinfo=timezone.utc))))
 
-# 5 — cancellation at period end
+# 5a — cancellation SCHEDULED: what the portal's Cancel button actually emits
+SAMPLES.append(("billing_cancellation_scheduled", be.spec_cancel_scheduled(
+    sub(status="active", lookup_key="pro_annual", unit_amount=82800, currency="usd",
+        cpe=ep(2026, 12, 1), period_start=ep(2025, 12, 1),
+        cancel_at_period_end=True, cancel_at=ep(2026, 12, 1), canceled_at=ep(2026, 7, 26)),
+    {"tier": "pro", "status": "active", "plan_interval": "annual",
+     "current_period_end": "2026-12-01T00:00:00+00:00"},
+    datetime(2026, 7, 26, tzinfo=timezone.utc))))
+
+# 5b — access ENDED: the same cancellation, months later
 SAMPLES.append(("billing_cancellation", be.spec_cancellation(
     sub(status="canceled", lookup_key="pro_annual", unit_amount=82800, currency="usd",
         cpe=ep(2026, 7, 26), period_start=ep(2025, 7, 26),

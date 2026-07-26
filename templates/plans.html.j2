@@ -747,7 +747,12 @@
         if (!r.ok) throw new Error('http');
         return r.json();
       }).then(function (d) {
-        if (!d || !d.url) throw new Error('nourl');
+        /* Only ever navigate to an https URL. The value comes off the wire, and an
+           unchecked assignment to window.location would honour a javascript: or data:
+           payload if this response were ever spoofed or proxied. */
+        if (!d || typeof d.url !== 'string' || d.url.indexOf('https://') !== 0) {
+          throw new Error('nourl');
+        }
         clean();
         window.location = d.url;
       }).catch(function (e) {
@@ -776,6 +781,10 @@
       if (window.MDXAuth && window.MDXAuth.onChange) {
         window.MDXAuth.onChange(function () { if (isSignedIn()) launch(); });
       }
+      /* Drop the param now: the onChange handler above owns the resume, so leaving
+         ?billing=portal in the URL only means a refresh re-runs this whole branch and
+         re-opens the sign-in modal over a page the reader may have chosen to browse. */
+      clean();
     }
   })();
 })();

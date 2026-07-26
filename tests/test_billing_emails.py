@@ -51,7 +51,8 @@ _REAL_STRIPE_CUSTOMER_EMAIL = be._stripe_customer_email
 WHSEC = "whsec_test_secret_123"
 _MAIL_ENV = ("MAIL_SMTP_HOST", "MAIL_SMTP_PORT", "MAIL_SMTP_USER", "MAIL_SMTP_PASS",
              "MAIL_FROM", "MAIL_REPLY_TO", "MAIL_SUPPORT_TO", "MAIL_UNSUB_SECRET",
-             "MAIL_SITE_BASE", "MAIL_LIFECYCLE_ENABLED", "MAIL_LIFECYCLE_INTERVAL_SEC")
+             "MAIL_SITE_BASE", "MAIL_LIFECYCLE_ENABLED", "MAIL_LIFECYCLE_INTERVAL_SEC",
+             "MAIL_BILLING_ENABLED")
 
 
 @pytest.fixture(autouse=True)
@@ -287,12 +288,21 @@ def test_replay_through_handle_event_sends_once(ledger, smtp, monkeypatch):
     assert len(smtp.sent) == 1
 
 
-def test_idem_key_shape_is_per_event_and_template(ledger, smtp):
-    ev = event("customer.subscription.deleted",
-               sub_obj(status="canceled", ended_at=ep(2026, 7, 26)), event_id="evt_zz")
-    be.on_event(ev, user_id="user_1", customer_id="cus_1", ent=ENT_FREE)
-    assert ledger.inserts[0]["idem_key"] == "stripe:evt_zz:billing_cancellation"
+def test_idem_key_defaults_to_the_event_id(ledger, smtp):
+    """One event, one message -> the event id is the right key."""
+    ev = event("customer.subscription.created", sub_obj(**TRIAL_SUB), event_id="evt_zz")
+    be.on_event(ev, user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL)
+    assert ledger.inserts[0]["idem_key"] == "stripe:evt_zz:billing_purchase"
     assert ledger.inserts[0]["class"] == "transactional"
+
+
+def test_idem_key_is_object_scoped_where_the_event_can_repeat(ledger, smtp):
+    """A delete can be redelivered and an invoice fails once per retry — those key on the
+    OBJECT, so the message cannot repeat even across distinct event ids."""
+    be.on_event(event("customer.subscription.deleted",
+                      sub_obj(status="canceled", ended_at=ep(2026, 7, 26)), event_id="evt_a"),
+                user_id="user_1", customer_id="cus_1", ent=ENT_FREE)
+    assert ledger.inserts[0]["idem_key"] == "stripe:sub_1:cancel_final"
 
 
 def test_missing_event_id_refuses_to_send(ledger, smtp):
@@ -410,7 +420,7 @@ def test_trial_to_active_conversion_sends_nothing():
 
 def test_plan_names_come_from_the_catalog(catalog_with_new_tier):
     assert be.plan_name("starter") == "Starter"
-    assert be.catalog_price("starter", "annual") == (29000, "usd")
+    assert be.plan_name("pro") == "Pro"
 
 
 # --------------------------------------------------------------------------- #
@@ -440,11 +450,45 @@ def test_non_usd_non_default_amount_renders_from_the_object():
     assert "€744.00" in html
 
 
-def test_no_hardcoded_prices_in_the_module():
-    """The catalog is the source of truth (MNZ-R12) — no literal price may live in code."""
-    src = (Path(__file__).resolve().parent.parent / "app" / "billing_emails.py").read_text()
-    for literal in ("6900", "9900", "58800", "82800", "$69", "$99", "US$69"):
-        assert literal not in src, f"hardcoded price literal {literal!r} in app/billing_emails.py"
+def _code_only(path: Path) -> str:
+    """Source with every docstring and comment removed (ast.unparse drops comments)."""
+    import ast
+
+    tree = ast.parse(path.read_text())
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        first = body[0]
+        if (isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant)
+                and isinstance(first.value.value, str)):
+            body.pop(0)
+    return ast.unparse(tree)
+
+
+def test_no_catalog_price_is_hardcoded_in_the_module():
+    """The catalog is the source of truth (MNZ-R12) — no literal price may live in code.
+
+    The literals are READ OUT OF config/plans.yml rather than frozen here: a list of
+    today's prices stops testing anything the moment the catalog changes, which is
+    exactly when a copy-pasted number would slip in.
+    """
+    import yaml
+
+    root = Path(__file__).resolve().parent.parent
+    catalog = yaml.safe_load((root / "config" / "plans.yml").read_text())
+    # Scan CODE, not prose. Docstrings and comments legitimately quote example amounts
+    # (the module explains at length why it must not hardcode one); stripping them is
+    # what keeps this guard about behaviour instead of about wording.
+    src = _code_only(root / "app" / "billing_emails.py")
+    amounts = {int(spec["unit_amount"])
+               for prod in catalog["products"].values()
+               for spec in prod["prices"].values()}
+    assert amounts, "catalog exposes no prices — this guard would be vacuous"
+    for minor in amounts:
+        for literal in (str(minor), f"{minor // 100}.00", f"${minor // 100}"):
+            assert literal not in src, (
+                f"catalog price {minor} leaked into app/billing_emails.py as {literal!r}")
 
 
 def test_dates_come_off_the_subscription_not_the_clock():
@@ -627,17 +671,16 @@ def test_cancellation_reads_the_plan_off_the_deleted_subscription():
     _, _, text = be._render(spec)
     assert "Pro — annual" in text
     assert "20 Jul 2026" in text and "26 Jul 2026" in text
-    assert "no" not in spec.headline_en.lower().split()       # no win-back plea
-    assert "why" not in " ".join([spec.lede_en, spec.fine_en]).lower()
 
 
-def test_cancellation_scheduled_for_the_future_says_you_keep_access():
-    future = int((datetime.now(timezone.utc) + timedelta(days=20)).timestamp())
+def test_deleted_always_reports_the_end_as_a_fact():
+    """`deleted` is the day it took effect, so it never promises future access."""
     ev = event("customer.subscription.deleted",
-               sub_obj(status="canceled", cancel_at=future, canceled_at=ep(2026, 7, 20)),
-               created=int(datetime.now(timezone.utc).timestamp()))
+               sub_obj(status="canceled", ended_at=ep(2026, 7, 26), canceled_at=ep(2026, 7, 20)))
     spec = be.build_spec(ev, ent=ENT_FREE, pre={})
-    assert "You keep" in spec.lede_en
+    assert spec.template == "billing_cancellation"
+    assert "ended on 26 Jul 2026" in spec.lede_en
+    assert "You keep" not in spec.lede_en
 
 
 def test_upgrade_names_the_capability_not_the_tier():
@@ -681,8 +724,8 @@ def _trial_row(user_id="user_1", cpe="2026-08-01T00:00:00+00:00", tier="insider"
 
 @pytest.fixture
 def sweeper(monkeypatch):
-    """Catalog pricing only — no live Stripe reach-out during a sweep test."""
-    monkeypatch.setattr(be, "_sweep_pricing", lambda cid, t, i: be.catalog_price(t, i))
+    """A known live price, so sweep tests exercise the send path not the Stripe seam."""
+    monkeypatch.setattr(be, "_sweep_pricing", lambda cid: (6900, "usd"))
     return None
 
 
@@ -700,7 +743,7 @@ def test_sweep_query_selects_only_trialing_inside_the_window(monkeypatch, ledger
     assert f"limit={be._SWEEP_LIMIT}" in path
 
 
-def test_sweep_sends_the_reminder_with_catalog_pricing(monkeypatch, ledger, smtp, sweeper):
+def test_sweep_sends_the_reminder(monkeypatch, ledger, smtp, sweeper):
     monkeypatch.setattr(billing, "_pg", _EntStore([_trial_row()]).pg)
     out = be.sweep_trial_ending(now=NOW)
     assert out == {"scanned": 1, "sent": 1, "duplicate": 0, "skipped": 0, "failed": 0}
@@ -782,15 +825,23 @@ def test_sweep_prefers_the_live_stripe_price(monkeypatch, ledger, smtp):
     assert "£49.00" in body
 
 
-def test_sweep_falls_back_to_the_catalog_when_stripe_is_down(monkeypatch, ledger, smtp):
+def test_sweep_omits_the_amount_when_stripe_cannot_price_it(monkeypatch, ledger, smtp):
+    """m4: the catalog's currency is not evidence about THIS customer's currency, so a
+    Stripe outage costs the amount — never a confidently wrong one."""
     def _boom(cid):
         raise RuntimeError("stripe down")
 
     monkeypatch.setattr(billing, "_pg", _EntStore([_trial_row()]).pg)
     monkeypatch.setattr(billing, "_live_subscription", _boom)
-    be.sweep_trial_ending(now=NOW)
+    out = be.sweep_trial_ending(now=NOW)
+    assert out["sent"] == 1                       # the reminder still goes out
     body = body_of(smtp.sent[0])
-    assert "US$69.00" in body
+    assert "US$" not in body and "美元" not in body
+    assert "1 Aug 2026" in body                   # the date it is really about
+    # the slip ROW is dropped rather than rendered blank (the words "amount"/"金额" still
+    # appear in the sentence that points the reader at billing)
+    assert "Amount:" not in body and "金额:" not in body
+    assert "billing" in body.lower()
 
 
 def test_trial_ending_wording_tracks_the_real_gap():
@@ -833,3 +884,285 @@ def test_pre_snapshot_only_for_events_that_need_it(monkeypatch):
     assert be.pre_upsert_snapshot("customer.subscription.updated", "user_1") == ENT_PRO
     assert be.pre_upsert_snapshot("invoice.payment_failed", "user_1") == ENT_PRO
     assert reads == ["user_1", "user_1"]
+
+
+# --------------------------------------------------------------------------- #
+# 11. M1 — dunning retries must not mail repeatedly
+# --------------------------------------------------------------------------- #
+def _invoice(attempt=1, retry=None, invoice_id="in_9", amount=9900):
+    o = {"id": invoice_id, "object": "invoice", "customer": "cus_1", "amount_due": amount,
+         "currency": "usd", "created": ep(2026, 7, 26), "attempt_count": attempt}
+    if retry:
+        o["next_payment_attempt"] = retry
+    return o
+
+
+def test_smart_retry_sequence_mails_exactly_once(ledger, smtp):
+    """THE M1 GATE. Stripe emits invoice.payment_failed once per retry attempt, each with
+    its OWN event id — so the event-scoped key cannot collapse them. Four attempts, one
+    email, one ledger row."""
+    retries = [ep(2026, 7, 29), ep(2026, 8, 1), ep(2026, 8, 5), None]
+    for n, retry in enumerate(retries, start=1):
+        be.on_event(event("invoice.payment_failed", _invoice(attempt=n, retry=retry),
+                          event_id=f"evt_dun_{n}"),
+                    user_id="user_1", customer_id="cus_1", ent=ENT_FREE, pre=ENT_PRO)
+
+    assert len(ledger.inserts) == 1, "one invoice must produce ONE dunning email"
+    assert len(smtp.sent) == 1
+    assert ledger.inserts[0]["idem_key"] == "stripe:in_9:billing_payment_failed"
+
+
+def test_second_attempt_alone_sends_nothing():
+    """Even if attempt 1 were never delivered, attempts 2+ stay quiet — the copy promises
+    a schedule, and re-sending mid-schedule would contradict it."""
+    assert be.build_spec(event("invoice.payment_failed", _invoice(attempt=2)),
+                         ent=ENT_FREE, pre=ENT_PRO) is None
+
+
+def test_dunning_copy_covers_the_whole_retry_schedule():
+    """The single email is the ONLY one, so it must not imply one final attempt."""
+    spec = be.build_spec(event("invoice.payment_failed", _invoice(retry=ep(2026, 7, 29))),
+                         ent=ENT_FREE, pre=ENT_PRO)
+    assert "29 Jul 2026" in spec.fine_en
+    assert "a few more times" in spec.fine_en
+    assert "will not email again" in spec.fine_en
+    assert "If that attempt also fails" not in spec.fine_en
+
+
+def test_invoice_id_key_survives_a_redelivered_first_attempt(ledger, smtp):
+    """Belt-and-braces behind the attempt_count gate: two DIFFERENT event ids carrying the
+    same first-attempt invoice still send once."""
+    for eid in ("evt_x1", "evt_x2"):
+        be.on_event(event("invoice.payment_failed", _invoice(), event_id=eid),
+                    user_id="user_1", customer_id="cus_1", ent=ENT_FREE, pre=ENT_PRO)
+    assert len(ledger.inserts) == 1 and len(smtp.sent) == 1
+
+
+# --------------------------------------------------------------------------- #
+# 12. M2 — the portal cancel path (at_period_end) must be covered
+# --------------------------------------------------------------------------- #
+def _cancelling_sub(cancel_at=None, flag=True, **kw):
+    return sub_obj(status="active", lookup_key="pro_annual", unit_amount=82800,
+                   cancel_at_period_end=flag,
+                   cancel_at=cancel_at or ep(2026, 12, 1),
+                   canceled_at=ep(2026, 7, 26), **kw)
+
+
+def test_portal_cancel_sends_the_scheduled_email():
+    """scripts/stripe_bootstrap.py configures subscription_cancel.mode=at_period_end, so
+    the user-facing cancel arrives as `updated` with the flag — never `deleted` that day."""
+    spec = be.build_spec(event("customer.subscription.updated", _cancelling_sub()),
+                         ent=ENT_PRO, pre=ENT_PRO)
+    assert spec is not None, "the commonest cancellation in the product must send something"
+    assert spec.template == "billing_cancellation_scheduled"
+    assert "You keep full Pro access until 1 Dec 2026" in spec.lede_en
+    assert "1 Dec 2026" in spec.preheader_en
+    assert "Turn the plan back on" in spec.fine_en          # how to undo
+    assert spec.cta_url.endswith("?billing=portal")
+
+
+def test_scheduled_and_final_are_two_distinct_emails():
+    """Both firing across one cancellation is correct — different facts, different days."""
+    sched = be.build_spec(event("customer.subscription.updated", _cancelling_sub()),
+                          ent=ENT_PRO, pre=ENT_PRO)
+    final = be.build_spec(event("customer.subscription.deleted",
+                                sub_obj(status="canceled", lookup_key="pro_annual",
+                                        unit_amount=82800, ended_at=ep(2026, 12, 1))),
+                          ent=ENT_FREE, pre={})
+    assert sched.template != final.template
+    assert sched.subject_en != final.subject_en
+    assert final.subject_en == "Your access has ended"
+    assert "has ended" in final.headline_en
+    assert final.cta_url.endswith("/plans.html")            # how to resubscribe
+
+
+def test_scheduled_cancel_collapses_across_repeated_updates(ledger, smtp):
+    """`updated` fires for every unrelated field change while the flag stays true — the
+    subscription+date key means the reader is told once."""
+    for eid in ("evt_c1", "evt_c2", "evt_c3"):
+        be.on_event(event("customer.subscription.updated", _cancelling_sub(), event_id=eid),
+                    user_id="user_1", customer_id="cus_1", ent=ENT_PRO, pre=ENT_PRO)
+    assert len(ledger.inserts) == 1 and len(smtp.sent) == 1
+    assert ledger.inserts[0]["idem_key"] == "stripe:sub_1:cancel_sched:2026-12-01"
+
+
+def test_recancelling_with_a_new_date_rearms(ledger, smtp):
+    be.on_event(event("customer.subscription.updated", _cancelling_sub(), event_id="evt_d1"),
+                user_id="user_1", customer_id="cus_1", ent=ENT_PRO, pre=ENT_PRO)
+    be.on_event(event("customer.subscription.updated",
+                      _cancelling_sub(cancel_at=ep(2027, 1, 1)), event_id="evt_d2"),
+                user_id="user_1", customer_id="cus_1", ent=ENT_PRO, pre=ENT_PRO)
+    assert {r["idem_key"] for r in ledger.inserts} == {
+        "stripe:sub_1:cancel_sched:2026-12-01", "stripe:sub_1:cancel_sched:2027-01-01"}
+
+
+def test_uncancelling_sends_nothing():
+    """flag true -> false is a RESUME, not a cancellation. It must be silent, and it must
+    not be mistaken for an upgrade either."""
+    assert be.build_spec(event("customer.subscription.updated", _cancelling_sub(flag=False)),
+                         ent=ENT_PRO, pre=ENT_PRO) is None
+
+
+def test_an_unrelated_update_cannot_trigger_the_scheduled_email():
+    """A card swap, a metadata edit — no cancel flag, no cancellation email."""
+    plain = sub_obj(status="active", lookup_key="pro_annual", unit_amount=82800)
+    assert be.build_spec(event("customer.subscription.updated", plain),
+                         ent=ENT_PRO, pre=ENT_PRO) is None
+
+
+def test_scheduled_cancel_without_an_end_date_says_nothing():
+    """No date to promise -> no promise. Silence beats an invented access-until."""
+    sub = sub_obj(status="active", cancel_at_period_end=True)
+    sub["items"]["data"][0]["current_period_end"] = None
+    assert be.build_spec(event("customer.subscription.updated", sub),
+                         ent=ENT_PRO, pre=ENT_PRO) is None
+
+
+def test_cancel_flag_wins_over_the_upgrade_comparison():
+    """A cancelling subscription is never an upgrade, whatever the tiers say."""
+    spec = be.build_spec(event("customer.subscription.updated", _cancelling_sub()),
+                         ent=ENT_PRO, pre=ENT_INSIDER)
+    assert spec.template == "billing_cancellation_scheduled"
+
+
+# --------------------------------------------------------------------------- #
+# 13. M3 — the upgrade email must not assert a charge this deployment may not make
+# --------------------------------------------------------------------------- #
+def _upgraded(latest_invoice=None):
+    sub = sub_obj(status="active", lookup_key="pro_monthly", unit_amount=9900)
+    if latest_invoice is not None:
+        sub["latest_invoice"] = latest_invoice
+    return sub
+
+
+def test_upgrade_wording_is_timing_free_without_evidence():
+    """A webhook carries latest_invoice as a bare id, so the in-app lane (always_invoice)
+    and the portal (create_prorations — stripe_bootstrap.py) are indistinguishable here.
+    The copy must be true under BOTH: state the arithmetic, never the collection moment."""
+    spec = be.build_spec(event("customer.subscription.updated", _upgraded("in_abc")),
+                         ent=ENT_PRO, pre=ENT_INSIDER)
+    assert "credit the unused time" in spec.fine_en
+    assert "today" not in spec.fine_en
+    assert "charged the difference" not in spec.fine_en   # no past-tense assertion
+    assert "billing history" in spec.fine_en
+    assert spec.meta["charged_now"] is None
+
+
+def test_upgrade_wording_states_the_charge_when_it_is_proven():
+    """An EXPANDED, paid, non-zero proration invoice is evidence — then we may say it."""
+    spec = be.build_spec(
+        event("customer.subscription.updated",
+              _upgraded({"status": "paid", "amount_paid": 3300, "currency": "usd"})),
+        ent=ENT_PRO, pre=ENT_INSIDER)
+    assert "charged the difference" in spec.fine_en
+    assert "US$33.00 today" in spec.fine_en
+    assert spec.meta["charged_now"] is True
+
+
+def test_upgrade_wording_stays_timing_free_for_a_deferred_proration():
+    """A draft/zero invoice is the portal's create_prorations shape — settle-later."""
+    spec = be.build_spec(
+        event("customer.subscription.updated",
+              _upgraded({"status": "draft", "amount_paid": 0, "currency": "usd"})),
+        ent=ENT_PRO, pre=ENT_INSIDER)
+    assert "today" not in spec.fine_en
+    assert "credit the unused time" in spec.fine_en
+    assert spec.meta["charged_now"] is False
+
+
+def test_proration_verdict_reads_only_expanded_invoices():
+    assert be.proration_charged_now({"latest_invoice": "in_str"}) == (None, None, None)
+    assert be.proration_charged_now({}) == (None, None, None)
+
+
+# --------------------------------------------------------------------------- #
+# 14. small findings — m5 switch, m7 slugs, m3 empty rows
+# --------------------------------------------------------------------------- #
+def test_billing_mail_switch_defaults_on(ledger, smtp):
+    assert be.billing_mail_enabled() is True
+    be.on_event(event("customer.subscription.created", sub_obj(**TRIAL_SUB), event_id="evt_on"),
+                user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL)
+    assert len(smtp.sent) == 1
+
+
+def test_billing_mail_switch_silences_only_this_module(monkeypatch, ledger, smtp):
+    """m5: kill a misbehaving receipt without taking support mail down with it."""
+    monkeypatch.setenv("MAIL_BILLING_ENABLED", "0")
+    assert be.billing_mail_enabled() is False
+    assert be.on_event(event("customer.subscription.created", sub_obj(**TRIAL_SUB),
+                             event_id="evt_off2"),
+                       user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL) is None
+    assert ledger.inserts == [] and smtp.sent == []
+    # ...while app/mailer.py itself is untouched: a support reply still goes out.
+    assert mailer.send(template="ticket_reply", cls="transactional", to_email="u@example.com",
+                       subject="Re: MX-1", html="<p>hi</p>", text="hi",
+                       idem_key="ticket:1") == "sent"
+
+
+def test_billing_mail_switch_stops_the_sweeper(monkeypatch, ledger, smtp, sweeper):
+    monkeypatch.setenv("MAIL_BILLING_ENABLED", "0")
+    monkeypatch.setattr(billing, "_pg", _EntStore([_trial_row()]).pg)
+    assert be.sweep_trial_ending(now=NOW)["sent"] == 0
+    assert smtp.sent == []
+
+
+def test_unknown_feature_key_is_omitted_never_printed_as_a_slug(catalog_with_new_tier):
+    """m7: DESIGN_DOCTRINE bans raw slugs in user copy, and an English slug in a Chinese
+    sentence is worse. A feature the catalog cannot name drops out of the sentence."""
+    assert be._feature_label("chat_opus") == ("Mastermind Pro chat (Opus)",
+                                              "Opus 模型的 Mastermind 对话")
+    assert be._feature_label("brand_new_unnamed_key") is None
+
+    prev = dict(ENT_INSIDER, features=["site_full"])
+    new = dict(ENT_PRO, features=["site_full", "brand_new_unnamed_key"])
+    spec = be.build_spec(event("customer.subscription.updated",
+                               sub_obj(status="active", lookup_key="pro_monthly")),
+                         ent=new, pre=prev)
+    assert "brand_new_unnamed_key" not in spec.lede_en
+    assert "brand_new_unnamed_key" not in spec.lede_zh
+    assert "_" not in spec.lede_en                       # no slug shape at all
+
+
+def test_feature_with_no_zh_translation_uses_the_english_name_not_the_slug():
+    """A product NAME in a Chinese sentence is normal here ('你的 Insider 试用'); a slug is not."""
+    en, zh = be._feature_label("site_full")
+    assert zh == "整站访问权限"
+    assert "site_full" not in zh
+
+
+def test_incomplete_slip_rows_are_dropped_not_printed_blank():
+    """m3: an unresolvable price must not leave 'Price:  per month' scaffolding."""
+    sub = sub_obj(**TRIAL_SUB)
+    sub["items"]["data"][0]["price"]["unit_amount"] = None
+    sub["items"]["data"][0]["price"]["currency"] = None
+    spec = be.build_spec(event("customer.subscription.created", sub), ent=ENT_INSIDER_TRIAL, pre={})
+    keys_en = [k for k, _, _, _ in spec.slip]
+    assert "Price" not in keys_en
+    assert all(v.strip() for _, v, _, _ in spec.slip), "no blank slip values"
+    _, _, text = be._render(spec)
+    assert "per month" not in text
+    assert "1 Aug 2026" in text                          # the rows we CAN fill survive
+
+
+def test_row_helper_drops_a_half_translated_row():
+    assert be._row("Plan", "Pro", "方案", "") is None
+    assert be._row("Plan", "", "方案", "Pro") is None
+    assert be._row("Plan", "Pro", "方案", "Pro") == ("Plan", "Pro", "方案", "Pro")
+
+
+def test_one_day_trial_says_day_not_days():
+    """nit: '{n} days' read 'the next one days' for a 1-day trial."""
+    sub = sub_obj(status="trialing", trial_start=ep(2026, 7, 31), trial_end=ep(2026, 8, 1))
+    spec = be.build_spec(event("customer.subscription.created", sub), ent=ENT_INSIDER_TRIAL, pre={})
+    assert "the next one day." in spec.lede_en
+    assert "one days" not in spec.lede_en
+    assert "(1-day trial)" in dict((k, v) for k, v, _, _ in spec.slip)["Free until"]
+
+
+def test_dispatch_table_is_the_only_source_of_truth():
+    """m6: the map build_spec reads IS the map — no parallel dead table to edit by mistake."""
+    assert not hasattr(be, "EVENT_TEMPLATES")
+    assert set(be._BUILDERS) == {
+        "customer.subscription.created", "customer.subscription.updated",
+        "invoice.payment_failed", "customer.subscription.deleted"}
+    assert "checkout.session.completed" not in be._BUILDERS

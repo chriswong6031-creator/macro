@@ -245,23 +245,6 @@ def plan_name(tier: str | None) -> str:
     return t.title() if t else ""
 
 
-def catalog_price(tier: str | None, interval: str | None) -> tuple[int | None, str | None]:
-    """(unit_amount, currency) from config/plans.yml — the fallback when no live price."""
-    t, iv = (tier or "").strip().lower(), (interval or "").strip().lower()
-    try:
-        cat = billing._catalog()
-        currency = str(cat.get("currency") or "usd")
-        for prod in cat.get("products", {}).values():
-            if prod.get("tier") != t:
-                continue
-            spec = (prod.get("prices") or {}).get(iv)
-            if spec and spec.get("unit_amount") is not None:
-                return int(spec["unit_amount"]), currency
-    except Exception as exc:  # noqa: BLE001
-        log.debug("billing_emails: catalog price lookup failed (%s)", type(exc).__name__)
-    return None, None
-
-
 _FEATURE_ZH = {
     "site_full": "整站访问权限",
     "terminal_live_options": "终端实时期权数据",
@@ -269,17 +252,27 @@ _FEATURE_ZH = {
 }
 
 
-def _feature_label(key: str) -> tuple[str, str]:
-    """(en, zh) display label for an entitlement feature key, EN from the catalog."""
-    en = key
+def _feature_label(key: str) -> tuple[str, str] | None:
+    """(en, zh) label for an entitlement feature key, or None when we cannot name it.
+
+    EN comes from ``config/plans.yml``'s ``features[].name``. ZH comes from the table
+    above, falling back to the catalog NAME — never to the key. A raw slug
+    (``terminal_live_options``) is banned from user-facing copy by DESIGN_DOCTRINE, and
+    an English slug dropped into a Chinese sentence is worse still, so a feature we
+    cannot name in words is OMITTED from the sentence rather than printed as a slug.
+    """
+    en = ""
     try:
         for f in billing._catalog().get("features", []) or []:
             if f.get("key") == key:
-                en = str(f.get("name") or key)
+                en = str(f.get("name") or "").strip()
                 break
     except Exception:  # noqa: BLE001
         pass
-    return en, _FEATURE_ZH.get(key, en)
+    if not en:
+        log.debug("billing_emails: feature %r has no catalog name — omitted from copy", key)
+        return None
+    return en, _FEATURE_ZH.get(key) or en
 
 
 def _tier_rank_of(tier: str | None) -> int:
@@ -332,12 +325,17 @@ def sub_price(sub: Any) -> tuple[int | None, str | None]:
     return _get(price, "unit_amount"), _get(price, "currency")
 
 
-def _pricing(sub: Any, tier: str | None, interval: str | None) -> tuple[int | None, str | None]:
-    """Live Stripe price when the object carries one, catalog price otherwise."""
-    amount, currency = sub_price(sub) if sub is not None else (None, None)
-    if amount is None:
-        amount, currency = catalog_price(tier, interval)
-    return amount, currency
+def _pricing(sub: Any) -> tuple[int | None, str | None]:
+    """Money for this message, taken ONLY from the live Stripe object.
+
+    There is deliberately no ``config/plans.yml`` fallback. The catalog records its
+    amounts in the catalog's OWN currency and nothing tells us the customer is billed in
+    it (a multi-currency price, a legacy price, a migrated account). Telling a customer
+    charged in euros that they will pay "US$69.00" is a worse failure than telling them
+    nothing: every money row is omitted when this returns ``(None, None)``, and the copy
+    around it drops the amount rather than guessing.
+    """
+    return sub_price(sub) if sub is not None else (None, None)
 
 
 def _interval_words(interval: str | None) -> dict[str, str]:
@@ -380,7 +378,28 @@ class EmailSpec:
     cta_url: str = ""
     fine_en: str = ""
     fine_zh: str = ""
+    # Idempotency key. Empty => the caller keys on the EVENT id, which is right whenever
+    # one event means one message. Builders whose event can legitimately repeat (Stripe
+    # emits invoice.payment_failed once per retry attempt, and subscription.updated on
+    # every unrelated field change) set a STABLE key on the underlying object instead.
+    idem: str = ""
     meta: dict = field(default_factory=dict, compare=False)
+
+
+def _row(k_en: str, v_en: str, k_zh: str, v_zh: str) -> tuple[str, str, str, str] | None:
+    """One slip row, or None when either language has no value.
+
+    Empty scaffolding reads as a bug to the reader — "Price:  per month" with a missing
+    amount is worse than a slip with one fewer row — so an incomplete row is dropped
+    rather than printed.
+    """
+    if not str(v_en or "").strip() or not str(v_zh or "").strip():
+        return None
+    return (k_en, v_en, k_zh, v_zh)
+
+
+def _slip(*rows: tuple[str, str, str, str] | None) -> tuple[tuple[str, str, str, str], ...]:
+    return tuple(r for r in rows if r is not None)
 
 
 def _render(spec: EmailSpec) -> tuple[str, str, str]:
@@ -416,7 +435,7 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
     interval = billing._sub_interval(sub) or (ent or {}).get("plan_interval")
     name = plan_name(tier)
     w = _interval_words(interval)
-    amount, currency = _pricing(sub, tier, interval)
+    amount, currency = _pricing(sub)
     m_en, m_zh = money_en(amount, currency), money_zh(amount, currency)
 
     trial_end = dt_from_epoch(_get(sub, "trial_end"))
@@ -425,10 +444,9 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
     period_end = dt_from_epoch(billing._sub_period_end(sub))
     started = event_at or trial_start or period_start
 
-    slip: list[tuple[str, str, str, str]] = [
-        ("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}"),
-        ("Price", f"{m_en} {w['per_en']}", "价格", f"{w['per_zh']} {m_zh}"),
-    ]
+    plan_row = _row("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}")
+    price_row = _row("Price", f"{m_en} {w['per_en']}" if m_en else "",
+                     "价格", f"{w['per_zh']} {m_zh}" if m_zh else "")
 
     if trial_end and (not trial_start or trial_end > trial_start):
         days = 0
@@ -437,12 +455,7 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
         if not days:
             days = billing._tier_trial_days(tier or "")
         covers_end = add_interval(trial_end, interval)
-        slip.append(("Free until", f"{date_en(trial_end)} ({days}-day trial)",
-                     "免费至", f"{date_zh(trial_end)}（{days} 天试用）"))
-        slip.append(("First charge", f"{date_en(trial_end)} · {m_en}",
-                     "首次扣款", f"{date_zh(trial_end)} · {m_zh}"))
-        slip.append(("That covers", range_en(trial_end, covers_end),
-                     "对应周期", range_zh(trial_end, covers_end)))
+        day_word_en = "day" if days == 1 else "days"
         return EmailSpec(
             template="billing_purchase",
             eyebrow="TRIAL",
@@ -452,12 +465,21 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
             preheader_zh=f"免费至 {date_zh(trial_end)}。在此之前取消，不会扣款。",
             headline_en=f"Your {name} trial has started.",
             headline_zh=f"你的 {name} 试用已开始。",
-            lede_en=(f"You have full {name} access for the next {_num_en(days)} days. "
+            lede_en=(f"You have full {name} access for the next {_num_en(days)} {day_word_en}. "
                      f"Nothing is charged until the trial ends — cancel before "
                      f"{date_en(trial_end)} and you pay nothing."),
             lede_zh=(f"接下来{_num_zh(days)}天，你可以使用 {name} 的全部功能。"
                      f"试用结束前不会扣款——在 {date_zh(trial_end)}前取消，你无需支付任何费用。"),
-            slip=tuple(slip),
+            slip=_slip(
+                plan_row,
+                price_row,
+                _row("Free until", f"{date_en(trial_end)} ({days}-{day_word_en} trial)",
+                     "免费至", f"{date_zh(trial_end)}（{days} 天试用）"),
+                _row("First charge", f"{date_en(trial_end)} · {m_en}" if m_en else date_en(trial_end),
+                     "首次扣款", f"{date_zh(trial_end)} · {m_zh}" if m_zh else date_zh(trial_end)),
+                _row("That covers", range_en(trial_end, covers_end),
+                     "对应周期", range_zh(trial_end, covers_end)),
+            ),
             cta_en="Manage billing", cta_zh="管理账单", cta_url=portal_url(),
             fine_en=(f"Cancel any time before {date_en(trial_end)} and you are not charged. "
                      f"If you do nothing, {name} renews {w['each_en']} until you cancel."),
@@ -470,25 +492,30 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
 
     # No trial: the subscription bills immediately for the period Stripe just opened.
     next_charge = period_end or (add_interval(period_start, interval) if period_start else None)
-    slip.append(("Started", date_en(period_start), "开始时间", date_zh(period_start)))
-    slip.append(("That covers", range_en(period_start, next_charge),
-                 "对应周期", range_zh(period_start, next_charge)))
-    slip.append(("Next charge", f"{date_en(next_charge)} · {m_en}",
-                 "下次扣款", f"{date_zh(next_charge)} · {m_zh}"))
     return EmailSpec(
         template="billing_purchase",
         eyebrow="RECEIPT",
         subject_en=f"Your {name} plan is active",
         subject_zh=f"{name} 订阅已开通",
-        preheader_en=f"{m_en} {w['per_en']}. Next charge {date_en(next_charge)}.",
-        preheader_zh=f"{w['per_zh']} {m_zh}。下次扣款 {date_zh(next_charge)}。",
+        preheader_en=(f"{m_en} {w['per_en']}. Next charge {date_en(next_charge)}." if m_en
+                      else f"{name} is active. Next charge {date_en(next_charge)}."),
+        preheader_zh=(f"{w['per_zh']} {m_zh}。下次扣款 {date_zh(next_charge)}。" if m_zh
+                      else f"{name} 已开通。下次扣款 {date_zh(next_charge)}。"),
         headline_en=f"Your {name} plan is active.",
         headline_zh=f"你的 {name} 订阅已开通。",
         lede_en=(f"You have full {name} access now. The charge below covers the period shown; "
                  f"after that it renews {w['each_en']} until you cancel."),
         lede_zh=(f"你现在可以使用 {name} 的全部功能。以下扣款对应下方所示周期；"
                  f"之后将{w['each_zh']}自动续订，直到你取消为止。"),
-        slip=tuple(slip),
+        slip=_slip(
+            plan_row,
+            price_row,
+            _row("Started", date_en(period_start), "开始时间", date_zh(period_start)),
+            _row("That covers", range_en(period_start, next_charge),
+                 "对应周期", range_zh(period_start, next_charge)),
+            _row("Next charge", f"{date_en(next_charge)} · {m_en}" if m_en else date_en(next_charge),
+                 "下次扣款", f"{date_zh(next_charge)} · {m_zh}" if m_zh else date_zh(next_charge)),
+        ),
         cta_en="Manage billing", cta_zh="管理账单", cta_url=portal_url(),
         fine_en="Cancel any time in billing. Access runs to the end of the period you have paid for.",
         fine_zh="你可以随时在账单中心取消。已付费周期结束前，访问权限保持不变。",
@@ -496,6 +523,34 @@ def spec_purchase(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec |
         why_zh=f"你收到这封邮件，是因为你在 {date_zh(started)}开通了 {name} 订阅。",
         meta={"tier": tier, "interval": interval, "amount": amount, "currency": currency},
     )
+
+
+def proration_charged_now(sub: Any) -> tuple[bool | None, int | None, str | None]:
+    """Did the plan switch bill the customer IMMEDIATELY? (verdict, amount, currency).
+
+    ``True`` only on positive evidence: an EXPANDED ``latest_invoice`` on the updated
+    subscription that is already paid for a non-zero amount. ``None`` means we cannot
+    tell — a webhook payload carries ``latest_invoice`` as a bare id string, which is the
+    normal case — and the caller must then use wording that is true either way.
+
+    Why this matters: this deployment runs TWO switch paths with DIFFERENT proration
+    settings. ``POST /api/billing/upgrade`` uses ``always_invoice`` (billed on the spot);
+    the customer portal is configured ``create_prorations``
+    (``scripts/stripe_bootstrap.py::PORTAL_PRORATION_BEHAVIOR``, docs/ops/stripe-setup.md
+    §5), where the credit and charge lines land on the NEXT invoice. Both arrive here as
+    the same ``customer.subscription.updated`` event, so asserting an immediate charge
+    would be a lie for every portal switch.
+    """
+    inv = _get(sub, "latest_invoice")
+    if not isinstance(inv, dict):
+        return None, None, None            # bare id (or absent) — no evidence either way
+    status = inv.get("status")
+    paid = inv.get("amount_paid")
+    if status == "paid" and isinstance(paid, int) and paid > 0:
+        return True, paid, inv.get("currency")
+    if status in ("draft", "open") or paid == 0:
+        return False, None, None
+    return None, None, None
 
 
 def spec_upgrade(sub: Any, prev: dict, ent: dict, event_at: datetime | None) -> EmailSpec | None:
@@ -506,14 +561,14 @@ def spec_upgrade(sub: Any, prev: dict, ent: dict, event_at: datetime | None) -> 
     interval = ent.get("plan_interval") or billing._sub_interval(sub)
     name = plan_name(tier)
     w = _interval_words(interval)
-    amount, currency = _pricing(sub, tier, interval)
+    amount, currency = _pricing(sub)
     m_en, m_zh = money_en(amount, currency), money_zh(amount, currency)
     changed = event_at or datetime.now(timezone.utc)
     next_bill = dt_from_iso(ent.get("current_period_end")) or dt_from_epoch(billing._sub_period_end(sub))
 
     # What is newly available, named as a capability rather than a tier (PIN §7.2).
     gained = [f for f in (ent.get("features") or []) if f not in set(prev.get("features") or [])]
-    labels = [_feature_label(k) for k in gained]
+    labels = [lbl for lbl in (_feature_label(k) for k in gained) if lbl]
     if labels:
         lede_en = "You now have " + _join_en([en for en, _ in labels]) + "."
         lede_zh = "你现在拥有" + _zh_lead("、".join(zh for _, zh in labels)) + "。"
@@ -527,16 +582,26 @@ def spec_upgrade(sub: Any, prev: dict, ent: dict, event_at: datetime | None) -> 
         lede_zh = f"{name} 已在你的账户中生效。"
 
     trialing = (ent.get("status") or _get(sub, "status")) == "trialing"
+    charged_now, paid_amount, paid_currency = proration_charged_now(sub)
     if trialing:
         fine_en = ("Nothing was charged for the switch — you are still in your trial. "
                    f"{name} billing starts when the trial ends.")
         fine_zh = f"本次变更未产生扣款——你仍在试用期内。试用结束后才会按 {name} 开始计费。"
-    else:
-        fine_en = ("We credited the time you had already paid for on the old plan and charged "
-                   "only the difference for the rest of this period. Your next full bill is "
+    elif charged_now:
+        paid_en, paid_zh = money_en(paid_amount, paid_currency), money_zh(paid_amount, paid_currency)
+        fine_en = (f"We credited the unused time on your old plan and charged the difference "
+                   f"for the rest of this period — {paid_en} today. Your next full bill is "
                    f"{date_en(next_bill)}.")
-        fine_zh = ("我们已把旧方案中尚未使用的时间折算成抵扣，只对本周期剩余时间收取差额。"
-                   f"下一次完整账单为 {date_zh(next_bill)}。")
+        fine_zh = (f"我们已把旧方案中尚未使用的时间折算成抵扣，并对本周期剩余时间收取差额"
+                   f"——今天扣款 {paid_zh}。下一次完整账单为 {date_zh(next_bill)}。")
+    else:
+        # Ambiguous or explicitly deferred: say WHAT happens to the money, never WHEN it
+        # is collected, because that differs between the in-app lane and the portal.
+        fine_en = ("We credit the unused time on your old plan and charge only the difference "
+                   "for the rest of this period. The exact adjustment shows up in your "
+                   f"billing history; your next full bill is {date_en(next_bill)}.")
+        fine_zh = ("我们会把旧方案中尚未使用的时间折算成抵扣，只对本周期剩余时间收取差额。"
+                   f"具体金额可在账单记录中查看；下一次完整账单为 {date_zh(next_bill)}。")
 
     return EmailSpec(
         template="billing_upgrade",
@@ -549,23 +614,38 @@ def spec_upgrade(sub: Any, prev: dict, ent: dict, event_at: datetime | None) -> 
         headline_zh=f"你已升级到 {name}。",
         lede_en=lede_en,
         lede_zh=lede_zh,
-        slip=(
-            ("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}"),
-            ("Price", f"{m_en} {w['per_en']}", "价格", f"{w['per_zh']} {m_zh}"),
-            ("Changed on", date_en(changed), "变更日期", date_zh(changed)),
-            ("Next bill", date_en(next_bill), "下次账单", date_zh(next_bill)),
+        slip=_slip(
+            _row("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}"),
+            _row("Price", f"{m_en} {w['per_en']}" if m_en else "",
+                 "价格", f"{w['per_zh']} {m_zh}" if m_zh else ""),
+            _row("Changed on", date_en(changed), "变更日期", date_zh(changed)),
+            _row("Next bill", date_en(next_bill), "下次账单", date_zh(next_bill)),
         ),
         cta_en="Manage billing", cta_zh="管理账单", cta_url=portal_url(),
         fine_en=fine_en, fine_zh=fine_zh,
         why_en=f"You received this because you changed your plan on {date_en(changed)}.",
         why_zh=f"你收到这封邮件，是因为你在 {date_zh(changed)}变更了订阅方案。",
-        meta={"tier": tier, "interval": interval, "amount": amount, "currency": currency},
+        meta={"tier": tier, "interval": interval, "amount": amount, "currency": currency,
+              "charged_now": charged_now},
     )
 
 
 def spec_payment_failed(invoice: Any, prev: dict, ent: dict,
                         event_at: datetime | None) -> EmailSpec | None:
-    """PIN §7.3 — a renewal charge was declined. No blame, no urgency theatre."""
+    """PIN §7.3 — a renewal charge was declined. No blame, no urgency theatre.
+
+    ONE email per invoice, on the FIRST attempt only. Stripe's Smart Retries emit
+    ``invoice.payment_failed`` again for every retry (each with its own event id, so the
+    event-scoped idempotency key cannot collapse them), and a customer whose card is
+    dead would otherwise get the identical message four times over a week. The retry
+    schedule is already stated in the first message, and the terminal outcome has its own
+    email from the cancellation path — so attempts 2..n are silent by design.
+    """
+    attempt = _get(invoice, "attempt_count")
+    if isinstance(attempt, int) and attempt > 1:
+        log.info("billing_emails: payment_failed attempt %s — already mailed, staying quiet", attempt)
+        return None
+
     # The tier survives on the PRE-upsert row: our reducer treats `past_due` as
     # unentitled, so by the time this runs the recomputed row already reads 'free'.
     tier = ent.get("tier") if _tier_rank_of(ent.get("tier")) > 0 else prev.get("tier")
@@ -582,8 +662,6 @@ def spec_payment_failed(invoice: Any, prev: dict, ent: dict,
     if amount is None:
         amount = _get(invoice, "total")
     currency = _get(invoice, "currency")
-    if amount is None:
-        amount, currency = _pricing(None, tier, interval)
     m_en, m_zh = money_en(amount, currency), money_zh(amount, currency)
 
     attempted = dt_from_epoch(_get(invoice, "created")) or event_at or datetime.now(timezone.utc)
@@ -610,22 +688,23 @@ def spec_payment_failed(invoice: Any, prev: dict, ent: dict,
         lede_zh = (f"{owned_zh}已暂停，直到扣款成功。"
                    f"更新银行卡后会立即恢复，其他数据不受影响。")
 
+    # Wording covers the WHOLE retry schedule, not just the next attempt — this is the
+    # only payment-failed email the customer gets, so it cannot imply "one more try".
     if retry:
-        fine_en = (f"We try the card again on {date_en(retry)}. If that attempt also fails, "
-                   f"the plan is cancelled and you can restart it any time.")
-        fine_zh = (f"我们会在 {date_zh(retry)}再次尝试扣款。若再次失败，订阅将被取消，"
-                   f"你随时可以重新订阅。")
+        fine_en = (f"We try the card again on {date_en(retry)}, and a few more times after that "
+                   f"if it keeps failing. If none of the attempts go through, the plan is "
+                   f"cancelled and you can restart it any time. We will not email again about "
+                   f"this payment.")
+        fine_zh = (f"我们会在 {date_zh(retry)}再次尝试扣款，若仍未成功还会再试几次。"
+                   f"如果都没有成功，订阅将被取消，你随时可以重新订阅。这笔扣款我们不会再发邮件提醒。")
     else:
         fine_en = ("We will not try this card again automatically. Update it in billing to "
                    "restart the plan.")
         fine_zh = "我们不会再自动尝试这张卡。请在账单中心更新银行卡以恢复订阅。"
 
-    slip = [("Plan", f"{plan_en} — {w['cadence_en']}" if name else plan_en,
-             "方案", f"{plan_zh} — {w['cadence_zh']}" if name else plan_zh)]
-    if m_en:
-        slip.append(("Amount", m_en, "金额", m_zh))
-    slip.append(("Attempted on", date_en(attempted), "扣款时间", date_zh(attempted)))
-    slip.append(("Access", access_en, "访问权限", access_zh))
+    # Keyed on the INVOICE, not the event: belt-and-braces behind the attempt_count gate
+    # above, so even a Stripe behaviour change that re-fires attempt 1 cannot double-send.
+    invoice_id = str(_get(invoice, "id") or "")
 
     return EmailSpec(
         template="billing_payment_failed",
@@ -637,24 +716,42 @@ def spec_payment_failed(invoice: Any, prev: dict, ent: dict,
         headline_en="Your card was declined.",
         headline_zh="银行卡扣款失败。",
         lede_en=lede_en, lede_zh=lede_zh,
-        slip=tuple(slip),
+        slip=_slip(
+            _row("Plan", f"{plan_en} — {w['cadence_en']}" if name else plan_en,
+                 "方案", f"{plan_zh} — {w['cadence_zh']}" if name else plan_zh),
+            _row("Amount", m_en, "金额", m_zh),
+            _row("Attempted on", date_en(attempted), "扣款时间", date_zh(attempted)),
+            _row("Access", access_en, "访问权限", access_zh),
+        ),
         cta_en="Update card", cta_zh="更新银行卡", cta_url=portal_url(),
         fine_en=fine_en, fine_zh=fine_zh,
         why_en="You received this because a payment on your account did not go through.",
         why_zh="你收到这封邮件，是因为你账户上的一笔扣款没有成功。",
+        idem=f"stripe:{invoice_id}:billing_payment_failed" if invoice_id else "",
         meta={"tier": tier, "interval": interval, "amount": amount, "currency": currency},
     )
 
 
-def spec_cancellation(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec | None:
-    """PIN §7.4 — one honest exit. No win-back, no "why are you leaving"."""
-    # The deleted subscription object still carries its own price items, so the plan it
-    # names is the plan that ended — not whatever the recomputed row now says.
+def spec_cancel_scheduled(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec | None:
+    """PIN §7.4, the REACHABLE form — the customer pressed cancel in the portal.
+
+    The portal is configured ``subscription_cancel.mode = at_period_end``
+    (``scripts/stripe_bootstrap.py``), so a user-facing cancellation does NOT emit
+    ``customer.subscription.deleted`` at the moment it happens — it emits
+    ``customer.subscription.updated`` with ``cancel_at_period_end=true`` and then, weeks
+    later, the delete. Without this builder the single most common cancellation in the
+    product sends nothing at all until the period ends.
+
+    Keyed on the SUBSCRIPTION plus the end date, not the event: ``updated`` fires for
+    every unrelated field change, so repeated updates while the flag stays true collapse
+    to one message, while a re-cancel that moves the date legitimately re-arms.
+    """
+    if not _get(sub, "cancel_at_period_end"):
+        return None                      # every other kind of update is not a cancellation
+
     tier = billing._sub_tier(sub) or ent.get("tier")
     interval = billing._sub_interval(sub) or ent.get("plan_interval")
     name = plan_name(tier)
-    owned_en = f"your {name} access" if name else "your access"
-    owned_zh = f"{name} 的访问权限" if name else "你的访问权限"
     full_en = f"full {name} access" if name else "full access"
     full_zh = f"{name} 的全部功能" if name else "全部功能"
     plan_en, plan_zh = name or "Your plan", name or "你的方案"
@@ -662,48 +759,96 @@ def spec_cancellation(sub: Any, ent: dict, event_at: datetime | None) -> EmailSp
 
     now = event_at or datetime.now(timezone.utc)
     cancelled_at = dt_from_epoch(_get(sub, "canceled_at")) or now
-    access_end = (dt_from_epoch(_get(sub, "ended_at"))
-                  or dt_from_epoch(_get(sub, "cancel_at"))
-                  or dt_from_epoch(billing._sub_period_end(sub))
-                  or now)
+    access_end = (dt_from_epoch(_get(sub, "cancel_at"))
+                  or dt_from_epoch(billing._sub_period_end(sub)))
+    if access_end is None:
+        return None                      # no end date to promise — say nothing rather than guess
 
-    if access_end > now:
-        lede_en = (f"You keep {full_en} until {date_en(access_end)}. "
-                   f"Nothing more will be charged.")
-        lede_zh = f"在 {date_zh(access_end)}之前，{full_zh}仍可使用。不会再产生任何扣款。"
-        access_key_en, access_key_zh = "Access until", "访问权限至"
-        pre_en = f"You keep full access until {date_en(access_end)}. Nothing more will be charged."
-        pre_zh = f"在 {date_zh(access_end)}之前仍可正常使用。不会再产生任何扣款。"
-    else:
-        lede_en = f"{owned_en[0].upper()}{owned_en[1:]} ended on {date_en(access_end)}. Nothing more will be charged."
-        lede_zh = f"{owned_zh}已于 {date_zh(access_end)}结束。不会再产生任何扣款。"
-        access_key_en, access_key_zh = "Access ended", "访问权限结束于"
-        pre_en = f"Access ended {date_en(access_end)}. Nothing more will be charged."
-        pre_zh = f"访问权限已于 {date_zh(access_end)}结束。不会再产生任何扣款。"
-
+    sub_id = str(_get(sub, "id") or "")
     return EmailSpec(
-        template="billing_cancellation",
+        template="billing_cancellation_scheduled",
         eyebrow="CANCELLATION",
         subject_en="Your plan is cancelled",
         subject_zh="订阅已取消",
-        preheader_en=pre_en,
-        preheader_zh=pre_zh,
+        preheader_en=f"You keep full access until {date_en(access_end)}. Nothing more will be charged.",
+        preheader_zh=f"在 {date_zh(access_end)}之前仍可正常使用。不会再产生任何扣款。",
         headline_en="Your plan is cancelled.",
         headline_zh="订阅已取消。",
-        lede_en=lede_en, lede_zh=lede_zh,
-        slip=(
-            ("Plan", f"{plan_en} — {w['cadence_en']}" if name else plan_en,
-             "方案", f"{plan_zh} — {w['cadence_zh']}" if name else plan_zh),
-            ("Cancelled on", date_en(cancelled_at), "取消日期", date_zh(cancelled_at)),
-            (access_key_en, date_en(access_end), access_key_zh, date_zh(access_end)),
+        lede_en=(f"You keep {full_en} until {date_en(access_end)}. "
+                 f"Nothing more will be charged."),
+        lede_zh=f"在 {date_zh(access_end)}之前，{full_zh}仍可使用。不会再产生任何扣款。",
+        slip=_slip(
+            _row("Plan", f"{plan_en} — {w['cadence_en']}" if name else plan_en,
+                 "方案", f"{plan_zh} — {w['cadence_zh']}" if name else plan_zh),
+            _row("Cancelled on", date_en(cancelled_at), "取消日期", date_zh(cancelled_at)),
+            _row("Access until", date_en(access_end), "访问权限至", date_zh(access_end)),
+        ),
+        cta_en="Manage billing", cta_zh="管理账单", cta_url=portal_url(),
+        fine_en=(f"Changed your mind? Turn the plan back on in billing any time before "
+                 f"{date_en(access_end)} and nothing changes — same plan, no gap, no new charge "
+                 f"until the usual date."),
+        fine_zh=(f"改变主意了？在 {date_zh(access_end)}之前随时可以在账单中心恢复订阅——"
+                 f"方案不变、不中断，也不会提前扣款。"),
+        why_en=f"You received this because you cancelled your plan on {date_en(cancelled_at)}.",
+        why_zh=f"你收到这封邮件，是因为你在 {date_zh(cancelled_at)}取消了订阅。",
+        idem=(f"stripe:{sub_id}:cancel_sched:{access_end.date().isoformat()}" if sub_id else ""),
+        meta={"tier": tier, "interval": interval, "access_end": access_end.isoformat()},
+    )
+
+
+def spec_cancellation(sub: Any, ent: dict, event_at: datetime | None) -> EmailSpec | None:
+    """PIN §7.4, the FINAL fact — the subscription has ended. One honest exit.
+
+    A different fact from :func:`spec_cancel_scheduled` at a different time: that one
+    says "you keep access until X", this one says "access has now ended". Both firing for
+    one cancellation is correct — the customer scheduled it weeks ago and this is the
+    day it took effect.
+
+    Keyed on the SUBSCRIPTION so a redelivered delete cannot re-send.
+    """
+    # The deleted subscription object still carries its own price items, so the plan it
+    # names is the plan that ended — not whatever the recomputed row now says.
+    tier = billing._sub_tier(sub) or ent.get("tier")
+    interval = billing._sub_interval(sub) or ent.get("plan_interval")
+    name = plan_name(tier)
+    owned_en = f"your {name} access" if name else "your access"
+    owned_zh = f"{name} 的访问权限" if name else "你的访问权限"
+    plan_en, plan_zh = name or "Your plan", name or "你的方案"
+    w = _interval_words(interval)
+
+    now = event_at or datetime.now(timezone.utc)
+    cancelled_at = dt_from_epoch(_get(sub, "canceled_at")) or now
+    access_end = (dt_from_epoch(_get(sub, "ended_at"))
+                  or dt_from_epoch(billing._sub_period_end(sub))
+                  or now)
+
+    sub_id = str(_get(sub, "id") or "")
+    return EmailSpec(
+        template="billing_cancellation",
+        eyebrow="CANCELLATION",
+        subject_en="Your access has ended",
+        subject_zh="访问权限已结束",
+        preheader_en=f"Access ended {date_en(access_end)}. Nothing more will be charged.",
+        preheader_zh=f"访问权限已于 {date_zh(access_end)}结束。不会再产生任何扣款。",
+        headline_en="Your access has ended.",
+        headline_zh="访问权限已结束。",
+        lede_en=(f"{owned_en[0].upper()}{owned_en[1:]} ended on {date_en(access_end)}. "
+                 f"Nothing more will be charged."),
+        lede_zh=f"{owned_zh}已于 {date_zh(access_end)}结束。不会再产生任何扣款。",
+        slip=_slip(
+            _row("Plan", f"{plan_en} — {w['cadence_en']}" if name else plan_en,
+                 "方案", f"{plan_zh} — {w['cadence_zh']}" if name else plan_zh),
+            _row("Cancelled on", date_en(cancelled_at), "取消日期", date_zh(cancelled_at)),
+            _row("Access ended", date_en(access_end), "访问权限结束于", date_zh(access_end)),
         ),
         cta_en="Start again", cta_zh="重新订阅", cta_url=plans_url(),
         fine_en=("Your account stays open on the free plan. Saved watchlists and settings are "
                  "kept — subscribe again whenever you want and they are where you left them."),
         fine_zh=("你的账户会保留在免费方案上。已保存的自选股和设置不会被删除——"
                  "随时重新订阅，它们都还在。"),
-        why_en=f"You received this because you cancelled your plan on {date_en(cancelled_at)}.",
-        why_zh=f"你收到这封邮件，是因为你在 {date_zh(cancelled_at)}取消了订阅。",
+        why_en=f"You received this because your subscription ended on {date_en(access_end)}.",
+        why_zh=f"你收到这封邮件，是因为你的订阅已于 {date_zh(access_end)}结束。",
+        idem=f"stripe:{sub_id}:cancel_final" if sub_id else "",
         meta={"tier": tier, "interval": interval},
     )
 
@@ -723,25 +868,41 @@ def spec_trial_ending(*, tier: str | None, interval: str | None, period_end: dat
     else:
         subj_en, subj_zh = f"Your trial ends in {days} days", f"试用还有 {days} 天结束"
 
+    if m_en:
+        pre_en = (f"First charge {date_en(period_end)}, {m_en}. "
+                  f"Cancel before then and you pay nothing.")
+        pre_zh = f"首次扣款 {date_zh(period_end)}，{m_zh}。在此之前取消不用付费。"
+        lede_en = (f"On {date_en(period_end)} we charge {m_en} for the next period. "
+                   f"Doing nothing means that charge happens — cancel before then and you "
+                   f"pay nothing.")
+        lede_zh = (f"我们将在 {date_zh(period_end)}扣款 {m_zh}，对应下一个周期。"
+                   f"如果不做任何操作，这笔扣款就会发生——在此之前取消，你无需支付任何费用。")
+    else:
+        # No live price available — say what happens without inventing an amount (m4).
+        pre_en = (f"First charge {date_en(period_end)}. "
+                  f"Cancel before then and you pay nothing.")
+        pre_zh = f"首次扣款 {date_zh(period_end)}。在此之前取消不用付费。"
+        lede_en = (f"On {date_en(period_end)} the first charge for the next period is taken. "
+                   f"Doing nothing means that charge happens — cancel before then and you "
+                   f"pay nothing. The exact amount is on your plan in billing.")
+        lede_zh = (f"我们将在 {date_zh(period_end)}进行首次扣款，对应下一个周期。"
+                   f"如果不做任何操作，这笔扣款就会发生——在此之前取消，你无需支付任何费用。"
+                   f"具体金额可在账单中心查看。")
+
     return EmailSpec(
         template="trial_ending",
         eyebrow="TRIAL",
         subject_en=subj_en, subject_zh=subj_zh,
-        preheader_en=(f"First charge {date_en(period_end)}, {m_en}. "
-                      f"Cancel before then and you pay nothing."),
-        preheader_zh=f"首次扣款 {date_zh(period_end)}，{m_zh}。在此之前取消不用付费。",
+        preheader_en=pre_en, preheader_zh=pre_zh,
         headline_en=f"Your {name} trial ends on {date_en(period_end)}.",
         headline_zh=f"你的 {name} 试用将于 {date_zh(period_end)}结束。",
-        lede_en=(f"On {date_en(period_end)} we charge {m_en} for the next period. "
-                 f"Doing nothing means that charge happens — cancel before then and you pay nothing."),
-        lede_zh=(f"我们将在 {date_zh(period_end)}扣款 {m_zh}，对应下一个周期。"
-                 f"如果不做任何操作，这笔扣款就会发生——在此之前取消，你无需支付任何费用。"),
-        slip=(
-            ("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}"),
-            ("First charge", date_en(period_end), "首次扣款", date_zh(period_end)),
-            ("Amount", m_en, "金额", m_zh),
-            ("That covers", range_en(period_end, covers_end),
-             "对应周期", range_zh(period_end, covers_end)),
+        lede_en=lede_en, lede_zh=lede_zh,
+        slip=_slip(
+            _row("Plan", f"{name} — {w['cadence_en']}", "方案", f"{name} — {w['cadence_zh']}"),
+            _row("First charge", date_en(period_end), "首次扣款", date_zh(period_end)),
+            _row("Amount", m_en, "金额", m_zh),
+            _row("That covers", range_en(period_end, covers_end),
+                 "对应周期", range_zh(period_end, covers_end)),
         ),
         cta_en="Manage billing", cta_zh="管理账单", cta_url=portal_url(),
         fine_en=(f"Cancelling works right up to the moment of the charge. After that, {name} "
@@ -825,13 +986,33 @@ def resolve_recipient(obj: Any, customer_id: str | None, user_id: str | None) ->
 # downgraded to free by the time we run.
 NEEDS_PRE_SNAPSHOT = frozenset({"customer.subscription.updated", "invoice.payment_failed"})
 
-# Event -> template. `checkout.session.completed` is deliberately ABSENT: see the module
-# docstring — `customer.subscription.created` is the one event both buy lanes produce.
-EVENT_TEMPLATES = {
-    "customer.subscription.created": "billing_purchase",
-    "customer.subscription.updated": "billing_upgrade",
-    "invoice.payment_failed": "billing_payment_failed",
-    "customer.subscription.deleted": "billing_cancellation",
+
+def _updated_spec(sub: Any, prev: dict, ent: dict, at: datetime | None) -> EmailSpec | None:
+    """`customer.subscription.updated` is the busiest event Stripe sends — dispatch it.
+
+    It fires for a plan switch, a cancellation scheduled at period end, a trial
+    converting, a card being replaced, and a dozen silent field changes. Cancellation is
+    checked FIRST because a subscription flagged ``cancel_at_period_end`` is not an
+    upgrade under any reading, and only then the upgrade comparison. Everything else
+    returns None and sends nothing.
+    """
+    scheduled = spec_cancel_scheduled(sub, ent, at)
+    if scheduled is not None:
+        return scheduled
+    return spec_upgrade(sub, prev, ent, at)
+
+
+# THE dispatch table — read by build_spec, so it can never drift out of use.
+#
+# `checkout.session.completed` is deliberately ABSENT (see the module docstring):
+# `customer.subscription.created` is the one event BOTH buy lanes emit, exactly once, so
+# adding checkout.session.completed here would double-send to every hosted-Checkout buyer.
+# Anything not in this map is acknowledged by the webhook and sends nothing.
+_BUILDERS: dict[str, Any] = {
+    "customer.subscription.created": lambda sub, prev, ent, at: spec_purchase(sub, ent, at),
+    "customer.subscription.updated": _updated_spec,
+    "invoice.payment_failed": lambda inv, prev, ent, at: spec_payment_failed(inv, prev, ent, at),
+    "customer.subscription.deleted": lambda sub, prev, ent, at: spec_cancellation(sub, ent, at),
 }
 
 
@@ -852,32 +1033,32 @@ def pre_upsert_snapshot(etype: str, user_id: str | None) -> dict | None:
 
 def build_spec(event: dict, *, ent: dict, pre: dict | None) -> EmailSpec | None:
     """The pure part: (event, entitlement state) -> spec, or None when nothing is owed."""
-    etype = str(event.get("type") or "")
+    builder = _BUILDERS.get(str(event.get("type") or ""))
+    if builder is None:
+        return None
     obj = ((event.get("data") or {}).get("object")) or {}
-    at = dt_from_epoch(event.get("created"))
-    ent = ent or {}
-    pre = pre or {}
-    if etype == "customer.subscription.created":
-        return spec_purchase(obj, ent, at)
-    if etype == "customer.subscription.updated":
-        return spec_upgrade(obj, pre, ent, at)
-    if etype == "invoice.payment_failed":
-        return spec_payment_failed(obj, pre, ent, at)
-    if etype == "customer.subscription.deleted":
-        return spec_cancellation(obj, ent, at)
-    return None
+    return builder(obj, pre or {}, ent or {}, dt_from_epoch(event.get("created")))
 
 
 def _on_event(event: dict, *, user_id: str | None, customer_id: str | None,
               ent: dict, pre: dict | None) -> str | None:
+    if not billing_mail_enabled():
+        log.info("billing_emails: MAIL_BILLING_ENABLED=0 — %s not mailed", event.get("type"))
+        return None
     spec = build_spec(event, ent=ent, pre=pre)
     if spec is None:
         return None
-    event_id = str(event.get("id") or "")
-    if not event_id:
-        log.warning("billing_emails: %s has no event id — cannot key idempotency, skipping",
-                    event.get("type"))
-        return None
+    # A spec that names its own key does so because its EVENT can legitimately repeat
+    # (a dunning retry, an unrelated subscription update); everything else is one event,
+    # one message, and keys on the event id.
+    idem_key = spec.idem
+    if not idem_key:
+        event_id = str(event.get("id") or "")
+        if not event_id:
+            log.warning("billing_emails: %s has no event id — cannot key idempotency, skipping",
+                        event.get("type"))
+            return None
+        idem_key = f"stripe:{event_id}:{spec.template}"
     obj = ((event.get("data") or {}).get("object")) or {}
     to_email = resolve_recipient(obj, customer_id, user_id)
     if not to_email:
@@ -892,7 +1073,7 @@ def _on_event(event: dict, *, user_id: str | None, customer_id: str | None,
         subject=subject,
         html=html,
         text=text,
-        idem_key=f"stripe:{event_id}:{spec.template}",
+        idem_key=idem_key,
         user_id=user_id,
     )
 
@@ -926,25 +1107,23 @@ TRIAL_WINDOW_HOURS = 48
 _SWEEP_LIMIT = 500
 
 
-def _sweep_pricing(customer_id: str | None, tier: str | None,
-                   interval: str | None) -> tuple[int | None, str | None]:
-    """Live subscription price when Stripe answers, catalog price otherwise.
+def _sweep_pricing(customer_id: str | None) -> tuple[int | None, str | None]:
+    """The live subscription price, or (None, None) when Stripe cannot tell us.
 
-    The live price is what the card will actually be charged (it survives legacy prices
-    and mid-trial plan switches); the catalog is the honest fallback that keeps the
-    reminder useful when Stripe is unreachable.
+    No catalog fallback, for the reason in :func:`_pricing`: the catalog's currency is
+    not evidence about THIS customer's currency. When Stripe is unreachable the reminder
+    still goes out — it just states the date and that a charge is coming, and points at
+    billing for the amount, instead of asserting a number that might be in the wrong
+    currency.
     """
-    if customer_id:
-        try:
-            sub = billing._live_subscription(customer_id)
-        except Exception as exc:  # noqa: BLE001
-            log.debug("billing_emails: sweep sub lookup failed (%s)", type(exc).__name__)
-            sub = None
-        if sub is not None:
-            amount, currency = sub_price(sub)
-            if amount is not None:
-                return amount, currency
-    return catalog_price(tier, interval)
+    if not customer_id:
+        return None, None
+    try:
+        sub = billing._live_subscription(customer_id)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("billing_emails: sweep sub lookup failed (%s)", type(exc).__name__)
+        return None, None
+    return sub_price(sub) if sub is not None else (None, None)
 
 
 def trial_ending_candidates(now: datetime, window_hours: int = TRIAL_WINDOW_HOURS) -> list[dict]:
@@ -976,6 +1155,9 @@ def sweep_trial_ending(*, now: datetime | None = None,
     """
     now = now or datetime.now(timezone.utc)
     out = {"scanned": 0, "sent": 0, "duplicate": 0, "skipped": 0, "failed": 0}
+    if not billing_mail_enabled():
+        log.info("billing_emails: MAIL_BILLING_ENABLED=0 — trial sweep did nothing")
+        return out
     try:
         rows = trial_ending_candidates(now, window_hours)
     except Exception as exc:  # noqa: BLE001
@@ -998,7 +1180,7 @@ def sweep_trial_ending(*, now: datetime | None = None,
                 log.warning("billing_emails: no address for trial_ending user=%s — skipped", user_id)
                 out["skipped"] += 1
                 continue
-            amount, currency = _sweep_pricing(customer_id, tier, interval)
+            amount, currency = _sweep_pricing(customer_id)
             spec = spec_trial_ending(tier=tier, interval=interval, period_end=period_end,
                                      amount=amount, currency=currency, now=now)
             subject, html, text = _render(spec)
@@ -1029,11 +1211,24 @@ def sweep_trial_ending(*, now: datetime | None = None,
 # --------------------------------------------------------------------------- #
 LIFECYCLE_INTERVAL_SEC = 6 * 3600     # four wakes a day — the window is 48h wide
 _TRUTHY = ("1", "true", "yes", "on")
+_FALSY = ("0", "false", "no", "off")
 
 
 def lifecycle_enabled() -> bool:
     """Read at CALL time (mailer._env idiom) so a systemd env reload takes effect."""
     return (os.environ.get("MAIL_LIFECYCLE_ENABLED") or "").strip().lower() in _TRUTHY
+
+
+def billing_mail_enabled() -> bool:
+    """Master switch for THIS module's sends. Default ON, so receipts work the moment the
+    relay lands — the operator should not have to arm two things to get a receipt.
+
+    Exists so a misbehaving billing email can be silenced WITHOUT taking down support
+    mail: ``MAIL_BILLING_ENABLED=0`` stops every webhook receipt and the trial reminder,
+    while ticket acknowledgements and operator replies (app/support.py, the admin
+    console) keep flowing through the same app/mailer.py.
+    """
+    return (os.environ.get("MAIL_BILLING_ENABLED") or "1").strip().lower() not in _FALSY
 
 
 def _lifecycle_interval() -> int:
@@ -1051,6 +1246,11 @@ def register_lifecycle(app: Any) -> bool:
     flipping the env is already a `systemctl restart macro-api` step in the runbook.
     """
     if not lifecycle_enabled():
+        # Log the OFF state too. A silent no-op makes "the operator chose not to arm it"
+        # and "the env never reached the droplet" look identical in journalctl, which is
+        # exactly the failure the runbook's verification step has to be able to tell
+        # apart (docs/ops/email-support-setup.md §5b).
+        log.info("billing_emails: lifecycle sweeper OFF (MAIL_LIFECYCLE_ENABLED not set)")
         return False
     import asyncio  # noqa: PLC0415 — only needed on the armed path
 
@@ -1075,8 +1275,17 @@ def register_lifecycle(app: Any) -> bool:
 
     async def _stop() -> None:
         task = getattr(app.state, "mail_lifecycle_task", None)
-        if task is not None:
-            task.cancel()
+        if task is None:
+            return
+        task.cancel()
+        # Await the cancellation so shutdown does not race a half-torn-down task (and so
+        # asyncio does not log "Task was destroyed but it is pending" on every restart).
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as exc:  # noqa: BLE001
+            log.debug("billing_emails: lifecycle task ended with %s", type(exc).__name__)
 
     app.add_event_handler("startup", _start)
     app.add_event_handler("shutdown", _stop)

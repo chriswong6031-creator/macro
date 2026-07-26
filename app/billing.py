@@ -48,6 +48,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 log = logging.getLogger("macro.billing")
 router = APIRouter()
@@ -158,6 +159,13 @@ def _upgrade_denial(cur_tier: str, cur_interval: str, tgt_tier: str, tgt_interva
 # --------------------------------------------------------------------------- #
 # Stripe client (lazy — keeps the API process importable without the dep/key)
 # --------------------------------------------------------------------------- #
+# Wall-clock ceiling for any single Stripe call. The SDK's default is NO timeout, so one
+# hung Stripe socket used to be able to park a webhook (and, before the threadpool hop
+# below, the whole event loop) indefinitely. A webhook that takes too long is retried by
+# Stripe and converges on the next delivery; one that never returns does not.
+_STRIPE_TIMEOUT_SEC = int(os.environ.get("STRIPE_TIMEOUT_SEC") or 20)
+
+
 def _stripe():
     try:
         import stripe  # noqa: PLC0415
@@ -167,6 +175,14 @@ def _stripe():
     if not key:
         raise HTTPException(503, "billing not configured (STRIPE_SECRET_KEY unset)")
     stripe.api_key = key
+    # Best-effort: the http-client factory has moved between SDK majors, and a billing
+    # route must not 500 because a timeout could not be pinned.
+    try:
+        if getattr(stripe, "default_http_client", None) is None:
+            stripe.default_http_client = stripe.http_client.new_default_http_client(
+                timeout=_STRIPE_TIMEOUT_SEC)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("billing: could not pin the Stripe HTTP timeout (%s)", type(exc).__name__)
     return stripe
 
 
@@ -1005,6 +1021,28 @@ def _billing_emails():
         return None
 
 
+# Per-user serialisation of the read-compare-write-mail sequence below.
+#
+# The email hook compares the entitlement BEFORE the upsert against the one after, so two
+# events for the same user must not interleave: both would read the same "before" and
+# both could decide an upgrade happened, mailing twice. That was structurally impossible
+# while the webhook ran inline on a single event loop; it stopped being impossible the
+# moment the handler moved to a threadpool (and would stop again under `--workers`, which
+# no lock in this process can cover — that needs an advisory lock in Postgres). Locks are
+# created on demand and kept: one small mutex per paying customer is not a leak worth
+# managing, and a lock we might still be holding must never be evicted.
+_USER_LOCKS: dict[str, threading.Lock] = {}
+_USER_LOCKS_GUARD = threading.Lock()
+
+
+def _user_lock(user_id: str) -> threading.Lock:
+    with _USER_LOCKS_GUARD:
+        lock = _USER_LOCKS.get(user_id)
+        if lock is None:
+            lock = _USER_LOCKS[user_id] = threading.Lock()
+        return lock
+
+
 def _handle_event(event: dict) -> None:
     etype = event["type"]
     if etype not in _HANDLED:
@@ -1017,29 +1055,32 @@ def _handle_event(event: dict) -> None:
         return
     if etype in _REVOKING:
         _cancel_subscriptions(customer_id)   # chargeback → cancel so the free downgrade sticks (C1)
-    # An upgrade is a comparison and a failed payment has already lost its tier by the
-    # time the recompute lands, so those two events need the row as it stands NOW. The
-    # module decides which events pay that extra read; every other event costs nothing.
-    emails = _billing_emails()
-    pre_ent = None
-    if emails is not None:
-        try:
-            pre_ent = emails.pre_upsert_snapshot(etype, user_id)
-        except Exception as exc:  # noqa: BLE001
-            log.debug("billing: pre-email snapshot skipped (%s)", type(exc).__name__)
-    ent = _compute_entitlement(customer_id)
-    _upsert_entitlement(user_id, customer_id, ent)
-    _invalidate(user_id)
-    log.info("billing: %s -> user %s tier=%s status=%s", etype, user_id, ent["tier"], ent["status"])
-    # AFTER the entitlement write, never before: the DB row is the source of truth and
-    # mail is a side effect. on_event never raises; the second guard here covers the
-    # import boundary itself, so a broken composer cannot 5xx the webhook (SEE G2/G7).
-    if emails is not None:
-        try:
-            emails.on_event(event, user_id=user_id, customer_id=customer_id,
-                            ent=ent, pre=pre_ent)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("billing: %s email hook failed (%s)", etype, type(exc).__name__)
+    with _user_lock(user_id):
+        # An upgrade is a comparison and a failed payment has already lost its tier by
+        # the time the recompute lands, so those two events need the row as it stands
+        # NOW. The module decides which events pay that extra read; every other event
+        # costs nothing. Snapshot, recompute, upsert and mail all sit inside ONE critical
+        # section so the comparison can never straddle another event's write.
+        emails = _billing_emails()
+        pre_ent = None
+        if emails is not None:
+            try:
+                pre_ent = emails.pre_upsert_snapshot(etype, user_id)
+            except Exception as exc:  # noqa: BLE001
+                log.debug("billing: pre-email snapshot skipped (%s)", type(exc).__name__)
+        ent = _compute_entitlement(customer_id)
+        _upsert_entitlement(user_id, customer_id, ent)
+        _invalidate(user_id)
+        log.info("billing: %s -> user %s tier=%s status=%s", etype, user_id, ent["tier"], ent["status"])
+        # AFTER the entitlement write, never before: the DB row is the source of truth and
+        # mail is a side effect. on_event never raises; the second guard here covers the
+        # import boundary itself, so a broken composer cannot 5xx the webhook (SEE G2/G7).
+        if emails is not None:
+            try:
+                emails.on_event(event, user_id=user_id, customer_id=customer_id,
+                                ent=ent, pre=pre_ent)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("billing: %s email hook failed (%s)", etype, type(exc).__name__)
 
 
 @router.post("/api/billing/webhook")
@@ -1061,7 +1102,13 @@ async def webhook(request: Request) -> dict:
     event_id, etype = event["id"], event["type"]
     if _event_seen(event_id):
         return {"status": "duplicate", "id": event_id}
-    _handle_event(event)   # raises -> 500 -> Stripe retries (no record written); recompute is idempotent
+    # OFF the event loop. _handle_event is entirely blocking — several urllib round trips
+    # to Supabase, up to a few Stripe calls, and (since SEE W3) an SMTP conversation with
+    # one retry. Left inline in this `async def`, a slow Stripe or relay stalls EVERY
+    # other request on this single-process API, not just the webhook. run_in_threadpool
+    # is the house-standard hop for a blocking call inside an async route.
+    # raises -> 500 -> Stripe retries (no record written); the recompute is idempotent.
+    await run_in_threadpool(_handle_event, event)
     _record_event(event_id, etype)
     return {"status": "ok", "id": event_id, "type": etype}
 
