@@ -4459,6 +4459,21 @@ button.obx-btn-postnow:hover:not(:disabled) {
 
 /* ---- Go-Live checklist (Publisher) -------------------------------------- */
 .golive { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+/* The setup rows collapse behind a disclosure so the ARM control is the only
+   thing competing for attention once go-live is done (operator, 2026-07-26). */
+.golive-setup { margin-top: 12px; }
+.golive-setup > summary {
+  cursor: pointer; user-select: none; list-style: none;
+  font-size: 12px; letter-spacing: .02em; color: var(--faint);
+  padding: 6px 2px; display: inline-flex; align-items: center; gap: 6px;
+}
+.golive-setup > summary::-webkit-details-marker { display: none; }
+.golive-setup > summary::before {
+  content: "▸"; font-size: 10px; color: var(--faint);
+  transition: transform .15s ease;
+}
+.golive-setup[open] > summary::before { transform: rotate(90deg); }
+.golive-setup > summary:hover { color: var(--fg); }
 .golive-row {
   display: grid; grid-template-columns: 26px 1fr auto; align-items: start; gap: 12px;
   padding: 13px 15px; border-top: 1px solid var(--grid);

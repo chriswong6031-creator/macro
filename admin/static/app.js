@@ -5503,10 +5503,22 @@ function pubGoLive(d) {
       </div>`
     : "";
 
+  /* The checklist was scaffolding for first go-live: once the channel and token
+     are set it is five rows of "done" standing between the operator and the one
+     control they actually use. Collapsed on operator instruction (2026-07-26):
+     the ARM row stays out front, the setup rows move behind a disclosure so a
+     token can still be replaced and the countdown is still reachable. Kept as a
+     <details> rather than deleted — pubSaveToken() drives #pub-token-input and
+     the golive-token-* ids, and dropping them would leave no way to rotate a
+     token from the panel. */
   return `<div class="card">
-    <div class="section">Go-live checklist <span class="cnt">what stands between drafts and live posts</span></div>
-    <div class="con-lede" style="margin-bottom:10px">Paste your token, then Arm. Nothing posts until the channel, token, and ARM toggle are all set and approvals are flowing.</div>
-    <div class="golive">${row1}${row2}${row3}${row4}${cd}</div>
+    <div class="section">Publisher <span class="cnt">arm state and the go-live setup</span></div>
+    <div class="golive">${row3}</div>
+    <details class="golive-setup">
+      <summary>Setup checklist${armed ? "" : " — not fully armed yet"}</summary>
+      <div class="con-lede" style="margin:10px 0">Nothing posts until the channel, token, and ARM toggle are all set and approvals are flowing.</div>
+      <div class="golive">${row1}${row2}${row4}${cd}</div>
+    </details>
   </div>`;
 }
 
