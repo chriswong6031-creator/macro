@@ -2236,6 +2236,24 @@ def write_posts_llm(
         providers = llm_auth.build_providers(
             {"usage_lane": "marketing-copywriter"}, opus_model=model_id)
         if not providers:
+            # ARMED BUT MUTE. Reaching here means the operator switched the voice
+            # lane ON (config copywriter.llm.enabled AND MARKETING_LLM_ENABLED)
+            # yet no credential is visible, so every post silently drops to the
+            # deterministic templates. That is exactly what happened for the life
+            # of this lane: daily.yml's governor step set MARKETING_LLM_ENABLED=1
+            # but passed no CLAUDE_CODE_OAUTH_TOKEN*/ANTHROPIC_API_KEY, and since
+            # lib.config.secret() reads env only, build_providers() returned []
+            # every night. The flagship account posted templates for months while
+            # the config said the persona writer was on (2026-07-26 incident).
+            # A bare print(): a "::warning::" behind a prefixed log formatter is
+            # not a line start, so GitHub never parses it as an annotation.
+            print("::warning title=marketing_copywriter_mute::LLM copy lane is "
+                  "ARMED (copywriter.llm.enabled + MARKETING_LLM_ENABLED) but no "
+                  "provider credential is visible — every post is falling back to "
+                  "the deterministic templates. Pass CLAUDE_CODE_OAUTH_TOKEN* / "
+                  "ANTHROPIC_API_KEY / DEEPSEEK_API_KEY to this step.")
+            log.warning("marketing copywriter: armed but no LLM provider credential "
+                        "— falling back to deterministic templates")
             return None
         max_tokens = int(llm_cfg.get("max_tokens", 6000))
 

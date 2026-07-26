@@ -2877,6 +2877,27 @@ jobs:
           # (config copywriter.llm.enabled AND this env var); any LLM failure or
           # per-post validation failure falls back to the deterministic templates.
           MARKETING_LLM_ENABLED: "1"
+          # …and the credentials that arming actually needs. WITHOUT THESE THE
+          # FLAG ABOVE IS A LIE: lib.config.secret() reads env only, so
+          # llm_auth.build_providers() returned [] on every nightly,
+          # write_posts_llm hit `if not providers: return None`, and EVERY post
+          # silently fell back to the deterministic templates. The whole voice
+          # layer — personas, copy laws, the "sound like a real person" prompt —
+          # had never once run in production, which is what made the flagship
+          # account read machine-written (2026-07-26 incident). copywriter.py now
+          # also emits a ::warning:: when armed-but-credential-less, so this
+          # cannot fail silently again.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           # Emits the current D1 content-plan items into the outbox queue
           # (status=queued). Posting stays gated by approval + MARKETING_PUBLISH_ENABLED.
           MARKETING_OUTBOX_ENABLED: "1"
