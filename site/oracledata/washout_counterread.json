@@ -36,7 +36,7 @@
   {
    "index": "QQQ",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 8.7,
+   "depth_pctile": 6.9,
    "reason": "low_depth",
    "washout_turn": false,
    "extreme": true
@@ -44,15 +44,15 @@
   {
    "index": "SOXX",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 2.8,
+   "depth_pctile": 3.4,
    "reason": "low_depth",
-   "washout_turn": false,
+   "washout_turn": true,
    "extreme": true
   },
   {
    "index": "MAG7",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 54.9,
+   "depth_pctile": 35.1,
    "reason": "washout_turn",
    "washout_turn": true,
    "extreme": true
