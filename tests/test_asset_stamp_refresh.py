@@ -98,3 +98,21 @@ def test_unhashable_asset_keeps_its_existing_stamp():
 def test_data_base_shim_is_never_touched():
     src = '<script data-dbase src="data_base.js?v=012345ab"></script>'
     assert _rw(src) == src
+
+
+def test_preload_hint_is_never_restamped():
+    """A `rel=preload` hint mirrors a URL owned elsewhere — `preload_css_text`
+    copies it from the stylesheet, or from an `@import` this sweep never
+    rewrites. Bumping the hint alone makes it a second cache key and double-
+    fetches the file, and it broke `optimize()` idempotency when it did."""
+    for src in (
+        '<link rel="preload" as="style" href="onboard.css?v=233832f9">',
+        '<link rel="modulepreload" href="theme.js?v=015c6c36">',
+        '<link rel="prefetch" href="theme.js?v=015c6c36">',
+    ):
+        assert _rw(src) == src, f"re-stamped a hint that mirrors someone else's URL: {src}"
+
+
+def test_stylesheet_link_is_still_restamped():
+    out = _rw('<link rel="stylesheet" href="onboard.css?v=233832f9">')
+    assert 'href="onboard.css?v=bbbbbbbb"' in out
