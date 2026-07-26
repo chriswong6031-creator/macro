@@ -147,6 +147,8 @@ const ICONS = {
   revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
   /* Support: a life-ring — the outer float, the inner hub, and the four lugs. */
   support_tickets: NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6"/><path d="M12 3v5.4M12 15.6V21M3 12h5.4M15.6 12H21"/>'),
+  /* Email Center: an envelope — the body, and the flap folded down over it. */
+  email_center: NAV_ICO('<rect x="2.6" y="5" width="18.8" height="14" rx="2.2"/><path d="M3.2 7.2l8.8 5.9 8.8-5.9"/>'),
   /* Marketing lobe icons */
   marketing_overview:    NAV_ICO('<path d="M3 17V8l5-3 4 2 5-3v9l-5 3-4-2-5 3Z"/><path d="M8 5v9M12 7v9M17 4v9"/>'),
   marketing_departments: NAV_ICO('<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="5" height="4" rx="1"/><rect x="9" y="15" width="5" height="4" rx="1"/><rect x="17" y="15" width="5" height="4" rx="1"/><path d="M12 7v4M4.5 15v-3h15v3"/>'),
@@ -170,7 +172,7 @@ const NAV_GROUPS = [
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
-  { label: "Support", items: [["support_tickets", "Support Tickets"]] },
+  { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
@@ -8683,6 +8685,405 @@ async function supReply(id) {
   const body = (box && box.value || "").trim();
   if (!body) { toast("Write a reply first", true); return; }
   await supAct(id, "reply", body);
+}
+
+/* ---- EMAIL CENTER (SEE W4) ----------------------------------------------
+   Four surfaces on one tab, over admin/email_center.py: who we can reach
+   (roster + segments + CSV), who told us to stop (suppression), whether mail is
+   switched on at all (the SMTP card), and the campaign composer/queue.
+
+   Reuses the entitlements/support chip, table, toolbar and pager classes — no
+   new CSS. Segment definitions are NOT duplicated here: the server hands back
+   `segments` from app/email_segments.py, so the picker cannot drift from the
+   thing that actually decides membership.
+
+   Nothing on this tab puts mail on the wire. "Queue" marks a row; the sweeper
+   in app/marketing_emails.py drains it, and only on a host where the operator
+   has armed MAIL_MARKETING_ENABLED + MAIL_CAMPAIGNS_ENABLED. */
+const EC = { tab: "people", segment: "all", q: "", page: 1, supQ: "", supPage: 1,
+             zhDelim: "===zh===", editing: null };
+
+function ecChip(label, active, on) {
+  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+}
+/* Colour says whether we may mail this person, which is the only question this
+   table exists to answer: ok = yes, bad = on the kill list, warn = opted out. */
+function ecReachPill(p) {
+  if (p.suppressed) return `<span class="statpill s-bad">suppressed${p.suppression_reason ? " · " + esc(p.suppression_reason) : ""}</span>`;
+  if (p.marketing_opt_out) return `<span class="statpill s-warn">opted out</span>`;
+  return `<span class="statpill s-ok">can receive</span>`;
+}
+function ecCampPill(s) {
+  const cls = s === "done" ? "s-ok" : (s === "aborted" ? "s-bad" : (s === "draft" ? "s-mut" : "s-warn"));
+  return `<span class="statpill ${cls}">${esc(s || "—")}</span>`;
+}
+/* email_log statuses are their own vocabulary, not the campaign one. `suppressed` is
+   MUTED, not red: it is the compliance machinery working correctly. `skipped_no_smtp`
+   and `queued` are amber because they are the two that mean "this never went out and
+   somebody should know why". */
+const EC_LOG_TONE = { sent: "s-ok", failed: "s-bad", suppressed: "s-mut",
+                      skipped_no_smtp: "s-warn", queued: "s-warn" };
+function ecLogPill(s) {
+  return `<span class="statpill ${EC_LOG_TONE[s] || "s-mut"}">${esc(s || "—")}</span>`;
+}
+
+RENDER.email_center = async () => {
+  const v = $("#view");
+  v.innerHTML = `
+    <div class="sub" style="margin-bottom:12px">Who we can email, who has told us to stop, and what has
+      actually been sent. Segments come from <code>app/email_segments.py</code> — the same definitions the
+      sender uses, so this page and the send cannot disagree. <b>Can receive</b> excludes every suppressed
+      address and every opted-out user by construction, and <code>mailer.send</code> re-checks both for each
+      recipient at send time.</div>
+    <div id="ecMail"><div class="spin">loading…</div></div>
+    <div class="ent-toolbar" style="margin-top:14px">
+      <div class="ent-chips">
+        ${ecChip("People", true, "ecTab('people')").replace('class="ent-chip on"', 'class="ent-chip on" id="ecTabPeople"')}
+        ${ecChip("Suppression", false, "ecTab('suppression')").replace('class="ent-chip"', 'class="ent-chip" id="ecTabSup"')}
+        ${ecChip("Campaigns", false, "ecTab('campaigns')").replace('class="ent-chip"', 'class="ent-chip" id="ecTabCamp"')}
+      </div>
+    </div>
+    <div id="ecPanel"><div class="spin">loading…</div></div>
+    <div id="ent-modal-root"></div>`;
+  EC.tab = "people"; EC.segment = "all"; EC.q = ""; EC.page = 1; EC.supQ = ""; EC.supPage = 1;
+  ecLoadMail();
+  ecTab("people");
+};
+
+function ecTab(name) {
+  EC.tab = name;
+  const map = { people: "ecTabPeople", suppression: "ecTabSup", campaigns: "ecTabCamp" };
+  Object.keys(map).forEach(k => {
+    const el = $("#" + map[k]); if (el) el.className = "ent-chip" + (k === name ? " on" : "");
+  });
+  if (name === "people") return ecLoadPeople();
+  if (name === "suppression") return ecLoadSuppression();
+  return ecLoadCampaigns();
+}
+
+/* ---- the SMTP status card ------------------------------------------------
+   Mail-off is the CURRENT production state, and in that state every send lands
+   a `skipped_no_smtp` ledger row and returns cleanly — which looks exactly like
+   a working system until you read the status column. Showing the switch and the
+   last sends together is what stops someone concluding a campaign went out. */
+async function ecLoadMail() {
+  const box = $("#ecMail"); if (!box) return;
+  const d = await api("/api/email_center/mail");
+  if (!d || !d.ok) { box.innerHTML = `<div class="card sub">Could not read mail status: ${esc((d && d.error) || "?")}</div>`; return; }
+  const last = d.last_30d || {};
+  const chips = Object.keys(last).sort().map(k =>
+    `<span class="statpill ${k === "sent" ? "s-ok" : (k === "failed" ? "s-bad" : "s-mut")}" style="margin-right:6px">${esc(k)} ${last[k]}</span>`).join("");
+  const rows = (d.recent || []).map(r => `<tr>
+      <td class="sub mono">${esc(r.created_at || "")}</td>
+      <td>${esc(r.template || "")}</td>
+      <td class="sub">${esc(r["class"] || "")}</td>
+      <td>${ecLogPill(r.status)}</td>
+      <td class="sub">${esc(r.detail || "")}</td>
+      <td class="sub mono">${esc(r.to_email || "")}</td>
+    </tr>`).join("");
+  box.innerHTML = `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <b>Outbound mail</b>
+        <span class="statpill ${d.configured ? "s-ok" : "s-warn"}">${d.configured ? "relay configured" : "mail OFF — no SMTP relay"}</span>
+        ${d.unsub_secret_set ? "" : `<span class="statpill s-bad">MAIL_UNSUB_SECRET unset — unsubscribe links cannot be signed</span>`}
+        ${d.parked ? `<span class="statpill s-warn">${d.parked} parked (suppression lookup failed)</span>` : ""}
+      </div>
+      <div class="sub" style="margin-top:6px">
+        ${d.configured
+          ? `Sending as <code>${esc(d.from || "?")}</code> via <code>${esc(d.host || "?")}</code>.`
+          : `Every send is ledgered and returns <code>skipped_no_smtp</code> — nothing leaves the building. Set MAIL_SMTP_* to switch it on.`}
+      </div>
+      <div style="margin-top:8px">${chips || `<span class="sub">no sends in the last 30 days</span>`}</div>
+      ${d.recent_error ? `<div class="sub" style="margin-top:8px">Log unavailable: ${esc(d.recent_error)}</div>` : ""}
+      ${rows ? `<table style="margin-top:10px"><thead><tr><th>When</th><th>Template</th><th>Class</th><th>Status</th><th>Detail</th><th>To</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
+    </div>`;
+}
+
+/* ---- people (roster + segments + export) --------------------------------- */
+function ecSetSegment(k) { EC.segment = k; EC.page = 1; ecLoadPeople(); }
+function ecGoto(p) { EC.page = Math.max(1, p); ecLoadPeople(); }
+
+async function ecLoadPeople() {
+  const box = $("#ecPanel"); if (!box) return;
+  box.innerHTML = `<div class="section">People <span class="cnt" id="ecCnt"></span></div>
+    <div class="ent-toolbar">
+      <div id="ecSegs" class="ent-chips"></div>
+      <input id="ecSearch" class="ent-search" type="search" placeholder="search email…" autocomplete="off" value="${esc(EC.q)}">
+      <a class="btn" id="ecExport" download>Export CSV</a>
+    </div>
+    <div id="ecFoot" class="sub" style="margin:2px 0 10px"></div>
+    <div id="ecTbl"><div class="spin">loading…</div></div>
+    <div id="ecPager" class="ent-pager"></div>`;
+  const si = $("#ecSearch");
+  if (si) si.addEventListener("input", () => {
+    clearTimeout(EC._searchT);
+    EC._searchT = setTimeout(() => { EC.q = si.value.trim(); EC.page = 1; ecLoadPeople(); }, 300);
+  });
+
+  const qs = new URLSearchParams({ segment: EC.segment, page: String(EC.page), page_size: "50" });
+  if (EC.q) qs.set("q", EC.q);
+  const d = await api("/api/email_center?" + qs.toString());
+  const tbl = $("#ecTbl"); if (!tbl) return;
+  if (!d || !d.ok) { tbl.innerHTML = `<div class="card sub">Could not load: ${esc((d && d.error) || "?")}</div>`; return; }
+
+  const segs = $("#ecSegs");
+  if (segs) segs.innerHTML = (d.segments || []).map(s =>
+    ecChip(`${s.label_en} ${(d.counts || {})[s.key] || 0}`, s.key === d.segment, `ecSetSegment('${s.key}')`)).join("");
+
+  const link = $("#ecExport");
+  if (link) {
+    const eq = new URLSearchParams({ segment: d.segment });
+    if (EC.q) eq.set("q", EC.q);
+    link.href = "/api/email_center/export.csv?" + eq.toString();
+  }
+
+  /* The reconciliation, shown rather than claimed. The Users page counts active
+     accounts; the Entitlements roster counts every auth.users row including
+     soft-deleted ones; those two already disagree, so a third number with no
+     derivation would be worthless. The arithmetic is on screen. */
+  const f = d.foot || {};
+  const foot = $("#ecFoot");
+  if (foot) foot.innerHTML = `${f.auth_total || 0} accounts in auth.users
+    − ${f.excluded_inactive || 0} deleted/banned/anonymous
+    − ${f.excluded_no_email || 0} with no address
+    = <b>${f.roster || 0} reachable</b> (segment “Everyone”).
+    Users page total is ${f.users_page_total || 0}.
+    ${f.balances ? "" : `<span class="statpill s-bad" style="margin-left:6px">these do not add up — read the SQL before mailing</span>`}`;
+
+  const cnt = $("#ecCnt"); if (cnt) cnt.textContent = d.total;
+  tbl.innerHTML = `<table class="ent-table"><thead><tr>
+      <th>Email</th><th>Tier</th><th>Status</th><th>Lang</th><th>Joined</th><th>Marketing</th>
+    </tr></thead><tbody>
+    ${(d.people || []).map(p => `<tr>
+      <td class="mono">${esc(p.email || "")}</td>
+      <td>${esc(p.tier || "")}</td>
+      <td class="sub">${esc(p.status || "")}</td>
+      <td class="sub">${esc(p.lang || "—")}</td>
+      <td class="sub mono">${esc(p.joined || "")}</td>
+      <td>${ecReachPill(p)}</td>
+    </tr>`).join("")}
+    </tbody></table>`;
+  const pages = d.pages || 1;
+  const pg = $("#ecPager");
+  if (pg) pg.innerHTML = pages > 1 ? `
+    <button class="ent-chip" ${d.page <= 1 ? "disabled" : ""} onclick="ecGoto(${d.page - 1})">← prev</button>
+    <span class="sub">page ${d.page} / ${pages}</span>
+    <button class="ent-chip" ${d.page >= pages ? "disabled" : ""} onclick="ecGoto(${d.page + 1})">next →</button>` : "";
+}
+
+/* ---- suppression --------------------------------------------------------- */
+function ecSupGoto(p) { EC.supPage = Math.max(1, p); ecLoadSuppression(); }
+
+async function ecLoadSuppression() {
+  const box = $("#ecPanel"); if (!box) return;
+  box.innerHTML = `<div class="section">Suppression list <span class="cnt" id="ecSupCnt"></span></div>
+    <div class="sub" style="margin-bottom:10px">Addresses we will not send marketing mail to. Transactional
+      mail — receipts, ticket replies — ignores this list entirely, by design. A <b>bounce</b> or a
+      <b>complaint</b> cannot be removed here: it records what the address did, not what its owner chose.</div>
+    <div class="ent-toolbar">
+      <input id="ecSupEmail" class="ent-search" type="email" placeholder="address to suppress…" autocomplete="off">
+      <select id="ecSupReason" class="btn">
+        <option value="manual">manual</option>
+        <option value="unsubscribe">unsubscribe</option>
+        <option value="bounce">bounce</option>
+        <option value="complaint">complaint</option>
+      </select>
+      <button class="btn primary" onclick="ecSuppressAdd()">Add</button>
+      <input id="ecSupSearch" class="ent-search" type="search" placeholder="search…" autocomplete="off" value="${esc(EC.supQ)}">
+    </div>
+    <div id="ecSupTbl"><div class="spin">loading…</div></div>
+    <div id="ecSupPager" class="ent-pager"></div>`;
+  const si = $("#ecSupSearch");
+  if (si) si.addEventListener("input", () => {
+    clearTimeout(EC._supT);
+    EC._supT = setTimeout(() => { EC.supQ = si.value.trim(); EC.supPage = 1; ecLoadSuppression(); }, 300);
+  });
+
+  const qs = new URLSearchParams({ page: String(EC.supPage), page_size: "50" });
+  if (EC.supQ) qs.set("q", EC.supQ);
+  const d = await api("/api/email_center/suppression?" + qs.toString());
+  const tbl = $("#ecSupTbl"); if (!tbl) return;
+  if (!d || !d.ok) { tbl.innerHTML = `<div class="card sub">Could not load: ${esc((d && d.error) || "?")}</div>`; return; }
+  const liftable = d.liftable || [];
+  const cnt = $("#ecSupCnt"); if (cnt) cnt.textContent = d.total;
+  tbl.innerHTML = `<table class="ent-table"><thead><tr>
+      <th>Address</th><th>Reason</th><th>Added</th><th></th>
+    </tr></thead><tbody>
+    ${(d.rows || []).map(r => `<tr>
+      <td class="mono">${esc(r.email || "")}</td>
+      <td>${esc(r.reason || "")}</td>
+      <td class="sub mono">${esc(r.created_at || "")}</td>
+      <td>${liftable.indexOf(r.reason) >= 0
+        ? `<button class="ent-chip" onclick="ecSuppressRemove('${encodeURIComponent(r.email || "")}','${esc(r.reason || "")}')">Remove</button>`
+        : `<span class="sub">not removable</span>`}</td>
+    </tr>`).join("")}
+    </tbody></table>`;
+  const pages = d.pages || 1;
+  const pg = $("#ecSupPager");
+  if (pg) pg.innerHTML = pages > 1 ? `
+    <button class="ent-chip" ${d.page <= 1 ? "disabled" : ""} onclick="ecSupGoto(${d.page - 1})">← prev</button>
+    <span class="sub">page ${d.page} / ${pages}</span>
+    <button class="ent-chip" ${d.page >= pages ? "disabled" : ""} onclick="ecSupGoto(${d.page + 1})">next →</button>` : "";
+}
+
+async function ecSuppressAdd() {
+  const el = $("#ecSupEmail"), sel = $("#ecSupReason");
+  const email = (el && el.value || "").trim();
+  if (!email) { toast("Enter an address first", true); return; }
+  const r = await post("/api/email_center/suppression",
+    { action: "add", email, reason: (sel && sel.value) || "manual" });
+  if (!r || !r.ok) { toast((r && r.error) || "could not suppress", true); return; }
+  if (el) el.value = "";
+  toast(`Suppressed ${r.email}`);
+  ecLoadSuppression();
+}
+
+/* Removing a suppression re-enables marketing email to somebody who asked us to
+   stop. The browser confirm is the courtesy; `confirm: true` in the BODY is the
+   authorisation the server actually checks, and the server also refuses to lift
+   a bounce or a complaint and writes the removal to the operator ledger. */
+async function ecSuppressRemove(encEmail, reason) {
+  const email = decodeURIComponent(encEmail || "");
+  if (!confirm(`Remove the "${reason}" suppression on ${email}?\n\nMarketing email to this address will be allowed again. This is recorded in the operator action ledger.`)) return;
+  const r = await post("/api/email_center/suppression", { action: "remove", email, confirm: true });
+  if (!r || !r.ok) { toast((r && r.error) || "could not remove", true); return; }
+  toast(`Removed the ${r.was} suppression on ${r.email}`);
+  ecLoadSuppression();
+}
+
+/* ---- campaigns ----------------------------------------------------------- */
+async function ecLoadCampaigns() {
+  const box = $("#ecPanel"); if (!box) return;
+  const d = await api("/api/email_center/campaigns");
+  if (!d || !d.ok) { box.innerHTML = `<div class="card sub">Could not load: ${esc((d && d.error) || "?")}</div>`; return; }
+  EC.zhDelim = d.zh_delim || EC.zhDelim;
+  const segOpts = (d.segments || []).map(s =>
+    `<option value="${esc(s.key)}">${esc(s.label_en)} — ${esc(s.note_en)}</option>`).join("");
+  box.innerHTML = `
+    <div class="section">Compose</div>
+    <div class="card">
+      <div class="sub" style="margin-bottom:10px">Both languages ship in every email (English first, then a
+        中文 rule, then the Chinese half) — we do not guess a reader's language from a stored preference.
+        Body is plain paragraphs separated by a blank line; a line that is exactly
+        <code>[Label](https://…)</code> becomes the single call-to-action button. Queueing does not send:
+        the sweeper on the API host does, and only when it is armed.</div>
+      <input type="hidden" id="ecCampId" value="">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="sub">Subject (EN)</label><input id="ecSubjEn" class="ent-search" style="width:100%" maxlength="200" placeholder="What changed, in one line"></div>
+        <div><label class="sub">主题 (ZH)</label><input id="ecSubjZh" class="ent-search" style="width:100%" maxlength="200" placeholder="一句话说明"></div>
+        <div><label class="sub">Body (EN)</label><textarea id="ecBodyEn" class="ent-search" style="width:100%;min-height:150px"></textarea></div>
+        <div><label class="sub">正文 (ZH)</label><textarea id="ecBodyZh" class="ent-search" style="width:100%;min-height:150px"></textarea></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+        <label class="sub">Segment</label>
+        <select id="ecSegPick" class="btn">${segOpts}</select>
+        <button class="btn" onclick="ecCampPreview()">Preview</button>
+        <button class="btn primary" onclick="ecCampSave()">Save draft</button>
+        <button class="btn" onclick="ecCampNew()">Clear</button>
+      </div>
+      <div id="ecPreview"></div>
+    </div>
+    <div class="section" style="margin-top:16px">Campaigns</div>
+    <div id="ecCampTbl"></div>`;
+  const pick = $("#ecSegPick");
+  if (pick) pick.value = "marketing_eligible";
+
+  $("#ecCampTbl").innerHTML = (d.campaigns || []).length ? `<table class="ent-table"><thead><tr>
+      <th>Created</th><th>Subject</th><th>Segment</th><th>Status</th><th>Queued</th><th>Sent</th><th>Skipped</th><th>Failed</th><th></th>
+    </tr></thead><tbody>
+    ${d.campaigns.map(c => `<tr>
+      <td class="sub mono">${esc(c.created_at || "")}</td>
+      <td>${esc(c.subject || "")}</td>
+      <td class="sub">${esc(c.segment || "")}</td>
+      <td>${ecCampPill(c.status)}</td>
+      <td class="sub mono">${c.queued_n === null || c.queued_n === undefined ? "—" : c.queued_n}</td>
+      <td class="mono">${c.sent_n || 0}</td>
+      <td class="sub mono">${c.skipped_n || 0}</td>
+      <td class="mono">${c.failed_n || 0}</td>
+      <td>
+        ${c.status === "draft" ? `<button class="ent-chip" onclick="ecCampEdit('${esc(c.id)}')">Edit</button>
+          <button class="ent-chip" onclick="ecCampAct('${esc(c.id)}','queue')">Queue</button>
+          <button class="ent-chip" onclick="ecCampAct('${esc(c.id)}','delete')">Delete</button>` : ""}
+        ${(c.status === "queued" || c.status === "sending") ? `<button class="ent-chip" onclick="ecCampAct('${esc(c.id)}','abort')">Abort</button>` : ""}
+      </td>
+    </tr>`).join("")}
+    </tbody></table>` : `<div class="card sub">No campaigns yet.</div>`;
+  EC._camps = d.campaigns || [];
+}
+
+function ecCampNew() {
+  ["ecCampId", "ecSubjEn", "ecSubjZh", "ecBodyEn", "ecBodyZh"].forEach(id => {
+    const el = $("#" + id); if (el) el.value = "";
+  });
+}
+
+/* Load a draft back into the composer, splitting the two columns the table has
+   back into the four fields the operator typed. */
+function ecCampEdit(id) {
+  const c = (EC._camps || []).find(x => x.id === id);
+  if (!c) return;
+  const subj = String(c.subject || "").split(" · ");
+  const body = String(c.body_md || "").split(EC.zhDelim);
+  const set = (k, val) => { const el = $("#" + k); if (el) el.value = val || ""; };
+  set("ecCampId", c.id);
+  set("ecSubjEn", subj[0]); set("ecSubjZh", subj.slice(1).join(" · "));
+  set("ecBodyEn", (body[0] || "").trim()); set("ecBodyZh", (body.slice(1).join(EC.zhDelim) || "").trim());
+  const pick = $("#ecSegPick"); if (pick && c.segment) pick.value = c.segment;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* Preview shows the message TEXT (both languages) plus what the markdown subset parsed
+   out of the body — the console's CSP is default-src 'none' with no frame-src, so an
+   iframe of the HTML shell is blocked, and the shell is already covered by
+   tests/test_email_templates.py. What an operator can actually get wrong is the body:
+   a CTA line that did not become a button, or a 中文 half they forgot to write. */
+async function ecCampPreview() {
+  const val = k => { const el = $("#" + k); return el ? el.value : ""; };
+  const r = await post("/api/email_center/campaign", {
+    action: "preview",
+    subject_en: val("ecSubjEn"), subject_zh: val("ecSubjZh"),
+    body_en: val("ecBodyEn"), body_zh: val("ecBodyZh"),
+  });
+  const box = $("#ecPreview"); if (!box) return;
+  if (!r || !r.ok) { box.innerHTML = `<div class="sub" style="margin-top:10px">${esc((r && r.error) || "could not preview")}</div>`; return; }
+  const notes = [
+    `${r.paragraphs} paragraph${r.paragraphs === 1 ? "" : "s"} EN`,
+    `${r.zh_paragraphs} ZH`,
+    r.cta ? `CTA “${esc(r.cta.label)}” → ${esc(r.cta.url)}` : "no CTA",
+  ];
+  if (r.mirrored) notes.push(`<span class="statpill s-warn">no 中文 half — the English is being mirrored</span>`);
+  box.innerHTML = `
+    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+      <div class="sub"><b>Subject:</b> ${esc(r.subject)}</div>
+      <div class="sub" style="margin:4px 0 8px">${notes.join(" · ")}</div>
+      <pre class="mono" style="white-space:pre-wrap;font-size:12px;line-height:1.5;background:var(--surface2);padding:12px;border-radius:8px;max-height:340px;overflow:auto">${esc(r.text)}</pre>
+    </div>`;
+}
+
+async function ecCampSave() {
+  const val = k => { const el = $("#" + k); return el ? el.value : ""; };
+  const r = await post("/api/email_center/campaign", {
+    action: "save", id: val("ecCampId") || null,
+    subject_en: val("ecSubjEn"), subject_zh: val("ecSubjZh"),
+    body_en: val("ecBodyEn"), body_zh: val("ecBodyZh"),
+    segment: val("ecSegPick"),
+  });
+  if (!r || !r.ok) { toast((r && r.error) || "could not save", true); return; }
+  toast("Draft saved");
+  ecCampNew();
+  ecLoadCampaigns();
+}
+
+async function ecCampAct(id, action) {
+  const c = (EC._camps || []).find(x => x.id === id) || {};
+  if (action === "queue" && !confirm(`Queue "${c.subject || id}" to segment "${c.segment || "?"}"?\n\nThe sweeper will send it the next time it wakes, IF marketing mail is armed on the API host. Suppression and opt-out are re-checked for every recipient at send time.`)) return;
+  if (action === "delete" && !confirm(`Delete the draft "${c.subject || id}"?`)) return;
+  if (action === "abort" && !confirm(`Abort "${c.subject || id}"?\n\nAnything already sent stays sent — this stops the rest.`)) return;
+  const r = await post("/api/email_center/campaign", { action, id });
+  if (!r || !r.ok) { toast((r && r.error) || "action failed", true); return; }
+  toast(action === "queue" ? `Queued — ${r.queued_n} planned recipients` : `Campaign ${r.status}`);
+  ecLoadCampaigns();
 }
 
 /* ---- LONG-HOLD LOBE ----------------------------------------------------- */

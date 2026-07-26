@@ -3325,6 +3325,29 @@ def build_support_page(env: Environment, site: Path, generated: str) -> None:
     log.info("wrote support.html (public support desk)")
 
 
+def build_unsubscribe_page(env: Environment, site: Path, generated: str) -> None:
+    """✨ Unsubscribe — the public bilingual opt-out page (SEE W4, masterplan R5).
+
+    Pure assembler: no data, no network, no engine state. The button talks to
+    POST /api/email/unsubscribe (app/unsubscribe.py) at run time, authorised by
+    the signed HMAC token in ?t= — there is no session and no login anywhere on
+    this page, which is the point: nobody should have to sign in to stop email.
+
+    PUBLIC, and it is the compliance gate for every marketing-class send — no
+    campaign may go out while this page 404s. Same three-place boundary edit as
+    /support.html (config/site_access.yml + app/deploy/Caddyfile's @reg_html list
+    AND its PUBLIC-BOUNDARY @reg_asset block, plus the three handle_errors
+    mirrors and @gate_html + app/regwall.py's PUBLIC_PATHS), asserted
+    per-matcher by tests/test_unsubscribe_page.py. Unlike /support.html it is
+    ALSO excluded from the sitemap (lib/seo.py _EXCLUDE_NAMES): public to reach,
+    not a page to index.
+    Additive + graceful: never fatal to the build.
+    """
+    html = env.get_template("unsubscribe.html.j2").render(generated_utc=generated)
+    write_page(site / "unsubscribe.html", html)
+    log.info("wrote unsubscribe.html (public opt-out)")
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -4246,6 +4269,10 @@ def main() -> int:
         build_support_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("support page failed: %s", e)
+    try:
+        build_unsubscribe_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("unsubscribe page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.

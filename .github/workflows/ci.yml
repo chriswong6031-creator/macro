@@ -984,6 +984,22 @@ on:
       # The design pin the page and the email base are ported FROM: a change to the pin
       # without a matching change to the implementation is exactly the drift to catch.
       - "mockups/support_email/**"
+      # Support + Email estate (SEE W4): the marketing foundation. Same #3509 lesson —
+      # every SOURCE by name, not only the tests. app/email_segments.py is listed first
+      # because it is the shared one: BOTH the admin console's SQL and the sweeper's
+      # Python read their membership rules from it, so an edit there can break the
+      # compliance gate on either plane, and neither plane's own file is touched.
+      - "app/email_segments.py"
+      - "app/unsubscribe.py"
+      - "app/marketing_emails.py"
+      - "admin/email_center.py"
+      - "templates/unsubscribe.html.j2"
+      - "site/unsubscribe.html"
+      - "tests/test_email_segments.py"
+      - "tests/test_unsubscribe_api.py"
+      - "tests/test_marketing_emails.py"
+      - "tests/test_admin_email_center.py"
+      - "tests/test_unsubscribe_page.py"
       # W2 entry points (funnel, not nav) + the page's writer.
       - "templates/index.html"
       - "site/index.html"
@@ -3995,6 +4011,16 @@ jobs:
         run: python -m pytest tests/test_support_page_js.py -v
       - name: pinned email base (app/mailer.py render_email)
         run: python -m pytest tests/test_email_templates.py -v
+      - name: segment definitions, shared by both planes (app/email_segments.py)
+        run: python -m pytest tests/test_email_segments.py -v
+      - name: public unsubscribe endpoint (app/unsubscribe.py)
+        run: python -m pytest tests/test_unsubscribe_api.py -v
+      - name: welcome bound + campaign drain compliance (app/marketing_emails.py)
+        run: python -m pytest tests/test_marketing_emails.py -v
+      - name: email center console + CSV export (admin/email_center.py)
+        run: python -m pytest tests/test_admin_email_center.py -v
+      - name: unsubscribe page + per-matcher serving boundary (templates/unsubscribe.html.j2)
+        run: python -m pytest tests/test_unsubscribe_page.py -v
 
   billing-emails:
     if: ${{ false }}

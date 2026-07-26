@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import re
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -29,7 +30,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                chronicle,
                codex_panel,
                config_store,
-               content, context_lobe, entitlements, experiments,
+               content, context_lobe, email_center, entitlements, experiments,
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
                marketing,
@@ -268,6 +269,32 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Security-Policy", _CSP)
         for c in (cookies or []):
             self.send_header("Set-Cookie", c)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _csv(self, filename: str, body: bytes) -> None:
+        """A real file download, not a JSON envelope the client re-wraps.
+
+        The other export on this console (mastermind response logs) returns its CSV as a
+        string inside JSON and lets app.js build a Blob. That is the right shape for an
+        export the operator filters interactively; it is the wrong shape here, where a
+        roster can run to tens of thousands of rows: JSON-escaping the whole file and
+        holding two copies of it in browser memory to save one round trip is a bad trade,
+        and `Content-Disposition` lets the link be an ordinary <a download> that the
+        session cookie already authorises.
+
+        Same security headers as _json, plus nosniff — the browser must not be talked
+        into rendering a text/csv body as anything else.
+        """
+        safe = re.sub(r'[^A-Za-z0-9._-]', "_", filename or "export.csv")[:120] or "export.csv"
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Disposition", f'attachment; filename="{safe}"')
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", _CSP)
         self.end_headers()
         self.wfile.write(body)
 
@@ -667,6 +694,37 @@ class Handler(BaseHTTPRequestHandler):
                     page_size=_int_param(q, "page_size", 50, 1, 200)))
             if path == "/api/support_tickets/detail":
                 return self._json(support_tickets.detail((q.get("id") or [""])[0]))
+            # Email Center (SEE W4): the roster + segments, the suppression list, the
+            # SMTP card and the campaign queue. Same Management-API PAT lane as the two
+            # routes above; the writes are the POST twins below.
+            if path == "/api/email_center":
+                return self._json(email_center.panel(
+                    segment=(q.get("segment") or [None])[0],
+                    q=(q.get("q") or q.get("search") or [None])[0],
+                    page=_int_param(q, "page", 1, 1, 100_000),
+                    page_size=_int_param(q, "page_size", 50, 1, 200)))
+            if path == "/api/email_center/suppression":
+                return self._json(email_center.suppression(
+                    q=(q.get("q") or q.get("search") or [None])[0],
+                    page=_int_param(q, "page", 1, 1, 100_000),
+                    page_size=_int_param(q, "page_size", 50, 1, 200)))
+            if path == "/api/email_center/mail":
+                return self._json(email_center.mail_status(
+                    limit=_int_param(q, "limit", 20, 1, 100)))
+            if path == "/api/email_center/campaigns":
+                return self._json(email_center.campaigns(
+                    limit=_int_param(q, "limit", 25, 1, 100)))
+            # The one non-JSON route on this console. Auth is the same session gate every
+            # /api path above passed; CSV is a GET, so it carries no CSRF token for the
+            # same reason no other GET here does — a double-submit cookie guards writes.
+            if path == "/api/email_center/export.csv":
+                out = email_center.export_csv(
+                    segment=(q.get("segment") or [None])[0],
+                    q=(q.get("q") or q.get("search") or [None])[0])
+                if isinstance(out, dict):
+                    return self._json(out, 503 if out.get("setup_steps") else 400)
+                name, blob = out
+                return self._csv(name, blob)
             # revenue analytics (billing/revenue suite): MRR/ARR, sub counts, real collected
             # cash, forward projections, and comp give-away counts — computed live from Stripe
             # (Subscription/Invoice + the entitlements comp read), ~60s in-process cache. ?force=1
@@ -983,6 +1041,39 @@ class Handler(BaseHTTPRequestHandler):
                 payload, code = support_tickets.act(
                     b.get("ticket_id", ""), b.get("action", ""), b.get("body"),
                     operator="operator")
+                return self._json(payload, code)
+
+            # Email Center writes (SEE W4). Suppression add/remove is compliance-
+            # sensitive: REMOVE re-enables marketing email to a person who asked us to
+            # stop, so the module requires confirm=true in the request itself (a browser
+            # confirm() is not an authorisation), refuses to lift a bounce or a complaint,
+            # and records the removal in the operator action ledger.
+            if path == "/api/email_center/suppression":
+                act = (b.get("action") or "").strip()
+                if act not in email_center.SUPPRESSION_ACTIONS:
+                    return self._json(
+                        {"ok": False,
+                         "error": f"action must be one of {sorted(email_center.SUPPRESSION_ACTIONS)}"},
+                        400)
+                if act == "add":
+                    payload, code = email_center.suppress(
+                        b.get("email", ""), b.get("reason", "manual"), operator="operator")
+                else:
+                    payload, code = email_center.unsuppress(
+                        b.get("email", ""), confirm=bool(b.get("confirm")), operator="operator")
+                return self._json(payload, code)
+
+            # Campaign composer: save / queue / abort / delete. Queuing only marks the
+            # row — app/marketing_emails.py drains it, and only when the operator has
+            # armed MAIL_MARKETING_ENABLED + MAIL_CAMPAIGNS_ENABLED on the API host, so
+            # nothing on this console can put mail on the wire by itself.
+            if path == "/api/email_center/campaign":
+                payload, code = email_center.campaign_action(
+                    b.get("action", ""),
+                    campaign_id=b.get("id"),
+                    subject_en=b.get("subject_en", ""), subject_zh=b.get("subject_zh", ""),
+                    body_en=b.get("body_en", ""), body_zh=b.get("body_zh", ""),
+                    segment=b.get("segment", ""), operator="operator")
                 return self._json(payload, code)
 
             # Allies (MKT-D11): record an operator status transition. This is a
