@@ -265,3 +265,40 @@ def _hermetic_master_brain_reply_cache(request, monkeypatch):
     monkeypatch.setattr(_mb, "_mb_reply_cache_put",
                         lambda ph, text, cfg, root=None: None)
     yield
+
+
+# --------------------------------------------------------------------------- #
+# data/marketing/account_overrides.json is LIVE OPERATOR STATE — the admin
+# panel's per-account ARM/DISARM toggle commits it straight to main. Unit tests
+# must assert what the CODE does, never which desks the operator happened to
+# have switched on when CI ran.
+#
+# 2026-07-26: during the flagship-post incident the operator disabled 5 of the 6
+# desks (receipts, theme_desk, research_a/b/c) at 00:16Z. The file appeared on
+# main, effective_accounts() picked it up, and the `marketing-engine` CI job went
+# red — 8 failures asserting cross-account near-dup quarantines and non-empty
+# `receipts` queues that can only hold while those desks are enabled. Nothing in
+# the marketing engine had changed. Worse, that job is path-filtered to
+# engine/marketing/**, so it fires ONLY on marketing PRs: the breakage was
+# invisible on every other PR and would have ambushed the next marketing change.
+#
+# Only DEFAULT-root reads are neutralized. Every test that deliberately
+# exercises the override mechanism passes an explicit tmp root and keeps the
+# real loader (tests/test_marketing_engine.py, tests/test_admin_marketing.py).
+# --------------------------------------------------------------------------- #
+@pytest.fixture(autouse=True)
+def _hermetic_marketing_account_overrides(monkeypatch):
+    try:
+        from engine.marketing import accounts as _accounts
+    except Exception:  # minimal-deps CI lanes may lack engine imports
+        yield
+        return
+    _real_load_overrides = _accounts.load_overrides
+
+    def _no_live_operator_state(root=None):
+        if root is None:
+            return {}
+        return _real_load_overrides(root)
+
+    monkeypatch.setattr(_accounts, "load_overrides", _no_live_operator_state)
+    yield

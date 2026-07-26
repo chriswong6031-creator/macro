@@ -158,6 +158,13 @@ def test_build_items_attaches_a_chart_card(tmp_path, monkeypatch):
     monkeypatch.setattr(chart_render, "rasterize_svg", lambda svg, **kw: b"\x89PNGx")
     monkeypatch.setattr(media_publish, "publish_chart_png",
                         lambda *a, **k: "https://pub-x.r2.dev/marketing/charts/x.png")
+    # build_card passes logo_root, which makes render_chart_v2 auto-resolve the
+    # company logo — a LIVE network fetch that hung this suite for minutes at
+    # ~0% CPU. Unit tests never touch the network.
+    monkeypatch.setattr(chart_render, "resolve_logo", lambda ticker, root: None)
+    # build_card passes logo_root, which makes render_chart_v2 auto-resolve the
+    # company logo — a LIVE network fetch. Unit tests never touch the network.
+    monkeypatch.setattr(chart_render, "resolve_logo", lambda ticker, root: None)
     _seed_ohlcv(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
 
     items = wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-25", max_items=1)
@@ -238,3 +245,67 @@ def test_write_copy_returns_the_floor_when_the_llm_is_off():
     specs = [{"ticker": "NVDA", "lv": lv, "headline": "$NVDA into the week",
               "body": "Floor body."}]
     assert wl.write_copy(specs, {}) == [("$NVDA into the week", "Floor body.")]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. The voice lane must not be able to sit "armed but mute"
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_llm_lane_armed_without_credentials_warns_loudly(monkeypatch, capsys):
+    """daily.yml set MARKETING_LLM_ENABLED=1 but passed no LLM credential, so
+    build_providers() returned [] and EVERY post silently fell back to the
+    deterministic templates — for the entire life of the lane. Falling back is
+    correct; doing it silently is what hid the defect."""
+    from engine.marketing import copywriter
+    from engine import llm_auth
+
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(llm_auth, "build_providers", lambda *a, **k: [])
+
+    ctx = copywriter.build_context({"ticker": "NVDA", "type": "watchlist",
+                                    "account": "flagship"}, persona={}, facts=None)
+    out = copywriter.write_posts_llm([ctx], {"llm": {"enabled": True,
+                                                     "model_key": "marketing_copy"}})
+
+    assert out is None                       # caller falls back — unchanged
+    err = capsys.readouterr().out
+    # A ::warning:: must start the line or GitHub never parses the annotation.
+    assert any(l.startswith("::warning title=marketing_copywriter_mute::")
+               for l in err.splitlines()), err
+
+
+def test_governor_step_passes_the_llm_credentials_it_arms():
+    """The env that arms the lane and the env that makes it work must ship
+    together — MARKETING_LLM_ENABLED without a credential is a no-op."""
+    import re
+    from pathlib import Path
+    wf = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "daily.yml"
+    text = wf.read_text(encoding="utf-8")
+
+    # Isolate the governor step's env block.
+    start = text.index("Marketing — NW lobe governor")
+    block = text[start:start + 3000]
+    assert "MARKETING_LLM_ENABLED" in block
+    for cred in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN",
+                 "CLAUDE_CODE_OAUTH_TOKEN_1", "DEEPSEEK_API_KEY"):
+        assert re.search(rf"^\s+{cred}:", block, re.M), \
+            f"governor step arms the LLM lane but never passes {cred}"
+
+
+def test_account_overrides_do_not_leak_into_unit_tests(tmp_path):
+    """Live operator state (the admin ARM/DISARM toggle) must not decide whether
+    the marketing suite passes — that turned CI red with no code change."""
+    import json
+    from engine.marketing.accounts import effective_accounts, load_overrides
+
+    cfg = {"desk_network": {"accounts": [{"id": "receipts"}, {"id": "flagship"}]}}
+    # Default root: the autouse conftest fixture neutralizes the live file.
+    assert all(a["enabled"] for a in effective_accounts(cfg))
+
+    # An EXPLICIT root still honors a real override file — the mechanism works.
+    d = tmp_path / "data" / "marketing"
+    d.mkdir(parents=True)
+    (d / "account_overrides.json").write_text(json.dumps({"receipts": {"enabled": False}}))
+    assert load_overrides(tmp_path) == {"receipts": {"enabled": False}}
+    by_id = {a["id"]: a["enabled"] for a in effective_accounts(cfg, tmp_path)}
+    assert by_id == {"receipts": False, "flagship": True}
