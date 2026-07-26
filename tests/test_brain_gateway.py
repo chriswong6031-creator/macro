@@ -3893,11 +3893,16 @@ def test_stage_labels_are_bilingual_and_complete():
 
 # ── B5: prompt caching ───────────────────────────────────────────────────────
 
-def _assert_cached(kwargs: dict) -> None:
+def _assert_cached(kwargs: dict, *, expect_tools: bool = True) -> None:
     system = kwargs["system"]
     assert isinstance(system, list) and len(system) == 1
     assert system[0]["type"] == "text"
     assert system[0]["cache_control"] == {"type": "ephemeral"}
+    if not expect_tools:
+        # Synthesis deliberately ships NO tools (see the stream call): the model must
+        # write prose, not answer a budget-exhausted turn with another tool_use.
+        assert "tools" not in kwargs
+        return
     tools = kwargs["tools"]
     assert tools[-1]["cache_control"] == {"type": "ephemeral"}
     assert all("cache_control" not in t for t in tools[:-1]), "one breakpoint only"
@@ -3911,8 +3916,9 @@ def test_cache_control_on_system_and_last_tool_in_stream_loop(tmp_path):
     _stream_events(client, root, tmp_path)
 
     assert len(client.create_kwargs) == 2 and len(client.stream_kwargs) == 1
-    for kwargs in client.create_kwargs + client.stream_kwargs:
+    for kwargs in client.create_kwargs:
         _assert_cached(kwargs)
+    _assert_cached(client.stream_kwargs[0], expect_tools=False)
     assert client.create_kwargs[0]["tools"] is client.create_kwargs[1]["tools"]
     assert client.create_kwargs[0]["system"] is client.create_kwargs[1]["system"]
 
@@ -4346,3 +4352,54 @@ def test_language_directive_reaches_the_model_kwargs(tmp_path):
     sysblocks = cap.create_kwargs[0]["system"]
     text = sysblocks[0]["text"] if isinstance(sysblocks, list) else sysblocks
     assert "LANGUAGE FOR THIS TURN: English" in text
+
+
+def test_tool_budget_exhausted_turn_still_answers(tmp_path):
+    """The reported Terminal outage: chart work burns every Phase-1 round, so synthesis
+    runs on an exhausted budget. It must ship a real answer — never the degraded stub —
+    and it must not offer tools (which is what let the model reply with another tool_use
+    and stream zero text)."""
+    tool_resp = _MockResponse(
+        [_MockBlock("tool_use", name="chart_digest", input_={}, id_="c1")], "tool_use")
+    client = _CaptureClient(responses=[tool_resp] * 8, answer=_CLEAN_ANSWER)
+    root = _make_temp_root()
+    # Fast lane: tool_budget 5, so 8 scripted tool rounds guarantee exhaustion.
+    parsed = _stream_events(client, root, tmp_path, lane="fast")
+    types = [e["type"] for e in parsed]
+    assert types.count("delta") == 1
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "temporarily unavailable" not in delta["text"].lower(), delta
+    assert client.stream_kwargs and "tools" not in client.stream_kwargs[0]
+
+
+def test_empty_synthesis_falls_over_to_the_next_candidate(tmp_path):
+    """An empty text stream from a healthy connection is a FAILURE, not an answer."""
+    class _EmptyStreamCtx(_FakeStreamCtx):
+        @property
+        def text_stream(self):
+            return iter(())
+    class _EmptyClient(_CaptureClient):
+        def stream(self, **kwargs):
+            self.stream_kwargs.append(kwargs)
+            return _EmptyStreamCtx("")
+    # page='terminal' raises the budget floor to _TERMINAL_TOOL_BUDGET_FLOOR, so script
+    # past it to guarantee the exhausted-budget synthesis path.
+    n_rounds = gw._TERMINAL_TOOL_BUDGET_FLOOR + 2
+    empty = _EmptyClient(responses=[_MockResponse(
+        [_MockBlock("tool_use", name="chart_digest", input_={}, id_="c1")], "tool_use")] * n_rounds)
+    healthy = _CaptureClient(responses=[_MockResponse(
+        [_MockBlock("tool_use", name="chart_digest", input_={}, id_="c2")], "tool_use")] * n_rounds,
+        answer=_CLEAN_ANSWER)
+    providers = [{"name": "deepseek", "model": "deepseek-v4-flash", "client": empty},
+                 {"name": "anthropic", "model": "claude-haiku-4-5", "client": healthy}]
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    parsed = _sse(list(gw.chat_stream("chart nvda levels", "u-empty-syn",
+                                                      lane="fast", root=root,
+                                                      context={"page": "terminal", "lang": "en"})))
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "temporarily unavailable" not in delta["text"].lower()
+    assert healthy.stream_kwargs, "healthy candidate never got its turn"
