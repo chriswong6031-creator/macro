@@ -151,7 +151,27 @@ class FredAdapter(Adapter):
     # macro backtests (and a future, separately-validated switch of the regime
     # inputs). Requires the API key (fredgraph has no vintages); skipped if absent.
     def _vintage_series(self) -> list[str]:
-        return list(self.cfg.get("vintage_series", DEFAULT_VINTAGE_SERIES))
+        """The series to fetch vintages for. config `fred.vintage_series` REPLACES
+        DEFAULT_VINTAGE_SERIES rather than extending it, and fetch_vintages() rewrites
+        vintages.parquet wholesale — so anything in the default but not in the override
+        is deleted from the point-in-time store on this run. That is a legitimate thing
+        to want (a deliberate narrowing), but it has twice been an accident that went
+        unnoticed for months, because the only thing this collector ever reported was a
+        fetch error. Say it out loud instead."""
+        configured = self.cfg.get("vintage_series")
+        if configured is None:
+            return list(DEFAULT_VINTAGE_SERIES)
+        out = list(configured)
+        dropped = [s for s in DEFAULT_VINTAGE_SERIES if s not in set(out)]
+        if dropped:
+            log.warning(
+                "FRED vintages: config fred.vintage_series omits %d DEFAULT_VINTAGE_SERIES "
+                "member(s) %s — this run REWRITES vintages.parquet wholesale, so any rows "
+                "they already have are being deleted from the point-in-time store. Add them "
+                "back in config.yml if that is not intended.",
+                len(dropped), dropped,
+            )
+        return out
 
     def _fetch_vintage_one(self, sid: str, realtime_start: str) -> pd.DataFrame:
         r = self.http_get(

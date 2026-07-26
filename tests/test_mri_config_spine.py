@@ -96,6 +96,49 @@ def test_series_in_vintage_list(cfg, sid):
 
 
 # ---------------------------------------------------------------------------
+# vintage_series must stay a SUPERSET of DEFAULT_VINTAGE_SERIES
+#
+# collectors/fred.py::_vintage_series() is
+#     self.cfg.get("vintage_series", DEFAULT_VINTAGE_SERIES)
+# — an OVERRIDE, not a merge — and fetch_vintages() concats what it fetched and
+# writes data/fred_vintage/vintages.parquet WHOLESALE. So a series that is in
+# DEFAULT_VINTAGE_SERIES but missing from this config list is DELETED from the
+# store on the next keyed collect, and nothing says so: the collector warns on
+# fetch errors, never on omissions.
+#
+# This has now happened twice. IC4WSA/CCSA went from 891/876 rows to zero and
+# took the claims point forecast and NFP's claims_survey_week_ccsa leg with them
+# (restored in #3710). PPIFES/ECIALLCIV/ECIWAG went from 148/51/118 rows to zero (#3735)
+# and left the CPI bridge's core_goods_pipeline block running on PPIFIS alone
+# under a spec that declares an equal-weight PPIFIS+PPIFES average.
+#
+# config.yml's own comment has always asserted the superset invariant in prose.
+# This is the executable form of it.
+# ---------------------------------------------------------------------------
+
+def test_vintage_series_superset_of_default(cfg):
+    """config.yml's fred.vintage_series must cover every DEFAULT_VINTAGE_SERIES member.
+
+    The config value REPLACES the default rather than extending it, and the store is
+    rewritten wholesale from whatever was fetched — so anything dropped here is deleted
+    from data/fred_vintage/vintages.parquet on the next keyed collect, silently.
+    """
+    from collectors.fred import DEFAULT_VINTAGE_SERIES
+
+    configured = set(_vintage_series(cfg))
+    missing = sorted(set(DEFAULT_VINTAGE_SERIES) - configured)
+    assert not missing, (
+        f"fred.vintage_series is missing {len(missing)} DEFAULT_VINTAGE_SERIES "
+        f"member(s): {missing}. The config list OVERRIDES the default (it does not "
+        f"extend it) and fetch_vintages() rewrites vintages.parquet wholesale, so "
+        f"these would be DELETED from the point-in-time store on the next keyed "
+        f"collect — with no warning, since the collector only reports fetch errors. "
+        f"Either add them back, or remove them from DEFAULT_VINTAGE_SERIES with a "
+        f"reason, but do not let the two lists drift apart."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Cleveland nowcast config block
 # ---------------------------------------------------------------------------
 

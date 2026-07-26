@@ -11,6 +11,17 @@ on:
       # job, so a conftest edit must trigger the full suite (2026-07-16 #2636
       # fixture import broke 14 minimal-lane jobs without triggering ci.yml).
       - "tests/conftest.py"
+      # the data spine itself: config.yml decides which FRED series are collected and,
+      # via fred.vintage_series, which survive in the ALFRED point-in-time store — that
+      # key OVERRIDES collectors/fred.py:DEFAULT_VINTAGE_SERIES and fetch_vintages()
+      # rewrites vintages.parquet wholesale, so a one-line deletion here silently drops
+      # series from the store on the next keyed collect. That has now happened twice
+      # (IC4WSA/CCSA, restored #3710; then PPIFES/ECIALLCIV/ECIWAG, #3735). Until this line,
+      # config.yml matched no pattern in this list at all — a PR touching only config.yml
+      # got no ci run, so no guard placed anywhere could have caught either round.
+      # tests/test_mri_config_spine.py now asserts the superset invariant; this line is
+      # what lets that guard fire on the edit it guards.
+      - "config.yml"
       - "site/**"
       - "scripts/check_inline_js.py"
       - "scripts/check_site_js.py"
