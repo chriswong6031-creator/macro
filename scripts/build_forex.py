@@ -1313,8 +1313,12 @@ def main() -> int:
         # B1.1: inject DXY into pairs block (quote-only entry)
         latest["pairs"]["DXY"] = pairs_dxy
     except Exception as _e_export:  # noqa: BLE001
-        log.warning("::warning :: forex additive export assembly failed (%s) — "
-                    "writing without dollar_day/em/stance/fx_state/DXY", _e_export)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning :: forex additive export assembly failed ({_e_export}) — writing "
+              "without dollar_day/em/stance/fx_state/DXY",
+              flush=True)
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 

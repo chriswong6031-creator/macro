@@ -42,6 +42,11 @@ on:
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
       - "scripts/check_conflict_markers.py"
+      # GH-annotation guard: a "::warning" behind logging's level prefix never parses as
+      # an annotation. NOTE: this only fires when ci.yml is already triggered — making it
+      # fire on EVERY python change needs "scripts/**"/"engine/**" here, which is a
+      # CI-cost call for the operator (it would run the whole pack on most PRs).
+      - "tests/test_gh_annotation_line_start.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
@@ -1065,6 +1070,25 @@ jobs:
         run: pip install pytest pandas numpy
       - name: guard constants must match engine/market_state.py
         run: python -m pytest tests/test_check_ms_board_coherence.py -q
+
+  gh-annotation-line-start:
+    if: ${{ false }}
+    # A "::warning"/"::error" routed through logging NEVER reaches the Actions
+    # summary: every builder logs with a prefixing format ("WARNING ::warning …")
+    # and GitHub only parses a workflow command at column 0. The call reviews as
+    # an alarm, runs clean, and emits nothing — so a fail-soft builder ships
+    # degraded output with its only signal silently dropped. Shipped dead five
+    # times (#3487, #3515, #3563, #3570, and #3562 which merged a fresh one on
+    # 2026-07-26). The guard scans every module that runs inside an Actions step.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: annotations must start the line (bare print, never a logger)
+        run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
   rebase-css-autoresolve:
     if: ${{ false }}

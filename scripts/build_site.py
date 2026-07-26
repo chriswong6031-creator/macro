@@ -5777,7 +5777,10 @@ def main() -> int:
         _core_count = len(_re.findall(r'<url>', _new_sm)) - len(_re.findall(r'/stocks/', _new_sm))
         log.info("regenerated sitemap.xml: %d core entries + stocks entries preserved", _core_count)
     except Exception as _sm_e:  # noqa: BLE001
-        log.warning("::warning title=sitemap::core sitemap regeneration failed: %s", _sm_e)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning title=sitemap::core sitemap regeneration failed: {_sm_e}", flush=True)
 
     return 0
 

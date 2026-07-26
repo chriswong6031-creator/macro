@@ -195,7 +195,10 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                 counts.get("quarantined_policy", 0),
             )
         except Exception as sentinel_exc:  # noqa: BLE001
-            log.warning("::warning::marketing sentinel failed: %s", sentinel_exc)
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+            print(f"::warning::marketing sentinel failed: {sentinel_exc}", flush=True)
             try:
                 from engine.marketing import sentinel as _sentinel  # noqa: PLC0415
                 _sentinel.mark_all_unverified(content_plan_obj)

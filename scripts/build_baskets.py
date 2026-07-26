@@ -428,7 +428,10 @@ def main() -> int:
         )
         log.info("basket_turn_watch: wrote %s (%d WATCH/IGNITION baskets)", _btw_path, _btw_n_watch)
     except Exception as _btw_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("::warning::basket_turn_watch hook failed: %s", _btw_exc)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning::basket_turn_watch hook failed: {_btw_exc}", flush=True)
 
     # TS-U2 — MTF UPTURN per-stock K-of-N confluence organ (mtf_upturn.v1).
     # Placed immediately after basket_turn_watch (U2 is the per-stock twin of that organ).
@@ -445,7 +448,7 @@ def main() -> int:
             _mtu_result.get("elapsed_s", 0),
         )
     except Exception as _mtu_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("::warning::mtf_upturn hook failed: %s", _mtu_exc)
+        print(f"::warning::mtf_upturn hook failed: {_mtu_exc}", flush=True)
 
     # NAR-W1 — Flare Persistence organ (flare_persistence.v1). Reads raw tape witnesses
     # (T1 altdata convergence, T2 call premium z, T3 GEX flip, T4 news bull ratio z).
@@ -466,7 +469,7 @@ def main() -> int:
             _fpo_result.get("elapsed_s", 0),
         )
     except Exception as _fpo_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("::warning::flare_persistence hook failed: %s", _fpo_exc)
+        print(f"::warning::flare_persistence hook failed: {_fpo_exc}", flush=True)
 
     # NAR-W3 — Narrative Flare organ (narrative_flare.v1). Reads W2 collector stores
     # (substack_posts, hn_mentions, edgar_8k_counts) + Polygon news counts; computes
@@ -489,7 +492,7 @@ def main() -> int:
             _nfo_result.get("elapsed_s", 0),
         )
     except Exception as _nfo_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("::warning::narrative_flare hook failed: %s", _nfo_exc)
+        print(f"::warning::narrative_flare hook failed: {_nfo_exc}", flush=True)
 
     # FTR W10 — Discord alerts for turn-watch IGNITION / shock activation / tape disagreement.
     # Placed after basket_turn_watch so turn_watch.json is fresh.
@@ -498,7 +501,7 @@ def main() -> int:
         from scripts.notify_turn_events import run as _notify_turn_events
         _notify_turn_events()
     except Exception as _nte_exc:  # noqa: BLE001 — additive, never fatal
-        log.warning("::warning::notify_turn_events hook failed: %s", _nte_exc)
+        print(f"::warning::notify_turn_events hook failed: {_nte_exc}", flush=True)
 
     # FT-R8 — surface-freshness sentinel: assert first-class artifacts carry today's
     # NYSE session.  Warn-only (exits 0 always); annotations appear in the job summary.

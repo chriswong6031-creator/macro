@@ -1076,9 +1076,12 @@ def _bear_from_regime(data_root: "Path | None" = None) -> bool:
         risk_off = rr.get("state") == "risk-off"
         return bool(spy_below is not False or risk_off)
     except Exception as e:  # noqa: BLE001
-        log.warning(
-            "::warning:: prophet_bridge: regime bear-gate unreadable (%s) — "
-            "tilt fails safe to bear=True (leash 1.0)", e)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning:: prophet_bridge: regime bear-gate unreadable ({e}) — tilt fails "
+              "safe to bear=True (leash 1.0)",
+              flush=True)
         return True
 
 
@@ -1106,9 +1109,9 @@ def _stage_tilt_demoted(data_root: "Path | None" = None) -> bool:
             return False
         return int(n_matured) >= STAGE_TILT_DEMOTE_MIN_MATURED and float(diff) <= 0
     except Exception as e:  # noqa: BLE001
-        log.warning(
-            "::warning:: prophet_bridge: shadow summary unreadable for demote check "
-            "(%s) — leaving tilt provisional-active", e)
+        print(f"::warning:: prophet_bridge: shadow summary unreadable for demote check ({e}) "
+              "— leaving tilt provisional-active",
+              flush=True)
         return False
 
 
@@ -1128,14 +1131,15 @@ def _load_stage_tilt_inputs(data_root: "Path | None" = None) -> dict:
         ec_by_ticker = psf.ec_index(psf.load_ec_table())
     except Exception as e:  # noqa: BLE001
         ec_load_ok = False
-        log.warning("::warning:: prophet_bridge: EC table load failed (%s) — "
-                    "tilt eligibility off (leash 1.0)", e)
+        print(f"::warning:: prophet_bridge: EC table load failed ({e}) — tilt eligibility off "
+              "(leash 1.0)",
+              flush=True)
 
     try:
         bench = psf.load_bench_close(root)
     except Exception as e:  # noqa: BLE001
         bench = None
-        log.warning("::warning:: prophet_bridge: bench close load failed (%s)", e)
+        print(f"::warning:: prophet_bridge: bench close load failed ({e})", flush=True)
 
     return {
         "root": root,
@@ -1182,8 +1186,9 @@ def _compute_stage_tilt(ticker: str, signal_date: str, tilt_inputs: dict) -> tup
                     if not prior.empty:
                         ec_call_date = str(prior["call_date"].iloc[-1].date())
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: prophet_bridge: stage-tilt compute failed for %s "
-                    "(%s) — leash 1.0 for this pick", ticker, e)
+        print(f"::warning:: prophet_bridge: stage-tilt compute failed for {ticker} ({e}) — "
+              "leash 1.0 for this pick",
+              flush=True)
         stage_at_entry_val = None
         ec_sent = None
         ec_call_date = None
@@ -1258,8 +1263,9 @@ def originate_plans(
     try:
         _tilt_inputs = _load_stage_tilt_inputs()
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: prophet_bridge: stage-tilt inputs unavailable "
-                    "(%s) — all picks default to leash 1.0", e)
+        print(f"::warning:: prophet_bridge: stage-tilt inputs unavailable ({e}) — all picks "
+              "default to leash 1.0",
+              flush=True)
         _tilt_inputs = None
 
     # ── OEU M-PRO: dealer-positioning context for the thesis prose (display-tier) ──

@@ -68,13 +68,16 @@ def main(argv: list[str] | None = None) -> int:
             stage_industry.build(root=root, asof=args.asof)
             log.info("stage_industry: ranks + name-percentile artifacts built")
         except Exception as e:  # noqa: BLE001 — never break the build
-            log.warning("::warning:: stage_industry.build failed (%s)", e)
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+            print(f"::warning:: stage_industry.build failed ({e})", flush=True)
         try:
             from engine import stage_flows  # noqa: PLC0415
             stage_flows.build(root=root, asof=args.asof)
             log.info("stage_flows: industry/sub-industry flows artifact built")
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning:: stage_flows.build failed (%s)", e)
+            print(f"::warning:: stage_flows.build failed ({e})", flush=True)
         try:
             from engine import earnings_qual  # noqa: PLC0415
             # build_all_earnings_surfaces takes the REPO root (data/ lives under it).
@@ -82,19 +85,20 @@ def main(argv: list[str] | None = None) -> int:
             earnings_qual.build_all_earnings_surfaces(eq_root)
             log.info("earnings_qual: 4 Earnings-Calls surfaces built")
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning:: earnings_qual.build_all_earnings_surfaces failed (%s)", e)
+            print(f"::warning:: earnings_qual.build_all_earnings_surfaces failed ({e})",
+                  flush=True)
         try:
             from engine import altdata_stage  # noqa: PLC0415
             altdata_stage.build_altdata_trending(root=root)
             log.info("altdata_stage: altdata_trending artifact built")
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning:: altdata_stage.build_altdata_trending failed (%s)", e)
+            print(f"::warning:: altdata_stage.build_altdata_trending failed ({e})", flush=True)
         try:
             from engine import stage_research  # noqa: PLC0415
             stage_research.build_research_index(root=root)
             log.info("stage_research: research_index artifact built")
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning:: stage_research.build_research_index failed (%s)", e)
+            print(f"::warning:: stage_research.build_research_index failed ({e})", flush=True)
 
     try:
         if args.fixture:
@@ -106,11 +110,11 @@ def main(argv: list[str] | None = None) -> int:
             contract = stage_analysis.build_context_feed(
                 root=root, asof=args.asof, max_workers=args.max_workers)
     except Exception as e:  # noqa: BLE001 — total failure
-        log.error("::error:: stage_analysis: context feed failed entirely (%s)", e)
+        print(f"::error:: stage_analysis: context feed failed entirely ({e})", flush=True)
         return 1
 
     if not contract or contract.get("schema") != "stage_context.v1":
-        log.error("::error:: stage_analysis: no valid contract produced")
+        print("::error:: stage_analysis: no valid contract produced", flush=True)
         return 1
 
     counts = contract.get("counts") or {}
@@ -124,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         n_led = stage_analysis.append_forward_ledger(contract, root=root)
         log.info("forward ledger: appended %d fresh-Stage-2 row(s)", n_led)
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: forward-ledger append failed (%s)", e)
+        print(f"::warning:: forward-ledger append failed ({e})", flush=True)
 
     return 0
 

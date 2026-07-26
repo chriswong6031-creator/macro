@@ -56,7 +56,12 @@ try:
 except Exception as _sc_import_err:  # noqa: BLE001
     _SHARE_CARDS = None  # type: ignore[assignment]
     _LOGO_CACHE = None   # type: ignore[assignment]
-    log.warning("::warning title=share_cards_import::share_cards/logo_cache not available: %s", _sc_import_err)
+    # Bare print, NOT a logger call: GitHub only parses a workflow command when
+    # "::" STARTS the line, and this module's logging format prefixes every
+    # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+    print("::warning title=share_cards_import::share_cards/logo_cache not available: "
+          f"{_sc_import_err}",
+          flush=True)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -720,7 +725,7 @@ def _load_json(path: Path) -> Any:
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning::could not load %s: %s", path, e)
+        print(f"::warning::could not load {path}: {e}", flush=True)
     return None
 
 
@@ -795,7 +800,7 @@ def load_all_aggregates(site: Path) -> dict:
                 [str(idx)[:10], float(v)] for idx, v in spy_df[col].dropna().items()
             ]
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning::SPY fallback load failed: %s", e)
+            print(f"::warning::SPY fallback load failed: {e}", flush=True)
 
     return agg
 
@@ -3136,14 +3141,17 @@ def run(
             try:
                 tmpl_page = env.get_template("ticker.html.j2")
             except Exception:  # noqa: BLE001
-                log.warning("::warning::ticker.html.j2 template not found — switching to context-only mode")
+                print("::warning::ticker.html.j2 template not found — switching to "
+                      "context-only mode",
+                      flush=True)
                 context_only = True
             try:
                 tmpl_index = env.get_template("ticker_index.html.j2")
             except Exception:  # noqa: BLE001
                 pass
         except Exception as e:
-            log.error("::error::failed to load templates: %s — switching to context-only mode", e)
+            print(f"::error::failed to load templates: {e} — switching to context-only mode",
+                  flush=True)
             context_only = True
 
     # --- Load dow30 from config (fail-soft to empty set) ---
@@ -3153,7 +3161,7 @@ def run(
         _dow30_list = (_cfg.get("leader_radar") or {}).get("dow30") or []
         dow30_set = set(_dow30_list)
     except Exception as _d30e:  # noqa: BLE001
-        log.warning("::warning::failed to load dow30 from config (fail-soft): %s", _d30e)
+        print(f"::warning::failed to load dow30 from config (fail-soft): {_d30e}", flush=True)
 
     # --- Load membership ---
     try:
@@ -3183,7 +3191,7 @@ def run(
 
         log.info("Loaded %d active universe members (deduplicated)", len(active))
     except Exception as e:
-        log.error("::error::failed to load membership.parquet: %s", e)
+        print(f"::error::failed to load membership.parquet: {e}", flush=True)
         return 1
 
     # --- Load shared aggregates ---
@@ -3223,7 +3231,7 @@ def run(
             if not isinstance(_logo_attempts, dict):
                 _logo_attempts = {}
     except Exception as _lae:  # noqa: BLE001
-        log.warning("::warning::logo_attempts load failed (fail-soft): %s", _lae)
+        print(f"::warning::logo_attempts load failed (fail-soft): {_lae}", flush=True)
         _logo_attempts = {}
     _today_iso = date.today().isoformat()
 
@@ -3405,7 +3413,7 @@ def run(
             })
 
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning title=%s::page render failed: %s", ticker, e)
+            print(f"::warning title={ticker}::page render failed: {e}", flush=True)
             n_skipped += 1
             continue
 
@@ -3427,7 +3435,7 @@ def run(
                 "priority": 0.7,
             })
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning title=index::index page render failed: %s", e)
+            print(f"::warning title=index::index page render failed: {e}", flush=True)
 
     # --- Share-card summary ---
     _sc_elapsed = _time.perf_counter() - _sc_t0
@@ -3455,7 +3463,7 @@ def run(
                     pass
                 raise
         except Exception as _persist_err:  # noqa: BLE001
-            log.warning("::warning::logo_attempts persist failed: %s", _persist_err)
+            print(f"::warning::logo_attempts persist failed: {_persist_err}", flush=True)
 
     # --- Sitemap update --- (skipped when --only restricts to a subset)
     real_sitemap = site / "sitemap.xml"
@@ -3470,12 +3478,11 @@ def run(
             target_sitemap.write_text(new_sitemap)
             log.info("Updated sitemap: %s (%d /stocks/ entries)", target_sitemap, len(sitemap_entries))
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning title=sitemap::sitemap update failed: %s", e)
+            print(f"::warning title=sitemap::sitemap update failed: {e}", flush=True)
 
-    log.info(
-        "::notice title=ticker_pages::rendered=%d skipped=%d limited=%d noindexed=%d",
-        n_rendered, n_skipped, n_limited, n_noindexed,
-    )
+    print(f"::notice title=ticker_pages::rendered={n_rendered} skipped={n_skipped} "
+          f"limited={n_limited} noindexed={n_noindexed}",
+          flush=True)
     return 0
 
 

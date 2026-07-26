@@ -372,8 +372,13 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         # A store copy exists but could not be restored — refuse to proceed so we
         # never overwrite the good published corpus with a truncated rebuild. No
         # receipts are written, so the next run retries the whole batch cleanly.
-        log.error("::error::research_vault: corpus restore FAILED with an existing "
-                  "store copy — skipping this run to protect the published corpus")
+        # Bare print, NOT log.error: GitHub only parses a workflow command when
+        # "::" STARTS the line, and every entry point that runs this module
+        # (build_research_vault, ingest_research) logs with a "%(levelname)s "
+        # prefix, which silently drops the annotation.
+        print("::error::research_vault: corpus restore FAILED with an existing "
+              "store copy — skipping this run to protect the published corpus",
+              flush=True)
         summary["error"] = "corpus_restore_failed"
         return summary
 
@@ -480,9 +485,9 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         if summary["corpus_published"]:
             _flush_receipts(store, pending_receipts)
         if pending_receipts:
-            log.error("::error::research_vault: %d receipts unflushed (corpus "
-                      "publish failed) — the docs will re-ingest next run",
-                      len(pending_receipts))
+            print(f"::error::research_vault: {len(pending_receipts)} receipts unflushed "
+                  f"(corpus publish failed) — the docs will re-ingest next run",
+                  flush=True)
             summary["receipts_unflushed"] = len(pending_receipts)
 
     return summary

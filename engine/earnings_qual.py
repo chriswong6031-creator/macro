@@ -1341,7 +1341,10 @@ def ec_industry_heatmap_grid(
                             "companies_with_fresh_ec",
                             "avg_earnings_call_combined"])
         except Exception as exc:  # noqa: BLE001
-            log.warning("::warning:: earnings_qual: ec grid seed unreadable (%s)", exc)
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+            print(f"::warning:: earnings_qual: ec grid seed unreadable ({exc})", flush=True)
             df = pd.DataFrame()
         if not df.empty:
             try:
@@ -1355,7 +1358,7 @@ def ec_industry_heatmap_grid(
                     if grid is not None:
                         regions_out[reg] = grid
             except Exception as exc:  # noqa: BLE001
-                log.warning("::warning:: earnings_qual: ec grid build failed (%s)", exc)
+                print(f"::warning:: earnings_qual: ec grid build failed ({exc})", flush=True)
 
     out = _context_envelope("ec_industry_heatmap_grid", {
         "n_regions": len(regions_out),
@@ -1706,7 +1709,7 @@ def build_all_earnings_surfaces(root: Path | None = None) -> dict:
         try:
             results[name] = fn(root=root)  # type: ignore[operator]
         except Exception as exc:  # noqa: BLE001
-            log.warning("::warning:: earnings_qual: surface %s failed (%s)", name, exc)
+            print(f"::warning:: earnings_qual: surface {name} failed ({exc})", flush=True)
             results[name] = {"error": str(exc)}
     return results
 

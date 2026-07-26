@@ -117,20 +117,19 @@ class RussellBreadthAdapter(BreadthAdapter):
             age = _json_age_days(payload)
             n = payload.get("n", 0) or 0
             if age > _JSON_MAX_AGE_DAYS:
-                log.warning(
-                    "::warning:: russell_breadth: idx_rut.json is %.1f days old "
-                    "(threshold %d) — using committed constituents.parquet to avoid "
-                    "stale-scrape universe shrink",
-                    age, _JSON_MAX_AGE_DAYS,
-                )
+                # Bare print, NOT a logger call: GitHub only parses a workflow command when
+                # "::" STARTS the line, and this module's logging format prefixes every
+                # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+                print(f"::warning:: russell_breadth: idx_rut.json is {age:.1f} days old "
+                      f"(threshold {_JSON_MAX_AGE_DAYS}) — using committed "
+                      "constituents.parquet to avoid stale-scrape universe shrink",
+                      flush=True)
                 payload = None
             elif n < _CONSTITUENTS_FLOOR:
-                log.warning(
-                    "::warning:: russell_breadth: idx_rut.json has only %d rows "
-                    "(floor %d) — using committed constituents.parquet to avoid "
-                    "bad-scrape universe shrink",
-                    n, _CONSTITUENTS_FLOOR,
-                )
+                print(f"::warning:: russell_breadth: idx_rut.json has only {n} rows (floor "
+                      f"{_CONSTITUENTS_FLOOR}) — using committed constituents.parquet to "
+                      "avoid bad-scrape universe shrink",
+                      flush=True)
                 payload = None
 
         if payload is not None:

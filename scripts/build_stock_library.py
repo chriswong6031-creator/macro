@@ -1976,8 +1976,12 @@ def main() -> int:
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
     to_write: list[tuple[str, dict]] = []
     uni = universe()
-    log.info("::notice title=stock_library::universe=%d elapsed=%.0fs",
-             len(uni), time.time() - _main_t0)
+    # Bare print, NOT a logger call: GitHub only parses a workflow command when
+    # "::" STARTS the line, and this module's logging format prefixes every
+    # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+    print(f"::notice title=stock_library::universe={len(uni)} "
+          f"elapsed={time.time() - _main_t0:.0f}s",
+          flush=True)
     # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
     # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
