@@ -29,10 +29,28 @@ SCHEMA = "research_vault.catalog.v1"
 CATALOG_KEY = "research_vault/catalog.json"
 
 # The public-safe fields carried on each catalog item (body is deliberately absent).
+# MIRRORED in scripts/build_research_vault.py — the SSR bake projects the same
+# subset, and a test asserts the two tuples stay identical.
 _ITEM_FIELDS = (
     "id", "title", "institution", "side", "desk", "published_at",
-    "summary_points", "tags", "tickers", "top_pick", "pages", "needs_metadata",
+    "summary_points", "tags", "tickers", "top_pick", "pages", "language",
+    "needs_metadata",
 )
+
+# Fields whose emptiness is a real gap worth reporting (see :func:`coverage`).
+# Excluded on purpose:
+#   - identity fields (id/title/institution/side/published_at) — every one has a
+#     fallback, so they are populated by construction;
+#   - booleans (top_pick/needs_metadata) — False is a meaning, not a gap;
+#   - ``language`` — sidecar.normalize DEFAULTS it to "en", so it reads 100%
+#     populated whether or not anything measured it. Counting it would manufacture
+#     exactly the vacuous green this function exists to expose. (Measuring the
+#     script from the body text is a follow-on, not a claim we make today.)
+_COVERAGE_FIELDS = (
+    "summary_points", "desk", "tags", "tickers", "pages",
+)
+
+_EMPTY_VALUES = (None, "", [], {}, ())
 
 
 def empty() -> dict:
@@ -102,6 +120,49 @@ def _public_item(item: dict) -> dict:
     # stop before a title becomes public (page <title>, og:title, the crawl hub).
     pub["title"] = clean_title(pub.get("title")) or (pub.get("title") or "")
     return pub
+
+
+def coverage(catalog: dict) -> dict[str, dict]:
+    """Per-field fill rate over the catalog's items.
+
+    Returns ``{field: {"filled": int, "total": int, "pct": float}}`` for each of
+    :data:`_COVERAGE_FIELDS`. ``total`` is the item count, so an empty catalog
+    yields 0% everywhere rather than a division error.
+
+    Why this exists: ``needs_metadata`` only trips on a bad-JSON sidecar or a
+    fallen-back title/institution, so it reported 0/60 — a clean bill of health —
+    while ``desk``, ``tags``, ``tickers`` and ``pages`` were empty on every single
+    document in the vault. A flag that cannot see the fields it is supposed to
+    guard is vacuous green: PRESENCE of a schema field is not COVERAGE of it.
+    Never raises.
+    """
+    items = [it for it in (catalog.get("items") or []) if isinstance(it, dict)]
+    total = len(items)
+    out: dict[str, dict] = {}
+    for field in _COVERAGE_FIELDS:
+        filled = sum(1 for it in items if it.get(field) not in _EMPTY_VALUES)
+        out[field] = {
+            "filled": filled,
+            "total": total,
+            "pct": (100.0 * filled / total) if total else 0.0,
+        }
+    return out
+
+
+def coverage_lines(cov: dict[str, dict]) -> tuple[list[str], list[str]]:
+    """Render :func:`coverage` for a log, plus the list of DEAD fields.
+
+    A field is "dead" when the catalog is non-empty and nothing fills it — the
+    condition that says a contract field exists but no producer ever writes it.
+    Returns ``(lines, dead_fields)``.
+    """
+    lines: list[str] = []
+    dead: list[str] = []
+    for field, c in sorted(cov.items()):
+        lines.append(f"  {field:16s} {c['filled']:5d}/{c['total']:<5d} {c['pct']:5.1f}%")
+        if c["total"] and not c["filled"]:
+            dead.append(field)
+    return lines, dead
 
 
 def upsert_item(catalog: dict, item: dict) -> dict:

@@ -3492,7 +3492,12 @@ jobs:
         # Pure stdlib engine (sqlite3 + subprocess) + jinja2 for the W3 page build.
         # pyyaml: build_research_vault imports lib.config (yaml) at module level
         # since #3315 — the lane was red on every PR until it was added here.
-        run: pip install pytest jinja2 pyyaml
+        # pypdf: pure-python, so it keeps the suite hermetic while making the probe's
+        # PRIMARY rung testable (page count + Info dict). The poppler `pdfinfo` rung —
+        # the one production actually uses, since the hourly lane installs neither
+        # pypdf nor anything else beyond boto3+pyyaml — needs a system package, so its
+        # two tests skip when `pdfinfo` is absent and run on the self-hosted Mac.
+        run: pip install pytest jinja2 pyyaml pypdf
       - name: research vault ingestion-spine + page unit tests
         run: python -m pytest tests/test_research_vault.py tests/test_research_vault_page.py tests/test_research_pages.py -q
 

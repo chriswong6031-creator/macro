@@ -12,18 +12,27 @@ from ``context_index/lexical.py``.
 Column weights (masterplan §8): title=4, summary=3, body=1.
 Facets (institution, date) are indexed columns on the ``documents`` table →
 compound ``WHERE`` alongside the FTS ``MATCH``. stdlib + sqlite3 only.
+
+Schema v2 adds the engine-MEASURED columns from :mod:`research_vault.probe`
+(page count, text-layer density, content hash, PDF provenance, page-1 text).
+They are metadata only — deliberately NOT added to the FTS table: ``first_page_text``
+is a prefix of ``body``, so indexing it would double-count those postings and
+silently reweight every BM25 score.
 """
 from __future__ import annotations
 
+import logging
 import re
 import sqlite3
 from pathlib import Path
+
+log = logging.getLogger("research_vault.corpus")
 
 # ---------------------------------------------------------------------------
 # DDL — contentless FTS5 + sync triggers (copied idiom: context_index/schema.py)
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _DDL = """
 -- Rollback-journal (single-file) mode, NOT WAL: the corpus is written in one
@@ -86,6 +95,37 @@ CREATE TABLE IF NOT EXISTS meta (
 );
 """
 
+# Engine-measured columns (schema v2), declared EXACTLY ONCE and applied by
+# ALTER TABLE in :func:`_migrate` on every open — never inline in the CREATE
+# TABLE above.
+#
+# Why migration-only rather than "new columns in the DDL plus a migration for old
+# files": ``CREATE TABLE IF NOT EXISTS`` is a no-op against the v1 corpus that
+# :func:`ingest._restore_corpus` pulls from R2 at the start of every run, so the
+# DDL alone would leave the live database on v1 while the INSERT below named v2
+# columns — an OperationalError inside ``_ingest_one``'s catch-all, i.e. every
+# document silently marked "failed". Declaring them in one place, applied through
+# one idempotent path, removes that whole failure mode.
+_V2_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("pages", "INTEGER"),
+    ("language", "TEXT"),
+    ("char_count", "INTEGER"),
+    ("word_count", "INTEGER"),
+    ("text_layer", "TEXT"),
+    ("content_sha256", "TEXT"),
+    ("byte_size", "INTEGER"),
+    ("pdf_creator", "TEXT"),
+    ("pdf_producer", "TEXT"),
+    ("pdf_created_at", "TEXT"),
+    ("pdf_modified_at", "TEXT"),
+)
+
+# Deliberately NOT a column: ``first_page_text``. ``body`` is truncated at the
+# TAIL (BODY_MAX_CHARS), so page 1 is always inside the row we already store —
+# downstream extractors read it via :func:`research_vault.probe.first_page` over
+# ``body`` instead. A separate column would duplicate ~4KB per row in a file the
+# API pulls whole on every corpus refresh.
+
 # bm25(documents_fts, w_title, w_summary, w_body, w_institution) — §8 weights.
 _BM25_WEIGHTS = "4.0, 3.0, 1.0, 2.0"
 
@@ -134,13 +174,56 @@ def sanitize_fts5(query: str) -> str:
 # open / build
 # ---------------------------------------------------------------------------
 
+def _existing_columns(conn: sqlite3.Connection, table: str = "documents") -> set[str]:
+    """Column names currently on ``table`` ({} when the table is absent)."""
+    try:
+        return {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    except sqlite3.Error:
+        return set()
+
+
+def _migrate(conn: sqlite3.Connection) -> list[str]:
+    """Add any missing :data:`_V2_COLUMNS` to ``documents``. Idempotent.
+
+    Runs on EVERY open, so a fresh database and a v1 corpus restored from R2 both
+    converge on the same shape. Returns the column names actually added (empty on
+    an already-current database). A single failed ALTER is logged and skipped
+    rather than raised: a corpus that is merely missing an enrichment column must
+    still ingest and still serve search.
+    """
+    have = _existing_columns(conn)
+    if not have:  # no documents table (should not happen — DDL ran first)
+        return []
+    added: list[str] = []
+    for name, decl in _V2_COLUMNS:
+        if name in have:
+            continue
+        try:
+            conn.execute(f"ALTER TABLE documents ADD COLUMN {name} {decl}")
+            added.append(name)
+        except sqlite3.Error as exc:
+            log.warning("research_vault corpus: ALTER for %s failed (%s)", name, exc)
+    if "content_sha256" in have or "content_sha256" in added:
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_rv_docs_sha "
+                         "ON documents(content_sha256)")
+        except sqlite3.Error as exc:
+            log.warning("research_vault corpus: sha index failed (%s)", exc)
+    if added:
+        conn.commit()
+        log.info("research_vault corpus: migrated to v%d (+%d columns)",
+                 SCHEMA_VERSION, len(added))
+    return added
+
+
 def open_db(path: str | Path) -> sqlite3.Connection:
-    """Open (or create) corpus.sqlite, apply DDL, stamp schema version."""
+    """Open (or create) corpus.sqlite, apply DDL + migrations, stamp the version."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(p), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(_DDL)
+    _migrate(conn)
     conn.execute(
         "INSERT INTO meta(key,value) VALUES('schema_version',?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -154,32 +237,75 @@ def open_db(path: str | Path) -> sqlite3.Connection:
 # upsert
 # ---------------------------------------------------------------------------
 
-def upsert(conn: sqlite3.Connection, item: dict, body_text: str) -> None:
+def upsert(conn: sqlite3.Connection, item: dict, body_text: str,
+           facts: dict | None = None) -> None:
     """Insert/replace one document's searchable row.
 
     ``item`` is a normalized sidecar item (see sidecar.normalize). ``body_text``
     is the pdftotext-extracted body ('' when extraction failed — the row is still
-    searchable by title/summary). Delete-then-insert keeps the FTS postings in
-    sync via the triggers (a bare REPLACE would not fire the delete trigger for
-    the old body). Never raises on a benign duplicate.
+    searchable by title/summary). ``facts`` is the optional engine-measured bundle
+    (:func:`research_vault.probe.probe` + :func:`~research_vault.probe.text_facts`
+    + ``first_page_text``); absent → the v2 columns stay NULL, which is the honest
+    "not measured" state.
+
+    Delete-then-insert keeps the FTS postings in sync via the triggers (a bare
+    REPLACE would not fire the delete trigger for the old body). The column list
+    is built from the columns the database ACTUALLY has, so a corpus whose
+    migration partially failed still ingests every document instead of raising
+    per row. Never raises on a benign duplicate.
     """
     doc_id = item.get("id") or ""
-    title = item.get("title") or ""
-    summary = " • ".join(item.get("summary_points") or [])
-    institution = item.get("institution") or ""
-    side = item.get("side") or ""
     published_at = item.get("published_at") or ""
-    published_date = published_at[:10] if len(published_at) >= 10 else ""
-    body = (body_text or "")[:BODY_MAX_CHARS]
+
+    row: dict = {
+        "doc_id": doc_id,
+        "title": item.get("title") or "",
+        "summary": " • ".join(item.get("summary_points") or []),
+        "institution": item.get("institution") or "",
+        "side": item.get("side") or "",
+        "published_at": published_at,
+        "published_date": published_at[:10] if len(published_at) >= 10 else "",
+        "body": (body_text or "")[:BODY_MAX_CHARS],
+    }
+
+    if facts:
+        for name, _decl in _V2_COLUMNS:
+            if name in facts:
+                row[name] = facts[name]
+        # ``language`` and ``pages`` live on the normalized item, not the probe.
+        row.setdefault("language", item.get("language") or "")
+        row.setdefault("pages", item.get("pages"))
+
+    have = _existing_columns(conn)
+    cols = [c for c in row if c in have] if have else list(row)
+    placeholders = ",".join("?" for _ in cols)
 
     conn.execute("DELETE FROM documents WHERE doc_id=?", (doc_id,))
     conn.execute(
-        """INSERT INTO documents
-           (doc_id, title, summary, institution, side, published_at, published_date, body)
-           VALUES (?,?,?,?,?,?,?,?)""",
-        (doc_id, title, summary, institution, side, published_at, published_date, body),
+        f"INSERT INTO documents ({','.join(cols)}) VALUES ({placeholders})",
+        [row[c] for c in cols],
     )
     conn.commit()
+
+
+def sha_index(conn: sqlite3.Connection) -> dict[str, str]:
+    """``{content_sha256: doc_id}`` for every hashed document. Never raises.
+
+    Used to REPORT byte-identical duplicates at ingest. Deliberately not used to
+    skip them: the same PDF legitimately re-arrives with a corrected sidecar, and
+    skipping on a hash match would freeze the original bad metadata in place.
+    Returns {} on a pre-v2 corpus where the column does not exist.
+    """
+    if "content_sha256" not in _existing_columns(conn):
+        return {}
+    try:
+        rows = conn.execute(
+            "SELECT content_sha256, doc_id FROM documents "
+            "WHERE content_sha256 IS NOT NULL AND content_sha256 <> ''"
+        ).fetchall()
+    except sqlite3.Error:
+        return {}
+    return {r[0]: r[1] for r in rows}
 
 
 # ---------------------------------------------------------------------------

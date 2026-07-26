@@ -16,14 +16,71 @@ whole suite offline. stdlib + pytest only.
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
+from pathlib import Path
 
 import pytest
+
+
+def _probe_rung_available() -> bool:
+    """True when at least one of probe.py's PDF-parsing rungs can run here.
+
+    Page-count assertions need pypdf OR poppler; with neither, ``probe`` correctly
+    reports None and those tests would be asserting the absence of a dependency
+    rather than the behaviour of the code.
+    """
+    if shutil.which("pdfinfo"):
+        return True
+    try:
+        import pypdf  # noqa: F401, PLC0415
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+# A REAL PDF, used wherever a test asserts a MEASURED page count.
+#
+# Why not the hand-rolled ``_MINIMAL_PDF`` below: it has no xref table, so pypdf
+# refuses it outright and only poppler is lenient enough to report its one page.
+# Asserting a measured page count against that fixture silently makes the test
+# poppler-only — green on the self-hosted Mac, red on the ubuntu CI lane that
+# installs pypdf and no system packages. A real PDF is read by BOTH rungs.
+_REAL_PDF = Path(__file__).resolve().parent / "fixtures" / "hk_cbbc" / "sample_sld_index.pdf"
+_REAL_PDF_PAGES = 16
+_HAVE_PDFINFO = shutil.which("pdfinfo") is not None
+
+_needs_measured = pytest.mark.skipif(
+    not (_REAL_PDF.is_file() and _probe_rung_available()),
+    reason="needs the real PDF fixture plus pypdf or poppler to measure page counts")
+
+# The poppler rung specifically — the one production runs, since the hourly ingest
+# lane installs only boto3+pyyaml. Skips where poppler is absent (ubuntu CI).
+_needs_pdfinfo = pytest.mark.skipif(
+    not (_REAL_PDF.is_file() and _HAVE_PDFINFO),
+    reason="poppler pdfinfo or the real PDF fixture is absent")
+
+
+def _have_pypdf() -> bool:
+    try:
+        import pypdf  # noqa: F401, PLC0415
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+# Cross-checking one rung against the other is only meaningful when BOTH exist —
+# neither the ubuntu CI lane (no poppler) nor the hourly ingest lane (no pypdf) has
+# both, so this skips in each of them and runs in a full local/dev environment.
+_needs_both_rungs = pytest.mark.skipif(
+    not (_REAL_PDF.is_file() and _HAVE_PDFINFO and _have_pypdf()),
+    reason="needs BOTH pypdf and poppler pdfinfo to cross-check them")
 
 from engine.research_vault import catalog as catalog_mod
 from engine.research_vault import corpus as corpus_mod
 from engine.research_vault import excerpt as excerpt_mod
 from engine.research_vault import ingest as ingest_mod
+from engine.research_vault import probe as probe_mod
 from engine.research_vault import sidecar as sidecar_mod
 from engine.research_vault import title as title_mod
 from engine.research_vault.r2_store import LocalStore, build_store
@@ -546,8 +603,13 @@ def canned_pdftotext(monkeypatch):
     return _fake
 
 
-def _seed_pdf(store, pdf_key, sidecar_obj, marker=b""):
-    store.put_bytes(pdf_key, _MINIMAL_PDF + marker, "application/pdf")
+def _seed_pdf(store, pdf_key, sidecar_obj, marker=b"", pdf_bytes=None):
+    """Seed a PDF + its sidecar into the store.
+
+    ``pdf_bytes`` overrides the hand-rolled minimal fixture — pass the real PDF
+    when the test asserts a MEASURED page count (see _REAL_PDF above).
+    """
+    store.put_bytes(pdf_key, pdf_bytes or (_MINIMAL_PDF + marker), "application/pdf")
     if sidecar_obj is not None:
         raw = (json.dumps(sidecar_obj) if isinstance(sidecar_obj, dict) else sidecar_obj)
         store.put_bytes(pdf_key[:-4] + ".json",
@@ -656,7 +718,9 @@ def test_ingest_top_picks_prefix_sets_top_pick(tmp_path, canned_pdftotext):
 def test_ingest_no_store_is_noop():
     summary = ingest_mod.run(None, "/tmp/whatever.sqlite")
     assert summary == {"ingested": 0, "skipped": 0, "failed": 0,
-                       "needs_metadata": 0, "catalog_bytes": b""}
+                       "needs_metadata": 0, "duplicate_bytes": 0,
+                       "no_text_layer": 0, "text_unavailable": 0,
+                       "catalog_bytes": b""}
 
 
 def test_ingest_one_bad_pdf_does_not_abort_batch(tmp_path, canned_pdftotext, monkeypatch):
@@ -670,10 +734,10 @@ def test_ingest_one_bad_pdf_does_not_abort_batch(tmp_path, canned_pdftotext, mon
     # Make corpus.upsert raise ONLY for the "Boom" doc to prove per-item isolation.
     real_upsert = corpus_mod.upsert
 
-    def _flaky(conn, item, body):
+    def _flaky(conn, item, body, **kw):
         if item.get("title") == "Boom":
             raise RuntimeError("simulated corpus failure")
-        return real_upsert(conn, item, body)
+        return real_upsert(conn, item, body, **kw)
 
     monkeypatch.setattr(ingest_mod.corpus_mod, "upsert", _flaky)
 
@@ -1204,3 +1268,497 @@ def test_repair_titles_survives_a_missing_corpus_row(tmp_path, canned_pdftotext)
     assert summary["titles_repaired"] == 1
     titles = {it["title"] for it in catalog_mod.load(store)["items"]}
     assert "Swiss economy" in titles            # cleaned without a body, never dropped
+
+
+# ===========================================================================
+# probe: deterministic facts measured from the bytes (RV W1-A)
+# ===========================================================================
+
+def test_probe_hash_and_size_always_present():
+    facts = probe_mod.probe(_MINIMAL_PDF)
+    assert len(facts["content_sha256"]) == 64
+    assert facts["byte_size"] == len(_MINIMAL_PDF)
+
+
+def test_probe_hash_is_stable_and_content_addressed():
+    a = probe_mod.probe(_MINIMAL_PDF)["content_sha256"]
+    b = probe_mod.probe(_MINIMAL_PDF)["content_sha256"]
+    c = probe_mod.probe(_MINIMAL_PDF + b"x")["content_sha256"]
+    assert a == b and a != c
+
+
+@_needs_measured
+def test_probe_reads_the_page_count():
+    assert probe_mod.probe(_REAL_PDF.read_bytes())["pages"] == _REAL_PDF_PAGES
+
+
+def test_probe_garbage_bytes_degrade_to_unknown_not_zero():
+    """A page count we could not measure must be None — never 0.
+
+    A zero would read downstream as "a zero-page document", which is a claim we
+    have not earned; None is the honest "not measured".
+    """
+    facts = probe_mod.probe(b"this is definitely not a pdf")
+    assert facts["pages"] is None
+    assert facts["content_sha256"]            # still hashed
+    assert facts["pdf_producer"] == ""
+
+
+def test_probe_empty_bytes_is_all_unknown():
+    facts = probe_mod.probe(b"")
+    assert facts["pages"] is None
+    assert facts["content_sha256"] == ""
+    assert facts["byte_size"] == 0
+
+
+@pytest.mark.parametrize("raw,want", [
+    ("D:20260721185916+08'00'", "2026-07-21T18:59:16+08:00"),
+    ("D:20260721185916Z",       "2026-07-21T18:59:16+00:00"),
+    ("D:20260721185916",        "2026-07-21T18:59:16"),
+    ("D:2026",                  "2026-01-01T00:00:00"),
+    ("2026-07-21T18:59:16+08",  "2026-07-21T18:59:16+08:00"),
+    ("",                        ""),
+    ("not a date",              ""),
+    ("D:garbage",               ""),
+])
+def test_pdf_date_to_iso(raw, want):
+    assert probe_mod._pdf_date_to_iso(raw) == want
+
+
+def test_text_facts_distinguishes_unavailable_from_absent():
+    """The four text-layer states must stay distinct.
+
+    ``extract_pdf_text() or ""`` collapses a BROKEN HOST (None) into an
+    image-only DOCUMENT (""). One is fixed by installing poppler, the other by
+    getting a better PDF — reporting them as the same thing hides the former.
+    """
+    assert probe_mod.text_facts(None)["text_layer"] == "unavailable"
+    assert probe_mod.text_facts(None)["char_count"] is None
+    assert probe_mod.text_facts("")["text_layer"] == "none"
+    assert probe_mod.text_facts("")["char_count"] == 0
+
+
+def test_text_facts_density_is_per_page_when_pages_known():
+    body = "x" * 1000
+    # 1000 chars over 1 page is a real text layer; over 20 pages it is not.
+    assert probe_mod.text_facts(body, 1)["text_layer"] == "full"
+    assert probe_mod.text_facts(body, 20)["text_layer"] == "thin"
+
+
+def test_text_facts_falls_back_to_absolute_floor_without_pages():
+    assert probe_mod.text_facts("x" * 100, None)["text_layer"] == "thin"
+    assert probe_mod.text_facts("x" * 5000, None)["text_layer"] == "full"
+
+
+def test_text_facts_counts_words():
+    f = probe_mod.text_facts("alpha beta  gamma\ndelta")
+    assert f["word_count"] == 4
+    assert f["char_count"] == len("alpha beta  gamma\ndelta")
+
+
+def test_first_page_splits_on_form_feed_and_caps():
+    body = "cover page text\fpage two\fpage three"
+    assert probe_mod.first_page(body) == "cover page text"
+    assert probe_mod.first_page(body, limit=5) == "cover"
+    assert probe_mod.first_page("") == ""
+    assert probe_mod.first_page(None) == ""
+
+
+def test_first_page_of_single_page_body_is_the_whole_body():
+    assert probe_mod.first_page("no form feeds here") == "no form feeds here"
+
+
+# ===========================================================================
+# corpus: v1 -> v2 migration (the restored-from-R2 path)
+# ===========================================================================
+
+# The FROZEN v1 schema, written out longhand on purpose: this is the shape of the
+# corpus.sqlite already published to R2, which _restore_corpus pulls down at the
+# start of every run. Deriving it from the current module would make the test
+# tautological — it must keep describing HISTORY, not today's code.
+_V1_DDL = """
+CREATE TABLE documents (
+    rowid          INTEGER PRIMARY KEY,
+    doc_id         TEXT UNIQUE NOT NULL,
+    title          TEXT,
+    summary        TEXT,
+    institution    TEXT,
+    side           TEXT,
+    published_at   TEXT,
+    published_date TEXT,
+    body           TEXT
+);
+CREATE VIRTUAL TABLE documents_fts USING fts5(
+    title, summary, body, institution, content=''
+);
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+INSERT INTO meta(key,value) VALUES('schema_version','1');
+"""
+
+
+def _write_v1_corpus(path):
+    conn = sqlite3.connect(str(path))
+    conn.executescript(_V1_DDL)
+    conn.commit()
+    conn.close()
+
+
+def test_v1_corpus_migrates_and_still_ingests(tmp_path):
+    """A v1 corpus restored from R2 must accept a v2 upsert.
+
+    Regression for the failure mode this migration exists to prevent: with the new
+    columns declared ONLY in the CREATE TABLE, ``CREATE TABLE IF NOT EXISTS`` would
+    no-op against the restored v1 file, every INSERT naming a v2 column would raise
+    OperationalError inside _ingest_one's catch-all, and the run would report every
+    single document as "failed" with no other symptom.
+    """
+    p = tmp_path / "corpus.sqlite"
+    _write_v1_corpus(p)
+
+    conn = corpus_mod.open_db(p)
+    cols = corpus_mod._existing_columns(conn)
+    for name, _decl in corpus_mod._V2_COLUMNS:
+        assert name in cols, f"{name} missing after migration"
+
+    corpus_mod.upsert(conn, {"id": "d1", "title": "Rates", "institution": "GS",
+                             "published_at": "2026-07-21", "pages": 12},
+                      "body text about rates",
+                      facts={"content_sha256": "abc", "pages": 12,
+                             "char_count": 21, "text_layer": "full"})
+    row = conn.execute("SELECT pages, content_sha256, text_layer FROM documents "
+                       "WHERE doc_id='d1'").fetchone()
+    assert (row[0], row[1], row[2]) == (12, "abc", "full")
+    conn.close()
+
+
+def test_v1_migration_preserves_existing_rows_and_search(tmp_path):
+    """Migrating must not lose the archive or break the FTS postings."""
+    p = tmp_path / "corpus.sqlite"
+    _write_v1_corpus(p)
+    conn = sqlite3.connect(str(p))
+    conn.execute("INSERT INTO documents(doc_id,title,summary,institution,side,"
+                 "published_at,published_date,body) VALUES(?,?,?,?,?,?,?,?)",
+                 ("old-1", "Legacy Report", "s", "UBS", "sell",
+                  "2026-01-02", "2026-01-02", "hyperscaler capacity"))
+    conn.execute("INSERT INTO documents_fts(rowid,title,summary,body,institution) "
+                 "VALUES((SELECT rowid FROM documents WHERE doc_id='old-1'),"
+                 "'Legacy Report','s','hyperscaler capacity','UBS')")
+    conn.commit()
+    conn.close()
+
+    conn = corpus_mod.open_db(p)
+    assert conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 1
+    hits = corpus_mod.search(conn, "hyperscaler")
+    assert [h["id"] for h in hits] == ["old-1"]
+    # The pre-existing row's new columns are NULL — honest "never measured".
+    assert conn.execute("SELECT pages FROM documents WHERE doc_id='old-1'"
+                        ).fetchone()[0] is None
+    conn.close()
+
+
+def test_migration_is_idempotent(tmp_path):
+    p = tmp_path / "corpus.sqlite"
+    _write_v1_corpus(p)
+    conn = corpus_mod.open_db(p)
+    assert corpus_mod._migrate(conn) == []      # second pass adds nothing
+    conn.close()
+    conn = corpus_mod.open_db(p)                # reopen: still nothing to do
+    assert corpus_mod._migrate(conn) == []
+    conn.close()
+
+
+def test_fresh_and_migrated_corpora_have_identical_columns(tmp_path):
+    """One declaration site, two entry paths — they must converge exactly."""
+    fresh = corpus_mod.open_db(tmp_path / "fresh.sqlite")
+    fresh_cols = corpus_mod._existing_columns(fresh)
+    fresh.close()
+
+    old = tmp_path / "old.sqlite"
+    _write_v1_corpus(old)
+    migrated = corpus_mod.open_db(old)
+    migrated_cols = corpus_mod._existing_columns(migrated)
+    migrated.close()
+
+    assert fresh_cols == migrated_cols
+
+
+def test_open_db_stamps_schema_version_2(tmp_path):
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    got = conn.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()[0]
+    assert got == "2"
+    conn.close()
+
+
+def test_first_page_text_is_deliberately_not_a_column(tmp_path):
+    """Page 1 lives inside ``body`` (tail-truncated), so a column would duplicate it."""
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    assert "first_page_text" not in corpus_mod._existing_columns(conn)
+    conn.close()
+
+
+def test_measured_facts_are_not_in_the_fts_index(tmp_path):
+    """The v2 columns are metadata; indexing them would reweight every BM25 score."""
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    corpus_mod.upsert(conn, {"id": "d1", "title": "T", "institution": "GS",
+                             "published_at": "2026-07-21"}, "body",
+                      facts={"pdf_producer": "Acrobat Distiller", "pages": 3})
+    # The producer string is stored but must not be searchable.
+    assert corpus_mod.search(conn, "Distiller") == []
+    row = conn.execute("SELECT pdf_producer FROM documents WHERE doc_id='d1'").fetchone()
+    assert row[0] == "Acrobat Distiller"
+    conn.close()
+
+
+def test_upsert_without_facts_leaves_measured_columns_null(tmp_path):
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    corpus_mod.upsert(conn, {"id": "d1", "title": "T", "institution": "GS",
+                             "published_at": "2026-07-21"}, "body")
+    row = conn.execute("SELECT pages, content_sha256 FROM documents "
+                       "WHERE doc_id='d1'").fetchone()
+    assert row[0] is None and row[1] is None
+    conn.close()
+
+
+def test_sha_index_maps_hash_to_doc_id(tmp_path):
+    conn = corpus_mod.open_db(tmp_path / "c.sqlite")
+    corpus_mod.upsert(conn, {"id": "d1", "title": "A", "institution": "GS",
+                             "published_at": "2026-07-21"}, "b",
+                      facts={"content_sha256": "hash-a"})
+    corpus_mod.upsert(conn, {"id": "d2", "title": "B", "institution": "GS",
+                             "published_at": "2026-07-22"}, "b",
+                      facts={"content_sha256": ""})     # unhashed rows excluded
+    assert corpus_mod.sha_index(conn) == {"hash-a": "d1"}
+    conn.close()
+
+
+def test_sha_index_is_empty_on_a_pre_v2_corpus(tmp_path):
+    p = tmp_path / "corpus.sqlite"
+    _write_v1_corpus(p)
+    conn = sqlite3.connect(str(p))
+    assert corpus_mod.sha_index(conn) == {}      # no column, no crash
+    conn.close()
+
+
+# ===========================================================================
+# catalog: per-field coverage (the anti-vacuous-green tripwire)
+# ===========================================================================
+
+def _cat(items):
+    return {"schema": "research_vault.catalog.v1", "count": len(items),
+            "institutions": [], "items": items}
+
+
+def test_coverage_counts_populated_fields():
+    cov = catalog_mod.coverage(_cat([
+        {"id": "a", "pages": 12, "tags": ["ai"], "desk": "", "tickers": [],
+         "summary_points": ["x"]},
+        {"id": "b", "pages": None, "tags": [], "desk": "Rates", "tickers": [],
+         "summary_points": []},
+    ]))
+    assert cov["pages"] == {"filled": 1, "total": 2, "pct": 50.0}
+    assert cov["desk"]["filled"] == 1
+    assert cov["tickers"]["filled"] == 0
+    assert cov["summary_points"]["filled"] == 1
+
+
+def test_coverage_flags_a_field_no_producer_ever_fills():
+    """The exact state that hid behind a green needs_metadata for 60 documents."""
+    cov = catalog_mod.coverage(_cat([
+        {"id": str(i), "pages": None, "tags": [], "tickers": [], "desk": "",
+         "summary_points": ["ok"]} for i in range(60)
+    ]))
+    _lines, dead = catalog_mod.coverage_lines(cov)
+    assert set(dead) == {"pages", "tags", "tickers", "desk"}
+    assert "summary_points" not in dead
+
+
+def test_coverage_of_an_empty_catalog_is_zero_not_an_error():
+    cov = catalog_mod.coverage(_cat([]))
+    assert cov["pages"] == {"filled": 0, "total": 0, "pct": 0.0}
+    _lines, dead = catalog_mod.coverage_lines(cov)
+    assert dead == []          # nothing to fill yet is not a dead field
+
+
+def test_coverage_excludes_defaulted_and_boolean_fields():
+    """``language`` defaults to "en" and the booleans mean something when False.
+
+    Counting either would report health the pipeline has not demonstrated.
+    """
+    assert "language" not in catalog_mod._COVERAGE_FIELDS
+    assert "top_pick" not in catalog_mod._COVERAGE_FIELDS
+    assert "needs_metadata" not in catalog_mod._COVERAGE_FIELDS
+
+
+def test_coverage_ignores_non_dict_items():
+    cov = catalog_mod.coverage({"items": [{"id": "a", "pages": 3}, "junk", None]})
+    assert cov["pages"]["total"] == 1
+
+
+def test_catalog_item_carries_language():
+    cat = catalog_mod.upsert_item(catalog_mod.empty(), {
+        "id": "d1", "title": "T", "institution": "GS", "side": "sell",
+        "published_at": "2026-07-21", "language": "zh",
+    })
+    assert cat["items"][0]["language"] == "zh"
+
+
+def test_builder_mirrors_the_catalog_item_fields():
+    """The SSR bake projects its own copy of the field list — they must match."""
+    import importlib
+
+    builder = importlib.import_module("scripts.build_research_vault")
+    assert builder._ITEM_FIELDS == catalog_mod._ITEM_FIELDS
+
+
+# ===========================================================================
+# ingest: measured facts win over sidecar claims; duplicates reported
+# ===========================================================================
+
+@_needs_measured
+def test_ingest_measures_pages_and_overrides_the_sidecar_claim(tmp_path, canned_pdftotext):
+    """``pages`` was null on every document ever ingested because the ingester only
+    ever read the sidecar's value. A local measurement beats an upstream promise."""
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Rates Outlook", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z", "pages": 999,   # a false claim
+    }, pdf_bytes=_REAL_PDF.read_bytes())
+    ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    item = catalog_mod.load(store)["items"][0]
+    assert item["pages"] == _REAL_PDF_PAGES     # what the PDF actually contains
+
+
+def test_ingest_keeps_the_sidecar_pages_when_measurement_fails(tmp_path, canned_pdftotext,
+                                                              monkeypatch):
+    """An unmeasurable PDF must not blank a value the sidecar did supply."""
+    monkeypatch.setattr(probe_mod, "probe", lambda b: {
+        "content_sha256": "x" * 64, "byte_size": len(b), "pages": None,
+        "encrypted": None, "pdf_creator": "", "pdf_producer": "",
+        "pdf_created_at": "", "pdf_modified_at": "",
+    })
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Rates Outlook", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z", "pages": 42,
+    })
+    ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    assert catalog_mod.load(store)["items"][0]["pages"] == 42
+
+
+@_needs_measured
+def test_ingest_records_measured_facts_in_the_corpus(tmp_path, canned_pdftotext):
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Rates Outlook", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z"}, pdf_bytes=_REAL_PDF.read_bytes())
+    ingest_mod.run(store, corpus_path)
+
+    conn = sqlite3.connect(str(corpus_path))
+    row = conn.execute("SELECT content_sha256, byte_size, pages, char_count, "
+                       "text_layer FROM documents").fetchone()
+    conn.close()
+    assert len(row[0]) == 64          # hashed
+    assert row[1] > 0                 # sized
+    assert row[2] == _REAL_PDF_PAGES  # measured page count
+    assert row[3] > 0                 # body chars counted
+    assert row[4] in ("full", "thin")
+
+
+def test_ingest_reports_duplicate_bytes_without_skipping_them(tmp_path, canned_pdftotext):
+    """The same PDF under two source keys is two objects to the receipt ledger.
+
+    We surface it, but must NOT skip on a hash match: identical bytes legitimately
+    re-arrive with a CORRECTED sidecar, and skipping would freeze the original bad
+    metadata in place forever (receipts make re-ingestion the only repair path).
+    """
+    store = LocalStore(tmp_path / "store")
+    for key, title in (("research_inbox/a.pdf", "First Drop"),
+                       ("research_inbox/b.pdf", "Second Drop")):
+        _seed_pdf(store, key, {"title": title, "institution": "GS",
+                               "published_at": "2026-07-21T10:00:00Z"})
+
+    summary = ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    assert summary["ingested"] == 2            # both kept
+    assert summary["duplicate_bytes"] == 1     # and the collision is reported
+    assert catalog_mod.load(store)["count"] == 2
+
+
+def test_ingest_counts_a_missing_text_layer(tmp_path, monkeypatch):
+    """An image-only PDF is invisible to body search and nothing else says so."""
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: "")
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/scan.pdf", {
+        "title": "Scanned Deck", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z"})
+
+    summary = ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    assert summary["ingested"] == 1            # still ingested, never dropped
+    assert summary["no_text_layer"] == 1
+
+
+def test_ingest_separates_a_broken_extractor_from_an_empty_pdf(tmp_path, monkeypatch):
+    """pdftotext missing is a HOST fault and must not be filed as a document one."""
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: None)
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Report", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z"})
+
+    summary = ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    assert summary["text_unavailable"] == 1
+    assert summary["no_text_layer"] == 0
+
+
+@_needs_measured
+def test_ingest_receipt_carries_the_measured_evidence(tmp_path, canned_pdftotext):
+    """Receipts are the only per-document record never regenerated from scratch."""
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Rates Outlook", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z"}, pdf_bytes=_REAL_PDF.read_bytes())
+    ingest_mod.run(store, tmp_path / "corpus.sqlite")
+
+    keys = [k for k in store.list_prefix("research_inbox/_processed/")
+            if k.endswith(".json")]
+    receipt = json.loads(store.get_bytes(keys[0]))
+    assert len(receipt["content_sha256"]) == 64
+    assert receipt["pages"] == _REAL_PDF_PAGES
+    assert receipt["byte_size"] > 0
+    assert receipt["text_layer"] in ("full", "thin")
+
+
+@_needs_measured
+def test_ingest_summary_reports_coverage(tmp_path, canned_pdftotext):
+    store = LocalStore(tmp_path / "store")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Rates Outlook", "institution": "GS",
+        "published_at": "2026-07-21T10:00:00Z", "tags": ["rates"]},
+        pdf_bytes=_REAL_PDF.read_bytes())
+    summary = ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    cov = summary["coverage"]
+    assert cov["pages"]["filled"] == 1         # measured, so no longer dead
+    assert cov["tags"]["filled"] == 1
+    assert cov["tickers"]["filled"] == 0
+
+
+# The hourly ingest lane installs only boto3+pyyaml, so pypdf (a SOFT dep declared
+# for the download watermark) is ABSENT there and production actually runs on the
+# poppler `pdfinfo` rung. These two tests cover that path against a real PDF.
+@_needs_pdfinfo
+def test_probe_pdfinfo_rung_reads_a_real_pdf(monkeypatch):
+    """With pypdf unavailable — the hourly lane's real configuration."""
+    monkeypatch.setattr(probe_mod, "_probe_pypdf", lambda b: {})
+    facts = probe_mod.probe(_REAL_PDF.read_bytes())
+    assert facts["pages"] and facts["pages"] > 1
+    assert facts["pdf_producer"]                       # Info dict recovered
+    assert facts["pdf_created_at"].startswith("20")    # ISO, not the locale form
+    assert facts["encrypted"] is False
+
+
+@_needs_both_rungs
+def test_probe_rungs_agree_on_the_page_count():
+    """pypdf and pdfinfo must not disagree about something this basic."""
+    data = _REAL_PDF.read_bytes()
+    assert probe_mod._probe_pypdf(data).get("pages") == \
+        probe_mod._probe_pdfinfo(data).get("pages")

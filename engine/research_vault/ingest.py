@@ -6,10 +6,12 @@ For each new PDF in ``research_inbox/`` (one whose receipt
   1. fetch pdf + sidecar (store GET, private bucket),
   2. normalize the sidecar to the v1 contract (fallbacks; never drop),
   3. extract body text via ``pdftotext -layout`` (30s timeout; graceful empty),
-  4. recover the real title when the sidecar gave us the PDF's FILENAME (title.py),
-  5. promote the PDF → ``research_vault/<id>.pdf``,
-  6. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
-  7. write the receipt ``research_inbox/_processed/<id>.json``.
+  4. measure the deterministic facts (probe.py: pages, content hash, text-layer
+     density, PDF provenance) — these OVERRIDE sidecar claims for the same field,
+  5. recover the real title when the sidecar gave us the PDF's FILENAME (title.py),
+  6. promote the PDF → ``research_vault/<id>.pdf``,
+  7. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
+  8. write the receipt ``research_inbox/_processed/<id>.json``.
 
 Each run also re-derives filename-shaped titles for documents ALREADY in the
 catalog (:func:`_repair_titles`) — receipted PDFs are never re-ingested, so that
@@ -36,6 +38,7 @@ from pathlib import Path
 
 from engine.research_vault import catalog as catalog_mod
 from engine.research_vault import corpus as corpus_mod
+from engine.research_vault import probe as probe_mod
 from engine.research_vault import sidecar as sidecar_mod
 from engine.research_vault import title as title_mod
 
@@ -174,7 +177,7 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
     (logged) and the batch continues.
     """
     result = {"pdf_key": pdf_key, "status": "failed", "id": None, "needs_metadata": False,
-              "title_source": "sidecar"}
+              "title_source": "sidecar", "facts": {}}
     try:
         pdf_bytes = store.get_bytes(pdf_key)
         if not pdf_bytes:
@@ -201,7 +204,33 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
         result["id"] = item_id
         result["needs_metadata"] = bool(item.get("needs_metadata"))
 
-        body_text = extract_pdf_text(pdf_bytes) or ""
+        # Keep the RAW extractor result: None means pdftotext is missing/crashed
+        # (a host fault) while "" means the PDF genuinely has no text layer (a
+        # document fault). probe.text_facts keeps them apart; every consumer below
+        # wants the "" form.
+        raw_text = extract_pdf_text(pdf_bytes)
+        body_text = raw_text or ""
+
+        # Facts MEASURED from the bytes — page count, content hash, text-layer
+        # density, PDF provenance. These override sidecar CLAIMS for the same field
+        # (pages), because a local measurement beats an upstream promise.
+        facts = probe_mod.probe(pdf_bytes)
+        facts.update(probe_mod.text_facts(raw_text, facts.get("pages")))
+        if facts.get("pages"):
+            item["pages"] = facts["pages"]
+        else:
+            facts["pages"] = item.get("pages")
+        facts["language"] = item.get("language") or ""
+        result["facts"] = facts
+
+        if facts.get("text_layer") in ("none", "thin"):
+            # Body search is blind (or nearly) to this document and nothing else in
+            # the pipeline would ever say so — the row still ingests and still ranks
+            # on title/summary.
+            log.warning("research_vault: %s has a %s text layer (%s chars / %s pages)"
+                        " — body search will not find it",
+                        item_id, facts["text_layer"], facts.get("char_count"),
+                        facts.get("pages"))
 
         # A sidecar title that is really the PDF's FILENAME is a valid field, so the
         # normalize ladder never sees it as missing — it has to be caught by shape
@@ -217,8 +246,8 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
         if not dry_run:
             store.put_bytes(f"{VAULT_PREFIX}{item_id}.pdf", pdf_bytes, "application/pdf")
 
-        # Upsert corpus (title/summary/body/institution/date).
-        corpus_mod.upsert(conn, item, body_text)
+        # Upsert corpus (title/summary/body/institution/date + measured facts).
+        corpus_mod.upsert(conn, item, body_text, facts=facts)
 
         result["item"] = item
         result["status"] = "ingested"
@@ -350,8 +379,13 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
     Returns a summary dict::
 
-        {ingested, skipped, failed, needs_metadata, titles_repaired, titles_recovered,
-         titles_unresolved, catalog_bytes[, corpus_published][, error]}
+        {ingested, skipped, failed, needs_metadata, duplicate_bytes, no_text_layer,
+         text_unavailable, titles_repaired, titles_recovered, titles_unresolved,
+         coverage, catalog_bytes[, corpus_published][, error]}
+
+    ``coverage`` is the per-field fill rate over the final catalog
+    (:func:`catalog.coverage`) — the signal that ``needs_metadata`` cannot give,
+    since it never inspects desk/tags/tickers/pages.
 
     ``catalog_bytes`` is the serialized catalog.json (so the CLI can snapshot it to
     the repo). ``dry_run=True`` runs the full pipeline but mutates NOTHING in the
@@ -360,6 +394,7 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
     """
     now = now or datetime.now(timezone.utc)
     summary = {"ingested": 0, "skipped": 0, "failed": 0, "needs_metadata": 0,
+               "duplicate_bytes": 0, "no_text_layer": 0, "text_unavailable": 0,
                "catalog_bytes": b""}
 
     if store is None:
@@ -396,6 +431,12 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
         done_pdf_keys = _already_processed_pdf_keys(store)
 
+        # {content_sha256: doc_id} for everything already indexed. Idempotency keys
+        # on the SOURCE KEY, so the same report re-dropped under a different
+        # filename is a genuinely new object and gets its own row. The hash makes
+        # that visible.
+        seen_sha = corpus_mod.sha_index(conn)
+
         for pdf_key in _list_inbox_pdfs(store):
             if pdf_key in done_pdf_keys:
                 summary["skipped"] += 1
@@ -408,6 +449,27 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
             item = res["item"]
             item_id = item["id"]
+
+            facts = res.get("facts") or {}
+            layer = facts.get("text_layer")
+            if layer in ("none", "thin"):
+                summary["no_text_layer"] += 1
+            elif layer == "unavailable":
+                summary["text_unavailable"] += 1
+
+            # REPORT byte-identical duplicates; never skip on one. The same bytes
+            # legitimately re-arrive with a corrected sidecar, and skipping would
+            # freeze the original bad metadata in place forever (receipts already
+            # make re-ingestion the only repair path).
+            sha = facts.get("content_sha256") or ""
+            if sha:
+                prior = seen_sha.get(sha)
+                if prior and prior != item_id:
+                    summary["duplicate_bytes"] += 1
+                    log.warning("research_vault: %s is byte-identical to %s "
+                                "(same PDF, different source key) — ingesting both",
+                                item_id, prior)
+                seen_sha.setdefault(sha, item_id)
             if res.get("title_source") == "pdf":
                 summary["titles_recovered"] += 1
             elif res.get("title_source") == "filename":
@@ -432,6 +494,13 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                     "title_source": res.get("title_source"),
                     "institution": item.get("institution"),
                     "top_pick": bool(item.get("top_pick")),
+                    # Measured evidence, carried on the receipt so it survives a
+                    # corpus rebuild — the receipts are the only per-document record
+                    # that is never regenerated from scratch.
+                    "content_sha256": facts.get("content_sha256") or "",
+                    "byte_size": facts.get("byte_size"),
+                    "pages": facts.get("pages"),
+                    "text_layer": facts.get("text_layer"),
                 }
                 pending_receipts.append((
                     _receipt_key(item_id),
@@ -454,6 +523,11 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                     _flush_receipts(store, pending_receipts)
                 log.info("research_vault: checkpoint at %d ingested",
                          summary["ingested"])
+
+        # Per-field fill rate over the FINAL catalog — reported whether or not this
+        # run ingested anything, because a dead contract field is a standing state,
+        # not an event.
+        summary["coverage"] = catalog_mod.coverage(cat)
 
         # Catalog: serialize always (for the repo snapshot); write to the store
         # only on a real run.

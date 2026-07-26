@@ -55,7 +55,8 @@ _EMPTY_CATALOG = {
 # _ITEM_FIELDS — body text is NEVER in the catalog, it lives in the search corpus).
 _ITEM_FIELDS = (
     "id", "title", "institution", "side", "desk", "published_at",
-    "summary_points", "tags", "tickers", "top_pick", "pages", "needs_metadata",
+    "summary_points", "tags", "tickers", "top_pick", "pages", "language",
+    "needs_metadata",
 )
 
 

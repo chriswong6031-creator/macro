@@ -39,6 +39,49 @@ _REPO_CATALOG = Path(__file__).resolve().parent.parent / "data" / "research_vaul
 _REPO_EXCERPTS = Path(__file__).resolve().parent.parent / "data" / "research_vault" / "excerpts.json"
 
 
+def _report_measured(summary: dict) -> None:
+    """Print the per-field fill rate + the engine-measured tripwires.
+
+    Annotations use a BARE print starting at column 0: GitHub only parses a
+    workflow command when ``::`` starts the line, and this CLI's logging format
+    prefixes ``%(levelname)s``, which would silently swallow it.
+
+    All three conditions are WARNINGS, never failures — the hourly job's contract
+    is that a bad document never blocks the batch, and the same holds for a
+    document we merely learned something unflattering about.
+    """
+    try:
+        from engine.research_vault import catalog as catalog_mod
+
+        cov = summary.get("coverage") or {}
+        if cov:
+            lines, dead = catalog_mod.coverage_lines(cov)
+            print("ingest_research: catalog field coverage")
+            for ln in lines:
+                print(ln)
+            for field in dead:
+                # A schema field that no producer ever fills. Loud on purpose: this
+                # is the state that sat unnoticed across every document in the vault
+                # while needs_metadata reported a clean bill of health.
+                print(f"::warning::research_vault: catalog field '{field}' is empty on "
+                      f"ALL {cov[field]['total']} items — no producer fills it",
+                      flush=True)
+
+        if summary.get("no_text_layer"):
+            print(f"::warning::research_vault: {summary['no_text_layer']} document(s) "
+                  f"ingested with no/thin text layer — body search cannot find them",
+                  flush=True)
+        if summary.get("text_unavailable"):
+            print(f"::warning::research_vault: pdftotext unavailable for "
+                  f"{summary['text_unavailable']} document(s) — HOST fault, not a "
+                  f"document property (install poppler)", flush=True)
+        if summary.get("duplicate_bytes"):
+            print(f"::warning::research_vault: {summary['duplicate_bytes']} "
+                  f"byte-identical duplicate(s) ingested under a second id", flush=True)
+    except Exception as exc:  # noqa: BLE001 — reporting must never fail the job
+        log.warning("ingest_research: coverage report failed: %s", exc)
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(levelname)s %(name)s %(message)s",
@@ -75,6 +118,7 @@ def main() -> int:
                   f"needs_metadata={summary['needs_metadata']} "
                   f"titles_repaired={summary.get('titles_repaired', 0)} "
                   f"(corpus={corpus_path}; nothing published)")
+            _report_measured(summary)
             return 0
 
         # Catalog + corpus were already published to the store by run(); snapshot
@@ -117,6 +161,7 @@ def main() -> int:
               f"filename_only={summary.get('titles_unresolved', 0)}) "
               f"corpus_published={summary.get('corpus_published')} "
               f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
+        _report_measured(summary)
         return 0
     except Exception as exc:  # noqa: BLE001 — never-raise: keep the hourly job alive
         log.warning("ingest_research: run failed: %s", exc)
