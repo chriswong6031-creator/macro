@@ -406,7 +406,12 @@ copywriter:
     - never repeat a headline or signature phrase across posts in the same plan
     - cashtag on every ticker post; max 275 chars; at most 1 emoji unless the persona budget says 0
     - signal posts carry an invalidation or "what would prove me wrong" line and an honest caveat ("historical, not a guarantee")
-    - never name MACD / RSI / Stochastic / Ichimoku / Bollinger in public copy (visible chart labels are fine)
+    - never name MACD / RSI / Stochastic / Ichimoku / Bollinger / VWAP / AVWAP / POC / point of control / value area / volume profile in public copy (visible chart labels are fine); say what the level IS ("the average price paid since the Jun 26 spike", "the price where the most shares changed hands")
+    # Quoted: an unquoted "word: text" scalar parses as a MAPPING, and the law
+    # would reach the prompt as a dict repr instead of a sentence.
+    - 'cold-read law: every post must make sense to someone who has not seen the chart and does not know what you were looking at; if a line only parses because you know what you meant, rewrite it'
+    - every count carries its noun ("up four weeks straight", never "four up"); every "it"/"that"/"this" points at something the same post already named
+    - if the point of the post is a level, print the level; "watching a close below it" names no price and gives the reader nothing to act on
     - every numeric claim must come from the provided numbers whitelist; no invented numbers
     - losses are posted as plainly as wins; self-deprecation beats spin
     - no financial-advice phrasing ("buy now", "can't lose", "guaranteed"); no "validated"

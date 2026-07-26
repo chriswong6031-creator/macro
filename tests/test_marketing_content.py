@@ -1135,3 +1135,39 @@ def test_content_plan_queue_uses_resolvable_ladder_slots():
     day_slots = [s for s in slots if s and _re.match(r"^D\d+-S[1-8]$", s)]
     assert day_slots, f"no ladder slots in queue: {slots[:8]}"
     assert all(slot_datetime(as_of, s) is not None for s in day_slots)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# copy_laws type contract
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_every_copy_law_is_a_string():
+    """A law written as `- some label: the rule` is YAML for a MAPPING, not a
+    sentence, and copywriter renders it into the system prompt with f"- {law}".
+    The law then reaches the model as a dict repr. Caught in review on the
+    cold-read law; this keeps the next one from shipping silently.
+    """
+    import yaml
+    from pathlib import Path
+    cfg = yaml.safe_load(
+        Path("config/marketing.yml").read_text(encoding="utf-8"))
+    laws = (cfg.get("copywriter") or {}).get("copy_laws") or []
+    assert laws, "copy_laws is empty — the guard would pass vacuously"
+    bad = [l for l in laws if not isinstance(l, str)]
+    assert not bad, (
+        f"{len(bad)} copy_law(s) parsed as non-strings (quote any law "
+        f"containing 'word: '): {bad}")
+
+
+def test_the_clarity_laws_are_present_and_readable():
+    """The three laws that close the 2026-07-26 $AAPL ambiguity incident."""
+    import yaml
+    from pathlib import Path
+    laws = yaml.safe_load(
+        Path("config/marketing.yml").read_text(encoding="utf-8")
+    )["copywriter"]["copy_laws"]
+    blob = "\n".join(laws).lower()
+    assert "cold-read law" in blob
+    assert "four up" in blob, "the worked counter-example is missing"
+    assert "print the level" in blob
+    assert "vwap" in blob, "the M2 study names are not banned in copy_laws"

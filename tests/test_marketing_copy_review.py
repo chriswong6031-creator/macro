@@ -10,9 +10,19 @@ from __future__ import annotations
 import pytest
 
 from engine.marketing.copy_review import (
+    detect_ambiguity,
     detect_repetition,
     lessons_from_rejections,
     review_batch,
+)
+
+# The post the operator saw on the flagship account, verbatim. Every clarity
+# assertion below is anchored to it so the fixture cannot drift from the defect.
+_INCIDENT_HL = "Four up, near highs, VWAP holds"
+_INCIDENT_BODY = (
+    "$AAPL -0.6% off the 52-week high at 334.99 and up four weeks straight. "
+    "That Jun 26 anchored VWAP has held for 20 sessions. I'm watching a close "
+    "below it, not chasing."
 )
 
 
@@ -42,13 +52,19 @@ def test_the_incident_batch_is_caught_without_a_model():
 
 
 def test_a_varied_batch_is_clean():
-    """The reviewer must not cry wolf, or the marker stops meaning anything."""
+    """The reviewer must not cry wolf, or the marker stops meaning anything.
+
+    Every line here is terse, fragmentary and on-voice — the things the reviewer
+    must NOT flag. Two of these fixtures used to read "Four up, near highs, VWAP
+    holds" and "Under POC, watching for lower retest"; the incident below is why
+    they no longer count as clean.
+    """
     posts = [
-        _p("AAPL", "Four up, near highs, VWAP holds", "Buyers keep showing up. 314 is the line."),
+        _p("AAPL", "Up four weeks, near highs", "Buyers keep showing up. 314 is the line."),
         _p("TSLA", "Eight weeks down, new low. No thanks.", "Nothing says the selling is done."),
-        _p("NVDA", "Under POC, watching for lower retest", "Wants 203 before I care."),
-        _p("AMZN", "Four red days, watching value area low", "244 is the test."),
-        _p("MSFT", "Inside value, up big, wait for pullback", "Not chasing here."),
+        _p("NVDA", "Sellers still have the tape", "Wants 203 before I care."),
+        _p("AMZN", "Four red days and counting", "244 is the test."),
+        _p("MSFT", "Up big, and I'd rather wait", "Not chasing here."),
     ]
     r = review_batch(posts)
     assert r["batch"] == []
@@ -90,6 +106,74 @@ def test_review_marks_which_posts_collide_not_just_that_some_do():
     verdicts = {p["id"]: v["verdict"] for p, v in zip(posts, r["posts"])}
     assert verdicts["A"] == verdicts["B"] == verdicts["C"] == "bad"
     assert verdicts["D"] == "ok"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Clarity: the post that was clean, unique, on-voice, and unreadable
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_unreadable_post_is_caught_without_a_model():
+    """"wtf is four up?" — the operator, looking at a post that broke no rule."""
+    findings = detect_ambiguity([_p("AAPL", _INCIDENT_HL, _INCIDENT_BODY)])
+    kinds = {f["kind"] for f in findings}
+    assert "headless_count" in kinds, "'Four up' has no noun and nothing caught it"
+    assert "unnamed_level" in kinds, (
+        "'watching a close below it' is the whole trade and names no price")
+
+    r = review_batch([_p("AAPL", _INCIDENT_HL, _INCIDENT_BODY)])
+    assert r["mode"] == "mechanical"                  # no model needed
+    assert r["posts"][0]["verdict"] == "bad"
+
+
+def test_ambiguity_is_per_post_so_a_single_bad_post_is_caught():
+    """detect_repetition needs 3+ posts to mean anything. A post that nobody can
+    read is bad on its own, so the clarity pass must not inherit that floor."""
+    assert detect_repetition([_p("A", _INCIDENT_HL, _INCIDENT_BODY)]) == []
+    assert detect_ambiguity([_p("A", _INCIDENT_HL, _INCIDENT_BODY)]) != []
+
+
+def test_house_voice_is_not_ambiguity():
+    """Terse, fragmentary, pronoun-carrying house copy must stay clean, or the
+    marker becomes noise and the operator learns to ignore it."""
+    posts = [
+        # Fragments and counts WITH their nouns.
+        _p("A", "$A is grinding higher", "Up four weeks straight. 328.40 is the line."),
+        _p("B", "Eight weeks down in $B", "Nothing says the selling is done."),
+        _p("C", "Four red days in $C", "244 is the test. Watching, no position."),
+        # The house exemplars: pronouns with a real antecedent (the stock).
+        _p("D", "$D down 14% today", "The dip buyers get to find out who was early. "
+                                     "Watching for a bottom setup, not catching it yet."),
+        _p("E", "Hard to argue with $E here", "I'd rather respect that than argue "
+                                              "with it. 512.00 is the line I want kept."),
+        # A watched level named by pronoun, but PRICED in the same sentence.
+        _p("F", "$F is still holding", "It has stayed above 328.40 for 20 sessions. "
+                                       "A close under that is what changes my mind."),
+    ]
+    assert detect_ambiguity(posts) == [], "the reviewer is crying wolf on house voice"
+
+
+def test_headless_count_needs_the_noun_missing_not_merely_a_count():
+    from engine.marketing.copywriter import headless_counts
+    assert headless_counts("Four up, near highs") == ["Four up"]
+    assert headless_counts("Two down. That settles that.") == ["Two down"]
+    assert headless_counts("8 green, no volume") == ["8 green"]
+    # The noun arrives → readable → clean.
+    assert headless_counts("Eight weeks down, new low") == []
+    assert headless_counts("Four red days, watching 244") == []
+    assert headless_counts("Up four weeks straight") == []
+    assert headless_counts("$AAPL down 3% today") == []
+
+
+def test_unnamed_level_fires_on_the_level_pronoun_not_every_pronoun():
+    from engine.marketing.copywriter import dangling_levels
+    assert dangling_levels("I'm watching a close below it, not chasing.")
+    assert dangling_levels("A break under that and I'm out.")
+    # Same sentence, level printed → clean.
+    assert dangling_levels("I'm watching a close below 328.40.") == []
+    # Pronouns with a real antecedent, no level preposition → clean.
+    assert dangling_levels("Watching for a bottom setup, not catching it yet.") == []
+    assert dangling_levels("I'd rather respect that than argue with it.") == []
+    assert dangling_levels("Getting back over the 20-day is what settles it.") == []
 
 
 # ─────────────────────────────────────────────────────────────────────────────

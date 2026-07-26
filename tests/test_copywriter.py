@@ -920,3 +920,144 @@ def test_llm_lane_no_provider_returns_none(monkeypatch):
     monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
     monkeypatch.setattr(la, "build_providers", lambda *a, **k: [])
     assert cw.write_posts_llm([_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"}}) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Clarity gate (2026-07-26 $AAPL incident)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The post below shipped on the flagship account and passed every gate the desk
+# had. It is reproduced verbatim as the fixture so these tests cannot drift away
+# from the actual defect:
+#
+#     Four up, near highs, VWAP holds
+#     $AAPL -0.6% off the 52-week high at 334.99 and up four weeks straight.
+#     That Jun 26 anchored VWAP has held for 20 sessions. I'm watching a close
+#     below it, not chasing.
+#
+# Operator, on seeing it: "it doesn't even make sense. wtf is four up?"
+
+_AAPL_HL = "Four up, near highs, VWAP holds"
+_AAPL_BODY = (
+    "$AAPL -0.6% off the 52-week high at 334.99 and up four weeks straight. "
+    "That Jun 26 anchored VWAP has held for 20 sessions. I'm watching a close "
+    "below it, not chasing."
+)
+
+
+def _aapl_ctx():
+    return {
+        "ticker": "AAPL", "type": "watchlist", "emoji_budget": 0,
+        "numbers_whitelist": ["-0.6%", "334.99", "20", "26"],
+    }
+
+
+def test_the_incident_post_is_now_rejected():
+    """Whole post, verbatim, through the real validator. Three separate defects."""
+    from engine.marketing.copywriter import validate_copy
+    violations = validate_copy(_AAPL_HL, _AAPL_BODY, _aapl_ctx())
+
+    assert any("headless count" in v for v in violations), (
+        f"'Four up' has no noun and nothing caught it: {violations}")
+    assert any("vwap" in v.lower() for v in violations), (
+        f"'VWAP' is a study name in public copy: {violations}")
+    assert any("pronoun" in v for v in violations), (
+        f"'a close below it' names no price: {violations}")
+
+
+def test_study_names_are_banned_in_public_copy():
+    """The M2 families, which the old ban list predated."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "", "type": "chart", "emoji_budget": 0, "numbers_whitelist": []}
+    for term in ("VWAP holds", "anchored VWAP", "the POC", "point of control",
+                 "value area low", "volume profile"):
+        violations = validate_copy(f"Chart note: {term}", "Watching.", ctx)
+        assert any("banned vocab" in v for v in violations), (
+            f"{term!r} shipped clean: {violations}")
+
+
+def test_plain_language_rewrite_of_the_incident_is_clean():
+    """The gate must ACCEPT the honest version, or it just blocks the lane.
+
+    Same facts, same stance, same terseness. The only difference is that a
+    stranger can read it: the count has its noun, the level has its price, and
+    the line is described instead of named.
+    """
+    from engine.marketing.copywriter import validate_copy
+    ctx = {
+        "ticker": "AAPL", "type": "watchlist", "emoji_budget": 0,
+        "numbers_whitelist": ["-0.6%", "334.99", "328.40", "20", "26"],
+    }
+    headline = "$AAPL is still holding the line"
+    body = (
+        "$AAPL is -0.6% off its 52-week high and up four weeks straight. It has "
+        "stayed above 328.40, the average price paid since the Jun 26 volume "
+        "spike, for 20 sessions. A close under that changes my mind."
+    )
+    assert validate_copy(headline, body, ctx) == []
+
+
+def test_house_voice_survives_the_clarity_gate():
+    """The exemplars in the prompt and copy_laws must not be self-rejecting."""
+    from engine.marketing.copywriter import validate_copy
+    ctx = {"ticker": "ISRG", "type": "mover", "emoji_budget": 0,
+           "numbers_whitelist": ["-14.2%"]}
+    violations = validate_copy(
+        "$ISRG down 14.2% today",
+        "The dip buyers get to find out who was early. Watching for a bottom "
+        "setup, not catching it yet.",
+        ctx)
+    clarity = [v for v in violations if "headless" in v or "pronoun" in v]
+    assert not clarity, f"the gate rejects the house exemplar: {clarity}"
+
+
+def test_llm_lane_unreadable_output_falls_back(monkeypatch):
+    """End to end: the incident copy comes back from the model and the lane
+    drops it for the deterministic floor instead of posting it."""
+    import json as _j
+    import engine.llm_auth as la
+    from engine.marketing import copywriter as cw
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
+    bad = _j.dumps([{"headline": "Four up, near highs, VWAP holds",
+                     "body": "$ISRG has held it for 20 sessions. Watching a "
+                             "close below it, not chasing."}])
+    monkeypatch.setattr(la, "make_call", lambda p, d, context="": (bad, None, "mock"))
+    out = cw.write_posts_llm(
+        [_llm_ctx()], {"llm": {"enabled": True, "model_key": "marketing_copy"},
+                       "personas": {}, "copy_laws": []})
+    assert out and out[0]["mode"] == "llm_fallback"
+
+
+def test_clarity_law_reaches_the_model(monkeypatch):
+    """A rule the writer is never told is a rule it will keep breaking. Assert
+    the cold-read law and the worked example are actually in the system prompt."""
+    import json as _j
+    import engine.llm_auth as la
+    from engine.marketing import copywriter as cw
+    seen: dict = {}
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    monkeypatch.setattr(la, "build_providers", lambda *a, **k: [{"name": "mock"}])
+
+    class _Resp:
+        content = []
+        stop_reason = None
+
+    class _Client:
+        class messages:
+            @staticmethod
+            def create(**kw):
+                seen.update(kw)
+                return _Resp()
+
+    def _make_call(providers, do_call, context=""):
+        return do_call(_Client(), "mock-model")
+
+    monkeypatch.setattr(la, "make_call", _make_call)
+    cw.write_posts_llm([_llm_ctx()],
+                       {"llm": {"enabled": True, "model_key": "marketing_copy"},
+                        "personas": {}, "copy_laws": []})
+    prompt = seen.get("system", "")
+    assert "COLD-READ TEST" in prompt
+    assert "Four up" in prompt, "the worked negative example is missing"
+    assert "A level with no number is not a level" in prompt
