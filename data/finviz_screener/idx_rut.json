@@ -1,6 +1,6 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-07-26 00:23 UTC",
+"as_of":"2026-07-26 07:02 UTC",
 "n":1956,
 "total_reported":1956,
 "unmapped_industries":[],
@@ -13534,6 +13534,14 @@
 "market_cap_b":0.2699
 },
 {
+"ticker":"GORO",
+"company":"Goldgroup Mining Inc",
+"industry":"Other Precious Metals & Mining",
+"sector":"Basic Materials",
+"country":"Canada",
+"market_cap_b":0.2698
+},
+{
 "ticker":"BRCC",
 "company":"BRC Inc",
 "industry":"Packaged Foods",
@@ -15260,14 +15268,6 @@
 "sector":"Real Estate",
 "country":"USA",
 "market_cap_b":0.152
-},
-{
-"ticker":"GORO",
-"company":"Gold Resource Corp",
-"industry":"Other Precious Metals & Mining",
-"sector":"Basic Materials",
-"country":"Canada",
-"market_cap_b":0.1499
 },
 {
 "ticker":"CNTN",

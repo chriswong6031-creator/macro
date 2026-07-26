@@ -5404,12 +5404,12 @@
      "name": "Vox Royalty Corp"
     },
     {
-     "ticker": "LODE",
-     "name": "Comstock Inc"
+     "ticker": "GORO",
+     "name": "Goldgroup Mining Inc"
     },
     {
-     "ticker": "GORO",
-     "name": "Gold Resource Corp"
+     "ticker": "LODE",
+     "name": "Comstock Inc"
     }
    ]
   },
@@ -8070,6 +8070,10 @@
      "name": "Clearwater Paper Corp"
     },
     {
+     "ticker": "GORO",
+     "name": "Goldgroup Mining Inc"
+    },
+    {
      "ticker": "HDSN",
      "name": "Hudson Technologies Inc"
     },
@@ -8108,10 +8112,6 @@
     {
      "ticker": "SMID",
      "name": "Smith-Midland Corp"
-    },
-    {
-     "ticker": "GORO",
-     "name": "Gold Resource Corp"
     },
     {
      "ticker": "AMTX",
