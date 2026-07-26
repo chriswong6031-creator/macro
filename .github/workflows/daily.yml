@@ -2170,7 +2170,19 @@ jobs:
         # Outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.grade_thematic || echo "::warning::grade_thematic failed (non-fatal — last committed artifacts stand)"
       - name: Chronicle — market context timeline spine
+        if: always()
         continue-on-error: true
+        # if: always() is load-bearing, NOT decoration (M12): this step sits deep
+        # in the job's tail, and ~19 upstream steps here can still hard-fail
+        # (build_aibrief, build_mastermind, build_sector_central, notify, ...).
+        # Once any of them fails, GitHub SKIPS every later step lacking always()
+        # — observed on 3 of the 5 scheduled nights 2026-07-21→07-25 (runs
+        # 29877186502 / 29966266057 / 30053251096, where e.g. "White House Watch"
+        # was skipped while its always() neighbours ran). continue-on-error does
+        # NOT cover this: it protects a step that RUNS and fails, not one that is
+        # never reached. Without always() the state_log — a forward-only capture
+        # that is unrecoverable for any night it misses — would advance on
+        # roughly 1 night in 5.
         # M10 fix: moved from standout_audit_us (which needs: engine, i.e. runs
         # AFTER this whole job finishes) into engine, ahead of "build mastermind
         # context" below — the chronicle lobe was permanently serving the
@@ -2187,6 +2199,11 @@ jobs:
           fi
           exit 0
       - name: commit chronicle artifacts
+        if: always()
+        # always() for the same reason as the build step above — and it matters
+        # more here: a build that ran but whose commit was skipped leaves the
+        # appended state_log row on the runner's disk only, so the capture is
+        # lost exactly as if the build had never run.
         # Scoped to data/chronicle only (not folded into "commit engine
         # outputs" below): an early, dedicated commit+push means the chronicle
         # store survives even if the rest of this job later times out (this
