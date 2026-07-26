@@ -188,6 +188,15 @@
     contFree:     ["Continue with Free", "免费开始"],
     contBilling:  ["Continue to billing", "去结算"],
 
+    // ── compare panel (opens OVER the plan step; never navigates away) ──
+    cmpTitle:     ["Compare every feature", "逐项对比"],
+    cmpBack:      ["Back to plans", "返回方案"],
+    cmpPick:      ["Continue with __N__", "继续使用 __N__"],
+    cmpFeature:   ["Feature", "功能"],
+    cmpSoon:      ["SOON", "即将"],
+    cmpPerAnnual: ["/mo annual", "/月 · 年付"],
+    cmpPerMonthly:["/mo monthly", "/月 · 月付"],
+
     // step 4 — billing
     billTitle:    ["Add your card", "添加银行卡"],
     billSub:      ["Your 7-day trial starts now. Cancel any time before it ends and you pay nothing.", "7 天试用现在开始。在结束前随时取消，分文不收。"],
@@ -227,6 +236,8 @@
     upRetry:      ["Try again", "重试"],
     // free → start a trial
     upFreeSub:    ["Start a 7-day free trial of Insider or Pro — your card starts the trial and we tell you exactly when the first charge lands.", "开启 Insider 或 Pro 的 7 天免费试用——绑卡即开始试用，我们会明确告知首次扣款时间。"],
+    upCurFree:    ["ON FREE", "当前免费版"],
+    upNotNow:     ["Not now", "暂不升级"],
     // annual-discount subheads
     upToAnnualSub:["Step up to Pro Annual — the full desk at its lowest monthly price. Your remaining Insider time is credited toward it.", "升级到 Pro 年付——以月均最低价获得完整台席。剩余的 Insider 时长将折算抵扣。"],
     upProAnnualSub:["Move up to Pro Annual — everything in Pro, at the lowest per-month price.", "升级到 Pro 年付——Pro 全部功能，月均价格最低。"],
@@ -264,6 +275,59 @@
   function lang() { try { return (window.LANG && window.LANG.cur && window.LANG.cur() === "zh") ? "zh" : (document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"); } catch (e) { return "en"; } }
   function tx(key) { var e = LEX[key]; if (!e) return key; return lang() === "zh" ? e[1] : e[0]; }
 
+  // ── the feature matrix, mirroring the landing's #pricing-matrix ────────────
+  // Cell values: 1 = included · 0 = not included · [en,zh] = the quota itself ·
+  // "soon" = shipped-but-not-yet. tests/test_onboard_compare_matrix.py pins every
+  // English label to the landing table so the two can never drift apart.
+  var COMPARE = [
+    { g: ["INTELLIGENCE — THE DAILY READ", "情报 — 每日研判"], rows: [
+      { l: ["Daily macro dashboards", "每日宏观看板"],     v: [1, 1, 1] },
+      { l: ["Stock dossiers", "个股档案"],                 v: [1, 1, 1] },
+      { l: ["Theme rotation lanes", "主题轮动通道"],       v: [1, 1, 1] },
+      { l: ["Insider & Congress desks", "内部人 & 国会台席"], v: [0, 1, 1] },
+      { l: ["Special situations", "特殊机会"],             v: [1, 1, 1] },
+      { l: ["13F institutional flows", "13F 机构资金流"],  v: [0, 1, 1] },
+      { l: ["Bitcoin · Commodities · FX", "比特币 · 大宗 · 外汇"], v: [1, 1, 1] }
+    ] },
+    { g: ["SIGNALS", "信号"], rows: [
+      { l: ["Daily buy signals", "每日买入信号"], v: [["6 / day", "6 条/天"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
+      { l: ["Track record & autopsies", "公开战绩 & 复盘"], v: [1, 1, 1] },
+      { l: ["Daily AI morning brief", "每日 AI 晨间简报"],  v: [0, 1, 1] }
+    ] },
+    { g: ["TERMINAL", "TERMINAL"], rows: [
+      { l: ["Live charting", "实时图表"],                  v: [1, 1, 1] },
+      { l: ["Intraday options flow", "日内期权流"],        v: [0, 1, 1] },
+      { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
+    ] },
+    { g: ["MASTERMIND AI", "MASTERMIND AI"], rows: [
+      { l: ["Flash AI", "Flash AI"], v: [0, ["Unlimited", "无限量"], ["Unlimited", "无限量"]] },
+      { l: ["Pro AI", "Pro AI"],     v: [0, ["20 / mo", "20 次/月"], ["50 / mo", "50 次/月"]] },
+      { l: ["Drives Terminal charts", "操控 Terminal 图表"], v: [0, 1, 1] }
+    ] },
+    { g: ["RESEARCH", "研究"], rows: [
+      { l: ["Mastermind research reports", "Mastermind 研究报告"], v: [0, 0, 1] },
+      { l: ["Institutional research library", "机构研究库"],       v: [0, 0, 1] },
+      { l: ["Mastermind Bot Portfolios", "Mastermind 机器人组合"], v: [0, 0, 1] },
+      { l: ["MCP server", "MCP 服务器"],                           v: [0, 0, "soon"] }
+    ] }
+  ];
+
+  // ── host skin ──────────────────────────────────────────────────────────────
+  // The sheet opens over the LIGHT landing and over the DARK macro pages alike.
+  // A page that ships theme.css owns a real light/dark skin; the landing does
+  // not (it is light-only), so its html[data-theme] — which the Preferences step
+  // writes — must never darken the sheet there.
+  function hostThemed() { try { return !!document.querySelector('link[href*="theme.css"]'); } catch (e) { return false; } }
+  function hostSkin() {
+    if (!hostThemed()) return "light";
+    try { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; } catch (e) { return "light"; }
+  }
+  function syncSkin() {
+    if (!el.scrim) return;
+    var sk = hostSkin();
+    if (el.scrim.getAttribute("data-obm-skin") !== sk) el.scrim.setAttribute("data-obm-skin", sk);
+  }
+
   // ── state ────────────────────────────────────────────────────────────────
   var S = {
     open: false, mode: "signup", step: STEP_ACCOUNT,
@@ -271,8 +335,11 @@
     prefs: { market_focus: [], trade_types: [], theme_pref: "auto" },
     plan: "pro", period: "annual",
     confirmPending: false, trialActive: false, trialEnd: null,
-    // upgrade mode (post-login monetization sheet)
-    pendingUpgrade: false, upgradeOpts: null, me: null
+    // upgrade mode (post-login monetization sheet). upStep is the upgrade lane's
+    // OWN progression (plan → billing) — it never borrows the signup stepper.
+    pendingUpgrade: false, upgradeOpts: null, me: null, upStep: "plan",
+    // the compare layer (over the plan step) + which column a phone is reading
+    compare: false, compareCol: null
   };
 
   // ── stash (per-tab, password never persisted) ──────────────────────────────
@@ -486,7 +553,9 @@
     sheet.addEventListener("keydown", nudgeIdle, { passive: true });
 
     el = { scrim: scrim, sheet: sheet, pane: pane, paneH: paneH, paneS: paneS, paneCopy: paneCopy,
-           desk: desk, meter: meter, steps: steps, mini: mini, body: body, foot: foot };
+           desk: desk, meter: meter, steps: steps, mini: mini, body: body, foot: foot,
+           formPane: formPane, cmp: null };
+    syncSkin();
 
     // Ambient motion is a battery cost, not a feature: park every loop the
     // moment the tab is hidden (same law as the start.html hero guard).
@@ -498,9 +567,16 @@
 
     // subscribe to language changes → re-apply our subtree
     if (window.LANG && typeof window.LANG.onChange === "function") window.LANG.onChange(applyLang);
-    // also observe html[data-lang] directly (robust if LANG isn't present yet)
+    // also observe html[data-lang] directly (robust if LANG isn't present yet),
+    // and html[data-theme] so the sheet's skin tracks a theme flip made behind
+    // it — or by our own Preferences step on a theme-capable page.
     try {
-      new MutationObserver(function () { applyLang(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });
+      new MutationObserver(function (recs) {
+        var lang = false;
+        for (var i = 0; i < recs.length; i++) if (recs[i].attributeName === "data-lang") lang = true;
+        syncSkin();
+        if (lang) applyLang(); else renderStage();
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang", "data-theme"] });
     } catch (e) {}
   }
 
@@ -519,6 +595,8 @@
     var keyed = el.sheet.querySelectorAll("[data-k]");
     for (var j = 0; j < keyed.length; j++) keyed[j].innerHTML = tx(keyed[j].getAttribute("data-k"));
     el.sheet.setAttribute("aria-label", tx("dialogLbl"));
+    // substituted labels (no [data-k]) rebuild by hand
+    if (el.cmp) { var go = el.cmp.querySelector("[data-obm-cmp-go]"); if (go) go.textContent = comparePickLabel(); }
     // the nameplate builds its possessive per-language in code, not via [data-k]
     renderStage();
     renderMini();
@@ -604,24 +682,30 @@
   var RANK = { free: 0, insider: 1, pro: 2, unlimited: 2 };
 
   function stageStep() {
-    if (S.mode === "upgrade") return 3;
+    // upgrade mode plays the same stage on its OWN two-step lane
+    if (S.mode === "upgrade") return S.upDone ? 5 : (S.upStep === "billing" ? 4 : 3);
     if (S.mode === "signin") return 1;
     return S.step;
   }
-  // the tone the stage previews: the visitor's theme pick (auto → time of day)
+  // the tone the stage previews: the visitor's theme pick. "auto" on a
+  // theme-capable page means the page itself already IS their real setting.
   function stageTone() {
     var p = S.prefs.theme_pref;
     if (p === "dark") return "dark";
-    if (p === "auto") { var hh = new Date().getHours(); return (hh >= 7 && hh < 19) ? "light" : "dark"; }
-    return "light";
+    if (p === "light") return "light";
+    if (hostThemed()) return hostSkin();
+    var hh = new Date().getHours(); return (hh >= 7 && hh < 19) ? "light" : "dark";
   }
   function renderPane() {
     var map = {
       1: ["paneAccountH", "paneAccountS"], 2: ["panePrefsH", "panePrefsS"],
       3: ["planePlanH", "planePlanS"], 4: ["paneBillH", "paneBillS"], 5: ["paneDoneH", "paneDoneS"]
     };
-    // upgrade mode borrows the billing pane copy ("7 days free · cancel in one click")
-    var m = (S.mode === "upgrade") ? ["paneBillH", "paneBillS"] : (map[S.step] || map[1]);
+    // upgrade mode borrows the billing pane copy ("7 days free · cancel in one
+    // click") until it lands, then the Done copy
+    var m = (S.mode === "upgrade")
+      ? (S.upDone ? ["paneDoneH", "paneDoneS"] : ["paneBillH", "paneBillS"])
+      : (map[S.step] || map[1]);
     var changed = el.paneH.getAttribute("data-k") !== m[0];
     el.paneH.setAttribute("data-k", m[0]); el.paneH.innerHTML = tx(m[0]);
     el.paneS.setAttribute("data-k", m[1]); el.paneS.innerHTML = tx(m[1]);
@@ -659,7 +743,9 @@
 
     // ── plate state: what the desk is doing right now ──
     var tier = null;
-    if (S.mode === "upgrade") tier = (S.me && S.me.tier) || "free";
+    // upgrade: paid lanes show what you HAVE (the locks are what an upgrade
+    // would light); the free lane is an active pick, so it shows the pick.
+    if (S.mode === "upgrade") tier = (S.upPre && S.planTouched) ? S.plan : ((S.me && S.me.tier) || "free");
     else if (S.planTouched) tier = S.plan;
     var stBox = q('[data-stage="state"]'), stTxt = q('[data-stage="statetxt"]');
     var st = "setup", stKey = "plateSetup";
@@ -757,6 +843,8 @@
   function go(step) { S.step = step; if (step >= STEP_PLAN && S.mode === "signup") S.planTouched = true; render(); stashSave(); }
   function render() {
     if (!el.sheet) return;
+    syncSkin();
+    destroyCompare();          // a step change always dismisses the compare layer
     renderSteps();
     // signin + upgrade are compact single-panel variants — hide the multi-step stepper
     var solo = (S.mode === "signin" || S.mode === "upgrade");
@@ -1061,14 +1149,7 @@
     root.appendChild(head);
     root.appendChild(T("p", "obm-sub", "planSub"));
 
-    // period toggle
-    var tog = h("div", "obm-toggle", { role: "group" });
-    var bA = h("button", "", { type: "button", "data-obm-per": "annual", "aria-pressed": S.period === "annual" ? "true" : "false" }); bA.setAttribute("data-obm-zh", LEX.togAnnual[1]); bA.innerHTML = LEX.togAnnual[0];
-    var bM = T("button", "", "togMonthly", { type: "button", "data-obm-per": "monthly", "aria-pressed": S.period === "monthly" ? "true" : "false" });
-    bA.addEventListener("click", function () { S.period = "annual"; updatePlanUI(); });
-    bM.addEventListener("click", function () { S.period = "monthly"; updatePlanUI(); });
-    tog.appendChild(bA); tog.appendChild(bM);
-    root.appendChild(tog);
+    root.appendChild(periodToggle());
 
     // plan cards
     var plans = h("div", "obm-plans");
@@ -1082,23 +1163,210 @@
     fillSummary(sum);
     root.appendChild(sum);
 
-    // compare link
-    var cmp = T("button", "obm-link obm-brand-link obm-compare", "compareAll", { type: "button" });
-    cmp.addEventListener("click", function () { closeSheet(); setTimeout(function () { location.hash = "#pricing"; }, 60); });
-    root.appendChild(cmp);
+    // compare link — opens the matrix IN PLACE (see openCompare)
+    root.appendChild(compareLink());
 
     planFoot();
     return root;
+  }
+  // annual ⇄ monthly — shared by the signup plan step and the upgrade lane
+  function periodToggle() {
+    var tog = h("div", "obm-toggle", { role: "group" });
+    var bA = h("button", "", { type: "button", "data-obm-per": "annual", "aria-pressed": S.period === "annual" ? "true" : "false" });
+    bA.setAttribute("data-obm-zh", LEX.togAnnual[1]); bA.innerHTML = LEX.togAnnual[0];
+    var bM = T("button", "", "togMonthly", { type: "button", "data-obm-per": "monthly", "aria-pressed": S.period === "monthly" ? "true" : "false" });
+    bA.addEventListener("click", function () { S.period = "annual"; updatePlanUI(); });
+    bM.addEventListener("click", function () { S.period = "monthly"; updatePlanUI(); });
+    tog.appendChild(bA); tog.appendChild(bM);
+    return tog;
+  }
+  function compareLink() {
+    var cmp = T("button", "obm-link obm-brand-link obm-compare", "compareAll", { type: "button" });
+    cmp.addEventListener("click", openCompare);
+    return cmp;
+  }
+
+  // ══════════════════════ THE COMPARE LAYER ══════════════════════════════════
+  // Pressing "Compare every feature" used to CLOSE the sheet and jump the page
+  // to #pricing — the visitor was thrown out of their own signup, mid-flow, and
+  // had to find their way back. The matrix now opens as a layer over the FORM
+  // column: the stage, the stepper and every answer already given stay put, and
+  // the tier headers are the picker, so a comparison ends in a decision instead
+  // of a scroll position. Back returns to the exact step it opened from.
+  var _cmpLastFocus = null;
+  function compareCols() { return ["free", "insider", "pro"]; }
+  function compareTierPickable(t) {
+    // in upgrade mode Free is the plan you already have — readable, not pickable
+    return !(S.mode === "upgrade" && t === "free");
+  }
+  // the same wording the landing's matrix header uses — "$49/mo" alone reads as
+  // the monthly price when the toggle is on Annual
+  function comparePriceLbl(t) {
+    if (t === "free") return "$0";
+    return "$" + perMonth(t, S.period) + tx(S.period === "annual" ? "cmpPerAnnual" : "cmpPerMonthly");
+  }
+  function openCompare() {
+    if (S.compare) return;
+    S.compare = true;
+    S.compareCol = compareTierPickable(S.plan) ? S.plan : "insider";
+    _cmpLastFocus = document.activeElement;
+    buildCompare();
+  }
+  function closeCompare() {
+    if (!S.compare) return;
+    S.compare = false;
+    destroyCompare();
+    // the plan step is still mounted underneath — repaint the pick in place
+    // (never a full re-render: that would replay the step and reset its scroll)
+    if (el.body && el.body.querySelector("[data-obm-plan]")) updatePlanUI();
+    if (_cmpLastFocus && _cmpLastFocus.focus) { try { _cmpLastFocus.focus(); } catch (e) {} }
+  }
+  function destroyCompare() {
+    if (el.cmp && el.cmp.parentNode) el.cmp.parentNode.removeChild(el.cmp);
+    el.cmp = null;
+  }
+  function buildCompare() {
+    if (!el.formPane) return;
+    destroyCompare();
+    var zh = lang() === "zh";
+    var root = h("div", "obm-cmp", { role: "region" });
+    if (S.compareCol) root.setAttribute("data-only", S.compareCol);
+
+    // header
+    var hd = h("div", "obm-cmp-hd");
+    var back = h("button", "obm-back", { type: "button" });
+    back.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span data-k="cmpBack">' + tx("cmpBack") + '</span>';
+    back.addEventListener("click", closeCompare);
+    var hTitle = h("h2", "obm-cmp-h", { "data-k": "cmpTitle", tabindex: "-1" });
+    hTitle.innerHTML = tx("cmpTitle");
+    hd.appendChild(back);
+    hd.appendChild(hTitle);
+    root.appendChild(hd);
+
+    // phone tab strip — three columns never fit 375px
+    var tabs = h("div", "obm-cmp-tabs", { role: "tablist" });
+    compareCols().forEach(function (t) {
+      var b = h("button", "obm-cmp-tab" + (S.compareCol === t ? " obm-on" : ""), { type: "button", "data-tab": t, role: "tab", "aria-selected": S.compareCol === t ? "true" : "false" });
+      b.innerHTML = '<span data-k="' + tierKey(t) + '">' + tx(tierKey(t)) + '</span><i>' + esc(comparePriceLbl(t)) + '</i>';
+      b.addEventListener("click", function () { pickCompareCol(t, true); });
+      tabs.appendChild(b);
+    });
+    root.appendChild(tabs);
+
+    // tier header = the picker
+    var tiers = h("div", "obm-cmp-tiers");
+    var lbl = T("span", "obm-cmp-tiers-lbl", "cmpFeature");
+    tiers.appendChild(lbl);
+    compareCols().forEach(function (t) {
+      var pickable = compareTierPickable(t);
+      var b = h("button", "obm-cmp-tier" + (S.plan === t ? " obm-on" : ""), {
+        type: "button", "data-tier": t, "aria-pressed": S.plan === t ? "true" : "false"
+      });
+      if (!pickable) { b.disabled = true; b.style.cursor = "default"; }
+      b.innerHTML = '<b data-k="' + tierKey(t) + '">' + tx(tierKey(t)) + '</b>' +
+                    '<span>' + esc(pickable ? comparePriceLbl(t) : tx("upCurFree")) + '</span>';
+      if (pickable) b.addEventListener("click", function () { pickComparePlan(t); });
+      tiers.appendChild(b);
+    });
+    root.appendChild(tiers);
+
+    // the matrix
+    var body = h("div", "obm-cmp-body");
+    COMPARE.forEach(function (grp) {
+      var g = h("div", "obm-cmp-grp");
+      g.setAttribute("data-obm-zh", grp.g[1]);
+      g.textContent = zh ? grp.g[1] : grp.g[0];
+      body.appendChild(g);
+      grp.rows.forEach(function (r) {
+        var row = h("div", "obm-cmp-row");
+        var ft = h("div", "obm-cmp-ft");
+        ft.setAttribute("data-obm-zh", r.l[1]);
+        ft.textContent = zh ? r.l[1] : r.l[0];
+        row.appendChild(ft);
+        compareCols().forEach(function (t, i) {
+          row.appendChild(compareCell(r.v[i], t));
+        });
+        body.appendChild(row);
+      });
+    });
+    root.appendChild(body);
+
+    // footer — the decision, spelled out
+    var foot = h("div", "obm-foot");
+    foot.appendChild(h("div", "obm-foot-spacer"));
+    var done = h("button", "obm-btn", { type: "button", "data-obm-cmp-go": "" });
+    done.textContent = comparePickLabel();
+    done.addEventListener("click", closeCompare);
+    foot.appendChild(done);
+    root.appendChild(foot);
+
+    el.formPane.appendChild(root);
+    el.cmp = root;
+    try { hTitle.focus(); } catch (e) {}
+  }
+  function tierKey(t) { return t === "free" ? "planFree" : t === "pro" ? "planPro" : "planInsider"; }
+  function comparePickLabel() { return escLine(LEX.cmpPick, { "__N__": tx(tierKey(S.plan)) }); }
+  function compareCell(v, col) {
+    var cell = h("div", "obm-cmp-cell" + (S.plan === col ? " obm-cmp-live" : ""), { "data-col": col });
+    if (v === 1) { cell.innerHTML = svgCheck(""); cell.setAttribute("aria-label", "included"); }
+    else if (v === 0) { cell.classList.add("obm-cmp-no"); cell.setAttribute("aria-label", "not included"); }
+    else if (v === "soon") { cell.innerHTML = '<span class="obm-cmp-soon" data-k="cmpSoon">' + tx("cmpSoon") + '</span>'; }
+    else { cell.setAttribute("data-obm-zh", v[1]); cell.textContent = lang() === "zh" ? v[1] : v[0]; }
+    return cell;
+  }
+  // switching the phone column also switches the plan being considered — the
+  // footer always names what "Continue" would actually pick.
+  function pickCompareCol(t, alsoPick) {
+    S.compareCol = t;
+    if (el.cmp) el.cmp.setAttribute("data-only", t);
+    if (el.cmp) el.cmp.querySelectorAll(".obm-cmp-tab").forEach(function (b) {
+      var on = b.getAttribute("data-tab") === t;
+      b.classList.toggle("obm-on", on); b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (alsoPick && compareTierPickable(t)) pickComparePlan(t);
+  }
+  function pickComparePlan(t) {
+    S.plan = t; S.planTouched = true;
+    if (S.compareCol && compareTierPickable(t)) pickCompareCol(t, false);
+    if (!el.cmp) return;
+    el.cmp.querySelectorAll(".obm-cmp-tier").forEach(function (b) {
+      var on = b.getAttribute("data-tier") === S.plan;
+      b.classList.toggle("obm-on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+      var pr = b.querySelector("span");
+      var tt = b.getAttribute("data-tier");
+      if (pr && compareTierPickable(tt)) pr.textContent = comparePriceLbl(tt);
+    });
+    el.cmp.querySelectorAll(".obm-cmp-cell").forEach(function (c) {
+      c.classList.toggle("obm-cmp-live", c.getAttribute("data-col") === S.plan);
+    });
+    var go = el.cmp.querySelector("[data-obm-cmp-go]");
+    if (go) go.textContent = comparePickLabel();
+    renderStage();      // the lattice behind the layer follows the pick too
+    stashSave();
   }
   // footer: back + primary (Free → done, paid → billing). Rebuilt on a plan
   // switch because the step count itself changes (Free skips Billing).
   function planFoot() {
     el.foot.innerHTML = "";
+    if (S.mode === "upgrade") { upgradeFoot(); return; }
     footNav({
       back: true, onBack: function () { go(STEP_PREFS); },
       primaryKey: S.plan === "free" ? "contFree" : "contBilling",
       onPrimary: onPlanContinue, dots: true
     });
+  }
+  // The upgrade lane's footer: no "Back" into an account/preferences step the
+  // visitor completed months ago — the only way out is forward or away.
+  function upgradeFoot() {
+    el.foot.innerHTML = "";
+    var quiet = T("button", "obm-quiet", "upNotNow", { type: "button" });
+    quiet.style.width = "auto";
+    quiet.addEventListener("click", requestClose);
+    el.foot.appendChild(quiet);
+    el.foot.appendChild(h("div", "obm-foot-spacer"));
+    var b = T("button", "obm-btn", "contBilling", { type: "button" });
+    b.addEventListener("click", function () { S.upStep = "billing"; render(); stashSave(); });
+    el.foot.appendChild(b);
   }
   function priceHtml(key) {
     if (key === "free") return "$0";
@@ -1235,9 +1503,11 @@
       S.mode = "signin"; S.step = STEP_ACCOUNT;
       S.pendingUpgrade = true; S.upgradeOpts = opts;
       S.open = true; _lastFocus = document.activeElement;
+      syncSkin();
       el.scrim.style.display = "flex";
       requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
       document.documentElement.style.overflow = "hidden";
+    document.documentElement.classList.add("obm-lock");
       render(); stashSave();
       return;
     }
@@ -1248,11 +1518,13 @@
     opts = opts || {};
     ensureAssets(); build();
     S.mode = "upgrade"; S.step = STEP_PLAN; S.upgradeOpts = opts;
-    S.me = null; S.upDone = null; S.upErr = false;
+    S.me = null; S.upDone = null; S.upErr = false; S.upStep = "plan"; S.upPre = false; S.compare = false;
     S.open = true; _lastFocus = document.activeElement;
+    syncSkin();
     el.scrim.style.display = "flex";
     requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
     document.documentElement.style.overflow = "hidden";
+    document.documentElement.classList.add("obm-lock");
     render(); stashSave();
     // A host that already knows the plan may pass opts.me to skip the round-trip.
     if (opts.me) { S.me = opts.me; S.upErr = false; render(); return; }
@@ -1289,17 +1561,20 @@
     var tier = (S.me.tier || "free");
     var interval = S.me.interval || null;
 
-    // free (or no active status) → reuse the PLAN→BILLING→DONE steps (they work
-    // for a signed-in user; subscribe/init is authenticated). Preselect Pro annual.
+    // free (or no active status) → the upgrade lane's OWN plan → billing steps.
+    // It used to hand off to the SIGNUP wizard, which put a signed-in customer
+    // back in front of "Create your account" / "Set up your desk" with a Back
+    // button into preferences they had already set. Nothing here is a step they
+    // have completed: they pick a plan and add a card, and that is the whole lane.
     if (tier === "free") {
-      S.mode = "signup";                      // hand off to the wizard machinery
-      S.step = STEP_PLAN; S.planTouched = true;
-      S.confirmPending = false;               // signed-in: no email-confirm gate
-      var o = S.upgradeOpts || {};
-      S.plan = (o.plan === "insider" || o.plan === "pro") ? o.plan : "pro";
-      S.period = (o.period === "monthly" || o.period === "annual") ? o.period : "annual";
-      render();                                // re-enter as the plan step (owns el.body)
-      return null;                             // signal render() to not append over it
+      if (!S.upPre) {
+        var o = S.upgradeOpts || {};
+        S.plan = (o.plan === "insider" || o.plan === "pro") ? o.plan : "pro";
+        S.period = (o.period === "monthly" || o.period === "annual") ? o.period : "annual";
+        S.planTouched = true; S.confirmPending = false;   // signed-in: no email-confirm gate
+        S.upPre = true;
+      }
+      return (S.upStep === "billing") ? viewBilling() : upgradeFreePlan(root);
     }
 
     // paid tiers → lane cards
@@ -1321,6 +1596,60 @@
     dash.addEventListener("click", function () { location.href = loginDest(); });
     el.foot.appendChild(dash);
     return root;
+  }
+
+  // The free-tier upgrade's plan step: the same cards and the same computed
+  // prices as signup, minus every step a signed-in customer already finished.
+  function upgradeFreePlan(root) {
+    root.appendChild(T("p", "obm-sub", "upFreeSub"));
+    root.appendChild(upgradeRail("plan"));
+    root.appendChild(periodToggle());
+
+    var plans = h("div", "obm-plans");
+    plans.appendChild(planCard("insider"));
+    plans.appendChild(planCard("pro"));
+    root.appendChild(plans);
+
+    var sum = h("div", "obm-summary", { "data-obm-sum": "" });
+    fillSummary(sum);
+    root.appendChild(sum);
+    root.appendChild(compareLink());
+
+    upgradeFoot();
+    return root;
+  }
+  // the lane's own two-beat rail — never the signup stepper's five
+  function upgradeRail(at) {
+    var rail = h("div", "obm-up-rail");
+    var i1 = h("i", "obm-on"), i2 = h("i", at === "billing" ? "obm-on" : "");
+    var lbl = h("span");
+    lbl.setAttribute("data-k", at === "billing" ? "stBilling" : "stPlan");
+    lbl.textContent = tx(at === "billing" ? "stBilling" : "stPlan");
+    rail.appendChild(i1); rail.appendChild(i2); rail.appendChild(lbl);
+    return rail;
+  }
+  // Where "back" and "done" go depends on which lane we are in — the billing
+  // step is shared by the signup wizard and the upgrade lane.
+  function backFromBilling() {
+    if (S.mode === "upgrade") { S.upStep = "plan"; render(); stashSave(); return; }
+    go(STEP_PLAN);
+  }
+  function billingDone() {
+    if (S.mode === "upgrade") {
+      S.upDone = {
+        tier: S.plan, interval: S.period, invoiceCents: null,
+        trialing: !!S.trialActive, periodEnd: null, trialEnd: S.trialEnd
+      };
+      render(); stashSave(); return;
+    }
+    go(STEP_DONE);
+  }
+  // the "or continue with Free" escape hatch: in the upgrade lane the visitor
+  // ALREADY has Free — the honest action is to leave, not to "choose" it again.
+  function freeBailKey() { return S.mode === "upgrade" ? "upNotNow" : "billOrFree"; }
+  function bailToFree() {
+    if (S.mode === "upgrade") { requestClose(); return; }
+    S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE);
   }
 
   // The lane matrix (upward-only, tier and interval may each rise, never fall).
@@ -1441,9 +1770,9 @@
         return;
       }
       if (res.status === 404) {   // no Stripe sub (comp'd) → subscribe lane preselecting the target
-        S.mode = "signup"; S.step = STEP_PLAN; S.planTouched = true; S.confirmPending = false;
+        S.planTouched = true; S.confirmPending = false;
         S.plan = ln.tier; S.period = ln.interval;
-        go(STEP_BILLING);
+        S.upStep = "billing"; S.upPre = true; render();
         return;
       }
       setMsg(tx("billErr"));
@@ -1460,6 +1789,13 @@
     var intLbl = d.interval === "annual" ? (lang() === "zh" ? "年付" : "Annual") : (lang() === "zh" ? "月付" : "Monthly");
     var planNm = tx(d.tier === "pro" ? "planPro" : "planInsider") + " · " + intLbl;
     var l1 = h("p", "obm-done-line"); l1.innerHTML = escLine(LEX.upDonePlan, { "__N__": esc(planNm) }); body.appendChild(l1);
+    // a free → paid upgrade lands on a trial: say when the first charge is,
+    // in the same words the signup lane uses
+    if (d.trialing && d.trialEnd) {
+      var lt = h("p", "obm-done-line");
+      lt.innerHTML = escLine(LEX.doneTrial, { "__T__": esc(tx(d.tier === "pro" ? "planPro" : "planInsider")), "__D__": esc(fmtDate(new Date(d.trialEnd * 1000))) });
+      body.appendChild(lt);
+    }
     // amount actually invoiced today — omit when trialing / zero
     if (!d.trialing && d.invoiceCents && d.invoiceCents > 0) {
       var l2 = h("p", "obm-done-line"); l2.innerHTML = escLine(LEX.upDoneCharged, { "__T__": esc(fmtMoney(d.invoiceCents)) }); body.appendChild(l2);
@@ -1505,18 +1841,19 @@
       var blk = h("div", "obm-bill-state");
       blk.appendChild(T("p", "obm-bill-state-msg", "billConfirmFirst"));
       var cg = T("button", "obm-btn", "billConfirmGo", { type: "button" }); cg.style.width = "auto"; cg.style.margin = "0 auto";
-      cg.addEventListener("click", function () { go(STEP_DONE); });
+      cg.addEventListener("click", billingDone);
       blk.appendChild(cg);
       root.appendChild(blk);
-      footNav({ back: true, onBack: function () { go(STEP_PLAN); }, dots: true });
+      footNav({ back: true, onBack: backFromBilling, dots: S.mode !== "upgrade" });
       return root;
     }
 
     root.appendChild(T("p", "obm-sub", "billSub"));
+    if (S.mode === "upgrade") root.appendChild(upgradeRail("billing"));
     root.appendChild(orderCard());
     var host = h("div", "", { "data-obm-billhost": "" });
     root.appendChild(host);
-    footNav({ back: true, onBack: function () { go(STEP_PLAN); }, dots: true });
+    footNav({ back: true, onBack: backFromBilling, dots: S.mode !== "upgrade" });
 
     // kick off async init
     initBilling(host);
@@ -1582,16 +1919,16 @@
     }).catch(function () { billError(host); });
   }
   function billError(host) {
-    billState(host, '<p class="obm-bill-state-msg" data-k="billErr">' + tx("billErr") + '</p><button type="button" class="obm-btn" data-obm-retry style="width:auto;margin:0 auto"><span data-k="billRetry">' + tx("billRetry") + '</span></button><button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="billOrFree">' + tx("billOrFree") + '</span></button>');
+    billState(host, '<p class="obm-bill-state-msg" data-k="billErr">' + tx("billErr") + '</p><button type="button" class="obm-btn" data-obm-retry style="width:auto;margin:0 auto"><span data-k="billRetry">' + tx("billRetry") + '</span></button><button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="' + freeBailKey() + '">' + tx(freeBailKey()) + '</span></button>');
     var r = host.querySelector("[data-obm-retry]"); if (r) r.addEventListener("click", function () { initBilling(host); });
-    var f = host.querySelector("[data-obm-payfree]"); if (f) f.addEventListener("click", function () { S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE); });
+    var f = host.querySelector("[data-obm-payfree]"); if (f) f.addEventListener("click", bailToFree);
   }
   function billNotConfigured(host) {
     billState(host, '<p class="obm-bill-state-msg" data-k="billNotConfigured">' + tx("billNotConfigured") + '</p><a class="obm-link obm-brand-link" href="' + PLANS_HTML + '" target="_blank" rel="noopener noreferrer"><span data-k="billPlansLink">' + tx("billPlansLink") + '</span> →</a>');
   }
   function billAlready(host) {
     billState(host, '<div class="obm-bill-state-hd" data-k="billAlready">' + tx("billAlready") + '</div><p class="obm-bill-state-msg" data-k="billAlreadySub">' + tx("billAlreadySub") + '</p><button type="button" class="obm-btn" data-obm-already style="width:auto;margin:0 auto"><span data-k="billAlreadyGo">' + tx("billAlreadyGo") + '</span></button>');
-    var b = host.querySelector("[data-obm-already]"); if (b) b.addEventListener("click", function () { S.trialActive = false; go(STEP_DONE); });
+    var b = host.querySelector("[data-obm-already]"); if (b) b.addEventListener("click", function () { S.trialActive = false; billingDone(); });
   }
   function getAccessToken() {
     return sbClient().then(function (sb) {
@@ -1617,7 +1954,17 @@
     return _stripeJs;
   }
   function mountPaymentForm(host, stripe, clientSecret, tier, period) {
-    var appearance = {
+    // Stripe paints inside an iframe our CSS cannot reach — hand it the sheet's
+    // own skin, or the card form lands as a white slab in a dark sheet.
+    var dark = hostSkin() === "dark";
+    var appearance = dark ? {
+      theme: "night",
+      variables: {
+        colorPrimary: "#5b8cff", colorText: "#e9eef8", colorBackground: "#141b2b",
+        colorTextSecondary: "#93a1b8", colorTextPlaceholder: "#6f7e98", colorDanger: "#ff7b7b",
+        borderRadius: "10px", fontFamily: "Inter, system-ui, sans-serif"
+      }
+    } : {
       theme: "stripe",
       variables: { colorPrimary: "#285fff", colorText: "#1c2430", colorBackground: "#ffffff", borderRadius: "10px", fontFamily: "Inter, system-ui, sans-serif" }
     };
@@ -1628,13 +1975,13 @@
       '<div class="obm-bill-el" data-obm-payel></div>' +
       '<div class="obm-err" data-obm-payerr style="display:none"></div>' +
       '<button type="submit" class="obm-btn" data-obm-paysubmit disabled style="margin-top:14px"><span data-k="billSubmit">' + tx("billSubmit") + '</span></button>' +
-      '<button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="billOrFree">' + tx("billOrFree") + '</span></button>' +
+      '<button type="button" class="obm-quiet" data-obm-payfree style="margin-top:12px"><span data-k="' + freeBailKey() + '">' + tx(freeBailKey()) + '</span></button>' +
       '</form>';
     var payEl = elements.create("payment");
     payEl.mount(host.querySelector("[data-obm-payel]"));
     var submitBtn = host.querySelector("[data-obm-paysubmit]");
     payEl.on("ready", function () { submitBtn.disabled = false; });
-    host.querySelector("[data-obm-payfree]").addEventListener("click", function () { S.plan = "free"; S.trialActive = false; S.trialEnd = null; go(STEP_DONE); });
+    host.querySelector("[data-obm-payfree]").addEventListener("click", bailToFree);
     host.querySelector("[data-obm-payform]").addEventListener("submit", function (e) {
       e.preventDefault(); onPaySubmit(host, tier, period);
     });
@@ -1666,7 +2013,7 @@
         return r.json().catch(function () { return {}; }).then(function (data) {
           S.trialActive = true;
           S.trialEnd = (data && typeof data.trial_end === "number") ? data.trial_end : null;
-          go(STEP_DONE);
+          billingDone();
         });
       }).catch(function () { setPayErr(tx("billErr")); submitBtn.disabled = false; submitBtn.innerHTML = tx("billSubmit"); });
     });
@@ -1742,12 +2089,14 @@
     if (opts && opts.period && (opts.period === "monthly" || opts.period === "annual")) S.period = opts.period;
     if (opts && opts.resume) S.step = STEP_PREFS;
     if (S.mode === "signin") S.step = STEP_ACCOUNT;
-    S.open = true;
+    S.open = true; S.compare = false;
     _lastFocus = document.activeElement;
+    syncSkin();
     el.scrim.style.display = "flex";
     // next frame → transition in
     requestAnimationFrame(function () { el.scrim.classList.add("obm-open"); });
     document.documentElement.style.overflow = "hidden";
+    document.documentElement.classList.add("obm-lock");
     render();
     redrawDesk();
     nudgeIdle();
@@ -1821,11 +2170,12 @@
   }
   function closeSheet() {
     if (!el.scrim) return;
-    S.open = false;
+    S.open = false; S.compare = false; destroyCompare();
     el.scrim.classList.remove("obm-open");
     parkStage(true);                       // nothing animates behind a closed sheet
     if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
     document.documentElement.style.overflow = "";
+    document.documentElement.classList.remove("obm-lock");
     // keep stash unless cleared by Done; hide after transition
     setTimeout(function () { if (!S.open) el.scrim.style.display = "none"; }, 220);
     if (_lastFocus && _lastFocus.focus) { try { _lastFocus.focus(); } catch (e) {} }
@@ -1836,7 +2186,8 @@
   // ESC + focus trap
   document.addEventListener("keydown", function (e) {
     if (!S.open || !el.sheet) return;
-    if (e.key === "Escape") { e.preventDefault(); requestClose(); return; }
+    // ESC peels ONE layer: the compare panel first, the sheet only once it's gone
+    if (e.key === "Escape") { e.preventDefault(); if (S.compare) closeCompare(); else requestClose(); return; }
     if (e.key === "Tab") trapTab(e);
   });
   function trapTab(e) {
