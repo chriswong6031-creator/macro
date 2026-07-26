@@ -98,19 +98,15 @@ body{background:radial-gradient(900px 480px at 12% -5%,color-mix(in srgb,var(--a
 .mm-back{display:inline-block;margin:2px 0 10px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600;transition:color .15s}
 .mm-back:hover{color:var(--accent)}
 .mm-stage{position:relative;overflow:hidden;margin:2px 0 8px;padding:28px 26px 24px;border-radius:24px;
-  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,var(--grad)) border-box;
+  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(160deg,color-mix(in srgb,var(--ink) 22%,transparent),color-mix(in srgb,var(--ink) 7%,transparent)) border-box;
   border:1.6px solid transparent;box-shadow:0 18px 60px color-mix(in srgb,var(--accent) 15%,transparent)}
 html[data-theme="dark"] .mm-stage{box-shadow:0 22px 72px color-mix(in srgb,var(--accent) 26%,transparent)}
 .mm-stage-glow{position:absolute;inset:0;pointer-events:none;opacity:.7;
   background:radial-gradient(320px 210px at 90% -12%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 70%)}
 .mm-flag{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;
-  background:linear-gradient(120deg,var(--grad));background-size:200% 100%;padding:5px 13px;border-radius:999px;animation:mm-flow 6s steps(40) infinite}
-/* Perf: background-position drift repaints per frame — steps(40/60) ≈ 6fps is
-   visually identical on these soft gradients (2026-07-21 mobile audit). */
-@keyframes mm-flow{to{background-position:200% 0}}
+  background:var(--accent);padding:5px 13px;border-radius:999px}
 .mm-h1{position:relative;font-size:36px;font-weight:800;letter-spacing:-.02em;margin:13px 0 6px;
-  background:linear-gradient(90deg,var(--grad),var(--accent));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s steps(60) infinite}
-@keyframes mm-shimmer{to{background-position:300% 0}}
+  color:var(--ink)}
 .mm-lead{position:relative;color:var(--muted);font-size:14.5px;max-width:850px;line-height:1.55;margin-bottom:18px}
 .mm-hero-mets{position:relative;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px}
 @media(max-width:720px){.mm-hero-mets{grid-template-columns:1fr 1fr}}
@@ -121,7 +117,7 @@ html[data-theme="dark"] .hm{background:rgba(255,255,255,.03);border-color:var(--
 .hm.big .hm-v{font-size:34px}
 .hm.big{border-color:color-mix(in srgb,var(--accent) 40%,var(--grid))}
 .hm-d{display:block;font-size:11px;color:var(--faint);margin-top:3px}
-.mm-meter{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);margin:8px 0 6px}
+.mm-meter{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#e5484d);margin:8px 0 6px}
 .mm-meter::after{content:"";position:absolute;top:50%;left:calc(var(--pos)*100%);transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 1px 6px rgba(0,0,0,.4)}
 .mm-meter-l{position:relative;display:flex;justify-content:space-between;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:15px}
 .mm-tags{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap}

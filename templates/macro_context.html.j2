@@ -34,9 +34,18 @@ body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 20%, color-mix(in srgb,var(--q1) 5%,transparent) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 35% at 80% 10%, color-mix(in srgb,var(--info) 5%,transparent) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, color-mix(in srgb,var(--warn) 4%,transparent) 0%, transparent 60%);
+    radial-gradient(ellipse 62% 42% at 12% 12%, color-mix(in srgb,var(--au) 11%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 38% at 88% 84%, rgba(99,102,241,.08) 0%, transparent 66%);
+}
+/* --au is the page's ambient hue; set from the risk-score state on <body>. */
+body { --au: var(--muted); }
+body.au-up   { --au: var(--up); }
+body.au-warn { --au: var(--warn); }
+body.au-down { --au: var(--down); }
+html[data-theme="light"] body::before {
+  background:
+    radial-gradient(ellipse 62% 42% at 12% 12%, color-mix(in srgb,var(--au) 6%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 38% at 88% 84%, rgba(99,102,241,.045) 0%, transparent 66%);
 }
 
 /* ── Layout ─────────────────────────────────────────────────── */
@@ -50,11 +59,29 @@ body::before {
 .sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
 /* ── Panel ──────────────────────────────────────────────────── */
-.panel {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 20px; box-shadow: 0 1px 0 rgba(255,255,255,.02);
+:root {
+  --mcg-bg:     rgba(16,22,30,.55);
+  --mcg-brd:    rgba(255,255,255,.12);
+  --mcg-shadow: 0 8px 32px rgba(0,0,0,.42), 0 1.5px 0 rgba(255,255,255,.06) inset;
+  --mcg-hover-brd:    rgba(255,255,255,.16);
+  --mcg-hover-shadow: 0 6px 24px rgba(0,0,0,.25);
+  --mcg-blur:   blur(20px);
 }
-.panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+html[data-theme="light"] {
+  --mcg-bg:     rgba(255,255,255,.82);
+  --mcg-brd:    rgba(0,0,0,.06);
+  --mcg-shadow: 0 4px 24px rgba(0,0,0,.07), 0 1px 0 rgba(255,255,255,.95) inset;
+  --mcg-hover-brd:    rgba(0,0,0,.14);
+  --mcg-hover-shadow: 0 6px 24px rgba(0,0,0,.10);
+}
+.panel {
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 16px;
+  padding: 20px; box-shadow: var(--mcg-shadow); backdrop-filter: var(--mcg-blur);
+}
+.panel2 {
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd); border-radius: 12px; padding: 14px;
+}
 
 /* ── Jump nav ───────────────────────────────────────────────── */
 .jump-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 20px; }
@@ -77,15 +104,31 @@ body::before {
   padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
   letter-spacing: .03em; white-space: nowrap;
 }
-.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); color: var(--q1); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
-.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); color: var(--q2); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
-.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); color: var(--q3); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
-.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); color: var(--q4); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
-.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); color: var(--up);   border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
-.c-down { background: color-mix(in srgb,var(--down)  14%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
-.c-warn { background: color-mix(in srgb,var(--warn)  14%,var(--panel)); color: var(--warn); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
-.c-info { background: color-mix(in srgb,var(--info)  14%,var(--panel)); color: var(--info); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
-.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); color: var(--muted); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
+/* Status tokens are COLOUR-ONLY. They are worn by bare text (.kpi-val, .liq-stat-v,
+   .hero-score-num …) as often as by pills, and a tint+border on an element with no
+   padding and no radius paints a hard-edged rectangle hugging the glyphs — the
+   "square background container" defect (operator, 2026-07-26). The tinted surface
+   belongs to the pill form alone, below. */
+.c-q1  { color: var(--q1); }
+.c-q2  { color: var(--q2); }
+.c-q3  { color: var(--q3); }
+.c-q4  { color: var(--q4); }
+.c-up   { color: var(--up); }
+.c-down { color: var(--down); }
+.c-warn { color: var(--warn); }
+.c-info { color: var(--info); }
+.c-muted { color: var(--muted); }
+/* Pill form: only .chip (and anything that opts in via .chip) gets the tinted
+   surface — it is the element that actually carries padding + a 100px radius. */
+.chip.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
+.chip.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
+.chip.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
+.chip.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
+.chip.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
+.chip.c-down { background: color-mix(in srgb,var(--down) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+.chip.c-warn { background: color-mix(in srgb,var(--warn) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+.chip.c-info { background: color-mix(in srgb,var(--info) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
+.chip.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
 
 /* ── Stale dots ─────────────────────────────────────────────── */
 .stale-ok   { color: var(--up);   }
@@ -110,36 +153,45 @@ body::before {
    HERO
    ───────────────────────────────────────────────────────────── */
 .hero {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 18px;
+  backdrop-filter: var(--mcg-blur); box-shadow: var(--mcg-shadow);
   padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden;
   animation: fadeInUp .5s ease both;
 }
+/* Ambient wash — ONE state hue bleeding from the top-left, fading to nothing.
+   --hs is set per-state on .hero (see .hero.s-* below) so the page's atmosphere
+   follows the verdict the way macro.html's aurora does. Single hue on purpose:
+   a multi-hue diagonal reads as decoration, not as a signal. */
 .hero::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg,
-    color-mix(in srgb,var(--up) 5%,transparent) 0%,
-    transparent 50%,
-    color-mix(in srgb,var(--info) 4%,transparent) 100%);
+  background:
+    radial-gradient(ellipse 70% 90% at 0% 0%, color-mix(in srgb,var(--hs) 7%,transparent) 0%, transparent 72%);
   pointer-events: none;
 }
 .hero-content { position: relative; }
 .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+/* Solid ink, tight tracking. The verdict's colour is carried by the score box and
+   the regime chip — a gradient headline spends colour on decoration and, being
+   background-clipped, degrades to invisible text wherever the clip is unsupported. */
 .hero-headline {
-  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
-  background: linear-gradient(135deg, var(--up) 0%, var(--info) 55%, var(--warn) 100%);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  margin-bottom: 8px;
+  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.14;
+  color: var(--text); margin-bottom: 8px; max-width: 20ch; text-wrap: balance;
 }
 .hero-sub { font-size: 13px; color: var(--muted); max-width: 520px; line-height: 1.6; margin-top: 4px; }
+/* State hue for the hero. Default neutral; .s-* set by the score class. */
+.hero { --hs: var(--muted); }
+.hero.s-up   { --hs: var(--up); }
+.hero.s-warn { --hs: var(--warn); }
+.hero.s-down { --hs: var(--down); }
 .hero-score-box {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-width: 110px; padding: 16px 20px; border-radius: 12px;
-  background: color-mix(in srgb,var(--up) 10%,var(--panel2));
-  border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); flex-shrink: 0;
+  background: color-mix(in srgb,var(--hs) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--hs) 25%,transparent); flex-shrink: 0;
 }
-.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--up); opacity: .7; }
+.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--hs); opacity: .75; }
 .hero-score-num { font-size: 48px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .hero-score-tag { font-size: 11px; font-weight: 600; margin-top: 2px; }
 
@@ -150,11 +202,13 @@ body::before {
 }
 .kpi-chip {
   display: flex; flex-direction: column; gap: 3px;
-  background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd); border-radius: 12px;
   padding: 10px 14px; min-width: 110px;
-  transition: transform .2s, box-shadow .2s;
+  transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out;
 }
-.kpi-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.kpi-chip:hover { transform: translateY(-1px); border-color: var(--mcg-hover-brd);
+                  box-shadow: var(--mcg-hover-shadow); }
 .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .kpi-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .kpi-sub { font-size: 10px; color: var(--muted); }
@@ -175,7 +229,9 @@ body::before {
    RISK RADAR
    ───────────────────────────────────────────────────────────── */
 .radar-board {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  /* auto-fit, not a hard 6: with 7 scares a fixed six-column grid stranded the
+     seventh tile alone on its own row. */
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;
 }
 @media (max-width: 900px) { .radar-board { grid-template-columns: repeat(3,1fr); } }
 @media (max-width: 480px) { .radar-board { grid-template-columns: repeat(2,1fr); } }
@@ -184,7 +240,8 @@ body::before {
   border-radius: 12px; padding: 18px 16px; border: 1px solid transparent;
   transition: transform .2s, box-shadow .2s; cursor: default; position: relative; overflow: hidden;
 }
-.scare-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.scare-tile { transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out; }
+.scare-tile:hover { transform: translateY(-1px); box-shadow: var(--mcg-hover-shadow); }
 .scare-tile.band-watch { background: color-mix(in srgb,var(--warn) 10%,var(--panel)); border-color: color-mix(in srgb,var(--warn) 30%,transparent); }
 .scare-tile.band-calm  { background: var(--panel); border-color: var(--line); }
 .scare-tile.dominant {
@@ -208,8 +265,9 @@ body::before {
 /* Drawdown ladder */
 .dd-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
 .dd-cell {
-  flex: 1; min-width: 90px; background: var(--panel2); border: 1px solid var(--line);
-  border-radius: 10px; padding: 10px 14px;
+  flex: 1; min-width: 108px; border-radius: 12px; padding: 11px 14px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
 }
 .dd-cell-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .dd-cell-v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--down); margin-top: 2px; }
@@ -239,10 +297,13 @@ body::before {
 @media (max-width: 560px) { .weather-grid { grid-template-columns: 1fr; } }
 
 .domain-card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 18px 16px; transition: transform .2s, box-shadow .2s; position: relative;
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 14px;
+  backdrop-filter: var(--mcg-blur); box-shadow: var(--mcg-shadow);
+  padding: 18px 16px; position: relative;
+  transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out;
 }
-.domain-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.domain-card:hover { transform: translateY(-1px); border-color: var(--mcg-hover-brd);
+                     box-shadow: var(--mcg-hover-shadow); }
 .domain-name {
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
   color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
@@ -253,7 +314,9 @@ body::before {
 .domain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .field-chip {
   display: flex; flex-direction: column; gap: 1px;
-  padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 9px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
   min-width: 0; position: relative;
 }
 .field-chip.changed-today { box-shadow: 0 0 0 1.5px var(--warn); }
@@ -353,8 +416,9 @@ body::before {
 .liq-block { margin-top: 0; }
 .liq-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .liq-stat {
-  flex: 1; min-width: 80px; background: var(--panel2); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px 12px;
+  flex: 1; min-width: 92px; border-radius: 10px; padding: 10px 12px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
 }
 .liq-stat-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
 .liq-stat-v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
@@ -488,7 +552,7 @@ body::before {
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
-<body>
+<body class="{{ ('au-' ~ vm.hero.score_cls[2:]) if vm.hero.score_cls else '' }}">
 {% include "_site_nav.html.j2" %}
 
 <div class="page-wrap">
@@ -517,7 +581,7 @@ body::before {
   </div>
 
   <!-- ── HERO ──────────────────────────────────────────────────── -->
-  <div id="hero" class="hero">
+  <div id="hero" class="hero{% if vm.hero.score_cls %} s-{{ vm.hero.score_cls[2:] }}{% endif %}">
     <div class="hero-content">
       <div class="hero-top">
         <div class="hero-headline-group">
@@ -529,7 +593,7 @@ body::before {
           <div class="hero-sub">
             <span class="chip {{ vm.hero.quad_cls }}">{{ vm.hero.quad }} {{ t(vm.hero.quad_name, vm.hero.quad_name_zh) }}</span>
             {% if vm.hero.transition_state %}&bull; {{ td(vm.hero.transition_state) }}{% endif %}
-            {% if vm.hero.quad_conf is not none %}&bull; {{ t('conf', '置信') }} {{ "%.0f"|format(vm.hero.quad_conf * 100) }}%{% endif %}
+            {% if vm.hero.quad_conf is not none %}&bull; <span class="l-en">{{ "%.0f"|format(vm.hero.quad_conf * 100) }}% confidence</span><span class="l-zh">置信 {{ "%.0f"|format(vm.hero.quad_conf * 100) }}%</span>{% endif %}
             {% if vm.hero.liq_quality %}&bull; {{ td(vm.hero.liq_quality) }}{% endif %}
             {% if vm.hero.vix is not none %}&bull; VIX {{ vm.hero.vix }}{% endif %}
           </div>
@@ -579,38 +643,40 @@ body::before {
         <div class="kpi-chip">
           <span class="kpi-label">{{ t('Radar', '雷达') }}</span>
           <span class="kpi-val {{ vm.hero.radar_cls }}">{{ vm.hero.radar_state | upper }}</span>
-          <span class="kpi-sub">{{ vm.hero.dominant_scare[:18] if vm.hero.dominant_scare else '' }}</span>
+          <span class="kpi-sub" style="white-space:normal">{{ td(vm.hero.dominant_scare) if vm.hero.dominant_scare else '' }}</span>
         </div>
         {% endif %}
         {% if vm.hero.repricing_state %}
         <div class="kpi-chip">
           <span class="kpi-label">{{ t('Repricing', '重定价') }}</span>
           <span class="kpi-val {{ vm.hero.repricing_cls }}">{{ vm.hero.repricing_state }}</span>
-          <span class="kpi-sub">{{ t('coherence', '一致性') }}</span>
+          <span class="kpi-sub l-en">how much markets agree</span><span class="kpi-sub l-zh">各市场一致程度</span>
         </div>
         {% endif %}
         {% if vm.hero.hmm_modal_quad is not none %}
         <div class="kpi-chip"
-             data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
+             data-tip-en="How confident a hidden-Markov regime model is in the current quadrant — its smoothed posterior probability P(quad), the months already spent in this regime, and the typical dwell time before a switch. Hazard rate {{ vm.hero.hmm_hazard }}. Display-only: scored use requires a causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
-          <span class="kpi-label">{{ t('Regime HMM', '象限HMM') }}</span>
-          <span class="kpi-val c-info">P({{ vm.hero.hmm_modal_quad }}) {{ vm.hero.hmm_p_modal }}</span>
-          <span class="kpi-sub l-en">hazard {{ vm.hero.hmm_hazard }}{% if vm.hero.hmm_dwell is not none %} &middot; ~{{ vm.hero.hmm_dwell }}mo dwell{% endif %}{% if vm.hero.hmm_in_regime is not none %} &middot; {{ vm.hero.hmm_in_regime }}mo in{% endif %}</span>
-          <span class="kpi-sub l-zh">风险{{ vm.hero.hmm_hazard }}{% if vm.hero.hmm_dwell is not none %} &middot; 预期停留~{{ vm.hero.hmm_dwell }}月{% endif %}{% if vm.hero.hmm_in_regime is not none %} &middot; 已{{ vm.hero.hmm_in_regime }}月{% endif %}</span>
+          <span class="kpi-label">{{ t('Model agrees', '模型判断') }}</span>
+          <span class="kpi-val c-info">{{ "%.0f"|format(vm.hero.hmm_p_modal * 100) }}%</span>
+          <span class="kpi-sub l-en">on {{ vm.hero.hmm_modal_quad }}{% if vm.hero.hmm_in_regime is not none %} &middot; {{ vm.hero.hmm_in_regime }} months in{% endif %}{% if vm.hero.hmm_dwell is not none %} &middot; usually ~{{ vm.hero.hmm_dwell }} months{% endif %}</span>
+          <span class="kpi-sub l-zh">判定为 {{ vm.hero.hmm_modal_quad }}{% if vm.hero.hmm_in_regime is not none %} &middot; 已 {{ vm.hero.hmm_in_regime }} 个月{% endif %}{% if vm.hero.hmm_dwell is not none %} &middot; 通常约 {{ vm.hero.hmm_dwell }} 个月{% endif %}</span>
         </div>
         {% endif %}
         {% if vm.hero.netliq_bn is not none %}
         <div class="kpi-chip">
           <span class="kpi-label">{{ t('Net Liquidity', '净流动性') }}</span>
           <span class="kpi-val c-info">${{ vm.hero.netliq_bn | int }}bn</span>
-          <span class="kpi-sub">{% if vm.hero.netliq_chg_65d is not none %}&Delta;65d {{ "%+.0f"|format(vm.hero.netliq_chg_65d) }}bn{% endif %}{% if vm.hero.netliq_pctile is not none %} &bull; p{{ vm.hero.netliq_pctile }}{% endif %}</span>
+          <span class="kpi-sub l-en">{% if vm.hero.netliq_chg_65d is not none %}{{ "%+.0f"|format(vm.hero.netliq_chg_65d) }}bn over 3 months{% endif %}{% if vm.hero.netliq_pctile is not none %} &bull; higher than {{ vm.hero.netliq_pctile }}% of history{% endif %}</span>
+          <span class="kpi-sub l-zh">{% if vm.hero.netliq_chg_65d is not none %}近3个月 {{ "%+.0f"|format(vm.hero.netliq_chg_65d) }}bn{% endif %}{% if vm.hero.netliq_pctile is not none %} &bull; 高于历史 {{ vm.hero.netliq_pctile }}%{% endif %}</span>
         </div>
         {% endif %}
         {% if vm.transitions_vm.today_count is defined %}
         <div class="kpi-chip">
-          <span class="kpi-label">{{ t('Transitions 14d', '14日转换') }}</span>
+          <span class="kpi-label">{{ t('Labels flipped', '标签变动') }}</span>
           <span class="kpi-val {% if vm.n_transitions_14d > 5 %}c-warn{% else %}c-muted{% endif %}">{{ vm.n_transitions_14d }}</span>
-          <span class="kpi-sub">{{ vm.transitions_vm.today_count }} {{ t('today', '今日') }}</span>
+          <span class="kpi-sub l-en">in 14 days &middot; {{ vm.transitions_vm.today_count }} today</span>
+          <span class="kpi-sub l-zh">近14日 &middot; 今日 {{ vm.transitions_vm.today_count }}</span>
         </div>
         {% endif %}
       </div>
@@ -633,7 +699,9 @@ body::before {
           <div class="recovery-hed">{{ t(vm.hero.headline_en, vm.hero.headline_zh) }}</div>
           <div class="recovery-sub">{{ t(vm.hero.sub_en, vm.hero.sub_zh) }}</div>
           {% if vm.hero.deesc_eligible %}
-          <div style="margin-top:6px" class="deesc-chip">{{ t('De-escalation eligible', '可降级') }}</div>
+          <div style="margin-top:6px" class="deesc-chip"
+               data-tip-en="The scare has receded far enough from its peak, for long enough, that the system may stand down a level."
+               data-tip-zh="警戒已自峰值回落足够幅度与时长，系统可下调一级。">{{ t('Safe to stand down', '可降级') }}</div>
           {% endif %}
         </div>
         <div class="spark-wrap">
@@ -697,18 +765,26 @@ body::before {
 
     <!-- Drawdown ladder -->
     <div class="dd-row">
-      {% for h, key, base_key in [('5d','dd_h5','dd_base_h5'), ('10d','dd_h10','dd_base_h10'), ('21d','dd_h21','dd_base_h21')] %}
+      {% for h_en, h_zh, key, base_key in [
+          ('Next week','未来1周','dd_h5','dd_base_h5'),
+          ('Next 2 weeks','未来2周','dd_h10','dd_base_h10'),
+          ('Next month','未来1个月','dd_h21','dd_base_h21')] %}
       {% set val = vm.risk_radar[key] %}
       {% set base = vm.risk_radar[base_key] %}
-      <div class="dd-cell">
-        <div class="dd-cell-h">H{{ h }}</div>
+      <div class="dd-cell"
+           {% if base is not none %}data-tip-en="In a normal week this happens about {{ "%.0f"|format(base * 100) }}% of the time — that is the bar this reading is measured against."
+           data-tip-zh="正常情况下该情形约有 {{ "%.0f"|format(base * 100) }}% 的概率发生——这是本读数的比较基准。"{% endif %}>
+        <div class="dd-cell-h">{{ t(h_en, h_zh) }}</div>
         <div class="dd-cell-v">{% if val is not none %}{{ "%.0f"|format(val * 100) }}%{% else %}—{% endif %}</div>
-        {% if base is not none %}<div class="dd-cell-base">{{ t('base', '基准') }} {{ "%.0f"|format(base * 100) }}%</div>{% endif %}
+        {% if base is not none %}<div class="dd-cell-base"><span class="l-en">normally {{ "%.0f"|format(base * 100) }}%</span><span class="l-zh">通常 {{ "%.0f"|format(base * 100) }}%</span></div>{% endif %}
       </div>
       {% endfor %}
     </div>
     {% if vm.risk_radar.dd_measure %}
-    <div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic">{{ t(vm.risk_radar.dd_measure, '≥5% 标普回撤（2006–2026 实证；随强度与共振上升）') }}</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">
+      <span class="l-en">Chance of a 5%-or-worse drop in the S&amp;P 500 over each window, against how often that normally happens.</span>
+      <span class="l-zh">各时间窗内标普500下跌5%或以上的概率，并与该情形通常发生的频率对比。</span>
+    </div>
     {% endif %}
 
     <!-- Trajectory -->
@@ -721,10 +797,19 @@ body::before {
         {% if vm.risk_radar.trajectory_peak_days_ago is not none %}· {{ vm.risk_radar.trajectory_peak_days_ago }}d {{ t('ago', '前') }}{% endif %}</span>
       {% endif %}
       {% if vm.risk_radar.trajectory_velocity is not none %}
-      <span>{{ t('Velocity', '速度') }} {{ "%.1f"|format(vm.risk_radar.trajectory_velocity) }}/d</span>
+      {% set _vel = vm.risk_radar.trajectory_velocity %}
+      <span data-tip-en="Change in the risk score per day over the recent window ({{ "%+.1f"|format(_vel) }}/day)."
+            data-tip-zh="近期窗口内风险评分的日均变化（{{ "%+.1f"|format(_vel) }}/天）。">
+        <span class="l-en">{{ 'Cooling' if _vel < 0 else ('Heating' if _vel > 0 else 'Flat') }} {{ "%.1f"|format(_vel | abs) }} pts a day</span>
+        <span class="l-zh">{{ '降温' if _vel < 0 else ('升温' if _vel > 0 else '持平') }} 每日 {{ "%.1f"|format(_vel | abs) }} 分</span>
+      </span>
       {% endif %}
       {% if vm.risk_radar.deesc_eligible %}
-      <span class="deesc-chip">{{ t('De-escalation eligible', '可降级') }}</span>
+      <span class="deesc-chip"
+            data-tip-en="The scare has receded far enough from its peak, for long enough, that the system may stand down a level."
+            data-tip-zh="警戒已自峰值回落足够幅度与时长，系统可下调一级。">
+        <span class="l-en">Safe to stand down</span><span class="l-zh">可降级</span>
+      </span>
       {% endif %}
     </div>
 
@@ -975,7 +1060,7 @@ body::before {
             <div>
               <span class="stat-val">{{ "%.0f"|format(rl.curve_2s10s * 100) }}bp</span>
               {% if rl.curve_pctile is not none %}
-              <div class="stat-pctile">p{{ "%.0f"|format(rl.curve_pctile * 100) }}</div>
+              <div class="stat-pctile"><span class="l-en">{{ "%.0f"|format(rl.curve_pctile * 100) }}th pct</span><span class="l-zh">第{{ "%.0f"|format(rl.curve_pctile * 100) }}百分位</span></div>
               {% endif %}
             </div>
           </div>
@@ -986,7 +1071,7 @@ body::before {
             <div>
               <span class="stat-val">{{ "%.2f"|format(rl.real_10y) }}%</span>
               {% if rl.real_pctile is not none %}
-              <div class="stat-pctile">p{{ "%.0f"|format(rl.real_pctile * 100) }}</div>
+              <div class="stat-pctile"><span class="l-en">{{ "%.0f"|format(rl.real_pctile * 100) }}th pct</span><span class="l-zh">第{{ "%.0f"|format(rl.real_pctile * 100) }}百分位</span></div>
               {% endif %}
             </div>
           </div>
@@ -1045,26 +1130,26 @@ body::before {
         {% if rl.netliq_bn is not none %}
         <div class="liq-row">
           <div class="liq-stat">
-            <div class="liq-stat-k">{{ t('Net Liq', '净流动性') }}</div>
+            <div class="liq-stat-k">{{ t('Net liquidity', '净流动性') }}</div>
             <div class="liq-stat-v c-info">${{ rl.netliq_bn | int }}bn</div>
             <div class="liq-stat-sub">{{ rl.lp_asof }}</div>
           </div>
           {% if rl.netliq_chg_20d is not none %}
           <div class="liq-stat">
-            <div class="liq-stat-k">&Delta;20d</div>
+            <div class="liq-stat-k">{{ t('1 month', '近1个月') }}</div>
             <div class="liq-stat-v {% if rl.netliq_chg_20d > 0 %}c-up{% else %}c-down{% endif %}">{{ "%+.0f"|format(rl.netliq_chg_20d) }}bn</div>
           </div>
           {% endif %}
           {% if rl.netliq_chg_65d is not none %}
           <div class="liq-stat">
-            <div class="liq-stat-k">&Delta;65d</div>
+            <div class="liq-stat-k">{{ t('3 months', '近3个月') }}</div>
             <div class="liq-stat-v {% if rl.netliq_chg_65d > 0 %}c-up{% else %}c-down{% endif %}">{{ "%+.0f"|format(rl.netliq_chg_65d) }}bn</div>
           </div>
           {% endif %}
           {% if rl.netliq_pctile is not none %}
           <div class="liq-stat">
-            <div class="liq-stat-k">{{ t('Pctile', '分位数') }}</div>
-            <div class="liq-stat-v c-info">p{{ rl.netliq_pctile }}</div>
+            <div class="liq-stat-k">{{ t('vs history', '历史分位') }}</div>
+            <div class="liq-stat-v c-info">{{ rl.netliq_pctile }}<span style="font-size:10px;font-weight:600">{{ t('th pct','%') }}</span></div>
           </div>
           {% endif %}
         </div>
@@ -1080,7 +1165,7 @@ body::before {
 
         <div class="liq-row" style="margin-top:14px">
           <div class="liq-stat">
-            <div class="liq-stat-k">{{ t('RRP', '逆回购') }}</div>
+            <div class="liq-stat-k" data-tip-en="Reverse repo — cash parked overnight at the Fed. When it empties, the next liquidity drain hits bank reserves directly." data-tip-zh="逆回购——隔夜存放于美联储的现金。一旦耗尽，下一轮流动性抽离将直接冲击银行准备金。">{{ t('Reverse repo', '逆回购') }}</div>
             <div class="liq-stat-v {% if rl.rrp_exhausted %}c-down{% else %}c-muted{% endif %}">{% if rl.rrp_bn is not none %}${{ rl.rrp_bn }}bn{% else %}—{% endif %}</div>
             {% if rl.rrp_exhausted %}
             <div class="liq-stat-sub" style="color:var(--down)">{{ t('EXHAUSTED', '已耗尽') }}</div>
@@ -1138,14 +1223,16 @@ body::before {
         <div class="htw-list">
           {% for hw in rt.headwinds %}
           <div class="htw-item head">
-            <span class="htw-asset">{{ hw.asset }}</span>
+            {% set _an = ASSET_NAMES.get(hw.asset) %}
+            <span class="htw-asset" data-tip-en="{{ hw.asset }}" data-tip-zh="{{ hw.asset }}">{{ t(_an[0], _an[1]) if _an else hw.asset }}</span>
             <span class="chip c-down">{{ t('headwind', '逆风') }}</span>
             <span class="htw-net">{{ '%+.2f'|format(hw.net) if hw.net is not none else '' }}</span>
           </div>
           {% endfor %}
           {% for tw in rt.tailwinds %}
           <div class="htw-item tail">
-            <span class="htw-asset">{{ tw.asset }}</span>
+            {% set _an = ASSET_NAMES.get(tw.asset) %}
+            <span class="htw-asset" data-tip-en="{{ tw.asset }}" data-tip-zh="{{ tw.asset }}">{{ t(_an[0], _an[1]) if _an else tw.asset }}</span>
             <span class="chip c-up">{{ t('tailwind', '顺风') }}</span>
             <span class="htw-net">{{ '%+.2f'|format(tw.net) if tw.net is not none else '' }}</span>
           </div>
@@ -1221,9 +1308,9 @@ body::before {
         <div class="tl-event{% if r.is_today %} hot{% endif %}">
           <span class="tl-domain">{{ t(r.domain_label_en, r.domain_label_zh) }}</span>
           <span style="font-size:12px;color:var(--muted)">{{ t(r.field_label_en, r.field_label_zh) }}</span>
-          <span class="tl-from">{{ r.from_val }}</span>
+          <span class="tl-from">{{ td(r.from_val) }}</span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">{{ r.to_val }}</span>
+          <span class="tl-to">{{ td(r.to_val) }}</span>
         </div>
         {% endfor %}
       </div>

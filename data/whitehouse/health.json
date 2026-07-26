@@ -1,10 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-26T06:48:47.097359+00:00",
+  "as_of": "2026-07-26T08:14:12.788395+00:00",
   "posts_seen": 6,
   "seen_total": 61,
   "evaluated": 0,
   "activated": 0,
-  "provider": "Claude claude-opus-4-8 (subscription)",
+  "provider": "",
   "gate_scores": []
 }

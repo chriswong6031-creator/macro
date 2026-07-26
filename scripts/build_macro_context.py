@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from engine.i18n import prettify  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_macro_context")
@@ -127,6 +128,53 @@ FIELD_LABELS: dict[str, tuple[str, str]] = {
     "intl_jp_quad":           ("Japan",                 "日本"),
     "intl_kr_quad":           ("Korea",                 "韩国"),
     "intl_tw_quad":           ("Taiwan",                "台湾"),
+    # fx — the field IS the pair; the value is the stance
+    "fx_dxy_action":          ("DXY",                   "美元指数"),
+    "fx_eurusd_action":       ("EUR/USD",               "欧元兑美元"),
+    "fx_gbpusd_action":       ("GBP/USD",               "英镑兑美元"),
+    "fx_usdjpy_action":       ("USD/JPY",               "美元兑日元"),
+    "fx_usdchf_action":       ("USD/CHF",               "美元兑瑞郎"),
+    "fx_audusd_action":       ("AUD/USD",               "澳元兑美元"),
+    "fx_usdcad_action":       ("USD/CAD",               "美元兑加元"),
+    "fx_usdmxn_action":       ("USD/MXN",               "美元兑墨西哥比索"),
+    "fx_usdbrl_action":       ("USD/BRL",               "美元兑巴西雷亚尔"),
+    "fx_usdcnh_action":       ("USD/CNH",               "美元兑离岸人民币"),
+    "usd_positioning":        ("USD Positioning",       "美元持仓"),
+    "usd_valuation":          ("USD Valuation",         "美元估值"),
+    # rates
+    "fed_path_lean":          ("Fed Path",              "美联储路径"),
+    # commodity — the field IS the metal/barrel; the value is the stance
+    "gold_action":            ("Gold",                  "黄金"),
+    "silver_action":          ("Silver",                "白银"),
+    "copper_action":          ("Copper",                "铜"),
+    "oil_action":             ("Oil",                   "原油"),
+    "commodity_ladder":       ("Setup",                 "交易形态"),
+    "commodity_mtf_grade":    ("Trend Agreement",       "趋势一致性"),
+    "commodity_shock_state":  ("Shock State",           "冲击状态"),
+    "commodity_confluence_state": ("Confluence",        "信号共振"),
+    "commodity_breadth_bucket":   ("Breadth",           "广度"),
+}
+
+# Display names for the tickers the headwind/tailwind matrix trades in. A raw
+# ticker is a machine slug to everyone who does not already know it (DESIGN_DOCTRINE
+# Law 2); the ticker itself survives as the hover receipt.
+ASSET_NAMES: dict[str, tuple[str, str]] = {
+    "SPY":  ("S&P 500",        "标普500"),
+    "QQQ":  ("Nasdaq 100",     "纳斯达克100"),
+    "IWM":  ("Small caps",     "小盘股"),
+    "TLT":  ("Long bonds",     "长期国债"),
+    "GC=F": ("Gold",           "黄金"),
+    "XLB":  ("Materials",      "原材料"),
+    "XLC":  ("Communications", "通信服务"),
+    "XLE":  ("Energy",         "能源"),
+    "XLF":  ("Financials",     "金融"),
+    "XLI":  ("Industrials",    "工业"),
+    "XLK":  ("Technology",     "科技"),
+    "XLP":  ("Staples",        "必需消费"),
+    "XLRE": ("Real estate",    "房地产"),
+    "XLU":  ("Utilities",      "公用事业"),
+    "XLV":  ("Health care",    "医疗保健"),
+    "XLY":  ("Discretionary",  "可选消费"),
 }
 
 # Chip CSS class mapping (replaces hex color dict)
@@ -777,7 +825,9 @@ def _build_weather_board(
         stale_cls = _stale_class(src_asof, today)
         chips: list[dict] = []
         for field, val in domain_labels.items():
-            field_en, field_zh = FIELD_LABELS.get(field, (field, field))
+            # Prettified fallback, never the raw slug (DESIGN_DOCTRINE Law 2).
+            _pf = prettify(field)
+            field_en, field_zh = FIELD_LABELS.get(field, (_pf, _pf))
             val_str = str(val) if val is not None else "—"
             if isinstance(val, list):
                 val_str = ", ".join(str(v) for v in val)
@@ -1089,7 +1139,9 @@ def _build_transitions_vm(transitions: list[dict], today: str) -> dict:
                 if is_today:
                     today_count -= 1
                 continue
-            field_en, field_zh = FIELD_LABELS.get(field, (field, field))
+            # Prettified fallback, never the raw slug (DESIGN_DOCTRINE Law 2).
+            _pf = prettify(field)
+            field_en, field_zh = FIELD_LABELS.get(field, (_pf, _pf))
             domain_en, domain_zh = DOMAIN_LABELS.get(domain, (domain.upper(), domain.upper()))
             formatted_rows.append({
                 "asof": asof,
@@ -1301,7 +1353,7 @@ def main() -> int:
 
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
-    env.globals.update(tr=tr, td=td)
+    env.globals.update(tr=tr, td=td, ASSET_NAMES=ASSET_NAMES)
     html = env.get_template("macro_context.html.j2").render(
         vm=vm,
         built=built,
