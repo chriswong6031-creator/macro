@@ -187,6 +187,34 @@ def test_eth_cross_reference_tracks_the_btc_figure():
     )
 
 
+def test_frozen_fallback_announces_its_own_staleness(tmp_path, monkeypatch):
+    """Past its expiry the fallback must read EXPIRED, not merely "frozen".
+
+    A frozen number that does not announce its own staleness is exactly how this
+    card drifted: it kept publishing 0.9945 long after the engine moved on. The
+    n_trials passport already escalates an expired quote (_resolve_dsr_provenance);
+    the figures fallback must too, or the two halves of the same card disagree
+    about whether their numbers can still be trusted.
+    """
+    monkeypatch.setattr(signal_lab.config, "data_dir", lambda: tmp_path)
+    frozen = dict(signal_lab._BTC_VECTOR_FROZEN)
+    assert frozen.get("expiry"), "_BTC_VECTOR_FROZEN carries no expiry to check"
+
+    # before the expiry: plain frozen quote, no false alarm
+    monkeypatch.setitem(signal_lab._BTC_VECTOR_FROZEN, "expiry", "2999-01-01")
+    fresh: list[str] = []
+    signal_lab._resolve_vector_live_stats([dict(_row())], fresh)
+    assert fresh and "frozen quote" in fresh[0]
+    assert "EXPIRED" not in fresh[0], f"not yet expired but warned as such: {fresh[0]}"
+
+    # past the expiry: escalated, and it names the remedy
+    monkeypatch.setitem(signal_lab._BTC_VECTOR_FROZEN, "expiry", "2000-01-01")
+    stale: list[str] = []
+    signal_lab._resolve_vector_live_stats([dict(_row())], stale)
+    assert stale and "EXPIRED" in stale[0], f"expired quote not escalated: {stale}"
+    assert "REFRESH IT" in stale[0], f"escalation does not name the remedy: {stale[0]}"
+
+
 def test_partial_artifact_is_rejected():
     """A calibration.json missing the raw track must not render a half-live card."""
     trial = {"n_trials_declared": 71, "n_trials_config": 65,
