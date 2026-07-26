@@ -47,10 +47,14 @@ reversed someone's opt-out, and that token rides in every marketing footer and i
 
 Undoing is therefore a capability the SERVER hands out, and only to the party that just
 performed the opt-out in this very request: a successful, NEWLY-recorded unsubscribe
-answers with a short-lived-by-construction ``resubscribe_token`` the page keeps in memory.
-An already-suppressed address gets no such token, so replaying a stolen footer link cannot
-manufacture one — which is precisely the escalation path that made the old design
-reversible by anyone who could read one of the target's emails.
+answers with a ``resubscribe_token`` the page keeps in a closure. Be precise about what
+that buys — the token does not expire (it is the same HMAC construction), so the property
+it has is that it is never DISTRIBUTED: it appears in one HTTP response, to the caller who
+just opted out, and in no email, URL or DOM node. An already-suppressed address gets no
+token at all, so replaying a stolen footer link cannot manufacture one, which is what
+closes the escalation. An attacker who unsubscribes a not-yet-suppressed target can undo
+their own action and reach the state they started from; they can never reverse a standing
+choice somebody else made.
 """
 from __future__ import annotations
 
