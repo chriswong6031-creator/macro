@@ -437,29 +437,128 @@ def send(*, template: str, cls: str, to_email: str, subject: str, html: str, tex
 
 
 # --------------------------------------------------------------------------- #
-# Base template
+# Base template — the W-D DESIGN PIN
 #
-# DELIBERATELY MINIMAL. This is the functional base so W1 can ship working mail; the
-# W-D pinned design (mockups/support_email/) REPLACES it in W2. Do not grow features
-# here — take the pinned markup instead. What it must be until then: clean, readable in
-# every client (600px table, inline CSS, no external assets), bilingual, and honest about
-# why the message arrived.
+# This IS mockups/support_email/email_base.html, expressed as a renderer. W1 shipped a
+# deliberately plain functional base and said W2 would swap it; this is that swap, so
+# every send in the estate (ticket ack, ticket reply, operator alert, and W3's billing
+# receipts) already comes out of the pinned shell.
+#
+# The seven hard rules from PIN §6.2, every one of which exists because breaking it
+# breaks a real client:
+#   1. Tables for layout, `role="presentation" border=0 cellpadding=0 cellspacing=0`.
+#      No flex, no grid, no float.
+#   2. All CSS inline on the element. The <style> block is PROGRESSIVE ENHANCEMENT ONLY
+#      (dark + mobile) — Gmail strips <style> in several contexts, so nothing in it may
+#      be load-bearing.
+#   3. NO IMAGES. The brand is text. A blocked logo makes a billing email look like
+#      phishing.
+#   4. width="600" + max-width:600px; fluid below 620px via the media query.
+#   5. background-color AND color on the SAME element, always — Gmail/Outlook.com
+#      force-invert regardless of `color-scheme`, and an inverter that flips only the
+#      background is what produces black-on-black.
+#   6. Buttons are table-based (bulletproof). border-radius is decoration; Outlook drops
+#      it and renders a square button. Accepted degrade.
+#   7. Every sentence obeys docs/DESIGN_DOCTRINE.md: plain words, no internal vocabulary.
+#
+# The signature detail is the brand gradient rendered as THREE SOLID <td>s at 4px
+# (PIN §6.4): a CSS gradient silently disappears in Outlook and a gradient image would be
+# blocked, but three solid cells paint identically everywhere.
+#
+# Class discipline (PIN §6.7 / masterplan R5): the unsubscribe slot renders ONLY when the
+# caller passes an unsubscribe_url — i.e. only for marketing. A receipt or a ticket
+# acknowledgment is information the reader is owed and the send happens regardless of
+# marketing opt-out, so an unsubscribe link on one would lie about what it does.
 # --------------------------------------------------------------------------- #
 _BRAND = "MASTERMIND"
-_FOOTER_BRAND = "Mastermind · mastermind-x.com"
+_FOOTER_BRAND = "Mastermind"
+_SITE_URL = "https://www.mastermind-x.com"
+_SITE_LABEL = "mastermind-x.com"
+_SUPPORT_ADDR = "support@mastermind-x.com"
 _WHY_EN = "You received this because you contacted Mastermind support or hold an account with us."
-_WHY_ZH = "您收到此邮件，是因为您联系了 Mastermind 客服或拥有我们的账户。"
+_WHY_ZH = "你收到这封邮件，是因为你联系了 Mastermind 客服，或拥有我们的账户。"
 
-_BG = "#f4f5f7"
-_CARD = "#ffffff"
-_INK = "#14161a"
-_MUTED = "#5b6270"
-_RULE = "#e3e6eb"
-_ACCENT = "#14161a"
+# PIN §6.1 palette. Light-first; the dark values live in the media query below.
+_C_CANVAS = "#eef1f5"
+_C_CARD = "#ffffff"
+_C_BAND = "#0f1115"      # dark in BOTH schemes — it is the product's identity, and an
+_C_TEXT = "#1c2430"      # already-dark band is the safest thing to hand an inverter.
+_C_MUTED = "#5d6b7e"
+_C_RULE = "#e3e7ee"
+_C_SLIP = "#f6f8fb"
+_C_CTA = "#285fff"
+_C_FOOT = "#7b8798"
+_C_DIM = "#8b93a1"       # eyebrow + 中文 divider chip, on both schemes
+_G1, _G2, _G3 = "#3b82f6", "#6366f1", "#7c5cff"
+
+# PIN §6.3. The ZH stacks lead with a CJK sans: the mono/Latin stacks carry no Hanzi, so
+# a ZH string falls through to whatever the system picks — on some machines a serif.
+_F_UI = ("-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,"
+         "'PingFang SC','Microsoft YaHei',sans-serif")
+_F_ZH = ("-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB',"
+         "'Microsoft YaHei',sans-serif")
+_F_MONO = "SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace"
+_F_MONO_ZH = "SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace"
+
+# Progressive enhancement only (rule 2): mobile reflow + the Apple/iOS/Outlook-macOS dark
+# overlay. Gmail honours neither reliably, which is what the paired bg+color protects.
+_STYLE = f"""  @media (max-width:620px) {{
+    .mx-shell   {{ width:100% !important; max-width:100% !important; }}
+    .mx-pad     {{ padding-left:22px !important; padding-right:22px !important; }}
+    .mx-band    {{ padding-left:22px !important; padding-right:22px !important; }}
+    .mx-h1      {{ font-size:23px !important; line-height:1.25 !important; }}
+    .mx-btn a   {{ display:block !important; text-align:center !important; }}
+    .mx-slip-k  {{ width:auto !important; }}
+  }}
+  @media (prefers-color-scheme: dark) {{
+    .mx-canvas  {{ background-color:#0b0d11 !important; }}
+    .mx-card    {{ background-color:#181b21 !important; }}
+    .mx-text    {{ color:#d7dce3 !important; }}
+    .mx-muted   {{ color:#96a0b0 !important; }}
+    .mx-rule    {{ border-color:#2a2f3a !important; }}
+    .mx-slip    {{ background-color:#1e222a !important; border-color:#2a2f3a !important; }}
+    .mx-slip-v  {{ color:#d7dce3 !important; }}
+    .mx-slip-k  {{ color:#96a0b0 !important; }}
+    .mx-link    {{ color:#7aa7e0 !important; }}
+    .mx-foot    {{ color:#8b93a1 !important; }}
+  }}"""
 
 
 def _esc(s: Any) -> str:
     return _html.escape(str(s if s is not None else ""), quote=True)
+
+
+def _ui(lang: str) -> str:
+    return _F_ZH if lang == "zh" else _F_UI
+
+
+def _slip_html(rows: list, lang: str) -> str:
+    """PIN §6.5 detail slip — deliberately the same key/value anatomy as the ticket slip
+    on /support.html, so the site and the inbox read as one product. Values are mono so
+    money and dates align; ZH KEYS use the UI face at 11.5px with no tracking (§2.1)."""
+    if not rows:
+        return ""
+    k_font = (f"font-family:{_F_ZH}; font-size:11.5px; font-weight:600;"
+              if lang == "zh" else
+              f"font-family:{_F_MONO}; font-size:10px; font-weight:600;"
+              " letter-spacing:1.3px; text-transform:uppercase;")
+    v_font = _F_MONO_ZH if lang == "zh" else _F_MONO
+    cells = []
+    last = len(rows) - 1
+    for i, (k, v) in enumerate(rows):
+        edge = "" if i == last else f" border-bottom:1px solid {_C_RULE};"
+        cells.append(
+            f'<tr>'
+            f'<td class="mx-slip-k" width="150" style="padding:11px 16px;{edge} {k_font}'
+            f' color:{_C_MUTED}; vertical-align:top;">{_esc(k)}</td>'
+            f'<td class="mx-slip-v" style="padding:11px 16px 11px 0;{edge}'
+            f' font-family:{v_font}; font-size:13px; color:{_C_TEXT};">{_esc(v)}</td>'
+            f'</tr>'
+        )
+    return (f'<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"'
+            f' class="mx-slip" bgcolor="{_C_SLIP}" style="background-color:{_C_SLIP};'
+            f' border:1px solid {_C_RULE}; border-radius:10px; margin:0 0 22px;">'
+            + "".join(cells) + "</table>")
 
 
 def _block_html(b: dict, lang: str) -> str:
@@ -467,24 +566,40 @@ def _block_html(b: dict, lang: str) -> str:
     val = b.get(lang)
     if val in (None, "", []):
         return ""
+    face = _ui(lang)
     if kind == "kv":
-        rows = "".join(
-            f'<tr><td style="padding:3px 14px 3px 0;color:{_MUTED};font-size:13px;'
-            f'white-space:nowrap">{_esc(k)}</td>'
-            f'<td style="padding:3px 0;color:{_INK};font-size:13px">{_esc(v)}</td></tr>'
-            for k, v in val
-        )
-        return f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">{rows}</table>'
+        return _slip_html(list(val), lang)
     if kind == "quote":
-        return (f'<div style="margin:0 0 16px;padding:12px 14px;background:{_BG};'
-                f'border-left:3px solid {_RULE};color:{_INK};font-size:14px;line-height:1.6;'
-                f'white-space:pre-wrap">{_esc(val)}</div>')
+        # The reader's own words handed back (PIN §7.7): muted, mono-free, line breaks
+        # kept. <br /> rather than white-space:pre-wrap alone — several clients drop the
+        # declaration, and a quote that collapses to one paragraph loses the shape of
+        # what the person actually wrote.
+        body = _esc(val).replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br />")
+        return (f'<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"'
+                f' class="mx-slip" bgcolor="{_C_SLIP}" style="background-color:{_C_SLIP};'
+                f' border:1px solid {_C_RULE}; border-radius:10px; margin:0 0 22px;">'
+                f'<tr><td class="mx-muted" style="padding:14px 16px; font-family:{face};'
+                f' font-size:14px; line-height:1.65; color:{_C_MUTED};">{body}</td></tr></table>')
     if kind == "button":
-        url = b.get("url") or "#"
-        return (f'<div style="margin:0 0 16px"><a href="{_esc(url)}" '
-                f'style="display:inline-block;padding:10px 18px;background:{_ACCENT};color:#ffffff;'
-                f'text-decoration:none;font-size:14px;font-weight:600;border-radius:4px">{_esc(val)}</a></div>')
-    return f'<p style="margin:0 0 14px;color:{_INK};font-size:14px;line-height:1.65">{_esc(val)}</p>'
+        # Bulletproof table button (rule 6). One CTA per email, maximum; the label is the
+        # verb of what happens, never "Click here".
+        url = b.get("url") or _SITE_URL
+        return (f'<table role="presentation" border="0" cellpadding="0" cellspacing="0"'
+                f' class="mx-btn" style="margin:0 0 20px;"><tr>'
+                f'<td align="center" bgcolor="{_C_CTA}" style="background-color:{_C_CTA};'
+                f' border-radius:8px;">'
+                f'<a href="{_esc(url)}" style="display:inline-block; padding:13px 26px;'
+                f' font-family:{face}; font-size:15px; font-weight:600; line-height:1;'
+                f' color:#ffffff; text-decoration:none; border-radius:8px;">{_esc(val)}</a>'
+                f'</td></tr></table>')
+    if kind == "fine":
+        lh = "1.7" if lang == "zh" else "1.55"
+        return (f'<p class="mx-muted" style="margin:0 0 14px; font-family:{face};'
+                f' font-size:13px; line-height:{lh}; color:{_C_MUTED};">{_esc(val)}</p>')
+    lh = "1.75" if lang == "zh" else "1.6"
+    size = "14.5px" if lang == "zh" else "15px"
+    return (f'<p class="mx-muted" style="margin:0 0 22px; font-family:{face};'
+            f' font-size:{size}; line-height:{lh}; color:{_C_MUTED};">{_esc(val)}</p>')
 
 
 def _block_text(b: dict, lang: str) -> str:
@@ -497,70 +612,189 @@ def _block_text(b: dict, lang: str) -> str:
     if kind == "quote":
         return "\n".join("> " + line for line in str(val).splitlines())
     if kind == "button":
-        return f"{val}: {b.get('url') or ''}"
+        return f"{val}: {b.get('url') or _SITE_URL}"
     return str(val)
 
 
-def render_email(title_en: str, title_zh: str, blocks: list[dict]) -> tuple[str, str]:
-    """Render one dual-language message body. Returns ``(html, text)``.
+def _lang_section_html(title: str, blocks: list[dict], lang: str) -> str:
+    """One language's half of the card: heading + every block, in order."""
+    body = "".join(_block_html(b, lang) for b in blocks)
+    if lang == "zh":
+        head = (f'<h2 class="mx-text" style="margin:0 0 10px; font-family:{_F_ZH};'
+                f' font-size:20px; line-height:1.35; font-weight:700; color:{_C_TEXT};">'
+                f'{_esc(title)}</h2>')
+        pad = "22px 32px 0"
+    else:
+        head = (f'<h1 class="mx-h1 mx-text" style="margin:0 0 10px; font-family:{_F_UI};'
+                f' font-size:25px; line-height:1.22; font-weight:700; letter-spacing:-0.4px;'
+                f' color:{_C_TEXT};">{_esc(title)}</h1>')
+        pad = "30px 32px 0"
+    return f'<tr><td class="mx-pad" style="padding:{pad};">{head}{body}</td></tr>'
+
+
+def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
+                 eyebrow: str = "", preheader: str = "",
+                 why_en: str | None = None, why_zh: str | None = None,
+                 unsubscribe_url: str = "") -> tuple[str, str]:
+    """Render one dual-language message in the pinned shell. Returns ``(html, text)``.
 
     ``blocks`` is a list of dicts, each carrying an ``en`` and a ``zh`` value plus an
     optional ``kind``:
 
-        {"en": "…", "zh": "…"}                          paragraph (default)
-        {"kind": "quote",  "en": "…", "zh": "…"}        the user's own words, verbatim
-        {"kind": "kv",     "en": [(k, v), …], "zh": […]} small label/value table
-        {"kind": "button", "en": "…", "zh": "…", "url": "…"}
+        {"en": "…", "zh": "…"}                          lede / body paragraph (default)
+        {"kind": "fine",   "en": "…", "zh": "…"}        fine print — the honest caveat
+        {"kind": "quote",  "en": "…", "zh": "…"}        the reader's own words, verbatim
+        {"kind": "kv",     "en": [(k, v), …], "zh": […]} the detail slip
+        {"kind": "button", "en": "…", "zh": "…", "url": "…"}   at most ONE per email
 
-    Both languages ship in EVERY message, English first, then a divider, then 中文 —
-    we do not guess which one the reader wants from a stored preference that may be
-    stale or absent. Every value is HTML-escaped: a support ticket body is untrusted
-    text written by a stranger, and it lands in the operator's inbox.
+    Keyword extras (all optional, all named by PIN §6):
+        eyebrow          the email's class label in the dark band — 1-2 words, English,
+                         uppercase (RECEIPT · TRIAL · UPGRADE · PAYMENT · SUPPORT · REPLY).
+                         It is a filing label, not a sentence, so it is never translated.
+        preheader        the ~90 chars the inbox list shows beside the subject. Say the ONE
+                         fact the reader needs before opening; never repeat the subject.
+        why_en / why_zh  the "why you received this" line. State the actual trigger.
+        unsubscribe_url  MARKETING ONLY. Passing it renders the unsubscribe slot; leaving
+                         it empty deletes the whole block, which is what every
+                         transactional send must do (PIN §6.7).
+
+    Both languages ship in EVERY message, English first, then a labelled 中文 rule, then
+    the Chinese half — we do not guess which one the reader wants from a stored preference
+    that may be stale or absent (masterplan R4). Every value is HTML-escaped: a support
+    ticket body is untrusted text written by a stranger, and it lands in an inbox.
     """
     blocks = list(blocks or [])
-    en_html = "".join(_block_html(b, "en") for b in blocks)
-    zh_html = "".join(_block_html(b, "zh") for b in blocks)
+    why_en = _WHY_EN if why_en is None else why_en
+    why_zh = _WHY_ZH if why_zh is None else why_zh
 
-    html = f"""<!-- W1 functional base — replaced by the W-D pinned design (mockups/support_email/) in W2 -->
-<div style="margin:0;padding:0;background:{_BG}">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{_BG};padding:28px 12px">
-<tr><td align="center">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:{_CARD};border:1px solid {_RULE};border-radius:6px">
-  <tr><td style="padding:22px 28px 0">
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-                font-size:13px;font-weight:700;letter-spacing:.16em;color:{_INK}">{_BRAND}</div>
-  </td></tr>
-  <tr><td style="padding:18px 28px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-    <h1 style="margin:0 0 16px;font-size:19px;line-height:1.35;font-weight:700;color:{_INK}">{_esc(title_en)}</h1>
-    {en_html}
-  </td></tr>
-  <tr><td style="padding:6px 28px 0">
-    <div style="height:1px;background:{_RULE};margin:8px 0 20px"></div>
-  </td></tr>
-  <tr><td style="padding:0 28px 8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-    <h2 style="margin:0 0 16px;font-size:17px;line-height:1.4;font-weight:700;color:{_INK}">{_esc(title_zh)}</h2>
-    {zh_html}
-  </td></tr>
-  <tr><td style="padding:8px 28px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-    <div style="height:1px;background:{_RULE};margin:0 0 14px"></div>
-    <div style="color:{_MUTED};font-size:12px;line-height:1.6">{_FOOTER_BRAND}</div>
-    <div style="color:{_MUTED};font-size:12px;line-height:1.6">{_esc(_WHY_EN)}</div>
-    <div style="color:{_MUTED};font-size:12px;line-height:1.6">{_esc(_WHY_ZH)}</div>
-  </td></tr>
+    # The trailing entity run stops Gmail pulling body copy in after the preheader.
+    pre = ""
+    if preheader:
+        filler = "&#8199;&#65279;" * 8
+        pre = (f'<div style="display:none; font-size:1px; color:{_C_CANVAS}; line-height:1px;'
+               f' max-height:0; max-width:0; opacity:0; overflow:hidden;">{_esc(preheader)}'
+               f' {filler}</div>')
+
+    eyebrow_td = (
+        f'<td align="right" style="font-family:{_F_MONO}; font-size:10px; font-weight:600;'
+        f' letter-spacing:1.6px; color:{_C_DIM}; white-space:nowrap;">{_esc(eyebrow)}</td>'
+        if eyebrow else ""
+    )
+
+    unsub = ""
+    if unsubscribe_url:
+        unsub = (
+            f'<p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px;'
+            f' line-height:1.6; color:{_C_FOOT};">'
+            f'<a class="mx-link" href="{_esc(unsubscribe_url)}" style="color:{_C_MUTED};'
+            f' text-decoration:underline;">Unsubscribe</a>&nbsp;·&nbsp;'
+            f'<a class="mx-link" href="{_esc(unsubscribe_url)}" style="color:{_C_MUTED};'
+            f' text-decoration:underline;">退订</a></p>'
+        )
+
+    html = f"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<title>{_esc(title_en)}</title>
+<style type="text/css">
+{_STYLE}
+</style>
+</head>
+<body class="mx-canvas" bgcolor="{_C_CANVAS}" style="margin:0; padding:0; width:100%;
+  background-color:{_C_CANVAS}; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+{pre}
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+  class="mx-canvas" bgcolor="{_C_CANVAS}" style="background-color:{_C_CANVAS};">
+<tr>
+<td align="center" style="padding:28px 12px 40px;">
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
+    class="mx-shell" style="width:600px; max-width:600px;">
+
+    <tr><td>
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+        <tr>
+          <td width="33.33%" height="4" bgcolor="{_G1}" style="background-color:{_G1}; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          <td width="33.33%" height="4" bgcolor="{_G2}" style="background-color:{_G2}; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          <td width="33.34%" height="4" bgcolor="{_G3}" style="background-color:{_G3}; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+        </tr>
+      </table>
+    </td></tr>
+
+    <tr>
+      <td class="mx-band" bgcolor="{_C_BAND}" style="background-color:{_C_BAND}; padding:18px 32px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td align="left" style="font-family:{_F_UI}; font-size:14px; font-weight:700;
+              letter-spacing:2.2px; color:#ffffff; white-space:nowrap;">{_BRAND}</td>
+            {eyebrow_td}
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="mx-card" bgcolor="{_C_CARD}" style="background-color:{_C_CARD};">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          {_lang_section_html(title_en, blocks, "en")}
+          <tr>
+            <td class="mx-pad" style="padding:26px 32px 0;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td class="mx-rule" style="border-top:1px solid {_C_RULE}; font-size:0; line-height:0;">&nbsp;</td>
+                  <td width="52" align="center" style="font-family:{_F_ZH}; font-size:11px;
+                    font-weight:600; letter-spacing:1px; color:{_C_DIM}; padding:0 4px;">中文</td>
+                  <td class="mx-rule" style="border-top:1px solid {_C_RULE}; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {_lang_section_html(title_zh, blocks, "zh")}
+          <tr><td style="height:30px; font-size:0; line-height:0;">&nbsp;</td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="mx-pad" style="padding:22px 32px 0;">
+        <p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
+          {_FOOTER_BRAND} · <a class="mx-link" href="{_SITE_URL}" style="color:{_C_MUTED}; text-decoration:underline;">{_SITE_LABEL}</a>
+        </p>
+        <p class="mx-foot" style="margin:0 0 8px; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
+          {_esc(why_en)}<br />{_esc(why_zh)}
+        </p>
+        {unsub}
+        <p class="mx-foot" style="margin:0; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
+          Questions? Reply to this email, or write to
+          <a class="mx-link" href="mailto:{_SUPPORT_ADDR}" style="color:{_C_MUTED}; text-decoration:underline;">{_SUPPORT_ADDR}</a>.<br />
+          有问题？直接回复本邮件，或发送至 {_SUPPORT_ADDR}。
+        </p>
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
 </table>
-</td></tr>
-</table>
-</div>"""
+
+</body>
+</html>"""
 
     en_text = "\n\n".join(t for t in (_block_text(b, "en") for b in blocks) if t)
     zh_text = "\n\n".join(t for t in (_block_text(b, "zh") for b in blocks) if t)
+    unsub_text = f"\nUnsubscribe / 退订: {unsubscribe_url}\n" if unsubscribe_url else ""
     text = (
-        f"{_BRAND}\n\n"
+        f"{_BRAND}{(' · ' + eyebrow) if eyebrow else ''}\n\n"
         f"{title_en}\n\n{en_text}\n\n"
         f"{'-' * 46}\n\n"
         f"{title_zh}\n\n{zh_text}\n\n"
         f"{'-' * 46}\n"
-        f"{_FOOTER_BRAND}\n{_WHY_EN}\n{_WHY_ZH}\n"
+        f"{_FOOTER_BRAND} · {_SITE_LABEL}\n{why_en}\n{why_zh}\n{unsub_text}"
     )
     return html, text
 

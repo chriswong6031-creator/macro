@@ -1,0 +1,1081 @@
+
+<!DOCTYPE html>
+<html lang="en" data-auth="out" data-form="idle">
+<head>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support — Mastermind</title>
+
+<meta name="description" content="Write to Mastermind support and get a real answer by email — usually within one business day. Billing, account, data and bug requests, in English or 中文.">
+<link rel="canonical" href="https://www.mastermind-x.com/support.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="Support — Mastermind">
+<meta property="og:description" content="Write to Mastermind support and get a real answer by email — usually within one business day. Billing, account, data and bug requests, in English or 中文.">
+<meta property="og:url" content="https://www.mastermind-x.com/support.html">
+<meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Support — Mastermind">
+<meta name="twitter:description" content="Write to Mastermind support and get a real answer by email — usually within one business day. Billing, account, data and bug requests, in English or 中文.">
+<meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── /support.html page CSS — ported from mockups/support_email/support_page.html
+   between ##PAGE-CSS-START## / ##PAGE-CSS-END##. Everything resolves from theme.css
+   tokens, so dark / light / EN / ZH all come for free. Two page-local additions
+   only: --surface (opaque elevated fill — the floating-menu --glass-bg is
+   translucent and needs a backdrop-filter to stay legible, and a content surface
+   must never depend on one; same recipe as plans.html.j2) and --brand-a/b/c (the
+   Mastermind mark's gradient stops, used ONLY for the headline accent). ────────── */
+*{ box-sizing:border-box; }
+body{ margin:0; padding-top:18px;            /* 18px top gap — house law, plans.html.j2 */
+  background:var(--bg); color:var(--text); font:14.5px/1.55 var(--font-ui);
+  -webkit-font-smoothing:antialiased; }
+a{ color:var(--link); text-decoration:none; }
+
+:root{
+  --surface:color-mix(in srgb, var(--panel) 96%, var(--text));
+  --brand-a:#3b82f6; --brand-b:#6366f1; --brand-c:#7c5cff;
+}
+html[data-theme="light"]{ --surface:color-mix(in srgb, var(--panel) 97%, #000); }
+
+/* auth variants are mutually exclusive; the page boots signed-OUT (the common
+   case) and the JS flips html[data-auth] once MDXAuth resolves a session, so an
+   anonymous visitor never sees a flash of somebody else's identity chip. */
+html[data-auth="out"] .auth-in{ display:none; }
+html[data-auth="in"]  .auth-out{ display:none; }
+
+/* mono micro-label — the instrument-panel voice used for every field label,
+   card label and slip key on this page. This is the page's type signature. */
+.mlab{ display:block; font:600 10.5px/1 var(--font-mono); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); }
+/* CJK typography: the mono stack has no Hanzi, so a ZH label falls through to
+   whatever the system picks — on some machines a SERIF (SF Mono → Songti). Pin a
+   sans CJK face ahead of the mono chain, and drop the wide Latin tracking, which
+   reads as broken spacing on Hanzi (theme.css does the same for h2, line 172). */
+html[data-lang="zh"] .mlab{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
+html[data-lang="zh"] .hero .eyebrow{ letter-spacing:.08em; }
+html[data-lang="zh"] .slip .k{ letter-spacing:.04em;
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); }
+
+/* ── shell ────────────────────────────────────────────────────────────────── */
+.wrap{ max-width:960px; margin:0 auto; padding:20px 18px 64px; }
+@media (min-width:900px){ .wrap{ padding:28px 26px 88px; } }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+.hero{ text-align:center; padding:22px 6px 6px; }
+.hero .eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--muted); display:inline-flex; align-items:center; gap:8px; margin-bottom:15px; }
+.hero .eyebrow::before,.hero .eyebrow::after{ content:""; width:26px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--line)); }
+.hero .eyebrow::after{ background:linear-gradient(90deg,var(--line),transparent); }
+.hero h1{ font:700 clamp(29px,5.2vw,45px)/1.06 var(--font-ui); letter-spacing:-.025em;
+  margin:0 auto; max-width:20ch; }
+/* inline-block keeps the second beat whole, so the headline always breaks at the
+   sentence ("Write once." / "Get a real answer.") and never mid-phrase. It still
+   wraps internally if a viewport is too narrow for the clause. */
+.hero h1 .accent{ display:inline-block;
+  background:linear-gradient(100deg,var(--brand-a),var(--brand-c));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero .sub{ font-size:clamp(14.5px,2.2vw,16.5px); color:var(--muted); max-width:50ch;
+  margin:15px auto 0; line-height:1.5; }
+
+/* ── two-column body ──────────────────────────────────────────────────────── */
+.cols{ display:grid; grid-template-columns:1fr; gap:18px; margin-top:30px; }
+@media (min-width:940px){
+  .cols{ grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:start; }
+  .aside{ grid-column:2; grid-row:1; position:sticky; top:74px; }
+  .ticket{ grid-column:1; grid-row:1; }
+}
+
+/* ── aside: fast answers (3 items, one line each) ─────────────────────────── */
+.fast{ border:1px solid var(--glass-brd); border-radius:14px; background:var(--surface);
+  box-shadow:var(--card-shadow); padding:14px 15px 8px; }
+.fast .mlab{ margin-bottom:4px; }
+.fast a{ display:flex; align-items:center; gap:10px; padding:9px 0; color:var(--text);
+  font-size:13.4px; line-height:1.35; border-top:1px solid var(--line);
+  transition:color .16s ease; }
+.fast a:first-of-type{ border-top:0; }
+.fast a:hover{ color:var(--link); }
+.fast a .chev{ margin-left:auto; flex:none; color:var(--muted); transition:transform .16s ease; }
+.fast a:hover .chev{ transform:translateX(2px); color:var(--link); }
+.fast a .chev svg{ display:block; width:13px; height:13px; }
+
+/* what happens next — quiet, unboxed, hairline rail */
+.next{ margin:16px 0 0; padding:2px 0 2px 13px; border-left:1px solid var(--line); }
+.next .mlab{ margin-bottom:8px; }
+.next ol{ margin:0; padding:0; counter-reset:nx; }
+/* Ordinals earn their place here: this really is a sequence in time, and the
+   order is the information (ticket number first, reply-to-that-email last). */
+.next li{ list-style:none; counter-increment:nx; position:relative; padding-left:19px;
+  font-size:12.8px; line-height:1.45; color:var(--muted); margin:0 0 8px; }
+.next li::before{ content:counter(nx); position:absolute; left:0; top:2px;
+  font:600 10px/1.3 var(--font-mono); letter-spacing:.06em;
+  color:color-mix(in srgb,var(--muted) 62%,transparent); }
+.next li b{ color:var(--text); font-weight:600; }
+
+/* ── the ticket panel ─────────────────────────────────────────────────────── */
+.ticket{ position:relative; border:1px solid var(--glass-brd); border-radius:16px;
+  background:var(--surface); box-shadow:var(--card-shadow); overflow:hidden; }
+/* the routing rail — 3px accent edge; turns --ok on success, --act on error */
+.ticket::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--accent,var(--info)); transition:background .25s ease; }
+html[data-form="success"] .ticket{ --accent:var(--ok); }
+html[data-form="error"]   .ticket{ --accent:var(--act); }
+
+.tk-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
+  border-bottom:1px solid var(--line); }
+.tk-head .mlab{ flex:1; color:var(--text); }
+/* The blank ref slip: the header reads `REF ········` while the form is open —
+   a promise that a number is coming and worth keeping. On success the header
+   hands off to the slip below, where the real number stamps in at full size.
+   The ref is never printed twice in one panel. */
+.tk-ref{ font:600 12.5px/1 var(--font-mono); letter-spacing:.1em; color:var(--muted);
+  display:inline-flex; align-items:baseline; gap:7px; white-space:nowrap; }
+.tk-ref .k{ font-size:9.5px; letter-spacing:.14em; opacity:.75; }
+.tk-ref .v{ font-size:12.5px; }
+html[data-form="success"] .tk-ref{ display:none; }
+/* header label follows the panel's state */
+.tk-head .st-done{ display:none; }
+html[data-form="success"] .tk-head .st-open{ display:none; }
+html[data-form="success"] .tk-head .st-done{ display:inline; }
+html[data-form="success"] .tk-head .mlab{ color:var(--ok); }
+@keyframes stamp{ from{ opacity:0; transform:translateY(-2px) scale(1.06); letter-spacing:.26em; }
+  to{ opacity:1; transform:none; letter-spacing:.06em; } }
+
+.tk-body{ padding:18px; }
+@media (min-width:600px){ .tk-body{ padding:22px 24px 20px; } }
+
+/* ── fields ───────────────────────────────────────────────────────────────── */
+.f{ margin:0 0 16px; }
+.f .mlab{ margin-bottom:7px; }
+/* Email and Topic share one row from 620px up: both are compact fields, and
+   pairing them stops the panel towering over the aside column. The two auth
+   variants sit inside ONE cell so hiding either never re-flows the grid. */
+.frow{ display:grid; grid-template-columns:1fr; gap:0 16px; }
+@media (min-width:620px){ .frow{ grid-template-columns:1fr 1fr; } }
+.inp{ width:100%; box-sizing:border-box; padding:10px 13px; border-radius:10px;
+  border:1px solid var(--line); background:var(--panel2); color:var(--text);
+  font:inherit; font-size:14.5px; outline:none;
+  transition:border-color .18s ease, box-shadow .25s ease; }
+.inp::placeholder{ color:color-mix(in srgb,var(--muted) 80%,transparent); }
+.inp:hover{ border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
+/* focus recipe copied verbatim from theme.css .tbl-filter input:focus */
+.inp:focus{ border-color:var(--link);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 20%,transparent); }
+textarea.inp{ min-height:118px; resize:vertical; line-height:1.55; }
+select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-right:38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none' stroke='%238b93a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; background-size:15px; }
+.inp:invalid{ box-shadow:none; }            /* never shout before submit */
+.f.bad .inp{ border-color:var(--act); }
+.f.bad .fmsg{ color:var(--act); }
+.fmsg{ display:block; margin-top:6px; font-size:12.2px; line-height:1.4; color:var(--muted); }
+/* The pin renders no helper copy under a healthy field (see crops/), and the JS
+   only fills .fmsg on a failed submit — so an empty one must take no space at
+   all, or every field would carry a stray 6px gap the crops do not have. */
+.fmsg:empty{ display:none; }
+
+/* honeypot — abuse hardening (masterplan R2). Off-screen, never focusable.
+   Deliberately NOT display:none: a bot that skips hidden inputs would sail past
+   a display:none trap, and some assistive tech would too. */
+.hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+
+/* signed-in identity chip (replaces the email input) */
+.who{ display:inline-flex; align-items:center; gap:9px; padding:8px 13px 8px 11px;
+  border:1px solid var(--line); border-radius:10px; background:var(--panel2);
+  font:500 14px/1 var(--font-ui); color:var(--text); max-width:100%; }
+.who .tick{ flex:none; width:16px; height:16px; color:var(--ok); }
+.who .addr{ font-family:var(--font-mono); font-size:13px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+.who .pill{ flex:none; font:600 9.5px/1 var(--font-mono); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ok); padding:3px 7px; border-radius:999px;
+  background:color-mix(in srgb,var(--ok) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok) 32%,transparent); }
+
+/* ── the "what to include" line — the page's behavioural signature ─────────
+   The hint swaps with the chosen topic, so one round-trip answers the ticket
+   instead of three. Content, not decoration. */
+.hint{ display:flex; gap:9px; align-items:flex-start; margin:-4px 0 18px;
+  padding:10px 12px; border-radius:10px; font-size:12.9px; line-height:1.45;
+  color:var(--muted); background:color-mix(in srgb,var(--info) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
+.hint .ic{ flex:none; width:15px; height:15px; margin-top:1px; color:var(--info); }
+.hint .ic svg{ display:block; width:15px; height:15px; }
+.hint b{ color:var(--text); font-weight:600; }
+
+/* the shortcut line — appears only for topics with a same-second self-serve
+   answer (billing, account). One quiet line, never a second card. */
+.shortcut{ display:none; margin:-4px 0 16px; font-size:12.6px; color:var(--muted);
+  padding-left:19px; position:relative; line-height:1.45; }
+.shortcut.on{ display:block; }
+.shortcut::before{ content:"→"; position:absolute; left:0; top:0; color:var(--info);
+  font-family:var(--font-mono); font-size:12px; }
+.shortcut a{ font-weight:600; }
+
+/* ── submit row ───────────────────────────────────────────────────────────── */
+.send{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  border-top:1px solid var(--line); padding-top:16px; margin-top:2px; }
+.send .note{ font-size:12px; color:var(--muted); flex:1; min-width:180px; line-height:1.4; }
+/* gbtn — house glass button (theme.css lines 302-328), -cta variant, no breathing
+   animation here: a form's primary action should not pulse while you type. */
+.btn{ position:relative; overflow:hidden; display:inline-flex; align-items:center;
+  justify-content:center; gap:7px; padding:10px 20px; border-radius:11px;
+  border:1px solid color-mix(in srgb,var(--info) 45%,var(--gbtn-brd));
+  background:linear-gradient(180deg, color-mix(in srgb,var(--info) 16%,var(--gbtn-bg)), var(--gbtn-bg));
+  -webkit-backdrop-filter:blur(12px) saturate(140%); backdrop-filter:blur(12px) saturate(140%);
+  color:var(--text); font:600 13.5px/1 var(--font-ui); letter-spacing:.01em; cursor:pointer;
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18);
+  transition:background .2s ease, border-color .2s ease, transform .16s ease, box-shadow .25s ease; }
+.btn:hover{ border-color:var(--info); transform:translateY(-1px);
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 8px 24px -10px color-mix(in srgb,var(--info) 55%,transparent); }
+.btn:active{ transform:translateY(0) scale(.985); }
+.btn:focus-visible{ outline:2px solid var(--link); outline-offset:2px; }
+.btn::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.13) 50%,transparent 60%);
+  transform:translateX(-140%) skewX(-8deg); }
+.btn:hover::after{ transform:translateX(140%) skewX(-8deg); transition:transform .55s ease; }
+.btn[aria-busy="true"]{ pointer-events:none; opacity:.75; }
+.btn-ghost{ background:var(--gbtn-bg); border-color:var(--gbtn-brd); color:var(--muted);
+  font-size:12.8px; padding:9px 16px; }
+.btn-ghost:hover{ color:var(--text); border-color:var(--gbtn-brd-hover); box-shadow:none; }
+
+/* ── error bar (interface voice: what happened + what to do) ───────────────── */
+.err{ display:none; align-items:flex-start; gap:10px; margin:0 0 16px; padding:12px 14px;
+  border-radius:11px; font-size:13.2px; line-height:1.45; color:var(--text);
+  border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
+  background:color-mix(in srgb,var(--act) 10%,transparent); }
+html[data-form="error"] .err{ display:flex; }
+.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
+.err .ic svg{ display:block; width:16px; height:16px; }
+/* keep the fallback address whole — a mid-address break reads as a typo */
+.err a, .tk-done .after a{ white-space:nowrap; }
+/* Two failures, two honest sentences. The pin specifies the generic one; a 429
+   needs its own words because "check your connection and try again" is wrong
+   advice when the server is asking you to wait. Same bar, same treatment. */
+.err .e-rate{ display:none; }
+html[data-err="rate"] .err .e-generic{ display:none; }
+html[data-err="rate"] .err .e-rate{ display:inline; }
+
+/* ── success state ────────────────────────────────────────────────────────── */
+html[data-form="success"] .tk-form{ display:none; }
+.tk-done{ display:none; }
+html[data-form="success"] .tk-done{ display:block; }
+.tk-done .seal{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
+  color:var(--ok); background:color-mix(in srgb,var(--ok) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok) 34%,transparent); margin-bottom:14px; }
+.tk-done .seal svg{ width:19px; height:19px; }
+.tk-done h2{ font:700 21px/1.2 var(--font-ui); letter-spacing:-.01em; margin:0 0 8px; }
+.tk-done p{ margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55; max-width:46ch; }
+.tk-done p b{ color:var(--text); font-weight:600; font-family:var(--font-mono); font-size:13.3px; }
+/* the slip — same key/value anatomy as the email receipt's detail slip */
+.slip{ border:1px solid var(--line); border-radius:11px; overflow:hidden;
+  background:color-mix(in srgb,var(--panel2) 55%,transparent); }
+.slip .row{ display:flex; align-items:center; gap:12px; padding:9px 14px;
+  border-top:1px solid var(--line); }
+.slip .row:first-child{ border-top:0; }
+.slip .k{ font:600 10px/1 var(--font-mono); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muted); flex:none; width:78px; }
+.slip .v{ font:500 13.2px/1.3 var(--font-mono); color:var(--text); font-variant-numeric:tabular-nums; }
+.slip .v.big{ font-size:15px; font-weight:600; letter-spacing:.06em; color:var(--ok);
+  animation:stamp .42s cubic-bezier(.2,.8,.3,1) both; }
+.tk-done .after{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:18px; }
+.tk-done .after .note{ font-size:12.2px; color:var(--muted); flex:1; min-width:190px; line-height:1.45; }
+
+/* ── footer — landing footer anatomy (templates/index.html ~1507-1534), but
+   every colour resolved from theme tokens instead of the landing's hardcoded
+   dark slab, because /support.html is a theme.css page with a real light mode.
+   Class names kept identical so the two footers stay one component. ────────── */
+.mx-footer{ border-top:1px solid var(--line); margin-top:52px;
+  background:color-mix(in srgb,var(--panel) 45%,transparent);
+  padding:38px 0 30px; color:var(--muted); font-size:13px; }
+.mx-footer .f-in{ max-width:1000px; margin:0 auto; padding:0 22px; }
+.mx-footer .f-grid{ display:flex; justify-content:space-between; align-items:flex-start;
+  gap:30px; flex-wrap:wrap; }
+.mx-footer .f-brand .fb-row{ display:flex; align-items:center; gap:9px; }
+.mx-footer .f-brand .fm{ width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg,var(--brand-a),var(--brand-c)); display:grid; place-items:center;
+  font:800 14px/1 var(--font-ui); color:#fff; }
+.mx-footer .f-brand .fn{ font:800 13px/1 var(--font-ui); letter-spacing:.08em; color:var(--text); }
+.mx-footer .f-brand .ft{ margin:10px 0 0; color:var(--muted); font-size:12.5px; }
+.mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
+.mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
+  color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+.mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
+.mx-footer .f-col a:hover{ color:var(--text); }
+.mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;
+  gap:12px 18px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:34px;
+  padding-top:18px; font-size:12px; color:var(--muted); }
+
+/* ── mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width:480px){
+  .wrap{ padding:14px 14px 52px; }
+  .hero{ padding:12px 2px 2px; text-align:left; }
+  /* the eyebrow's leading hairline reads as a stray indent once the hero is
+     left-aligned — keep only the trailing rule */
+  .hero .eyebrow{ margin-bottom:12px; }
+  .hero .eyebrow::before{ display:none; }
+  .hero h1{ margin:0; max-width:none; }
+  .hero .sub{ margin:12px 0 0; max-width:none; }
+  .cols{ margin-top:22px; gap:16px; }
+  .fast{ padding:12px 13px 6px; border-radius:12px; }
+  .fast a{ font-size:13px; padding:8px 0; }
+  .ticket{ border-radius:14px; }
+  .tk-head{ padding:11px 14px; gap:8px; }
+  .tk-ref .k{ display:none; }             /* keep the ref, drop its label */
+  .tk-body{ padding:15px 14px 16px; }
+  .send{ gap:10px; }
+  .send .btn{ width:100%; order:-1; }
+  .send .note{ min-width:0; }
+  .mx-footer{ padding:30px 0 24px; margin-top:38px; }
+  .mx-footer .f-in{ padding:0 16px; }
+  .mx-footer .f-grid{ gap:24px; }
+  .mx-footer .f-cols{ gap:40px; }
+  .slip .k{ width:64px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .btn, .btn::after, .fast a .chev, .ticket::before{ transition:none; }
+  html[data-form="success"] .tk-ref .v, .slip .v.big{ animation:none; }
+  .btn:hover{ transform:none; }
+}
+</style>
+</head>
+
+<body>
+
+
+<nav class="site-nav">
+
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="start.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html"><span class="menu-icon menu-icon-flag menu-icon-us" aria-hidden="true"></span><span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · sectors · flows</span><span class="l-zh">先知 · 板块 · 资金</span></span></a>
+        <a href="stage_analysis.html"><span class="submenu-icon submenu-icon-stage" aria-hidden="true"></span><span class="l-en">Stage Analysis</span><span class="l-zh">阶段分析</span><span class="d"><span class="l-en">Stage 1-4 cycle · fresh breakouts · earnings tone</span><span class="l-zh">阶段1-4周期 · 新突破 · 财报语气</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html"><span class="submenu-icon submenu-icon-alert" aria-hidden="true"></span><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="gex.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span><span class="d"><span class="l-en">GEX · screener · flow · dark pool</span><span class="l-zh">GEX · 筛选台 · 资金流 · 暗池</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="gex.html"><span class="submenu-icon submenu-icon-options" aria-hidden="true"></span><span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+            <a href="options_screener.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+            <a href="movers.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Daily Movers</span><span class="l-zh">每日异动</span><span class="d"><span class="l-en">Free · biggest gainers & losers today · themes moving together</span><span class="l-zh">免费 · 今日涨跌最大 · 联动主题</span></span></a>
+            <a href="flow_desk.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span><span class="d"><span class="l-en">Market tide · where the money went · biggest bets</span><span class="l-zh">资金潮汐 · 资金流向 · 最大押注</span></span></a>
+            <a href="intraday_flow.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span><span class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow · K/7 confluence</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金 · K/7汇聚</span></span></a>
+            <a href="flow_leaders.html"><span class="submenu-icon submenu-icon-leader" aria-hidden="true"></span><span class="l-en">Flow Leaders</span><span class="l-zh">资金领袖</span><span class="d"><span class="l-en">Recurring net-impact leaders · washout turns · K/N confluence</span><span class="l-zh">持续净额领头 · 洗盘转机 · K/N汇聚</span></span></a>
+            <a href="darkpool.html"><span class="submenu-icon submenu-icon-darkpool" aria-hidden="true"></span><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+            <a href="market_structure.html"><span class="submenu-icon submenu-icon-structure" aria-hidden="true"></span><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">GEX regime · machine flows · dispersion · weekly range</span><span class="l-zh">做市商制度 · 机器资金 · 离散度 · 周度区间</span></span></a>
+          </div>
+        </div>
+        <a href="leader_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Leader Radar</span><span class="l-zh">领袖雷达</span><span class="d"><span class="l-en">Lifecycle board · regime · handoff watch · rerating watch</span><span class="l-zh">生命周期看板 · 领导力制度 · 交接观察 · 重估观察</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html"><span class="menu-icon menu-icon-flag menu-icon-cn" aria-hidden="true"></span><span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet · alpha · setups</span><span class="l-zh">先知 · 阿尔法 · 布局</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html"><span class="submenu-icon submenu-icon-rotation" aria-hidden="true"></span><span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html"><span class="submenu-icon submenu-icon-confluence" aria-hidden="true"></span><span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html"><span class="submenu-icon submenu-icon-news" aria-hidden="true"></span><span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html"><span class="submenu-icon submenu-icon-intelligence" aria-hidden="true"></span><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="china_mechanics.html"><span class="submenu-icon submenu-icon-research" aria-hidden="true"></span><span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+            <a href="baskets_china_ths.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html"><span class="submenu-icon submenu-icon-altdata" aria-hidden="true"></span><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html"><span class="submenu-icon submenu-icon-radar" aria-hidden="true"></span><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html"><span class="submenu-icon submenu-icon-event" aria-hidden="true"></span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html"><span class="submenu-icon submenu-icon-narrative" aria-hidden="true"></span><span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html"><span class="menu-icon menu-icon-flag menu-icon-hk" aria-hidden="true"></span><span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet HK · alpha</span><span class="l-zh">先知港股 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html"><span class="submenu-icon submenu-icon-flow" aria-hidden="true"></span><span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html"><span class="menu-icon menu-icon-flag menu-icon-ca" aria-hidden="true"></span><span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet TSX · sectors · alpha</span><span class="l-zh">先知TSX · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html"><span class="submenu-icon submenu-icon-heatmap" aria-hidden="true"></span><span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html"><span class="submenu-icon submenu-icon-rebalance" aria-hidden="true"></span><span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
+        <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html"><span class="submenu-icon submenu-icon-forex" aria-hidden="true"></span><span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html"><span class="submenu-icon submenu-icon-policy" aria-hidden="true"></span><span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">State of Themes</span><span class="l-zh">主题态势</span></span><span class="d"><span class="l-en">All themes at a glance · phase · thesis · asymmetry</span><span class="l-zh">一览全部主题 · 阶段 · 论点 · 非对称</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic research-icon research-icon-demand" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic research-icon research-icon-anticipation" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic research-icon research-icon-impulse" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic research-icon research-icon-congress" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic research-icon research-icon-ipo" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Eleven national equity markets on one clock</span><span class="l-zh">十一大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic research-icon research-icon-measurement" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic research-icon research-icon-cross-asset" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic research-icon research-icon-transmission" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic research-icon research-icon-white-house" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic research-icon research-icon-signal-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="tech_lab.html"><span class="nm-ic research-icon research-icon-technical-lab" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Technical Lab</span><span class="l-zh">技术实验室</span></span><span class="d"><span class="l-en">Signal screener + descriptive backtest profiles · per-stock breakdown</span><span class="l-zh">信号筛选器 + 描述性回测档案 · 个股信号分解</span></span></span></a>
+            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signals Lining Up</span><span class="l-zh">信号共振</span></span><span class="d"><span class="l-en">Free daily screener · today's top buy-signal combos · honest win rates</span><span class="l-zh">免费每日筛选器 · 今日最强买入信号组合 · 客观胜率</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic research-icon research-icon-macro-signals" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic research-icon research-icon-factors-seasonality" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · momentum · monthly calendar</span><span class="l-zh">价值 · 质量 · 动量 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link mastermind-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow"><span class="l-en">Support</span><span class="l-zh">支持</span></span><h1><span class="l-en">Write once. </span><span class="l-zh">一次写清，</span><span class="accent"><span class="l-en">Get a real answer.</span><span class="l-zh">真人回复。</span></span></h1>
+    <p class="sub"><span class="l-en">Support replies by email — usually within one business day.</span><span class="l-zh">我们通过邮件回复——通常在一个工作日内。</span></p>
+  </header>
+
+  <div class="cols"><aside class="aside">
+      <div class="fast">
+        <span class="mlab"><span class="l-en">Faster than writing</span><span class="l-zh">比写信更快</span></span>
+        <a href="plans.html?billing=portal"><span class="l-en">Manage or cancel your subscription</span><span class="l-zh">管理或取消订阅</span>
+          <span class="chev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></span>
+        </a>
+        <a href="plans.html"><span class="l-en">Plans, prices and what's included</span><span class="l-zh">方案、价格与包含内容</span>
+          <span class="chev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></span>
+        </a>
+        <a href="methodology.html"><span class="l-en">How a number is calculated</span><span class="l-zh">某个数字是怎么算出来的</span>
+          <span class="chev"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></span>
+        </a>
+      </div>
+
+      <div class="next">
+        <span class="mlab"><span class="l-en">What happens next</span><span class="l-zh">接下来会发生什么</span></span>
+        <ol>
+          <li><span class="l-en">You get an email with a <b>ticket number</b>.</span><span class="l-zh">你会收到一封带<b>工单号</b>的邮件。</span></li>
+          <li><span class="l-en">A person reads it — not a bot.</span><span class="l-zh">由真人阅读，不是机器人。</span></li>
+          <li><span class="l-en">Reply to that email to add anything.</span><span class="l-zh">回复那封邮件即可补充信息。</span></li>
+        </ol>
+      </div>
+    </aside><section class="ticket">
+      <div class="tk-head">
+        <span class="mlab">
+          <span class="st-open"><span class="l-en">New request</span><span class="l-zh">新建请求</span></span>
+          <span class="st-done"><span class="l-en">Received</span><span class="l-zh">已收到</span></span>
+        </span>
+        <span class="tk-ref">
+          <span class="k">REF</span>
+          <span class="v" id="tk-ref-v">········</span>
+        </span>
+      </div>
+
+      <div class="tk-body"><form class="tk-form" id="tk-form" novalidate>
+
+          <div class="err" role="alert">
+            <span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v4.2M10 13.6v.1"/></svg></span>
+            <span>
+              <span class="e-generic"><span class="l-en">That didn't send. Check your connection and try again — or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.</span><span class="l-zh">没有发送成功。请检查网络后重试，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。</span></span>
+              <span class="e-rate"><span class="l-en">That is a lot of requests from here. Wait a few minutes and send it again — or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.</span><span class="l-zh">这里发出的请求太多了。请过几分钟再发一次，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。</span></span>
+            </span>
+          </div>
+
+          <div class="frow">
+           <div class="fcell"><div class="f auth-out">
+            <label class="mlab" for="s-email"><span class="l-en">Your email</span><span class="l-zh">你的邮箱</span></label>
+            <input class="inp" id="s-email" name="email" type="email" required
+                   autocomplete="email" inputmode="email" placeholder="you@example.com">
+            <span class="fmsg" id="s-email-msg"></span>
+          </div><div class="f auth-in">
+            <span class="mlab"><span class="l-en">Signed in as</span><span class="l-zh">当前登录</span></span>
+            <span class="who">
+              <span class="tick"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></span>
+              <span class="addr" id="s-who-addr"></span><span class="pill"><span class="l-en">Account</span><span class="l-zh">账户</span></span>
+            </span>
+          </div>
+           </div><div class="f">
+            <label class="mlab" for="s-topic"><span class="l-en">Topic</span><span class="l-zh">问题类型</span></label>
+            <select class="inp" id="s-topic" name="topic"><option value="billing"  data-en="Billing &amp; payments"      data-zh="账单与付款">Billing &amp; payments</option>
+              <option value="account"  data-en="Account &amp; sign-in"       data-zh="账户与登录">Account &amp; sign-in</option>
+              <option value="bug"      data-en="Something is broken"         data-zh="有功能坏了">Something is broken</option>
+              <option value="data"     data-en="Question about the data"     data-zh="数据相关问题">Question about the data</option>
+              <option value="feature"  data-en="Idea for something new"      data-zh="功能建议">Idea for something new</option>
+              <option value="other"    data-en="Something else"              data-zh="其他">Something else</option>
+            </select>
+          </div>
+          </div><p class="shortcut" id="s-shortcut"></p>
+
+          <div class="f">
+            <label class="mlab" for="s-subject"><span class="l-en">Subject</span><span class="l-zh">主题</span></label>
+            <input class="inp" id="s-subject" name="subject" type="text" maxlength="120" required
+                   data-ph-en="One line — what is this about?" data-ph-zh="一句话说明这是什么问题"
+                   placeholder="One line — what is this about?">
+            <span class="fmsg" id="s-subject-msg"></span>
+          </div>
+
+          <div class="f">
+            <label class="mlab" for="s-message"><span class="l-en">Message</span><span class="l-zh">内容</span></label>
+            <textarea class="inp" id="s-message" name="message" maxlength="4000" required
+                      data-ph-en="Write it however you like." data-ph-zh="怎么写都可以。"
+                      placeholder="Write it however you like."></textarea>
+            <span class="fmsg" id="s-message-msg"></span>
+          </div><p class="hint" id="s-hint">
+            <span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9.2v4.3M10 6.6v.1"/></svg></span>
+            <span id="s-hint-txt"></span>
+          </p><div class="hp" aria-hidden="true">
+            <label for="s-website">Website</label>
+            <input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="send">
+            <button class="btn" type="submit" id="s-send"><span class="l-en">Send request</span><span class="l-zh">发送请求</span></button>
+            <span class="note"><span class="l-en">Your email is used only to answer this request.</span><span class="l-zh">你的邮箱仅用于回复本次请求。</span></span>
+          </div>
+        </form><div class="tk-done" role="status">
+          <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
+          <h2><span class="l-en">Request received.</span><span class="l-zh">已收到你的请求。</span></h2>
+          <p>
+            <span class="l-en">We emailed a copy to <b class="done-addr"></b>. Reply to that email any time to add detail.</span>
+            <span class="l-zh">我们已把副本发送到 <b class="done-addr"></b>。随时回复那封邮件补充信息。</span>
+          </p>
+
+          <div class="slip">
+            <div class="row">
+              <span class="k"><span class="l-en">Ticket</span><span class="l-zh">工单号</span></span>
+              <span class="v big" id="slip-ref"></span>
+            </div>
+            <div class="row">
+              <span class="k"><span class="l-en">Topic</span><span class="l-zh">类型</span></span>
+              <span class="v" id="slip-topic"></span>
+            </div>
+            <div class="row">
+              <span class="k"><span class="l-en">Sent</span><span class="l-zh">发送时间</span></span>
+              <span class="v" id="slip-sent"></span>
+            </div>
+          </div>
+
+          <div class="after">
+            <button class="btn btn-ghost" type="button" id="s-again"><span class="l-en">Write another request</span><span class="l-zh">再写一条请求</span></button>
+            <span class="note"><span class="l-en">No email in a few minutes? Check spam, or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.</span><span class="l-zh">几分钟内没收到邮件？请查看垃圾箱，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。</span></span>
+          </div>
+        </div>
+
+      </div></section>
+
+  </div></div><footer class="mx-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <p class="ft"><span class="l-en">Institutional-grade market intelligence.</span><span class="l-zh">机构级市场情报。</span></p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p><span class="l-en">Product</span><span class="l-zh">产品</span></p>
+          <a href="https://app.mastermind-x.com">Terminal</a>
+          <a href="start.html"><span class="l-en">Dashboards</span><span class="l-zh">仪表盘</span></a>
+          <a href="plans.html"><span class="l-en">Pricing</span><span class="l-zh">定价</span></a>
+        </div>
+        <div class="f-col">
+          <p><span class="l-en">Resources</span><span class="l-zh">资源</span></p>
+          <a href="methodology.html"><span class="l-en">Methodology</span><span class="l-zh">方法论</span></a>
+          <a href="learn/index.html"><span class="l-en">Learn</span><span class="l-zh">学习</span></a>
+          <a href="support.html"><span class="l-en">Support</span><span class="l-zh">支持</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span><a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="theme.js"></script>
+<script>
+/* /support.html page JS — ported from mockups/support_email/support_page.html
+   between ##PAGE-JS-START## / ##PAGE-JS-END##, with the pin's submit stub replaced
+   by the real POST /api/support/ticket call (app/support.py, SEE W1).
+
+   Four jobs, nothing else:
+     1. swap the "what to include" hint + the shortcut line with the topic
+     2. swap placeholders on language change (placeholders can't use l-en/l-zh)
+     3. reflect the Supabase session: prefill + lock the address, show the chip
+     4. submit -> POST /api/support/ticket -> success slip / error bar
+
+   Origin + auth mirror templates/mm_brain.js exactly, the same way plans.html.j2
+   does: API base from window.MM_BRAIN_CFG.api ('' = same origin), bearer from
+   MDXAuth.client().auth.getSession(). The client-side email is a CONVENIENCE
+   ONLY — app/support.py overrides it from the verified Bearer identity, and a
+   client-sent user id is never accepted at all. */
+(function () {
+  'use strict';
+  var H = document.documentElement;
+  var zh = function () { return H.getAttribute('data-lang') === 'zh'; };
+  var $  = function (s) { return document.querySelector(s); };
+  var API = ((window.MM_BRAIN_CFG && window.MM_BRAIN_CFG.api) || '').replace(/\/$/, '');
+
+  /* The API's time-to-fill gate (app/support.py MIN_FILL_MS): epoch-ms at form
+     render. Stamped ONCE per page load — a reload is what re-arms it, exactly as
+     it would for the bot the gate exists for. */
+  var T0 = Date.now();
+
+  /* Per-topic guidance. The single reason this page exists in this shape:
+     telling someone what to include turns a 3-round-trip ticket into 1. */
+  var HINT = {
+    billing: ['Include the email on the receipt and the date of the charge.',
+              '请附上收据上的邮箱，以及扣款日期。'],
+    account: ['Tell us the email you signed up with, and what happens when you try to sign in.',
+              '请说明注册时使用的邮箱，以及登录时出现了什么。'],
+    bug:     ['Tell us the page, what you did, and what you expected to see.',
+              '请说明页面、你的操作，以及你预期看到的结果。'],
+    data:    ['Name the page and the number you are asking about.',
+              '请说明是哪个页面、哪个数字。'],
+    feature: ['Tell us what you are trying to do — not only the feature you want.',
+              '请说明你想完成什么——而不只是想要哪个功能。'],
+    other:   ['One short paragraph is plenty.', '一小段话就够了。']
+  };
+  /* Topics with a same-second self-serve answer get one quiet extra line. */
+  var SHORT = {
+    billing: ['Cancelling or changing a card? <a href="plans.html?billing=portal">Do it now in the billing portal</a> — no waiting.',
+              '要取消订阅或更换银行卡？<a href="plans.html?billing=portal">现在就到账单中心处理</a>——无需等待。'],
+    account: ['Can’t sign in? <a href="plans.html">Ask for a new sign-in link</a> first — that fixes most of these.',
+              '登录不了？先<a href="plans.html">重新获取登录链接</a>——大多数问题都能解决。']
+  };
+  /* Field-level failure copy. Never shown before a submit (PIN §4.1). */
+  var FMSG = {
+    email:   ['Add the address we should reply to.', '请填写我们回复用的邮箱。'],
+    subject: ['One line about what this is.', '请用一句话说明这是什么问题。'],
+    message: ['Tell us what happened.', '请说明发生了什么。']
+  };
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  var sel = $('#s-topic'), hint = $('#s-hint-txt'), shortEl = $('#s-shortcut');
+  var form = $('#tk-form'), btn = $('#s-send');
+  var emailEl = $('#s-email'), subjEl = $('#s-subject'), msgEl = $('#s-message'), hpEl = $('#s-website');
+
+  function paintTopic() {
+    if (!sel) return;
+    var k = sel.value, i = zh() ? 1 : 0;
+    if (hint) hint.textContent = (HINT[k] || HINT.other)[i];
+    if (shortEl) {
+      if (SHORT[k]) { shortEl.innerHTML = SHORT[k][i]; shortEl.classList.add('on'); }
+      else { shortEl.innerHTML = ''; shortEl.classList.remove('on'); }
+    }
+    /* the <option> labels themselves cannot hold l-en/l-zh spans */
+    Array.prototype.forEach.call(sel.options, function (o) {
+      o.textContent = o.getAttribute(zh() ? 'data-zh' : 'data-en');
+    });
+  }
+
+  /* placeholders are attributes — they follow the site's data-ph-en/zh contract */
+  function paintPlaceholders() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ph-en]'), function (el) {
+      el.setAttribute('placeholder', el.getAttribute(zh() ? 'data-ph-zh' : 'data-ph-en'));
+    });
+  }
+
+  /* any field message already on screen has to follow the toggle too */
+  function repaintFieldMsgs() {
+    Object.keys(FMSG).forEach(function (k) {
+      var m = $('#s-' + k + '-msg');
+      if (m && m.textContent) m.textContent = FMSG[k][zh() ? 1 : 0];
+    });
+  }
+
+  /* the success slip's topic cell is a stored key, not baked text */
+  var doneTopic = '';
+  function paintSlipTopic() {
+    var cell = $('#slip-topic');
+    if (!cell || !doneTopic || !sel) return;
+    var opt = sel.querySelector('option[value="' + doneTopic + '"]');
+    if (opt) cell.textContent = opt.getAttribute(zh() ? 'data-zh' : 'data-en');
+  }
+
+  function paintLang() { paintTopic(); paintPlaceholders(); repaintFieldMsgs(); paintSlipTopic(); }
+  if (sel) sel.addEventListener('change', paintTopic);
+  /* theme.js dispatches langchange on DOCUMENT (non-bubbling), so listen there */
+  document.addEventListener('langchange', paintLang);
+  paintLang();
+
+  /* ── auth: prefill + lock the address, flip to the identity chip ──────────
+     The page boots data-auth="out". MDXAuth.onChange fires once auth settles —
+     including for an anonymous visitor — so this never leaves the chip showing
+     a stale address after a sign-out. */
+  var authAddr = '';
+  function paintAuth(user) {
+    var addr = (user && user.email) ? String(user.email) : '';
+    var who = $('#s-who-addr');
+    if (addr) {
+      authAddr = addr;
+      if (who) who.textContent = addr;
+      if (emailEl) { emailEl.value = addr; emailEl.readOnly = true; }
+      H.setAttribute('data-auth', 'in');
+    } else {
+      if (emailEl) {
+        emailEl.readOnly = false;
+        if (emailEl.value && emailEl.value === authAddr) emailEl.value = '';
+      }
+      authAddr = '';
+      if (who) who.textContent = '';
+      H.setAttribute('data-auth', 'out');
+    }
+  }
+  if (window.MDXAuth && window.MDXAuth.onChange) {
+    window.MDXAuth.onChange(function (u) { paintAuth(u); });
+  }
+
+  /* Supabase bearer, mirroring mm_brain.js withAuth(). Absent/expired session →
+     the request simply goes out unauthenticated and files as signed-out. */
+  function withAuth(h) {
+    h = h || {};
+    if (!(window.MDXAuth && window.MDXAuth.client)) return Promise.resolve(h);
+    return window.MDXAuth.client().then(function (sb) { return sb.auth.getSession(); })
+      .then(function (r) {
+        var tok = r && r.data && r.data.session && r.data.session.access_token;
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+        return h;
+      })
+      .catch(function () { return h; });
+  }
+
+  /* ── validation: never before submit (PIN §4.1) ───────────────────────── */
+  function mark(el, key, bad) {
+    if (!el) return;
+    var cell = el.closest('.f'), m = $('#s-' + key + '-msg');
+    if (cell) cell.classList.toggle('bad', !!bad);
+    if (m) m.textContent = bad ? FMSG[key][zh() ? 1 : 0] : '';
+  }
+  function validate() {
+    var mail = emailEl ? emailEl.value.trim() : '';
+    var okMail = /^[^@\s,;]{1,128}@[^@\s,;.]+(\.[^@\s,;.]+)+$/.test(mail);
+    var okSubj = !!(subjEl && subjEl.value.trim());
+    var okMsg  = !!(msgEl && msgEl.value.trim());
+    mark(emailEl, 'email', !okMail);
+    mark(subjEl, 'subject', !okSubj);
+    mark(msgEl, 'message', !okMsg);
+    var first = !okMail ? emailEl : (!okSubj ? subjEl : (!okMsg ? msgEl : null));
+    if (first) { try { first.focus(); } catch (e) {} return false; }
+    return true;
+  }
+
+  function fail(kind) {
+    H.setAttribute('data-err', kind === 'rate' ? 'rate' : 'generic');
+    H.setAttribute('data-form', 'error');
+  }
+
+  function succeed(ticketId, payload) {
+    /* PIN §4.3b: ref short form = 'MX-' + the first 8 hex of the uuid, uppercased.
+       Stamped ONCE, in the slip — the header ref hides, so it is never printed
+       twice in one panel. */
+    var hex = String(ticketId || '').replace(/-/g, '').slice(0, 8).toUpperCase();
+    var refEl = $('#slip-ref');
+    if (refEl) refEl.textContent = hex ? 'MX-' + hex : '';
+    doneTopic = payload.topic;
+    paintSlipTopic();
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var sent = $('#slip-sent');
+    if (sent) {
+      sent.textContent = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() +
+                         ', ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.done-addr'), function (b) {
+      b.textContent = payload.email;
+    });
+    H.removeAttribute('data-err');
+    H.setAttribute('data-form', 'success');
+  }
+
+  if (form) form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!validate()) return;
+    H.setAttribute('data-form', 'idle');
+    if (btn) btn.setAttribute('aria-busy', 'true');
+
+    var payload = {
+      email: emailEl ? emailEl.value.trim() : '',
+      topic: sel ? sel.value : 'other',
+      subject: subjEl ? subjEl.value.trim() : '',
+      message: msgEl ? msgEl.value.trim() : '',
+      lang: zh() ? 'zh' : 'en',
+      website: hpEl ? hpEl.value : '',
+      t0: T0
+    };
+
+    withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
+      return fetch(API + '/api/support/ticket', {
+        method: 'POST', headers: h, body: JSON.stringify(payload)
+      });
+    }).then(function (r) {
+      if (r.status === 429) { fail('rate'); return null; }
+      if (!r.ok) { fail('generic'); return null; }
+      return r.json();
+    }).then(function (j) {
+      if (!j) return;                                   /* already handled */
+      if (j.ok && j.ticket_id) succeed(j.ticket_id, payload);
+      else fail('generic');
+    }).catch(function () {
+      fail('generic');                                  /* nothing typed is lost */
+    }).then(function () {
+      if (btn) btn.removeAttribute('aria-busy');
+    });
+  });
+
+  var again = $('#s-again');
+  if (again) again.addEventListener('click', function () {
+    H.removeAttribute('data-err');
+    H.setAttribute('data-form', 'idle');
+    if (form) form.reset();
+    /* form.reset() clears the locked address too — put the session back */
+    if (authAddr && emailEl) emailEl.value = authAddr;
+    ['email', 'subject', 'message'].forEach(function (k) {
+      var m = $('#s-' + k + '-msg'); if (m) m.textContent = '';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.f.bad'), function (c) {
+      c.classList.remove('bad');
+    });
+    paintTopic();
+    if (msgEl) msgEl.focus();
+  });
+})();
+</script>
+</body>
+</html>

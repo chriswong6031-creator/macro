@@ -3307,6 +3307,24 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
              vm["pro"]["monthly_pm"], vm["pro"]["annual_pm"], vm["pro"]["save_pct"])
 
 
+def build_support_page(env: Environment, site: Path, generated: str) -> None:
+    """✨ Support — the public bilingual support desk (SEE W2, masterplan R6).
+
+    Pure assembler: no data, no network, no engine state. The template is the
+    W-D design pin (mockups/support_email/PIN.md + support_page.html) ported to
+    Jinja; the form POSTs to /api/support/ticket (app/support.py) at run time.
+
+    The page is PUBLIC — it must be reachable before signup, which is a
+    three-place boundary edit (config/site_access.yml + app/deploy/Caddyfile's
+    @reg_html list AND its PUBLIC-BOUNDARY @reg_asset block + app/regwall.py's
+    mirrors), guarded by tests/test_site_access_boundary.py.
+    Additive + graceful: never fatal to the build.
+    """
+    html = env.get_template("support.html.j2").render(generated_utc=generated)
+    write_page(site / "support.html", html)
+    log.info("wrote support.html (public support desk)")
+
+
 ETF_GICS = {                       # SPDR sector fund -> GICS sector (residual-alpha leaders)
     "XLK": "Information Technology", "XLF": "Financials", "XLV": "Health Care",
     "XLY": "Consumer Discretionary", "XLP": "Consumer Staples", "XLE": "Energy",
@@ -4224,6 +4242,10 @@ def main() -> int:
         build_plans_page(env, site, generated)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("plans page failed: %s", e)
+    try:
+        build_support_page(env, site, generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("support page failed: %s", e)
     # Quant Lab (advanced analytics): cross-asset concentration + risk budgeting +
     # factor scorecard + the raw internals moved off the main dashboard. Returns the
     # cross-asset snapshot for the dashboard's compact one-bet card.

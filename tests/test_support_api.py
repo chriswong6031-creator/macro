@@ -13,6 +13,12 @@ write; t0-too-fast 400; rate limit 429 on the 6th; topic/subject/message/email/l
 validation; the Bearer path overriding the body email and snapshotting tier; the operator
 notification firing; and — the acceptance gate — the route never 500s when mail is off or
 the mailer itself explodes.
+
+W2 adds the submitter's acknowledgment and moves BOTH sends off the request path. The
+route now takes a ``BackgroundTasks`` with no fallback, so ``_post`` supplies one and
+drains it by hand; that is what lets the suite assert the ordering property M4 exists for
+— at the moment the caller is told ``ok: true`` the row is stored and NOTHING has been
+mailed yet.
 """
 from __future__ import annotations
 
@@ -21,7 +27,7 @@ import time
 from pathlib import Path
 
 import pytest
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -84,9 +90,32 @@ def _body(**kw):
     return support.TicketRequest(**args)
 
 
-def _post(body=None, request=None, authorization=None):
-    return support.create_ticket(body or _body(), request or _FakeRequest(),
-                                 authorization=authorization)
+def _drain(bt: BackgroundTasks) -> int:
+    """Run the queued background jobs the way Starlette would after the response.
+
+    Every task this route queues is a plain sync callable, so no event loop is needed —
+    and calling them by hand is what lets a test assert the ORDER: nothing has been mailed
+    at the moment the caller gets `ok: true`, and both sends happen only afterwards.
+    """
+    tasks = list(getattr(bt, "tasks", []))
+    for task in tasks:
+        task.func(*task.args, **task.kwargs)
+    return len(tasks)
+
+
+def _post(body=None, request=None, authorization=None, bt=None, drain=True):
+    """Call the route and, by default, run its background mail job.
+
+    The route takes BackgroundTasks with no fallback (SEE W2 / M4: mail must never run on
+    the request path), so a direct caller supplies one. Pass ``drain=False`` to inspect the
+    queue before it runs.
+    """
+    bt = bt if bt is not None else BackgroundTasks()
+    out = support.create_ticket(body or _body(), request or _FakeRequest(), bt,
+                                authorization=authorization)
+    if drain:
+        _drain(bt)
+    return out
 
 
 # ===========================================================================
@@ -315,15 +344,23 @@ def test_route_succeeds_when_mail_is_off(monkeypatch):
 
     out = _post()
     assert out["ok"] is True and len(store.tickets) == 1
-    assert len(sent) == 1
-    assert sent[0]["template"] == "ticket_operator_notify"
-    assert sent[0]["cls"] == "transactional"
+    # Two sends per ticket since W2: the operator alert and the submitter's ack.
+    assert [s["template"] for s in sent] == ["ticket_operator_notify", "ticket_ack"]
+    assert {s["cls"] for s in sent} == {"transactional"}
     assert sent[0]["idem_key"] == f"ticket-notify:{store.ticket_id}"
     assert sent[0]["to_email"] == "ops@mastermind-x.com"
+    assert sent[1]["idem_key"] == f"ticket-ack:{store.ticket_id}"
+    assert sent[1]["to_email"] == "ada@example.com"
     support._reset_rate_limiter()
 
 
-def test_no_support_recipient_configured_is_a_clean_skip(monkeypatch):
+def test_no_support_recipient_configured_still_acks_the_submitter(monkeypatch):
+    """An unconfigured operator inbox is the operator's problem, not the customer's.
+
+    MAIL_SUPPORT_TO unset skips the operator alert cleanly (W1 behaviour). The
+    acknowledgment is addressed to the person who wrote in, so it is unaffected — the
+    submitter must never lose their ticket number because ops has not set an env var.
+    """
     store = _Store()
     monkeypatch.setattr(support, "_pg", store.pg)
     monkeypatch.setattr(support, "_client_ip", lambda request: "203.0.113.11")
@@ -331,8 +368,11 @@ def test_no_support_recipient_configured_is_a_clean_skip(monkeypatch):
     support._reset_rate_limiter()
     from app import mailer
     monkeypatch.delenv("MAIL_SUPPORT_TO", raising=False)
-    monkeypatch.setattr(mailer, "send", lambda **kw: pytest.fail("must not send with no recipient"))
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
     assert _post()["ok"] is True
+    assert [s["template"] for s in sent] == ["ticket_ack"]
+    assert sent[0]["to_email"] == "ada@example.com"
     support._reset_rate_limiter()
 
 
@@ -494,3 +534,124 @@ def test_rate_map_is_hard_capped_within_one_window(wired, monkeypatch):
         support._rate_ok(f"203.0.113.{i}", "")
     assert len(support._rate) <= support._RATE_MAX_KEYS
     support._reset_rate_limiter()
+
+
+# ===========================================================================
+# W2 / M4 — mail runs AFTER the response, and the ack reaches the submitter
+#
+# `create_ticket` is a sync def, so FastAPI runs it in the 40-slot anyio threadpool that
+# every other sync route shares. With SMTP inline, one stalled relay costs a whole slot
+# for the mailer's full retry budget, and 40 concurrent submissions to a route a stranger
+# can call would stall the entire API. These tests pin the property that fixes it: at the
+# moment the caller is told ok:true, NOTHING has been mailed yet.
+# ===========================================================================
+def test_mail_is_queued_not_sent_on_the_request_path(wired, monkeypatch):
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+
+    bt = BackgroundTasks()
+    out = _post(bt=bt, drain=False)
+
+    # the row exists…
+    assert out["ok"] is True and len(store.tickets) == 1
+    # …and not one byte has gone near a relay yet
+    assert sent == []
+    assert len(bt.tasks) == 1
+    assert bt.tasks[0].func is support._send_ticket_mail
+
+    _drain(bt)
+    assert [s["template"] for s in sent] == ["ticket_ack"]
+
+
+def test_route_requires_background_tasks_so_there_is_no_inline_mail_path():
+    """A guard against the fallback returning: an optional BackgroundTasks would silently
+    restore the inline-SMTP path this change exists to remove, and nothing else in the
+    suite would notice. FastAPI injects the parameter off its annotation."""
+    import inspect
+    import typing
+    # app/support.py carries `from __future__ import annotations`, so the raw annotation
+    # is the STRING "BackgroundTasks" — resolve it the way FastAPI does before comparing.
+    assert typing.get_type_hints(support.create_ticket)["background_tasks"] is BackgroundTasks
+    param = inspect.signature(support.create_ticket).parameters["background_tasks"]
+    assert param.default is inspect.Parameter.empty
+
+
+def test_exploding_mail_job_never_touches_the_stored_ticket(wired, monkeypatch):
+    """Persist-first: the mail job is downstream of the row, so it cannot unmake it —
+    and a background task that raises would be logged and forgotten, so it must not."""
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    monkeypatch.setattr(mailer, "send",
+                        lambda **kw: (_ for _ in ()).throw(RuntimeError("relay exploded")))
+    bt = BackgroundTasks()
+    out = _post(bt=bt, drain=False)
+    assert out["ok"] is True and len(store.tickets) == 1
+    _drain(bt)                                   # must not raise
+    assert len(store.tickets) == 1 and len(store.messages) == 1
+
+
+def test_ack_goes_to_the_submitter_with_the_pinned_contract(wired, monkeypatch):
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+    _post(_body(email="ada@example.com", topic="billing", message="my card failed\non the 3rd"))
+
+    assert len(sent) == 1
+    ack = sent[0]
+    assert ack["template"] == "ticket_ack"
+    assert ack["cls"] == "transactional"          # never suppressed by a marketing opt-out
+    assert ack["idem_key"] == f"ticket-ack:{store.ticket_id}"
+    assert ack["to_email"] == "ada@example.com"
+    # PIN §7.7: the ref rides the subject in braces so replies thread and the operator
+    # lane can match them back to the row.
+    ref = support.ticket_ref(store.ticket_id)
+    assert ack["subject"].startswith("{" + ref + "}")
+    assert "We got your message" in ack["subject"] and "我们已收到你的消息" in ack["subject"]
+
+
+def test_ack_body_carries_the_ref_topic_and_the_senders_own_words(wired, monkeypatch):
+    """The four things §7.7 says the ack owes the reader: the number, the topic in words,
+    their message back, and the reply-to-this-email instruction."""
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+    _post(_body(topic="billing", message="my card failed"))
+
+    html, text = sent[0]["html"], sent[0]["text"]
+    ref = support.ticket_ref(store.ticket_id)
+    for needle in (ref, "Billing &amp; payments", "账单与付款", "my card failed",
+                   "We got your message.", "我们已收到你的消息。", "Reply to this email"):
+        assert needle in html, needle
+    assert ref in text and "my card failed" in text
+    # transactional class: the pinned base's unsubscribe slot stays unrendered
+    assert "unsubscribe.html" not in html.lower()
+    assert "SUPPORT" in html                      # the band eyebrow (PIN §7.7)
+
+
+def test_ack_attaches_the_verified_user_id_when_signed_in(wired, monkeypatch):
+    """email_log.user_id is what lets the Email Center attribute a send to an account."""
+    store, _n = wired
+    from app import mailer, billing
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    monkeypatch.setattr(support, "_resolve_user",
+                        lambda auth: {"id": UID, "email": "signed@example.com"})
+    monkeypatch.setattr(billing, "read_entitlement", lambda uid: {"tier": "insider"})
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+    _post(_body(email="typed@example.com"), authorization="Bearer tok")
+
+    assert sent[0]["to_email"] == "signed@example.com"   # verified identity wins
+    assert sent[0]["user_id"] == UID
+
+
+def test_ticket_ref_is_the_pinned_short_form():
+    assert support.ticket_ref("7f3a2b91-1111-4000-8000-000000000001") == "MX-7F3A2B91"
+    assert support.ticket_ref("") == ""

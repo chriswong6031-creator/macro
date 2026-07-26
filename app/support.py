@@ -43,12 +43,23 @@ Privacy: the row stores the user agent and a keyed, truncated HASH of the client
 raw IP is never written — abuse triage needs "was this the same submitter", not an
 address.
 
-Mail-off safe: the operator notification goes through app/mailer.py, which returns a
-status string and never raises. A dead relay produces a ledger row and a filed ticket,
-never a 500 at the user.
+Mail-off safe: both sends go through app/mailer.py, which returns a status string and
+never raises. A dead relay produces a ledger row and a filed ticket, never a 500 at the
+user.
+
+Persist first, mail after (SEE W2 / reviewer M4). The two sends — the operator alert and
+the submitter's acknowledgment — run in a FastAPI ``BackgroundTasks`` job, AFTER the
+response is written. This route is a sync ``def``, so FastAPI runs it in the 40-slot
+anyio threadpool that every other sync route shares: with SMTP inline, one stalled relay
+costs up to ``_SMTP_TIMEOUT × _SEND_ATTEMPTS`` per request (~24s today, and up to ~120s if
+the timeouts are ever relaxed), and 40 concurrent submissions would occupy every slot and
+stall the whole API — from a route a stranger can call. Moving mail off the request path
+means ``ok: true`` keeps its literal meaning: the ticket is STORED. The email is a
+consequence of that, not a precondition for it.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import hmac
 import json
@@ -61,7 +72,7 @@ import urllib.request
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 log = logging.getLogger("macro.support")
@@ -75,6 +86,20 @@ SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 TOPICS = ("billing", "account", "bug", "data", "feature", "other")
 LANGS = ("en", "zh")
+
+# The reader's own words back at them. Same labels as the <select> on /support.html
+# (mockups/support_email/PIN.md §5), so the page, the email and the admin thread all
+# name a topic the same way — a stored slug is never shown to a customer.
+TOPIC_LABELS: dict[str, tuple[str, str]] = {
+    "billing": ("Billing & payments", "账单与付款"),
+    "account": ("Account & sign-in", "账户与登录"),
+    "bug": ("Something is broken", "有功能坏了"),
+    "data": ("Question about the data", "数据相关问题"),
+    "feature": ("Idea for something new", "功能建议"),
+    "other": ("Something else", "其他"),
+}
+_ZH_MONTHS = ("1 月", "2 月", "3 月", "4 月", "5 月", "6 月",
+              "7 月", "8 月", "9 月", "10 月", "11 月", "12 月")
 
 SUBJECT_MAX = 200
 MESSAGE_MAX = 5000
@@ -254,6 +279,29 @@ def _tier_for(user_id: str) -> str | None:
         return None
 
 
+def ticket_ref(ticket_id: str) -> str:
+    """Human-facing short form of a ticket id: ``MX-`` + the first 8 hex, uppercased.
+
+    Design pin §4.3b. The SAME string appears on /support.html's success slip, in the ack
+    email's subject (in braces, so replies thread) and in the admin thread — a customer
+    who quotes "MX-7F3A2B91" must be findable by it everywhere. A full uuid is not a thing
+    anyone reads aloud or types back.
+    """
+    hexpart = str(ticket_id or "").replace("-", "")[:8].upper()
+    return f"MX-{hexpart}" if hexpart else ""
+
+
+def _sent_stamp() -> tuple[str, str, str]:
+    """(slip value, EN date, ZH date) for now, in UTC.
+
+    UTC and SAID so — the submitter's timezone is not knowable server-side, and a
+    timestamp whose zone is a guess is worse than one that names itself.
+    """
+    now = _dt.datetime.now(_dt.timezone.utc)
+    slip = f"{now.day} {now.strftime('%b')} {now.year}, {now:%H:%M} UTC"
+    return slip, f"{now.day} {now.strftime('%B')} {now.year}", f"{now.year} 年 {_ZH_MONTHS[now.month - 1]} {now.day} 日"
+
+
 def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
                      email: str, tier: str | None, lang: str | None) -> str:
     """Tell the operator a ticket arrived. Never raises; returns the mailer status."""
@@ -264,6 +312,7 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
         if not to:
             return "skipped_no_recipient"
         excerpt = message[:NOTIFY_EXCERPT] + ("…" if len(message) > NOTIFY_EXCERPT else "")
+        ref = ticket_ref(ticket_id)
         html, text = mailer.render_email(
             f"New support ticket — {topic}",
             f"新的客服工单 — {topic}",
@@ -276,6 +325,10 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
                 {"en": subject, "zh": subject},
                 {"kind": "quote", "en": excerpt, "zh": excerpt},
             ],
+            eyebrow="SUPPORT",
+            preheader=f"{ref} · {topic} · {email}",
+            why_en="You received this because you are the Mastermind support operator.",
+            why_zh="你收到这封邮件，是因为你是 Mastermind 的客服负责人。",
         )
         return mailer.send(
             template="ticket_operator_notify",
@@ -289,6 +342,89 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
     except Exception as exc:  # noqa: BLE001 — a notification failure never fails the ticket
         log.warning("support: operator notify failed for %s (%s)", ticket_id, type(exc).__name__)
         return "failed"
+
+
+def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
+                   email: str, user_id: str | None) -> str:
+    """Acknowledge the ticket to the person who filed it. Never raises.
+
+    Design pin §7.7. The content is fixed by the pin: what happened, the ticket number
+    worth keeping, their own words quoted back so they can see we have them, and the one
+    instruction that matters — reply to THIS email to add anything. No CTA: there is
+    nothing for them to click, and inventing one would be theatre.
+
+    CLASS = transactional (masterplan R5): an acknowledgment is information the sender is
+    owed, it is never suppressed by a marketing opt-out, and it carries NO unsubscribe
+    link — the pinned base leaves that slot unrendered whenever no URL is passed.
+
+    The ref rides the subject IN BRACES so replies thread and the operator lane can match
+    them back to the row.
+    """
+    try:
+        from app import mailer  # noqa: PLC0415
+        if not email:
+            return "skipped_no_recipient"
+        ref = ticket_ref(ticket_id)
+        topic_en, topic_zh = TOPIC_LABELS.get(topic, TOPIC_LABELS["other"])
+        slip, date_en, date_zh = _sent_stamp()
+        html, text = mailer.render_email(
+            "We got your message.",
+            "我们已收到你的消息。",
+            [
+                {"en": "A person reads every request — not a bot. You will usually have a "
+                       "reply within one business day.",
+                 "zh": "每一条请求都由真人阅读，不是机器人。通常一个工作日内你就会收到回复。"},
+                {"kind": "kv",
+                 "en": [("Ticket", ref), ("Topic", topic_en), ("Sent", slip)],
+                 "zh": [("工单号", ref), ("类型", topic_zh), ("发送时间", slip)]},
+                {"kind": "quote", "en": message, "zh": message},
+                {"kind": "fine",
+                 "en": "Reply to this email to add anything — a screenshot, a date, "
+                       "the address on the receipt. It lands on the same ticket.",
+                 "zh": "回复这封邮件即可补充信息——截图、日期、收据上的邮箱都可以，它们会记到同一个工单上。"},
+            ],
+            eyebrow="SUPPORT",
+            preheader="A person reads it. Reply to this email to add anything.",
+            why_en=f"You received this because you wrote to support on {date_en}.",
+            # Space BEFORE the date only — a Latin-digit run needs air on its left, but a
+            # space after 日 prints as a gap in the middle of a Chinese sentence
+            # (email_receipt_sample.html sets the same rhythm).
+            why_zh=f"你收到这封邮件，是因为你在 {date_zh}联系了客服。",
+        )
+        return mailer.send(
+            template="ticket_ack",
+            cls="transactional",
+            to_email=email,
+            subject=f"{{{ref}}} We got your message · 我们已收到你的消息",
+            html=html,
+            text=text,
+            idem_key=f"ticket-ack:{ticket_id}",
+            user_id=user_id,
+        )
+    except Exception as exc:  # noqa: BLE001 — the ticket is filed; mail is best-effort
+        log.warning("support: ticket ack failed for %s (%s)", ticket_id, type(exc).__name__)
+        return "failed"
+
+
+def _send_ticket_mail(*, ticket_id: str, topic: str, subject: str, message: str,
+                      email: str, tier: str | None, lang: str | None,
+                      user_id: str | None) -> None:
+    """Both sends for one new ticket, off the request path (see the module docstring).
+
+    Operator FIRST: if only one of the two gets out before the process is restarted, the
+    one that must survive is the one that puts a human on the ticket. Neither can raise —
+    each helper swallows its own failure — but the whole job is wrapped anyway, because a
+    background task that raises is logged and forgotten, and silence is the worst outcome
+    for a queue nobody watches.
+    """
+    try:
+        notified = _notify_operator(ticket_id=ticket_id, topic=topic, subject=subject,
+                                    message=message, email=email, tier=tier, lang=lang)
+        acked = _ack_submitter(ticket_id=ticket_id, topic=topic, subject=subject,
+                               message=message, email=email, user_id=user_id)
+        log.info("support: ticket %s mail (notify=%s ack=%s)", ticket_id, notified, acked)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("support: ticket %s mail job failed (%s)", ticket_id, type(exc).__name__)
 
 
 # --------------------------------------------------------------------------- #
@@ -306,8 +442,15 @@ class TicketRequest(BaseModel):
 
 @router.post("/api/support/ticket")
 def create_ticket(body: TicketRequest, request: Request,
+                  background_tasks: BackgroundTasks,
                   authorization: str | None = Header(default=None)) -> dict:
-    """File a support ticket. Public — no auth required, auth honoured when offered."""
+    """File a support ticket. Public — no auth required, auth honoured when offered.
+
+    ``background_tasks`` is injected by FastAPI off the type annotation and is REQUIRED,
+    with no in-route fallback: making it optional would leave a second, untested code path
+    where mail runs inline again, which is precisely the failure this route was changed to
+    remove. A direct in-process caller passes ``BackgroundTasks()`` and drains it.
+    """
     # ---- body size (cheap early refusal; the real cap is Caddy's request_body) --
     try:
         declared = int(request.headers.get("content-length") or 0)
@@ -399,8 +542,15 @@ def create_ticket(body: TicketRequest, request: Request,
         # is loud — but the user still gets their id rather than a 500 on a filed ticket.
         log.error("support: first message insert failed for %s (%s)", ticket_id, type(exc).__name__)
 
-    status = _notify_operator(ticket_id=str(ticket_id), topic=topic, subject=subject,
-                              message=message, email=email, tier=tier, lang=lang)
-    log.info("support: ticket %s filed (topic=%s authed=%s notify=%s)",
-             ticket_id, topic, bool(user_id), status)
+    # ---- mail: AFTER the response, never inside it ----------------------------
+    # The row exists by this point, so `ok: true` already means "stored". Handing the two
+    # sends to BackgroundTasks keeps a stalled relay out of the shared sync threadpool
+    # (module docstring) — the response is written first, the relay is talked to second.
+    background_tasks.add_task(
+        _send_ticket_mail,
+        ticket_id=str(ticket_id), topic=topic, subject=subject, message=message,
+        email=email, tier=tier, lang=lang, user_id=user_id,
+    )
+    log.info("support: ticket %s filed (topic=%s authed=%s mail=deferred)",
+             ticket_id, topic, bool(user_id))
     return {"ok": True, "ticket_id": str(ticket_id)}

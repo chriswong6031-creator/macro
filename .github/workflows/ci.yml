@@ -948,6 +948,23 @@ on:
       - "tests/test_billing_emails.py"
       - "tests/test_account_prefs.py"
       - "tests/test_billing_webhook.py"
+      # SEE W2: the public /support.html surface, its builder, and the pinned email base.
+      # templates/** and site/** already reach this workflow, but the #3509 lesson is that
+      # a guard has to be reachable from the file that BREAKS it by name, not by a broad
+      # wildcard somebody may narrow later.
+      - "templates/support.html.j2"
+      - "site/support.html"
+      - "tests/test_support_page.py"
+      - "tests/test_email_templates.py"
+      # The design pin the page and the email base are ported FROM: a change to the pin
+      # without a matching change to the implementation is exactly the drift to catch.
+      - "mockups/support_email/**"
+      # W2 entry points (funnel, not nav) + the page's writer.
+      - "templates/index.html"
+      - "site/index.html"
+      - "templates/plans.html.j2"
+      - "lib/pages.py"
+      - "lib/seo.py"
       # Site Access Gate: gate logic engine, admin backend, test suites.
       # Any change to app/gate.py, admin/site_gate.py, or either test file must
       # re-prove the fail-open + self-lockout + IP/CIDR + country contracts.
@@ -3795,9 +3812,10 @@ jobs:
 
   support-email-spine:
     if: ${{ false }}
-    # Support + Email estate, W1 spine (app/mailer.py, app/support.py,
-    # admin/support_tickets.py). Three suites, all fully offline — no SMTP, no Supabase,
-    # no live admin state:
+    # Support + Email estate: the W1 spine (app/mailer.py, app/support.py,
+    # admin/support_tickets.py) plus the W2 public surface (templates/support.html.j2, the
+    # pinned email base). Five suites, all fully offline — no SMTP, no Supabase, no live
+    # admin state, no network:
     #   test_mailer.py            — LEDGER-FIRST idempotency (a duplicate idem_key sends
     #                               nothing), mail-off skip, marketing suppression +
     #                               per-user opt-out, transactional bypassing both,
@@ -3814,7 +3832,20 @@ jobs:
     #                               matrix decided from the DB not the client, reply
     #                               append→mail→flag, plus HTTP-level 401/403 against the
     #                               live admin.server Handler.
-    # Deps: fastapi+pydantic for the route/model surface; pandas/numpy/pyarrow/pyyaml/
+    #   test_support_page.py      — the /support.html contract a screenshot cannot show:
+    #                               the seven POSTed fields, the honeypot's off-screen
+    #                               shape, the t0 stamp, EN/ZH dual-spans, no translated
+    #                               title=, the three-place public boundary, and PIN §1.1
+    #                               (success/error use --ok/--act, NEVER the --up/--down
+    #                               direction tokens that swap red<->green in zh).
+    #   test_email_templates.py   — the pinned email base: no images/external CSS (a
+    #                               blocked logo reads as phishing), presentational tables
+    #                               at 600px, the three-solid-cell gradient bar, both
+    #                               languages EN-first, and class discipline — the
+    #                               unsubscribe slot is ABSENT from every transactional
+    #                               send and present for marketing.
+    # Deps: fastapi+pydantic for the route/model surface; jinja2 renders the support
+    # template (markupsafe rides along for engine.i18n); pandas/numpy/pyarrow/pyyaml/
     # requests are what importing admin.server pulls in (same set as the site-gate job).
     runs-on: ubuntu-latest
     steps:
@@ -3823,13 +3854,17 @@ jobs:
         with:
           python-version: "3.12"
       - name: install deps
-        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests
+        run: pip install pytest fastapi pydantic jinja2 pandas numpy pyarrow pyyaml requests
       - name: mailer transport + ledger tests (app/mailer.py)
         run: python -m pytest tests/test_mailer.py -v
       - name: public support intake tests (app/support.py)
         run: python -m pytest tests/test_support_api.py -v
       - name: admin support console tests (admin/support_tickets.py)
         run: python -m pytest tests/test_admin_support_tickets.py -v
+      - name: support page contract + pinned design (templates/support.html.j2)
+        run: python -m pytest tests/test_support_page.py -v
+      - name: pinned email base (app/mailer.py render_email)
+        run: python -m pytest tests/test_email_templates.py -v
 
   billing-emails:
     if: ${{ false }}

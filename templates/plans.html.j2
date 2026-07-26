@@ -192,6 +192,12 @@
   .faq summary .chev { flex:none; width:16px; height:16px; color:var(--muted); transition:transform .22s ease; }
   .faq details[open] summary .chev { transform:rotate(180deg); }
   .faq .ans { padding:0 18px 16px; color:var(--muted); font-size:13.4px; line-height:1.6; }
+  /* the FAQ's honest exit: when none of the five answers is yours, there is a
+     person to ask (SEE W2 / masterplan R6 — support entry points ride the funnel,
+     not the nav, which is on hold). */
+  .faq-more { max-width:760px; margin:14px auto 0; text-align:center; font-size:13.2px;
+    color:var(--muted); line-height:1.55; }
+  .faq-more a { color:var(--link); font-weight:600; }
 
   /* ── disclaimer ─────────────────────────────────────────────────────── */
   .disclaimer { margin-top:44px; padding:16px 18px; border:1px solid var(--line); border-radius:12px;
@@ -506,6 +512,7 @@
                               '随时都可以，在账户中操作。已付费周期结束前你仍保有访问权限。') }}</div>
       </details>
     </div>
+    <p class="faq-more">{{ t('Still stuck? ', '还没解决？') }}<a href="support.html">{{ t('Write to support', '给客服写信') }}</a>{{ t(' — a person reads it and replies by email, usually within one business day.', '——真人阅读并通过邮件回复，通常在一个工作日内。') }}</p>
   </section>
 
   {# ── DISCLAIMER (securities / research-not-advice) ────────────────── #}
