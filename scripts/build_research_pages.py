@@ -262,6 +262,27 @@ def _load_excerpts() -> dict[str, list[str]]:
 # sitemap merge — preserve every non-/research/ url, replace /research/ block
 # ---------------------------------------------------------------------------
 
+def prune_stale(keep: set[str], names: list[str], max_share: float = 0.34) -> list[str]:
+    """Which of ``names`` to delete so ``site/research/`` holds only ``keep``.
+
+    A page's filename is ``slug(title)-<id suffix>.html``, so correcting a report's
+    title MOVES its page: without a prune, the old URL survives as a second live
+    copy of the same report under the wrong title — the exact string these pages
+    exist to stop competing with. Pages are fully re-rendered from the catalog on
+    every run, so anything not in ``keep`` is unreachable.
+
+    Guard: a wipe that large is a truncated catalog, not 20 renamed reports, so a
+    prune touching more than ``max_share`` of the directory is refused wholesale
+    (the caller logs it). Pure — the caller does the unlinking.
+    """
+    stale = sorted(n for n in names if n.endswith(".html") and n not in keep)
+    if not stale or not names:
+        return []
+    if len(stale) > max(1, int(len(names) * max_share)):
+        return []
+    return stale
+
+
 def build_sitemap(existing_xml: str, entries: list[dict]) -> str:
     kept = [ln for ln in existing_xml.splitlines()
             if not (ln.strip().startswith("<url>") and "/research/" in ln)]
@@ -399,13 +420,34 @@ def build(catalog: dict | None = None) -> int:
         "loc": f"{CANONICAL_BASE}/research/index.html",
         "lastmod": None, "changefreq": "daily", "priority": 0.6})
 
+    # drop pages whose report has been retitled (new slug) or left the catalog —
+    # otherwise the old URL stays live under the stale title (see prune_stale).
+    try:
+        keep = {f"{s}.html" for s in slug_by_id.values()} | {"index.html"}
+        names = [p.name for p in RESEARCH_DIR.glob("*.html")]
+        orphans = [n for n in names if n not in keep]
+        stale = prune_stale(keep, names)
+        for name in stale:
+            (RESEARCH_DIR / name).unlink()
+        if stale:
+            log.info("research pages: pruned %d stale page(s): %s", len(stale),
+                     ", ".join(stale[:5]) + ("…" if len(stale) > 5 else ""))
+        elif orphans:
+            # Bare print: an annotation behind logging's "%(levelname)s " prefix
+            # never parses as one.
+            print(f"::warning title=research pages::refusing to prune {len(orphans)} "
+                  f"stale /research/ page(s) — too many for one run; the catalog may "
+                  f"be short. Left in place.")
+    except Exception as exc:  # noqa: BLE001 — a stale file never breaks the build
+        log.warning("research pages: prune failed (%s)", exc)
+
     # merge into the real sitemap (preserving /stocks/ and everything else)
     try:
         existing = SITEMAP.read_text(encoding="utf-8") if SITEMAP.exists() else _EMPTY_XML
         SITEMAP.write_text(build_sitemap(existing, sitemap_entries), encoding="utf-8")
         log.info("research pages: sitemap updated (%d /research/ entries)", len(sitemap_entries))
-    except Exception as exc:  # noqa: BLE001
-        log.warning("::warning title=sitemap::research sitemap merge failed: %s", exc)
+    except Exception as exc:  # noqa: BLE001 — bare print: see the prune block above
+        print(f"::warning title=sitemap::research sitemap merge failed: {exc}")
 
     log.info("research pages: wrote %d report pages + index", written)
     return written

@@ -6,9 +6,14 @@ For each new PDF in ``research_inbox/`` (one whose receipt
   1. fetch pdf + sidecar (store GET, private bucket),
   2. normalize the sidecar to the v1 contract (fallbacks; never drop),
   3. extract body text via ``pdftotext -layout`` (30s timeout; graceful empty),
-  4. promote the PDF → ``research_vault/<id>.pdf``,
-  5. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
-  6. write the receipt ``research_inbox/_processed/<id>.json``.
+  4. recover the real title when the sidecar gave us the PDF's FILENAME (title.py),
+  5. promote the PDF → ``research_vault/<id>.pdf``,
+  6. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
+  7. write the receipt ``research_inbox/_processed/<id>.json``.
+
+Each run also re-derives filename-shaped titles for documents ALREADY in the
+catalog (:func:`_repair_titles`) — receipted PDFs are never re-ingested, so that
+pass is the only way an ingest-side title fix ever reaches them.
 
 Every per-item step is wrapped so ONE bad document can never abort the batch
 (never-raise-per-item); the whole run is idempotent (a re-run ingests 0). A
@@ -32,6 +37,7 @@ from pathlib import Path
 from engine.research_vault import catalog as catalog_mod
 from engine.research_vault import corpus as corpus_mod
 from engine.research_vault import sidecar as sidecar_mod
+from engine.research_vault import title as title_mod
 
 log = logging.getLogger("research_vault.ingest")
 
@@ -167,7 +173,8 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
     ``status`` ∈ ingested | failed. On any exception the item is marked failed
     (logged) and the batch continues.
     """
-    result = {"pdf_key": pdf_key, "status": "failed", "id": None, "needs_metadata": False}
+    result = {"pdf_key": pdf_key, "status": "failed", "id": None, "needs_metadata": False,
+              "title_source": "sidecar"}
     try:
         pdf_bytes = store.get_bytes(pdf_key)
         if not pdf_bytes:
@@ -196,6 +203,16 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
 
         body_text = extract_pdf_text(pdf_bytes) or ""
 
+        # A sidecar title that is really the PDF's FILENAME is a valid field, so the
+        # normalize ladder never sees it as missing — it has to be caught by shape
+        # and looked up in the report's own first page (engine/research_vault/title.py).
+        # The id is NOT re-derived: it already keys the receipt and vault object.
+        new_title, src = title_mod.resolve(item["title"], body_text)
+        if src != "sidecar":
+            log.info("research_vault: title (%s) %r -> %r", src, item["title"], new_title)
+            item["title"] = new_title
+        result["title_source"] = src
+
         # Promote the canonical PDF into the vault (private). Skipped on dry-run.
         if not dry_run:
             store.put_bytes(f"{VAULT_PREFIX}{item_id}.pdf", pdf_bytes, "application/pdf")
@@ -209,6 +226,60 @@ def _ingest_one(store, conn, pdf_key: str, now: datetime, dry_run: bool = False)
     except Exception as e:  # noqa: BLE001 — one bad doc must not kill the batch
         log.warning("research_vault: ingest failed for %s: %s", pdf_key, e)
         return result
+
+
+# ---------------------------------------------------------------------------
+# title repair over the EXISTING catalog
+# ---------------------------------------------------------------------------
+
+def _repair_titles(cat: dict, conn) -> dict:
+    """Re-derive filename-shaped titles for documents already in the catalog.
+
+    Ingest skips every PDF that has a receipt, so a fix to the ingest-time title
+    ladder alone would never reach a document that was already ingested — and the
+    catalog in the store is the copy the render bakes from. This pass closes that
+    gap: each run re-examines the catalog it just loaded, repairs any title that
+    still carries filename furniture using the body text the corpus already holds
+    (restored from the store above — no PDF re-fetch), and updates the corpus row
+    so search ranks the real title too (title is the heaviest FTS column).
+
+    Idempotent: a repaired title no longer looks filename-derived, so the next run
+    passes over it. Returns ``{repaired, recovered, unresolved: [(id, title), …]}``;
+    never raises — a title is never worth failing the hourly job.
+    """
+    out = {"repaired": 0, "recovered": 0, "unresolved": []}
+    for item in cat.get("items") or []:
+        try:
+            old = (item.get("title") or "").strip()
+            doc_id = item.get("id") or ""
+            if not old or not doc_id or not title_mod.looks_filename_derived(old):
+                continue
+            body = ""
+            try:
+                row = conn.execute("SELECT body FROM documents WHERE doc_id=?",
+                                   (doc_id,)).fetchone()
+                if row is not None:
+                    body = row[0] or ""
+            except Exception as e:  # noqa: BLE001 — no body: clean-only repair
+                log.warning("research_vault: corpus body lookup failed for %s: %s", doc_id, e)
+            new, src = title_mod.resolve(old, body)
+            if src == "filename":
+                out["unresolved"].append((doc_id, new))
+            if new == old:
+                continue
+            item["title"] = new
+            out["repaired"] += 1
+            out["recovered"] += int(src == "pdf")
+            log.info("research_vault: repaired title (%s) %r -> %r", src, old, new)
+            try:
+                conn.execute("UPDATE documents SET title=? WHERE doc_id=?", (new, doc_id))
+            except Exception as e:  # noqa: BLE001 — catalog is the public surface
+                log.warning("research_vault: corpus title update failed for %s: %s", doc_id, e)
+        except Exception as e:  # noqa: BLE001 — one bad row never stops the pass
+            log.warning("research_vault: title repair failed for %s: %s", item.get("id"), e)
+    if out["repaired"]:
+        conn.commit()
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +350,8 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
     Returns a summary dict::
 
-        {ingested, skipped, failed, needs_metadata, catalog_bytes[, corpus_published][, error]}
+        {ingested, skipped, failed, needs_metadata, titles_repaired, titles_recovered,
+         titles_unresolved, catalog_bytes[, corpus_published][, error]}
 
     ``catalog_bytes`` is the serialized catalog.json (so the CLI can snapshot it to
     the repo). ``dry_run=True`` runs the full pipeline but mutates NOTHING in the
@@ -309,6 +381,14 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
     pending_receipts: list = []  # (key, body) — flushed only after a publish
     try:
         cat = catalog_mod.load(store)
+
+        # Heal filename-shaped titles already in the catalog (receipted docs are
+        # never re-ingested, so this is the only path that reaches them).
+        rep = _repair_titles(cat, conn)
+        summary["titles_repaired"] = rep["repaired"]
+        summary["titles_recovered"] = rep["recovered"]
+        summary["titles_unresolved"] = len(rep["unresolved"])
+
         done_pdf_keys = _already_processed_pdf_keys(store)
 
         for pdf_key in _list_inbox_pdfs(store):
@@ -323,6 +403,11 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
 
             item = res["item"]
             item_id = item["id"]
+            if res.get("title_source") == "pdf":
+                summary["titles_recovered"] += 1
+            elif res.get("title_source") == "filename":
+                rep["unresolved"].append((item_id, item["title"]))
+                summary["titles_unresolved"] += 1
             catalog_mod.upsert_item(cat, item)
 
             # Receipt is only ACCUMULATED here — it is flushed to the store AFTER
@@ -339,6 +424,7 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
                     "vault_key": f"{VAULT_PREFIX}{item_id}.pdf",
                     "processed_at": now.astimezone(timezone.utc).isoformat(),
                     "needs_metadata": bool(item.get("needs_metadata")),
+                    "title_source": res.get("title_source"),
                     "institution": item.get("institution"),
                     "top_pick": bool(item.get("top_pick")),
                 }
@@ -371,6 +457,18 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         else:
             summary["catalog_bytes"] = catalog_mod.write(store, cat, now=now)
             conn.commit()
+
+        # Flag rather than silently ship: these reports are published under a
+        # cleaned-up FILENAME because their headline could not be found on page 1
+        # — the desk sidecar needs a real title (or the PDF has no text layer).
+        # Printed bare: a "::warning" behind logging's prefixed format never
+        # parses as a GitHub annotation.
+        if rep["unresolved"]:
+            names = ", ".join(f"{i} ({t})" for i, t in rep["unresolved"][:8])
+            more = "" if len(rep["unresolved"]) <= 8 else f" +{len(rep['unresolved']) - 8} more"
+            print(f"::warning title=research_vault::{len(rep['unresolved'])} report(s) "
+                  f"titled from their filename — no headline found on page 1: "
+                  f"{names}{more}")
     finally:
         conn.close()
 
