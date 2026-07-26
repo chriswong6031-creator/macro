@@ -1,6 +1,6 @@
 {
   "date": "2026-07-24",
-  "generated_utc": "2026-07-26 09:51",
+  "generated_utc": "2026-07-26 09:55",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4114,7 +4114,7 @@
       "skew_pctile": 0.5168650793650794,
       "stock_bond_corr": 0.5415527494317207,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.5334175012774452,
+      "roro": 0.5334175012773763,
       "roro_state": "risk-on",
       "vol_target_scalar": 1.0556408777638482,
       "news_sentiment": 0.010867821983993053,
@@ -4225,7 +4225,7 @@
   "fear_euphoria": {
     "fe_score": 88,
     "band": "Greed",
-    "roro": 0.5334175012774452,
+    "roro": 0.5334175012773763,
     "roro_state": "risk-on",
     "legs": [
       {
