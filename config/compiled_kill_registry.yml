@@ -216,6 +216,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Downside-vol asymmetry (semivariance RV_down/RV_up) flip as a STANDALONE entry-timing signal (PSS-F4)'
+    verdict: 'KILLED as a standalone timer — fails pre-stated falsifier prong 2 (collapses into a later-than-incumbent confirmer with no earliness gain). F4 fires at td_to_trough −9td — LATER than the incumbent Stoch-RSI cross (−2td) — at a near-low rate of 10.4% vs the 16.3% base (U_W5 vs all-days [−8.36,−5.93] excludes 0 DOWN, worse than random on proximity). So as a bottom-timer it is strictly worse than the incumbent (later AND further from the low). NOTABLE DISTINCTION (the one sign of life across all 4 families): F4 is the ONLY family to CLEAR its mirror placebo — F4 − total-vol-analog excludes 0 UP on U_MAE [+0.43,+2.92] AND (as a "less-bad" artifact, both below base) U_W5 [+0.54,+3.23] — so the DIRECTIONAL down/up asymmetry carries information plain vol-normalization does not (F4 selects calmer, shallower-MAE entries: F4 MAE −6.79% vs analog −8.21% vs incumbent −8.20%, on 96% disjoint fire sets). But that shallow MAE is "safe late entry past the trough," not bottom-timing. Closes the standalone-timer construction only — the semivariance-asymmetry MEASUREMENT is RETAINED as a codex descriptor and is the single best candidate for a future incumbent×asymmetry CONFLUENCE probe (the one W-CONF thread not moot). Charter''s "defensives correctly-null" prediction NOT confirmed (KO/WMT/COST eligible with normal conditional asymmetry). F1-class bugs verified ABSENT (per-name-first self-check U_W5 −5.98pp matches direct). Deviations pre-outcome (A1/A2/A3 re-pin from absolute crossing/eligibility to per-name-baseline crossing + dispersion eligibility — universe FIT A_base≈0.96 made the absolute form degenerate; measurement-distribution probe only, in the prereg commit; +C32 U_W5 +73.70pp flagged in-report as a single-fire small-sample degeneracy, CI includes 0).'
+    source: 'PSS-F4, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F4; `reports/pss_f4_semivar.md` (family `pss_f4_semivar`, 2026-07-26)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
