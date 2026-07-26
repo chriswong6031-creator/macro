@@ -649,7 +649,7 @@ def compute_name(sym: str, etf: str, rung: str) -> dict:
             fr2 = r2_primary[fmask]; fr2 = fr2[np.isfinite(fr2)]
             if len(fr2):
                 rec["mech_low"] = int((fr2 <= q1).sum())
-                rec["mech_mid"] = int((fr2 > q1) & (fr2 <= q2))
+                rec["mech_mid"] = int(((fr2 > q1) & (fr2 <= q2)).sum())
                 rec["mech_high"] = int((fr2 > q2).sum())
                 rec["mech_n"] = int(len(fr2))
 
