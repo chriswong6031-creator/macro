@@ -206,3 +206,109 @@ def test_theme_discovery_candidates_in_state(monkeypatch, tmp_path):
         {"as_of": "2026-01-05", "market_en": "China", "ranks": [{"name": "x", "id": "x",
          "etf_proxy": None, "durability": {}, "crowding": {}}], "ai_handoff": {}}))
     assert td.gather_thematic_state("china", root=tmp_path)["theme_candidates"] is None
+
+
+# --------------------------------------------------------------------------- #
+# scored.jsonl — the per-thesis outcome spine every other desk keeps. Without it
+# engine.desk_placebo can only reconstruct the graded population from the ledger's
+# elapsed rows, and its exact-pairing guard fails closed the moment a thesis is
+# graded but unsweepable (or vice versa).
+# --------------------------------------------------------------------------- #
+def _ledger(tmp_path, rows):
+    d = tmp_path / "data" / "thematic_desk"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "theses.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return d
+
+
+def _row(tid, ticker="512760.SS", check_by="2026-02-15", kind="theme_rel_return"):
+    return {"id": tid, "market": "china", "subject": "CN Semis", "lean": "overweight",
+            "conviction": "low", "state_asof": "2026-01-05", "check_by": check_by,
+            "falsifier": {"check": {"kind": kind, "subject_ticker": ticker,
+                                    "vs": "510300.SS", "group": "china", "op": "<",
+                                    "threshold": -0.05, "horizon_d": 20}},
+            "entry_levels": {ticker: 100.0, "510300.SS": 100.0}}
+
+
+def _prices(up="512760.SS"):
+    idx = pd.date_range("2026-01-01", periods=60, freq="B")
+    proxy = pd.DataFrame({"close": np.linspace(100, 130, 60)}, index=idx)      # +30%
+    bench = pd.DataFrame({"close": np.linspace(100, 105, 60)}, index=idx)      # +5%
+    return lambda g, s: proxy if s == up else (bench if s == "510300.SS" else None)
+
+
+def test_scorer_persists_per_thesis_outcomes(monkeypatch, tmp_path):
+    monkeypatch.setattr(td.store, "read", _prices())
+    d = _ledger(tmp_path, [_row("china-1"), _row("china-2", check_by="2099-01-01"),
+                           _row("china-3", kind="soft")])
+    td.score_ledger(root=tmp_path, today="2026-03-01")
+    rows = [json.loads(x) for x in (d / "scored.jsonl").read_text().splitlines()]
+    by_id = {r["id"]: r for r in rows}
+    assert by_id["china-1"]["outcome"] == "hit" and by_id["china-1"]["realized"] is not None
+    assert by_id["china-3"]["outcome"] == "unscored"
+    assert "china-2" not in by_id            # still open — a verdict it has not reached yet
+    assert by_id["china-1"]["scored_at"]     # auditable, like every other desk's spine
+
+
+def test_scored_ledger_is_append_only_and_idempotent(monkeypatch, tmp_path):
+    monkeypatch.setattr(td.store, "read", _prices())
+    d = _ledger(tmp_path, [_row("china-1")])
+    first = td.score_ledger(root=tmp_path, today="2026-03-01")
+    lines = (d / "scored.jsonl").read_text()
+    again = td.score_ledger(root=tmp_path, today="2026-03-01")
+    assert (d / "scored.jsonl").read_text() == lines      # no duplicate row for a graded id
+    assert again["overall"] == first["overall"]
+
+
+def test_a_published_verdict_is_not_rewritten_by_a_re_based_history(monkeypatch, tmp_path):
+    """yfinance re-adjusts the WHOLE stored series on every dividend, so re-grading from
+    live prices can silently flip a verdict the track record already reported. The graded
+    outcome is the published one."""
+    monkeypatch.setattr(td.store, "read", _prices())
+    d = _ledger(tmp_path, [_row("china-1")])
+    assert td.score_ledger(root=tmp_path, today="2026-03-01")["overall"]["hits"] == 1
+    # the proxy's history is re-based downward — a fresh grade would now read `miss`
+    idx = pd.date_range("2026-01-01", periods=60, freq="B")
+    down = pd.DataFrame({"close": np.linspace(100, 70, 60)}, index=idx)
+    bench = pd.DataFrame({"close": np.linspace(100, 105, 60)}, index=idx)
+    monkeypatch.setattr(td.store, "read",
+                        lambda g, s: down if s == "512760.SS" else (bench if s == "510300.SS" else None))
+    again = td.score_ledger(root=tmp_path, today="2026-03-01")
+    assert again["overall"]["hits"] == 1 and again["overall"]["n"] == 1
+    assert len((d / "scored.jsonl").read_text().splitlines()) == 1
+
+
+def test_unpriceable_thesis_stays_retryable(monkeypatch, tmp_path):
+    """`expired` on this desk means the price plane could not value the thesis, emitted on
+    the first unpriceable read with none of desk_scorer's grace days. Freezing it would turn
+    a collector gap into a permanent verdict (two live URNM theses sit in exactly that
+    state), so it is never written to the spine."""
+    monkeypatch.setattr(td.store, "read", lambda g, s: None)          # nothing priceable yet
+    d = _ledger(tmp_path, [_row("china-1")])
+    assert td.score_ledger(root=tmp_path, today="2026-03-01")["overall"]["n"] == 0
+    assert not (d / "scored.jsonl").exists()
+    monkeypatch.setattr(td.store, "read", _prices())                  # collector backfills
+    assert td.score_ledger(root=tmp_path, today="2026-03-01")["overall"]["hits"] == 1
+    assert [json.loads(x)["outcome"]
+            for x in (d / "scored.jsonl").read_text().splitlines()] == ["hit"]
+
+
+def test_scored_spine_lets_the_placebo_pair_outcomes_exactly(monkeypatch, tmp_path):
+    """The point of the spine: engine.desk_placebo takes its exact `scored` path instead of
+    inferring the graded population from the ledger's elapsed rows."""
+    from engine import desk_placebo as dp
+
+    monkeypatch.setattr(td.store, "read", _prices())
+    _ledger(tmp_path, [_row(f"china-{i}") for i in range(3)])
+    track = td.score_ledger(root=tmp_path, today="2026-03-01")
+    # the sweep prices off data/<group>/ on the passed root, and needs history on both sides
+    # of the graded window to have anything to sweep
+    dpx = tmp_path / "data" / "china"
+    dpx.mkdir(parents=True, exist_ok=True)
+    idx = pd.date_range("2024-01-01", periods=600, freq="B")
+    pd.DataFrame({"close": np.linspace(100, 400, 600)}, index=idx).to_parquet(dpx / "512760.SS.parquet")
+    pd.DataFrame({"close": [100.0] * 600}, index=idx).to_parquet(dpx / "510300.SS.parquet")
+    res = dp.null_baseline(tmp_path, "thematic_desk", track, "2026-03-01")
+    assert res["mix_source"] == "scored"
+    assert res["n"] == res["n_decided"] == 3 and res["available"] is True
+    assert res["by_kind"]["theme_rel_return"]["n"] == 3

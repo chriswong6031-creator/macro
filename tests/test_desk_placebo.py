@@ -163,6 +163,54 @@ def test_theme_boundary_is_inclusive_unlike_rel_return():
     assert incl["p_hit"] == 0.0        # 0.0 <= 0.0 is True → always falsified
 
 
+def test_theme_exit_bar_is_the_first_close_at_or_after_check_by():
+    """The third difference, and the only one that is NOT measure-zero. desk_scorer reads the
+    exit as the last close <= check_by; thematic_desk._close_on_or_after reads the first close
+    >= check_by. check_by is a BusinessDay offset, so it lands on a market holiday on 3.6%
+    (yahoo) to 7.0% (china) of business days — and there the window is a whole bar longer."""
+    root = _new_root()
+    _write_prices(root, "A", [100.0] * 400, group="canada")
+    get = dp._series_cache(root)
+    s = get("A", "canada")
+    # 2020-02-01 is a Saturday: last bar at/before it is Fri 01-31, first at/after is Mon 02-03
+    assert dp._window_len(s, "2020-01-06", "2020-02-01") == 19
+    assert dp._window_len_on_or_after(s, "2020-01-06", "2020-02-01") == 20
+    # on a check_by that IS a trading day the two agree — the fix is inert off-holiday
+    assert dp._window_len(s, "2020-01-06", "2020-01-31") == 19
+    assert dp._window_len_on_or_after(s, "2020-01-06", "2020-01-31") == 19
+
+
+def test_theme_sweep_uses_the_on_or_after_window():
+    """Wired end to end: the theme sweep must report the longer window on a holiday check_by,
+    or it measures a 19-day null for a thesis that was graded over 20."""
+    root = _new_root()
+    _write_prices(root, "A", [100 * (1.001 ** i) for i in range(400)], group="canada")
+    _write_prices(root, "B", [100.0] * 400, group="canada")
+    get = dp._series_cache(root)
+    check = {"kind": "theme_rel_return", "subject_ticker": "A", "vs": "B",
+             "group": "canada", "op": "<", "threshold": -0.05}
+    theme = dp.placebo_theme_rel_return(get, check, "2020-01-06", "2020-02-01")
+    scorer = dp.placebo_rel_return(get, check, "2020-01-06", "2020-02-01", group="canada")
+    assert theme["window_bd"] == 20        # graded window
+    assert scorer["window_bd"] == 19       # desk_scorer's rule, one bar short here
+
+
+def test_theme_window_not_yet_elapsed_yields_no_null():
+    """No bar at or after check_by means _eval could not have graded it either — the honest
+    answer is no null, not a window silently truncated to whatever data exists."""
+    root = _new_root()
+    _write_prices(root, "A", [100.0] * 300, group="canada")
+    _write_prices(root, "B", [100.0] * 300, group="canada")
+    get = dp._series_cache(root)
+    last = pd.bdate_range("2020-01-01", periods=300)[-1].date().isoformat()
+    assert dp.placebo_theme_rel_return(
+        get, {"subject_ticker": "A", "vs": "B", "group": "canada",
+              "op": "<", "threshold": -0.05}, "2020-06-01", "2099-01-01") is None
+    assert dp.placebo_theme_rel_return(
+        get, {"subject_ticker": "A", "vs": "B", "group": "canada",
+              "op": "<", "threshold": -0.05}, "2020-06-01", last) is not None
+
+
 def test_thematic_style_desk_gets_a_null_end_to_end():
     """A thematic-shaped ledger (no scored.jsonl, theme_rel_return, non-US group) must
     resolve to a usable null via the elapsed-ledger fallback."""

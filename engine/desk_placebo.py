@@ -37,6 +37,16 @@ one deliberate difference is `start_level`: the scorer prefers the entry close c
 log time, while a placebo entry at an arbitrary historical date has no such capture and must
 use the cached close throughout. That moves realized values by <0.005 and flipped no outcome.
 
+The same replay was run for `theme_rel_return` against the live thematic_desk ledger: at each
+thesis's ACTUAL entry date it reproduces engine.thematic_desk._eval's hit/miss on 28 of 28
+(every elapsed, priceable thesis as of 2026-07-26; the other 2 are URNM, which has no parquet
+on any plane and is `expired` on both sides). The `start_level` difference above applies here
+too and is LARGER: the capture-vs-cache gap reaches 0.018 of realized excess on the China
+A-share proxies, whose stored history is re-based by every dividend (lib/store.upsert
+`overwrite_overlap`), against <0.005 on the US names. It flipped no outcome on any of the 28.
+Nothing else diverged — reading the exit off the joined proxy/benchmark index reproduced
+_eval's per-series `_close_on_or_after` exactly.
+
 WHAT IT DOES NOT DO
 -------------------
 Display-tier accrual is untouched. This module computes a promotion statistic and nothing
@@ -131,11 +141,37 @@ def _window_len(s, asof, check_by) -> int:
     return int(i1 - i0)
 
 
+def _window_len_on_or_after(s, asof, check_by) -> int:
+    """Trading-day span thematic_desk actually graded: last bar <= asof → FIRST bar >= check_by.
+
+    engine.desk_scorer.close_at reads the exit as the last close AT OR BEFORE check_by;
+    engine.thematic_desk._close_on_or_after reads the FIRST close AT OR AFTER it. check_by is
+    a BusinessDay offset from asof, and a business day is not always a trading day — market
+    holidays are 3.6% of business days on the yahoo plane, 3.8% canada, 5.8% hk and 7.0%
+    china (2015-2026). On those dates the two rules land on DIFFERENT bars and `_window_len`
+    measures a window one bar SHORT of the one that was graded.
+
+    Returns -1 when the window is not contained in the series (no bar at/before asof, or none
+    at/after check_by) — the same condition under which _eval returns None rather than
+    grading a truncated window.
+    """
+    import pandas as pd
+
+    i0 = s.index.searchsorted(pd.Timestamp(asof), side="right") - 1
+    i1 = s.index.searchsorted(pd.Timestamp(check_by), side="left")
+    if i0 < 0 or i1 >= len(s):
+        return -1
+    return int(i1 - i0)
+
+
 # --------------------------------------------------------------------------- #
-# the per-thesis placebo sweeps — mirror engine.desk_scorer's evaluators exactly
+# the per-thesis placebo sweeps — each mirrors the evaluator that ACTUALLY graded the desk,
+# exactly. That is engine.desk_scorer for rel_return / level, and thematic_desk's own _eval
+# for theme_rel_return, which is a different function and does not agree with it.
 # --------------------------------------------------------------------------- #
 def placebo_rel_return(get, check: dict, asof, check_by, *,
-                       group=None, inclusive: bool = False) -> dict | None:
+                       group=None, inclusive: bool = False,
+                       exit_on_or_after: bool = False) -> dict | None:
     """Null for eval_rel_return: realized = subject excess vs benchmark over W sessions;
     falsified iff op(realized, threshold). Swept over every historical entry date.
 
@@ -143,6 +179,11 @@ def placebo_rel_return(get, check: dict, asof, check_by, *,
     `<`, thematic_desk on `<=` ("moves the wrong way by >= threshold"). The two differ only
     on an exact tie, which is measure-zero for continuous returns — mirrored anyway so the
     null is computed under the same rule that graded the thesis.
+
+    `exit_on_or_after` selects the EXIT BAR: desk_scorer takes the last close at or before
+    check_by, thematic_desk the first close at or after it. Unlike the boundary convention
+    this is NOT measure-zero — it changes the window length itself on every check_by that
+    falls on a market holiday (see _window_len_on_or_after).
     """
     import pandas as pd
 
@@ -160,7 +201,8 @@ def placebo_rel_return(get, check: dict, asof, check_by, *,
         a, b = joined["a"], joined["b"]
     else:
         b = None
-    w = _window_len(a, asof, check_by)
+    w = (_window_len_on_or_after(a, asof, check_by) if exit_on_or_after
+         else _window_len(a, asof, check_by))
     if w < 1:
         return None
     realized = a.shift(-w) / a - 1.0
@@ -182,13 +224,22 @@ def placebo_rel_return(get, check: dict, asof, check_by, *,
 def placebo_theme_rel_return(get, check: dict, asof, check_by) -> dict | None:
     """Null for thematic_desk's `theme_rel_return` (engine/thematic_desk.py:550).
 
-    Same excess-return predicate as rel_return, with two differences that both matter: the
-    prices come from the region-aware store keyed by the check's `group`, and falsification
-    is inclusive at the boundary. Without this the whole desk went unmeasured — 28 graded
-    calls reported as "no placebo baseline" while its ledger held everything needed.
+    Same excess-return predicate as rel_return, with THREE differences that all matter —
+    thematic_desk grades through its own `_eval`, not desk_scorer.eval_rel_return, and a
+    sweep of the wrong endpoint is worse than reporting no null at all:
+
+      1. PRICES come from the region-aware store keyed by the check's `group` (yahoo /
+         china / hk / canada). Without it the whole desk went unmeasured — 28 graded calls
+         reported as "no placebo baseline" while its ledger held everything needed.
+      2. FALSIFICATION is inclusive at the boundary (`<=` / `>=`), matching the desk's
+         "moves the wrong way by >= threshold" spec.
+      3. The EXIT BAR is the first close at or AFTER check_by (`_close_on_or_after`), where
+         desk_scorer takes the last close at or before it. This one is not measure-zero: it
+         lengthens the window by a bar on every check_by that falls on a market holiday.
     """
     return placebo_rel_return(get, check, asof, check_by,
-                              group=check.get("group") or "yahoo", inclusive=True)
+                              group=check.get("group") or "yahoo", inclusive=True,
+                              exit_on_or_after=True)
 
 
 def placebo_level(get, check: dict, asof, check_by) -> dict | None:
