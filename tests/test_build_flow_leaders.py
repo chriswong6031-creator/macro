@@ -9,6 +9,7 @@ Covers:
   - JSON serialiser handles numpy types + None without crash
   - pick_lab registry: 27 books, unique hashes, families present
   - pick_lab candidates: _load_leaders_json handles missing file gracefully
+  - loud fail-soft: main() crash still exits 0 AND prints a line-start ::warning annotation
 
 Run:
     python -m pytest tests/test_build_flow_leaders.py -x -q
@@ -697,3 +698,32 @@ class TestBuildMembershipDf:
         if not result.empty:
             assert "ticker" in result.columns
             assert "session" in result.columns
+
+
+# ──────────────────────────────────────────────────── loud fail-soft main() ──
+
+class TestLoudFailSoft:
+    """Fail-soft paths must emit a PARSEABLE GitHub annotation.
+
+    log.warning("::warning ...") never parses — the logging format prefixes the
+    line and GitHub only reads ::warning at line start (#3487/#3515 postmortem).
+    tests/test_gh_annotation_line_start.py is the static guard (no annotation may
+    go through a logger); this is the behavioural proof for this builder — a crash
+    in build() still returns rc 0 AND actually reaches stdout at column 0.
+    """
+
+    def test_main_crash_emits_line_start_annotation(self, capsys, monkeypatch):
+        import scripts.build_flow_leaders as mod
+
+        def _boom(*args, **kwargs):
+            raise RuntimeError("boom")
+
+        # main() calls the module-global build(), so setattr on the module suffices.
+        monkeypatch.setattr(mod, "build", _boom)
+        rc = mod.main()
+
+        assert rc == 0, "builder must stay fail-soft (exit 0)"
+        out_lines = capsys.readouterr().out.splitlines()
+        assert any(line.startswith("::warning title=flow_leaders::") for line in out_lines), (
+            f"Annotation must start the line (bare print, not a logger call): {out_lines}"
+        )
