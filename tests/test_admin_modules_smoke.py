@@ -375,6 +375,27 @@ class TestAnalyticsFirstParty:
         result = afp.status()
         assert result["configured"] is False
 
+    def test_status_with_pat_is_configured(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The two cases above pass IDENTICALLY in a venv where `import requests` failed.
+
+        analytics_first_party degrades to `requests = None`, and `status()` then folds the
+        missing dependency into the same `configured is False` the no-PAT case asserts —
+        so a shape check and a no-PAT check cannot tell the shipped branch from the
+        degraded one.  Verified: all 74 tests here passed in a venv without requests.
+
+        Pinning `configured is True` with a PAT present is the assertion that separates
+        them: it can only hold when the module actually imported requests.  A lane that
+        drops the dep goes RED here instead of green-and-weaker (#3703's class).
+        """
+        from admin import analytics_first_party as afp, settings
+        monkeypatch.setattr(settings, "supabase_pat", lambda: "sbp_test_token")
+        result = afp.status()
+        assert result["configured"] is True, (
+            f"status() degraded with a PAT present — reason={result.get('reason')!r}. "
+            "The CI lane running this file must install requests (see ci.yml)."
+        )
+        assert result["reason"] is None
+
 
 # ---------------------------------------------------------------------------
 # 8. umami.status() — network-free dict
