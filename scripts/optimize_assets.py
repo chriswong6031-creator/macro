@@ -1,4 +1,4 @@
-"""Post-render asset optimization: content-hash cache-busting + defer.
+"""Post-render asset optimization: content-hash cache-busting + defer + CSS preload.
 
 Rewrites every local ``.js``/``.css`` reference across ``site/**/*.html`` to
 carry a ``?v=<content-hash>`` query and marks non-critical ``<script>`` tags
@@ -8,10 +8,20 @@ bundle (theme.js, heatmap.js, theme.css, …) from being re-validated on every
 page navigation — the dominant mobile cost when browsing macro → country pages —
 while ``defer`` keeps synchronous script execution off the first-paint path.
 
+It then adds ``<link rel=preload as=style>`` to ``<head>`` for the stylesheets the
+parser would otherwise discover LATE — the ones externalize_css left in the body
+(macro.html's biggest sit ~48KB into a 582KB document) and the one theme.css
+reaches by ``@import``, which is strictly serialized behind theme.css's own
+download. Every stylesheet here is render-blocking, so late discovery delays first
+paint by whole round-trips; the hints move only discovery, never the ``<link>``
+itself, so the cascade is untouched. See lib.pages.preload_css_text.
+
 Runs after all builders have copied their assets into site/ (so the files exist
 to hash), mirroring scripts/inject_data_base.py. Idempotent + never raises: a
 ref that already carries a query is left as-is, so re-runs are no-ops. The core
-rewrite lives in lib.pages.optimize_assets_text (kept beside the shim logic).
+rewrites live in lib.pages.optimize_assets_text / preload_css_text (kept beside
+the shim logic). Stamping must precede the preload pass — a hint whose URL differs
+from the stylesheet's by a query string is a second cache key, not a warm hit.
 
 Run standalone: python -m scripts.optimize_assets
 """
@@ -25,7 +35,7 @@ from typing import Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.pages import optimize_assets_text, write_page  # noqa: E402
+from lib.pages import css_imports, optimize_assets_text, preload_css_text, write_page  # noqa: E402
 
 log = logging.getLogger("optimize_assets")
 
@@ -45,6 +55,7 @@ def optimize(site_dir: Path) -> int:
         return 0
     root = site_dir.resolve()
     cache: Dict[Path, Optional[str]] = {}  # resolved asset path -> hash (once per process)
+    imports: Dict[Path, list] = {}         # resolved css path -> its @import urls
     n = 0
     for html in site_dir.rglob("*.html"):
         try:
@@ -53,19 +64,40 @@ def optimize(site_dir: Path) -> int:
             continue
         page_dir = html.parent
 
-        def hash_for(url: str, _page_dir: Path = page_dir) -> Optional[str]:
+        def _resolve(url: str, _page_dir: Path = page_dir) -> Optional[Path]:
             rel = url.split("?", 1)[0].split("#", 1)[0]
             try:
                 target = (_page_dir / rel).resolve()
-                target.relative_to(root)  # never hash outside the site tree
+                target.relative_to(root)  # never reach outside the site tree
             except Exception:  # noqa: BLE001
+                return None
+            return target
+
+        def hash_for(url: str, _resolve=_resolve) -> Optional[str]:
+            target = _resolve(url)
+            if target is None:
                 return None
             if target not in cache:
                 cache[target] = _hash_bytes(target) if target.is_file() else None
             return cache[target]
 
+        def imports_for(url: str, _resolve=_resolve) -> list:
+            """@import urls inside a linked stylesheet — read once per file."""
+            target = _resolve(url)
+            if target is None:
+                return []
+            if target not in imports:
+                try:
+                    imports[target] = css_imports(target.read_text(encoding="utf-8")) if target.is_file() else []
+                except Exception:  # noqa: BLE001
+                    imports[target] = []
+            return imports[target]
+
         try:
+            # ?v= stamping FIRST: preload hints must carry the same final URL as the
+            # stylesheet they warm, or the two are separate cache keys and double-fetch.
             new = optimize_assets_text(text, hash_for)
+            new = preload_css_text(new, imports_for)
         except Exception as e:  # noqa: BLE001
             log.warning("optimize failed for %s (%s)", html.name, e)
             continue

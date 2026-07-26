@@ -30,11 +30,54 @@
   var lastScrollT = -1e4;        // timestamp of last scroll event (performance.now())
   window.addEventListener("scroll", function () { lastScrollT = performance.now(); _wake(); }, { passive: true });
   // ---- thermal guard -------------------------------------------------------
-  // Ambient (no-interaction) repaints are capped to ~30fps: ProMotion phones
-  // otherwise run this full-canvas repaint at 120Hz and cook in minutes. After
-  // PARK_MS with no real user input the loop, the auto-tour and the decorative
-  // CSS animations park entirely on the last frame; any touch/scroll/key wakes them.
-  var AMBIENT_MS = 30, PARK_MS = 120000;
+  // Ambient (no-interaction) repaints are capped: ProMotion PHONES otherwise run
+  // this full-canvas repaint at 120Hz and cook in minutes. The cap is device-tiered
+  // because the hazard is — a mains/actively-cooled machine has no thermal problem
+  // and the idle auto-rotation is the whole point of the deck, so desktops keep a
+  // 60fps floor and phones/tablets stay at ~33fps. After PARK_MS with no real user
+  // input the loop, the auto-tour and the decorative CSS animations park entirely on
+  // the last frame; any touch/scroll/key wakes them.
+  //
+  // The two tiers are NOT the same rule with different numbers — one is a floor and
+  // the other a ceiling, so they round opposite ways:
+  //   desktop: "never below 60fps"  -> AMBIENT_MS is a target period, round DOWN
+  //   mobile:  "never above ~33fps" -> AMBIENT_MS is a hard budget,  round UP
+  // Skipping is by FRAME COUNT off the measured refresh rate, not by comparing
+  // elapsed-ms to a threshold. A fixed ms threshold beats against the display: a
+  // 14ms cap looks like 60fps reasoning but silently yields 48fps on a 144Hz panel
+  // (two 6.94ms frames = 13.89ms, just under the bar, so it paints every third).
+  // Deriving the skip from the period cannot land between frames like that.
+  // Touch tiering (not viewport width): a narrowed desktop window is still a desktop,
+  // while a touchscreen laptop reports coarse pointer yet is actively cooled — so
+  // "has a real mouse" (hover + fine pointer) is the signal that tracks the hazard.
+  var DESKTOP_MS = 1000 / 60, MOBILE_MS = 30;
+  var DESKTOP_PARK = 600000, MOBILE_PARK = 120000;
+  var _mqDesktop = window.matchMedia ? matchMedia("(hover: hover) and (pointer: fine)") : null;
+  var AMBIENT_MS = MOBILE_MS, PARK_MS = MOBILE_PARK, _isDesktop = false;
+  var _rafPrevT = 0, _skipN = 1, _skipI = 0;   // paint one rAF in every _skipN
+  function _applyTier() {
+    _isDesktop = !!(_mqDesktop && _mqDesktop.matches);
+    AMBIENT_MS = _isDesktop ? DESKTOP_MS : MOBILE_MS;
+    PARK_MS = _isDesktop ? DESKTOP_PARK : MOBILE_PARK;
+    _skipN = 1; _skipI = 0; _rafPrevT = 0;
+    if (window.__gdPerf) { window.__gdPerf.power = _isDesktop ? "desktop" : "mobile"; window.__gdPerf.ambientMs = AMBIENT_MS; }
+  }
+  // How many rAF callbacks to coalesce into one repaint, given the measured display
+  // period. The 0.05 nudge absorbs vsync jitter so a 120Hz panel reading 8.34ms
+  // instead of 8.33ms doesn't flip the skip count frame to frame.
+  function _skipFor(rafDt) {
+    if (!(rafDt > 0) || rafDt > 100) return _skipN;      // hitch/first frame: keep the current cadence
+    var k = AMBIENT_MS / rafDt;
+    return Math.max(1, _isDesktop ? Math.floor(k + 0.05) : Math.ceil(k - 0.05));
+  }
+  _applyTier();
+  // Re-tier live: an iPad gaining/losing a trackpad and DevTools device emulation both
+  // flip these queries after load. _wake() un-parks a globe parked under the old tier.
+  if (_mqDesktop) {
+    var _onTier = function () { _applyTier(); _wake(); };
+    if (_mqDesktop.addEventListener) _mqDesktop.addEventListener("change", _onTier);
+    else if (_mqDesktop.addListener) _mqDesktop.addListener(_onTier);
+  }
   var _lastRenderT = 0, _parked = false, _parkCss = null;
 
   // Quality tier: 2=high dpr≤2, 1=mid dpr≤1.5, 0=low dpr≤1.15
@@ -874,8 +917,17 @@
     var interacting = !!flying || dragging || !!sweep || Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02;
     // thermal park: nothing but the tour has happened for PARK_MS — freeze on this frame
     if (!interacting && !selected && t - lastInteract > PARK_MS) { _park(); return; }
-    // thermal cap: ambient repaints at ~30fps; interaction keeps the native rate
-    if (!interacting && t - _lastRenderT < AMBIENT_MS) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+    // thermal cap: ambient repaints run at the tier rate (desktop >=60fps floor,
+    // phones ~33fps ceiling); interaction always keeps the native rate.
+    var rafDt = _rafPrevT > 0 ? t - _rafPrevT : 0;
+    _rafPrevT = t;
+    if (interacting) {
+      _skipI = 0; _skipN = 1;
+    } else {
+      _skipN = _skipFor(rafDt);
+      if (++_skipI < _skipN) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+      _skipI = 0;
+    }
     // quality governor: sample only uncapped frames (capped dt would read as jank)
     if (interacting && _lastFrameT > 0) _pushDt(t - _lastFrameT);
     _lastFrameT = t;
@@ -1617,7 +1669,10 @@
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
     // init instrumentation object once (mutated each frame)
+    // power/ambientMs: the thermal tier resolved above (_applyTier ran before this
+    // object existed, so seed them here as well as on every later re-tier).
     window.__gdPerf = { tier: Q, frames: 0, scale: scale, avg: 0, rot0: rot[0] };
+    _applyTier();
     buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
     // hint chip + eyebrow chips (new self-owned UI)
     buildHintChip();

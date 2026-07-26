@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.pages import optimize_assets_text  # noqa: E402
+from lib.pages import css_imports, optimize_assets_text, preload_css_text  # noqa: E402
 from scripts.optimize_assets import optimize  # noqa: E402
 
 # a stub hasher: pretend theme.js/heatmap.js/theme.css exist, nothing else
@@ -97,6 +97,119 @@ def test_optimize_sweep_end_to_end(tmp_path):
     out = (site / "macro.html").read_text()
     assert 'src="theme.js?v=' in out and 'src="heatmap.js?v=' in out
     assert out.count(" defer") == 2  # theme + heatmap, not the shim
-    assert '<script data-dbase src="data_base.js">' in out  # shim intact & blocking
+    # shim intact & blocking — inlined, so no src to version or defer
+    assert "data-dbase" in out and "window.DATA_BASE" in out
+    assert "data_base.js" not in out
     # second sweep is a no-op (idempotent)
     assert optimize(site) == 0
+
+
+# ---------------------------------------------------------------------------
+# head preload hints for late-discovered CSS (lib.pages.preload_css_text)
+# ---------------------------------------------------------------------------
+# Every stylesheet on these pages is render-blocking, so first paint waits for the
+# LAST one — which makes *when the browser learns the URL* as costly as the bytes.
+# Two structural delays put discovery late: externalize_css leaves the big sheets
+# in the body (macro.html's biggest sit ~48KB into a 582KB document, past what has
+# arrived on a cold mobile connection), and theme.css reaches product-nav-icons.css
+# by @import, which cannot be seen until theme.css itself has downloaded — a
+# guaranteed extra round-trip. The hints move discovery only; the real <link> stays
+# put, so the cascade is untouched.
+
+_IMPORTS = {"theme.css": ["product-nav-icons.css?v=7b0290e9"]}
+
+
+def _imports_for(href: str):
+    # mirrors the real resolver: the query is stripped before the file is read
+    return _IMPORTS.get(href.split("?", 1)[0].split("/")[-1], [])
+
+
+def _head_of(html: str) -> str:
+    return html[: html.lower().index("</head>")]
+
+
+def test_preloads_body_stylesheet_from_head():
+    page = (
+        '<html><head><link rel="stylesheet" href="theme.css?v=1"></head>'
+        '<body><link rel="stylesheet" href="assets/css/deep.css?v=2"></body></html>'
+    )
+    out = preload_css_text(page, _imports_for)
+    assert '<link rel="preload" as="style" href="assets/css/deep.css?v=2">' in _head_of(out)
+    # the body <link> itself must NOT move — that is what preserves the cascade
+    assert '<link rel="stylesheet" href="assets/css/deep.css?v=2">' in out[out.lower().index("</head>"):]
+    assert out.count('rel="stylesheet"') == 2
+
+
+def test_preloads_css_import_target():
+    """@import is invisible until its parent sheet has downloaded AND parsed."""
+    out = preload_css_text('<html><head><link rel="stylesheet" href="theme.css?v=1">'
+                           "</head><body></body></html>", _imports_for)
+    assert '<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">' in _head_of(out)
+
+
+def test_preload_url_matches_stylesheet_url_exactly():
+    """A hint whose URL differs by so much as a query is a second cache key — it
+    would double-fetch instead of dedupe. Guards the stamp-before-preload order."""
+    page = ('<html><head><link rel="stylesheet" href="theme.css?v=1"></head>'
+            '<body><link rel="stylesheet" href="a.css?v=abc12345"></body></html>')
+    out = preload_css_text(page, lambda h: [])
+    assert 'as="style" href="a.css?v=abc12345"' in out
+    assert 'href="a.css"' not in out  # never the unstamped form
+
+
+def test_preload_hint_keeps_head_css_priority_and_is_idempotent():
+    page = ('<html><head><link rel="stylesheet" href="theme.css?v=1"></head>'
+            '<body><link rel="stylesheet" href="b.css?v=2"></body></html>')
+    out = preload_css_text(page, _imports_for)
+    assert out.index('href="theme.css?v=1"') < out.index('rel="preload"')
+    assert preload_css_text(out, _imports_for) == out
+
+
+def test_no_preload_for_sheet_already_linked_in_head():
+    page = ('<html><head><link rel="stylesheet" href="theme.css?v=1">'
+            '<link rel="stylesheet" href="product-nav-icons.css?v=7b0290e9">'
+            "</head><body></body></html>")
+    assert 'rel="preload"' not in preload_css_text(page, _imports_for)
+
+
+def test_never_preloads_svg_internal_link():
+    """A <link> inside inline <svg> parses as an inert SVG element and is never
+    fetched — hinting it would be a pure wasted request."""
+    page = ('<html><head><link rel="stylesheet" href="theme.css?v=1"></head>'
+            '<body><svg><link rel="stylesheet" href="inert.css?v=9"></svg></body></html>')
+    assert "inert.css" not in _head_of(preload_css_text(page, lambda h: []))
+
+
+def test_preload_skips_remote_and_headless_pages():
+    page = ('<html><head><link rel="stylesheet" href="theme.css?v=1"></head><body>'
+            '<link rel="stylesheet" href="https://cdn.example.com/x.css"></body></html>')
+    assert "cdn.example.com" not in _head_of(preload_css_text(page, lambda h: []))
+    assert preload_css_text("<p>no head</p>", lambda h: []) == "<p>no head</p>"
+
+
+def test_css_imports_parsing():
+    assert css_imports('@import url("a.css?v=1");body{}') == ["a.css?v=1"]
+    assert css_imports("@import 'b.css';") == ["b.css"]
+    assert css_imports("@import url(https://x.com/c.css);") == []  # remote: not ours
+    assert css_imports("body{color:red}") == []
+
+
+def test_preload_sweep_end_to_end(tmp_path):
+    """The real sweep: stamping must run BEFORE the hints so the URLs match."""
+    site = tmp_path / "site"
+    (site / "assets" / "css").mkdir(parents=True)
+    (site / "theme.css").write_text('@import url("product-nav-icons.css?v=7b0290e9");\nbody{color:red}')
+    (site / "product-nav-icons.css").write_text(".i{color:blue}")
+    (site / "assets" / "css" / "deep.css").write_text(".d{color:green}")
+    (site / "macro.html").write_text(
+        '<html><head><link rel="stylesheet" href="theme.css"></head>'
+        '<body><link rel="stylesheet" href="assets/css/deep.css?v=deadbeef"></body></html>'
+    )
+    assert optimize(site) == 1
+    out = (site / "macro.html").read_text()
+    head = _head_of(out)
+    # theme.css got stamped, and its hint carries that same stamped URL
+    assert 'href="theme.css?v=' in head
+    assert '<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">' in head
+    assert '<link rel="preload" as="style" href="assets/css/deep.css?v=deadbeef">' in head
+    assert optimize(site) == 0  # idempotent

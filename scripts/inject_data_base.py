@@ -45,8 +45,12 @@ def inject(site_dir: Path) -> int:
             text = html.read_text()
         except Exception:  # noqa: BLE001
             continue
-        if _MARKER in text:
-            continue
+        # No `if _MARKER in text: continue` here: a page can carry the marker and
+        # still hold the OLD external <script src="data_base.js"> tag, which
+        # inject_text upgrades to the inline shim in place. Short-circuiting on the
+        # marker would freeze every already-rendered page on the external ref
+        # forever. inject_text is idempotent, and the `new != text` guard below
+        # still keeps an already-inline page from being rewritten.
         try:
             depth = len(html.relative_to(site_dir).parts) - 1
         except ValueError:
