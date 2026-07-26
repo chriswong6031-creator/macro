@@ -2107,9 +2107,19 @@
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = _pfx() + "onboard.css";
       document.head.appendChild(l);
     }
-    if (!document.querySelector('link[href*="Archivo+Expanded"]')) {
+    // 'Archivo Expanded' is NOT a Google family — requested alone css2 answers
+    // 400, and inside a combined URL it is dropped from an otherwise-200 reply,
+    // so the sheet's display face never loaded. Archivo is variable on `wdth`:
+    // ask for the axis and let font-stretch instance it. The 100,* tuples keep
+    // plain-'Archivo' UI text (.obm-ribbon, .obm-sum-hd, .obm-mchip, ...) at its
+    // present width; the 125,* tuples are the display weights onboard.css asks
+    // for with font-stretch:125%. One variable file serves both widths.
+    // The guard keys on the wdth axis, not on a family name: a host page that
+    // still links the old (Expanded) URL has no 125% instance to offer, so the
+    // sheet must inject its own — matching on "Archivo" alone would suppress it.
+    if (!document.querySelector('link[href*="Archivo:wdth,wght"]')) {
       var f = document.createElement("link"); f.rel = "stylesheet";
-      f.href = "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap";
+      f.href = "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;100,900;125,600;125,700;125,800;125,900&family=Inter:wght@400;450;500;600;700&display=swap";
       document.head.appendChild(f);
     }
   }
