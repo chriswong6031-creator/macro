@@ -783,6 +783,17 @@ on:
       - "engine/corp_credit.py"
       - "tests/test_corp_credit.py"
       - "scripts/fetch_ishares_validation_sample.py"
+      # Support + Email estate (SEE W1): the mail transport/ledger, the public ticket
+      # intake, the operator console, and the schema they all address. The #3509 lesson
+      # is why the SOURCE files are listed and not just the tests — a job whose paths
+      # cannot be reached by the change that breaks it is a guard that cannot fail.
+      - "app/mailer.py"
+      - "app/support.py"
+      - "admin/support_tickets.py"
+      - "scripts/deploy/0007_support_email.sql"
+      - "tests/test_mailer.py"
+      - "tests/test_support_api.py"
+      - "tests/test_admin_support_tickets.py"
       # Site Access Gate: gate logic engine, admin backend, test suites.
       # Any change to app/gate.py, admin/site_gate.py, or either test file must
       # re-prove the fail-open + self-lockout + IP/CIDR + country contracts.
@@ -2896,6 +2907,44 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: CCW-W6 Study S1 unit tests
         run: python -m pytest tests/test_ccw_study_s1.py -v
+
+  support-email-spine:
+    if: ${{ false }}
+    # Support + Email estate, W1 spine (app/mailer.py, app/support.py,
+    # admin/support_tickets.py). Three suites, all fully offline — no SMTP, no Supabase,
+    # no live admin state:
+    #   test_mailer.py            — LEDGER-FIRST idempotency (a duplicate idem_key sends
+    #                               nothing), mail-off skip, marketing suppression +
+    #                               per-user opt-out, transactional bypassing both,
+    #                               one-click unsubscribe headers, the retry policy
+    #                               (SMTPException subclasses OSError — auth failures
+    #                               must NOT ride the transient retry), dual-language
+    #                               rendering + escaping, and unsub token round-trip.
+    #   test_support_api.py       — honeypot silent drop, time-to-fill gate, per-IP rate
+    #                               limit, every validation branch, the Bearer identity
+    #                               override + tier snapshot, and the fail-soft contract
+    #                               (an exploding mailer never 500s a filed ticket).
+    #   test_admin_support_tickets.py — the operator console: list filter/paging/search
+    #                               escaping, detail thread, the legal/illegal transition
+    #                               matrix decided from the DB not the client, reply
+    #                               append→mail→flag, plus HTTP-level 401/403 against the
+    #                               live admin.server Handler.
+    # Deps: fastapi+pydantic for the route/model surface; pandas/numpy/pyarrow/pyyaml/
+    # requests are what importing admin.server pulls in (same set as the site-gate job).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests
+      - name: mailer transport + ledger tests (app/mailer.py)
+        run: python -m pytest tests/test_mailer.py -v
+      - name: public support intake tests (app/support.py)
+        run: python -m pytest tests/test_support_api.py -v
+      - name: admin support console tests (admin/support_tickets.py)
+        run: python -m pytest tests/test_admin_support_tickets.py -v
 
   site-gate:
     if: ${{ false }}

@@ -1533,6 +1533,22 @@ except Exception as _billing_exc:  # noqa: BLE001 — never let a billing wiring
     _logging.getLogger("macro.api").warning("billing router not mounted: %r", _billing_exc)
 
 # ---------------------------------------------------------------------------
+# Support intake router (SEE W1 — app/support.py): POST /api/support/ticket.
+# PUBLIC by design (the contact form must work for a signed-out visitor), but it
+# honours a Bearer token when one is offered — hence the mount AFTER require_user
+# is defined, exactly like the billing block above (app/support._resolve_user
+# lazy-imports it, so there is no import cycle). Wrapped so a wiring error can
+# never crash the whole API: the worst case is that the contact form 404s while
+# every other route keeps serving.
+# ---------------------------------------------------------------------------
+try:
+    from app.support import router as support_router  # noqa: E402
+    app.include_router(support_router)
+except Exception as _support_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("support router not mounted: %r", _support_exc)
+
+# ---------------------------------------------------------------------------
 # Registration wall (app/regwall.py): /api/regwall/check — Caddy's second gate
 # stage for all non-public HTML (operator lockdown 2026-07-24). NOTE the
 # asymmetry with the blocks above: if THIS router fails to mount, gated pages
