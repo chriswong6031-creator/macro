@@ -57,7 +57,7 @@ between the macro site and the Terminal.
 
 ## §2 Rulings
 
-### R1 — Nav: fold, don't delete. **ON HOLD until the Codex menu-icon PR lands.**
+### R1 — Nav: fold, don't delete. **SHIPPED (#3582)** — hold released, icon pass landed (#3525/#3528).
 Operator, 2026-07-25: *"don't we have that international menu? we can just put the other
 countries in there?"* and *"a codex session is working on redesigning menu icons, so wait for
 them to push that PR before making edits on the menu layout."*
@@ -131,9 +131,29 @@ a list the user has edited.
   dual-mode component** (standalone + embed) — but `MM_API` points at `app.mastermind-x.com`,
   where `/api/account` currently 404s. Resolve that before assuming the embed works.
 
-### W5 — Nav fold + market-aware landing
-Blocked on R1's hold. Then: `loginDest()` → home-market macro page; country menus fold into
-International; settings repoint everything.
+### W5a — Nav fold ✅ SHIPPED (#3582)
+`templates/nav_market.js`, loaded by `account.js` (already on every page via `theme.js`), folds
+the non-home country dropdowns into International under an "Other markets" eyebrow. Client-side
+by necessity — the home market is per-user and the nav is baked once per page — which also keeps
+the served html complete for crawlers, the SEO property R1 was protecting. No home market ⇒ DOM
+untouched.
+
+Two things worth carrying forward:
+- **Restore-then-fold, never fold-in-place.** A folded country lives *inside* the International
+  menu, so swapping a dropdown back where it currently sits nests it permanently: `us→cn→hk`
+  left the rail with no country at all and sign-out never restored. Restore the whole
+  `.nav-links` innerHTML from a pristine snapshot each time.
+- **`theme.js` binds the mobile accordion per node** at DOMContentLoaded, so any innerHTML
+  restore drops those handlers. Re-bind after.
+
+Also closed a live contract split: #3560 shipped a desk-prefs pane writing ONLY `market_focus`
+while the Terminal reads `markets` and treats it as authoritative — so a macro-side edit was
+silently ignored for anyone who had used the Terminal. `_sdSaveDesk` now writes both.
+
+### W5b — Market-aware landing (open)
+`loginDest()` in `onboard.js` returns a hardcoded `start.html`; point it at the home market's
+macro page with `start.html` kept as an explicit choice (R2). Deliberately NOT bundled with the
+nav fold — `onboard.js` was the other file #3560 rewrote and deserves its own diff.
 
 ### W6 — Data coverage, second pass
 - **Chinese commodity futures** via Sina (`hq.sinajs.cn`) — probed working, incl. the night
