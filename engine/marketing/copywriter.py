@@ -545,9 +545,14 @@ _NOUN_HEAD = (
     "point", "zone", "area", "band", "number", "high", "low", "close", "week",
     "day", "session", "sessions", "name", "names", "move", "setup", "stock",
     "range", "spot", "one", "thing", "mark", "figure", "trade", "read",
+    "time", "month", "year", "quarter", "stretch", "run", "morning", "kind",
 )
+# "through" is deliberately NOT a level preposition here. It is overwhelmingly
+# phrasal in this copy ("walk you through this", "followed through this time",
+# "see it through") and produced only false positives across all four template
+# libraries. The prepositions kept are the ones that reliably introduce a price.
 _DANGLING_LEVEL_RE = re.compile(
-    r"\b(?:below|under|above|over|through|beneath|back\s+to|past)\s+"
+    r"\b(?:below|under|above|over|beneath|back\s+to|past)\s+"
     r"(?:it|that|this|there|them|the\s+line|the\s+level)\b"
     r"(?!\s+(?:" + "|".join(_NOUN_HEAD) + r")\b)",
     re.IGNORECASE,

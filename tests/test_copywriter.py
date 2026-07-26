@@ -1126,6 +1126,10 @@ def test_every_fallback_template_survives_the_clarity_gate():
                 walk(y)
 
     walk(_TEMPLATES)
+    # content_studio keeps its OWN per-voice library, separate from the one
+    # above. Auditing only copywriter's missed two false positives in it.
+    from engine.marketing.content_studio import _COPY_TEMPLATES
+    walk(_COPY_TEMPLATES)
     assert checked > 100, f"only {checked} templates walked — guard is vacuous"
     assert not bad, "deterministic fallback copy trips the gate:\n" + "\n".join(bad)
 
@@ -1150,3 +1154,17 @@ def test_weekend_levels_floor_survives_the_clarity_gate():
             bad.append(f"dangling {sent[:50]!r} in {t[:60]!r}")
     assert checked > 50, f"only {checked} floor strings walked — guard is vacuous"
     assert not bad, "weekend floor copy trips the gate:\n" + "\n".join(bad)
+
+
+def test_through_is_not_treated_as_a_level_preposition():
+    """"walk you through this" and "followed through this time" are phrasal, not
+    level references. Both were false positives in content_studio's template
+    library, which is a separate library from the copywriter's."""
+    from engine.marketing.copywriter import dangling_levels
+    assert dangling_levels("$AAPL, let me walk you through this") == []
+    assert dangling_levels("Here's whether it followed through this time") == []
+    assert dangling_levels("We'll see it through") == []
+    # The prepositions that really do introduce a price still fire.
+    assert dangling_levels("Watching a close below it")
+    assert dangling_levels("A close under that changes my mind")
+    assert dangling_levels("It has to get back above that first")
