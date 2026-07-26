@@ -28,6 +28,13 @@
   /* re-localizable label — carries BOTH languages so a live switch can re-tint it
      in place (see relabel()); use for chrome text that persists across renders. */
   function LB(en, cn) { return '<span class="mmb-l" data-en="' + en + '" data-zh="' + cn + '">' + L(en, cn) + '</span>'; }
+  /* Stream events carry their OWN bilingual label pair (status/tool). Fall back to the
+     house line when the server sends none (an older gateway) — never to an internal
+     tool name, which is not user language and not ours to show. */
+  function evLabel(j, en, cn) { return L(j.label_en || en, j.label_zh || cn); }
+  /* Optional qualifier on an event (a server-sanitized symbol) — trimmed and capped. */
+  function evDetail(j) { return j.detail ? String(j.detail).trim().slice(0, 24) : ''; }
+
 
   /* ── CSS ─────────────────────────────────────────────────────────────── */
   var CSS = `
@@ -56,9 +63,10 @@
   @keyframes mmb-morph-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
   #mmb-panel.max .mmb-rail{animation:mmb-morph-in .44s .14s both cubic-bezier(.22,1,.36,1)}
   #mmb-panel.max .mmb-threads{animation:mmb-morph-in .5s .2s both cubic-bezier(.22,1,.36,1)}
-  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,
+  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,.mmb-think-h::before,
     #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{animation:none}
-    #mmb-panel{transition:opacity .18s ease!important}}
+    #mmb-panel{transition:opacity .18s ease!important}
+    .mmb-chip,.mmb-chip::after{transition:none}}
   #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text);white-space:nowrap}
   #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}
   #mmb-launch .lt{display:flex;flex-direction:column}
@@ -279,12 +287,28 @@
   .mmb-tool{font:12px/1.3 var(--mmb-font);color:var(--mmb-muted);display:flex;align-items:center;gap:7px;padding:1px 4px}
   .mmb-tool::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
   @keyframes mmb-pulse{0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+  /* reasoning timeline — the answer is buffered server-side, so the wait carries the
+     trust: one calm current line, the last three finished steps, and a live clock. */
+  .mmb-think{display:flex;flex-direction:column;gap:4px;padding:2px 4px}
+  .mmb-think-h{display:flex;align-items:center;gap:7px;font:12.5px/1.4 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted))}
+  .mmb-think-h::before{content:'';width:7px;height:7px;flex:none;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
+  .mmb-think-h .lb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mmb-think-t{flex:none;font:11.5px/1 var(--mmb-font);color:var(--mmb-muted);font-variant-numeric:tabular-nums}
+  .mmb-step{display:flex;align-items:center;gap:7px;font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);opacity:.68}
+  .mmb-step::before{content:'✓';flex:none;width:7px;font-size:9.5px;color:color-mix(in srgb,var(--mmb-info) 62%,var(--mmb-muted))}
+  /* after the answer lands: one muted receipt line; click unfolds what was checked */
+  .mmb-recap{margin:0 0 9px}
+  .mmb-chip{display:inline-flex;align-items:center;gap:6px;padding:0;border:none;background:none;cursor:pointer;
+    font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);text-align:left;transition:color .13s}
+  .mmb-chip:hover{color:color-mix(in srgb,var(--mmb-text) 72%,var(--mmb-muted))}
+  .mmb-chip::after{content:'';width:5px;height:5px;flex:none;border-right:1.2px solid currentColor;border-bottom:1.2px solid currentColor;
+    transform:translateY(-1px) rotate(45deg);transition:transform .14s ease}
+  .mmb-recap.on .mmb-chip::after{transform:translateY(1px) rotate(-135deg)}
+  .mmb-recap-list{display:none;flex-direction:column;gap:3px;margin-top:6px}
+  .mmb-recap.on .mmb-recap-list{display:flex}
   .mmb-cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .mmb-cite{font:11px/1.3 var(--mmb-font);background:color-mix(in srgb,var(--mmb-info) 11%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:3px 10px;color:color-mix(in srgb,var(--mmb-info) 86%,var(--mmb-text));text-decoration:none;cursor:pointer}
   .mmb-cite:hover{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
-  .mmb-typing{display:inline-flex;gap:4px;padding:6px 3px}
-  .mmb-typing span{width:7px;height:7px;border-radius:50%;background:var(--mmb-info);opacity:.6;animation:mmb-bounce 1.3s ease-in-out infinite}
-  .mmb-typing span:nth-child(2){animation-delay:.18s}.mmb-typing span:nth-child(3){animation-delay:.36s}
   @keyframes mmb-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
   .mmb-meta{font:11px/1.4 var(--mmb-font);color:var(--mmb-muted);padding:0 4px}
   .mmb-upgrade{display:none;margin:0 0 12px;padding:13px 15px;border-radius:13px;font:13px/1.5 var(--mmb-font);
@@ -354,7 +378,7 @@
   .mmb-slash-i .sn{font:700 12.5px/1 var(--mmb-font);color:var(--mmb-text)}
   .mmb-slash-i .sh{font:400 11.5px/1 var(--mmb-font);color:var(--mmb-muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* focus-visible rings on new controls (house style) */
-  .mmb-abtn:focus-visible,.mmb-retry:focus-visible,.mmb-jump:focus-visible,.mmb-slash-i:focus-visible,.mmb-code-copy:focus-visible,.mmb-ti-act:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
+  .mmb-abtn:focus-visible,.mmb-retry:focus-visible,.mmb-jump:focus-visible,.mmb-slash-i:focus-visible,.mmb-code-copy:focus-visible,.mmb-ti-act:focus-visible,.mmb-chip:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
   /* signed-out */
   .mmb-gate{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 22px;gap:14px}
   .mmb-gate .mmb-orb{width:64px;height:64px}.mmb-gate .mmb-orb svg{width:30px;height:30px}
@@ -1091,8 +1115,103 @@
 
   /* Per-turn UI + parse state. Shared by the opening POST and by every later
      re-attachment, so a resumed stream paints into the same bubble it started in. */
+  /* ── reasoning timeline (think*) ──────────────────────────────────────────────
+     The gateway holds the whole answer back until it clears the advice filter, so the
+     wait is the only thing the user has: this strip narrates it the way a colleague
+     would — the step in progress on top (pulse dot + live clock), the last three
+     finished steps dimmed beneath with a ✓. Every label arrives as a bilingual pair on
+     the event; nothing internal is ever rendered. When the answer lands the strip folds
+     into one muted receipt line above the text.
+
+     All state lives in ONE plain holder (`tl`) created by thinkInit(); every function
+     below takes that holder and is a no-op once it has been torn down, so the send flow
+     owns nothing but the holder itself and never has to guard a call. */
+  function thinkInit(host) {
+    var tl = { node: el('div', 'mmb-think'), t0: Date.now(), key: '', label: '', shown: [], record: [], checks: 0, timer: 0, dead: false };
+    var head = el('div', 'mmb-think-h');
+    tl.lab = el('span', 'lb'); tl.lab.textContent = L('Reading your question', '正在理解您的问题');
+    tl.clock = el('span', 'mmb-think-t'); tl.clock.textContent = '0:00';
+    tl.label = tl.lab.textContent; tl.key = tl.label + '|';
+    head.appendChild(tl.lab); head.appendChild(tl.clock); tl.node.appendChild(head);
+    tl.timer = setInterval(function () {
+      var s = Math.max(0, Math.floor((Date.now() - tl.t0) / 1000));
+      tl.clock.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+    }, 1000);
+    if (host) host.appendChild(tl.node);
+    return tl;
+  }
+  /* the strip follows the reply: placeholder bubble → real bubble, above the text */
+  function thinkMount(tl, bub) { if (!tl || tl.dead) return; bub.insertBefore(tl.node, bubTxt(bub)); }
+  /* a finished step: kept in the record forever, on screen only while it is recent */
+  function thinkRetire(tl, text) {
+    if (!text) return;
+    tl.record.push(text);
+    var s = el('div', 'mmb-step'); s.textContent = text; tl.node.appendChild(s); tl.shown.push(s);
+    while (tl.shown.length > 3) { var old = tl.shown.shift(); if (old.parentNode) old.remove(); }
+  }
+  /* Move to a step. `label` is the whole visible line; `extra` a qualifier (a symbol, or
+     the writing size estimate). Re-marking the SAME step only repaints the header — that
+     is how the writing estimate grows without spamming the list. Tool steps key on their
+     detail too (same tool, new symbol = a new step) and count toward the check tally. */
+  function thinkStep(tl, label, extra, isTool) {
+    if (!tl || tl.dead || !label) return;
+    var full = label + (extra ? ' · ' + extra : '');
+    var key = label + '|' + (isTool ? (extra || '') : '');
+    if (key !== tl.key) { thinkRetire(tl, tl.label); tl.key = key; if (isTool) tl.checks++; }
+    /* a finished tool line keeps its symbol (that is a fact worth reading back); a stage
+       line drops its size estimate, which is progress, not a result. */
+    tl.label = isTool ? full : label;
+    tl.lab.textContent = full;
+    stickAfter();
+  }
+  /* one `status` event. `beat` is the keepalive heartbeat — liveness only, no visual
+     change (the clock is client-side and never stalls). */
+  function thinkStatus(tl, j) {
+    if (!tl || tl.dead || j.phase === 'beat') return;
+    var extra = (j.phase === 'writing' && j.n > 0)
+      ? '~' + (zh() ? (j.n + ' 字') : (Math.max(1, Math.round(j.n / 6)) + ' words'))
+      : evDetail(j);
+    thinkStep(tl, evLabel(j, '', ''), extra, false);
+  }
+  /* one `tool` event — an old gateway sends no labels, so fall back to the house line */
+  function thinkTool(tl, j) { thinkStep(tl, evLabel(j, 'Reading market data', '读取市场数据'), evDetail(j), true); }
+  /* Fold into the receipt chip above the finished answer, then tear the strip down. */
+  function thinkCollapse(tl, bub) {
+    if (!tl || tl.dead) return null;
+    thinkRetire(tl, tl.label); tl.label = '';
+    var secs = Math.max(0, Math.round((Date.now() - tl.t0) / 1000)), record = tl.record;
+    thinkTeardown(tl);
+    var wrap = el('div', 'mmb-recap');
+    var btn = el('button', 'mmb-chip'); btn.type = 'button'; btn.setAttribute('aria-expanded', 'false');
+    var line = el('span');
+    line.textContent = tl.checks
+      ? L('Analyzed for ' + secs + 's · ' + tl.checks + (tl.checks === 1 ? ' check' : ' checks'), '分析 ' + secs + ' 秒 · ' + tl.checks + ' 项核查')
+      : L('Analyzed for ' + secs + 's', '分析 ' + secs + ' 秒');
+    btn.appendChild(line); wrap.appendChild(btn);
+    if (record.length) {
+      var list = el('div', 'mmb-recap-list');
+      record.forEach(function (r) { var s = el('div', 'mmb-step'); s.textContent = r; list.appendChild(s); });
+      wrap.appendChild(list);
+      btn.addEventListener('click', function () {
+        var on = wrap.classList.toggle('on');
+        btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        stick();   /* follow the growth only if the user is riding the bottom — never a jump pill */
+      });
+    }
+    bub.insertBefore(wrap, bubTxt(bub));
+    return wrap;
+  }
+  /* idempotent: stops the clock, drops the strip, and makes the holder inert. Called at
+     every place the old `steps` node was removed (done, stop, error, abort). */
+  function thinkTeardown(tl) {
+    if (!tl || tl.dead) return;
+    tl.dead = true;
+    if (tl.timer) { clearInterval(tl.timer); tl.timer = 0; }
+    if (tl.node.parentNode) tl.node.parentNode.removeChild(tl.node);
+  }
+
   function newTurn(payload, typing) {
-    return { payload: payload, typing: typing, bub: null, stream: null, steps: null,
+    return { payload: payload, typing: typing, bub: null, stream: null, tl: null,
              suggestions: null, sawDelta: false, doneSeen: false, stopped: false,
              runId: null, threadId: null, cursor: 0, tries: 0, parks: 0 };
   }
@@ -1100,7 +1219,7 @@
     if (!T.bub) {
       if (T.typing && T.typing.parentNode) T.typing.remove();
       T.bub = appendMsg('assistant', ''); T.stream = MdStream(bubTxt(T.bub));
-      T.stream.startCaret(); markLastAssistant();
+      T.stream.startCaret(); markLastAssistant(); thinkMount(T.tl, T.bub);
     }
     return T.bub;
   }
@@ -1115,9 +1234,15 @@
     if (j.type === 'run') { T.runId = j.run_id; if (j.thread_id) T.threadId = j.thread_id; saveRun(T); return false; }
     T.tries = 0;   /* bytes are flowing again — reset the reconnect backoff */
     if (j.type === 'meta') { if (j.thread_id) { threadId = j.thread_id; T.threadId = j.thread_id; } if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } }
-    else if (j.type === 'tool') { ensureBub(T); if (!T.steps) { T.steps = el('div', 'mmb-tool'); T.steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; T.bub.insertBefore(T.steps, bubTxt(T.bub)); } else T.steps.textContent = L('Reading ', '正在读取 ') + (j.name || '') + '…'; stickAfter(); }
+    /* stage narration; anything arriving after `done` is stale noise */
+    else if (j.type === 'status') { if (!T.doneSeen) thinkStatus(T.tl, j); }
+    else if (j.type === 'tool') { ensureBub(T); if (!T.doneSeen) thinkTool(T.tl, j); stickAfter(); }
     else if (j.type === 'chart' && j.svg) { ensureBub(T); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (T.bub.querySelector('.mmb-charts') || T.bub).appendChild(cw); stickAfter(); }
-    else if (j.type === 'delta') { ensureBub(T); if (T.steps) { T.steps.remove(); T.steps = null; } T.sawDelta = true; T.bub._raw = (T.bub._raw || '') + j.text; T.stream.push(j.text); }
+    else if (j.type === 'delta') {
+      /* the answer has landed: the strip folds into the receipt above the text */
+      ensureBub(T); thinkCollapse(T.tl, T.bub);
+      T.sawDelta = true; T.bub._raw = (T.bub._raw || '') + j.text; T.stream.push(j.text);
+    }
     else if (j.type === 'suggest') { if (j.items && j.items.length) T.suggestions = j.items.slice(0, 3); }
     /* host bridges (Terminal): chart-command + annotate events are executed by the
        host page, not the widget — forward them to the CFG callbacks when provided. */
@@ -1133,7 +1258,7 @@
   function finalizeDone(j, T) {
     if (T.doneSeen) return; T.doneSeen = true;
     clearRun();
-    ensureBub(T); if (T.steps) { T.steps.remove(); T.steps = null; }
+    ensureBub(T); thinkTeardown(T.tl);
     T.stream.finalize(function () {
       if (j && j.citations && j.citations.length) addCites(T.bub, j.citations);
       if (T.suggestions && T.suggestions.length) addSuggest(T.bub, T.suggestions);
@@ -1197,6 +1322,7 @@
      back up from the server. Used when the tab has simply been away a long time. */
   function shelve(T) {
     T.stopped = true; parked = null;
+    thinkTeardown(T.tl);
     if (T.typing && T.typing.parentNode) T.typing.remove();
     if (T.bub && T.stream && (T.sawDelta || T.bub._raw)) T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); });
     else if (T.bub && T.bub.parentNode) T.bub.remove();   /* a bare "Reading…" bubble is noise */
@@ -1236,7 +1362,7 @@
         var prev = msgs.length > 1 ? msgs[msgs.length - 2] : null;
         if (q && !(prev && prev.role === 'user' && String(prev.content || '').indexOf(q) === 0)) { failTurn(T, ''); return; }
         clearRun(); T.doneSeen = true;
-        ensureBub(T); if (T.steps) { T.steps.remove(); T.steps = null; }
+        ensureBub(T); thinkTeardown(T.tl);
         T.bub._raw = last.content; T.stream.push(last.content);
         T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); });
         endTurn(T); loadThreads(); announceDone();
@@ -1246,6 +1372,7 @@
   function failTurn(T, msg) {
     if (T.doneSeen) { endTurn(T); return; }
     T.doneSeen = true; clearRun(); parked = null;
+    thinkTeardown(T.tl);
     if (T.typing && T.typing.parentNode) T.typing.remove();
     if (T.bub && T.stream && (T.sawDelta || T.bub._raw)) { T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); }); }
     else {
@@ -1273,9 +1400,12 @@
     sendBtn.disabled = true; streaming = true; upgradeEl.style.display = 'none';
     setBusy(true);
     var typing = el('div', 'mmb-msg assistant');
-    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
+    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span></div>';
     scroll.appendChild(typing); stick();
     var T = newTurn(payload, typing);
+    /* the bouncing dots are replaced by the reasoning strip: it lives in the placeholder
+       bubble until the real one exists, then moves across in ensureBub(). */
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
     activeStream = T;
     var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
     var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
@@ -1284,8 +1414,8 @@
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/brain/stream', { method: 'POST', headers: h, credentials: 'include', body: body, signal: ac ? ac.signal : undefined });
     }).then(function (res) {
-      if (res.status === 401) { T.doneSeen = true; if (typing.parentNode) typing.remove(); endTurn(T); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
-      if (res.status === 402) { T.doneSeen = true; if (typing.parentNode) typing.remove(); endTurn(T); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
+      if (res.status === 401) { T.doneSeen = true; thinkTeardown(T.tl); if (typing.parentNode) typing.remove(); endTurn(T); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
+      if (res.status === 402) { T.doneSeen = true; thinkTeardown(T.tl); if (typing.parentNode) typing.remove(); endTurn(T); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
       if (!res.ok || !res.body) { failTurn(T, ''); return; }
       return readSse(res, T);
     }).catch(function (err) {
@@ -1303,6 +1433,8 @@
     var a = activeStream;
     if (a) a.stopped = true;
     parked = null;
+    /* the strip stops with the stream; a receipt chip (delta already landed) stays put */
+    if (a) thinkTeardown(a.tl);
     if (a && a.runId) {
       withAuth().then(function (h) { return fetch(API + '/api/brain/runs/' + encodeURIComponent(a.runId) + '/cancel', { method: 'POST', headers: h, credentials: 'include' }); }).catch(function () {});
     }
@@ -1365,9 +1497,11 @@
   function attachFresh(status, cursor, question) {
     root.querySelectorAll('.mmb-sugg').forEach(function (n) { n.remove(); });
     var typing = el('div', 'mmb-msg assistant');
-    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span><span class="mmb-typing"><span></span><span></span><span></span></span></div>';
+    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span></div>';
     scroll.appendChild(typing); stick();
     var T = newTurn({ text: question || '', imgs: [], lane: status.lane || 'fast', mode: status.mode || 'chat' }, typing);
+    /* replayed status events fast-forward the strip to the run's live stage */
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
     T.runId = status.run_id; T.threadId = status.thread_id || null; T.cursor = cursor || 0;
     saveRun(T);   /* re-arm immediately — openThread() cleared the record on its way in */
     attachRun(T);
@@ -1537,6 +1671,7 @@
     if (!streaming && !streamAbort) { activeStream = null; return; }
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; }
     if (activeStream && activeStream.stream) { try { activeStream.stream.cancel(); } catch (e) {} }
+    if (activeStream) thinkTeardown(activeStream.tl);
     activeStream = null; streaming = false; setBusy(false);
   }
   /* Closing the panel does NOT tear the turn down — the widget is hidden, not gone, and

@@ -3534,6 +3534,14 @@ def _load_thread_history(thread_id: str) -> list[dict]:
 # Provider waterfall builder per lane
 # ---------------------------------------------------------------------------
 
+def _lane_client_tuning(lane_cfg: dict) -> dict:
+    """The lane's optional client latency guards, ready to splat into a build_providers
+    cfg (llm_auth reads `client_max_retries` / `client_timeout_s`). Keys the lane does
+    not set are omitted, so a lane without them builds today's clients exactly."""
+    return {k: lane_cfg[k] for k in ("client_max_retries", "client_timeout_s")
+            if lane_cfg.get(k) is not None}
+
+
 def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
     """Build the provider list for a lane using config/brain.yml + llm_auth.build_providers."""
     cfg = _load_brain_config(root)
@@ -3543,6 +3551,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
     from engine import llm_auth  # noqa: PLC0415
 
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
+    tuning = _lane_client_tuning(lane_cfg)
 
     if lane == "fast":
         # Primary: DeepSeek; fallback: haiku via anthropic key
@@ -3557,6 +3566,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
             # anthropic entry uses fallback_model for haiku
             "opus_model": fallback_model,
             "usage_lane": usage_lane,
+            **tuning,
         }
         providers = llm_auth.build_providers(ds_cfg, opus_model=fallback_model, deepseek_model=deepseek_model)
 
@@ -3575,6 +3585,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
             "oauth_weekly_ceiling_pct": lane_cfg.get("weekly_ceiling_pct"),
             "opus_model": opus_model,
             "usage_lane": usage_lane,
+            **tuning,
         }
         providers = llm_auth.build_providers(pro_cfg, opus_model=opus_model)
 
@@ -3585,6 +3596,7 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
                 "provider_order": ["anthropic"],
                 "opus_model": fallback_model,
                 "usage_lane": usage_lane,
+                **tuning,
             }
             fallback_providers = llm_auth.build_providers(sonnet_cfg, opus_model=fallback_model)
             providers = providers + fallback_providers
@@ -3596,9 +3608,45 @@ def _build_lane_providers(lane: str, root: Path | None = None) -> list[dict]:
         # LAST, so a healthy Opus quota always serves first.
         providers = providers + _pro_degraded_providers(lane_cfg, providers, usage_lane, root)
 
+        # Cooled-key skip-ahead: a fully capped pool otherwise pays one 429 per opus key
+        # BEFORE the degraded rungs get a turn. One probe is kept, the rest move behind them.
+        providers = _skip_ahead_cooled_opus(providers, opus_model)
+
         return providers
 
     return []
+
+
+def _skip_ahead_cooled_opus(providers: list[dict], opus_model: str) -> list[dict]:
+    """Reorder the pro chain so a fully rate-capped OAuth pool costs ONE 429 probe.
+
+    Partitions the OPUS-model oauth rungs by key_pool.is_cooling(cap_id). Non-cooling
+    rungs keep their place, and so does the FIRST cooling rung — a cooling row is a
+    ledger hint, not proof, so one live probe still runs (~0.5s at client_max_retries=0).
+    Every FURTHER cooling opus rung moves to the very end of the chain, after the
+    degraded rungs, so DeepSeek serves instead of five sequential 429s.
+
+    The Haiku degraded rungs reuse the same cap_ids and are NEVER reordered: cooling is
+    keyed per KEY, and Haiku still has headroom while that key's Opus tier is capped.
+    Fail-open — ANY error returns the original order untouched.
+    """
+    try:
+        from engine.neuralweb.key_pool import is_cooling  # noqa: PLC0415
+        head: list[dict] = []
+        tail: list[dict] = []
+        probe_kept = False
+        for p in providers:
+            if (p.get("name") == "oauth" and p.get("model") == opus_model
+                    and p.get("cap_id") and is_cooling(p["cap_id"])):
+                if probe_kept:
+                    tail.append(p)
+                    continue
+                probe_kept = True
+            head.append(p)
+        return head + tail if tail else providers
+    except Exception as exc:  # noqa: BLE001
+        log.warning("brain_gateway: cooled-key skip-ahead failed (%s) — keeping order", exc)
+        return providers
 
 
 def _pro_degraded_providers(
@@ -3631,6 +3679,7 @@ def _pro_degraded_providers(
                     "deepseek_base_url": lane_cfg.get("deepseek_base_url") or "https://api.deepseek.com/anthropic",
                     "deepseek_model": m,
                     "usage_lane": usage_lane,
+                    **_lane_client_tuning(lane_cfg),
                 }
                 out += llm_auth.build_providers(ds_cfg, deepseek_model=m)
             elif m.startswith("claude"):
@@ -3875,6 +3924,39 @@ def _effort_thinking_params(model: str, effort: str | None, thinking_mode: str |
     return extra
 
 
+def _deepseek_extra_params(model: str, deepseek_thinking: str | None) -> dict:
+    """Extra messages.create kwargs that turn OFF DeepSeek's default thinking — {} for
+    every other model or setting.
+
+    DeepSeek v4 models think by default (content[0] is a ThinkingBlock), which more than
+    doubles TTFT on a one-liner and ~4×s the output tokens; the Anthropic-compat endpoint
+    accepts `thinking={"type":"disabled"}` (probed 2026-07-26: flash 2.55s → 1.15s). Gated
+    on the model prefix as well as the lane key so a claude-* candidate in the same
+    failover chain never receives it — Claude takes _effort_thinking_params instead."""
+    if str(model or "").startswith("deepseek") and deepseek_thinking == "disabled":
+        return {"thinking": {"type": "disabled"}}
+    return {}
+
+
+def _cache_control_system(system_prompt: str) -> list[dict]:
+    """The system prompt as a single cached text block. The prompt is byte-identical for
+    every round of a turn, so an ephemeral breakpoint turns rounds 2..n into cache reads
+    (probed: 1.56s → 0.75s over the OAuth pool; DeepSeek's compat endpoint accepts the
+    list form + cache_control)."""
+    return [{"type": "text", "text": system_prompt, "cache_control": {"type": "ephemeral"}}]
+
+
+def _cache_control_tools(tool_schemas: list[dict]) -> list[dict]:
+    """Copy of `tool_schemas` whose LAST tool carries the ephemeral cache breakpoint
+    (one breakpoint covers every tool before it). Copies the list AND the last dict so
+    the schema builders' output is never mutated in place. Empty list → unchanged."""
+    if not tool_schemas:
+        return tool_schemas
+    cached = list(tool_schemas)
+    cached[-1] = {**cached[-1], "cache_control": {"type": "ephemeral"}}
+    return cached
+
+
 def _turn_providers(client: Any, model: str, providers: list[dict] | None) -> list[dict]:
     """Ordered candidate providers for a turn — the explicit list when given (enables
     failover across OAuth tokens / to the Anthropic fallback), else the single
@@ -3988,6 +4070,7 @@ def _run_brain_loop(
     user_email: str = "",
     effort: str | None = None,
     thinking_mode: str | None = None,
+    deepseek_thinking: str | None = None,
 ) -> tuple[str, list[dict], list[dict], list[dict], dict, list[dict]]:
     """Run the bounded tool loop.
 
@@ -4066,8 +4149,13 @@ def _run_brain_loop(
     tool_call_count = 0
     last_resp = None  # track to extract usage from final response
     _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
-    def _pmk(m):  # per-candidate high-intensity params — Claude-only (see _create_failover)
-        return _effort_thinking_params(m, effort, thinking_mode)
+    def _pmk(m):  # per-candidate model params — Claude-only / DeepSeek-only (see _create_failover)
+        return {**_effort_thinking_params(m, effort, thinking_mode),
+                **_deepseek_extra_params(m, deepseek_thinking)}
+
+    # Cached prompt surfaces — built ONCE, reused by every round (see _cache_control_*).
+    system_param = _cache_control_system(system_prompt)
+    tools_param = _cache_control_tools(tool_schemas)
 
     while tool_call_count < tool_budget:
         try:
@@ -4075,8 +4163,8 @@ def _run_brain_loop(
                 _cands,
                 per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
-                system=system_prompt,
-                tools=tool_schemas,
+                system=system_param,
+                tools=tools_param,
                 messages=messages,
             )
         except Exception as exc:  # noqa: BLE001
@@ -4146,8 +4234,8 @@ def _run_brain_loop(
                 _cands,
                 per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
-                system=system_prompt,
-                tools=tool_schemas,
+                system=system_param,
+                tools=tools_param,
                 messages=messages,
             )
             last_resp = resp
@@ -4179,6 +4267,128 @@ def _run_brain_loop(
 # ---------------------------------------------------------------------------
 # SSE generator (streaming)
 # ---------------------------------------------------------------------------
+# Reasoning-transparency labels. The answer is buffered server-side (advice-filter
+# law), so `status` events are the ONLY thing the user sees while waiting — which makes
+# them a leak surface. Every user-visible string ships from these two hardcoded tables:
+# no tool params, no tool results, no model/provider names (debrand law), no thinking
+# text, no system-prompt or digest text ever reaches the wire. The one dynamic field is
+# `detail`, a _safe_symbol()-sanitized ticker.
+_STAGE_LABELS: dict[str, tuple[str, str]] = {
+    "start":      ("Reading your question",        "正在理解您的问题"),
+    "grounding":  ("Loading today's market state", "载入今日市场状态"),
+    "model.fast": ("Working out the answer",       "推理中"),
+    "model.pro":  ("Analyzing in depth",           "深度分析中"),
+    "synthesis":  ("Writing your answer",          "撰写回答中"),
+    "writing":    ("Writing your answer",          "撰写回答中"),
+    "review":     ("Final quality check",          "最终质量核查"),
+}
+
+# EVERY name in _all_brain_tool_schemas(root, page='terminal', internals_allowed=True) must
+# have a row here — the raw snake_case names the widget used to show ARE an internal-naming
+# leak, and the fallback below is a safety net, not a licence to ship a tool label-less
+# (test_tool_label_whitelist_covers_every_tool holds the line).
+_TOOL_LABELS: dict[str, tuple[str, str]] = {
+    # brain-gateway tools (market data, portfolio, charts)
+    "get_quote":              ("Fetching the latest quote",     "获取最新行情"),
+    "get_symbol_intel":       ("Checking the current read",     "查看最新解读"),
+    "get_symbol_backtest":    ("Reviewing the track record",    "回顾历史表现"),
+    "screen_universe":        ("Screening the market",          "筛选市场"),
+    "get_fundamentals":       ("Reading the financials",        "查阅财务数据"),
+    "get_earnings":           ("Checking earnings",             "查看财报"),
+    "get_insider_activity":   ("Checking insider activity",     "查看内部人交易"),
+    "get_congress_trades":    ("Checking congressional trades", "查看国会交易记录"),
+    "get_smart_money":        ("Following institutional money", "追踪机构资金"),
+    "get_stage_peers":        ("Comparing similar stocks",      "对比同类股票"),
+    "get_movers":             ("Scanning today's movers",       "扫描今日异动"),
+    "get_house_view":         ("Consulting the house view",     "查询本站观点"),
+    "get_watchlist":          ("Reading your watchlist",        "读取您的自选列表"),
+    "get_portfolio_brief":    ("Reviewing your portfolio",      "查看您的组合"),
+    "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
+    "annotate_chart":         ("Marking key levels",            "标记关键位置"),
+    "chart_digest":           ("Reading your chart",            "读取您的图表"),
+    "read_chart_state":       ("Reading your chart",            "读取您的图表"),
+    "measure_line":           ("Measuring chart levels",        "测量图表位置"),
+    "set_chart_symbol":       ("Switching the chart",           "切换图表"),
+    "set_chart_timeframe":    ("Adjusting the timeframe",       "调整周期"),
+    "toggle_chart_indicator": ("Updating indicators",           "更新指标"),
+    "run_chart_detection":    ("Scanning chart patterns",       "扫描图表形态"),
+    "emit_chart_command":     ("Drawing on your chart",         "在图表上标注"),
+    "context_search":         ("Searching the research library", "检索研究库"),
+    "context_open":           ("Opening research notes",        "查阅研究笔记"),
+    # inherited ask_brain read tools (spine / kernel / factor / theme families)
+    "read_world_state":           ("Reading the world dashboard",   "读取全球市场概览"),
+    "read_options_entry_state":   ("Checking options positioning",  "查看期权布局"),
+    "explain_options_context":    ("Explaining the options setup",  "解读期权背景"),
+    "query_options_confluence":   ("Cross-checking options signals", "交叉核对期权信号"),
+    "list_options_contradictions": ("Checking for conflicting options reads", "排查期权矛盾信号"),
+    "query_spine":                ("Cross-referencing market drivers", "交叉核对市场驱动"),
+    "read_kernel":                ("Consulting the market map",     "查询市场关联图"),
+    "read_graph":                 ("Tracing market connections",    "梳理市场关联"),
+    "read_contradictions":        ("Weighing conflicting evidence", "权衡矛盾证据"),
+    "read_governance":            ("Checking data quality gates",   "核查数据质量"),
+    "read_artifact":              ("Opening a research note",       "查阅研究记录"),
+    "read_factor_state":          ("Checking factor conditions",    "查看因子状态"),
+    "list_factor_contradictions": ("Checking for factor conflicts", "排查因子矛盾"),
+    "explain_factor_context":     ("Explaining factor context",     "解读因子背景"),
+    "read_cycle_pattern_state":   ("Reading the market cycle",      "读取市场周期"),
+    "read_mechanism_pathways":    ("Tracing cause and effect",      "梳理因果路径"),
+    "read_theme_state":           ("Checking the theme dashboard",  "查看主题面板"),
+    "read_theme_thesis":          ("Reading the theme thesis",      "读取主题论点"),
+    "read_theme_pathways":        ("Tracing theme linkages",        "梳理主题关联"),
+    "read_theme_asymmetry":       ("Weighing theme risk/reward",    "权衡主题风险收益"),
+    "read_theme_options_witness": ("Checking options confirmation", "查看期权佐证"),
+    "read_theme_clinical":        ("Reviewing theme checkpoints",   "审视主题检查点"),
+    "read_theme_trade_flows":     ("Tracking theme trade flows",    "追踪主题资金流"),
+    "read_liquidity_plumbing":    ("Checking market liquidity",     "查看市场流动性"),
+    "read_china_decision_packet": ("Reading the China desk brief",  "读取中国市场简报"),
+    "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
+    "read_stage_analysis":        ("Checking the stage analysis",   "查看阶段分析"),
+}
+
+# Unknown tool name (a new tool shipped before this table) → a truthful generic line.
+_TOOL_LABEL_FALLBACK: tuple[str, str] = ("Gathering data", "整理数据")
+
+# Minimum gap between `writing` beats during Phase-2 accumulation.
+_WRITING_BEAT_S = 1.5
+
+
+def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
+                  detail: str = "", n: int | None = None) -> str:
+    """One `status` SSE line — ADDITIVE to the contract (an old widget ignores unknown
+    event types). `elapsed_ms` is loop-local: ms since the caller's monotonic t0."""
+    ev: dict = {"type": "status", "phase": phase,
+                "elapsed_ms": int((time.monotonic() - t0) * 1000)}
+    if label is not None:
+        ev["label_en"], ev["label_zh"] = label
+    if detail:
+        ev["detail"] = detail
+    if n is not None:
+        ev["n"] = n
+    return f"data: {json.dumps(ev)}\n\n"
+
+
+def _model_stage_label(lane: str, n: int) -> tuple[str, str]:
+    """Stage label for one Phase-1 round: lane-specific (Fast reasons, Pro analyses), with
+    the pass count baked in from round 2 on so a multi-round turn reads as progress rather
+    than a stuck line. Unknown lane → the Pro wording (research mode runs on pro)."""
+    en, zh = _STAGE_LABELS.get(f"model.{lane}") or _STAGE_LABELS["model.pro"]
+    if n >= 2:
+        return f"{en} · pass {n}", f"{zh} · 第 {n} 轮"
+    return en, zh
+
+
+def _tool_event(tool_name: str, tool_params: dict) -> str:
+    """One `tool` SSE line. `name` stays for the deployed widget; label_en/label_zh come
+    from _TOOL_LABELS (never the raw name), and `detail` is only ever a _safe_symbol()
+    ticker — never a parameter value, path, or free-text argument."""
+    label = _TOOL_LABELS.get(tool_name) or _TOOL_LABEL_FALLBACK
+    ev: dict = {"type": "tool", "name": tool_name,
+                "label_en": label[0], "label_zh": label[1]}
+    detail = _safe_symbol(str(tool_params.get("symbol") or tool_params.get("ticker") or ""))
+    if detail:
+        ev["detail"] = detail
+    return f"data: {json.dumps(ev)}\n\n"
+
 
 def _run_brain_loop_stream(
     message: str,
@@ -4202,11 +4412,15 @@ def _run_brain_loop_stream(
     user_email: str = "",
     effort: str | None = None,
     thinking_mode: str | None = None,
+    deepseek_thinking: str | None = None,
 ) -> Generator[str, None, None]:
     """Run the brain loop; yield SSE events per contract.
 
-    Event sequence: meta (first) → tool*/annotate*/command*/chart* (0+) → delta →
+    Event sequence: meta (first) → status*/tool*/annotate*/command*/chart* (0+) → delta →
     suggest (0/1, W6d) → done (last).
+    `status` events are ADDITIVE reasoning transparency (the answer is buffered, so they
+    are the only progress the user sees); their copy comes from _STAGE_LABELS/_TOOL_LABELS
+    and costs no network or file I/O — see the leak note above those tables.
     Filter must run on full answer before any delta bytes are emitted (same constraint
     as ask_brain: advice cannot be un-sent once on the wire).
     usage_out: optional single-element list; if provided, usage_dict is placed in [0]
@@ -4219,8 +4433,11 @@ def _run_brain_loop_stream(
     """
     from engine.neuralweb.ask_brain import _post_filter_advice  # noqa: PLC0415
 
+    _t0 = time.monotonic()  # loop-local clock for status elapsed_ms
+
     # Emit meta first (always)
     yield f"data: {json.dumps(meta_event)}\n\n"
+    yield _status_event("start", _t0, _STAGE_LABELS["start"])
 
     annotations: list[dict] = []
     charts: list[dict] = []
@@ -4256,6 +4473,8 @@ def _run_brain_loop_stream(
     _digest = _grounding_digest(root)
     if _digest:
         user_content = f"{_digest}\n\n[USER QUESTION]\n{user_content}"
+        # Digest text itself NEVER goes on the wire — only that we loaded it.
+        yield _status_event("grounding", _t0, _STAGE_LABELS["grounding"])
 
     # Fix #4: filter client history — only role in {user,assistant} with non-empty str content
     def _filter_history_stream(h: list[dict]) -> list[dict]:
@@ -4287,17 +4506,26 @@ def _run_brain_loop_stream(
     # Phase 1: tool-calling turns (blocking, no streaming)
     _cands = _turn_providers(client, model, providers)  # failover order (OAuth tokens)
     # High-intensity params (effort + adaptive thinking) added PER-CANDIDATE — Claude-only,
-    # so a DeepSeek/Haiku candidate in the same failover chain never receives them.
+    # so a DeepSeek/Haiku candidate in the same failover chain never receives them; the
+    # DeepSeek thinking-disable rides the same channel in the opposite direction.
     def _pmk(m):
-        return _effort_thinking_params(m, effort, thinking_mode)
+        return {**_effort_thinking_params(m, effort, thinking_mode),
+                **_deepseek_extra_params(m, deepseek_thinking)}
+
+    # Cached prompt surfaces — built ONCE, reused by every round (see _cache_control_*).
+    system_param = _cache_control_system(system_prompt)
+    tools_param = _cache_control_tools(tool_schemas)
+
     while tool_call_count < tool_budget:
+        yield _status_event("model", _t0, _model_stage_label(lane, tool_call_count + 1),
+                            n=tool_call_count + 1)
         try:
             resp, model = _create_failover(
                 _cands,
                 per_model_kwargs=_pmk,
                 max_tokens=max_tokens,
-                system=system_prompt,
-                tools=tool_schemas,
+                system=system_param,
+                tools=tools_param,
                 messages=messages,
             )
         except Exception as exc:  # noqa: BLE001
@@ -4323,8 +4551,8 @@ def _run_brain_loop_stream(
             tool_params = block.input or {}
             tool_id = block.id
 
-            # Emit tool progress event
-            yield f"data: {json.dumps({'type': 'tool', 'name': tool_name})}\n\n"
+            # Emit tool progress event (name kept for the deployed widget; labels added)
+            yield _tool_event(tool_name, tool_params)
 
             result = _dispatch_brain_tool(tool_name, tool_params, root, terminal_data_dir, terminal_hub_url, user_id=user_id, internals_ok=internals_ok, chart_client=("terminal" if safe_page == "terminal" else ""))
 
@@ -4372,6 +4600,7 @@ def _run_brain_loop_stream(
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
         messages.append({"role": "user", "content": "Please synthesize your findings and answer my question."})
+        yield _status_event("synthesis", _t0, _STAGE_LABELS["synthesis"])
         # Stream with OAuth-token failover: the answer is buffered server-side (emitted
         # as one delta below), so a candidate that 429s on open is retried from scratch
         # with a fresh buffer — no partial/duplicated text reaches the client.
@@ -4381,17 +4610,24 @@ def _run_brain_loop_stream(
             if _cl is None:
                 continue
             full_answer = ""
+            # Writing beats are throttled and carry only a character count — the text
+            # stays buffered until the advice filter has run on ALL of it.
+            _beat_at = time.monotonic()
             try:
                 with _cl.messages.stream(
                     model=_p.get("model"),
                     max_tokens=max_tokens,
-                    system=system_prompt,
-                    tools=tool_schemas,
+                    system=system_param,
+                    tools=tools_param,
                     messages=messages,
-                    **_effort_thinking_params(_p.get("model"), effort, thinking_mode),
+                    **_pmk(_p.get("model")),
                 ) as s:
                     for chunk in s.text_stream:
                         full_answer += chunk
+                        if time.monotonic() - _beat_at >= _WRITING_BEAT_S:
+                            _beat_at = time.monotonic()
+                            yield _status_event("writing", _t0, _STAGE_LABELS["writing"],
+                                                n=len(full_answer))
                 final_resp = s.get_final_message()
                 u = getattr(final_resp, "usage", None)
                 if u:
@@ -4430,6 +4666,8 @@ def _run_brain_loop_stream(
                 }
         except Exception:  # noqa: BLE001
             pass
+
+    yield _status_event("review", _t0, _STAGE_LABELS["review"])
 
     citations = _extract_citations_brain(messages)
     filtered_answer, was_filtered = _post_filter_advice(full_answer, citations)
@@ -4768,6 +5006,9 @@ def chat(
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
     effort = lane_cfg.get("effort")
     thinking_mode = lane_cfg.get("thinking")
+    # DeepSeek-path-only: 'disabled' turns off v4's default thinking (Fast opts in; Pro's
+    # degraded DeepSeek rung deliberately does not, so research mode inherits thinking ON).
+    deepseek_thinking = lane_cfg.get("deepseek_thinking")
 
     # Research mode: override tool budget + intensity from config
     if mode == "research":
@@ -4939,6 +5180,7 @@ def chat(
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
+            deepseek_thinking=deepseek_thinking,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: loop failed (%s) — degraded reply", exc)
@@ -5046,7 +5288,9 @@ def chat_stream(
 
     SSE event sequence (contract):
         {"type":"meta",...}              (always first)
-        {"type":"tool","name":...}       (progress, 0+)
+        {"type":"status","phase":...}    (reasoning transparency, 0+; ADDITIVE — an old
+                                          widget ignores unknown event types)
+        {"type":"tool","name":...,"label_en":...,"label_zh":...,"detail":?}  (progress, 0+)
         {"type":"annotate",...}          (when annotate_chart called, 0+)
         {"type":"command","action":...}  (chart-command bus W6b, 0+)
         {"type":"chart","ticker":...,"timeframe":...,"svg":...}  (inline chart W6c, 0+)
@@ -5075,6 +5319,9 @@ def chat_stream(
     # High-intensity intent (per-lane): effort + thinking mode, applied Claude-path-only.
     effort = lane_cfg.get("effort")
     thinking_mode = lane_cfg.get("thinking")
+    # DeepSeek-path-only: 'disabled' turns off v4's default thinking (Fast opts in; Pro's
+    # degraded DeepSeek rung deliberately does not, so research mode inherits thinking ON).
+    deepseek_thinking = lane_cfg.get("deepseek_thinking")
 
     # Research mode: force pro-lane intensity even if invoked with a different lane_cfg
     # and raise the budget (Deep Research thinks harder + longer than plain chat).
@@ -5234,6 +5481,7 @@ def chat_stream(
             mode=mode, image_blocks=image_blocks, providers=turn_providers,
             user_id=user_id, user_email=user_email,
             effort=effort, thinking_mode=thinking_mode,
+            deepseek_thinking=deepseek_thinking,
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: stream loop failed (%s)", exc)
