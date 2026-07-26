@@ -11,6 +11,7 @@ Run: .venv/bin/python -m pytest tests/test_optimize_assets.py -q
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -305,3 +306,92 @@ def test_preload_sweep_end_to_end(tmp_path):
     assert deep.group(1) != "assets/css/deep.css?v=deadbeef", "stale stamp was not refreshed"
     assert f'<link rel="preload" as="style" href="{deep.group(1)}">' in head
     assert optimize(site) == 0  # idempotent once the stamps are current
+
+
+# ---------------------------------------------------------------------------
+# `--fix` heals in ONE direction, so it must know when that direction is wrong
+# ---------------------------------------------------------------------------
+# The pair law's repair is templates/ -> site/, which is right for the case it was
+# written for (a PR edits a template one-sidedly) and wrong for the case a render
+# lane produces: 2026-07-26 push 886fe25d89e advanced site/chat.html to
+# theme.js?v=c094a665 plus the product-nav-icons preload and left
+# templates/chat.html at ?v=16dc65dc. No PR was involved, so no PR gate could see
+# it; `--fix` then offered to "heal" the pair by re-pinning every returning browser
+# to bytes theme.js no longer had, under `immutable, max-age=1y` at the edge. It
+# printed FIXED either way — a clobber and a heal were indistinguishable, which is
+# how the wrong direction stayed invisible. #3676 healed it by hand the other way.
+# These pin the asymmetric evidence rule: refuse only on a stamp that PROVABLY
+# contradicts the file it names, never on absence.
+
+
+def _stale_pair(tmp_path, tpl: str, site_page: str):
+    """A tree whose site/ carries a real app.js the pages' stamps can be judged against."""
+    site, templates = tmp_path / "site", tmp_path / "templates"
+    site.mkdir()
+    templates.mkdir()
+    (site / "app.js").write_text("var live = 1;\n")
+    live = hashlib.sha256((site / "app.js").read_bytes()).hexdigest()[:8]
+    (templates / "page.html").write_text(tpl.replace("{LIVE}", live))
+    (site / "page.html").write_text(site_page.replace("{LIVE}", live))
+    return site, templates, live
+
+
+def test_fix_refuses_to_clobber_a_site_copy_whose_stamps_are_current(tmp_path):
+    """The render-lane shape: site/ is the fresher side, so the copy must not run."""
+    from scripts.check_template_site_sync import check
+
+    site, _templates, live = _stale_pair(
+        tmp_path,
+        '<script src="app.js?v=deadbeef" defer></script>\n',
+        '<script src="app.js?v={LIVE}" defer></script>\n<link rel="preload" href="app.js?v={LIVE}">\n',
+    )
+    before = (site / "page.html").read_bytes()
+
+    assert check(tmp_path, fix=True) == ["page.html"]
+    assert check.refused == ["page.html"], "wrong-direction --fix was not refused"
+    assert (site / "page.html").read_bytes() == before, "--fix clobbered the current site copy"
+    assert f"app.js?v={live}" in (site / "page.html").read_text()
+    # and it stays loud: a refused pair is still diverged, never reported as healed
+    assert check(tmp_path) == ["page.html"]
+
+
+def test_fix_still_heals_a_template_that_is_legitimately_ahead(tmp_path):
+    """A one-sided PR reword — every stamp current on both sides — must still copy."""
+    from scripts.check_template_site_sync import check
+
+    site, _templates, live = _stale_pair(
+        tmp_path,
+        '<script src="app.js?v={LIVE}" defer></script>\n<p>calibration-gated</p>\n',
+        '<script src="app.js?v={LIVE}" defer></script>\n<p>validated</p>\n',
+    )
+    assert check(tmp_path, fix=True) == ["page.html"]
+    assert check.refused == [], "refused an ordinary one-sided template edit"
+    assert "calibration-gated" in (site / "page.html").read_text()
+    assert check(tmp_path) == []
+
+
+def test_a_ref_the_template_dropped_is_not_evidence_of_staleness(tmp_path):
+    """Deleting a <link> in templates/ is a legitimate edit, not a stale stamp."""
+    from scripts.check_template_site_sync import check
+
+    site, _templates, _live = _stale_pair(
+        tmp_path,
+        '<script src="app.js?v={LIVE}" defer></script>\n',
+        '<script src="app.js?v={LIVE}" defer></script>\n<link rel="preload" href="app.js?v={LIVE}">\n',
+    )
+    assert check(tmp_path, fix=True) == ["page.html"]
+    assert check.refused == [], "absence of a ref was treated as staleness"
+    assert "preload" not in (site / "page.html").read_text(), "the deletion did not propagate"
+
+
+def test_a_hand_written_query_is_never_judged(tmp_path):
+    """Only OUR ?v=<8 hex> stamp is audited — `?v=3` is authored, not derived."""
+    from scripts.check_template_site_sync import check
+
+    _site, _templates, _live = _stale_pair(
+        tmp_path,
+        '<script src="app.js?v=3" defer></script>\n<p>a</p>\n',
+        '<script src="app.js?v=3" defer></script>\n<p>b</p>\n',
+    )
+    assert check(tmp_path, fix=True) == ["page.html"]
+    assert check.refused == [], "a hand-written query was audited as our stamp"
