@@ -817,6 +817,46 @@ def test_nightly_workflow_does_not_pass_rebuild():
     )
 
 
+def test_nightly_chronicle_steps_are_reached_after_an_upstream_failure():
+    """M12: both chronicle steps must carry `if: always()`.
+
+    The two asserts above pin WHAT the nightly runs; neither notices that the
+    step is never REACHED. The chronicle pair sits deep in the engine job's
+    tail, and ~19 upstream steps in that job can still hard-fail. GitHub skips
+    every later step lacking always() once one does — observed on 3 of the 5
+    scheduled nights 2026-07-21→07-25 (runs 29877186502 / 29966266057 /
+    30053251096), where the non-always "White House Watch" step was skipped
+    while its always() neighbours ran fine.
+
+    `continue-on-error: true` is NOT a substitute: it protects a step that runs
+    and fails, not one that is skipped before it starts. And the skip is silent
+    in exactly the way the store cannot afford — state_log.jsonl is a
+    forward-only capture, so a skipped night is unrecoverable history, while
+    the governor's rc warning never prints because nothing ran.
+    """
+    import re
+
+    wf = (ROOT / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+
+    # Split the workflow into steps, keeping each step's own body only.
+    steps = re.split(r"^ {6}- (?=name:|uses:|run:)", wf, flags=re.M)
+    chronicle = [s for s in steps
+                 if "scripts.build_chronicle" in s or "git add data/chronicle" in s]
+    assert len(chronicle) == 2, (
+        "expected exactly 2 chronicle steps in daily.yml (build + commit), found "
+        f"{len(chronicle)} — the wiring moved; re-point this guard"
+    )
+
+    for step in chronicle:
+        name = step.splitlines()[0].strip()
+        assert re.search(r"^ {8}if: always\(\)\s*$", step, flags=re.M), (
+            f"chronicle step '{name}' has no `if: always()`, so an earlier "
+            "hard-failing step in the engine job silently SKIPS it. state_log.jsonl "
+            "is a forward-only capture — a skipped night is permanently lost history, "
+            "and no chronicle_governor warning is emitted because the step never ran."
+        )
+
+
 def test_capture_row_absent_world_state_is_gap(tmp_path):
     from engine.chronicle import state_log
     row, gap = state_log.capture_row(tmp_path)
