@@ -1,94 +1,22 @@
 {
   "schema": "codex_lane.usage_state.v1",
-  "updated_at": "2026-07-22T08:31:03.333599+00:00",
+  "updated_at": "2026-07-26T07:50:05.176929+00:00",
   "rate_limits": {
     "primary": {
-      "used_percent": 0.0,
-      "resets_at": "2026-07-28T20:13:42+00:00",
+      "used_percent": 8.0,
+      "resets_at": "2026-08-01T19:18:15+00:00",
       "window_mins": 10080
     },
     "secondary": null,
     "plan_type": "pro",
-    "fetched_at": "2026-07-22T08:25:09.658725+00:00"
+    "fetched_at": "2026-07-26T07:43:22.315984+00:00"
   },
   "token_usage_last": {
-    "input_tokens": 21078,
-    "output_tokens": 725,
-    "total_tokens": 21803
+    "input_tokens": 268652,
+    "output_tokens": 1271,
+    "total_tokens": 269923
   },
   "sessions": [
-    {
-      "ts": "2026-07-17T09:54:48.423494+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T09:55:52.521628+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T10:01:06.945331+00:00",
-      "lane": "signals",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T10:18:46.418123+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T10:20:54.949292+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T10:23:19.702430+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T10:23:56.424343+00:00",
-      "lane": "cases",
-      "ok": false,
-      "error_kind": "usage_limit"
-    },
-    {
-      "ts": "2026-07-17T11:01:46.359475+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T11:02:47.341669+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T11:21:23.497540+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T11:22:11.478756+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
-    {
-      "ts": "2026-07-17T11:53:05.020462+00:00",
-      "lane": "cases",
-      "ok": true,
-      "error_kind": null
-    },
     {
       "ts": "2026-07-17T11:53:58.848996+00:00",
       "lane": "cases",
@@ -1201,6 +1129,90 @@
     },
     {
       "ts": "2026-07-22T08:31:03.333367+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:12:11.407805+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:12:45.727642+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:15:35.490094+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:16:13.412867+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:23:50.168986+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:23:59.023719+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:30:06.332327+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:30:58.983453+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:34:00.155287+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:34:42.040912+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:40:55.909088+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:41:46.116463+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:49:15.137565+00:00",
+      "lane": "cases",
+      "ok": true,
+      "error_kind": null
+    },
+    {
+      "ts": "2026-07-26T07:50:05.176779+00:00",
       "lane": "cases",
       "ok": true,
       "error_kind": null
