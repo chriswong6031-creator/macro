@@ -1,7 +1,26 @@
 {
-  "ts": "2026-07-25T23:20:27+00:00",
-  "main_sha": "b96193060cdd56cf7303fcbf7eadc1e693f0cc58",
-  "red_required": [],
-  "green": true,
-  "consecutive_failures": 0
+  "ts": "2026-07-26T04:02:58+00:00",
+  "main_sha": "3186822d4ba2af9fa5de23b72f23cf0e4296c441",
+  "red_required": [
+    {
+      "name": "Supabase Preview",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/runs/89753440663"
+    },
+    {
+      "name": "tier-gate",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/30186990965/job/89753360846"
+    },
+    {
+      "name": "engine-render-guards",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/chriswong6031-creator/macro/actions/runs/30186990965/job/89753360792"
+    }
+  ],
+  "green": false,
+  "consecutive_failures": 1
 }
