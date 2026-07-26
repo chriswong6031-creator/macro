@@ -1649,12 +1649,12 @@
       "checked_at": "2026-07-26T07:10:30.017564+00:00"
     },
     "tape_flow_forward": {
-      "status": "empty",
-      "n_ok": 0,
+      "status": "ok",
+      "n_ok": 375,
       "n_err": 0,
-      "elapsed_sec": 0.0,
-      "last_date": "2026-07-19",
-      "checked_at": "2026-07-20T03:12:28.170413+00:00",
+      "elapsed_sec": 117.5,
+      "last_date": "2026-07-24",
+      "checked_at": "2026-07-26T07:45:16.452841+00:00",
       "mode": "forward"
     },
     "china_filings": {
@@ -1909,17 +1909,17 @@
       "n_ok": 0,
       "n_err": 0,
       "elapsed_sec": 0.0,
-      "last_date": "2026-07-19",
-      "checked_at": "2026-07-20T03:12:29.347392+00:00",
+      "last_date": "2026-07-26",
+      "checked_at": "2026-07-26T07:45:17.585097+00:00",
       "mode": "episodes"
     },
     "tape_flow_etf-history": {
       "status": "ok",
-      "n_ok": 210,
-      "n_err": 4,
-      "elapsed_sec": 1275.4,
-      "last_date": "2022-07-15",
-      "checked_at": "2026-07-20T03:33:45.099180+00:00",
+      "n_ok": 174,
+      "n_err": 8,
+      "elapsed_sec": 1236.4,
+      "last_date": "2023-03-17",
+      "checked_at": "2026-07-26T08:05:54.277715+00:00",
       "mode": "etf-history"
     },
     "google_trends": {

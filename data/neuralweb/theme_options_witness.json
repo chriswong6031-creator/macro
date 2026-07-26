@@ -1,7 +1,7 @@
 {
   "schema": "theme_options_witness.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T01:08:17.291915+00:00",
+  "generated_at": "2026-07-26T08:11:32.018854+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -70,8 +70,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.0359,
-        "value_z252": -0.742,
+        "value": 0.0369,
+        "value_z252": -0.634,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -102,17 +102,17 @@
           "APH",
           "GLW"
         ],
-        "note_en": "Coverage: 26/26 members. Strike concentration (median): 0.036 (z -0.74). Call bets spread across many strikes — no crowding sign.",
-        "note_zh": "覆盖：26/26 个成员。行权价集中度（中位数）：0.036（z -0.74）。看涨押注分散于多个行权价——无拥挤迹象。"
+        "note_en": "Coverage: 26/26 members. Strike concentration (median): 0.037 (z -0.63). Call bets spread across many strikes — no crowding sign.",
+        "note_zh": "覆盖：26/26 个成员。行权价集中度（中位数）：0.037（z -0.63）。看涨押注分散于多个行权价——无拥挤迹象。"
       },
       "leg_b_pcr": {
         "label_en": "Put/Call OI Ratio (PCR) — EXIT-CROWD L3 accrual",
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.9369,
-        "value_z252": 0.622,
-        "pcr_5d_chg": 0.0188,
+        "value": 0.9233,
+        "value_z252": -0.015,
+        "pcr_5d_chg": -0.0042,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
@@ -144,17 +144,17 @@
           "APH",
           "GLW"
         ],
-        "note_en": "Coverage: 26/26 members. Put/call open-interest ratio: 0.94 (z +0.62). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
-        "note_zh": "覆盖：26/26 个成员。看跌/看涨持仓比：0.94（z +0.62）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
+        "note_en": "Coverage: 26/26 members. Put/call open-interest ratio: 0.92 (z -0.01). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：26/26 个成员。看跌/看涨持仓比：0.92（z -0.01）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "label_en": "IV Premium vs Realized (Event-Premium Hazard)",
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 26,
         "coverage_total": 26,
-        "value": 0.1953,
-        "value_z252": 0.843,
-        "band": "rising",
+        "value": 0.1374,
+        "value_z252": 0.479,
+        "band": "normal",
         "stale": false,
         "inputs": [
           "NVDA",
@@ -184,8 +184,8 @@
           "APH",
           "GLW"
         ],
-        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +19.5% (z +0.84). Options pricing rising versus recent actual swings.",
-        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+19.5%（z +0.84）。期权定价相对近期实际波动上升。"
+        "note_en": "Coverage: 26/26 members. Options priced vs recent actual swings (median): +13.7% (z +0.48). Options priced near their usual level.",
+        "note_zh": "覆盖：26/26 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.48）。期权定价接近正常水平。"
       }
     },
     "memory_storage": {
@@ -205,8 +205,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 0.013,
-        "value_z252": -0.993,
+        "value": 0.0131,
+        "value_z252": -0.992,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -223,9 +223,9 @@
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": 1.3098,
-        "value_z252": 1.383,
-        "pcr_5d_chg": 0.0202,
+        "value": 1.2953,
+        "value_z252": 1.196,
+        "pcr_5d_chg": 0.0268,
         "pcr_collapse_into_strength": false,
         "band": "normal",
         "stale": false,
@@ -235,16 +235,16 @@
           "STX",
           "SNDK"
         ],
-        "note_en": "Coverage: 4/4 members. Put/call open-interest ratio: 1.31 (z +1.38). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
-        "note_zh": "覆盖：4/4 个成员。看跌/看涨持仓比：1.31（z +1.38）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
+        "note_en": "Coverage: 4/4 members. Put/call open-interest ratio: 1.30 (z +1.20). Hedges coming off into strength: no. Positioning: put/call balance in its normal range.",
+        "note_zh": "覆盖：4/4 个成员。看跌/看涨持仓比：1.30（z +1.20）。对冲盘在强势中撤离：否。仓位状态：看跌/看涨比处于正常区间。"
       },
       "leg_c_iv_premium": {
         "label_en": "IV Premium vs Realized (Event-Premium Hazard)",
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 4,
         "coverage_total": 4,
-        "value": -0.0006,
-        "value_z252": -0.383,
+        "value": 0.1374,
+        "value_z252": 0.433,
         "band": "normal",
         "stale": false,
         "inputs": [
@@ -253,8 +253,8 @@
           "STX",
           "SNDK"
         ],
-        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): -0.1% (z -0.38). Options priced near their usual level.",
-        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：-0.1%（z -0.38）。期权定价接近正常水平。"
+        "note_en": "Coverage: 4/4 members. Options priced vs recent actual swings (median): +13.7% (z +0.43). Options priced near their usual level.",
+        "note_zh": "覆盖：4/4 个成员。期权定价相对近期实际波动（中位数）：+13.7%（z +0.43）。期权定价接近正常水平。"
       }
     },
     "semicap_equipment": {
@@ -1245,8 +1245,8 @@
         "label_zh": "看涨OI集中度（HHI）",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.0833,
-        "value_z252": 0.888,
+        "value": 0.0819,
+        "value_z252": 0.742,
         "band": "rising",
         "stale": false,
         "inputs": [
@@ -1272,17 +1272,17 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.083 (z +0.89). Call bets tilting toward fewer strikes.",
-        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.083（z +0.89）。看涨押注趋向集中于较少行权价。"
+        "note_en": "Coverage: 21/21 members. Strike concentration (median): 0.082 (z +0.74). Call bets tilting toward fewer strikes.",
+        "note_zh": "覆盖：21/21 个成员。行权价集中度（中位数）：0.082（z +0.74）。看涨押注趋向集中于较少行权价。"
       },
       "leg_b_pcr": {
         "label_en": "Put/Call OI Ratio (PCR) — EXIT-CROWD L3 accrual",
         "label_zh": "看跌/看涨OI比率（PCR）— EXIT-CROWD L3积累",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.4612,
-        "value_z252": -2.579,
-        "pcr_5d_chg": -0.0517,
+        "value": 0.4631,
+        "value_z252": -2.507,
+        "pcr_5d_chg": -0.007,
         "pcr_collapse_into_strength": false,
         "band": "complacency",
         "stale": false,
@@ -1309,16 +1309,16 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.46 (z -2.58). Hedges coming off into strength: no. Positioning: put protection unusually low — complacency hazard.",
-        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.46（z -2.58）。对冲盘在强势中撤离：否。仓位状态：看跌保护异常偏低——自满风险。"
+        "note_en": "Coverage: 21/21 members. Put/call open-interest ratio: 0.46 (z -2.51). Hedges coming off into strength: no. Positioning: put protection unusually low — complacency hazard.",
+        "note_zh": "覆盖：21/21 个成员。看跌/看涨持仓比：0.46（z -2.51）。对冲盘在强势中撤离：否。仓位状态：看跌保护异常偏低——自满风险。"
       },
       "leg_c_iv_premium": {
         "label_en": "IV Premium vs Realized (Event-Premium Hazard)",
         "label_zh": "隐含波动率溢价 vs 实现波动率（事件溢价风险）",
         "coverage_count": 21,
         "coverage_total": 21,
-        "value": 0.5966,
-        "value_z252": 1.686,
+        "value": 0.5711,
+        "value_z252": 1.583,
         "band": "elevated",
         "stale": false,
         "inputs": [
@@ -1344,8 +1344,8 @@
           "FLYW",
           "MQ"
         ],
-        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +59.7% (z +1.69). Options priced far above recent actual swings — event-premium hazard.",
-        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+59.7%（z +1.69）。期权定价远高于近期实际波动——事件溢价风险。"
+        "note_en": "Coverage: 21/21 members. Options priced vs recent actual swings (median): +57.1% (z +1.58). Options priced far above recent actual swings — event-premium hazard.",
+        "note_zh": "覆盖：21/21 个成员。期权定价相对近期实际波动（中位数）：+57.1%（z +1.58）。期权定价远高于近期实际波动——事件溢价风险。"
       }
     },
     "space_satellite": {
