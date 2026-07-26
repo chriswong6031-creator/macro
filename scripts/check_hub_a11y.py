@@ -41,6 +41,17 @@ e) theme.js documentElement.lang sync (WCAG 3.1.1 tripwire)
    proof that the WCAG 3.1.1 fix (syncing the html[lang] attribute at runtime) has
    not been silently reverted.
 
+f) Mastermind Brain launcher keyboard operability (WCAG 2.1.1 tripwire)
+   site/mm_brain.js mounts the Brain launcher on EVERY page, so if it regresses to a
+   bare <div> the whole Brain goes keyboard- and screen-reader-unreachable site-wide.
+   It shipped exactly that way until 2026-07-26.  The launcher must therefore keep:
+     • role="button" and tabindex="0" on the #mmb-launch element (it is a <div>, so
+       neither is free — the pill collapses to a bare orb on phones and owns its
+       layout, which is why it is not a real <button>),
+     • a keydown listener that handles BOTH Enter and Space, and
+     • a #mmb-launch:focus-visible rule, so the tab stop is actually visible.
+   Grep-level, like (e): this fences the semantics, not the styling.
+
 Usage
 -----
     python -m scripts.check_hub_a11y [SITE_DIR]   # default: site/
@@ -246,6 +257,79 @@ def check_e_theme_js_lang_sync(site_dir: str) -> list[str]:
     return []
 
 
+# ── check f: Brain launcher keyboard operability ─────────────────────────────
+
+# The launcher markup is built as a JS string concatenation, so the opening tag is
+# not terminated by '>' anywhere near the id — scan a bounded window after the id
+# instead of trying to match a whole tag.
+_LAUNCH_ID_RE = re.compile(r"""id=["']mmb-launch["']""")
+_LAUNCH_ATTR_WINDOW = 240
+# The handler is `launch.addEventListener('keydown', ...)`; quoting may be ' or ".
+_LAUNCH_KEYDOWN_RE = re.compile(
+    r"""launch\s*\.\s*addEventListener\s*\(\s*["']keydown["']""")
+_FOCUS_VISIBLE_RE = re.compile(r"""#mmb-launch:focus-visible""")
+
+
+def check_f_brain_launcher_keyboard(site_dir: str) -> list[str]:
+    """Return violations if the Brain launcher is not keyboard-operable."""
+    path = os.path.join(site_dir, "mm_brain.js")
+    if not os.path.isfile(path):
+        return [
+            f"{path}: file not found — cannot verify the Brain launcher is "
+            "keyboard-operable (WCAG 2.1.1)"
+        ]
+    try:
+        src = open(path, encoding="utf-8", errors="replace").read()
+    except OSError as exc:
+        return [f"{path}: could not read ({exc})"]
+
+    violations: list[str] = []
+
+    m = _LAUNCH_ID_RE.search(src)
+    if not m:
+        return [
+            f"{path}: no id=\"mmb-launch\" element found — the launcher markup moved "
+            "or was renamed; update this guard so it keeps fencing the real control"
+        ]
+
+    window = src[m.end(): m.end() + _LAUNCH_ATTR_WINDOW]
+    if 'role="button"' not in window and "role='button'" not in window:
+        violations.append(
+            f"{path}: #mmb-launch is missing role=\"button\" — it is a <div>, so "
+            "assistive tech announces it as nothing without the role"
+        )
+    if 'tabindex="0"' not in window and "tabindex='0'" not in window:
+        violations.append(
+            f"{path}: #mmb-launch is missing tabindex=\"0\" — a <div> is not in the "
+            "tab order, so keyboard users cannot reach the Brain at all"
+        )
+
+    if not _LAUNCH_KEYDOWN_RE.search(src):
+        violations.append(
+            f"{path}: no keydown listener on the launcher — role=\"button\" buys the "
+            "semantics but Enter/Space still have to be wired by hand"
+        )
+    else:
+        # Both keys, or the control is only half-operable. Space is ' ' (modern) and
+        # 'Spacebar' (legacy WebKit/Edge); accept either spelling as the Space branch.
+        if "'Enter'" not in src and '"Enter"' not in src:
+            violations.append(
+                f"{path}: launcher keydown handler does not reference 'Enter'"
+            )
+        if not any(tok in src for tok in ("' '", '" "', "'Spacebar'", '"Spacebar"')):
+            violations.append(
+                f"{path}: launcher keydown handler does not reference Space "
+                "(' ' or the legacy 'Spacebar')"
+            )
+
+    if not _FOCUS_VISIBLE_RE.search(src):
+        violations.append(
+            f"{path}: no #mmb-launch:focus-visible rule — a tab stop nobody can see "
+            "is not an accessible control"
+        )
+    return violations
+
+
 # ── page discovery ────────────────────────────────────────────────────────────
 
 _GD_STAGE_RE = re.compile(r"\bgd-stage\b")
@@ -275,9 +359,11 @@ def run_checks(site_dir: str) -> list[tuple[str, str]]:
     """Return a list of (location, message) violation tuples, empty on clean."""
     all_violations: list[tuple[str, str]] = []
 
-    # Check e is file-level, not per-page.
+    # Checks e and f are file-level, not per-page.
     for msg in check_e_theme_js_lang_sync(site_dir):
         all_violations.append(("site/theme.js", msg))
+    for msg in check_f_brain_launcher_keyboard(site_dir):
+        all_violations.append(("site/mm_brain.js", msg))
 
     pages = _find_globe_deck_pages(site_dir)
     if not pages:
@@ -326,8 +412,8 @@ def main(argv: list[str] | None = None) -> int:
     pages_count = len(_find_globe_deck_pages(site_dir))
     print(
         f"check_hub_a11y: OK — {pages_count} globe-deck page(s) clean "
-        f"(5 checks: aria-hidden traps, lang boot, pill contrast, "
-        f"viewport safe-area, theme.js lang sync)."
+        f"(6 checks: aria-hidden traps, lang boot, pill contrast, "
+        f"viewport safe-area, theme.js lang sync, Brain launcher keys)."
     )
     return 0
 

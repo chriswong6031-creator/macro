@@ -18,6 +18,7 @@ from scripts.check_hub_a11y import (
     check_c_pill_contrast,
     check_d_viewport_safe_area,
     check_e_theme_js_lang_sync,
+    check_f_brain_launcher_keyboard,
     main,
     run_checks,
 )
@@ -44,6 +45,26 @@ body{{padding:22px max(20px,env(safe-area-inset-right)) 56px max(20px,env(safe-a
 def _page(extra_body: str = "", extra_head: str = "", use_marker: bool = True) -> str:
     marker = _GLOBE_MARKER if use_marker else ""
     return _MINIMAL_PASSING.format(marker=marker) + extra_body
+
+
+# A launcher stub that satisfies check (f): role + tab stop + Enter/Space + ring.
+# Kept in the same JS-string-concatenation shape as the real mm_brain.js so the
+# guard is exercised against markup it will actually meet.
+_LAUNCHER_OK = (
+    "var h = '<div id=\"mmb-launch\" role=\"button\" tabindex=\"0\" "
+    "aria-expanded=\"false\" aria-label=\"Ask Mastermind\"></div>';\n"
+    "var CSS = '#mmb-launch:focus-visible{outline:2px solid blue;outline-offset:2px}';\n"
+    "launch.addEventListener('keydown', function (e) {\n"
+    "  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;\n"
+    "  e.preventDefault(); open();\n"
+    "});\n"
+)
+
+
+def _write_support_files(tmp_path) -> None:
+    """Write the two file-level assets checks (e) and (f) require."""
+    (tmp_path / "theme.js").write_text("documentElement.lang = 'en';", encoding="utf-8")
+    (tmp_path / "mm_brain.js").write_text(_LAUNCHER_OK, encoding="utf-8")
 
 
 # ── check a: aria-hidden focusable trap ───────────────────────────────────────
@@ -265,8 +286,8 @@ def test_e_real_theme_js_passes():
 
 
 def test_non_globe_deck_pages_are_skipped(tmp_path):
-    """Pages without .gd-stage are ignored (only lang-sync check still fires on theme.js)."""
-    (tmp_path / "theme.js").write_text("documentElement.lang = 'en';", encoding="utf-8")
+    """Pages without .gd-stage are ignored (only the file-level checks still fire)."""
+    _write_support_files(tmp_path)
     (tmp_path / "other.html").write_text(
         '<html lang="en"><head></head><body><div class="normal-page">Hi</div></body></html>',
         encoding="utf-8",
@@ -292,14 +313,90 @@ def test_globe_deck_page_with_violations_is_detected(tmp_path):
     assert any("(a)" in loc_msg[1] for loc_msg in violations)
 
 
+# ── check f: Brain launcher keyboard operability ─────────────────────────────
+
+
+def test_f_compliant_launcher_passes(tmp_path):
+    (tmp_path / "mm_brain.js").write_text(_LAUNCHER_OK, encoding="utf-8")
+    assert check_f_brain_launcher_keyboard(str(tmp_path)) == []
+
+
+def test_f_missing_file_is_flagged(tmp_path):
+    """A vanished mm_brain.js must fail loudly, not pass vacuously."""
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    assert len(out) == 1 and "file not found" in out[0]
+
+
+def test_f_bare_div_launcher_is_flagged(tmp_path):
+    """The exact shape that shipped until 2026-07-26: a <div> with only aria-label."""
+    (tmp_path / "mm_brain.js").write_text(
+        "var h = '<div id=\"mmb-launch\" aria-label=\"Ask Mastermind\"></div>';\n"
+        "launch.addEventListener('click', open);\n",
+        encoding="utf-8",
+    )
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    joined = " ".join(out)
+    assert 'role="button"' in joined
+    assert 'tabindex="0"' in joined
+    assert "keydown" in joined
+    assert "focus-visible" in joined
+
+
+def test_f_role_without_tabindex_is_flagged(tmp_path):
+    """role="button" alone still leaves the control out of the tab order."""
+    (tmp_path / "mm_brain.js").write_text(
+        _LAUNCHER_OK.replace(' tabindex="0"', ""), encoding="utf-8"
+    )
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    assert len(out) == 1 and 'tabindex="0"' in out[0]
+
+
+def test_f_keydown_without_space_is_flagged(tmp_path):
+    """Enter-only is half a button — Space must work too."""
+    src = _LAUNCHER_OK.replace(
+        "if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;",
+        "if (e.key !== 'Enter') return;",
+    )
+    (tmp_path / "mm_brain.js").write_text(src, encoding="utf-8")
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    assert len(out) == 1 and "Space" in out[0]
+
+
+def test_f_missing_focus_ring_is_flagged(tmp_path):
+    (tmp_path / "mm_brain.js").write_text(
+        _LAUNCHER_OK.replace("#mmb-launch:focus-visible", "#mmb-other:focus-visible"),
+        encoding="utf-8",
+    )
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    assert len(out) == 1 and "focus-visible" in out[0]
+
+
+def test_f_renamed_launcher_is_flagged(tmp_path):
+    """If the id moves, the guard must say so rather than silently stop guarding."""
+    (tmp_path / "mm_brain.js").write_text(
+        _LAUNCHER_OK.replace("mmb-launch", "mmb-fab"), encoding="utf-8"
+    )
+    out = check_f_brain_launcher_keyboard(str(tmp_path))
+    assert len(out) == 1 and "no id" in out[0]
+
+
+def test_f_real_site_passes():
+    """The committed site/mm_brain.js must keep the launcher keyboard-operable."""
+    site = Path(__file__).resolve().parent.parent / "site"
+    if not (site / "mm_brain.js").is_file():
+        pytest.skip("site/mm_brain.js not built")
+    assert check_f_brain_launcher_keyboard(str(site)) == []
+
+
 def test_main_exits_0_on_clean_tree(tmp_path):
-    """main() returns 0 when the site_dir has no globe-deck pages and theme.js is clean."""
-    (tmp_path / "theme.js").write_text("documentElement.lang = 'en';", encoding="utf-8")
+    """main() returns 0 when the site_dir has no globe-deck pages and the file-level
+    assets (theme.js, mm_brain.js) are clean."""
+    _write_support_files(tmp_path)
     assert main([str(tmp_path)]) == 0
 
 
 def test_main_exits_1_on_violation(tmp_path):
-    (tmp_path / "theme.js").write_text("documentElement.lang = 'en';", encoding="utf-8")
+    _write_support_files(tmp_path)
     html = (
         '<html lang="en"><head>'
         '<meta name="viewport" content="width=device-width, viewport-fit=cover">'
