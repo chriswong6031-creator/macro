@@ -224,6 +224,25 @@ class TestBuild:
         for k in ("schema", "as_of", "stale", "cold_start", "board_a", "board_b", "etf_strip", "coverage"):
             assert k in result, f"Missing key: {k}"
 
+    def test_session_date_is_the_underlying_session_not_the_build_clock(self, tmp_path):
+        """#F3-18: the page's rendered date stamp used `as_of[:10]` (the BUILD's
+        wall-clock timestamp — read live around 2026-07, whatever weekend/holiday
+        that happens to be), while every board row describes the fixture's own
+        last session (2024-06-14, per _make_summary_parquet's bdate_range).
+        session_date must carry the latter, distinctly from as_of."""
+        result = self._run_build(tmp_path, ["AAPL", "MSFT"])
+        assert "session_date" in result
+        assert result["session_date"] == "2024-06-14"
+        assert result["session_date"] != result["as_of"][:10]
+
+    def test_session_date_is_null_on_a_cold_empty_store(self, tmp_path):
+        site_root = _make_site_dir(tmp_path)
+        tpl_root = _make_tpl_dir(self._repo)
+        data_root = tmp_path / "data"
+        (data_root / "options_flow").mkdir(parents=True, exist_ok=True)
+        result = build(data_root=data_root, site_root=site_root, tpl_root=tpl_root)
+        assert result.get("session_date") is None
+
     def test_cold_start_when_few_sessions(self, tmp_path):
         # With n_sessions < RECUR_MIN_HISTORY → cold_start=True
         result = self._run_build(tmp_path, ["AAPL"], n_sessions=2)

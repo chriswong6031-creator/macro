@@ -357,6 +357,99 @@ class TestCor1mRegime:
 
 
 # ===========================================================================
+# OEU bug-wave F3-11 / F3-12 — gamma block must ignore weekend/holiday rows
+# ===========================================================================
+
+class TestGammaBlock:
+    """_build_gamma_block: the Cboe store carries Sat/Sun rows that RECOMPUTE
+    net GEX off a stale, carried-forward spot rather than skipping the
+    non-session day.  iloc[-1], the percentile window and days_in_regime must
+    all be measured over real sessions only."""
+
+    def _store(self, tmp_path: Path, rows: list[dict]) -> Path:
+        cboe_dir = tmp_path / "data" / "cboe"
+        cboe_dir.mkdir(parents=True, exist_ok=True)
+        idx = pd.to_datetime([r["date"] for r in rows])
+        df = pd.DataFrame(
+            {
+                "net_gex_bn": [r["net_gex_bn"] for r in rows],
+                "gamma_regime": [r["gamma_regime"] for r in rows],
+                "gamma_flip": [r.get("gamma_flip", 100.0) for r in rows],
+                "spot": [r.get("spot", 100.0) for r in rows],
+                "dist_to_flip_pct": [r.get("dist_to_flip_pct", 0.0) for r in rows],
+            },
+            index=idx,
+        )
+        df.to_parquet(cboe_dir / "gex_SPX.parquet")
+        return tmp_path / "data"
+
+    def test_latest_row_skips_a_trailing_weekend_row(self, tmp_path):
+        """The regression that shipped: iloc[-1] landed on a Saturday row that
+        recomputed GEX off Friday's stale spot, so the live page showed the
+        weekend's fabricated number under the real Friday's asof."""
+        from scripts.build_market_structure import _build_gamma_block
+        data_dir = self._store(tmp_path, [
+            {"date": "2026-07-23", "net_gex_bn": -35.11, "gamma_regime": "short"},
+            {"date": "2026-07-24", "net_gex_bn": -21.30, "gamma_regime": "short"},
+            {"date": "2026-07-25", "net_gex_bn": -23.96, "gamma_regime": "short"},  # Saturday
+        ])
+        block = _build_gamma_block(data_dir)
+        assert block["net_gex_bn"] == pytest.approx(-21.30)
+
+    def test_days_in_regime_excludes_weekend_padding(self, tmp_path):
+        """A Sat/Sun pair must not count as two extra days in the regime."""
+        from scripts.build_market_structure import _build_gamma_block
+        data_dir = self._store(tmp_path, [
+            {"date": "2026-07-21", "net_gex_bn": 22.2, "gamma_regime": "long"},
+            {"date": "2026-07-22", "net_gex_bn": 12.6, "gamma_regime": "long"},
+            {"date": "2026-07-23", "net_gex_bn": -35.1, "gamma_regime": "short"},
+            {"date": "2026-07-24", "net_gex_bn": -21.3, "gamma_regime": "short"},
+            {"date": "2026-07-25", "net_gex_bn": -23.9, "gamma_regime": "short"},  # Sat
+            {"date": "2026-07-26", "net_gex_bn": -23.9, "gamma_regime": "short"},  # Sun
+        ])
+        block = _build_gamma_block(data_dir)
+        assert block["days_in_regime"] == 2   # 07-23, 07-24 — not 4
+
+    def test_percentile_is_measured_over_sessions_only(self, tmp_path):
+        """A fabricated weekend extreme must not warp the percentile window."""
+        from scripts.build_market_structure import _build_gamma_block
+        rows = [{"date": d, "net_gex_bn": v, "gamma_regime": "long"} for d, v in
+                [("2026-07-20", 10.0), ("2026-07-21", 20.0), ("2026-07-22", 30.0),
+                 ("2026-07-23", 40.0), ("2026-07-24", 50.0)]]
+        rows.append({"date": "2026-07-25", "net_gex_bn": -999.0, "gamma_regime": "long"})  # Sat
+        data_dir = self._store(tmp_path, rows)
+        block = _build_gamma_block(data_dir)
+        # Latest SESSION (07-24, value 50.0) is above 4 of the 5 real sessions.
+        assert block["net_gex_pctile"] == 80.0
+
+    def test_history_omits_non_session_rows(self, tmp_path):
+        from scripts.build_market_structure import _build_gamma_block
+        data_dir = self._store(tmp_path, [
+            {"date": "2026-07-24", "net_gex_bn": -21.3, "gamma_regime": "short"},
+            {"date": "2026-07-25", "net_gex_bn": -23.9, "gamma_regime": "short"},  # Sat
+            {"date": "2026-07-26", "net_gex_bn": -23.9, "gamma_regime": "short"},  # Sun
+        ])
+        block = _build_gamma_block(data_dir)
+        dates = [h["date"] for h in block["history"]]
+        assert "2026-07-25" not in dates
+        assert "2026-07-26" not in dates
+        assert "2026-07-24" in dates
+
+    def test_session_filter_never_empties_the_store(self, tmp_path):
+        """A store that is SOMEHOW all-non-session (e.g. bad dates) must fall
+        back to the unfiltered frame rather than returning a blank block —
+        degrading is always the fail-open choice, never a crash or a void."""
+        from scripts.build_market_structure import _build_gamma_block
+        data_dir = self._store(tmp_path, [
+            {"date": "2026-07-25", "net_gex_bn": 1.0, "gamma_regime": "long"},  # Sat
+            {"date": "2026-07-26", "net_gex_bn": 2.0, "gamma_regime": "long"},  # Sun
+        ])
+        block = _build_gamma_block(data_dir)
+        assert block["net_gex_bn"] == pytest.approx(2.0)
+        assert block["regime"] == "long"
+
+
+# ===========================================================================
 # 6. change-feed same-day idempotency
 # ===========================================================================
 
@@ -603,10 +696,18 @@ class TestWeekMap:
         from scripts.build_market_structure import _spx_closes
         return _spx_closes(data_dir)
 
-    def _build(self, tmp_path: Path, **kw) -> dict | None:
+    def _build(self, tmp_path: Path, *, build_today: str | None = None, **kw) -> dict | None:
+        """build_today defaults to the fixture's own last_date (Fri 2026-07-24 by
+        default) — i.e. "the build ran the evening of the data's own last close",
+        which is what every pre-existing test in this class actually intends.
+        Pass build_today explicitly to exercise a build that runs LATER than the
+        data (the weekend-rollover scenario, #F3-15)."""
+        from datetime import date as _date
         from scripts.build_market_structure import _build_week_map
         data_dir = self._make_store(tmp_path, **kw)
-        return _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0})
+        bt = _date.fromisoformat(build_today or kw.get("last_date", "2026-07-24"))
+        return _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0},
+                                build_today=bt)
 
     def test_emits_a_week_map_at_all(self, tmp_path):
         """The regression that shipped: the key was never produced."""
@@ -666,25 +767,82 @@ class TestWeekMap:
 
     def test_none_when_no_prior_week_exists(self, tmp_path):
         """Cold start: nothing before this Monday → no band, no invention."""
+        from datetime import date as _date
         from scripts.build_market_structure import _build_week_map
         data_dir = self._make_store(tmp_path)
         closes = self._closes(data_dir)
         week_start = pd.Timestamp("2026-07-20")
         truncated = closes[closes.index >= week_start]
-        assert _build_week_map(truncated, data_dir, {"gamma_flip": None}) is None
+        assert _build_week_map(truncated, data_dir, {"gamma_flip": None},
+                                build_today=_date(2026, 7, 24)) is None
 
     def test_none_when_iv_missing(self, tmp_path):
+        from datetime import date as _date
         from scripts.build_market_structure import _build_week_map
         data_dir = self._make_store(tmp_path)
         gex = pd.read_parquet(data_dir / "cboe" / "gex_SPX.parquet").drop(columns=["iv30"])
         gex.to_parquet(data_dir / "cboe" / "gex_SPX.parquet")
-        assert _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": None}) is None
+        assert _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": None},
+                                build_today=_date(2026, 7, 24)) is None
 
     def test_none_when_closes_absent(self, tmp_path):
+        from datetime import date as _date
         from scripts.build_market_structure import _build_week_map
         data_dir = self._make_store(tmp_path)
-        assert _build_week_map(None, data_dir, {}) is None
-        assert _build_week_map(pd.Series(dtype=float), data_dir, {}) is None
+        bt = _date(2026, 7, 24)
+        assert _build_week_map(None, data_dir, {}, build_today=bt) is None
+        assert _build_week_map(pd.Series(dtype=float), data_dir, {}, build_today=bt) is None
+
+    # -----------------------------------------------------------------------
+    # OEU bug-wave F3-15 — the anchor must be the BUILD date, not the data
+    # cursor: a build running after Friday's close (weekend, or a lagging
+    # price store) must not keep describing a week that has already closed.
+    # -----------------------------------------------------------------------
+    def test_weekend_build_rolls_to_the_upcoming_week(self, tmp_path):
+        """The regression that shipped: a Sunday build still showed the week
+        that ended two days earlier, under a panel that promises 'resets each
+        weekend'."""
+        from datetime import date as _date
+        data_dir = self._make_store(tmp_path, last_date="2026-07-24")  # data stops Friday
+        from scripts.build_market_structure import _build_week_map
+        wm = _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0},
+                              build_today=_date(2026, 7, 26))  # Sunday
+        assert wm is not None
+        assert wm["week_start"] == "2026-07-27"
+        assert wm["week_end"] == "2026-07-31"
+        assert wm["locked_close"] == 4900.0          # still Friday 07-24's close
+        assert wm["locked_at"][:10] == "2026-07-24"
+
+    def test_saturday_build_also_rolls_forward(self, tmp_path):
+        from datetime import date as _date
+        data_dir = self._make_store(tmp_path, last_date="2026-07-24")
+        from scripts.build_market_structure import _build_week_map
+        wm = _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0},
+                              build_today=_date(2026, 7, 25))  # Saturday
+        assert wm["week_start"] == "2026-07-27"
+        assert wm["week_end"] == "2026-07-31"
+
+    def test_monday_build_before_todays_close_still_shows_this_week(self, tmp_path):
+        """Monday morning, before today's own close has landed: still THIS
+        week, locked at last Friday's close — not a rollover yet."""
+        from datetime import date as _date
+        data_dir = self._make_store(tmp_path, last_date="2026-07-24")  # data stops Fri
+        from scripts.build_market_structure import _build_week_map
+        wm = _build_week_map(self._closes(data_dir), data_dir, {"gamma_flip": 4950.0},
+                              build_today=_date(2026, 7, 27))  # Monday
+        assert wm["week_start"] == "2026-07-27"
+        assert wm["week_end"] == "2026-07-31"
+        assert wm["locked_close"] == 4900.0
+
+    def test_default_build_today_is_the_real_current_date(self, tmp_path):
+        """No build_today given -> falls back to wall-clock now(), not the data
+        cursor.  Regression guard: the OLD code derived the anchor from
+        closes.index[-1] with no way to inject 'today' at all."""
+        import inspect
+        from scripts.build_market_structure import _build_week_map
+        sig = inspect.signature(_build_week_map)
+        assert "build_today" in sig.parameters
+        assert sig.parameters["build_today"].default is None
 
     def test_gamma_flip_carried_through(self, tmp_path):
         wm = self._build(tmp_path)
@@ -707,3 +865,66 @@ class TestWeekMap:
         assert "week_map" in artifact, "template reads msp.week_map — builder must emit it"
         assert artifact["week_map"] is not None
         assert artifact["week_map"]["locked_close"] == 4900.0
+
+
+# ===========================================================================
+# OEU bug-wave F3-13 — staleness tripwire (skipped organ must not stay silent)
+# ===========================================================================
+
+class TestStalenessTripwire:
+    """A skipped organ leaves no red signal on its own — the artifact just
+    quietly keeps an old asof until a human notices the gap in git history
+    (three real sessions, in the incident this closes).  The exchange
+    calendar has zero data dependencies, so it is used as an independent
+    check on the artifact's own asof, printed loud as a workflow annotation."""
+
+    def test_stale_closes_store_prints_a_loud_warning(self, tmp_path, capsys):
+        """TestLedgerLaneGate's own fixture stops in 2025 — already stale
+        against any real 'today' — so it doubles as this regression's fixture."""
+        gate = TestLedgerLaneGate()
+        gate._run_builder_in_tmp(tmp_path, collect_lane=None)
+        out = capsys.readouterr().out
+        assert "::warning title=build_market_structure::" in out
+        assert "behind the expected last session" in out
+
+    def test_fresh_closes_store_prints_no_warning(self, tmp_path, monkeypatch, capsys):
+        """A build whose SPX store IS current must not cry wolf."""
+        import importlib
+        import lib.config as _cfg
+        from lib import nyse_calendar
+
+        expected = nyse_calendar.expected_last_session()
+        idx = pd.bdate_range(end=pd.Timestamp(expected), periods=150)
+        prices = 4500.0 * np.cumprod(1 + np.random.default_rng(7).normal(0.0005, 0.01, len(idx)))
+        spx_df = pd.DataFrame({"close": prices}, index=idx)
+        spx_df.index.name = "Date"
+        yahoo_dir = tmp_path / "data" / "yahoo"
+        yahoo_dir.mkdir(parents=True)
+        spx_df.to_parquet(yahoo_dir / "_GSPC.parquet")
+
+        gex_cols = ["spot", "net_gex_bn", "gamma_flip", "dist_to_flip_pct", "gamma_regime", "iv30"]
+        gex_df = pd.DataFrame(
+            {col: [1.0] * len(idx) for col in gex_cols[:-2]} | {
+                "gamma_flip": [4400.0] * len(idx),
+                "gamma_regime": ["long"] * len(idx),
+                "iv30": [0.15] * len(idx),
+            },
+            index=idx,
+        )
+        gex_df["spot"] = prices
+        gex_df["net_gex_bn"] = 50.0
+        gex_df["dist_to_flip_pct"] = 2.0
+        cboe_dir = tmp_path / "data" / "cboe"
+        cboe_dir.mkdir(parents=True)
+        gex_df.to_parquet(cboe_dir / "gex_SPX.parquet")
+
+        monkeypatch.setattr(_cfg, "data_dir", lambda: tmp_path / "data")
+        monkeypatch.delenv("COLLECT_LANE", raising=False)
+        import scripts.build_market_structure as _bms
+        importlib.reload(_bms)
+        try:
+            _bms.main()
+        finally:
+            importlib.reload(_bms)
+        out = capsys.readouterr().out
+        assert "::warning title=build_market_structure::" not in out

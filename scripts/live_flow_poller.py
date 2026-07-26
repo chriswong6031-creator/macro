@@ -1749,12 +1749,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
             # only ever deletes under a {ROOT}/{YYYY-MM-DD}/ prefix, so a retention failure
             # can neither break the flow cycle nor touch the legacy today-paths the live
             # Terminal reads. Merging R2 truth back into the local ledger self-heals
-            # dates.json after a staging-dir wipe (droplet redeploy); the healed file goes
-            # up on the next cycle's surface upload (one cadence later — no extra PUT here).
+            # dates.json after a staging-dir wipe (droplet redeploy) — and the healed file
+            # is PUT right here, in this same cycle (#F3-04): deferring it to "the next
+            # cycle's surface upload" left a `--once` / `--rth-only` run (the plist's own
+            # documented cold-start recipe) exiting at the bottom of THIS cycle with the
+            # pre-heal, truncated dates.json still the live R2 object — until the second
+            # cycle of a LATER session ever runs.
             if surf_roots and last_surface_prune_date != session_date:
                 try:
                     from scripts.build_flow_surface import (
+                        R2_SURFACE_PREFIX as _R2_SURFACE_PREFIX,
+                        SURFACE_DATES_NAME as _SURFACE_DATES_NAME,
                         SURFACE_RETAIN_SESSIONS as _RETAIN,
+                        _surface_out_dir,
                         merge_surface_dates as _merge_dates,
                         prune_surface_dates as _prune_dates,
                     )
@@ -1769,6 +1776,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                                 asof=meta.get("asof", ""), retain=keep_n)
                             log.info("poller: surface retention %s → %d session(s) kept",
                                      _sr.upper(), len(dates_local))
+                            try:
+                                healed_path = _surface_out_dir(_sr) / _SURFACE_DATES_NAME
+                                if healed_path.exists():
+                                    _upload_r2(s3, bucket, healed_path,
+                                               f"{_R2_SURFACE_PREFIX}{_sr.upper()}/{_SURFACE_DATES_NAME}")
+                            except Exception as heal_err:  # noqa: BLE001
+                                log.warning("poller: healed dates.json upload failed for %s: %s",
+                                            _sr.upper(), heal_err)
                     if all_ok:
                         last_surface_prune_date = session_date
                 except Exception as prune_err:  # noqa: BLE001

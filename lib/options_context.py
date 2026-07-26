@@ -271,6 +271,10 @@ def wall_flag(ctx: dict | None) -> tuple[str, str] | None:
 
     Copy follows the gex.html primer's own gloss: a call wall above "acts like a
     ceiling", and "price tends to stall there; it doesn't aim there".
+
+    Stamped with the manifest's OWN asof — mirrors dealer_context_sentence below
+    exactly, and for the same reason: an undated level quietly becomes a lie once
+    the manifest goes stale (#F2-07).
     """
     if not wall_overhead(ctx):
         return None
@@ -278,9 +282,12 @@ def wall_flag(ctx: dict | None) -> tuple[str, str] | None:
     if dist is None:
         return None
     d = f"{dist:.1f}"
+    asof = str((ctx or {}).get("asof") or "").strip()
+    stamp_en = f" (as of {asof})" if asof else ""
+    stamp_zh = f"（截至{asof}）" if asof else ""
     return (
-        f"Options ceiling {d}% above — price tends to stall where dealer hedging is heaviest",
-        f"上方{d}%有期权天花板 — 价格倾向在做市商对冲最重处停滞",
+        f"Options ceiling {d}% above{stamp_en} — price tends to stall where dealer hedging is heaviest",
+        f"上方{d}%有期权天花板{stamp_zh} — 价格倾向在做市商对冲最重处停滞",
     )
 
 
@@ -290,14 +297,20 @@ def iv_flag(ivr: dict | None) -> tuple[str, str] | None:
     The sample size rides INSIDE the sentence: this history is short (~40 days,
     accruing since 2026-06-15), and a reader who sees the claim must see the
     caveat in the same breath.
+
+    Discloses n_obs (the actual row count the percentile was computed over), not
+    history_days (the CALENDAR span of the store) — the two diverge whenever a
+    name's history has gaps, and "top of its own N-day record" previously named
+    the wrong N for a threshold that is itself only an 80th-percentile cut, never
+    a literal maximum (#F2-06).
     """
     if not iv_elevated(ivr):
         return None
-    days = int((ivr or {}).get("history_days") or 0)
+    n = int((ivr or {}).get("n_obs") or 0)
     return (
-        f"Options pricing a bigger move than usual — top of its own {days}-day record"
-        " (short history)",
-        f"期权定价高于平常的波动 — 处于自身{days}日记录的高位（历史尚短）",
+        f"Options pricing a bigger move than usual — in the top fifth of its own "
+        f"{n}-session record (short history)",
+        f"期权定价高于平常的波动 — 处于自身{n}次记录的前五分之一（历史尚短）",
     )
 
 

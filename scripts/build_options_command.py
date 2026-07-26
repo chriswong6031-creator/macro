@@ -43,10 +43,12 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+
+from lib import nyse_calendar
 
 log = logging.getLogger("build_options_command")
 
@@ -192,6 +194,24 @@ def pct(value, digits: int = 1) -> str:
     return "—" if v is None else f"{v:.{digits}f}%"
 
 
+def _day(value) -> str | None:
+    """The YYYY-MM-DD session-date prefix of a store's own stamp, or None.
+
+    Stores stamp themselves inconsistently — a bare date here, a full ISO
+    timestamp there.  Both name one session; reducing them to the same
+    comparable key lets the receipt say which stores disagree instead of
+    silently printing several vintages as one close (#F2-02/#F2-03).
+    """
+    if not isinstance(value, str) or len(value) < 10:
+        return None
+    day = value[:10]
+    try:
+        datetime.strptime(day, "%Y-%m-%d")
+    except ValueError:
+        return None
+    return day
+
+
 def _pips(fraction, total: int = 5) -> int:
     """Position on a bounded 0..1 scale, as a count of filled segments.
 
@@ -212,20 +232,29 @@ def _pips(fraction, total: int = 5) -> int:
 def build_session(stores: dict, missing: list[str]) -> dict:
     """The session stamp: date, OI vintage, coverage share, quality word.
 
+    ONE SESSION DATE, CROSS-CHECKED (#F2-03/#F2-04).  The page date is the flow
+    desk's own `asof` — the settled close the Brief is written against.  The
+    screener export and the index-levels manifest each carry their OWN stamp,
+    and those CAN drift apart (a rebuilt levels board, a scanner export from a
+    later run).  When either disagrees with the page date, the mismatch is
+    NAMED in the receipt and the quality word degrades to Partial — three
+    vintages must never be presented silently as one settled close.
+
     Coverage numerator/denominator both come from ONE payload (the screener
     export) so the fraction is internally consistent: how many of the names we
-    track reported a chain dated to the most recent close.  Stale rows are the
-    remainder, and the Scanner's per-row age column explains each one.
+    track reported a chain dated to the SCREENER'S OWN most recent close (which
+    may not be the page date — see the mismatch note above).  Stale rows are
+    the remainder, and the Scanner's per-row age column explains each one.
     """
     fd = stores.get("flow_desk") or {}
     sc = stores.get("screener") or {}
     gex_index = stores.get("gex_index")
 
-    session_date = fd.get("asof") if isinstance(fd, dict) else None
+    session_date = _day(fd.get("asof")) if isinstance(fd, dict) else None
     weekday_en = weekday_zh = ""
     if session_date:
         try:
-            wd = datetime.strptime(str(session_date), "%Y-%m-%d").strftime("%A")
+            wd = datetime.strptime(session_date, "%Y-%m-%d").strftime("%A")
             weekday_en, weekday_zh = wd, _WEEKDAY_ZH.get(wd, "")
         except ValueError:
             pass
@@ -233,31 +262,45 @@ def build_session(stores: dict, missing: list[str]) -> dict:
     # OI vintage — the options-chain snapshot the levels were measured from.
     oi_vintage = None
     if isinstance(gex_index, list) and gex_index:
-        stamps = sorted({e.get("asof") for e in gex_index if isinstance(e, dict) and e.get("asof")})
+        stamps = sorted({_day(e.get("asof")) for e in gex_index
+                         if isinstance(e, dict) and _day(e.get("asof"))})
         oi_vintage = stamps[-1] if stamps else None
 
     covered = universe = None
+    coverage_asof = None
     rows = sc.get("rows") if isinstance(sc, dict) else None
     if isinstance(rows, list) and rows:
-        stamps = [r.get("asof") for r in rows if isinstance(r, dict) and r.get("asof")]
+        stamps = [_day(r.get("asof")) for r in rows if isinstance(r, dict) and _day(r.get("asof"))]
         universe = len(rows)
         if stamps:
-            freshest = max(stamps)
-            covered = sum(1 for s in stamps if s == freshest)
+            coverage_asof = max(stamps)
+            covered = sum(1 for s in stamps if s == coverage_asof)
 
     coverage_pct = None
     if covered is not None and universe:
         coverage_pct = round(covered / universe * 100, 1)
 
-    # Quality word — a PRESENCE census over the stores, never a threshold on a
-    # value.  The receipt names exactly what is absent or stale (#vacuous-green:
-    # emit the census, never a bare count).
+    # Quality word — a PRESENCE census over the stores PLUS a VINTAGE-AGREEMENT
+    # census, never a threshold on a value.  The receipt names exactly what is
+    # absent, stale, or dated to a different close than the page's own
+    # (#vacuous-green: emit the census, never a bare count).
     stale_notes_en: list[str] = []
     stale_notes_zh: list[str] = []
     leaders = stores.get("leaders")
     if isinstance(leaders, dict) and leaders.get("stale"):
         stale_notes_en.append("the leader boards are from an earlier session")
         stale_notes_zh.append("领头股榜单来自更早的场次")
+
+    if session_date:
+        if coverage_asof and coverage_asof != session_date:
+            stale_notes_en.append(
+                f"the options scanner's freshest chain is dated {coverage_asof}, not {session_date}")
+            stale_notes_zh.append(f"期权筛选表的最新期权链日期为 {coverage_asof}，而非 {session_date}")
+        if oi_vintage and oi_vintage != session_date:
+            stale_notes_en.append(
+                f"the index levels were last measured {oi_vintage}, not {session_date}")
+            stale_notes_zh.append(f"指数水位的最近测算日期为 {oi_vintage}，而非 {session_date}")
+
     if missing:
         stale_notes_en.append("some sections could not be built for this close")
         stale_notes_zh.append("部分板块本次收盘无法生成")
@@ -270,16 +313,16 @@ def build_session(stores: dict, missing: list[str]) -> dict:
         tip_zh = "本次收盘并非所有数据都已送达：" + "；".join(stale_notes_zh) + "。受影响的板块会在原处说明。"
     else:
         quality_en, quality_zh = "Complete", "完整"
-        tip_en = ("Every source reported on time and inside its normal range. "
-                  "Nothing was estimated or carried over from an older session.")
-        tip_zh = "所有数据源均按时送达且处于正常范围。没有任何数值是估算或沿用旧场次的。"
+        tip_en = ("Every source reported on time, for the same close, and inside its normal "
+                  "range. Nothing was estimated or carried over from an older session.")
+        tip_zh = "所有数据源均按时送达、对应同一次收盘且处于正常范围。没有任何数值是估算或沿用旧场次的。"
 
     if covered is not None and universe:
         cov_tip_en = (f"{covered} of the {universe} names we track reported a complete options "
-                      "chain for this close. The filled part of this line is that share; the gap "
-                      "on the right is what is missing.")
-        cov_tip_zh = (f"我们跟踪的 {universe} 个标的中，有 {covered} 个在本次收盘提供了完整期权链。"
-                      "此线的填充部分即该比例，右侧空缺为缺失部分。")
+                      f"chain dated {coverage_asof}. The filled part of this line is that share; "
+                      "the gap on the right is what is missing.")
+        cov_tip_zh = (f"我们跟踪的 {universe} 个标的中，有 {covered} 个提供了截至 {coverage_asof} "
+                      "的完整期权链。此线的填充部分即该比例，右侧空缺为缺失部分。")
     else:
         # No coverage number — the line stays fully hatched rather than pretending
         # to be complete, and says why.
@@ -294,6 +337,9 @@ def build_session(stores: dict, missing: list[str]) -> dict:
         "oi_vintage": oi_vintage,
         "covered": covered,
         "universe": universe,
+        # The vintage the coverage fraction was actually counted at — pinned so
+        # a caller can check it against the page date instead of assuming.
+        "coverage_asof": coverage_asof,
         "coverage_pct": coverage_pct,
         "quality_en": quality_en,
         "quality_zh": quality_zh,
@@ -425,6 +471,15 @@ def build_changed(stores: dict) -> dict:
     A chip is emitted ONLY where a payload carries an actual change plus copy we
     can state plainly.  Nothing is inferred; an unrecognised state-change key is
     skipped rather than machine-phrased at the user.
+
+    EACH CHIP CARRIES ITS OWN COMPARISON DATE IN ITS OWN TOOLTIP (#F2-14) — a
+    panel-level "since X's close" header previously applied ONE baseline to
+    both chips even though the tape chip is always vs flow_desk's own prior
+    close while the regime-flip chip's baseline is whatever market_structure
+    last completed, which can sit several sessions back after a build gap.  The
+    regime-flip chip is WITHHELD entirely when that baseline is not the
+    immediately preceding NYSE session — a stale attribution is worse than a
+    missing chip.
     """
     fd = stores.get("flow_desk") or {}
     read = fd.get("read") if isinstance(fd, dict) else None
@@ -436,7 +491,8 @@ def build_changed(stores: dict) -> dict:
     chips: list[dict] = []
 
     # Tape, day over day — flow_desk's own dod_key, phrased with the fragments
-    # templates/flow_desk.html.j2:343-344 already ships.
+    # templates/flow_desk.html.j2:343-344 already ships.  Always vs the single
+    # immediately-prior close, by flow_desk's own dod convention.
     dod_key = read.get("dod_key")
     dod_pct = _num(read.get("dod_pct"))
     dod_copy = {
@@ -457,19 +513,38 @@ def build_changed(stores: dict) -> dict:
         })
 
     # Dealer regime flips — market_structure publishes these with their own
-    # bilingual note; only the gamma_regime key has plain-word chip copy.
-    for item in (changes.get("items") or []):
-        if not isinstance(item, dict) or item.get("key") != "gamma_regime":
-            continue
-        to = item.get("to")
-        if to == "short":
-            chips.append({"arrow": "d", "en": "Dealers now amplify moves", "zh": "做市商转为放大波动",
-                          "tip_en": item.get("note_en") or "", "tip_zh": item.get("note_zh") or ""})
-        elif to == "long":
-            chips.append({"arrow": "u", "en": "Dealers now absorb moves", "zh": "做市商转为吸收波动",
-                          "tip_en": item.get("note_en") or "", "tip_zh": item.get("note_zh") or ""})
+    # bilingual note; only the gamma_regime key has plain-word chip copy.  Trust
+    # the comparison only when vs_asof really is the session immediately before
+    # market_structure's own asof; a multi-session build gap makes the "since"
+    # attribution unsound, so withhold the chip rather than mislabel it.
+    vs_asof = _day(changes.get("vs_asof"))
+    ms_asof = _day(ms.get("asof")) if isinstance(ms, dict) else None
+    baseline_sound = False
+    if vs_asof and ms_asof:
+        try:
+            expected_prev = nyse_calendar.last_session_on_or_before(
+                datetime.strptime(ms_asof, "%Y-%m-%d").date() - timedelta(days=1))
+            baseline_sound = vs_asof == str(expected_prev)
+        except ValueError:
+            baseline_sound = False
 
-    return {"vs": changes.get("vs_asof"), "chips": chips[:5], "asof": read.get("asof")}
+    if baseline_sound:
+        vs_stamp_en = f" Comparison baseline: {vs_asof}'s close."
+        vs_stamp_zh = f" 对比基准：{vs_asof} 收盘。"
+        for item in (changes.get("items") or []):
+            if not isinstance(item, dict) or item.get("key") != "gamma_regime":
+                continue
+            to = item.get("to")
+            if to == "short":
+                chips.append({"arrow": "d", "en": "Dealers now amplify moves", "zh": "做市商转为放大波动",
+                              "tip_en": (item.get("note_en") or "") + vs_stamp_en,
+                              "tip_zh": (item.get("note_zh") or "") + vs_stamp_zh})
+            elif to == "long":
+                chips.append({"arrow": "u", "en": "Dealers now absorb moves", "zh": "做市商转为吸收波动",
+                              "tip_en": (item.get("note_en") or "") + vs_stamp_en,
+                              "tip_zh": (item.get("note_zh") or "") + vs_stamp_zh})
+
+    return {"chips": chips[:5], "asof": read.get("asof")}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -623,18 +698,45 @@ def build_rail(stores: dict) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 # Context assembly
 # ─────────────────────────────────────────────────────────────────────────────
+def _missing_stores(stores: dict) -> list[str]:
+    """Content-aware presence census (#F2-02).
+
+    A store that is PRESENT but carries no usable rows/boards/payloads is
+    exactly as unusable to the page as an absent one — `{"rows": []}` and
+    `{"board_a": [], "board_b": []}` are truthy dicts that a bare `if not
+    stores.get(key)` check waves through as "fine".
+    """
+    missing: list[str] = []
+
+    fd = stores.get("flow_desk")
+    if not (isinstance(fd, dict) and fd.get("read")):
+        missing.append("flow_desk")
+
+    sc = stores.get("screener")
+    if not (isinstance(sc, dict) and sc.get("rows")):
+        missing.append("screener")
+
+    ld = stores.get("leaders")
+    if not (isinstance(ld, dict) and (ld.get("board_a") or ld.get("board_b"))):
+        missing.append("leaders")
+
+    if not stores.get("market_structure"):
+        missing.append("market_structure")
+    if not stores.get("vol"):
+        missing.append("vol")
+    if not stores.get("gex"):
+        missing.append("gex")
+    if not stores.get("gex_index"):
+        missing.append("gex_index")
+
+    return missing
+
+
 def build_context(root: Path, stores: dict | None = None) -> dict:
     """Assemble the whole workspace context from the committed stores."""
     stores = load_stores(root) if stores is None else stores
 
-    missing: list[str] = []
-    for name, key in (("flow_desk", "flow_desk"), ("screener", "screener"),
-                      ("leaders", "leaders"), ("market_structure", "market_structure"),
-                      ("vol", "vol")):
-        if not stores.get(key):
-            missing.append(name)
-    if not stores.get("gex"):
-        missing.append("gex")
+    missing = _missing_stores(stores)
 
     session = build_session(stores, missing)
     changed = build_changed(stores)
@@ -661,8 +763,12 @@ def build_context(root: Path, stores: dict | None = None) -> dict:
             "leaders": n_boards or None,
         },
         "missing": missing,
-        # Direction honesty, straight from the flow desk's own note.
+        # Direction honesty, straight from the flow desk's own fields (#F2-01/
+        # #F2-09) — rendered next to the sector/bets tone chips rather than
+        # loaded and left unused.
         "direction_note": (stores.get("flow_desk") or {}).get("direction_note")
+        if isinstance(stores.get("flow_desk"), dict) else None,
+        "direction_reliable": (stores.get("flow_desk") or {}).get("direction_reliable")
         if isinstance(stores.get("flow_desk"), dict) else None,
     }
 
@@ -695,8 +801,34 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root).resolve()
     out_path = Path(args.out) if args.out else (root / "site" / "options.html")
 
+    # CONTRACT (docstring §5): the builder always exits 0.  write_page and the
+    # logging pass used to sit OUTSIDE this fence — along with a second, fully
+    # redundant re-read of every store purely to log a line — so an exception
+    # in either one propagated out of main() despite the contract's promise
+    # (#F2-08).  One store load, one context build, one fence.
     try:
-        html = render(root)
+        stores = load_stores(root)
+        html = render(root, stores=stores)
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        # write_page is the ONLY write path. The fail-soft law above covers a
+        # RENDER failure (keep the previous page); it never licensed shipping a
+        # rendered page without the data-base shim, which is what the raw-write
+        # fallback here did — silently, since the render lane's
+        # inject_data_base sweep healed the committed copy afterwards.
+        from lib.pages import write_page  # noqa: PLC0415
+        write_page(out_path, html)
+
+        ctx = build_context(root, stores)
+        sess = ctx["session"]
+        log.info(
+            "options workspace -> %s | session=%s coverage=%s/%s (%s%%) quality=%s missing=%s",
+            out_path, sess.get("date"), sess.get("covered"), sess.get("universe"),
+            sess.get("coverage_pct"), sess.get("quality_en"), ctx["missing"] or "none",
+        )
+        if ctx["missing"]:
+            print("::warning title=build_options_command::degraded sections — missing stores: "
+                  + ", ".join(ctx["missing"]))
     except Exception as exc:  # noqa: BLE001
         # Display-tier surface: never break the nightly deploy.  The last
         # committed options.html stands.
@@ -704,25 +836,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"::warning title=build_options_command::render failed ({exc}); previous page kept")
         return 0
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    # write_page is the ONLY write path. The fail-soft law above covers a RENDER
-    # failure (keep the previous page); it never licensed shipping a rendered page
-    # without the data-base shim, which is what the raw-write fallback here did —
-    # silently, since the render lane's inject_data_base sweep healed the
-    # committed copy afterwards.
-    from lib.pages import write_page  # noqa: PLC0415
-    write_page(out_path, html)
-
-    ctx = build_context(root)
-    sess = ctx["session"]
-    log.info(
-        "options workspace -> %s | session=%s coverage=%s/%s (%s%%) quality=%s missing=%s",
-        out_path, sess.get("date"), sess.get("covered"), sess.get("universe"),
-        sess.get("coverage_pct"), sess.get("quality_en"), ctx["missing"] or "none",
-    )
-    if ctx["missing"]:
-        print("::warning title=build_options_command::degraded sections — missing stores: "
-              + ", ".join(ctx["missing"]))
     return 0
 
 

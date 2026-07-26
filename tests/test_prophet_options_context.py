@@ -270,12 +270,34 @@ class TestWallFlag:
         ctx = oc.load_gex_walls(tmp_path)["ACME"]
         assert ctx["call_wall_dist_pct"] == pytest.approx(2.0)
 
+    def test_stamps_the_manifest_as_of_date(self, tmp_path):
+        """An undated wall flag has no staleness gate — dealer_context_sentence
+        already stamps the same field for the same reason (#F2-07)."""
+        _write_manifest(tmp_path, [_manifest_row(call_wall=102.0, asof="2026-07-09")])
+        ctx = oc.load_gex_walls(tmp_path)["ACME"]
+        en, zh = oc.wall_flag(ctx)
+        assert "2026-07-09" in en and "2026-07-09" in zh
+
+    def test_silent_asof_omits_the_stamp_rather_than_a_blank_parenthetical(self, tmp_path):
+        _write_manifest(tmp_path, [_manifest_row(call_wall=102.0, asof=None)])
+        ctx = oc.load_gex_walls(tmp_path)["ACME"]
+        en, zh = oc.wall_flag(ctx)
+        assert "(as of" not in en
+        assert "截至" not in zh
+
 
 class TestIvFlag:
 
     def test_fires_at_the_top_of_its_own_history(self):
-        en, zh = oc.iv_flag(_iv(rank_pct=92.0, history_days=34))
-        assert "34-day" in en and "34日" in zh
+        """The sample size disclosed is n_obs (the row count the percentile was
+        actually computed over), not history_days (the calendar span) — a name
+        with gaps has fewer rows than days, and the claim must name the real
+        sample (#F2-06)."""
+        en, zh = oc.iv_flag(_iv(rank_pct=92.0, n_obs=34, history_days=48))
+        assert "34-session" in en and "34次" in zh
+        assert "48" not in en and "48" not in zh
+        assert "top of" not in en, "an 80th-percentile cut is not a literal maximum"
+        assert "in the top fifth of" in en
 
     def test_discloses_the_short_history_in_the_same_sentence(self):
         """The claim and its caveat must arrive together — no hidden sample size."""

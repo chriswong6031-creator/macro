@@ -53,7 +53,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -194,14 +194,35 @@ def _load_ivspread_lookup() -> dict[str, float | None]:
 # ---------------------------------------------------------------------------
 
 def _load_gex_summary(ticker: str) -> pd.DataFrame | None:
+    """Load summary_{ticker}.parquet, restricted to real NYSE sessions (#F3-17).
+
+    The store accrues a row on non-session days too (a Saturday/Sunday row is
+    not a carry-forward duplicate — it can carry its own recomputed iv30/spot
+    off no real trading), so `.iloc[-1]` / `.index[-1]` must never be allowed
+    to land on one: that is exactly how a non-session date (observed live:
+    2026-07-26, a Sunday) ends up stamped as the row's `asof` and how the
+    Scanner's "Data age" column gets a fabricated reference point to measure
+    every OTHER row against. Falls back to the unfiltered frame if filtering
+    would empty it out — degrading is the fail-open choice, never a crash.
+    """
     p = GEX_DIR / f"summary_{ticker}.parquet"
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p)
+        df = pd.read_parquet(p)
     except Exception as e:  # noqa: BLE001
         log.debug("gex summary read failed %s: %s", ticker, e)
         return None
+    if df is None or df.empty:
+        return df
+    try:
+        idx = pd.to_datetime(df.index)
+        mask = [nyse_calendar.is_session(ts.date()) for ts in idx]
+        filtered = df.loc[mask]
+        return filtered if not filtered.empty else df
+    except Exception as e:  # noqa: BLE001
+        log.debug("gex summary session filter failed for %s (%s); using unfiltered", ticker, e)
+        return df
 
 
 def _compute_iv_rank(df: pd.DataFrame) -> tuple[float | None, int, bool]:

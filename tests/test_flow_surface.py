@@ -993,6 +993,68 @@ def test_merge_surface_dates_heals_ledger_from_r2_truth(tmp_path, monkeypatch):
     assert is_surface_dates(doc)
 
 
+# ── (g6) OEU bug-wave F3-04 — the healed ledger must be PUT in the same cycle ────────
+# live_flow_poller.py's retention sweep does exactly this sequence: prune_surface_dates
+# (R2 truth) -> merge_surface_dates (heal the local ledger) -> upload the healed file.
+# Before the fix, step 3 was deferred to "the next cycle's surface upload", which never
+# arrives for a --once / --rth-only run (the plist's own documented cold-start recipe) —
+# leaving the pre-heal, truncated dates.json as the live R2 object indefinitely.
+
+def test_healed_ledger_lands_at_the_exact_path_the_poller_uploads(tmp_path, monkeypatch):
+    """The path the poller's retention sweep now uploads (`_surface_out_dir(root) /
+    SURFACE_DATES_NAME`) must be exactly the file merge_surface_dates just healed —
+    not a stale copy, not a different root's file."""
+    from scripts.build_flow_surface import _surface_out_dir, SURFACE_DATES_NAME
+    import lib.config as cfg_mod
+    monkeypatch.setattr(cfg_mod, "data_dir", lambda: tmp_path)
+
+    # Cold staging dir: only today's session is known locally (a fresh worktree/droplet).
+    build_and_stage_surfaces(
+        root_strikes_by_root={"SPY": _mk_strikes(s600=(1_000.0, 0.0))},
+        roots=["SPY"], session_date="2026-07-06", asof="a", cadence_sec=120,
+    )
+
+    # Simulate the poller's retention block: R2 truth has 3 retained sessions.
+    s3 = _FakeS3(_store_keys(dates=["2026-07-02", "2026-07-05", "2026-07-06"]))
+    res = prune_surface_dates(s3, "bkt", "SPY", keep=10)
+    assert res["ok"] and res["retained"] == ["2026-07-06", "2026-07-05", "2026-07-02"]
+    merge_surface_dates("SPY", res["retained"], cadence_sec=120, asof="a", retain=10)
+
+    healed_path = _surface_out_dir("SPY") / SURFACE_DATES_NAME
+    assert healed_path.exists()
+    doc = json.loads(healed_path.read_text())
+    # The exact defect: without the heal-and-upload, this file (and the one that would
+    # have shipped to R2) would still read ["2026-07-06"] only.
+    assert doc["dates"] == ["2026-07-06", "2026-07-05", "2026-07-02"]
+
+
+def test_poller_retention_sweep_imports_the_heal_upload_dependencies():
+    """Regression guard for the fix itself (#F3-04): live_flow_poller.py's retention
+    block imports _surface_out_dir/SURFACE_DATES_NAME/R2_SURFACE_PREFIX from
+    build_flow_surface and calls _upload_r2 on the healed path — verified against the
+    module SOURCE (the block runs deep inside main()'s live loop, which needs a
+    network-backed harness this repo does not have; the import + call-site check is the
+    proportionate regression guard for a fix that is otherwise a one-line typo away from
+    silently no-op'ing)."""
+    import inspect
+    import scripts.live_flow_poller as poller
+
+    # The names themselves must be real, importable attributes of build_flow_surface —
+    # a typo here would raise ImportError the moment the retention block executes.
+    import scripts.build_flow_surface as bfs
+    for name in ("_surface_out_dir", "SURFACE_DATES_NAME", "R2_SURFACE_PREFIX",
+                 "merge_surface_dates", "prune_surface_dates"):
+        assert hasattr(bfs, name), f"build_flow_surface has no {name} — poller import would fail"
+
+    src = inspect.getsource(poller)
+    start = src.index("M-XP(a): Flow-Surface retention sweep")
+    end = src.index("FC-R8:", start)
+    block = src[start:end]
+    assert "_surface_out_dir" in block
+    assert "SURFACE_DATES_NAME" in block
+    assert "_upload_r2(s3, bucket, healed_path" in block
+
+
 def test_dated_layout_failure_keeps_legacy_paths(tmp_path, monkeypatch):
     # Fencing contract: a blow-up anywhere in the dated layout degrades to today-only
     # (pre-M-XP behavior) and must never cost a root its legacy upload.

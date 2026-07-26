@@ -489,7 +489,7 @@ html[data-lang="zh"] .stance-chip.caution{background:rgba(26,127,67,.14);color:v
     <div><div class="kick">{{ t('Locked Friday close', '锁定周五收盘价') }}</div>
     <div style="font-size:22px;font-weight:800;color:var(--ink)">{{ '%.1f'|format(wm.locked_close|float) }}</div></div>
     {% if wm.implied_weekly_pct is not none %}<div class="kpi" style="margin-left:8px"><b>±{{ '%.2f'|format(wm.implied_weekly_pct|float) }}%</b>{{ t('weekly implied move', '隐含周度涨跌幅') }}</div>{% endif %}
-    {% if wm.locked_at is not none %}<div class="sec-foot" style="margin:0 0 0 auto">{{ t('Locked', '锁定于') }} {{ wm.locked_at[:10] }} · {{ t('held through week', '持有至本周') }}</div>{% endif %}
+    {% if wm.locked_at is not none %}<div class="sec-foot" style="margin:0 0 0 auto">{{ t('Locked', '锁定于') }} {{ wm.locked_at[:10] }}{% if wm.week_start is not none and wm.week_end is not none %} · {{ t('covers', '覆盖') }} {{ wm.week_start }}→{{ wm.week_end }}{% endif %} · {{ t('held through week', '持有至本周') }}</div>{% endif %}
   </div>
 
   {# SVG band visual — build price range from 2sigma or expand from 1sigma #}
