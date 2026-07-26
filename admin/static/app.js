@@ -8361,6 +8361,9 @@ RENDER.alerts = async () => {
 const SUP = { status: null, q: "", page: 1, rows: [] };
 const SUP_STATUSES = ["open", "pending", "resolved", "closed"];
 const SUP_ACTION_LABEL = { reply: "Reply", resolve: "Resolve", close: "Close", reopen: "Reopen" };
+/* Past tense for the confirmation toast — spelled out because `action + "d"` turns
+   "reopen" into "reopend". */
+const SUP_ACTION_DONE = { reply: "replied to", resolve: "resolved", close: "closed", reopen: "reopened" };
 
 function supChip(label, active, on) {
   return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
@@ -8513,7 +8516,7 @@ async function supAct(id, action, body) {
   if (body != null) payload.body = body;
   const r = await post("/api/support_tickets/action", payload);
   if (!r.ok) { toast(r.error || "action failed", true); return r; }
-  let msg = `Ticket ${action === "reply" ? "replied" : action + "d"} — now ${r.status}`;
+  let msg = `Ticket ${SUP_ACTION_DONE[action] || action} — now ${r.status}`;
   if (action === "reply" && r.emailed === false) {
     msg = `Reply recorded, but NOT emailed (${r.email_status || "no relay"}) — check the SMTP settings`;
   }
