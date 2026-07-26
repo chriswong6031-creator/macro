@@ -1030,6 +1030,69 @@ artifacts:
       two-ruler kill) — display context ONLY, NEVER selection inputs.
       Deterministic arithmetic; display-tier; nothing here promotes to authority.
 
+  # PSS-W3: Prophet tailored-gate shadow — forward ledger + display state.
+  # Wired into engine/run.py (US-nightly lane, after mag7_washout_shadow);
+  # ledger append + grade advance nightly-gated (ledger_lane sentinel).
+  # Masterplan: research/PERSONALITY_SIGNAL_SUITE_MASTERPLAN_BY_FABLE.md §W3;
+  # candidate pinned by ruling R-W1T-2 (PERSONALITY_TIMING_TAILORING_HANDOFF §8).
+  personality-gate-shadow-ledger:
+    path: data/personality_timing/gate_shadow.jsonl
+    format: jsonl
+    producer: engine/personality_gate_shadow.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: personality_gate_shadow.ledger/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      PSS-W3 FORWARD LEDGER — one row per FIRED (as_of, sym) over the codex
+      universe. Logs the incumbent UNIFORM gate (Stoch-RSI<20 cross on the fixed
+      2W rung) vs the TAILORED gate (the same S-family cross at each name's codex
+      structure-derived rung, R-W1T-2 pinned) with the disagreement class
+      (fired_uniform_only / fired_tailored_only / both) — disagreements both
+      directions are the product. Stores frozen entry state per fired side so
+      each fire is graded LATER under DUAL rulers (legacy fwd63 + timing
+      mae63/prox/td_to_trough) once 63td of forward tape accrues; grades are
+      nightly-advanced, frozen-until-matured (never graded prematurely). Copy law
+      R-W1T-3: reset-CONFIRMER, never bottom-caller. PURE MEASUREMENT — never
+      gates/ranks/sizes/alters any Prophet, washout, or board decision;
+      contamination row absolute (no us_board_ledger writes). Promotion of any
+      gate change needs its own prereg + ruling. Nightly is the sole advancer.
+  personality-gate-shadow-state:
+    path: data/personality_timing/gate_shadow_state.json
+    format: json
+    producer: engine/personality_gate_shadow.py
+    known_extra_writers: []
+    owner_program: personality-timing
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: personality_gate_shadow.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      PSS-W3 display state (rewritten each nightly): coverage census (codex
+      names, covered, no-price / bad-rung drops, rung distribution, class counts,
+      disagreements, agree-by-construction) + ledger tallies + dual-ruler timing
+      scorecard (confirmed_reset / called_low / early shares + median fwd63 per
+      gate side; nulls printed until fires mature). No consumers yet by design —
+      operator/agent inspection surface + the source for the quarterly miss-rate
+      readout (first readout ≈ 3 months post-ship). Display-tier; nothing here
+      promotes to authority.
+
   # IHM-R1..R4: Index Hybrid Momentum snapshot — display-tier daily snapshot for
   # 13 index carriers at 1D/2B/3B/W-FRI grids.  Written by engine/index_momentum.py
   # (called in-process by engine/run.py); no new collectors required.

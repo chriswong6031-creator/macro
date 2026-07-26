@@ -765,6 +765,19 @@ def run(force: bool = False) -> dict:
         _m7ws.update(gate=latest.get("mag7_washout") or {})
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mag7-washout-shadow failed: %s", e)
+    # PSS-W3 tailored-gate shadow (engine/personality_gate_shadow.py): logs
+    # uniform-gate (2W Stoch-RSI) vs tailored-gate (Stoch-RSI at each name's
+    # codex structure-derived rung) disagreements both directions over the
+    # personality-timing codex universe, graded later under dual rulers
+    # (fwd63 + timing). PURE ACCRUAL — never gates/ranks/alters any decision;
+    # ledger append + grade advance are nightly-gated (ledger_lane sentinel).
+    # Masterplan: research/PERSONALITY_SIGNAL_SUITE_MASTERPLAN_BY_FABLE.md §W3.
+    # Never fatal.
+    try:
+        from engine import personality_gate_shadow as _pgs
+        _pgs.update()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("personality-gate-shadow failed: %s", e)
     # Index Hybrid Momentum organ (engine/index_momentum.py, IHM-R1..R4): RSI-MACD
     # hybrid at 1D/2B/3B/W-FRI for 13 index carriers (US/HK/CN/INTL + MAG7 carrier).
     # Depth percentile, hist_vel3, washout_turn/trap_zone quality tags, and global-turn
