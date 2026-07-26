@@ -62,7 +62,56 @@ def inject(site_dir: Path) -> int:
                 n += 1
             except Exception as e:  # noqa: BLE001
                 log.warning("inject failed for %s (%s)", html.name, e)
+    n += _inject_paired_templates(site_dir)
     log.info("data_base shim injected into %d page(s)", n)
+    return n
+
+
+def _inject_paired_templates(site_dir: Path) -> int:
+    """Sweep the templates/ side of every plain-copy PAIR (templates/<name>.html that
+    also ships as site/<name>.html). Returns files modified. Never raises.
+
+    Without this the two paired pages can NEVER be healed. The render lanes run
+    `check_template_site_sync --fix` after the sweeps and before `git add site/`, and
+    that fix copies templates/ -> site/ (the site copy is the derived one). So the
+    sweep would upgrade site/index.html, the sync would immediately overwrite it from
+    the un-swept templates/index.html, and the staged result is the ORIGINAL tag —
+    silently, every render, forever. index.html is the landing page, so that stranded
+    the single most-hit page in the site on the blocking external ref while all 3195
+    unpaired pages moved to the inline shim (observed 2026-07-26, post #3558).
+
+    Pair definition is imported from the guard that enforces it, so the two can't
+    drift; falls back to a local glob when the guard isn't importable.
+    """
+    root = site_dir.parent
+    try:
+        from scripts.check_template_site_sync import find_pairs
+        pairs = [(t, s) for _name, t, s in find_pairs(root)]
+    except Exception:  # noqa: BLE001 — mirror the guard's own rule: direct children, no .j2
+        tdir = root / "templates"
+        pairs = [(p, site_dir / p.name) for p in sorted(tdir.glob("*.html"))
+                 if p.is_file() and (site_dir / p.name).is_file()] if tdir.is_dir() else []
+    n = 0
+    for tpl, site_copy in pairs:
+        if tpl.suffix.lower() != ".html":
+            continue                      # .js/.css pairs carry no shim tag
+        try:
+            text = tpl.read_text()
+        except Exception:  # noqa: BLE001
+            continue
+        # depth "" — a paired template always ships at the site ROOT (site/<name>.html)
+        new = inject_text(text, "")
+        if new == text:
+            continue
+        try:
+            tpl.write_text(new)
+            n += 1
+            # keep the pair byte-identical in the same pass, so the sync guard is
+            # green whether or not --fix runs afterwards
+            if site_copy.is_file() and site_copy.read_text() != new:
+                site_copy.write_text(new)
+        except Exception as e:  # noqa: BLE001
+            log.warning("inject failed for template %s (%s)", tpl.name, e)
     return n
 
 
