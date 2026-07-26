@@ -3053,8 +3053,10 @@ jobs:
           python-version: "3.12"
       - name: install deps (the builder suite runs real builders)
         run: pip install pytest pyyaml jinja2 pandas numpy pyarrow
-      - name: data-base shim guard (lib.pages units + committed-page tripwire + source guard)
-        run: python -m pytest tests/test_site_shim.py -q
+      # test_site_shim.py itself (units + tripwire + source guard) runs on the
+      # template-site-sync lane, which #3635 wired and which needs only pyyaml.
+      # This job exists for the suite that lane CANNOT host: it RUNS each builder,
+      # so it needs the data stack below.
       - name: every page builder emits the shim (runs each against a fixture root)
         run: python -m pytest tests/test_builder_shim_writes.py -q
 
