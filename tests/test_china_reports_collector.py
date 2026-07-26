@@ -212,6 +212,26 @@ class TestReportStore:
         for col in cr._COLUMNS:
             assert col in stored.columns, f"missing column: {col}"
 
+    def test_corrupt_store_aborts_the_append_untouched(self, store):
+        # F1: a present-but-unreadable parquet ABORTS the append — the old path
+        # read it as empty and replaced the whole accrued tape with tonight's rows.
+        cr.write_reports([cr.parse_report_row(_REPORT_PAGE["data"][0], _TS, 2026)])
+        corrupt = b"PAR1 definitely not parquet"
+        cr._reports_path().write_bytes(corrupt)
+        rows = [cr.parse_report_row(r, _TS, 2026) for r in _REPORT_PAGE["data"]]
+        assert cr.write_reports(rows) == 0
+        assert cr._reports_path().read_bytes() == corrupt
+
+    def test_first_seen_survives_a_correction(self, store):
+        # F8: fetched_at advances on a keep-LAST correction; first_seen never moves.
+        cr.write_reports([cr.parse_report_row(_REPORT_PAGE["data"][0], _TS, 2026)])
+        later = "2026-08-30T12:00:00+00:00"
+        corrected = dict(_REPORT_PAGE["data"][0])
+        corrected["indvAimPriceT"] = "88.00"
+        cr.write_reports([cr.parse_report_row(corrected, later, 2026)])
+        hit = cr.load_reports().iloc[0]
+        assert hit["fetched_at"] == later and hit["first_seen"] == _TS
+
 
 # --------------------------------------------------------------------------- #
 # daily aggregates
@@ -316,16 +336,38 @@ class TestPullWindow:
 
         monkeypatch.setattr(cr, "_fetch_page", page)
         monkeypatch.setattr(cr, "_pace", lambda: None)
-        rows, ok, failed, capped = cr._pull_window(None, "a", "b", _TS, cr._clock())
+        rows, ok, failed, capped, empty_key = cr._pull_window(None, "a", "b", _TS, cr._clock())
         assert seen == [1, 2]
         assert len(rows) == 2 and ok == 2 and failed == 0 and capped is False
+        assert empty_key == 0
 
     def test_page_cap_is_loud_not_silent(self, monkeypatch):
         monkeypatch.setattr(cr, "_fetch_page", lambda *a: {
             "TotalPage": 40, "currentYear": 2026, "data": _REPORT_PAGE["data"][:1]})
         monkeypatch.setattr(cr, "_pace", lambda: None)
-        rows, ok, failed, capped = cr._pull_window(None, "a", "b", _TS, cr._clock())
+        rows, ok, failed, capped, _ = cr._pull_window(None, "a", "b", _TS, cr._clock())
         assert ok == cr._PAGE_CAP and capped is True
+
+    def test_missing_total_page_is_capped_not_complete(self, monkeypatch):
+        # F3: a vendor rename of TotalPage used to read as "1 page" with capped=False
+        # — the plane would silently shrink to one page a night forever, and the
+        # truncated pull's aggregates would be stamped as complete facts.
+        monkeypatch.setattr(cr, "_fetch_page", lambda *a: {
+            "currentYear": 2026, "data": _REPORT_PAGE["data"][:1]})
+        monkeypatch.setattr(cr, "_pace", lambda: None)
+        rows, ok, failed, capped, _ = cr._pull_window(None, "a", "b", _TS, cr._clock())
+        assert ok == 1 and capped is True and len(rows) == 1
+
+    def test_keyless_rows_are_dropped_and_counted(self, monkeypatch):
+        # F7: info_code is the dedup key — keyless rows would collapse into one.
+        keyless = dict(_REPORT_PAGE["data"][1])
+        keyless["infoCode"] = ""
+        monkeypatch.setattr(cr, "_fetch_page", lambda *a: {
+            "TotalPage": 1, "currentYear": 2026,
+            "data": [_REPORT_PAGE["data"][0], keyless]})
+        monkeypatch.setattr(cr, "_pace", lambda: None)
+        rows, ok, failed, capped, empty_key = cr._pull_window(None, "a", "b", _TS, cr._clock())
+        assert len(rows) == 1 and empty_key == 1
 
     def test_transport_failure_on_page_one(self, monkeypatch):
         def dead(*a):
@@ -333,7 +375,7 @@ class TestPullWindow:
 
         monkeypatch.setattr(cr, "_fetch_page", dead)
         monkeypatch.setattr(cr, "_pace", lambda: None)
-        rows, ok, failed, capped = cr._pull_window(None, "a", "b", _TS, cr._clock())
+        rows, ok, failed, capped, _ = cr._pull_window(None, "a", "b", _TS, cr._clock())
         assert rows == [] and ok == 0 and failed == 1
 
     def test_wall_clock_guard(self, monkeypatch):
@@ -342,7 +384,7 @@ class TestPullWindow:
         monkeypatch.setattr(cr, "_pace", lambda: None)
         ticks = iter([0.0, 1.0] + [cr._BUDGET_S + 1.0] * 20)
         monkeypatch.setattr(cr, "_clock", lambda: next(ticks))
-        rows, ok, failed, capped = cr._pull_window(None, "a", "b", _TS, 0.0)
+        rows, ok, failed, capped, _ = cr._pull_window(None, "a", "b", _TS, 0.0)
         assert ok == 2 and capped is True and len(rows) == 2
 
 
@@ -398,8 +440,12 @@ class TestRefresh:
         s = cr.refresh()
         assert s["n_failed"] == 1 and s["n_new"] == 4
         agg = cr.load_aggregates()
-        # Only the dates that actually carry rows; the empty window days are a GAP.
-        assert set(agg["date"]) == {"2026-07-24", "2026-07-25"}
+        # F2: the vendor serves publishDate DESC, so a truncated pull reached its
+        # OLDEST fetched date (2026-07-24) only PART-WAY — its stored rows may be an
+        # undercount, and writing them as a daily fact would be permanent (the window
+        # moves forward and never re-pulls the day). Only dates STRICTLY newer than
+        # the boundary are aggregated; the empty window days stay a visible gap.
+        assert set(agg["date"]) == {"2026-07-25"}
 
     def test_total_transport_failure_raises_for_the_breaker(self, store, pinned_window,
                                                             monkeypatch):
@@ -433,10 +479,11 @@ class TestBackfill:
 class TestAdapter:
     def test_sentinel_is_a_coverage_frame_with_a_tz_naive_index(self, store, monkeypatch):
         monkeypatch.setattr(cr, "refresh", lambda: {
-            "n_new": 4, "n_fetched": 4, "n_failed": 0, "universe": 4, "shard": 1})
+            "n_new": 4, "n_fetched": 4, "n_failed": 0, "n_nulls": 0,
+            "universe": 4, "shard": 1})
         sentinel = cr.ChinaReportsAdapter().fetch()["refresh"]
         assert list(sentinel.columns) == [
-            "n_new", "n_fetched", "n_failed", "universe", "shard"]
+            "n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard"]
         for ts in sentinel.index:
             assert ts.tzinfo is None, "tz-aware index breaks store.upsert combine_first"
 

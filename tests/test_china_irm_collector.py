@@ -265,6 +265,45 @@ class TestQaStore:
         assert df.empty
         assert list(df.columns) == list(ci._QA_COLUMNS)
 
+    def test_corrupt_store_aborts_the_append_untouched(self, store):
+        # F1: a present-but-unreadable parquet must ABORT the append. The old
+        # behaviour read it as an EMPTY store and replaced the whole accrued tape
+        # with tonight's rows — silent destruction of the PIT history.
+        ci.write_qa([ci.parse_question_row(_QUESTION_PAGE["rows"][0], _TS)])
+        corrupt = b"PAR1 this is not a parquet file"
+        ci._qa_path().write_bytes(corrupt)
+        rows = [ci.parse_question_row(r, _TS) for r in _QUESTION_PAGE["rows"]]
+        assert ci.write_qa(rows) == 0
+        assert ci._qa_path().read_bytes() == corrupt   # left for manual recovery
+
+    def test_write_is_atomic_no_tmp_residue(self, store):
+        # F1: the tmp+os.replace path leaves no sibling temp files behind.
+        rows = [ci.parse_question_row(r, _TS) for r in _QUESTION_PAGE["rows"]]
+        assert ci.write_qa(rows) == 3
+        leftovers = [p for p in ci._qa_path().parent.iterdir()
+                     if p.name != ci._qa_path().name and p.suffix != ".json"]
+        assert leftovers == []
+
+    def test_first_seen_survives_a_keep_last_correction(self, store):
+        # F8: fetched_at advances on every correction; first_seen never moves.
+        first = ci.parse_question_row(_QUESTION_PAGE["rows"][0], _TS)
+        ci.write_qa([first])
+        answered = dict(_QUESTION_PAGE["rows"][0])
+        answered["attachedContent"] = "已回复。"
+        later = "2026-08-30T12:00:00+00:00"
+        ci.write_qa([ci.parse_question_row(answered, later)])
+        stored = ci.load_qa()
+        assert len(stored) == 1
+        assert stored.iloc[0]["fetched_at"] == later      # last observed
+        assert stored.iloc[0]["first_seen"] == _TS        # first observed, preserved
+
+    def test_fixture_pages_are_newest_first(self):
+        # S7: the single-page pageNum=1 pull relies on the venue serving newest-
+        # first; an ASC flip upstream would silently freeze every name's tape at
+        # its oldest 100 questions. Pin the assumption to the captured fixture.
+        pub = [int(r["pubDate"]) for r in _QUESTION_PAGE["rows"]]
+        assert pub == sorted(pub, reverse=True) and len(set(pub)) == len(pub)
+
 
 # --------------------------------------------------------------------------- #
 # cursor rotation
@@ -372,7 +411,8 @@ class TestRefresh:
     def test_empty_universe_is_a_zero_row_night(self, store, monkeypatch):
         monkeypatch.setattr(ci, "board_universe", lambda: [])
         s = ci.refresh()
-        assert s == {"n_new": 0, "n_fetched": 0, "n_failed": 0, "universe": 0, "shard": 0}
+        assert s == {"n_new": 0, "n_fetched": 0, "n_failed": 0, "n_nulls": 0,
+                     "universe": 0, "shard": 0}
 
     def test_happy_path_shards_and_advances_the_cursor(self, store, monkeypatch):
         order = [f"{i:06d}" for i in range(50)]
@@ -401,7 +441,22 @@ class TestRefresh:
         s = ci.refresh()
         assert s["n_failed"] == 0                  # a null is not a failure
         assert s["n_fetched"] == 3                 # only 000001 produced rows
+        assert s["n_nulls"] == 1                   # …and the null is LEDGERED (F6)
         assert ci.load_cursor(order) == 0          # both names consumed → full wrap
+
+    def test_keyless_rows_are_dropped_at_the_parse_site(self, store, monkeypatch):
+        # F7: an empty indexId is the dedup key — keyless rows would collapse into
+        # ONE stored row. They are skipped, counted, and surfaced via n_nulls.
+        keyless = dict(_QUESTION_PAGE["rows"][1])
+        keyless["indexId"] = None
+        keyless2 = dict(_QUESTION_PAGE["rows"][2])
+        keyless2["indexId"] = ""
+        _wire(monkeypatch, ["000001"],
+              questions=lambda c: [_QUESTION_PAGE["rows"][0], keyless, keyless2])
+        s = ci.refresh()
+        assert s["n_fetched"] == 1                 # only the keyed row survived
+        assert s["n_nulls"] == 2                   # both keyless rows counted
+        assert len(ci.load_qa()) == 1
 
     def test_time_guard_stops_mid_shard_and_persists_the_true_position(
             self, store, monkeypatch):
@@ -473,11 +528,12 @@ class TestRefresh:
 class TestAdapter:
     def test_sentinel_is_a_coverage_frame_with_a_tz_naive_index(self, store, monkeypatch):
         monkeypatch.setattr(ci, "refresh", lambda: {
-            "n_new": 2, "n_fetched": 9, "n_failed": 1, "universe": 50, "shard": 40})
+            "n_new": 2, "n_fetched": 9, "n_failed": 1, "n_nulls": 1,
+            "universe": 50, "shard": 40})
         frames = ci.ChinaIrmAdapter().fetch()
         sentinel = frames["refresh"]
         assert list(sentinel.columns) == [
-            "n_new", "n_fetched", "n_failed", "universe", "shard"]
+            "n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard"]
         assert sentinel["n_failed"].iloc[0] == 1.0
         for ts in sentinel.index:
             assert ts.tzinfo is None, "tz-aware index breaks store.upsert combine_first"

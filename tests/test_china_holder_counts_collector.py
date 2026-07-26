@@ -213,6 +213,30 @@ class TestStore:
         ch.write_holder_counts([ch.parse_holder_row(raw, _TS)])
         assert pd.isna(ch.load_holder_counts()["holder_num"].iloc[0])
 
+    def test_corrupt_store_aborts_the_append_untouched(self, store):
+        # F1: a present-but-unreadable parquet ABORTS the append — reading it as an
+        # empty store would replace the accrued quarterly tape with tonight's page.
+        ch.write_holder_counts([ch.parse_holder_row(_PAGE["result"]["data"][0], _TS)])
+        corrupt = b"PAR1 not a parquet"
+        ch._store_path().write_bytes(corrupt)
+        rows = [ch.parse_holder_row(r, _TS) for r in _PAGE["result"]["data"]]
+        assert ch.write_holder_counts(rows) == 0
+        assert ch._store_path().read_bytes() == corrupt
+
+    def test_first_seen_survives_a_notice_correction(self, store):
+        # F8: a later notice corrects the row (keep-LAST) but the first-observation
+        # stamp must survive — it is the one PIT answer this store uniquely holds.
+        ch.write_holder_counts([_row("688475", "2026-06-30", "2026-07-25", 16621)])
+        later_fetch = "2026-08-30T12:00:00+00:00"
+        corrected = _row("688475", "2026-06-30", "2026-07-28", 16500)
+        corrected["fetched_at"] = later_fetch
+        corrected["first_seen"] = later_fetch
+        ch.write_holder_counts([corrected])
+        stored = ch.load_holder_counts()
+        assert len(stored) == 1
+        assert stored.iloc[0]["fetched_at"] == later_fetch
+        assert stored.iloc[0]["first_seen"] == _TS
+
 
 # --------------------------------------------------------------------------- #
 # key helpers
@@ -345,10 +369,11 @@ class TestUrlAndAdapter:
 
     def test_sentinel_is_a_coverage_frame_with_a_tz_naive_index(self, store, monkeypatch):
         monkeypatch.setattr(ch, "refresh", lambda: {
-            "n_new": 12, "n_fetched": 500, "n_failed": 0, "universe": 5535, "shard": 1})
+            "n_new": 12, "n_fetched": 500, "n_failed": 0, "n_nulls": 0,
+            "universe": 5535, "shard": 1})
         sentinel = ch.ChinaHolderCountsAdapter().fetch()["refresh"]
         assert list(sentinel.columns) == [
-            "n_new", "n_fetched", "n_failed", "universe", "shard"]
+            "n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard"]
         assert sentinel["universe"].iloc[0] == 5535.0
         for ts in sentinel.index:
             assert ts.tzinfo is None, "tz-aware index breaks store.upsert combine_first"

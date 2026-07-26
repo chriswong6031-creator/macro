@@ -10,9 +10,10 @@ NAMING: deliberately NOT ``china_holders``. collectors/cn_holder_sale_calendar.p
 减持 (insider SALE window) calendar — a completely unrelated dataset about who is selling,
 not about how many holders there are. The two must never be conflated.
 
-CONTEXT / INPUT TIER ONLY. Nothing here is scored, ranked, promoted, or surfaced on
-site/; the leg registers as tier="pending" in engine/china_signal_lab.py (collected +
-accruing).
+CONTEXT / INPUT TIER ONLY. Nothing here is scored, ranked or promoted, and there is no
+dedicated surface — the leg appears only as a pending-tier inventory row in the
+signal-lab scorecard (engine/china_signal_lab.py, rendered on china_altdata with a 待验
+badge).
 
 VERIFIED ENDPOINT (live 2026-07-25, this runner):
   GET https://datacenter-web.eastmoney.com/api/data/v1/get
@@ -26,8 +27,11 @@ VERIFIED ENDPOINT (live 2026-07-25, this runner):
 Store contract: APPEND-ONLY point-in-time. data/china_holder_counts/holder_counts.parquet
 dedups on (code, end_date) keep-LAST after ordering by notice_date, so a later notice
 CORRECTS an earlier one for the same reporting period and a same-day re-collect never
-duplicates. Every row carries fetched_at (UTC ISO). Vendor nulls are coerced to NaN and
-LEFT as NaN — never zero-filled — so a missing disclosure stays visibly missing.
+duplicates. Every row carries fetched_at (UTC ISO, "last observed") AND first_seen
+("first observed", carried through every correction). Writes go through a tmp sibling +
+os.replace, and an existing-but-unreadable store ABORTS the append rather than being
+replaced by tonight's page buffer. Vendor nulls are coerced to NaN and LEFT as NaN —
+never zero-filled — so a missing disclosure stays visibly missing.
 
 Politeness + budget: ≥1.0 s + jitter before EVERY request, page-1-descending by notice
 date with an early stop as soon as a page contributes no new (code, end_date) key, a
@@ -38,6 +42,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import random
 import time
 from datetime import datetime, timezone
@@ -86,7 +91,8 @@ _COLUMNS = (
     "total_market_cap",
     "total_a_shares",
     "interval_chrate",    # price change over the interval, %
-    "fetched_at",
+    "fetched_at",         # LAST observation of this (code, end_date)
+    "first_seen",         # FIRST observation — never overwritten by a later notice
 )
 _NUMERIC_COLUMNS = (
     "holder_num", "pre_holder_num", "holder_num_change", "holder_num_ratio",
@@ -108,14 +114,74 @@ def _store_path() -> Path:
     return _dir() / "holder_counts.parquet"
 
 
+def _read_store(path: Path, columns: tuple[str, ...]) -> pd.DataFrame | None:
+    """The store reindexed to ``columns``, an EMPTY frame when ABSENT, None when UNREADABLE.
+
+    Three different facts, which is why this is not a plain try/except returning an
+    empty frame: "absent" is the first night (seed freely), while "present but
+    unreadable" means the accrued history is still on disk and we simply cannot see
+    it — taking the empty-store branch there would replace all of it with tonight's
+    page buffer. The caller ABORTS on None.
+    """
+    if not path.exists():
+        return pd.DataFrame(columns=list(columns))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(columns))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_holder_counts: %s is present but UNREADABLE (%s)", path.name, e)
+        return None
+
+
+def _atomic_write(df: pd.DataFrame, path: Path) -> None:
+    """Write ``df`` via a tmp sibling + os.replace — never a truncated store.
+
+    The asia lane runs under a hard job kill that has fired mid-chain before; a
+    to_parquet() straight onto the live path turns that kill into a corrupt file.
+    """
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        df.to_parquet(tmp, index=False)
+        os.replace(tmp, path)
+    except Exception:  # noqa: BLE001 — never leave a half-written sibling behind
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _restore_first_seen(merged: pd.DataFrame, existing: pd.DataFrame,
+                        key: list[str]) -> pd.DataFrame:
+    """Carry each key's ORIGINAL first_seen through the keep-LAST merge. Pure.
+
+    fetched_at means "last observed" and advances every time a later notice corrects
+    the period; first_seen means "first observed" and must not. It is the one question
+    an append-only PIT store exists to answer. Keys absent from ``existing`` keep
+    tonight's stamp.
+    """
+    if existing.empty or "first_seen" not in existing.columns:
+        return merged
+    prior = existing[[*key, "first_seen"]].astype(str)
+    prior = prior[prior["first_seen"].str.strip().ne("")
+                  & ~prior["first_seen"].isin(("nan", "None", "NaT", "<NA>"))]
+    if prior.empty:
+        return merged
+    prior = prior.sort_values("first_seen").drop_duplicates(subset=key, keep="first")
+    lookup = dict(zip(zip(*(prior[c] for c in key)), prior["first_seen"]))
+    out = merged.copy()
+    out["first_seen"] = [
+        lookup.get(k, cur)
+        for k, cur in zip(zip(*(out[c].astype(str) for c in key)), out["first_seen"])
+    ]
+    return out
+
+
 def load_holder_counts() -> pd.DataFrame:
-    path = _store_path()
-    if path.exists():
-        try:
-            return pd.read_parquet(path).reindex(columns=list(_COLUMNS))
-        except Exception as e:  # noqa: BLE001
-            log.warning("china_holder_counts: could not read holder_counts.parquet: %s", e)
-    return pd.DataFrame(columns=list(_COLUMNS))
+    """Existing holder_counts.parquet, or an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads as empty HERE — a reader must not
+    crash — but write_holder_counts() checks readability separately and aborts, so the
+    empty frame can never be written back over the real one.
+    """
+    df = _read_store(_store_path(), _COLUMNS)
+    return pd.DataFrame(columns=list(_COLUMNS)) if df is None else df
 
 
 def coerce_numeric(df: pd.DataFrame) -> pd.DataFrame:
@@ -134,14 +200,24 @@ def coerce_numeric(df: pd.DataFrame) -> pd.DataFrame:
 def write_holder_counts(rows: list[dict]) -> int:
     """Append rows, dedup (code, end_date) keep-LAST ordered by notice_date.
 
-    Returns the count of net-new (code, end_date) keys. Never raises — a store
-    failure is logged and the night degrades to 0 net-new.
+    Returns the count of net-new (code, end_date) keys. first_seen is carried through
+    the merge, so a later notice advances fetched_at without destroying the
+    first-observation time. Never raises — a store failure is logged and the night
+    degrades to 0 net-new. An existing-but-UNREADABLE store ABORTS the append (returns
+    0, file left in place for manual recovery) rather than being replaced by tonight's
+    pages.
     """
     if not rows:
         return 0
     try:
+        existing = _read_store(_store_path(), _COLUMNS)
+        if existing is None:
+            log.error("china_holder_counts: ABORTING the holder_counts.parquet append — "
+                      "the accrued store is unreadable and is left untouched for manual "
+                      "recovery")
+            return 0
         new_df = coerce_numeric(pd.DataFrame(rows).reindex(columns=list(_COLUMNS)))
-        existing = load_holder_counts()
+        new_df["first_seen"] = new_df["first_seen"].fillna(new_df["fetched_at"])
         if existing.empty:
             merged, pre = new_df, 0
         else:
@@ -152,9 +228,10 @@ def write_holder_counts(rows: list[dict]) -> int:
         merged = merged.sort_values(["code", "end_date", "notice_date"],
                                     kind="stable", na_position="first")
         merged = merged.drop_duplicates(subset=_KEY, keep="last")
+        merged = _restore_first_seen(merged, existing, list(_KEY))
         merged = merged.sort_values(["notice_date", "code"],
                                     na_position="last").reset_index(drop=True)
-        merged.to_parquet(_store_path(), index=False)
+        _atomic_write(merged, _store_path())
         return int(len(merged) - pre)
     except Exception as e:  # noqa: BLE001
         log.error("china_holder_counts.write_holder_counts failed: %s", e)
@@ -306,8 +383,12 @@ def refresh() -> dict:
                      "keys — stopping (later pages are older still)", page)
             break
         if page >= _PAGE_CAP:
-            log.warning("china_holder_counts: hit the %d-page cap with new keys still "
-                        "arriving — tomorrow's run continues from the top", _PAGE_CAP)
+            log.warning(
+                "china_holder_counts: hit the %d-page cap with new keys still arriving — "
+                "the pages past it are NOT revisited (tomorrow re-pages from the top and "
+                "stops again at the first all-known page, which is above the cap). "
+                "Compare the store's row count against the endpoint's result.count (%d) "
+                "and raise the cap if they diverge", _PAGE_CAP, total_names)
             break
         page += 1
 
@@ -317,8 +398,11 @@ def refresh() -> dict:
     n_new = write_holder_counts(rows)
     log.info("china_holder_counts: pages_ok=%d pages_failed=%d rows=%d net_new=%d "
              "universe=%d", ok_pages, failed_pages, len(rows), n_new, total_names)
+    # n_nulls is structurally 0 on this plane — it is a whole-market snapshot with no
+    # per-name resolution step that can come back empty. The column is kept so all four
+    # W1 sentinels share one schema and one reading.
     return {"n_new": n_new, "n_fetched": len(rows), "n_failed": failed_pages,
-            "universe": total_names, "shard": ok_pages}
+            "n_nulls": 0, "universe": total_names, "shard": ok_pages}
 
 
 # ------------------------------------------------------------------ adapter --
@@ -346,7 +430,7 @@ class ChinaHolderCountsAdapter(Adapter):
         # tz-NAIVE normalized UTC day (collectors/china_filings.py precedent).
         idx = pd.Timestamp.now("UTC").normalize().tz_localize(None)
         sentinel = pd.DataFrame(
-            {k: [float(s[k])] for k in ("n_new", "n_fetched", "n_failed", "universe", "shard")},
+            {k: [float(s[k])] for k in ("n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard")},
             index=[idx],
         )
         sentinel.index.name = "collected_at"

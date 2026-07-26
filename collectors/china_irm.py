@@ -15,10 +15,11 @@ are collected, both keyless and both machine-fields-only:
                     stored, never a delta — an ES total wobbles, and a stored delta
                     would bake one night's wobble into history forever.
 
-CONTEXT / INPUT TIER ONLY. Nothing here is scored, ranked, promoted, or surfaced on
-site/; the 互动易 legs register as tier="pending" in engine/china_signal_lab.py
-(collected + accruing). Q&A text is stored as an input plane for downstream context
-work, not as a display surface.
+CONTEXT / INPUT TIER ONLY. Nothing here is scored, ranked or promoted, and there is no
+dedicated surface: the 互动易 legs appear only as pending-tier inventory rows in the
+signal-lab scorecard (engine/china_signal_lab.py, rendered on china_altdata with a 待验
+badge). Q&A text is stored as an input plane for downstream context work, not as a
+display surface.
 
 VERIFIED ENDPOINTS (live 2026-07-25, this runner):
   POST /newircs/index/queryKeyboardInfo?_t=…   form {"keyWord": "<6-digit code>"}
@@ -34,7 +35,10 @@ VERIFIED ENDPOINTS (live 2026-07-25, this runner):
 Store contract: APPEND-ONLY point-in-time from creation. qa.parquet dedups on
 indexId keep-LAST (a same-day re-pull that now carries the company's answer CORRECTS
 the row); velocity.parquet dedups on date keep-LAST. Nothing ever deletes or rewrites
-history; every row carries fetched_at (UTC ISO).
+history; every row carries fetched_at (UTC ISO, "last observed") AND first_seen ("first
+observed", carried through every correction). Writes go through a tmp sibling +
+os.replace, and an existing-but-unreadable store ABORTS the append rather than being
+replaced by tonight's rows.
 
 Politeness + budget: ≥1.0 s + jitter before EVERY request (single host, no parallelism)
 and a ~100 s in-collector wall-clock guard. When the guard fires mid-shard the cursor is
@@ -47,6 +51,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import random
 import time
 from datetime import datetime, timezone
@@ -94,7 +99,8 @@ _QA_COLUMNS = (
     "update_ts",
     "industry",     # trade[0]
     "source",       # raw pubClient
-    "fetched_at",
+    "fetched_at",   # LAST observation of this indexId
+    "first_seen",   # FIRST observation — never overwritten by a keep-LAST correction
 )
 _VELOCITY_COLUMNS = ("date", "total_record", "max_pub_ts_page1", "asof")
 
@@ -143,15 +149,75 @@ def _save_json(path: Path, payload: dict) -> None:
 
 # ------------------------------------------------------------------ stores --
 
+def _read_store(path: Path, columns: tuple[str, ...]) -> pd.DataFrame | None:
+    """The store reindexed to ``columns``, an EMPTY frame when ABSENT, None when UNREADABLE.
+
+    Three different facts, which is why this is not a plain try/except returning an
+    empty frame: "absent" is the first night (append freely), while "present but
+    unreadable" means the accrued history is still on disk and we simply cannot see
+    it — taking the empty-store branch there would replace all of it with tonight's
+    handful of rows. The caller ABORTS on None.
+    """
+    if not path.exists():
+        return pd.DataFrame(columns=list(columns))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(columns))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_irm: %s is present but UNREADABLE (%s)", path.name, e)
+        return None
+
+
+def _atomic_write(df: pd.DataFrame, path: Path) -> None:
+    """Write ``df`` via a tmp sibling + os.replace — never a truncated store.
+
+    The asia lane runs under a hard job kill that has fired mid-chain before; a
+    to_parquet() straight onto the live path turns that kill into a corrupt file
+    (and the next night would then find it unreadable).
+    """
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        df.to_parquet(tmp, index=False)
+        os.replace(tmp, path)
+    except Exception:  # noqa: BLE001 — never leave a half-written sibling behind
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _restore_first_seen(merged: pd.DataFrame, existing: pd.DataFrame,
+                        key: list[str]) -> pd.DataFrame:
+    """Carry each key's ORIGINAL first_seen through the keep-LAST merge. Pure.
+
+    fetched_at means "last observed" and advances on every correction; first_seen
+    means "first observed" and must not. It is the one question an append-only PIT
+    store exists to answer, and a keep-LAST dedup would otherwise overwrite it every
+    time the company answers. Keys absent from ``existing`` keep tonight's stamp.
+    """
+    if existing.empty or "first_seen" not in existing.columns:
+        return merged
+    prior = existing[[*key, "first_seen"]].astype(str)
+    prior = prior[prior["first_seen"].str.strip().ne("")
+                  & ~prior["first_seen"].isin(("nan", "None", "NaT", "<NA>"))]
+    if prior.empty:
+        return merged
+    prior = prior.sort_values("first_seen").drop_duplicates(subset=key, keep="first")
+    lookup = dict(zip(zip(*(prior[c] for c in key)), prior["first_seen"]))
+    out = merged.copy()
+    out["first_seen"] = [
+        lookup.get(k, cur)
+        for k, cur in zip(zip(*(out[c].astype(str) for c in key)), out["first_seen"])
+    ]
+    return out
+
+
 def load_qa() -> pd.DataFrame:
-    """Existing qa.parquet, or an empty frame with the canonical schema."""
-    path = _qa_path()
-    if path.exists():
-        try:
-            return pd.read_parquet(path).reindex(columns=list(_QA_COLUMNS))
-        except Exception as e:  # noqa: BLE001
-            log.warning("china_irm: could not read qa.parquet: %s", e)
-    return pd.DataFrame(columns=list(_QA_COLUMNS))
+    """Existing qa.parquet, or an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads as empty HERE — a reader must not
+    crash — but write_qa() checks readability separately and aborts, so the empty
+    frame can never be written back over the real one.
+    """
+    df = _read_store(_qa_path(), _QA_COLUMNS)
+    return pd.DataFrame(columns=list(_QA_COLUMNS)) if df is None else df
 
 
 def write_qa(rows: list[dict]) -> int:
@@ -159,13 +225,23 @@ def write_qa(rows: list[dict]) -> int:
 
     Keep-LAST is deliberate: 互动易 answers land days after the question, so a
     re-pull of the same indexId carrying attachedContent must CORRECT the stored
-    row rather than be discarded. Never raises — a store failure is logged.
+    row rather than be discarded — first_seen is carried through the merge, so the
+    correction advances fetched_at without losing the first-observation time.
+
+    Never raises. An existing-but-UNREADABLE qa.parquet ABORTS the append (returns
+    0, file left in place for manual recovery): the alternative — reading it as an
+    empty store — would replace the entire accrued tape with tonight's shard.
     """
     if not rows:
         return 0
     try:
+        existing = _read_store(_qa_path(), _QA_COLUMNS)
+        if existing is None:
+            log.error("china_irm: ABORTING the qa.parquet append — the accrued store is "
+                      "unreadable and is left untouched for manual recovery")
+            return 0
         new_df = pd.DataFrame(rows).reindex(columns=list(_QA_COLUMNS))
-        existing = load_qa()
+        new_df["first_seen"] = new_df["first_seen"].fillna(new_df["fetched_at"])
         if existing.empty:
             merged = new_df.drop_duplicates(subset=["index_id"], keep="last")
             net_new = len(merged)
@@ -173,9 +249,10 @@ def write_qa(rows: list[dict]) -> int:
             pre = existing["index_id"].nunique()
             merged = pd.concat([existing, new_df], ignore_index=True)
             merged = merged.drop_duplicates(subset=["index_id"], keep="last")
+            merged = _restore_first_seen(merged, existing, ["index_id"])
             net_new = merged["index_id"].nunique() - pre
         merged = merged.sort_values(["q_ts", "index_id"], na_position="last").reset_index(drop=True)
-        merged.to_parquet(_qa_path(), index=False)
+        _atomic_write(merged, _qa_path())
         return int(net_new)
     except Exception as e:  # noqa: BLE001
         log.error("china_irm.write_qa failed: %s", e)
@@ -183,30 +260,31 @@ def write_qa(rows: list[dict]) -> int:
 
 
 def load_velocity() -> pd.DataFrame:
-    path = _velocity_path()
-    if path.exists():
-        try:
-            return pd.read_parquet(path).reindex(columns=list(_VELOCITY_COLUMNS))
-        except Exception as e:  # noqa: BLE001
-            log.warning("china_irm: could not read velocity.parquet: %s", e)
-    return pd.DataFrame(columns=list(_VELOCITY_COLUMNS))
+    """Existing velocity.parquet, or an empty canonical frame (see load_qa)."""
+    df = _read_store(_velocity_path(), _VELOCITY_COLUMNS)
+    return pd.DataFrame(columns=list(_VELOCITY_COLUMNS)) if df is None else df
 
 
 def write_velocity(row: dict | None) -> int:
     """Append one market-wide velocity observation, dedup date keep-LAST.
 
     ``None`` (the endpoint answered but carried no totalRecord) writes NOTHING —
-    the gap is logged by the caller, never zero-filled.
+    the gap is logged by the caller, never zero-filled. An unreadable store aborts
+    the append exactly as write_qa does.
     """
     if not row:
         return 0
     try:
+        existing = _read_store(_velocity_path(), _VELOCITY_COLUMNS)
+        if existing is None:
+            log.error("china_irm: ABORTING the velocity.parquet append — the accrued "
+                      "store is unreadable and is left untouched for manual recovery")
+            return 0
         new_df = pd.DataFrame([row]).reindex(columns=list(_VELOCITY_COLUMNS))
-        existing = load_velocity()
         merged = new_df if existing.empty else pd.concat([existing, new_df], ignore_index=True)
         merged = merged.drop_duplicates(subset=["date"], keep="last")
         merged = merged.sort_values("date").reset_index(drop=True)
-        merged.to_parquet(_velocity_path(), index=False)
+        _atomic_write(merged, _velocity_path())
         return 1
     except Exception as e:  # noqa: BLE001
         log.error("china_irm.write_velocity failed: %s", e)
@@ -261,8 +339,10 @@ def next_shard(order: list[str], pos: int, size: int) -> tuple[list[str], int]:
 def load_cursor(order: list[str]) -> int:
     """Persisted position, clamped into ``order``.
 
-    A universe that changed size (names enter/leave the board) rebuilds the order
-    and clamps the position rather than dropping the rotation to zero.
+    A universe that changed size (names enter/leave the board) keeps rotating: the
+    position is clamped into the NEW order rather than dropped to zero. Note that
+    nothing is re-ordered here — tonight's order is whatever board_universe() sorted,
+    and save_cursor() persists it at the end of the night.
     """
     state = _load_json(_cursor_path())
     try:
@@ -270,8 +350,8 @@ def load_cursor(order: list[str]) -> int:
     except (TypeError, ValueError):
         pos = 0
     if state.get("order") != order:
-        log.info("china_irm: universe changed (%d names) — rebuilding cursor order",
-                 len(order))
+        log.info("china_irm: universe changed (%d names) — the persisted order is stale; "
+                 "clamping the position into tonight's order", len(order))
     return pos % len(order) if order else 0
 
 
@@ -412,7 +492,7 @@ def refresh() -> dict:
     call → persist the cursor at the TRUE stop position.
 
     Per-name try/except isolation: one dead name never sinks the night, and a name
-    whose org-id will not resolve is logged as a coverage null and skipped. Raises
+    whose org-id will not resolve is counted in n_nulls and skipped. Raises
     RuntimeError ONLY when every attempted name AND the velocity call failed at
     transport level — the honest circuit-breaker signal.
 
@@ -425,7 +505,8 @@ def refresh() -> dict:
     order = board_universe()
     if not order:
         log.warning("china_irm: empty SZ universe — 0-row night (nothing to fetch)")
-        return {"n_new": 0, "n_fetched": 0, "n_failed": 0, "universe": 0, "shard": 0}
+        return {"n_new": 0, "n_fetched": 0, "n_failed": 0, "n_nulls": 0,
+                "universe": 0, "shard": 0}
 
     start_pos = load_cursor(order)
     shard, _ = next_shard(order, start_pos, _SHARD_SIZE)
@@ -435,6 +516,7 @@ def refresh() -> dict:
     rows: list[dict] = []
     processed = 0
     n_failed = 0
+    n_empty_key = 0
     unresolved: list[str] = []
     truncated = False
 
@@ -457,8 +539,14 @@ def refresh() -> dict:
                     unresolved.append(code)
                     processed += 1
                     continue
-            rows.extend(parse_question_row(r, fetched_at)
-                        for r in _fetch_questions(session, code, org_id))
+            parsed = [parse_question_row(r, fetched_at)
+                      for r in _fetch_questions(session, code, org_id)]
+            # index_id IS the dedup key: an empty one collapses every keyless row of
+            # the night into a SINGLE stored row, so they are dropped at the parse
+            # call site and counted as coverage nulls instead.
+            keyed = [r for r in parsed if r["index_id"]]
+            n_empty_key += len(parsed) - len(keyed)
+            rows.extend(keyed)
         except Exception as e:  # noqa: BLE001 — per-name isolation
             n_failed += 1
             log.warning("china_irm: %s failed: %s", code, e)
@@ -469,6 +557,10 @@ def refresh() -> dict:
     if unresolved:
         log.warning("china_irm: %d coverage nulls (org-id unresolved): %s",
                     len(unresolved), ",".join(unresolved))
+    if n_empty_key:
+        log.warning("china_irm: %d fetched row(s) carried no indexId — SKIPPED, not "
+                    "stored: the dedup key is index_id, so storing them would collapse "
+                    "the whole batch into one row", n_empty_key)
 
     # One cheap market-wide call, independent of the shard outcome.
     velocity_ok = False
@@ -493,14 +585,19 @@ def refresh() -> dict:
     write_velocity(velocity_row)
     log.info(
         "china_irm: universe=%d shard=%d processed=%d failed=%d unresolved=%d "
-        "rows=%d net_new=%d velocity=%s%s",
-        len(order), len(shard), processed, n_failed, len(unresolved), len(rows),
-        n_new, "ok" if velocity_ok else "MISSING", " [TRUNCATED]" if truncated else "",
+        "empty_key=%d rows=%d net_new=%d velocity=%s%s",
+        len(order), len(shard), processed, n_failed, len(unresolved), n_empty_key,
+        len(rows), n_new, "ok" if velocity_ok else "MISSING",
+        " [TRUNCATED]" if truncated else "",
     )
     return {
         "n_new": n_new,
         "n_fetched": len(rows),
         "n_failed": n_failed,
+        # Coverage nulls: names that produced NO observation (org-id unresolved) plus
+        # rows dropped for an empty indexId. Without this a night where every name
+        # failed to resolve is indistinguishable from a quiet night in refresh.parquet.
+        "n_nulls": len(unresolved) + n_empty_key,
         "universe": len(order),
         "shard": len(shard),
     }
@@ -513,10 +610,15 @@ class ChinaIrmAdapter(Adapter):
 
     Wraps refresh() in the standard run_adapter / circuit-breaker machinery. Group
     ``china_irm`` starts with ``china`` so it is auto-assigned to the asia lane
-    (scripts/collect.py group_members). fetch() returns a COVERAGE sentinel — not a
-    bare count — so data/china_irm/refresh.parquet is a readable run ledger
-    (vacuous-green law: a count alone cannot distinguish "nothing new" from
-    "nothing fetched").
+    (scripts/collect.py group_members).
+
+    fetch() returns a COVERAGE sentinel rather than a bare count, so
+    data/china_irm/refresh.parquet is a readable run ledger: n_new/n_fetched say what
+    landed, n_failed what broke at transport, and n_nulls how many names produced NO
+    observation at all (org-id unresolved, or a row dropped for an empty indexId) —
+    without it a fully blind night reads exactly like a quiet one. What the sentinel
+    does NOT prove is per-name coverage: universe/shard are the sizes ATTEMPTED, not
+    a receipt that each name in the shard answered.
     """
 
     name = "china_irm"
@@ -529,7 +631,8 @@ class ChinaIrmAdapter(Adapter):
         # tz-aware index into a tz-naive parquet makes store.upsert's combine_first raise.
         idx = pd.Timestamp.now("UTC").normalize().tz_localize(None)
         sentinel = pd.DataFrame(
-            {k: [float(s[k])] for k in ("n_new", "n_fetched", "n_failed", "universe", "shard")},
+            {k: [float(s[k])] for k in
+             ("n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard")},
             index=[idx],
         )
         sentinel.index.name = "collected_at"
