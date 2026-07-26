@@ -148,6 +148,45 @@ def _looks_truncated(title: str) -> bool:
     return title.count("(") > title.count(")")
 
 
+def heal_truncated_title(title: str) -> str:
+    """Cut the dangling "(FRAGMENT" tail off a MarketDesk-truncated title.
+
+    This is a DISPLAY-tier repair, deliberately not applied by :func:`normalize`.
+    The lossless repair is the PDF-/Title/ recovery in the title ladder below, and
+    it is triggered by :func:`_looks_truncated` — so the stored record must keep
+    its unbalanced-paren fingerprint or a later re-ingest carrying a good PDF
+    /Title could no longer repair it. Callers project, they do not rewrite.
+
+    Cutting at the first UNMATCHED "(" leaves a clean, balanced name:
+
+        "Alcon Inc. (ALCC"    -> "Alcon Inc."
+        "Repsol (REP"         -> "Repsol"
+        "Carrefour (CARR(1)"  -> "Carrefour"   (inner "(1)" is a dedupe artifact)
+
+    Lossy by construction — the exchange suffix is not recoverable from the string
+    — but an unbalanced paren in <title>/og:title is the worse of the two on pages
+    whose whole purpose is exact-title search match. A balanced title is returned
+    untouched, so a good title is never rewritten, and a title that is *only* a
+    fragment is returned as-is rather than blanked.
+    """
+    if not isinstance(title, str) or not _looks_truncated(title):
+        return title
+    depth = 0
+    cut = None
+    for i, ch in enumerate(title):
+        if ch == "(":
+            if depth == 0:
+                cut = i  # outermost "(" of this group — the dangling candidate
+            depth += 1
+        elif ch == ")" and depth:
+            depth -= 1
+            if depth == 0:
+                cut = None  # the group closed; it was not the unmatched one
+    if cut is None:
+        return title
+    return title[:cut].strip(" \t-–—:,;") or title
+
+
 def normalize(
     sidecar: dict | None,
     *,

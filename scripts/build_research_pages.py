@@ -56,6 +56,12 @@ try:  # canonical base ("https://www.mastermind-x.com"), trailing slash stripped
 except Exception:  # noqa: BLE001 — never let a missing import break the build
     CANONICAL_BASE = "https://www.mastermind-x.com"
 
+try:  # display-tier title repair (see _norm); never break the build on an import
+    from engine.research_vault.sidecar import heal_truncated_title  # noqa: E402
+except Exception:  # noqa: BLE001
+    def heal_truncated_title(title):  # type: ignore[misc]
+        return title
+
 _MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 _STAMP = {"buy": ("BUY", "buy"), "sell": ("SELL", "sell"), "independent": ("IND", "indep")}
 _EMPTY_XML = ('<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -131,9 +137,14 @@ def _norm(item: dict) -> dict:
     side = (item.get("side") or "independent").lower()
     pts = [p for p in (item.get("summary_points") or []) if _clean(p)]
     stamp_txt, stamp_cls = _STAMP.get(side, ("IND", "indep"))
+    raw_title = (item.get("title") or "Untitled research").strip()
     return {
         "id": item.get("id") or "",
-        "title": (item.get("title") or "Untitled research").strip(),
+        # DISPLAY title: a MarketDesk truncation ("Alcon Inc. (ALCC") is cut back to
+        # a balanced name before it reaches <title>/og:title/H1. slug_title keeps the
+        # raw string so the published URL never moves off an indexed page.
+        "title": heal_truncated_title(raw_title),
+        "slug_title": raw_title,
         "inst": inst,
         "mono": _monogram(inst),
         "side": side,
@@ -297,7 +308,7 @@ def build(catalog: dict | None = None) -> int:
     slug_by_id: dict[str, str] = {}
     for n, it in zip(all_norm, items):
         s = (it.get("slug") or "").strip()          # reuse the vault build's slug if injected
-        slug_by_id[n["id"]] = s or _slug(n["title"], n["id"], seen)
+        slug_by_id[n["id"]] = s or _slug(n["slug_title"], n["id"], seen)
         seen.add(slug_by_id[n["id"]])
 
     RESEARCH_DIR.mkdir(parents=True, exist_ok=True)

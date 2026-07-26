@@ -136,6 +136,74 @@ def test_normalize_good_title_never_touched_by_pdf():
     assert item["title"] == "Datacenter demand inflecting"
 
 
+def test_heal_truncated_title_cuts_at_the_unmatched_paren():
+    # The four real shapes sitting in the catalog, plus the dedupe-suffix variant
+    # where the INNER "(1)" balances and only the outer "(" dangles.
+    heal = sidecar_mod.heal_truncated_title
+    assert heal("Alcon Inc. (ALCC") == "Alcon Inc."
+    assert heal("Repsol (REP") == "Repsol"
+    assert heal("SAP (SAPG") == "SAP"
+    assert heal("Carrefour (CARR") == "Carrefour"
+    assert heal("Carrefour (CARR(1)") == "Carrefour"
+    # Balanced titles are never rewritten — including a legitimate ticker paren.
+    assert heal("Alcon Inc. (ALCC.US) - Q2 Results") == "Alcon Inc. (ALCC.US) - Q2 Results"
+    assert heal("Datacenter demand inflecting") == "Datacenter demand inflecting"
+    assert heal("Rates: 2H outlook (US, EU) revisited") == "Rates: 2H outlook (US, EU) revisited"
+    # A stray ")" is not this defect; leave it alone rather than guess.
+    assert heal("Buybacks) resumed") == "Buybacks) resumed"
+    # Degenerate: cutting would blank the title → keep the fragment over nothing.
+    assert heal("(ALCC") == "(ALCC"
+    assert heal("") == ""
+    assert heal(None) is None
+
+
+def test_truncated_title_heals_on_the_way_out_not_in_the_record():
+    """The split that keeps #3444 working.
+
+    #3444 recovers a truncated title losslessly from the PDF /Title, and it fires
+    on the unbalanced-paren tell. So the RECORD must keep the fragment (a later
+    re-ingest can still repair it), while what readers see drops it — an unbalanced
+    paren in <title>/og:title is what actually reaches them.
+    """
+    from scripts.build_research_vault import _display_catalog
+
+    stored = sidecar_mod.normalize(
+        {"title": "Alcon Inc. (ALCC", "institution": "GS", "published_at": "2026-07-01"})
+    assert stored["title"] == "Alcon Inc. (ALCC", "record must keep the recovery fingerprint"
+    assert sidecar_mod._looks_truncated(stored["title"]), "recovery trigger still fires"
+
+    shown = _display_catalog({"items": [stored]})
+    assert shown["items"][0]["title"] == "Alcon Inc."
+    assert stored["title"] == "Alcon Inc. (ALCC", "display projection must not mutate the record"
+    # and it leaves a good title alone
+    good = sidecar_mod.normalize({"title": "Rates: 2H outlook (US, EU)", "institution": "GS"})
+    assert _display_catalog({"items": [good]})["items"][0]["title"] == "Rates: 2H outlook (US, EU)"
+
+
+def test_healed_titles_do_not_move_published_research_urls():
+    """The regression this repair must not cause.
+
+    /research/<slug>.html is live and indexed. The slug comes from the RAW title,
+    so a healed display title must leave every published URL byte-identical —
+    otherwise fixing a <title> silently orphans the page it names.
+    """
+    from scripts.build_research_pages import slug_map
+    from scripts.build_research_vault import _display_catalog
+
+    items = [
+        {"id": "marketdesk-a4e7fwpzlci-daa27a", "title": "Alcon Inc. (ALCC"},
+        {"id": "marketdesk-r8uvpaoqcip-b339e3", "title": "Carrefour (CARR(1)"},
+        {"id": "marketdesk-brepbuioeuo-9a32df", "title": "Repsol (REP"},
+    ]
+    before = slug_map(items)
+    after = slug_map(_display_catalog({"items": items})["items"])
+    assert before["marketdesk-a4e7fwpzlci-daa27a"] == "alcon-inc-alcc-daa27a"
+    assert before != after, "guard is vacuous if the healed title slugs identically"
+    # The build must use the RAW-title slugs; these are the URLs already published.
+    assert set(before.values()) == {
+        "alcon-inc-alcc-daa27a", "carrefour-carr-1-b339e3", "repsol-rep-9a32df"}
+
+
 def test_normalize_missing_title_all_the_way_to_placeholder():
     item = sidecar_mod.normalize({"institution": "GS"})
     assert item["title"] == "Untitled research"

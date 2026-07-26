@@ -78,8 +78,37 @@ def load_catalog() -> dict:
         return dict(_EMPTY_CATALOG)
 
 
+try:  # display-tier title repair; never let an engine import break the render
+    from engine.research_vault.sidecar import heal_truncated_title  # noqa: E402
+except Exception:  # noqa: BLE001
+    def heal_truncated_title(title):  # type: ignore[misc]
+        return title
+
+
 def _public_item(item: dict) -> dict:
     return {k: item.get(k) for k in _ITEM_FIELDS}
+
+
+def _display_catalog(cat: dict) -> dict:
+    """Copy of ``cat`` with MarketDesk-truncated titles healed for DISPLAY only.
+
+    "Alcon Inc. (ALCC" -> "Alcon Inc.". #3444 repairs these losslessly from the
+    PDF /Title, but it ran FORWARD-ONLY and never backfilled: rows ingested hours
+    before it merged still carry the fragment, and it lands in the vault cards,
+    the crawl hub and <title>/og:title/H1 of the per-report SEO pages — the single
+    most weighted element on pages built for exact-title match.
+
+    Applied HERE, downstream of ``slug_map``, and on a copy: the published
+    /research/<slug>.html URLs are derived from the RAW title and must not move
+    (they are live and indexed), and the stored record must keep its unbalanced
+    paren or #3444's recovery could never fire on a re-ingest.
+    """
+    items = []
+    for it in (cat.get("items") or []):
+        if isinstance(it, dict) and isinstance(it.get("title"), str):
+            it = {**it, "title": heal_truncated_title(it["title"])}
+        items.append(it)
+    return {**cat, "items": items}
 
 
 def _public_catalog(cat: dict) -> dict:
@@ -203,6 +232,9 @@ def render(catalog: dict | None = None) -> str:
     tmpl = env.get_template("research_vault.html.j2")
     if catalog is None:
         catalog = _public_catalog(load_catalog())
+    # Slugs are already injected by build() at this point, so healing here moves
+    # no URL — it only fixes what the cards and the island actually show.
+    catalog = _display_catalog(catalog)
     # Bake as a JSON island. ensure_ascii=False keeps CJK readable; </script> is
     # escaped so a title/summary containing it can't break out of the island.
     catalog_json = json.dumps(catalog, ensure_ascii=False).replace("</", "<\\/")
