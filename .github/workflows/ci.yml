@@ -547,6 +547,13 @@ on:
       - "tests/test_neuralweb_daily_brief.py"
       # CMX W4: technician doctrine library tests (neural-web-core job).
       - "tests/test_brain_doctrine.py"
+      # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
+      # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
+      # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
+      # changed never executed. engine/neuralweb/** covers edits to the code under test;
+      # these two lines cover edits to the tests themselves.
+      - "tests/test_cortex.py"
+      - "tests/test_cortex_adb_w3.py"
       - "tests/test_admin_neural_web.py"
       - "tests/test_admin_metabolism.py"
       - "tests/test_admin_metabolism_history.py"
