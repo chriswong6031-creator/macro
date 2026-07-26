@@ -33,7 +33,7 @@ on:
       - "scripts/check_ms_board_coherence.py"
       - "tests/test_check_ms_board_coherence.py"
       - "engine/market_state.py"
-      # hub-a11y guard: five static a11y regressions on globe-deck pages.
+      # hub-a11y guard: six static a11y regressions on globe-deck pages + shared assets.
       - "scripts/check_hub_a11y.py"
       - "tests/test_check_hub_a11y.py"
       # hashed-css rebase autoresolver: every render lane's push loop leans on it to not
@@ -3298,8 +3298,9 @@ jobs:
 
   hub-a11y:
     if: ${{ false }}
-    # Hub UX program (W5 — a11y regression guard): five static checks on every
-    # committed page that embeds the globe deck (gd-stage presence):
+    # Hub UX program (W5 — a11y regression guard): six static checks — (a)-(d) on
+    # every committed page that embeds the globe deck (gd-stage presence), (e)-(f)
+    # on the shared JS assets those pages load:
     #   (a) no focusable element (button/a/input/[tabindex] without tabindex="-1")
     #       statically inside an aria-hidden="true" subtree.
     #   (b) html tag has a non-empty lang= attribute AND the inline boot script in
@@ -3308,6 +3309,10 @@ jobs:
     #   (d) viewport meta includes viewport-fit=cover; body CSS references
     #       env(safe-area-inset for notch/home-indicator padding.
     #   (e) site/theme.js contains documentElement.lang sync (WCAG 3.1.1 tripwire).
+    #   (f) site/mm_brain.js keeps the Brain launcher keyboard-operable: role="button"
+    #       + tabindex="0" on #mmb-launch, a keydown handler for Enter AND Space, and
+    #       a #mmb-launch:focus-visible ring (WCAG 2.1.1 tripwire — it shipped as a
+    #       bare <div> until #3682, unreachable from the keyboard on every page).
     # Pure stdlib / html.parser — no browser, no extra deps, safe on ubuntu CI.
     runs-on: ubuntu-latest
     steps:
