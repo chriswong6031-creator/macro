@@ -2774,6 +2774,118 @@ artifacts:
       Grading unit = catalyst-day cohort (DT-R14). Expected-NULL forward
       meter (FT-R9); promotion question earliest 2027.
 
+  # --- W2 native funding / risk-appetite planes (research/china_native_data) ---
+  # One entry per store DIRECTORY family: the collector's primary artifact is the
+  # registered path, its siblings are named in notes (no duplicate-path violation).
+  china-funding-store:
+    path: data/china_funding/shibor.parquet
+    format: parquet
+    producer: collectors/china_funding.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: china_funding.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      Masterplan W2 (research/china_native_data/CHINA_HK_NATIVE_DATA_MASTERPLAN_BY_FABLE.md
+      §W2). ChinaFundingAdapter writes three sibling parquets under data/china_funding/:
+      shibor.parquet (the registered path — full-tenor SHIBOR fixings in %, columns
+      on/w1/w2/m1/m3/m6/m9/y1), repo_fixings.parquet (CFETS repo fixings in %, columns
+      FR001/FR007/FR014 + FDR001/FDR007/FDR014, the FDR set ABSENT while the
+      frr-chrt.csv fallback is in use), and cgb_mm.parquet (market-maker quote
+      temperature — n_quotes, n_bonds, bid_yield_med, ask_yield_med, spread_bp_med,
+      cgb_n, cgb_mid_med, policy_n, policy_mid_med). ACCRUING — no engine consumer yet;
+      the W7 lens and W8 chips wire the first reads. PIT: repo_fixings and shibor are
+      dated by the UPSTREAM fixing date, never by collection time; cgb_mm is a live
+      snapshot carrying no upstream date, so it is dated by the collection date in
+      Asia/Shanghai and skipped entirely on Sat/Sun instead of stamping a stale Friday
+      quote onto a weekend. Deep seeds are backfill provenance, off the render path:
+      --full-history walks month windows from 2015-01-01 for repo_fixings (single-shot),
+      while the Jin10 CDN SHIBOR payload already IS the whole history, so full_history
+      and nightly are identical for that leg. data/china_macro/rates.parquet is
+      PREREG-FROZEN (CHINA_POLICY_EVENTS_PREREG) and is NOT read, written, or retired
+      here — this store supersedes it as the DEEP SHIBOR reference only, and the frozen
+      artifact is left exactly as it is.
+
+  china-cb-store:
+    path: data/china_cb/breadth.parquet
+    format: parquet
+    producer: collectors/china_cb.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: china_cb.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      Masterplan W2 (research/china_native_data/CHINA_HK_NATIVE_DATA_MASTERPLAN_BY_FABLE.md
+      §W2). ChinaCbAdapter writes two sibling parquets under data/china_cb/:
+      breadth.parquet (the registered path — full-universe convertible-bond breadth
+      aggregates: n_listed, n_priced, price_med, price_mean, premium_med, premium_mean,
+      pct_price_lt_100, pct_price_ge_130, pct_double_low, issue_scale_sum in 亿元) and
+      index.parquet (jisilu equal-weight CB index history: price, count, avg_price,
+      mid_price, avg_premium_rt, mid_premium_rt, avg_ytm_rt, avg_dblow, temperature,
+      turnover_rt, idx_price). ACCRUING — no engine consumer yet; the W7 lens and W8
+      chips wire the first reads. PIT: breadth is a live snapshot with no upstream date,
+      so it is dated by the collection date in Asia/Shanghai and skipped entirely on
+      Sat/Sun; index rows are dated by the upstream price_dt and the endpoint serves a
+      rolling ~1-year window, so the store accrues forward past what jisilu still
+      returns (no deep seed exists to backfill it, and the login-capped cb_list_new list
+      endpoint is deliberately never called — CNH-R5/R6).
+
+  china-fund-issuance-store:
+    path: data/china_fund_issuance/issuance.parquet
+    format: parquet
+    producer: collectors/china_fund_issuance.py
+    known_extra_writers: []
+    owner_program: china-system
+    cadence: collect
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 240
+    schema: china_fund_issuance.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    may_rank: false
+    consumers: []
+    external_consumers: []
+    notes: >
+      Masterplan W2 (research/china_native_data/CHINA_HK_NATIVE_DATA_MASTERPLAN_BY_FABLE.md
+      §W2). ChinaFundIssuanceAdapter writes one parquet under data/china_fund_issuance/:
+      issuance.parquet (weekly aggregates of newly ESTABLISHED funds — n_funds,
+      shares_yi, equity_n, equity_shares_yi, bond_shares_yi, other_shares_yi, with
+      shares in 亿份 per the source page's own label). ACCRUING — no engine consumer
+      yet; the W7 lens and W8 chips wire the first reads. PIT: every row is dated by the
+      FRIDAY of the week containing the upstream 成立日期 (W-FRI bins), never by
+      collection time; weeks with no parseable establishment are dropped rather than
+      written as a zero row. The nightly window covers the ~400 most recent rows, so an
+      upsert recomputes only the weeks that window reaches — the same aggregation over a
+      fuller row set — leaves older weeks untouched, and drops the window's OLDEST
+      (boundary) bin, which the window cuts mid-week and would otherwise overwrite with
+      an undercount. --full-history pulls the whole
+      rolling list in one shot as a deep seed (backfill provenance): the source is a
+      LIVE rolling list, not an archive, so historical completeness for long-dead funds
+      is UNVERIFIED and the earliest seeded weeks may undercount.
+
   # TS-U2 — mtf_upturn.v1 per-stock multi-timeframe upturn-confluence organ
   stock-mtf-upturn:
     path: site/stockdata/mtf_upturn.json

@@ -221,6 +221,9 @@ def all_adapters() -> dict:
         ("china_einteraction", "collectors.china_einteraction", "ChinaEInteractionAdapter"),  # 上证e互动 investor Q&A drip (W1 CNH; SS-half, uid map cached/resumable)
         ("china_reports", "collectors.china_reports", "ChinaReportsAdapter"),  # sell-side rating/TP/EPS revision stream + daily aggregates (W1 CNH; per-report EVENT tape, distinct from china_analyst's consensus snapshot)
         ("china_holder_counts", "collectors.china_holder_counts", "ChinaHolderCountsAdapter"),  # 股东户数 quarterly retail-concentration tape (W1 CNH; NOT cn_holder_sale_calendar = 减持 windows)
+        ("china_funding", "collectors.china_funding", "ChinaFundingAdapter"),   # W2 funding curve: chinamoney FR/FDR fixings + jin10-CDN deep SHIBOR + CGB MM-quote temperature (research/china_native_data W2)
+        ("china_cb", "collectors.china_cb", "ChinaCbAdapter"),                  # W2 convertible-bond plane: EastMoney full-universe breadth aggregates + jisilu CB index (keyless INDEX endpoint only — list is login-capped)
+        ("china_fund_issuance", "collectors.china_fund_issuance", "ChinaFundIssuanceAdapter"),  # W2 新发基金 weekly issuance aggregates (retail risk-appetite proxy)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

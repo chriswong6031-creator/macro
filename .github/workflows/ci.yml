@@ -734,6 +734,11 @@ on:
       - "collectors/stocktwits.py"
       - "tests/test_finnhub_transcripts.py"
       - "tests/test_stocktwits.py"
+      # china_native_data W2: collector fixture suites (test-only edits must retrigger)
+      - "tests/test_china_funding_collector.py"
+      - "tests/test_china_cb_collector.py"
+      - "tests/test_china_fund_issuance_collector.py"
+      - "tests/test_china_flows_etf_universe.py"
       # IRD-W1 International Risk Desk substrate: IMF WEO adapter, CB calendar,
       # FRED alias-collision lint, and liquidity_plumbing swap-lines Phase-5.
       - "collectors/imf_weo.py"
@@ -2189,6 +2194,28 @@ jobs:
         run: python -m pytest tests/test_finnhub_transcripts.py -q
       - name: stocktwits sentiment collector tests
         run: python -m pytest tests/test_stocktwits.py -q
+
+  china-native-w2:
+    if: ${{ false }}
+    # china_native_data W2 (funding curve / CB plane / fund issuance / full-universe
+    # ETF shares): pure parse + aggregate fixture tests, no network. Executed via
+    # the ci-pack matrix like every other legacy job.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml requests openpyxl
+      - name: china_funding collector tests
+        run: python -m pytest tests/test_china_funding_collector.py -q
+      - name: china_cb collector tests
+        run: python -m pytest tests/test_china_cb_collector.py -q
+      - name: china_fund_issuance collector tests
+        run: python -m pytest tests/test_china_fund_issuance_collector.py -q
+      - name: china_flows full-universe ETF shares tests
+        run: python -m pytest tests/test_china_flows_etf_universe.py -q
 
   wri-risk-core:
     if: ${{ false }}
