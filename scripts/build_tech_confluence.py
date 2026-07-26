@@ -306,6 +306,13 @@ def _build_combo_entry(
     entry["consistent"] = stats.get("consistent")
     entry["rank_score"] = stats.get("rank_score")
     entry["mfe_mae_med"] = stats.get("mfe_mae_med")
+    # Entry-timing ruler (W-LAB-1 / V-LAB-4): dual-ruler descriptive fields
+    # shown NEXT TO the legacy fwd21 column; badge from median trough timing.
+    entry["mae63_med"] = stats.get("mae63_med")
+    entry["near_low_hit"] = stats.get("near_low_hit")
+    entry["near_low_n"] = stats.get("near_low_n")
+    entry["td_to_trough_med"] = stats.get("td_to_trough_med")
+    entry["entry_badge"] = stats.get("entry_badge")
     entry["n_fires"] = stats.get("n_fires")
     entry["n_tickers"] = stats.get("n_tickers")
     entry["fires_per_year"] = stats.get("fires_per_year")

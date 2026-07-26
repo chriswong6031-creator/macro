@@ -1506,3 +1506,124 @@ class TestMethodTab:
         """Must state that post-hoc horizon selection is forbidden."""
         html = self._render()
         assert "forbidden" in html or "trap" in html or "禁止" in html
+
+
+# --------------------------------------------------------------------------- #
+#  V-LAB-5/6 — stratified cuts (rung / archetype)                             #
+# --------------------------------------------------------------------------- #
+
+def _cuts_fixture() -> dict:
+    """A cuts payload with a rated stratum, a suppressed one, unmeasured, and
+    an all-unlabeled archetype dimension."""
+    return {
+        "rung_derived": {
+            "total_fires": 30, "covered_fires": 22,
+            "rows": [
+                {"key": "3D", "n": 22, "suppressed": False, "wr21_abs": 0.55,
+                 "wr21_exc": 0.03, "med_exc21": 0.012, "mae_med": -0.04},
+                {"key": "1W", "n": 6, "suppressed": True},
+                {"key": "unmeasured", "n": 2, "suppressed": True},
+            ],
+        },
+        "archetype": {
+            "total_fires": 30, "covered_fires": 0,
+            "rows": [{"key": "unlabeled", "n": 30, "suppressed": True}],
+        },
+    }
+
+
+class TestStratifiedCutsEnrich:
+    """engine.pick_lab.render._enrich_cuts: labels, suppression, coverage."""
+
+    def _ev(self):
+        from engine.pick_lab.render import _enrich_cuts
+        return _enrich_cuts(_cuts_fixture())
+
+    def test_none_yields_empty(self):
+        from engine.pick_lab.render import _enrich_cuts
+        assert _enrich_cuts(None) == []
+        assert _enrich_cuts({}) == []
+
+    def test_rung_first_then_archetype(self):
+        assert [d["dim"] for d in self._ev()] == ["rung_derived", "archetype"]
+
+    def test_rated_row_has_rate_fmts(self):
+        r3d = next(r for r in self._ev()[0]["rows"] if r["key"] == "3D")
+        assert r3d["wr21_abs_fmt"] and r3d["mae_med_fmt"]
+        assert "too_few_en" not in r3d
+
+    def test_suppressed_row_has_too_few_label_no_rate(self):
+        r1w = next(r for r in self._ev()[0]["rows"] if r["key"] == "1W")
+        assert r1w["too_few_en"] == "too few to rate"
+        assert r1w["too_few_zh"]
+        assert "wr21_abs_fmt" not in r1w
+
+    def test_coverage_footer_string(self):
+        ev = self._ev()
+        assert ev[0]["coverage_en"] == "covers 22 of 30 fires"
+        assert "30" in ev[0]["coverage_zh"] and "22" in ev[0]["coverage_zh"]
+
+    def test_value_labels_bilingual(self):
+        r3d = next(r for r in self._ev()[0]["rows"] if r["key"] == "3D")
+        assert r3d["label_en"] == "3-day"
+        assert r3d["label_zh"] == "3日"
+        unlab = self._ev()[1]["rows"][0]
+        assert unlab["key"] == "unlabeled" and unlab["label_zh"]
+
+
+class TestStratifiedCutsRender:
+    """Template renders the cut section: stratum rows, unlabeled row, min-n
+    suppression, coverage footer."""
+
+    def _render_with_cuts(self) -> str:
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()
+        pl = dict(pl)
+        board = list(pl["scoreboard"])
+        row0 = dict(board[0])
+        row0["cuts"] = _cuts_fixture()
+        board[0] = row0
+        pl["scoreboard"] = board
+        vm = build_vm(pl, lh)
+        return _env().get_template("us_stocks_lab.html.j2").render(**vm)
+
+    def test_cut_section_present(self):
+        html = self._render_with_cuts()
+        assert "Cuts by personality" in html
+        assert "按性格分层" in html
+
+    def test_stratum_rows_rendered(self):
+        html = self._render_with_cuts()
+        assert "By reversion rung" in html
+        assert "3-day" in html  # rated rung row label
+
+    def test_min_n_suppression_rendered(self):
+        html = self._render_with_cuts()
+        assert "too few to rate" in html
+        assert "样本过少" in html
+
+    def test_unmeasured_and_unlabeled_rows_rendered(self):
+        html = self._render_with_cuts()
+        assert "unmeasured" in html   # rung tickers absent from codex
+        assert "unlabeled" in html    # archetype NaN names
+
+    def test_coverage_footer_rendered(self):
+        html = self._render_with_cuts()
+        assert "covers 22 of 30 fires" in html
+
+    def test_no_cuts_no_section(self):
+        """A book without cuts (codex absent) renders no cut section, no crash."""
+        from engine.pick_lab.render import build_vm
+        pl, lh = _prod_fixture()  # no cuts on any row
+        vm = build_vm(pl, lh)
+        html = _env().get_template("us_stocks_lab.html.j2").render(**vm)
+        assert "Cuts by personality" not in html
+        assert len(html) > 5000
+
+    def test_no_cjk_in_title_attributes(self):
+        """CI guard: bilingual UI must not put translated text in title=."""
+        import re
+        html = self._render_with_cuts()
+        titles = re.findall(r'title="([^"]*)"', html)
+        cjk = [t for t in titles if any("一" <= ch <= "鿿" for ch in t)]
+        assert cjk == [], f"CJK in title= attrs: {cjk[:3]}"

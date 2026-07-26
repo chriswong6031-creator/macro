@@ -78,6 +78,17 @@
   .sb-detail-inner summary::-webkit-details-marker{display:none}
   .sb-detail-inner[open] summary span:first-child{content:'▼'}
 
+  /* ── V-LAB-5/6 stratified cuts (nested inside the detail row) ── */
+  .sb-cuts-inner{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+  .sb-cuts-inner summary::-webkit-details-marker{display:none}
+  .sb-cuts-note{font-size:11px;color:var(--muted);margin:2px 0 8px;font-style:italic}
+  .sb-cut-block{margin-bottom:10px}
+  .sb-cut-title{font-size:11px;font-weight:700;color:var(--text);margin:2px 0 3px}
+  .sb-cut-tbl{margin-bottom:3px}
+  .sb-cut-suppress{text-align:left!important;color:var(--muted);font-style:italic}
+  .sb-cut-unmapped td{color:var(--muted)}
+  .sb-cut-coverage{font-size:10.5px;color:var(--muted);margin:0 0 2px}
+
   /* ── lh control chip ── */
   .lh-control-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;
     border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));
@@ -369,6 +380,67 @@
                   <span class="l-en">{{ hd.path_en }}</span>
                   <span class="l-zh">{{ hd.path_zh }}</span>
                 </p>
+
+                {# V-LAB-5/6 — display-tier stratified cuts (rung / archetype). #}
+                {% if row.cuts_view %}
+                <details class="sb-cuts-inner">
+                  <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted);
+                    text-transform:uppercase;letter-spacing:.06em;list-style:none;display:flex;
+                    align-items:center;gap:6px;padding:6px 0 2px">
+                    <span style="font-size:10px">▶</span>
+                    <span class="l-en">Cuts by personality</span>
+                    <span class="l-zh">按性格分层</span>
+                  </summary>
+                  <p class="sb-cuts-note">
+                    <span class="l-en">Descriptive breakdowns of this book's fires — display-only, not a rate on single-digit samples.</span>
+                    <span class="l-zh">该书本触发的描述性拆分 — 仅供展示，个位数样本不出评级。</span>
+                  </p>
+                  {% for cut in row.cuts_view %}
+                  <div class="sb-cut-block">
+                    <div class="sb-cut-title">
+                      <span class="l-en">{{ cut.title_en }}</span>
+                      <span class="l-zh">{{ cut.title_zh }}</span>
+                    </div>
+                    <table class="sb-ladder sb-cut-tbl">
+                      <thead><tr>
+                        <th>{{ t('Stratum', '分层') }}</th>
+                        <th>{{ t('N fires', 'N触发') }}</th>
+                        <th>{{ t('WR21 abs', 'WR21绝对') }}</th>
+                        <th>{{ t('WR21 exc', 'WR21超额') }}</th>
+                        <th>{{ t('Med exc21', '中位超额21') }}</th>
+                        <th>{{ t('MAE med', 'MAE中位') }}</th>
+                      </tr></thead>
+                      <tbody>
+                        {% for cr in cut.rows %}
+                        <tr class="{{ 'sb-cut-unmapped' if cr.key in ('unmeasured', 'unlabeled') else '' }}">
+                          <td class="l">
+                            <span class="l-en">{{ cr.label_en }}</span>
+                            <span class="l-zh">{{ cr.label_zh }}</span>
+                          </td>
+                          <td>{{ cr.n_fmt }}</td>
+                          {% if cr.suppressed %}
+                          <td colspan="4" class="sb-cut-suppress">
+                            <span class="l-en">{{ cr.too_few_en }}</span>
+                            <span class="l-zh">{{ cr.too_few_zh }}</span>
+                          </td>
+                          {% else %}
+                          <td class="{{ 'pos' if cr.wr21_abs is not none and cr.wr21_abs >= 0.5 else '' }}">{{ cr.wr21_abs_fmt }}</td>
+                          <td class="{{ 'pos' if cr.wr21_exc is not none and cr.wr21_exc > 0 else ('neg' if cr.wr21_exc is not none and cr.wr21_exc < 0 else '') }}">{{ cr.wr21_exc_fmt }}</td>
+                          <td class="{{ 'pos' if cr.med_exc21 is not none and cr.med_exc21 > 0 else ('neg' if cr.med_exc21 is not none and cr.med_exc21 < 0 else '') }}">{{ cr.med_exc21_fmt }}</td>
+                          <td>{{ cr.mae_med_fmt }}</td>
+                          {% endif %}
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                    <p class="sb-cut-coverage">
+                      <span class="l-en">{{ cut.coverage_en }}</span>
+                      <span class="l-zh">{{ cut.coverage_zh }}</span>
+                    </p>
+                  </div>
+                  {% endfor %}
+                </details>
+                {% endif %}
               </details>
             </td>
           </tr>

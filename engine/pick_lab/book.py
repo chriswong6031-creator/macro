@@ -70,6 +70,11 @@ LH_HORIZON_ROLE = "hold_thesis"
 ENTRY_HORIZONS = (5, 10, 21, 63)
 LH_HORIZONS = (126, 252)
 
+# Stratified-cut minimum-n (V-LAB-5). Strata with fewer than this many fires
+# print their n and suppress the rate — never a rate on single-digit fires
+# (plain-word null disclosure). The primary pooled scoreboard is unaffected.
+CUT_MIN_N = 10
+
 
 # ------------------------------------------------------------------ helpers ---
 
@@ -285,6 +290,120 @@ def _horizon_stats(
         )
 
     return result
+
+
+# ------------------------------------------------------------------ stratified cuts --
+
+
+def _cut_row(label_key: str, h21_grades: list[dict]) -> dict:
+    """Build one stratum row from its h21 return grades.
+
+    Reuses the same stat definitions as the pooled scoreboard (WR21 abs/exc,
+    median excess21, median |MAE|), computed on the stratum subset only. When
+    the stratum has fewer than CUT_MIN_N fires the rates are suppressed and only
+    the count is reported (plain-word null disclosure — never a rate on
+    single-digit fires).
+    """
+    n = len(h21_grades)
+    row: dict = {"key": label_key, "n": n}
+    if n < CUT_MIN_N:
+        row["suppressed"] = True
+        # No rate fields — the template prints n + "too few to rate".
+        return row
+
+    rets_abs = [g["ret_abs"] for g in h21_grades if g.get("ret_abs") is not None]
+    rets_exc = [g["ret_excess_spy"] for g in h21_grades if g.get("ret_excess_spy") is not None]
+    maes = [abs(g["mae"]) for g in h21_grades if g.get("mae") is not None]
+
+    wr_abs = _wr(rets_abs)
+    wr_exc = _wr(rets_exc)
+    med_exc = _med(rets_exc)
+    med_abs_mae = _med(maes)
+
+    row.update({
+        "suppressed": False,
+        "wr21_abs": round(wr_abs, 4) if wr_abs is not None else None,
+        "wr21_exc": round(wr_exc, 4) if wr_exc is not None else None,
+        "med_exc21": round(med_exc, 6) if med_exc is not None else None,
+        "mae_med": round(med_abs_mae, 6) if med_abs_mae is not None else None,
+    })
+    return row
+
+
+def stratified_cuts(
+    engine_id: str,
+    grades: list[dict],
+    strata: dict[str, dict[str, str]],
+    *,
+    category_orders: Optional[dict[str, list[str]]] = None,
+    unmapped_labels: Optional[dict[str, str]] = None,
+) -> dict:
+    """Display-tier stratified cuts of one book's fires (V-LAB-5/6).
+
+    Joins the book's h21 return grades onto per-ticker strata and reports the
+    pooled book stats within each stratum. This is a join + group-by on already
+    graded fires — no new heavy computation.
+
+    Parameters
+    ----------
+    engine_id       : Book id to cut.
+    grades          : All grade rows (all books); filtered to this book here.
+    strata          : {dimension: {ticker: value}}.  A ticker absent from a
+                      dimension's map falls into that dimension's explicit
+                      unmapped bucket (never silently dropped).
+    category_orders : {dimension: [ordered category values]} for stable row
+                      ordering.  Values not listed are appended alphabetically.
+    unmapped_labels : {dimension: label} for the explicit unmapped bucket key
+                      (e.g. "unmeasured" for rung, "unlabeled" for archetype).
+
+    Returns
+    -------
+    {dimension: {"rows": [cut_row, ...], "total_fires": int,
+                 "covered_fires": int}}
+      total_fires   : the book's total h21 fires (denominator for coverage).
+      covered_fires : fires that fell into a RATED (n>=CUT_MIN_N) named
+                      (non-unmapped) stratum — the honest "covers X of Y".
+    """
+    category_orders = category_orders or {}
+    unmapped_labels = unmapped_labels or {}
+
+    my_grades = _filter(grades, engine_id)
+    # One row per (ticker, fire_date) at h21 — the fire is the unit, not the
+    # per-horizon grade. Keep the h21 ret row (carries ret_abs / excess / mae).
+    h21 = [
+        g for g in my_grades
+        if g.get("horizon") == 21 and g.get("kind") in ("ret", None)
+    ]
+    total_fires = len(h21)
+
+    out: dict = {}
+    for dim, tmap in strata.items():
+        unmapped_key = unmapped_labels.get(dim, "unmapped")
+        buckets: dict[str, list[dict]] = {}
+        for g in h21:
+            val = tmap.get(g.get("ticker"))
+            key = val if (val is not None and str(val) != "" and str(val).lower() != "nan") else unmapped_key
+            buckets.setdefault(key, []).append(g)
+
+        # Row ordering: declared category order first, then any extras
+        # alphabetically, then the unmapped bucket always last.
+        order = list(category_orders.get(dim, []))
+        extras = sorted(k for k in buckets if k not in order and k != unmapped_key)
+        ordered_keys = [k for k in order if k in buckets] + extras
+        if unmapped_key in buckets:
+            ordered_keys.append(unmapped_key)
+
+        rows = [_cut_row(k, buckets[k]) for k in ordered_keys]
+        covered = sum(
+            r["n"] for r in rows
+            if not r.get("suppressed") and r["key"] != unmapped_key
+        )
+        out[dim] = {
+            "rows": rows,
+            "total_fires": total_fires,
+            "covered_fires": covered,
+        }
+    return out
 
 
 # ------------------------------------------------------------------ path stats --
