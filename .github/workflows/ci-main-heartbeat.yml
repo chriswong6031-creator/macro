@@ -98,12 +98,21 @@ jobs:
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
 
-  # ── template↔site + interfonts sync (mirror ci.yml: template-site-sync) ────
+  # ── template↔site + interfonts + data-base shim (mirror ci.yml: template-site-sync) ──
+  # The shim steps are the reason this job matters most here: tests/test_site_shim.py
+  # had no CI lane anywhere, so build_leader_radar's raw write_text on
+  # site/leader_radar.html sat RED on main until a human ran pytest by hand. This
+  # lane has no `paths:` filter — it re-checks main HEAD every 6h regardless of what
+  # the offending PR happened to touch (#3612 touched only workflow YAML + dag.yml,
+  # so no ci.yml path filter would have caught it).
   template-site-sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: install minimal deps (theme.js bake reads config.yml)
         run: pip install pyyaml pytest
       - name: template-site-sync selftest (gate fires on synthetic divergence)
@@ -123,6 +132,10 @@ jobs:
         run: python3 scripts/check_interfonts_sync.py --selftest
       - name: _interfonts partial @font-face blocks must match templates/theme.css
         run: python3 scripts/check_interfonts_sync.py
+      - name: data-base shim guard (lib.pages units + committed-page tripwire + source guard)
+        run: python -m pytest tests/test_site_shim.py -q
+      - name: inline-CSS externalization units
+        run: python -m pytest tests/test_externalize_css.py -q
 
   # ── workflow-yaml parse guard (mirror ci.yml: workflow-yaml) ───────────────
   workflow-yaml:

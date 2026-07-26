@@ -330,27 +330,35 @@ _DBASE_EXTERNAL_TAG_RE = re.compile(
     rf'<script\s+{DBASE_MARKER}\s+src="[^"]*data_base\.js(?:\?[^"]*)?"\s*>\s*</script>',
     re.IGNORECASE,
 )
-_shim_body_cache: Optional[str] = None
+_shim_body_cache: dict[Path, str] = {}
 
 
 def _shim_body() -> Optional[str]:
     """The shim source to inline, minus its leading block comment (the rationale
     lives in templates/data_base.js and in this module). Stripping only a LEADING
     /*…*/ is safe without a JS parser — nothing can precede it, so it can never be
-    inside a string literal. Cached per process; None when unreadable, which makes
-    _tag() fall back to the external ref rather than dropping the shim."""
-    global _shim_body_cache
-    if _shim_body_cache is None:
+    inside a string literal. None when unreadable, which makes _tag() fall back to
+    the external ref rather than dropping the shim.
+
+    Cached PER SOURCE PATH, not per process. A single global slot also cached the
+    *failure*: builder tests patch config.ROOT to a fixture tree with no
+    templates/, so the first write_page under such a patch pinned every later page
+    write in that process to the external-ref fallback — a red that lands on
+    whichever suite happens to run second, far from the test that caused it."""
+    src = config.ROOT / "templates" / "data_base.js"
+    body = _shim_body_cache.get(src)
+    if body is None:
         try:
-            src = (config.ROOT / "templates" / "data_base.js").read_text(encoding="utf-8")
-            body = _DBASE_LEAD_COMMENT_RE.sub("", src).strip()
+            raw = src.read_text(encoding="utf-8")
+            stripped = _DBASE_LEAD_COMMENT_RE.sub("", raw).strip()
             # A literal </script> in the body would close the tag early. The shim has
             # none today; bail to the external ref rather than emit a broken page.
-            _shim_body_cache = "" if (not body or "</script" in body.lower()) else body
+            body = "" if (not stripped or "</script" in stripped.lower()) else stripped
         except Exception as e:  # noqa: BLE001
             log.warning("data_base.js shim read failed (%s) — falling back to external ref", e)
-            _shim_body_cache = ""
-    return _shim_body_cache or None
+            body = ""
+        _shim_body_cache[src] = body
+    return body or None
 
 
 def _tag(prefix: str) -> str:

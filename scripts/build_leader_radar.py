@@ -2868,8 +2868,13 @@ def build(
             env = Environment(loader=FileSystemLoader(str(tpl_root)), autoescape=False)
             tpl = env.get_template("leader_radar.html.j2")
             rendered = tpl.render(leader_radar=payload)
-            html_out = site_root / "leader_radar.html"
-            html_out.write_text(rendered)
+            # write_page, not write_text: the template carries no data-base shim,
+            # so a raw write ships the page with its per-ticker fetches pointed at
+            # Pages instead of R2 whenever this builder runs outside the render
+            # lane's inject_data_base sweep. (The variable target is invisible to
+            # the source guard in tests/test_site_shim.py — the literal-path stub
+            # above is what it can see, so this one has to be held by hand.)
+            html_out = write_page(site_root / "leader_radar.html", rendered)
             log.info("build_leader_radar: rendered %s", html_out)
         except Exception as e:  # noqa: BLE001
             log.warning("build_leader_radar: HTML render failed: %s", e, exc_info=True)

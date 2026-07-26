@@ -68,6 +68,15 @@ on:
       - "tests/test_asset_stamp_refresh.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
+      # data-base shim guard: every builder writes site/**/*.html via lib.pages.write_page,
+      # or the page's per-ticker fetches miss the R2 reroute in a standalone run. Unwired
+      # until now, which let build_leader_radar's raw write_text sit red on main.
+      - "lib/pages.py"
+      - "tests/test_site_shim.py"
+      - "scripts/inject_data_base.py"
+      # inline-CSS externalization units (same lib/pages page-rewrite family).
+      - "tests/test_externalize_css.py"
+      - "scripts/externalize_css.py"
       - "templates/**"
       # SEO meta rollout guard (D12A): template-source SEO head/desc contract.
       - "tests/test_seo_meta_rollout.py"
@@ -2356,6 +2365,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: install minimal deps (theme.js bake reads config.yml)
         run: pip install pyyaml pytest
       - name: template-site-sync selftest (gate fires on synthetic divergence)
@@ -2386,6 +2398,26 @@ jobs:
         run: python3 scripts/check_interfonts_sync.py --selftest
       - name: _interfonts partial @font-face blocks must match templates/theme.css
         run: python3 scripts/check_interfonts_sync.py
+      # ui.data_base_shim: same page-asset drift family, and it had NO CI lane at
+      # all — which is how scripts/build_leader_radar.py sat red on main writing
+      # site/leader_radar.html with a raw write_text instead of lib.pages.write_page
+      # (the render lane's inject_data_base sweep healed the committed copy after
+      # the fact, so only a standalone builder run showed the missing shim).
+      # test_site_shim carries all three layers: lib.pages units, the committed-page
+      # tripwire, and the source guard against raw write_text on an *.html target.
+      # NOTE on trigger breadth: the source guard scans scripts/**+engine/** for
+      # offenders, but listing those globs under `paths:` would run this pack on
+      # nearly every Python PR — a CI-cost call for the operator (same reasoning as
+      # the gh-annotation guard above). ci-main-heartbeat.yml runs this job on a
+      # schedule against main with NO path filter, which is what keeps the guard
+      # from rotting red on main invisibly again.
+      - name: data-base shim guard (lib.pages units + committed-page tripwire + source guard)
+        run: python -m pytest tests/test_site_shim.py -q
+      # Same module, same class of post-render page rewrite: externalize_css lifts
+      # inline <style> into hashed sheets via lib.pages.externalize_css_text and
+      # writes through write_page. Also unwired until now.
+      - name: inline-CSS externalization units
+        run: python -m pytest tests/test_externalize_css.py -q
 
   grader-manifest:
     if: ${{ false }}
