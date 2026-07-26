@@ -87,11 +87,29 @@ class TestFtrStaticSource:
         assert "../policy_lever.json" in src
 
     def test_allocation_ft_r11_horizon_label(self):
-        """FT-R11: allocation page must carry the honest strategic-horizon sub-label."""
+        """FT-R11: allocation page must carry the honest strategic-horizon sub-label.
+
+        The label ships in plain words, not the wording this test was born with.
+        #2635 ported the original copy — "Strategic horizon (3–12m): skip-month
+        momentum by construction — this view is deliberately slow." — to the
+        current sentence under docs/DESIGN_DOCTRINE.md Law 2 (no unexplained
+        construction jargon on Tier 1: "skip-month momentum by construction" is
+        exactly the banned "comparative construction that needs a manual") and
+        Law 3 (a Tier-1 number arrives with its interpretation). The label div
+        and its FT-R11 marker comment are untouched by that port — only the
+        sentence inside changed — so assert the disclosure, not the retired
+        string. Asserting the old wording would pin a Law 2 violation in place.
+        """
         src = _src("allocation.html.j2")
-        assert "Strategic horizon" in src
-        assert "3" in src and "12m" in src  # "3–12m" range
-        assert "deliberately slow" in src
+        assert "FT-R11 horizon label" in src
+        # the horizon, and that it is slow by construction
+        assert "A slow book" in src
+        assert "3–12 month trends" in src
+        assert "most recent month deliberately excluded" in src
+        # the consequence the label exists to state: it is not an intraday read
+        assert "reacts over months, not days" in src
+        # Law 5 — honesty survives translation (the ZH twin carries the same claim)
+        assert "慢速账本" in src
 
     def test_basket_detail_nb_chg_spans(self):
         """basket_detail must emit nb-chg spans for member live-price wiring."""

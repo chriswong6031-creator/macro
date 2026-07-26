@@ -297,6 +297,18 @@ on:
       - "engine/basket_turn_watch.py"
       - "templates/basket_detail.html.j2"
       - "tests/test_cohort_flow_chips.py"
+      # FTR tape-surface guards (unrun-suite census, 2026-07-26): both suites read
+      # templates/{baskets,allocation,basket_detail}.html.j2 — all three are already
+      # listed above — but the test files need explicit paths so a test-only re-pin
+      # still re-runs the ftr-tape-surfaces job that carries them.  Both files sat
+      # RED and unrun for ~2 weeks with no signal: three deliberate surface changes
+      # each moved a marker the suites pinned as a bare literal (#2635 ported the
+      # FT-R11 horizon copy off Law-2 jargon, #2267 deleted the flat #ftr-dtp-full
+      # container that interleaved the expansion, #2380 made the basket-name map
+      # region-aware) and no `run:` step in any of the 51 workflows named either
+      # file, so nothing went red.  Both halves listed on purpose (#3488).
+      - "tests/test_ftr_w1_template_markup.py"
+      - "tests/test_ftr_w3_ui.py"
       # CPI net-liquidity artifact (data infrastructure): builder + contract tests
       # must re-run together so a canon-formula or stale-guard regression fails RED.
       - "scripts/build_netliq_daily.py"
@@ -2728,6 +2740,30 @@ jobs:
         run: pip install pytest pandas pyarrow jinja2 pyyaml
       - name: basket staleness warn tests
         run: python -m pytest tests/test_basket_staleness_warn.py -q
+
+  ftr-tape-surfaces:
+    if: ${{ false }}
+    # FTR W1/W2a + W3/W8-UI template guards for the three tape surfaces
+    # (baskets / allocation / basket_detail): shock banner + lever chip reading
+    # framing_zh from JSON, tape band v3 ranked columns + per-column expander,
+    # FT-R11 horizon label, plain-word fade footer with the Tier-2 receipt,
+    # region-aware basket-name map, W8 anatomy leg order.
+    # Wired 2026-07-26 by the unrun-suite census: both files were named by NO
+    # `run:` step in any of the 51 workflows and had been red since the surfaces
+    # they guard were deliberately reworked (#2635 / #2267 / #2380).
+    # Source-only (reads templates/*.j2 off disk, renders baskets.html.j2) —
+    # pytest + jinja2 is the whole dependency set.
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest jinja2
+      - name: FTR tape-surface template guards
+        run: python -m pytest tests/test_ftr_w1_template_markup.py tests/test_ftr_w3_ui.py -q
 
   live-flow-ops:
     if: ${{ false }}
