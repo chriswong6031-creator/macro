@@ -52,6 +52,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config
+from lib.pages import write_page
 
 log = logging.getLogger(__name__)
 
@@ -115,7 +116,9 @@ def _write_noindex_stub(site_root: Path) -> None:
     )
     # The stub must REPLACE the live page — writing only the JSON left the
     # last-baked site/leader_radar.html serving as if the program were still on.
-    (site_root / "leader_radar.html").write_text(stub)
+    # write_page (not raw write_text): the kill-switch stub is still a served page
+    # and must carry the data-base shim like every other one.
+    write_page(site_root / "leader_radar.html", stub)
     log.info(
         "build_leader_radar: kill-switch active — wrote noindex stub "
         "(leaderradar/radar.json + leader_radar.html)"
