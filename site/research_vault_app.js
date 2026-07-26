@@ -630,8 +630,18 @@
      PDF VIEWER — auth-gated pdf.js render + quota-metered download.
      ═══════════════════════════════════════════════════════════════════════ */
   var _pdfLib = null, _pdfLoad = null;
-  var V = { item: null, pdf: null, page: 1, pages: 0, zoom: 1.0, invert: false, renderTok: 0, lastFocus: null,
-            dling: false };
+  /* Zoom is a MULTIPLIER on the fit-to-width scale, so 100% == fit width. A ladder
+     rather than a fixed step: every stop is a round percentage and the low end
+     stays usable (the old additive 0.15 step could never land back on 100% from a
+     50% start, and floored at 70% — too tight to see a full page). */
+  var ZOOM_STEPS = [0.25, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5, 1.75, 2.0, 2.4];
+  var ZOOM_DEFAULT = 0.5;   // opening zoom — a whole page in view, not fit-width
+
+  var V = { item: null, pdf: null, page: 1, pages: 0, zoom: ZOOM_DEFAULT, invert: false, renderTok: 0, lastFocus: null,
+            dling: false,
+            // in-document find: hits are document-ordered; byPage indexes them for
+            // painting; textIx caches the per-page search index (scan once per doc).
+            find: { q: '', tok: 0, hits: [], byPage: {}, idx: -1 }, textIx: {} };
 
   function loadPdfLib() {
     if (_pdfLib) return Promise.resolve(_pdfLib);
@@ -669,7 +679,9 @@
 
   function openViewer(id) {
     var x = ITEMS.find(function (i) { return i.id === id; }); if (!x) return;
-    V.item = x; V.zoom = 1.0; V.invert = false;
+    V.item = x; V.zoom = ZOOM_DEFAULT; V.invert = false;
+    $('zoom-ind').textContent = Math.round(ZOOM_DEFAULT * 100) + '%';
+    resetFind();                                  // a new document invalidates hits + the text index
     V.page = DocState.lastPage(id) || 1;
     V.lastFocus = doc.activeElement;
     DocState.markRead(id);
@@ -707,6 +719,7 @@
     V.renderTok++; _teardownObservers();
     try { if (V.pdf) V.pdf.destroy(); } catch (e) {}
     V.pdf = null; V.pageEls = null;
+    resetFind();          // drop hits + the cached page text of the document we just destroyed
     if (V.lastFocus && V.lastFocus.focus) V.lastFocus.focus();
   }
 
@@ -897,6 +910,7 @@
       var r = el.getBoundingClientRect();
       if (r.bottom > sr.top - 500 && r.top < sr.bottom + 500) renderPageInto(+el.getAttribute('data-page'), scale);
     });
+    repaintHighlights();   // hit rects are stored at scale 1 — re-project them at the new zoom
   }
   function buildThumbs() {
     var host = $('vthumbs'); if (!host || !V.pdf) return;
@@ -932,11 +946,28 @@
     var top = stage.scrollTop + (r.top - sr.top) - 16;
     stage.scrollTo({ top: top < 0 ? 0 : top, behavior: behavior || 'smooth' });
   }
-  function gotoPage(n) { if (!V.pdf || n < 1 || n > V.pages) return; V.page = n; updatePager(); scrollThumb(); scrollToPage(n); }
+  // Page turns land INSTANTLY (behavior 'auto'). A smooth scroll across a tall page
+  // reads as a slow drift rather than a page turn, and it drags the page indicator
+  // through every page it passes — real PDF viewers snap.
+  function gotoPage(n) { if (!V.pdf || n < 1 || n > V.pages) return; V.page = n; updatePager(); scrollThumb(); scrollToPage(n, 'auto'); }
   function turnPage(d) { gotoPage(Math.min(V.pages, Math.max(1, V.page + d))); }
   function scrollThumb() { var t = doc.querySelector('.vthumb[data-page="' + V.page + '"]'); if (t) t.scrollIntoView({ block: 'nearest' }); }
-  function zoomBy(d) { V.zoom = Math.max(0.7, Math.min(2.4, V.zoom + d * 0.15)); $('zoom-ind').textContent = Math.round(V.zoom * 100) + '%'; relayout(); }
-  function fitWidth() { V.zoom = 1.0; $('zoom-ind').textContent = '100%'; relayout(); }
+  function setZoom(z) {
+    var lo = ZOOM_STEPS[0], hi = ZOOM_STEPS[ZOOM_STEPS.length - 1];
+    V.zoom = Math.max(lo, Math.min(hi, z));
+    $('zoom-ind').textContent = Math.round(V.zoom * 100) + '%';
+    relayout();
+  }
+  function zoomBy(d) {
+    var i;
+    if (d > 0) {
+      for (i = 0; i < ZOOM_STEPS.length; i++) if (ZOOM_STEPS[i] > V.zoom + 1e-6) { setZoom(ZOOM_STEPS[i]); return; }
+      setZoom(ZOOM_STEPS[ZOOM_STEPS.length - 1]); return;
+    }
+    for (i = ZOOM_STEPS.length - 1; i >= 0; i--) if (ZOOM_STEPS[i] < V.zoom - 1e-6) { setZoom(ZOOM_STEPS[i]); return; }
+    setZoom(ZOOM_STEPS[0]);
+  }
+  function fitWidth() { setZoom(1.0); }
   function toggleInvert() { V.invert = !V.invert; $('vstage').classList.toggle('inverted', V.invert); setInvertBtn(V.invert); }
   function setInvertBtn(on) { var b = $('vh-invert'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
   function toggleFullscreen() { var on = $('overlay').classList.toggle('fs'); setFsBtn(on); if (V.pdf) setTimeout(relayout, 60); }
@@ -1179,8 +1210,24 @@
     $('dl-btn-ok').addEventListener('click', doDownload);
     $('dl-btn-anon').addEventListener('click', function () { if (window.MDXAuth && window.MDXAuth.signIn) window.MDXAuth.signIn(); else if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open(); });
     $('vrelated').addEventListener('click', function (e) { var b = e.target.closest('[data-open]'); if (b) openViewer(b.getAttribute('data-open')); });
-    // in-document find (pdf.js find controller wiring kept minimal — see cut note in report)
-    $('vh-find-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') findInDoc($('vh-find-in').value.trim()); });
+    // in-document find: live search as you type, Enter/Shift+Enter to step matches
+    var _findTimer = null;
+    $('vh-find-in').addEventListener('input', function () {
+      var q = this.value;
+      clearTimeout(_findTimer);
+      _findTimer = setTimeout(function () { runFind(q); }, 180);
+    });
+    $('vh-find-in').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      clearTimeout(_findTimer);
+      var q = this.value;
+      // Enter re-runs a changed query, otherwise it steps to the next/previous match
+      if (q.trim() && q !== V.find.q) runFind(q);
+      else stepHit(e.shiftKey ? -1 : 1);
+    });
+    $('vh-find-prev').addEventListener('click', function () { stepHit(-1); });
+    $('vh-find-next').addEventListener('click', function () { stepHit(1); });
     // overlay click-out + keyboard (Esc / arrows / focus-trap)
     $('overlay').addEventListener('click', function (e) { if (e.target === this) closeViewer(); });
     doc.addEventListener('keydown', onKeydown);
@@ -1197,7 +1244,13 @@
   function onKeydown(e) {
     if (!$('overlay').classList.contains('open')) return;
     var inField = /^(INPUT|TEXTAREA)$/.test((e.target.tagName || ''));
-    if (e.key === 'Escape') { closeViewer(); return; }
+    if (e.key === 'Escape') {
+      // Escape with a live search clears the search first — closing the whole
+      // document out from under someone who only wanted to drop the query is a
+      // surprise (Preview/Books both dismiss the find bar first).
+      if (V.find.q || (inField && e.target.id === 'vh-find-in' && e.target.value)) { resetFind(); return; }
+      closeViewer(); return;
+    }
     if (!inField && e.key === 'ArrowRight') { turnPage(1); return; }
     if (!inField && e.key === 'ArrowLeft') { turnPage(-1); return; }
     if (e.key === 'Tab') {
@@ -1209,18 +1262,173 @@
     }
   }
 
-  /* in-document find — jump to the first page containing the query (text-layer scan). */
-  function findInDoc(q) {
-    if (!q || !V.pdf) return;
-    var lc = q.toLowerCase(), n = 1;
-    (function scan(p) {
-      if (p > V.pages) return;
-      V.pdf.getPage(p).then(function (page) { return page.getTextContent(); }).then(function (tc) {
-        var text = tc.items.map(function (it) { return it.str; }).join(' ').toLowerCase();
-        if (text.indexOf(lc) >= 0) { gotoPage(p); return; }
-        scan(p + 1);
-      }).catch(function () { scan(p + 1); });
-    })(n);
+  /* ═══════════ in-document find ═══════════
+     A real find controller (Preview / Apple Books shape): every match in the
+     document, a live count, next/prev step-through, and a highlight box drawn over
+     the page.
+
+     The pages are bare <canvas> (no pdf.js text layer), so match geometry is
+     derived from getTextContent() item transforms: each hit's rectangles are stored
+     in scale-1 viewport units and multiplied by the live zoom at paint time, so a
+     zoom change never needs a re-scan. Per-page indexes are cached — a 60-page PDF
+     is scanned once, not once per keystroke. */
+
+  function resetFind() {
+    V.find = { q: '', tok: 0, hits: [], byPage: {}, idx: -1 };
+    V.textIx = {};
+    clearHighlights();
+    var i = $('vh-find-in'); if (i) i.value = '';
+    updateFindUI();
+  }
+  function clearHighlights() {
+    doc.querySelectorAll('.vhl-layer').forEach(function (l) { l.remove(); });
+  }
+
+  /* Per-page search index: a normalized string (lowercased, whitespace runs
+     collapsed) plus a map back to the raw character origins, so a hit in the
+     normalized text can be resolved to the exact text items it covers. */
+  function pageIndex(p) {
+    if (V.textIx[p]) return Promise.resolve(V.textIx[p]);
+    if (!V.pdf) return Promise.reject(new Error('no document'));
+    return V.pdf.getPage(p).then(function (page) {
+      return page.getTextContent().then(function (tc) {
+        var vp = page.getViewport({ scale: 1 });
+        var raw = '', origin = [], prev = null;
+        tc.items.forEach(function (it) {
+          var s = it.str || '';
+          // pdf.js emits one item per text run. A run usually carries its own
+          // spaces, but a run boundary with a real horizontal gap (or a line end)
+          // is a word break the concatenation would otherwise swallow — insert a
+          // separator so a phrase query still matches across the boundary.
+          if (prev && raw && !/\s$/.test(raw) && !/^\s/.test(s)) {
+            var gap = it.transform[4] - (prev.transform[4] + (prev.width || 0));
+            if (prev.hasEOL || gap > (prev.height || 10) * 0.18) { raw += ' '; origin.push(null); }
+          }
+          for (var c = 0; c < s.length; c++) { raw += s[c]; origin.push({ it: it, off: c }); }
+          if (it.hasEOL && !/\s$/.test(raw)) { raw += '\n'; origin.push(null); }
+          prev = it;
+        });
+        var norm = '', n2r = [], ws = true;
+        for (var k = 0; k < raw.length; k++) {
+          var ch = raw[k];
+          if (/\s/.test(ch)) { if (!ws) { norm += ' '; n2r.push(k); ws = true; } }
+          else { norm += ch.toLowerCase(); n2r.push(k); ws = false; }
+        }
+        var rec = { norm: norm, n2r: n2r, origin: origin, vp: vp };
+        V.textIx[p] = rec; return rec;
+      });
+    });
+  }
+
+  /* Rectangles (scale-1 viewport units) covering normalized range [a, b). One rect
+     per text item the hit spans; the sub-string slice is proportional within the
+     item, which is what makes a mid-run match highlight only its own characters. */
+  function rectsFor(rec, a, b) {
+    var runs = [], k, o;
+    for (k = a; k < b && k < rec.n2r.length; k++) {
+      o = rec.origin[rec.n2r[k]];
+      if (!o) continue;                                    // synthetic separator
+      var last = runs[runs.length - 1];
+      if (last && last.it === o.it && o.off === last.o2 + 1) last.o2 = o.off;
+      else runs.push({ it: o.it, o1: o.off, o2: o.off });
+    }
+    var out = [];
+    runs.forEach(function (r) {
+      var it = r.it, s = it.str || '', len = s.length || 1;
+      var tx = (_pdfLib && _pdfLib.Util)
+        ? _pdfLib.Util.transform(rec.vp.transform, it.transform)
+        : null;
+      if (!tx) return;
+      var fh = Math.sqrt(tx[1] * tx[1] + tx[3] * tx[3]) || Math.abs(tx[3]) || 10;
+      var cw = (it.width || 0) / len;
+      var x = tx[4] + cw * r.o1, w = cw * (r.o2 - r.o1 + 1);
+      if (!(w > 0)) return;
+      out.push({ x: x, y: tx[5] - fh, w: w, h: fh * 1.18 });
+    });
+    return out;
+  }
+
+  function paintHighlights(p) {
+    var el = V.pageEls && V.pageEls[p - 1]; if (!el) return;
+    var hits = V.find.byPage[p], layer = el.querySelector('.vhl-layer');
+    if (!hits || !hits.length) { if (layer) layer.remove(); return; }
+    if (!layer) { layer = doc.createElement('div'); layer.className = 'vhl-layer'; el.appendChild(layer); }
+    var s = (V.fitScale || 1) * V.zoom, cur = V.find.hits[V.find.idx], html = '';
+    hits.forEach(function (h) {
+      var on = (h === cur) ? ' cur' : '';
+      h.rects.forEach(function (r) {
+        html += '<i class="vhl' + on + '" style="left:' + (r.x * s).toFixed(1) + 'px;top:' + (r.y * s).toFixed(1)
+             + 'px;width:' + (r.w * s).toFixed(1) + 'px;height:' + (r.h * s).toFixed(1) + 'px"></i>';
+      });
+    });
+    layer.innerHTML = html;
+  }
+  function repaintHighlights() {
+    Object.keys(V.find.byPage).forEach(function (p) { paintHighlights(+p); });
+  }
+
+  function updateFindUI() {
+    var box = $('vh-find-count'), prev = $('vh-find-prev'), next = $('vh-find-next');
+    if (!box) return;
+    var n = V.find.hits.length;
+    if (!V.find.q) { box.textContent = ''; box.classList.remove('none'); }
+    else if (!n) { box.textContent = T('No results', '无结果'); box.classList.add('none'); }
+    else { box.textContent = (V.find.idx + 1) + ' / ' + n; box.classList.remove('none'); }
+    if (prev) prev.disabled = !n;
+    if (next) next.disabled = !n;
+  }
+
+  function scrollToHit(h) {
+    var el = V.pageEls && V.pageEls[h.page - 1], stage = $('vstage');
+    if (!el || !stage) return;
+    var s = (V.fitScale || 1) * V.zoom, r = h.rects[0];
+    var pr = el.getBoundingClientRect(), sr = stage.getBoundingClientRect();
+    var y = pr.top - sr.top + (r ? r.y * s : 0);
+    // park the hit ~35% down the stage rather than at the very top — the
+    // surrounding lines are what make a match readable in context
+    var top = stage.scrollTop + y - stage.clientHeight * 0.35;
+    stage.scrollTo({ top: top < 0 ? 0 : top, behavior: 'auto' });
+  }
+
+  function gotoHit(i) {
+    var n = V.find.hits.length; if (!n) return;
+    V.find.idx = ((i % n) + n) % n;
+    var h = V.find.hits[V.find.idx];
+    if (V.page !== h.page) { V.page = h.page; updatePager(); scrollThumb(); }
+    scrollToHit(h);
+    repaintHighlights();
+    updateFindUI();
+  }
+  function stepHit(d) { if (V.find.hits.length) gotoHit(V.find.idx + d); }
+
+  function runFind(q) {
+    var tok = ++V.find.tok;
+    clearHighlights();
+    V.find.q = q; V.find.hits = []; V.find.byPage = {}; V.find.idx = -1;
+    var nq = (q || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!nq || !V.pdf) { updateFindUI(); return; }
+    var p = 1;
+    (function step() {
+      if (tok !== V.find.tok) return;                       // superseded by a newer query
+      if (p > V.pages) { updateFindUI(); return; }
+      var cur = p++;
+      pageIndex(cur).then(function (rec) {
+        if (tok !== V.find.tok) return;
+        var from = 0, i;
+        while ((i = rec.norm.indexOf(nq, from)) >= 0) {
+          var hit = { page: cur, rects: rectsFor(rec, i, i + nq.length) };
+          V.find.hits.push(hit);
+          (V.find.byPage[cur] = V.find.byPage[cur] || []).push(hit);
+          from = i + nq.length;
+        }
+        if (V.find.byPage[cur]) {
+          paintHighlights(cur);
+          if (V.find.idx < 0) gotoHit(0);                   // jump to the first hit as soon as it exists
+        }
+        updateFindUI();
+        step();
+      }).catch(function () { if (tok === V.find.tok) step(); });
+    })();
   }
 
   /* deep link from a report landing page: research_vault.html?doc=<id> opens that
