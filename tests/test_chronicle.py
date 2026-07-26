@@ -1386,6 +1386,115 @@ def test_build_weekly_trim_loop_fires_and_notes_when_over_budget():
 # state, where data/chronicle/ sat frozen at its hand-run seed).
 _MANIFEST_MAX_AGE_DAYS = 21
 
+# Fields whose value is a pure function of (source row identity, id scheme) and
+# therefore may NEVER drift for a given event id. Everything else on the body
+# (title, facts, tickers, themes, weight_hint, links) is re-derived text/metadata
+# from the current source snapshot and legitimately improves between nightlies.
+_IMMUTABLE_EVENT_FIELDS = ("id", "ts", "date", "source", "source_ref", "kind")
+
+
+def _load_committed_events():
+    path = ROOT / "data" / "chronicle" / "events.jsonl"
+    if not path.exists():
+        pytest.skip("no committed data/chronicle/events.jsonl in this checkout")
+    return path, [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _rebuild_committed_sources_into_scratch(
+    tmp_path: Path, *, include_prev_store: bool = False,
+) -> list[dict]:
+    """Rebuild the store into a scratch root from the ACTUAL committed sources.
+
+    Never writes the live store (the governor has no __main__ for the same
+    reason): sources are copied into tmp_path and the build is rooted there.
+
+    ``include_prev_store`` seeds data/chronicle/events.jsonl too — the
+    union-merge operation the nightly actually runs, under which a
+    retained-after-drop event (B1: a source row leaves its snapshot, its event
+    is kept) survives the rebuild. Without it the rebuild is from scratch,
+    which only equals the committed store while NO adapter is retaining a
+    dropped row — the first legitimate retention would otherwise read as
+    "append-only violated"/"stale store" here forever, a false red no regen
+    could clear.
+    """
+    import shutil
+    from engine.chronicle.governor import build_and_write
+    from engine.chronicle import spine
+
+    rels = list(spine.REBUILD_SOURCES)
+    if include_prev_store:
+        rels.append("data/chronicle/events.jsonl")
+    for rel in rels:
+        src = ROOT / rel
+        if src.exists():
+            dst = tmp_path / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+
+    result = build_and_write(root=tmp_path, rebuild=True)
+    assert not result.get("error"), result
+    rebuilt_path = tmp_path / "data" / "chronicle" / "events.jsonl"
+    return [json.loads(line) for line in rebuilt_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _drifted_sources() -> list[str] | None:
+    """Which rebuild inputs have moved since the committed store was written.
+
+    Returns [] when the manifest attests EVERY source at its current vintage
+    (byte reproduction is then a real invariant), a list of repo-relative paths
+    that have drifted, or None when the vintage is UNKNOWABLE — no manifest, an
+    unreadable one, or one written before per-source fingerprints existed.
+
+    None and a non-empty list are treated identically by the caller (weak form).
+    They are distinguished only so the failure message can say which it is: an
+    unknowable vintage is a wiring question, drift is ordinary cadence.
+
+    The pin covers the WHOLE closure rather than research_vault/catalog.json
+    alone. A catalog-only pin leaves five other inputs able to move unseen — and
+    earnings.parquet moves by construction, since daily.yml's collect_tail job
+    commits it in PARALLEL with the engine job that rebuilds the spine. That
+    left gate 1 on its STRICT path against sources that had already advanced:
+    the spurious red that drew four duplicate fixes on 2026-07-26.
+    """
+    from engine.chronicle import spine
+
+    manifest_path = ROOT / "data" / "chronicle" / "manifest.json"
+    if not manifest_path.exists():
+        return None
+    try:
+        recorded = (json.loads(manifest_path.read_text(encoding="utf-8"))
+                    .get("source_fingerprints") or {})
+    except Exception:  # noqa: BLE001 — unreadable manifest: vintage unknowable
+        return None
+    # A manifest predating the per-source pin carries a flat {name: sha} map (or
+    # nothing). Anything that is not the {rel: {"sha256": ...}} shape for EVERY
+    # source is unknowable rather than "drifted" — never silently strict.
+    if not all(isinstance(recorded.get(rel), dict) for rel in spine.REBUILD_SOURCES):
+        return None
+    return _drift_against(recorded)
+
+
+def _drift_against(recorded: dict) -> list[str]:
+    """Which REBUILD_SOURCES entries a given fingerprint mapping fails to attest.
+
+    Split out of :func:`_drifted_sources` so the ARMING CONDITION can be tested
+    against a synthetic fingerprint set while still exercising the real decision
+    — a test that re-implements this comparison would keep passing while the
+    shipped gate rots. An entry that is missing, malformed, or hash-mismatched
+    all count as unattested; only an exact match attests.
+    """
+    from engine.chronicle import spine
+
+    drifted: list[str] = []
+    for rel in spine.REBUILD_SOURCES:
+        src = ROOT / rel
+        current = ("sha256:" + hashlib.sha256(src.read_bytes()).hexdigest()) if src.exists() else None
+        entry = recorded.get(rel)
+        if not isinstance(entry, dict) or entry.get("sha256") != current:
+            drifted.append(rel)
+    return drifted
+
+
 
 # ---------------------------------------------------------------------------
 # Gate 1 companions: the two cadence-immune teeth (#3648) that #3660 dropped
@@ -1447,6 +1556,19 @@ def test_committed_store_matches_its_manifest_receipt():
         "no governor run produced (hand-edited or half-written)"
     )
 
+    # Same tie for the one genuinely-incremental ledger: a hand-edited
+    # state_log.jsonl is unrecoverable history damage (forward-only capture of
+    # world_state's regime label — a night never captured cannot be re-run), so
+    # it gets the same receipt binding rather than a weaker presence check.
+    state_log_path = ROOT / "data" / "chronicle" / "state_log.jsonl"
+    state_receipt = (manifest.get("ledgers") or {}).get("state_log") or {}
+    if state_log_path.exists() and state_receipt.get("present"):
+        state_actual = hashlib.sha256(state_log_path.read_bytes()).hexdigest()
+        assert str(state_receipt.get("sha256") or "").split(":")[-1] == state_actual, (
+            "committed state_log.jsonl does not hash to its own manifest receipt — "
+            "the forward-only capture ledger was edited outside the governor"
+        )
+
 
 def test_committed_manifest_proves_the_nightly_is_advancing_the_store():
     """Dead-wire alarm (#3648): the store must be REGENERATED, not just wired.
@@ -1480,77 +1602,311 @@ def test_committed_manifest_proves_the_nightly_is_advancing_the_store():
     )
 
 
-def test_rebuild_from_committed_sources_reproduces_committed_store():
-    """Gate 1: rebuilding into a scratch root from the ACTUAL committed
-    sources must reproduce data/chronicle/events.jsonl byte-for-byte. The
-    existing determinism test only proved engine self-consistency on a
-    synthetic fixture -- it could not have caught the stale-seed defect (19
-    of 86 vault titles carrying PDF-filename garbage from before PR #3570
-    landed) because it never touches the committed sources at all."""
-    import shutil
-    import tempfile
-    from engine.chronicle.governor import build_and_write
+def test_vintage_guard_arms_on_full_closure_not_just_the_catalog():
+    """The ARMING CONDITION needs coverage, not just the assertion it guards.
 
-    committed_path = ROOT / "data" / "chronicle" / "events.jsonl"
-    if not committed_path.exists():
-        pytest.skip("no committed data/chronicle/events.jsonl in this checkout")
+    Ported from #3690 (closed as overlapping this PR), whose author found the
+    property first; re-pointed at the shipped `_drift_against` instead of a
+    local mirror of it, so the test cannot pass while the real gate rots.
+
+    A conditioned gate has two failure modes a green run cannot tell apart: the
+    condition held and the assertion passed, or the condition never held and the
+    assertion never ran. Gate 1 spent its whole life in the second state — the
+    committed manifest predates source_fingerprints, so every source reads as
+    unknowable and the strict byte branch has never executed on a real checkout.
+    That is exactly how attesting 1 of 6 sources survived review: reading the
+    code and running the suite both said "fine".
+
+    Touches no committed artifact — the fingerprint sets here are synthetic.
+    """
+    from engine.chronicle.manifest import _source_fingerprints
+    from engine.chronicle import spine
+
+    full = _source_fingerprints(ROOT)
+
+    # the stamper must cover the closure exactly — under-attestation is the defect
+    assert set(full) == set(spine.REBUILD_SOURCES), (
+        f"_source_fingerprints stamped {sorted(full)} but the rebuild closure is "
+        f"{sorted(spine.REBUILD_SOURCES)} — the manifest would under-attest, and the "
+        "gate would arm while blind to whichever source is missing."
+    )
+
+    # a complete, matching attestation arms (no drift)
+    assert _drift_against(full) == [], (
+        "a fingerprint set stamped from the live tree should report zero drift"
+    )
+
+    # the historical defect: catalog-only attestation must NOT arm. Every other
+    # source reads as unattested, so the gate stays on its permissive branch
+    # instead of demanding byte equality it cannot legitimately get.
+    catalog = "data/research_vault/catalog.json"
+    unattested = set(_drift_against({catalog: full[catalog]}))
+    assert unattested == set(spine.REBUILD_SOURCES) - {catalog}, (
+        f"catalog-only attestation should leave the other five sources unattested, "
+        f"got {sorted(unattested)}"
+    )
+    assert unattested, (
+        "catalog-only attestation reported zero drift — the gate would arm strict "
+        "byte-equality while five of six sources are unattested and free to advance. "
+        "This is the defect that reddened unrelated PRs; it must never report clean."
+    )
+
+    # and a stale vintage on ANY single source is enough to disarm
+    for rel in spine.REBUILD_SOURCES:
+        stale = dict(full)
+        stale[rel] = {"sha256": "sha256:" + "0" * 64, "present": True}
+        assert _drift_against(stale) == [rel], (
+            f"a stale fingerprint on {rel} alone must disarm the strict branch"
+        )
+
+
+def test_rebuild_sources_covers_every_path_the_adapters_read():
+    """spine.REBUILD_SOURCES must list EVERY file a rebuild reads.
+
+    The tuple carries a comment saying "adding an adapter requires extending
+    this tuple" — but a comment is not a guard, and this whole gate exists
+    because an under-listed closure arms the strict branch against inputs that
+    have already moved. A new adapter added without extending the tuple would
+    silently re-create exactly that trap: its source would go unattested, so the
+    gate would call the vintage a match while that source drifted freely.
+
+    Scans the adapter module for its `Path("data") / ... ` literals rather than
+    trusting the constant to be maintained by hand, and asserts the scan matched
+    something FIRST — a guard whose pattern has gone stale finds nothing and
+    passes vacuously, which is how it stops being a guard.
+    """
+    import re
+    from engine.chronicle import spine, state_log
+
+    src = (ROOT / "engine" / "chronicle" / "adapters.py").read_text(encoding="utf-8")
+    found = {
+        "data/" + "/".join(re.findall(r'"([^"]+)"', parts))
+        for parts in re.findall(r'Path\("data"\)((?:\s*/\s*"[^"]+")+)', src)
+    }
+    assert found, (
+        "found no `Path(\"data\") / ...` literals in engine/chronicle/adapters.py — "
+        "the adapters changed how they name their sources and this scan now checks "
+        "nothing. Re-derive the pattern before trusting a green here."
+    )
+
+    missing = sorted(found - set(spine.REBUILD_SOURCES))
+    assert not missing, (
+        f"{len(missing)} source(s) read by an adapter are absent from "
+        f"spine.REBUILD_SOURCES, so no vintage is stamped for them and gate 1 will "
+        f"call a drifted checkout 'attested': {missing}. Extend REBUILD_SOURCES."
+    )
+
+    # state_log.jsonl is read by the regime_flip derivation, not by a file adapter,
+    # so the scan above cannot see it — pin it explicitly.
+    assert str(state_log.STATE_LOG_REL).replace("\\", "/") in spine.REBUILD_SOURCES, (
+        "state_log.jsonl feeds the regime_flip events but is not in REBUILD_SOURCES"
+    )
+
+
+def test_rebuild_from_committed_sources_never_contradicts_committed_store(tmp_path):
+    """Gate 1 tooth (3): rebuilding from the ACTUAL committed sources (not the
+    synthetic fixture — the determinism test above already covers engine
+    self-consistency) must never contradict the committed store.
+
+    Tolerated (ordinary cadence lag, see the section note above): ids only in
+    the rebuild (a source advanced since the last nightly), and drift in
+    source-derived text on a shared id (the vault re-extracts titles/facts on
+    every re-collect). Both are reported so lag is never silently swallowed.
+
+    NOT tolerated — each of these means something worse than staleness:
+      * a committed event whose (source, source_ref) still exists in the rebuild
+        under a DIFFERENT id (id-scheme or date churn — breaks idempotency and
+        every downstream reference);
+      * immutable-field drift on a shared id;
+      * shared ids reordered (events.jsonl is sorted by (date, id): a reorder
+        means a date moved).
+
+    Deliberately NOT this test's job: a line hand-deleted from (or hand-added
+    to) the committed store is indistinguishable from ordinary cadence lag from
+    a single snapshot — the rebuild simply produces an event the store lacks,
+    exactly as it does between nightlies. That case is caught by
+    test_committed_store_matches_its_manifest_receipt (rows + sha256 tie), which
+    no hand-edit can survive. Verified by mutation: deleting an event line goes
+    red there, not here.
+    """
+    import warnings
+
+    _, committed = _load_committed_events()
+    rebuilt = _rebuild_committed_sources_into_scratch(tmp_path)
+
+    committed_by_id = {e["id"]: e for e in committed}
+    rebuilt_by_id = {e["id"]: e for e in rebuilt}
+    committed_pairs = {(e["source"], e["source_ref"]): e["id"] for e in committed}
+    rebuilt_pairs = {(e["source"], e["source_ref"]): e["id"] for e in rebuilt}
+
+    # (a) no id churn: a source row that still exists must still hash to its
+    # committed id. This is the "an id change would mean something worse" check.
+    churned = {
+        pair: (committed_pairs[pair], rebuilt_pairs[pair])
+        for pair in committed_pairs
+        if pair in rebuilt_pairs and committed_pairs[pair] != rebuilt_pairs[pair]
+    }
+    assert not churned, (
+        f"{len(churned)} committed event(s) re-derive to a DIFFERENT id from the same "
+        f"(source, source_ref) — id-scheme or date churn, not staleness: "
+        f"{list(churned.items())[:5]}"
+    )
+
+    # (b) (a)'s backstop for the one case its pair->id map cannot see: two
+    # committed events sharing a (source, source_ref) across different dates
+    # collapse to one entry in committed_pairs, so churn on the shadowed one
+    # would slip past (a). A committed id the rebuild no longer produces is
+    # legitimate ONLY when its source row left the snapshot too (union_events
+    # retains it forever by design — the append-only law).
+    lost_with_live_source = [
+        eid for eid, ev in committed_by_id.items()
+        if eid not in rebuilt_by_id and (ev["source"], ev["source_ref"]) in rebuilt_pairs
+    ]
+    assert not lost_with_live_source, (
+        f"{len(lost_with_live_source)} committed event(s) disappeared from the rebuild "
+        f"while their source row is still present: {lost_with_live_source[:5]}"
+    )
+
+    # (c) immutable fields never drift on a shared id.
+    drifted = {
+        eid: {k: (committed_by_id[eid].get(k), rebuilt_by_id[eid].get(k))
+              for k in _IMMUTABLE_EVENT_FIELDS
+              if committed_by_id[eid].get(k) != rebuilt_by_id[eid].get(k)}
+        for eid in committed_by_id
+        if eid in rebuilt_by_id
+        and any(committed_by_id[eid].get(k) != rebuilt_by_id[eid].get(k)
+                for k in _IMMUTABLE_EVENT_FIELDS)
+    }
+    assert not drifted, (
+        f"{len(drifted)} shared event id(s) drifted on an immutable field "
+        f"{_IMMUTABLE_EVENT_FIELDS}: {list(drifted.items())[:5]}"
+    )
+
+    # (d) shared ids keep their relative order (sorted by (date, id) — a reorder
+    # means a date moved under a stable id, which (c) should already have caught).
+    committed_order = [e["id"] for e in committed if e["id"] in rebuilt_by_id]
+    rebuilt_order = [e["id"] for e in rebuilt if e["id"] in committed_by_id]
+    assert committed_order == rebuilt_order, (
+        "shared event ids are ordered differently in the rebuild — events.jsonl is "
+        "sorted by (date, id), so a reorder means a date moved"
+    )
+
+    # (e) report the tolerated lag (never silently swallowed).
+    fresh_only = [eid for eid in rebuilt_by_id if eid not in committed_by_id]
+    text_drift = [eid for eid in committed_by_id
+                  if eid in rebuilt_by_id and committed_by_id[eid] != rebuilt_by_id[eid]]
+    if fresh_only or text_drift:
+        msg = (f"chronicle store lags its sources by {len(fresh_only)} unbuilt event(s) and "
+               f"{len(text_drift)} re-derived body/bodies — expected between nightlies "
+               f"(catalog.json advances intraday, events.jsonl nightly). "
+               f"Heal early with: python -m scripts.build_chronicle --rebuild")
+        print(msg)
+        warnings.warn(msg, stacklevel=2)
+
+
+def test_rebuild_from_committed_sources_reproduces_committed_store(tmp_path):
+    """Gate 1 tooth (4): byte-for-byte reproduction, enforced EXACTLY WHEN the
+    manifest attests that every rebuild input is still at the vintage the store
+    was built from.
+
+    This is the original gate-1 assertion, kept in the only form that is
+    actually true. The vintage pin is what makes it decidable: every governor run
+    stamps a sha256 for each spine.REBUILD_SOURCES entry into manifest.json in
+    the SAME call that writes events.jsonl, so "the store should reproduce" is a
+    checkable claim rather than a hope about wall-clock timing.
+
+    The pin covers the WHOLE closure, not just the research-vault catalog. A
+    catalog-only pin leaves five other inputs able to move unseen — and
+    earnings.parquet moves by construction, since daily.yml's collect_tail job
+    commits it in PARALLEL with the engine job that rebuilds the spine. With a
+    catalog-only pin, that drift left this test on its STRICT path against
+    sources that had already advanced: a red on unrelated PRs, repaired only by
+    hand-committing a store rebuild whose shelf life was one source commit.
+
+    When any source has drifted (ordinary cadence) or the vintage is unknowable,
+    the invariant degrades to APPEND-ONLY: a rebuild may add events, never lose
+    one. Teeth (1)-(3) above carry the rest of the load in that mode, and none of
+    them depends on source cadence.
+
+    Both branches run the rebuild the nightly actually runs — union-merge seeded
+    with the committed store — so a retained-after-drop event (B1) never reads
+    as a loss or a byte mismatch here. The armed branch ADDITIONALLY requires a
+    from-scratch rebuild to reproduce the store whenever the manifest reports
+    zero retained drops: in that state the union seed is not load-bearing, and
+    "delete events.jsonl and lose nothing" (masterplan §0 gate 1) must hold
+    literally.
+    """
+    committed_path, committed = _load_committed_events()
     committed_bytes = committed_path.read_bytes()
+    # The production-mirror rebuild: union-merge seeded, exactly the nightly op.
+    rebuilt = _rebuild_committed_sources_into_scratch(tmp_path, include_prev_store=True)
+    rebuilt_bytes = (tmp_path / "data" / "chronicle" / "events.jsonl").read_bytes()
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_root = Path(tmp)
-        for rel in (
-            "data/research_vault/catalog.json",
-            "data/prophet/ledger.jsonl",
-            "data/release_forecast/forward_ledger.jsonl",
-            "data/earnings/earnings.parquet",
-            "data/risk_radar/forward_log.jsonl",
-            "data/neuralweb/world_state.json",
-            "data/chronicle/state_log.jsonl",
-        ):
-            src = ROOT / rel
-            if src.exists():
-                dst = tmp_root / rel
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dst)
-
-        result = build_and_write(root=tmp_root, rebuild=True)
-        assert not result.get("error"), result
-        rebuilt_bytes = (tmp_root / "data" / "chronicle" / "events.jsonl").read_bytes()
-
-    # Vintage guard: the research-vault catalog is committed HOURLY by its own
-    # lane, so between chronicle regen commits the checkout's catalog can be
-    # NEWER than the one the committed store was built from. That drift is the
-    # catalog lane doing its job, not a broken store — so byte identity is
-    # enforced exactly when the manifest ATTESTS the matching catalog vintage
-    # (source_fingerprints, stamped by every governor run once this code is
-    # live). On a recorded mismatch, OR when the manifest predates fingerprints
-    # entirely (vintage unknowable), enforce the append-only invariant instead:
-    # a rebuild may only ADD events, never lose one.
-    committed_manifest = ROOT / "data" / "chronicle" / "manifest.json"
-    catalog_path = ROOT / "data" / "research_vault" / "catalog.json"
-    vintage_drift = False
-    if committed_manifest.exists() and catalog_path.exists():
-        try:
-            recorded = (json.loads(committed_manifest.read_text(encoding="utf-8"))
-                        .get("source_fingerprints") or {}).get("research_vault_catalog")
-            current = "sha256:" + hashlib.sha256(catalog_path.read_bytes()).hexdigest()
-            vintage_drift = recorded != current   # unrecorded (None) => unknowable => drift path
-        except Exception:  # noqa: BLE001 — unreadable manifest -> strict gate below
-            vintage_drift = False
-
-    if vintage_drift:
-        committed_ids = {json.loads(line)["id"]
-                         for line in committed_bytes.decode("utf-8").splitlines() if line.strip()}
-        rebuilt_ids = {json.loads(line)["id"]
-                       for line in rebuilt_bytes.decode("utf-8").splitlines() if line.strip()}
-        missing = committed_ids - rebuilt_ids
-        assert not missing, (
-            "catalog advanced past the committed store's vintage (expected between "
-            f"regen commits), but a rebuild LOST {len(missing)} committed event(s) — "
-            f"append-only violated: {sorted(missing)[:5]}"
-        )
-    else:
+    drifted = _drifted_sources()
+    if drifted == []:
         assert rebuilt_bytes == committed_bytes, (
-            "rebuilding from the committed sources did not reproduce the committed "
-            "events.jsonl byte-for-byte — the committed store is stale (gate 1)"
+            "every rebuild source still matches the vintage data/chronicle/manifest.json "
+            "attests, so the committed events.jsonl MUST reproduce byte-for-byte — it did "
+            "not. The committed store is stale or was not written by the governor run that "
+            "wrote its manifest. Heal: python -m scripts.build_chronicle --rebuild"
         )
+        manifest = json.loads((ROOT / "data" / "chronicle" / "manifest.json")
+                              .read_text(encoding="utf-8"))
+        if all(info.get("dropped_from_source") == 0
+               for info in manifest.get("adapters", {}).values()):
+            import tempfile
+            with tempfile.TemporaryDirectory() as scratch2:
+                scratch_events = _rebuild_committed_sources_into_scratch(
+                    Path(scratch2), include_prev_store=False)
+                scratch_bytes = (Path(scratch2) / "data" / "chronicle" /
+                                 "events.jsonl").read_bytes()
+                assert scratch_events is not None
+            assert scratch_bytes == committed_bytes, (
+                "a FROM-SCRATCH rebuild (no previous store seeded) did not reproduce "
+                "the committed events.jsonl even though the manifest reports zero "
+                "retained-after-drop events — the store carries events its sources "
+                "no longer produce, unrecorded"
+            )
+        return
+
+    committed_ids = {e["id"] for e in committed}
+    rebuilt_ids = {e["id"] for e in rebuilt}
+    missing = committed_ids - rebuilt_ids
+    why = ("the manifest records no usable per-source vintage (predates the pin, absent, "
+           "or unreadable)" if drifted is None else f"these sources advanced: {drifted}")
+    assert not missing, (
+        f"a rebuild LOST {len(missing)} committed event(s) — append-only violated "
+        f"even though the rebuild was union-merge seeded (this can only be a "
+        f"union_events regression or store corruption, never retention). "
+        f"Byte identity was not required here because {why}, which is expected between "
+        f"regen commits; losing a committed event never is: {sorted(missing)[:5]}"
+    )
+
+
+def test_regen_on_committed_tree_is_deterministic():
+    """Gate 1 tooth (5): the production-mirror regen is byte-deterministic on
+    REAL data, at ANY vintage.
+
+    The synthetic determinism test (build twice on the fixture root) cannot see
+    real-data-only nondeterminism — the full committed catalog, a
+    multi-thousand-ticker parquet and five real ledgers exercise ordering,
+    collision and encoding paths one hand-written row per adapter never
+    reaches. Two INDEPENDENT scratch roots (not a re-run in the same tree)
+    must land on identical bytes. Runs on every PR regardless of source
+    cadence, so nondeterminism cannot hide behind the vintage skip.
+    """
+    import tempfile
+
+    if not (ROOT / "data" / "chronicle" / "events.jsonl").exists():
+        pytest.skip("no committed data/chronicle/events.jsonl in this checkout")
+
+    outputs: list[bytes] = []
+    for _ in range(2):
+        with tempfile.TemporaryDirectory() as tmp:
+            _rebuild_committed_sources_into_scratch(Path(tmp), include_prev_store=True)
+            outputs.append((Path(tmp) / "data" / "chronicle" / "events.jsonl").read_bytes())
+
+    assert outputs[0] == outputs[1], (
+        "two independent regens of the REAL committed tree disagree byte-for-byte "
+        "— real-data nondeterminism the synthetic fixture cannot see"
+    )

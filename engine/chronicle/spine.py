@@ -37,6 +37,27 @@ log = logging.getLogger(__name__)
 
 EVENTS_REL = Path("data") / "chronicle" / "events.jsonl"
 
+# The EXACT file closure a ``--rebuild`` reads, and therefore the complete set of
+# inputs whose vintage decides whether a rebuild CAN reproduce a committed store
+# byte-for-byte. ADDING AN ADAPTER REQUIRES EXTENDING THIS TUPLE. Two consumers
+# key off it: ``manifest.build_manifest`` stamps a per-file sha256 vintage from
+# every entry, and gate 1 in tests/test_chronicle.py enforces byte identity only
+# when EVERY entry still matches the vintage the manifest attests.
+#
+# data/neuralweb/world_state.json is deliberately ABSENT: only the incremental
+# nightly's state_log capture reads it (state_log.capture_row), and --rebuild
+# skips that append entirely (governor.py), so world_state can never move a
+# rebuilt byte. Listing it would manufacture phantom vintage drift every night
+# and permanently demote gate 1 to its weak form.
+REBUILD_SOURCES: tuple[str, ...] = (
+    "data/research_vault/catalog.json",
+    "data/prophet/ledger.jsonl",
+    "data/release_forecast/forward_ledger.jsonl",
+    "data/earnings/earnings.parquet",
+    "data/risk_radar/forward_log.jsonl",
+    "data/chronicle/state_log.jsonl",
+)
+
 _SOURCE_ADAPTERS: tuple[tuple[str, object], ...] = (
     ("research_vault", adapters.adapt_research_vault),
     ("prophet_ledger", adapters.adapt_prophet_ledger),
