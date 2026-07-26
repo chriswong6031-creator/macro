@@ -155,6 +155,22 @@ CHINA_REGISTRY: list[tuple] = [
      "hk_southbound/holdings (accruing)",
      "Per-stock mainland ownership momentum; history accruing for validation.",
      "个股内地持股动量；正在累计历史以待验证。"),
+    # --- W2 native funding / risk-appetite planes: collected + accruing, NOT scored -- #
+    ("funding_curve", "Funding curve (FR/FDR + SHIBOR)", "资金利率曲线", "pending",
+     "china_funding (accruing)",
+     "FR/FDR repo fixings plus full-tenor SHIBOR depth; liquidity-temperature context, "
+     "collected + accruing, not scored.",
+     "FR/FDR回购定盘利率与全期限SHIBOR深度历史；资金面温度背景，已采集并累计，尚未评分。"),
+    ("cb_premium", "Convertible-bond breadth & premium", "转债宽度与溢价", "pending",
+     "china_cb (accruing)",
+     "Full-universe price/premium breadth plus the jisilu equal-weight index; "
+     "risk-appetite context, collected + accruing, not scored.",
+     "全市场转债价格/溢价宽度与集思录等权指数；风险偏好背景，已采集并累计，尚未评分。"),
+    ("fund_issuance", "New-fund issuance (新发基金)", "新发基金", "pending",
+     "china_fund_issuance (accruing)",
+     "Weekly established-fund shares with an equity/bond split; retail-appetite "
+     "context, collected + accruing, not scored.",
+     "每周新成立基金份额及股/债拆分；散户风险偏好背景，已采集并累计，尚未评分。"),
     # --- PREMIUM Tushare feeds (GATED on TUSHARE_TOKEN) — display until validated ---- #
     ("flow", "Main-force money flow (主力资金, Tushare)", "主力资金流向", "pending",
      "china_altdata convergence (0.18)",

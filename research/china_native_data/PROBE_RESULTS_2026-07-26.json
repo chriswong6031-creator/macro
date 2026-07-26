@@ -1,0 +1,444 @@
+{
+ "schema": "china_source_probe.v2",
+ "probed_utc": "2026-07-26T11:59:44+00:00",
+ "note": "verdicts are egress-relative; see script docstring",
+ "counts": {
+  "OK": 43,
+  "EMPTY": 1,
+  "FLAKY": 1,
+  "CHANGED": 0,
+  "ERR": 0
+ },
+ "results": [
+  {
+   "name": "em_report_list",
+   "family": "sellside",
+   "cls": "candidate",
+   "url": "https://reportapi.eastmoney.com/report/list?industryCode=*&pageSize=3&pageNo=1&reportType=&beginTime=2026-06-01&endTime=2026-07-24&qType=0",
+   "status": 200,
+   "bytes": 4401,
+   "field": "695",
+   "verdict": "OK"
+  },
+  {
+   "name": "em_holdernum",
+   "family": "positioning",
+   "cls": "candidate",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_HOLDERNUMLATEST&columns=SECURITY_CODE,HOLDER_NUM,END_DATE&pageSize=3&pageNumber=1&sortColumns=HOLDER_NUM&sortTypes=-1&source=WEB&client=WEB",
+   "status": 200,
+   "bytes": 373,
+   "field": "1634154",
+   "verdict": "OK"
+  },
+  {
+   "name": "irm_cninfo_qa",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://irm.cninfo.com.cn/newircs/index/queryKeyboardInfo",
+   "status": 200,
+   "bytes": 172,
+   "field": "gssz0000001",
+   "verdict": "OK"
+  },
+  {
+   "name": "irm_company_question",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://irm.cninfo.com.cn/newircs/company/question?_t=1691142650&stockcode=000001&orgId=gssz0000001&pageSize=3&pageNum=1&keyWord=&startDay=&endDay=",
+   "status": 200,
+   "bytes": 3187,
+   "field": "2309409449541922816",
+   "verdict": "OK"
+  },
+  {
+   "name": "irm_index_search",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://irm.cninfo.com.cn/newircs/index/search?_t=1691142650",
+   "status": 200,
+   "bytes": 3019,
+   "field": "94789",
+   "verdict": "OK"
+  },
+  {
+   "name": "sse_einteraction",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://sns.sseinfo.com/allcompany.do",
+   "status": 200,
+   "bytes": 11652,
+   "field": "\t<div class='companyBox'>\t\t<a rel='tag' uid=65 href='user.do",
+   "verdict": "OK"
+  },
+  {
+   "name": "sse_userfeeds",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://sns.sseinfo.com/ajax/userfeeds.do?typeCode=company&type=11&pageSize=5&uid=65&page=1",
+   "status": 200,
+   "bytes": 20404,
+   "verdict": "OK"
+  },
+  {
+   "name": "em_report_window",
+   "family": "sellside",
+   "cls": "candidate",
+   "url": "https://reportapi.eastmoney.com/report/list?industryCode=*&pageSize=3&industry=*&rating=*&ratingChange=*&beginTime=2026-07-20&endTime=2026-07-24&pageNo=1&fields=&qType=0&orgCode=&code=*&rcode=&p=1&pageNum=1&pageNumber=1",
+   "status": 200,
+   "bytes": 4399,
+   "field": "AP202607241827321448",
+   "verdict": "OK"
+  },
+  {
+   "name": "em_holdernum_full",
+   "family": "positioning",
+   "cls": "candidate",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?sortColumns=HOLD_NOTICE_DATE,SECURITY_CODE&sortTypes=-1,-1&pageSize=3&pageNumber=1&reportName=RPT_HOLDERNUMLATEST&columns=SECURITY_CODE,SECURITY_NAME_ABBR,END_DATE,INTERVAL_CHRATE,AVG_MARKET_CAP,AVG_HOLD_NUM,TOTAL_MARKET_CAP,TOTAL_A_SHARES,HOLD_NOTICE_DATE,HOLDER_NUM,PRE_HOLDER_NUM,HOLDER_NUM_CHANGE,HOLDER_NUM_RATIO,PRE_END_DATE&source=WEB&client=WEB",
+   "status": 200,
+   "bytes": 1399,
+   "field": "0",
+   "verdict": "OK"
+  },
+  {
+   "name": "em_hsgt_quota",
+   "family": "connect",
+   "cls": "candidate",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_MUTUAL_QUOTA&columns=ALL&source=WEB&client=WEB&pageSize=6&sortColumns=TRADE_DATE&sortTypes=-1",
+   "status": 200,
+   "bytes": 1407,
+   "field": "\\u5357\\u5411",
+   "verdict": "OK"
+  },
+  {
+   "name": "chinamoney_frr_csv",
+   "family": "rates",
+   "cls": "candidate",
+   "url": "https://www.chinamoney.com.cn/r/cms/www/chinamoney/data/currency/frr-chrt.csv",
+   "status": 200,
+   "bytes": 23405,
+   "verdict": "OK"
+  },
+  {
+   "name": "chinamoney_frrhis",
+   "family": "rates",
+   "cls": "candidate",
+   "url": "https://www.chinamoney.com.cn/ags/ms/cm-u-bk-currency/FrrHis?startDate=2026-06-01&endDate=2026-07-24",
+   "status": 200,
+   "bytes": 8415,
+   "field": "1.4100",
+   "verdict": "OK"
+  },
+  {
+   "name": "chinamoney_mm_quotes",
+   "family": "rates",
+   "cls": "candidate",
+   "url": "https://www.chinamoney.com.cn/ags/ms/cm-u-md-bond/CbMktMakQuot",
+   "status": 200,
+   "bytes": 15298,
+   "field": "1.5400 / 1.4500",
+   "verdict": "OK"
+  },
+  {
+   "name": "jin10_shibor_cdn",
+   "family": "rates",
+   "cls": "candidate",
+   "url": "https://cdn.jin10.com/data_center/reports/il_1.json",
+   "status": 200,
+   "bytes": 476614,
+   "field": "{'2026-07-24': {'O/N': ['1.3812', '1.62'], '9M': ['1.4691', ",
+   "verdict": "OK"
+  },
+  {
+   "name": "jin10_reports_api",
+   "family": "calendar",
+   "cls": "candidate",
+   "url": "https://datacenter-api.jin10.com/reports/list_v2?category=ec&attr_id=1&max_date=",
+   "status": 502,
+   "bytes": 0,
+   "verdict": "OK"
+  },
+  {
+   "name": "cpca_chartlist",
+   "family": "altdata",
+   "cls": "candidate",
+   "url": "http://data.cpcadata.com/api/chartlist?charttype=1",
+   "status": 200,
+   "bytes": 2799,
+   "field": "\\u6574\\u4f53\\u5e02\\u573a",
+   "verdict": "OK"
+  },
+  {
+   "name": "futu_flash",
+   "family": "wire",
+   "cls": "candidate",
+   "url": "https://news.futunn.com/news-site-api/main/get-flash-list?type=1&page=1&pageSize=3",
+   "status": 200,
+   "bytes": 4221,
+   "field": "True",
+   "verdict": "OK"
+  },
+  {
+   "name": "ths_push_news",
+   "family": "wire",
+   "cls": "candidate",
+   "url": "https://news.10jqka.com.cn/tapp/news/push/stock",
+   "status": 200,
+   "bytes": 33245,
+   "field": "\\u4f0a\\u6717\\u603b\\u7edf\\uff1a\\u7f8e\\u88ad\\u51fb\\u4f0a\\u6717\\u6c11\\u7528\\u57fa\\u7840\\u8bbe\\u65bd\\u662f\\u201c\\u660e\\u663e\\u7684\\u6218\\u4e89\\u7f6a\\u884c\\u201d",
+   "verdict": "OK"
+  },
+  {
+   "name": "hkma_monetary_base",
+   "family": "hk",
+   "cls": "candidate",
+   "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/daily-monetary-statistics/daily-figures-monetary-base?pagesize=3",
+   "status": 200,
+   "bytes": 915,
+   "field": "2026-07-24",
+   "verdict": "OK"
+  },
+  {
+   "name": "hkma_hibor_bulletin",
+   "family": "hk",
+   "cls": "candidate",
+   "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/er-ir/hk-interbank-ir-daily?pagesize=3",
+   "status": 200,
+   "bytes": 540,
+   "field": "2026-06-30",
+   "verdict": "OK"
+  },
+  {
+   "name": "em_cb_list",
+   "family": "bonds",
+   "cls": "candidate",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_BOND_CB_LIST&columns=SECURITY_CODE,RATING&pageSize=3&pageNumber=1&sortColumns=PUBLIC_START_DATE&sortTypes=-1&source=WEB&client=WEB",
+   "status": 200,
+   "bytes": 257,
+   "field": "1040",
+   "verdict": "OK"
+  },
+  {
+   "name": "jisilu_cb_index",
+   "family": "bonds",
+   "cls": "candidate",
+   "url": "https://www.jisilu.cn/webapi/cb/index_history/",
+   "status": 200,
+   "bytes": 43918,
+   "field": "2025-07-15",
+   "verdict": "OK"
+  },
+  {
+   "name": "sse_etf_scale",
+   "family": "flows",
+   "cls": "candidate",
+   "url": "https://query.sse.com.cn/commonQuery.do?sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L&STAT_DATE=2026-07-24",
+   "status": 200,
+   "bytes": 99063,
+   "verdict": "OK"
+  },
+  {
+   "name": "szse_etf_scale_xlsx",
+   "family": "flows",
+   "cls": "candidate",
+   "url": "https://fund.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1000_lf",
+   "status": 200,
+   "bytes": 69241,
+   "verdict": "OK"
+  },
+  {
+   "name": "fund_new_issue",
+   "family": "flows",
+   "cls": "candidate",
+   "url": "https://fund.eastmoney.com/data/FundNewIssue.aspx?t=xcln&sort=jzrgq,desc&page=1,3&isbuy=1",
+   "status": 200,
+   "bytes": 765,
+   "verdict": "OK"
+  },
+  {
+   "name": "em_fflow_daykline",
+   "family": "flows",
+   "cls": "candidate",
+   "url": "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get?secid=1.600519&klt=101&lmt=5&fields1=f1,f2,f3,f7&fields2=f51,f52,f53",
+   "status": null,
+   "error": "ConnectionError",
+   "verdict": "FLAKY",
+   "note": "known-flaky endpoint; network error within baseline"
+  },
+  {
+   "name": "em_zt_pool",
+   "family": "microstructure",
+   "cls": "candidate",
+   "url": "https://push2ex.eastmoney.com/getTopicZTPool?dpt=wz.ztzt&date=20260724",
+   "status": 200,
+   "bytes": 61,
+   "field": "JSON-SHAPE-MISMATCH",
+   "verdict": "EMPTY"
+  },
+  {
+   "name": "csindex_perf",
+   "family": "index",
+   "cls": "candidate",
+   "url": "https://www.csindex.com.cn/csindex-home/perf/index-perf?indexCode=000300&startDate=20260713&endDate=20260724",
+   "status": 200,
+   "bytes": 3428,
+   "verdict": "OK"
+  },
+  {
+   "name": "czce_daily_txt",
+   "family": "futures",
+   "cls": "candidate",
+   "url": "http://www.czce.com.cn/cn/DFSStaticFiles/Future/2026/20260724/FutureDataDaily.txt",
+   "status": 200,
+   "bytes": 37747,
+   "verdict": "OK"
+  },
+  {
+   "name": "shfe_daily_dat",
+   "family": "futures",
+   "cls": "candidate",
+   "url": "https://www.shfe.com.cn/data/tradedata/future/dailydata/kx20260724.dat",
+   "status": 200,
+   "bytes": 123169,
+   "verdict": "OK"
+  },
+  {
+   "name": "cffex_month_zip",
+   "family": "futures",
+   "cls": "candidate",
+   "url": "http://www.cffex.com.cn/sj/historysj/202606/zip/202606.zip",
+   "status": 200,
+   "bytes": 4,
+   "field": "magic=504b0304",
+   "verdict": "OK"
+  },
+  {
+   "name": "gacc_english",
+   "family": "macro",
+   "cls": "candidate",
+   "url": "http://english.customs.gov.cn/",
+   "status": 200,
+   "bytes": 40620,
+   "verdict": "OK"
+  },
+  {
+   "name": "govcn_policy_search",
+   "family": "policy",
+   "cls": "candidate",
+   "url": "https://sousuo.www.gov.cn/search-gov/data?t=zhengcelibrary&q=%E5%88%A9%E7%8E%87&timetype=timeqb&mintime=&maxtime=&sort=score&sortType=1&searchfield=title&pcodeJiguan=&childtype=&subchildtype=&tsbq=&pubtimeyear=&puborg=&pcodeYear=&pcodeNum=&filetype=&p=1&n=5",
+   "status": 200,
+   "bytes": 22068,
+   "field": "0",
+   "verdict": "OK"
+  },
+  {
+   "name": "cninfo_hisannouncement",
+   "family": "disclosure",
+   "cls": "integrated",
+   "url": "http://www.cninfo.com.cn/new/hisAnnouncement/query",
+   "status": 200,
+   "bytes": 2350,
+   "verdict": "OK"
+  },
+  {
+   "name": "em_datacenter_lhb",
+   "family": "microstructure",
+   "cls": "integrated",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DAILYBILLBOARD_DETAILSNEW&columns=ALL&pageSize=3&pageNumber=1&sortColumns=TRADE_DATE&sortTypes=-1&source=WEB&client=WEB",
+   "status": 200,
+   "bytes": 3431,
+   "field": "2026-07-24 00:00:00",
+   "verdict": "OK"
+  },
+  {
+   "name": "sina_hq_quote",
+   "family": "quotes",
+   "cls": "integrated",
+   "url": "https://hq.sinajs.cn/list=sh600519",
+   "status": 200,
+   "bytes": 289,
+   "verdict": "OK"
+  },
+  {
+   "name": "wallstreetcn_feed",
+   "family": "wire",
+   "cls": "integrated",
+   "url": "https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&limit=3",
+   "status": 200,
+   "bytes": 5828,
+   "field": "3139835",
+   "verdict": "OK"
+  },
+  {
+   "name": "hkexnews_search",
+   "family": "hk",
+   "cls": "integrated",
+   "url": "https://www1.hkexnews.hk/search/titlesearch.xhtml?lang=en",
+   "status": 200,
+   "bytes": 12469,
+   "verdict": "OK"
+  },
+  {
+   "name": "nbs_easyquery",
+   "family": "macro",
+   "cls": "dead",
+   "url": "https://data.stats.gov.cn/easyquery.htm",
+   "status": 403,
+   "bytes": 292,
+   "verdict": "OK"
+  },
+  {
+   "name": "em_push2_clist",
+   "family": "quotes",
+   "cls": "dead",
+   "url": "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=3&fs=m:0+t:6&fid=f3&fields=f12,f14",
+   "status": 502,
+   "bytes": 559,
+   "verdict": "OK"
+  },
+  {
+   "name": "cls_nodeapi",
+   "family": "wire",
+   "cls": "dead",
+   "url": "https://www.cls.cn/nodeapi/telegraphList",
+   "status": 404,
+   "bytes": 9042,
+   "verdict": "OK"
+  },
+  {
+   "name": "thepaper_api",
+   "family": "wire",
+   "cls": "dead",
+   "url": "https://api.thepaper.cn/contentapi/nodeCont/getByChannelId",
+   "status": 200,
+   "bytes": 84,
+   "verdict": "OK"
+  },
+  {
+   "name": "xueqiu_quote_noauth",
+   "family": "sentiment",
+   "cls": "dead",
+   "url": "https://stock.xueqiu.com/v5/stock/quote.json?symbol=SH600519",
+   "status": 400,
+   "bytes": 162,
+   "verdict": "OK"
+  },
+  {
+   "name": "mofcom_data_tls",
+   "family": "macro",
+   "cls": "dead",
+   "url": "https://data.mofcom.gov.cn/datamofcom/front/gnmy/shrzgmQuery",
+   "status": null,
+   "error": "SSLError",
+   "verdict": "OK"
+  },
+  {
+   "name": "shibor_org_dns",
+   "family": "rates",
+   "cls": "dead",
+   "url": "https://www.shibor.org/",
+   "status": null,
+   "error": "ConnectionError",
+   "verdict": "OK"
+  }
+ ]
+}

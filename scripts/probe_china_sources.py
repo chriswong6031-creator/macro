@@ -167,15 +167,19 @@ def build_probes() -> list[dict]:
         dict(name="chinamoney_frr_csv", family="rates", cls="candidate", method="GET",
              url="https://www.chinamoney.com.cn/r/cms/www/chinamoney/data/currency/frr-chrt.csv",
              expect=dict(statuses=[200], min_bytes=10000)),
+        # W2 anchors carry shape checks on the exact leaves the collectors parse
+        # (collectors/china_funding.py): records[].frValueMap and records[].contraRate.
         dict(name="chinamoney_frrhis", family="rates", cls="candidate", method="GET",
              url="https://www.chinamoney.com.cn/ags/ms/cm-u-bk-currency/FrrHis?startDate=" + m_iso + "&endDate=" + d_iso,
-             expect=dict(statuses=[200], min_bytes=2000)),
+             expect=dict(statuses=[200], min_bytes=2000,
+                         json_path=["records", 0, "frValueMap", "FR007"])),
         dict(name="chinamoney_mm_quotes", family="rates", cls="candidate", method="POST",
              url="https://www.chinamoney.com.cn/ags/ms/cm-u-md-bond/CbMktMakQuot",
-             expect=dict(statuses=[200], min_bytes=5000)),
+             expect=dict(statuses=[200], min_bytes=5000,
+                         json_path=["records", 0, "contraRate"])),
         dict(name="jin10_shibor_cdn", family="rates", cls="candidate", method="GET",
              url="https://cdn.jin10.com/data_center/reports/il_1.json",
-             expect=dict(statuses=[200], min_bytes=100000)),
+             expect=dict(statuses=[200], min_bytes=100000, json_path=["values"])),
         # Pinned to its observed state: 502-flaky from datacenter egress (one 200 with
         # real payload on the 2026-07-25 lane run, 502 on every same-day retry). The
         # stable path is the cdn.jin10.com mirror above. A 200 here = stabilized —
@@ -207,6 +211,13 @@ def build_probes() -> list[dict]:
              url=(dc + "?reportName=RPT_BOND_CB_LIST&columns=SECURITY_CODE,RATING&pageSize=3"
                   "&pageNumber=1&sortColumns=PUBLIC_START_DATE&sortTypes=-1&source=WEB&client=WEB"),
              expect=dict(statuses=[200], json_path=["result", "count"])),
+        # W2 anchor (collectors/china_cb.py): the KEYLESS equal-weight index history —
+        # dict-of-aligned-arrays keyed by price_dt. The login-capped cb_list_new list
+        # endpoint stays out of posture (CNH-R5/R6) and is deliberately NOT probed.
+        dict(name="jisilu_cb_index", family="bonds", cls="candidate", method="GET",
+             url="https://www.jisilu.cn/webapi/cb/index_history/",
+             expect=dict(statuses=[200], min_bytes=10000,
+                         json_path=["data", "price_dt", 0])),
         dict(name="sse_etf_scale", family="flows", cls="candidate", method="GET", dated=True,
              url=("https://query.sse.com.cn/commonQuery.do?sqlId=COMMON_SSE_ZQPZ_ETFZL_XXPL_ETFGM_SEARCH_L"
                   "&STAT_DATE=" + d_iso),

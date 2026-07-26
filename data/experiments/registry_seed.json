@@ -4963,6 +4963,27 @@
       "state": "W1 merged 2026-07-25: four collectors registered in the asia lane, legs registered as tier=pending in engine/china_signal_lab.py, stores empty at registration.",
       "next_step": "Accrue. Review 2026-10-25.",
       "phase_hint": "collecting"
+    },
+    {
+      "id": "china-native-w2-stores",
+      "name": "China native W2 — funding / CB / issuance / ETF-universe store stability",
+      "kind": "data_collection",
+      "priority": "medium",
+      "program": "china-native-data",
+      "wave": "W2",
+      "cadence": "nightly asia-lane accrual",
+      "what": "Forward accrual of the W2 native data plane: data/china_funding/ (FR/FDR repo fixings, deep full-tenor SHIBOR, CGB market-maker quote temperature), data/china_cb/ (full-universe breadth aggregates + jisilu equal-weight index), data/china_fund_issuance/ (weekly established-fund shares), and the full-universe widening of data/china_flows/etf_shares.parquet (~21 -> ~1,500 funds). Display-tier context accrual only (masterplan CNH-R1); the W8 display adjudication is gated on 2 weeks of W2 store stability.",
+      "source": "collectors/china_funding.py",
+      "storage": "data/china_funding/ + data/china_cb/ + data/china_fund_issuance/ + data/china_flows/etf_shares.parquet",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-26",
+      "come_back_on": "2026-08-08",
+      "come_back_note": "Masterplan china_native_data §6: W8 display adjudication after ~2 weeks of W2 store stability (nightly rows advancing, no schema churn, gaps printed not zero-filled). The deepened etf_share panel also folds into the existing CN-SYS participation review 2026-10-08.",
+      "maturation": "every W2 store advances on trading days for ~14 consecutive days with no manual repair; etf_shares row width holds >= 1,000 funds; jisilu index accrues past its rolling ~250-session served window.",
+      "status": "accruing",
+      "state": "registered at W2 merge (2026-07-26). Deep seeds committed with the PR (one-shot --full-history off the render path): repo_fixings 2,882 rows 2015-01-04->2026-07-24 (139/139 windows clean), shibor 2,331 rows 2015-05-08->, cb index 250 rows (rolling window), issuance 180 weekly bins 2013-08-23-> (sparse pre-2023 -- source completeness caveat), etf_shares first full-universe row (1,584 funds) at 2026-07-24. Weekend-snapshot legs (cgb_mm, cb breadth) start accruing on the first Monday asia-close render.",
+      "next_step": "At come-back: read store row counts / widths; if stable, run the W8 display adjudication (designer lane) for the CB-breadth + ETF-share-flow chips; if unstable, diagnose collectors before any display work."
     }
   ]
 }

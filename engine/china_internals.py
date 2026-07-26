@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from lib import store
+from lib import config, store
 
 
 def _pctile(s: pd.Series, v: float) -> int:
@@ -277,6 +277,21 @@ def flow_snaps() -> dict | None:
             "zt_chart": _series(lb["zt"], ndigits=0), "dt_chart": _series(lb["dt"], ndigits=0),
         }
     etf = store.read("china_flows", "etf_shares")
+    if etf is not None:
+        # W2 (china_native_data) widened the store to the full exchange universe
+        # (~1,500 funds). This glance panel keeps reading the ORIGINAL tracked
+        # broad+sector basket so the displayed net-creation number keeps its
+        # historical scale and meaning; full-universe reads wait for the W8
+        # display adjudication (2 weeks of store stability).
+        try:
+            ycfg = config.load()["china"]["yahoo"]
+            codes = list(ycfg["indices"]) + list(ycfg["sector_etfs"])
+            basket = {f"sh_{c.split('.')[0]}" for c in codes if c and c[0].isdigit()}
+            cols = [c for c in etf.columns if c in basket]
+        except Exception:  # noqa: BLE001 — config miss must not kill the panel
+            cols = []
+        if cols:
+            etf = etf[cols].dropna(how="all")
     if etf is not None and len(etf) >= 2:
         d = (etf.iloc[-1] - etf.iloc[-2])           # net creation in shares
         net = float(d.sum())
