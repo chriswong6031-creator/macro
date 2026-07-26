@@ -115,6 +115,16 @@ on:
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"
       - "tests/test_pooling.py"
+      # Promotion gate (#3495/#3523): the per-desk empirical null and the Calibration Hub
+      # verdicts it feeds. These files carried NO trigger — a change to the module that
+      # decides whether a desk is "calibrated" could not start ci.yml at all, so its own
+      # suites never ran on the PR that changed it (same class as the tier-gate hole, #3509).
+      - "engine/desk_placebo.py"
+      - "engine/calibration_hub.py"
+      - "engine/thematic_desk.py"
+      - "tests/test_desk_placebo.py"
+      - "tests/test_calibration_hub.py"
+      - "tests/test_thematic_desk.py"
       # WRI W3: watchlist book-structure math + its node-shelled unit tests. templates/**
       # already covers risk_core.js/watchlist_risk.js; list the test file so a test-only
       # edit still triggers CI (ci-test-whitelist-rot guard).
@@ -1194,6 +1204,13 @@ jobs:
         run: python3 scripts/check_badge_passport.py site
       - name: spine contract + partial-pooling safety tests
         run: python -m pytest tests/test_spine.py tests/test_pooling.py -q
+      - name: promotion gate — per-desk empirical null + Calibration Hub verdicts
+        # The bar a desk is promoted against. The placebo sweeps must mirror the evaluator
+        # each desk was actually graded by (price plane, falsification boundary, exit bar),
+        # or the null describes a different endpoint than the one on the page.
+        run: >
+          python -m pytest
+          tests/test_desk_placebo.py tests/test_calibration_hub.py tests/test_thematic_desk.py -q
 
   cycle-ontology-js:
     if: ${{ false }}

@@ -547,6 +547,26 @@ def run(market: str = "us", persist: bool = True, root=None, call=None) -> dict 
 # --------------------------------------------------------------------------- #
 # scorer — grade past-due theses vs realized proxy-vs-bench returns (region-aware)
 # --------------------------------------------------------------------------- #
+# Outcomes that are final once written to scored.jsonl. Mirrors engine.desk_scorer's
+# append-only convention (theses.jsonl is the desk's; outcomes go to a separate file, one
+# row per id) minus `expired` — see _prior_outcomes for why that one stays retryable.
+_FINAL_OUTCOMES = ("hit", "miss", "unscored")
+
+
+def _append_scored(d: Path, rows: list) -> None:
+    """Append newly-final outcomes to the append-only scored.jsonl. Never raises: an
+    unwritable audit trail must not cost us the track record."""
+    if not rows:
+        return
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        with open(d / "scored.jsonl", "a") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, default=str) + "\n")
+    except Exception as e:  # noqa: BLE001
+        log.warning("thematic_desk scored append failed: %s", e)
+
+
 def _eval(check: dict, entry: dict, check_by: str) -> dict | None:
     g = check.get("group", "yahoo")
     et, vs = check.get("subject_ticker"), check.get("vs")
@@ -588,9 +608,32 @@ def _calibration_note(overall: dict) -> str:
     return " ".join(parts)
 
 
+def _prior_outcomes(d: Path) -> dict:
+    """Already-graded outcomes from scored.jsonl, by thesis id (last write wins).
+
+    Only FINAL outcomes are read back. `open` is retried every run by definition, and
+    `expired` here means the price plane could not value the thesis — which for this desk is
+    emitted on the first unpriceable read, with none of desk_scorer's GRACE_BD business days
+    of slack (URNM carries two such theses today, with no parquet on any plane). Freezing
+    that would turn a collector gap into a permanent verdict, so it stays retryable."""
+    out = {}
+    try:
+        for line in (d / "scored.jsonl").read_text().splitlines():
+            try:
+                r = json.loads(line)
+                if r.get("id") and r.get("outcome") in _FINAL_OUTCOMES:
+                    out[r["id"]] = r
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception:  # noqa: BLE001 — absent file is the cold-start case, not an error
+        pass
+    return out
+
+
 def score_ledger(root=None, today=None) -> dict | None:
     """Grade every past-due, scorable thesis; write data/thematic_desk/track_record.json
-    (overall + by_market + by_conviction). Additive/idempotent; never raises."""
+    (overall + by_market + by_conviction) and append new outcomes to
+    data/thematic_desk/scored.jsonl. Additive/idempotent; never raises."""
     root = Path(root) if root else config.ROOT
     today = pd.Timestamp(today) if today else pd.Timestamp(datetime.now(timezone.utc).date())
     d = Path(root).joinpath(*_LEDGER_DIR)
@@ -606,22 +649,36 @@ def score_ledger(root=None, today=None) -> dict | None:
                     rows[r["id"]] = r            # dedupe by id (last wins)
             except Exception:  # noqa: BLE001
                 pass
-        scored = []
+        prior = _prior_outcomes(d)
+        scored, fresh = [], []
         for r in rows.values():
             check = (r.get("falsifier") or {}).get("check") or {}
             cb = r.get("check_by")
             base = {"id": r.get("id"), "market": r.get("market"), "subject": r.get("subject"),
                     "lean": r.get("lean"), "conviction": r.get("conviction"),
                     "kind": check.get("kind"), "check_by": cb}
+            was = prior.get(r.get("id"))
+            if was is not None:
+                # A verdict is reached ONCE. The aggregation dimensions are re-read from the
+                # ledger, but the OUTCOME is the one already published — a later re-adjustment
+                # of the stored price history (yfinance re-bases the whole series on every
+                # dividend; lib/store.upsert `overwrite_overlap`) must not silently rewrite a
+                # grade the track record has already reported.
+                scored.append({**base, **{k: was.get(k) for k in
+                                          ("outcome", "realized", "directionally_correct")}})
+                continue
             if check.get("kind") != "theme_rel_return" or not cb:
-                scored.append({**base, "outcome": "unscored"})
-                continue
-            if pd.Timestamp(cb) > today:
-                scored.append({**base, "outcome": "open"})
-                continue
-            check = {**check, "_asof": r.get("state_asof")}
-            res = _eval(check, r.get("entry_levels") or {}, cb)
-            scored.append({**base, **(res or {"outcome": "expired"})})
+                row = {**base, "outcome": "unscored"}
+            elif pd.Timestamp(cb) > today:
+                row = {**base, "outcome": "open"}
+            else:
+                res = _eval({**check, "_asof": r.get("state_asof")},
+                            r.get("entry_levels") or {}, cb)
+                row = {**base, **(res or {"outcome": "expired"})}
+            scored.append(row)
+            if row.get("outcome") in _FINAL_OUTCOMES:
+                fresh.append({**row, "scored_at": _now_iso()})
+        _append_scored(d, fresh)
         dec = [s for s in scored if s.get("outcome") in ("hit", "miss")]
         overall = _bucket(dec)
         track = {
