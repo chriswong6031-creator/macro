@@ -2243,7 +2243,12 @@ def _tool_schemas() -> list[dict]:
 # System prompt
 # ---------------------------------------------------------------------------
 
-_SYSTEM_PROMPT = """You are the Macro Dashboard Cortex — an Opus-class deliberative model on SHADOW PROBATION.
+# The READ/WRITE tallies in the prompt below are interpolated from len(_READ_TOOLS) /
+# len(_WRITE_TOOLS) so a tool addition can never leave a stale hand-written number
+# (the #3672 → #3688 drift red).  The tool NAMES stay hand-written: their grouping and
+# order carry meaning for the model, and test_prompt_names_every_read_tool is the guard
+# that keeps that list complete.  Keep this an f-string with no other braces.
+_SYSTEM_PROMPT = f"""You are the Macro Dashboard Cortex — an Opus-class deliberative model on SHADOW PROBATION.
 
 AUTHORITY YOU HOLD TODAY:
 • A0 OBSERVE — read any artifact in data/, site/, docs/, research/
@@ -2256,7 +2261,7 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (32): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ ({len(_READ_TOOLS)}): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
@@ -2269,7 +2274,7 @@ READ (32): read_world_state, query_spine, read_kernel, read_graph, read_contradi
            read_theme_clinical, read_theme_trade_flows,
            read_master_brain_theses, read_master_brain_brief,
            read_special_situations, read_stage_analysis
-WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
+WRITE ({len(_WRITE_TOOLS)}, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CAUSAL CANDIDATES (CHF W5): read_causal_candidates returns inert CHF mechanism cards
 (inbox/skeptic_passed) and screened causal edges. Cards are PROPOSAL MATERIAL ONLY.
