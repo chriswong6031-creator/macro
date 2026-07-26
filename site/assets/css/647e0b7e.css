@@ -331,6 +331,8 @@
   .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
   .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
   .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
+  .tb-confirm { font-size:10.5px; color:var(--muted); line-height:1.35; margin:-1px 0 6px; }
+  .tb-confirm b { color:var(--text); }
   .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
   .tb-metrics .tm-v { font-weight:700; }
   .tb-metrics .tm-v.pos { color:var(--up); }
