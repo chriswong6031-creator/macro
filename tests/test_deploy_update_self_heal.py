@@ -45,24 +45,51 @@ def test_changed_systemd_unit_forces_api_restart():
 # old object).  These guards pin the regex's behaviour, not its spelling.
 # --------------------------------------------------------------------------
 
-def _api_restart_regex() -> str:
-    """The ERE from the macro-api restart line in update.sh."""
-    marker = '[ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '
-    line = next(
-        ln for ln in SCRIPT.splitlines()
-        if marker in ln and ln.lstrip().startswith("if ")
-    )
-    body = line.split(marker, 1)[1]
+_GREP = "grep -qE "
+
+
+def _ere_on_line(line: str) -> str:
+    """Pull the single-quoted ERE out of a `grep -qE '...'` shell line."""
+    body = line.split(_GREP, 1)[1]
     assert body.startswith("'"), body
     return body[1: body.index("'", 1)]
 
 
-def _triggers_restart(path: str) -> bool:
+def _api_restart_regex() -> str:
+    """The ERE from the macro-api restart line in update.sh."""
+    marker = '[ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | ' + _GREP
+    return _ere_on_line(next(
+        ln for ln in SCRIPT.splitlines()
+        if marker in ln and ln.lstrip().startswith("if ")
+    ))
+
+
+def _admin_restart_regex() -> str:
+    """The ERE guarding `systemctl restart admin`.
+
+    Anchored on the restart it guards rather than on the regex's own spelling, so
+    reordering the alternation can never silently point this at another line.
+    """
+    lines = SCRIPT.splitlines()
+    restart = next(i for i, ln in enumerate(lines)
+                   if "systemctl is-enabled admin " in ln)
+    guard = next(i for i in range(restart - 1, -1, -1) if _GREP in lines[i])
+    return _ere_on_line(lines[guard])
+
+
+def _matches(regex: str, path: str) -> bool:
     """Run the real grep so the test sees POSIX ERE semantics, not Python's."""
     return subprocess.run(
-        ["grep", "-qE", _api_restart_regex()],
-        input=path, text=True, check=False,
+        ["grep", "-qE", regex], input=path, text=True, check=False,
     ).returncode == 0
+
+
+def _triggers_restart(path: str) -> bool:
+    return _matches(_api_restart_regex(), path)
+
+
+def _triggers_admin_restart(path: str) -> bool:
+    return _matches(_admin_restart_regex(), path)
 
 
 # Import-cached by the macro-api process -> a change here MUST restart it.
@@ -107,6 +134,21 @@ MUST_RESTART = [
     # brain_gateway chart path
     "engine/marketing/chart_render.py",
     "engine/marketing/confluence_source.py",
+    # ...plus the substrate the PACKAGE __init__ drags in: importing any
+    # engine.marketing submodule runs __init__ -> state -> these ten.  Invisible
+    # to an import-line scan; confirmed against a live interpreter's sys.modules.
+    "engine/marketing/__init__.py",
+    "engine/marketing/state.py",
+    "engine/marketing/authority.py",
+    "engine/marketing/charter.py",
+    "engine/marketing/claims.py",
+    "engine/marketing/cmo.py",
+    "engine/marketing/departments.py",
+    "engine/marketing/economics.py",
+    "engine/marketing/events.py",
+    "engine/marketing/ledgers.py",
+    "engine/marketing/opportunity_bus.py",
+    "engine/marketing/publication.py",
     # app/tape.py REST quotes, and lib modules on the chat path
     "engine/live_quotes.py",
     "lib/config.py",
@@ -134,8 +176,15 @@ MUST_NOT_RESTART = [
     "engine/context_index/ingest.py",
     "engine/context_index/chunking.py",
     "engine/context_index/health.py",
+    # nightly-only marketing modules — the package is named, not globbed
+    "engine/marketing/seo_director.py",
+    "engine/marketing/social_publisher.py",
+    # outbox/rejections back the ADMIN outbox endpoints and sit on no API path
+    "engine/marketing/outbox.py",
+    "engine/marketing/rejections.py",
     # other lanes
     "scripts/build_site.py",
+    "scripts/marketing_publisher.py",
     "engine/spine.py",
     "admin/server.py",
     "templates/index.html.j2",
@@ -157,6 +206,111 @@ def test_non_api_path_does_not_trigger_api_restart(path):
         f"{path} is not import-cached by macro-api; restarting on it blips /api "
         "for nothing and defeats the narrow-restart intent"
     )
+
+
+# --------------------------------------------------------------------------
+# admin console restart trigger.  Same trap, separate (narrower) regex: the
+# panel is a long-running process, so sys.modules pins whatever a request-time
+# import loaded and an engine-side fix stays dead until something restarts it.
+# --------------------------------------------------------------------------
+
+# Import-cached by the admin process -> a change here MUST restart it.
+ADMIN_MUST_RESTART = [
+    # panel code (all import-cached by the running process)
+    "admin/server.py",
+    "admin/marketing.py",
+    "admin/metabolism_panel.py",
+    "admin/neural_web.py",
+    "admin/orchestrator_chat.py",
+    "admin/ai_cost.py",
+    "admin/mastermind_logs.py",
+    "admin/prophet.py",
+    # outbox approve / reject / decide endpoints (admin/marketing.py).  This was
+    # the 2026-07-26 gap: an outbox.py fix deployed to the VPS and the running
+    # panel kept serving the previous module, with no signal.
+    "engine/marketing/outbox.py",
+    "engine/marketing/rejections.py",
+    # ...and the substrate `from engine.marketing import outbox` executes on the
+    # way in (package __init__ -> state -> these ten)
+    "engine/marketing/__init__.py",
+    "engine/marketing/state.py",
+    "engine/marketing/authority.py",
+    "engine/marketing/charter.py",
+    "engine/marketing/claims.py",
+    "engine/marketing/cmo.py",
+    "engine/marketing/departments.py",
+    "engine/marketing/economics.py",
+    "engine/marketing/events.py",
+    "engine/marketing/ledgers.py",
+    "engine/marketing/opportunity_bus.py",
+    "engine/marketing/publication.py",
+    # publish dry-run report (admin/marketing.py)
+    "scripts/marketing_publisher.py",
+    # deliberation-spend panel (admin/prophet.py)
+    "engine/llm_auth.py",
+    # reached via importlib.import_module("...") string literals — a grep for
+    # `from engine`/`from lib` does not see these at all
+    "engine/neuralweb/support_map.py",
+    "engine/neuralweb/orchestrator_log.py",
+    "engine/neuralweb/ask_brain.py",
+    "lib/ai_costs.py",
+    # static request-time imports
+    "engine/neuralweb/key_pool.py",
+    "engine/metabolism/throttle.py",
+    "engine/metabolism/budget_gate.py",
+    "lib/mastermind_response_log.py",
+]
+
+# NOT import-cached by admin -> restarting would blip the panel for nothing.
+ADMIN_MUST_NOT_RESTART = [
+    # rendered site + data artifacts are read from disk per request
+    "site/index.html",
+    "data/qbus/items.parquet",
+    "engine/neuralweb/doctrine/00_identity.md",
+    # the panel's only entry into ask_brain is _post_filter_advice(); the
+    # tool-schema / dispatch paths that lazily import cortex are never called
+    # from admin, which ships its own tool dispatcher
+    "engine/neuralweb/cortex.py",
+    "engine/master_brain.py",
+    "engine/china_radar.py",
+    # nightly-only marketing modules — the package is named, not globbed
+    "engine/marketing/seo_director.py",
+    "engine/marketing/social_publisher.py",
+    "engine/marketing/breaking_feed.py",
+    # macro-api's chart path, on no panel path
+    "engine/marketing/chart_render.py",
+    "engine/marketing/confluence_source.py",
+    # the API and site-build lanes
+    "app/main.py",
+    "app/research.py",
+    "lib/config.py",
+    "scripts/build_site.py",
+    "templates/index.html.j2",
+]
+
+
+@pytest.mark.parametrize("path", ADMIN_MUST_RESTART)
+def test_import_cached_module_triggers_admin_restart(path):
+    assert (ROOT / path).exists(), f"stale test fixture: {path} no longer exists"
+    assert _triggers_admin_restart(path), (
+        f"{path} is import-cached by the admin panel but does not match the "
+        "admin restart regex in app/deploy/update.sh — a change would deploy "
+        "and never go live"
+    )
+
+
+@pytest.mark.parametrize("path", ADMIN_MUST_NOT_RESTART)
+def test_non_admin_path_does_not_trigger_admin_restart(path):
+    assert not _triggers_admin_restart(path), (
+        f"{path} is not import-cached by admin; restarting on it blips the panel "
+        "for nothing and defeats the narrow-restart intent"
+    )
+
+
+def test_api_and_admin_regexes_are_distinct():
+    """Guard the extractor: both helpers must not resolve to the same line."""
+    assert _api_restart_regex() != _admin_restart_regex()
+    assert _admin_restart_regex().startswith("^(admin/")
 
 
 # --------------------------------------------------------------------------
@@ -199,12 +353,48 @@ def _module_level_imports(path: Path) -> set[str]:
     return found
 
 
-def _all_imports(path: Path) -> set[str]:
+def _dynamic_modules(tree: ast.AST) -> set[str]:
+    """`importlib.import_module("engine.x")` targets, by string literal.
+
+    An Import/ImportFrom scan is blind to these, and admin/ai_cost.py,
+    admin/orchestrator_chat.py and admin/neural_web.py reach lib.ai_costs,
+    engine.neuralweb.ask_brain, support_map and orchestrator_log ONLY this way —
+    so without this the admin closure would silently miss half its seeds.
+    """
     found: set[str] = set()
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        name = (fn.attr if isinstance(fn, ast.Attribute)
+                else fn.id if isinstance(fn, ast.Name) else None)
+        if name != "import_module" or not node.args:
+            continue
+        arg = node.args[0]
+        if (isinstance(arg, ast.Constant) and isinstance(arg.value, str)
+                and arg.value.split(".")[0] in _TRACKED_ROOTS):
+            found.add(arg.value)
+    return found
+
+
+def _all_imports(path: Path) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    found: set[str] = set()
+    for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             found |= _tracked_modules(node, path)
-    return found
+    return found | _dynamic_modules(tree)
+
+
+def _ancestor_packages(dotted: str) -> set[str]:
+    """Importing a.b.c executes a/__init__.py and a/b/__init__.py first.
+
+    engine/marketing/__init__.py is not inert — it imports state, which pulls in
+    ten more modules — so every one of them is pinned in sys.modules by a single
+    `from engine.marketing import outbox`.
+    """
+    parts = dotted.split(".")
+    return {".".join(parts[:i]) for i in range(1, len(parts))}
 
 
 def _module_files(dotted: str) -> list[Path]:
@@ -226,16 +416,19 @@ def _is_inert_package_init(path: Path) -> bool:
     )
 
 
-def _api_load_time_closure() -> set[str]:
-    """engine/lib modules guaranteed present in the macro-api sys.modules.
+def _load_time_closure(seed_dir: str) -> set[str]:
+    """engine/lib modules guaranteed present in a service's sys.modules.
 
-    Seeded from EVERY engine/lib import in app/ (app/ is the API, so even a
-    function-level import there executes in-process on some request), then
-    expanded through module-level imports only.
+    Seeded from EVERY engine/lib import in `seed_dir` — the whole directory is
+    that service's own code, so even a function-level import there executes
+    in-process on some request — then expanded through module-level imports
+    only, plus the parent packages Python runs on the way to a submodule.
+    Deeper function-level imports need human judgement about whether an endpoint
+    reaches them and live in the MUST_RESTART lists instead.
     """
     queue = deque()
-    for router in sorted((ROOT / "app").glob("*.py")):
-        queue.extend(_all_imports(router))
+    for module in sorted((ROOT / seed_dir).glob("*.py")):
+        queue.extend(_all_imports(module))
 
     seen: set[str] = set()
     reached: set[str] = set()
@@ -244,10 +437,19 @@ def _api_load_time_closure() -> set[str]:
         if dotted in seen:
             continue
         seen.add(dotted)
+        queue.extend(_ancestor_packages(dotted))
         for path in _module_files(dotted):       # skips symbols (funcs/classes)
             reached.add(str(path.relative_to(ROOT)))
             queue.extend(_module_level_imports(path))
     return reached
+
+
+def _api_load_time_closure() -> set[str]:
+    return _load_time_closure("app")
+
+
+def _admin_load_time_closure() -> set[str]:
+    return _load_time_closure("admin")
 
 
 def test_api_load_time_import_closure_is_covered_by_restart_regex():
@@ -279,3 +481,60 @@ def test_load_time_closure_probe_is_not_vacuous():
     # nightly-only modules must stay OUT, else the closure is over-broad
     assert "engine/master_brain.py" not in closure
     assert "engine/china_radar.py" not in closure
+
+
+def test_admin_load_time_import_closure_is_covered_by_restart_regex():
+    """Every module the admin panel import-caches must force a restart.
+
+    Fails when someone adds an `engine`/`lib` import to an admin/ panel (or a
+    module-level import to something already in the closure) without extending
+    the admin trigger regex — the 2026-07-26 engine/marketing/outbox.py gap,
+    which shipped dead outbox approve/reject/decide code to the running panel.
+    """
+    uncovered = sorted(
+        rel for rel in _admin_load_time_closure()
+        if not _triggers_admin_restart(rel)
+        and not _is_inert_package_init(ROOT / rel)
+    )
+    assert not uncovered, (
+        "import-cached by the admin panel but missing from the admin restart "
+        f"regex in app/deploy/update.sh: {uncovered}\n"
+        "Add them (or, if a path is genuinely content read per request, document "
+        "the exemption in the comment above the regex)."
+    )
+
+
+def test_admin_closure_probe_is_not_vacuous():
+    """Guard the guard: each seed form the admin closure depends on must work."""
+    closure = _admin_load_time_closure()
+    # static function-level import (admin/marketing.py)
+    assert "engine/marketing/outbox.py" in closure, closure
+    # importlib.import_module("...") literals — invisible to an import-line scan
+    assert "engine/neuralweb/support_map.py" in closure, closure
+    assert "lib/ai_costs.py" in closure, closure
+    # package __init__ side effect: `from engine.marketing import outbox` runs
+    # __init__ -> state -> the substrate
+    assert "engine/marketing/__init__.py" in closure, closure
+    assert "engine/marketing/state.py" in closure, closure
+    # nightly-only lanes must stay OUT, else the closure is over-broad and the
+    # narrow-restart intent is lost
+    assert "engine/neuralweb/cortex.py" not in closure
+    assert "engine/marketing/seo_director.py" not in closure
+    assert "engine/master_brain.py" not in closure
+
+
+def test_dotted_import_still_reaches_the_package_init():
+    """A dotted-only import names no package, but Python still runs its __init__.
+
+    Tested directly because today both spellings appear in admin/marketing.py, so
+    `engine.marketing` is seeded either way and the closure probe above cannot
+    tell the ancestor walk apart from the plain seed.  It becomes load-bearing the
+    moment the last `from engine.marketing import outbox` form goes away — as is
+    already the case for macro-api, where brain_gateway only ever writes
+    `from engine.marketing.chart_render import ...` and the package __init__ (and
+    the twelve-module substrate behind it) is reachable no other way.
+    """
+    assert _ancestor_packages("engine.marketing.outbox") == {
+        "engine", "engine.marketing",
+    }
+    assert _ancestor_packages("lib") == set()

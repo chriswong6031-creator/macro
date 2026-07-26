@@ -121,8 +121,16 @@ fi
 #                          globbed: ingest/chunking/health/schema/sources are
 #                          nightly-only builders the API never imports.
 #   marketing/             brain_gateway's chart path → chart_render (load_ohlcv,
-#                          render_chart_v2) + confluence_source. Named, not globbed:
-#                          the rest of the marketing lane is nightly-only.
+#                          render_chart_v2) + confluence_source. The other twelve
+#                          are NOT optional and NOT reached by reading import
+#                          lines: importing ANY engine.marketing submodule first
+#                          executes the PACKAGE __init__, which imports state →
+#                          authority, charter, claims, cmo, departments, economics,
+#                          events, ledgers, opportunity_bus, publication. All
+#                          fourteen were confirmed against a live interpreter's
+#                          sys.modules, not inferred. Named, not globbed: 34 of the
+#                          48 marketing modules are nightly-only, and outbox/
+#                          rejections are admin-only (see the admin list below).
 #   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
 #   lib/*                  ai_costs + mastermind_response_log log every chat call;
 #                          config.py is a module-level dep of live_quotes
@@ -136,7 +144,7 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(chart_render|confluence_source)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
@@ -171,12 +179,50 @@ fi
 # includes the engine/lib modules the panels lazily import — cached in sys.modules
 # after the first request, so without a restart an engine-side fix (e.g. a
 # key_pool.py change to the Raw Key Usage join) never reaches the running panel;
-# data files are read from disk per request and need no restart. Keep this list in
-# sync when adding a lazy engine/lib import to an admin/ panel:
-#   ai_cost/orchestrator_chat → lib/ai_costs; metabolism_panel → key_pool, throttle;
-#   server manual-run gate → budget_gate; orchestrator_chat → ask_brain;
-#   neural_web → support_map, orchestrator_log.
-if echo "$CHANGED" | grep -qE '^(admin/.*|lib/ai_costs\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log)\.py|engine/metabolism/(throttle|budget_gate)\.py)$'; then
+# data files are read from disk per request and need no restart.
+#
+# INCLUSION RULE — the same one the macro-api list above uses. admin/ is ALL panel
+# code, so a function-level import there is import-cached exactly like a
+# module-level one, just from the first request that reaches it; both kinds seed
+# this list. Each seed is then expanded through MODULE-LEVEL imports only, because
+# those are what actually execute on load. A nightly-only tail hanging off a DEEP
+# function-level import is not cached and stays out (see the exclusions below).
+# Three seed forms count, and grepping for `from engine`/`from lib` finds only the
+# first: static imports, `importlib.import_module("engine...")` string literals
+# (ai_cost, orchestrator_chat, neural_web all use this form), and the PACKAGE
+# __init__ that Python executes before any submodule. Keep this list in sync when
+# adding any of them — tests/test_deploy_update_self_heal.py recomputes the closure
+# and fails CI if it drifts.
+#
+# Why each group is here:
+#   admin/*                every panel module is import-cached by the process
+#   lib/*                  ai_cost + orchestrator_chat → ai_costs;
+#                          mastermind_logs → mastermind_response_log
+#   neuralweb/*            metabolism_panel + orchestrator_chat → key_pool;
+#                          orchestrator_chat → ask_brain; neural_web →
+#                          support_map, orchestrator_log
+#   metabolism/*           metabolism_panel → throttle; server manual-run gate →
+#                          budget_gate
+#   engine/llm_auth.py     prophet.py deliberation-spend panel
+#   marketing/             marketing.py's outbox approve/reject/decide endpoints →
+#                          outbox + rejections. The other twelve ride the package
+#                          __init__ (→ state → authority, charter, claims, cmo,
+#                          departments, economics, events, ledgers,
+#                          opportunity_bus, publication) — confirmed against a live
+#                          interpreter's sys.modules. Named, not globbed: 34 of the
+#                          48 marketing modules are nightly-only.
+#   scripts/               marketing.py's publish dry-run → marketing_publisher
+#
+# Deliberately NOT here (they would blip the panel for nothing):
+#   - site/ and data/ artifacts, read from disk per request.
+#   - engine/neuralweb/cortex.py and the nightly lane behind it. The panel's only
+#     entry into ask_brain is _post_filter_advice() (the advice guard); the
+#     tool-schema/dispatch paths that lazily import cortex are never called from
+#     admin, so cortex is absent from the panel's sys.modules. admin ships its own
+#     tool dispatcher.
+#   - The rest of engine/marketing (breaking_feed, seo_director, social_publisher,
+#     …) — nightly-only, never imported by a panel.
+if echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/llm_auth\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|authority|charter|claims|cmo|departments|economics|events|ledgers|opportunity_bus|outbox|publication|rejections|state)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
