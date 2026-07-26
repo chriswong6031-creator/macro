@@ -431,6 +431,60 @@ def _append_ledger(notes: list, asof, root) -> None:
 # --------------------------------------------------------------------------- #
 # scorer — grade past-due leans vs realized name-minus-SPY return
 # --------------------------------------------------------------------------- #
+# Outcomes that are FINAL once written to scored.jsonl. Mirrors engine.desk_scorer's
+# append-only convention (theses.jsonl is the desk's; outcomes go to a separate file, one
+# row per id) minus `expired` — see _prior_outcomes for why that one stays retryable.
+_FINAL_OUTCOMES = ("hit", "miss", "unscored")
+
+
+def _append_scored(d: Path, rows: list) -> None:
+    """Append newly-final outcomes to the append-only scored.jsonl.
+
+    NOT lane-gated, deliberately. The forward-ledger law ("nightly is the sole advancer")
+    is enforced for THIS desk at the workflow level, not in the module: the only caller is
+    scripts.build_stock_briefs → daily.yml's `stock_briefs` job, and that job is also the
+    only thing that commits `data/stock_desk` (daily.yml `git add data/stock_desk`). Any
+    other lane's write lands in a checkout that is thrown away. Do not "fix" this with
+    engine.ledger_lane.nightly_advance_enabled(): the `stock_briefs` job sets no
+    COLLECT_LANE, so that gate would never fire and the spine would be dead on arrival
+    (the sibling theses.jsonl append and track_record.json write here are ungated for the
+    same reason).
+
+    Never raises: an unwritable audit trail must not cost us the track record."""
+    if not rows:
+        return
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        with open(d / "scored.jsonl", "a") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, default=str) + "\n")
+    except Exception as e:  # noqa: BLE001
+        log.warning("stock_desk scored append failed: %s", e)
+
+
+def _prior_outcomes(d: Path) -> dict:
+    """Already-graded outcomes from scored.jsonl, by thesis id (last write wins).
+
+    Only FINAL outcomes are read back. `open` is retried every run by definition, and
+    `expired` here means the price cache could not value the lean — which for this desk is
+    emitted on the FIRST unpriceable read, with none of engine.desk_scorer.GRACE_BD's ten
+    business days of slack (score_ledger turns any `_eval` → None straight into `expired`).
+    Freezing that would turn a collector gap — a name absent from today's `_closes()` panel,
+    a delisting that later backfills — into a permanent verdict, so it stays retryable."""
+    out = {}
+    try:
+        for line in (d / "scored.jsonl").read_text().splitlines():
+            try:
+                r = json.loads(line)
+                if r.get("id") and r.get("outcome") in _FINAL_OUTCOMES:
+                    out[r["id"]] = r
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception:  # noqa: BLE001 — absent file is the cold-start case, not an error
+        pass
+    return out
+
+
 def _eval(check: dict, entry: dict, check_by: str, asof) -> dict | None:
     et, vs = check.get("subject_ticker"), check.get("vs")
     e0 = (entry or {}).get(et) or _close_asof(et, asof)
@@ -471,6 +525,9 @@ def _calibration_note(overall: dict) -> str:
 
 
 def score_ledger(root=None, today=None) -> dict | None:
+    """Grade every past-due, scorable lean; write data/stock_desk/track_record.json +
+    site/stockdata/ai_desk_track.json and append new outcomes to
+    data/stock_desk/scored.jsonl. Additive/idempotent; never raises."""
     root = Path(root) if root else config.ROOT
     today = pd.Timestamp(today) if today else pd.Timestamp(datetime.now(timezone.utc).date())
     lp = _ledger_path(root)
@@ -485,20 +542,41 @@ def score_ledger(root=None, today=None) -> dict | None:
                     rows[r["id"]] = r
             except Exception:  # noqa: BLE001
                 pass
-        scored = []
+        d = Path(root).joinpath(*_LEDGER_DIR)
+        prior = _prior_outcomes(d)
+        scored, fresh = [], []
         for r in rows.values():
             check = (r.get("falsifier") or {}).get("check") or {}
             cb = r.get("check_by")
-            base = {"id": r.get("id"), "ticker": r.get("ticker"), "lean": r.get("lean"),
-                    "conviction": r.get("conviction"), "kind": check.get("kind"), "check_by": cb}
+            # `subject` duplicates `ticker` for engine.spine.adapt_desk_scorer, which reads
+            # `subject` for the row's symbol and derives its co-firing collapse key from it
+            # (event_key defaults to "{symbol}:{as_of}"). Without it every row here would
+            # fall back to the literal "stock_desk" and 45 distinct leans would collapse to
+            # one effective event per check_by date in engine.pooling.arming. `ticker` stays
+            # for the track record's own `recent` list and any existing reader.
+            base = {"id": r.get("id"), "ticker": r.get("ticker"), "subject": r.get("ticker"),
+                    "lean": r.get("lean"), "conviction": r.get("conviction"),
+                    "kind": check.get("kind"), "check_by": cb}
+            was = prior.get(r.get("id"))
+            if was is not None:
+                # A verdict is reached ONCE. The aggregation dimensions are re-read from the
+                # ledger, but the OUTCOME is the one already published — yfinance re-bases a
+                # name's whole stored history on every dividend, so re-grading from live
+                # prices can silently rewrite a grade the track record already reported.
+                scored.append({**base, **{k: was.get(k) for k in
+                                          ("outcome", "realized", "directionally_correct")}})
+                continue
             if check.get("kind") != "rel_return" or not cb:
-                scored.append({**base, "outcome": "unscored"})
-                continue
-            if pd.Timestamp(cb) > today:
-                scored.append({**base, "outcome": "open"})
-                continue
-            res = _eval(check, r.get("entry_levels") or {}, cb, r.get("state_asof"))
-            scored.append({**base, **(res or {"outcome": "expired"})})
+                row = {**base, "outcome": "unscored"}
+            elif pd.Timestamp(cb) > today:
+                row = {**base, "outcome": "open"}
+            else:
+                res = _eval(check, r.get("entry_levels") or {}, cb, r.get("state_asof"))
+                row = {**base, **(res or {"outcome": "expired"})}
+            scored.append(row)
+            if row.get("outcome") in _FINAL_OUTCOMES:
+                fresh.append({**row, "scored_at": datetime.now(timezone.utc).isoformat()})
+        _append_scored(d, fresh)
         dec = [s for s in scored if s.get("outcome") in ("hit", "miss")]
         overall = _bucket(dec)
         track = {
@@ -516,7 +594,6 @@ def score_ledger(root=None, today=None) -> dict | None:
                        for s in sorted(dec, key=lambda s: s.get("check_by") or "",
                                        reverse=True)[:12]],
         }
-        d = Path(root).joinpath(*_LEDGER_DIR)
         (d / "track_record.json").write_text(json.dumps(track, indent=2, default=str))
         pub = Path(root) / "site" / "stockdata" / "ai_desk_track.json"
         pub.parent.mkdir(parents=True, exist_ok=True)
