@@ -130,6 +130,81 @@ def _ensure_price(product_id: str | None, spec: dict, currency: str, dry: bool) 
     return pr.id
 
 
+# --------------------------------------------------------------------------- #
+# Customer Portal configuration
+# --------------------------------------------------------------------------- #
+# The portal is where a customer updates a card, cancels, or DOWNGRADES — everything
+# /api/billing/upgrade deliberately refuses (its matrix is strictly upward). It used to be
+# configured by hand, and the 2026-07-25 go-live audit found it carrying
+# `subscription_update.proration_behavior = "none"`: a customer switching plans there would
+# have been charged full freight with NO credit for time they had already paid for, while
+# the identical move through /api/billing/upgrade credits it. That is now set here.
+#
+# READ-BACK CAVEAT worth knowing before you "verify" this: Stripe **validates**
+# features.subscription_update.products on write (a bogus product id is rejected) but does
+# **not** echo the field back on any current API version — it is absent from the response
+# on 2024-06-20 through 2025-08-27.basil alike. So the API cannot tell you which products
+# a portal configuration allows, and a `products: null` read is NOT evidence that none are
+# configured. Verify plan switching BEHAVIOURALLY instead: open a portal session and load
+# .../subscriptions/<sub>/update — it lists the sellable plans plus a Monthly/Yearly toggle.
+#
+# Configuring it HERE (rather than by clicking) makes it idempotent, reviewable, and
+# reproducible against the live account with the same command as the products/prices —
+# and removes the ambiguity the unreadable field would otherwise leave.
+#
+# PRORATION_BEHAVIOR note: "create_prorations" writes the credit/charge lines onto the
+# NEXT invoice instead of billing them on the spot. That is the right default for a
+# self-serve surface where the customer confirms without ever being shown an amount — the
+# credit arithmetic is identical to the in-app lane, only the collection moment differs.
+# Set it to "always_invoice" if you want portal switches to charge immediately, exactly
+# like /api/billing/upgrade does.
+PORTAL_PRORATION_BEHAVIOR = "create_prorations"
+
+
+def _ensure_portal_configuration(products: dict[str, list[str]], dry: bool) -> str | None:
+    """Create or update the DEFAULT customer-portal configuration from the catalog.
+
+    `products` maps product_id -> [price_id, ...] (its monthly + annual prices), which is
+    the shape Stripe wants for features.subscription_update.products.
+    """
+    entries = [{"product": pid, "prices": prices} for pid, prices in products.items() if pid and prices]
+    if not entries:
+        print("  portal   (skipped — no products/prices resolved)")
+        return None
+
+    features = {
+        "subscription_update": {
+            "enabled": True,
+            "default_allowed_updates": ["price"],
+            "proration_behavior": PORTAL_PRORATION_BEHAVIOR,
+            "products": entries,
+        },
+        # at_period_end: a cancelling customer keeps what they already paid for.
+        "subscription_cancel": {"enabled": True, "mode": "at_period_end",
+                                "proration_behavior": "none"},
+        "payment_method_update": {"enabled": True},
+        "invoice_history": {"enabled": True},
+        "customer_update": {"enabled": True, "allowed_updates": ["email", "address", "tax_id"]},
+    }
+
+    existing = [c for c in stripe.billing_portal.Configuration.list(limit=20).auto_paging_iter()
+                if c.is_default]
+    if dry:
+        verb = "UPDATE" if existing else "CREATE"
+        print(f"  portal   default config       {verb}  (dry-run) "
+              f"[{len(entries)} products, proration={PORTAL_PRORATION_BEHAVIOR}]")
+        return None
+    if existing:
+        cfg = stripe.billing_portal.Configuration.modify(existing[0].id, features=features)
+        print(f"  portal   default config       update  {cfg.id} "
+              f"[{len(entries)} products, proration={PORTAL_PRORATION_BEHAVIOR}]")
+    else:
+        cfg = stripe.billing_portal.Configuration.create(features=features)
+        print(f"  portal   default config       create  {cfg.id} "
+              f"[{len(entries)} products, proration={PORTAL_PRORATION_BEHAVIOR}]")
+    return cfg.id
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true", help="print planned actions; create nothing")
@@ -154,12 +229,18 @@ def main() -> int:
 
     print("products + prices:")
     summary: list[tuple[str, str, str | None]] = []
+    portal_products: dict[str, list[str]] = {}
     for pkey, prod in cat["products"].items():
         pid = _ensure_product(pkey, prod["name"], args.dry_run)
         _attach_features(pid, [feat_ids.get(f) for f in prod.get("features", [])], args.dry_run)
         for interval_name, pspec in prod["prices"].items():
             price_id = _ensure_price(pid, pspec, currency, args.dry_run)
             summary.append((f"{pkey}/{interval_name}", pspec["lookup_key"], price_id))
+            if pid and price_id:
+                portal_products.setdefault(pid, []).append(price_id)
+
+    print("customer portal:")
+    _ensure_portal_configuration(portal_products, args.dry_run)
 
     print("\nsummary (application code addresses prices by lookup_key, not id):")
     for label, lk, pid in summary:

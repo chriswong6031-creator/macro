@@ -218,6 +218,11 @@
   .flag-banner.cancel { border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
     background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--text); }
   .flag-banner .ficon { flex:none; font-size:17px; }
+  /* the success banner's way OUT of the pricing page — the old copy told the user to
+     "head to the dashboard" and then gave them nothing to click. */
+  .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
+    color:var(--text); text-decoration:none; border-bottom:1px solid currentColor; }
+  .flag-banner .fgo:hover { opacity:.72; }
   .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
     font-size:16px; line-height:1; padding:2px 4px; }
 
@@ -679,8 +684,17 @@
     if (m[1] === 'success') {
       banner.classList.add('show', 'ok');
       icon.textContent = '🎉';
-      text.textContent = L('You’re in. Your trial is live — head to the dashboard to start.',
-                           '搞定。试用已开通——前往仪表盘开始使用吧。');
+      /* Hosted Checkout now returns to start.html?checkout=success (app/billing.py),
+         so this branch is only reached by a stale bookmark or by a Checkout Session
+         that was created BEFORE that change shipped and still carries the old
+         success_url baked in (sessions live ~24h). Those users must not be stranded on
+         the pricing page: give them the link the old copy only ever talked about. */
+      text.textContent = L('You’re in. Your trial is live.', '搞定。试用已开通。');
+      var go = document.createElement('a');
+      go.href = 'start.html';
+      go.className = 'fgo';
+      go.textContent = L('Open the dashboard →', '前往仪表盘 →');
+      text.parentNode.insertBefore(go, x || null);
     } else {
       banner.classList.add('show', 'cancel');
       icon.textContent = '↩︎';

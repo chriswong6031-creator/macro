@@ -74,10 +74,34 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
   `charge.refunded`, `charge.dispute.created`, `entitlements.active_entitlement_summary.updated`.
 - Copy the **Signing secret** (`whsec_...`) → `STRIPE_WEBHOOK_SECRET` (step 3) → restart the service.
 
-## 5. Configure the Customer Portal
+## 5. Configure the Customer Portal — **scripted, not clicked**
 
-Dashboard → **Settings → Billing → Customer portal**: allow the Insider/Pro products, enable
-cancel + plan switching. `GET /api/billing/portal` returns a portal session for the signed-in user.
+`scripts/stripe_bootstrap.py` now configures the **default portal configuration** alongside the
+products and prices, so it is idempotent and reproduces identically against the live account.
+Re-running the bootstrap is all that is needed; there is no dashboard step.
+
+It sets: plan switching **with the Insider/Pro products and all four prices attached**, cancel
+(`at_period_end`), payment-method update, invoice history, and customer update.
+
+> **Why it moved out of the dashboard (2026-07-25 go-live audit).** The hand-clicked config was
+> carrying `subscription_update.proration_behavior = "none"`, so a customer switching plans in the
+> portal would have paid full freight with **no credit for time already paid for**, while the same
+> move via `/api/billing/upgrade` credits it.
+>
+> ⚠️ **You cannot verify the allowed products through the API.** Stripe *validates*
+> `features.subscription_update.products` on write (a bogus product id is rejected) but never echoes
+> it back — the field is absent from the response on every API version from `2024-06-20` through
+> `2025-08-27.basil`. A `products: null` read is **not** evidence that none are configured. Verify
+> plan switching **behaviourally**: create a portal session and open
+> `…/subscriptions/<sub_id>/update`, which lists the sellable plans and a Monthly/Yearly toggle.
+
+`PORTAL_PRORATION_BEHAVIOR` in the script is `create_prorations`: the credit/charge lines land on the
+customer's **next** invoice rather than being billed on the spot. The credit arithmetic is identical
+to the in-app lane — only the collection moment differs — which is the right default for a
+self-serve surface that confirms without ever showing an amount. Set it to `always_invoice` if you
+want portal switches to charge immediately, exactly like `/api/billing/upgrade`.
+
+`GET /api/billing/portal` returns a portal session for the signed-in user.
 
 ## 5b. Elements lane (W2)
 
@@ -130,10 +154,37 @@ Dashboard → **Settings → Tax**: set the origin address + registrations. Unti
 
 ---
 
+## Customer email — what Stripe sends and what it does NOT
+
+Audited 2026-07-25. **Stripe has no "subscription started" or "plan changed" email of any kind**, and
+our signup invoice is **$0** (7-day trial) while receipts only fire on a successful charge above
+zero. So a customer who completes checkout today receives **nothing** until the first real charge a
+week later. Any welcome / activation / upgrade-confirmation mail is ours to send — the natural hook
+is `app/billing.py::_handle_event`, which already resolves `user_id` and recomputes the tier for
+every relevant event; key it off the `stripe_events` ledger for idempotency and send from the
+**webhook only**, never the pre-webhook `/subscribe/complete` fast path, or it double-fires.
+
+What Stripe *can* send, all **Dashboard-only toggles with no API surface** (they cannot be set or
+verified from code — an operator has to open the dashboard):
+
+| Email | Where |
+|---|---|
+| Receipts for successful payments, refunds | Settings → Business → **Customer emails** |
+| Trial-ending reminder (7 days before) | Settings → Billing → **Subscriptions and emails** |
+| Card-payment-failed | Settings → Billing → **Subscriptions and emails** |
+| Upcoming-renewal | Settings → Billing → **Subscriptions and emails** |
+| Retry/dunning schedule | Billing → **Revenue recovery → Retries** |
+
+⚠️ Test mode **cannot prove delivery**: sandbox receipts only auto-send when the customer email is a
+verified address with sandbox permissions on the account. Enable the toggles, then confirm on the
+first live transaction.
+
 ## Verify (test mode)
 
 1. Signed-in user opens `/plans.html` → **Subscribe** → Stripe Checkout. Pay with test card
-   `4242 4242 4242 4242`, any future expiry/CVC.
+   `4242 4242 4242 4242`, any future expiry/CVC. Checkout returns to
+   **`start.html?checkout=success`** (the desk, not the pricing page); `site/hub-welcome.js`
+   confirms the tier it reads back from `/api/me`.
 2. Webhook fires → a row appears in `user_entitlements` (tier `insider`/`pro`, status `trialing`).
 3. `GET /api/me` (with the user's bearer token) reflects the new `tier` + `features`.
 4. Customer Portal → cancel → within seconds `/api/me` downgrades to `free` (cache-bust on the

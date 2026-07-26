@@ -104,6 +104,32 @@ SUPABASE_ANON_KEY = os.environ.get(
 app = FastAPI(title="macro API", version="0.1.0")
 
 
+@app.middleware("http")
+async def _api_no_store(request: Request, call_next):
+    """Every /api/* response is per-user — never let a shared cache keep one.
+
+    FOUND LIVE (2026-07-25 Stripe go-live audit): macro-api sent NO Cache-Control on
+    /api/*, so the EdgeOne edge applied its own default and cached **404** responses,
+    with a cache key that IGNORES the Authorization header. `GET /api/billing/portal`
+    404s for every user without a Stripe customer (i.e. every free user), and that 404
+    was then replayed from the edge to PAYING subscribers — who saw "no billing account
+    yet" and could not reach the billing portal at all (the only self-serve path to
+    update a card, cancel, or downgrade). Reproduced twice with `eo-cache-status: HIT`.
+
+    Measured scope at the time: 404 was cached; 401 and 200 were not — so /api/me and
+    /api/account happened to be safe. That is a CDN heuristic, not a guarantee, and it
+    can change under us. This middleware removes the dependency entirely: the origin now
+    states the caching rule for its own responses instead of leaving it to the edge.
+
+    `setdefault` semantics — a route that already set Cache-Control (the SSE streams'
+    `no-cache`, the regwall/paywall gates' `no-store`) keeps its own value.
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/api/") and "cache-control" not in response.headers:
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
 def _commit() -> str:
     try:
         return subprocess.check_output(
