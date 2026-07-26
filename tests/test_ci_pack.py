@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -186,4 +187,118 @@ def test_every_workflow_test_path_exists() -> None:
         "every other test listed in that step never runs and the job is red for "
         "a reason unrelated to the code. Delete the stale path from the workflow "
         "(or restore the file if the deletion was a mistake)."
+    )
+
+
+# ── self-mod-fence live check: the ship-loop E1 lever must stay satisfiable ───
+#
+# `gh workflow run ci.yml --ref main` is the documented operator lever (CLAUDE.md,
+# ship_loop_guard E1) for clearing every pinned merge with one green main run. On a
+# workflow_dispatch there is no `github.base_ref`, so ci-pack renders the fence's
+# base as `main` and HEAD *is* main — the three-dot diff is empty by construction.
+# Until #3697 that empty list hit R-AUT-5's fail-closed branch and exited 1, so the
+# lever could never go green and every dispatch burned a full ~20-min pack (observed
+# runs 30207008917 / 30208496248 / 30209369270 / 30210372515, all 2026-07-26).
+#
+# #3697 shipped the fix as raw shell inside a legacy job that GitHub never runs
+# (`if: ${{ false }}`) — only ci-pack executes it, and nothing asserted the behavior.
+# These tests render the REAL step out of ci.yml through the REAL pack renderer and
+# execute it against a throwaway git repo, so the lever's two halves are pinned:
+# dispatch-at-tip passes, and everything else still fails closed.
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", "-c", "user.email=ci@example.com", "-c", "user.name=ci", *args],
+        cwd=repo, check=True, capture_output=True, text=True,
+    )
+
+
+def _fence_live_check_command() -> str:
+    """Render the fence's live check exactly as a dispatched ci-pack would.
+
+    workflow_dispatch supplies neither base_ref nor head_ref, so ci-pack's
+    `github.base_ref || 'main'` and `github.head_ref || github.ref_name` both
+    collapse to the dispatched ref — main.
+    """
+    job = _yaml(WORKFLOW)["jobs"]["self-mod-fence"]
+    steps = [s for s in job["steps"] if "live check" in str(s.get("name", ""))]
+    assert len(steps) == 1, f"expected exactly one live-check step, got {len(steps)}"
+    return PACK.render_command(str(steps[0]["run"]), base_ref="main", head_ref="main")
+
+
+def _run_fence(repo: Path, event_name: str) -> subprocess.CompletedProcess:
+    env = os.environ.copy()
+    env["GITHUB_EVENT_NAME"] = event_name
+    return subprocess.run(
+        ["bash", "-eo", "pipefail", "-c", _fence_live_check_command()],
+        cwd=repo, env=env, capture_output=True, text=True,
+    )
+
+
+@pytest.fixture
+def dispatch_repo(tmp_path: Path) -> Path:
+    """A repo whose HEAD is the tip of `origin/main` — the dispatch-on-main shape."""
+    origin = tmp_path / "origin.git"
+    subprocess.run(
+        ["git", "init", "--bare", "-b", "main", str(origin)],
+        check=True, capture_output=True,
+    )
+    work = tmp_path / "work"
+    subprocess.run(
+        ["git", "clone", str(origin), str(work)], check=True, capture_output=True
+    )
+    (work / "seed.txt").write_text("seed\n", encoding="utf-8")
+    _git(work, "add", "seed.txt")
+    _git(work, "commit", "-m", "seed")
+    _git(work, "push", "origin", "main")
+    return work
+
+
+def test_fence_passes_on_dispatch_at_main_tip(dispatch_repo: Path) -> None:
+    """The E1 lever must reach green: no PR context means nothing to classify."""
+    result = _run_fence(dispatch_repo, "workflow_dispatch")
+    assert result.returncode == 0, (
+        "`gh workflow run ci.yml --ref main` is the documented ship-loop E1 unblock "
+        "lever, and the self-mod-fence live check redded it for an unrelated "
+        "structural reason: on a dispatch there is no base_ref, so the fence diffs "
+        "main against itself and calls the empty result undeterminable.\n"
+        f"exit={result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+
+
+def test_fence_passes_on_dispatch_behind_main_tip(dispatch_repo: Path) -> None:
+    """Main advancing between dispatch checkout and this step must not red it."""
+    (dispatch_repo / "later.txt").write_text("later\n", encoding="utf-8")
+    _git(dispatch_repo, "add", "later.txt")
+    _git(dispatch_repo, "commit", "-m", "main moves on")
+    _git(dispatch_repo, "push", "origin", "main")
+    _git(dispatch_repo, "checkout", "-q", "HEAD~1")  # detach at the dispatched SHA
+
+    result = _run_fence(dispatch_repo, "workflow_dispatch")
+    assert result.returncode == 0, (
+        "The dispatch arm is written with `merge-base --is-ancestor` rather than "
+        "tip-equality precisely so a main that advanced mid-run still passes.\n"
+        f"exit={result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+
+
+@pytest.mark.parametrize("event_name", ["pull_request", "push", ""])
+def test_fence_still_fails_closed_without_dispatch(
+    dispatch_repo: Path, event_name: str
+) -> None:
+    """R-AUT-5 is unweakened: an empty diff off a dispatch is still a hard block.
+
+    On a real pull_request an empty changed-file list means the diff genuinely
+    failed — shallow clone, base-ref resolution failure, merge-commit HEAD — and
+    the fence's own comment is the contract: a fence that errors open is worse
+    than no fence. Only the verified dispatch-at-main case may pass.
+    """
+    result = _run_fence(dispatch_repo, event_name)
+    assert result.returncode == 1, (
+        f"event_name={event_name!r} produced an empty changed-file list and did NOT "
+        "block. The #3697 dispatch arm must stay conditioned on workflow_dispatch; "
+        "widening it to all events would silently disarm the self-modification "
+        "fence for every PR whose diff cannot be determined.\n"
+        f"exit={result.returncode}\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
