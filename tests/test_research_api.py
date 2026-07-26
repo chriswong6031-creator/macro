@@ -11,6 +11,9 @@ a dependency-overridden auth + a monkeypatched tier resolver):
   * download quota: PRO gets 10/day then 402 quota_exhausted; insider/free blocked
     (402 paid_required, before the quota check); the counter is server-authoritative
     (increments only on allow); peek() does NOT increment; the day period resets.
+  * lifetime allowance: a PRO holding a lifetime (comp, no-period-end) grant gets
+    50/day off the SAME day ledger — and the flag never lifts a free/insider 0, so
+    it can only raise a cap, never open the paywall.
   * doc_id hardening: traversal / ``..`` / uppercase / slash / unknown id →
     400 or 404, and NEVER a raw R2 fetch of an unvalidated key.
   * watermark: download returns a body whether pypdf/reportlab are present OR
@@ -122,10 +125,15 @@ def client(tmp_path, monkeypatch):
     research_mod._corpus_fetched_at = 0.0
 
     # Control knobs the tests flip.
-    ctl = {"tier": "free", "user": {"id": "u-test", "email": "buyer@example.com"}}
+    ctl = {"tier": "free", "lifetime": False,
+           "user": {"id": "u-test", "email": "buyer@example.com"}}
 
     # Stub the tier resolver (no Supabase). Fail-closed default is 'free'.
     monkeypatch.setattr(research_mod, "_resolve_tier", lambda uid: ctl["tier"])
+
+    # Stub the lifetime (comp grant / no period end) probe — no Supabase. Default
+    # False = the standard Pro allowance, matching the resolver's fail-closed side.
+    monkeypatch.setattr(research_mod, "_is_lifetime", lambda uid: ctl["lifetime"])
 
     # Override the auth dependency: a present stub bearer → ctl['user']; absent → 401.
     from fastapi import Header, HTTPException
@@ -362,6 +370,179 @@ def test_download_attachment_filename_from_title(client):
     cd = r.headers["content-disposition"]
     assert cd.startswith('attachment; filename="')
     assert cd.endswith('.pdf"')
+
+
+# ===========================================================================
+# LIFETIME allowance — a comp/no-period-end PRO gets 50/day, and ONLY a raise
+# ===========================================================================
+
+def test_lifetime_pro_quota_reports_50(client):
+    """The button's "N of 50 left today" copy reads this limit straight off peek."""
+    c, ctl = client
+    ctl["tier"], ctl["lifetime"] = "pro", True
+    q = c.get("/api/research/quota", headers=_AUTH).json()
+    assert q["limit"] == 50
+    assert q["remaining"] == 50
+    assert q["tier"] == "pro"      # the tier string stays canonical — no new tier leaks
+
+
+def test_lifetime_pro_gets_50_downloads_then_402(client):
+    """The 50th download passes and the 51st is refused server-side.
+
+    The first 49 are spent through the engine API rather than 49 HTTP round-trips —
+    same ledger, same day key — so the test proves the BOUNDARY without paying for
+    49 PDF watermarks. The 50th and 51st go over HTTP, which is the contract.
+    """
+    c, ctl = client
+    ctl["tier"], ctl["lifetime"] = "pro", True
+    uid = ctl["user"]["id"]
+    for i in range(49):
+        allowed, _ = download_quota.check_and_increment(uid, "pro", lifetime=True)
+        assert allowed, f"pre-spend {i} should pass under the lifetime cap"
+
+    r50 = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r50.status_code == 200, "the 50th download is still inside the lifetime cap"
+    assert r50.content.startswith(b"%PDF")
+
+    r51 = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r51.status_code == 402
+    body = r51.json()
+    assert body["error"] == "quota_exhausted"
+    assert body["remaining"] == 0
+    assert body["limit"] == 50
+    assert body["tier"] == "pro"
+
+
+def test_lifetime_pro_passes_the_standard_10_download_wall(client):
+    """The raise is real end-to-end: download 11 clears the wall a plain Pro hits."""
+    c, ctl = client
+    ctl["tier"], ctl["lifetime"] = "pro", True
+    for i in range(11):
+        r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+        assert r.status_code == 200, f"download {i} should pass on a lifetime grant"
+    q = c.get("/api/research/quota", headers=_AUTH).json()
+    assert q["used"] == 11
+    assert q["remaining"] == 39
+
+
+@pytest.mark.parametrize("tier", ["free", "insider"])
+def test_lifetime_flag_never_unlocks_a_non_pro_tier(client, tier):
+    """SECURITY: the lifetime flag raises a cap; it can never open the paywall.
+
+    A comp row with a null period end is exactly what an admin DOWNGRADE writes, so
+    'lifetime' and 'free' co-occur in production. Both the route (402 paid_required,
+    ahead of the quota check) and the ledger (limit 0) must hold.
+    """
+    c, ctl = client
+    ctl["tier"], ctl["lifetime"] = tier, True
+
+    r = c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH)
+    assert r.status_code == 402
+    assert r.json()["error"] == "paid_required"
+
+    q = c.get("/api/research/quota", headers=_AUTH).json()
+    assert q["limit"] == 0
+    assert q["remaining"] == 0
+
+
+def test_lifetime_grant_mid_day_keeps_downloads_already_spent(client):
+    """A grant that lands mid-day raises the cap without refunding the day's spend."""
+    c, ctl = client
+    ctl["tier"] = "pro"
+    for _ in range(3):
+        assert c.post(f"/api/research/download/{_DOC_ID}", headers=_AUTH).status_code == 200
+
+    ctl["lifetime"] = True  # operator grants the pass; same UTC day, same ledger file
+    q = c.get("/api/research/quota", headers=_AUTH).json()
+    assert q["used"] == 3
+    assert q["limit"] == 50
+    assert q["remaining"] == 47
+
+
+# --- unit level: the promotion rule itself --------------------------------------
+
+@pytest.mark.parametrize("tier,lifetime,expected", [
+    ("pro", False, 10),      # standard Pro is untouched
+    ("pro", True, 50),       # the raise
+    ("free", True, 0),       # …never promotes a zero allowance
+    ("insider", True, 0),
+    ("bogus", True, 0),      # unknown tier stays blocked
+    ("PRO", True, 50),       # tier strings are normalized before the lookup
+])
+def test_limit_for_promotes_paid_tiers_only(tier, lifetime, expected):
+    assert download_quota._limit_for(tier, lifetime) == expected
+
+
+# --- unit level: the REAL lifetime probe (the route tests stub it) ---------------
+
+_LIFETIME_ROW = {"tier": "pro", "status": "active", "source": "comp",
+                 "current_period_end": None}
+
+
+@pytest.mark.parametrize("row,expected,why", [
+    (_LIFETIME_ROW, True, "grant_pass(kind='lifetime') — comp, active, null end"),
+    ({**_LIFETIME_ROW, "current_period_end": "2026-08-25T00:00:00Z"}, False,
+     "a dated comp pass (monthly/annual) is not lifetime"),
+    ({**_LIFETIME_ROW, "source": "stripe"}, False,
+     "a Stripe row with a null end is a mid-signup/lapsed row, never a grant"),
+    ({**_LIFETIME_ROW, "status": "canceled"}, False,
+     "canceled is excluded by the account-panel rule this mirrors"),
+    ({"tier": "unlimited", "status": "active", "source": "stripe",
+      "current_period_end": None}, True, "the 'unlimited' leg of the canonical rule"),
+    ({"tier": "free", "status": "none", "source": "stripe",
+      "current_period_end": None}, False, "read_entitlement's free default"),
+    ({"tier": "free", "status": "none", "source": "comp",
+      "current_period_end": None}, True,
+     "an admin downgrade IS comp/no-end — _limit_for is what keeps it at 0"),
+])
+def test_is_lifetime_matches_the_account_panel_rule(monkeypatch, row, expected, why):
+    """`_is_lifetime` must agree with site/theme.js `_sdPlanChip` row for row.
+
+    The last case is the load-bearing one: the probe says True for a downgraded comp
+    row (that IS the shape), and the paywall + zero-allowance guard — not this
+    function — are what keep such a user at 0 downloads. Tested at the route level in
+    ``test_lifetime_flag_never_unlocks_a_non_pro_tier``.
+    """
+    import app.research as research_mod
+    monkeypatch.setattr("app.billing.read_entitlement", lambda uid: dict(row))
+    assert research_mod._is_lifetime("u-x") is expected, why
+
+
+def test_is_lifetime_fails_closed_when_the_lookup_breaks(monkeypatch):
+    """A Supabase hiccup costs a holder headroom, never hands anyone access."""
+    import app.research as research_mod
+
+    def _boom(uid):
+        raise RuntimeError("postgrest down")
+
+    monkeypatch.setattr("app.billing.read_entitlement", _boom)
+    assert research_mod._is_lifetime("u-x") is False
+    assert research_mod._is_lifetime("") is False
+
+
+def test_lifetime_for_skips_the_lookup_for_tiers_that_get_zero(monkeypatch):
+    """Free/insider never pay for the entitlement read — the cap cannot move."""
+    import app.research as research_mod
+    calls = []
+    monkeypatch.setattr("app.billing.read_entitlement",
+                        lambda uid: calls.append(uid) or dict(_LIFETIME_ROW))
+    assert research_mod._lifetime_for("free", "u-x") is False
+    assert research_mod._lifetime_for("insider", "u-x") is False
+    assert calls == []
+    assert research_mod._lifetime_for("pro", "u-x") is True
+    assert calls == ["u-x"]
+
+
+def test_peek_and_increment_agree_on_the_lifetime_limit(tmp_path, monkeypatch):
+    """peek() must report the same cap check_and_increment() enforces."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path / "state"))
+    uid = "u-lifetime-unit"
+    allowed, info = download_quota.check_and_increment(uid, "pro", lifetime=True)
+    assert allowed and info["limit"] == 50 and info["used"] == 1
+    peeked = download_quota.peek(uid, "pro", lifetime=True)
+    assert peeked["limit"] == 50
+    assert peeked["used"] == 1
+    assert peeked["remaining"] == 49
 
 
 # ===========================================================================
