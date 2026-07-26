@@ -9051,7 +9051,13 @@ async function ecSuppressAdd() {
     { action: "add", email, reason: (sel && sel.value) || "manual" });
   if (!r || !r.ok) { toast((r && r.error) || "could not suppress", true); return; }
   if (el) el.value = "";
-  toast(`Suppressed ${r.email}`);
+  /* `kept` means the address was already on the list under a bounce or a complaint and
+     the weaker reason did NOT replace it. Saying "Suppressed …" there would report a
+     change that did not happen — and it is exactly the step that used to succeed and
+     unlock the removal this console refuses. */
+  toast(r.kept
+    ? `${r.email} stays suppressed as "${r.reason}" — a "${r.requested}" does not replace it`
+    : `Suppressed ${r.email} (${r.reason})`);
   ecLoadSuppression();
 }
 

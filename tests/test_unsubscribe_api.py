@@ -22,7 +22,9 @@ Fully offline. Two seams: ``unsubscribe._pg`` (PostgREST) and ``unsubscribe._use
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
+import urllib.error
 import urllib.parse
 from pathlib import Path
 
@@ -63,7 +65,15 @@ class _FakeRequest:
 
 
 class _Store:
-    """In-memory email_suppression + email_prefs."""
+    """In-memory email_suppression + email_prefs.
+
+    The POST branch models PostgREST FAITHFULLY, and that is load-bearing rather than
+    pedantic: ``email_suppression.email`` is UNIQUE, so a plain insert on an address
+    already on file answers 409 (SQLSTATE 23505) and writes nothing, while an insert
+    carrying ``Prefer: resolution=merge-duplicates`` becomes ``do update set …`` and
+    OVERWRITES the reason. A fake that upserted either way could not tell the two apart,
+    and telling them apart is the whole of the downgrade fix.
+    """
 
     def __init__(self, suppression=None, prefs=None):
         self.suppression = dict(suppression or {})     # addr -> reason
@@ -83,6 +93,11 @@ class _Store:
                 return [{"email": addr, "reason": reason}] if reason else []
             if method == "POST":
                 row = (body or [{}])[0]
+                merge = "resolution=merge-duplicates" in (prefer or "")
+                if row["email"] in self.suppression and not merge:
+                    raise urllib.error.HTTPError(
+                        "https://example.supabase.co/rest/v1/email_suppression", 409,
+                        "duplicate key value violates unique constraint", {}, None)
                 self.suppression[row["email"]] = row["reason"]
                 return None
             if method == "DELETE":
@@ -108,8 +123,22 @@ def _call(query=None, body=b""):
     return asyncio.run(unsub.unsubscribe(_FakeRequest(query, body)))
 
 
-def _token(identity=UID):
-    return mailer.unsub_token(identity)
+def _token(identity=UID, action="unsubscribe"):
+    return mailer.unsub_token(identity, action)
+
+
+def _undo(store, identity=UID):
+    """Unsubscribe once and hand back the resubscribe capability the server minted.
+
+    The ONLY way the page ever obtains one: the footer token authorises `unsubscribe`,
+    and the undo token is issued to the request that actually recorded the opt-out.
+    """
+    out = _call({"t": _token(identity)})
+    return out.get("resubscribe_token", "")
+
+
+def _resub(store, tok):
+    return _call({}, body=json.dumps({"t": tok, "action": "resubscribe"}).encode())
 
 
 # ===========================================================================
@@ -181,16 +210,38 @@ def test_a_second_click_says_already_and_never_errors(store):
     assert store.suppression == {ADDR: "unsubscribe"}
 
 
-def test_the_suppression_write_is_an_upsert_not_an_insert(store):
-    """A read-then-write would race two tabs into a duplicate-key 500 in front of somebody
-    who only wants the mail to stop."""
+def test_the_suppression_write_can_never_overwrite_an_existing_reason(store):
+    """It must NOT be a merge-duplicates upsert.
+
+    ``resolution=merge-duplicates`` is ``on conflict do update set reason =
+    excluded.reason`` with no guard, so a reader already suppressed as `complaint` who
+    clicked an old footer link rewrote their own row to `unsubscribe` — which
+    RESUBSCRIBABLE then let them delete from the page. The unique constraint is still what
+    arbitrates the two-tabs race; a 409 is simply read as "already there" instead of being
+    papered over with a write that can only weaken the row.
+    """
     _call({"t": _token()})
     posts = [(p, pref) for m, p, pref in store.calls
              if m == "POST" and p.startswith("email_suppression")]
     assert posts, "the suppression write must happen"
-    # the merge-duplicates Prefer header is what makes the second click a no-op UPDATE
-    # inside PostgREST rather than a unique-violation the reader would see as a failure
-    assert all("resolution=merge-duplicates" in (pref or "") for _p, pref in posts)
+    assert all("resolution=merge-duplicates" not in (pref or "") for _p, pref in posts)
+
+
+@pytest.mark.parametrize("reason", ["bounce", "complaint"])
+def test_an_unsubscribe_click_cannot_downgrade_a_bounce_or_a_complaint(store, reason):
+    """THE ESCALATION, end to end. Someone suppressed as `complaint` clicks an old
+    unsubscribe link; if that click rewrote the reason to `unsubscribe`, the very next
+    press of "turn them back on" would delete the row and marketing would resume to an
+    address that had reported us as spam. The reason must survive the click, and the
+    refusal must survive it too."""
+    store.suppression = {ADDR: reason}
+    out = _call({"t": _token()})
+
+    assert out["ok"] is True and out["already"] is True
+    assert store.suppression == {ADDR: reason}, "the reason may not be weakened"
+    assert "resubscribe_token" not in out, (
+        "an already-suppressed address must not hand out an undo capability — that is the "
+        "second half of the same escalation")
 
 
 def test_the_preference_write_is_an_upsert_too(store):
@@ -225,7 +276,7 @@ def test_a_json_body_token_also_works(store):
     assert out["ok"] is True and store.suppression == {ADDR: "unsubscribe"}
 
 
-def test_one_click_can_never_resubscribe(store):
+def test_a_one_click_body_can_never_select_the_action(store):
     """A mail client's own body must not be able to select the action. `action` is read
     from OUR json, and a form body carrying action=resubscribe is not our json."""
     _call({"t": _token()})
@@ -234,16 +285,69 @@ def test_one_click_can_never_resubscribe(store):
     assert store.suppression == {ADDR: "unsubscribe"}
 
 
+def test_the_query_string_door_is_shut_too(store):
+    """THE ONE THAT ACTUALLY WORKED, and which the test named for it never touched.
+
+    The body check above closed a door mail clients cannot open anyway; the action was
+    read from the QUERY STRING first, so ``POST /api/email/unsubscribe?t=<any footer
+    token>&action=resubscribe`` with a one-click body returned 200 and DELETED the
+    suppression. Anyone who could read one of the target's emails could silently reverse
+    their opt-out.
+
+    Two independent things now stop it, and both are asserted: the action is not read from
+    the query string at all, and the token is scoped to `unsubscribe` so it could not
+    authorise a resubscribe even if it were.
+    """
+    _call({"t": _token()})
+    assert store.suppression == {ADDR: "unsubscribe"}
+
+    out = _call({"t": _token(), "action": "resubscribe"},
+                body=b"List-Unsubscribe=One-Click")
+    assert out["state"] == "unsubscribed", "the query string must not select the action"
+    assert store.suppression == {ADDR: "unsubscribe"}, "nothing may have been lifted"
+
+
+def test_an_unsubscribe_token_does_not_verify_for_a_resubscribe(store):
+    """The signature covers the ACTION. Belt and braces behind the parameter removal: even
+    a caller who gets `action=resubscribe` past the reader is presenting a token minted for
+    a different action, and gets the same 400 a forged one does."""
+    tok = _token()
+    assert mailer.verify_unsub_token(tok, "unsubscribe") == UID
+    assert mailer.verify_unsub_token(tok, "resubscribe") is None
+
+    _call({"t": tok})
+    with pytest.raises(HTTPException) as e:
+        _resub(store, tok)
+    assert e.value.status_code == 400
+    assert store.suppression == {ADDR: "unsubscribe"}
+
+
 # ===========================================================================
-# Resubscribe — a second action, never the default
+# Resubscribe — a second action, its own capability, never the default
 # ===========================================================================
 def test_resubscribe_lifts_an_unsubscribe_and_clears_the_opt_out(store):
-    import json
-    _call({"t": _token()})
+    tok = _undo(store)
+    assert tok, "a newly recorded opt-out hands back the undo capability"
     assert store.suppression == {ADDR: "unsubscribe"} and store.prefs == {UID: True}
-    out = _call({}, body=json.dumps({"t": _token(), "action": "resubscribe"}).encode())
+    out = _resub(store, tok)
     assert out["state"] == "subscribed"
     assert store.suppression == {} and store.prefs == {UID: False}
+
+
+def test_the_undo_capability_is_only_minted_for_a_NEW_opt_out(store):
+    """The reason the undo is not simply "a resubscribe token in every reply".
+
+    A token that came back for an ALREADY-suppressed address would rebuild the exact
+    escalation the action scope closes: read one of the target's emails, POST the footer
+    token, collect an undo capability for a choice somebody else made, put them back on
+    the list. Undoing something you did a second ago is a courtesy; undoing a standing
+    choice is the vulnerability.
+    """
+    first = _call({"t": _token()})
+    second = _call({"t": _token()})
+    assert first.get("resubscribe_token"), "the request that recorded it may undo it"
+    assert second["already"] is True
+    assert "resubscribe_token" not in second, "a replay must not mint a capability"
 
 
 @pytest.mark.parametrize("reason", ["bounce", "complaint"])
@@ -251,9 +355,8 @@ def test_resubscribe_refuses_to_lift_a_bounce_or_a_complaint(store, reason):
     """Those record what the ADDRESS did, not what its owner chose. Re-arming the exact
     send that damaged our sending reputation because a link was clicked is how a domain
     gets blocklisted — and the reader is told plainly rather than silently ignored."""
-    import json
     store.suppression = {ADDR: reason}
-    out = _call({}, body=json.dumps({"t": _token(), "action": "resubscribe"}).encode())
+    out = _resub(store, _token(action="resubscribe"))
     assert out["refused"] == reason
     assert out["state"] == "unsubscribed"
     assert store.suppression == {ADDR: reason}, "the row must survive"
@@ -263,16 +366,14 @@ def test_resubscribe_refuses_to_lift_a_bounce_or_a_complaint(store, reason):
 def test_an_unknown_action_falls_back_to_unsubscribing(store):
     """The stricter direction. A typo or a hand-rolled request can never turn an
     unsubscribe link into a re-subscribe."""
-    import json
     out = _call({}, body=json.dumps({"t": _token(), "action": "surprise"}).encode())
     assert out["state"] == "unsubscribed"
     assert store.suppression == {ADDR: "unsubscribe"}
 
 
 def test_manual_suppressions_are_liftable_by_their_owner(store):
-    import json
     store.suppression = {ADDR: "manual"}
-    out = _call({}, body=json.dumps({"t": _token(), "action": "resubscribe"}).encode())
+    out = _resub(store, _token(action="resubscribe"))
     assert "refused" not in out and store.suppression == {}
 
 
@@ -321,6 +422,15 @@ def test_the_reply_masks_the_address():
     assert "ada.lovelace" not in unsub.mask("ada.lovelace@example.com")
     assert unsub.mask("ab@x.com").startswith("a")
     assert unsub.mask("") == "" and unsub.mask("no-at-sign") == ""
+
+
+def test_the_mask_is_a_fixed_width_and_does_not_leak_the_length():
+    """A bullet run sized to the local part printed the ONE fact a mask exists to hide.
+    `a@x.com` and `alexandra.hamilton@x.com` must be indistinguishable after the head."""
+    short = unsub.mask("ab.cd@example.com")
+    long = unsub.mask("alexandra.hamilton.jones@example.com")
+    assert short.count("•") == long.count("•")
+    assert len(short) == len(long)
 
 
 def test_the_masked_address_comes_back_on_success(store):

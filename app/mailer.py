@@ -883,10 +883,10 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
 # --------------------------------------------------------------------------- #
 # Unsubscribe tokens
 #
-# HMAC-SHA256 over the identity (a user id or a bare email address) with
-# MAIL_UNSUB_SECRET. The token CARRIES its identity so a one-click unsubscribe URL is
-# self-contained — the W4 endpoint verifies and acts without a session. Ships + tested
-# in W1; wired to a route in W4.
+# HMAC-SHA256 over (ACTION, identity) with MAIL_UNSUB_SECRET, where the identity is a user
+# id or a bare email address. The token CARRIES its identity so a one-click unsubscribe URL
+# is self-contained — the W4 endpoint verifies and acts without a session. Ships + tested
+# in W1; wired to a route in W4; action-scoped after the W4 review (see _token_payload).
 # --------------------------------------------------------------------------- #
 def _b64e(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).decode().rstrip("=")
@@ -896,28 +896,59 @@ def _b64d(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
 
 
-def unsub_token(identity: str) -> str:
-    """Signed, url-safe unsubscribe token for ``identity`` (user id or email).
+#: The actions a token may be minted FOR. The action is inside the MAC, so a token is a
+#: capability for exactly one of them.
+TOKEN_ACTIONS = ("unsubscribe", "resubscribe")
+
+
+def _token_payload(identity: str, action: str) -> str:
+    """What the MAC actually covers.
+
+    THE ACTION IS BOUND INTO THE SIGNATURE. Before this, one token authorised both
+    directions and the action was read from the query string, so
+    ``POST /api/email/unsubscribe?t=<footer token>&action=resubscribe`` silently reversed
+    someone's opt-out — and that token appears in every marketing footer and in the
+    ``List-Unsubscribe`` header, i.e. anyone who can read one of the target's emails could
+    put them back on the list. Revoking it meant rotating MAIL_UNSUB_SECRET and killing
+    every link ever sent.
+
+    ``unsubscribe`` covers the bare identity, unchanged, so every link already printed in a
+    footer keeps working — stopping mail is the direction that is legally required to be
+    one-click and must never be made harder. Every OTHER action is namespaced, so an
+    unsubscribe token cannot satisfy the verification for one of them.
+    """
+    return identity if action == "unsubscribe" else f"{action}:{identity}"
+
+
+def unsub_token(identity: str, action: str = "unsubscribe") -> str:
+    """Signed, url-safe token authorising ONE ``action`` for ``identity``.
 
     Empty string when MAIL_UNSUB_SECRET is unset — fail-closed: no secret means no
-    valid token can be minted, and verify_unsub_token rejects everything in turn.
+    valid token can be minted, and verify_unsub_token rejects everything in turn. Also
+    empty for an unknown action, and for an identity that is already shaped like a
+    namespaced payload (``resubscribe:…``), which is the only way the two payload forms
+    could be made to collide.
     """
     secret = _env("MAIL_UNSUB_SECRET")
     ident = (identity or "").strip()
-    if not secret or not ident:
+    if not secret or not ident or action not in TOKEN_ACTIONS:
         return ""
-    mac = hmac.new(secret.encode(), ident.encode(), hashlib.sha256).digest()
+    if any(ident.startswith(f"{a}:") for a in TOKEN_ACTIONS):
+        return ""
+    payload = _token_payload(ident, action)
+    mac = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()
     return f"{_b64e(ident.encode())}.{_b64e(mac)}"
 
 
-def verify_unsub_token(t: str) -> str | None:
-    """Return the identity a token attests to, or None if it does not verify.
+def verify_unsub_token(t: str, action: str = "unsubscribe") -> str | None:
+    """Return the identity a token attests to FOR ``action``, or None.
 
     Constant-time MAC comparison (hmac.compare_digest); any malformed input, any
-    tampered payload, and an unset secret all return None.
+    tampered payload, an unset secret, an unknown action, and a token minted for a
+    DIFFERENT action all return None.
     """
     secret = _env("MAIL_UNSUB_SECRET")
-    if not secret or not t or "." not in t:
+    if not secret or not t or "." not in t or action not in TOKEN_ACTIONS:
         return None
     ident_b64, _, mac_b64 = t.partition(".")
     try:
@@ -925,7 +956,8 @@ def verify_unsub_token(t: str) -> str | None:
         given = _b64d(mac_b64)
     except Exception:  # noqa: BLE001
         return None
-    expect = hmac.new(secret.encode(), ident.encode(), hashlib.sha256).digest()
+    payload = _token_payload(ident, action)
+    expect = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()
     if not hmac.compare_digest(expect, given):
         return None
     return ident

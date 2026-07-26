@@ -53,12 +53,17 @@ SUBJECT_MAX = 200
 BODY_MAX = 20_000
 EMAIL_MAX = 320
 
-VALID_REASONS = ("unsubscribe", "bounce", "complaint", "manual")
+VALID_REASONS = tuple(email_segments.REASONS)
 #: Reasons an operator may lift from the console. A bounce or a complaint is evidence
 #: about the ADDRESS, not a preference someone set, and clearing it re-arms the exact
 #: send that damaged our sending reputation in the first place. Re-adding is always
 #: available; un-recording a complaint is not.
-LIFTABLE = ("unsubscribe", "manual")
+#:
+#: Read from ``app/email_segments.py`` rather than spelled again here, because the public
+#: unsubscribe page holds the same list and the two came apart once already: this module
+#: documented "not removable" three times while its INSERT quietly allowed a re-suppression
+#: as `manual` to overwrite a `complaint`, after which the removal it forbids was legal.
+LIFTABLE = tuple(email_segments.SOFT_REASONS)
 
 CAMPAIGN_ACTIONS = frozenset({"preview", "save", "queue", "abort", "delete"})
 SUPPRESSION_ACTIONS = frozenset({"add", "remove"})
@@ -160,7 +165,7 @@ def _people(segment: str, search: str | None, page: int, page_size: int) -> list
     where = email_segments.where_sql(segment, extra=search)
     return users._query(
         "select u.id::text as user_id, u.email as email, "
-        "coalesce(e.tier,'free') as tier, coalesce(e.status,'none') as status, "
+        f"{email_segments.TIER_SQL} as tier, {email_segments.STATUS_SQL} as status, "
         "coalesce(p.lang,'') as lang, "
         "coalesce(p.marketing_opt_out, false) as marketing_opt_out, "
         "(s.email is not null) as suppressed, "
@@ -234,9 +239,14 @@ def export_csv(segment: str | None = None, q: str | None = None,
     as the system codepage and every Chinese display name in the export becomes mojibake.
     Every other reader (Sheets, pandas, ``csv`` itself with ``utf-8-sig``) ignores it.
 
-    The row count equals the segment count from :func:`panel` by construction: both come
+    The row count equals the segment count from :func:`panel` by construction — both come
     from ``email_segments.where_sql(segment)`` over the same join, and neither applies a
-    filter the other does not.
+    filter the other does not — **up to** ``limit``. Past that the file is a prefix of the
+    segment, and :func:`panel`'s count is uncapped, so the two numbers differ. That is now
+    SAID rather than implied: the query asks for one row more than it will write, and a
+    truncated file is named ``…-first-50000.csv``. An operator who mails a list has to be
+    able to tell a complete one from the top of one, and a filename is the only part of a
+    CSV that survives being opened in Excel.
     """
     nc = _not_configured()
     if nc:
@@ -251,7 +261,7 @@ def export_csv(segment: str | None = None, q: str | None = None,
     try:
         rows = users._query(
             "select u.email as email, u.id::text as user_id, "
-            "coalesce(e.tier,'free') as tier, coalesce(e.status,'none') as status, "
+            f"{email_segments.TIER_SQL} as tier, {email_segments.STATUS_SQL} as status, "
             "coalesce(p.lang,'') as lang, "
             "coalesce(p.marketing_opt_out, false) as marketing_opt_out, "
             "(s.email is not null) as suppressed, "
@@ -259,9 +269,15 @@ def export_csv(segment: str | None = None, q: str | None = None,
             "to_char(u.created_at,'YYYY-MM-DD') as joined "
             f"{email_segments.JOIN_SQL} "
             f"where {email_segments.where_sql(seg.key, extra=search)} "
-            f"order by u.created_at desc limit {limit}") or []
+            f"order by u.created_at desc limit {limit + 1}") or []
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}
+
+    truncated = len(rows) > limit
+    rows = rows[:limit]
+    if truncated:
+        log.warning("email_center: %s export truncated at %d rows — the segment is larger",
+                    seg.key, limit)
 
     buf = io.StringIO(newline="")
     w = csv.writer(buf, lineterminator="\r\n")     # CRLF per RFC 4180
@@ -269,7 +285,8 @@ def export_csv(segment: str | None = None, q: str | None = None,
     for row in rows:
         w.writerow([_cell(row.get(c)) for c in EXPORT_COLUMNS])
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
-    name = f"mastermind_{seg.key}_{stamp}.csv"
+    tail = f"-first-{limit}" if truncated else ""
+    name = f"mastermind_{seg.key}_{stamp}{tail}.csv"
     return name, ("﻿" + buf.getvalue()).encode("utf-8")
 
 
@@ -310,7 +327,20 @@ def suppression(q: str | None = None, page: int = 1, page_size: int = 50) -> dic
 
 
 def suppress(email: str, reason: str = "manual", *, operator: str = "operator") -> tuple[dict, int]:
-    """Add (or re-add) an address to the kill list."""
+    """Add (or re-add) an address to the kill list. A hard reason is never downgraded.
+
+    The ``where`` on the conflict clause is the whole point, and it closes a hole that
+    made :func:`unsuppress`'s 409 decorative. Without it the sequence was: suppress an
+    address as ``complaint``; try to remove it and get the documented "a 'complaint'
+    suppression is not removable here" refusal; re-suppress the SAME address as
+    ``manual``, which overwrote the reason; remove it — legally, this time — and watch the
+    operator ledger record the removal of a *manual* suppression, with no trace anywhere
+    that a spam complaint had ever been filed. Marketing then resumed to that address.
+
+    The row is kept either way. Refusing the downgrade must never mean deleting the
+    suppression, so the address stays on the kill list and the answer reports the reason
+    actually in force rather than the one that was asked for.
+    """
     nc = _not_configured()
     if nc:
         return nc, 503
@@ -319,15 +349,34 @@ def suppress(email: str, reason: str = "manual", *, operator: str = "operator") 
         return {"ok": False, "error": "a valid email address is required"}, 400
     if reason not in VALID_REASONS:
         return {"ok": False, "error": f"reason must be one of {list(VALID_REASONS)}"}, 400
+    lit = _lit(addr, maxlen=EMAIL_MAX)
     try:
-        users._query(
+        rows = users._query(
             "insert into public.email_suppression (email, reason) "
-            f"values ({_lit(addr, maxlen=EMAIL_MAX)}, '{reason}') "
-            "on conflict (email) do update set reason = excluded.reason")
+            f"values ({lit}, '{reason}') "
+            "on conflict (email) do update set reason = excluded.reason "
+            f"where email_suppression.reason not in {email_segments.HARD_REASONS_SQL} "
+            "returning reason")
+        if rows:
+            kept = str(rows[0].get("reason") or reason)
+        else:
+            # No row came back: the conflict fired and the guard refused the write. Read
+            # what is actually on file, so the console shows the truth and not the input.
+            cur = users._query(
+                f"select reason from public.email_suppression where email = {lit}") or []
+            kept = str((cur[0] if cur else {}).get("reason") or reason)
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e)}, 500
-    log.info("email_center: suppressed %s (%s) by %s", addr, reason, operator)
-    return {"ok": True, "email": addr, "reason": reason}, 200
+    if kept != reason:
+        log.info("email_center: %s stays suppressed as '%s' — a '%s' does not overwrite it "
+                 "(requested by %s)", addr, kept, reason, operator)
+        return {"ok": True, "email": addr, "reason": kept, "requested": reason,
+                "kept": True,
+                "note": f"this address is already suppressed as '{kept}', which records what "
+                        f"the address did rather than what its owner chose — a '{reason}' "
+                        f"does not replace it"}, 200
+    log.info("email_center: suppressed %s (%s) by %s", addr, kept, operator)
+    return {"ok": True, "email": addr, "reason": kept}, 200
 
 
 def unsuppress(email: str, *, confirm: bool = False,
@@ -451,6 +500,28 @@ def _zh_delim() -> str:
     return marketing_emails.ZH_DELIM
 
 
+def _subject_sep() -> str:
+    from app import marketing_emails  # noqa: PLC0415
+    return marketing_emails.SUBJECT_SEP
+
+
+def _compose_error(subject_en: str, subject_zh: str) -> str | None:
+    """Why these two subject halves cannot be packed into one column, in plain words.
+
+    ``EN · ZH`` is a delimited format stored in a single ``subject`` column, so a half that
+    CONTAINS the delimiter is ambiguous: the renderer split at the first occurrence and
+    shipped part of the English headline as the Chinese one. Refusing at compose time is
+    the honest fix — silently rewriting somebody's headline is worse than telling them.
+    """
+    sep = _subject_sep()
+    for value in (subject_en, subject_zh):
+        if sep in " ".join(str(value or "").split()):
+            return (f"a subject cannot contain '{sep.strip()}' with spaces around it — that "
+                    f"is the mark that joins the English and 中文 halves. Use a comma, a "
+                    f"dash, or a middot with no spaces")
+    return None
+
+
 def _compose(subject_en: str, subject_zh: str, body_en: str, body_zh: str) -> tuple[str, str]:
     """Pack the composer's four fields into the two columns the table has.
 
@@ -460,10 +531,13 @@ def _compose(subject_en: str, subject_zh: str, body_en: str, body_zh: str) -> tu
     format ``billing_emails._render`` already produces) and a delimiter line for the
     body. Storing JSON would have been tidier for the code and unreadable for the
     operator who opens the row in the Supabase table editor.
+
+    Callers validate with :func:`_compose_error` first — an ambiguous subject is refused,
+    not packed.
     """
     en = " ".join(str(subject_en or "").split())[:SUBJECT_MAX]
     zh = " ".join(str(subject_zh or "").split())[:SUBJECT_MAX]
-    subject = f"{en} · {zh}" if (en and zh) else (en or zh)
+    subject = f"{en}{_subject_sep()}{zh}" if (en and zh) else (en or zh)
     b_en = str(body_en or "").strip()[:BODY_MAX]
     b_zh = str(body_zh or "").strip()[:BODY_MAX]
     body = f"{b_en}\n\n{_zh_delim()}\n\n{b_zh}" if b_zh else b_en
@@ -490,6 +564,9 @@ def _preview(subject_en: str, subject_zh: str,
     """
     from app import marketing_emails  # noqa: PLC0415
 
+    bad = _compose_error(subject_en, subject_zh)
+    if bad:
+        return {"ok": False, "error": bad}, 400
     subject, body = _compose(subject_en, subject_zh, body_en, body_zh)
     if not subject:
         return {"ok": False, "error": "a subject is required"}, 400
@@ -540,6 +617,9 @@ def campaign_action(action: str, *, campaign_id: str | None = None,
 
     try:
         if action == "save":
+            bad = _compose_error(subject_en, subject_zh)
+            if bad:
+                return {"ok": False, "error": bad}, 400
             subject, body = _compose(subject_en, subject_zh, body_en, body_zh)
             if not subject:
                 return {"ok": False, "error": "a subject is required"}, 400

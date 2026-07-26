@@ -333,6 +333,11 @@ html[data-form="success"] .tk-done{ display:block; }
 .mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
 .mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
   color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+/* Same recipe as .mlab above, so it needs the same CJK fix: 9px mono + .14em tracking
+   with no Hanzi in the stack renders 产品 / 资源 through whatever the system picks — a
+   serif on some machines — at the wide Latin tracking that reads as broken spacing. */
+html[data-lang="zh"] .mx-footer .f-col p{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
 .mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
 .mx-footer .f-col a:hover{ color:var(--text); }
 .mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;

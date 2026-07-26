@@ -35,6 +35,26 @@ reader gets to overrule from a link. A hard bounce means the address rejected us
 complaint means someone pressed "spam" — sending again because a link was clicked is how
 a domain's reputation dies. Only an ``unsubscribe`` (and an operator's ``manual``, from
 the Email Center) is theirs to undo.
+
+THE TOKEN IS SCOPED TO ONE ACTION
+---------------------------------
+The footer token authorises ``unsubscribe`` and nothing else: the action is inside the
+MAC (``mailer._token_payload``), and the action is read from OUR JSON body only — never
+from the query string, which is where a mail client's one-click POST cannot put it and
+where an attacker could. Before that, ``?t=<any footer token>&action=resubscribe``
+reversed someone's opt-out, and that token rides in every marketing footer and in the
+``List-Unsubscribe`` header.
+
+Undoing is therefore a capability the SERVER hands out, and only to the party that just
+performed the opt-out in this very request: a successful, NEWLY-recorded unsubscribe
+answers with a ``resubscribe_token`` the page keeps in a closure. Be precise about what
+that buys — the token does not expire (it is the same HMAC construction), so the property
+it has is that it is never DISTRIBUTED: it appears in one HTTP response, to the caller who
+just opted out, and in no email, URL or DOM node. An already-suppressed address gets no
+token at all, so replaying a stolen footer link cannot manufacture one, which is what
+closes the escalation. An attacker who unsubscribes a not-yet-suppressed target can undo
+their own action and reach the state they started from; they can never reverse a standing
+choice somebody else made.
 """
 from __future__ import annotations
 
@@ -42,13 +62,14 @@ import json
 import logging
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app import mailer
+from app import email_segments, mailer
 
 log = logging.getLogger("macro.unsubscribe")
 router = APIRouter()
@@ -57,10 +78,17 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://fsldfzlxyavsuwqbceod.supa
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-#: Reasons a reader may lift themselves. `bounce` and `complaint` are deliberately absent.
-RESUBSCRIBABLE = ("unsubscribe", "manual")
+#: Reasons a reader may lift themselves. `bounce` and `complaint` are deliberately absent —
+#: read from the one place both writers read it, so the console and this page cannot come
+#: to different conclusions about what "not removable" means.
+RESUBSCRIBABLE = email_segments.SOFT_REASONS
 
 ACTIONS = ("unsubscribe", "resubscribe")
+
+#: Fixed-width local-part mask. Deliberately NOT `len(local) - len(head)` bullets: the
+#: reply is a public answer to a bearer token, and a bullet count is the exact length of
+#: the address's local part, which narrows a guess for anyone holding the reply.
+_MASK = "•" * 6
 
 
 def _service_key() -> str:
@@ -114,43 +142,55 @@ def _user_email(user_id: str) -> str | None:
 
 
 def mask(email: str) -> str:
-    """``ada.lovelace@example.com`` -> ``ad••••••••@example.com``.
+    """``ada.lovelace@example.com`` -> ``ad••••••@example.com``.
 
     The page says which address it just acted on, because "we stopped the emails" is not
     an answer when someone holds three addresses. It is masked anyway: the reply is a
     public response to a token, and printing a full address back would turn a guessed or
     shoulder-surfed link into an address disclosure.
+
+    The bullet run is FIXED WIDTH. A run sized to the local part disclosed its exact
+    length to whoever presented the token — the one fact a mask is supposed to withhold,
+    and the one that turns "some address at example.com" into a much smaller search.
     """
     addr = (email or "").strip()
     local, sep, domain = addr.partition("@")
     if not sep:
         return ""
     head = local[:2] if len(local) > 3 else local[:1]
-    return f"{head}{'•' * max(3, len(local) - len(head))}@{domain}"
+    return f"{head}{_MASK}@{domain}"
 
 
 # --------------------------------------------------------------------------- #
 # The two mutations
 # --------------------------------------------------------------------------- #
 def _suppress(email: str) -> bool:
-    """Upsert the address onto the kill list. Returns whether it was ALREADY there.
+    """Put the address on the kill list. Returns whether it was ALREADY there.
 
-    ``resolution=merge-duplicates`` makes the second click a no-op update rather than a
-    409, so idempotency lives in the request itself and not in a read-then-write race
-    between two tabs.
+    A PLAIN INSERT, and the unique violation is the success path. It used to be an upsert
+    with ``resolution=merge-duplicates`` — a blanket ``do update set reason =
+    excluded.reason`` — so a reader already suppressed as ``complaint`` who clicked an old
+    footer link DOWNGRADED their own row to ``unsubscribe``, which :data:`RESUBSCRIBABLE`
+    then let them delete from the page. Marketing resumed to an address that had filed a
+    spam complaint, and the ledger recorded the removal of a mere unsubscribe. PostgREST
+    cannot express a conditional ``on conflict``, so the conditional is removed instead:
+    the row is never written a second time and its reason is therefore structurally
+    unable to move in the weaker direction.
+
+    The unique constraint is still what arbitrates, so the two-tabs race the upsert was
+    protecting against is unchanged — a concurrent second click gets the 409 and reports
+    ``already``, never a duplicate-key error shown to someone who wants the mail to stop.
     """
     addr = email.strip().lower()
-    already = False
     try:
-        rows = _pg("GET", f"email_suppression?email=eq.{urllib.parse.quote(addr, safe='')}"
-                          "&select=email")
-        already = bool(rows)
-    except Exception as exc:  # noqa: BLE001 — advisory only; the upsert below is the write
-        log.debug("unsubscribe: pre-read failed (%s)", type(exc).__name__)
-    _pg("POST", "email_suppression",
-        body=[{"email": addr, "reason": "unsubscribe"}],
-        prefer="resolution=merge-duplicates,return=minimal")
-    return already
+        _pg("POST", "email_suppression",
+            body=[{"email": addr, "reason": "unsubscribe"}],
+            prefer="return=minimal")
+    except urllib.error.HTTPError as exc:
+        if exc.code != 409:               # 409 = 23505, the row is already there
+            raise
+        return True
+    return False
 
 
 def _unsuppress(email: str) -> str | None:
@@ -224,6 +264,18 @@ def apply(identity: str, action: str = "unsubscribe") -> dict:
         # Told plainly rather than silently ignored: a reader who presses "turn them back
         # on" and sees nothing change would reasonably assume the site is broken.
         out["refused"] = refused
+    if want_off and not already:
+        # THE UNDO, AND WHY IT IS CONDITIONAL. The footer token authorises `unsubscribe`
+        # only, so the page needs a resubscribe-scoped token to offer "turn them back on".
+        # It is minted ONLY when this request is the one that actually recorded the
+        # opt-out: handing one to a caller who merely re-presented a footer link for an
+        # ALREADY-suppressed address would restore the exact escalation the action scope
+        # closes — read one of the target's emails, POST it, get an undo capability, put
+        # them back on the list. Undoing something you did a second ago is a courtesy;
+        # undoing somebody else's standing choice is the vulnerability.
+        tok = mailer.unsub_token(ident, "resubscribe")
+        if tok:
+            out["resubscribe_token"] = tok
     return out
 
 
@@ -231,15 +283,23 @@ def apply(identity: str, action: str = "unsubscribe") -> dict:
 # Route
 # --------------------------------------------------------------------------- #
 async def _read_token_and_action(request: Request) -> tuple[str, str]:
-    """Token + action from a JSON body, a form body, or the query string.
+    """Token from a JSON body or the query string; action from the JSON body ONLY.
 
-    The query string is the fallback because that is where RFC 8058's one-click POST
-    carries it: the mail client re-posts the List-Unsubscribe URI verbatim with a
+    The query string is the token's fallback because that is where RFC 8058's one-click
+    POST carries it: the mail client re-posts the List-Unsubscribe URI verbatim with a
     form-encoded ``List-Unsubscribe=One-Click`` body it invented itself, and it will never
     send our JSON.
+
+    THE ACTION IS NOT READ FROM THE QUERY STRING. It used to be, and that was the door
+    that actually worked: ``POST /api/email/unsubscribe?t=<footer token>&action=resubscribe``
+    with a one-click body returned 200 and deleted the suppression. No legitimate caller
+    needs it there — a mail client never sends an action at all, and our own page posts
+    JSON — so the parameter is simply not consulted. Belt and braces: the token itself is
+    action-scoped now, so even a request that got an action past this function would fail
+    verification.
     """
     token = (request.query_params.get("t") or "").strip()
-    action = (request.query_params.get("action") or "").strip()
+    action = ""
     try:
         raw = await request.body()
     except Exception:  # noqa: BLE001
@@ -249,7 +309,7 @@ async def _read_token_and_action(request: Request) -> tuple[str, str]:
             body = json.loads(raw)
             if isinstance(body, dict):
                 token = str(body.get("t") or body.get("token") or token).strip()
-                action = str(body.get("action") or action).strip()
+                action = str(body.get("action") or "").strip()
         except Exception:  # noqa: BLE001 — a form body (one-click) is not an error
             pass
     return token, (action if action in ACTIONS else "unsubscribe")
@@ -267,9 +327,13 @@ async def unsubscribe(request: Request) -> dict:
     is the difference between a reader who retries and a reader who reports us.
     """
     token, action = await _read_token_and_action(request)
-    identity = mailer.verify_unsub_token(token) if token else None
+    # Verified AGAINST THE ACTION: an unsubscribe token does not verify for a resubscribe,
+    # so the answer to a footer link asking to be put back on a list is the same 400 a
+    # forged token gets.
+    identity = mailer.verify_unsub_token(token, action) if token else None
     if not identity:
-        log.info("unsubscribe: rejected an invalid or absent token")
+        log.info("unsubscribe: rejected a token that is invalid, absent, or not scoped to %s",
+                 action)
         raise HTTPException(400, "this unsubscribe link is not valid")
 
     try:

@@ -67,6 +67,32 @@ def _page_css(text: str) -> str:
     return "\n".join(re.findall(r"<style[^>]*>(.*?)</style>", text, re.S))
 
 
+def _page_js(text: str) -> str:
+    """EVERY inline script block, head bootstrap included.
+
+    Not ``split("<script>")[-1]``. That took only the LAST block, so the theme/lang
+    bootstrap in <head> sat outside the slice a mutation check looked at — a fetch added
+    there would have passed a test whose entire subject is "nothing mutates on load".
+    """
+    return "\n".join(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", text, re.S))
+
+
+def _spans(text: str, cls: str) -> list[tuple[int, int]]:
+    """(start, end) of every ``<span class="{cls}">…</span>``, nesting-aware."""
+    out = []
+    open_tag = f'<span class="{cls}">'
+    for m in re.finditer(re.escape(open_tag), text):
+        i = m.end()
+        depth = 1
+        while depth:
+            nxt = re.search(r"<span\b|</span>", text[i:])
+            assert nxt, f"unclosed {open_tag}"
+            i += nxt.end()
+            depth += 1 if nxt.group(0) != "</span>" else -1
+        out.append((m.start(), i))
+    return out
+
+
 # ===========================================================================
 # It builds, and it is wired
 # ===========================================================================
@@ -138,17 +164,38 @@ def test_no_external_asset_dependencies(page):
 def test_the_page_posts_to_the_real_route(page):
     assert "'/api/email/unsubscribe'" in page
     assert "method: 'POST'" in page
-    assert "t: TOKEN" in page and "action: action" in page
+    assert "t: tok" in page and "action: action" in page
 
 
 def test_nothing_mutates_on_load(page):
     """A GET that unsubscribed would silently opt out everyone whose corporate mail
-    scanner follows links in inbound messages. Every request must originate in a click."""
-    js = page.split("<script>")[-1]
+    scanner follows links in inbound messages. Every request must originate in a click.
+
+    Widened after the W4 audit found the old version proved almost none of that: it read
+    only the LAST <script> block (so the head bootstrap was outside the slice), and its
+    click check was a per-LINE regex for ``send('`` — defeated by ``var f = send;
+    f('unsubscribe')``, by ``sendBeacon``, by ``XMLHttpRequest``, or by an ``<img>``
+    beacon, none of which contain that literal at all.
+    """
+    js = _page_js(page)
     assert js.count("fetch(") == 1, "one request path, and it is the button's"
-    for line in js.splitlines():
-        if re.search(r"\bsend\('", line):
-            assert "addEventListener('click'" in line, f"send() outside a click: {line.strip()}"
+
+    # no OTHER way to reach the network, anywhere in any inline block
+    for beacon in ("sendBeacon", "XMLHttpRequest", "EventSource", "WebSocket",
+                   "navigator.connection", "new Image(", "import("):
+        assert beacon not in js, beacon
+    # ...nor an <img>/<iframe> that fetches on parse
+    for tag in re.findall(r"<(?:img|iframe|object|embed)\b[^>]*>", page):
+        assert "/api/" not in tag, tag
+
+    # every CALL of send() is inside a click listener, and send is never aliased
+    calls = [m for m in re.finditer(r"(?<!function )\bsend\s*\(", js)]
+    assert len(calls) >= 3, "the three buttons"
+    for m in calls:
+        line = js[js.rfind("\n", 0, m.start()) + 1: js.find("\n", m.start())]
+        assert "addEventListener('click'" in line, f"send() outside a click: {line.strip()}"
+    assert not re.search(r"=\s*send\s*[;,)]", js), "send() must not be aliased past the check"
+    assert js.count("function send(") == 1
 
 
 def test_a_missing_token_is_decided_client_side_without_a_request(page):
@@ -175,10 +222,35 @@ def test_resubscribe_is_a_separate_explicit_action(page):
     already-unsubscribed state, and sends its own action."""
     assert "send('resubscribe', back)" in page
     assert 'id="u-back"' in page
-    css = _page_css(page)
-    assert ".btn-ghost{" in css
     assert re.search(r'id="u-back"[^>]*class="btn btn-ghost"|class="btn btn-ghost"[^>]*id="u-back"',
                      page), "the way back must not be a primary button"
+
+
+def test_the_ghost_button_is_actually_quieter_than_the_primary(page):
+    """``".btn-ghost{" in css`` asserted the class EXISTS, not that it does anything — a
+    ghost button styled identically to the primary would have passed. What the design
+    requires is smaller type, no accent fill, and muted colour."""
+    css = _page_css(page)
+    body = re.search(r"\n\.btn-ghost\{([^}]*)\}", css).group(1)
+    assert "var(--gbtn-bg)" in body, "no accent fill — the primary's gradient must be gone"
+    assert "color:var(--muted)" in body
+    ghost_size = float(re.search(r"font-size:([\d.]+)px", body).group(1))
+    primary = re.search(r"\n\.btn\{([^}]*)\}", css).group(1)
+    primary_size = float(re.search(r"font:600 ([\d.]+)px", primary).group(1))
+    assert ghost_size < primary_size, (ghost_size, primary_size)
+
+
+def test_the_ghost_button_stays_secondary_on_a_phone(page):
+    """`.act .btn{ width:100%; order:-1; }` matches `.btn.btn-ghost` too, so at 375px the
+    "turn them back on" button rendered full width ABOVE its own explanatory note, as the
+    only button on screen — the loudest element on the page, on the exact surface where
+    email links are opened. Desktop was correct, which is why nothing else caught it."""
+    css = _page_css(page)
+    mobile = re.search(r"@media \(max-width:480px\)\{(.*?)\n\}", css, re.S).group(1)
+    assert ".act .btn{ width:100%; order:-1; }" in mobile
+    assert ".act .btn-ghost{ width:auto; order:0; }" in mobile
+    assert mobile.index(".act .btn{") < mobile.index(".act .btn-ghost{"), \
+        "the override has to come after the rule it overrides"
 
 
 def test_a_refused_lift_hides_the_way_back_and_explains(page):
@@ -187,15 +259,29 @@ def test_a_refused_lift_hides_the_way_back_and_explains(page):
     assert 'html[data-refused="1"] .st-off .btn-ghost{ display:none; }' in css
 
 
+def test_the_way_back_needs_its_own_token_and_hides_without_one(page):
+    """The footer token authorises `unsubscribe` and nothing else, so the undo is a
+    capability the SERVER mints — only for the request that actually recorded the opt-out
+    — and it lives in a closure, never in the URL, the DOM or an email. No token, no
+    button: one that can only 400 is worse than none."""
+    css = _page_css(page)
+    assert 'html:not([data-undo="1"]) .st-off .btn-ghost{ display:none; }' in css
+    assert "resubscribe_token" in page
+    assert "action === 'resubscribe' ? UNDO : TOKEN" in page
+    # the capability must not be written anywhere it could outlive the tab
+    assert "localStorage" not in page.split("</head>", 1)[1], "no persistence of the undo"
+    assert "textContent = UNDO" not in page and "innerHTML = UNDO" not in page
+
+
 # ===========================================================================
 # Bilingual (the house law)
 # ===========================================================================
 KEY_STRINGS = [
     ("Email settings", "邮件设置"),
-    ("One click. ", "一次点击，"),
+    ("One click. ", "一键退订，"),
     ("No more marketing email.", "不再收到营销邮件。"),
     ("Account emails — receipts, sign-in links, support replies — keep coming either way.",
-     "账户邮件——收据、登录链接、客服回复——不受影响，仍会照常发送。"),
+     "账户邮件——收据、登录链接、客服回复——不受影响，照常送达。"),
     ("Unsubscribe", "退订"),
     ("Nothing changes until you press it.", "在你点击之前，什么都不会改变。"),
     ("Marketing emails are off.", "营销邮件已关闭。"),
@@ -203,6 +289,7 @@ KEY_STRINGS = [
     ("We will not email to ask you to reconsider.", "我们不会再发邮件劝你回来。"),
     ("This link does not work.", "这个链接无法使用。"),
     ("Marketing email: off", "营销邮件：已关闭"),
+    ("Marketing email: on", "营销邮件：已开启"),
 ]
 
 
@@ -210,6 +297,33 @@ KEY_STRINGS = [
 def test_every_key_string_ships_in_both_languages(page, en, zh):
     assert f'<span class="l-en">{en}</span>' in page, en
     assert f'<span class="l-zh">{zh}</span>' in page, zh
+
+
+def test_EVERY_english_span_has_a_chinese_twin(page):
+    """The generic law, not eleven hand-picked strings.
+
+    KEY_STRINGS covers 12 of the page's ~28 dual spans, so a new EN-only string ships
+    green — which is exactly how a bilingual surface goes half-English one commit at a
+    time. theme.css hides the wrong half off html[data-lang], so an l-en with no adjacent
+    l-zh is not a fallback: it is a line that VANISHES for every Chinese reader.
+    """
+    en = _spans(page, "l-en")
+    zh = _spans(page, "l-zh")
+    assert en, "the page is bilingual"
+    assert len(en) == len(zh), (len(en), len(zh))
+    zh_starts = {s for s, _e in zh}
+    for start, end in en:
+        assert end in zh_starts, (
+            "this English span has no 中文 twin immediately after it: "
+            + page[start:end][:120])
+
+
+def test_the_two_aspects_of_the_state_label_are_symmetric():
+    """`营销邮件：开启` against `营销邮件：已关闭` mixed a bare adjective with a perfective
+    one for a matched EN pair (on/off). Both take 已."""
+    on = dict(KEY_STRINGS)["Marketing email: on"]
+    off = dict(KEY_STRINGS)["Marketing email: off"]
+    assert on.startswith("营销邮件：已") and off.startswith("营销邮件：已")
 
 
 def test_no_translated_text_in_title_attributes(page):
@@ -227,23 +341,51 @@ def test_the_cjk_micro_label_gets_a_hanzi_face(page):
     assert "PingFang SC" in css
 
 
+def test_every_mono_micro_label_recipe_gets_the_same_hanzi_fix(page):
+    """The footer column headings (产品 / 资源) use the identical 9px mono + .14em recipe
+    and were left out of the fix, so they rendered through the un-pinned chain at the wide
+    Latin tracking this file's own comment calls broken spacing. Same recipe, same fix."""
+    css = _page_css(page)
+    assert 'html[data-lang="zh"] .mx-footer .f-col p{' in css
+    fix = re.search(r'html\[data-lang="zh"\] \.mx-footer \.f-col p\{([^}]*)\}', css).group(1)
+    assert "PingFang SC" in fix and "letter-spacing:.04em" in fix
+
+
+def test_the_address_slot_never_renders_an_empty_sentence(page):
+    """`mask()` answers '' when the address cannot be resolved (a user id whose auth record
+    has no address), and the slot coerced with `masked || ''` — so the page rendered "We
+    stopped marketing email to ." with a hole where its object should be. The markup ships
+    a dual-language fallback and the painter only overwrites it when there IS a mask."""
+    assert '<b class="addr" data-addr>this address</b>' in page
+    assert '<b class="addr" data-addr>这个邮箱</b>' in page
+    assert "data-addr></b>" not in page, "no empty slot may survive"
+    assert "if (!masked) return;" in page
+
+
 # ===========================================================================
 # PIN §1.1 — the state colour law, as an executable assert
 # ===========================================================================
 def test_success_and_error_never_use_the_direction_tokens(page):
     """--up/--down swap red<->green under html[data-lang="zh"] for the Asia convention, so
     a success panel painted with --up turns RED for every Chinese reader. --ok/--act encode
-    health, never direction, and deliberately do not swap."""
+    health, never direction, and deliberately do not swap.
+
+    Checked over the STYLE ATTRIBUTES too: the old version read only <style> blocks, so an
+    inline `style="color:var(--up)"` — which wins over everything in a stylesheet — sailed
+    straight through the one guard written to stop it.
+    """
     css = _page_css(page)
     assert "var(--up)" not in css and "var(--down)" not in css
     assert "--up" not in css and "--down" not in css
+    for value in re.findall(r'\bstyle="([^"]*)"', page):
+        assert "--up" not in value and "--down" not in value, value
 
 
 @pytest.mark.parametrize("selector", [
     r'html\[data-unsub="off"\]\s+\.panel\{ --accent:var\(--ok\); \}',
     r'html\[data-unsub="on"\]\s+\.panel\{ --accent:var\(--ok\); \}',
     r'html\[data-unsub="bad"\]\s+\.panel\{ --accent:var\(--act\); \}',
-    r'html\[data-unsub="error"\]\s+\.panel\{ --accent:var\(--act\); \}',
+    r'html\[data-err="1"\]\s+\.panel\{ --accent:var\(--act\); \}',
 ])
 def test_the_rail_carries_the_health_tokens(page, selector):
     assert re.search(selector, _page_css(page)), selector
@@ -257,8 +399,125 @@ def test_the_seal_and_the_error_bar_are_correctly_toned(page):
 
 
 def test_an_error_keeps_the_button_the_reader_was_about_to_press(page):
-    """Never discard the action on a failure — the support page's rule, applied here."""
-    assert 'html[data-unsub="error"] .st-ready{ display:block; }' in _page_css(page)
+    """THE PROPERTY, not the line that broke it.
+
+    This test asserted ``html[data-unsub="error"] .st-ready{ display:block; }`` existed —
+    and that line IS the bug. `error` was a data-unsub VALUE that displayed the READY step,
+    so a failure overwrote whatever step the reader was on: press "Turn them back on" from
+    `off`, have the server 500, and the panel flipped to the label MARKETING EMAIL: ON, the
+    unsubscribe lede, and an "Unsubscribe" button — the inverse of what was attempted, next
+    to a bar saying "try again", on a compliance surface.
+
+    Failure is a separate axis now, so the assertion is structural: `error` is not a state
+    at all, `data-err` never selects a step, and the bar rides above whichever step is
+    already showing.
+    """
+    css = _page_css(page)
+    assert 'data-unsub="error"' not in css, "`error` must not be a step-selecting state"
+    assert "'data-unsub', 'error'" not in page, "...nor may the JS ever set it"
+    assert 'html[data-err="1"] .err{ display:flex; }' in css
+    # data-err selects the bar and the rail, and NOTHING that shows or hides a step
+    for rule in re.findall(r'html\[data-err="1"\][^{]*\{[^}]*\}', css):
+        assert ".st-" not in rule, f"the error axis must not select a step: {rule}"
+
+
+def _drive(page: str, start: str, action: str, outcome: str) -> dict:
+    """Run the page's own send() under node against a minimal DOM, and report the
+    attributes that decide what the reader sees.
+
+    A text assertion cannot reach this: the defect was a RUNTIME state transition, and the
+    audit found it with a browser. This is the same probe, offline.
+    """
+    import json
+    import shutil
+    import subprocess
+    import tempfile
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node is not installed")
+    js = _page_js(page).split("/* /unsubscribe.html page JS", 1)[1]
+    js = js[js.index("(function"):]
+    harness = f"""
+    var attrs = {{'data-unsub': {json.dumps(start)}}};
+    var H = {{
+      setAttribute: function (k, v) {{ attrs[k] = v; }},
+      removeAttribute: function (k) {{ delete attrs[k]; }},
+      getAttribute: function (k) {{ return attrs[k] === undefined ? null : attrs[k]; }}
+    }};
+    var handlers = {{}};
+    function el(id) {{
+      return {{ id: id, setAttribute: function () {{}}, removeAttribute: function () {{}},
+                addEventListener: function (_e, fn) {{ handlers[id] = fn; }} }};
+    }}
+    var nodes = {{'#u-go': el('u-go'), '#u-back': el('u-back'), '#u-off': el('u-off')}};
+    global.document = {{
+      documentElement: H,
+      querySelector: function (s) {{ return nodes[s] || null; }},
+      querySelectorAll: function () {{ return []; }},
+      addEventListener: function () {{}}
+    }};
+    global.location = {{ search: '?t=footer-token' }};
+    global.window = {{}};
+    global.fetch = function () {{
+      var outcome = {json.dumps(outcome)};
+      if (outcome === 'throw') return Promise.reject(new Error('offline'));
+      if (outcome === '500') return Promise.resolve({{ ok: false, status: 500 }});
+      if (outcome === '400') return Promise.resolve({{ ok: false, status: 400 }});
+      return Promise.resolve({{ ok: true, status: 200,
+        json: function () {{ return Promise.resolve({{ state: 'unsubscribed',
+          email_masked: 'ad\\u2022\\u2022\\u2022\\u2022\\u2022\\u2022@example.com',
+          resubscribe_token: 'undo-token' }}); }} }});
+    }};
+    {js}
+    // put the page into the starting step, then press the button under test
+    H.setAttribute('data-unsub', {json.dumps(start)});
+    if ({json.dumps(start)} === 'off') H.setAttribute('data-undo', '1');
+    handlers[{json.dumps(action)}]();
+    setTimeout(function () {{ console.log(JSON.stringify(attrs)); }}, 20);
+    """
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as fh:
+        fh.write(harness)
+        path = fh.name
+    proc = subprocess.run([node, path], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("outcome", ["500", "throw"])
+def test_a_failed_resubscribe_leaves_the_reader_in_the_off_state(page, outcome):
+    """THE REPRODUCTION, executed. Reader is unsubscribed (`off`), presses "Turn them back
+    on", the server fails. Before the fix the page moved to `data-unsub="error"`, which
+    displayed `.st-ready` — so the label said MARKETING EMAIL: ON (false), the visible
+    button became `u-go` "Unsubscribe" (the opposite action), and the lede became the
+    unsubscribe lede, all under "That didn't go through. Try again."
+    """
+    attrs = _drive(page, start="off", action="u-back", outcome=outcome)
+    assert attrs["data-unsub"] == "off", "the step the reader was on must survive"
+    assert attrs.get("data-err") == "1", "and the bar must say the press failed"
+    assert attrs.get("data-undo") == "1", "the undo is still offered — retry means retry"
+
+
+def test_a_failed_unsubscribe_also_keeps_its_own_step(page):
+    """The same rule from the other direction: the ready step keeps its Unsubscribe
+    button, which is what the original comment promised and only ever delivered here."""
+    attrs = _drive(page, start="ready", action="u-go", outcome="500")
+    assert attrs["data-unsub"] == "ready"
+    assert attrs.get("data-err") == "1"
+
+
+def test_a_successful_press_clears_the_error_bar(page):
+    attrs = _drive(page, start="ready", action="u-go", outcome="ok")
+    assert attrs["data-unsub"] == "off"
+    assert "data-err" not in attrs
+    assert attrs.get("data-undo") == "1", "a new opt-out may be undone by the one who made it"
+
+
+def test_a_dead_token_on_the_unsubscribe_press_is_still_the_dead_link_panel(page):
+    """400 means the token does not verify, and for the unsubscribe press that IS the
+    dead-link story the `bad` panel exists to tell."""
+    attrs = _drive(page, start="ready", action="u-go", outcome="400")
+    assert attrs["data-unsub"] == "bad"
 
 
 # ===========================================================================

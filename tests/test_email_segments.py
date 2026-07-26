@@ -169,9 +169,9 @@ def test_sql_and_python_use_the_same_coalesce_defaults():
     assert seg.matches("paid", empty) is False
     for s in seg.SEGMENTS:
         if "e.tier" in s.sql:
-            assert "coalesce(e.tier,'free')" in s.sql, s.key
+            assert seg.TIER_SQL in s.sql, s.key
         if "e.status" in s.sql:
-            assert "coalesce(e.status,'none')" in s.sql, s.key
+            assert seg.STATUS_SQL in s.sql, s.key
 
 
 def test_normalize_coerces_empty_strings_not_just_none():
@@ -179,6 +179,86 @@ def test_normalize_coerces_empty_strings_not_just_none():
     a plain `is None` check would not."""
     row = seg.normalize({"tier": "", "status": ""})
     assert row["tier"] == "free" and row["status"] == "none"
+
+
+def test_an_empty_tier_defaults_on_BOTH_planes_not_just_in_python():
+    """The divergence the pair exists to prevent, in its exact shape.
+
+    Python resolves `tier=''` to `free`. A bare `coalesce(e.tier,'free')` does NOT —
+    coalesce replaces NULL, not the empty string — so a row carrying '' was a `free`
+    member for the sweeper and a member of no tier segment at all for the console. The
+    console's count and the send's audience then disagree by exactly those rows, which is
+    the failure mode described in this module's own docstring.
+    """
+    assert seg.normalize({"tier": "", "status": ""})["tier"] == "free"
+    assert seg.matches("free", seg.normalize({"tier": ""})) is True
+    for s in seg.SEGMENTS:
+        if "e.tier" in s.sql:
+            assert "nullif(e.tier,'')" in s.sql, s.key
+        if "e.status" in s.sql:
+            assert "nullif(e.status,'')" in s.sql, s.key
+
+
+# ===========================================================================
+# The ban clause — the other half of the pair, and the one that was read wrong
+# ===========================================================================
+def test_an_expired_ban_is_mailable_on_both_planes():
+    """`ACTIVE_SQL` says `banned_until is null OR banned_until < now()`, so a ban that has
+    EXPIRED is an active account. `not row.get("banned_until")` called every ban
+    permanent, so a user banned for a day last March counted on the console and was
+    invisible to the sweeper — the pair disagreeing about a real person."""
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime(2026, 7, 26, 12, 0, tzinfo=timezone.utc)
+    ok = {"email": "ada@example.com"}
+    assert "u.banned_until < now()" in seg.ACTIVE_SQL, "the SQL half of this claim"
+
+    expired = {**ok, "banned_until": (now - timedelta(days=120)).isoformat()}
+    assert seg.base_match(expired, now=now) is True, "an expired ban is not a ban"
+
+    live = {**ok, "banned_until": (now + timedelta(days=1)).isoformat()}
+    assert seg.base_match(live, now=now) is False
+
+
+def test_an_unparseable_ban_fails_closed():
+    """SQL cannot produce junk from a timestamp column, so junk here is junk — and a value
+    we cannot read must not be read as permission."""
+    assert seg.base_match({"email": "a@example.com", "banned_until": "soon"}) is False
+
+
+# ===========================================================================
+# Suppression vocabulary — one list, both writers
+# ===========================================================================
+def test_the_hard_and_soft_reasons_partition_the_vocabulary():
+    """Both writers read these. A reason that is in neither list is a reason no guard
+    covers, and a reason in both is a contradiction."""
+    assert set(seg.HARD_REASONS) == {"bounce", "complaint"}
+    assert set(seg.SOFT_REASONS) & set(seg.HARD_REASONS) == set()
+    assert set(seg.REASONS) == set(seg.SOFT_REASONS) | set(seg.HARD_REASONS)
+
+
+def test_the_hard_reason_sql_is_a_static_literal_list():
+    """It is interpolated into an `on conflict … where` guard, so it must be authored
+    here and carry nothing an operator could have supplied."""
+    assert seg.HARD_REASONS_SQL == "('bounce', 'complaint')"
+    for r in seg.HARD_REASONS:
+        assert f"'{r}'" in seg.HARD_REASONS_SQL
+
+
+# ===========================================================================
+# Which segments actually need the billing join
+# ===========================================================================
+def test_needs_entitlements_is_derived_from_the_fragment():
+    """The sweeper aborts a drain when `user_entitlements` cannot be read — but only for a
+    segment whose membership that table could have changed. Derived from the SQL rather
+    than hand-listed, so a new tier segment cannot forget to declare itself."""
+    assert seg.needs_entitlements("free") is True
+    assert seg.needs_entitlements("paid") is True
+    assert seg.needs_entitlements("trialing") is True
+    assert seg.needs_entitlements("all") is False
+    assert seg.needs_entitlements(seg.MARKETING_KEY) is False
+    for key in seg.KEYS:
+        assert seg.needs_entitlements(key) == ("e." in seg.BY_KEY[key].sql), key
 
 
 # ===========================================================================

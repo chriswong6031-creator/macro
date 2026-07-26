@@ -43,7 +43,31 @@ unknown key raises rather than reaching SQL (:func:`get`).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Callable
+
+# --------------------------------------------------------------------------- #
+# Suppression vocabulary — shared by BOTH writers, for the same reason the segments are
+# --------------------------------------------------------------------------- #
+#: Reasons that record what the ADDRESS did, not what its owner chose. A hard bounce means
+#: the address rejected us; a complaint means someone pressed "spam". Neither is a
+#: preference anybody may overwrite with a weaker one, and neither is liftable from a link
+#: or from the console — see ``admin/email_center.py::suppress`` (SQL writer) and
+#: ``app/unsubscribe.py::_suppress`` (PostgREST writer), which BOTH consult this tuple.
+#:
+#: It lives here rather than in either writer because two hand-written copies of one
+#: compliance rule is exactly the rot this module exists to prevent: the console proved
+#: that by documenting "a complaint is not removable" three times while allowing a
+#: re-suppression as ``manual`` to overwrite the reason and unlock the removal.
+HARD_REASONS = ("bounce", "complaint")
+
+#: The reasons a person (or an operator) MAY lift: everything that is not a hard reason.
+SOFT_REASONS = ("unsubscribe", "manual")
+
+REASONS = SOFT_REASONS + HARD_REASONS
+
+#: The hard reasons as a SQL literal list, for an ``on conflict do update … where`` guard.
+HARD_REASONS_SQL = "(" + ", ".join(f"'{r}'" for r in HARD_REASONS) + ")"
 
 # --------------------------------------------------------------------------- #
 # The canonical join. Both planes read the same four relations under the same four
@@ -82,13 +106,26 @@ BASE_SQL = f"{ACTIVE_SQL} and {MAILABLE_SQL}"
 TIERS = ("free", "insider", "pro")
 STATUSES = ("active", "trialing", "past_due", "canceled", "none")
 
+# The tier/status defaulting expression, authored ONCE so the fragments below, the roster
+# projection and the CSV export cannot drift from each other or from :func:`normalize`.
+#
+# `nullif(…, '')` is not decoration. Python resolves an EMPTY tier to 'free' (`row.get(…)
+# or 'free'`), and a bare `coalesce(e.tier,'free')` does not — coalesce only replaces
+# NULL. A row carrying '' would then be a `free` member on the sweeper's plane and a
+# member of NO tier segment on the console's, which is the two-copies divergence this
+# module exists to prevent. PostgREST hands back '' for a nulled text column in some
+# shapes, so this is reachable, not hypothetical.
+TIER_SQL = "coalesce(nullif(e.tier,''),'free')"
+STATUS_SQL = "coalesce(nullif(e.status,''),'none')"
+
 
 def normalize(row: dict) -> dict:
     """A raw roster row from either plane, in the shape the predicates expect.
 
-    Absent tier/status resolve the way ``coalesce(e.tier,'free')`` does in SQL: a user who
-    never touched billing IS a free member (the registration lockdown made that true), not
-    a user with an unknown plan.
+    Absent tier/status resolve the way :data:`TIER_SQL` does in SQL: a user who never
+    touched billing IS a free member (the registration lockdown made that true), not a
+    user with an unknown plan. An EMPTY string resolves the same way on both planes — see
+    the note on :data:`TIER_SQL`.
     """
     return {
         "tier": (row.get("tier") or "free") or "free",
@@ -98,11 +135,31 @@ def normalize(row: dict) -> dict:
     }
 
 
-def base_match(row: dict) -> bool:
+def _parse_ts(value) -> datetime | None:
+    """An ISO8601 timestamp from the GoTrue admin JSON as an aware UTC datetime, else None."""
+    s = str(value or "").strip()
+    if not s:
+        return None
+    try:
+        d = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return d.replace(tzinfo=timezone.utc) if d.tzinfo is None else d.astimezone(timezone.utc)
+
+
+def base_match(row: dict, *, now: datetime | None = None) -> bool:
     """The Python half of :data:`BASE_SQL`, for a roster row from the auth admin API.
 
     Kept separate from the segment predicates because the two planes learn these four
     facts differently: SQL reads the columns, the GoTrue admin list reads the JSON fields.
+
+    The ban clause is the one that has to be READ rather than merely truthy-tested.
+    ``ACTIVE_SQL`` says ``u.banned_until is null or u.banned_until < now()`` — an EXPIRED
+    ban is an active account — while ``not row.get("banned_until")`` called every ban
+    permanent. A user banned for a day last March was therefore mailable on the console
+    and invisible to the sweeper, which is the divergence this module exists to prevent.
+    An unparseable value fails CLOSED (not mailable): SQL cannot produce one from a
+    timestamp column, so it can only be junk, and junk must not open a gate.
     """
     if not str(row.get("email") or "").strip():
         return False
@@ -110,7 +167,13 @@ def base_match(row: dict) -> bool:
         return False
     if row.get("is_anonymous"):
         return False
-    return not row.get("banned_until")
+    banned = row.get("banned_until")
+    if not banned:
+        return True
+    until = _parse_ts(banned)
+    if until is None:
+        return False
+    return until < (now or datetime.now(timezone.utc))
 
 
 # --------------------------------------------------------------------------- #
@@ -139,37 +202,37 @@ SEGMENTS: tuple[Segment, ...] = (
     ),
     Segment(
         "free", "Free", "免费",
-        "coalesce(e.tier,'free') = 'free'",
+        f"{TIER_SQL} = 'free'",
         lambda r: r["tier"] == "free",
         "Never paid or trialed.", "从未付费或试用。",
     ),
     Segment(
         "trialing", "On trial", "试用中",
-        "coalesce(e.status,'none') = 'trialing'",
+        f"{STATUS_SQL} = 'trialing'",
         lambda r: r["status"] == "trialing",
         "In a trial right now.", "正在试用期内。",
     ),
     Segment(
         "paid", "Paying", "付费",
-        "coalesce(e.tier,'free') in ('insider','pro')",
+        f"{TIER_SQL} in ('insider','pro')",
         lambda r: r["tier"] in ("insider", "pro"),
         "Insider and Pro together.", "Insider 与 Pro 合计。",
     ),
     Segment(
         "insider", "Insider", "Insider",
-        "coalesce(e.tier,'free') = 'insider'",
+        f"{TIER_SQL} = 'insider'",
         lambda r: r["tier"] == "insider",
         "On the Insider plan.", "使用 Insider 方案。",
     ),
     Segment(
         "pro", "Pro", "Pro",
-        "coalesce(e.tier,'free') = 'pro'",
+        f"{TIER_SQL} = 'pro'",
         lambda r: r["tier"] == "pro",
         "On the Pro plan.", "使用 Pro 方案。",
     ),
     Segment(
         "canceled", "Cancelled", "已取消",
-        "coalesce(e.status,'none') = 'canceled'",
+        f"{STATUS_SQL} = 'canceled'",
         lambda r: r["status"] == "canceled",
         "Paid once, cancelled since.", "曾经付费，之后取消。",
     ),
@@ -228,6 +291,21 @@ def where_sql(key: str | None, *, extra: str | None = None) -> str:
 def matches(key: str | None, row: dict) -> bool:
     """Python-side membership for an already-:func:`normalize`d row."""
     return get(key).match(row)
+
+
+def needs_entitlements(key: str | None) -> bool:
+    """Does this segment's membership depend on the billing join?
+
+    Derived from the fragment rather than hand-listed, so a new tier segment cannot forget
+    to declare itself: a rule that references the ``e.`` alias needs ``user_entitlements``,
+    and one that does not cannot be changed by that table.
+
+    The sweeper uses this to decide whether a failed entitlements read must ABORT the drain
+    (#4: a transient PostgREST blip made every user normalise to ``tier='free'``, which
+    turned a free-users-only campaign into a broadcast that reached paying subscribers) or
+    is simply irrelevant — ``all`` and ``marketing_eligible`` are decided without it.
+    """
+    return "e." in get(key).sql
 
 
 def options() -> list[dict]:
