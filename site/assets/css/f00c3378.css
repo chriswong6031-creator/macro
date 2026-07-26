@@ -33,7 +33,7 @@
   .art-hero { max-width:1060px; margin:14px auto 0; background:var(--panel); border:1px solid var(--line);
               border-radius:16px; padding:26px 30px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
   .art-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
-              background:linear-gradient(90deg,#5b8def,#c77dff 55%,#e0607a); }
+              background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 25%,transparent)); }
   .art-kicker { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 10px; font-weight:600; }
   .art-hero h1 { font-size:30px; line-height:1.18; margin:0 0 12px; letter-spacing:-.01em; }
   .art-dek { font-size:16px; line-height:1.55; color:var(--text); opacity:.86; margin:0 0 16px; max-width:80ch; }
