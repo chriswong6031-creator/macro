@@ -320,12 +320,19 @@ jobs:
   # if: always() — accrual is idempotent and must not stop because a collector
   # crashed core (tape-flow pulls from ThetaData, TIL organs from external APIs;
   # a failed core just means tonight's pass re-scores yesterday's stores).
-  # Runner budget: holding a second macstudio slot alongside engine is accepted
-  # (3-slot pool; operator-ratified 2026-07-14). Known contention: after collect,
-  # FOUR jobs go eligible (engine / collect_tail / factor_series /
-  # active_build_map) for 3 slots — the scheduler may briefly queue engine
-  # behind the others; worst case it waits out the shortest running job
-  # (active_build_map, minutes), a small dent in the ~30-75m win.
+  # Runner budget: PINNED to theta-m1 (mac-builder-1/2/3, the M1 host) since
+  # 2026-07-26 — the ThetaData Terminal (:25503, launchd com.macro.theta-terminal)
+  # and the 60GB thetadata_eod store are machine-local on the M1 after the
+  # 2026-07-25 M2→M1 data-plane migration, while the wider `macstudio` label
+  # spans TWO machines (M1 builders 1/2/3 + M2 builders 4/5). Un-pinned, this
+  # job landed on an M2 runner ~2/5 nights and every tape_flow step self-skipped
+  # (probe-only Terminal law, #3644 — CI must never launch a second Terminal;
+  # the single-session license kicks the M1 session). Contention (2026-07-26
+  # audit): the other heavy jobs stay 5-slot-eligible and 4 slots remain free
+  # while this job holds one M1 slot; the only new exposure is THIS job
+  # queueing when long jobs happen to occupy all 3 M1 slots — acceptable for a
+  # state-resumable accrual job whose commit has a full night of runway. The
+  # macstudio-light lane (own runner) is unaffected.
   # Forward-ledger law: untouched — the nightly graders stay inside
   # scripts.collect (collect core, COLLECT_LANE=nightly); this job only accrues
   # stores + registers idempotent claims, and its commit lands hours before the
@@ -333,12 +340,18 @@ jobs:
   collect_tail:
     needs: collect
     if: always()
-    runs-on: [self-hosted, macstudio]
+    # theta-m1 ⊂ macstudio: custom runner label on mac-builder-1/2/3 only (added
+    # via the runners API 2026-07-26). The probe-only health-check below stays
+    # as defense in depth — if the label set or the Terminal host ever drifts,
+    # tape_flow still degrades to a warning + self-skip, never a second Terminal.
+    runs-on: [self-hosted, theta-m1]
     # Budget arithmetic: tape-flow budgets 25+30+20=75m (hard-stopped in-script)
-    # + census ≤8m (--max-requests 450) + other TIL organs ~seconds + shadow-
-    # importance ~13-14m (the spike leg of the old collect job's 98.5m night)
-    # + qledger backfill + setup ≈ ~110m worst case. 150m keeps the silent-
-    # timeout class (#2193 / the 2026-07-11 collect cancel) away.
+    # + census ≤8m (--max-requests 450) + W11 options witness ~5m (real-path on
+    # the store-bearing M1 — measured 4m35s on mac-builder-1, 2026-07-26; was a
+    # 0.5s no-op when the job landed store-less) + other TIL organs ~seconds
+    # + shadow-importance ~13-14m (the spike leg of the old collect job's 98.5m
+    # night) + qledger backfill + setup ≈ ~115m worst case. 150m keeps the
+    # silent-timeout class (#2193 / the 2026-07-11 collect cancel) away.
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
@@ -464,14 +477,18 @@ jobs:
           python -m engine.theme_clinical \
             || echo "::warning::theme_clinical rollup failed (non-fatal)"
       - name: TIL W11 — options-tape crowding witness (non-fatal)
-        # ThetaData EOD store is host-local (theta-ops-wt) and NOT visible on the
-        # runner — this is the designed fast no-op path (measured 0.5s). Two-writer
-        # coexistence (engine keep-last-real law): while the committed artifact
-        # holds real legs newer than 6d (pushed by the theta-ops launchd lane,
-        # ops/launchd/com.macro.theme-options-witness.plist), this store-less run
-        # SKIPS its write; otherwise it refreshes the honest null artifact
-        # (store_present:false printed in coverage_stats) to keep the lobe's
-        # as_of current — and to disclose a dead launchd lane after 6d.
+        # Since the theta-m1 pin (2026-07-26) this job runs on the store-bearing
+        # M1 host: the canonical resolver finds the thetadata_eod store via the
+        # ops-wt path (engine/thetadata_store.py), so this step takes the REAL
+        # compute path nightly — measured 4m35s on mac-builder-1 (2026-07-26),
+        # budgeted in the job's arithmetic above. Two-writer coexistence with
+        # the launchd lane (ops/launchd/com.macro.theme-options-witness.plist,
+        # also on the M1 post-migration) is by design: both writers score the
+        # SAME store, so last-writer-wins is content-stable; the keep-last-real
+        # law (engine keep-last-real: a store-LESS run must not overwrite real
+        # legs newer than 6d, and discloses a dead real lane past 6d via the
+        # honest null) still guards any future store-less landing — e.g. if the
+        # theta-m1 label set or the store path ever drifts.
         run: |
           python -m engine.theme_options_witness \
             || echo "::warning::theme_options_witness failed (non-fatal)"
