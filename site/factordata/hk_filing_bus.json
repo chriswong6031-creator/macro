@@ -3651,10 +3651,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0279.HK",
+      "ticker": "1830.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "FINAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -3795,10 +3795,10 @@
       "name_zh": null
     },
     {
-      "ticker": "1830.HK",
+      "ticker": "0279.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "FINAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4099,10 +4099,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8003.HK",
+      "ticker": "8132.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4115,10 +4115,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8132.HK",
+      "ticker": "8003.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4627,10 +4627,10 @@
       "name_zh": null
     },
     {
-      "ticker": "1703.HK",
+      "ticker": "8341.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4739,26 +4739,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8300.HK",
+      "ticker": "1867.HK",
       "date": "2026-06-30",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false,
-      "bucket": "results",
-      "pill_en": "Results",
-      "pill_zh": "\u4e1a\u7ee9",
-      "read_en": "earnings update",
-      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
-      "name_en": null,
-      "name_zh": null
-    },
-    {
-      "ticker": "1271.HK",
-      "date": "2026-06-30",
-      "category": "results",
-      "title_en": "Annual Results Announcement for the Year ended 31 March 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4787,10 +4771,26 @@
       "name_zh": null
     },
     {
-      "ticker": "1867.HK",
+      "ticker": "8300.HK",
       "date": "2026-06-30",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false,
+      "bucket": "results",
+      "pill_en": "Results",
+      "pill_zh": "\u4e1a\u7ee9",
+      "read_en": "earnings update",
+      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
+      "name_en": null,
+      "name_zh": null
+    },
+    {
+      "ticker": "1271.HK",
+      "date": "2026-06-30",
+      "category": "results",
+      "title_en": "Annual Results Announcement for the Year ended 31 March 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -4899,22 +4899,6 @@
       "name_zh": null
     },
     {
-      "ticker": "0673.HK",
-      "date": "2026-06-30",
-      "category": "results",
-      "title_en": "FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
-      "official_flag": true,
-      "dilution_flag": false,
-      "buyback_flag": false,
-      "bucket": "results",
-      "pill_en": "Results",
-      "pill_zh": "\u4e1a\u7ee9",
-      "read_en": "earnings update",
-      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
-      "name_en": null,
-      "name_zh": null
-    },
-    {
       "ticker": "1142.HK",
       "date": "2026-06-30",
       "category": "results",
@@ -4935,6 +4919,22 @@
       "date": "2026-06-30",
       "category": "results",
       "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "official_flag": true,
+      "dilution_flag": false,
+      "buyback_flag": false,
+      "bucket": "results",
+      "pill_en": "Results",
+      "pill_zh": "\u4e1a\u7ee9",
+      "read_en": "earnings update",
+      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
+      "name_en": null,
+      "name_zh": null
+    },
+    {
+      "ticker": "0673.HK",
+      "date": "2026-06-30",
+      "category": "results",
+      "title_en": "FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -5043,10 +5043,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8341.HK",
+      "ticker": "1703.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -5123,10 +5123,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0508.HK",
+      "ticker": "8431.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -5139,10 +5139,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8431.HK",
+      "ticker": "0508.HK",
       "date": "2026-06-30",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -6435,7 +6435,7 @@
       "name_zh": null
     },
     {
-      "ticker": "8003.HK",
+      "ticker": "8448.HK",
       "date": "2026-06-29",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
@@ -6451,7 +6451,7 @@
       "name_zh": null
     },
     {
-      "ticker": "8448.HK",
+      "ticker": "8003.HK",
       "date": "2026-06-29",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
@@ -6723,10 +6723,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0776.HK",
+      "ticker": "8091.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE FIFTEEN MONTHS ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -6739,10 +6739,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8549.HK",
+      "ticker": "2350.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -6771,10 +6771,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8347.HK",
+      "ticker": "0252.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -6787,10 +6787,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0252.HK",
+      "ticker": "8347.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -6867,7 +6867,7 @@
       "name_zh": null
     },
     {
-      "ticker": "8091.HK",
+      "ticker": "1613.HK",
       "date": "2026-06-29",
       "category": "results",
       "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
@@ -6883,10 +6883,10 @@
       "name_zh": null
     },
     {
-      "ticker": "1613.HK",
+      "ticker": "0776.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE FIFTEEN MONTHS ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -7043,10 +7043,10 @@
       "name_zh": null
     },
     {
-      "ticker": "2350.HK",
+      "ticker": "8549.HK",
       "date": "2026-06-29",
       "category": "results",
-      "title_en": "ANNUAL RESULTS ANNOUNCEMENT FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -7971,18 +7971,18 @@
       "name_zh": null
     },
     {
-      "ticker": "8072.HK",
+      "ticker": "1327.HK",
       "date": "2026-06-26",
-      "category": "results",
-      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "category": "mandate",
+      "title_en": "POLL RESULTS OF THE ANNUAL GENERAL MEETING HELD ON 26 JUNE 2026 AND SUPPLMENTAL ANNOUNCEMENT IN RELATION TO THE COMPLETI",
       "official_flag": true,
-      "dilution_flag": false,
+      "dilution_flag": true,
       "buyback_flag": false,
-      "bucket": "results",
-      "pill_en": "Results",
-      "pill_zh": "\u4e1a\u7ee9",
-      "read_en": "earnings update",
-      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
+      "bucket": "placement",
+      "pill_en": "Placement",
+      "pill_zh": "\u914d\u80a1",
+      "read_en": "new shares \u2014 dilution",
+      "read_zh": "\u65b0\u53d1\u80a1\u4efd \u2014 \u7a00\u91ca",
       "name_en": null,
       "name_zh": null
     },
@@ -8179,18 +8179,18 @@
       "name_zh": null
     },
     {
-      "ticker": "1327.HK",
+      "ticker": "8072.HK",
       "date": "2026-06-26",
-      "category": "mandate",
-      "title_en": "POLL RESULTS OF THE ANNUAL GENERAL MEETING HELD ON 26 JUNE 2026 AND SUPPLMENTAL ANNOUNCEMENT IN RELATION TO THE COMPLETI",
+      "category": "results",
+      "title_en": "ANNOUNCEMENT OF ANNUAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
-      "dilution_flag": true,
+      "dilution_flag": false,
       "buyback_flag": false,
-      "bucket": "placement",
-      "pill_en": "Placement",
-      "pill_zh": "\u914d\u80a1",
-      "read_en": "new shares \u2014 dilution",
-      "read_zh": "\u65b0\u53d1\u80a1\u4efd \u2014 \u7a00\u91ca",
+      "bucket": "results",
+      "pill_en": "Results",
+      "pill_zh": "\u4e1a\u7ee9",
+      "read_en": "earnings update",
+      "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
       "name_en": null,
       "name_zh": null
     },
@@ -8275,10 +8275,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0989.HK",
+      "ticker": "8516.HK",
       "date": "2026-06-26",
       "category": "results",
-      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
+      "title_en": "Annual results announcement for the year ended 31 March 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -8291,10 +8291,10 @@
       "name_zh": null
     },
     {
-      "ticker": "8516.HK",
+      "ticker": "0989.HK",
       "date": "2026-06-26",
       "category": "results",
-      "title_en": "Annual results announcement for the year ended 31 March 2026",
+      "title_en": "ANNOUNCEMENT OF FINAL RESULTS FOR THE YEAR ENDED 31 MARCH 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -9603,22 +9603,6 @@
       "name_zh": null
     },
     {
-      "ticker": "1943.HK",
-      "date": "2026-06-25",
-      "category": "mandate",
-      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
-      "official_flag": true,
-      "dilution_flag": true,
-      "buyback_flag": false,
-      "bucket": "placement",
-      "pill_en": "Placement",
-      "pill_zh": "\u914d\u80a1",
-      "read_en": "new shares \u2014 dilution",
-      "read_zh": "\u65b0\u53d1\u80a1\u4efd \u2014 \u7a00\u91ca",
-      "name_en": null,
-      "name_zh": null
-    },
-    {
       "ticker": "1382.HK",
       "date": "2026-06-25",
       "category": "results",
@@ -9631,6 +9615,22 @@
       "pill_zh": "\u4e1a\u7ee9",
       "read_en": "earnings update",
       "read_zh": "\u4e1a\u7ee9\u66f4\u65b0",
+      "name_en": null,
+      "name_zh": null
+    },
+    {
+      "ticker": "1943.HK",
+      "date": "2026-06-25",
+      "category": "mandate",
+      "title_en": "PLACING OF NEW SHARES UNDER GENERAL MANDATE",
+      "official_flag": true,
+      "dilution_flag": true,
+      "buyback_flag": false,
+      "bucket": "placement",
+      "pill_en": "Placement",
+      "pill_zh": "\u914d\u80a1",
+      "read_en": "new shares \u2014 dilution",
+      "read_zh": "\u65b0\u53d1\u80a1\u4efd \u2014 \u7a00\u91ca",
       "name_en": null,
       "name_zh": null
     },
@@ -14259,10 +14259,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0158.HK",
+      "ticker": "0179.HK",
       "date": "2026-05-28",
       "category": "results",
-      "title_en": "Interim Results Announcement 2026",
+      "title_en": "Annual Results Announcement for the year ended 31 March 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,
@@ -14547,10 +14547,10 @@
       "name_zh": null
     },
     {
-      "ticker": "0179.HK",
+      "ticker": "0158.HK",
       "date": "2026-05-28",
       "category": "results",
-      "title_en": "Annual Results Announcement for the year ended 31 March 2026",
+      "title_en": "Interim Results Announcement 2026",
       "official_flag": true,
       "dilution_flag": false,
       "buyback_flag": false,

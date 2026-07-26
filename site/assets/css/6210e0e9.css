@@ -29,7 +29,7 @@
   .wh-hero { max-width:1060px; margin:16px auto 0; background:var(--panel); border:1px solid var(--line);
              border-radius:16px; padding:24px 28px; position:relative; overflow:hidden; box-shadow:var(--card-shadow); }
   .wh-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:4px;
-             background:linear-gradient(90deg,#1f4ea8,#b23b4e 55%,#d9a441); }
+             background:linear-gradient(90deg,#1f4ea8,color-mix(in srgb,#1f4ea8 22%,transparent)); }
   .wh-kick { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); margin:0 0 8px; font-weight:700; }
   .wh-hero h1 { font-size:27px; line-height:1.18; margin:0 0 8px; letter-spacing:-.01em; }
   .wh-hero p.sub { font-size:14.5px; color:var(--text); opacity:.82; margin:0; max-width:80ch; }

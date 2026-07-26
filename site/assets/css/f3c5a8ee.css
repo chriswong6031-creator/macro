@@ -20,7 +20,11 @@ a{color:var(--blue);text-decoration:none}
 /* ---------- hero ---------- */
 .tx-hero{padding:26px 0 4px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
 .tx-brand{font-weight:800;font-size:26px;color:var(--ink);letter-spacing:-.02em}
-.tx-brand .gn{background:linear-gradient(92deg,var(--ch-rates),var(--ch-infl) 55%,var(--ch-usd));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Solid ink. The three channel hues (rates / inflation / dollar) carry meaning in the
+   channel sections below — smearing all three across the wordmark spends a signal
+   palette on decoration and reads as a novelty gradient rather than a financial
+   product. Identity here comes from weight and tracking, not hue. */
+.tx-brand .gn{color:var(--ink)}
 .tx-sub{color:var(--muted);font-size:14px;margin:4px 0 0}
 .tx-verdict{font-size:clamp(21px,3.2vw,30px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.28;margin:18px 0 6px;max-width:900px}
 .tx-asof{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:4px}

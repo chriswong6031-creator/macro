@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-07-25",
-  "generated_at": "2026-07-25T09:54:41.781907+00:00",
+  "as_of": "2026-07-26",
+  "generated_at": "2026-07-26T10:01:46.843818+00:00",
   "is_context_only": true,
-  "n_snapshots": 1578,
+  "n_snapshots": 1674,
   "horizons": {
     "5": {
       "n_matured": 134,
@@ -16,7 +16,8 @@
         "t_hac": 0.514,
         "p_hac": 0.6074,
         "hit": 0.5,
-        "n": 8
+        "n": 8,
+        "hac_lags": 5
       },
       "opportunity_ic": 0.0717,
       "edge_ic_pooled": 0.2576,
