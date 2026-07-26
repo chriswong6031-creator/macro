@@ -185,6 +185,11 @@
   .flag-banner.cancel { border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
     background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--text); }
   .flag-banner .ficon { flex:none; font-size:17px; }
+  /* the success banner's way OUT of the pricing page — the old copy told the user to
+     "head to the dashboard" and then gave them nothing to click. */
+  .flag-banner .fgo { flex:none; margin-left:14px; font-weight:600; white-space:nowrap;
+    color:var(--text); text-decoration:none; border-bottom:1px solid currentColor; }
+  .flag-banner .fgo:hover { opacity:.72; }
   .flag-banner .fx { margin-left:auto; cursor:pointer; color:var(--muted); background:none; border:0;
     font-size:16px; line-height:1; padding:2px 4px; }
 
