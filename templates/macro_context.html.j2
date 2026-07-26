@@ -1060,7 +1060,7 @@ html[data-theme="light"] {
             <div>
               <span class="stat-val">{{ "%.0f"|format(rl.curve_2s10s * 100) }}bp</span>
               {% if rl.curve_pctile is not none %}
-              <div class="stat-pctile">p{{ "%.0f"|format(rl.curve_pctile * 100) }}</div>
+              <div class="stat-pctile"><span class="l-en">{{ "%.0f"|format(rl.curve_pctile * 100) }}th pct</span><span class="l-zh">第{{ "%.0f"|format(rl.curve_pctile * 100) }}百分位</span></div>
               {% endif %}
             </div>
           </div>
@@ -1071,7 +1071,7 @@ html[data-theme="light"] {
             <div>
               <span class="stat-val">{{ "%.2f"|format(rl.real_10y) }}%</span>
               {% if rl.real_pctile is not none %}
-              <div class="stat-pctile">p{{ "%.0f"|format(rl.real_pctile * 100) }}</div>
+              <div class="stat-pctile"><span class="l-en">{{ "%.0f"|format(rl.real_pctile * 100) }}th pct</span><span class="l-zh">第{{ "%.0f"|format(rl.real_pctile * 100) }}百分位</span></div>
               {% endif %}
             </div>
           </div>
@@ -1165,7 +1165,7 @@ html[data-theme="light"] {
 
         <div class="liq-row" style="margin-top:14px">
           <div class="liq-stat">
-            <div class="liq-stat-k">{{ t('RRP', '逆回购') }}</div>
+            <div class="liq-stat-k" data-tip-en="Reverse repo — cash parked overnight at the Fed. When it empties, the next liquidity drain hits bank reserves directly." data-tip-zh="逆回购——隔夜存放于美联储的现金。一旦耗尽，下一轮流动性抽离将直接冲击银行准备金。">{{ t('Reverse repo', '逆回购') }}</div>
             <div class="liq-stat-v {% if rl.rrp_exhausted %}c-down{% else %}c-muted{% endif %}">{% if rl.rrp_bn is not none %}${{ rl.rrp_bn }}bn{% else %}—{% endif %}</div>
             {% if rl.rrp_exhausted %}
             <div class="liq-stat-sub" style="color:var(--down)">{{ t('EXHAUSTED', '已耗尽') }}</div>
@@ -1223,14 +1223,16 @@ html[data-theme="light"] {
         <div class="htw-list">
           {% for hw in rt.headwinds %}
           <div class="htw-item head">
-            <span class="htw-asset">{{ hw.asset }}</span>
+            {% set _an = ASSET_NAMES.get(hw.asset) %}
+            <span class="htw-asset" data-tip-en="{{ hw.asset }}" data-tip-zh="{{ hw.asset }}">{{ t(_an[0], _an[1]) if _an else hw.asset }}</span>
             <span class="chip c-down">{{ t('headwind', '逆风') }}</span>
             <span class="htw-net">{{ '%+.2f'|format(hw.net) if hw.net is not none else '' }}</span>
           </div>
           {% endfor %}
           {% for tw in rt.tailwinds %}
           <div class="htw-item tail">
-            <span class="htw-asset">{{ tw.asset }}</span>
+            {% set _an = ASSET_NAMES.get(tw.asset) %}
+            <span class="htw-asset" data-tip-en="{{ tw.asset }}" data-tip-zh="{{ tw.asset }}">{{ t(_an[0], _an[1]) if _an else tw.asset }}</span>
             <span class="chip c-up">{{ t('tailwind', '顺风') }}</span>
             <span class="htw-net">{{ '%+.2f'|format(tw.net) if tw.net is not none else '' }}</span>
           </div>

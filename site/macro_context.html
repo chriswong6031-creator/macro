@@ -3044,7 +3044,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div>
               <span class="stat-val">36bp</span>
               
-              <div class="stat-pctile">p65</div>
+              <div class="stat-pctile"><span class="l-en">65th pct</span><span class="l-zh">第65百分位</span></div>
               
             </div>
           </div>
@@ -3055,7 +3055,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             <div>
               <span class="stat-val">2.43%</span>
               
-              <div class="stat-pctile">p99</div>
+              <div class="stat-pctile"><span class="l-en">99th pct</span><span class="l-zh">第99百分位</span></div>
               
             </div>
           </div>
@@ -3188,7 +3188,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 
         <div class="liq-row" style="margin-top:14px">
           <div class="liq-stat">
-            <div class="liq-stat-k"><span class="l-en">RRP</span><span class="l-zh">逆回购</span></div>
+            <div class="liq-stat-k" data-tip-en="Reverse repo — cash parked overnight at the Fed. When it empties, the next liquidity drain hits bank reserves directly." data-tip-zh="逆回购——隔夜存放于美联储的现金。一旦耗尽，下一轮流动性抽离将直接冲击银行准备金。"><span class="l-en">Reverse repo</span><span class="l-zh">逆回购</span></div>
             <div class="liq-stat-v c-down">$0.7bn</div>
             
             <div class="liq-stat-sub" style="color:var(--down)"><span class="l-en">EXHAUSTED</span><span class="l-zh">已耗尽</span></div>
@@ -3244,50 +3244,58 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="htw-list">
           
           <div class="htw-item head">
-            <span class="htw-asset">XLB</span>
+            
+            <span class="htw-asset" data-tip-en="XLB" data-tip-zh="XLB"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.49</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">SPY</span>
+            
+            <span class="htw-asset" data-tip-en="SPY" data-tip-zh="SPY"><span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.44</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">XLK</span>
+            
+            <span class="htw-asset" data-tip-en="XLK" data-tip-zh="XLK"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.42</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">QQQ</span>
+            
+            <span class="htw-asset" data-tip-en="QQQ" data-tip-zh="QQQ"><span class="l-en">Nasdaq 100</span><span class="l-zh">纳斯达克100</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.41</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">XLF</span>
+            
+            <span class="htw-asset" data-tip-en="XLF" data-tip-zh="XLF"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.36</span>
           </div>
           
           <div class="htw-item head">
-            <span class="htw-asset">IWM</span>
+            
+            <span class="htw-asset" data-tip-en="IWM" data-tip-zh="IWM"><span class="l-en">Small caps</span><span class="l-zh">小盘股</span></span>
             <span class="chip c-down"><span class="l-en">headwind</span><span class="l-zh">逆风</span></span>
             <span class="htw-net">-0.35</span>
           </div>
           
           
           <div class="htw-item tail">
-            <span class="htw-asset">TLT</span>
+            
+            <span class="htw-asset" data-tip-en="TLT" data-tip-zh="TLT"><span class="l-en">Long bonds</span><span class="l-zh">长期国债</span></span>
             <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
             <span class="htw-net">+0.20</span>
           </div>
           
           <div class="htw-item tail">
-            <span class="htw-asset">GC=F</span>
+            
+            <span class="htw-asset" data-tip-en="GC=F" data-tip-zh="GC=F"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
             <span class="chip c-up"><span class="l-en">tailwind</span><span class="l-zh">顺风</span></span>
             <span class="htw-net">+0.07</span>
           </div>
@@ -3994,7 +4002,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 07:59 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 08:07 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->

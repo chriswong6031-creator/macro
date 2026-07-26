@@ -155,6 +155,28 @@ FIELD_LABELS: dict[str, tuple[str, str]] = {
     "commodity_breadth_bucket":   ("Breadth",           "广度"),
 }
 
+# Display names for the tickers the headwind/tailwind matrix trades in. A raw
+# ticker is a machine slug to everyone who does not already know it (DESIGN_DOCTRINE
+# Law 2); the ticker itself survives as the hover receipt.
+ASSET_NAMES: dict[str, tuple[str, str]] = {
+    "SPY":  ("S&P 500",        "标普500"),
+    "QQQ":  ("Nasdaq 100",     "纳斯达克100"),
+    "IWM":  ("Small caps",     "小盘股"),
+    "TLT":  ("Long bonds",     "长期国债"),
+    "GC=F": ("Gold",           "黄金"),
+    "XLB":  ("Materials",      "原材料"),
+    "XLC":  ("Communications", "通信服务"),
+    "XLE":  ("Energy",         "能源"),
+    "XLF":  ("Financials",     "金融"),
+    "XLI":  ("Industrials",    "工业"),
+    "XLK":  ("Technology",     "科技"),
+    "XLP":  ("Staples",        "必需消费"),
+    "XLRE": ("Real estate",    "房地产"),
+    "XLU":  ("Utilities",      "公用事业"),
+    "XLV":  ("Health care",    "医疗保健"),
+    "XLY":  ("Discretionary",  "可选消费"),
+}
+
 # Chip CSS class mapping (replaces hex color dict)
 _CHIP_CLASS: dict[str, str] = {
     # quads
@@ -1331,7 +1353,7 @@ def main() -> int:
 
     from engine.i18n import tr, td
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=True)
-    env.globals.update(tr=tr, td=td)
+    env.globals.update(tr=tr, td=td, ASSET_NAMES=ASSET_NAMES)
     html = env.get_template("macro_context.html.j2").render(
         vm=vm,
         built=built,
