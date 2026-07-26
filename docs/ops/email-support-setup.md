@@ -9,8 +9,10 @@ record, the operator console answers; nothing leaves the building until the rela
 | Mail transport + send ledger | `app/mailer.py` |
 | Public ticket intake | `app/support.py` → `POST /api/support/ticket` (mounted in `app/main.py`) |
 | Operator console | `admin/support_tickets.py` + admin console → **Support → Support Tickets** |
+| Billing + lifecycle email (W3) | `app/billing_emails.py`, hooked from `app/billing.py::_handle_event` |
+| Display preferences (W3) | `app/account_prefs.py` → `POST /api/account/prefs` |
 | Secret delivery | `.github/workflows/deploy-api-secrets.yml` |
-| Tests | `tests/test_mailer.py`, `tests/test_support_api.py`, `tests/test_admin_support_tickets.py` (CI job `support-email-spine`) |
+| Tests | `tests/test_mailer.py`, `tests/test_support_api.py`, `tests/test_admin_support_tickets.py` (CI job `support-email-spine`) · `tests/test_billing_emails.py`, `tests/test_account_prefs.py`, `tests/test_billing_webhook.py` (CI job `billing-emails`) |
 
 Everything below is **operator ops** — one-time actions outside the repo.
 
@@ -52,6 +54,9 @@ that is mail-off mode, not an error.
 | `MAIL_REPLY_TO` | no | where user replies land, e.g. `support@mastermind-x.com` |
 | `MAIL_SUPPORT_TO` | no | where NEW-ticket alerts go. Unset → no operator alert (tickets still file) |
 | `MAIL_UNSUB_SECRET` | no | HMAC key for one-click unsubscribe tokens. **Also keys the ticket IP hash** — set it: without it the stored `meta.ip_hash` is a bare SHA-256 of an IPv4, which is a 2^32 brute force, i.e. not anonymisation |
+| `MAIL_LIFECYCLE_ENABLED` | no | **default OFF.** `1` arms the in-process trial-ending sweeper (§5b). Leave unset until the relay is verified — the billing receipts do not need it |
+| `MAIL_LIFECYCLE_INTERVAL_SEC` | no | sweeper wake interval, default `21600` (6h). Floor 60s. Only for a smoke test — the reminder window is 48h wide, so four wakes a day is plenty |
+| `MAIL_SITE_BASE` | no | public host used in email links, default `https://www.mastermind-x.com`. Only set this if the public host moves |
 
 Prefer a **bare address** for `MAIL_FROM` / `MAIL_REPLY_TO`. A display-name form
 (`Mastermind <hello@…>`) is delivered intact — the workflow's `_addv` helper preserves inner
@@ -122,6 +127,8 @@ With no relay credentials the whole estate still works:
 | `POST /api/support/ticket` | 200, ticket + first message written, `ok:true` with a `ticket_id` |
 | Operator alert | `email_log` row with `status='skipped_no_smtp'`; no send attempted |
 | Console reply | message appended, thread shows a **"not emailed"** pill, toast says so |
+| Billing webhook | `POST /api/billing/webhook` still returns **200**, entitlement still written; one `email_log` row per event at `status='skipped_no_smtp'` |
+| Trial sweeper | ledgers every candidate as `skipped_no_smtp` — the period is then "already handled", so turning the relay on later does NOT backfill that period |
 | `send()` return | `'skipped_no_smtp'` — never an exception, never a 500 at a caller |
 
 One asymmetry to know about once campaigns exist (W4): **marketing mail is fail-closed on the
@@ -144,6 +151,75 @@ We send our own receipts and dunning notices from this estate. Turning Stripe's 
 emails per event with different branding, different language (Stripe's are English-only — half our
 audience reads 中文), and no `email_log` row, so the ledger stops being the record of what a user
 received.
+
+Those toggles are **dashboard-only** — there is no API to read or set them, so this is a step an
+operator has to perform and re-check by eye. The full audit of what Stripe would send, and when,
+is in `docs/ops/stripe-setup.md` (§ *Customer email*).
+
+## 5b. Billing emails + the trial-ending reminder (SEE W3)
+
+Four messages fire from the **Stripe webhook**, composed in `app/billing_emails.py` and hooked
+into `app/billing.py::_handle_event` **after** the entitlement upsert — the database row is the
+source of truth and mail is a side effect. Nothing about the money is hardcoded: amounts,
+currencies and dates come off the Stripe objects, plan names and the tier ordering come from
+`config/plans.yml`.
+
+| Stripe event | Email | Notes |
+|---|---|---|
+| `customer.subscription.created` | purchase / trial confirmation | plan, price, trial end, first-charge date + amount, the period it covers |
+| `customer.subscription.updated` | plan upgrade | only when the tier RANK rose or the cadence moved monthly → annual, and only from an already-paid tier |
+| `invoice.payment_failed` | payment failed | amount, what still works and until when, the retry date if Stripe gave one |
+| `customer.subscription.deleted` | cancellation | access-until date, no further charges, how to come back |
+
+**`checkout.session.completed` deliberately sends nothing.** The estate has two buy lanes —
+hosted Checkout and the Elements sheet (`POST /api/billing/subscribe/complete`) — and only the
+first produces that event, while **both** produce exactly one `customer.subscription.created`.
+Keying the receipt off `created` covers both lanes once; handling both events would send the
+hosted-Checkout buyer two receipts, because the idempotency key is per *event id* and the two
+events have different ones.
+
+**Idempotency** is `email_log.idem_key = stripe:{event_id}:{template}`, written BEFORE the SMTP
+attempt. A replayed webhook event therefore sends nothing a second time. This is a separate key
+from the `stripe_events` ledger on purpose: that row is only written after a *successful* handle,
+so a crash between the send and that write would otherwise re-send.
+
+### The trial-ending reminder (T-2)
+
+A sweeper finds `user_entitlements` rows with `status='trialing'` whose `current_period_end` lands
+inside the next 48 hours and sends the "your trial ends" message, keyed
+`trial_ending:{user_id}:{period_end_date}` — re-armable for a later trial, never twice for the
+same period. It is **behaviour-triggered**, not a drip: no calendar chain, no follow-ups.
+
+**Home: an in-process asyncio task in macro-api, default OFF.**
+
+1. Set `MAIL_LIFECYCLE_ENABLED=1` as a repository secret and run **deploy-api-secrets** (§2). The
+   value is read at mount time, so the workflow's `systemctl restart macro-api` is what arms it.
+2. Confirm: `journalctl -u macro-api -n 50 | grep lifecycle` → `lifecycle sweeper armed (every
+   21600s)`. Nothing in the log means it is still off, which is a safe state.
+3. Watch it work: `journalctl -u macro-api | grep 'trial sweep'` prints a per-wake census
+   (`scanned / sent / duplicate / skipped / failed`).
+4. To run one sweep by hand at any time (it is the same function, and the ledger makes it safe to
+   run alongside the loop):
+   ```
+   cd /opt/macro && /opt/macro-api/.venv/bin/python -m app.billing_emails --sweep
+   ```
+
+*Why in-process rather than a crontab line beside the nightly `--reconcile`:* the sweeper is
+cursor-free and idempotent through `email_log`, so a restart mid-sweep costs nothing and there is
+no state a cron lane would protect. `macro-api` runs as a single uvicorn process under systemd,
+so the loop runs exactly once. The env var already rides the secrets lane you use in §2, which
+makes arming it one workflow run instead of an ssh session and a crontab edit on a box whose
+checkout is ephemeral (G7). The `--sweep` CLI stays available for a manual run and for recovery.
+
+### `POST /api/account/prefs`
+
+`templates/account.js` has always called this route on theme/language change and nothing answered.
+`app/account_prefs.py` now does: bearer-authed (a `user_id` in the body is ignored), it validates
+`lang ∈ {en, zh}` and `theme ∈ {light, dark}`, merges them into the Supabase auth `user_metadata`,
+and mirrors `lang` into `email_prefs.lang`. Emails are dual-language today (SEE-R4); the mirror is
+the plumbing that makes a single-language send possible later without a migration. `GET
+/api/account` returns the stored values as `prefs`, so a signed-in visitor lands in their own theme
+and language on any device. No operator step — it works as soon as the migration from §3 is applied.
 
 ## 6. Verify
 

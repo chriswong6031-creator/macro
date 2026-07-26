@@ -705,6 +705,79 @@
     /* clean the query param so a refresh doesn't re-show the banner */
     try { history.replaceState({}, '', location.pathname + location.hash); } catch (e) {}
   })();
+
+  /* ── billing-portal deep link: ?billing=portal ─────────────────────────
+     Every billing email's CTA points here (mockups/support_email/PIN.md §7). Email
+     cannot run JS, so the link has to land on a page that finishes the job: signed in,
+     we call the authed GET /api/billing/portal and forward to the Stripe portal;
+     signed out, we ask for sign-in first and resume the moment auth resolves.
+     Fail-soft everywhere — any error leaves the reader on a working pricing page with
+     a plain-word line telling them what to do instead.
+     The banner is left UNCLASSED for the neutral states: .flag-banner.ok is tinted with
+     var(--up), which theme.css flips to red under html[data-lang="zh"] (PIN §1.1) — a
+     neutral progress line must not turn red for a Chinese reader. */
+  (function () {
+    if (!/[?&]billing=portal\b/.test(location.search)) return;
+    var banner = $('#flag-banner'), icon = $('#flag-icon'), text = $('#flag-text'), x = $('#flag-x');
+    if (!banner) return;
+    var launched = false;
+
+    function say(glyph, msg, warn) {
+      banner.classList.remove('ok', 'cancel');
+      banner.classList.add('show');
+      if (warn) banner.classList.add('cancel');
+      if (icon) icon.textContent = glyph;
+      if (text) text.textContent = msg;
+    }
+    function clean() {
+      try { history.replaceState({}, '', location.pathname + location.hash); } catch (e) {}
+    }
+    if (x) x.addEventListener('click', function () { banner.classList.remove('show'); });
+
+    function launch() {
+      if (launched) return;
+      launched = true;
+      say('↗', L('Opening your billing portal…', '正在打开账单中心…'), false);
+      withAuth({}).then(function (h) {
+        if (!h['Authorization']) throw new Error('auth');
+        return fetch(API + '/api/billing/portal', { headers: h, credentials: 'include' });
+      }).then(function (r) {
+        if (r.status === 401) throw new Error('auth');
+        if (r.status === 404) throw new Error('nobilling');
+        if (!r.ok) throw new Error('http');
+        return r.json();
+      }).then(function (d) {
+        if (!d || !d.url) throw new Error('nourl');
+        clean();
+        window.location = d.url;
+      }).catch(function (e) {
+        launched = false;
+        clean();
+        var m = e && e.message;
+        if (m === 'nobilling') {
+          say('•', L('No subscription on this account yet — pick a plan below to start one.',
+                     '此账户还没有订阅——请在下方选择一个方案。'), false);
+        } else if (m === 'auth') {
+          say('•', L('Sign in to open your billing portal.', '登录后即可打开账单中心。'), false);
+          if (window.MDXAuth && authEnabled()) window.MDXAuth.open('signin');
+        } else {
+          say('•', L('Couldn’t open the billing portal. Try again in a moment, or write to support@mastermind-x.com.',
+                     '暂时无法打开账单中心。请稍后重试，或发邮件至 support@mastermind-x.com。'), true);
+        }
+      });
+    }
+
+    if (isSignedIn()) {
+      launch();
+    } else {
+      say('•', L('Sign in to open your billing portal.', '登录后即可打开账单中心。'), false);
+      if (window.MDXAuth && authEnabled()) window.MDXAuth.open('signin');
+      /* resume once the session resolves — a cold load often signs in a beat after paint */
+      if (window.MDXAuth && window.MDXAuth.onChange) {
+        window.MDXAuth.onChange(function () { if (isSignedIn()) launch(); });
+      }
+    }
+  })();
 })();
 </script>
 </body>

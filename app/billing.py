@@ -990,6 +990,21 @@ def _cancel_subscriptions(customer_id: str) -> None:
         log.warning("billing: chargeback cancel sweep failed for %s (%s)", customer_id, exc)
 
 
+def _billing_emails():
+    """The SEE-W3 email module, or None when it is unavailable.
+
+    Lazy + tolerant on purpose: mail is a side effect of the entitlement write, so an
+    import error (module absent in a slimmer deployment, a syntax slip in a hotfix) must
+    degrade to "no email", never to a webhook 500 that makes Stripe retry forever.
+    """
+    try:
+        from app import billing_emails  # noqa: PLC0415
+        return billing_emails
+    except Exception as exc:  # noqa: BLE001
+        log.debug("billing: email module unavailable (%s)", type(exc).__name__)
+        return None
+
+
 def _handle_event(event: dict) -> None:
     etype = event["type"]
     if etype not in _HANDLED:
@@ -1002,10 +1017,29 @@ def _handle_event(event: dict) -> None:
         return
     if etype in _REVOKING:
         _cancel_subscriptions(customer_id)   # chargeback → cancel so the free downgrade sticks (C1)
+    # An upgrade is a comparison and a failed payment has already lost its tier by the
+    # time the recompute lands, so those two events need the row as it stands NOW. The
+    # module decides which events pay that extra read; every other event costs nothing.
+    emails = _billing_emails()
+    pre_ent = None
+    if emails is not None:
+        try:
+            pre_ent = emails.pre_upsert_snapshot(etype, user_id)
+        except Exception as exc:  # noqa: BLE001
+            log.debug("billing: pre-email snapshot skipped (%s)", type(exc).__name__)
     ent = _compute_entitlement(customer_id)
     _upsert_entitlement(user_id, customer_id, ent)
     _invalidate(user_id)
     log.info("billing: %s -> user %s tier=%s status=%s", etype, user_id, ent["tier"], ent["status"])
+    # AFTER the entitlement write, never before: the DB row is the source of truth and
+    # mail is a side effect. on_event never raises; the second guard here covers the
+    # import boundary itself, so a broken composer cannot 5xx the webhook (SEE G2/G7).
+    if emails is not None:
+        try:
+            emails.on_event(event, user_id=user_id, customer_id=customer_id,
+                            ent=ent, pre=pre_ent)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("billing: %s email hook failed (%s)", etype, type(exc).__name__)
 
 
 @router.post("/api/billing/webhook")
