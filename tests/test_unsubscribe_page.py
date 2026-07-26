@@ -296,26 +296,58 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
     assert regwall._is_public(PATH + "?t=abc") is True, "the token must not defeat the match"
 
 
-def test_nothing_else_became_public_as_a_side_effect():
-    """Mutation-check the blast radius of this PR's boundary edit: exactly one path was
-    added to the policy, and it is this one."""
-    import subprocess
+# The public no-account-needed surface, frozen. Widening it is a deliberate act:
+# adding a line here is the review checkpoint, which is the whole point of pinning
+# the set rather than diffing against a moving branch.
+PUBLIC_EXACT = frozenset({
+    "/", "/index.html", "/plans.html", "/support.html", "/unsubscribe.html",
+    "/privacy.html", "/terms.html", "/disclaimer.html",
+    "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
+    "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    "/onboard.css", "/onboard.js", "/landing.css", "/chat.css", "/chat_nav.css",
+    "/theme.css", "/product-nav-icons.css", "/theme.js", "/account.js",
+    "/nav_market.js", "/supabase.js", "/data_base.js", "/live.js", "/live_config.js",
+    "/live/quotes.json", "/live/breadth.json", "/prophet/showcase.json",
+    "/factordata/tech_lab.json",
+})
 
+# Paid payload trees. A regression that lists one of these publicly is the failure
+# this guard exists to catch, so name them rather than inferring them.
+# /factordata/ is NOT blanket-private: /factordata/tech_events/ and the tech_lab.json
+# carve-out are deliberate and predate this program, so only the tree root is barred.
+NEVER_PUBLIC = ("/labdata/", "/premiumdata/")
+PUBLIC_PREFIXES = frozenset({
+    "/assets/css/", "/assets/landing/", "/factordata/tech_events/",
+    "/stocks/", "/tools/", "/learn/", "/blog/", "/research/", "/fonts/",
+})
+
+
+def test_nothing_else_became_public_as_a_side_effect():
+    """The public boundary is exactly the frozen set — no more, no less.
+
+    This deliberately does NOT diff against origin/main. A relative assertion is
+    self-invalidating: the moment it merges, the diff it measures is empty and the
+    test can never fail again (it went red on main that way once already).
+    """
     import yaml
 
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text(encoding="utf-8"))
-    base = subprocess.run(
-        ["git", "show", "origin/main:config/site_access.yml"],
-        cwd=ROOT, capture_output=True, text=True, timeout=60)
-    if base.returncode != 0:            # shallow clone / detached CI checkout
-        pytest.skip("origin/main not available for a diff")
-    before = yaml.safe_load(base.stdout)
-    assert set(policy["public"]["exact"]) - set(before["public"]["exact"]) == {PATH}
-    assert set(before["public"]["exact"]) - set(policy["public"]["exact"]) == set()
-    assert policy["public"]["prefixes"] == before["public"]["prefixes"]
-    assert policy.get("free_registered") == before.get("free_registered")
-    assert policy.get("deny") == before.get("deny")
-    assert policy.get("premium") == before.get("premium")
+    exact = set(policy["public"]["exact"])
+
+    assert PATH in exact, "the unsubscribe page must stay reachable without an account"
+    unexpected = exact - PUBLIC_EXACT
+    assert not unexpected, f"these paths became public without updating the frozen set: {sorted(unexpected)}"
+    missing = PUBLIC_EXACT - exact
+    assert not missing, f"these public paths disappeared: {sorted(missing)}"
+
+    prefixes = set(policy["public"].get("prefixes", []))
+    assert prefixes == PUBLIC_PREFIXES, (
+        "the public prefix list moved; widen the frozen set deliberately. "
+        f"added={sorted(prefixes - PUBLIC_PREFIXES)} removed={sorted(PUBLIC_PREFIXES - prefixes)}")
+
+    for tree in NEVER_PUBLIC:
+        leaked = [p for p in prefixes if p.startswith(tree)] + [p for p in exact if p.startswith(tree)]
+        assert not leaked, f"paid payload tree published publicly: {leaked}"
 
 
 # ===========================================================================
