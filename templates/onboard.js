@@ -124,7 +124,7 @@
     appleSoon:    ["Apple — coming soon", "Apple — 即将支持"],
     toSignin:     ["Already have an account? Sign in", "已有账户？登录"],
     toSignup:     ["New to Mastermind? Create an account", "初次使用？创建账户"],
-    terms:        ["By continuing you agree to our Terms and Privacy Policy.", "继续即表示你同意我们的服务条款与隐私政策。"],
+    terms:        ["By continuing you agree to our <a href='/terms.html' target='_blank' rel='noopener'>Terms</a> and <a href='/privacy.html' target='_blank' rel='noopener'>Privacy Policy</a>.", "继续即表示你同意我们的<a href='/terms.html' target='_blank' rel='noopener'>服务条款</a>与<a href='/privacy.html' target='_blank' rel='noopener'>隐私政策</a>。"],
 
     // step 2 — preferences
     prefsTitle:   ["Set up your desk", "配置你的台席"],
