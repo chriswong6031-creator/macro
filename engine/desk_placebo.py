@@ -56,29 +56,68 @@ SCHEMA = "desk_placebo.v1"
 # A placebo rate is only meaningful with enough historical windows behind it.
 _MIN_PLACEBO_WINDOWS = 60
 
-_MACHINE_KINDS = ("rel_return", "level")
+_MACHINE_KINDS = ("rel_return", "level", "theme_rel_return")
 
 
 # --------------------------------------------------------------------------- #
 # price access (lazy imports — keep this module cheap to import)
 # --------------------------------------------------------------------------- #
+def _grouped_series(root, group: str, ticker: str):
+    """Close series from the region-aware store (lib.store's layout), resolved under `root`.
+
+    lib.store.read() keys off the global config.data_dir() and ignores any root, which would
+    make a tmp-root caller silently read the operator's real data plane. We resolve the data
+    dir the way engine.desk_scorer already does — the live dir when root IS the repo root
+    (so production is byte-identical to store.read), the root's own data/ otherwise.
+    """
+    import pandas as pd
+    from lib import config as _config
+
+    try:
+        base = (_config.data_dir() if Path(root) == Path(_config.ROOT)
+                else Path(root) / "data")
+        safe = ticker.replace("^", "_").replace("=", "_").replace("/", "_").replace(" ", "_")
+        p = base / group / f"{safe}.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        if "close" not in getattr(df, "columns", []):
+            return None
+        s = df["close"].astype(float).dropna()
+        s.index = pd.to_datetime(s.index)
+        return s.sort_index()
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _series_cache(root):
-    """Per-call ticker → close-series cache. _close_series re-reads parquet each time and a
-    desk re-uses the same benchmark on every thesis, so caching turns O(theses) parquet
-    reads into O(distinct tickers)."""
+    """Per-call (group, ticker) → close-series cache. The underlying readers re-open parquet
+    on every call and a desk re-uses the same benchmark on every thesis, so caching turns
+    O(theses) reads into O(distinct instruments).
+
+    `group` is the region-aware store key thematic_desk stamps on its checks (yahoo /
+    canada / china / hk). Without it we would silently miss every non-US theme: on
+    2026-07-26 thematic_desk's graded set was 11 canada, 9 yahoo, 9 china, 1 hk. When no
+    group is given we use ai_desk's yahoo-first helper, which is what the other desks log
+    against.
+    """
     from engine import ai_desk as _desk
 
     cache: dict = {}
 
-    def get(ticker):
+    def get(ticker, group=None):
         if not ticker:
             return None
-        if ticker not in cache:
+        key = (group, ticker)
+        if key not in cache:
             try:
-                cache[ticker] = _desk._close_series(ticker, root)
+                if group:
+                    cache[key] = _grouped_series(root, group, ticker)
+                else:
+                    cache[key] = _desk._close_series(ticker, root)
             except Exception:  # noqa: BLE001
-                cache[ticker] = None
-        return cache[ticker]
+                cache[key] = None
+        return cache[key]
 
     return get
 
@@ -95,20 +134,29 @@ def _window_len(s, asof, check_by) -> int:
 # --------------------------------------------------------------------------- #
 # the per-thesis placebo sweeps — mirror engine.desk_scorer's evaluators exactly
 # --------------------------------------------------------------------------- #
-def placebo_rel_return(get, check: dict, asof, check_by) -> dict | None:
+def placebo_rel_return(get, check: dict, asof, check_by, *,
+                       group=None, inclusive: bool = False) -> dict | None:
     """Null for eval_rel_return: realized = subject excess vs benchmark over W sessions;
-    falsified iff op(realized, threshold). Swept over every historical entry date."""
+    falsified iff op(realized, threshold). Swept over every historical entry date.
+
+    `inclusive` selects the boundary convention: engine.desk_scorer falsifies on a strict
+    `<`, thematic_desk on `<=` ("moves the wrong way by >= threshold"). The two differ only
+    on an exact tie, which is measure-zero for continuous returns — mirrored anyway so the
+    null is computed under the same rule that graded the thesis.
+    """
     import pandas as pd
 
     sub, vs = check.get("subject_ticker"), check.get("vs")
-    a = get(sub)
+    a = get(sub, group) if group else get(sub)
     if a is None or getattr(a, "empty", True):
         return None
     if vs:
-        b = get(vs)
+        b = get(vs, group) if group else get(vs)
         if b is None or b.empty:
             return None
         joined = pd.concat({"a": a, "b": b}, axis=1, sort=True).dropna()
+        if joined.empty:
+            return None
         a, b = joined["a"], joined["b"]
     else:
         b = None
@@ -122,10 +170,25 @@ def placebo_rel_return(get, check: dict, asof, check_by) -> dict | None:
     if len(realized) < _MIN_PLACEBO_WINDOWS:
         return None
     op, thr = check.get("op"), float(check.get("threshold", 0.0))
-    falsified = (realized < thr) if op == "<" else (realized > thr)
+    if op == "<":
+        falsified = (realized <= thr) if inclusive else (realized < thr)
+    else:
+        falsified = (realized >= thr) if inclusive else (realized > thr)
     dir_ok = (realized > 0) if op == "<" else (realized < 0)
     return {"p_hit": float((~falsified).mean()), "p_dir": float(dir_ok.mean()),
             "window_bd": w, "n_windows": int(len(realized))}
+
+
+def placebo_theme_rel_return(get, check: dict, asof, check_by) -> dict | None:
+    """Null for thematic_desk's `theme_rel_return` (engine/thematic_desk.py:550).
+
+    Same excess-return predicate as rel_return, with two differences that both matter: the
+    prices come from the region-aware store keyed by the check's `group`, and falsification
+    is inclusive at the boundary. Without this the whole desk went unmeasured — 28 graded
+    calls reported as "no placebo baseline" while its ledger held everything needed.
+    """
+    return placebo_rel_return(get, check, asof, check_by,
+                              group=check.get("group") or "yahoo", inclusive=True)
 
 
 def placebo_level(get, check: dict, asof, check_by) -> dict | None:
@@ -149,7 +212,8 @@ def placebo_level(get, check: dict, asof, check_by) -> dict | None:
             "window_bd": w, "n_windows": int(len(frame))}
 
 
-_PLACEBOS = {"rel_return": placebo_rel_return, "level": placebo_level}
+_PLACEBOS = {"rel_return": placebo_rel_return, "level": placebo_level,
+             "theme_rel_return": placebo_theme_rel_return}
 
 
 # --------------------------------------------------------------------------- #
@@ -242,10 +306,11 @@ def _decided_mix(root: Path, slug: str, today) -> tuple[list, str, int, str]:
 
     Returns (pairs, source, orphans, empty_reason). `empty_reason` is populated only when
     `pairs` is empty, and names WHY in plain words. It exists because "no null" was
-    previously disclosed as "no thesis ledger" in every empty case — a statement that is
-    simply false for a desk like thematic_desk, which has a 141-row ledger whose predicates
-    are of a kind (`theme_rel_return`) this module has no placebo sweep for. A null we cannot
-    measure has to say what actually stopped us.
+    previously disclosed as "no thesis ledger" in every empty case — a statement that was
+    simply false for thematic_desk, which has a 148-row ledger that this module merely had
+    no sweep for. (That specific gap is now closed: `theme_rel_return` is swept. The
+    disclosure stays, because the next desk to log a novel predicate kind must say what
+    actually stopped us rather than claim a ledger it has.)
     """
     ledger = {}
     for row in _load_jsonl(root / "data" / slug / "theses.jsonl"):
