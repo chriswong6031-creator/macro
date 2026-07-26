@@ -22,7 +22,66 @@ THREE HARD SAFETY PROPERTIES (from the masterplan + the China reassessment Q6)
     moves at most ``MAX_STEP`` per update from its current value; the whole vector is
     L1-renormalised so it stays a convex-ish blend; and nothing arms until an ARMING
     PREDICATE holds (≥ MIN_FAMILY_N effective graded events per family AND the pooled vector
-    beats equal-weight on held-out spine data). Never free-fits on tiny n.
+    beats equal-weight on held-out spine data BY A PRE-REGISTERED MARGIN — see below).
+    Never free-fits on tiny n.
+
+THE ARMING MARGIN (pre-registered 2026-07-25 — why "beats equal-weight" was not enough)
+---------------------------------------------------------------------------------------
+``arming`` originally required only ``heldout_edge_pooled > heldout_edge_equal`` — a strict
+float comparison with NO floor. Measured on the live spine, that predicate armed on margins
+as small as **3e-18** (machine epsilon), and at every armed point BOTH held-out edges were
+NEGATIVE: the family lost out-of-sample under either weighting, pooled just lost ~3bp less.
+Worse, while the family had a single contributing member the test was VACUOUS — one member
+means the pooled and equal-weight vectors are the SAME allocation, so the margin is
+identically zero and "pooled did not beat equal" was arithmetic, not evidence.
+
+Arming the live desk-weight vector is a PROMOTION to authority, the same class of decision as
+``engine.calibration_hub._PROMOTE_MARGIN = 0.05`` ("observed must clear its own null by ≥ 5pp,
+not just significantly"). It gets the same kind of bar. Four pre-registered conditions now
+stand between the shadow vector and the live one:
+
+  1. ``MIN_FAMILY_N`` effective graded events (unchanged — this gates ACCRUAL).
+  2. ``ARM_MIN_HELDOUT_N`` distinct events in the held-out tail. A weighted-mean comparison
+     over four observations is not a measurement; at eight, no single held-out event can be
+     more than ~1/8 of the verdict. Because ``HELDOUT_FRAC`` is 0.3, this raises the family's
+     effective bar to ~27 graded events in practice — deliberately. MIN_FAMILY_N gates when
+     the family has enough history to LOOK; this gates whether the TEST can decide anything.
+  3. The held-out tail must carry ≥ 2 distinct members. With one member the comparison is
+     undefined, not passed — a null result from a vacuous test is not evidence of anything.
+  4. ``heldout_edge_pooled`` must be POSITIVE, and must clear ``heldout_edge_equal`` by
+     ``max(ARM_MIN_MARGIN, ARM_MIN_MARGIN_REL × held-out outcome scale)``.
+
+Condition 4 is two ideas. The SIGN gate (``ARM_REQUIRE_POSITIVE_EDGE``): a live weight vector
+asserts "these weights capture edge", and ``pooled_weights`` can only produce a convex
+allocation — it cannot go short. So a negative realized held-out edge means every allocation
+over this family loses, and "loses slightly less than equal-weight" is not an edge to arm on.
+
+The MARGIN floor is scale-aware because this module is generic and the caller sets the units,
+so the RELATIVE bar (3% of the mean |outcome| on the tail) is the one that normally binds; the
+ABSOLUTE bar is a backstop so a family whose outcome scale collapses toward zero cannot arm on
+a proportionally large but materially meaningless difference.
+
+WHERE 3% COMES FROM (measured, not assumed — the tilt this module produces is deliberately
+bounded by ``tanh``, so the bar has to clear the noise band while staying REACHABLE):
+
+    margin / held-out outcome scale        p50      p99      max
+    pure noise, no real separation      0.0010   0.0154   0.0244   (2500 simulated draws,
+                                                                    every permitted tail size)
+    genuine separation (±3%, sd 4%)     0.0414     —      0.0589   (8 draws, range 0.023-0.059)
+    perfect separation at desk scale    0.0521                     (a always right, b always wrong)
+
+3% sits above the 99th percentile of what pure noise produces at the smallest permitted tail —
+and above the largest pure-noise excursion observed — while staying under the median of a
+genuinely separated family and under the mechanism's own ceiling, so a family that really has
+edge can still arm. The margins that provoked this change measured **0.012 of scale**: inside
+the pure-noise band, which is the quantitative form of "that is noise, not evidence". Every
+bar is an overridable keyword so a caller with a genuinely different endpoint pre-registers its
+own in its own module rather than quietly relaxing this one.
+
+Erring strict is the correct asymmetry here, and it costs nothing: display-tier accrual is
+untouched by any of these bars (a null NEVER blocks building), the shadow vector keeps being
+computed and reported every night, and ``armed: true`` stays what it claims to be — a
+statement that the loop is closed on evidence.
 
 THE MATH (deliberately simple, fully deterministic, no scipy)
 -------------------------------------------------------------
@@ -67,6 +126,16 @@ MAX_STEP = 0.10         # max L1 move of any single weight per update (trust reg
 MIN_FAMILY_N = 12       # effective graded events a family needs before it can ARM.
 MIN_MEMBER_N = 3        # a member with fewer than this borrows PURELY from the family mean.
 HELDOUT_FRAC = 0.3      # fraction of events reserved to test pooled-beats-equal (arming).
+
+# --- PRE-REGISTERED ARMING BARS (2026-07-25) ------------------------------------------- #
+# The sibling of engine.calibration_hub._PROMOTE_MARGIN. Arming the live weight vector is a
+# promotion to authority; a hair's-breadth held-out lift must not buy one. Rationale in the
+# module docstring (§THE ARMING MARGIN). Overridable per-caller via arming() keywords.
+ARM_MIN_HELDOUT_N = 8      # distinct held-out events required before the test can decide
+ARM_MIN_MARGIN = 0.0005    # absolute floor on (pooled − equal) held-out edge
+ARM_MIN_MARGIN_REL = 0.03  # ...or 3% of the held-out outcome scale, whichever is LARGER
+ARM_REQUIRE_POSITIVE_EDGE = True   # pooled must WIN out-of-sample, not merely lose less
+ARM_MIN_MEMBERS = 2        # a one-member family makes the pooled-vs-equal test vacuous
 
 
 @dataclass
@@ -198,6 +267,13 @@ class ArmStatus:
     heldout_edge_pooled: float | None
     heldout_edge_equal: float | None
     reason: str
+    # Pre-registered-margin fields (2026-07-25). ``pooled_beats_equal`` remains the RAW
+    # directional comparison so the report can still say "ahead, but not by enough";
+    # ``armed`` reflects the full gate.
+    margin: float | None = None           # heldout_edge_pooled − heldout_edge_equal
+    margin_required: float | None = None  # max(ARM_MIN_MARGIN, rel × held-out outcome scale)
+    heldout_n: float | None = None        # distinct events in the held-out tail
+    need_heldout_n: float | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -207,27 +283,48 @@ class ArmStatus:
                                     if self.heldout_edge_pooled is not None else None),
             "heldout_edge_equal": (round(self.heldout_edge_equal, 5)
                                    if self.heldout_edge_equal is not None else None),
+            "margin": round(self.margin, 6) if self.margin is not None else None,
+            "margin_required": (round(self.margin_required, 6)
+                                if self.margin_required is not None else None),
+            "heldout_n": self.heldout_n,
+            "need_heldout_n": self.need_heldout_n,
             "reason": self.reason,
         }
 
 
 def arming(events: Sequence[dict], *, k: float = K_POOL, lam: float = LAMBDA_SELF,
-           min_family_n: float = MIN_FAMILY_N, heldout_frac: float = HELDOUT_FRAC) -> ArmStatus:
+           min_family_n: float = MIN_FAMILY_N, heldout_frac: float = HELDOUT_FRAC,
+           min_heldout_n: float = ARM_MIN_HELDOUT_N,
+           min_margin: float = ARM_MIN_MARGIN,
+           min_margin_rel: float = ARM_MIN_MARGIN_REL,
+           require_positive_edge: bool = ARM_REQUIRE_POSITIVE_EDGE,
+           min_members: int = ARM_MIN_MEMBERS) -> ArmStatus:
     """The ARM-BY-EVIDENCE predicate (no env flags). Given a time-ordered list of graded
     events ``[{key, event_key, outcome, as_of}, ...]`` for ONE family, decide whether the
-    pooled weights may go LIVE. Two conditions, both required:
+    pooled weights may go LIVE. Four conditions, ALL required (see the module docstring
+    §THE ARMING MARGIN for why the last three exist):
 
       1. ≥ ``min_family_n`` effective (co-firing-collapsed) graded events in the family.
-      2. On a chronological held-out tail, the pooled weights produce a HIGHER realized edge
-         than equal weights (pooled must EARN the flip — never armed on in-sample fit).
+      2. ≥ ``min_heldout_n`` distinct events in the chronological held-out tail, carrying
+         ≥ ``min_members`` distinct members — below that the pooled-vs-equal comparison
+         cannot decide anything, and with one member it is arithmetically vacuous.
+      3. The pooled weights produce a POSITIVE realized edge on that tail. Losing less than
+         equal-weight is not an edge: ``pooled_weights`` yields a convex allocation, so a
+         negative held-out edge means every allocation over this family loses out-of-sample.
+      4. That edge clears equal-weight by ``max(min_margin, min_margin_rel × the tail's mean
+         |outcome|)`` — a PRE-REGISTERED floor, the sibling of calibration_hub's
+         ``_PROMOTE_MARGIN``. Pooled must EARN the flip; it is never armed on in-sample fit,
+         on a hair's-breadth lift, or on float dust.
 
     Returns an ArmStatus carrying distance-to-arming so an 'armory' report can show progress.
     Deterministic; degrades to not-armed (never crashes) on thin/degenerate data."""
     ev = [e for e in events if e.get("outcome") is not None]
     n_eff = float(len({e.get("event_key") or f"{e.get('key')}:{e.get('as_of')}" for e in ev}))
+    need_h = float(min_heldout_n)
     if n_eff < min_family_n:
         return ArmStatus(False, n_eff, float(min_family_n), None, None, None,
-                         f"accruing: {n_eff:.0f}/{min_family_n:.0f} effective events")
+                         f"accruing: {n_eff:.0f}/{min_family_n:.0f} effective events",
+                         need_heldout_n=need_h)
 
     # chronological split — fit pooling on the first (1-heldout), test on the tail.
     ev_sorted = sorted(ev, key=lambda e: str(e.get("as_of") or ""))
@@ -235,7 +332,8 @@ def arming(events: Sequence[dict], *, k: float = K_POOL, lam: float = LAMBDA_SEL
     train, test = ev_sorted[:cut], ev_sorted[cut:]
     if not test:
         return ArmStatus(False, n_eff, float(min_family_n), None, None, None,
-                         "no held-out tail to validate on yet")
+                         "no held-out tail to validate on yet", heldout_n=0.0,
+                         need_heldout_n=need_h)
 
     # per-key signed outcomes on train → pooled weights
     by_key: dict[str, list[float]] = {}
@@ -259,8 +357,42 @@ def arming(events: Sequence[dict], *, k: float = K_POOL, lam: float = LAMBDA_SEL
 
     ep, ee = realized(pooled), realized(eqw)
     beats = ep > ee
+    margin = ep - ee
+
+    # the tail's own outcome scale — the relative bar rides on this so the floor stays
+    # meaningful whatever units the caller's endpoint uses (module docstring §THE ARMING MARGIN)
+    tail_out = [abs(float(e["outcome"])) for e in test]
+    scale = (sum(tail_out) / len(tail_out)) if tail_out else 0.0
+    required = max(float(min_margin), float(min_margin_rel) * scale)
+
+    # held-out size + membership: below these the comparison cannot decide anything.
+    heldout_n = float(len({e.get("event_key") or f"{e.get('key')}:{e.get('as_of')}"
+                           for e in test}))
+    test_members = len({str(e.get("key")) for e in test})
+
+    def _held(reason: str) -> ArmStatus:
+        return ArmStatus(
+            armed=False, n_eff=n_eff, need_n=float(min_family_n), pooled_beats_equal=beats,
+            heldout_edge_pooled=ep, heldout_edge_equal=ee, reason=reason,
+            margin=margin, margin_required=required, heldout_n=heldout_n,
+            need_heldout_n=need_h)
+
+    if heldout_n < min_heldout_n:
+        return _held(f"held-out tail too thin to decide: {heldout_n:.0f}/{need_h:.0f} "
+                     f"effective events")
+    if test_members < min_members:
+        return _held("vacuous: the held-out tail carries one contributing member, so pooled "
+                     "and equal weighting are the SAME allocation — no test was run")
+    if require_positive_edge and ep <= 0:
+        return _held(f"held: pooled loses out-of-sample ({ep:+.5f}) — losing less than "
+                     f"equal-weight ({ee:+.5f}) is not an edge")
+    if margin < required:
+        return _held(f"held: pooled clears equal-weight by {margin:+.6f}, under the "
+                     f"pre-registered {required:.6f} bar")
+
     return ArmStatus(
-        armed=bool(beats), n_eff=n_eff, need_n=float(min_family_n),
-        pooled_beats_equal=beats, heldout_edge_pooled=ep, heldout_edge_equal=ee,
-        reason=("armed: pooled beats equal-weight on held-out tail"
-                if beats else "held: pooled does not beat equal-weight out-of-sample"))
+        armed=True, n_eff=n_eff, need_n=float(min_family_n), pooled_beats_equal=beats,
+        heldout_edge_pooled=ep, heldout_edge_equal=ee,
+        reason=(f"armed: pooled earns {ep:+.5f} out-of-sample and clears equal-weight by "
+                f"{margin:+.6f} (bar {required:.6f})"),
+        margin=margin, margin_required=required, heldout_n=heldout_n, need_heldout_n=need_h)
