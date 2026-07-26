@@ -44,6 +44,7 @@ SITE = ROOT / "site"
 RESEARCH_DIR = SITE / "research"
 SITEMAP = SITE / "sitemap.xml"
 EXCERPTS = ROOT / "data" / "research_vault" / "excerpts.json"
+SLUG_LOCK = ROOT / "data" / "research_vault" / "slug_lock.json"
 
 # Render-side re-cap on the published excerpt. engine/research_vault/excerpt.py
 # already caps at 4200 when it derives, but excerpts.json is committed repo data
@@ -130,15 +131,50 @@ def _title(item: dict) -> str:
     return clean_title(item.get("title")) or (item.get("title") or "").strip()
 
 
-def slug_map(items: list[dict]) -> dict[str, str]:
+def load_slug_lock() -> dict[str, str]:
+    """id -> the slug a report was FIRST published under (committed snapshot).
+
+    The slug is derived from the TITLE, so any later title change renames the
+    page — and ``site/research/`` is committed with the render lane doing a plain
+    ``git add site/``, so the old file is never pruned: it keeps serving at its
+    indexed URL, frozen at pre-repair content, while the sitemap advertises only
+    the new one. #3570's PDF title recovery would have moved 19 such pages.
+
+    Reading a lock makes the URL a property of the report rather than of its
+    current title, so titles stay free to improve. Returns ``{}`` on ANY failure —
+    an absent lock must render exactly today's pages, so it can never be a build
+    dependency. Shape is validated rather than trusted: the file is repo data.
+    """
+    try:
+        raw = json.loads(SLUG_LOCK.read_text(encoding="utf-8"))
+        blob = raw.get("slugs") if isinstance(raw, dict) else None
+        if not isinstance(blob, dict):
+            return {}
+        return {k: v for k, v in blob.items()
+                if isinstance(k, str) and isinstance(v, str) and k and v}
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:  # noqa: BLE001 — never let the snapshot break the build
+        log.warning("research pages: slug lock unusable (%s) — deriving from titles", exc)
+        return {}
+
+
+def slug_map(items: list[dict], lock: dict[str, str] | None = None) -> dict[str, str]:
     """id -> URL slug for every catalog item (deterministic). Shared with the vault
-    build so its cards can link straight to ``research/<slug>.html``."""
-    seen: set[str] = set()
+    build so its cards can link straight to ``research/<slug>.html``.
+
+    A locked id keeps its published slug; anything else derives from the title.
+    """
+    lock = load_slug_lock() if lock is None else lock
+    ids = [it.get("id") or "" for it in items]
+    # Every locked slug is reserved UP FRONT: a derived slug must never collide
+    # with a published URL that simply comes later in the list.
+    seen: set[str] = {lock[i] for i in ids if i and lock.get(i)}
     out: dict[str, str] = {}
-    for it in items:
-        idv = it.get("id") or ""
-        if idv:
-            out[idv] = _slug(_title(it), idv, seen)
+    for it, idv in zip(items, ids):
+        if not idv:
+            continue
+        out[idv] = lock.get(idv) or _slug(_title(it), idv, seen)
     return out
 
 
@@ -369,12 +405,14 @@ def build(catalog: dict | None = None) -> int:
     idx_tmpl = env.get_template("research_index.html.j2")
 
     all_norm = [_norm(it) for it in items]
-    seen: set[str] = set()
+    # One slug authority: the lock pins every already-published URL, and slug_map
+    # derives the rest. The vault build injects the SAME map onto items, so an
+    # injected slug and this one can no longer disagree.
+    derived = slug_map(items)
     slug_by_id: dict[str, str] = {}
     for n, it in zip(all_norm, items):
         s = (it.get("slug") or "").strip()          # reuse the vault build's slug if injected
-        slug_by_id[n["id"]] = s or _slug(n["title"], n["id"], seen)
-        seen.add(slug_by_id[n["id"]])
+        slug_by_id[n["id"]] = s or derived.get(n["id"], "")
 
     RESEARCH_DIR.mkdir(parents=True, exist_ok=True)
     from lib.pages import write_page  # noqa: PLC0415

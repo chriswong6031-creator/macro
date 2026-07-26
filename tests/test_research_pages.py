@@ -210,6 +210,81 @@ def test_build_prunes_the_page_a_retitle_orphans(monkeypatch, tmp_path):
     assert (tmp_path / "research" / "index.html").exists()      # hub is never pruned
 
 
+def test_committed_pages_are_never_orphaned_by_a_retitle():
+    """Regression: a title repair must not renumber an already-published URL.
+
+    The slug is derived from the title, so #3570's PDF title recovery moved 19
+    of the 86 published slugs. Combined with the prune above — 19 stale is just
+    under the ``max(4, 86//4) = 21`` refusal cap — the next render would have
+    DELETED those 19 files, turning 19 indexed /research/ URLs into 404s and
+    resetting their ranking, purely as a side effect of better <title> text.
+
+    ``data/research_vault/slug_lock.json`` pins the slug a report was first
+    published under, so the URL is a property of the report and titles stay free
+    to improve. This asserts the whole committed section survives the builder.
+    """
+    from pathlib import Path
+
+    from scripts.build_research_vault import _public_catalog, load_catalog
+    catalog = _public_catalog(load_catalog())
+    if not catalog["items"]:
+        pytest.skip("committed catalog is empty")
+    committed = {p.stem for p in Path("site/research").glob("*.html")
+                 if p.name != "index.html"}
+    if not committed:
+        pytest.skip("no committed report pages yet — nothing to orphan")
+    generated = set(rp.slug_map(catalog["items"]).values())
+    orphaned = sorted(committed - generated)
+    assert not orphaned, (
+        f"{len(orphaned)} published /research/ page(s) would be pruned to a 404 by a "
+        f"retitle — add them to slug_lock.json: {orphaned[:5]}")
+
+
+def test_slug_lock_pins_the_url_while_the_title_moves():
+    item = dict(_ITEM, id="marketdesk-abc123-71f35b", title="A Brand New Title")
+    lock = {"marketdesk-abc123-71f35b": "the-old-published-slug-71f35b"}
+    assert rp.slug_map([item], lock)[item["id"]] == "the-old-published-slug-71f35b"
+    # unlocked ids still derive from the (repaired) title
+    assert rp.slug_map([item], {})[item["id"]] == rp._slug(rp._title(item), item["id"], set())
+
+
+def test_slug_lock_reserves_locked_slugs_against_a_derived_collision():
+    """A derived slug must not land on a published URL that comes later."""
+    locked = dict(_ITEM, id="md-locked-aaa111", title="Whatever")
+    deriving = dict(_ITEM, id="md-derive-aaa222", title="Taken Slug")
+    lock = {"md-locked-aaa111": "taken-slug-aaa222"}   # collides with what B derives
+    out = rp.slug_map([deriving, locked], lock)
+    assert out["md-locked-aaa111"] == "taken-slug-aaa222"
+    assert out["md-derive-aaa222"] != out["md-locked-aaa111"]
+    assert len(set(out.values())) == 2
+
+
+def test_missing_or_corrupt_slug_lock_degrades_to_derivation(monkeypatch, tmp_path):
+    """An absent lock must render exactly today's pages — never a build dependency."""
+    monkeypatch.setattr(rp, "SLUG_LOCK", tmp_path / "nope.json")
+    assert rp.load_slug_lock() == {}
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not json", encoding="utf-8")
+    monkeypatch.setattr(rp, "SLUG_LOCK", bad)
+    assert rp.load_slug_lock() == {}
+    wrong_shape = tmp_path / "shape.json"
+    wrong_shape.write_text('{"slugs": ["a", "b"]}', encoding="utf-8")
+    monkeypatch.setattr(rp, "SLUG_LOCK", wrong_shape)
+    assert rp.load_slug_lock() == {}
+
+
+def test_committed_slug_lock_covers_every_committed_page():
+    """The lock must not silently drift behind the section it protects."""
+    from pathlib import Path
+    lock = rp.load_slug_lock()
+    committed = {p.stem for p in Path("site/research").glob("*.html")
+                 if p.name != "index.html"}
+    if not committed:
+        pytest.skip("no committed report pages yet")
+    assert committed - set(lock.values()) == set(), "published page missing from slug_lock"
+    assert len(set(lock.values())) == len(lock), "slug_lock maps two ids to one URL"
+
+
 def test_build_refuses_to_mass_prune_on_a_partial_catalog(monkeypatch, tmp_path, caplog):
     """A degraded catalog must not be able to de-index the section."""
     _redirect_out(monkeypatch, tmp_path)
