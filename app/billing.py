@@ -547,7 +547,14 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         "mode": "subscription",
         "line_items": [{"price": _price_id(lookup_key), "quantity": 1}],
         "client_reference_id": user_id,
-        "success_url": f"{MM_SITE_BASE}/plans.html?checkout=success",
+        # Land a PAYING customer on the desk, not back on the pricing page. The Elements
+        # sheet lane already ends at start.html (its Done step -> loginDest()); hosted
+        # Checkout used to return to /plans.html?checkout=success, where the banner told
+        # the user to "head to the dashboard" without giving them a link and the plan
+        # cards still read "Subscribe". site/hub-welcome.js consumes ?checkout=success on
+        # the hub and confirms the tier it reads back from /api/me. A CANCEL still belongs
+        # on the pricing page — that user is still choosing.
+        "success_url": f"{MM_SITE_BASE}/start.html?checkout=success",
         "cancel_url": f"{MM_SITE_BASE}/plans.html?checkout=cancel",
         "subscription_data": {
             "trial_period_days": _tier_trial_days(tier),

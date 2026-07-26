@@ -69,6 +69,7 @@ from typing import Any
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
+from starlette.datastructures import MutableHeaders
 
 # Server-side brain runs: a chat turn is owned by the registry, not by the socket
 # that started it, so a backgrounded tab or a culled connection can never destroy
@@ -105,6 +106,55 @@ SUPABASE_ANON_KEY = os.environ.get(
 app = FastAPI(title="macro API", version="0.1.0")
 
 log = logging.getLogger("macro.api")
+
+
+class _NoStoreAPI:
+    """Every /api/* response is per-user — never let a shared cache keep one.
+
+    FOUND LIVE (2026-07-25 Stripe go-live audit): macro-api sent NO Cache-Control on
+    /api/*, so the EdgeOne edge applied its own default and cached **404** responses,
+    with a cache key that IGNORES the Authorization header. `GET /api/billing/portal`
+    404s for every user without a Stripe customer (i.e. every free user), and that 404
+    was then replayed from the edge to PAYING subscribers — who saw "no billing account
+    yet" and could not reach the billing portal at all (the only self-serve path to
+    update a card, cancel, or downgrade). Reproduced twice with `eo-cache-status: HIT`.
+
+    Measured scope at the time: 404 was cached; 401 and 200 were not — so /api/me and
+    /api/account happened to be safe. That is a CDN heuristic, not a guarantee, and it
+    can change under us. This removes the dependency entirely: the origin now states the
+    caching rule for its own responses instead of leaving it to the edge.
+
+    `setdefault` semantics — a route that already set Cache-Control (the SSE streams'
+    `no-cache`, the regwall/paywall gates' `no-store`) keeps its own value.
+
+    Deliberately a RAW ASGI middleware, not @app.middleware("http"): the latter is
+    Starlette's BaseHTTPMiddleware, which wraps the response body in an anyio stream and
+    has a long history of interfering with StreamingResponse. This app serves several
+    long-lived SSE streams under /api/ — the brain lane and its re-attach stream
+    (app/brain_runs.py) among them — and a header-only concern has no business in the
+    body path for any of them. This touches exactly one dict on the `http.response.start`
+    message and passes every body chunk straight through.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or not scope.get("path", "").startswith("/api/"):
+            await self.app(scope, receive, send)
+            return
+
+        async def _send(message):
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                if "cache-control" not in headers:
+                    headers["cache-control"] = "private, no-store"
+            await send(message)
+
+        await self.app(scope, receive, _send)
+
+
+app.add_middleware(_NoStoreAPI)
 
 
 def _commit() -> str:

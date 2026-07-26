@@ -1733,6 +1733,12 @@
     manageBillingNote:['Update your card, download invoices, or cancel.', '更新银行卡、下载发票或取消订阅。'],
     openPortal:  ['Open', '打开'],
     portalErr:   ['Couldn’t open billing — please try again.', '无法打开账单页，请重试。'],
+    // A comp / lifetime grant has no Stripe customer, so there is no portal to open. Say
+    // that plainly instead of offering a button that 404s and then blaming the network:
+    // "please try again" is a lie when retrying can never work.
+    grantedPlan: ['Granted access', '已授予的权限'],
+    grantedNote: ['This plan was granted directly — there’s no subscription or card to manage.', '此方案为直接授予——没有需要管理的订阅或银行卡。'],
+    portalNone:  ['This account has no Stripe billing — nothing to open.', '此账号没有 Stripe 账单——无可打开。'],
     opening:     ['Opening…', '正在打开…'],
     onFreePlan:  ['You’re on the free plan.', '你正在使用免费版。'],
     planIncludes:['Your plan includes', '你的方案包含'],
@@ -2443,7 +2449,11 @@
         '<span><span class="l-en">' + _escHtml(feats[fi][0]) + '</span><span class="l-zh">' + _escHtml(feats[fi][1]) + '</span></span></div>';
     }
     html += '</div>';
-    if (tier !== 'free') {
+    // The Stripe portal only exists for a row Stripe actually owns. A comp / lifetime
+    // grant (source 'comp', the same signal _sdPlanChip reads for its Lifetime chip) has
+    // no stripe_customer_id, so /api/billing/portal 404s for it by design — offering the
+    // button anyway produced a dead "Open" that failed every time.
+    if (tier !== 'free' && (p.source || 'stripe') === 'stripe') {
       html += '<div class="sd-group">' +
           '<div class="sd-row"><div class="sd-row-line">' +
             '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('manageBilling') + '</span>' +
@@ -2451,6 +2461,13 @@
             '<button type="button" class="sd-link" id="sd-portal-btn">' + _sdBl('openPortal') + SD_ICON.extlink + '</button>' +
           '</div></div>' +
           '<div class="sd-msg" id="sd-bill-msg" role="alert"></div>' +
+        '</div>';
+    } else if (tier !== 'free') {
+      html += '<div class="sd-group">' +
+          '<div class="sd-row"><div class="sd-row-line">' +
+            '<span class="sd-row-main"><span class="sd-row-lbl">' + _sdBl('grantedPlan') + '</span>' +
+              '<span class="sd-row-desc">' + _sdBl('grantedNote') + '</span></span>' +
+          '</div></div>' +
         '</div>';
     }
     host.innerHTML = html + '</div>';
@@ -2470,11 +2487,16 @@
         var h = {}; if (tok) h['Authorization'] = 'Bearer ' + tok;
         return fetch(base + '/api/billing/portal', { headers: h, credentials: 'include' });
       })
-      .then(function (r) { return r && r.ok ? r.json() : null; })
-      .then(function (j) {
+      .then(function (r) {
+        // Keep the status: 404 means this account has no Stripe billing at all (a comp
+        // that outlived its subscription, say), which retrying will never fix.
+        if (r && r.ok) return r.json().then(function (j) { return { j: j }; });
+        return { status: r ? r.status : 0 };
+      })
+      .then(function (res) {
         _sdSetBusy(btn, false);
-        if (j && j.url) { location.href = j.url; return; }
-        _sdMsg('sd-bill-msg', _sdL('portalErr'), 'err');
+        if (res && res.j && res.j.url) { location.href = res.j.url; return; }
+        _sdMsg('sd-bill-msg', _sdL(res && res.status === 404 ? 'portalNone' : 'portalErr'), 'err');
       })
       .catch(function () { _sdSetBusy(btn, false); _sdMsg('sd-bill-msg', _sdL('portalErr'), 'err'); });
   }
