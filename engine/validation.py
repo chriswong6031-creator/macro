@@ -703,10 +703,20 @@ def newey_west_tstat(x, lags: int = 4) -> dict:
             "p": round(2.0 * (1.0 - _norm_cdf(abs(t))), 4), "n": n}
 
 
-def ic_summary(ics, periods_per_year: int = 4) -> dict:
+def ic_summary(ics, periods_per_year: int = 4, hac_lags: int | None = None) -> dict:
     """Summarize a time series of per-date ICs: mean IC, IC vol, IC-IR (mean/vol),
     annualized IC-IR, a Newey-West t-stat (the IC series autocorrelates when the
-    forward window overlaps the sampling step), hit rate and n."""
+    forward window overlaps the sampling step), hit rate and n.
+
+    `hac_lags` OVERRIDES the Newey-West truncation lag. The default
+    (``periods_per_year // 2``) is a REBALANCE-cadence heuristic: it assumes the grid is
+    sampled at roughly the horizon, so a handful of lags spans the overlap. It silently
+    under-corrects whenever the grid is sampled FINER than the forward window — daily
+    cross-sections against a 21-day forward return overlap 21 deep, and Bartlett-weighting
+    only 6 of those lags understates the long-run variance and inflates t. Pass the measured
+    overlap (forward horizon ÷ sampling step, in the same units) whenever the caller knows
+    its own cadence; the lag actually used is echoed back as ``hac_lags``.
+    """
     import math
     s = pd.Series(ics).dropna()
     n = len(s)
@@ -714,10 +724,19 @@ def ic_summary(ics, periods_per_year: int = 4) -> dict:
         return {"n": n}
     mean, sd = float(s.mean()), float(s.std(ddof=1))
     icir = mean / sd if sd else float("nan")
-    nw = newey_west_tstat(s, lags=max(1, periods_per_year // 2))
+    # coerce rather than isinstance-check: a numpy int or a 21.0 float must NOT silently fall
+    # back to the (shorter, anticonservative) default — that is the very bug this override fixes
+    try:
+        lags = int(hac_lags) if hac_lags is not None else 0
+    except (TypeError, ValueError):
+        lags = 0
+    if lags < 1:
+        lags = max(1, periods_per_year // 2)
+    nw = newey_west_tstat(s, lags=lags)
     return {"mean_ic": round(mean, 4), "ic_vol": round(sd, 4), "ic_ir": round(icir, 3),
             "ic_ir_ann": round(icir * math.sqrt(periods_per_year), 3),
-            "t_hac": nw["t"], "p_hac": nw["p"], "hit": round(float((s > 0).mean()), 3), "n": n}
+            "t_hac": nw["t"], "p_hac": nw["p"], "hit": round(float((s > 0).mean()), 3), "n": n,
+            "hac_lags": lags}
 
 
 def benjamini_hochberg(pvals: dict, alpha: float = 0.10) -> dict:
@@ -888,12 +907,15 @@ def cross_sectional_resid(signal, loadings):
 
 
 def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: dict,
-                   periods_per_year: int = 12) -> dict:
+                   periods_per_year: int = 12, hac_lags: int | None = None) -> dict:
     """Raw vs factor-NEUTRALIZED rank-IC across a rebalance grid. `*_by_date` map a date
     to a cross-section (signal Series / forward-return Series / loadings DataFrame). Returns
     raw and incremental ic_summary blocks + the mean-IC delta — the share of a signal's edge
     that is NOT just repackaged factor exposure. A signal whose IC collapses to ~0 after
-    neutralization carries no independent information, however good its raw IC looked."""
+    neutralization carries no independent information, however good its raw IC looked.
+
+    `hac_lags` is forwarded to both ic_summary calls — see its note there on why the
+    periods_per_year default under-corrects an overlapping grid."""
     raw_ics, inc_ics = [], []
     for d, sig in signal_by_date.items():
         fwd = fwd_by_date.get(d)
@@ -905,8 +927,8 @@ def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: di
             resid = cross_sectional_resid(sig, load)
             if len(resid):
                 inc_ics.append(rank_ic(resid, fwd))
-    raw = ic_summary(raw_ics, periods_per_year=periods_per_year)
-    inc = ic_summary(inc_ics, periods_per_year=periods_per_year)
+    raw = ic_summary(raw_ics, periods_per_year=periods_per_year, hac_lags=hac_lags)
+    inc = ic_summary(inc_ics, periods_per_year=periods_per_year, hac_lags=hac_lags)
     rm, im = raw.get("mean_ic"), inc.get("mean_ic")
     return {"raw": raw, "incremental": inc,
             "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,

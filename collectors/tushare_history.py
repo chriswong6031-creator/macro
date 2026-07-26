@@ -2,11 +2,21 @@
 
 The snapshot collectors overwrite a single day; the predictive-validation harness
 (engine/china_validation) needs a GRID of historical cross-sections to compute forward-return
-rank-IC. This maintains a compact weekly-grid history — for only the names in the china_search
-panel (the names that have forward returns to validate against) — backfilling any missing grid
-dates from Tushare on first run and adding the newest each build, deduped on ticker+date. So the
+rank-IC. This maintains a compact history — for only the names in the china_search panel (the
+names that have forward returns to validate against) — backfilling any missing grid dates from
+Tushare on first run and adding the newest each build, deduped on ticker+date. So the
 ``fundflow`` / ``chips`` validation families compute a REAL verdict immediately (using the history
 the ¥-tier already paid for) instead of waiting months to accrue forward.
+
+CADENCE — the store is DAILY, not weekly, despite the weekly `_grid_dates` stride. The grid is
+tail-anchored (``idx[-260:][::5]``), so every build whose panel gained a trading day emits a
+stride shifted one day from the last one; the store is append-only, so it has accreted every
+phase. Measured 2026-07-25: 273 distinct dates over ~14 months, median gap 1 trading day. This
+is harmless-to-good for the collector (more cross-sections, still capped at _MAX_BACKFILL/build)
+but it INVALIDATED the overlap assumptions downstream — engine/china_validation sized its HAC
+lags and its N gate for a weekly step. That harness now measures the cadence instead of assuming
+it; see its module docstring. Do not "fix" the stride here without re-reading that note: the
+dense history is an asset, and anchoring the grid now would not undo the dates already stored.
 
 GATED: no-ops unless ``TUSHARE_TOKEN`` is set. Both queries are leakage-irrelevant (raw signal
 snapshots; the harness does the leak-guarded forward alignment).
@@ -29,7 +39,9 @@ log = logging.getLogger("tushare_history")
 
 FLOW_HIST = config.data_dir() / "tushare" / "flow_hist.parquet"
 CHIPS_HIST = config.data_dir() / "tushare" / "chips_hist.parquet"
-_GRID_WEEKS = 52          # ~1y of weekly cross-sections (≥ _MIN_PROVEN_N=40 → can reach "proven")
+_GRID_WEEKS = 52          # ~1y of history. NOTE: the emitted grid is daily in practice (see the
+                          # module CADENCE note); china_validation gates on distinct weeks +
+                          # non-overlapping windows, never on the raw cross-section count.
 _MAX_BACKFILL = 60        # safety cap on fetches per build (first run backfills the grid, then ~1/build)
 
 
@@ -49,7 +61,9 @@ def _panel_tickers() -> set[str]:
 
 
 def _grid_dates(n_weeks: int = _GRID_WEEKS) -> list[str]:
-    """Weekly trading-day grid (YYYYMMDD) from the china_search close-panel index, newest last."""
+    """Weekly-STRIDE trading-day grid (YYYYMMDD) from the china_search close-panel index, newest
+    last. Tail-anchored, so the stride phase shifts one trading day whenever the panel grows —
+    the accreted store is therefore daily, not weekly (module CADENCE note)."""
     try:
         cp = config.data_dir() / "china_search" / "closes.parquet"
         if not cp.exists():
@@ -114,7 +128,7 @@ def _accrue(path, api: str, fields: str, value_attr, col: str, panel: set[str],
 
 
 def refresh() -> int:
-    """Maintain the fund-flow + chips weekly-grid history. Gated; returns #dates backfilled."""
+    """Maintain the fund-flow + chips cross-section history. Gated; returns #dates backfilled."""
     if not tc.enabled():
         return 0
     panel = _panel_tickers()
