@@ -228,6 +228,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Incumbent × semivariance-asymmetry confluence / causal F4 stress arms (PSS-F4R/F4H)'
+    verdict: 'KILLED as a hard gate — causal rejection, terminality, volume/range exhaustion, relative/systemic repair, survival, structure-break, and frozen hazard variants were tested on 1,300 names / 25,343 incumbent events with DEV 2020H2–2022, VAL 2023–24, and FWD 2025+ splits. No hand-built construction cleared MAE/tail promotion, and combined-minus-orthogonal F4 ablations were effectively zero across eras. Do not rebuild by retiming persistence, adding F4 stress to the incumbent, or wrapping F4 around the orthogonal locator. The F4-free orthogonal score remains open only as a prospective shadow locator.'
+    source: '`reports/pss_f4_repair.md`; `reports/pss_f4_hazard.md`; `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F4 repair wave (2026-07-26)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'

@@ -310,7 +310,9 @@ def test_nothing_else_became_public_as_a_side_effect():
     if base.returncode != 0:            # shallow clone / detached CI checkout
         pytest.skip("origin/main not available for a diff")
     before = yaml.safe_load(base.stdout)
-    assert set(policy["public"]["exact"]) - set(before["public"]["exact"]) == {PATH}
+    added = set(policy["public"]["exact"]) - set(before["public"]["exact"])
+    expected = set() if PATH in set(before["public"]["exact"]) else {PATH}
+    assert added == expected
     assert set(before["public"]["exact"]) - set(policy["public"]["exact"]) == set()
     assert policy["public"]["prefixes"] == before["public"]["prefixes"]
     assert policy.get("free_registered") == before.get("free_registered")
