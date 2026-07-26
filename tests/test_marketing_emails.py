@@ -23,6 +23,7 @@ time-sensitive call takes an explicit ``now``.
 """
 from __future__ import annotations
 
+import re
 import sys
 import urllib.parse
 from datetime import datetime, timedelta, timezone
@@ -61,6 +62,9 @@ def _clean_env(monkeypatch):
     monkeypatch.setattr(mailer, "SUPABASE_SERVICE_ROLE_KEY", "svc-key")
     # the throttle must never make a test wait
     monkeypatch.setattr(me.time, "sleep", lambda *_a, **_k: None)
+    # `log once` state is module-global; a leftover entry would silence the line a later
+    # test might read (the #3494 frozen-seed lesson, applied to a set instead of a dict)
+    me._UNCONFIGURED_LOGGED.clear()
 
 
 # --------------------------------------------------------------------------- #
@@ -145,7 +149,13 @@ class _Smtp:
 
 
 class _Api:
-    """marketing_emails._pg + _auth_page: the roster, entitlements and campaigns."""
+    """marketing_emails._pg + _auth_page: the roster, entitlements and campaigns.
+
+    ``auth_page`` pages for real (200 rows per page, the GoTrue default this module
+    declares), because the campaign drain's whole resume story is which PAGE a wake starts
+    on — a fake that answered everything on page 1 could not tell a working cursor from a
+    broken one.
+    """
 
     def __init__(self, users=None, ents=None, campaigns=None, log_keys=None):
         self.users = users if users is not None else []
@@ -154,18 +164,33 @@ class _Api:
         self.log_keys = list(log_keys or [])
         self.patches: list[tuple[str, dict]] = []
         self.parked: list[dict] = []
+        self.no_smtp: list[dict] = []
+        self.welcomed: list[str] = []
+        self.pages_read: list[int] = []
+        self.fail_ents = False
+        self.fail_page: int | None = None
 
     def auth_page(self, page, per_page=200):
-        return self.users if page == 1 else []
+        self.pages_read.append(page)
+        if self.fail_page is not None and page == self.fail_page:
+            raise RuntimeError("gotrue unreachable")
+        per = me._ROSTER_PAGE
+        return self.users[(page - 1) * per: page * per]
 
     def pg(self, method, path, body=None, prefer=None, timeout=8):
         path = urllib.parse.unquote(path)
         if method == "GET" and path.startswith("user_entitlements"):
+            if self.fail_ents:
+                raise RuntimeError("postgrest blip")
             return [{"user_id": uid, **v} for uid, v in self.ents.items()]
+        if method == "GET" and path.startswith("email_log?select=idem_key&idem_key=like.welcome:"):
+            return [{"idem_key": f"welcome:{u}"} for u in self.welcomed]
         if method == "GET" and path.startswith("email_log?select=idem_key"):
             return [{"idem_key": k} for k in self.log_keys]
         if method == "GET" and path.startswith("email_log?status=eq.queued"):
             return list(self.parked)
+        if method == "GET" and path.startswith("email_log?status=eq.skipped_no_smtp"):
+            return list(self.no_smtp)
         if method == "GET" and path.startswith("email_campaigns?status=in."):
             return [c for c in self.campaigns.values() if c.get("status") in ("queued", "sending")]
         if method == "GET" and path.startswith("email_campaigns?id=eq."):
@@ -504,7 +529,8 @@ def test_campaigns_default_off_so_merging_cannot_send(monkeypatch, wired):
     _mail_on(monkeypatch)
     api.campaigns = {c["id"]: c for c in [_campaign()]}
     out = me.drain_campaigns()
-    assert out == {"campaigns": 0, "sent": 0, "duplicate": 0, "skipped": 0, "failed": 0}
+    assert out == {"campaigns": 0, "sent": 0, "duplicate": 0, "skipped": 0,
+                   "skipped_no_smtp": 0, "failed": 0}
     assert smtp.sent == []
 
 
@@ -728,3 +754,450 @@ def test_the_window_cli_reports_the_bound_and_sends_nothing(monkeypatch, capsys,
     out = json.loads(capsys.readouterr().out)
     assert out["armed"] is True and out["floor"].startswith("2026-07-")
     assert wired[1].sent == []
+
+
+# ===========================================================================
+# #2 — THE RELAY GATE. Production has SMTP off TODAY, so this is the acute one.
+# ===========================================================================
+def _uid(i: int) -> str:
+    return f"{i:08d}-0000-4000-8000-000000000000"
+
+
+def _many(n: int, base=NOW):
+    return [_user(_uid(i), f"u{i}@example.com", base - timedelta(minutes=i + 1))
+            for i in range(n)]
+
+
+def test_the_welcome_sweep_refuses_to_run_with_no_relay(monkeypatch, wired):
+    """THE ACUTE DEFECT. `skipped_no_smtp` is a TERMINAL ledger row, so every account it
+    touches has its `welcome:{user_id}` key spent for good: a later retry answers
+    `duplicate` and sends nothing, and the parked drain only ever looked for
+    `status='queued'`. Arming the welcome leg today would therefore have destroyed the
+    welcome email for every account in the window while reporting `sent: N`.
+
+    Refusing to start is the only recoverable version: nothing is claimed, so the window
+    is still intact the day a relay lands."""
+    led, smtp, api = wired
+    _arm(monkeypatch, MAIL_WELCOME_AFTER=(NOW - timedelta(hours=6)).isoformat())  # no _mail_on
+    api.users = [_user(U1, "a@example.com", NOW - timedelta(hours=1)),
+                 _user(U2, "b@example.com", NOW - timedelta(hours=2))]
+
+    out = me.sweep_welcome(now=NOW)
+
+    assert out["not_configured"] is True
+    assert out["sent"] == 0 and out["scanned"] == 0
+    assert led.rows == {}, "NOT ONE idem_key may be claimed with no relay to spend it on"
+    assert smtp.sent == []
+
+
+def test_the_campaign_drain_refuses_to_run_with_no_relay(monkeypatch, wired):
+    """Same burn, same refusal: a campaign drained with no relay claims
+    `campaign:{id}:{user_id}` for its whole segment and can never re-send to any of them."""
+    led, smtp, api = wired
+    _arm(monkeypatch)                                    # no _mail_on
+    cid = _campaign()["id"]
+    api.users = [_user(U1, "a@example.com", NOW)]
+    api.campaigns = {cid: _campaign()}
+
+    out = me.drain_campaigns()
+
+    assert out["not_configured"] is True and out["campaigns"] == 0
+    assert led.rows == {}
+    assert api.campaigns[cid]["status"] == "queued", "and it is still there to send later"
+
+
+def test_skipped_no_smtp_is_never_counted_as_a_send():
+    """It used to share the `sent` column, which is what made mail-off mode look like a
+    working broadcast in the census the operator reads."""
+    assert me._bucket("skipped_no_smtp") == "skipped_no_smtp"
+    assert me._bucket("sent") == "sent"
+    out = {"sent": 0, "skipped_no_smtp": 0}
+    me._tally(out, "skipped_no_smtp")
+    assert out == {"sent": 0, "skipped_no_smtp": 1}
+
+
+def test_a_row_burnt_by_an_earlier_mail_off_run_is_recovered_once_smtp_exists(monkeypatch, wired):
+    """The recovery lane for rows that already exist on main.
+
+    A `skipped_no_smtp` row is terminal and its idem_key is spent, so nothing would ever
+    have looked at it again — the message was simply gone. It is now re-offered exactly
+    like a parked row: suppression re-checked, message rebuilt, transport handed the
+    result, THIS row PATCHed."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    key = f"welcome:{U1}"
+    led.rows[key] = {"idem_key": key, "status": "skipped_no_smtp", "detail": "MAIL_SMTP_* unset"}
+    api.no_smtp = [_parked(key, "welcome", "a@example.com", U1)]
+
+    out = me.drain_parked()
+
+    assert out["sent"] == 1
+    assert led.rows[key]["status"] == "sent" and led.rows[key]["detail"] == "drained"
+    assert [m["To"] for m in smtp.sent] == ["a@example.com"]
+    assert list(led.rows) == [key], "completed IN PLACE — nothing re-claimed"
+
+
+def test_the_recovery_lane_is_not_even_queried_while_the_relay_is_still_off(monkeypatch, wired):
+    """Re-skipping a row is work with no outcome, and it would re-PATCH a row that is
+    already in the right terminal state."""
+    led, smtp, api = wired
+    _arm(monkeypatch)                                    # no _mail_on
+    key = f"welcome:{U1}"
+    led.rows[key] = {"idem_key": key, "status": "skipped_no_smtp"}
+    api.no_smtp = [_parked(key, "welcome", "a@example.com", U1)]
+    assert me.drain_parked()["scanned"] == 0
+
+
+# ===========================================================================
+# #3 — A campaign must reach its WHOLE audience, and never lie about finishing
+# ===========================================================================
+def test_a_segment_larger_than_one_wake_is_drained_across_wakes(monkeypatch, wired):
+    """THE 500-PERSON CEILING. The drain re-read the same first 500 members every wake,
+    skipped them all as already-claimed, ran off the end of an empty loop and called
+    `_bump(done=True)`. A 600-person segment received exactly 500 emails and the row said
+    `done`, so it was never selected again and the other 100 were stranded silently."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = _many(600)
+    api.campaigns = {cid: {**_campaign(), "queued_n": 600}}
+
+    first = me.drain_campaigns()
+    assert first["sent"] == me._CAMPAIGN_MAX_PER_WAKE == 500
+    assert api.campaigns[cid]["status"] == "sending", "500 of 600 is not finished"
+
+    api.log_keys = [f"campaign:{cid}:{_uid(i)}" for i in range(500)]
+    second = me.drain_campaigns()
+    assert second["sent"] == 100
+    assert api.campaigns[cid]["status"] == "done", "...and now it genuinely is"
+
+    reached = {m["To"] for m in smtp.sent}
+    assert len(reached) == 600, "every member, exactly once"
+
+
+def test_the_drain_never_overwrites_the_operators_plan_number(monkeypatch, wired):
+    """`queued_n` is written by the console from the FULL SQL count — it is what the
+    operator approved. The drain used to replace it with one wake's slice, so a truncated
+    send read "queued 500 · sent 500 · done" and the discrepancy was not merely
+    unexplained, it was unrecorded."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = _many(600)
+    api.campaigns = {cid: {**_campaign(), "queued_n": 2000}}
+
+    me.drain_campaigns()
+
+    assert api.campaigns[cid]["queued_n"] == 2000
+    assert all("queued_n" not in patch for _cid, patch in api.patches), \
+        "the drain must not touch it at all"
+
+
+def test_a_later_wake_starts_deeper_in_the_roster(monkeypatch, wired):
+    """The cursor this lane has no column for, derived from the ledger: every recipient
+    already offered holds an `email_log` row, so `len(done)` is the progress marker and the
+    scan resumes from the page that provably cannot be past the first unprocessed person."""
+    assert me._resume_page(0) == 1
+    assert me._resume_page(1) == 1
+    assert me._resume_page(me._ROSTER_PAGE) == 1
+    assert me._resume_page(me._ROSTER_PAGE + 1) == 2
+    assert me._resume_page(500) == 3
+
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = _many(600)
+    api.campaigns = {cid: _campaign()}
+    api.log_keys = [f"campaign:{cid}:{_uid(i)}" for i in range(500)]
+
+    api.pages_read.clear()
+    me.drain_campaigns()
+    assert min(api.pages_read) >= 3, "wake 2 must not re-read pages 1-2 of the roster"
+    assert [m["To"] for m in smtp.sent] == [f"u{i}@example.com" for i in range(500, 600)]
+
+
+def test_the_roster_page_ceiling_is_reported_not_swallowed(monkeypatch, wired):
+    """`_ROSTER_MAX_PAGES × _ROSTER_PAGE` used to be a silent truncation — the caller got a
+    short list and no way to tell it apart from a short roster."""
+    led, smtp, api = wired
+    api.users = _many(400)
+    rows, complete = me.roster_scan(max_pages=1)
+    assert len(rows) == me._ROSTER_PAGE and complete is False, "the cap is now VISIBLE"
+    rows, complete = me.roster_scan(max_pages=25)
+    assert len(rows) == 400 and complete is True
+
+
+# ===========================================================================
+# #4 / #5 — an unreadable input is UNKNOWN membership, never empty membership
+# ===========================================================================
+def test_an_entitlements_failure_aborts_a_tier_campaign_rather_than_broadcasting(monkeypatch, wired):
+    """A transient PostgREST blip returned `{}`, every user normalised to `tier='free'`,
+    and a campaign addressed to FREE users reached the paying subscribers it was written
+    to leave alone — with every idem_key claimed and the campaign marked `done`. There is
+    no taking that back, so the drain must not start."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = [_user(U1, "free@example.com", NOW), _user(U2, "pro@example.com", NOW)]
+    api.ents = {U2: {"tier": "pro", "status": "active"}}
+    api.campaigns = {cid: {**_campaign(), "segment": "free"}}
+    api.fail_ents = True
+
+    out = me.drain_campaigns()
+
+    assert smtp.sent == [], "nobody may be mailed on a tier we could not read"
+    assert led.rows == {}, "and no idem_key may be claimed"
+    assert api.campaigns[cid]["status"] == "queued", "still queued, for the next wake"
+    assert out["failed"] == 1
+
+
+def test_the_healthy_read_is_the_control(monkeypatch, wired):
+    """The same fixture with the read working: exactly the free user, and not the Pro one.
+    Without this the test above would pass on a drain that never sends anything."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = [_user(U1, "free@example.com", NOW), _user(U2, "pro@example.com", NOW)]
+    api.ents = {U2: {"tier": "pro", "status": "active"}}
+    api.campaigns = {cid: {**_campaign(), "segment": "free"}}
+
+    me.drain_campaigns()
+    assert [m["To"] for m in smtp.sent] == ["free@example.com"]
+
+
+def test_a_segment_that_cannot_be_changed_by_entitlements_still_sends(monkeypatch, wired):
+    """`all` and `marketing_eligible` are decided without the billing join, so an
+    unavailable `user_entitlements` must not stop a send whose audience it could not have
+    altered. Failing closed on an input that is not an input is just an outage."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = [_user(U1, "a@example.com", NOW)]
+    api.campaigns = {cid: _campaign()}          # segment 'all'
+    api.fail_ents = True
+
+    me.drain_campaigns()
+    assert [m["To"] for m in smtp.sent] == ["a@example.com"]
+    assert api.campaigns[cid]["status"] == "done"
+
+
+def test_a_failed_roster_page_never_produces_a_done_campaign(monkeypatch, wired):
+    """Page 2 of 3 failing used to `break`, hand back a short list, drain it and mark the
+    campaign complete against a real audience three times the size."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch)
+    cid = _campaign()["id"]
+    api.users = _many(600)
+    api.campaigns = {cid: _campaign()}
+    api.fail_page = 2
+
+    out = me.drain_campaigns()
+
+    assert smtp.sent == [], "a partial roster is not an audience"
+    assert api.campaigns[cid]["status"] != "done"
+    assert out["failed"] == 1
+
+
+def test_a_failed_roster_page_raises_rather_than_truncating():
+    """The property underneath both: 'could not read' must not look like 'nobody else'."""
+    assert issubclass(me.RosterUnavailable, me.SegmentUnavailable)
+    assert issubclass(me.EntitlementsUnavailable, me.SegmentUnavailable)
+
+
+# ===========================================================================
+# #7 — ONE pacer, all three legs
+# ===========================================================================
+def _naps(monkeypatch) -> list:
+    out: list = []
+    monkeypatch.setattr(me.time, "sleep", lambda s: out.append(s))
+    return out
+
+
+def test_the_welcome_leg_is_paced_too(monkeypatch, wired):
+    """200 welcomes fired back to back is 200 SMTP connections in a few seconds, which
+    every relay reads as a spam burst. The throttle used to exist only in the campaign
+    drain."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch, MAIL_THROTTLE_PER_MIN="12",
+         MAIL_WELCOME_AFTER=(NOW - timedelta(hours=6)).isoformat())
+    api.users = [_user(U1, "a@example.com", NOW - timedelta(hours=1)),
+                 _user(U2, "b@example.com", NOW - timedelta(hours=2))]
+    naps = _naps(monkeypatch)
+
+    me.sweep_welcome(now=NOW)
+    assert naps == [5.0, 5.0], "12 a minute is one every five seconds, on this leg too"
+
+
+def test_the_parked_drain_is_paced_too(monkeypatch, wired):
+    """The other 500-per-wake leg."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch, MAIL_THROTTLE_PER_MIN="12")
+    for uid, addr in ((U1, "a@example.com"), (U2, "b@example.com")):
+        key = f"welcome:{uid}"
+        led.rows[key] = {"idem_key": key, "status": "queued",
+                         "detail": "suppression_lookup_failed"}
+        api.parked.append(_parked(key, "welcome", addr, uid))
+    naps = _naps(monkeypatch)
+
+    me.drain_parked()
+    assert naps == [5.0, 5.0]
+
+
+def test_bookkeeping_is_not_paced(monkeypatch, wired):
+    """A `duplicate` or a `suppressed` never touched the relay, so pacing it costs wall
+    clock and protects nothing."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch, MAIL_THROTTLE_PER_MIN="12")
+    cid = _campaign()["id"]
+    api.users = [_user(U1, "a@example.com", NOW), _user(U2, "sup@example.com", NOW)]
+    api.campaigns = {cid: _campaign()}
+    led.suppressed = {"sup@example.com": "unsubscribe"}
+    naps = _naps(monkeypatch)
+
+    me.drain_campaigns()
+    assert naps == [5.0], "one transmission, one gap"
+
+
+# ===========================================================================
+# #8 — the minors
+# ===========================================================================
+def test_the_welcome_cap_is_spent_on_people_who_have_not_been_welcomed(monkeypatch, wired):
+    """STARVATION. The cap took the OLDEST 200 of the window BEFORE dedup, so with more
+    than 200 in-window signups every wake spent its whole budget re-offering the same
+    already-welcomed 200 and collecting 200 `duplicate`s — while accounts 201+ waited
+    until the 72h lookback expired them out of the window entirely."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch, MAIL_WELCOME_AFTER=(NOW - timedelta(hours=6)).isoformat())
+    n = me._WELCOME_MAX_PER_WAKE
+    api.users = _many(n + 50, base=NOW)
+    api.welcomed = [_uid(i) for i in range(50, n + 50)]   # the oldest ones are all done
+
+    got = [c["user_id"] for c in me.welcome_candidates(NOW)]
+    assert len(got) == 50
+    assert set(got) == {_uid(i) for i in range(50)}, "the ones still waiting, not duplicates"
+
+
+def test_an_unreadable_welcome_ledger_costs_a_wake_not_a_send(monkeypatch, wired):
+    """Falling back to no dedup is safe — `mailer.send` is still idempotent — so the
+    preload failing must not stop the sweep."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    _arm(monkeypatch, MAIL_WELCOME_AFTER=(NOW - timedelta(hours=6)).isoformat())
+    api.users = [_user(U1, "a@example.com", NOW - timedelta(hours=1))]
+
+    def _broken(method, path, **kw):
+        if "idem_key=like.welcome" in urllib.parse.unquote(path):
+            raise RuntimeError("postgrest blip")
+        return api.pg(method, path, **kw)
+
+    monkeypatch.setattr(me, "_pg", _broken)
+    assert me.sweep_welcome(now=NOW)["sent"] == 1
+
+
+def test_the_parked_drain_obeys_the_same_off_switches_as_the_other_legs(monkeypatch, wired):
+    """It was gated on `MAIL_MARKETING_ENABLED` alone, so a parked welcome went out while
+    the welcome leg itself was switched off."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    monkeypatch.setenv("MAIL_MARKETING_ENABLED", "1")     # ...and nothing else
+    key = f"welcome:{U1}"
+    led.rows[key] = {"idem_key": key, "status": "queued", "detail": "suppression_lookup_failed"}
+    api.parked = [_parked(key, "welcome", "a@example.com", U1)]
+
+    assert me.drain_parked()["scanned"] == 0
+    assert smtp.sent == []
+
+
+def test_a_parked_row_is_gated_by_ITS_OWN_leg(monkeypatch, wired):
+    """Per row, not per sweep: with campaigns armed and welcomes off, a parked WELCOME is
+    left alone and a parked campaign is not."""
+    led, smtp, api = wired
+    _mail_on(monkeypatch)
+    monkeypatch.setenv("MAIL_MARKETING_ENABLED", "1")
+    monkeypatch.setenv("MAIL_CAMPAIGNS_ENABLED", "1")
+    cid = _campaign()["id"]
+    api.campaigns = {cid: _campaign()}
+    for key, template, addr, uid in ((f"welcome:{U1}", "welcome", "a@example.com", U1),
+                                     (f"campaign:{cid}:{U2}", "campaign", "b@example.com", U2)):
+        led.rows[key] = {"idem_key": key, "status": "queued",
+                         "detail": "suppression_lookup_failed"}
+        api.parked.append(_parked(key, template, addr, uid))
+
+    out = me.drain_parked()
+    assert out["sent"] == 1 and out["skipped"] == 1
+    assert [m["To"] for m in smtp.sent] == ["b@example.com"]
+    assert led.rows[f"welcome:{U1}"]["status"] == "queued", "the off leg's row waits"
+
+
+def test_a_subject_containing_the_separator_splits_at_the_LAST_one(monkeypatch, wired):
+    """`EN · ZH` is packed into one column, so the 中文 half is the LAST field. `partition`
+    split at the FIRST separator, so an English subject that itself contained ' · ' shipped
+    half an English headline labelled as the Chinese one."""
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s")
+    camp = {**_campaign(), "subject": "Q3 · Q4 outlook · 三四季度展望"}
+    subject, html, _text = me.campaign_message(camp, U1)
+    assert subject == "Q3 · Q4 outlook · 三四季度展望"
+    assert "Q3 · Q4 outlook" in html
+    assert "三四季度展望" in html
+
+
+def test_a_single_language_subject_is_still_used_for_both_halves(monkeypatch):
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s")
+    subject, html, _t = me.campaign_message({**_campaign(), "subject": "Just English"}, U1)
+    assert subject == "Just English"
+    assert html.count("Just English") >= 2, "no half may render blank"
+
+
+def test_an_inline_delimiter_cannot_truncate_the_english_body():
+    """The docstring always said the delimiter is on its OWN LINE; the implementation was a
+    bare substring `partition`, so a paragraph that merely mentioned it cut the English
+    body off at that word and shipped the remainder as 中文."""
+    body = ("Type ===zh=== on its own line to start the Chinese half.\n\n"
+            "That is the whole convention.\n\n"
+            "===zh===\n\n"
+            "在单独一行输入分隔符。")
+    en, zh = me.split_langs(body)
+    assert en.startswith("Type ===zh=== on its own line")
+    assert "That is the whole convention." in en
+    assert zh == "在单独一行输入分隔符。"
+
+
+def test_a_delimiter_line_with_trailing_spaces_still_splits():
+    en, zh = me.split_langs("English.\n\n===zh===  \n\n中文。")
+    assert en == "English." and zh == "中文。"
+
+
+# ===========================================================================
+# Delivery — the env var that has to survive the trip to the droplet
+# ===========================================================================
+def test_the_activation_timestamp_is_delivered_with_its_space_intact():
+    """`MAIL_WELCOME_AFTER` is an ISO DATETIME, and `2026-07-26 12:00:00` is a legal one.
+
+    The deploy workflow's `_add` helper runs `tr -d '\\r\\n '`, so that value arrived on the
+    droplet as `2026-07-2612:00:00`. `_parse_dt` treats unparseable exactly like unset —
+    deliberately, so a typo cannot become the epoch — which means the welcome leg would
+    have sent NOTHING with the secret sitting on the box looking perfectly correct. `_addv`
+    strips only newlines and the outer whitespace.
+    """
+    wf = (ROOT / ".github" / "workflows" / "deploy-api-secrets.yml").read_text(encoding="utf-8")
+    calls = [ln.strip() for ln in wf.splitlines()
+             if re.match(r"_addv?\s+MAIL_WELCOME_AFTER\b", ln.strip())]
+    assert len(calls) == 2, f"both env blocks must deliver it: {calls}"
+    for ln in calls:
+        assert ln.startswith("_addv "), ln
+
+    # ...and the value it would have produced really is unparseable, so this is not theory
+    assert me._parse_dt("2026-07-26 12:00:00") is not None
+    assert me._parse_dt("2026-07-2612:00:00") is None

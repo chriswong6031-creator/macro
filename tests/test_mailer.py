@@ -457,6 +457,58 @@ def test_unsub_token_is_secret_scoped(monkeypatch):
     assert mailer.verify_unsub_token(tok) is None
 
 
+def test_the_token_is_scoped_to_ONE_action(monkeypatch):
+    """The action is inside the MAC, so a token is a capability for exactly one of them.
+
+    One token used to authorise both directions with the action read from the query
+    string, so the link in every marketing footer and every ``List-Unsubscribe`` header
+    doubled as a re-subscribe capability: anyone who could read one of the target's emails
+    could reverse their opt-out, and revoking it meant rotating MAIL_UNSUB_SECRET and
+    killing every link ever sent."""
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s3cr3t-unsub")
+    ident = "user@example.com"
+    off = mailer.unsub_token(ident, "unsubscribe")
+    on = mailer.unsub_token(ident, "resubscribe")
+
+    assert off and on and off != on
+    assert mailer.verify_unsub_token(off, "unsubscribe") == ident
+    assert mailer.verify_unsub_token(on, "resubscribe") == ident
+    assert mailer.verify_unsub_token(off, "resubscribe") is None, "the whole point"
+    assert mailer.verify_unsub_token(on, "unsubscribe") is None
+
+
+def test_the_unsubscribe_scope_is_the_bare_identity_so_printed_links_keep_working(monkeypatch):
+    """Stopping mail is the direction that is legally required to be one-click, so it is
+    the one whose wire format may not move: an ``unsubscribe`` token is the MAC over the
+    identity alone, exactly as W1 shipped it."""
+    import hashlib
+    import hmac
+
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s3cr3t-unsub")
+    ident = "user@example.com"
+    expect = hmac.new(b"s3cr3t-unsub", ident.encode(), hashlib.sha256).digest()
+    assert mailer.unsub_token(ident) == f"{mailer._b64e(ident.encode())}.{mailer._b64e(expect)}"
+    assert mailer.unsub_token(ident, "unsubscribe") == mailer.unsub_token(ident)
+
+
+def test_an_unknown_action_mints_and_verifies_nothing(monkeypatch):
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s3cr3t-unsub")
+    assert mailer.unsub_token("user@example.com", "delete-account") == ""
+    tok = mailer.unsub_token("user@example.com")
+    assert mailer.verify_unsub_token(tok, "delete-account") is None
+
+
+def test_an_identity_shaped_like_a_scoped_payload_is_refused(monkeypatch):
+    """The only way the two payload forms could be made to collide: an ``unsubscribe``
+    token minted for the literal identity ``resubscribe:ada@example.com`` would carry the
+    MAC a resubscribe token for ``ada@example.com`` needs. No real identity looks like
+    that — an identity is a uuid or an address — so minting one is simply refused."""
+    monkeypatch.setenv("MAIL_UNSUB_SECRET", "s3cr3t-unsub")
+    assert mailer.unsub_token("resubscribe:ada@example.com") == ""
+    assert mailer.unsub_token("unsubscribe:ada@example.com") == ""
+    assert mailer.unsub_token("ada@example.com") != ""
+
+
 # ===========================================================================
 # B1 regression — header injection must never reach an email header
 #

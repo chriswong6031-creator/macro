@@ -22,6 +22,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import sys
 import threading
 import urllib.error
@@ -71,7 +72,7 @@ class _Q:
         if "from public.email_suppression where email" in low:
             return list(self.suppression)
         if low.startswith("insert into public.email_suppression"):
-            return []
+            return self._upsert_suppression(sql)
         if low.startswith("delete from public.email_suppression"):
             return []
         if "from public.email_log l" in low:
@@ -96,6 +97,28 @@ class _Q:
         if "from auth.users u" in low:
             return list(self.people)
         raise AssertionError(f"unscripted SQL: {sql[:160]}")
+
+    def _upsert_suppression(self, sql: str) -> list[dict]:
+        """Model `on conflict (email) do update … where reason not in (…) returning reason`.
+
+        Postgres runs the DO UPDATE only when the guard holds, and `returning` yields NO
+        ROW when it does not — which is exactly the signal the console reads to report the
+        reason actually in force. A fake that always overwrote could not tell a guarded
+        upsert from an unguarded one, and that difference is the whole fix.
+        """
+        m = re.search(r"values \('([^']*)', '([^']*)'\)", sql)
+        assert m, sql
+        addr, reason = m.group(1), m.group(2)
+        guard = re.search(r"where email_suppression\.reason not in \(([^)]*)\)", sql)
+        hard = set(re.findall(r"'([^']*)'", guard.group(1))) if guard else set()
+        row = next((r for r in self.suppression if r.get("email") == addr), None)
+        if row is None:
+            self.suppression.append({"email": addr, "reason": reason})
+            return [{"reason": reason}]
+        if row.get("reason") in hard:
+            return []                       # the guard refused the write; the row stands
+        row["reason"] = reason
+        return [{"reason": reason}]
 
     def find(self, needle):
         return next(s for s in self.sqls if needle in s)
@@ -261,23 +284,52 @@ def EC_COL(name: str) -> int:
     return list(ec.EXPORT_COLUMNS).index(name)
 
 
-def test_the_export_row_count_equals_the_segment_count(wired):
-    """The gate: both the count and the export go through the SAME
-    email_segments.where_sql over the same join, so they cannot disagree."""
-    wired.counts = {**{k: 0 for k in seg.KEYS}, "marketing_eligible": 3}
+def test_the_export_and_the_count_apply_THE_SAME_predicate(wired):
+    """The gate, asserted on the two STATEMENTS rather than on the fixture.
+
+    This test used to set both numbers to 3 itself and then assert 3 == 3, which is a
+    tautology: the fake decided the answer, so the export could have carried any WHERE
+    clause at all and it would still have passed. What actually has to hold is that the
+    count's per-segment filter and the export's WHERE are the same predicate — base ∧
+    segment — over the same join, and that is a property of the SQL.
+    """
+    key = "marketing_eligible"
+    frag = seg.BY_KEY[key].sql
+    ec.panel(segment=key)
+    ec.export_csv(key)
+
+    count_sql = wired.find(f"seg_{key}")
+    export_sql = wired.find("limit 50001")
+
+    # the count: `count(*) filter (where <frag>)` narrowed by a `where <BASE_SQL>`
+    assert f"count(*) filter (where {frag})::int as seg_{key}" in count_sql
+    assert f"where {seg.BASE_SQL}" in count_sql
+    # the export: the composed clause, which IS base ∧ segment
+    assert f"where {seg.where_sql(key)}" in export_sql
+    assert seg.where_sql(key) == f"{seg.BASE_SQL} and ({frag})"
+    # ...and neither statement carries a filter the other does not
+    assert seg.JOIN_SQL in count_sql and seg.JOIN_SQL in export_sql
+
+
+def test_the_export_says_so_when_it_is_only_the_top_of_a_segment(wired):
+    """The cap was contradicted by the docstring above it: the export stopped at 50,000
+    rows while `_counts` was uncapped, so a bigger segment produced a file that silently
+    was not the segment. An operator about to mail a list has to be able to tell a
+    complete one from a prefix, and the filename is the only part of a CSV that survives
+    being opened in Excel."""
+    wired.people = [_person(email=f"u{i}@example.com") for i in range(4)]
+    name, blob = ec.export_csv("all", limit=3)
+
+    assert "limit 4" in wired.find("limit 4"), "it asks for one more than it will write"
+    assert len(_rows(blob)[1:]) == 3, "and writes exactly the cap"
+    assert name.endswith("-first-3.csv"), name
+
+
+def test_a_complete_export_is_not_labelled_as_a_prefix(wired):
+    """The control: exactly at the cap is complete, so the plain name must survive."""
     wired.people = [_person(email=f"u{i}@example.com") for i in range(3)]
-
-    panel = ec.panel(segment="marketing_eligible")
-    _name, blob = ec.export_csv("marketing_eligible")
-    body = _rows(blob)[1:]                       # drop the header
-
-    assert panel["total"] == 3 == len(body)
-
-    count_sql = wired.find("seg_marketing_eligible")
-    export_sql = wired.find("limit 50000")
-    frag = seg.BY_KEY["marketing_eligible"].sql
-    assert frag in count_sql and frag in export_sql
-    assert seg.BASE_SQL in export_sql
+    name, _blob = ec.export_csv("all", limit=3)
+    assert "-first-" not in name and name.endswith(".csv")
 
 
 def test_the_export_header_is_the_declared_column_set(wired):
@@ -295,7 +347,7 @@ def test_an_unknown_export_segment_is_an_error_not_a_full_dump(wired):
 
 def test_the_export_search_is_escaped_like_the_roster(wired):
     ec.export_csv("all", q="o'brien")
-    assert "ilike '%o''brien%'" in wired.find("limit 50000")
+    assert "ilike '%o''brien%'" in wired.find("limit 50001")
 
 
 # ===========================================================================
@@ -588,3 +640,96 @@ def test_email_center_routes_require_auth_and_csrf():
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+# ===========================================================================
+# The downgrade hole — the console documented the opposite guarantee three times
+# ===========================================================================
+@pytest.mark.parametrize("hard", ["bounce", "complaint"])
+def test_a_hard_reason_cannot_be_overwritten_by_a_weaker_one(wired, ledger, hard):
+    """THE FULL SEQUENCE the reviewer executed, as one test.
+
+    1. suppress as `complaint` — recorded;
+    2. try to remove it — the documented 409, "not removable here";
+    3. RE-SUPPRESS THE SAME ADDRESS AS `manual` — this is the hole: `on conflict do
+       update set reason = excluded.reason` fired unconditionally and rewrote the reason;
+    4. remove it — now legal, and the operator ledger records the removal of a *manual*
+       suppression, erasing every trace that a spam complaint had ever been filed.
+
+    The `where` on the conflict clause is what makes step 3 a no-op, and steps 2 and 4 the
+    same answer. The row must survive step 3 either way — refusing the downgrade may never
+    mean dropping the suppression.
+    """
+    payload, code = ec.suppress("a@example.com", hard)
+    assert code == 200 and payload["reason"] == hard
+
+    _p, code = ec.unsuppress("a@example.com", confirm=True)
+    assert code == 409, "the documented refusal"
+
+    payload, code = ec.suppress("a@example.com", "manual")
+    assert code == 200
+    assert payload["reason"] == hard, "the reason on file, not the one asked for"
+    assert payload.get("kept") is True and "requested" in payload
+    assert wired.suppression == [{"email": "a@example.com", "reason": hard}], \
+        "the row stands, and it stands at its hard reason"
+
+    _p, code = ec.unsuppress("a@example.com", confirm=True)
+    assert code == 409, "and the refusal cannot be unlocked by re-suppressing"
+    assert ledger == [], "nothing was lifted, so nothing may be recorded as lifted"
+
+
+def test_the_guard_is_in_the_statement_not_only_in_the_python(wired):
+    """Read-then-write would race two operators; the guard has to be inside the one
+    statement Postgres executes."""
+    ec.suppress("a@example.com", "manual")
+    sql = wired.find("insert into public.email_suppression")
+    assert "on conflict (email) do update set reason = excluded.reason" in sql
+    assert f"where email_suppression.reason not in {seg.HARD_REASONS_SQL}" in sql
+    assert "returning reason" in sql
+
+
+def test_a_soft_reason_still_upgrades_to_a_hard_one(wired):
+    """The guard is one-directional on purpose: a bounce webhook must be able to promote
+    an existing `unsubscribe` row, because that records something new about the ADDRESS."""
+    ec.suppress("a@example.com", "unsubscribe")
+    payload, code = ec.suppress("a@example.com", "complaint")
+    assert code == 200 and payload["reason"] == "complaint"
+    assert wired.suppression == [{"email": "a@example.com", "reason": "complaint"}]
+
+
+def test_the_two_reason_lists_come_from_one_place(wired):
+    """The console and the public unsubscribe page both decide what "not removable" means.
+    Two hand-written copies is how they came apart the first time."""
+    from app import unsubscribe as unsub
+
+    assert set(ec.LIFTABLE) == set(seg.SOFT_REASONS) == set(unsub.RESUBSCRIBABLE)
+    assert set(ec.VALID_REASONS) == set(seg.REASONS)
+    assert set(ec.LIFTABLE) & set(seg.HARD_REASONS) == set()
+
+
+# ===========================================================================
+# The bilingual subject is a DELIMITED format, so the delimiter is reserved
+# ===========================================================================
+def test_a_subject_half_carrying_the_separator_is_refused(wired):
+    """`EN · ZH` lives in one column, so a half that contains ' · ' is ambiguous and the
+    renderer split it in the wrong place — shipping part of an English headline as the
+    Chinese one. Refused at compose time, in plain words, rather than silently rewritten."""
+    payload, code = ec.campaign_action(
+        "save", subject_en="Q3 · Q4 outlook", subject_zh="三四季度展望",
+        body_en="hi", body_zh="嗨", segment="all")
+    assert code == 400
+    assert "·" in payload["error"]
+    assert not wired.all("insert into public.email_campaigns")
+
+    payload, code = ec.campaign_action(
+        "preview", subject_en="fine", subject_zh="也 · 不行", body_en="hi", body_zh="嗨")
+    assert code == 400
+
+
+def test_an_ordinary_middot_is_not_refused(wired):
+    """The reserved mark is the separator WITH its spaces. A middot inside a word, or an
+    ordinary bullet, is somebody's headline and must survive."""
+    _p, code = ec.campaign_action(
+        "save", subject_en="A·B channel check", subject_zh="A·B 渠道核查",
+        body_en="hi", body_zh="嗨", segment="all")
+    assert code == 200

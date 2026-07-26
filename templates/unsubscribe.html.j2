@@ -100,7 +100,7 @@ html[data-lang="zh"] .hero .eyebrow{ letter-spacing:.08em; }
 html[data-unsub="off"]   .panel{ --accent:var(--ok); }
 html[data-unsub="on"]    .panel{ --accent:var(--ok); }
 html[data-unsub="bad"]   .panel{ --accent:var(--act); }
-html[data-unsub="error"] .panel{ --accent:var(--act); }
+html[data-err="1"]       .panel{ --accent:var(--act); }
 
 .p-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
   border-bottom:1px solid var(--line); }
@@ -115,13 +115,15 @@ html[data-unsub="ready"] .st-ready,
 html[data-unsub="off"]   .st-off,
 html[data-unsub="on"]    .st-on,
 html[data-unsub="bad"]   .st-bad{ display:block; }
-/* `error` keeps whatever step the reader was on and adds the bar above it, so a failed
-   press never discards the button they were about to press again */
-html[data-unsub="error"] .st-ready{ display:block; }
-/* the state label follows the panel */
+/* FAILURE IS A SEPARATE AXIS, not a fifth state. `error` used to be a data-unsub VALUE
+   that displayed .st-ready, so a failed press overwrote the step the reader was on: press
+   "Turn them back on" from `off`, have the server 500, and the panel flipped to the label
+   MARKETING EMAIL: ON, the unsubscribe lede, and an "Unsubscribe" button — the inverse of
+   what was attempted, on a compliance surface, next to a bar saying "try again". The bar
+   now rides on data-err, so the step, the label and the button are all still whatever
+   they were and "try again" means what it says. */
 .lb{ display:none; }
 html[data-unsub="ready"] .lb-ready,
-html[data-unsub="error"] .lb-ready,
 html[data-unsub="on"]    .lb-ready,
 html[data-unsub="off"]   .lb-off,
 html[data-unsub="bad"]   .lb-bad{ display:inline; }
@@ -175,7 +177,7 @@ html[data-unsub="bad"]   .lb-bad{ display:inline; }
   border-radius:11px; font-size:13.2px; line-height:1.45; color:var(--text);
   border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
   background:color-mix(in srgb,var(--act) 10%,transparent); }
-html[data-unsub="error"] .err{ display:flex; }
+html[data-err="1"] .err{ display:flex; }
 .err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
 .err .ic svg{ display:block; width:16px; height:16px; }
 .err a{ white-space:nowrap; }
@@ -187,6 +189,10 @@ html[data-unsub="error"] .err{ display:flex; }
   border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
 html[data-refused="1"] .refused{ display:block; }
 html[data-refused="1"] .st-off .btn-ghost{ display:none; }
+/* The way back needs its OWN token — the footer token authorises `unsubscribe` and
+   nothing else — and the server only mints one for the request that actually recorded the
+   opt-out. No token, no button: a button that can only 400 is worse than no button. */
+html:not([data-undo="1"]) .st-off .btn-ghost{ display:none; }
 
 /* ── footer — landing footer anatomy, colours resolved from theme tokens ───── */
 .mx-footer{ border-top:1px solid var(--line); margin-top:52px;
@@ -204,6 +210,11 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
 .mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
 .mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
   color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+/* Same recipe as .mlab, so it needs the same CJK fix: 9px mono + .14em tracking with no
+   Hanzi in the stack renders 产品 / 资源 through whatever the system picks — a serif on
+   some machines — at tracking this file's own comment calls broken spacing. */
+html[data-lang="zh"] .mx-footer .f-col p{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
 .mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
 .mx-footer .f-col a:hover{ color:var(--text); }
 .mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;
@@ -224,6 +235,11 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
   .p-body{ padding:15px 14px 16px; }
   .act{ gap:10px; }
   .act .btn{ width:100%; order:-1; }
+  /* ...but NOT the ghost one. `.act .btn` matches `.btn.btn-ghost` too, so on a phone the
+     "turn them back on" button became full width and jumped ABOVE its own note — the
+     loudest thing on screen and the only button visible, on the exact surface where email
+     links are opened. It is a second, quieter action everywhere or it is not one. */
+  .act .btn-ghost{ width:auto; order:0; }
   .act .note{ min-width:0; }
   .mx-footer{ padding:30px 0 24px; margin-top:38px; }
   .mx-footer .f-in{ padding:0 16px; }
@@ -246,15 +262,15 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
     <span class="eyebrow">{{ t('Email settings', '邮件设置') }}</span>
     {#- the EN word-space lives INSIDE the l-en span: markup whitespace between the two
         spans would print a stray gap after the ZH full-width comma -#}
-    <h1>{{ t('One click. ', '一次点击，') }}<span class="accent">{{ t('No more marketing email.', '不再收到营销邮件。') }}</span></h1>
+    <h1>{{ t('One click. ', '一键退订，') }}<span class="accent">{{ t('No more marketing email.', '不再收到营销邮件。') }}</span></h1>
     <p class="sub">{{ t('Account emails — receipts, sign-in links, support replies — keep coming either way.',
-                        '账户邮件——收据、登录链接、客服回复——不受影响，仍会照常发送。') }}</p>
+                        '账户邮件——收据、登录链接、客服回复——不受影响，照常送达。') }}</p>
   </header>
 
   <section class="panel">
     <div class="p-head">
       <span class="mlab">
-        <span class="lb lb-ready">{{ t('Marketing email: on', '营销邮件：开启') }}</span>
+        <span class="lb lb-ready">{{ t('Marketing email: on', '营销邮件：已开启') }}</span>
         <span class="lb lb-off">{{ t('Marketing email: off', '营销邮件：已关闭') }}</span>
         <span class="lb lb-bad">{{ t('Link not valid', '链接无效') }}</span>
       </span>
@@ -282,10 +298,10 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
       <div class="st st-off">
         <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
         <h2>{{ t('Marketing emails are off.', '营销邮件已关闭。') }}</h2>
-        <p>{{ t('We stopped marketing email to <b class="addr" data-addr></b>. Receipts, sign-in links and replies from support still reach you.',
-                '我们已停止向 <b class="addr" data-addr></b> 发送营销邮件。收据、登录链接以及客服回复，仍会照常送达。') }}</p>
+        <p>{{ t('We stopped marketing email to <b class="addr" data-addr>this address</b>. Receipts, sign-in links and replies from support still reach you.',
+                '我们已停止向 <b class="addr" data-addr>这个邮箱</b> 发送营销邮件。收据、登录链接以及客服回复，照常送达。') }}</p>
         <p class="refused">{{ t('This one cannot be switched back on here: the address bounced or reported us as spam. Write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a> if that was a mistake.',
-                                '这个邮箱无法在此重新开启：它曾退信，或将我们标记为垃圾邮件。如果这是误判，请发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</p>
+                                '这个邮箱无法在此重新开启：这个地址曾经退信，或将我们标记为垃圾邮件。如果这是误会，请发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</p>
         {#- The way back is deliberately a second, quieter action — never the default,
             and never pre-selected. The note is the PIN §7.4 rule applied to a page:
             one honest exit, no win-back. -#}
@@ -299,8 +315,8 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
       <div class="st st-on">
         <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
         <h2>{{ t('Marketing emails are back on.', '营销邮件已重新开启。') }}</h2>
-        <p>{{ t('You will hear from us again at <b class="addr" data-addr></b>.',
-                '我们会再次通过 <b class="addr" data-addr></b> 与你联系。') }}</p>
+        <p>{{ t('You will hear from us again at <b class="addr" data-addr>this address</b>.',
+                '我们会再次通过 <b class="addr" data-addr>这个邮箱</b> 与你联系。') }}</p>
         <div class="act">
           <button class="btn btn-ghost" type="button" id="u-off">{{ t('Turn them off again', '再次关闭') }}</button>
           <span class="note">{{ t('You can change this any time from any of our emails.', '你随时可以在我们的任意一封邮件里更改。') }}</span>
@@ -312,7 +328,7 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
         <div class="seal bad"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8"/></svg></div>
         <h2>{{ t('This link does not work.', '这个链接无法使用。') }}</h2>
         <p>{{ t('It has expired, or your email app cut it short. Open the most recent email from us and use the unsubscribe link at the bottom — or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a> and we will do it for you.',
-                '它可能已失效，或被你的邮件客户端截断。请打开我们最近的一封邮件，点击底部的退订链接——或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>，我们替你处理。') }}</p>
+                '它可能已失效，或被你的邮件应用截断。请打开我们最近的一封邮件，点击底部的退订链接——或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>，我们替你处理。') }}</p>
       </div>
 
     </div>
@@ -374,37 +390,59 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
   }
   var TOKEN = param('t');
 
+  /* The undo capability, and the ONLY place it ever exists. The token in the URL
+     authorises `unsubscribe` and nothing else — the action is inside its signature — so
+     "turn them back on" needs a resubscribe-scoped token, and the server mints one only
+     for the request that actually recorded the opt-out. It lives in this closure: never in
+     the URL, never in the DOM, never in an email, and gone when the tab closes. */
+  var UNDO = '';
+
   /* A missing token is decided here, with no request: the server would answer the same
      400, and asking it would mean the page briefly offers a button that cannot work. */
   if (!TOKEN) H.setAttribute('data-unsub', 'bad');
 
   function paintAddr(masked) {
+    if (!masked) return;   /* keep the dual-language "this address" the markup ships with:
+                              an empty mask used to render "We stopped marketing email to
+                              ." — a sentence with a hole where its object should be */
     Array.prototype.forEach.call(document.querySelectorAll('[data-addr]'), function (b) {
-      b.textContent = masked || '';
+      b.textContent = masked;
     });
   }
 
   function send(action, btn) {
+    var tok = action === 'resubscribe' ? UNDO : TOKEN;
     if (!TOKEN) { H.setAttribute('data-unsub', 'bad'); return; }
+    if (!tok) { H.setAttribute('data-err', '1'); return; }
     H.removeAttribute('data-refused');
+    H.removeAttribute('data-err');
     if (btn) btn.setAttribute('aria-busy', 'true');
     fetch(API + '/api/email/unsubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ t: TOKEN, action: action })
+      body: JSON.stringify({ t: tok, action: action })
     }).then(function (r) {
-      /* 400 is the server saying the token does not verify — the same dead-link answer
-         the page already knows how to explain. Anything else that is not ok is ours. */
-      if (r.status === 400) { H.setAttribute('data-unsub', 'bad'); return null; }
-      if (!r.ok) { H.setAttribute('data-unsub', 'error'); return null; }
+      /* 400 is the server saying the token does not verify. For the unsubscribe press
+         that IS the dead-link story the `bad` panel exists to tell. For an undo it is
+         not — the opt-out on screen is real and recorded — so the step stays and the bar
+         says the retry failed. Anything else that is not ok is ours, either way. */
+      if (r.status === 400 && action !== 'resubscribe') {
+        H.setAttribute('data-unsub', 'bad'); return null;
+      }
+      if (!r.ok) { H.setAttribute('data-err', '1'); return null; }
       return r.json();
     }).then(function (j) {
       if (!j) return;                                   /* already handled */
       paintAddr(j.email_masked);
       if (j.refused) H.setAttribute('data-refused', '1');
+      UNDO = j.resubscribe_token || '';
+      if (UNDO) H.setAttribute('data-undo', '1'); else H.removeAttribute('data-undo');
       H.setAttribute('data-unsub', j.state === 'subscribed' ? 'on' : 'off');
     }).catch(function () {
-      H.setAttribute('data-unsub', 'error');            /* the button is still there */
+      /* data-err, NOT data-unsub: the reader's step, its label and its button all stay
+         exactly as they were. Overwriting the state here is how a failed "turn them back
+         on" used to leave an "Unsubscribe" button under a "try again" bar. */
+      H.setAttribute('data-err', '1');
     }).then(function () {
       if (btn) btn.removeAttribute('aria-busy');
     });

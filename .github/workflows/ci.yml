@@ -1005,6 +1005,13 @@ on:
       - "tests/test_marketing_emails.py"
       - "tests/test_admin_email_center.py"
       - "tests/test_unsubscribe_page.py"
+      # The secret-delivery lane is an INPUT to app/marketing_emails.py, not merely ops:
+      # MAIL_WELCOME_AFTER is an ISO datetime and the workflow's `_add` helper strips
+      # spaces, so a legal `2026-07-26 12:00:00` arrived unparseable — which the module
+      # treats exactly like unset, i.e. the welcome leg silently sends nothing.
+      # test_marketing_emails.py asserts the `_addv` call, so the edit that breaks it has
+      # to reach the guard by name (#3509).
+      - ".github/workflows/deploy-api-secrets.yml"
       # W2 entry points (funnel, not nav) + the page's writer.
       - "templates/index.html"
       - "site/index.html"

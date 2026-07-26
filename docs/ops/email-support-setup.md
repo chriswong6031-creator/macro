@@ -267,6 +267,83 @@ the plumbing that makes a single-language send possible later without a migratio
 /api/account` returns the stored values as `prefs`, so a signed-in visitor lands in their own theme
 and language on any device. No operator step — it works as soon as the migration from §3 is applied.
 
+## 5c. Marketing email — the eight W4 switches, and the volume they buy (SEE W4)
+
+`app/marketing_emails.py` runs three legs on one in-process sweeper in macro-api: the
+**welcome** mail, the **campaign** drain, and the **parked-row** drain that finishes rows the
+fail-closed suppression check left behind. All three are **OFF by default** and every one of
+them needs `MAIL_MARKETING_ENABLED` **plus** its own switch.
+
+**Do not arm `MAIL_MARKETING_ENABLED` on a build that predates the W4 review fixes.** On the
+merged-but-unreviewed W4 code, arming the welcome leg with the relay still off would have
+claimed `welcome:{user_id}` in `email_log` for every account in the window and PATCHed each
+row to the terminal `skipped_no_smtp` — spending the idempotency key without ever writing a
+message, so those people could never be welcomed and the census would have said `sent: N`.
+The current code **refuses to run either sending leg when `mailer.is_configured()` is false**
+and returns `not_configured: true` instead, so nothing is claimed. Confirm you are past that
+before arming: `journalctl -u macro-api | grep 'refusing to run'` prints the refusal, and
+`python -m app.marketing_emails --window` reports the bound in force without sending anything.
+
+| Secret | Default | What it does, and what happens when it is unset or malformed |
+|---|---|---|
+| `MAIL_MARKETING_ENABLED` | **OFF** | The master switch for all three legs. Off ⇒ the sweeper is never even mounted, and the startup log says so. Only `1/true/yes/on` count; anything else is OFF |
+| `MAIL_WELCOME_ENABLED` | **OFF** | Arms the welcome leg. Needs the master switch too. Off ⇒ no welcome is sent **and** a parked welcome row is left alone rather than completed |
+| `MAIL_CAMPAIGNS_ENABLED` | **OFF** | Arms the campaign drain, and likewise gates a parked *campaign* row |
+| `MAIL_WELCOME_AFTER` | **unset ⇒ ZERO candidates** | **The deliberate arming switch, and the one with teeth.** An ISO date or datetime; only accounts created strictly after it are ever candidates. Unset means **nobody** — not "everyone", not "since boot" — so arming `MAIL_WELCOME_ENABLED` without setting it sends nothing at all, which is the correct behaviour for a half-finished rollout and the one that cannot be regretted. **A typo is treated exactly like unset**, for the same reason: a date that fails to parse must not silently become the epoch and mail every account that has ever existed. Set it to the day the feature went live. It rides `_addv` in the deploy workflow, so a value with a space (`2026-07-26 12:00:00`) survives delivery intact |
+| `MAIL_WELCOME_LOOKBACK_HOURS` | `72` | The second bound, ANDed with the floor: the LATER of the two wins, so a sweeper that was off for a year still only looks at the last 72h. Clamped to 1h…30d; junk falls back to 72 |
+| `MAIL_THROTTLE_PER_MIN` | `30` | **The only ceiling on volume.** One shared pacer across all three legs: every message that reaches the relay is followed by a `60 / MAIL_THROTTLE_PER_MIN` second gap. Clamped to 1…600; junk falls back to 30 |
+| `MAIL_MARKETING_INTERVAL_SEC` | `900` | How long the sweeper sleeps between wakes (it sleeps FIRST, so a crash-restart loop can never become a send loop). Floor 60s; junk falls back to 900. See the volume note below — it no longer multiplies anything |
+| `MAIL_UNSUB_MAILTO` | unset ⇒ the https URI alone | Adds a `<mailto:…>` alternative in front of the https one in `List-Unsubscribe`. Optional but real: it is the only route that still works for a reader whose client will not make the POST. Unset is not a defect — the header is then byte-identical to what W1 shipped |
+
+Two pre-existing secrets from §2 become load-bearing the moment anything marketing-class is armed:
+
+| Secret | Why it matters here |
+|---|---|
+| `MAIL_UNSUB_SECRET` | Keys the one-click unsubscribe token. Unset ⇒ `unsub_token` returns `""`, so marketing mail ships with **no `List-Unsubscribe` header and no footer link** — a CAN-SPAM problem, not a cosmetic one. Set it before arming. Rotating it invalidates every link already sent. The token is scoped to one ACTION, so the link in a footer authorises `unsubscribe` and can never be replayed as a re-subscribe |
+| `MAIL_SITE_BASE` | The host in those links. A wrong value points every unsubscribe link in every marketing email at somewhere that cannot honour it |
+
+### The worst-case volume, with the number that actually controls it
+
+Per wake the caps are module constants, not env knobs (an operator who needs a bigger blast
+radius should have to change code and get it reviewed): **200** welcomes, **500** campaign
+recipients, **500** parked rows — 1,200 messages.
+
+**As W4 merged**, only the campaign drain was throttled. The reviewer's arithmetic for the
+defaults was therefore **≤4,600 messages/hour** (4 wakes × [200 welcome + 500 parked]
+ungated = 2,800, plus 30/min × 60 = 1,800 throttled), of which **≤800 welcomes** — and
+`MAIL_MARKETING_INTERVAL_SEC`, not `MAIL_THROTTLE_PER_MIN`, was the multiplier: dropping it
+to its 60s floor took the ceiling to **~43,800/hour**. That is the number to know if you are
+looking at an older build.
+
+**Now the pacer is shared by all three legs**, so the wake interval no longer multiplies
+anything and the ceiling is one multiplication:
+
+> **messages/hour ≤ `MAIL_THROTTLE_PER_MIN` × 60**, whatever `MAIL_MARKETING_INTERVAL_SEC` is.
+
+| `MAIL_THROTTLE_PER_MIN` | Hourly ceiling | Note |
+|---|---|---|
+| `30` (default) | **≤ 1,800** | ~1,310/h in practice at the default 900s interval, because a full 1,200-message wake takes 40 min of pacing and then still sleeps 15 min |
+| `10` | ≤ 600 | what to use for the first armed night |
+| `120` | ≤ 7,200 | only with a warmed sending domain |
+| `600` (max) | ≤ 36,000 | effectively unpaced; do not |
+
+`MAIL_MARKETING_INTERVAL_SEC` now only decides **latency** — how long a new signup waits for
+its welcome — not throughput. Lowering it to 60s does not raise the ceiling.
+
+### Arming order
+
+1. `MAIL_UNSUB_SECRET`, then the relay creds from §2, then verify a real send lands (§6).
+2. `MAIL_MARKETING_ENABLED=1` alone — nothing sends; confirm the sweeper armed:
+   `journalctl -u macro-api | grep 'marketing: sweeper armed'`.
+3. `MAIL_WELCOME_AFTER=<today, ISO>` **and** `MAIL_WELCOME_ENABLED=1`, with
+   `MAIL_THROTTLE_PER_MIN=10` for the first night. Watch `grep 'welcome sweep'` — the census
+   prints `scanned / sent / duplicate / skipped / skipped_no_smtp / failed`, and
+   `skipped_no_smtp` has its own column precisely so mail-off can never read as success.
+4. `MAIL_CAMPAIGNS_ENABLED=1` last, and only once a campaign has been previewed in the
+   Email Center. A campaign that is larger than one wake stays `sending` across wakes and
+   only becomes `done` when its audience is exhausted — `sent_n + skipped_n + failed_n`
+   against the operator's `queued_n` is the progress read.
+
 ## 6. Verify
 
 1. `curl -sS -X POST https://mastermind-x.com/api/support/ticket -H 'content-type: application/json' -d '{"email":"you@example.com","topic":"other","subject":"relay smoke test","message":"checking the support spine end to end"}'`

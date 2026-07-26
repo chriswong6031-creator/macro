@@ -57,15 +57,37 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 import urllib.parse
 import urllib.request
+from collections.abc import Collection
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app import email_segments, mailer
 
 log = logging.getLogger("macro.marketing_emails")
+
+
+class SegmentUnavailable(RuntimeError):
+    """A read the segment depends on failed, so membership is UNKNOWN, not empty.
+
+    The distinction is the whole point. Both reads used to fail open — a roster page error
+    ``break``ed out of the loop and a failed entitlements read returned ``{}`` — and both
+    failures are silent and plausible: 199 of 600 people mailed and the campaign marked
+    ``done``, or every user normalising to ``tier='free'`` so a free-only campaign reaches
+    the Pro subscribers it was written to exclude. An idem_key claimed for the wrong
+    audience cannot be taken back, so a partial read must abort, never complete.
+    """
+
+
+class RosterUnavailable(SegmentUnavailable):
+    """A page of the GoTrue admin roster could not be read."""
+
+
+class EntitlementsUnavailable(SegmentUnavailable):
+    """``user_entitlements`` could not be read, so nobody's tier is known."""
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://fsldfzlxyavsuwqbceod.supabase.co").rstrip("/")
 
@@ -78,7 +100,14 @@ _WELCOME_MAX_PER_WAKE = 200
 _CAMPAIGN_MAX_PER_WAKE = 500
 _PARKED_LIMIT = 500
 _ROSTER_PAGE = 200
-_ROSTER_MAX_PAGES = 25          # 5,000 accounts scanned per wake, hard ceiling
+_ROSTER_MAX_PAGES = 25          # 5,000 accounts — the default scan depth
+#: The campaign drain scans deeper, because for IT the page cap is not a work bound but an
+#: AUDIENCE cap: a segment whose members sit past the ceiling can never be reached, and
+#: the drain would mark itself `done` having never seen them. 50,000 accounts is the whole
+#: user base with room to spare, the scan stops early the moment it has a full wake's
+#: worth of unmailed members, and hitting the ceiling is reported (:func:`roster_scan`
+#: returns ``truncated``) instead of being swallowed by a ``break``.
+_CAMPAIGN_MAX_PAGES = 250
 _ABORT_CHECK_EVERY = 25         # re-read campaign status this often mid-send
 
 DEFAULT_LOOKBACK_HOURS = 72
@@ -229,25 +258,52 @@ def _mailable(row: dict) -> dict | None:
             "created_at": _parse_dt(row.get("created_at"))}
 
 
-def roster(*, max_pages: int = _ROSTER_MAX_PAGES,
-           newer_than: datetime | None = None) -> list[dict]:
-    """Mailable accounts, newest first.
+def roster_scan(*, max_pages: int = _ROSTER_MAX_PAGES,
+                newer_than: datetime | None = None,
+                start_page: int = 1,
+                stop_after: int | None = None,
+                skip_ids: Collection[str] = (),
+                keep: Any = None) -> tuple[list[dict], bool]:
+    """``(rows, complete)`` — mailable accounts, newest first.
+
+    ``complete`` is True only when the scan reached the **end of the roster** (an empty or
+    short page), i.e. there is provably nobody after these. It is False when the scan
+    stopped early for any reason: the caller's quota filled, or the page ceiling was hit.
 
     ``newer_than`` is an EARLY EXIT, never the correctness gate: GoTrue lists newest-first,
     so once a whole page holds nothing inside the window there is nothing further to find.
     Every returned row is filtered against the bound regardless, so a future GoTrue that
-    ordered differently would cost pages, not correctness — and the page cap bounds it
-    either way, failing toward FEWER emails.
+    ordered differently would cost pages, not correctness.
+
+    Two things this does NOT do any more, both of them ways a caller was previously lied
+    to about how much of the roster it had seen:
+
+    * **A failed page raises.** It used to ``break``, so page 2 of 3 failing produced a
+      short list indistinguishable from a short roster — the campaign drain then mailed
+      199 of 600 people and marked itself ``done``. "Could not read" is not "there is
+      nobody else".
+    * **Hitting the page ceiling is REPORTED and LOGGED.** That is the 5,000-account cap
+      made visible; the caller decides whether it is a work bound (the welcome window is
+      72h wide and re-derived every wake) or an audience cap it must not mistake for
+      exhaustion (a campaign).
+
+    ``skip_ids``, ``start_page``, ``keep`` and ``stop_after`` are the paging seam: a
+    caller that already knows whom it has processed hands them in, the scan walks PAST
+    them into the part of the roster no wake has reached yet, and it stops as soon as it
+    has a wake's worth rather than materialising the whole user base.
     """
     out: list[dict] = []
-    for page in range(1, max(1, max_pages) + 1):
+    skip = set(skip_ids or ())
+    first = max(1, int(start_page))
+    last = first + max(1, max_pages) - 1
+    for page in range(first, last + 1):
         try:
             rows = _auth_page(page)
         except Exception as exc:  # noqa: BLE001
             log.warning("marketing: roster page %d failed (%s)", page, type(exc).__name__)
-            break
+            raise RosterUnavailable(f"page {page}: {type(exc).__name__}") from None
         if not rows:
-            break
+            return out, True
         hit = 0
         for raw in rows:
             row = _mailable(raw)
@@ -257,26 +313,59 @@ def roster(*, max_pages: int = _ROSTER_MAX_PAGES,
                 if row["created_at"] is None or row["created_at"] <= newer_than:
                     continue
                 hit += 1
+            if row["user_id"] in skip:
+                continue
+            if keep is not None and not keep(row):
+                continue
             out.append(row)
+            if stop_after is not None and len(out) >= stop_after:
+                return out, False       # a full quota — there may well be more behind it
         if newer_than is not None and hit == 0:
-            break
+            return out, True
         if len(rows) < _ROSTER_PAGE:
-            break
-    return out
+            return out, True
+    log.warning("marketing: roster scan stopped at its %d-page ceiling (%d accounts, from "
+                "page %d) with the roster not yet exhausted — anyone past that point was "
+                "NOT seen this wake", max_pages, max_pages * _ROSTER_PAGE, first)
+    return out, False
+
+
+def roster(*, max_pages: int = _ROSTER_MAX_PAGES,
+           newer_than: datetime | None = None) -> list[dict]:
+    """Mailable accounts, newest first. :func:`roster_scan` without the completeness flag,
+    for the callers that genuinely only want a bounded sample of the top of the roster."""
+    return roster_scan(max_pages=max_pages, newer_than=newer_than)[0]
 
 
 def _entitlements() -> dict[str, dict]:
-    """``{user_id: {tier, status}}`` for everyone who has ever touched billing."""
+    """``{user_id: {tier, status}}`` for everyone who has ever touched billing.
+
+    RAISES on a failed read. It used to answer ``{}``, which is not "nobody has an
+    entitlement" — it is "we do not know" wearing the costume of an answer, and
+    :func:`email_segments.normalize` turns an unknown tier into ``free``. One transient
+    PostgREST blip therefore rewrote a 20-free/20-paid roster as 40-free/0-paid, and a
+    campaign addressed to free users went to the paying subscribers it was written to
+    leave alone, with every idem_key claimed and the campaign marked ``done``.
+    """
     try:
         rows = _pg("GET", "user_entitlements?select=user_id,tier,status&limit=10000") or []
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing: entitlements read failed (%s)", type(exc).__name__)
-        return {}
+        raise EntitlementsUnavailable(type(exc).__name__) from None
     return {str(r.get("user_id")): r for r in rows if r.get("user_id")}
 
 
-def segment_members(segment: str, *, limit: int = _CAMPAIGN_MAX_PER_WAKE) -> list[dict]:
-    """Everyone in ``segment``, as ``{user_id, email, tier, status}``.
+def segment_page(segment: str, *, limit: int = _CAMPAIGN_MAX_PER_WAKE,
+                 skip_ids: Collection[str] = (), start_page: int = 1,
+                 max_pages: int = _ROSTER_MAX_PAGES) -> tuple[list[dict], bool]:
+    """``(members, exhausted)`` for one wake's slice of ``segment``.
+
+    ``exhausted`` is the only honest basis for calling a campaign finished: True means the
+    scan reached the END of the roster, so there is provably nobody left after these.
+    False means the wake filled its quota, or stopped at the page ceiling, or both — in
+    every one of those cases there may be more people, and marking ``done`` would strand
+    them permanently (the segment is re-derived each wake, so a campaign that says ``done``
+    is never looked at again).
 
     Note what is NOT done here: suppression and opt-out are not read, so
     ``marketing_eligible`` resolves to the whole mailable roster on this plane. That is
@@ -284,18 +373,33 @@ def segment_members(segment: str, *, limit: int = _CAMPAIGN_MAX_PER_WAKE) -> lis
     recipient at send time and is fail-closed, so the people this list over-includes are
     exactly the people the send will refuse and count as skipped. Pre-filtering here would
     add a second, staler copy of a compliance decision that already has an authority.
+
+    The entitlements read is skipped entirely for a segment whose rule does not reference
+    the billing join (``all``, ``marketing_eligible``), so an unavailable
+    ``user_entitlements`` cannot stop a send whose audience it could not have changed.
     """
-    ents = _entitlements()
-    out: list[dict] = []
-    for row in roster():
+    ents = _entitlements() if email_segments.needs_entitlements(segment) else {}
+    tiers: dict[str, dict] = {}
+
+    def _keep(row: dict) -> bool:
         ent = ents.get(row["user_id"]) or {}
         norm = email_segments.normalize({"tier": ent.get("tier"), "status": ent.get("status")})
         if not email_segments.matches(segment, norm):
-            continue
-        out.append({**row, "tier": norm["tier"], "status": norm["status"]})
-        if len(out) >= limit:
-            break
-    return out
+            return False
+        tiers[row["user_id"]] = norm
+        return True
+
+    rows, complete = roster_scan(max_pages=max_pages, start_page=start_page,
+                                 skip_ids=skip_ids, stop_after=limit, keep=_keep)
+    members = [{**r, "tier": tiers[r["user_id"]]["tier"], "status": tiers[r["user_id"]]["status"]}
+               for r in rows]
+    return members, complete
+
+
+def segment_members(segment: str, *, limit: int = _CAMPAIGN_MAX_PER_WAKE) -> list[dict]:
+    """Everyone in ``segment``, up to ``limit``. :func:`segment_page` for callers that
+    only want the members and can live with the default scan depth."""
+    return segment_page(segment, limit=limit)[0]
 
 
 # --------------------------------------------------------------------------- #
@@ -366,20 +470,52 @@ def welcome_message(identity: str) -> tuple[str, str, str]:
     return "You're in · 欢迎加入", html, text
 
 
+def _welcomed() -> set[str]:
+    """The user ids that already hold a ``welcome:`` ledger row.
+
+    One query, so the per-wake cap can be spent on people who have NOT been welcomed. It
+    used to take the oldest 200 of the window and dedupe afterwards inside
+    ``mailer.send``, which is starvation dressed as a cap: with more than 200 signups in
+    the window, every wake spent its whole budget re-offering the same already-welcomed
+    200 and collecting 200 ``duplicate``s, while accounts 201+ waited until the 72h
+    lookback expired them out of the window entirely — a welcome email that never arrives.
+
+    An unreadable ledger falls back to no dedup rather than to no sends: ``mailer.send``
+    is still idempotent, so the cost is a wasted wake, not a double send.
+    """
+    try:
+        rows = _pg("GET", "email_log?select=idem_key&idem_key=like."
+                          f"{urllib.parse.quote('welcome:*', safe='')}&limit=20000") or []
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing: welcome dedup preload failed (%s) — this wake may spend its "
+                    "budget on duplicates", type(exc).__name__)
+        return set()
+    return {str(r.get("idem_key") or "").split(":", 1)[1]
+            for r in rows if str(r.get("idem_key") or "").startswith("welcome:")}
+
+
 def welcome_candidates(now: datetime | None = None) -> list[dict]:
-    """Accounts created inside the welcome window. Empty when the window is disarmed."""
+    """Accounts created inside the window that have NOT been welcomed yet.
+
+    Dedup happens BEFORE the cap, deliberately — see :func:`_welcomed`.
+    """
     floor, now = welcome_window(now)
     if floor is None:
         return []
     rows = roster(newer_than=floor)
+    already = _welcomed()
+    rows = [r for r in rows if r["user_id"] not in already]
     rows.sort(key=lambda r: r["created_at"] or now)      # oldest first: closest to expiring
     return rows[:_WELCOME_MAX_PER_WAKE]
 
 
 def sweep_welcome(*, now: datetime | None = None) -> dict:
     """Send the welcome email to every account inside the window. Never raises."""
-    out = {"scanned": 0, "sent": 0, "duplicate": 0, "skipped": 0, "failed": 0}
+    out = {"scanned": 0, "sent": 0, "duplicate": 0, "skipped": 0,
+           "skipped_no_smtp": 0, "failed": 0}
     if not (marketing_enabled() and welcome_enabled()):
+        return out
+    if not _relay_ready("welcome", out):
         return out
     floor, now = welcome_window(now)
     if floor is None:
@@ -411,6 +547,7 @@ def sweep_welcome(*, now: datetime | None = None) -> dict:
                 idem_key=f"welcome:{user_id}",
                 user_id=user_id, headers=_marketing_headers(user_id))
             _tally(out, status)
+            _pace(status)
         except Exception as exc:  # noqa: BLE001 — one bad row must not end the sweep
             log.warning("marketing: welcome row failed (%s)", type(exc).__name__)
             out["failed"] += 1
@@ -422,15 +559,23 @@ def sweep_welcome(*, now: datetime | None = None) -> dict:
 def _bucket(status: str) -> str:
     """Which census column one mailer status belongs in.
 
-    'skipped_no_smtp' counts as a SEND: the ledger row is terminal and the message will
-    never be retried, so calling it a failure would make mail-off mode look like an
-    outage. 'queued' counts as SKIPPED — it is W3's fail-closed park, and the parked drain
-    owns it from there.
+    'skipped_no_smtp' HAS ITS OWN COLUMN and is emphatically not a send. It used to be
+    folded into ``sent``, and that single line was the most expensive thing in this
+    module: ``mailer.send`` writes a TERMINAL ledger row for it, so the idem_key is burnt
+    and a later retry answers ``duplicate`` without sending — meaning arming the welcome
+    leg while the relay is off would have destroyed the welcome email for every account in
+    the window while reporting ``sent: N``. The refusal in :func:`_relay_ready` is the
+    real fix; this column is how the census stops lying about what happened either way.
+
+    'queued' counts as SKIPPED — it is W3's fail-closed park, and the parked drain owns it
+    from there.
     """
     if status == "duplicate":
         return "duplicate"
-    if status in ("sent", "skipped_no_smtp"):
+    if status == "sent":
         return "sent"
+    if status == "skipped_no_smtp":
+        return "skipped_no_smtp"
     if status in ("suppressed", "queued"):
         return "skipped"
     return "failed"
@@ -439,8 +584,59 @@ def _bucket(status: str) -> str:
 def _tally(out: dict, status: str) -> str:
     """Record one mailer status in ``out``; returns the bucket it landed in."""
     b = _bucket(status)
-    out[b] += 1
+    out[b] = out.get(b, 0) + 1
     return b
+
+
+#: Statuses that mean the relay was actually reached, so the pacer owes them a gap.
+_TRANSMITTED = ("sent", "failed")
+
+#: Legs already told, once, that the relay is unconfigured. A sweeper wakes four times an
+#: hour forever; the first line is the operator's signal and the rest are noise.
+_UNCONFIGURED_LOGGED: set[str] = set()
+
+
+def _relay_ready(leg: str, out: dict) -> bool:
+    """False (and ``out`` marked) when there is no relay, so the leg must not run.
+
+    THE ACUTE ONE. Production has SMTP off today. Without this, arming the welcome leg
+    would walk the window, claim ``welcome:{user_id}`` for every account in it, PATCH each
+    row to the terminal ``skipped_no_smtp``, and report success — after which those people
+    can never be welcomed, because the key is spent and ``drain_parked`` only ever looked
+    for ``status='queued'``. Refusing to start is the only version of this that is
+    recoverable: nothing is claimed, so the day the relay lands the window is still intact.
+    """
+    if mailer.is_configured():
+        return True
+    out["not_configured"] = True
+    if leg not in _UNCONFIGURED_LOGGED:
+        _UNCONFIGURED_LOGGED.add(leg)
+        log.warning("marketing: the %s leg is armed but there is no relay (MAIL_SMTP_* / "
+                    "MAIL_FROM unset) — refusing to run. Nothing was claimed, so no "
+                    "message was burnt; it will run for the same people once mail is "
+                    "configured.", leg)
+    return False
+
+
+def _pace(status: str = "sent") -> None:
+    """Wait the shared inter-message gap after a message that reached the relay.
+
+    ONE pacer for ALL THREE legs. It used to exist only inside the campaign drain, so a
+    single wake could fire 200 welcomes and 500 parked rows back to back, ungated — up to
+    700 SMTP connections in a few seconds, which every relay reads as a spam burst from a
+    compromised account. Sharing it also changes the arithmetic the runbook quotes: the
+    ceiling is now ``MAIL_THROTTLE_PER_MIN`` × 60 messages an hour whatever the wake
+    interval is, instead of the interval multiplying the two unthrottled legs.
+
+    Only a status that actually touched the transport is paced. Pacing a ``duplicate`` or
+    a ``suppressed`` would throttle bookkeeping, which costs wall-clock and protects
+    nothing.
+    """
+    if status not in _TRANSMITTED:
+        return
+    gap = 60.0 / throttle_per_min()
+    if gap:
+        time.sleep(gap)
 
 
 # --------------------------------------------------------------------------- #
@@ -449,16 +645,23 @@ def _tally(out: dict, status: str) -> str:
 CAMPAIGN_TEMPLATE = "campaign"
 
 
+#: :data:`ZH_DELIM` ON ITS OWN LINE, which is what the docstring always promised and what
+#: ``admin/email_center.py::_compose`` always writes. A bare substring ``partition`` took
+#: the delimiter anywhere, so an English paragraph that merely MENTIONED ``===zh===``
+#: truncated the English body at that word and shipped the remainder as the 中文 half.
+_ZH_SPLIT = re.compile(rf"^[ \t]*{re.escape(ZH_DELIM)}[ \t]*$", re.M)
+
+
 def split_langs(text: str) -> tuple[str, str]:
-    """``body_md`` -> (english, chinese) on :data:`ZH_DELIM`.
+    """``body_md`` -> (english, chinese) on a :data:`ZH_DELIM` LINE.
 
     No delimiter means the operator wrote one language; it is used for both halves rather
     than shipping an empty 中文 section, because a blank half reads as a broken email.
     """
     raw = str(text or "")
-    if ZH_DELIM in raw:
-        en, _, zh = raw.partition(ZH_DELIM)
-        return en.strip(), zh.strip()
+    parts = _ZH_SPLIT.split(raw, maxsplit=1)
+    if len(parts) == 2:
+        return parts[0].strip(), parts[1].strip()
     return raw.strip(), raw.strip()
 
 
@@ -486,10 +689,22 @@ def _blocks(body: str) -> list[dict]:
     return out
 
 
+#: How ``admin/email_center.py::_compose`` joins the two subject halves into the single
+#: ``subject`` column, and therefore how they are taken apart again.
+SUBJECT_SEP = " · "
+
+
 def campaign_message(campaign: dict, identity: str) -> tuple[str, str, str]:
     """(subject, html, text) for one recipient of a campaign."""
     subject = " ".join(str(campaign.get("subject") or "").split()) or "Mastermind"
-    subj_en, _, subj_zh = subject.partition(" · ")
+    # rpartition, not partition: the 中文 half is the LAST field, so an English subject
+    # that itself contains " · " splits at its own separator and ships half a headline in
+    # English and the other half labelled as Chinese. The composer also refuses to store a
+    # half containing the separator (email_center._subject_error) — this is the second
+    # belt, for a row written before that check existed or edited in the table editor.
+    subj_en, _, subj_zh = subject.rpartition(SUBJECT_SEP)
+    if not subj_en:                       # no separator at all: one language, used for both
+        subj_en, subj_zh = subj_zh, ""
     en_body, zh_body = split_langs(campaign.get("body_md"))
     en, zh = _blocks(en_body), _blocks(zh_body)
 
@@ -544,8 +759,11 @@ def _already_sent(campaign_id: str) -> set[str]:
 
 def drain_campaigns() -> dict:
     """Send every queued campaign to its segment, throttled. Never raises."""
-    out = {"campaigns": 0, "sent": 0, "duplicate": 0, "skipped": 0, "failed": 0}
+    out = {"campaigns": 0, "sent": 0, "duplicate": 0, "skipped": 0,
+           "skipped_no_smtp": 0, "failed": 0}
     if not (marketing_enabled() and campaigns_enabled()):
+        return out
+    if not _relay_ready("campaign", out):
         return out
     try:
         rows = _pg("GET", "email_campaigns?status=in.(queued,sending)"
@@ -566,6 +784,20 @@ def drain_campaigns() -> dict:
     return out
 
 
+def _resume_page(processed: int) -> int:
+    """Which GoTrue page a wake should START on, given how many members are already done.
+
+    The cursor this lane does not have a column for, derived from the one it does: every
+    recipient the drain has offered holds an ``email_log`` row, so ``len(done)`` IS the
+    progress marker. Members are drawn in roster order and an account can only ever be
+    filtered OUT of that order, so the Nth member always sits at account index ≥ N — which
+    makes ``1 + (N-1)//page`` a page that provably cannot be past the first unprocessed
+    person. Deliberately conservative: overlapping a page costs one wasted read (the
+    skip-set drops it), skipping one costs somebody their email.
+    """
+    return 1 + max(0, int(processed) - 1) // _ROSTER_PAGE
+
+
 def _drain_one(camp: dict, out: dict) -> None:
     cid = str(camp.get("id") or "")
     if not cid:
@@ -578,12 +810,32 @@ def _drain_one(camp: dict, out: dict) -> None:
         _patch_campaign(cid, {"status": "aborted"})
         return
 
-    members = segment_members(segment)
     done = _already_sent(cid)
-    _patch_campaign(cid, {"status": "sending", "queued_n": len(members)})
+    seen = {k.rsplit(":", 1)[-1] for k in done}
+    try:
+        # Walk PAST everyone this campaign has already offered, so wake 2 reaches people
+        # wake 1 never saw. Before this the drain re-read the same first 500 members every
+        # wake, skipped them all as already-claimed, ran off the end of an empty loop and
+        # marked itself `done` — a 2,000-person segment received exactly 500 emails and
+        # the row said "done" with nothing anywhere recording the other 1,500.
+        members, exhausted = segment_page(
+            segment, limit=_CAMPAIGN_MAX_PER_WAKE, skip_ids=seen,
+            start_page=_resume_page(len(seen)), max_pages=_CAMPAIGN_MAX_PAGES)
+    except SegmentUnavailable as exc:
+        # Membership is UNKNOWN, not empty. Leave the campaign exactly as it was: it is
+        # still selected next wake, and nothing has been claimed for the wrong audience.
+        log.warning("marketing: campaign %s left queued — %s (%s)",
+                    cid, type(exc).__name__, exc)
+        out["failed"] += 1
+        return
 
-    gap = 60.0 / throttle_per_min()
-    tally = {"sent": 0, "skipped": 0, "failed": 0}
+    # queued_n is the OPERATOR'S plan, written from the console's full SQL count, and the
+    # drain no longer touches it. Overwriting it with one wake's slice is what made the
+    # 500-of-2,000 truncation invisible: the row read "queued 500 · sent 500 · done" and
+    # the number the operator had actually approved was gone.
+    _patch_campaign(cid, {"status": "sending"})
+
+    tally = {"sent": 0, "skipped": 0, "skipped_no_smtp": 0, "failed": 0}
     n = 0
     for member in members:
         key = f"campaign:{cid}:{member['user_id']}"
@@ -613,11 +865,14 @@ def _drain_one(camp: dict, out: dict) -> None:
         if bucket in tally:
             tally[bucket] += 1
         n += 1
-        if gap:
-            time.sleep(gap)
+        _pace(status)
 
-    _bump(cid, tally, done=True)
-    log.info("marketing: campaign %s drained %s", cid, tally)
+    # `done` ONLY when the roster was walked to its end. A wake that filled its quota, or
+    # stopped at the scan ceiling, has not proved there is nobody left — and a campaign
+    # marked done is never selected again, so the proof has to come first.
+    _bump(cid, tally, done=exhausted)
+    log.info("marketing: campaign %s wake %s (audience %s)", cid, tally,
+             "exhausted" if exhausted else "MORE TO COME — still sending")
 
 
 def _bump(cid: str, tally: dict, *, done: bool = False) -> None:
@@ -625,7 +880,10 @@ def _bump(cid: str, tally: dict, *, done: bool = False) -> None:
     live = _campaign(cid) or {}
     patch = {
         "sent_n": int(live.get("sent_n") or 0) + tally["sent"],
-        "skipped_n": int(live.get("skipped_n") or 0) + tally["skipped"],
+        # No column exists for "the relay was off", and it is emphatically not a send, so
+        # it lands with the other people we did not reach rather than inflating sent_n.
+        "skipped_n": (int(live.get("skipped_n") or 0) + tally["skipped"]
+                      + tally.get("skipped_no_smtp", 0)),
         "failed_n": int(live.get("failed_n") or 0) + tally["failed"],
     }
     # An aborted campaign keeps its status: the operator's decision outranks the drain's
@@ -654,14 +912,37 @@ def drain_parked() -> dict:
     or of a campaign row (``campaign:{id}:{user_id}``). A parked row from any OTHER
     template is left alone and logged — guessing at content nobody stored would be a
     worse outcome than a row an operator has to look at.
+
+    TWO KINDS OF STRANDED ROW, and the second one is the recovery lane
+    ------------------------------------------------------------------
+    ``status='queued', detail='suppression_lookup_failed'`` is W3's park, above.
+    ``status='skipped_no_smtp'`` is the OTHER one: a terminal row whose idem_key is spent
+    and whose message was never written, produced by any send attempted while the relay
+    was off. :func:`_relay_ready` stops the welcome and campaign legs from creating more
+    of them, but rows created before that landed still exist, and nothing would ever have
+    looked at them again — the message was simply gone. So once a relay exists they are
+    re-offered exactly like a parked row: suppression re-checked, message rebuilt,
+    transport handed the result, THIS row PATCHed. While there is still no relay they are
+    not selected at all, because re-skipping them is work with no outcome.
+
+    The gates are the LEG's gates, per row. A parked welcome is only completed when the
+    welcome leg is armed and a parked campaign only when campaigns are — the same switches
+    that decide whether those messages may go out at all, applied to messages that are
+    merely late.
     """
-    out = {"scanned": 0, "sent": 0, "suppressed": 0, "skipped": 0, "failed": 0}
-    if not marketing_enabled():
+    out = {"scanned": 0, "sent": 0, "suppressed": 0, "skipped": 0,
+           "skipped_no_smtp": 0, "failed": 0}
+    if not (marketing_enabled() and (welcome_enabled() or campaigns_enabled())):
         return out
+    rows: list[dict] = []
     try:
-        rows = _pg("GET", "email_log?status=eq.queued&detail=eq.suppression_lookup_failed"
-                          "&select=idem_key,template,class,to_email,user_id"
-                          f"&order=created_at.asc&limit={_PARKED_LIMIT}") or []
+        rows += _pg("GET", "email_log?status=eq.queued&detail=eq.suppression_lookup_failed"
+                           "&select=idem_key,template,class,to_email,user_id"
+                           f"&order=created_at.asc&limit={_PARKED_LIMIT}") or []
+        if mailer.is_configured():
+            rows += _pg("GET", "email_log?status=eq.skipped_no_smtp"
+                               "&select=idem_key,template,class,to_email,user_id"
+                               f"&order=created_at.asc&limit={_PARKED_LIMIT}") or []
     except Exception as exc:  # noqa: BLE001
         log.warning("marketing: parked query failed (%s)", type(exc).__name__)
         out["failed"] += 1
@@ -693,12 +974,24 @@ def _rebuild(idem_key: str, template: str, user_id: str | None) -> tuple[str, st
     return None
 
 
+def _leg_armed(template: str) -> bool:
+    """Is the leg that owns this template switched on? Unknown templates are not ours."""
+    if template == WELCOME_TEMPLATE:
+        return welcome_enabled()
+    if template == CAMPAIGN_TEMPLATE:
+        return campaigns_enabled()
+    return False
+
+
 def _complete_parked(row: dict, out: dict) -> None:
     idem_key = str(row.get("idem_key") or "")
     to_email = str(row.get("to_email") or "")
     user_id = row.get("user_id") or None
     template = str(row.get("template") or "")
     if not (idem_key and to_email):
+        out["skipped"] += 1
+        return
+    if not _leg_armed(template):
         out["skipped"] += 1
         return
 
@@ -719,8 +1012,10 @@ def _complete_parked(row: dict, out: dict) -> None:
         out["skipped"] += 1
         return
     if not mailer.is_configured():
+        # Terminal, but no longer final: the row is picked up again by the second select
+        # in drain_parked the moment a relay exists.
         mailer._ledger_finish(idem_key, "skipped_no_smtp", "MAIL_SMTP_* unset")
-        out["skipped"] += 1
+        out["skipped_no_smtp"] += 1
         return
 
     subject, html, text = built
@@ -733,9 +1028,11 @@ def _complete_parked(row: dict, out: dict) -> None:
     except Exception as exc:  # noqa: BLE001
         mailer._ledger_finish(idem_key, "failed", type(exc).__name__)
         out["failed"] += 1
+        _pace("failed")
         return
     mailer._ledger_finish(idem_key, "sent", "drained")
     out["sent"] += 1
+    _pace("sent")
 
 
 # --------------------------------------------------------------------------- #
