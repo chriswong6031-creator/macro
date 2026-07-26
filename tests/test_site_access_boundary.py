@@ -113,6 +113,65 @@ def test_runtime_artifact_exemption_stays_honest():
         assert f"site{prefix}" in ignored, f"exempt prefix is not gitignored: site{prefix}"
 
 
+def test_exempt_prefixes_publish_out_of_band():
+    """Closes the hole BOTH existing guards leave open: the exemption and the
+    .gitignore added TOGETHER.
+
+    test_runtime_artifact_exemption_stays_honest asks "is it gitignored" -- which
+    an author silencing a red can simply make true. test_public_estates_stay_committable
+    skips exempt prefixes by construction. So the exact #3507 change (add /research/
+    to RUNTIME_ARTIFACT_PREFIXES *and* site/research/ to .gitignore) passes both:
+    verified by replaying it against the post-#3504/#3522 suite -- 8 passed. Only the
+    gitignore half done ALONE was ever caught.
+
+    The property that actually separates the two planes is DELIVERY, and it leaves a
+    mechanical trace. A gitignored tree is invisible to the render lane's plain
+    `git add site/`, so anything legitimately shipped from one must be named by an
+    explicit `git add -f`:
+
+        site/live/     14 tracked files, every one force-added by name across
+                       intraday-fastpath / earlyclose / closing-bell / btc-live /
+                       daily -- a genuine out-of-band plane with committed fallbacks.
+        site/research/ 87 tracked files under #3507, ZERO force-adds anywhere. They
+                       could only have arrived via plain `git add site/`, which is
+                       proof the prefix is commit-delivered and the exemption false.
+
+    So: if the repo TRACKS files under an exempt prefix and nothing force-adds there,
+    the exemption contradicts how the content actually reaches the edge.
+    """
+    workflows = ROOT / ".github" / "workflows"
+    wf_text = "\n".join(
+        p.read_text() for p in sorted(workflows.glob("*.yml")) if p.is_file()
+    )
+    for prefix in RUNTIME_ARTIFACT_PREFIXES:
+        tree = f"site{prefix}"                      # e.g. "site/live/"
+        proc = subprocess.run(
+            ["git", "ls-files", "--", tree],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        # Never read a broken git as "nothing tracked" -- that is the vacuous-green
+        # failure this whole module keeps re-learning.
+        assert proc.returncode == 0, (
+            f"git ls-files unusable (rc={proc.returncode}), so this guard cannot "
+            f"vouch for {tree}: {proc.stderr.strip()}"
+        )
+        tracked = [ln for ln in proc.stdout.splitlines() if ln.strip()]
+        if not tracked:
+            continue                                 # purely runtime -- nothing to explain
+        assert re.search(rf"add\s+(?:-f|--force)\s+[^\n]*{re.escape(tree)}", wf_text), (
+            f"{tree} is exempt as a runtime artifact and gitignored, yet the repo "
+            f"tracks {len(tracked)} file(s) under it and NO workflow force-adds there "
+            f"(`git add -f {tree}...`). Plain `git add site/` cannot stage an ignored "
+            f"path, so those files prove the prefix is delivered by being COMMITTED -- "
+            f"it is not a runtime plane. Either drop it from RUNTIME_ARTIFACT_PREFIXES "
+            f"and un-ignore it (what #3522 did for /research/), or, if it really does "
+            f"publish out of band, force-add its committed fallbacks by name the way "
+            f"site/live/ does. See #3501/#3507/#3522."
+        )
+
+
 def test_public_estates_stay_committable():
     """The inverse guard: a NON-exempt public path must not be gitignored.
 
