@@ -1,34 +1,71 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-26T03:13:02Z",
+  "produced_at": "2026-07-26T09:52:12Z",
   "as_of": "2026-07-26",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
     "items": 55,
-    "passed": 53,
-    "quarantined": 2,
-    "quarantined_policy": 2,
-    "quarantined_overflow": 0,
+    "passed": 43,
+    "quarantined": 12,
+    "quarantined_policy": 4,
+    "quarantined_overflow": 8,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "missing_disclosure": 2
+    "missing_disclosure": 4,
+    "cashtag_cap": 8
   },
   "quarantined": [
     {
-      "id": "post-flagship-001",
+      "id": "post-flagship-002",
       "account": "flagship",
-      "slot": "D1-S1",
+      "slot": "D1-S2",
       "type": "signal",
       "cashtag": "$ROST",
       "headline": "$ROST at 235.80. Simple read.",
       "class": "policy",
       "reasons": [
         "missing_disclosure"
+      ]
+    },
+    {
+      "id": "post-flagship-005",
+      "account": "flagship",
+      "slot": "D1-S5",
+      "type": "watchlist",
+      "cashtag": "$CBOE",
+      "headline": "Circling $CBOE",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$CBOE"
+      ]
+    },
+    {
+      "id": "post-flagship-006",
+      "account": "flagship",
+      "slot": "D1-S6",
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST | 235.80 is the line",
+      "class": "policy",
+      "reasons": [
+        "missing_disclosure"
+      ]
+    },
+    {
+      "id": "post-flagship-007",
+      "account": "flagship",
+      "slot": "D1-S7",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "$INTU is close",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$INTU"
       ]
     },
     {
@@ -42,48 +79,108 @@
       "reasons": [
         "missing_disclosure"
       ]
+    },
+    {
+      "id": "post-flagship-015",
+      "account": "flagship",
+      "slot": "D2-S7",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "Watching $INTU, not buying yet",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$INTU"
+      ]
+    },
+    {
+      "id": "post-flagship-029",
+      "account": "flagship",
+      "slot": "D4-S5",
+      "type": "chart",
+      "cashtag": "$CBOE",
+      "headline": "$CBOE chart I keep coming back to",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$CBOE"
+      ]
+    },
+    {
+      "id": "post-flagship-038",
+      "account": "flagship",
+      "slot": "D5-S6",
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST | 235.80 is the line",
+      "class": "policy",
+      "reasons": [
+        "missing_disclosure"
+      ]
+    },
+    {
+      "id": "post-flagship-039",
+      "account": "flagship",
+      "slot": "D5-S7",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "$INTU on my radar this week",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$INTU"
+      ]
+    },
+    {
+      "id": "post-flagship-040",
+      "account": "flagship",
+      "slot": "D5-S8",
+      "type": "watchlist",
+      "cashtag": "$GPI",
+      "headline": "Circling $GPI",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$GPI"
+      ]
+    },
+    {
+      "id": "post-flagship-047",
+      "account": "flagship",
+      "slot": "D6-S7",
+      "type": "watchlist",
+      "cashtag": "$INTU",
+      "headline": "Keeping $INTU close this week",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$INTU"
+      ]
+    },
+    {
+      "id": "post-flagship-053",
+      "account": "flagship",
+      "slot": "D7-S5",
+      "type": "watchlist",
+      "cashtag": "$CBOE",
+      "headline": "Watching $CBOE, not buying yet",
+      "class": "overflow",
+      "reasons": [
+        "cashtag_cap:$CBOE"
+      ]
     }
   ],
   "passed": [
     {
-      "id": "post-flagship-002",
+      "id": "post-flagship-001",
       "account": "flagship",
-      "slot": "D1-S2",
+      "slot": "D1-S1",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Circling $CRM"
+      "cashtag": "$CBOE",
+      "headline": "$CBOE is close"
     },
     {
       "id": "post-flagship-003",
       "account": "flagship",
       "slot": "D1-S3",
       "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "$ENOV on my radar this week"
-    },
-    {
-      "id": "post-flagship-005",
-      "account": "flagship",
-      "slot": "D1-S5",
-      "type": "watchlist",
-      "cashtag": "$SONO",
-      "headline": "Watching $SONO, not buying yet"
-    },
-    {
-      "id": "post-flagship-006",
-      "account": "flagship",
-      "slot": "D1-S6",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "Circling $LKFN"
-    },
-    {
-      "id": "post-flagship-007",
-      "account": "flagship",
-      "slot": "D1-S7",
-      "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "$MOS on my radar this week"
+      "cashtag": "$INTU",
+      "headline": "Keeping $INTU close this week"
     },
     {
       "id": "post-flagship-008",
@@ -106,8 +203,8 @@
       "account": "flagship",
       "slot": "D2-S3",
       "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Keeping $CRM close this week"
+      "cashtag": "$INTU",
+      "headline": "$INTU is close"
     },
     {
       "id": "post-flagship-012",
@@ -122,40 +219,32 @@
       "account": "flagship",
       "slot": "D2-S5",
       "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Circling $KMT"
+      "cashtag": "$CBOE",
+      "headline": "Keeping $CBOE close this week"
     },
     {
       "id": "post-flagship-014",
       "account": "flagship",
       "slot": "D2-S6",
-      "type": "watchlist",
-      "cashtag": "$SONO",
-      "headline": "Keeping $SONO close this week"
-    },
-    {
-      "id": "post-flagship-015",
-      "account": "flagship",
-      "slot": "D2-S7",
-      "type": "watchlist",
-      "cashtag": "$LKFN",
-      "headline": "Keeping $LKFN close this week"
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "Flagged $ROST at 235.80"
     },
     {
       "id": "post-flagship-017",
       "account": "flagship",
       "slot": "D3-S1",
       "type": "chart",
-      "cashtag": "$FDS",
-      "headline": "FDS | worth a look"
+      "cashtag": "$CBOE",
+      "headline": "CBOE, one chart"
     },
     {
       "id": "post-flagship-018",
       "account": "flagship",
       "slot": "D3-S2",
-      "type": "watchlist",
-      "cashtag": "$CBOE",
-      "headline": "Watching $CBOE, not buying yet"
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST back on the board"
     },
     {
       "id": "post-flagship-021",
@@ -170,24 +259,24 @@
       "account": "flagship",
       "slot": "D3-S8",
       "type": "chart",
-      "cashtag": "$LKFN",
-      "headline": "$LKFN chart I keep coming back to"
+      "cashtag": "$GPI",
+      "headline": "$GPI | 319.40 is the line"
     },
     {
       "id": "post-flagship-025",
       "account": "flagship",
       "slot": "D4-S1",
       "type": "chart",
-      "cashtag": "$MOS",
-      "headline": "$MOS this week"
+      "cashtag": "$CBOE",
+      "headline": "CBOE | worth a look"
     },
     {
       "id": "post-flagship-026",
       "account": "flagship",
       "slot": "D4-S2",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "$FDS is close"
+      "cashtag": "$ROST",
+      "headline": "Circling $ROST"
     },
     {
       "id": "post-flagship-028",
@@ -196,14 +285,6 @@
       "type": "education",
       "cashtag": "",
       "headline": "What flagging something actually means"
-    },
-    {
-      "id": "post-flagship-029",
-      "account": "flagship",
-      "slot": "D4-S5",
-      "type": "chart",
-      "cashtag": "$CRM",
-      "headline": "$CRM | 167.00 is the line"
     },
     {
       "id": "post-flagship-030",
@@ -234,24 +315,24 @@
       "account": "flagship",
       "slot": "D5-S2",
       "type": "chart",
-      "cashtag": "$MOS",
-      "headline": "MOS, one chart"
+      "cashtag": "$ROST",
+      "headline": "ROST | worth a look"
     },
     {
       "id": "post-flagship-035",
       "account": "flagship",
       "slot": "D5-S3",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Circling $FDS"
+      "cashtag": "$INTU",
+      "headline": "Keeping $INTU close this week"
     },
     {
       "id": "post-flagship-036",
       "account": "flagship",
       "slot": "D5-S4",
       "type": "watchlist",
-      "cashtag": "$CBOE",
-      "headline": "Circling $CBOE"
+      "cashtag": "$GPI",
+      "headline": "Keeping $GPI close this week"
     },
     {
       "id": "post-flagship-037",
@@ -262,52 +343,28 @@
       "headline": "The stop matters more than the target"
     },
     {
-      "id": "post-flagship-038",
-      "account": "flagship",
-      "slot": "D5-S6",
-      "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Keeping $CRM close this week"
-    },
-    {
-      "id": "post-flagship-039",
-      "account": "flagship",
-      "slot": "D5-S7",
-      "type": "watchlist",
-      "cashtag": "$ENOV",
-      "headline": "Watching $ENOV, not buying yet"
-    },
-    {
-      "id": "post-flagship-040",
-      "account": "flagship",
-      "slot": "D5-S8",
-      "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "$KMT is close"
-    },
-    {
       "id": "post-flagship-041",
       "account": "flagship",
       "slot": "D6-S1",
       "type": "chart",
-      "cashtag": "$SONO",
-      "headline": "$SONO chart I keep coming back to"
+      "cashtag": "$CBOE",
+      "headline": "$CBOE | 285.10 is the line"
     },
     {
       "id": "post-flagship-043",
       "account": "flagship",
       "slot": "D6-S3",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "Keeping $MOS close this week"
+      "cashtag": "$INTU",
+      "headline": "$INTU is close"
     },
     {
       "id": "post-flagship-044",
       "account": "flagship",
       "slot": "D6-S4",
       "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Watching $FDS, not buying yet"
+      "cashtag": "$GPI",
+      "headline": "$GPI is close"
     },
     {
       "id": "post-flagship-046",
@@ -318,28 +375,20 @@
       "headline": "$ROST back on the board"
     },
     {
-      "id": "post-flagship-047",
-      "account": "flagship",
-      "slot": "D6-S7",
-      "type": "watchlist",
-      "cashtag": "$CRM",
-      "headline": "Keeping $CRM close this week"
-    },
-    {
       "id": "post-flagship-049",
       "account": "flagship",
       "slot": "D7-S1",
       "type": "watchlist",
-      "cashtag": "$KMT",
-      "headline": "Keeping $KMT close this week"
+      "cashtag": "$CBOE",
+      "headline": "$CBOE is close"
     },
     {
       "id": "post-flagship-050",
       "account": "flagship",
       "slot": "D7-S2",
-      "type": "watchlist",
-      "cashtag": "$SONO",
-      "headline": "$SONO on my radar this week"
+      "type": "signal",
+      "cashtag": "$ROST",
+      "headline": "$ROST back on the board"
     },
     {
       "id": "post-flagship-051",
@@ -354,16 +403,8 @@
       "account": "flagship",
       "slot": "D7-S4",
       "type": "watchlist",
-      "cashtag": "$MOS",
-      "headline": "$MOS on my radar this week"
-    },
-    {
-      "id": "post-flagship-053",
-      "account": "flagship",
-      "slot": "D7-S5",
-      "type": "watchlist",
-      "cashtag": "$FDS",
-      "headline": "Keeping $FDS close this week"
+      "cashtag": "$GPI",
+      "headline": "$GPI is close"
     },
     {
       "id": "post-flagship-054",
@@ -378,8 +419,8 @@
       "account": "flagship",
       "slot": "D7-S7",
       "type": "chart",
-      "cashtag": "$ROST",
-      "headline": "ROST, one chart"
+      "cashtag": "$INTU",
+      "headline": "INTU, one chart"
     },
     {
       "id": "post-flagship-056",
@@ -478,7 +519,7 @@
     },
     "cadence": {
       "cadence_cap_daily_hits": 0,
-      "cashtag_cap_hits": 0,
+      "cashtag_cap_hits": 8,
       "slot_collision_hits": 0,
       "reply_cap_hits": 0
     },
@@ -486,7 +527,7 @@
       "hits": 0
     },
     "disclosure": {
-      "hits": 2
+      "hits": 4
     },
     "cherry_pick": {
       "status": "run",

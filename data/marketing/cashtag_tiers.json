@@ -2,7 +2,7 @@
   "schema": "marketing.cashtag_tiers/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-07-26T03:19:13Z",
+  "produced_at": "2026-07-26T09:59:03Z",
   "tier": "display",
   "as_of": "2026-07-24",
   "universe_n": 520,
@@ -1788,7 +1788,7 @@
       ],
       "proxies": {
         "mcap_weight": 0.401225,
-        "pct_1d": 1.71,
+        "pct_1d": 1.73,
         "pct_1w": -6.26,
         "earnings_in_days": 1,
         "dollar_vol_musd": 1075.4107732074738
@@ -1948,7 +1948,7 @@
       ],
       "proxies": {
         "mcap_weight": 0.526872,
-        "pct_1d": 0.97,
+        "pct_1d": 1.13,
         "pct_1w": -0.46,
         "earnings_in_days": null,
         "dollar_vol_musd": 1483.2381354736328
@@ -2954,7 +2954,7 @@
       ],
       "proxies": {
         "mcap_weight": 0.141369,
-        "pct_1d": 2.58,
+        "pct_1d": 2.59,
         "pct_1w": -1.57,
         "earnings_in_days": 5,
         "dollar_vol_musd": null
@@ -3128,7 +3128,7 @@
       ],
       "proxies": {
         "mcap_weight": 0.05149,
-        "pct_1d": -2.27,
+        "pct_1d": -2.22,
         "pct_1w": -3.89,
         "earnings_in_days": 5,
         "dollar_vol_musd": null
@@ -6350,7 +6350,7 @@
       "reasons": [],
       "proxies": {
         "mcap_weight": 0.060769,
-        "pct_1d": 2.54,
+        "pct_1d": 2.53,
         "pct_1w": 2.48,
         "earnings_in_days": 9,
         "dollar_vol_musd": null
