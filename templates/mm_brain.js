@@ -143,7 +143,9 @@
     box-shadow:var(--mmb-fab-glow);
     transition:transform .18s ease,box-shadow .18s ease}
   #mmb-launch:hover{transform:translateY(-2px);box-shadow:var(--mmb-fab-glow-h)}
-  #mmb-launch.mmb-hide{opacity:0;pointer-events:none;transform:translateY(8px)}
+  /* visibility, not just opacity: a launcher hidden behind the open panel is still a tab
+     stop if it only fades, so a keyboard user would tab onto an invisible pill. */
+  #mmb-launch.mmb-hide{opacity:0;pointer-events:none;visibility:hidden;transform:translateY(8px)}
   /* The arc is a conic gradient masked down to the rim band. Gated on
      mask-composite: where the mask cannot be composited the ring would paint as a
      full coloured disc over the pill, so it is better to have no ring at all —
@@ -159,6 +161,16 @@
       animation:mmb-rim 5.2s linear infinite}
     #mmb-launch:hover::before{animation-duration:2.4s;opacity:1}
   }
+  /* The launcher is the one control that floats over ARBITRARY page content, so its focus
+     ring cannot borrow a known backdrop the way the in-panel rings borrow the dark panel —
+     and the themed pill is near-white in light and near-black in dark, so it cannot lean on
+     the pill either. Three concentric tones drawn outward: house blue hugging the pill, then
+     a white hairline, then a dark edge. The achromatic pair is what survives BOTH themes;
+     the blue is what makes it read as this desk's focus ring rather than the UA default.
+     ::after because the rim arc above already owns ::before. */
+  #mmb-launch:focus-visible{outline:2px solid var(--mmb-info);outline-offset:2px}
+  #mmb-launch:focus-visible::after{content:'';position:absolute;inset:-4px;border-radius:inherit;pointer-events:none;
+    box-shadow:0 0 0 1.5px rgba(255,255,255,.92),0 0 0 3px rgba(6,10,20,.55)}
   .mmb-orb{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;
     background:radial-gradient(circle at 32% 28%,color-mix(in srgb,#a78bfa 92%,#fff),#416aec 60%,#0b1030 100%);
     box-shadow:inset 0 1px 3px color-mix(in srgb,#fff 45%,transparent),0 0 18px -2px color-mix(in srgb,var(--mmb-glow) 80%,transparent);
@@ -201,13 +213,17 @@
     border-radius:22px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel) 82%,transparent);
     -webkit-backdrop-filter:blur(26px) saturate(1.15);backdrop-filter:blur(26px) saturate(1.15);
     box-shadow:var(--mmb-shadow-panel),inset 0 1px 0 var(--mmb-sheen);
-    transform:translateY(16px) scale(.98);opacity:0;pointer-events:none;transform-origin:bottom right;
+    transform:translateY(16px) scale(.98);opacity:0;pointer-events:none;visibility:hidden;transform-origin:bottom right;
     /* CSS owns OPACITY only. TRANSFORM is driven entirely by the Web Animations API (entry
        + the compact↔max morph) so nothing ever transitions transform in CSS — a CSS transform
-       transition would fight the WAAPI morph and freeze it at the inverted start. */
-    transition:opacity .26s ease}
+       transition would fight the WAAPI morph and freeze it at the inverted start.
+       VISIBILITY is what keeps a CLOSED panel out of the tab order: opacity:0 alone leaves
+       every control inside it focusable, so tabbing through any page on the site walked
+       into ~23 invisible chat controls. Delayed 0s step AFTER the fade, so closing still
+       reads as a fade-out and not a cut. */
+    transition:opacity .26s ease,visibility 0s linear .26s}
   #mmb-panel.mmb-top{right:18px;top:64px;bottom:auto;transform-origin:top right;transform:translateY(-16px) scale(.98)}
-  #mmb-panel.open{transform:none;opacity:1;pointer-events:auto}
+  #mmb-panel.open{transform:none;opacity:1;pointer-events:auto;visibility:visible;transition:opacity .26s ease,visibility 0s}
   /* Transform-free centering (inset:0 + margin:auto) so the panel's resting transform is
      'none' in BOTH states — the FLIP invert composes cleanly against it. */
   #mmb-panel.max{inset:0;margin:auto;width:min(1480px,90vw);height:min(1240px,95vh)}
@@ -542,7 +558,10 @@
   var st = DOC.createElement('style'); st.textContent = CSS; root.appendChild(st);
 
   var launchHtml = ANCHOR === 'br' ? (
-    '<div id="mmb-launch" aria-label="' + L('Ask Mastermind', '问操盘大脑') + '"><div class="mmb-orb">' + ORB + '</div>' +
+    /* A div rather than a <button> because the pill collapses to a bare orb on phones and
+       carries its own layout — so it is given a button's manners by hand: role + tab stop
+       here, Enter/Space wired below, aria-expanded kept in sync by open()/close(). */
+    '<div id="mmb-launch" role="button" tabindex="0" aria-expanded="false" aria-label="' + L('Ask Mastermind', '问操盘大脑') + '"><div class="mmb-orb">' + ORB + '</div>' +
     '<div class="lt"><span class="ll">' + LB('Ask Mastermind', '问操盘大脑') + '</span>' +
     '<span class="lk">' + LB('Brain · your desk copilot', '大脑 · 你的桌面副驾') + '</span></div></div>') : '';
 
@@ -1849,7 +1868,7 @@
   function open() {
     refreshCtx(); scrim.classList.add('open'); panel.classList.add('open');
     if (ANCHOR === 'top') panel.classList.add('mmb-top');
-    if (launch) launch.classList.add('mmb-hide');
+    if (launch) { launch.classList.add('mmb-hide'); launch.setAttribute('aria-expanded', 'true'); }
     /* WAAPI entry (transform only; opacity fades via CSS) — the sole transform owner. */
     if (!reduceMotion() && typeof panel.animate === 'function') {
       if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} }
@@ -1863,7 +1882,23 @@
     else { loadQuotas(); }   /* guests refresh their daily meter; a 401 keeps the gate */
     restoreDraft();
     resumeStoredRun();       /* a turn started before a reload is still ours to finish */
-    setTimeout(function () { ta.focus(); }, 260);
+    setTimeout(focusPanel, 260);
+  }
+  /* Move focus INTO the panel once the entry has settled. It cannot just be ta.focus():
+     for a SIGNED-OUT visitor the composer is display:none and the sign-in gate stands in
+     its place, so that call is a silent no-op and focus is left stranded on <body> — the
+     keyboard user who just pressed Enter would Tab from the top of the page instead of
+     into the chat they opened. Take the composer when it is live, the gate's own primary
+     action when it is not, and the first thing the panel is actually showing otherwise. */
+  function focusPanel() {
+    var cands = [ta, $('.mmb-signin')].concat(
+      [].slice.call(panel.querySelectorAll('button:not([disabled]),a[href],textarea,[tabindex="0"]')));
+    for (var i = 0; i < cands.length; i++) {
+      var n = cands[i];
+      if (!n || !n.offsetParent) continue;     /* display:none somewhere up the chain */
+      try { n.focus(); } catch (e) { continue; }
+      if (DOC.activeElement === n) return;
+    }
   }
   /* Tear down any in-flight stream: abort the fetch reader, drop the caret, and reset the
      streaming flags + send button. Called by newChat/openThread so switching context
@@ -1883,7 +1918,20 @@
   }
   /* Closing the panel does NOT tear the turn down — the widget is hidden, not gone, and
      the answer keeps painting into it. Re-opening shows the finished reply. */
-  function close() { if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
+  function close() {
+    if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} }
+    /* Read activeElement BEFORE the classes drop: the panel goes visibility:hidden on the
+       way out, and the browser blurs whatever was focused inside it the moment it does. */
+    var wasInside = root.contains(DOC.activeElement);
+    scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side');
+    if (launch) {
+      launch.classList.remove('mmb-hide'); launch.setAttribute('aria-expanded', 'false');
+      /* Hand focus back to the control that opened it — otherwise a keyboard user who
+         closes with Esc is stranded on <body> and tabs from the top of the page again.
+         Only when focus was ours to begin with, so a scrim click never steals it. */
+      if (wasInside) { try { launch.focus(); } catch (e) {} }
+    }
+  }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
   /* ── FLIP morph: animate the compact↔max resize with a transform ONLY (GPU compositor,
      60fps, zero reflow). Measure First rect → apply the class (panel snaps to Last geometry)
@@ -2006,7 +2054,16 @@
      document (theme.js setLang), the Terminal fires 'mm:lang' on window (i18n.tsx). */
   DOC.addEventListener('langchange', relabel);
   window.addEventListener('mm:lang', relabel);
-  if (launch) launch.addEventListener('click', open);
+  if (launch) {
+    launch.addEventListener('click', open);
+    /* role="button" buys the semantics; the keys are still ours to wire. Space is
+       preventDefault'd or the page scrolls away underneath the panel that just opened. */
+    launch.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      open();
+    });
+  }
   scrim.addEventListener('click', close);
   /* Send button doubles as Stop mid-stream (the arrow morphs to a square). A retract
      flips it straight back to Send with the prompt reloaded, so the SECOND half of an
