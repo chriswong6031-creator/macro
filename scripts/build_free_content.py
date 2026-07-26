@@ -105,6 +105,9 @@ _URL_MAP: frozenset[str] = frozenset({
     "/blog/compound-growth-for-traders.html",
     "/blog/feed.xml",
     "/about-research.html",
+    "/privacy.html",
+    "/terms.html",
+    "/disclaimer.html",
 })
 
 # valid track values (CONTRACT §3)
@@ -1124,7 +1127,7 @@ def _check_mode() -> int:
         # HTML/XML files not produced by this fresh render
         orphans: list[str] = []
         _FREE_DIRS = ["blog", "learn", "tools"]
-        _FREE_ROOT_FILES = ["about-research.html"]
+        _FREE_ROOT_FILES = ["about-research.html", "privacy.html", "terms.html", "disclaimer.html"]
 
         for sub in _FREE_DIRS:
             committed_sub = _SITE_DIR / sub

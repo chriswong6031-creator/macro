@@ -14,6 +14,11 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Legal pages — public so anyone (and search crawlers) can read them without
+    # an account. Static est-article pages built from content/seo/pages/*.md.
+    - /privacy.html
+    - /terms.html
+    - /disclaimer.html
     - /favicon.svg
     - /favicon.ico
     - /apple-touch-icon.png
