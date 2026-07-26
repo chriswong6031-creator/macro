@@ -326,7 +326,8 @@ def test_equivalence_is_a_finding_not_a_shortfall():
     r = ad_stats.analyze(arms, primary_metric="signup_rate", n_floor=100)
     assert r.verdict == "equivalent"
     assert r.winner_arm_id is None
-    assert "the same" in r.plain
+    assert "worth chasing" in r.plain
+    assert "too small to matter" in r.plain
 
 
 def test_a_losing_variant_never_becomes_the_winner():

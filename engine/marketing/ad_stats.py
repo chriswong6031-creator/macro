@@ -499,6 +499,11 @@ def analyze(
         return f"“{r.label}”" if r.label else r.arm_id
 
     # ── equivalence: every contrast inside the practical band ────────────────
+    # Checked BEFORE separation on purpose. A difference can be real (interval
+    # excludes zero) and still too small to be worth acting on; when both hold,
+    # "too small to chase" is the more useful verdict than "winner". The wording
+    # below claims only what is measured — inside the band — never that the
+    # difference is exactly zero.
     if non_control and all(
         r.diff_pp_low is not None and r.diff_pp_high is not None
         and r.diff_pp_low > -practical_pp and r.diff_pp_high < practical_pp
@@ -509,10 +514,11 @@ def analyze(
             control_arm_id=control.arm_id, winner_arm_id=None,
             arms=readouts, n_floor=n_floor, credible_level=credible_level,
             prior={"alpha": prior_alpha, "beta": prior_beta},
-            plain=(f"These ads perform the same. Every one of them lands within "
+            plain=(f"Nothing here is worth chasing. Every ad lands within "
                    f"±{practical_pp} points of the copy we already run, at "
-                   f"{int(credible_level * 100)}% confidence — that is a result, not a "
-                   f"shortfall. Stop testing this wording and change something bigger."),
+                   f"{int(credible_level * 100)}% confidence — too small to matter even "
+                   f"where it is real. That is a result, not a shortfall: stop testing "
+                   f"this wording and change something bigger."),
             notes=["equivalent_within_practical_band"],
         )
 
