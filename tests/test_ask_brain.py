@@ -2205,15 +2205,16 @@ def test_china_flows_makes_no_network_call(tmp_path):
     """HARD CONTRACT: the brain must never put vendor latency in the chat path — the
     serving host has no TUSHARE_TOKEN and the packet is committed-artifact-only.
 
-    importorskip: patch("requests.post") IMPORTS requests to resolve the target,
-    so in a venv without it (the ci-pack envs install only
-    pytest/pandas/numpy/pyarrow/pyyaml) this test died on ModuleNotFoundError
-    before proving anything — every PR's ci-pack-1 went red within an hour of
-    the test landing (#3672). Where requests is absent the contract is enforced
-    by the environment itself (no requests-based call is even possible), so an
-    honest skip loses nothing; the dev/nightly envs carry requests and still
-    exercise the patched assertion."""
-    pytest.importorskip("requests")
+    Do NOT reintroduce `pytest.importorskip("requests")` here — #3703 did, and it was
+    reverted. patch("requests.post") imports requests to resolve the target, so a venv
+    without it raises ModuleNotFoundError — but the honest repair is the venv, not a
+    skip. `requests>=2.31` is a declared requirements.txt dependency, and exactly one
+    CI job runs this file (ci.yml::neural-web-core), whose install line carries
+    requests as of #3694. A missing-requests ImportError here therefore means a real
+    environment regression, and it must stay loud: an importorskip converts this
+    tripwire into a silent pass in precisely the environment it exists to police.
+    Absent requests the contract is also NOT self-enforcing — nothing stops
+    _tool_read_china_flows from reaching the network via urllib or httpx instead."""
     import engine.neuralweb.ask_brain as _ab
     _write_china_plane(tmp_path)
     with patch("requests.post", side_effect=AssertionError("live network call!")), \
