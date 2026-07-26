@@ -2964,7 +2964,7 @@ jobs:
         run: python3 scripts/check_validated_claims.py
 
   template-site-sync:
-    if: ${{ false }}
+    if: ${{ false }}  # executed inside ci-pack (pack 0) — NOT a disabled gate; see the ci-pack job
     # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
     # that also ships as site/<name>) must byte-match at every commit — a one-sided
     # reword creates the divergence window the render lanes then propagate at an
