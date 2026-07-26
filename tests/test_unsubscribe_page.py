@@ -297,8 +297,12 @@ def test_unsubscribe_is_public_in_the_regwalls_own_mirror():
 
 
 def test_nothing_else_became_public_as_a_side_effect():
-    """Mutation-check the blast radius of this PR's boundary edit: exactly one path was
-    added to the policy, and it is this one."""
+    """The unsubscribe rollout may add only its own path and remove nothing.
+
+    Once the rollout commit itself is on ``origin/main``, the allowed addition
+    is naturally empty. Requiring it to remain "new" forever makes every later
+    PR and main dispatch fail against an identical base.
+    """
     import subprocess
 
     import yaml
@@ -310,7 +314,8 @@ def test_nothing_else_became_public_as_a_side_effect():
     if base.returncode != 0:            # shallow clone / detached CI checkout
         pytest.skip("origin/main not available for a diff")
     before = yaml.safe_load(base.stdout)
-    assert set(policy["public"]["exact"]) - set(before["public"]["exact"]) == {PATH}
+    added = set(policy["public"]["exact"]) - set(before["public"]["exact"])
+    assert added in ({PATH}, set())
     assert set(before["public"]["exact"]) - set(policy["public"]["exact"]) == set()
     assert policy["public"]["prefixes"] == before["public"]["prefixes"]
     assert policy.get("free_registered") == before.get("free_registered")
