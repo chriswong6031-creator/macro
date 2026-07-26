@@ -2,6 +2,26 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-07-26",
+      "tickers": [
+        "CBOE",
+        "CRM",
+        "ENOV",
+        "FDS",
+        "IBM",
+        "IP",
+        "KMT",
+        "LKFN",
+        "MOS",
+        "ROST",
+        "SONO",
+        "SW",
+        "VST",
+        "WMT",
+        "XEL"
+      ]
+    },
+    {
       "as_of": "2026-07-25",
       "tickers": [
         "CRM",

@@ -1,16 +1,16 @@
 {
   "schema": "us_track_history/v1",
-  "as_of": "2026-07-24",
-  "generated": "2026-07-25T01:28:23.787523+00:00",
+  "as_of": "2026-07-25",
+  "generated": "2026-07-26T03:08:57.561164+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
         "accruing": true,
-        "raw_n": 1140,
+        "raw_n": 1270,
         "effective_n": 1,
-        "win_rate": 0.5798,
-        "avg_excess": 0.0108,
-        "med_excess": 0.0108,
+        "win_rate": 0.5732,
+        "avg_excess": 0.01,
+        "med_excess": 0.0101,
         "wilson_lo": 0.2065,
         "wilson_hi": 1.0,
         "cohort_series": [
@@ -48,21 +48,21 @@
           },
           {
             "week": "2026-07-13/2026-07-19",
-            "raw_n": 66,
+            "raw_n": 196,
             "effective_n": 1,
-            "win_rate": 0.6515,
-            "avg_excess": 0.0133,
-            "med_excess": 0.0207
+            "win_rate": 0.5612,
+            "avg_excess": 0.0064,
+            "med_excess": 0.0055
           }
         ]
       },
       "h10": {
         "accruing": true,
-        "raw_n": 452,
+        "raw_n": 508,
         "effective_n": 1,
-        "win_rate": 0.6128,
-        "avg_excess": 0.0122,
-        "med_excess": 0.02,
+        "win_rate": 0.6201,
+        "avg_excess": 0.013,
+        "med_excess": 0.0212,
         "wilson_lo": 0.2065,
         "wilson_hi": 1.0,
         "cohort_series": [
@@ -84,11 +84,11 @@
           },
           {
             "week": "2026-07-06/2026-07-12",
-            "raw_n": 115,
+            "raw_n": 171,
             "effective_n": 1,
-            "win_rate": 0.5913,
-            "avg_excess": 0.0104,
-            "med_excess": 0.0189
+            "win_rate": 0.6199,
+            "avg_excess": 0.0134,
+            "med_excess": 0.0212
           }
         ]
       },
@@ -169,6 +169,11 @@
       },
       {
         "as_of": "2026-07-21",
+        "total": 0,
+        "by_lane": {}
+      },
+      {
+        "as_of": "2026-07-24",
         "total": 0,
         "by_lane": {}
       }

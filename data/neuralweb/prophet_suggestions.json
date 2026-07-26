@@ -1,25 +1,16 @@
 {
   "schema": "prophet.suggestions/v1",
-  "as_of": "2026-07-25T01:28:24+00:00",
+  "as_of": "2026-07-26T03:08:57+00:00",
   "built_by": "engine.neuralweb.prophet_governor",
   "suggestions": [
     {
       "code": "stale_us_board_outcomes_us",
       "kind": "staleness",
       "severity": "medium",
-      "detail": "us-board-outcomes is 98h old (SLA 48h) [US]",
+      "detail": "us-board-outcomes is 51h old (SLA 48h) [US]",
       "market": "us",
       "first_seen": "2026-07-23",
-      "asof": "2026-07-25"
-    },
-    {
-      "code": "stale_ca_board_ledger_ca",
-      "kind": "staleness",
-      "severity": "medium",
-      "detail": "ca-board-ledger is 70h old (SLA 48h) [CA]",
-      "market": "ca",
-      "first_seen": "2026-07-24",
-      "asof": "2026-07-25"
+      "asof": "2026-07-26"
     }
   ]
 }
