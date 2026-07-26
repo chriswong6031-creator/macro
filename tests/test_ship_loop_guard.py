@@ -5,6 +5,7 @@ from __future__ import annotations
 import email.message
 import importlib.util
 import json
+import shutil
 import subprocess
 import urllib.error
 import urllib.parse
@@ -95,11 +96,11 @@ def _commit(repo: Path, rel: str, body: str, message: str) -> str:
 
 
 def test_needs_render_only_when_the_merge_itself_touched_render_inputs(tmp_path):
-    """The render precondition must match render.yml's push path filter.
+    """The render precondition is scoped to the merge's OWN diff.
 
-    render.yml's push trigger only fires on templates/** + scripts/build_*.py, so
-    a merge that touched neither never queues a render of its own, and demanding
-    one is an unsatisfiable block rather than a real gap. (_render_status may now
+    render.yml's push trigger is path-filtered, so a merge that matched none of
+    those paths never queues a render of its own, and demanding one is an
+    unsatisfiable block rather than a real gap. (_render_status may now
     also accept a later main descendant's render — that widens what SATISFIES the
     requirement, not which merges carry one.)
     """
@@ -132,6 +133,162 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     # A sibling script that is not a build_* entrypoint must not trigger one.
     other = _commit(repo, "scripts/check_thing.py", "print(2)\n", "chore: checker")
     assert GUARD._needs_render(repo, other, start_head, other) is False
+
+    # Nor a NESTED build_*: render.yml's `scripts/build_*.py` glob does not cross
+    # `/`, and the lane invokes nothing under scripts/research/ regardless — so
+    # demanding a render there is unsatisfiable, not strict.
+    nested = _commit(repo, "scripts/research/build_panel.py", "print(3)\n", "chore: research")
+    assert GUARD._needs_render(repo, nested, start_head, nested) is False
+
+
+def _commit_files(repo: Path, files: dict[str, str], message: str) -> str:
+    """Commit several paths at once — a paired asset ships both halves together."""
+    for rel, body in files.items():
+        target = repo / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body, encoding="utf-8")
+        _git(repo, "add", rel)
+    _git(repo, "commit", "-m", message)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def _paired_repo(tmp_path: Path) -> Path:
+    """A fixture repo carrying the REAL pair enumerator the guard loads.
+
+    Copied rather than stubbed: the point of the exemption is that the guard and
+    CI's ui.template_site_sync gate read one definition, so the test must exercise
+    that same file.
+    """
+    repo = _repo(tmp_path)
+    (repo / "scripts").mkdir(exist_ok=True)
+    shutil.copy(
+        ROOT / "scripts" / "check_template_site_sync.py",
+        repo / "scripts" / "check_template_site_sync.py",
+    )
+    _git(repo, "add", "scripts/check_template_site_sync.py")
+    _git(repo, "commit", "-m", "chore: the pair enumerator")
+    return repo
+
+
+def test_a_paired_plain_copy_asset_merge_does_not_require_a_render(tmp_path):
+    """THE false gate. #3671's exact shape: templates/<name> + its site/ twin.
+
+    render.yml produces re-baked .j2 pages and ?v= re-stamps; a plain-copy asset
+    is neither. Its site/ copy is committed straight to main and the VPS pulls
+    main every 3 minutes, so it was live 3 minutes after the merge — while the
+    guard held Stop at `render_pending` for 40+ minutes against a render lane in
+    which 28 of the last 30 runs had concluded `cancelled`.
+    """
+    repo = _paired_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    paired = _commit_files(
+        repo,
+        {
+            "templates/mm_brain.js": "var brain = 'light';\n",
+            "site/mm_brain.js": "var brain = 'light';\n",
+        },
+        "feat(brain): light-mode theme",
+    )
+    assert GUARD._needs_render(repo, paired, start_head, paired) is False, (
+        "a paired plain-copy asset is live via the VPS pull; render produces nothing for it"
+    )
+    # Several pairs at once is the same shape, not a weaker case.
+    many = _commit_files(
+        repo,
+        {
+            "templates/theme.css": "body{color:#111}\n",
+            "site/theme.css": "body{color:#111}\n",
+            "templates/index.html": "<h1>hi</h1>\n",
+            "site/index.html": "<h1>hi</h1>\n",
+        },
+        "fix(landing): restyle",
+    )
+    assert GUARD._needs_render(repo, many, start_head, many) is False
+
+
+def test_a_j2_riding_with_a_paired_asset_still_requires_a_render(tmp_path):
+    """The exemption is per-diff, not per-file: one .j2 re-bake keeps the gate."""
+    repo = _paired_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    mixed = _commit_files(
+        repo,
+        {
+            "templates/mm_brain.js": "var brain = 1;\n",
+            "site/mm_brain.js": "var brain = 1;\n",
+            "templates/macro.html.j2": "{{ x }}\n",
+        },
+        "feat: asset + page",
+    )
+    assert GUARD._needs_render(repo, mixed, start_head, mixed) is True
+
+
+def test_a_one_sided_or_unpaired_templates_edit_still_requires_a_render(tmp_path):
+    """Fail closed on everything the pair list cannot vouch for."""
+    repo = _paired_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+
+    # site/ twin missing from the commit: the sync gate rejects this anyway, and
+    # it means the live bytes have not moved.
+    one_sided = _commit(repo, "templates/mm_brain.js", "var brain = 2;\n", "fix: source only")
+    assert GUARD._needs_render(repo, one_sided, start_head, one_sided) is True
+
+    # Never shipped as a site/ copy -> not a pair -> render.
+    unpaired = _commit_files(
+        repo,
+        {"templates/partial.html": "<p>x</p>\n"},
+        "feat: unshipped asset",
+    )
+    assert GUARD._needs_render(repo, unpaired, start_head, unpaired) is True
+
+    # find_pairs walks direct children only; templates/fonts/ is a render copytree.
+    nested = _commit_files(
+        repo,
+        {"templates/fonts/x.woff2": "binary\n", "site/fonts/x.woff2": "binary\n"},
+        "feat(fonts): subset",
+    )
+    assert GUARD._needs_render(repo, nested, start_head, nested) is True
+
+
+def test_the_page_rewriting_sweeps_require_a_render(tmp_path):
+    """render.yml renders on these too — they rewrite every page in site/.
+
+    Omitting them under-required a render, which is the fail-OPEN direction: the
+    #3558 class of change reaches main and re-bakes nothing.
+    """
+    repo = _paired_repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    for rel in ("scripts/optimize_assets.py", "scripts/externalize_css.py",
+                "scripts/inject_data_base.py", "lib/pages.py"):
+        sha = _commit(repo, rel, f"# {rel}\n", f"fix: {rel}")
+        assert GUARD._needs_render(repo, sha, start_head, sha) is True, rel
+
+
+def test_the_pair_list_is_the_ci_gate_s_own_enumeration(tmp_path):
+    """One definition, so the exemption and ui.template_site_sync cannot drift."""
+    import scripts.check_template_site_sync as sync
+
+    expected = {name for name, _t, _s in sync.find_pairs(ROOT)}
+    assert expected, "the repo must have plain-copy pairs for this exemption to matter"
+    assert GUARD._plain_copy_pairs(ROOT) == expected
+
+    # Ignorance is not permission: an unreadable pair list requires the render.
+    assert GUARD._plain_copy_pairs(tmp_path) == set()
+
+
+def test_needs_render_matches_the_real_merges_it_was_written_for(tmp_path):
+    """Replayed against this repo's own history, not a fixture.
+
+    0effaadbd31 = #3671 (templates/mm_brain.js + site/mm_brain.js, no .j2) — the
+    merge that spent 40+ minutes blocked while already live.
+    a7e8c15b30b = #3696 (templates/intl.html.j2 + rendered pages) — still gated.
+    """
+    for sha in ("0effaadbd31", "a7e8c15b30b"):
+        if subprocess.run(
+            ("git", "cat-file", "-e", f"{sha}^{{commit}}"), cwd=ROOT, check=False
+        ).returncode:
+            pytest.skip(f"{sha} not present (shallow clone)")
+    assert GUARD._needs_render(ROOT, "0effaadbd31", "HEAD", "HEAD") is False
+    assert GUARD._needs_render(ROOT, "a7e8c15b30b", "HEAD", "HEAD") is True
 
 
 @pytest.fixture(autouse=True)
