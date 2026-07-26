@@ -554,6 +554,27 @@ def _seed_pdf(store, pdf_key, sidecar_obj, marker=b""):
                         raw.encode() if isinstance(raw, str) else raw, "application/json")
 
 
+def test_already_processed_skips_on_pdf_key_not_filename(tmp_path):
+    """The processed-skip set is the source ``pdf_key`` recorded in each receipt
+    body — NOT the receipt filename, since a receipt is named by the derived id
+    which can differ from the source PDF's filename. Non-json / broken receipts
+    are ignored, never raising. (Bodies are fetched concurrently for scale.)"""
+    store = LocalStore(tmp_path / "store")
+    store.put_bytes(
+        "research_inbox/_processed/bernstein-2026-07-21-x.json",
+        json.dumps({"id": "bernstein-2026-07-21-x",
+                    "pdf_key": "research_inbox/rep1.pdf"}).encode("utf-8"))
+    store.put_bytes(
+        "research_inbox/_processed/gs-2026-07-20-y.json",
+        json.dumps({"id": "gs-2026-07-20-y",
+                    "pdf_key": "research_inbox/rep2.pdf"}).encode("utf-8"))
+    store.put_bytes("research_inbox/_processed/README.txt", b"ignore me")
+    store.put_bytes("research_inbox/_processed/broken.json", b"{ not json ]")
+
+    done = ingest_mod._already_processed_pdf_keys(store)
+    assert done == {"research_inbox/rep1.pdf", "research_inbox/rep2.pdf"}
+
+
 def test_ingest_end_to_end_and_idempotent(tmp_path, canned_pdftotext):
     store = LocalStore(tmp_path / "store")
     corpus_path = tmp_path / "corpus.sqlite"
