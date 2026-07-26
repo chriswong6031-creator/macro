@@ -789,13 +789,15 @@ def main() -> None:
     # CORRECTLY-NULL DEFENSIVES disposition (the charter prediction, tested honestly)
     L.append("- **Charter-named defensives (KO PG WMT COST) — the 'correctly-null' "
              "prediction, TESTED not assumed (amendment A3):**")
+    elig_syms = set(p["sym"]) if len(p) else set()
+    excl_syms = set(exc["sym"]) if len(exc) else set()
     for d in DEFENSIVES:
-        if d in set(p["sym"]):
+        if d in elig_syms:
             row = p[p.sym == d].iloc[0]
             L.append(f"  - {d}: **ELIGIBLE** — FIT A_base {row['a_base_fit']:.3f}, "
                      f"spread {row['spread_fit']:.3f} (≥ {SPREAD_MIN}); graded like any "
                      f"other name. NOT excluded as baseline-symmetric.")
-        elif d in set(exc.sym) if len(exc) else False:
+        elif d in excl_syms:
             er = exc[exc.sym == d].iloc[0]["excl"]
             L.append(f"  - {d}: excluded ({er}).")
         else:
@@ -859,16 +861,34 @@ def main() -> None:
     L.append("RAW = no terminality gate. +C32 = decline-deceleration terminality "
              "gate (roc20 stopped making new lows while close ≤ 60d low + rolling-low "
              "slope flattening; copied verbatim from pss_f1_downvol).\n")
-    L.append("| variant | U_MAE OOS | U_W5 OOS | U_MAE 2021+ | U_W5 2021+ | n names OOS |")
-    L.append("|---|---|---|---|---|---|")
+    L.append("| variant | U_MAE OOS | U_W5 OOS | U_MAE 2021+ | U_W5 2021+ | n names OOS "
+             "| median C32 fires/name |")
+    L.append("|---|---|---|---|---|---|---|")
+    c32_deg = False
     for gate, lab in (("raw", "RAW (no gate)"), ("c32", "+C32")):
         um = f"umae_oos_{gate}"; uw = f"uw5_oos_{gate}"
         um21 = f"umae_oos21_{gate}"; uw21 = f"uw5_oos21_{gate}"
         nn = f"n_oos_{gate}"
-        nnames = int((p.get(nn, pd.Series(dtype=float)) >= 1).sum()) if nn in p else 0
+        nser = p.get(nn, pd.Series(dtype=float))
+        nnames = int((nser >= 1).sum()) if nn in p else 0
+        med_fires = float(nser[nser >= 1].median()) if (nn in p and (nser >= 1).any()) else float("nan")
+        med_str = f"{med_fires:.0f}" if np.isfinite(med_fires) else "—"
+        if gate == "c32" and np.isfinite(med_fires) and med_fires <= 2:
+            c32_deg = True
         L.append(f"| {lab} | {float(p[um].median()):+.2f}pp | {float(p[uw].median()):+.2f}pp "
                  f"| {float(p[um21].dropna().median()):+.2f}pp | "
-                 f"{float(p[uw21].dropna().median()):+.2f}pp | {nnames} |")
+                 f"{float(p[uw21].dropna().median()):+.2f}pp | {nnames} | {med_str} |")
+    if c32_deg:
+        L.append("\n⚠️ **C32-gated U_W5 is DEGENERATE (small-sample artifact, NOT a "
+                 "signal) — read the CI, not the point estimate.** The C32 gate is so "
+                 "restrictive that the surviving names carry a median of ~1 gated fire "
+                 "EACH, so each name's within-5%-of-low RATE collapses to 0% or 100% and "
+                 "the cross-name median of those degenerate binary rates swings wildly "
+                 "(here to a physically implausible ~+74pp). The month-cluster bootstrap "
+                 "CI below correctly reports this column as `includes 0` (a wide, "
+                 "0-straddling interval) — i.e. the C32-gated U_W5 estimates NOTHING. The "
+                 "C32-gated U_MAE (a continuous statistic) does NOT collapse this way and "
+                 "is read normally. This is a vacuous-green disclosure, not a result.")
 
     # inference CIs vs BOTH nulls
     L.append("\n## Inference — month-cluster bootstrap (primary cell), vs BOTH nulls\n")
@@ -1018,7 +1038,11 @@ def main() -> None:
              "incumbent on BOTH td_to_trough and MAE), the overlap census, and the 2022 "
              "P-sensitivity counts above are the pre-registered conditioner / falsifier "
              "reads. All nulls are printed. F4 makes NO pre-trough claim; the at-trough "
-             "'better or redundant' verdict input is the F4-vs-incumbent table.\n")
+             "'better or redundant' verdict input is the F4-vs-incumbent table.")
+    L.append("- CAUTION on the +C32-gated U_W5 point estimate: the gate leaves ~1 fire "
+             "per surviving name, so that binary-rate column is a small-sample artifact "
+             "(its CI correctly includes 0 — it estimates nothing); the gated U_MAE "
+             "(continuous) is unaffected. See the gate-variant degeneracy note above.\n")
 
     # limitations
     L.append("## Limitations\n")
