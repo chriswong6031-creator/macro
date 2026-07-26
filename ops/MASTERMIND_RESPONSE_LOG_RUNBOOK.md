@@ -85,12 +85,14 @@ Logging is **ON** whenever a sink is configured and it is not explicitly disable
 
 | env var | where | effect |
 |---|---|---|
-| `R2_ENDPOINT` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` | macro-api VPS (`/etc/macro-api.env`), admin/Mac | the R2 sink; already present on the VPS/Mac for existing R2 lanes |
+| `R2_ENDPOINT` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` | macro-api VPS (`/etc/macro-api.env`), admin/Mac | the R2 sink. **NOT implied by other R2 lanes** — `R2_RESEARCH_*` on the VPS does not satisfy this; the logger gates on the four **plain** `R2_*` names exactly (`lib.mastermind_response_log.enabled()`) |
 | `MASTERMIND_RESPONSE_LOG_DISABLED` | any | truthy → hard-off (kill switch) |
 | `MASTERMIND_RESPONSE_LOG_LOCAL_DIR` | any | optional local mirror dir (tests / VPS durability fallback) |
 
-No new cron is required: the brain gateway PUTs to R2 directly (it already has R2
-creds on the VPS). The admin pulls on demand (the **Refresh from R2** button) — or wire
+No new cron is required: the brain gateway PUTs to R2 directly (once
+`/etc/macro-api.env` carries the plain `R2_*` keys — see above; a restart of
+`macro-api` is needed after editing the env file). The admin pulls on demand (the
+**Refresh from R2** button) — or wire
 a periodic `refresh()` later. Because both surfaces proxy through this one gateway,
 there is nothing to configure on the charting-app/Terminal side.
 
@@ -105,6 +107,30 @@ Admin → **Neural Web → AI Response Logs**:
 - **Grade** — 1–5 + 👍/👎 + ⚑ flag + tags + note → **Save verdict** (writes the sidecar).
 - **Export** — JSONL (full rows + eval) or CSV (flattened) of the current filter, for
   batch evaluation / training-set curation in external tooling.
+
+## When the tab says "Ingest dark"
+
+The tab computes ingest health on every load (`mastermind_logs.ingest_health`): a
+full-width **"⚠️ Ingest dark since <date>"** banner means the newest ledger row is
+≥ 2 days old — or the ledger has never seen a row. Per-surface red pills
+(`macro dark Nd` / `terminal dark Nd`) cover the asymmetric case where one surface
+keeps writing while the other silently stops.
+
+This surface exists because the failure already happened: the logger shipped
+2026-07-24 but `/etc/macro-api.env` had no plain `R2_*` keys, so `enabled()` was
+False and the bucket held **zero** objects until 2026-07-26 — with nothing anywhere
+saying so. Recovery recipe from that incident:
+
+1. On the VPS: back up the env file (`cp -p /etc/macro-api.env
+   /etc/macro-api.env.bak.YYYYMMDD`), append the four plain `R2_*` lines,
+   `systemctl restart macro-api`.
+2. Send one guest turn: `POST https://www.mastermind-x.com/api/brain/stream` with
+   `{"message":"…","lane":"fast"}`.
+3. Confirm a fresh object under `mastermind_response_logs/macro/<today>/` in the
+   bucket, then **Refresh from R2** in the tab.
+
+If the banner persists with recent R2 objects present, the problem is the
+admin-side pull, not the writers — check R2 creds in the admin's own environment.
 
 ## Privacy & retention
 
