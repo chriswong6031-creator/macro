@@ -71,10 +71,9 @@ CANONICAL_BASE = _SITE_BASE.rstrip("/")
 STALENESS_DAYS = 14
 SEASONALITY_MIN_BARS = 750  # require at least this many ohlc bars
 
-OG_DIR = SITE / "og" / "stocks"
-LOGO_DIR = _ROOT / "data" / "marketing" / "logos"
+# Share-card paths are deliberately NOT module constants: run() derives them from the
+# site/root it was actually given, so redirecting the roots redirects the writes too.
 MAX_LOGO_FETCH_PER_RUN = 300
-_LOGO_ATTEMPTS_PATH = _ROOT / "data" / "marketing" / "share_cards" / "logo_attempts.json"
 _LOGO_NEGATIVE_CACHE_DAYS = 30
 
 # Plain-word sector display names
@@ -3222,12 +3221,22 @@ def run(
     import time as _time
     _sc_t0 = _time.perf_counter()
 
+    # Share-card destinations resolved HERE, not at import. They used to be module
+    # constants bound off _ROOT/SITE at load time, so a caller that redirected the roots
+    # (run(site=...), or a test monkeypatching _ROOT) still had its cards written to the
+    # import-time tree — tests/test_ticker_pages.py was silently rewriting the real
+    # site/og/stocks/*.png and data/marketing/share_cards/logo_attempts.json on every run.
+    # og:image assets belong under the site tree this run was actually given.
+    _og_dir = site / "og" / "stocks"
+    _logo_dir = _ROOT / "data" / "marketing" / "logos"
+    _logo_attempts_path = _ROOT / "data" / "marketing" / "share_cards" / "logo_attempts.json"
+
     # Negative logo-fetch cache: {ticker: "YYYY-MM-DD"} — skip re-fetching recently
     # attempted logos (both successes and failures) for _LOGO_NEGATIVE_CACHE_DAYS days.
     _logo_attempts: dict[str, str] = {}
     try:
-        if _LOGO_ATTEMPTS_PATH.exists():
-            _logo_attempts = json.loads(_LOGO_ATTEMPTS_PATH.read_text(encoding="utf-8"))
+        if _logo_attempts_path.exists():
+            _logo_attempts = json.loads(_logo_attempts_path.read_text(encoding="utf-8"))
             if not isinstance(_logo_attempts, dict):
                 _logo_attempts = {}
     except Exception as _lae:  # noqa: BLE001
@@ -3279,7 +3288,8 @@ def run(
             og_image_url: str | None = None
             if _SHARE_CARDS is not None and not context_only:
                 try:
-                    _og_out = OG_DIR / f"{ticker}.png"
+                    _og_dir.mkdir(parents=True, exist_ok=True)
+                    _og_out = _og_dir / f"{ticker}.png"
                     # Industry from blob profile (not in membership.parquet)
                     _profile = (blob or {}).get("profile") or {}
                     _industry = _profile.get("industry") or None
@@ -3287,7 +3297,7 @@ def run(
                     # Logo: check cache first, then attempt one CDN fetch per run.
                     # Negative cache: skip tickers attempted within the last
                     # _LOGO_NEGATIVE_CACHE_DAYS days (recorded regardless of outcome).
-                    _logo_path: Path | None = LOGO_DIR / f"{ticker}_white.png"
+                    _logo_path: Path | None = _logo_dir / f"{ticker}_white.png"
                     if not (_logo_path and _logo_path.exists()):
                         _logo_path = None
                         _last_attempt = _logo_attempts.get(ticker)
@@ -3308,7 +3318,7 @@ def run(
                                 _sc_logo_fetches += 1
                             except Exception:  # noqa: BLE001
                                 pass
-                            _candidate = LOGO_DIR / f"{ticker}_white.png"
+                            _candidate = _logo_dir / f"{ticker}_white.png"
                             if _candidate.exists():
                                 _logo_path = _candidate
 
@@ -3447,15 +3457,15 @@ def run(
     # Persist logo negative-cache atomically (temp file + os.replace).
     if _logo_attempts:
         try:
-            _LOGO_ATTEMPTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _logo_attempts_path.parent.mkdir(parents=True, exist_ok=True)
             import tempfile as _tempfile
             _tmp_fd, _tmp_name = _tempfile.mkstemp(
-                dir=str(_LOGO_ATTEMPTS_PATH.parent), suffix=".tmp"
+                dir=str(_logo_attempts_path.parent), suffix=".tmp"
             )
             try:
                 with os.fdopen(_tmp_fd, "w", encoding="utf-8") as _fh:
                     json.dump(_logo_attempts, _fh, ensure_ascii=False, indent=2)
-                os.replace(_tmp_name, str(_LOGO_ATTEMPTS_PATH))
+                os.replace(_tmp_name, str(_logo_attempts_path))
             except Exception:  # noqa: BLE001
                 try:
                     os.unlink(_tmp_name)

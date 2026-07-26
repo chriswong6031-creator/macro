@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -72,6 +72,19 @@ def _as_of_stale(today: date) -> str:
     """Return an as_of that is 20 calendar days old (beyond any SLA)."""
     ts = pd.Timestamp(today) - timedelta(days=20)
     return ts.isoformat() + "+00:00"
+
+
+def _as_of_now() -> str:
+    """An as_of that is fresh against the AUDITOR's own clock.
+
+    ``audit()`` measures staleness from ``datetime.now(timezone.utc).date()``, so a
+    frozen TODAY here has an expiry date: the freshness case passed when it was written
+    and then silently rotted into a "store stale: N trading days old" warning as the
+    calendar walked past the SLA.  Only the freshness assertions need the live clock —
+    ``next_date`` fixtures stay pinned to TODAY so the bdate_range / Monday-gap window
+    tests below remain deterministic.
+    """
+    return pd.Timestamp(datetime.now(timezone.utc).date()).isoformat() + "+00:00"
 
 
 # Reference date: a Tuesday so bdate_range tests are predictable and
@@ -130,9 +143,10 @@ class TestFreshnessTripwire:
         """Store written today with enough tickers → ok=True, no warnings.
 
         Uses 60 tickers to stay above the MIN_TICKER_PLAUSIBILITY floor (50).
+        as_of comes from the auditor's own clock — see _as_of_now().
         """
         (tmp_path / "earnings").mkdir(parents=True, exist_ok=True)
-        rows = {f"TK{i:03d}": {"next_date": "2026-08-01", "as_of": _as_of_fresh(TODAY, 0)}
+        rows = {f"TK{i:03d}": {"next_date": "2026-08-01", "as_of": _as_of_now()}
                 for i in range(60)}
         _make_earnings_parquet(tmp_path / "earnings", rows, base_name="earnings.parquet")
         result = self._run_audit(tmp_path, max_age_td=2)

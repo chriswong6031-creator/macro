@@ -35,22 +35,24 @@ workflow_text`*, so **naming an unwired suite in a workflow comment makes it loo
 Ranked so the top tier is where a silent break changes shipped numbers with no signal at all:
 modules on the nightly/render publish path, then forward-ledger writers, then the rest.
 
-| tier | before | after | meaning |
-|---|---|---|---|
-| **P0** | **30** | **0** | unrun + untriggerable + on a publish pipeline |
-| P1 | 142 | 139 | unrun, on a publish pipeline (triggerable) |
-| **P2** | **42** | **0** | unrun + untriggerable + writes a `data/` ledger |
-| **P3** | **60** | **0** | unrun + untriggerable (other) |
-| P4 | 415 | 416 | unrun, writes a `data/` ledger (triggerable) |
-| P5 | 446 | 445 | unrun (remainder) |
-| **total unrun** | **1135** / 1491 | **1000** / 1497 | |
-| **strictly dark** | **132** | **0** | |
+| tier | before | on `main` | after P1 | meaning |
+|---|---|---|---|---|
+| **P0** | **30** | **0** | 0 | unrun + untriggerable + on a publish pipeline |
+| **P1** | 142 | 140 | **4** | unrun, on a publish pipeline (triggerable) |
+| **P2** | **42** | **0** | 0 | unrun + untriggerable + writes a `data/` ledger |
+| **P3** | **60** | **0** | 0 | unrun + untriggerable (other) |
+| P4 | 415 | 416 | 416 | unrun, writes a `data/` ledger (triggerable) |
+| P5 | 446 | 445 | 445 | unrun (remainder) |
+| **total unrun** | **1135** / 1491 | **998** / 1499 | **862** / 1499 | |
+| **strictly dark** | **132** | **0** | 0 | |
 
-#3636 closes the strictly-dark subset — the class where no signal was possible — and leaves
-the 1000 triggerable-but-unrun suites staged below. Wiring all of them would blow the ci-pack
-budget, so the remainder is deliberate backlog, not oversight. (The "before" column was
-measured at 1491 suites; the total is 1497 on current `main` as other PRs land, and the
-arrivals came already wired, so they do not move the unrun count.)
+Two passes so far. #3636 closed the strictly-dark subset — the class where no signal was
+possible. This one closes **P1**, the triggerable-but-unrun suites on a publish pipeline,
+leaving 4 of them deliberately unwired because they are red for reasons that need a program
+decision (see *Red on arrival — P1*). `P4`/`P5` remain deliberate backlog, not oversight:
+wiring all of them at once would blow the ci-pack budget. (The "before" column was measured
+at 1491 suites; the total is 1497 on current `main` as other PRs land, and the arrivals came
+already wired, so they do not move the unrun count.)
 
 #3636 left two dark; #3645 closed them the same day, so the strictly-dark set is now **empty**.
 Measured in CI, the nine jobs cost **~3 min** of pack wall — pack 1 ran its five lanes
@@ -184,21 +186,136 @@ dof_cost` (EN and ZH, plus a `DSR gated / raw` row), while the live ledger
 re-running `calibrate_vector`, which is engine work outside this PR — the numbers must be
 recomputed, never edited by hand.
 
+## P1: unrun but triggerable, on a publish pipeline
+
+P1 was the 142 suites (139 by the time this landed — three were wired by unrelated PRs in
+between) that no workflow ran even though `ci.yml` *could* be triggered by a change to them
+or their subject. Blast radius is the same as P0 — these guard
+`build_site`, `build_release_forecast`, `neuralweb/cortex`, `build_vector`, `grade_us_board`
+and 70 further publish-path modules — but a signal was at least *possible*, so they ranked
+below the strictly-dark set. 136 are now wired across twelve lanes; four are held back.
+
+| job | suites | measured (clean venv) |
+|---|---|---|
+| `unrun-site-surfaces` | 14 | 234 tests / 18s |
+| `unrun-release-forecast` | 8 | 307 / 46s |
+| `unrun-brain-desks` | 13 | 190 / 11s |
+| `unrun-neuralweb-cortex` | 9 | 215 / 7s |
+| `unrun-vector-baskets` | 8 | 146 / 6s |
+| `unrun-picks-boards` | 11 | 445 / 20s |
+| `unrun-intl-collectors` | 11 | 198 / 30s |
+| `unrun-russell-breadth` | 1 | 11 / 12s |
+| `unrun-macro-panels` | 19 | 739 / 63s |
+| `unrun-market-plumbing` | 22 | 682 / 25s |
+| `unrun-publish-ops` | 19 | 507 / 27s |
+| `unrun-inline-js-guard` | 1 | 14 / 2s |
+| **total** | **136** | **3688 / 270s** |
+
+Eleven of the twelve repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
+`run_ci_pack.py` still builds ONE venv across all twenty-one `unrun-*` jobs. The dependency set
+was re-derived empirically — every suite run in a fresh venv carrying exactly that install
+and nothing else — which turned up **one** gap: `collectors/russell_breadth` imports
+`yfinance` at module scope. That suite gets its own lane with `yfinance` appended rather
+than adding the wheel to all twenty-one; `execute_pack` sorts jobs by install string, so a
+second dependency set costs exactly one extra venv per pack.
+
+Budget: ci-pack goes 109 → 121 legacy jobs and the balancing weight 1978 → 2280
+(+302, +15%), splitting 6/6 across the packs at `[1140, 1140]`. Weight is the pack
+*balancer*, not a time estimate — 270s of measured local wall on an idle box (520s when
+the box was running three other agents' suites, which is what the per-lane numbers above
+should be read against) versus a 180-minute per-pack timeout whose heaviest single job
+(`engine-render-guards`) is 481s.
+
+`paths` grows 889 → 1099: the 135 unmatched test files **and** the 75 subject modules that
+nothing else glob-matched. Wiring one half without the other rebuilds the #3488 shape.
+
+### `test_check_inline_js.py` — wired minus two duplicated full-tree scans
+
+Two of its 16 tests (`test_real_site_is_clean`, `test_real_tree_handlers_and_curly_clean`)
+call `find_bad_scripts` / `find_bad_handlers` / `find_curly_contamination` across the whole
+`site/` + `templates/` tree — byte-for-byte the scans the pre-existing `inline-js` job
+already runs as `check_inline_js.py site templates`. They cost **204s**; the other 14 (the
+hermetic guard-the-guard round-trips that were genuinely unrun) cost **2.5s**. They are
+`--deselect`ed, so the lane adds the missing coverage without buying the same tree scan
+twice per PR. Splitting the full-tree assertions out of the unit file is the real fix.
+
+## Red on arrival — P1
+
+The pre-flight probe in the previous PR extrapolated 4/29 (14%) from the highest-value
+modules. Running **all 142** gives **7 real reds (4.9%)** — the probe oversampled the
+hot modules. An **eighth** (`test_brain_gateway.py`) landed on `main` while this was in
+flight and is red for its own reasons; it is listed below and not wired. It also flushed
+out a measurement trap worth recording:
+
+> **Run the census suites SERIALLY.** `MM_DATA_GUARD` compares the repo tree at pytest
+> session end against session start, so under a parallel sweep it blames whichever suite
+> happened to finish in a tree that *another* suite dirtied. Three of ten apparent reds
+> (`test_check_inline_js`, `test_til_nw_citizenship`, `test_track_ledger_emitters`) were
+> this artifact and are green in isolation. One — `test_ticker_pages` — was the real
+> culprit for all of them.
+
+| suite | root cause | disposition |
+|---|---|---|
+| `test_ticker_pages.py` | `build_ticker_pages` bound `OG_DIR`/`LOGO_DIR`/`_LOGO_ATTEMPTS_PATH` off `_ROOT`/`SITE` **at import**, so `run(site=tmp)` still wrote its share cards to the real tree. Every run rewrote `site/og/stocks/*.png` and `data/marketing/share_cards/logo_attempts.json`. | **fixed** — `run()` derives all three from the site/root it was given; production path unchanged (`site` defaults to `SITE`) |
+| `test_action_board_lane_split.py` | asserted a raw fixture literal `"RRR"`, but the chip renders `td(x.name)` and `td()` prettifies unglossed labels → `"Rrr"`. | **fixed** — pins the chip against `td()`'s own output, inside the hot chip, with a glossed sector so the EN+ZH pair is exercised |
+| `test_earnings_w5.py` | frozen `TODAY = 2026-07-14` vs `audit()`'s `datetime.now(utc)`: the "fresh store, no warnings" case had an expiry date and had already walked past the 2-td SLA. | **fixed** — freshness fixtures read the auditor's own clock; `next_date` windows stay pinned so the bdate_range tests stay deterministic |
+| `test_release_integration_2a.py` | the mocked event calendar returned frozen dates while `build()` runs off the real clock; the PPI event (2026-07-14) had walked into the past and dropped out of `upcoming`. | **fixed** — mock honours the `today` it is handed |
+| `test_release_forecast_producer.py` | **live defect, see below** | **NOT wired** |
+| `test_no_module_level_logging_disable.py` | **ratchet drift, see below** | **NOT wired** |
+| `test_okx_retail.py` | `test_bilingual_render` slices the OKX chip out of `vector.html.j2` and renders it with a hand-copied `t` macro. The markup now also calls `qmark()` → `UndefinedError`. Slicing the template's real macro header fixes the crash, and then **five of its six copy assertions still fail**: the chip copy was deliberately rewritten (`"crowded longs (contrarian caution, not a buy)"` → `"many traders long"`). | **NOT wired** — deciding what the chip must say is a design call under the plain-word doctrine, not test rot |
+| `test_brain_gateway.py` | arrived on `main` mid-flight (2026-07-26). Two blockers, not one: it imports `fastapi`, which the shared `unrun-*` install deliberately lacks (8 of 241 tests fail without it), **and** it appends to the real `data/ai_costs/usage.jsonl` on every run — MM_DATA_GUARD would fail the lane even with the wheel added. | **NOT wired** — the ledger write has to be redirected to `tmp_path` first; that is the author's call, not test rot |
+
+### Shipped claims cards carry an all-null benchmark set
+
+`test_release_forecast_producer.py` has 73 passing tests and 2 failures, and the 2 are
+right. `site/macrodata/release_forecast.json` ships every `claims` card as:
+
+```json
+"benchmark_set": {"naive_prior": null, "trailing_4w": null, "ar_model": null,
+                  "cleveland_nowcast": null, "market_implied": null},
+"projection": {"mode": "benchmark_only", "reason": "... §6 kill rule triggered ..."}
+```
+
+`benchmark_only` is the §6 adjudication: the point forecast lost to the naive benchmark and
+was killed, leaving the **benchmarks** as the card's entire content. They are all null.
+
+Root cause: `engine/release_components_nfp.py::project_claims` opens with
+
+```python
+if icsa.empty or ic4wsa.empty:
+    return _empty_claims_projection(asof, "insufficient_data")
+```
+
+`data/fred_vintage/vintages.parquet` carries **895 ICSA rows and zero IC4WSA rows**, so the
+guard fires on every call. But only `point`/quantiles need IC4WSA — `naive_prior` is the
+last ICSA initial print and `trailing_4w` the mean of the last four, both computable from
+the ICSA that *is* there. The kill rule and the guard compose into an empty card.
+
+Two candidate fixes, and choosing between them is a program call, not test rot:
+backfill IC4WSA into the vintage store (it is already listed in `build_release_forecast.py`'s
+ALFRED series set, so this is a collection gap), or decouple the ICSA-only benchmarks from
+the IC4WSA guard. Until one lands the suite stays unwired, and 73 good tests stay dark
+with it — the cost of not papering over a real red.
+
+### The import-time warnings ratchet has drifted 37 files
+
+`test_no_module_level_logging_disable.py` carries an allowlist frozen 2026-07-03 that "MUST
+ONLY SHRINK". Three of its four tests pass. The fourth reports **37 files** that have added
+module-level `warnings.filterwarnings("ignore")` / `simplefilter("ignore")` since — mostly
+`scripts/*_phase0.py` and `research/entry_intel/**` one-off runners. The ratchet never ran,
+so nothing pushed back.
+
+The test forbids re-baselining ("Do NOT add to the allowlist") and prescribes the fix: move
+each silencer under `if __name__ == "__main__":`. That is a 37-file mechanical migration
+that changes the runtime warning behaviour of research scripts with no coverage of their
+own — deliberately not folded into a CI-wiring PR. Wiring this suite is one commit behind
+that sweep.
+
 ## Staged remainder
 
-`P1` (139 on current `main`) is the next lane: unrun suites on the publish path that *are* triggerable. A
-29-suite probe of its highest-value modules ran **4 red out of 29** (14%), against 7/144 (5%)
-for the dark set — so P1 needs its own repair pass before wiring, not a bulk add:
-
-- `test_no_module_level_logging_disable.py` · `test_okx_retail.py`
-- `test_release_forecast_producer.py` · `test_release_integration_2a.py`
-
-Highest-value P1 concentrations: `build_site.py` (11 suites), `build_release_forecast.py` (9),
-`neuralweb/cortex.py` (5), `build_vector.py` (4), `calibrate_vector.py` (4).
-
-`P4` (415, ledger writers) and `P5` (446) follow. Wire them in blast-radius order, in batches
-small enough to keep the ci-pack budget sane, and **run each batch locally first** — the red
-rate on never-run suites is high enough that a bulk add lands red on `main`.
+`P4` (416, ledger writers) and `P5` (445) are what is left. Wire them in blast-radius order,
+in batches small enough to keep the ci-pack budget sane, run each batch **serially** in a
+clean venv first, and expect ~5% red.
 
 ## Why the existing meta-guard did not catch this
 

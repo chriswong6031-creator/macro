@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -175,9 +175,14 @@ class TestContract:
         import scripts.build_release_forecast as producer
 
         def _mock_events(today, horizon_days, use_fred=True):
+            # Unlike the _find_upcoming_releases tests above, build() runs off the REAL
+            # clock, so these dates must be relative to the `today` it passes in.  Frozen
+            # literals here have an expiry: once the calendar walks past them the event
+            # drops out of `upcoming` and the PPI assertion below fails for a calendar
+            # reason rather than a code reason.  Both stay inside the 40-day horizon.
             return [
-                {"type": "PCE", "date": "2026-07-30"},
-                {"type": "PPI", "date": "2026-07-14"},
+                {"type": "PCE", "date": (today + timedelta(days=22)).isoformat()},
+                {"type": "PPI", "date": (today + timedelta(days=6)).isoformat()},
             ]
 
         (tmp_path / "data" / "release_forecast").mkdir(parents=True)

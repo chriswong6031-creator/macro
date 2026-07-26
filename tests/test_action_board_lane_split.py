@@ -136,13 +136,23 @@ def test_china_dlg_sector_leaders_dont_chase_not_green():
     """Redesign: sector 'act on now' moved into dlg-sector. The 'leaders' chips
     must render as caution (hot accent), never as a green buy. #2639 deliberately
     dropped the 'don't chase' wording from the Leaders label (EN+ZH parity) —
-    the caution now lives in the hot accent + Leaders framing, not the verb."""
-    pb = {"preferred": [{"name": "PPP", "rank": 3}], "leaders": [{"name": "RRR"}], "avoid": []}
+    the caution now lives in the hot accent + Leaders framing, not the verb.
+
+    The chip renders `td(x.name)`, and td() routes dynamic labels through the
+    glossary — unglossed ones come back prettified ("RRR" -> "Rrr"), so a raw
+    fixture literal is not what ships. Pin the chip against td()'s own output and
+    use a real glossed sector so the bilingual pair is exercised too.
+    """
+    from engine import i18n
+    pb = {"preferred": [{"name": "PPP", "rank": 3}], "leaders": [{"name": "Energy"}],
+          "avoid": []}
     html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
     assert "领先" in html                           # Leaders label present (#2639 copy)
-    assert "RRR" in html
-    assert "cnx-chip hot" in html                   # caution accent, not a buy/turn chip
-    assert '<span class="cnx-chip turn">RRR' not in html  # never a green buy/turn chip
+    # the leader name ships bilingual, INSIDE the hot chip — not merely somewhere
+    # in the dialog (a name that drifted into another lane would still pass that)
+    assert f'<span class="cnx-chip hot">{i18n.td("Energy")}</span>' in html
+    assert "Energy" in html and "能源" in html      # EN + ZH both present
+    assert '<span class="cnx-chip turn">' not in html  # never a green buy/turn chip
 
 
 def test_china_dlg_sector_missing_lane_safe():
@@ -152,7 +162,7 @@ def test_china_dlg_sector_missing_lane_safe():
     pb = {"preferred": [{"name": "PPP", "rank": 1}]}   # no 'leaders' / 'avoid'
     html = _env(_china_block()).get_template("blk").render(pb_obj=pb)
     assert 'id="cnx-dlg-sector"' in html               # dialog shell rendered
-    assert "领先" not in html and "RRR" not in html    # no leaders label/chips
+    assert "领先" not in html and "cnx-chip hot" not in html  # no leaders label/chips
 
 
 def test_canada_template_renders_on_the_run_lane():
