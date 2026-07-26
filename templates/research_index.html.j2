@@ -42,7 +42,12 @@ html[data-theme="light"] .rx-eyebrow{ color:var(--rv); }
 .rx-grp a{ display:block; padding:12px 15px; border-radius:11px; text-decoration:none; color:var(--text);
   background:var(--rx-bg); border:1px solid var(--rx-bd); transition:.15s; }
 .rx-grp a:hover{ border-color:color-mix(in srgb,var(--rv) 40%,var(--rx-bd)); transform:translateY(-1px); }
-.rx-grp .d{ font-family:var(--num); font-size:10.5px; color:var(--muted); } .rx-grp .ti{ font-size:13.5px; font-weight:600; margin-top:3px; line-height:1.35; }
+/* date over title. Both are <span>, so without display:block they render on one
+   line and the date collides with the title ("Jul 25, 2026EM Asia FX…") — and the
+   .ti margin-top is silently inert on an inline box. */
+.rx-grp .d{ display:block; font-family:var(--num); font-size:10.5px; line-height:1.4; letter-spacing:.01em;
+  color:var(--muted); font-variant-numeric:tabular-nums; }
+.rx-grp .ti{ display:block; font-size:13.5px; font-weight:600; margin-top:4px; line-height:1.35; }
 .rx-foot{ margin-top:40px; padding-top:20px; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); font-size:12px; color:var(--muted); }
 @media (prefers-reduced-motion:reduce){ .rx-grp a:hover{ transform:none; } }
 </style>
