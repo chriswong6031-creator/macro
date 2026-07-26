@@ -28,10 +28,26 @@
 {%- set _dn = trd.dn_class if trd.dn_class else 'az-dn' -%}
 {%- set _st = trd.stats or {} -%}
 {%- set _series = trd.series if (trd.series is defined and trd.series) else none -%}
-{#- Accent stance band. scored → win_rate_pct; interim → hit_pct; else neutral. -#}
+{#- Accent stance band. A desk only reads GREEN when the win rate is good AND the
+    average-trade interval clears zero — a 63% win rate whose expectancy range still
+    spans a loss is not yet a winning desk, and colouring it green would say it is.
+    Falls back to the legacy win_rate_pct / hit_pct keys for any host still on the old
+    summary shape (HK/CA accruing artifacts). -#}
+{%- set _win = _st.get('win_pct') if _st.get('win_pct') is not none else _st.get('win_rate_pct') -%}
+{#- _confident gates every "this desk works" signal — the green accent, the breathing
+    halo, and the "worth following" line. It needs BOTH: an average-trade interval
+    clear of zero, AND enough independent board days to believe the interval. The
+    second clause is not decoration. On 2026-07-26 the US desk's lower bound landed at
+    +0.01% off ten board days — arithmetically above zero, and nowhere near evidence.
+    20 is the same threshold the short-record ribbon uses, so the dialog can never
+    simultaneously warn "short record" and claim "worth following". -#}
+{%- set _days = _st.get('n_board_days') -%}
+{%- set _confident = (_st.get('exp_lo_pct') is none or _st.exp_lo_pct > 0)
+                     and (_days is none or _days >= 20) -%}
 {%- set _band = 'neutral' -%}
-{%- if trd.state == 'scored' and (_st.get('win_rate_pct') is not none) -%}
-  {%- if _st.win_rate_pct >= 55 -%}{% set _band = 'up' %}{%- elif _st.win_rate_pct < 45 -%}{% set _band = 'dn' %}{%- endif -%}
+{%- if trd.state == 'scored' and (_win is not none) -%}
+  {%- if _win >= 55 and _confident -%}{% set _band = 'up' %}
+  {%- elif _win < 45 -%}{% set _band = 'dn' %}{%- endif -%}
 {%- elif trd.state == 'interim' and (_st.get('hit_pct') is not none) -%}
   {%- if _st.hit_pct >= 55 -%}{% set _band = 'up' %}{%- elif _st.hit_pct < 45 -%}{% set _band = 'dn' %}{%- endif -%}
 {%- endif -%}
@@ -335,8 +351,13 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   {%- endif -%}
   {#- label + stat, per state -#}
   <span class="trd-stat"><span class="trd-lead">{{ t('Track record', '往绩') }}</span>
-    {%- if trd.state == 'scored' and _st.get('win_rate_pct') is not none -%}
-      <span class="trd-sep">·</span><span class="l-en"><b>{{ _st.win_rate_pct }}% win</b>{% if _st.get('avg_pct') is not none %} · {{ '%+g'|format(_st.avg_pct) }}% avg{% endif %}</span><span class="l-zh"><b>胜率 {{ _st.win_rate_pct }}%</b>{% if _st.get('avg_pct') is not none %} · 平均 {{ '%+g'|format(_st.avg_pct) }}%{% endif %}</span>
+    {%- if trd.state == 'scored' and _win is not none -%}
+      {#- Glance tier: the win rate and what an average trade did. Everything else
+          (interval, payoff, sample width) is demoted into the dialog. -#}
+      {%- set _exp = _st.get('expectancy_pct') if _st.get('expectancy_pct') is not none else _st.get('avg_pct') -%}
+      {#- Whole percent at glance tier. A tenth of a point on a win rate whose interval
+          is ~17pp wide is false precision; the decimal lives in the card below. -#}
+      <span class="trd-sep">·</span><span class="l-en"><b>{{ _win|round|int }}% win</b>{% if _exp is not none %} · {{ '%+g'|format(_exp) }}% a trade{% endif %}</span><span class="l-zh"><b>胜率 {{ _win|round|int }}%</b>{% if _exp is not none %} · 每笔 {{ '%+g'|format(_exp) }}%{% endif %}</span>
     {%- elif trd.state == 'interim' and _st.get('hit_pct') is not none -%}
       <span class="trd-sep">·</span><span class="l-en"><b>{{ _st.hit_pct }}% ahead of {{ trd.bench_en or 'the index' }}</b> · early</span><span class="l-zh"><b>{{ _st.hit_pct }}% 暂跑赢{{ trd.bench_zh or '指数' }}</b> · 初期</span>
     {%- else -%}
@@ -360,9 +381,14 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
         <div class="trd-eyebrow"><span class="l-en">{{ trd.eyebrow_en or 'Board track record' }}</span><span class="l-zh">{{ trd.eyebrow_zh or '榜单往绩' }}</span></div>
         <div class="trd-title" id="trd-dlg-title">{{ t('Track record', '榜单往绩') }}</div>
         <div class="trd-sub">
-          {%- if trd.state == 'scored' and _st.get('win_rate_pct') is not none -%}
-            {%- if _st.win_rate_pct >= 60 -%}<span class="l-en">Worth following — wins are outrunning stops.</span><span class="l-zh">值得跟踪——盈多于损。</span>
-            {%- elif _st.win_rate_pct >= 45 -%}<span class="l-en">Mixed so far — treat picks as ideas to check, not auto-buys.</span><span class="l-zh">喜忧参半——榜单是线索，不是自动买入。</span>
+          {%- if trd.state == 'scored' and _win is not none -%}
+            {#- Stance follows the INTERVAL, not the point estimate. While the average
+                trade's range still spans a loss, "more often right than wrong" is the
+                honest ceiling — the desk has not yet earned "worth following". -#}
+            {%- if not _confident -%}
+              <span class="l-en">More often right than wrong so far — but the record is still too short to lean on.</span><span class="l-zh">目前胜多于负——但记录尚短，不足以依赖。</span>
+            {%- elif _win >= 60 -%}<span class="l-en">Worth following — wins are outrunning stops.</span><span class="l-zh">值得跟踪——盈多于损。</span>
+            {%- elif _win >= 45 -%}<span class="l-en">Mixed so far — treat picks as ideas to check, not auto-buys.</span><span class="l-zh">喜忧参半——榜单是线索，不是自动买入。</span>
             {%- else -%}<span class="l-en">Cold stretch — stops are outrunning wins. Be picky.</span><span class="l-zh">近期偏冷——止损多于盈利，需精选。</span>{%- endif -%}
           {%- elif trd.state == 'interim' -%}
             <span class="l-en">Early read only — not final grades yet. Watch, don't lean on it.</span><span class="l-zh">仅为初期读数——尚非最终成绩，参考勿依赖。</span>
@@ -384,32 +410,55 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
       {%- endif -%}
       <div class="trd-cards">
       {%- if trd.state == 'scored' -%}
+        {#- Sample-width ribbon. n_board_days is the number of INDEPENDENT nights behind
+            the record; picks surfaced on one night move together and are close to one
+            bet, so this — not the trade count — is what makes an interval wide. It
+            leads the dialog because it is the single fact most likely to stop a reader
+            over-trusting the headline. -#}
+        {%- if _st.get('n_board_days') is not none and _st.n_board_days < 20 -%}
+        <div class="trd-ribbon" style="grid-column:1 / -1"><span class="l-en">Short record — {{ _st.get('n_matured') }} finished trades, but only {{ _st.n_board_days }} separate board days behind them. Picks from one night tend to rise and fall together, so the range below is wide and will tighten as more days accrue.</span><span class="l-zh">记录尚短——已完成 {{ _st.get('n_matured') }} 笔交易，但仅来自 {{ _st.n_board_days }} 个不同的上榜日。同一晚的标的往往同涨同跌，因此下方区间较宽，随日积累会收窄。</span></div>
+        {%- endif -%}
         <div class="trd-card">
           <div class="trd-card-k">{{ t('Win rate', '胜率') }}</div>
-          <div class="trd-card-v trd-accented">{{ _st.get('win_rate_pct', '—') }}%</div>
-          <div class="trd-card-m" data-tip-en="A win = a pick that left the board up more than 2% from its surfaced price. Flat names (within ±2%) don't count either way.{% if _st.get('wilson_lo_pct') is not none %} Typical range {{ _st.wilson_lo_pct }}–{{ _st.wilson_hi_pct }}% given {{ _st.get('n_resolved','') }} picks.{% endif %}" data-tip-zh="胜＝上榜后较上榜价上涨超过 2% 的标的。持平（±2% 以内）不计入任何一方。{% if _st.get('wilson_lo_pct') is not none %}按 {{ _st.get('n_resolved','') }} 笔样本，典型区间 {{ _st.wilson_lo_pct }}–{{ _st.wilson_hi_pct }}%。{% endif %}"><span class="l-en">resolved picks that rose</span><span class="l-zh">已了结且上涨的占比</span></div>
+          <div class="trd-card-v trd-accented">{{ _win if _win is not none else '—' }}%</div>
+          <div class="trd-card-m"><span class="l-en">of {{ _st.get('n_matured', '—') }} finished trades{% if _st.get('ci_lo_pct') is not none %} · likely {{ _st.ci_lo_pct }}–{{ _st.ci_hi_pct }}%{% endif %}</span><span class="l-zh">共 {{ _st.get('n_matured', '—') }} 笔已完成交易{% if _st.get('ci_lo_pct') is not none %} · 大致区间 {{ _st.ci_lo_pct }}–{{ _st.ci_hi_pct }}%{% endif %}</span></div>
         </div>
         <div class="trd-card">
-          <div class="trd-card-k">{{ t('Avg move', '平均涨跌') }}</div>
-          <div class="trd-card-v {{ _up if (_st.get('avg_pct') or 0) >= 0 else _dn }}">{% if _st.get('avg_pct') is not none %}{{ '%+g'|format(_st.avg_pct) }}%{% else %}—{% endif %}</div>
-          <div class="trd-card-m"><span class="l-en">surfaced price → latest, all resolved</span><span class="l-zh">上榜价→最新价，全部已了结</span></div>
+          <div class="trd-card-k">{{ t('Average trade', '每笔平均') }}</div>
+          {%- set _exp = _st.get('expectancy_pct') -%}
+          <div class="trd-card-v {{ _up if (_exp or 0) >= 0 else _dn }}">{% if _exp is not none %}{{ '%+g'|format(_exp) }}%{% else %}—{% endif %}</div>
+          <div class="trd-card-m"><span class="l-en">wins and losses together{% if _st.get('exp_lo_pct') is not none %} · likely {{ '%+g'|format(_st.exp_lo_pct) }}% to {{ '%+g'|format(_st.exp_hi_pct) }}%{% endif %}</span><span class="l-zh">盈亏合计{% if _st.get('exp_lo_pct') is not none %} · 大致区间 {{ '%+g'|format(_st.exp_lo_pct) }}% 至 {{ '%+g'|format(_st.exp_hi_pct) }}%{% endif %}</span></div>
         </div>
+        {%- if _st.get('avg_win_pct') is not none or _st.get('avg_loss_pct') is not none -%}
+        <div class="trd-card">
+          <div class="trd-card-k">{{ t('When right vs wrong', '对错幅度') }}</div>
+          <div class="trd-card-v" style="font-size:20px"><span class="{{ _up }}">{% if _st.get('avg_win_pct') is not none %}{{ '%+g'|format(_st.avg_win_pct) }}%{% else %}—{% endif %}</span> <span class="trd-mut" style="font-size:15px">/</span> <span class="{{ _dn }}">{% if _st.get('avg_loss_pct') is not none %}{{ '%+g'|format(_st.avg_loss_pct) }}%{% else %}—{% endif %}</span></div>
+          {#- Profit factor is TOTAL won ÷ TOTAL lost, so it is driven by how MANY
+              trades win as much as by how big they are. "1.54x more won than lost"
+              read as "the average win is 1.54x the average loss", which was false here
+              (+4.49 vs −4.53 — near-identical). Say what the ratio actually is. -#}
+          <div class="trd-card-m"><span class="l-en">a typical win vs a typical loss{% if _st.get('profit_factor') is not none %} · adding it all up, {{ _st.profit_factor }}x as much made as lost{% endif %}</span><span class="l-zh">典型盈利 vs 典型亏损{% if _st.get('profit_factor') is not none %} · 全部加总，赚的是亏的 {{ _st.profit_factor }} 倍{% endif %}</span></div>
+        </div>
+        {%- endif -%}
+        {%- if _st.get('n_inflight') -%}
+        <div class="trd-card">
+          <div class="trd-card-k">{{ t('Still running', '进行中') }}</div>
+          <div class="trd-card-v">{{ _st.n_inflight }}</div>
+          <div class="trd-card-m"><span class="l-en">too recent to score — listed below, not counted above</span><span class="l-zh">时间尚短未计分——下方可见，不计入上方</span></div>
+        </div>
+        {%- endif -%}
+        {%- if _st.get('median_hold') is not none -%}
+        <div class="trd-card">
+          <div class="trd-card-k">{{ t('Typical hold', '典型持有') }}</div>
+          <div class="trd-card-v">{{ _st.median_hold }}<span style="font-size:13px;font-weight:600" class="trd-mut"> {{ t('sessions', '个交易日') }}</span></div>
+          <div class="trd-card-m"><span class="l-en">sold at {{ _st.get('horizon', 10) }} sessions, or sooner on a hot run or a broken base</span><span class="l-zh">持有 {{ _st.get('horizon', 10) }} 个交易日卖出；冲高或跌破底部则提前</span></div>
+        </div>
+        {%- endif -%}
+        {%- if _st.get('mfe_median_pct') is not none -%}
         <div class="trd-card trd-card-wide">
-          <div class="trd-card-k">{{ t('Resolved', '已了结') }}</div>
-          <div class="trd-card-v">{{ _st.get('n_resolved', '—') }}</div>
-          {%- set _nu = _st.get('n_up', 0) or 0 -%}{%- set _ns = _st.get('n_stopped', 0) or 0 -%}{%- set _nf = _st.get('n_flat', 0) or 0 -%}{%- set _tot = (_nu + _ns + _nf) if (_nu + _ns + _nf) > 0 else 1 -%}
-          <div class="trd-segbar" role="img" aria-label="up / flat / below-entry mix">
-            <span class="trd-seg trd-seg-up" data-w="{{ (100 * _nu / _tot)|round(1) }}" style="width:{{ (100 * _nu / _tot)|round(1) }}%"></span>
-            <span class="trd-seg trd-seg-flat" data-w="{{ (100 * _nf / _tot)|round(1) }}" style="width:{{ (100 * _nf / _tot)|round(1) }}%"></span>
-            <span class="trd-seg trd-seg-dn" data-w="{{ (100 * _ns / _tot)|round(1) }}" style="width:{{ (100 * _ns / _tot)|round(1) }}%"></span>
-          </div>
-          <div class="trd-seg-legend"><b class="trd-up">{{ _nu }}</b> {{ t('up', '涨') }} · {{ _nf }} {{ t('flat', '持平') }} · <b class="trd-dn">{{ _ns }}</b> {{ t('below entry', '低于入场价') }}</div>
-        </div>
-        {%- if _st.get('n_onboard') is not none -%}
-        <div class="trd-card">
-          <div class="trd-card-k">{{ t('On board now', '目前在榜') }}</div>
-          <div class="trd-card-v">{{ _st.n_onboard }}</div>
-          <div class="trd-card-m"><span class="l-en">still riding, not yet resolved</span><span class="l-zh">仍在榜、尚未了结</span></div>
+          <div class="trd-card-k">{{ t('What was on the table', '最大可得与最大回撤') }}</div>
+          <div class="trd-card-v" style="font-size:20px"><span class="{{ _up }}">{{ '%+g'|format(_st.mfe_median_pct) }}%</span> <span class="trd-mut" style="font-size:15px">/</span> <span class="{{ _dn }}">{% if _st.get('mae_median_pct') is not none %}{{ '%+g'|format(_st.mae_median_pct) }}%{% else %}—{% endif %}</span></div>
+          <div class="trd-card-m"><span class="l-en">The best and worst a typical trade touched while held{% if _st.get('capture') is not none %} — selling by the rule kept about {{ (_st.capture * 100)|round|int }}% of the best.{% endif %} Nobody sells the exact high; this is the room, not a result.</span><span class="l-zh">典型交易持有期内触及的最高与最低{% if _st.get('capture') is not none %}——按规则卖出约保留了最高点的 {{ (_st.capture * 100)|round|int }}%。{% endif %}无人能卖在最高点；这是空间，不是成绩。</span></div>
         </div>
         {%- endif -%}
       {%- elif trd.state == 'interim' -%}
@@ -460,12 +509,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
         {%- if _m == 'us' -%}<select class="trd-sel" id="trd-sector" aria-label="Sector"></select>{%- endif -%}
         <span class="trd-rail-grow"></span>
       </div>
-      {#- Tier-2 marking-basis disclosure. US rows carry an open mark-to-latest-close
-          move (no executed exit); CN/HK/CA grade on committed excess, so this note is
-          US-only (it would misdescribe the other markets' committed rows). Plain-words
-          receipt, not glance tier; no CJK in title= (uses l-en/l-zh spans). -#}
-      {%- if _m == 'us' -%}
-      <p class="trd-mark-note"><span class="l-en">Open marks — priced at the latest close; not executed exits.</span><span class="l-zh">实时标记——按最新收盘计价，并非已执行的离场。</span></p>
+      {#- Tier-2 marking-basis disclosure. Both scored desks now record a COMMITTED
+          exit at the forced horizon (or sooner on the rule), so the old US-only
+          "open marks" caveat would misdescribe them. What still needs saying is which
+          rows are finished and which are not. Plain words; no CJK in title=. -#}
+      {%- if trd.state == 'scored' -%}
+      <p class="trd-mark-note"><span class="l-en">Finished trades show the price they were sold at. Rows still running show today's price and are not scored.</span><span class="l-zh">已完成交易显示实际卖出价；进行中的标的显示今日价格，不计入评分。</span></p>
       {%- endif -%}
       <div id="trd-tbl-mount">
         <div class="trd-err" style="display:none"></div>
@@ -594,8 +643,12 @@ html.trd-lock body{ overflow:hidden;position:fixed;width:100%; }
   function L(k){ return (isZh()? T.zh : T.en)[k]; }
 
   function statusChipDefs(){
-    if(market === 'cn') return [['all','all'],['matured','matured'],['early','early']];
-    if(market === 'us') return [['all','all'],['up','up'],['stopped','stopped'],['flat','flat']];
+    // Vocabulary follows what each emitter actually writes: the US desk scores
+    // absolute P&L (up / stopped), CN scores excess vs CSI300 (beat / lag). Both list
+    // not-yet-finished episodes so a reader can see the whole book, not just the
+    // settled half — those rows are excluded from every number above.
+    if(market === 'cn') return [['all','all'],['beat','beat'],['lag','lag'],['early','early']];
+    if(market === 'us') return [['all','all'],['up','up'],['stopped','stopped'],['onboard','onboard']];
     return [['all','all'],['early','early']]; // hk/ca
   }
   function buildRail(){

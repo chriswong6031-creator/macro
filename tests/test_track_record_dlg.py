@@ -40,17 +40,25 @@ def _render_partial(trd: dict | None) -> str:
 
 
 def _scored_trd(**over) -> dict:
+    """The post-2026-07-26 summary shape (engine.track_scoring.summarize).
+
+    exp_lo_pct is POSITIVE here so the fixture exercises the confident branch; the
+    interval-crossing-zero branch has its own test below.
+    """
     trd = dict(
         market="us", state="scored",
-        stats=dict(win_rate_pct=68, avg_pct=2.0, n_resolved=148, n_up=74, n_stopped=34,
-                   n_flat=40, wilson_lo_pct=60, wilson_hi_pct=75, n_onboard=61, n_calls=214),
+        stats=dict(metric="pnl", horizon=10, win_pct=68.0, expectancy_pct=2.0,
+                   median_pct=1.6, avg_win_pct=4.1, avg_loss_pct=-2.4, profit_factor=1.9,
+                   ci_lo_pct=60.0, ci_hi_pct=75.0, exp_lo_pct=0.4, exp_hi_pct=3.6,
+                   n_matured=148, n_inflight=61, n_board_days=44, n_skipped_no_price=2,
+                   median_hold=8, capture=0.71, mfe_median_pct=3.4, mae_median_pct=-1.9),
         data_url="factordata/us_track_ledger.json",
         eyebrow_en="US buy board · vs S&P 500", eyebrow_zh="美股买入榜 · 对比标普500",
         bench_en="S&P 500", bench_zh="标普500",
         series=[0.52, 0.55, 0.58, 0.61, 0.60, 0.64, 0.66, 0.68], as_of="2026-07-20",
         deep_link="us_track_record.html", up_class="az-up", dn_class="az-dn",
-        note_en="Grading: entry = the next session's close after a name is surfaced; a win = up >2%.",
-        note_zh="打分：入场＝上榜后下一交易日收盘价；胜＝上涨超过 2%。")
+        note_en="Bought at the next session's close, sold 10 sessions later or sooner on the rule.",
+        note_zh="以次日收盘价买入，持有 10 个交易日后卖出；触发规则则提前。")
     trd.update(over)
     return trd
 
@@ -91,15 +99,70 @@ def test_partial_renders_nothing_when_trd_absent():
     assert _render_partial(None).strip() == ""
 
 
-def test_scored_chip_shows_win_and_avg():
+def test_scored_chip_shows_win_and_average_trade():
     html = _render_partial(_scored_trd())
     assert 'id="trd-btn"' in html and 'id="trd-dlg"' in html
-    assert "68% win" in html and "2% avg" in html                 # EN chip stat
-    assert "胜率 68%" in html                                      # ZH chip stat
+    assert "68% win" in html and "+2% a trade" in html            # EN chip stat
+    assert "胜率 68%" in html and "每笔 +2%" in html                # ZH chip stat
     assert 'data-state="scored"' not in html or 'data-market="us"' in html
     # verdict cards are server-rendered (works JS-off)
     assert "WIN RATE" in html.upper() or "Win rate" in html
-    assert "148" in html                                          # resolved count
+    assert "148" in html                                          # matured count
+
+
+def test_scored_dialog_discloses_the_effective_sample():
+    """n_board_days is what makes the interval wide; it must be on the surface, not
+    only in the JSON. 44 board days is under the ribbon's threshold of 20? No — it is
+    above it, so the ribbon stays off and the raw count still ships in the cards."""
+    html = _render_partial(_scored_trd())
+    assert "60.0–75.0%" in html or "60.0" in html                 # win-rate interval
+    assert "Short record" not in html                             # 44 days → no ribbon
+
+
+def test_short_record_ribbon_fires_under_twenty_board_days():
+    html = _render_partial(_scored_trd(stats=dict(_scored_trd()["stats"], n_board_days=5)))
+    assert "Short record" in html and "5 separate board days" in html
+    assert "记录尚短" in html
+
+
+def test_stance_refuses_to_claim_an_edge_when_the_interval_spans_a_loss():
+    """A 68% win rate whose average-trade range still includes a loss must NOT read as
+    'worth following', and must not glow green."""
+    html = _render_partial(_scored_trd(stats=dict(_scored_trd()["stats"], exp_lo_pct=-0.8)))
+    assert "still too short to lean on" in html
+    assert "Worth following" not in html
+    assert 'trd-wrap trd-band-up' not in html                    # neutral accent, not green
+
+
+def test_confident_stance_needs_enough_independent_board_days():
+    """An interval that clears zero by a hair off a handful of nights is not evidence.
+
+    The live US desk landed at exp_lo_pct=+0.01% over 10 board days — arithmetically
+    positive. The dialog must not simultaneously warn 'short record' and claim 'worth
+    following', so both gate on the same 20-board-day threshold.
+    """
+    thin = dict(_scored_trd()["stats"], exp_lo_pct=0.01, n_board_days=10)
+    html = _render_partial(_scored_trd(stats=thin))
+    assert "Short record" in html
+    assert "still too short to lean on" in html
+    assert "Worth following" not in html
+    assert "trd-wrap trd-band-up" not in html
+    assert "trd-btn trd-breathe" not in html                      # no halo either
+
+
+def test_confident_stance_fires_once_the_record_is_long_enough():
+    fat = dict(_scored_trd()["stats"], exp_lo_pct=0.9, n_board_days=60, win_pct=64.0)
+    html = _render_partial(_scored_trd(stats=fat))
+    assert "Worth following" in html
+    assert "trd-wrap trd-band-up" in html
+    assert "Short record" not in html
+
+
+def test_mfe_is_framed_as_room_not_result():
+    """MFE must never read as performance — selling the exact high is not a strategy."""
+    html = _render_partial(_scored_trd())
+    assert "this is the room, not a result" in html
+    assert "无人能卖在最高点" in html
 
 
 def test_interim_chip_shows_ahead_and_early():
@@ -205,12 +268,40 @@ _US_OUTCOMES = {
              {"ticker": "ZEUS", "status": "stopped", "pct_since": -5.0}],
 }
 
+# The ledger artifact the chip reads. Deliberately carries DIFFERENT numbers from
+# _US_OUTCOMES above so the test can prove which artifact the chip is bound to.
+_US_LEDGER = {
+    "schema": "track_ledger/v1", "market": "US", "as_of": "2026-07-24", "state": "scored",
+    "summary": {"metric": "pnl", "horizon": 10, "win_pct": 63.1, "expectancy_pct": 0.97,
+                "avg_win_pct": 4.08, "avg_loss_pct": -4.34, "profit_factor": 1.61,
+                "ci_lo_pct": 51.9, "ci_hi_pct": 69.2, "exp_lo_pct": -0.78, "exp_hi_pct": 1.93,
+                "n_matured": 111, "n_inflight": 201, "n_board_days": 5, "median_hold": 10},
+    "rows": [], "meta": {"grain": "episode"},
+}
 
-def test_us_host_renders_scored_chip_with_outcomes():
-    html = _render_dashboard("stocks", us_board_outcomes=_US_OUTCOMES, us_track_series=[0.55, 0.6, 0.64, 0.68])
+
+def test_us_host_chip_reads_the_ledger_not_the_outcomes_strip():
+    """The chip and the popup table it heads must report the SAME artifact.
+
+    They used to disagree: the chip rendered us_board_outcomes.json (same-bar entry,
+    marked to today) while the table fetched us_track_ledger.json. Passing both, with
+    different win rates, proves which one wins.
+    """
+    html = _render_dashboard("stocks", us_board_outcomes=_US_OUTCOMES,
+                             us_track_ledger=_US_LEDGER,
+                             us_track_series=[0.55, 0.6, 0.64, 0.68])
     assert 'id="trd-btn"' in html and 'id="trd-dlg"' in html
-    assert "68% win" in html                                      # scored stat from summary.win_rate
+    assert "63% win" in html                                      # from the ledger
+    assert "68% win" not in html                                  # NOT the outcomes strip
     assert 'data-market="us"' in html
+
+
+def test_us_host_falls_back_to_accruing_without_a_ledger():
+    """No ledger yet → the chip must not borrow the outcomes strip's numbers."""
+    html = _render_dashboard("stocks", us_board_outcomes=_US_OUTCOMES, us_track_ledger=None)
+    assert 'id="trd-btn"' in html
+    assert 'data-state="accruing"' in html
+    assert "68% win" not in html
 
 
 def test_us_host_renders_fine_with_none_outcomes():

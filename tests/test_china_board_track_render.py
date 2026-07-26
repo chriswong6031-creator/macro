@@ -46,20 +46,51 @@ def test_accruing_state_maps_to_chip():
     assert 'data-market="cn"' in html
 
 
-def test_scored_state_passes_hit_and_semantic_classes():
+_CN_LEDGER = {
+    "schema": "track_ledger/v1", "market": "CN", "as_of": "2026-07-24", "state": "scored",
+    "summary": {"metric": "excess", "horizon": 10, "win_pct": 59.0, "expectancy_pct": 0.94,
+                "avg_win_pct": 9.8, "avg_loss_pct": -12.1, "profit_factor": 1.21,
+                "ci_lo_pct": 52.5, "ci_hi_pct": 67.7, "exp_lo_pct": -0.73, "exp_hi_pct": 3.01,
+                "n_matured": 261, "n_inflight": 216, "n_board_days": 7, "median_hold": 10,
+                "n_logged": 477, "n_locked_excluded": 1},
+    "rows": [], "meta": {"grain": "episode"},
+}
+
+
+def test_scored_state_reads_the_ledger_not_the_research_grade():
+    """The chip must report the artifact the popup's table fetches.
+
+    It used to read bt.by_horizon['21d'] — the board's own 21-session research grade —
+    while the table below fetched cn_track_ledger.json at a 10-session horizon on
+    episode grain. Two studies, one component. The `bt` here carries a DIFFERENT hit
+    rate (0.575) from the ledger (59.0) so the binding is provable.
+    """
     bt = {"available": True, "n_rows": 240, "dates": ["2026-06-30", "2026-07-01"],
           "grading": {"benchmark": "510300.SS", "relative": True, "entry_basis": "t1_hl2",
                       "marker_dates": "forbidden"},
           "by_horizon": {"21d": {"n": 40, "hit_vs_csi300": 0.575, "hit_ci": [0.42, 0.72],
                                  "median_excess": 0.018, "board_rank_ic": -0.12}}}
-    html = _render_block(setups={"board_track": bt,
+    html = _render_block(setups={"board_track": bt, "track_ledger": _CN_LEDGER,
                                  "coverage": {"data_through": "2026-07-01", "partial_session": False}})
-    assert 'data-state="scored"' in html                          # n≥8 → scored
-    assert "58%" in html or "57%" in html                         # hit rate → win basis (0.575 → 58%)
+    assert 'data-state="scored"' in html
+    assert "59% win" in html                                      # from the ledger
+    assert "58%" not in html                                      # NOT the 21d research grade
     # semantic up/down classes routed to the partial (zh flip stays automatic)
     assert 'data-up-class="pos"' in html and 'data-dn-class="neg"' in html
-    assert "CSI300" in html                                       # benchmark stated
-    assert "T+1" in html                                          # fill-realism disclosed in the footnote
+    assert "CSI 300" in html or "CSI300" in html                  # benchmark stated
+    # the short-record ribbon must fire: 7 board days is a thin independent sample
+    assert "7 separate board days" in html
+
+
+def test_scored_falls_back_to_accruing_without_a_ledger():
+    """A rich research grade must not be able to promote a chip with no ledger."""
+    bt = {"available": True, "n_rows": 240, "dates": ["2026-06-30"],
+          "grading": {"entry_basis": "t1_hl2"},
+          "by_horizon": {"21d": {"n": 40, "hit_vs_csi300": 0.575, "hit_ci": [0.42, 0.72]}}}
+    html = _render_block(setups={"board_track": bt,
+                                 "coverage": {"data_through": "2026-07-01", "partial_session": False}})
+    assert 'data-state="accruing"' in html
+    assert "58%" not in html
 
 
 def test_partial_session_folds_into_footnote():

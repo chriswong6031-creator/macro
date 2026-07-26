@@ -91,6 +91,11 @@ from engine.grading import (  # noqa: E402
     LIFTOFF_8,
 )
 from engine.regime_vector import get_vector_for_date  # noqa: E402
+from engine.confluence_tiers import (  # noqa: E402 — 3D StochRSI for the ledger's target exit
+    _tf_bars,
+    _stoch_rsi_kd,
+    _to_daily,
+)
 
 BOARD_PATH = "site/factordata/us_standouts.json"
 LEDGER_DIR = ROOT / "data" / "us_board_ledger"
@@ -102,6 +107,34 @@ OUTCOMES_JSON = ROOT / "site" / "factordata" / "us_board_outcomes.json"
 # NEW artifact — never move/rename OUTCOMES_JSON or TRACK_JSON (Prophet freshness pins
 # us_board_outcomes.json; us_board_track.json keeps key `per_horizon`).
 LEDGER_JSON = ROOT / "site" / "factordata" / "us_track_ledger.json"
+
+# TRD popup scoring parameters. The forced-verdict horizon is the ONE number that
+# decides what the headline means, so it lives here, named, not inline.
+#   10 sessions ≈ two trading weeks. Measured on the US board 2026-07-26: at H=5 the
+#   desk had NO edge (profit factor 0.99, expectancy −0.01%); at H=10 it had one
+#   (1.61, +0.97%). H=21 was unmeasurable — the record was 24 calendar days old and no
+#   episode had 21 forward bars. Revisit once the ledger carries a quarter of dates.
+LEDGER_HORIZON = 10
+_OB = 80.0          # 3D StochRSI overbought — engine/hold.py LAUNCHED leg
+_TROUGH_LB = 90     # trough lookback for the stop — engine/hold.py TROUGH_LB
+_TROUGH_TOL = 0.97  # BROKEN below trough × 0.97 — engine/hold.py TROUGH_TOL
+
+# First board date whose definition matches the board that ships today. Earlier boards
+# are real history but a DIFFERENT INSTRUMENT, and a track record is a claim about a
+# specific product:
+#   * 2026-06-15..06-24 published 120 names on the `buy` key against ~780 eligible —
+#     a broad screen, not a selection. The 06-15 board's own labels include DOWNTREND,
+#     TOPPING and ROLLING OVER names; grading those as buy calls would be grading
+#     recommendations the board never made.
+#   * from 2026-06-25 the lane narrows to ~30-45 names, which is what a reader sees now.
+# Those 7 boards supplied 479 of 680 matured episodes — 70% of the evidence — so
+# pooling them means the headline mostly describes a product nobody can follow.
+#
+# Note for whoever revisits this: INCLUDING the old era is the choice that makes the
+# desk look better (it lifted the average-trade interval clear of zero, 0.25–1.67 vs
+# −0.78–1.93). That asymmetry is the reason to leave it out, not a reason to keep it.
+# The excluded count ships in meta.history so the cut is auditable, never silent.
+LEDGER_HISTORY_FROM = "2026-06-25"
 
 # SA-W5: v2 parallel lane (sibling files, ISOLATED from main lane)
 # These files NEVER touch retro_grades.parquet / us_board_track.json.
@@ -166,11 +199,27 @@ def _load_prices() -> tuple[pd.DataFrame, pd.DataFrame]:
 # board reconstruction (git archaeology + snapshot union)
 # --------------------------------------------------------------------------- #
 def _git_revisions() -> list[tuple[str, str]]:
-    out = subprocess.run(
+    """Every commit that touched the board artifact, newest first.
+
+    LOUD on failure. This used to return `[]` for any git error — a wrong-and-silent
+    degradation: the retro half of the ledger simply vanished and the forward
+    snapshots carried on alone. Observed 2026-07-26, a transient failure here cut the
+    US ledger from 680 matured episodes across 17 board days to 111 across 5, moving
+    the published interval from 55.2–71.3% to 51.9–69.2% with nothing in the output to
+    say the history had been truncated. A track record that silently changes size
+    depending on whether a subprocess succeeded is not a track record.
+    """
+    proc = subprocess.run(
         ["git", "log", "--format=%H", "--", BOARD_PATH],
         cwd=ROOT, capture_output=True, text=True,
-    ).stdout.split()
-    return out
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git log over {BOARD_PATH} failed (rc={proc.returncode}): "
+            f"{proc.stderr.strip()[:300]} — refusing to grade on a silently truncated "
+            "history; re-run once git is available."
+        )
+    return proc.stdout.split()
 
 
 def _load_blob(sha: str) -> dict | None:
@@ -1371,162 +1420,187 @@ def _load_retro_excess_21() -> dict[tuple[str, str], float]:
     return out
 
 
-def emit_ledger(boards: list[dict], names: pd.DataFrame) -> dict:
-    """Build the compact buy-lane EPISODE ledger for the Track-record popup.
+def _ob_mask(close: pd.Series) -> pd.Series | None:
+    """Daily-aligned bool: the 3D StochRSI is overbought (k or d >= 80).
 
-    Grain: one row per buy-lane ticker EPISODE — its first_surfaced date through its
-    exit (or, if still on the current board, st='onboard'). Reuses collect_boards()
-    output + the broad closes already loaded (`names`) — no redundant store reads.
+    The desk's OWN cycle-top read — engine/hold.py's LAUNCHED leg, pre-registered in
+    research/entry_timing/WAVE6_PREREG.md §3 ("oversold → overbought"). Reused here as
+    the episode's TARGET exit so the track record measures the system's own sell
+    discipline instead of an arbitrary calendar date. Known-date mapped (causal — a 3D
+    bucket is only readable once complete), so it can never peek.
+    """
+    try:
+        c = close.dropna()
+        if len(c) < 200:
+            return None
+        s3, k3 = _tf_bars(c, 3)
+        k, d = _stoch_rsi_kd(s3)
+        return _to_daily(((k >= _OB) | (d >= _OB)).fillna(False), k3, c.index).fillna(False).astype(bool)
+    except Exception:  # noqa: BLE001 — no oscillator → the episode runs to its horizon
+        return None
 
-    Status thresholds mirror emit_outcomes exactly: pct > +2 → up, pct < −2 → stopped,
-    else flat; current on-board names → onboard. `x` (excess vs SPY, %) and `m`
-    (matured) are joined from retro_grades.parquet's 21d buy-lane excess_spy on
-    (first_surfaced, ticker). Survivorship: names with no usable price path are counted
-    into summary/meta as n_skipped_no_price (never fabricated).
+
+def emit_ledger(boards: list[dict], names: pd.DataFrame,
+                etfs: pd.DataFrame | None = None) -> dict:
+    """Build the buy-lane EPISODE ledger for the Track-record popup.
+
+    Grain: one row per CONTIGUOUS board run (engine.track_scoring.build_episodes) — a
+    name that leaves and returns yields two episodes, each with its own entry.
+
+    Scoring (engine.track_scoring — see that module for why each rule exists):
+      * fill  = the NEXT session's close after the board date. The board is computed
+                FROM the board date's close and published that evening, so the signal
+                bar itself is unbuyable. The pre-2026-07-26 ledger entered on it and
+                that single bar was worth +5.5pp of win rate and 69% of the reported
+                average return.
+      * exit  = the FIRST of: the 3D-StochRSI overbought target, a break of the
+                90-session trough × 0.97 stop, or the forced HORIZON verdict. The rule
+                legs may only shorten the hold — never extend it past the horizon.
+      * gate  = only episodes with >= HORIZON forward bars are summarised; younger
+                ones ride as st='onboard' with a live unrealised mark and are counted
+                in n_inflight. Excluding by AGE is symmetric; excluding by OUTCOME is
+                not, and would delete the losers (module docstring, rule 1).
+
+    Headline metric is ABSOLUTE P&L (what a reader actually experiences); excess vs
+    SPY ships alongside in each row's `x`. Survivorship: names with no usable price
+    path are counted into n_skipped_no_price, never silently dropped.
 
     Returns the track_ledger/v1 dict (JSON-safe via engine.track_ledger.build_shell).
     """
     from engine import track_ledger as _tl
+    from engine import track_scoring as _ts
 
     bench = {"code": "SPY", "en": "S&P 500", "zh": "标普500"}
+    empty_summary = _ts.summarize([], metric="pnl", horizon=LEDGER_HORIZON)
 
     if not boards:
         return _tl.build_shell(
             "US", str(dt.date.today()), "accruing", bench,
-            summary={"win_rate": None, "avg_pct": None, "n_resolved": 0,
-                     "n_up": 0, "n_stopped": 0, "n_flat": 0,
-                     "wilson_lo_pct": None, "wilson_hi_pct": None, "n_onboard": 0,
-                     "n_skipped_no_price": 0},
-            rows=[], grain="episode",
+            summary=empty_summary, rows=[], grain="episode",
             survivorship={"n_skipped_no_price": 0},
         )
 
-    current_board = boards[-1]
-    current_as_of = current_board.get("as_of", "")
-    current_buy_tickers = {
-        r.get("ticker") for r in current_board.get("rows", [])
-        if r.get("lane") == "buy" and r.get("ticker")
-    }
+    current_as_of = boards[-1].get("as_of", "")
 
-    # First-surfaced date + sector + latest board rank/tier per buy-lane ticker,
-    # scanning ALL boards (episode grain = full history, not a lookback window).
-    first_seen: dict[str, dict] = {}
-    last_seen: dict[str, dict] = {}
+    # board_day -> buy-lane tickers, plus display metadata from the LATEST board a
+    # ticker appeared on (freshest sector / rank / tier).
+    board_days: dict[str, set[str]] = {}
+    meta_by_tk: dict[str, dict] = {}
+    n_boards_predefinition = 0
     for b in boards:
         as_of_str = b.get("as_of", "")
+        if not as_of_str:
+            continue
+        if as_of_str < LEDGER_HISTORY_FROM:
+            n_boards_predefinition += 1        # different instrument — see the constant
+            continue
+        day = board_days.setdefault(as_of_str, set())
         for r in b.get("rows", []):
             if r.get("lane") != "buy":
                 continue
             tk = r.get("ticker")
             if not tk:
                 continue
-            if tk not in first_seen:
-                first_seen[tk] = {"first_surfaced": as_of_str, "sector": r.get("sector")}
-            last_seen[tk] = {"as_of": as_of_str, "sector": r.get("sector"),
-                             "rank": r.get("position"), "tier": r.get("align_tier")}
+            day.add(tk)
+            meta_by_tk[tk] = {"sector": r.get("sector"), "rank": r.get("position"),
+                              "tier": r.get("align_tier")}
 
-    retro_x = _load_retro_excess_21()
+    bench_ser = None
+    if etfs is not None and BENCH in getattr(etfs, "columns", []):
+        bench_ser = etfs[BENCH].dropna()
 
     rows_out: list[dict] = []
+    scored: list[dict] = []
     skipped_no_price: list[str] = []
-    for tk, meta in first_seen.items():
-        first_surfaced_str = meta["first_surfaced"]
-        on_board_now = tk in current_buy_tickers
+    n_inflight = 0
+    _ob_cache: dict[str, pd.Series | None] = {}
 
-        # price path from the broad closes (columns=ticker, DatetimeIndex)
-        entry_px = latest_px = pct = None
-        dy = None
-        priced = False
-        if tk in names.columns:
-            ser = names[tk].dropna()
-            if not ser.empty:
-                try:
-                    first_dt = pd.Timestamp(first_surfaced_str)
-                except Exception:  # noqa: BLE001
-                    first_dt = None
-                if first_dt is not None:
-                    idx_first = ser.index.searchsorted(first_dt, side="left")
-                    if idx_first < len(ser):
-                        entry_px = float(ser.iloc[idx_first])
-                        if entry_px > 0:
-                            latest_px = float(ser.iloc[-1])
-                            pct = (latest_px / entry_px - 1.0) * 100.0
-                            dy = int(len(ser) - idx_first)
-                            priced = True
-        if not priced and not on_board_now:
-            # exited name with no usable price path — likely delisted; the very outcome
-            # the ledger must disclose, not silently drop.
+    for ep in _ts.build_episodes(board_days):
+        tk, d0 = ep["ticker"], ep["entry_date"]
+        if tk not in names.columns:
             skipped_no_price.append(tk)
             continue
+        ser = names[tk].dropna()
+        if ser.empty:
+            skipped_no_price.append(tk)
+            continue
+        if tk not in _ob_cache:
+            _ob_cache[tk] = _ob_mask(ser)
 
-        # status
-        if on_board_now:
-            st = "onboard"
-        elif pct is None:
-            st = "flat"
-        elif pct > 2.0:
-            st = "up"
-        elif pct < -2.0:
-            st = "stopped"
+        # stop = a break of the setup's OWN base (engine/hold.py BROKEN), not a flat
+        # percentage — the trough is what the bottoming thesis rests on.
+        i_sig = ser.index.searchsorted(pd.Timestamp(d0), side="left")
+        stop_lvl = None
+        if i_sig < len(ser):
+            lo = max(0, i_sig - _TROUGH_LB)
+            trough = float(ser.iloc[lo:i_sig + 1].min())
+            if math.isfinite(trough) and trough > 0:
+                stop_lvl = trough * _TROUGH_TOL
+
+        sc = _ts.score_episode(ser, d0, LEDGER_HORIZON, stop_level=stop_lvl,
+                               early_exit=_ob_cache[tk], bench_close=bench_ser)
+        if sc is None:
+            skipped_no_price.append(tk)
+            continue
+        if sc.get("fill_pending"):
+            # Surfaced on the newest board — the T+1 fill prints tomorrow. In flight,
+            # not a survivorship casualty (conflating the two inflated the skip count
+            # to 22 and listed liquid names like DE and F as unpriceable).
+            n_inflight += 1
+            m = meta_by_tk.get(tk, {})
+            rows_out.append({
+                "t": tk, "nm": None, "sec": m.get("sector"), "grp": None, "d": d0,
+                "e": None, "l": None, "p": None, "x": None, "dy": None,
+                "st": "onboard", "m": False,
+                "rk": m.get("rank"), "tr": m.get("tier"), "fl": [], "xr": None,
+            })
+            continue
+
+        m = meta_by_tk.get(tk, {})
+        if sc["matured"]:
+            st = "up" if (sc["pnl"] or 0) > 0 else "stopped"
+            latest, move = sc["exit"], sc["pnl"]
+            sc["board_date"] = d0
+            scored.append(sc)
         else:
-            st = "flat"
-
-        # 21d excess join (matured) on (first_surfaced, ticker)
-        x_frac = retro_x.get((first_surfaced_str, tk))
-        matured = x_frac is not None
-        x_pct = round(x_frac * 100.0, 2) if matured else None
+            st = "onboard"                     # in flight — never in the summary
+            n_inflight += 1
+            latest = (float(ser.iloc[-1]) if len(ser) else None)
+            move = sc["mark"]
 
         rows_out.append({
-            "t": tk,
-            "nm": None,
-            "sec": meta.get("sector"),
-            "grp": None,
-            "d": first_surfaced_str,
-            "e": round(entry_px, 2) if entry_px is not None else None,
-            "l": round(latest_px, 2) if latest_px is not None else None,
-            "p": round(pct, 1) if pct is not None else None,
-            "x": x_pct,
-            "dy": dy,
+            "t": tk, "nm": None, "sec": m.get("sector"), "grp": None,
+            "d": d0,
+            "e": round(sc["entry"], 2),
+            "l": round(latest, 2) if latest is not None else None,
+            "p": round(move, 1) if move is not None else None,
+            "x": round(sc["excess"], 2) if sc.get("excess") is not None else None,
+            "dy": sc["held"],
             "st": st,
-            "m": bool(matured),
-            "rk": last_seen.get(tk, {}).get("rank"),
-            "tr": last_seen.get(tk, {}).get("tier"),
+            "m": bool(sc["matured"]),
+            "rk": m.get("rank"), "tr": m.get("tier"),
             "fl": [],
+            "xr": sc.get("exit_reason"),
         })
 
-    # Summary over RESOLVED (exited & priced) rows only — onboard names are in-flight,
-    # not part of the win/loss record. Mirrors emit_outcomes' status math.
-    resolved = [r for r in rows_out if r["st"] in ("up", "stopped", "flat")]
-    n_up = sum(1 for r in resolved if r["st"] == "up")
-    n_stopped = sum(1 for r in resolved if r["st"] == "stopped")
-    n_flat = sum(1 for r in resolved if r["st"] == "flat")
-    n_onboard = sum(1 for r in rows_out if r["st"] == "onboard")
-    denom = n_up + n_stopped
-    win_rate = round(n_up / denom, 3) if denom > 0 else None
-    _pcts = [r["p"] for r in resolved if r["p"] is not None]
-    avg_pct = round(sum(_pcts) / len(_pcts), 1) if _pcts else None
-    wl, wh = _tl.wilson_ci(n_up, denom)
+    summary = _ts.summarize(scored, metric="pnl", n_inflight=n_inflight,
+                            n_skipped=len(skipped_no_price), horizon=LEDGER_HORIZON)
+    state = _ts.publish_state(summary)
 
-    summary = {
-        "win_rate": win_rate,
-        "avg_pct": avg_pct,
-        "n_resolved": len(resolved),
-        "n_up": n_up,
-        "n_stopped": n_stopped,
-        "n_flat": n_flat,
-        "wilson_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
-        "wilson_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
-        "n_onboard": n_onboard,
-        "n_skipped_no_price": len(skipped_no_price),
-    }
-
-    # state: scored when the resolved sample is real; else accruing (button falls back).
-    state = "scored" if (win_rate is not None and len(resolved) >= 8) else "accruing"
-
+    _days = sorted(board_days)
     return _tl.build_shell(
         "US", current_as_of, state, bench, summary, rows_out, grain="episode",
         survivorship={"n_skipped_no_price": len(skipped_no_price),
-                      "tickers_skipped": sorted(skipped_no_price)[:15]},
+                      "tickers_skipped": sorted(set(skipped_no_price))[:15]},
+        extra_meta={"exit_rule": "3D StochRSI >= 80 target · 90d-trough x0.97 stop · "
+                                 f"{LEDGER_HORIZON}-session forced verdict",
+                    # History span, so a truncated retro read is visible in the artifact
+                    # instead of silently shrinking the record (see _git_revisions).
+                    "history": {"first_board": _days[0] if _days else None,
+                                "last_board": _days[-1] if _days else None,
+                                "n_boards": len(_days),
+                                "scored_from": LEDGER_HISTORY_FROM,
+                                "n_boards_before_current_definition": n_boards_predefinition}},
     )
 
 
@@ -1820,12 +1894,14 @@ def main() -> None:
     # cards stay current regardless (they don't depend on this JSON).
     try:
         from engine import track_ledger as _tl
-        ledger = emit_ledger(boards, names)
+        ledger = emit_ledger(boards, names, etfs)
         if _tl.atomic_write(LEDGER_JSON, ledger) and not args.quiet:
             _lsm = ledger.get("summary", {})
             print(f"[track_ledger] {ledger.get('meta', {}).get('n_total', 0)} episodes "
-                  f"(state={ledger.get('state')} win_rate={_lsm.get('win_rate')} "
-                  f"onboard={_lsm.get('n_onboard')} "
+                  f"(state={ledger.get('state')} win={_lsm.get('win_pct')}% "
+                  f"exp={_lsm.get('expectancy_pct')}% pf={_lsm.get('profit_factor')} "
+                  f"matured={_lsm.get('n_matured')} over {_lsm.get('n_board_days')} board days, "
+                  f"inflight={_lsm.get('n_inflight')} "
                   f"skipped_no_price={_lsm.get('n_skipped_no_price')}) → {LEDGER_JSON.name}")
     except Exception as _le:  # noqa: BLE001 — ledger is additive; never fatal
         if not args.quiet:

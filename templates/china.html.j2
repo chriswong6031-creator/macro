@@ -3593,27 +3593,18 @@
     {% set h21 = bt.by_horizon['21d'] if (bt.by_horizon and '21d' in bt.by_horizon) else none %}
     {% set itm = bt.interim %}
     {% set _partial = (cov.partial_session if cov else none) %}
-    {% if h21 and h21.n and h21.n >= 8 %}
+    {# Chip stats come from the SAME artifact the popup's table fetches
+       (setups.track_ledger = cn_track_ledger.json, built by
+       build_china_library.emit_cn_track_ledger). It previously read bt.by_horizon['21d']
+       / bt.interim — the board's own research grade — so the headline and the rows
+       below it were two different studies with two different horizons. The ledger
+       scores CSI300 excess at a forced 10-session verdict on EPISODE grain, with a
+       date-blocked interval; see engine/track_scoring.py.
+       Falls back to the accruing shell when the ledger hasn't been built yet. #}
+    {% set _cl = setups.track_ledger if (setups.track_ledger is defined and setups.track_ledger) else none %}
+    {% if _cl and _cl.get('state') == 'scored' %}
       {% set _cn_state = 'scored' %}
-      {% set _cn_stats = {
-        'win_rate_pct': (h21.hit_vs_csi300 * 100)|round|int if h21.hit_vs_csi300 is not none else none,
-        'avg_pct': (h21.median_excess * 100)|round(1) if h21.median_excess is not none else none,
-        'n_resolved': h21.n, 'n_up': none, 'n_stopped': none, 'n_flat': none,
-        'wilson_lo_pct': (h21.hit_ci[0]*100)|round|int if h21.hit_ci else none,
-        'wilson_hi_pct': (h21.hit_ci[1]*100)|round|int if h21.hit_ci else none,
-        'n_calls': bt.n_rows,
-      } %}
-    {% elif itm and itm.available and itm.n and itm.n >= 8 %}
-      {% set _cn_state = 'interim' %}
-      {% set _cn_stats = {
-        'hit_pct': (itm.hit_vs_csi300 * 100)|round|int if itm.hit_vs_csi300 is not none else none,
-        'ci_lo_pct': (itm.hit_ci[0]*100)|round|int if itm.hit_ci else none,
-        'ci_hi_pct': (itm.hit_ci[1]*100)|round|int if itm.hit_ci else none,
-        'median_excess_pct': (itm.median_excess * 100)|round(1) if itm.median_excess is not none else none,
-        'n': itm.n, 'since': (bt.dates[0] if bt.dates else none),
-        'median_hold': itm.median_days_held, 'first_mature': '2026-07-29',
-        'n_calls': bt.n_rows,
-      } %}
+      {% set _cn_stats = _cl.get('summary') or {} %}
     {% else %}
       {% set _cn_state = 'accruing' %}
       {% set _cn_stats = {
@@ -3628,8 +3619,8 @@
       'bench_en': 'CSI300', 'bench_zh': '沪深300',
       'series': none, 'as_of': (cov.data_through if cov else none),
       'deep_link': none, 'up_class': 'pos', 'dn_class': 'neg',
-      'note_en': 'Grading: CSI300-relative excess, fill-realistic T+1 ' ~ ('(H+L)/2 proxy' if (bt.grading and bt.grading.entry_basis == 't1_hl2') else 'open') ~ ' entry, locked-limit days excluded.' ~ (' Today\'s session not yet logged.' if _partial else ''),
-      'note_zh': '打分：相对沪深300超额，可成交 T+1 ' ~ ('（最高+最低）/2 代理' if (bt.grading and bt.grading.entry_basis == 't1_hl2') else '开盘') ~ '入场，剔除一字涨停日。' ~ ('盘中未收——今日未记录。' if _partial else ''),
+      'note_en': 'Scored against the CSI 300, not on its own — in A-shares most of a move is the market. Bought at the next morning\'s open, sold ' ~ (_cn_stats.get('horizon') or 10) ~ ' sessions later. Days a stock was locked limit-up can\'t be bought and are left out.' ~ (' Today\'s session not yet logged.' if _partial else ''),
+      'note_zh': '以沪深300为基准计分，而非绝对涨跌——A股个股走势多半来自大盘。次日开盘买入，持有 ' ~ (_cn_stats.get('horizon') or 10) ~ ' 个交易日后卖出。一字涨停日无法买入，已剔除。' ~ ('盘中未收——今日未记录。' if _partial else ''),
     } %}
     <div style="margin:14px 0 0">{% include '_track_record_dlg.html.j2' %}</div>
     {% endif %}

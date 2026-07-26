@@ -47,6 +47,7 @@ SNAPSHOTS_JSONL = _ROOT / "data" / "us_board_ledger" / "snapshots.jsonl"
 US_BOARD_TRACK = _ROOT / "site" / "factordata" / "us_board_track.json"
 US_BOARD_OUTCOMES = _ROOT / "site" / "factordata" / "us_board_outcomes.json"
 US_AUDIT_SCOREBOARD = _ROOT / "site" / "factordata" / "us_audit_scoreboard.json"
+US_TRACK_LEDGER = _ROOT / "site" / "factordata" / "us_track_ledger.json"
 US_ATTRIBUTION = _ROOT / "data" / "standout_audit" / "us_attribution.parquet"
 
 OUT_JSON = _ROOT / "site" / "factordata" / "us_track_history.json"
@@ -389,23 +390,33 @@ def build() -> int:
     log.info("Wrote %s", OUT_JSON)
 
     # ── 4. Assemble template view-model ─────────────────────────────────────
-    # Glance hero stats from outcomes_json summary
+    # Glance hero stats from us_track_ledger.json — the SAME artifact the Track-record
+    # chip that links here reports, so the two can be reconciled.
+    #
+    # They previously came from us_board_outcomes.json, whose entry was the close on
+    # the board's own as_of date. This page's own footnote has always claimed
+    # "next session's close (next-bar realism)" — true of the horizon ladder below
+    # (graded via engine.grading.fill_index) but NOT of the hero stat sitting above it.
+    # The page described one convention and displayed another.
     outcomes_summary = (outcomes_json or {}).get("summary", {})
-    win_rate_pct = None
-    avg_pct = None
-    n_outcomes = None
     n_running = outcomes_summary.get("n_running")
     n_stopped = outcomes_summary.get("n_stopped")
-    n_total = outcomes_summary.get("n_total")
     n_skipped = outcomes_summary.get("n_skipped_no_price", 0)
     outcomes_as_of = (outcomes_json or {}).get("as_of", as_of)
 
-    if outcomes_summary.get("win_rate") is not None:
-        win_rate_pct = round(float(outcomes_summary["win_rate"]) * 100)
-    if outcomes_summary.get("avg_pct") is not None:
-        avg_pct = round(float(outcomes_summary["avg_pct"]), 1)
-    if n_total is not None:
-        n_outcomes = n_total
+    ledger_json = _safe_json_load(US_TRACK_LEDGER)
+    ledger_summary = (ledger_json or {}).get("summary", {})
+    win_rate_pct = ledger_summary.get("win_pct")
+    avg_pct = ledger_summary.get("expectancy_pct")
+    n_outcomes = ledger_summary.get("n_matured")
+    hero_ci = (ledger_summary.get("ci_lo_pct"), ledger_summary.get("ci_hi_pct"))
+    hero_board_days = ledger_summary.get("n_board_days")
+    hero_horizon = ledger_summary.get("horizon")
+    hero_inflight = ledger_summary.get("n_inflight")
+    if (ledger_json or {}).get("state") != "scored":
+        # Not enough sample to headline — fall through to the page's accruing block
+        # rather than printing a number the ledger itself declines to publish.
+        win_rate_pct = avg_pct = n_outcomes = None
 
     # Board track horizon ladder from us_board_track.json
     horizon_ladder = []
@@ -465,6 +476,10 @@ def build() -> int:
         "n_running": n_running,
         "n_stopped": n_stopped,
         "n_skipped": n_skipped,
+        "hero_ci": hero_ci,
+        "hero_board_days": hero_board_days,
+        "hero_horizon": hero_horizon,
+        "hero_inflight": hero_inflight,
         # Horizon ladder
         "horizon_ladder": horizon_ladder,
         # Chart series (inline JSON for JS)

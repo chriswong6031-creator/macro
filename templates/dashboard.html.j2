@@ -15014,49 +15014,34 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          W3 survivorship disclosure: n_skipped_no_price = names with no price / delisted
          that were silently excluded from graded outcomes (the win/loss mix is survivor-tilted). #}
       {% if _has_outcomes %}{% set _oc = us_board_outcomes %}
-      {% set _sm = _oc.get('summary') or {} %}
-      {# Track-record stats for the pinned toggle button. Prefer the builder-emitted
-         summary.win_rate (0..1) / summary.avg_pct (%); fall back to computing from the
-         displayed rows when an older JSON omits them. #}
-      {% set _tr_ns = namespace(wr=none, avg=none) %}
-      {% if _sm.get('win_rate') is defined and _sm.get('win_rate') is not none %}
-        {% set _tr_ns.wr = (_sm.win_rate * 100)|round|int %}
-      {% else %}
-        {% set _wins = _oc.get('rows', []) | selectattr('status', 'equalto', 'running') | list | length %}
-        {% set _losses = _oc.get('rows', []) | selectattr('status', 'equalto', 'stopped') | list | length %}
-        {% if (_wins + _losses) > 0 %}{% set _tr_ns.wr = (100 * _wins / (_wins + _losses))|round|int %}{% endif %}
-      {% endif %}
-      {% if _sm.get('avg_pct') is defined and _sm.get('avg_pct') is not none %}
-        {% set _tr_ns.avg = _sm.avg_pct %}
-      {% else %}
-        {% set _pcts = _oc.get('rows', []) | map(attribute='pct_since') | list %}
-        {% if _pcts | length > 0 %}{% set _tr_ns.avg = ((_pcts | sum) / (_pcts | length))|round(1) %}{% endif %}
-      {% endif %}
-      {# Track-record receipt chip + popup — shared partial (2026-07-20 revamp).
-         The stat line IS the button; clicking opens the in-page dialog. State is
-         'scored' when the desk has a win rate + avg; falls back to 'accruing'
-         otherwise. us_track_series (nullable, may be entirely absent from the
-         render context — the render tests never pass it, so guard `is defined`
-         too) feeds the button's live win-rate sparkline. #}
-      {% set _trd_state = 'scored' if (_tr_ns.wr is not none and _tr_ns.avg is not none) else 'accruing' %}
+      {# Track-record receipt chip + popup — shared partial.
+         The stat line IS the button; clicking opens the in-page dialog.
+
+         DATA SOURCE (2026-07-26): the chip reads us_track_ledger.json — the SAME
+         artifact the dialog's table fetches. It previously read us_board_outcomes.json,
+         which scored on a different (and wrong) convention: entry at the close of the
+         board's own as_of date, which is unbuyable, and "exit" at whatever today's
+         close happened to be. Headline and rows could not be reconciled.
+         Scoring now: next-bar fill, exit at the first of the 3D-StochRSI overbought
+         target / the 90d-trough stop / a forced 10-session verdict, and only episodes
+         with a full 10 sessions behind them count. See engine/track_scoring.py.
+
+         us_track_series (nullable, may be absent from the render context — the render
+         tests never pass it, so guard `is defined`) feeds the button's sparkline. #}
+      {% set _tl = us_track_ledger if (us_track_ledger is defined and us_track_ledger) else none %}
+      {% set _sm = (_tl.get('summary') if _tl else none) or {} %}
+      {% set _trd_state = _tl.get('state') if _tl else 'accruing' %}
       {% set _trd_series = us_track_series if (us_track_series is defined and us_track_series) else none %}
       {% set trd = {
         'market': 'us', 'state': _trd_state,
-        'stats': {
-          'win_rate_pct': _tr_ns.wr, 'avg_pct': _tr_ns.avg,
-          'n_resolved': _sm.get('n_resolved') if _sm.get('n_resolved') is not none else ((_sm.get('n_running') or 0) + (_sm.get('n_stopped') or 0) + (_sm.get('n_flat') or 0)),
-          'n_up': _sm.get('n_running'), 'n_stopped': _sm.get('n_stopped'), 'n_flat': _sm.get('n_flat'),
-          'wilson_lo_pct': _sm.get('wilson_lo_pct'), 'wilson_hi_pct': _sm.get('wilson_hi_pct'),
-          'n_onboard': _sm.get('n_onboard'),
-          'n_calls': _sm.get('n_calls') if _sm.get('n_calls') is not none else _oc.get('rows', []) | length,
-        },
+        'stats': _sm,
         'data_url': 'factordata/us_track_ledger.json',
         'eyebrow_en': 'US buy board · vs S&P 500', 'eyebrow_zh': '美股买入榜 · 对比标普500',
         'bench_en': 'S&P 500', 'bench_zh': '标普500',
-        'series': _trd_series, 'as_of': _sm.get('as_of') or _oc.get('as_of'),
+        'series': _trd_series, 'as_of': (_tl.get('as_of') if _tl else none) or _oc.get('as_of'),
         'deep_link': 'us_track_record.html', 'up_class': 'az-up', 'dn_class': 'az-dn',
-        'note_en': 'Grading: entry = the closing price on the day a name surfaces; a win = it left the board up more than 2%. Delisted names can\'t be priced and sit outside these numbers.',
-        'note_zh': '打分：入场＝上榜当日收盘价；胜＝离榜时上涨超过 2%。退市个股无法定价，不计入以上数据。',
+        'note_en': 'Every pick is bought at the next session\'s close and sold ' ~ (_sm.get('horizon') or 10) ~ ' sessions later, or sooner if it runs hot or breaks its base. Picks too recent to have finished are listed but not scored.',
+        'note_zh': '每个标的均以次日收盘价买入，持有 ' ~ (_sm.get('horizon') or 10) ~ ' 个交易日后卖出；若提前冲高或跌破底部则提早离场。尚未走完的标的会列出但不计分。',
       } %}
       {% include '_track_record_dlg.html.j2' %}
       {% endif %}
