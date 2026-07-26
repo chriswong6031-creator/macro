@@ -737,4 +737,24 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+
+  /* ---- market-aware nav ----------------------------------------------------
+     Pull in nav_market.js, which folds the non-home country menus into the
+     International dropdown for a signed-in user (masterplan R1). It rides along
+     here because account.js is already loaded on EVERY page by theme.js, so the
+     fold reaches the whole estate without adding a <script> to _navlinks.html.j2
+     — which would mean re-rendering 3,000+ pages to ship a per-user behaviour
+     that never belonged in the baked html in the first place.
+     Path-depth aware (pages under /sectors/ etc. need the '../' prefix) and
+     idempotent; no-ops for anonymous visitors. */
+  (function loadNavMarket() {
+    if (window.__mmNavMarketLoading) return;
+    window.__mmNavMarketLoading = true;
+    var self = document.querySelector('script[src$="account.js"],script[src*="account.js?"]');
+    var pfx = self ? (self.getAttribute('src') || '').replace(/account\.js(\?.*)?$/, '') : '';
+    var s = document.createElement('script');
+    s.src = pfx + 'nav_market.js';
+    s.async = true;
+    (document.head || document.documentElement).appendChild(s);
+  })();
 })();
