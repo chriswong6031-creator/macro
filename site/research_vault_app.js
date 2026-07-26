@@ -29,6 +29,43 @@
   function T(en, cn) { return zh() ? cn : en; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
+  /* ── transfer progress ───────────────────────────────────────────────────
+     Reports of a "broken" download button were a REPORTING bug, not a transfer
+     bug: the server hands the whole PDF over in ~0.3s (R2 GET measured at
+     0.1-0.3s for a 0.5-1.5MB report), but the origin is in SFO and the bytes
+     still have to cross to the reader. `resp.blob()` / `resp.arrayBuffer()`
+     resolve only after the LAST byte, so for those seconds the UI was
+     indistinguishable from a dead click. The bytes were never the problem; the
+     silence was. These helpers surface the transfer as it happens. */
+
+  function fmtBytes(n) {
+    if (typeof n !== 'number' || !isFinite(n) || n < 0) return '';
+    return n < 1048576 ? (Math.round(n / 1024) + ' KB') : ((n / 1048576).toFixed(1) + ' MB');
+  }
+
+  /* Drain a Response to an ArrayBuffer, calling onProgress(frac, got, total).
+     `frac` is -1 when the total is unknown (no Content-Length), so callers can
+     fall back to a byte count rather than inventing a percentage. Degrades to
+     the one-shot read where streams are unavailable — the download still works,
+     it just has no progress to report. */
+  function readWithProgress(resp, onProgress) {
+    var total = parseInt(resp.headers.get('Content-Length') || '0', 10) || 0;
+    if (!resp.body || typeof resp.body.getReader !== 'function') return resp.arrayBuffer();
+    var reader = resp.body.getReader(), chunks = [], got = 0;
+    return (function pump() {
+      return reader.read().then(function (r) {
+        if (r.done) {
+          var out = new Uint8Array(got), off = 0;
+          for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], off); off += chunks[i].length; }
+          return out.buffer;
+        }
+        chunks.push(r.value); got += r.value.length;
+        try { onProgress(total ? (got / total) : -1, got, total); } catch (e) {}
+        return pump();
+      });
+    })();
+  }
+
   /* ── SVG glyphs ── */
   var CAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
   var STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>';
@@ -593,7 +630,8 @@
      PDF VIEWER — auth-gated pdf.js render + quota-metered download.
      ═══════════════════════════════════════════════════════════════════════ */
   var _pdfLib = null, _pdfLoad = null;
-  var V = { item: null, pdf: null, page: 1, pages: 0, zoom: 1.0, invert: false, renderTok: 0, lastFocus: null };
+  var V = { item: null, pdf: null, page: 1, pages: 0, zoom: 1.0, invert: false, renderTok: 0, lastFocus: null,
+            dling: false };
 
   function loadPdfLib() {
     if (_pdfLib) return Promise.resolve(_pdfLib);
@@ -705,7 +743,36 @@
     $('vstage').innerHTML = '<div class="vshim"><span class="sk" style="top:44px;width:52px;height:6px"></span>'
       + '<span class="sk" style="top:66px;width:70%;height:14px"></span><span class="sk" style="top:96px;width:40%"></span>'
       + '<span class="sk" style="top:140px"></span><span class="sk" style="top:162px"></span>'
-      + '<span class="sk" style="top:184px;width:88%"></span><span class="sk" style="top:240px;height:120px;border-radius:6px"></span></div>';
+      + '<span class="sk" style="top:184px;width:88%"></span><span class="sk" style="top:240px;height:120px;border-radius:6px"></span>'
+      // Progress line under the skeleton. A skeleton alone says "something is
+      // coming"; on a multi-megabyte report over a long link the reader also
+      // needs to know it is MOVING. Inline styles for the same reason as the
+      // button fill — this file ships ahead of the baked template.
+      //
+      // Anchored to the TOP of the page mock, and neither to a magic mid-page
+      // offset nor to the bottom. .vshim is sized by aspect-ratio (1/1.32), so it
+      // is ~739px tall inside a shorter scrollable .vstage: a bottom-anchored line
+      // sits below the fold and a large top offset falls outside the paper on a
+      // narrow viewport. The top edge is the one place always in view on first
+      // paint. Colors are literal ink, not theme tokens — .vshim is a WHITE page
+      // mock in both themes, so var(--muted) would be near-invisible on it in
+      // dark mode; these match the skeleton's own #eef0f5 family.
+      + '<div id="vshim-p" style="position:absolute;left:46px;right:46px;top:16px;display:flex;align-items:center;gap:10px;font-size:12px;color:#8a93a6">'
+      + '<span style="flex:1;height:4px;border-radius:4px;overflow:hidden;background:#eef0f5">'
+      + '<i id="vshim-bar" style="display:block;height:100%;width:0%;border-radius:4px;background:#b9c3d6;transition:width .25s ease"></i></span>'
+      + '<span id="vshim-txt" style="font-variant-numeric:tabular-nums;white-space:nowrap"></span></div></div>';
+    setStageProgress(null);
+  }
+
+  /* Transfer progress inside the viewer stage. Silent no-op once the stage has
+     moved on (gate, error, or the rendered document replaced the shimmer). */
+  function setStageProgress(frac, got) {
+    var bar = $('vshim-bar'), txt = $('vshim-txt');
+    if (!bar || !txt) return;
+    if (frac == null) { txt.textContent = T('Fetching the report…', '正在获取报告…'); return; }
+    if (frac < 0) { txt.textContent = fmtBytes(got); return; }   // no Content-Length
+    bar.style.width = Math.round(frac * 100) + '%';
+    txt.textContent = Math.round(frac * 100) + '%';
   }
 
   function loadDocument(x) {
@@ -721,7 +788,9 @@
       if (resp.status === 402) { return resp.json().catch(function () { return {}; }).then(function (j) { showGate(j && j.quota_exhausted ? 'quota' : 'paid_required'); return null; }); }
       if (resp.status === 429) { showGate('rate'); return null; }
       if (!resp.ok) { showGate('error'); return null; }
-      return resp.arrayBuffer();
+      return readWithProgress(resp, function (frac, got) {
+        if (tok === V.renderTok) setStageProgress(frac, got);
+      });
     }).then(function (buf) {
       if (!buf || tok !== V.renderTok) return;
       return loadPdfLib().then(function (lib) {
@@ -915,23 +984,87 @@
       })
       .catch(function () { showDlState('free'); });
   }
+  /* The button IS the progress bar: a translucent fill sweeps across the control
+     the reader is already looking at, and the label counts up. No new element and
+     no new tokens — the question being answered ("is this working?") is about
+     this button, so the answer belongs on it.
+
+     We do NOT use `disabled` while busy: `.btn.primary:disabled` greys the
+     control out, which reads as "unavailable" at exactly the moment we need it to
+     read as "working". A guard flag blocks the double-click instead, and
+     aria-busy/aria-disabled carry the state to assistive tech. */
+  function setBtnBusy(btn, frac, got) {
+    if (!btn) return;
+    if (btn._rvLabel == null) btn._rvLabel = btn.innerHTML;
+    if (frac === false) {                                  // finished — restore
+      btn.innerHTML = btn._rvLabel; btn._rvLabel = null; btn._rvBg = null;
+      btn.style.backgroundImage = ''; btn.style.backgroundRepeat = '';
+      btn.style.backgroundSize = ''; btn.style.backgroundPosition = '';
+      btn.removeAttribute('aria-busy'); btn.removeAttribute('aria-disabled');
+      return;
+    }
+    var end = btn._rvLabel.indexOf('</svg>');
+    var icon = end >= 0 ? btn._rvLabel.slice(0, end + 6) : '';
+    var txt;
+    if (frac == null) txt = T('Preparing…', '正在准备…');
+    else if (frac < 0) txt = T('Downloading', '下载中') + ' ' + fmtBytes(got);   // no Content-Length
+    else txt = T('Downloading', '下载中') + ' ' + Math.round(frac * 100) + '%';
+    btn.innerHTML = icon + esc(txt);
+    btn.setAttribute('aria-busy', 'true');
+    btn.setAttribute('aria-disabled', 'true');
+    // Inline so this works against the CURRENTLY BAKED page: this file is served
+    // straight from site/ while the template needs a render lane to bake, so any
+    // class we invented here would go live unstyled until the next render.
+    //
+    // LAYER over the button's own gradient, never replace it: `.btn.primary` sets
+    // its brand gradient through the `background` SHORTHAND, so assigning
+    // backgroundImage alone would erase it and leave a bare white bar. We read the
+    // resolved gradient once and stack the fill in front of it, so this keeps
+    // working if the button's palette is ever restyled.
+    if (btn._rvBg == null) {
+      var bg = '';
+      try { bg = window.getComputedStyle(btn).backgroundImage || ''; } catch (e) {}
+      btn._rvBg = (bg && bg !== 'none') ? bg : '';
+    }
+    var fill = 'linear-gradient(90deg,rgba(255,255,255,.28),rgba(255,255,255,.28))';
+    btn.style.backgroundImage = btn._rvBg ? (fill + ',' + btn._rvBg) : fill;
+    btn.style.backgroundRepeat = 'no-repeat,no-repeat';
+    btn.style.backgroundPosition = 'left center,left center';
+    btn.style.backgroundSize = ((frac > 0 ? frac : 0) * 100) + '% 100%,100% 100%';
+  }
+
+  /* Prefer the filename the server chose (a readable report title) over the
+     opaque doc id. Same-origin, so Content-Disposition is readable. */
+  function filenameFrom(resp, fallbackId) {
+    try {
+      var cd = resp.headers.get('Content-Disposition') || '';
+      var m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
+      if (m && m[1]) return decodeURIComponent(m[1].trim());
+    } catch (e) {}
+    return (fallbackId || 'research') + '.pdf';
+  }
+
   function doDownload() {
-    if (!V.item) return;
-    var btn = $('dl-btn-ok'); if (btn.disabled) return; btn.disabled = true;
-    withAuth().then(function (h) { return fetch(API + '/api/research/download/' + encodeURIComponent(V.item.id), { method: 'POST', headers: h, credentials: 'include' }); })
+    if (!V.item || V.dling) return;
+    var btn = $('dl-btn-ok'), id = V.item.id;
+    V.dling = true;
+    setBtnBusy(btn, null);                                  // "Preparing…" until byte 1
+    withAuth().then(function (h) { return fetch(API + '/api/research/download/' + encodeURIComponent(id), { method: 'POST', headers: h, credentials: 'include' }); })
       .then(function (resp) {
         if (resp.status === 402) { return resp.json().catch(function () { return {}; }).then(function (j) { showDlState(j && j.quota_exhausted ? 'max' : 'free'); return null; }); }
         if (resp.status === 401) { showDlState('anon'); return null; }
         if (resp.status === 429) { return null; }
         if (!resp.ok) return null;
-        return resp.blob().then(function (blob) {
-          var url = URL.createObjectURL(blob);
-          var a = doc.createElement('a'); a.href = url; a.download = (V.item.id || 'research') + '.pdf';
-          doc.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-        });
+        var name = filenameFrom(resp, id);
+        return readWithProgress(resp, function (frac, got) { setBtnBusy(btn, frac, got); })
+          .then(function (buf) {
+            var url = URL.createObjectURL(new Blob([buf], { type: 'application/pdf' }));
+            var a = doc.createElement('a'); a.href = url; a.download = name;
+            doc.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+          });
       })
       .catch(function () {})
-      .then(function () { btn.disabled = false; refreshQuota(); });
+      .then(function () { V.dling = false; setBtnBusy(btn, false); refreshQuota(); });
   }
 
   /* ═══════════ unread count ═══════════ */
