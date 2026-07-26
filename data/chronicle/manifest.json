@@ -37,13 +37,13 @@
     "note": "142 events across 29 distinct date(s)",
     "start": "2025-07-22"
   },
-  "elapsed_s": 0.952,
+  "elapsed_s": 1.255,
   "gap_notes": [
     "earnings: coverage: 4/1364 tickers carried reported surprises",
     "macro_release: 5/5 release event(s) joined to a scored actual print",
     "regime_flip: data/chronicle/state_log.jsonl has no rows yet (first nightly capture pending)"
   ],
-  "inputs_hash": "sha256:66e410c4ab61598e36df0ca9f1fed3f8b09bcbd12942780160277a98d1b161a5",
+  "inputs_hash": "sha256:efc15a76d5a443deb11622eb9bff280e3da6fc9d241572c591f7055cb251c19a",
   "ledgers": {
     "events": {
       "path": "data/chronicle/events.jsonl",
@@ -58,9 +58,17 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   },
-  "produced_at": "2026-07-26T13:33:22Z",
+  "produced_at": "2026-07-26T14:43:11Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
+  "source_fingerprints": {
+    "data/chronicle/state_log.jsonl": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "data/earnings/earnings.parquet": "sha256:989c7daafe6f1f2d84301b916205e7435db94290cfab7aa49ce5aa0586255014",
+    "data/prophet/ledger.jsonl": "sha256:f37e882649f0af1cb636643766300455acb2313c91b572a95f83759cb1345160",
+    "data/release_forecast/forward_ledger.jsonl": "sha256:4369dfdf35b403a60c19b10debbd0b34595e458e97f9aeec079910228b6dc41d",
+    "data/research_vault/catalog.json": "sha256:e1a34e0527c14a2a4b7f090ff677e58dc199dded35e7ab2754a1aacccdcf5f98",
+    "data/risk_radar/forward_log.jsonl": "sha256:6e51380e6352357cde4b45340690ce76ae48c04d030fc215914488ec58f9ac90"
+  },
   "tier": "display"
 }

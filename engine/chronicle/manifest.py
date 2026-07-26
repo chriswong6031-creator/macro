@@ -11,6 +11,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from . import spine  # no cycle: spine does not import manifest
+
 
 def _display_path(path: Path, repo: Path) -> str:
     """Repo-relative path string for the committed manifest (never an absolute
@@ -39,24 +41,27 @@ def _ledger_stats(path: Path, repo: Path) -> dict:
 
 
 def _source_fingerprints(repo: Path) -> dict:
-    """sha256 of each LIVE-SNAPSHOT source the spine rebuilds from.
+    """sha256 vintage of EVERY source the spine's rebuild closure reads.
 
-    The research-vault catalog is committed HOURLY by its own lane, so the
-    committed events.jsonl is only byte-reproducible against the exact catalog
-    vintage it was built from. Recording that vintage here lets the CI
-    reproducibility gate distinguish "store is genuinely broken" from "the
-    catalog advanced past the store's build" (expected between regen commits).
+    #3660 introduced this catalog-only (the catalog is the one INTRADAY-advanced
+    source, so it was the incident's trigger) — but the other five sources
+    advance too (nightly steps, occasional manual fix PRs), and any of them
+    moving while the catalog stands still would re-create the exact
+    false-red/false-arm confusion this key exists to prevent. So the fingerprint
+    now covers the full ``spine.REBUILD_SOURCES`` closure, keyed by
+    repo-relative path so the recording and the gate can never disagree about
+    what a rebuild reads. The CI gate arms its byte-equality branch only when
+    EVERY entry still matches, and treats any mismatch as recorded accrual lag.
     Fail-soft: an absent/unreadable source records null, never raises.
     """
     out: dict[str, str | None] = {}
-    catalog = repo / "data" / "research_vault" / "catalog.json"
-    try:
-        out["research_vault_catalog"] = (
-            "sha256:" + hashlib.sha256(catalog.read_bytes()).hexdigest()
-            if catalog.exists() else None
-        )
-    except Exception:  # noqa: BLE001
-        out["research_vault_catalog"] = None
+    for rel in spine.REBUILD_SOURCES:
+        path = repo / rel
+        try:
+            out[rel] = ("sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+                        if path.exists() else None)
+        except Exception:  # noqa: BLE001
+            out[rel] = None
     return out
 
 
