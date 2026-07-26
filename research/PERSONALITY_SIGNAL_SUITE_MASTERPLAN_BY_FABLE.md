@@ -84,6 +84,16 @@ disagreements both directions; dual-ruler grading; quarterly miss-rate readout
 appended to the charter. First readout ≈ 3 months post-ship. Promotion of any
 gate change = own prereg + ruling (contamination row absolute).
 
+*[W3 SHIPPED 2026-07-25 — engine/personality_gate_shadow.py, wired into the
+US-nightly lane (engine/run.py, after mag7_washout_shadow). Uniform gate =
+Stoch-RSI<20 cross on the fixed 2W rung (the incumbent mag7_washout / index_momentum
+construction); tailored gate = the same S-family cross at each name's codex
+`rung_derived` (R-W1T-2). Forward ledger data/personality_timing/gate_shadow.jsonl
++ display state gate_shadow_state.json; both nightly-gated, dual-ruler grading
+(fwd63 + timing mae63/prox/td_to_trough) deferred to 63td maturity. First quarterly
+miss-rate readout due ≈ 2026-10-25 (appended to this §W3 block). No live gating
+changed.]*
+
 **W-LAB — lab audit + personality upgrade (operator-flagged surfaces).**
 Audit BEFORE changing (append verdicts to §5):
   (a) `tech_lab.html#combos` + `engine/tech_confluence.py` (+ build_tech_lab*,

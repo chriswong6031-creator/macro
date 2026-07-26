@@ -65,7 +65,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
-| personality-timing | 1 |
+| personality-timing | 3 |
 | pick-lab | 3 |
 | policy-shock | 5 |
 | prophet | 1 |
@@ -99,7 +99,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 324 |
+| display | 326 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -108,7 +108,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 472 |
+| git | 474 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -762,6 +762,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | personality-timing-codex | `data/personality_timing/codex.parquet` | parquet | weekly | display | 1 | 0 |
+| personality-gate-shadow-ledger | `data/personality_timing/gate_shadow.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| personality-gate-shadow-state | `data/personality_timing/gate_shadow_state.json` | json | daily-engine | display | 0 | 0 |
 
 ### pick-lab
 
