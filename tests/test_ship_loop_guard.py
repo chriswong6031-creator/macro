@@ -1549,6 +1549,122 @@ def test_a_session_that_never_moved_head_may_still_stop(monkeypatch, tmp_path, c
     assert capsys.readouterr().out.strip() == ""
 
 
+def _pushed_session_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """A session that committed and PUSHED its branch, with a real origin.
+
+    Everything the stand-down exemption checks is genuinely available here — a
+    reachable remote, a real origin/main to fetch — so a test built on this
+    fixture exercises the exemption rather than being declined by a missing ref.
+    Main is advanced by a concurrent session so that landing on origin/main is
+    never also a landing on start_head, which the older no-op exemption would
+    claim first.
+    """
+    repo = _repo(tmp_path)
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-q", "-u", "origin", "main")
+    start_head = _git(repo, "rev-parse", "HEAD")
+    state_path = tmp_path / "state.json"
+    GUARD._save(state_path, {
+        "root": str(repo),
+        "start_head": start_head,
+        "baseline": GUARD._fingerprint(repo),
+        "last_blocker": "",
+        "blocker_count": 0,
+    })
+    _git(repo, "checkout", "-qb", "claude/feature")
+    _commit(repo, "work.txt", "session work\n", "feat: real session work")
+    _git(repo, "push", "-q", "-u", "origin", "claude/feature")
+    _git(repo, "checkout", "-q", "main")
+    _commit(repo, "other.txt", "another session\n", "other: concurrent merge")
+    _git(repo, "push", "-q", "origin", "main")
+    _git(repo, "checkout", "-q", "claude/feature")
+    return repo, state_path
+
+
+def test_an_open_pull_request_is_not_a_stand_down(monkeypatch, tmp_path, capsys):
+    """Pushed work waiting on CI looks EXACTLY like a stand-down by position.
+
+    `git reset --hard origin/main` moves the LOCAL branch ref, so peeking at main
+    while a pull request is still open leaves the worktree at origin's tip with a
+    zero ahead-count and a clean tree — every condition `_fast_forwarded_onto_main`
+    tests — while the session's commits are alive on `origin/<branch>` under an
+    unmerged pull request. Exempting that abandons the pull request silently.
+
+    The verdict is `unpushed` rather than `unmerged` because the ahead-count gate
+    reaches it first: the reset worktree now carries main's commit, which the
+    branch's own upstream does not have. Either way the session is held — what
+    this pins is that the exemption does not release it.
+    """
+    repo, state_path = _pushed_session_repo(tmp_path)
+    _git(repo, "reset", "--hard", "-q", "origin/main")
+    assert GUARD._fast_forwarded_onto_main(repo), (
+        "precondition: by POSITION this is indistinguishable from a stand-down"
+    )
+    assert _git(repo, "log", "--oneline", "-1", "origin/claude/feature"), (
+        "precondition: the session's commits are alive on the remote"
+    )
+
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unpushed", f"an open pull request must still block, got {verdict}"
+
+
+def test_a_merge_commit_that_keeps_the_branch_shas_still_runs_the_ci_gate(
+    monkeypatch, tmp_path, capsys
+):
+    """A squash mints a new sha; a merge commit or rebase merge does not.
+
+    With the branch's own shas on main, the tip becomes a literal ancestor of
+    origin/main with no reset and no branch switch — the session simply stops
+    where it stood. Position alone would exempt a merge that really landed and
+    skip CI, render, and live for it. `ci_failed` proves the chain was reached.
+    """
+    repo, state_path = _pushed_session_repo(tmp_path)
+    # The server merged it without squashing: main now contains this very sha.
+    _git(repo, "checkout", "-q", "main")
+    _git(repo, "merge", "--no-ff", "-q", "-m", "Merge pull request", "claude/feature")
+    _git(repo, "push", "-q", "origin", "main")
+    _git(repo, "checkout", "-q", "claude/feature")
+    _git(repo, "fetch", "-q", "origin", "main")
+    assert GUARD._fast_forwarded_onto_main(repo), (
+        "precondition: an unsquashed merge leaves the tip inside origin/main"
+    )
+
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path,
+        merged_pr=_MERGED_PR, ci=(False, "Failing CI: build (failure)"),
+    )
+    assert verdict == "ci_failed", f"expected to reach the CI gate, got {verdict}"
+
+
+def test_a_branch_pushed_without_an_upstream_is_not_a_stand_down(
+    monkeypatch, tmp_path, capsys
+):
+    """`@{upstream}` alone cannot answer "was this ever pushed?".
+
+    `git push origin HEAD:<branch>` sets no upstream but does update the
+    remote-tracking ref, and so does any later fetch — which is why the remote
+    ref is the second half of the question.
+    """
+    repo, state_path = _pushed_session_repo(tmp_path)
+    _git(repo, "branch", "--unset-upstream")
+    _git(repo, "reset", "--hard", "-q", "origin/main")
+    assert GUARD._fast_forwarded_onto_main(repo)
+    assert GUARD._branch_was_pushed(repo, "claude/feature") is True
+
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unpushed", f"a pushed branch is never a stand-down, got {verdict}"
+
+
+def test_branch_was_pushed_fails_closed_when_git_cannot_answer(tmp_path):
+    """Ignorance declines the exemption; it never grants it."""
+    repo = _repo(tmp_path)
+    assert GUARD._branch_was_pushed(repo, "claude/never-pushed") is False
+    assert GUARD._branch_was_pushed(repo, "") is True, "an unknown branch is not a stand-down"
+    assert GUARD._branch_was_pushed(tmp_path / "not-a-repo", "claude/x") is True
+
+
 def test_settings_wire_session_start_and_stop():
     settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     hooks = settings["hooks"]

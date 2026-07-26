@@ -1033,6 +1033,52 @@ def _fast_forwarded_onto_main(root: Path) -> bool:
         return False
 
 
+def _branch_was_pushed(root: Path, branch: str) -> bool:
+    """Whether ``branch`` has ever reached origin — by upstream config or remote ref.
+
+    The stand-down exemption needs this because ``_fast_forwarded_onto_main``
+    answers only where HEAD SITS, and the branch gate above it can only rule out
+    main itself. Neither sees the third way a session arrives at origin's tip
+    with a zero ahead-count: it pushed real commits, opened a pull request, and
+    then ran `git reset --hard origin/main` to look at main while waiting.
+    `reset --hard` moves the LOCAL branch ref, so those commits survive only on
+    the remote — the worktree looks exactly like a stand-down while an unmerged
+    pull request is still open. A branch that was never pushed cannot be in that
+    state: no pull request of ours can exist, so nothing is waiting on CI,
+    render, or deploy.
+
+    Both halves are needed. `@{upstream}` alone misses
+    `git push origin HEAD:<branch>`, which sets no upstream but does update the
+    remote-tracking ref (so does any later fetch); the remote ref alone misses
+    nothing in practice but is the cheaper, more direct question, so it is asked
+    second and only when there is no upstream to consult.
+
+    Fail-CLOSED: a missing branch name or an unanswerable probe reports True,
+    which only ever DECLINES the exemption and keeps the full completion chain.
+    `for-each-ref` is used rather than `rev-parse --verify` because it exits 0
+    whether or not the ref matches, keeping "absent" distinguishable from "git
+    could not answer".
+    """
+    if not branch:
+        return True
+    try:
+        if _run(root, "git", "rev-parse", "--abbrev-ref", "@{upstream}"):
+            return True
+    except Exception:
+        pass
+    try:
+        listing = _run(
+            root,
+            "git",
+            "for-each-ref",
+            "--format=%(refname)",
+            f"refs/remotes/origin/{branch}",
+        )
+    except Exception:
+        return True
+    return bool(listing.strip())
+
+
 def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     state = _load(path)
     # Hooks can be installed during an already-running session. Fail open once so
@@ -1056,7 +1102,24 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         _block(path, state, payload, "unsafe_branch", f"Work is on {branch or 'detached HEAD'}.")
         return
 
-    if _fast_forwarded_onto_main(root):
+    # A stand-down session may stop — but only one that never pushed anything.
+    #
+    # `_fast_forwarded_onto_main` proves POSITION and the branch gate above rules
+    # out main itself; neither can see that this branch already put commits on
+    # the remote. A session that pushed, opened a pull request, then ran
+    # `git reset --hard origin/main` to look at main while waiting on CI lands at
+    # origin's tip with a zero ahead-count and a clean tree — indistinguishable
+    # from a stand-down by position alone, yet its commits are alive on
+    # `origin/<branch>` under an unmerged pull request. Exempting it abandons
+    # that pull request silently. The same shape covers a merge commit or rebase
+    # merge, which (unlike a squash) preserve the branch's own shas on main, so
+    # the tip becomes a literal ancestor of origin/main with no reset at all —
+    # skipping the CI, render, and live gates for a merge that really landed.
+    #
+    # Asking whether the branch was ever pushed is what separates the two, and it
+    # costs nothing when the answer is no. Fail-closed: an unanswerable probe
+    # reports "pushed" and keeps the full chain.
+    if _fast_forwarded_onto_main(root) and not _branch_was_pushed(root, branch):
         return
 
     # A missing upstream means one of two opposite things: never pushed, or
