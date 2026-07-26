@@ -57,6 +57,24 @@ workflow unions every dirty scope since its last covering watermark. Monitor
 that shared covering run; do not demand a dedicated successful run for every
 merge SHA.
 
+A **paired plain-copy asset PR needs no render at all.** A non-`.j2` file under
+`templates/` that also ships as `site/<name>` — the 56 pairs
+`scripts/check_template_site_sync.py` enumerates: `theme.js`, `mm_brain.js`,
+`onboard.js`, `index.html`, the `*.css` — has its `site/` copy committed straight
+to main, and the VPS `macro-update` cron pulls main every 3 minutes, so it is live
+within minutes whether render ever completes or not. render.yml produces only two
+things: re-baked `.j2` pages and the `?v=` content-hash re-stamp. Do not wait on a
+perpetually superseded render for such a PR, and do not report it as a blocker.
+The one thing you forfeit is that re-stamp: the Caddyfile pins `?v=`-carrying
+requests to `immutable, max-age=1y` for an enumerated list (`theme.js`, `live.js`,
+`theme.css`, `product-nav-icons.css`, `onboard.*`, `landing.css`, `account.js`,
+`nav_market.js`, `supabase.js`, `data_base.js`, `chat*.css`,
+`assets/{css,landing}/*`), so for those a warm-cache visitor keeps the old body
+until a later render re-hashes the pages that reference them. New visitors always
+get fresh bytes. `.j2` pages, `scripts/build_*.py`, and the page-rewriting sweeps
+(`optimize_assets.py`, `externalize_css.py`, `inject_data_base.py`, `lib/pages.py`)
+still require the render before they are live.
+
 Never cancel or manually re-run an in-progress `render`, `engine-render`, or
 `daily` solely to unblock a session. A long job inside its declared timeout is
 not wedged evidence. Re-run only after the job has concluded unsuccessfully,

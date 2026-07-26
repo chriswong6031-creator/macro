@@ -10,6 +10,7 @@ Repository rules remain the source of truth; this hook makes them executable.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -649,25 +650,117 @@ def _check_ci(
     return False, message
 
 
-def _render_triggering_paths(changed: list[str]) -> bool:
-    """True when these paths match render.yml's push trigger filter."""
-    return any(
-        item.startswith("templates/")
-        or (item.startswith("scripts/") and Path(item).name.startswith("build_"))
-        for item in changed
-    )
+# render.yml's push filter, verbatim. The three sweep scripts and lib/pages.py
+# rewrite every page in site/ (shim injection, inline-CSS externalization, ?v=
+# stamping, CSS preload hints), so the lane renders on them too — they were
+# added to the workflow after #3558 shipped a sweep change that triggered
+# nothing. Missing them here under-required a render, the fail-OPEN direction.
+_RENDER_INPUT_PATHS = {
+    "scripts/inject_data_base.py",
+    "scripts/externalize_css.py",
+    "scripts/optimize_assets.py",
+    "lib/pages.py",
+}
+# `scripts/build_*.py`. GitHub path globs do not cross `/`, so neither does this
+# — and the merits agree independently of that semantics: render.yml invokes
+# nothing under `scripts/research/`, so a nested `build_*.py` there produces
+# nothing in the lane and a render for it would be an unsatisfiable demand.
+_RENDER_BUILDER = re.compile(r"^scripts/build_[^/]*\.py$")
+
+
+def _plain_copy_pairs(root: Path) -> set[str]:
+    """Names under ``templates/`` that also ship as a committed ``site/`` copy.
+
+    Loaded from ``scripts/check_template_site_sync.find_pairs`` — the very
+    enumeration CI's ui.template_site_sync gate walks — rather than re-deriving
+    the rule here, so the exemption in ``_render_triggering_paths`` and the sync
+    law can never drift apart as pairs are added or retired (56 today).
+
+    Every failure path returns the empty set, which REQUIRES a render rather
+    than skipping one: an unreadable pair list is ignorance, not permission.
+    """
+    module_path = root / "scripts" / "check_template_site_sync.py"
+    # It is loaded by PATH, never registered in sys.modules, and its own
+    # `sys.path.insert` is rolled back: reading the pair list must not leave a
+    # repo root on the import path of whatever process is asking.
+    saved_path = list(sys.path)
+    try:
+        spec = importlib.util.spec_from_file_location("_mm_template_site_sync", module_path)
+        if spec is None or spec.loader is None:
+            return set()
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return {name for name, _tpl, _site in module.find_pairs(root)}
+    except Exception:
+        return set()
+    finally:
+        sys.path[:] = saved_path
+
+
+def _render_triggering_paths(changed: list[str], pairs: set[str]) -> bool:
+    """True when ``changed`` touches something the render lane actually produces.
+
+    render.yml's push filter is `templates/**`, so ANY templates/ path used to
+    demand a render. But the lane only produces two things: re-baked `.j2` pages
+    and the `?v=` content-hash re-stamp. A paired PLAIN-COPY asset — a non-.j2
+    file under templates/ that also ships as `site/<name>` — is neither. Its
+    site/ copy is committed straight to main, and the VPS `macro-update` cron
+    pulls main every 3 minutes, so those bytes are live within minutes whether
+    render ever runs or not.
+
+    Demanding a render for them was a real, recurring false gate. Observed
+    2026-07-26 on PR #3671 (templates/mm_brain.js + site/mm_brain.js, no .j2):
+    merged 14:30Z, VPS served the new bytes by 14:33Z, byte-verified at three
+    successive box HEADs — and the guard still refused Stop with `render_pending`
+    for 40+ minutes, while 28 of the last 30 render.yml runs concluded
+    `cancelled` and none concluded `success` (a repo-wide treadmill jam from a
+    concurrent merge spree, unrelated to the PR). House law forbids cancelling
+    or re-running a shared in-flight render to unblock a session, so the only
+    exit was the `SHIP LOOP BLOCKED:` escape — which reads as a failed ship when
+    the deploy had in fact succeeded. `go-live-deploy-mechanics` has recorded
+    this as "a real false gate" since #3464/#3486.
+
+    KNOWN AND ACCEPTED LIMIT: the exemption gives up the `?v=` re-stamp for the
+    assets that carry one. The Caddyfile pins `?v=`-carrying requests to
+    `max-age=31536000, immutable` for an enumerated list (theme.js, live.js,
+    theme.css, product-nav-icons.css, onboard.*, landing.css, account.js,
+    nav_market.js, supabase.js, data_base.js, chat*.css, assets/{css,landing}/*),
+    so for THOSE a warm-cache visitor keeps the old body until a render re-hashes
+    the pages that reference them (`asset-stamp-frozen-not-stable`). Assets off
+    that list — mm_brain.js among them, which is why #3671 was fully live — fall
+    back to `max-age=300, must-revalidate` and go live on the next revalidate.
+    New visitors always get fresh bytes either way. Trading a stamp refresh for
+    an unsatisfiable gate is the operator's call, taken deliberately.
+
+    A `.j2` page, a builder, a sweep script, or anything else under templates/
+    (`templates/fonts/`, a subdirectory, an unpaired asset) still requires the
+    render. So does a paired asset whose `site/` twin is NOT in the same commit:
+    that is a one-sided edit the sync gate rejects anyway, and it means the live
+    bytes have not moved. Fail-closed on everything the pair list cannot vouch for.
+    """
+    touched = set(changed)
+    for item in changed:
+        if item in _RENDER_INPUT_PATHS or _RENDER_BUILDER.match(item):
+            return True
+        if not item.startswith("templates/"):
+            continue
+        name = item[len("templates/") :]
+        if name in pairs and f"site/{name}" in touched:
+            continue
+        return True
+    return False
 
 
 def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
     """Whether a push-triggered render must exist for ``merge_sha``.
 
     Scoped to THIS merge's own diff, not the whole session range. render.yml's
-    push trigger is path-filtered to templates/** + scripts/build_*.py, so a push
-    render attributable to this merge can exist if and only if merge_sha ITSELF
-    touched those paths. (What SATISFIES the requirement is a separate question:
-    ``_render_status`` accepts either the push render at merge_sha or a later
-    successful render on a main descendant, per the shared-lane coalescing law.
-    That widens coverage, not this requirement, which stays scoped as below.)
+    push trigger is path-filtered, so a push render attributable to this merge
+    can exist if and only if merge_sha ITSELF touched those paths. (What
+    SATISFIES the requirement is a separate question: ``_render_status`` accepts
+    either the push render at merge_sha or a later successful render on a main
+    descendant, per the shared-lane coalescing law. That widens coverage, not
+    this requirement, which stays scoped as below.)
 
     start_head..head was the wrong basis on a shared main: this repo runs many
     concurrent sessions, and a session that syncs its worktree to origin/main
@@ -677,9 +770,14 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     2026-07-25: PR #3481 changed only .github/workflows/ci.yml, yet five
     template/builder files from concurrent merges set needs_render.)
 
-    This TIGHTENS alignment rather than loosening the gate: a PR that does touch
-    templates/ still requires a render, and ``_render_status`` must still find a
-    successful one — at this merge sha or on a later main descendant of it.
+    Within that scope, ``_render_triggering_paths`` asks the narrower question
+    the gate actually cares about: not "would render.yml fire?" but "does this
+    merge contain anything render PRODUCES?" — see its docstring for why a
+    paired plain-copy asset is live without one.
+
+    The pair list is read from the worktree, which carries this merge's files
+    (the session's branch is what was merged). A worktree that cannot answer
+    yields no pairs and therefore requires the render.
     """
     try:
         changed = _run(
@@ -689,7 +787,7 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
         # Root/orphan merge or unavailable parent — fall back to the session
         # range, which over-requires rather than under-requires a render.
         changed = _run(root, "git", "diff", "--name-only", start_head, head).splitlines()
-    return _render_triggering_paths(changed)
+    return _render_triggering_paths(changed, _plain_copy_pairs(root))
 
 
 def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
