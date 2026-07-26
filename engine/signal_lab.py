@@ -116,6 +116,156 @@ def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
     }
 
 
+# --- BTC Vector: promotion stats sourced from the calibrator, not typed --------
+# The Bitcoin-Vector card's headline stats are the calibrator's OUTPUT, read back
+# at build time from data/vector/{calibration,trial_log}.json — the artifacts
+# ``scripts/calibrate_vector.py`` writes. ``_BTC_VECTOR_FROZEN`` is the fallback
+# for a data-less build (fresh clone / CI without the store); it is a stamped
+# quote of that same artifact, never an independent number.
+#
+# Why this plumbing exists: the card shipped "DSR 0.9945 (n=68 = 65 base + 3
+# override dof_cost)" long after the Override Registry grew midterm_blackout to
+# dof_cost=6 (n=71), AND after the headline DSR moved onto the block-bootstrap
+# T_eff basis — so a card claiming 0.9945 sat next to an engine computing 0.9661.
+# A hardcoded promotion stat cannot survive its own engine being re-run; the
+# only durable fix is to read the number the calibrator actually produced.
+_BTC_VECTOR_FROZEN: dict = {
+    # Stamped from data/vector/calibration.json + trial_log.json @ 2026-07-26
+    # (data span 2015-01-01..2026-07-25). Refresh only by re-quoting the artifact.
+    "asof": "2026-07-25", "quoted_on": "2026-07-26",
+    "n_trials_declared": 71, "n_trials_config": 65, "override_dof": 6,
+    "sharpe_raw": 1.42, "sharpe_gated": 1.59, "hodl_sharpe": 1.02,
+    "maxdd_raw": -41.2, "maxdd_gated": -32.3, "hodl_maxdd": -83.8,
+    "dsr_raw": 0.9661, "dsr_gated": 0.9892,
+    "eff_n_raw": 0.9146, "eff_n_gated": 0.9644,
+    "t_eff_raw": 2511, "t_eff_gated": 2495, "n_obs": 4224,
+    "boot_p_sharpe_gt0": 1.0, "boot_sharpe_ci": [0.98, 1.59, 2.19],
+}
+
+
+def _fmt_dd(v) -> str:
+    """Drawdown as the house's signed percent (U+2212 minus, 1dp)."""
+    return f"−{abs(float(v)):.1f}%" if v is not None else "—"
+
+
+def _fmt_prob(v) -> str:
+    """Probability keeping at least one decimal, without trailing-zero noise."""
+    s = f"{float(v):.3f}".rstrip("0")
+    return s + "0" if s.endswith(".") else s
+
+
+def _btc_vector_figures(cal: dict | None, trial: dict | None) -> dict | None:
+    """Pull the Bitcoin-Vector display figures out of the calibrator's artifacts.
+
+    ``cal`` = data/vector/calibration.json, ``trial`` = data/vector/trial_log.json.
+    Returns None unless every figure the card renders is present — a partial
+    artifact must fall back to the stamped frozen quote rather than render a
+    half-live card whose numbers disagree with each other.
+    """
+    if not isinstance(cal, dict) or not isinstance(trial, dict):
+        return None
+    try:
+        g = cal["allocation"]["optimal"]
+        r = cal["allocation_raw"]["optimal"]
+        mtg, mtr = cal["multiple_testing"], cal["multiple_testing_raw"]
+        boot = cal["allocation_bootstrap"]
+        fig = {
+            "asof": (cal.get("meta") or {}).get("span", "").split("..")[-1] or trial.get("asof"),
+            "quoted_on": None,
+            "n_trials_declared": int(trial["n_trials_declared"]),
+            "n_trials_config": int(trial["n_trials_config"]),
+            "override_dof": int(sum(trial["overrides_dof"].values())),
+            "sharpe_raw": float(r["sharpe"]), "sharpe_gated": float(g["sharpe"]),
+            "hodl_sharpe": float(r["hodl_sharpe"]),
+            "maxdd_raw": float(r["maxdd"]), "maxdd_gated": float(g["maxdd"]),
+            "hodl_maxdd": float(r["hodl_maxdd"]),
+            "dsr_raw": float(mtr["dsr"]), "dsr_gated": float(mtg["dsr"]),
+            "eff_n_raw": float(mtr["dsr_effN"]["dsr_effN"]),
+            "eff_n_gated": float(mtg["dsr_effN"]["dsr_effN"]),
+            "t_eff_raw": round(float(mtr["dsr_effN"]["T_eff"])),
+            "t_eff_gated": round(float(mtg["dsr_effN"]["T_eff"])),
+            "n_obs": int(r["n_obs"]),
+            "boot_p_sharpe_gt0": float(boot["sharpe_gt0_prob"]),
+            "boot_sharpe_ci": [float(x) for x in boot["sharpe_ci"]],
+        }
+    except (KeyError, TypeError, ValueError, IndexError, AttributeError):
+        return None
+    if any(fig[k] is None for k in fig if k != "quoted_on"):
+        return None
+    return fig
+
+
+def _btc_vector_copy(f: dict) -> dict:
+    """Render the card's EN + ZH prose and extra chips from a figures dict.
+
+    Bilingual by construction: both strings are formatted from the SAME dict, so
+    EN and ZH cannot drift apart on a number (the CI bilingual guard cares).
+    """
+    dd_cut = abs(f["hodl_maxdd"]) / abs(f["maxdd_raw"]) if f["maxdd_raw"] else float("nan")
+    ci = ",".join(f"{x:.2f}" for x in f["boot_sharpe_ci"])
+    n_budget = (f"n={f['n_trials_declared']} = {f['n_trials_config']} base "
+                f"+ {f['override_dof']} override dof_cost")
+    why = (
+        "The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives "
+        "every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid. "
+        "PROVENANCE: pre-gate figure (DSR 0.9965, Sharpe 1.44) retired 2026-07 — it certified a strategy "
+        "that baked the midterm-blackout human override into every backtest bar. The dual-track pair first "
+        "shipped here (0.9945 raw / 0.9986 gated) is ALSO retired: it was computed on raw-T at a 68-trial "
+        f"budget, before the Override Registry declared midterm_blackout dof_cost=6 ({n_budget}) and before "
+        "the headline DSR moved onto the block-bootstrap T_eff basis. Both haircuts are harsher, so the "
+        f"figures below are LOWER than the retired pair — and they are read live from the calibrator. As of {f['asof']}: "
+        f"RAW (pure engine, ungated) Sharpe {f['sharpe_raw']:.2f} vs HODL {f['hodl_sharpe']:.2f}, "
+        f"MaxDD {_fmt_dd(f['maxdd_raw'])} vs {_fmt_dd(f['hodl_maxdd'])} ({dd_cut:.2f}× cut), "
+        f"DSR {f['dsr_raw']:.4f} ({n_budget}), dsr_effN {f['eff_n_raw']:.4f} "
+        f"(T_eff={f['t_eff_raw']} vs T_raw={f['n_obs']}). "
+        f"GATED (live behavior, midterm blackout active through 2026) Sharpe {f['sharpe_gated']:.2f}, "
+        f"MaxDD {_fmt_dd(f['maxdd_gated'])}, DSR {f['dsr_gated']:.4f}, dsr_effN {f['eff_n_gated']:.4f}. "
+        f"Bootstrap P(Sharpe>0)={_fmt_prob(f['boot_p_sharpe_gt0'])} (CI [{ci}]). DD-cut holds in both split-halves "
+        "and every leave-one-crisis-out. Beats brake-matched 200dma. Decomposition proves NOT a brake artifact. "
+        "SCORE THE DRAWDOWN/SHARPE ONLY — direction is a coin-flip (P(7d up|long) ~0.58). Honest-N ~4 crises."
+    )
+    why_zh = (
+        "本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。"
+        "溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中期选举人工覆盖污染了回测。"
+        "首版双轨数字（原始 0.9945／带覆盖 0.9986）同样退役：它按原始 T、68 次试验预算计算，"
+        f"当时覆盖登记表尚未将 midterm_blackout 的自由度成本定为 6（n={f['n_trials_declared']}"
+        f"={f['n_trials_config']}基础+{f['override_dof']}覆盖自由度），且主口径 DSR 尚未改用分块自助 T_eff。"
+        "两处折扣都更严格，因此以下数字低于已退役的旧值——且均由校准器实时读入。"
+        f"数据截至 {f['asof']}：原始（纯引擎/未覆盖）夏普 {f['sharpe_raw']:.2f} 对 HODL {f['hodl_sharpe']:.2f}，"
+        f"最大回撤 {_fmt_dd(f['maxdd_raw'])} 对 {_fmt_dd(f['hodl_maxdd'])}（缩小{dd_cut:.2f}倍），"
+        f"DSR {f['dsr_raw']:.4f}，dsr_effN {f['eff_n_raw']:.4f}（T_eff={f['t_eff_raw']} 对 T_raw={f['n_obs']}）。"
+        f"带覆盖（实盘，含中期选举封锁）夏普 {f['sharpe_gated']:.2f}，回撤 {_fmt_dd(f['maxdd_gated'])}，"
+        f"DSR {f['dsr_gated']:.4f}，dsr_effN {f['eff_n_gated']:.4f}。"
+        f"自助法 P(夏普>0)={_fmt_prob(f['boot_p_sharpe_gt0'])}（区间 [{ci}]）。仅计回撤/夏普；方向为掷硬币。"
+    )
+    extra = [
+        ("RAW MaxDD", f"{_fmt_dd(f['maxdd_raw'])} vs {_fmt_dd(f['hodl_maxdd'])} ({dd_cut:.2f}× cut)"),
+        ("GATED Sharpe / MaxDD",
+         f"{f['sharpe_gated']:.2f} / {_fmt_dd(f['maxdd_gated'])} (midterm blackout active through 2026)"),
+        ("DSR gated / raw",
+         f"{f['dsr_gated']:.4f} / {f['dsr_raw']:.4f} ({n_budget}) — both SURVIVE (≥0.95)"),
+        ("dsr_effN gated / raw",
+         f"{f['eff_n_gated']:.4f} / {f['eff_n_raw']:.4f} "
+         f"(T_eff≈{f['t_eff_gated']}/{f['t_eff_raw']} vs T_raw={f['n_obs']}) — raw leg is MARGINAL under this lens"),
+        ("bootstrap P(Sh>0)", f"{_fmt_prob(f['boot_p_sharpe_gt0'])} · CI [{ci}]"),
+        ("direction", "coin-flip — NOT scored"),
+        ("honest-N", "~4 crash episodes"),
+        ("provenance",
+         "pre-gate 0.9965 retired 2026-07; first dual-track pair (0.9945/0.9986, raw-T @ n=68) retired — "
+         f"now block-bootstrap T_eff @ n={f['n_trials_declared']}, read live from data/vector/calibration.json"),
+    ]
+    return {"why": why, "why_zh": why_zh, "extra": extra,
+            "dsr": f["dsr_raw"], "sharpe": f["sharpe_raw"], "n": f["n_obs"]}
+
+
+_BTC_VECTOR_ROW_NAME = "Bitcoin Vector — `optimal` momentum×risk allocation"
+# The ETH port's scorecard carries a "vs BTC DSR (raw)" chip — a CROSS-REFERENCE to
+# the row above, so it has to move whenever the BTC figure does (it was quoting the
+# retired 0.9945 too). Resolved live alongside the BTC card.
+_ETH_VECTOR_ROW_NAME = "ETH Vector — BTC-Vector optimal grid ported to ETH"
+_ETH_VS_BTC_CHIP = "vs BTC DSR (raw)"
+
+
 # --- The curated registry -----------------------------------------------------
 # Every number here is quoted from the report named in ``source``. The 11-factor
 # cross-section is appended LIVE from ic_scorecard.json by build_scorecard().
@@ -490,35 +640,19 @@ REGISTRY: list[dict] = [
          wired="macro.html banner (×1.0)"),
 
     # ---- SIGNAL-LAB EXPANSION (validated 2026-06 — research + adversarial-verify workflows) ----
-    _row("Bitcoin Vector — `optimal` momentum×risk allocation",
+    # Prose + stats are FORMATTED from the calibrator's figures (frozen quote at
+    # import; overwritten with the live artifact by _resolve_vector_live_stats()).
+    _row(_BTC_VECTOR_ROW_NAME,
          "比特币向量 — optimal 动量×风险配置", "BTC", "scored",
-         why="The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives "
-             "every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid. "
-             "PROVENANCE: pre-gate figure (DSR 0.9965, Sharpe 1.44) retired 2026-07 — it certified a strategy "
-             "that baked the midterm-blackout human override into every backtest bar. Fresh dual-track as of 2026-07: "
-             "RAW (pure engine, ungated) Sharpe 1.43 vs HODL 1.01, MaxDD −41.2% vs −83.8% (2.04× cut), "
-             "DSR 0.9945 (n=68 = 65 base + 3 override dof_cost), dsr_effN 0.9236 (T_eff=2523 vs T_raw=4200). "
-             "GATED (live behavior, midterm blackout active through 2026) Sharpe 1.56, MaxDD −32.3%, DSR 0.9986, "
-             "dsr_effN 0.9622. Bootstrap P(Sharpe>0)=1.0 (CI [0.95,1.57,2.17]). DD-cut holds in both split-halves "
-             "and every leave-one-crisis-out. Beats brake-matched 200dma. Decomposition proves NOT a brake artifact. "
-             "SCORE THE DRAWDOWN/SHARPE ONLY — direction is a coin-flip (P(7d up|long) ~0.58). Honest-N ~4 crises.",
-         why_zh="本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。"
-                "溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中期选举人工覆盖污染了回测。"
-                "双轨新数字（2026-07）：原始（纯引擎/未覆盖）夏普 1.43 对 HODL 1.01，最大回撤 −41.2% 对 −83.8%（缩小2.04倍），"
-                "DSR 0.9945（n=68=65基础+3覆盖自由度），dsr_effN 0.9236。"
-                "带覆盖（实盘，含中期选举封锁）夏普 1.56，回撤 −32.3%，DSR 0.9986。仅计回撤/夏普；方向为掷硬币。",
          source="btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); "
-                "W1 N7 dual-track calibration 2026-07",
-         horizon="allocation (daily)", dsr=0.9945, sharpe=1.43, n=4200,
+                "W1 N7 dual-track calibration — figures read live from data/vector/calibration.json",
+         horizon="allocation (daily)",
          wired="vector.html / vector_allocation — alloc_optimal (LIVE, midterm-gated); alloc_optimal_raw (pure engine)",
-         extra=[("RAW MaxDD", "−41.2% vs −83.8% (2.04× cut)"),
-                ("GATED Sharpe / MaxDD", "1.56 / −32.3% (midterm blackout active through 2026)"),
-                ("DSR gated / raw", "0.9986 / 0.9945 (n=68, incl. override dof_cost=3)"),
-                ("dsr_effN gated / raw", "0.9622 / 0.9236 (T_eff≈2520 vs T_raw=4200)"),
-                ("bootstrap P(Sh>0)", "1.0 · CI [0.95,1.57,2.17]"),
-                ("direction", "coin-flip — NOT scored"),
-                ("honest-N", "~4 crash episodes"),
-                ("provenance", "pre-gate figure 0.9965 retired 2026-07; dual-track as of W1 N7")]),
+         # The multiple-testing budget resolves from the persistent Trial Ledger's
+         # `vector` family (declared 65 + override dof 6 = 71) — not a constant here.
+         dsr_family="vector", dsr_n_trials=_BTC_VECTOR_FROZEN["n_trials_declared"],
+         dsr_basis="frozen-quote", dsr_expiry="2026-10-31",
+         **_btc_vector_copy(_BTC_VECTOR_FROZEN)),
     _row("Mastermind GTAA (Moderate) — diversified-leverage book",
          "Mastermind 全球配置（均衡）— 多元杠杆组合", "Multi-asset", "confirmer",
          why="Live levered vol-targeted cross-asset GTAA (~1.21× lev) beats SPY on risk-adjusted terms over 19.1y: "
@@ -1423,6 +1557,64 @@ def _resolve_dsr_provenance(registry: list[dict]) -> None:
             }
 
 
+def _resolve_vector_live_stats(registry: list[dict], warnings: list[str] | None = None) -> None:
+    """Re-render the Bitcoin-Vector card from the calibrator's live artifacts.
+
+    The card's numbers are promotion stats: they must be whatever
+    ``scripts/calibrate_vector.py`` last computed, never a hand-typed quote that
+    silently outlives its own recompute. Reads data/vector/{calibration,trial_log}.json
+    and overwrites the row's prose, extra chips, DSR, Sharpe and n in place.
+
+    Degrade-safe: a missing or partial artifact leaves the stamped frozen quote
+    from ``_BTC_VECTOR_FROZEN`` in place and appends a build warning, so a
+    data-less build renders a visibly-frozen card rather than a wrong live one.
+    """
+    row = next((r for r in registry if r["name"] == _BTC_VECTOR_ROW_NAME), None)
+    if row is None:
+        return
+    vdir = config.data_dir() / "vector"
+
+    def _read(name: str):
+        p = vdir / name
+        try:
+            return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+        except Exception:  # noqa: BLE001 — a corrupt artifact must not fail the build
+            return None
+
+    fig = _btc_vector_figures(_read("calibration.json"), _read("trial_log.json"))
+    if fig is None:
+        if warnings is not None:
+            warnings.append(
+                f"BTC Vector card: data/vector/calibration.json+trial_log.json unreadable or "
+                f"incomplete — rendering the frozen quote stamped "
+                f"{_BTC_VECTOR_FROZEN['quoted_on']} (data asof {_BTC_VECTOR_FROZEN['asof']})"
+            )
+        return
+    row.update(_btc_vector_copy(fig))
+    row["dsr_n_trials"] = fig["n_trials_declared"]
+
+    # Keep the ETH port's cross-reference chip pointing at the SAME BTC figure.
+    eth = next((r for r in registry if r["name"] == _ETH_VECTOR_ROW_NAME), None)
+    if eth is not None and eth.get("dsr") is not None:
+        eth["extra"] = [
+            (lbl, f"{eth['dsr']:.4f} vs {fig['dsr_raw']:.4f}" if lbl == _ETH_VS_BTC_CHIP else val)
+            for lbl, val in eth["extra"]
+        ]
+    # A DSR that crosses a verdict band is a PROMOTION-AUTHORITY change, not a copy
+    # refresh: the tier here says `scored`, which the gauntlet only grants at
+    # SURVIVES (DSR>=0.95). Surface the crossing loudly instead of silently
+    # re-rendering a re-tiered signal as if nothing moved.
+    for label, val in (("raw", fig["dsr_raw"]), ("gated", fig["dsr_gated"])):
+        if val < 0.95 and warnings is not None:
+            warnings.append(
+                f"BTC Vector card: {label} DSR {val:.4f} has fallen below the SURVIVES bar "
+                f"(0.95) while the row is still tiered `scored` — the multiple-testing "
+                f"verdict is now "
+                f"{'MARGINAL' if val >= 0.90 else 'FAILS'}. This is a promotion-authority "
+                f"change and needs adjudication, not a copy edit."
+            )
+
+
 def _build_foundry_block(repo_root: Path | None = None) -> dict:
     """Assemble the Signal Foundry panel payload (D1).
 
@@ -1463,7 +1655,15 @@ def _build_foundry_block(repo_root: Path | None = None) -> dict:
         return {"present": False}
 
     # ---- 2. Load results/*.json -------------------------------------------
-    from engine.signal_foundry.results import load_results, promotion_docket
+    # Guarded import: engine.signal_foundry pulls in the frozen battery, which needs
+    # scipy. The minimal CI lanes install pandas/numpy only, so an unguarded import
+    # turned "no foundry panel" into a hard build failure — breaking this function's
+    # own contract (additive, graceful, never fatal). A missing DEPENDENCY degrades
+    # exactly like missing DATA does: no panel, not a crash.
+    try:
+        from engine.signal_foundry.results import load_results, promotion_docket
+    except ImportError:
+        return {"present": False}
 
     all_results: list[dict] = []
     try:
@@ -1655,6 +1855,10 @@ def build_scorecard() -> dict:
             })
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
+
+    # Re-render the BTC Vector card off the calibrator's own artifacts BEFORE the
+    # provenance pass, so the passport stamps the same n_trials the prose quotes.
+    _resolve_vector_live_stats(REGISTRY, warnings)
 
     # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
     # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.

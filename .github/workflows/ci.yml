@@ -227,6 +227,13 @@ on:
       # main because no CI job ran them. engine/** is broad on purpose — most of these
       # tests pin engine contracts (display-only firewalls, unit guards, honesty layer).
       - "engine/**"
+      # Signal-Lab promotion-stat display gate: the BTC Vector card's DSR/Sharpe/n
+      # must equal what calibrate_vector actually computed. engine/** covers the
+      # module, but a test-only re-pin (or a nightly refresh of the artifacts the
+      # test reads) must still retrigger the trial-budgets lane below.
+      - "tests/test_signal_lab_vector_display.py"
+      - "data/vector/calibration.json"
+      - "data/vector/trial_log.json"
       # regime no-regress guard (2026-07-13 earlyclose↔render flip-flop fix)
       - "tests/test_engine_run_no_regress.py"
       - "scripts/build_site.py"
@@ -1317,6 +1324,13 @@ jobs:
         run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
+      - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
+        # Registering the trial budget (above) is only half the chain: the number the
+        # PAGE shows must equal the number the calibrator produced. The BTC Vector card
+        # shipped "DSR 0.9945 (n=68)" while calibration.json carried 0.9661 at n=71 —
+        # optimistic against the engine's own output, the one direction a promotion stat
+        # must never drift. Skips cleanly when data/vector/*.json is absent.
+        run: python -m pytest tests/test_signal_lab_vector_display.py -q
 
   outcome-spine:
     if: ${{ false }}
