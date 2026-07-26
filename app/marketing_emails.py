@@ -8,8 +8,25 @@ Three legs on one in-process sweeper, all marketing-class, all default OFF:
 
 Shape is W3's (``app/billing_emails.py``): env-gated, registered from ``app/main.py``, an
 asyncio loop that sleeps FIRST, each wake wrapped, work done in ``asyncio.to_thread``, and
-cursor-free — the eligible set is re-derived every wake and ``email_log``'s unique
-``idem_key`` decides what has already gone out, so a restart mid-sweep costs nothing.
+carrying no cursor of its own — the eligible set is re-derived every wake and
+``email_log``'s unique ``idem_key`` decides what has already gone out, so a restart
+mid-sweep costs nothing.
+
+That last part is exact rather than loose, because a campaign larger than one wake needs a
+resume point and there is no column to put one in. The LEDGER is the cursor: ``mailer.send``
+claims a row for every recipient it is offered, so ``campaign:{id}:*`` is a complete record
+of who has been processed, and a wake skips those and starts its roster scan at the page
+that provably cannot be past the first person still waiting (:func:`_resume_page`). A
+campaign is marked ``done`` only when the roster has been walked to its END — anything less
+is a truncation, and a ``done`` campaign is never selected again.
+
+NOTHING SENDS WITHOUT A RELAY, AND NOTHING IS CLAIMED EITHER
+------------------------------------------------------------
+``mailer.send`` writes a TERMINAL ``skipped_no_smtp`` row when SMTP is unconfigured, which
+spends the idem_key on a message that was never written: the retry answers ``duplicate``
+and the person never hears from us. So the two sending legs REFUSE to run at all while
+``mailer.is_configured()`` is false (:func:`_relay_ready`) rather than burning the window,
+and :func:`drain_parked` picks up any row a pre-refusal build already burnt.
 
 THE BLAST RADIUS, AND THE THREE BOUNDS ON IT
 --------------------------------------------
