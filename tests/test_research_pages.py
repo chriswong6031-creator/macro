@@ -245,6 +245,91 @@ def test_build_on_committed_catalog_never_yields_zero_pages(monkeypatch, tmp_pat
     assert (tmp_path / "research" / "index.html").exists()
 
 
+# --- titles: the real committed catalog, not a synthetic fixture --------------
+# #3562 and #3570 each fixed a title defect that reached public <title>/<h1>/
+# JSON-LD, and each shipped only SYNTHETIC coverage. The recurrence guard has to
+# run over the REAL catalog: an ingest-time fix cannot reach a document that
+# already has a receipt, so a bad row can sit in data/research_vault/catalog.json
+# indefinitely without any synthetic test noticing.
+
+def test_committed_catalog_never_titles_a_report_after_its_source_filename():
+    """#3570 regression, over the REAL committed catalog.
+
+    Three reports shipped a de-slugified PDF filename as the public title of their
+    SEO landing page ("2026 07 24 Pmi Fall Seven Times Get Up Eight en"). Those
+    pages exist so someone Googling the exact report title lands on us, and a
+    filename matches nothing anyone types.
+
+    The literal check — title == deslug(source filename) — is neither available
+    nor meaningful here: ``catalog._ITEM_FIELDS`` deliberately drops
+    ``source_filename``, and the page slug is DERIVED FROM the title, so
+    slug-vs-title equality holds for every healthy row too. The property that
+    separates good from bad is the filename *shape*, which is what
+    ``title.looks_filename_derived`` reports — and since it is defined as
+    ``clean(t) != t``, the detector can never drift from the repair.
+    """
+    from engine.research_vault import title as title_mod
+    from scripts.build_research_vault import _public_catalog, load_catalog
+
+    items = _public_catalog(load_catalog())["items"]
+    if not items:
+        pytest.skip("committed catalog is empty — nothing to guard")
+
+    bad = [(it.get("id"), it.get("title")) for it in items
+           if title_mod.looks_filename_derived(it.get("title") or "")]
+    assert bad == [], (
+        "catalog rows titled after their source PDF filename — this string becomes "
+        f"the public <title>/<h1>/JSON-LD headline of a /research/ page: {bad[:5]}"
+    )
+
+
+def test_committed_catalog_titles_reach_every_seo_surface_clean():
+    """<title>, <h1>, og:title and JSON-LD "headline" are separately derived.
+
+    A fix that lands in one and misses another still ships the bad string to the
+    crawler that matters, so assert on the RENDERED page rather than the catalog.
+    Covers both defect classes at their real heal point: filename shape (#3570,
+    repaired in the catalog) and the dangling truncated paren (#3562, repaired at
+    render by ``clean_title`` — so the catalog legitimately still holds
+    "Alcon Inc. (ALCC" and only the rendered output must be balanced).
+
+    The shape predicates run on the FULL title only. ``_jsonld`` caps headline at
+    110 chars (Google's limit), and a mid-word cut can strip a closing paren or
+    leave a trailing comma — an artefact of truncation, not a title defect. The
+    honest assertion for that surface is that it is the leading slice of the same
+    repaired title, which is what proves the repair reached it.
+    """
+    import html as _html
+
+    from engine.research_vault import title as title_mod
+    from scripts.build_research_vault import _public_catalog, load_catalog
+
+    items = _public_catalog(load_catalog())["items"]
+    if not items:
+        pytest.skip("committed catalog is empty — nothing to render")
+
+    offenders: list[tuple] = []
+    for item in items:
+        page = _norm_render(item)
+        h1 = re.search(r"<h1[^>]*>(.*?)</h1>", page, re.S)
+        head = re.search(r"<title>(.*?)</title>", page, re.S)
+        jsonld = re.search(r'"headline":\s*"([^"]*)"', page)
+        assert h1 and head and jsonld, f"{item.get('id')}: an SEO surface is missing"
+
+        title_txt = _html.unescape(re.sub(r"<[^>]+>", "", h1.group(1))).strip()
+        if title_mod.looks_filename_derived(title_txt):
+            offenders.append((item.get("id"), "filename-shaped", title_txt))
+        if title_txt.count("(") > title_txt.count(")"):
+            offenders.append((item.get("id"), "dangling-paren", title_txt))
+
+        # the same repaired string must feed <title> and the JSON-LD headline
+        if title_txt not in _html.unescape(head.group(1)):
+            offenders.append((item.get("id"), "<title> disagrees with <h1>", title_txt))
+        if not title_txt.startswith(_html.unescape(jsonld.group(1))):
+            offenders.append((item.get("id"), "headline is not the title", title_txt))
+    assert offenders == [], f"bad title reached a public SEO surface: {offenders[:5]}"
+
+
 # --- stale-page prune (a retitled report MOVES; the old URL must not survive) --
 def test_prune_stale_drops_orphans_but_keeps_the_hub():
     keep = {"a-111111.html", "index.html"}
