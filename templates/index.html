@@ -60,7 +60,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;100,900;125,600;125,700;125,800;125,900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="onboard.css?v=21c2fef6">
+<link rel="stylesheet" href="onboard.css?v=bfd44ba9">
 <style>
 /* ============================================================
    MASTERMIND LANDING — "The Neural Cover"
@@ -83,6 +83,15 @@
   --sh-plate:0 24px 60px -20px rgba(18,26,45,.34),0 6px 16px -6px rgba(18,26,45,.14);
   --r-sm:6px; --r:12px; --r-lg:16px;
   --maxw:1280px; --gutter:clamp(20px,4.5vw,60px);
+  /* Display FIGURES (live score, proof stat, plan price) are set in a serif, not in
+     the Archivo Expanded Black they used to wear — that face is so wide and heavy its
+     numerals read short and blocky at these sizes. Words stay Archivo Expanded, so the
+     page pairs a grotesque voice with serif figures. The @font-face (self-hosted, subset,
+     variable on opsz+wght) lives in onboard.css, which this page links above; declared
+     here too so the landing never depends on that file's load order. Small inline data
+     (tickers, %, price cells) deliberately stays on Archivo, where a tight grotesque
+     out-reads a serif. Specimen + regeneration: mockups/refs/landing-numerals/. */
+  --fig:'Newsreader',ui-serif,Georgia,'Times New Roman',serif;
   /* Overlay-token bridge — theme.js injects the shared settings/account dashboard
      using the macro token vocabulary (--panel2/--line/--card/--text/…). This
      light-only landing declares its own names (--panel-2/--hair/--ink), so without
@@ -236,7 +245,7 @@ html.still{scroll-behavior:auto}
 .gz-row{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:14px}
 .gz{width:118px;flex:none}
 .gz-num{display:flex;flex:0 0 92px;min-width:92px;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center}
-.gz-num b{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:48px;line-height:.92;letter-spacing:-.03em;color:var(--q-gold);transition:color .9s}
+.gz-num b{font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 72;font-size:48px;line-height:.96;letter-spacing:-.005em;color:var(--q-gold);transition:color .9s}
 .gz-num .gzw{min-height:16px;font-weight:700;font-size:14.5px;line-height:1.1;color:var(--ink-soft);white-space:nowrap}
 .gz-arcf{transition:stroke .9s}
 .pp3.risk .gz-arcf{stroke:var(--q-green)}
@@ -582,7 +591,7 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 .fi-row .side.s{color:var(--q-red);background:var(--red-wash)}
 .fi-row .amt{font-weight:700;font-size:11px;color:var(--ink)}
 .fi-sum{background:var(--panel-2);border:1px solid var(--hair);border-radius:10px;padding:13px 14px;align-self:start}
-.fi-sum .big{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:26px;letter-spacing:-.02em}
+.fi-sum .big{font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 34;font-size:27px;letter-spacing:-.005em}
 .fi-sum .lb{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
 .fi-sum .div{height:1px;background:var(--hair);margin:11px 0}
 .fi-sum .cc{display:flex;align-items:baseline;gap:7px;font-size:11.5px;color:var(--muted)}
@@ -634,7 +643,7 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 .fx-note{margin-top:8px;font-size:11px;color:var(--muted);line-height:1.5}
 .fx-note b{color:var(--ink)}
 .dxy{display:flex;align-items:baseline;gap:8px;margin-top:6px}
-.dxy .n{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:24px;letter-spacing:-.02em}
+.dxy .n{font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 32;font-size:25px;letter-spacing:-.005em}
 .dxy .tag2{font-family:'Archivo',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.08em;color:var(--q-green);background:var(--green-wash);border-radius:5px;padding:3px 7px}
 
 /* ============ AI SECTION ============ */
@@ -709,9 +718,9 @@ html.still .ph-belt .phc-ch svg{clip-path:none !important}
 html[data-lang="zh"] .tier.hot::before{content:"最受欢迎";letter-spacing:.08em}
 .tier h3{margin:0;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:19px}
 .tier .who{color:var(--muted);font-size:13px;margin-top:4px;min-height:36px}
-.price{margin-top:12px;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:40px;letter-spacing:-.02em}
+.price{margin-top:12px;font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 72;font-size:41px;letter-spacing:-.005em}
 .price .per{font-family:'Inter',sans-serif;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:0}
-.price .was{font-weight:600;font-size:15px;color:var(--faint);text-decoration:line-through;margin-right:7px}
+.price .was{font-family:var(--fig);font-variation-settings:'opsz' 16;font-weight:600;font-size:16px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:7px}
 .badge{display:inline-block;margin-top:6px;font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;color:var(--q-green);background:var(--green-wash);border-radius:6px;padding:4px 9px}
 .tier .gist{margin:14px 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6;flex:1}
 .tier .gist b{color:var(--ink);font-weight:600}
@@ -856,7 +865,7 @@ footer{background:#04070c;border-top:1px solid #10161f;padding:46px 0 44px;color
   .tier .who{min-height:0;margin-bottom:2px}
   .tier .gist{margin:12px 0 17px}
   .tier .btn{min-height:48px}
-  .price{font-size:36px}
+  .price{font-size:37px;font-variation-settings:'opsz' 56}
   .matrix-card{margin-top:30px}
 }
 @media (max-width:360px){

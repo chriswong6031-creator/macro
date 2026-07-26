@@ -23,6 +23,42 @@
    --blue, --hair, --sh-*, --r*) are inherited from index.html's :root.
    ========================================================================== */
 
+/* ── the FIGURE face ─────────────────────────────────────────────────────────
+   Display numerals — the live score, the proof stat, the plan price — are set in
+   Newsreader ExtraBold, not in the Archivo Expanded Black they used to wear.
+   Archivo's black weight is very wide and very heavy, so at 20–48px its figures
+   read short and blocky (operator, 2026-07-26: "kinda squashed"). Newsreader is a
+   screen-first news serif: taller figures, open counters, real contrast — it gives
+   a number the authority of a research page instead of a poster. Words stay on
+   Archivo Expanded, so the page now PAIRS a grotesque voice with serif figures
+   rather than setting everything in one face.
+
+   Two properties made it the pick over the grotesques we tried (the specimen is
+   committed at mockups/refs/landing-numerals/):
+     · its default figures are already FIXED-WIDTH — all ten digits share one
+       advance — so a live-updating score (#gz-score) cannot jitter;
+     · it carries an `opsz` axis, so 15px and 48px each get their proper optical
+       design instead of one drawing stretched across both.
+
+   SELF-HOSTED, like Inter in theme.css: fonts.googleapis.com is blocked in
+   mainland China, so a CDN face silently never arrives there. Subset to ASCII +
+   currency/dash punctuation and clipped to the axis ranges we actually use
+   (wght 600–800, opsz 14–72) — 54KB for the whole variable family. `unicode-range`
+   keeps everything outside that subset falling through to the serif stack.
+   Regenerate: see mockups/refs/landing-numerals/README.md.
+   Newsreader is SIL Open Font License 1.1 (Production Type). */
+@font-face{
+  font-family:'Newsreader';
+  font-style:normal;
+  font-weight:600 800;
+  font-display:swap;
+  src:url("fonts/Newsreader-figures.woff2") format("woff2");
+  unicode-range:U+0020-007E,U+00A0,U+00A3,U+00A5,U+2013-2014,U+2018-201D,U+2026,U+2212,U+20AC;
+}
+/* Landing and sheet both declare --fig, so neither depends on the other's
+   cascade (the sheet is lazy-injected onto macro pages that have no landing CSS). */
+:root{--fig:'Newsreader',ui-serif,Georgia,'Times New Roman',serif}
+
 /* Self-carried control reset. The sheet was authored against the LANDING, which
    resets `button{font:inherit;color:inherit;background:none;border:0;padding:0}`
    globally — macro pages (theme.css) do not, so every unstyled button in here
@@ -531,9 +567,10 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-plan-nm{display:flex;align-items:baseline;gap:8px;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:16px;color:var(--ink)}
 .obm-plan-who{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.4}
 .obm-plan-r{display:flex;align-items:center;gap:13px;flex:none}
-.obm-plan-price{text-align:right;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:23px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+/* figures in --fig (see the @font-face note at the top of this file) */
+.obm-plan-price{text-align:right;font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 30;font-size:24px;letter-spacing:-.005em;color:var(--ink);white-space:nowrap}
 .obm-plan-price .obm-per{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:10.5px;color:var(--muted);letter-spacing:0;margin-top:1px}
-.obm-plan-price .obm-was{font-weight:600;font-size:12px;color:var(--faint);text-decoration:line-through;margin-right:5px}
+.obm-plan-price .obm-was{font-family:var(--fig);font-variation-settings:'opsz' 14;font-weight:600;font-size:13px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:5px}
 .obm-ribbon{
   position:absolute;top:-10px;left:16px;font-family:'Archivo',sans-serif;font-weight:700;
   font-size:9px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:3px 10px;border-radius:99px;
@@ -567,7 +604,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-order-hd{display:flex;align-items:center;gap:9px}
 .obm-order-dot{width:9px;height:9px;border-radius:3px;background:var(--obm-accent);flex:none}
 .obm-order-nm{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:16px;color:var(--ink)}
-.obm-order-price{margin-left:auto;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:900;font-size:20px;letter-spacing:-.02em;color:var(--ink)}
+.obm-order-price{margin-left:auto;font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 26;font-size:21px;letter-spacing:-.005em;color:var(--ink)}
 .obm-order-per{font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:var(--muted);margin-left:2px}
 .obm-order-billed{margin-top:6px;font-size:12.5px;color:var(--muted)}
 .obm-order-truth{margin-top:11px;border-top:1px solid var(--hair);padding-top:11px}

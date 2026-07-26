@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Numerals head-to-head — round 2</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@400;450;500;600;700&family=Schibsted+Grotesk:wght@400..900&family=Chivo:wght@100..900&family=Fraunces:SOFT,WONK,opsz,wght@0..100,0..1,9..144,100..900&family=Newsreader:opsz,wght@6..72,200..800&family=Literata:opsz,wght@7..72,200..900&family=Frank+Ruhl+Libre:wght@300..900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f8fa;--panel:#fff;--hair:#eaecf0;--ink:#1c2430;--muted:#5d6b7e;--faint:#8a95a4;--blue:#285fff;--q-gold:#b07d05;--q-green:#1f8b41}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{padding:12px 16px 18px}
+.hd,.r{display:grid;grid-template-columns:104px 92px 116px 156px 1fr;align-items:center;gap:0 13px}
+.hd{padding:0 13px 5px;font-size:8.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.r{background:var(--panel);border:1px solid var(--hair);border-radius:11px;padding:8px 13px;margin-bottom:6px}
+.r.cur{background:#eef0f3;border-color:#dfe3e9}
+.lbl{line-height:1.25}
+.lbl b{display:block;font-weight:700;font-size:11px;letter-spacing:-.01em}
+.lbl i{display:block;font-style:normal;font-weight:600;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--blue);margin-bottom:1px}
+.r.cur .lbl i{color:var(--faint)}
+.n{font-family:var(--face);font-variation-settings:var(--vf);letter-spacing:var(--ls,-.02em)}
+.score{font-size:46px;line-height:.94;color:var(--q-gold)}
+.stat{font-size:25px;line-height:1.05}
+.pw{display:flex;align-items:baseline;gap:6px}
+.was{font-size:15px;color:var(--faint);text-decoration:line-through;font-variation-settings:var(--vf-t)}
+.pr{font-size:34px;line-height:1.05}
+.per{font-family:'Inter',sans-serif;font-weight:500;font-size:12px;color:var(--muted)}
+/* the small-data survival test — 15px and 10.5px tabular */
+.tab{font-family:var(--face);font-variation-settings:var(--vf-t);font-variant-numeric:tabular-nums;letter-spacing:0}
+.tab .a{font-size:15px}.tab .b{font-size:10.5px;color:var(--muted)}
+.tab .g{color:var(--q-green)}
+.tab i{font-style:normal;display:block;line-height:1.45}
+
+#a{--face:'Archivo',sans-serif;--vf:'wdth' 125,'wght' 900;--vf-t:'wdth' 100,'wght' 700}
+#c{--face:'Schibsted Grotesk',sans-serif;--vf:'wght' 800;--vf-t:'wght' 700}
+#d{--face:'Chivo',sans-serif;--vf:'wght' 900;--vf-t:'wght' 700}
+#f{--face:'Fraunces',serif;--vf:'SOFT' 0,'WONK' 1,'opsz' 72,'wght' 800;--vf-t:'SOFT' 0,'WONK' 0,'opsz' 14,'wght' 700;--ls:0}
+#h{--face:'Newsreader',serif;--vf:'opsz' 72,'wght' 800;--vf-t:'opsz' 14,'wght' 700;--ls:-.005em}
+#i{--face:'Literata',serif;--vf:'opsz' 72,'wght' 800;--vf-t:'opsz' 14,'wght' 700;--ls:-.01em}
+#j{--face:'Frank Ruhl Libre',serif;--vf:'wght' 900;--vf-t:'wght' 700;--ls:-.005em}
+</style></head>
+<body><div class="wrap">
+<div class="hd"><span>face</span><span>score 46px</span><span>stat 25px</span><span>price 34px</span><span>small data 15 / 10.5px</span></div>
+
+<div class="r cur" id="a"><span class="lbl"><i>A · now</i><b>Archivo Exp.</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="c"><span class="lbl"><i>C</i><b>Schibsted Grotesk</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="d"><span class="lbl"><i>D</i><b>Chivo Black</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="f"><span class="lbl"><i>F</i><b>Fraunces wonk</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="h"><span class="lbl"><i>H</i><b>Newsreader</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="i"><span class="lbl"><i>I</i><b>Literata</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+<div class="r" id="j"><span class="lbl"><i>J</i><b>Frank Ruhl Libre</b></span>
+  <span class="n score">49</span><span class="n stat">96,412</span>
+  <span class="pw"><span class="n was">$69</span><span class="n pr">$49</span><span class="per">/mo</span></span>
+  <span class="tab"><i class="a">$58.50 &nbsp;<span class="g">+12.2%</span>&nbsp; 101.12</i><i class="b">57.95 – 58.60 · EDGE 74 · JUL 21</i></span></div>
+
+</div></body></html>

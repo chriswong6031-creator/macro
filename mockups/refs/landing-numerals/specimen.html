@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Landing numerals — candidate specimen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62.5..125,100..900&family=Inter:wght@400;450;500;600;700&family=Schibsted+Grotesk:wght@400..900&family=Chivo:wght@100..900&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Fraunces:SOFT,WONK,opsz,wght@0..100,0..1,9..144,100..900&family=Epilogue:wght@100..900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#fff; --hair:#eaecf0; --hair-2:#dfe3e9;
+  --ink:#1c2430; --muted:#5d6b7e; --faint:#8a95a4;
+  --blue:#285fff; --q-green:#1f8b41; --q-gold:#b07d05;
+  --green-wash:#e9f5ec;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin-inline:auto;padding:40px 32px 90px}
+h1{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 125,'wght' 800;letter-spacing:-.02em;font-size:1.6rem;margin:0 0 6px}
+.lede{color:var(--muted);max-width:70ch;margin:0 0 34px;font-size:.95rem}
+
+/* one candidate block */
+.cand{background:var(--panel);border:1px solid var(--hair);border-radius:14px;margin-bottom:18px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(20,30,50,.07),0 1px 2px rgba(20,30,50,.05)}
+.cand-hd{display:flex;align-items:baseline;gap:12px;padding:12px 20px;border-bottom:1px solid var(--hair);background:#fbfcfd}
+.cand-hd .id{font-family:'Archivo',sans-serif;font-variation-settings:'wght' 800;font-size:11px;letter-spacing:.12em;color:var(--blue)}
+.cand-hd .nm{font-family:'Archivo',sans-serif;font-variation-settings:'wdth' 125,'wght' 800;font-size:15px;letter-spacing:-.01em}
+.cand-hd .note{margin-left:auto;font-size:11.5px;color:var(--faint);text-align:right;max-width:46ch;line-height:1.35}
+.cand.is-cur{border-color:var(--hair-2);background:#f4f5f7}
+.cand.is-cur .cand-hd{background:#eef0f3}
+.cand.is-cur .cand-hd .id{color:var(--faint)}
+
+.row{display:grid;grid-template-columns:206px 1fr 250px;gap:26px;align-items:center;padding:18px 20px}
+.row + .row{border-top:1px dashed var(--hair)}
+
+/* ── context 1 · live score (gold 48px/900) ─────────────────────── */
+.gz{display:flex;align-items:flex-end;gap:11px}
+.gz b{font-size:48px;line-height:.92;letter-spacing:-.03em;color:var(--q-gold);display:block}
+.gz span{font-family:'Inter',sans-serif;font-weight:600;font-size:12.5px;color:var(--muted);padding-bottom:7px}
+
+/* ── context 2 · proof stat (26px/900) ──────────────────────────── */
+.stat .big{font-size:26px;line-height:1.1;letter-spacing:-.02em}
+.stat .lb{font-family:'Inter',sans-serif;font-weight:450;font-size:12.5px;color:var(--muted);margin:3px 0 0}
+
+/* ── context 3 · price (36px/900) ───────────────────────────────── */
+.price{font-size:36px;letter-spacing:-.02em;line-height:1.1}
+.price .was{font-size:15px;color:var(--faint);text-decoration:line-through;margin-right:7px;font-variation-settings:'wght' 600}
+.price .per{font-family:'Inter',sans-serif;font-weight:500;font-size:12.5px;color:var(--muted);letter-spacing:0}
+.badge{display:inline-block;margin-top:7px;font-family:'Archivo',sans-serif;font-variation-settings:'wght' 800;font-size:10px;letter-spacing:.08em;
+  color:var(--q-green);background:var(--green-wash);border-radius:6px;padding:4px 9px}
+
+/* ── figure set + tabular check ─────────────────────────────────── */
+.figs{padding:14px 20px 18px;border-top:1px dashed var(--hair);display:flex;flex-wrap:wrap;gap:8px 26px;align-items:baseline}
+.figs .set{font-size:27px;letter-spacing:.005em}
+.figs .tab{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;font-size:15px;color:var(--muted);display:flex;gap:14px}
+.figs .tab b{color:var(--ink)}
+.figs .grn{color:var(--q-green)}
+
+/* ── dark strip (onboarding stage side) ─────────────────────────── */
+.dk{background:#0b1120;padding:14px 20px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.dk .p{font-size:23px;letter-spacing:-.02em;color:#eef2f8}
+.dk .p .per{font-family:'Inter',sans-serif;font-weight:500;font-size:10.5px;color:#8b96a8;letter-spacing:0}
+.dk .t{font-size:18px;color:#eef2f8;letter-spacing:-.01em}
+.dk .g{font-size:18px;color:#3ecf95;font-variant-numeric:tabular-nums}
+.dk .lb{font-family:'Inter',sans-serif;font-weight:500;font-size:10px;letter-spacing:.12em;color:#5c6879;text-transform:uppercase}
+
+/* ══ the candidate faces ═══════════════════════════════════════════
+   Every numeral-bearing element inside a .cand inherits the face. */
+.cand .gz b,.cand .stat .big,.cand .price,.cand .figs .set,.cand .figs .tab,
+.cand .dk .p,.cand .dk .t,.cand .dk .g{font-family:var(--face);font-variation-settings:var(--vf)}
+
+/* A — current */
+#a{--face:'Archivo',sans-serif; --vf:'wdth' 125,'wght' 900}
+/* B — same face, normal width */
+#b{--face:'Archivo',sans-serif; --vf:'wdth' 100,'wght' 900}
+/* C */
+#c{--face:'Schibsted Grotesk',sans-serif; --vf:'wght' 800}
+/* D */
+#d{--face:'Chivo',sans-serif; --vf:'wght' 900}
+/* E */
+#e{--face:'Bricolage Grotesque',sans-serif; --vf:'opsz' 48,'wdth' 100,'wght' 800}
+/* F */
+#f{--face:'Fraunces',serif; --vf:'SOFT' 0,'WONK' 1,'opsz' 72,'wght' 800}
+/* G */
+#g{--face:'Epilogue',sans-serif; --vf:'wght' 800}
+</style></head>
+<body><div class="wrap">
+<h1>Landing &amp; onboarding numerals — candidates</h1>
+<p class="lede">Same three real contexts in every block: the live gold score (48px), the proof stat (26px), the plan price (36px) — plus the full figure set, a tabular-alignment check, and the onboarding dark stage. Row&nbsp;A is what ships today.</p>
+
+<!-- ═══ A ═══════════════════════════════════════════════════════ -->
+<section class="cand is-cur" id="a">
+  <div class="cand-hd"><span class="id">A · NOW</span><span class="nm">Archivo Expanded Black</span>
+    <span class="note">wdth 125 · wght 900. Wide + heavy, so the figures read short and blocky — the “squashed” look.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ B ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="b">
+  <div class="cand-hd"><span class="id">B</span><span class="nm">Archivo Black — normal width</span>
+    <span class="note">Same family, wdth 100. Free fix: taller proportion, nothing new to load. Still low-contrast and plain.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ C ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="c">
+  <div class="cand-hd"><span class="id">C</span><span class="nm">Schibsted Grotesk ExtraBold</span>
+    <span class="note">Drawn for Nordic news desks — headline + data figures. Tall, open counters, crisp flat terminals.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ D ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="d">
+  <div class="cand-hd"><span class="id">D</span><span class="nm">Chivo Black</span>
+    <span class="note">Archivo’s foundry sibling, narrower and sharper. Distinct 4 and 9; strong money face.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ E ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="e">
+  <div class="cand-hd"><span class="id">E</span><span class="nm">Bricolage Grotesque ExtraBold</span>
+    <span class="note">Most character: flat-footed 1, closed 4, cut 9. Optical-size axis. Personality risk on a price.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ F ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="f">
+  <div class="cand-hd"><span class="id">F</span><span class="nm">Fraunces ExtraBold (wonk)</span>
+    <span class="note">The editorial swing — high-contrast serif figures against the grotesque UI. Financial-press authority.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+<!-- ═══ G ═══════════════════════════════════════════════════════ -->
+<section class="cand" id="g">
+  <div class="cand-hd"><span class="id">G</span><span class="nm">Epilogue ExtraBold</span>
+    <span class="note">Geometric-grotesque: very tall, tight, engineered. Coldest of the set.</span></div>
+  <div class="row">
+    <div class="gz"><b>49</b><span>Mixed</span></div>
+    <div class="stat"><div class="big">96,412</div><p class="lb">disclosures read &amp; scored to date</p></div>
+    <div><div class="price"><span class="was">$69</span>$49<span class="per"> /mo billed annually</span></div><span class="badge">SAVE 29% · $588/YR</span></div>
+  </div>
+  <div class="figs"><span class="set">0123456789</span>
+    <span class="tab"><b>$58.50</b><span class="grn">+12.2%</span><span>57.95 – 58.60</span><b>101.12</b></span></div>
+  <div class="dk"><span class="lb">onboarding</span><span class="p">$49<span class="per"> /mo</span></span><span class="t">96,412</span><span class="g">+12.2%</span></div>
+</section>
+
+</div></body></html>
