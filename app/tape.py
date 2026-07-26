@@ -64,6 +64,12 @@ _HEARTBEAT_S = 20.0
 # Upstream reconnect backoff (exponential, capped).
 _RECONNECT_BASE_S = 1.0
 _RECONNECT_MAX_S = 60.0
+# Per-IP concurrent-connection cap for /ws/tape: one client can't open unbounded
+# sockets and grow the hub's client set (and its fanout cost) without bound. The
+# cap keys on the derived client IP (see _client_ip); until EdgeOne's EO-Client-IP
+# rule is live, visitors behind the same CDN PoP share an edge IP and thus one
+# bucket, so this is set high enough for genuine multi-tab use. Tune here.
+_MAX_CONNS_PER_IP = 5
 
 
 class TapeHub:
@@ -80,6 +86,9 @@ class TapeHub:
         # sym -> last broadcast payload dict {"sym","price","chgPct","ts","basis"}
         self._cache: dict[str, dict[str, Any]] = {}
         self._clients: set[asyncio.Queue] = set()
+        # ip -> live /ws/tape connection count (per-IP cap; see _MAX_CONNS_PER_IP).
+        # Touched only from coroutines on the one event loop, so no lock is needed.
+        self._ip_counts: dict[str, int] = {}
         self._last_upstream_ms: float = 0.0  # wall-clock (ms) of last decoded frame
         self._task: asyncio.Task | None = None
         self._poll_task: asyncio.Task | None = None
@@ -119,6 +128,24 @@ class TapeHub:
 
     def unregister(self, q: asyncio.Queue) -> None:
         self._clients.discard(q)
+
+    def try_admit(self, ip: str) -> bool:
+        """Per-IP concurrent-connection gate. Returns False when ip is already at
+        the cap; otherwise reserves a slot and returns True. Synchronous (no await)
+        so the check+increment is atomic against other connections on the loop."""
+        n = self._ip_counts.get(ip, 0)
+        if n >= _MAX_CONNS_PER_IP:
+            return False
+        self._ip_counts[ip] = n + 1
+        return True
+
+    def release(self, ip: str) -> None:
+        """Free a slot reserved by try_admit. Only call after a successful admit."""
+        n = self._ip_counts.get(ip, 0) - 1
+        if n > 0:
+            self._ip_counts[ip] = n
+        else:
+            self._ip_counts.pop(ip, None)
 
     def snapshot(self) -> list[dict[str, Any]]:
         return list(self._cache.values())
@@ -327,6 +354,26 @@ async def stop_tape_hub(app) -> None:
             await hub.stop()
 
 
+def _client_ip(websocket: WebSocket) -> str:
+    """Real visitor IP for a /ws/tape connection, mirroring app.main._mm_client_ip:
+    the configured CDN real-IP header first (EO-Client-IP), then other real-client
+    headers, then XFF / x-real-ip, then the socket peer. Kept local so this module
+    stays importable without app.main (register_tape is called from app.main)."""
+    h = websocket.headers
+    for k in ("eo-client-ip", "eo-connecting-ip", "cf-connecting-ip", "true-client-ip"):
+        v = (h.get(k) or "").strip()
+        if v:
+            return v[:64]
+    xff = h.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()[:64]
+    xr = (h.get("x-real-ip") or "").strip()
+    if xr:
+        return xr[:64]
+    client = websocket.client
+    return (client.host if client else "") or "unknown"
+
+
 def register_tape(app) -> None:
     """Wire the /ws/tape websocket route onto the FastAPI app. Kept as a
     function (not a module-level router include) because a WebSocket route needs
@@ -337,6 +384,16 @@ def register_tape(app) -> None:
     async def ws_tape(websocket: WebSocket) -> None:  # noqa: ANN001
         await websocket.accept()
         hub = _get_hub(websocket.app)
+        ip = _client_ip(websocket)
+        # Per-IP connection cap: one client can't open unbounded sockets and grow
+        # the hub's client set without bound. Over-cap connections are closed with
+        # 1013 ("try again later") right after accept, before any registration.
+        if not hub.try_admit(ip):
+            log.info("tape: per-IP connection cap reached for %s (max %d)",
+                     ip, _MAX_CONNS_PER_IP)
+            with contextlib.suppress(Exception):
+                await websocket.close(code=1013)
+            return
         # A lazily-started hub: if the startup hook didn't fire (e.g. a test
         # client that only exercises the route), start it on first connect.
         hub.start()
@@ -357,6 +414,7 @@ def register_tape(app) -> None:
             log.debug("tape: ws client dropped (%s)", e)
         finally:
             hub.unregister(q)
+            hub.release(ip)
 
     @app.on_event("startup")
     async def _tape_startup() -> None:

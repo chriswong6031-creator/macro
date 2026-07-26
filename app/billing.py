@@ -568,7 +568,7 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         session = stripe.checkout.Session.create(**args)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: checkout create failed (%s)", exc)
-        raise HTTPException(502, f"checkout failed: {exc}") from None
+        raise HTTPException(502, "checkout failed, please try again") from None
     return {"url": session.url, "id": session.id}
 
 
@@ -650,7 +650,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
             customer = stripe.Customer.create(email=email, metadata={"mm_user_id": user_id})
         except Exception as exc:  # noqa: BLE001
             log.warning("billing: customer create failed for %s (%s)", user_id, exc)
-            raise HTTPException(502, f"subscribe init failed: {exc}") from None
+            raise HTTPException(502, "subscribe init failed, please try again") from None
         customer_id = customer.id
         # Persist the mapping immediately (mapping only — no tier/status), so the webhook can resolve
         # customer->user even if the browser abandons before /complete.
@@ -664,7 +664,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
         already = _has_live_subscription(customer_id)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: subscribe init sub-check failed (%s)", exc)
-        raise HTTPException(502, f"subscribe init failed: {exc}") from None
+        raise HTTPException(502, "subscribe init failed, please try again") from None
     if already:
         raise HTTPException(409, "already subscribed")
 
@@ -682,7 +682,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: setup intent create failed for %s (%s)", user_id, exc)
-        raise HTTPException(502, f"subscribe init failed: {exc}") from None
+        raise HTTPException(502, "subscribe init failed, please try again") from None
     return {"client_secret": si.client_secret, "customer_id": customer_id}
 
 
@@ -715,7 +715,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         si = stripe.SetupIntent.retrieve(body.setup_intent_id)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: setup intent retrieve failed (%s)", exc)
-        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+        raise HTTPException(502, "subscribe complete failed, please try again") from None
 
     si_status = si["status"] if isinstance(si, dict) else si.status
     si_customer = si["customer"] if isinstance(si, dict) else si.customer
@@ -737,7 +737,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         raise
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: subscribe complete sub-check failed (%s)", exc)
-        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+        raise HTTPException(502, "subscribe complete failed, please try again") from None
 
     try:
         sub = stripe.Subscription.create(
@@ -751,7 +751,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         )
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: subscription create failed for %s (%s)", user_id, exc)
-        raise HTTPException(502, f"subscribe complete failed: {exc}") from None
+        raise HTTPException(502, "subscribe complete failed, please try again") from None
 
     # Same-module authority (MNZ-R3): this IS the billing spine, so it may write the entitlement row
     # directly. Recompute + upsert + invalidate exactly like _handle_event, so /api/me reflects
@@ -832,7 +832,7 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
         sub = _live_subscription(customer_id)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: upgrade sub-lookup failed for %s (%s)", user_id, exc)
-        raise HTTPException(502, f"upgrade failed: {exc}") from None
+        raise HTTPException(502, "upgrade failed, please try again") from None
     if sub is None:
         raise HTTPException(404, "no subscription")
 
@@ -871,7 +871,7 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
         raise HTTPException(402, msg) from None
     except Exception as exc:  # noqa: BLE001 — house pattern: any other Stripe failure -> 502
         log.warning("billing: upgrade modify failed for %s (%s)", user_id, exc)
-        raise HTTPException(502, f"upgrade failed: {exc}") from None
+        raise HTTPException(502, "upgrade failed, please try again") from None
 
     # Same-module authority: recompute -> upsert -> invalidate so /api/me flips to Pro instantly.
     try:
