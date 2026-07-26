@@ -97,10 +97,10 @@ def _commit(repo: Path, rel: str, body: str, message: str) -> str:
 def test_needs_render_only_when_the_merge_itself_touched_render_inputs(tmp_path):
     """The render precondition must match render.yml's push path filter.
 
-    _render_status looks for a `push` render run whose head_sha IS the merge sha,
-    and render.yml only fires on templates/** + scripts/build_*.py. A merge that
-    touched neither can never have such a run, so demanding one is an
-    unsatisfiable block rather than a real gap.
+    render.yml only fires on push for templates/** + scripts/build_*.py, so a
+    merge that touched neither can never produce such a run, and demanding one is
+    an unsatisfiable block rather than a real gap. (What SATISFIES the demand is
+    wider than the push run — see the _render_status tests below.)
     """
     repo = _repo(tmp_path)
     start_head = _git(repo, "rev-parse", "HEAD")
@@ -426,3 +426,111 @@ def test_ui_contract_separates_scores_from_axis_labels():
     assert 'class="rkc-mood-axis rsx-axis-labels"' in source
     assert "rkc-mood-flag" not in source
     assert "@container risk-dialog (max-width:520px)" in source
+
+
+# ---------------------------------------------------------------------------
+# _render_status: what SATISFIES the render gate
+# ---------------------------------------------------------------------------
+
+def _render_api(by_sha: dict, main_successes: list[str]):
+    """Fake the two render.yml queries _render_status makes."""
+    def _fake(url: str):
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        if "head_sha" in q:
+            return {"workflow_runs": by_sha.get(q["head_sha"][0], [])}
+        return {"workflow_runs": [{"head_sha": s} for s in main_successes]}
+    return _fake
+
+
+def test_a_superseded_push_render_is_not_a_failure_when_another_run_baked_the_merge(
+    monkeypatch, tmp_path
+):
+    """PR #3570, 2026-07-26: the push run at the merge sha was cancelled by the
+    coalescing lane 3 minutes in, and the workflow_dispatch run beside it rendered
+    and deployed the merge. Filtering to event=push saw only the cancellation and
+    reported render_failed on work that was already live — an unsatisfiable block,
+    since re-running the lane to clear it is exactly what the house rule forbids.
+    A render bakes the tree it checks out; what STARTED it is irrelevant.
+    """
+    repo = _repo(tmp_path)
+    mine = _git(repo, "rev-parse", "HEAD")
+    monkeypatch.setattr(GUARD, "_get_json", _render_api({mine: [
+        {"event": "push", "status": "completed", "conclusion": "cancelled",
+         "created_at": "2026-07-26T06:23:33Z"},
+        {"event": "workflow_dispatch", "status": "completed", "conclusion": "success",
+         "created_at": "2026-07-26T06:26:17Z"},
+    ]}, []))
+    assert GUARD._render_status(repo, "acme", "widgets", mine) == ("success", "")
+
+
+def test_a_later_successful_render_on_main_covers_an_earlier_merge(monkeypatch, tmp_path):
+    """CLAUDE.md: "one successful push render at a merge SHA OR ANY LATER MAIN
+    DESCENDANT covers that merge through the workflow's dirty-scope union."
+    Without this, a session whose own run was superseded can never pass, however
+    green main has since gone."""
+    repo = _repo(tmp_path)
+    mine = _git(repo, "rev-parse", "HEAD")
+    later = _commit(repo, "templates/x.html.j2", "{{ y }}\n", "someone else's merge")
+
+    monkeypatch.setattr(GUARD, "_get_json", _render_api(
+        {mine: [{"status": "completed", "conclusion": "cancelled",
+                 "created_at": "2026-07-26T06:23:33Z"}]},
+        [later],
+    ))
+    assert GUARD._render_status(repo, "acme", "widgets", mine) == ("success", "")
+
+
+def test_an_unrelated_render_success_does_not_cover_the_merge(monkeypatch, tmp_path):
+    """The descendant clause must check ANCESTRY, not merely "a render passed".
+
+    A success on a sibling branch that does not contain our merge proves nothing
+    about our merge, and an unknown sha must fail closed rather than open.
+    """
+    repo = _repo(tmp_path)
+    _commit(repo, "a.txt", "a\n", "base")
+    _git(repo, "checkout", "-b", "sibling", "-q")
+    sibling = _commit(repo, "b.txt", "b\n", "sibling work")
+    _git(repo, "checkout", "main", "-q")
+    mine = _commit(repo, "c.txt", "c\n", "my merge")
+
+    monkeypatch.setattr(GUARD, "_get_json", _render_api(
+        {mine: [{"status": "completed", "conclusion": "cancelled",
+                 "created_at": "2026-07-26T06:23:33Z"}]},
+        [sibling, "f" * 40],          # a real non-descendant + a sha we don't have
+    ))
+    status, detail = GUARD._render_status(repo, "acme", "widgets", mine)
+    assert status == "pending"                 # superseded, not yet covered
+    assert "superseded" in detail
+    assert "never re-run" in detail            # the house rule, stated where it bites
+
+
+def test_a_genuinely_failed_render_still_blocks(monkeypatch, tmp_path):
+    """The widenings must not soften the gate they widen."""
+    repo = _repo(tmp_path)
+    mine = _git(repo, "rev-parse", "HEAD")
+    monkeypatch.setattr(GUARD, "_get_json", _render_api({mine: [
+        {"status": "completed", "conclusion": "failure",
+         "created_at": "2026-07-26T06:23:33Z"},
+    ]}, []))
+    status, detail = GUARD._render_status(repo, "acme", "widgets", mine)
+    assert status == "failed"
+    assert "failure" in detail
+
+
+def test_a_still_running_render_is_pending_not_failed(monkeypatch, tmp_path):
+    repo = _repo(tmp_path)
+    mine = _git(repo, "rev-parse", "HEAD")
+    monkeypatch.setattr(GUARD, "_get_json", _render_api({mine: [
+        {"status": "completed", "conclusion": "cancelled", "created_at": "2026-07-26T06:23:33Z"},
+        {"status": "in_progress", "conclusion": None, "created_at": "2026-07-26T06:26:17Z"},
+    ]}, []))
+    assert GUARD._render_status(repo, "acme", "widgets", mine)[0] == "pending"
+
+
+def test_no_render_at_all_is_still_pending(monkeypatch, tmp_path):
+    repo = _repo(tmp_path)
+    mine = _git(repo, "rev-parse", "HEAD")
+    monkeypatch.setattr(GUARD, "_get_json", _render_api({}, []))
+    status, detail = GUARD._render_status(repo, "acme", "widgets", mine)
+    assert status == "pending"
+    assert "has not started" in detail

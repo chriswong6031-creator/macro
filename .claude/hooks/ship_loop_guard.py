@@ -327,11 +327,11 @@ def _render_triggering_paths(changed: list[str]) -> bool:
 def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
     """Whether a push-triggered render must exist for ``merge_sha``.
 
-    Scoped to THIS merge's own diff, not the whole session range.
-    ``_render_status`` looks for a render.yml run whose head_sha IS merge_sha
-    and whose event is ``push`` — and render.yml's push trigger is path-filtered
-    to templates/** + scripts/build_*.py. So such a run can exist if and only if
-    merge_sha ITSELF touched those paths.
+    Scoped to THIS merge's own diff, not the whole session range. render.yml's
+    push trigger is path-filtered to templates/** + scripts/build_*.py, so a
+    push-triggered run on merge_sha can exist if and only if merge_sha ITSELF
+    touched those paths — which is what makes a render demandable here at all.
+    (What SATISFIES the demand is wider: see :func:`_render_status`.)
 
     start_head..head was the wrong basis on a shared main: this repo runs many
     concurrent sessions, and a session that syncs its worktree to origin/main
@@ -356,22 +356,76 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     return _render_triggering_paths(changed)
 
 
-def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
-    query = urllib.parse.urlencode(
-        {"event": "push", "head_sha": merge_sha, "per_page": "20"}
+def _covering_render(root: Path, owner: str, repo: str, merge_sha: str) -> bool:
+    """True when a SUCCESSFUL render on main already contains ``merge_sha``.
+
+    render.yml is a coalescing lane: it re-renders the whole dirty scope of main
+    at whatever commit it checks out, so a successful render at any DESCENDANT of
+    our merge has baked our merge too. CLAUDE.md states this directly — "one
+    successful push render at a merge SHA or any later main descendant covers
+    that merge through the workflow's dirty-scope union" — and without it a
+    session whose own run was superseded can never pass, however green main is.
+
+    Ancestry is decided locally (the caller has just fetched origin/main); a SHA
+    the local repo does not know is treated as not covering, never as covering.
+    """
+    payload = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?"
+        + urllib.parse.urlencode({"branch": "main", "status": "success", "per_page": "50"})
     )
+    for run in payload.get("workflow_runs", []):
+        sha = str(run.get("head_sha") or "")
+        if not sha or sha == merge_sha:
+            continue
+        try:
+            _run(root, "git", "merge-base", "--is-ancestor", merge_sha, sha)
+        except Exception:  # not a descendant, or the object is not local
+            continue
+        return True
+    return False
+
+
+def _render_status(root: Path, owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
+    """Whether a render has shipped ``merge_sha``: success | pending | failed.
+
+    Two deliberate widenings over "the push run at this sha must be green", both
+    of which this lane produces routinely and neither of which is a real gap:
+
+    * ANY trigger counts. A render checks out the merge commit and re-renders it
+      the same way whether a push, a schedule, or a workflow_dispatch started it —
+      the baked output is a function of the tree, not of the event. Filtering to
+      ``event=push`` mistook a superseded push run for a failure while the
+      dispatch run that actually baked and deployed the merge sat right beside it,
+      invisible. (Observed 2026-07-26, PR #3570: push run 30190971163 cancelled at
+      06:23Z, dispatch run 30191048616 SUCCESS at 06:26Z, change verified live.)
+    * A later main descendant counts — see :func:`_covering_render`.
+
+    A cancelled run is only reported as a failure once neither of those holds:
+    ``cancel-in-progress`` supersession is this lane's normal operation, not an
+    unsuccessful render, and the house rule is never to re-run one to unblock a
+    session.
+    """
+    query = urllib.parse.urlencode({"head_sha": merge_sha, "per_page": "20"})
     payload = _get_json(
         f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
     )
     runs = payload.get("workflow_runs", [])
+    if any(r.get("conclusion") == "success" for r in runs):
+        return "success", ""
+    if _covering_render(root, owner, repo, merge_sha):
+        return "success", ""
     if not runs:
         return "pending", "The required render workflow has not started yet."
+    if any(r.get("status") != "completed" for r in runs):
+        return "pending", "Render workflow is still running."
     run = max(runs, key=lambda item: item.get("created_at") or "")
-    if run.get("status") != "completed":
-        return "pending", f"Render workflow is {run.get('status') or 'pending'}."
-    if run.get("conclusion") != "success":
-        return "failed", f"Render workflow concluded {run.get('conclusion') or 'unknown'}."
-    return "success", ""
+    conclusion = run.get("conclusion") or "unknown"
+    if conclusion == "cancelled":
+        return "pending", (
+            "Every render at this merge was superseded by a newer push and no later "
+            "successful render covers it yet — wait for the lane, never re-run it."
+        )
+    return "failed", f"Render workflow concluded {conclusion}."
 
 
 def _find_commit(value: Any) -> str:
@@ -537,7 +591,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(owner, repo, merge_sha)
+            status, detail = _render_status(root, owner, repo, merge_sha)
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
