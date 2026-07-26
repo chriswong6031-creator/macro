@@ -277,12 +277,24 @@ class RegimeHistory:
 # regime cell. Nulls / thin cells → "untested" WITH n (never a fabricated rate).
 # --------------------------------------------------------------------------- #
 def _confirm_flags(from_hist: pd.Series, to_hist: pd.Series, lag_hi: int) -> pd.DataFrame:
-    """For every FROM-activation date, whether the TO-node fired within lag_hi CALENDAR days
+    """For every FROM-activation EVENT, whether the TO-node fired within lag_hi CALENDAR days
     (inclusive), plus the activation's own date (for the regime join). Returns a frame indexed
     by activation date with a bool ``confirmed`` column. A from-activation whose forward window
     extends past the end of the TO history is DROPPED (right-censored — we can't observe its
-    outcome), so p is never biased by unresolved-yet windows."""
-    from_dates = from_hist.index[from_hist.values.astype(bool)]
+    outcome), so p is never biased by unresolved-yet windows.
+
+    EPISODE COUNTING (not per-bar): an activation is the upstream node's rising edge
+    (False->True), NOT every bar the condition stays True. Upstream nodes are PERSISTENT
+    conditions (VIX>=25 for weeks; real-10y d63d>30bp; ret/rs level tests), so counting every
+    True bar would score one real event as dozens of activations — inflating n, defeating the
+    N_FLOOR sample-adequacy guard, and turning p into a run-length x lag-overlap artifact
+    instead of P(confirm | upstream EVENT) as TXI-R4 defines it. A rising edge requires a
+    preceding False bar, so this matches the nightly state machine's "arm once per arc, re-arm
+    only after a reset" semantics (engine/transmission_chains.py) — the miner's base rate and
+    the forward ledger now count the same episodes."""
+    fb = from_hist.astype(bool)
+    rising = fb & ~fb.shift(1, fill_value=False)
+    from_dates = from_hist.index[rising.values]
     if len(from_dates) == 0:
         return pd.DataFrame(columns=["confirmed"])
     to_true = to_hist[to_hist.values.astype(bool)]
