@@ -9,7 +9,7 @@ never re-derived: rank_ic, ic_summary, newey_west_tstat, incremental_ic, benjami
 Signal families, each reconstructed from what is actually on disk today:
 
   * fundflow         — per-name 主力 (超大+大单) net inflow rate (GATED Tushare moneyflow_dc), a
-                      CROSS-SECTIONAL signal validated like valuation off the weekly-grid history in
+                      CROSS-SECTIONAL signal validated like valuation off the accrued history in
                       data/tushare/flow_hist.parquet (collectors/tushare_history backfills it from
                       the paid history). sign_expected +1 (inflow → continuation). `accruing` when
                       the token / history is absent.
@@ -41,6 +41,36 @@ is only scored once the panel actually covers its forward end (mirrors china_rad
 Anything without enough reconstructable history degrades to status "accruing" (n_obs 0) — the
 conviction/hub LEDGERS (snapshot-forward) are the rigorous path that accrues from go-live.
 
+SAMPLING CADENCE — why N is not a row count (2026-07-25)
+-------------------------------------------------------
+The fundflow/chips stores were designed as a WEEKLY grid (collectors/tushare_history._GRID_WEEKS
+= 52) and this harness was written against that assumption. They are no longer weekly: `_grid_dates`
+is tail-anchored (``idx[-260:][::5]``), so its stride phase-shifts by one trading day per build and
+the append-only store accreted every phase. Measured 2026-07-25, flow_hist/chips_hist hold 273
+distinct dates from 2025-05-26 to 2026-07-20 — a median gap of 1 trading day, ~20 dates/month where
+a weekly grid would give ~4. forecast_hist (guidance) is event-keyed and likewise sub-weekly.
+
+Consequences, and what this module does about each:
+
+  * IC POINT ESTIMATES are unaffected. A cross-sectional rank-IC is invariant to any common
+    per-date additive offset, so the finer grid changes only how often the same forward window
+    is re-measured, not what it measures. Nothing here corrects them.
+  * SIGNIFICANCE was inflated. Cross-sections one trading day apart share (h-1)/h of their
+    forward window, so the per-date IC series is an MA(~h) process. The harness passed
+    ``periods_per_year=12`` to ic_summary, which truncates Newey-West at 6 lags — right for a
+    weekly grid at h<=21, but ~3x too few at daily h=21 and ~10x too few at h=63. Measured
+    inflation on the live store: 1.1x at h=21, and 1.73x at h=63 (fundflow t 3.075 -> 1.772,
+    crossing the |t|>=2 gate). Lags are now sized to the MEASURED cadence (`_hac_lags_for`).
+  * N was inflated ~5x. `n_obs` counted scored rows: 272 where the design intended ~52, against
+    a `_MIN_PROVEN_N` of 40 — a gate that could no longer bind on any grid this dense. The same
+    14 months hold 56 distinct weeks and, at the headline 21d horizon, only 13 non-overlapping
+    forward windows (4 at h=63). Promotion now gates on those honest counts; every horizon block
+    prints `n_weeks`, `n_indep`, `sampling_step_td`, `hac_lags` and `overlap_ratio` alongside `n`.
+
+The collector is deliberately left alone: the accreted daily panel is MORE data for the point
+estimates and costs nothing to keep — it was only the inference that was wrong. See the
+horizon-config comment in engine/flow_velocity.py (PR #3561) for the collector-side write-up.
+
 validate_all() writes data/china_validation/scorecard.json (schema china_validation.v1) and
 returns the same dict. Every public fn returns plain data / None and NEVER raises.
 """
@@ -58,8 +88,20 @@ log = logging.getLogger(__name__)
 SCHEMA = "china_validation.v1"
 BENCH = "510300.SS"                       # CSI 300 ETF — same bench as china_radar / its ledger
 FDR_ALPHA = 0.10
+# N gates are counted in DISTINCT WEEKS, not in scored rows. A row count is not a sample
+# size when the grid is sampled finer than the forward window: flow_hist/chips_hist accreted
+# to a ~daily cadence (see the module docstring), so the same ~14 months of history reports
+# 272 cross-sections where the weekly design intended ~52. Weeks are cadence-INVARIANT — a
+# genuine weekly grid still scores 1 per cross-section, so these thresholds keep their
+# original meaning ("~40 weekly cross-sections") while a daily grid stops inflating them.
 _MIN_PROVEN_N = 40                        # cross-sectional families (mirror hub_track_record._MIN_PROVEN_N)
 _MIN_PROVEN_N_TS = 25                     # pooled time-series families (looser, fewer obs)
+# Independent-evidence floor: non-overlapping forward windows at the headline horizon.
+# 8 mirrors newey_west_tstat's own n<8 refusal — a HAC t computed over fewer genuinely
+# disjoint windows than the primitive would accept observations is not evidence, however
+# many overlapping rows fed it. At h=63 over 14 months this is 4, which is why the 63d
+# cells must never carry a verdict (chips still reads |t| 2.61 there).
+_MIN_INDEP_WINDOWS = 8
 _TD_PER_YEAR = 252
 
 # (family -> expected SIGN of mean predictive IC / regression slope). A leg that validates
@@ -333,6 +375,85 @@ def _tier_for(t_hac, q_fdr, n_obs, proven) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# sampling-cadence forensics — how much INDEPENDENT evidence is really here
+#
+# Every count below answers a question a raw row count cannot. A scored grid whose step is
+# finer than the forward horizon repeats the same forward window over and over: the IC point
+# estimate is unaffected (a common per-date offset cancels out of a cross-sectional rank
+# correlation), but the row count, the HAC lag and therefore the t-stat all become fiction.
+# --------------------------------------------------------------------------- #
+def _cal_positions(dates, calendar):
+    """Positions of `dates` on the trading calendar (sorted, de-duped, misses dropped).
+    Trading-day positions — NOT calendar days — so weekends/holidays never masquerade as
+    sampling gaps. Empty list when the calendar can't resolve them."""
+    try:
+        import pandas as pd
+        idx = pd.Index(calendar)
+        pos = idx.get_indexer(pd.DatetimeIndex(sorted(set(dates))))
+        return sorted(int(p) for p in pos if p >= 0)
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_validation._cal_positions failed (%s)", e)
+        return []
+
+
+def _sampling_step(pos) -> float:
+    """Median gap between consecutive scored dates, in TRADING DAYS. 1.0 = a daily grid,
+    ~5.0 = the weekly grid this harness was originally written for."""
+    try:
+        if len(pos) < 2:
+            return 1.0        # cadence unknowable → assume the densest grid (most HAC lags)
+        import numpy as np
+        return max(1.0, float(np.median(np.diff(pos))))
+    except Exception:  # noqa: BLE001
+        return 1.0            # fail CONSERVATIVE: a short step buys more lags, never fewer
+
+
+def _hac_lags_for(horizon: int, step: float) -> int:
+    """Newey-West truncation lag in SAMPLING STEPS for a `horizon`-day forward window.
+
+    Consecutive scored dates share (horizon − step) days of their forward window, so the IC
+    series is an MA process of order ~horizon/step and the Bartlett kernel must span it.
+    Under the weekly design (step 5, h 21) this returns 5 — near the hard-coded 6 the harness
+    used to pass, which is why the constant looked right. Under a daily grid the same h=21
+    needs 21, and 6 understates the long-run variance by ~3x (t inflated ~1.8x at h=63)."""
+    import math
+    return max(1, int(math.ceil(float(horizon) / max(float(step), 1.0))))
+
+
+def _disjoint_windows(pos, horizon: int) -> int:
+    """Count of NON-OVERLAPPING forward windows among the scored dates — the honest
+    independent-observation count. Greedy left-to-right: take a date, skip everything whose
+    forward window still overlaps it, repeat. This is what `n` would have been had the grid
+    been sampled at the horizon instead of below it."""
+    try:
+        h = max(1, int(horizon))
+        n, end = 0, None
+        for p in sorted(pos):
+            if end is None or p >= end:
+                n += 1
+                end = p + h
+        return n
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def _distinct_weeks(dates) -> int:
+    """Distinct ISO weeks covered by the scored dates — the cadence-INVARIANT restatement of
+    the design's '52 weekly cross-sections' unit. A weekly grid scores 1 per cross-section
+    (unchanged bar); a daily grid over the same span scores the same ~52 rather than ~260."""
+    try:
+        import pandas as pd
+        d = pd.DatetimeIndex(sorted(set(dates)))
+        if len(d) == 0:
+            return 0
+        iso = d.isocalendar()
+        return int(len({(int(y), int(w)) for y, w in zip(iso.year, iso.week)}))
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_validation._distinct_weeks failed (%s)", e)
+        return 0
+
+
+# --------------------------------------------------------------------------- #
 # per-family validators  (call engine.validation primitives VERBATIM)
 # --------------------------------------------------------------------------- #
 def _hist_cross_sections(name: str, col: str, date_col: str = "date") -> dict:
@@ -361,7 +482,13 @@ def _validate_xs(V, family, xs, panel, bench, horizons, neutralize: bool = True)
     """Generic CROSS-SECTIONAL forward-return rank-IC over a {asof: Series(ticker->signal)} grid,
     vs each name's forward CSI-300-relative return, with an optional incremental-IC neutralization
     against {momentum_252, reversal_21, size}. Leak-guarded (a date is scored only once its forward
-    end is realized in the panel). Shared by valuation / fundflow / chips."""
+    end is realized in the panel). Shared by valuation / fundflow / chips / guidance.
+
+    OVERLAP-AWARE. The grid's cadence is MEASURED per horizon rather than assumed, because the
+    stores it reads no longer sample weekly (module docstring). Two corrections follow from it:
+    the HAC truncation lag is sized to the real overlap (`_hac_lags_for`), and the promotion gate
+    counts distinct weeks + non-overlapping forward windows instead of scored rows. The IC point
+    estimates are untouched — only the claim of confidence in them changes."""
     try:
         if not xs:
             return _accruing(family, f"{family} history empty")
@@ -375,7 +502,7 @@ def _validate_xs(V, family, xs, panel, bench, horizons, neutralize: bool = True)
             if rel is None or covered is None:
                 continue
             sig_by_date, fwd_by_date, load_by_date = {}, {}, {}
-            ics = []
+            ics, scored = [], []
             for asof, sig in xs.items():
                 if asof > covered:
                     continue                             # leak guard: forward end not realized
@@ -387,20 +514,32 @@ def _validate_xs(V, family, xs, panel, bench, horizons, neutralize: bool = True)
                 if len(row) < 10:
                     continue
                 ics.append(V.rank_ic(sig, row))
+                scored.append(idx[0])                    # the PANEL row actually scored
                 sig_by_date[asof] = sig
                 fwd_by_date[asof] = row
                 if neutralize:
                     load = _factor_loadings(panel, idx[0])
                     if load is not None and len(load):
                         load_by_date[asof] = load
-            summ = V.ic_summary(ics, periods_per_year=12)
+            # measured cadence → honest lag + honest N (never assumed weekly)
+            pos = _cal_positions(scored, panel.index)
+            step = _sampling_step(pos)
+            lags = _hac_lags_for(h, step)
+            n_indep = _disjoint_windows(pos, h)
+            n_weeks = _distinct_weeks(scored)
+            summ = V.ic_summary(ics, periods_per_year=12, hac_lags=lags)
             n = summ.get("n", 0)
             max_n = max(max_n, n)
             block = {"mean_ic": summ.get("mean_ic"), "ic_ir": summ.get("ic_ir"),
                      "t_hac": summ.get("t_hac"), "p_hac": summ.get("p_hac"),
-                     "hit": summ.get("hit"), "n": n}
+                     "hit": summ.get("hit"), "n": n,
+                     # honest N — printed for EVERY horizon, gate or no gate
+                     "n_weeks": n_weeks, "n_indep": n_indep,
+                     "sampling_step_td": round(step, 2), "hac_lags": lags,
+                     "overlap_ratio": round(max(1.0, h / max(step, 1.0)), 2)}
             if neutralize and len(load_by_date) >= 6:
-                inc = V.incremental_ic(sig_by_date, fwd_by_date, load_by_date, periods_per_year=12)
+                inc = V.incremental_ic(sig_by_date, fwd_by_date, load_by_date,
+                                       periods_per_year=12, hac_lags=lags)
                 block["incremental"] = {"surviving_frac": inc.get("surviving_frac"),
                                         "ic_delta": inc.get("ic_delta")}
             by_h[str(h)] = block
@@ -415,7 +554,13 @@ def _validate_xs(V, family, xs, panel, bench, horizons, neutralize: bool = True)
 def _validate_timer(V, family, sig, panel, bench, horizons) -> dict:
     """Market-wide TIMER validation: regress signed forward CSI-300 return on the (lagged)
     signal level; pooled Newey-West HAC t on signal·fwd_return product per horizon. Sign of
-    the mean product is the predictive sign. Leak-safe (forward stamped on signal date)."""
+    the mean product is the predictive sign. Leak-safe (forward stamped on signal date).
+
+    The HAC lag here was already horizon-aware (`lags = h - 1` on a daily series), so the
+    t-stats are sound. The N was not: these series are daily, so a 21-day horizon reports
+    ~3400 overlapping obs against a 25-obs gate. config/qual_ladder.yml already specifies
+    "n_dates >= 25 (not overlapping obs)" for the news_sentiment family — this counts weeks
+    and non-overlapping windows so the code honours the contract the ladder already wrote."""
     try:
         if sig is None:
             return _accruing(family, "signal series missing")
@@ -438,9 +583,14 @@ def _validate_timer(V, family, sig, panel, bench, horizons) -> dict:
             n = nw.get("n", 0)
             max_n = max(max_n, n)
             mean = nw.get("mean")
+            # the timer's own index IS its calendar — positions are just 0..len-1
+            pos = list(range(len(j.index)))
             by_h[str(h)] = {"mean_ic": mean, "ic_ir": None,
                             "t_hac": nw.get("t"), "p_hac": nw.get("p"),
-                            "hit": None, "n": n}
+                            "hit": None, "n": n,
+                            "n_weeks": _distinct_weeks(j.index),
+                            "n_indep": _disjoint_windows(pos, h),
+                            "hac_lags": max(1, h - 1)}
         if not by_h or max_n < 8:
             return _accruing(family, f"only {max_n} obs")
         return _finalize(family, by_h, max_n, _MIN_PROVEN_N_TS)
@@ -450,20 +600,39 @@ def _validate_timer(V, family, sig, panel, bench, horizons) -> dict:
 
 
 def _finalize(family, by_h, n_obs, min_proven) -> dict:
-    """Pick the headline horizon (prefer 21d), compute PROVEN gate + computed tier."""
+    """Pick the headline horizon (prefer 21d), compute PROVEN gate + computed tier.
+
+    The PROMOTION gate is counted in independent evidence, not in rows. `n_obs` stays the raw
+    scored-row count — china_signal_lab's wrong-sign DEMOTION path reads it, and demotion is
+    deliberately the easier burden (a misleading leg should stay easy to zero) — but `proven`
+    now requires `n_weeks >= min_proven` AND `n_indep >= _MIN_INDEP_WINDOWS` at the headline
+    horizon. Both honest counts ride along in the family block so the row/evidence gap is
+    legible wherever the scorecard is read."""
     sign_expected = _SIGN_EXPECTED.get(family)
     head = by_h.get("21") or next(iter(by_h.values()))
     t_hac = head.get("t_hac")
     mean_ic = head.get("mean_ic")
+    n_weeks = int(head.get("n_weeks") or 0)
+    n_indep = int(head.get("n_indep") or 0)
     sign_ok = (mean_ic is not None and sign_expected is not None
                and (mean_ic > 0) == (sign_expected > 0))
-    proven = bool(n_obs >= min_proven and t_hac is not None and abs(t_hac) >= 2.0 and sign_ok)
+    enough = n_weeks >= min_proven and n_indep >= _MIN_INDEP_WINDOWS
+    proven = bool(enough and t_hac is not None and abs(t_hac) >= 2.0 and sign_ok)
     tier = _tier_for(t_hac, head.get("p_hac"), n_obs, proven)
     status = "scored" if proven else ("validated" if tier == "confirmer" else "tested")
-    return {"family": family, "status": status, "tier": tier, "proven": proven,
-            "n_obs": int(n_obs), "by_horizon": by_h, "sign_expected": sign_expected,
-            "sign_ok": sign_ok, "t_hac": t_hac, "mean_ic": mean_ic,
-            "is_context_only": True}
+    out = {"family": family, "status": status, "tier": tier, "proven": proven,
+           "n_obs": int(n_obs), "n_weeks": n_weeks, "n_indep": n_indep,
+           "by_horizon": by_h, "sign_expected": sign_expected,
+           "sign_ok": sign_ok, "t_hac": t_hac, "mean_ic": mean_ic,
+           "is_context_only": True}
+    if not enough:
+        # say WHICH honest count is short — never let a blocked promotion read as a weak signal.
+        # Quote the HEADLINE horizon's own row count (n_obs is a max across horizons, so pairing
+        # it with headline-horizon weeks/windows would compare two different populations).
+        out["n_gate"] = (f"{n_weeks}/{min_proven} distinct weeks, "
+                         f"{n_indep}/{_MIN_INDEP_WINDOWS} non-overlapping windows "
+                         f"(from {int(head.get('n') or 0)} overlapping rows)")
+    return out
 
 
 # --------------------------------------------------------------------------- #
