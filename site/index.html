@@ -57,11 +57,29 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Mastermind","url":"https://www.mastermind-x.com/","logo":"https://www.mastermind-x.com/apple-touch-icon.png"},{"@type":"WebSite","name":"Mastermind","url":"https://www.mastermind-x.com/","inLanguage":["en","zh"]}]}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;100,900;125,600;125,700;125,800;125,900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="onboard.css?v=bfd44ba9">
+<!-- Both display faces are self-hosted: fonts.googleapis.com is blocked in mainland
+     China, so the CDN <link> that used to sit here delivered NOTHING to Chinese
+     visitors and every Archivo headline fell back to system sans, silently. Archivo
+     is declared in onboard.css (see the note there — it must also reach the sheet
+     when it is injected onto pages that have no landing CSS); Inter is declared
+     below, because this page is the one page on the site that does not link
+     theme.css and so would otherwise lose its body face along with the CDN. -->
+<link rel="preload" href="fonts/Archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="onboard.css?v=a9c0bc38">
 <style>
+/* Self-hosted Inter, byte-identical to the six blocks at the top of
+   templates/theme.css (the same set templates/_interfonts.html.j2 carries for
+   standalone pages). This page defines its own tokens inline and never links
+   theme.css, so it is exactly the "standalone page" case that partial exists
+   for — it just cannot {% include %} it, being plain HTML rather than a .j2.
+   The CDN URL these replace also asked for wght 450, which no rule on this page
+   or in onboard.css ever used. */
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 /* ============================================================
    MASTERMIND LANDING — "The Neural Cover"
    Cover: live scorecards dealt across the porcelain, strings

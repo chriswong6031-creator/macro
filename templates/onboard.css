@@ -59,6 +59,28 @@
    cascade (the sheet is lazy-injected onto macro pages that have no landing CSS). */
 :root{--fig:'Newsreader',ui-serif,Georgia,'Times New Roman',serif}
 
+/* Archivo — the display face for BOTH the landing and this sheet, self-hosted for
+   the same reason theme.css self-hosts Inter: fonts.googleapis.com is blocked in
+   mainland China, so the old CDN <link> silently delivered nothing there and every
+   .display / .sec-title / .feat-title / .cov-copy h1 / .tier h3 / .kicker / .brand
+   fell back to system sans with no error anywhere.
+
+   It lives HERE, not in index.html, because the sheet is lazy-injected onto macro
+   pages that carry none of the landing's CSS (theme.js _mmOpenOnboard -> onboard.js
+   ensureAssets): declaring it in the stylesheet makes the url() resolve relative to
+   THIS file, which is correct at any page depth, and means neither file depends on
+   the other's cascade.
+
+   ONE variable file serves both widths. The wdth axis is load-bearing — the CSS
+   drives it with font-stretch:125% on 21 display rules — and wght must stay live
+   too, because the sheet asks for the interpolated 650. Static instances would
+   break both. Axes are clipped to the ranges actually used (wght 400-900, wdth
+   100-125) and the glyphs subset to latin; unicode-range mirrors that subset so
+   CJK and anything else outside it falls through to the stack instead of tofu.
+   57KB. Regeneration commands: mockups/refs/landing_archivo_wdth/README.md.
+   Archivo is SIL Open Font License 1.1 (Omnibus-Type). */
+@font-face{font-family:'Archivo';font-style:normal;font-weight:400 900;font-stretch:100% 125%;font-display:swap;src:url("fonts/Archivo-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+
 /* Self-carried control reset. The sheet was authored against the LANDING, which
    resets `button{font:inherit;color:inherit;background:none;border:0;padding:0}`
    globally — macro pages (theme.css) do not, so every unstyled button in here
