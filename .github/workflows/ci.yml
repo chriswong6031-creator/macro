@@ -367,6 +367,15 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # Whole-board 涨跌家数: the heatmap card quotes a ~5,200-name count, and the
+      # engine gates the row against the map's own session. Both suites were
+      # previously named by NO job (#1253 wiring law) — test_market_heatmap.py
+      # included — so a regression in either would merge green.
+      - "collectors/china_board_breadth.py"
+      - "tests/test_china_board_breadth.py"
+      - "engine/market_heatmap.py"
+      - "scripts/build_market_heatmap.py"
+      - "tests/test_market_heatmap.py"
       # LHB-W3 winner-autopsy B-family feature columns: engine + builder + test re-run together.
       - "tests/test_winner_autopsy.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
@@ -1052,6 +1061,260 @@ on:
       # (templates/** and lib/** already trigger above.)
       - "scripts/build_options_command.py"
       - "tests/test_build_options_command.py"
+      # ── UNRUN-SUITE CENSUS (2026-07-26) ──────────────────────────────────────
+      # 1135 of 1491 tests/test_*.py suites were named by NO `run:` step in ANY of
+      # the 51 workflows, and there is no broad `pytest tests/` anywhere — every
+      # invocation carries an explicit file list, so an unnamed suite is genuinely
+      # never executed.  #3595 fixed a six-suite instance of this hole; the block
+      # below closes the STRICTLY DARK subset: suites where neither the test file
+      # nor the module under test was matched by any pattern here, so no possible
+      # edit could even START ci.yml.  Both halves are listed on purpose — wiring
+      # a suite into a job while leaving its subject untriggerable rebuilds the
+      # #3488 shape ("a guard the guarded change cannot trigger is not a guard").
+      # Ranked by blast radius: everything reachable from the nightly/render
+      # pipelines first (build_vector, grade_us_board, oracle_nightly, the R2
+      # transport), since a silent break there moves shipped numbers with no
+      # signal at all.  Suites run in the unrun-* jobs below.
+      # unrun-vector-dsr — BTC vector allocation + the DSR trial budget that haircuts it
+      - "tests/test_btc_vector_w1.py"
+      - "tests/test_deflated_sharpe.py"
+      - "tests/test_settled_close_tape.py"
+      - "tests/test_vector_catalyst.py"
+      - "tests/test_vector_forward_risk.py"
+      - "tests/test_vector_kelly.py"
+      - "tests/test_vector_timeline_gated.py"
+      - "scripts/build_basket_pulse.py"
+      - "scripts/build_vector.py"
+      - "scripts/calibrate_vector.py"
+      # unrun-oracle-desk — oracle nightly + its gauntlet promotion gates
+      - "tests/test_oracle_asymmetry_intraday.py"
+      - "tests/test_oracle_gauntlet.py"
+      - "tests/test_oracle_gauntlet_p3b.py"
+      - "tests/test_oracle_gauntlet_p8.py"
+      - "tests/test_oracle_nightly.py"
+      - "tests/test_oracle_onset_quality_w1.py"
+      - "tests/test_oracle_single_regime_gate.py"
+      - "tests/test_oracle_tape.py"
+      - "tests/test_oracle_turn_desk.py"
+      - "scripts/oracle_asymmetry_intraday.py"
+      - "scripts/oracle_gauntlet_p3.py"
+      - "scripts/oracle_gauntlet_p8.py"
+      - "scripts/oracle_nightly.py"
+      - "scripts/oracle_onset_quality_w1.py"
+      - "scripts/oracle_reversion_screen.py"
+      - "scripts/oracle_review_inbox.py"
+      - "scripts/oracle_tape.py"
+      # unrun-grading-board — US board grading — the shipped verdict ledgers and their tenure stamps
+      - "tests/test_board_tenure_stamp.py"
+      - "tests/test_claim_accountability.py"
+      - "tests/test_onboard_compare_matrix.py"
+      - "tests/test_track_record_dlg.py"
+      - "tests/test_us_board_outcomes.py"
+      - "tests/test_us_board_outcomes_strip.py"
+      - "scripts/audit_claim_accountability.py"
+      - "scripts/grade_us_board.py"
+      # unrun-intl-libraries — China / HK / Canada library writers behind the international surfaces
+      - "tests/test_backfill_china_communiques.py"
+      - "tests/test_baskets_china_intel.py"
+      - "tests/test_canada_branch_b.py"
+      - "tests/test_china_analogs.py"
+      - "tests/test_china_fx_context_render.py"
+      - "tests/test_china_stf_facets.py"
+      - "tests/test_hk_closes_fallback.py"
+      - "tests/test_stock_library_manifests.py"
+      - "tests/test_stocktable_hk_data.py"
+      - "tests/test_w0_5_10_8.py"
+      - "scripts/backfill_china_communiques.py"
+      - "scripts/build_baskets_china.py"
+      - "scripts/build_canada_library.py"
+      - "scripts/build_china_analogs.py"
+      - "scripts/build_china_library.py"
+      - "scripts/build_hk_library.py"
+      # unrun-data-plane — R2 transport, accrual audits and the ledger-advance guards
+      - "tests/test_audit_options_accrual.py"
+      - "tests/test_audit_r2.py"
+      - "tests/test_audit_thetadata_accrual.py"
+      - "tests/test_build_polygon_universe.py"
+      - "tests/test_builder_failstreaks.py"
+      - "tests/test_check_ledger_advance.py"
+      - "tests/test_check_surface_freshness.py"
+      - "tests/test_fetch_dead_name_prices_polygon.py"
+      - "tests/test_fetch_r2.py"
+      - "tests/test_finviz_archival.py"
+      - "tests/test_notify_turn_events.py"
+      - "tests/test_polygon_intraday.py"
+      - "tests/test_thetadata_tape_sessions.py"
+      - "scripts/audit_options_accrual.py"
+      - "scripts/audit_r2.py"
+      - "scripts/audit_thetadata_accrual.py"
+      - "scripts/build_polygon_intraday.py"
+      - "scripts/build_polygon_universe.py"
+      - "scripts/calibrate_thetadata_tape_sessions.py"
+      - "scripts/check_builder_failstreaks.py"
+      - "scripts/check_ledger_advance.py"
+      - "scripts/check_surface_freshness.py"
+      - "scripts/fetch_finviz_themes.py"
+      - "scripts/fetch_r2.py"
+      - "scripts/notify_turn_events.py"
+      - "scripts/research/fetch_dead_name_prices_polygon.py"
+      # unrun-factor-research — factor registry + measurement disclosure + the study lanes behind them
+      - "tests/test_a2_oos_analysis.py"
+      - "tests/test_build_measurement_evidence_gap.py"
+      - "tests/test_construction_divergence_study.py"
+      - "tests/test_expect_drift_panel.py"
+      - "tests/test_f_hz1_study.py"
+      - "tests/test_factor_intelligence_state.py"
+      - "tests/test_falsosc_trial_v1.py"
+      - "tests/test_grade_breadth_divergence.py"
+      - "tests/test_intraday_large_cap_tech_leader_study.py"
+      - "tests/test_long_hold_gap_guard.py"
+      - "tests/test_macro_fire_context.py"
+      - "tests/test_no_lookahead.py"
+      - "tests/test_options_history_gauntlet.py"
+      - "tests/test_per_fire_sector_benchmark.py"
+      - "tests/test_register_factor_hypotheses.py"
+      - "tests/test_run_w1_sev.py"
+      - "tests/test_run_w2_slq.py"
+      - "tests/test_thesis_funnel_history.py"
+      - "tests/test_w3_fingerprint_stats.py"
+      - "scripts/build_factor_intelligence_state.py"
+      - "scripts/build_measurement.py"
+      - "scripts/grade_breadth_divergence.py"
+      - "scripts/register_factor_hypotheses.py"
+      - "scripts/research/a2_oos_analysis.py"
+      - "scripts/research/build_expect_drift_panel.py"
+      - "scripts/research/build_macro_fire_context.py"
+      - "scripts/research/build_per_fire_sector_benchmark.py"
+      - "scripts/research/build_thesis_funnel_history.py"
+      - "scripts/research/build_thesis_funnel_snapshot.py"
+      - "scripts/research/f_hz1_study.py"
+      - "scripts/research/intraday_large_cap_tech_leader_study.py"
+      - "scripts/research/long_hold_label_panel.py"
+      - "scripts/research/options_history_gauntlet.py"
+      - "scripts/research/run_w1_sev.py"
+      - "scripts/research/run_w2_slq.py"
+      - "scripts/research/run_w3_census_fingerprints.py"
+      - "scripts/run_falsosc_trial_v1.py"
+      - "scripts/study_construction_divergence.py"
+      # unrun-serving-admin — admin control surfaces + the brain/tape serving edges
+      - "tests/test_admin_config_store.py"
+      - "tests/test_admin_flags.py"
+      - "tests/test_admin_health.py"
+      - "tests/test_brain_sse_keepalive.py"
+      - "tests/test_tape_decode.py"
+      - "admin/config_store.py"
+      - "admin/flags.py"
+      - "admin/health.py"
+      - "app/brain_runs.py"
+      - "app/tape_decode.py"
+      # unrun-builders-render — page/render builders whose output ships to the site
+      - "tests/test_ai_desk_page.py"
+      - "tests/test_build_chart_data.py"
+      - "tests/test_build_odds_observability.py"
+      - "tests/test_build_sector_map.py"
+      - "tests/test_committee_template.py"
+      - "tests/test_confluence_screener_page.py"
+      - "tests/test_contagion_card_render.py"
+      - "tests/test_flow_leaders_render_markers.py"
+      - "tests/test_macro_signals_render.py"
+      - "tests/test_movers_page.py"
+      - "tests/test_nav_submenu_icons.py"
+      - "tests/test_sector_nav_links.py"
+      - "tests/test_site_semantics_refs.py"
+      - "tests/test_sp500_heatmap_caps.py"
+      - "tests/test_stage_analysis_page.py"
+      - "tests/test_stocktable_data.py"
+      - "tests/test_template_items_footgun.py"
+      - "tests/test_trading_journal_xlsx.py"
+      - "tests/test_us_stocks_w8g_table.py"
+      - "scripts/build_ai_desk_page.py"
+      - "scripts/build_chart_data.py"
+      - "scripts/build_confluence_screener.py"
+      - "scripts/build_movers_page.py"
+      - "scripts/build_odds.py"
+      - "scripts/build_sector_map.py"
+      - "scripts/build_sp500_heatmap.py"
+      - "scripts/build_stage_analysis_page.py"
+      # unrun-builders-stores — store/ops builders behind the nightly data lanes
+      - "tests/test_append_sync_gauge.py"
+      - "tests/test_audit_fred_groups.py"
+      - "tests/test_audit_massive_store.py"
+      - "tests/test_build_adjudication_packet.py"
+      - "tests/test_build_demand.py"
+      - "tests/test_build_ext_quotes.py"
+      - "tests/test_build_live_overlay.py"
+      - "tests/test_build_m2_profiles.py"
+      - "tests/test_build_unusual_baseline.py"
+      - "tests/test_calibrate_flow_signing_append.py"
+      - "tests/test_calibrate_stage.py"
+      - "tests/test_cctv_finalize_watcher.py"
+      - "tests/test_collect_lane_gate.py"
+      - "tests/test_context_candidates.py"
+      - "tests/test_context_index_eval.py"
+      - "tests/test_deploy_update_self_heal.py"
+      - "tests/test_ei_f1d_shadow.py"
+      - "tests/test_exit_tax_scenarios.py"
+      - "tests/test_expanding_mean_benchmark.py"
+      - "tests/test_fetch_basket_ohlcv.py"
+      - "tests/test_finra_short_interest_pit.py"
+      - "tests/test_flow_score_stock_block.py"
+      - "tests/test_gex_history_snapshot.py"
+      - "tests/test_grade_policy_calendar.py"
+      - "tests/test_import_equitydesk.py"
+      - "tests/test_import_equitydesk_backfill.py"
+      - "tests/test_index_add_overnight.py"
+      - "tests/test_manifest_seams.py"
+      - "tests/test_mri_config_spine.py"
+      - "tests/test_narrative_ttl.py"
+      - "tests/test_net_replay_v1.py"
+      - "tests/test_options_tape_signed.py"
+      - "tests/test_quotes_server.py"
+      - "tests/test_reconcile_membership.py"
+      - "tests/test_refresh_markets_now.py"
+      - "tests/test_release_playbook.py"
+      - "tests/test_sf_harness_runner.py"
+      - "tests/test_slf031.py"
+      - "tests/test_slf051_cn_margin.py"
+      - "tests/test_tech_lab_cli.py"
+      - "tests/test_tech_parity_fixtures.py"
+      - "tests/test_vps_live_orchestration.py"
+      - "scripts/_narrative_ttl.py"
+      - "scripts/analyze_index_add_overnight.py"
+      - "scripts/append_sync_gauge.py"
+      - "scripts/audit_common.py"
+      - "scripts/audit_fred_groups.py"
+      - "scripts/audit_massive_store.py"
+      - "scripts/build_adjudication_packet.py"
+      - "scripts/build_context_candidates.py"
+      - "scripts/build_demand.py"
+      - "scripts/build_ext_quotes.py"
+      - "scripts/build_live_overlay.py"
+      - "scripts/build_m2_profiles.py"
+      - "scripts/build_masterminds.py"
+      - "scripts/build_narrative_tolerance_report.py"
+      - "scripts/build_options_hub_nightly.py"
+      - "scripts/build_tech_parity_fixtures.py"
+      - "scripts/build_unusual_baseline.py"
+      - "scripts/calibrate_flow_signing.py"
+      - "scripts/calibrate_stage_vs_equitydesk.py"
+      - "scripts/cctv_finalize_watcher.py"
+      - "scripts/check_vps_live_health.py"
+      - "scripts/context_index_eval.py"
+      - "scripts/ei_shadow_review.py"
+      - "scripts/fetch_basket_ohlcv.py"
+      - "scripts/grade_policy_calendar.py"
+      - "scripts/import_equitydesk_backfill.py"
+      - "scripts/import_equitydesk_full.py"
+      - "scripts/migrate_narrative_ttl.py"
+      - "scripts/options_tape_signed_pilot.py"
+      - "scripts/quotes_server.py"
+      - "scripts/reconcile_membership.py"
+      - "scripts/refresh_markets_now.py"
+      - "scripts/run_signal_foundry_harness.py"
+      - "scripts/slf031_edgar_pilot.py"
+      - "scripts/tech_lab_cli.py"
+      - "scripts/vps_live_orchestrator.py"
+      - "scripts/watch_release_publications.py"
       # Free acquisition estate (2026-07-26): the builder, its content sources and
       # its templates had NO workflow at all — `--check` and test_free_content.py
       # were manual-only, so the estate rotted 52 pages behind seo_base.html.j2
@@ -1412,13 +1675,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2 is deliberately NOT installed here, and the omission is
+      # load-bearing. The M8 links.site derivation resolves slugs through
+      # engine.research_vault.slugs, which engine/chronicle/adapters.py imports
+      # FAIL-SOFT — so while that derivation still lived in the page renderer
+      # (jinja2 at module scope), every vault event silently shipped
+      # links.site=None in exactly this venv while passing on any dev box that
+      # had jinja2. This line used to install jinja2 to make that red go away,
+      # but #3648 and #3669 fixed the ROOT: jinja2 moved off module scope and the
+      # slug derivation moved to a stdlib-only engine module. Keeping the lane
+      # minimal is now strictly stronger — it exercises the no-template-engine
+      # path for real on every run, so a regression that drags a renderer back
+      # into the adapter's import closure goes red HERE instead of hiding behind
+      # an installed package. The invariant is separately pinned by
+      # test_vault_site_link_survives_a_minimal_dependency_set, which blocks the
+      # jinja2 import explicitly and so holds whatever this lane installs.
+      # Verified: tests/test_chronicle.py is 61/61 green with these deps alone.
       - name: install minimal deps
-        # jinja2 is REQUIRED here: the M8 links.site derivation imports
-        # scripts/build_research_pages (jinja2 at module level); without it the
-        # rebuild fail-softs to link-less events and both the links test and the
-        # byte-reproducibility gate go red in exactly this venv while staying
-        # green in any full env (diagnosed 2026-07-26).
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: chronicle engine tests
         run: python -m pytest tests/test_chronicle.py -q
 
@@ -1712,6 +1986,26 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
+
+  china-board-breadth:
+    if: ${{ false }}
+    # Whole-board 沪深 涨跌家数 (~5,200 names) behind the A-share heatmap's breadth
+    # card. WIRING LAW (#1253 precedent): tests/test_market_heatmap.py was named by
+    # NO job before this — the CN/HK/CA map contract merged untested for its whole
+    # life. Both suites are offline (canned Sina/Tushare payloads, synthetic closes).
+    # numpy is required: engine.market_heatmap imports engine.sp500_heatmap for the
+    # shared timeframe contract, and that module imports numpy at module scope — a
+    # minimal lane without it fails at collection, not at assert.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow requests pyyaml
+      - name: whole-board breadth collector + heatmap payload contract
+        run: python -m pytest tests/test_china_board_breadth.py tests/test_market_heatmap.py -q
 
   cycle-consistency:
     if: ${{ false }}
@@ -3654,6 +3948,192 @@ jobs:
         run: pip install pytest fastapi httpx pyyaml
       - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
         run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py -q
+
+  # ── UNRUN-SUITE CENSUS JOBS (2026-07-26) ───────────────────────────────────
+  # Nine lanes covering the 130 strictly-dark suites that no workflow ran.  All
+  # nine declare a byte-identical dependency install so run_ci_pack.py builds ONE
+  # shared venv for the whole set instead of one per job.  Measured locally in a
+  # clean venv with exactly this install: 130 suites / 2420 tests / 70s batched.
+  # Two suites from the census are deliberately NOT wired here because they are
+  # RED on main and the fix is a product decision, not test rot: the two FTR
+  # template-markup suites assert markers ("Strategic horizon", "ftr-dtp-full")
+  # that exist nowhere in templates/ or site/ any more.  Deciding whether the
+  # feature or the assertion is wrong is a product call — see the PR body.
+  # Their filenames are deliberately NOT spelled out here: the census that found
+  # this hole tests `name in workflow_text`, so naming a suite in a comment makes
+  # it look covered.  Never reference an unwired suite by filename in this file.
+
+  unrun-vector-dsr:
+    # BTC vector allocation + the DSR trial budget that haircuts it.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: vector page organs — catalyst, forward-risk, Kelly, gated timeline
+        run: python -m pytest tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py -q
+      - name: DSR / override-registry trial budget (dof charged must equal dof declared)
+        run: python -m pytest tests/test_btc_vector_w1.py tests/test_deflated_sharpe.py -q
+      - name: settled-close tape — the basket pulse the closing-bell lane publishes
+        run: python -m pytest tests/test_settled_close_tape.py -q
+
+  unrun-oracle-desk:
+    # oracle nightly + its gauntlet promotion gates.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: oracle nightly writer + turn desk
+        run: python -m pytest tests/test_oracle_nightly.py tests/test_oracle_turn_desk.py tests/test_oracle_tape.py -q
+      - name: oracle gauntlet phases + onset quality + regime gate + intraday asymmetry
+        run: python -m pytest tests/test_oracle_gauntlet.py tests/test_oracle_gauntlet_p3b.py tests/test_oracle_gauntlet_p8.py tests/test_oracle_onset_quality_w1.py tests/test_oracle_single_regime_gate.py tests/test_oracle_asymmetry_intraday.py -q
+
+  unrun-grading-board:
+    # US board grading — the shipped verdict ledgers and their tenure stamps.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: grade_us_board outcome ledgers + tenure stamp + the strip it renders
+        run: python -m pytest tests/test_board_tenure_stamp.py tests/test_us_board_outcomes.py tests/test_us_board_outcomes_strip.py -q
+      - name: claim accountability + track-record dialog + onboarding compare matrix
+        run: python -m pytest tests/test_claim_accountability.py tests/test_track_record_dlg.py tests/test_onboard_compare_matrix.py -q
+
+  unrun-intl-libraries:
+    # China / HK / Canada library writers behind the international surfaces.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: china + hk + canada library builders and their manifests
+        run: python -m pytest tests/test_w0_5_10_8.py tests/test_hk_closes_fallback.py tests/test_canada_branch_b.py tests/test_stock_library_manifests.py tests/test_stocktable_hk_data.py -q
+      - name: china intel/analog/facet organs + fx context render
+        run: python -m pytest tests/test_baskets_china_intel.py tests/test_china_analogs.py tests/test_china_stf_facets.py tests/test_china_fx_context_render.py tests/test_backfill_china_communiques.py -q
+
+  unrun-data-plane:
+    # R2 transport, accrual audits and the ledger-advance guards.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: R2 fetch/audit + accrual audits + surface freshness
+        run: python -m pytest tests/test_fetch_r2.py tests/test_audit_r2.py tests/test_audit_options_accrual.py tests/test_audit_thetadata_accrual.py tests/test_check_surface_freshness.py -q
+      - name: ledger-advance + builder failstreaks + turn-event notifier
+        run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py -q
+      - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
+        run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+
+  unrun-factor-research:
+    # factor registry + measurement disclosure + the study lanes behind them.
+    if: ${{ false }}
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: factor hypothesis registry + intelligence state + measurement evidence gap
+        run: python -m pytest tests/test_register_factor_hypotheses.py tests/test_factor_intelligence_state.py tests/test_build_measurement_evidence_gap.py -q
+      - name: look-ahead tripwire over engine/ + collectors/ (feature-leak guard)
+        run: python -m pytest tests/test_no_lookahead.py -q
+      - name: study + trial lanes (OOS, divergence, drift, fingerprints, gauntlets)
+        run: python -m pytest tests/test_a2_oos_analysis.py tests/test_construction_divergence_study.py tests/test_expect_drift_panel.py tests/test_f_hz1_study.py tests/test_falsosc_trial_v1.py tests/test_grade_breadth_divergence.py tests/test_intraday_large_cap_tech_leader_study.py tests/test_long_hold_gap_guard.py tests/test_macro_fire_context.py tests/test_options_history_gauntlet.py tests/test_per_fire_sector_benchmark.py tests/test_run_w1_sev.py tests/test_run_w2_slq.py tests/test_thesis_funnel_history.py tests/test_w3_fingerprint_stats.py -q
+
+  unrun-serving-admin:
+    # admin control surfaces + the brain/tape serving edges.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: admin health, feature flags and the config store
+        run: python -m pytest tests/test_admin_health.py tests/test_admin_flags.py tests/test_admin_config_store.py -q
+      - name: brain SSE keepalive + tape decode
+        run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
+
+  unrun-builders-render:
+    # page/render builders whose output ships to the site.
+    if: ${{ false }}
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: page/render builders whose output ships to the site
+        run: python -m pytest tests/test_ai_desk_page.py tests/test_build_chart_data.py tests/test_build_odds_observability.py tests/test_build_sector_map.py tests/test_committee_template.py tests/test_confluence_screener_page.py tests/test_contagion_card_render.py tests/test_flow_leaders_render_markers.py tests/test_macro_signals_render.py tests/test_movers_page.py tests/test_nav_submenu_icons.py tests/test_sector_nav_links.py tests/test_site_semantics_refs.py tests/test_sp500_heatmap_caps.py tests/test_stage_analysis_page.py tests/test_stocktable_data.py tests/test_template_items_footgun.py tests/test_trading_journal_xlsx.py tests/test_us_stocks_w8g_table.py -q
+
+  unrun-builders-stores:
+    # store/ops builders behind the nightly data lanes.
+    if: ${{ false }}
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: store/ops builders behind the nightly data lanes
+        run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
+      # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup
+      # nulls, RSI range, band ordering, value-area >=70%) are platform-
+      # independent and run here.  TestFixtureDeterminism is DESELECTED: it
+      # regenerates the fixtures and demands byte-identity, which holds on
+      # macOS (where the committed fixtures were generated) but NOT on
+      # ubuntu-latest — expected_ribbon.json and expected_bollinger.json
+      # differ in float tails (rolling std / EMA accumulation) under a
+      # different numpy/BLAS build.  docs/TECH_LAB_TESTING.md asserts
+      # byte-identity as a contract, so the contract itself is
+      # platform-dependent; regenerating on ubuntu would just break macOS.
+      # Picking a resolution (tolerance vs pinned numpy vs per-platform
+      # fixtures) is an owner decision, not a wiring decision — see
+      # docs/UNRUN_TEST_CENSUS.md.  Found by running this suite in CI for
+      # the first time (it was named by no workflow before #3636).
+      - name: tech-lab parity fixtures — structure only (determinism is platform-dependent)
+        run: python -m pytest tests/test_tech_parity_fixtures.py -q
+          --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
