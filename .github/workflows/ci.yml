@@ -1046,6 +1046,20 @@ on:
       # (templates/** and lib/** already trigger above.)
       - "scripts/build_options_command.py"
       - "tests/test_build_options_command.py"
+      # Free acquisition estate (2026-07-26): the builder, its content sources and
+      # its templates had NO workflow at all — `--check` and test_free_content.py
+      # were manual-only, so the estate rotted 52 pages behind seo_base.html.j2
+      # (the #3592 Legal footer column never reached them) with main staying green.
+      - "scripts/build_free_content.py"
+      - "tests/test_free_content.py"
+      - "content/seo/**"
+      - "templates/seo_base.html.j2"
+      - "templates/seo_article.html.j2"
+      - "templates/seo_calculator_base.html.j2"
+      - "templates/seo_blog_index.html.j2"
+      - "templates/seo_learn_index.html.j2"
+      - "templates/seo_tools_index.html.j2"
+      - "templates/calculators/**"
   workflow_dispatch:
 
 permissions:
@@ -3606,3 +3620,27 @@ jobs:
         run: pip install pytest fastapi httpx pyyaml
       - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
         run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py -q
+
+  free-content-estate:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Free acquisition estate drift law (2026-07-26). scripts/build_free_content.py
+    # and tests/test_free_content.py were wired into ZERO workflows — the D12/W1
+    # masterplan flagged `--check` as "currently a manual command" and it was never
+    # wired. Both rotted red on main unnoticed: #3592 added the Legal footer column
+    # to templates/seo_base.html.j2 and re-rendered only the 3 new legal pages, so 52
+    # estate pages silently shipped without the Privacy/Terms/Disclaimer links, and
+    # 15 of 26 calculator pages shipped with no CTA at all. Network-free (renders to
+    # a tmp dir) and writes nothing under site/.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2
+      - name: free-content builder suite (frontmatter contract, RSS, rendered-output pins)
+        run: python -m pytest tests/test_free_content.py -q
+      - name: committed estate must match a fresh render (template↔site drift law)
+        run: python -m scripts.build_free_content --check

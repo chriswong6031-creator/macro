@@ -157,9 +157,9 @@
     <aside class="est-cta-block">
       <div class="cta-copy">
         <span class="cta-k">{{ t('Next step', '下一步') }}</span>
-        <p class="cta-t">{{ cta.label }}</p>
+        <p class="cta-t">{{ t(cta.label, cta.get('label_zh', '')) }}</p>
       </div>
-      <a class="gbtn gbtn-lg gbtn-cta" href="{{ rel }}{{ cta.href.lstrip('/') }}">{{ cta.label }}</a>
+      <a class="gbtn gbtn-lg gbtn-cta" href="{{ rel }}{{ cta.href.lstrip('/') }}">{{ t(cta.label, cta.get('label_zh', '')) }}</a>
     </aside>
     {% endif %}
     {% endblock %}
