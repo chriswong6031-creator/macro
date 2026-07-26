@@ -25,6 +25,9 @@ scripts.build_odds`):
   5. Render templates/odds.html.j2 → site/odds.html via lib.pages.write_page
      (data-base shim injection, same as build_congress.py). A missing template
      degrades quietly — the data files are already on disk.
+  6. Observability: degraded paths emit ``::warning`` GitHub Actions
+     annotations (bare print — only column 0 parses) at rc=0, and catalog.json
+     carries a ``coverage`` census (declared/built/dropped + built_utc).
 
 Universe/params live in config.yml under ``odds:`` — no magic numbers here.
 Display / research only — never trades. Returns 0 on ANY error so it can
@@ -51,6 +54,16 @@ from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("build_odds")
+
+
+def _gha(kind: str, msg: str) -> None:
+    """Emit a GitHub Actions annotation while keeping rc=0 (fail-soft stays fail-soft).
+
+    MUST be a bare print starting the line: the runner parses ``::warning`` only
+    at column 0, and this module's logging format prefixes every record — a
+    ``log.warning("::warning ...")`` line never annotates.
+    """
+    print(f"::{kind} title=odds::" + " ".join(str(msg).split())[:600], flush=True)
 
 
 def _cfg() -> dict:
@@ -141,9 +154,16 @@ def ensure_store(cfg: dict, store: Path) -> list[str]:
 
     bs = int(cfg.get("batch_size", 40))
     pause = float(cfg.get("batch_pause_s", 1.0))
+    # Download productivity: a run where every fetch-needing ticker came back
+    # empty froze the store silently (AMAT vanished from the catalog 2026-07-21
+    # on exactly this path — the exists() filter below drops it with no log line).
+    attempted = len(need_max) + len(need_win)
+    fetched = 0
     if need_max:
         log.info("odds: full backfill for %d tickers", len(need_max))
-        for t, df in _download(need_max, "max", bs, pause).items():
+        frames = _download(need_max, "max", bs, pause)
+        fetched += len(frames)
+        for t, df in frames.items():
             try:
                 df.to_parquet(store / f"{t}.parquet")
             except Exception as e:  # noqa: BLE001
@@ -152,7 +172,9 @@ def ensure_store(cfg: dict, store: Path) -> list[str]:
         log.info("odds: 1mo upsert for %d tickers", len(need_win))
         basis_tol = float(cfg.get("upsert_basis_tol", 1e-3))
         rebase: list[str] = []
-        for t, new in _download(need_win, "1mo", bs, pause).items():
+        win_frames = _download(need_win, "1mo", bs, pause)
+        fetched += len(win_frames)
+        for t, new in win_frames.items():
             try:
                 old = _norm_ohlcv(pd.read_parquet(store / f"{t}.parquet"))
                 # Adjustment-basis guard: yfinance auto_adjust rebases the WHOLE
@@ -184,11 +206,16 @@ def ensure_store(cfg: dict, store: Path) -> list[str]:
                 log.warning("odds: upsert %s failed: %s", t, e)
         if rebase:
             log.info("odds: basis re-backfill (period=max) for %d tickers", len(rebase))
-            for t, df in _download(rebase, "max", bs, pause).items():
+            rebase_frames = _download(rebase, "max", bs, pause)
+            fetched += len(rebase_frames)
+            for t, df in rebase_frames.items():
                 try:
                     df.to_parquet(store / f"{t}.parquet")
                 except Exception as e:  # noqa: BLE001
                     log.warning("odds: basis re-backfill write %s failed: %s", t, e)
+    if attempted and not fetched:
+        _gha("warning", f"yfinance returned no data for all {attempted} fetch-needing "
+                        f"tickers — store frozen at its last close")
     return [t for t in universe if (store / f"{t}.parquet").exists()]
 
 
@@ -201,7 +228,11 @@ def ensure_meta(cfg: dict, store: Path, tickers: list[str]) -> dict:
             meta = json.loads(path.read_text())
     except Exception as e:  # noqa: BLE001
         log.warning("odds: meta read failed: %s", e)
-    missing = [t for t in tickers if t not in meta]
+    # Empty-sector entries are the degraded cache form (a transient .info failure
+    # caches {name: ticker, sector: ""} below) — retry them each run instead of
+    # freezing the degradation permanently.
+    missing = [t for t in tickers
+               if t not in meta or not ((meta.get(t) or {}).get("sector") or "").strip()]
     if not missing:
         return meta
     pause = float(cfg.get("meta_pause_s", 0.15))
@@ -215,7 +246,8 @@ def ensure_meta(cfg: dict, store: Path, tickers: list[str]) -> dict:
                 meta[t] = {"name": info.get("shortName") or info.get("longName") or t,
                            "sector": sector}
             except Exception:  # noqa: BLE001
-                meta[t] = {"name": t, "sector": ""}
+                # A failed RETRY must not clobber a previously-good name.
+                meta[t] = meta.get(t) or {"name": t, "sector": ""}
             time.sleep(pause)
     except Exception as e:  # noqa: BLE001
         log.warning("odds: meta fetch degraded (%s)", e)
@@ -446,6 +478,8 @@ def _render(catalog: dict, site: Path) -> None:
     if not tpl.exists():
         log.warning("odds: templates/odds.html.j2 absent — page render skipped "
                     "(data files already written)")
+        _gha("warning", "templates/odds.html.j2 absent — odds.html NOT re-rendered "
+                        "(data files already written)")
         return
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -458,6 +492,8 @@ def _render(catalog: dict, site: Path) -> None:
         )
     except Exception as e:  # noqa: BLE001
         log.warning("odds render failed — skipping (additive): %s", e)
+        _gha("warning", f"odds.html render failed — page left stale "
+                        f"(data files already written): {e}")
         return
     site.mkdir(exist_ok=True)
     write_page(site / "odds.html", html)
@@ -477,10 +513,19 @@ def main() -> int:
         root = config.ROOT
         store = root / cfg.get("store_dir", "data/odds_ohlcv")
         store.mkdir(parents=True, exist_ok=True)
+        declared = [str(t) for t in (cfg.get("universe") or [])]
 
         tickers = ensure_store(cfg, store)
+        # Drop ledger, one reason per declared-but-unpublished ticker. The store
+        # layer is the invisible one: a ticker whose fetch never landed simply
+        # fails ensure_store's exists() filter with no log line of its own.
+        dropped: dict[str, str] = {
+            t: "no parquet in store (yfinance fetch failed / never fetched)"
+            for t in declared if t not in set(tickers)}
         if not tickers:
             log.warning("odds: no tickers in store — nothing to build")
+            _gha("warning", f"store empty ({len(declared)} declared) — "
+                            f"catalog/factor_match/odds.html NOT rebuilt this run")
             return 0
         meta = ensure_meta(cfg, store, tickers)
 
@@ -500,15 +545,19 @@ def main() -> int:
                 df = _norm_ohlcv(pd.read_parquet(store / f"{t}.parquet"))
                 if len(df) < min_rows:
                     log.info("odds: %s has %d rows (<%d) — skipped", t, len(df), min_rows)
+                    dropped[t] = f"{len(df)} rows < min_rows {min_rows}"
                     continue
                 m = odds_lab.build_matrix(t, df, market)
                 (matrix_dir / f"{t}.json").write_text(json.dumps(m, separators=(",", ":")))
                 matrices[t] = m
             except Exception as e:  # noqa: BLE001
                 log.warning("odds: matrix %s failed: %s", t, e)
+                dropped[t] = f"matrix build error: {e}"
         log.info("odds: built %d/%d matrices → %s", len(matrices), len(tickers), matrix_dir)
         if not matrices:
             log.warning("odds: no matrices built — skipping artifacts")
+            _gha("warning", f"0/{len(tickers)} matrices built — "
+                            f"catalog/factor_match/odds.html NOT rebuilt this run")
             return 0
 
         data_dir = root / cfg.get("data_dir", "site/oddsdata")
@@ -517,9 +566,27 @@ def main() -> int:
         market_today = _market_today(market)
 
         catalog = _catalog(cfg, matrices, meta, market_today, asof)
+        # Additive census (schema unchanged): built_utc also makes the nightly
+        # catalog.json commit a heartbeat when the market data itself is static.
+        catalog["coverage"] = {
+            "declared": len(declared), "built": len(matrices),
+            "dropped": [{"t": t, "reason": dropped[t]} for t in sorted(dropped)],
+            "built_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
         (data_dir / "catalog.json").write_text(
             json.dumps(catalog, ensure_ascii=False, separators=(",", ":")))
         log.info("odds: wrote catalog.json (%d universe, asof %s)", len(matrices), asof)
+
+        census = f"coverage {len(matrices)}/{len(declared)} built, {len(dropped)} dropped, asof {asof}"
+        if dropped:
+            _gha("warning", census + " — dropped: "
+                 + ", ".join(f"{t} ({dropped[t]})" for t in sorted(dropped)))
+        else:
+            print(f"odds census: {census}", flush=True)
+        stale_bd = _stale_days(pd.Timestamp(asof))
+        if stale_bd > 2:
+            _gha("warning", f"asof {asof} is {stale_bd} trading days old — the OHLCV "
+                            f"store is not advancing (yfinance degraded on this runner?)")
 
         fm_cfg = cfg.get("factor_match") or {}
         fm = odds_lab.run_factor_match(
@@ -540,7 +607,9 @@ def main() -> int:
         _render(catalog, root / "site")
         return 0
     except Exception as e:  # noqa: BLE001 — never break the daily build
-        log.warning("odds desk build failed — skipping (additive): %s", e)
+        log.exception("odds desk build failed — skipping (additive)")
+        _gha("warning", f"odds desk build failed (fail-soft rc=0) — artifacts NOT "
+                        f"rebuilt this run: {type(e).__name__}: {e}")
         return 0
 
 
