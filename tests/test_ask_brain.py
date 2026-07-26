@@ -2205,20 +2205,40 @@ def test_china_flows_makes_no_network_call(tmp_path):
     """HARD CONTRACT: the brain must never put vendor latency in the chat path — the
     serving host has no TUSHARE_TOKEN and the packet is committed-artifact-only.
 
-    Do NOT reintroduce `pytest.importorskip("requests")` here — #3703 did, and it was
-    reverted. patch("requests.post") imports requests to resolve the target, so a venv
-    without it raises ModuleNotFoundError — but the honest repair is the venv, not a
-    skip. `requests>=2.31` is a declared requirements.txt dependency, and exactly one
-    CI job runs this file (ci.yml::neural-web-core), whose install line carries
-    requests as of #3694. A missing-requests ImportError here therefore means a real
-    environment regression, and it must stay loud: an importorskip converts this
-    tripwire into a silent pass in precisely the environment it exists to police.
-    Absent requests the contract is also NOT self-enforcing — nothing stops
-    _tool_read_china_flows from reaching the network via urllib or httpx instead."""
+    Two guards, deliberately layered — do NOT collapse them to one.
+
+    (1) requests.post/get. Do NOT reintroduce `pytest.importorskip("requests")` here —
+    #3703 did, and it was reverted (#3715). patch("requests.post") imports requests to
+    resolve the target, so a venv without it raises ModuleNotFoundError — but the honest
+    repair is the venv, not a skip. `requests>=2.31` is a declared requirements.txt
+    dependency, and exactly one CI job runs this file (ci.yml::neural-web-core), whose
+    install line carries requests as of #3694. A missing-requests ImportError here
+    therefore means a real environment regression, and it must stay loud: an importorskip
+    converts this tripwire into a silent pass in precisely the environment it exists to
+    police.
+
+    (2) socket connect/connect_ex/create_connection. #3715 named the hole arm (1) leaves
+    open — "nothing stops _tool_read_china_flows from reaching the network via urllib or
+    httpx instead" — and this closes it at the one chokepoint every client must pass
+    through. Mutation-tested: raw socket, socket.create_connection, urllib and requests
+    egress each injected into the tool's real code path are ALL caught, where arm (1)
+    alone caught only the last. It also needs no third-party import, so the contract
+    still holds in any lane where arm (1) is unavailable.
+
+    Detection is via available=False: the tool swallows every exception by design, so an
+    escaping AssertionError degrades the packet rather than propagating."""
+    import socket
     import engine.neuralweb.ask_brain as _ab
+
+    def _no_network(*_a, **_k):
+        raise AssertionError("live network call!")
+
     _write_china_plane(tmp_path)
     with patch("requests.post", side_effect=AssertionError("live network call!")), \
-         patch("requests.get", side_effect=AssertionError("live network call!")):
+         patch("requests.get", side_effect=AssertionError("live network call!")), \
+         patch.object(socket.socket, "connect", _no_network), \
+         patch.object(socket.socket, "connect_ex", _no_network), \
+         patch.object(socket, "create_connection", _no_network):
         out = _ab._tool_read_china_flows(tmp_path, {})
     assert out["available"] is True
 
