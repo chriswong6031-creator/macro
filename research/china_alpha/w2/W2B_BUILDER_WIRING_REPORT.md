@@ -189,6 +189,19 @@ Row attachment:
 
 ## Laws honored
 
+> **Superseded evidence, 2026-07-26 (#3616).** The laws below still hold; three of
+> the *evidence* cells point at surfaces that no longer exist. The narrative chip and
+> the A/B-tier badge left the board cards in the standout declutter (#1400), and the
+> Prophet-card redesign (2026-07-21) replaced the ENTRY / RAN-LATE cards entirely — so
+> there is no "🔥 theme" chip text, no chip tooltip, and no A-tier badge `title=`
+> attribute on the board. `test_entry_chip_title_not_buy_family` was **deleted** as
+> vacuous (its regex keyed on the retired `class="nb-narr"` and matched nothing);
+> BUY-family wording is now guarded by `test_no_buy_family_words_on_ripening_shelf` in
+> `tests/test_china_stocks_w1c_render.py`. `test_narrative_chip_has_dual_span` survives
+> but was retargeted onto the RIPENING rip-chip, which is where the theme still renders.
+> The narrative lens itself was not lost — it lives in the W2-B ledger columns and the
+> W8-E JSON data layer, both still covered by `TestLedgerSchema`.
+
 | Law | Evidence |
 |-----|----------|
 | Narrative NEVER creates admission or rank in W2 | `_cn_bonus`, `blend_sorted`, gates untouched; order-invariance assert at build time |
