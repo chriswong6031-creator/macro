@@ -1415,15 +1415,28 @@
       if (up <= 46) return { tone: 'down', en: 'Softer tape', zh: '偏弱' };
       return { tone: 'flat', en: 'Split tape', zh: '涨跌分化' };
     }
+    // Where the tape is strong and weak, in plain words. ZH hangs 走强/走弱 off the
+    // sector names as suffixes, so it composes under the 资金流向： prefix. EN can't:
+    // "Money flowing to weakness in Basic Materials" is backwards — money flows *out*
+    // of weakness — and on a broad-decline day (no up sectors) that was the whole
+    // sentence. So EN owns a full sentence here instead, and the caller adds only the
+    // period.
     function _leadPhrase(sm) {
       var up = sm.secs.filter(function (s) { return s.agg > 0.05; }).slice(0, 2);
       var dn = sm.secs.filter(function (s) { return s.agg < -0.05; }).slice(-2).reverse();
       var zh = isZh();
       function names(arr) { return arr.map(function (s) { return '<b>' + esc(_secName(s.name)) + '</b>'; }).join(zh ? '、' : ', '); }
-      var parts = [];
-      if (up.length) parts.push(zh ? (names(up) + ' 走强') : ('strength in ' + names(up)));
-      if (dn.length) parts.push(zh ? (names(dn) + ' 走弱') : ('weakness in ' + names(dn)));
-      return parts.join(zh ? '，' : ', ');
+      if (zh) {
+        var parts = [];
+        if (up.length) parts.push(names(up) + ' 走强');
+        if (dn.length) parts.push(names(dn) + ' 走弱');
+        return parts.join('，');
+      }
+      // Em dash, not a comma, between the clauses — each side is already a comma list.
+      if (up.length && dn.length) return 'Strength in ' + names(up) + ' — weakness in ' + names(dn);
+      if (up.length) return 'Strength in ' + names(up);
+      if (dn.length) return 'Weakness in ' + names(dn);
+      return '';
     }
     function renderPulse(sm) {
       if (!pulseEl) return;
@@ -1433,7 +1446,7 @@
       var lead = _leadPhrase(sm);
       var read = lz(pctUp + '% of names advancing · median ' + medTxt + '. ',
                     pctUp + '% 个股上涨 · 中位数 ' + medTxt + '。')
-               + (lead ? (lz('Money flowing to ', '资金流向：') + lead + (isZh() ? '。' : '.')) : '');
+               + (lead ? (isZh() ? ('资金流向：' + lead + '。') : (lead + '.')) : '');
       pulseEl.className = 'hx-pulse ' + st.tone;
       pulseEl.innerHTML = ''
         + '<div class="hx-pulse-top">'
