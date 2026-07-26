@@ -846,6 +846,15 @@ on:
       - "tests/test_marketing_chart_png.py"
       - "tests/test_marketing_media_publish.py"
       - "tests/test_share_cards.py"
+      # chart_render SVG suites (job: chart-render). Added 2026-07-26; never
+      # whitelisted anywhere → test-whitelist-rot. Found via
+      # test_chart_render_inline sitting RED on main since #3088, which moved the
+      # MACD stroke off raw material-blue and left the test's colour probe behind.
+      # engine/marketing/** already triggers on renderer changes; these entries
+      # make a test-only edit reach its own guard.
+      - "tests/test_chart_render_inline.py"
+      - "tests/test_chart_render_m2.py"
+      - "tests/test_marketing_card_parity.py"
       # tier-gate serving/revenue boundary (job: tier-gate). Found 2026-07-25
       # shipping #3488: NONE of the boundary's enforcement files were listed, so a
       # PR that changes ONLY the site-access boundary (regwall, Caddy public list,
@@ -3109,6 +3118,43 @@ jobs:
         # plain dict-returning functions, no fastapi/httpx). All stdlib-only —
         # verified against a minimal pytest+pyyaml env.
         run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py -q
+
+  chart-render:
+    if: ${{ false }}
+    # chart_render SVG suites — the renderer behind every marketing card and the
+    # brain gateway's inline chat chart, and (since #3551) the SVG that is
+    # rasterized and posted to the live MastermindX X account.
+    #
+    # Added 2026-07-26. None of these three suites was referenced by ANY workflow,
+    # so test_chart_render_inline sat RED on main from #3088 (which moved the MACD
+    # stroke off raw material-blue and left the test's colour probe behind) until
+    # it was reported by hand — roughly four months of a guard that could not fail
+    # anything. test_marketing_card_parity is #3551's own incident suite pinning
+    # which renderer feeds the posted PNG; unwired, that incident could silently
+    # recur.
+    #
+    # Deliberately its OWN job rather than a step on marketing-engine: that job is
+    # currently red on main for an unrelated reason (test_marketing_content —
+    # `account receipts has empty queue`), and folding these in would mask a
+    # chart-render regression behind a failure that has nothing to do with charts.
+    #
+    # Deps: pytest + pyyaml. chart_render's own top-level imports are stdlib
+    # (math/zlib/pathlib/typing) — pandas, PIL and headless Chrome are all lazy,
+    # and the tests needing them importorskip cleanly — but the repo-wide
+    # conftest imports yaml in EVERY pytest run, so pyyaml is not optional
+    # (a pytest-only env dies at collection). Matching marketing-engine's
+    # dependency set also lets the pack runner reuse its venv. Verified green
+    # against a minimal pytest+pyyaml env: 28 passed, 3 skipped.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps
+        run: pip install pytest pyyaml
+      - name: chart_render SVG suites
+        run: python -m pytest tests/test_chart_render_inline.py tests/test_chart_render_m2.py tests/test_marketing_card_parity.py -q
 
   portfolio-ctx:
     if: ${{ false }}
