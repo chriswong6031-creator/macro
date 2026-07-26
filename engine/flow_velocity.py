@@ -17,7 +17,7 @@ Four panels, each from a source ALREADY on disk (keyless at build time — no Tu
                  mainland / all foreign money" tape. Southbound is live & deep (2014→);
                  NORTHBOUND aggregate net was discontinued 2024-08-16 under the Stock
                  Connect "home-market" rule, so it is surfaced as HISTORICAL-ONLY.
-  ashare_names   data/tushare/flow_hist.parquet  — weekly per-name 主力 (super-large +
+  ashare_names   data/tushare/flow_hist.parquet  — DAILY per-name 主力 (super-large +
                  large order) net-RATE grid; velocity/acceleration per name, ranked.
   ashare_sectors the same grid rolled into the 22 curated baskets_china sectors
                  (equal-weight member mean) — "which sector is big money rushing into".
@@ -48,39 +48,89 @@ from lib import config
 log = logging.getLogger(__name__)
 
 # ── horizon configs (windows are in the SOURCE's native bars) ─────────────────
-# aggregate channels are DAILY; the per-name / sector grid is WEEKLY (~5th trading day).
+# BOTH sources are DAILY. The per-name / sector grid was ORIGINALLY a weekly cross-section
+# grid, but collectors/tushare_history._grid_dates() is tail-anchored (`idx[-260:][::5]`), so
+# its stride phase shifts one trading day per build and the append-only store accreted every
+# phase — the panel is now ~1 bar per trading day (verified: median gap 1 day, ~20 distinct
+# dates/month). Windows below are therefore sized in TRADING DAYS so the "4wk"/"13wk" labels
+# the UI prints are true (20 / 65 bars), not 5x short.
+#
+# `demean` is load-bearing, not cosmetic. slope_z measures drift against ZERO, but neither
+# source has a zero null: 主力净占比 has a structural mean of ~-2.5% (the order-size tiers sum
+# to zero per stock and the 主力 tier is the persistently negative one — 97% of names have a
+# negative mean), and southbound net is structurally POSITIVE (77% of days). Undemeaned, the
+# measure's null sits at ~-0.6 for names / ~-1.1 for sectors / ~+3.3 for southbound, while the
+# +-0.5 cutoffs assume a null of 0 — so the readout pins to one verdict forever (backtested:
+# the sector breadth gauge printed "broad outflow" on 93.4% of days and "broad inflow" on 0 of
+# 256; southbound printed "accelerating in" on 96.6% of the last 2y and "out" on none of them).
+# Subtracting a CAUSAL trailing mean restores a zero null and makes the gauges move again.
+#
+# `vol_floor` guards the denominator: a name whose flow goes quiet gets a collapsing baseline
+# vol and a manufactured extreme (a name with a +0.5% net rate and a 0.11 baseline printed
+# +9.64σ and topped the leaderboard, outranking a name with 13.3% actual net flow). Floor the
+# baseline at a fraction of the series' own causal expanding vol.
 _AGG = {"horizons": {"1w": 5, "1m": 21, "3m": 63}, "primary": "1m",
-        "base": 126, "accel_w": 21, "min_obs": 80}
-_WK = {"horizons": {"4wk": 4, "13wk": 13}, "primary": "4wk",
-       "base": 13, "accel_w": 6, "min_obs": 20}
+        "base": 126, "accel_w": 21, "min_obs": 80, "demean": 252, "vol_floor": 0.25}
+_WK = {"horizons": {"4wk": 20, "13wk": 65}, "primary": "4wk",
+       "base": 65, "accel_w": 21, "min_obs": 90, "demean": 126, "vol_floor": 0.25}
 
 NORTHBOUND_FROZEN = "2024-08-16"   # last aggregate northbound net (home-market rule)
 
 
 # ── kinetics primitive ────────────────────────────────────────────────────────
+def _vel_series(x: pd.Series, w: int, base: int, floor_frac: float) -> pd.Series:
+    """``indicators.slope_z(x.cumsum(), w, base, use_log=False)`` with a floored denominator.
+
+    Identical formula — sqrt(w) * mean(x, w) / std(x, base) — because d(cumsum(x)) = x; the
+    only addition is that the baseline vol may not fall below `floor_frac` of the series' own
+    causal expanding vol, so a quiet stretch cannot manufacture a large t-stat.
+
+    With floor_frac=0 this equals slope_z(x.cumsum(), ...) exactly from bar `base` onward. It
+    differs only while the FIRST bar is still inside the baseline window: slope_z reconstructs
+    the flow as cum.diff(), which is NaN at position 0, so it normalizes against one fewer
+    observation there. Working on the flow series directly keeps that bar. Both asserted in
+    tests/test_flow_velocity.py.
+    """
+    drift = x.rolling(w, min_periods=w).mean()
+    vol = x.rolling(base, min_periods=max(2, base // 2)).std()
+    if floor_frac:
+        ref = x.expanding(min_periods=max(8, base // 2)).std()
+        vol = vol.combine(ref * floor_frac, lambda a, b: a if (pd.isna(b) or a >= b) else b)
+    return drift / (vol.replace(0, np.nan) / np.sqrt(w))
+
+
 def _kinetics(flow: pd.Series, cfg: dict) -> dict | None:
     """Velocity + acceleration of a per-period NET-FLOW series.
 
-    Velocity at window w = ``slope_z(cumflow, w, base)`` — because d(cumflow) = flow, this
-    is the t-stat of the recent average net-flow vs its own vol (a unit-free, cross-source
-    comparable "how fast is money moving" read). Acceleration = the trailing slope of the
-    primary-horizon velocity series (is the inflow speeding up). None when too short.
+    Velocity at window w is the t-stat of the recent average net-flow vs its own vol (a
+    unit-free, cross-source comparable "how fast is money moving" read), measured against the
+    series' own CAUSAL trailing mean rather than against zero — see the `demean` note on the
+    horizon configs above; without it the readout is pinned by the source's structural offset.
+    Acceleration = the trailing slope of the primary-horizon velocity series (is the inflow
+    speeding up). None when too short.
     """
     flow = pd.to_numeric(flow, errors="coerce").dropna()
     if len(flow) < cfg["min_obs"]:
         return None
-    cum = flow.cumsum()
+    # causal (point-in-time) offset removal — never a full-sample mean
+    dm = cfg.get("demean")
+    if dm:
+        dm = min(dm, max(30, len(flow) // 2))
+        flow = (flow - flow.rolling(dm, min_periods=max(20, dm // 2)).mean()).dropna()
+        if len(flow) < max(cfg["horizons"][cfg["primary"]] + 2, 30):
+            return None
     base = min(cfg["base"], max(8, len(flow) // 2))
+    floor_frac = cfg.get("vol_floor") or 0.0
     vel: dict[str, float | None] = {}
     for lab, w in cfg["horizons"].items():
         if len(flow) < w + 2:
             vel[lab] = None
             continue
-        z = indicators.slope_z(cum, w, base, use_log=False)
+        z = _vel_series(flow, w, base, floor_frac)
         v = z.iloc[-1] if len(z) else np.nan
         vel[lab] = round(float(v), 2) if v is not None and np.isfinite(v) else None
     pw = cfg["horizons"][cfg["primary"]]
-    vser = indicators.slope_z(cum, pw, base, use_log=False)
+    vser = _vel_series(flow, pw, base, floor_frac)
     accel = np.nan
     if len(vser.dropna()) > cfg["accel_w"] + 2:
         a = indicators.rolling_slope(vser, cfg["accel_w"]).iloc[-1]
@@ -124,6 +174,35 @@ def _series_tail(s: pd.Series, n: int = 60) -> list[float]:
     return [round(float(v), 1) for v in s.dropna().tail(n)]
 
 
+def _rate_read(s: pd.Series, cfg: dict) -> dict:
+    """The displayable net-rate trio for a flow series, on the SAME footing as the velocity.
+
+    Velocity is measured against the series' own causal trailing norm, so a raw net rate alone
+    contradicts it on screen (Baijiu printed "-1.2% net" beside "+2.17σ inflow" — both true, but
+    only because -1.2% is far ABOVE its usual -3.5%). Shipping `norm` and `rel` lets the board
+    lead with the figure the velocity actually reflects and keep the raw rate as the receipt.
+    """
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    if s.empty:
+        return {"rate_now": None, "rate_4wk": None, "rate_norm": None, "rate_rel": None}
+    w4 = cfg["horizons"][cfg["primary"]]
+    dm = min(cfg.get("demean") or 0, max(30, len(s) // 2))
+    r4 = float(s.tail(w4).mean()) if len(s) >= w4 else None
+    rel = None
+    if dm:
+        # `rel` is the velocity's own numerator — the mean of the DEMEANED series over the same
+        # window — not `r4 - norm(last bar)`. The trailing norm moves across those bars, so the
+        # shortcut disagrees in sign near zero (one row shipped -0.2% beside +0.09σ). Deriving
+        # `norm` back out of the pair keeps the tooltip's arithmetic exact: raw - norm == rel.
+        dser = (s - s.rolling(dm, min_periods=max(20, dm // 2)).mean()).dropna()
+        if len(dser) >= w4:
+            rel = float(dser.tail(w4).mean())
+    norm = (r4 - rel) if (r4 is not None and rel is not None) else None
+    rnd = lambda v: round(v, 1) if v is not None else None   # noqa: E731
+    return {"rate_now": rnd(float(s.iloc[-1])), "rate_4wk": rnd(r4),
+            "rate_norm": rnd(norm), "rate_rel": rnd(rel)}
+
+
 # ── 1) aggregate Connect channels ─────────────────────────────────────────────
 def _read_connect(name: str) -> pd.DataFrame | None:
     p = config.data_dir() / "china_connect" / f"{name}.parquet"
@@ -163,9 +242,9 @@ def _channel(name: str, label: str, label_zh: str) -> dict | None:
                        primary=kin["primary"], state=kin["state"], state_zh=kin["state_zh"])
     else:
         out["frozen_since"] = NORTHBOUND_FROZEN
-        out["note"] = ("Aggregate northbound net disclosure ended 19 Aug 2024 (Stock "
+        out["note"] = (f"Aggregate northbound net disclosure ended {NORTHBOUND_FROZEN} (Stock "
                        "Connect home-market rule) — historical only, no live velocity.")
-        out["note_zh"] = "北向资金净额披露于2024年8月19日停止（互联互通本地市场规则）——仅历史，无实时流速。"
+        out["note_zh"] = f"北向资金净额披露于{NORTHBOUND_FROZEN}停止（互联互通本地市场规则）——仅历史，无实时流速。"
     return out
 
 
@@ -226,12 +305,10 @@ def _name_kinetics_map(wide: pd.DataFrame) -> dict[str, dict]:
         kin = _kinetics(wide[tk], _WK)
         if not kin or kin["vel_primary"] is None:
             continue
-        rate = pd.to_numeric(wide[tk], errors="coerce").dropna()
         out[tk] = {
             "ticker": tk, "name": names.get(tk),
             "vel": kin["vel_primary"], "accel": kin["accel"],
-            "rate_now": round(float(rate.iloc[-1]), 1) if len(rate) else None,
-            "rate_4wk": round(float(rate.tail(4).mean()), 1) if len(rate) >= 4 else None,
+            **_rate_read(wide[tk], _WK),
             "state": kin["state"], "state_zh": kin["state_zh"],
         }
     return out
@@ -252,8 +329,8 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = N
     outflow = df.sort_values("vel").head(top).to_dict("records")
     return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
             "n": int(len(df)), "primary": _WK["primary"],
-            "note": "主力 net-rate (super-large + large orders); velocity = standardized 4-week inflow rate, acceleration = its trend.",
-            "note_zh": "主力净占比（超大单+大单）；流速＝标准化4周流入率，加速度＝其趋势。",
+            "note": "主力 net-rate (super-large + large orders); velocity = the 4-week inflow rate standardized against the name's OWN trailing norm (not against zero — main money is a structural net seller), acceleration = its trend.",
+            "note_zh": "主力净占比（超大单+大单）；流速＝4周流入率相对该股自身常态的标准化值（非相对零——主力资金结构性净卖出），加速度＝其趋势。",
             "inflow": inflow, "outflow": outflow}
 
 
@@ -294,9 +371,9 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
             "id": bid, "name": b.get("name"), "name_zh": b.get("name_zh"),
             "category": b.get("category"), "n_members": len(cols),
             "vel": kin["vel_primary"], "accel": kin["accel"],
-            "rate_4wk": round(float(sect_flow.tail(4).mean()), 1),
+            **_rate_read(sect_flow, _WK),
             "state": kin["state"], "state_zh": kin["state_zh"],
-            "spark": _spark(_series_tail(sect_flow.cumsum(), 52)),
+            "spark": _spark(_series_tail(sect_flow.cumsum(), 130)),   # ~6m of daily bars
             "members": mem_recs, "inst_attention": inst_attention,
         })
     if len(rows) < 4:
@@ -304,8 +381,8 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
     rows.sort(key=lambda r: (r["vel"] is None, -(r["vel"] or 0)))
     return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
             "n": len(rows), "primary": _WK["primary"],
-            "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity. Expand a sector for its biggest-moving member names.",
-            "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速排序。展开板块查看流向最强的成分股。",
+            "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity vs the sector's own trailing norm. Expand a sector for its biggest-moving member names.",
+            "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速（相对板块自身常态）排序。展开板块查看流向最强的成分股。",
             "rows": rows}
 
 
@@ -417,18 +494,24 @@ def momentum(kmap: dict | None, top: int = 6) -> dict | None:
       accel_in : fast money still SPEEDING UP     (vel≥+.5 & accel>0)  — strongest push
       cooling  : strong inflow now FADING          (vel≥+.5 & accel<0)  — possible exhaustion
       easing   : heavy outflow now EASING          (vel≤−.5 & accel>0)  — possible bottoming
-    Descriptive, watch-family; None when nothing qualifies."""
+    Descriptive, watch-family; None when nothing qualifies.
+
+    Each list is truncated to `top` for display, but the TRUE population count ships alongside
+    it as n_<bucket> — the UI must never print a truncated list length as if it were the count
+    (the hero chip read "6 speeding up" when 116 names qualified). Mirrors confluence()'s
+    n_agree / n_diverge contract."""
     recs = [r for r in (kmap or {}).values()
             if r.get("vel") is not None and r.get("accel") is not None]
     accel_in = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] > 0),
-                      key=lambda r: -r["accel"])[:top]
+                      key=lambda r: -r["accel"])
     cooling = sorted((r for r in recs if r["vel"] >= _VIN and r["accel"] < 0),
-                     key=lambda r: r["accel"])[:top]
+                     key=lambda r: r["accel"])
     easing = sorted((r for r in recs if r["vel"] <= _VOUT and r["accel"] > 0),
-                    key=lambda r: -r["accel"])[:top]
+                    key=lambda r: -r["accel"])
     if not (accel_in or cooling or easing):
         return None
-    return {"accel_in": accel_in, "cooling": cooling, "easing": easing}
+    return {"accel_in": accel_in[:top], "cooling": cooling[:top], "easing": easing[:top],
+            "n_accel_in": len(accel_in), "n_cooling": len(cooling), "n_easing": len(easing)}
 
 
 def confluence(kmap: dict | None, seats: dict | None, top: int = 12) -> dict | None:
@@ -520,8 +603,8 @@ def snapshot() -> dict | None:
         asof = aggregate[0].get("as_of")
     panels["as_of"] = asof
     panels["note"] = ("Display-only positioning lens — flow is never scored into an "
-                      "allocation signal. Velocity = standardized net-flow rate; "
-                      "acceleration = its 2nd derivative.")
+                      "allocation signal. Velocity = net-flow rate standardized against the "
+                      "series' own trailing norm; acceleration = its 2nd derivative.")
     return panels
 
 

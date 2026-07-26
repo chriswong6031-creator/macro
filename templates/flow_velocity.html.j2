@@ -18,8 +18,16 @@
   <span class="vbar-sig">{{ '%+.2f'|format(v) if v is not none else '·' }}σ</span>
 </span>
 {%- endmacro %}
-{% macro rate(v) -%}
-{% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.1f'|format(v) }}%</span>{% endif %}
+{# The board's rate figure is the 4wk net rate RELATIVE to the series' own trailing norm — the
+   same footing the velocity is measured on, so the number and the σ never contradict on screen.
+   The raw net rate and that norm ride along in the tooltip as the receipt. #}
+{% macro rate(r) -%}
+{% set v = r.rate_rel if r.rate_rel is defined else none %}
+{% if v is none %}<span class="chg na">·</span>{% else %}
+<span class="chg {{ 'pos' if v>=0 else 'neg' }}"
+  data-tip-en="{{ '%+.1f'|format(v) }}% vs its own norm — main money ran {{ '%+.1f'|format(r.rate_4wk) }}% of turnover over the last 4 weeks against a usual {{ '%+.1f'|format(r.rate_norm) }}%."
+  data-tip-zh="相对自身常态 {{ '%+.1f'|format(v) }}%——近4周主力净占比 {{ '%+.1f'|format(r.rate_4wk) }}%，常态为 {{ '%+.1f'|format(r.rate_norm) }}%。"
+  role="button" tabindex="0">{{ '%+.1f'|format(v) }}%</span>{% endif %}
 {%- endmacro %}
 {% macro accel(v) -%}
 {% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.3f'|format(v) }}</span>{% endif %}
@@ -47,7 +55,7 @@
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
   <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ nameln(m) }}</td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" data-tip-en="Dragon-Tiger institutional-seat net flow (institutional-dedicated seats)" data-tip-zh="龙虎榜机构专用席位净额">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
-  <td>{{ rate(m.rate_4wk) }}</td>
+  <td>{{ rate(m) }}</td>
   <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }}</td>
   <td style="text-align:left">{{ vstate(m.state, m.state_zh, m.vel) }}</td>
 </tr>
@@ -274,6 +282,7 @@ html[data-lang="zh"] .rot-col.out .rot-col-h::before{background:linear-gradient(
 .mom-col{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:14px 15px}
 .mom-col-h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--ink);margin-bottom:3px}
 .mom-col-h .mi{font-size:15px}
+.mom-col-h .mom-n{margin-left:auto;font-family:var(--num);font-size:10.5px;font-weight:700;color:var(--faint);letter-spacing:.04em}
 .mom-col .mom-sub{font-size:11.5px;color:var(--muted);margin-bottom:10px;line-height:1.4}
 .mom-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent)}
 .mom-row .nm{font-size:13px;font-weight:650;color:var(--ink);min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -422,7 +431,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   <section class="fv-hero fv-reveal">
     <div class="fv-hero-eyebrow">
       <span class="dot"></span>🌊 {{ t('Capital Flow Velocity','资金流速') }} · {{ t('China &amp; Hong Kong','中国及香港') }}
-      <span class="asof">{{ t('weekly · as of','周度 · 截至') }} {{ snap.as_of }}</span>
+      <span class="asof">{{ t('daily · as of','日度 · 截至') }} {{ snap.as_of }}</span>
     </div>
     <div class="fv-hero-grid">
       <div>
@@ -473,8 +482,9 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       </button>
       <button class="fv-vital" data-goto-sec="momentum">
         <span class="vk">⚡ {{ t('Momentum','动能') }}</span>
-        <span class="vv">{% if snap.momentum %}<span class="tnum">{{ snap.momentum.accel_in|length }}</span> {{ t('speeding up','加速中') }}<span class="arrow">→</span>{% else %}—{% endif %}</span>
-        <span class="vs">{% if snap.momentum and snap.momentum.cooling %}<span class="tnum">{{ snap.momentum.cooling|length }}</span> {{ t('cooling — possible exhaustion','降温——或近衰竭') }}{% else %}{{ t('where inflow is turning','流入拐点所在') }}{% endif %}</span>
+        {# counts are the engine's TRUE population totals (n_*), never the truncated list length #}
+        <span class="vv">{% if snap.momentum %}<span class="tnum">{{ snap.momentum.n_accel_in }}</span> {{ t('speeding up','加速中') }}<span class="arrow">→</span>{% else %}—{% endif %}</span>
+        <span class="vs">{% if snap.momentum and snap.momentum.n_cooling %}<span class="tnum">{{ snap.momentum.n_cooling }}</span> {{ t('cooling — possible exhaustion','降温——或近衰竭') }}{% else %}{{ t('where inflow is turning','流入拐点所在') }}{% endif %}</span>
       </button>
       <button class="fv-vital" data-goto-sec="confluence">
         <span class="vk">🏛 {{ t('Institutions','机构') }}</span>
@@ -492,8 +502,12 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
   {# ============================ THE ROTATION ============================ #}
   {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
   {% set rows = snap.ashare_sectors.rows|rejectattr('vel','none')|list %}
-  {% set into = (rows|sort(attribute='vel', reverse=true)|selectattr('vel','ge',0.5)|list)[:5] %}
-  {% set outof = (rows|sort(attribute='vel')|selectattr('vel','le',-0.5)|list)[:5] %}
+  {# keep the FULL qualifying sets so the column headers can print the true totals — the cards
+     show only the top 5, and a truncated length must never be printed as if it were the count. #}
+  {% set into_all = rows|sort(attribute='vel', reverse=true)|selectattr('vel','ge',0.5)|list %}
+  {% set outof_all = rows|sort(attribute='vel')|selectattr('vel','le',-0.5)|list %}
+  {% set into = into_all[:5] %}
+  {% set outof = outof_all[:5] %}
   <section class="fv-sec fv-reveal" id="rotation">
     <div class="fv-sec-head">
       <div>
@@ -504,33 +518,33 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     </div>
     <div class="fv-rot">
       <div class="rot-col into">
-        <div class="rot-col-h"><i class="cdot conf-buy" style="width:11px;height:11px"></i> {{ t('Rushing in','资金涌入') }} <span class="rot-n">{{ into|length }} {{ t('group' if (into|length)==1 else 'groups','个板块') }}</span></div>
+        <div class="rot-col-h"><i class="cdot conf-buy" style="width:11px;height:11px"></i> {{ t('Rushing in','资金涌入') }} <span class="rot-n">{{ into_all|length }} {{ t('group' if (into_all|length)==1 else 'groups','个板块') }}{% if into_all|length > into|length %} · {{ t('top','前') }} {{ into|length }}{% endif %}</span></div>
         {% for r in into %}
         <div class="rot-card" data-goto="{{ r.id }}" role="button" tabindex="0">
           <div class="rc-top">
             <div class="rc-name">{{ t(r.name, r.name_zh) }}</div>
-            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r.rate_4wk) }}</div>
+            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r) }}</div>
           </div>
           <div class="rc-meta">{{ vstate(r.state, r.state_zh, r.vel) }} {% if r.inst_attention %}<span class="attn" data-tip-en="Members with Dragon-Tiger institutional-seat activity" data-tip-zh="有龙虎榜机构席位活动的成分股">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</div>
           {% if r.members %}<div class="rc-members">{% for m in r.members[:4] %}<span><b>{{ m.name or m.ticker }}</b> <span class="chg {{ 'pos' if m.vel>=0 else 'neg' }}">{{ '%+.1f'|format(m.vel) }}σ</span></span>{% endfor %}</div>{% endif %}
         </div>
         {% else %}
-        <div class="rot-empty">{{ t('No group is drawing broad inflow this week.','本周暂无板块普遍流入。') }}</div>
+        <div class="rot-empty">{{ t('No group is drawing broad inflow right now.','当前暂无板块普遍流入。') }}</div>
         {% endfor %}
       </div>
       <div class="rot-col out">
-        <div class="rot-col-h"><i class="cdot conf-sell" style="width:11px;height:11px"></i> {{ t('Bleeding out','资金流出') }} <span class="rot-n">{{ outof|length }} {{ t('group' if (outof|length)==1 else 'groups','个板块') }}</span></div>
+        <div class="rot-col-h"><i class="cdot conf-sell" style="width:11px;height:11px"></i> {{ t('Bleeding out','资金流出') }} <span class="rot-n">{{ outof_all|length }} {{ t('group' if (outof_all|length)==1 else 'groups','个板块') }}{% if outof_all|length > outof|length %} · {{ t('top','前') }} {{ outof|length }}{% endif %}</span></div>
         {% for r in outof %}
         <div class="rot-card" data-goto="{{ r.id }}" role="button" tabindex="0">
           <div class="rc-top">
             <div class="rc-name">{{ t(r.name, r.name_zh) }}</div>
-            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r.rate_4wk) }}</div>
+            <div class="rc-right">{{ vbar(r.vel, 'md', loop.index) }}{{ rate(r) }}</div>
           </div>
           <div class="rc-meta">{{ vstate(r.state, r.state_zh, r.vel) }} {% if r.inst_attention %}<span class="attn" data-tip-en="Members with Dragon-Tiger institutional-seat activity" data-tip-zh="有龙虎榜机构席位活动的成分股">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</div>
           {% if r.members %}<div class="rc-members">{% for m in r.members[:4] %}<span><b>{{ m.name or m.ticker }}</b> <span class="chg {{ 'pos' if m.vel>=0 else 'neg' }}">{{ '%+.1f'|format(m.vel) }}σ</span></span>{% endfor %}</div>{% endif %}
         </div>
         {% else %}
-        <div class="rot-empty">{{ t('No group is bleeding broadly this week.','本周暂无板块普遍流出。') }}</div>
+        <div class="rot-empty">{{ t('No group is bleeding broadly right now.','当前暂无板块普遍流出。') }}</div>
         {% endfor %}
       </div>
     </div>
@@ -547,7 +561,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
     <div class="fv-mom">
       <div class="mom-col m-in">
         <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🚀</span> {{ t('Speeding up','加速流入') }}</div>
+        <div class="mom-col-h"><span class="mi">🚀</span> {{ t('Speeding up','加速流入') }}{% if M.n_accel_in and M.n_accel_in > M.accel_in|length %}<span class="mom-n">{{ M.accel_in|length }} {{ t('of','/') }} {{ M.n_accel_in }}</span>{% endif %}</div>
         <div class="mom-sub">{{ t('inflow still accelerating','流入仍在加速') }}</div>
         {% for m in M.accel_in %}
         <div class="mom-row"><span class="cdot conf-buy"></span><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
@@ -555,7 +569,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       </div>
       <div class="mom-col m-cool">
         <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🌡️</span> {{ t('Cooling','流入降温') }}</div>
+        <div class="mom-col-h"><span class="mi">🌡️</span> {{ t('Cooling','流入降温') }}{% if M.n_cooling and M.n_cooling > M.cooling|length %}<span class="mom-n">{{ M.cooling|length }} {{ t('of','/') }} {{ M.n_cooling }}</span>{% endif %}</div>
         <div class="mom-sub">{{ t('strong inflow now fading — possible exhaustion','强流入正衰减——或近衰竭') }}</div>
         {% for m in M.cooling %}
         <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv pos">{{ '%+.1f'|format(m.vel) }}σ</span></div>
@@ -563,7 +577,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
       </div>
       <div class="mom-col m-ease">
         <div class="mom-accent"></div>
-        <div class="mom-col-h"><span class="mi">🌱</span> {{ t('Outflow easing','流出趋缓') }}</div>
+        <div class="mom-col-h"><span class="mi">🌱</span> {{ t('Outflow easing','流出趋缓') }}{% if M.n_easing and M.n_easing > M.easing|length %}<span class="mom-n">{{ M.easing|length }} {{ t('of','/') }} {{ M.n_easing }}</span>{% endif %}</div>
         <div class="mom-sub">{{ t('heavy selling now slowing — possible bottoming','重度卖出放缓——或近筑底') }}</div>
         {% for m in M.easing %}
         <div class="mom-row"><span class="nm">{{ nameln(m) }}</span><span class="mv neg">{{ '%+.1f'|format(m.vel) }}σ</span></div>
@@ -637,7 +651,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
           <thead><tr>
             <th data-c="0">{{ t('Sector','板块') }}</th>
             <th data-c="1">{{ t('Members','成分') }}</th>
-            <th data-c="2">{{ t('4wk net','4周净占比') }}</th>
+            <th data-c="2">{{ t('4wk vs norm','4周相对常态') }}</th>
             <th data-c="3">{{ t('Velocity','流速') }}</th>
             <th class="nos">{{ t('State','状态') }}</th>
             <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
@@ -658,7 +672,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
             <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
               <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}{% if r.category %} <span class="cat">{{ td(r.category) }}</span>{% endif %}</td>
               <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" data-tip-en="Members with institutional-seat activity on the Dragon-Tiger board" data-tip-zh="有龙虎榜机构席位活动的成分股" style="margin-left:6px">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</td>
-              <td>{{ rate(r.rate_4wk) }}</td>
+              <td>{{ rate(r) }}</td>
               <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
               <td style="text-align:left">{{ vstate(r.state, r.state_zh, r.vel) }}</td>
               <td>{{ spark(r.spark) }}</td>
@@ -755,7 +769,7 @@ html:not(.js) .fv-reveal{opacity:1;transform:none}
 
   <div class="foot">
     <b>{{ t('Sources','数据来源') }}:</b>
-    {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 weekly grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力周度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
+    {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 daily grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力日度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
     <b>{{ t('Method','方法') }}:</b>
     {{ t('Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’. Breadth = the share of groups drawing net inflow. Confluence is a render-time agree/diverge class joining 主力 velocity to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.','流速＝累计净流向的 slope_z（漂移÷自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值。广度＝净流入板块的占比。共振为渲染期一致/背离类别，将主力流速与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。') }}
     · {{ t('Built','构建于') }} {{ built }}
