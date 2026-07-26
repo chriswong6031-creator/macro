@@ -114,6 +114,48 @@ Field rules (the ingester is defensive — every field except the PDF itself has
 Unknown fields are preserved but ignored. A sidecar that fails JSON parse → the PDF is still
 ingested with all-fallback metadata and flagged `needs_metadata:true` (never dropped).
 
+### 5b. Engine-MEASURED metadata (RV W1-A, added 2026-07-26) — `engine/research_vault/probe.py`
+
+The sidecar is a set of upstream **claims**. Anything we can compute from the bytes we are
+already holding is a **measurement**, and a measurement wins. Audit that motivated this:
+across the first 60 ingested documents, `pages`, `desk`, `tags` and `tickers` were empty on
+**every single row** — `pages` because the ingester only ever read `sidecar.pages` while the
+PDF sat in memory beside it, and the other three because the upstream never sends them.
+`needs_metadata` reported 0/60 throughout, because it only inspects title/institution/bad-JSON.
+
+| field | source | notes |
+|---|---|---|
+| `pages` | pypdf → poppler `pdfinfo` | **overrides** `sidecar.pages`; falls back to the claim only when unmeasurable |
+| `content_sha256`, `byte_size` | `hashlib`/`len` | always available; duplicate EVIDENCE (see below) |
+| `char_count`, `word_count` | `pdftotext` output | depth proxies |
+| `text_layer` | derived | `full` / `thin` / `none` / `unavailable` — see the four-state rule below |
+| `pdf_creator`, `pdf_producer` | Info dict | publishing-house fingerprint; useful when `institution` fell back to `Unknown` |
+| `pdf_created_at`, `pdf_modified_at` | Info dict, ISO-8601 | an INDEPENDENT check on `published_at`, which otherwise silently falls back to the R2 upload time |
+
+Rules that are load-bearing, not stylistic:
+
+- **Unknown is `None`/`''`, never `0`.** A null page count must not read as a zero-page document.
+- **`text_layer` keeps four states.** `unavailable` means `pdftotext` is missing or crashed (a
+  HOST fault — install poppler); `none` means the extractor ran and found nothing (an
+  image-only PDF, invisible to body search); `thin` is below readable density; `full` is a real
+  text layer. `extract_pdf_text() or ""` at the call site collapses the first two, which would
+  hide a broken runner behind a plausible-looking document property.
+- **`content_sha256` is evidence, NOT a gate.** Idempotency keys on the source object key, so
+  the same report re-dropped under a different filename is a new object and gets its own row.
+  We report the collision and ingest both — skipping on a hash match would freeze the
+  original bad metadata forever, since receipts make re-ingestion the only repair path.
+- **The hourly lane installs only `boto3 pyyaml`,** so pypdf (a soft dep declared for the
+  download watermark) is ABSENT in production and the `pdfinfo` rung is the one that actually
+  runs. Both rungs are covered by tests against a real PDF; they must agree on the page count.
+- **`first_page_text` is deliberately NOT stored.** `body` is truncated at the tail, so page 1
+  is always inside the row we already keep; downstream extractors read it via
+  `probe.first_page(body)`. A column would duplicate ~4KB per row in a file the API pulls
+  whole on every corpus refresh.
+- **`language` is NOT a measurement.** `sidecar.normalize` defaults it to `"en"`, so it is a
+  declared field carried through to the catalog — excluded from the coverage report below
+  precisely because it would always read 100%. Measuring the script from the body text is a
+  follow-on, not a claim we make today.
+
 ## 6. Catalog schema — `research_vault/catalog.json` (public-safe)
 
 ```json
@@ -123,11 +165,32 @@ ingested with all-fallback metadata and flagged `needs_metadata:true` (never dro
     { "id": "...", "title": "...", "institution": "Bernstein", "side": "sell",
       "desk": "Data Centers", "published_at": "...", "summary_points": [...],
       "tags": [...], "tickers": [...], "top_pick": true, "pages": 12,
-      "needs_metadata": false } , … ] }
+      "language": "en", "needs_metadata": false } , … ] }
 ```
 Body text is NOT in the catalog (search-only, §8). Items are sorted newest-first. `top_pick`
 items also power the Top Picks rail. This file is the ONLY research artifact that carries
 publicly-visible content; the PDFs themselves are never public.
+
+The item field list is declared in `engine/research_vault/catalog.py::_ITEM_FIELDS` and
+MIRRORED in `scripts/build_research_vault.py` (the SSR bake projects its own copy) — a test
+asserts the two tuples stay identical. Only public-safe fields belong here: the measured
+technical facts of §5b (hash, byte size, producer strings, text-layer state) live in the
+corpus, which is server-side, not in the catalog, which is the one public artifact.
+
+### 6b. Coverage tripwire — `catalog.coverage()`
+
+`needs_metadata` cannot see the fields it appears to guard, so the hourly CLI prints a
+per-field fill rate over the final catalog and emits `::warning::` for any field that is
+empty on **all** items — the standing state that a contract field exists and no producer
+ever writes it. Covered fields: `summary_points`, `desk`, `tags`, `tickers`, `pages`.
+Excluded and why: the identity fields all have fallbacks so they are populated by
+construction; `top_pick`/`needs_metadata` mean something when `False`; `language` is
+defaulted (§5b). **Presence of a schema field is not coverage of it** — widening the
+contract before wiring a producer just yields a wider schema with the same holes.
+
+Everything here is a WARNING, never a failure: the hourly job's contract is that no single
+bad document blocks the batch, and that holds equally for a document we merely learned
+something unflattering about.
 
 ## 7. Ingestion pipeline (RV W1)  — `scripts/ingest_research.py` + `engine/research_vault/ingest.py`
 
@@ -151,6 +214,20 @@ month/date) are indexed columns on a `documents` table → compound `WHERE` with
 `MATCH`. **House law (CXI-R23):** never query the CXI databases from this public surface and
 never add PDFs as CXI sources — this is a standalone corpus that only borrows the *code*.
 The API loads `corpus.sqlite` from R2 into the VPS with a TTL cache (read-only queries).
+
+**Schema v2 (2026-07-26)** adds the §5b measured columns to `documents`. They are metadata
+only and are NOT in the FTS table: `first_page_text` would duplicate `body` postings, and
+indexing the provenance strings would silently reweight every BM25 score.
+
+The migration is the load-bearing part. `_restore_corpus` pulls the published corpus from R2
+at the start of every run, and `CREATE TABLE IF NOT EXISTS` is a no-op against it — so new
+columns declared only in the DDL would leave the live database on v1 while every INSERT named
+a v2 column, raising `OperationalError` inside `_ingest_one`'s catch-all and reporting **every
+document as "failed"** with no other symptom. Therefore: the v2 columns are declared exactly
+once (`corpus._V2_COLUMNS`) and applied only through `ALTER TABLE` in `_migrate()`, which runs
+on every open and is idempotent. `upsert` also builds its column list from the columns the
+database actually has, so a partially-failed migration still ingests. Tests cover the v1→v2
+path, row/FTS preservation, migration idempotency, and fresh-vs-migrated column parity.
 
 ## 9. Serving API + download gate (RV W2)  — `app/research.py` (mirror `app/hub.py`)
 
