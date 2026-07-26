@@ -61,12 +61,15 @@ def adapt_research_vault(repo: Path) -> tuple[list[dict], str | None]:
     # M8: every vault item that lands a page gets one at site/research/<slug>.html
     # (scripts/build_research_pages.py). slug_map() is the SAME deterministic
     # id->slug function the site builder uses (pure function of the ordered
-    # items list), so this reproduces the real published URL exactly. Fail-soft
-    # to an empty map -- links.site simply stays None per item if the import
-    # or the derivation ever fails (never blocks the adapter).
+    # items list), so this reproduces the real published URL exactly — imported
+    # from the stdlib-only engine.research_vault.slugs, NOT the jinja2-loading
+    # renderer, because this adapter must produce identical bytes in minimal
+    # environments (chronicle-suite deps; the hourly ingest lane's regen).
+    # Fail-soft to an empty map -- links.site simply stays None per item if the
+    # import or the derivation ever fails (never blocks the adapter).
     slug_by_id: dict[str, str] = {}
     try:
-        from scripts.build_research_pages import slug_map  # noqa: PLC0415
+        from engine.research_vault.slugs import slug_map  # noqa: PLC0415
         slug_by_id = slug_map(items)
     except Exception as exc:  # noqa: BLE001
         log.debug("chronicle.research_vault: slug_map unavailable, links.site will be None: %s", exc)
