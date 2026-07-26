@@ -29,7 +29,7 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
-<link rel="stylesheet" href="assets/css/50da3150.css?v=50da3150">
+<link rel="stylesheet" href="assets/css/83578302.css?v=83578302">
 </head>
 <body class="page-canada">
 
@@ -1685,10 +1685,11 @@
   </div>
 </div>
 
-<!-- Market Participation dialog (Tier-2 receipt for the sentiment odometer) -->
+<!-- Market Participation dialog — illustrated breadth read (field + contribution bars) -->
+
 <div class="cax-dlg" id="cax-dlg-sentiment">
   <div class="cax-dlg-backdrop" onclick="caxCloseDlg()"></div>
-  <div class="cax-dlg-panel">
+  <div class="cax-dlg-panel mp-broad">
     <div class="cax-dlg-head">
       <span class="cax-dlg-title"><span class="l-en">Market Participation</span><span class="l-zh">市场参与度</span></span>
       <button class="cax-dlg-close" onclick="caxCloseDlg()">✕</button>
@@ -1697,17 +1698,48 @@
       
       
       
-      <div class="cax-pop-big"><span class="n" style="color:var(--up)">62</span><span class="t" style="color:var(--up)"><span class="l-en">Broad participation</span><span class="l-zh">参与广泛</span></span></div>
-      <p class="cax-thesis" style="max-width:52ch;margin:2px 0 12px"><span class="l-en">How much of the TSX is actually moving together. This is a computed breadth read — not a fear/greed index — rolled into one 0–100 number so a glance tells you whether strength is broad or just a few names.</span><span class="l-zh">衡量有多少 TSX 成分股在同向运行。这是一项基于市场宽度的计算读数 — 并非恐慌／贪婪指数 — 汇总为 0–100 的单一数字，让你一眼看出走强是广泛的还是仅由少数股票带动。</span></p>
       
-      <div class="cax-lbl"><span class="l-en">So what do I do</span><span class="l-zh">该怎么做</span></div>
-      <p style="font-size:12.5px;color:var(--text);margin:0 0 14px"><span class="l-en">Broad participation — the move has support under it. Trend-following is on firmer ground; still size to the regime gauge above.</span><span class="l-zh">参与广泛 — 上涨有基础支撑。顺势交易的立足点更稳；仍需按上方周期表盘控制仓位。</span></p>
+      <div class="mp-hero">
+        <div class="mp-score-col">
+          <div class="mp-score">62<span class="of">/100</span></div>
+          <div class="mp-zone"><span class="l-en">Broad participation</span><span class="l-zh">参与广泛</span></div>
+        </div>
+        <div class="mp-hero-right">
+          <p class="mp-thesis"><span class="l-en">How much of the TSX is actually moving together — a breadth read, not a fear/greed index. A glance tells you whether strength is broad or just a few names.</span><span class="l-zh">衡量有多少 TSX 成分股在同向运行 — 这是市场宽度读数，并非恐慌／贪婪指数。一眼看出走强是广泛的还是仅由少数股票带动。</span></p>
+          <div class="mp-rail">
+            <div class="seg s-thin" style="width:40%"></div>
+            <div class="seg s-mixed" style="width:20%"></div>
+            <div class="seg s-broad" style="width:40%"></div>
+            <div class="mp-rail-marker" style="left:62%"></div>
+          </div>
+          <div class="mp-rail-scale"><span style="left:40%">40</span><span style="left:60%">60</span></div>
+          <div class="mp-rail-ends"><span><span class="l-en">Thin</span><span class="l-zh">稀薄</span></span><span><span class="l-en">Mixed</span><span class="l-zh">中性</span></span><span><span class="l-en">Broad</span><span class="l-zh">广泛</span></span></div>
+        </div>
+      </div>
       
-      <div class="cax-lbl"><span class="l-en">How it’s measured</span><span class="l-zh">如何测算</span></div>
-      <div class="cax-kv"><span class="k"><span class="l-en">Names above 50-day line</span><span class="l-zh">站上50日线的成分股</span> <span style="color:var(--muted)">· 45%</span></span><span class="v">57.8%</span></div>
-      <div class="cax-kv"><span class="k"><span class="l-en">Names above 200-day line</span><span class="l-zh">站上200日线的成分股</span> <span style="color:var(--muted)">· 30%</span></span><span class="v">61.5%</span></div>
-      <div class="cax-kv"><span class="k"><span class="l-en">Advancers share today</span><span class="l-zh">当日上涨占比</span> <span style="color:var(--muted)">· 15%</span></span><span class="v">62.0%</span></div>
-      <div class="cax-kv"><span class="k"><span class="l-en">20-day change in participation</span><span class="l-zh">参与度20日变化</span> <span style="color:var(--muted)">· 10%</span></span><span class="v">+16.1 pts</span></div>
+      <div class="mp-stance">
+        <svg class="st-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v6c0 5 3.8 8.3 9 9 5.2-.7 9-4 9-9V7z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div class="st-tx"><span class="l-en"><b>The move has support under it.</b> Trend-following is on firmer ground — still size to the regime gauge above.</span><span class="l-zh"><b>上涨有基础支撑。</b>顺势交易的立足点更稳 — 仍需按上方周期表盘控制仓位。</span></div>
+      </div>
+      
+      <div class="mp-grid">
+        <div>
+          <div class="cax-lbl"><span class="l-en">Names taking part</span><span class="l-zh">参与的成分股</span></div>
+          <div class="mp-field"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="mp-field-cap"><span class="l-en">About <b>58</b> of every 100 TSX names are above their 50-day line.</span><span class="l-zh">每 100 只 TSX 成分股中约 <b>58</b> 只站上其 50 日均线。</span></div>
+          <div class="mp-field-sub"><span class="l-en">Broad — most of the market is participating.</span><span class="l-zh">广泛 — 多数股票在参与。</span></div>
+        </div>
+        <div>
+          <div class="cax-lbl"><span class="l-en">What builds the score</span><span class="l-zh">评分构成</span></div>
+          <div class="mp-bars">
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Names above 50-day line</span><span class="l-zh">站上50日线</span><span class="br-wt">45%</span></span><span class="br-val">57.8%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:57.8%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Names above 200-day line</span><span class="l-zh">站上200日线</span><span class="br-wt">30%</span></span><span class="br-val">61.5%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:61.5%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Advancers today</span><span class="l-zh">当日上涨占比</span><span class="br-wt">15%</span></span><span class="br-val">62.0%</span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:62.0%"></div></div></div>
+            <div class="mp-bar-row"><div class="br-top"><span class="br-name"><span class="l-en">Trend (20-day change)</span><span class="l-zh">趋势（20日变化）</span><span class="br-wt">10%</span></span><span class="br-val">+16.1 <span class="l-en">pts</span><span class="l-zh">点</span></span></div><div class="mp-bar-track"><div class="mp-bar-fill" style="width:82.2%"></div></div></div>
+          </div>
+          <div class="mp-note"><span class="l-en">Each input is scaled 0–100 and weighted into one read. Higher-weight rows move the number most.</span><span class="l-zh">每项输入归一化为 0–100 后按权重合成为单一读数。权重越高的项对数字影响越大。</span></div>
+        </div>
+      </div>
       <div class="cax-foot"><span class="l-en">Display-only composite of S&P/TSX Composite breadth (~220 names). Bands: broad ≥60 · mixed 40–59 · thin <40. Not scored, not a trading signal.</span><span class="l-zh">标普/TSX 综合指数市场宽度（约220只）的仅展示合成指标。区间：广泛 ≥60 · 中性 40–59 · 稀薄 <40。不计分，非交易信号。</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-24</div>
       
     </div>
@@ -1736,7 +1768,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-25 23:04 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-26 00:37 UTC</p>
 
 </div>
 

@@ -120,7 +120,10 @@
   /* state tint of the primary blob */
   body.aur-warn .intl-aurora .a1 { background:radial-gradient(ellipse,color-mix(in srgb,var(--warn) 20%,transparent),transparent 70%); }
   body.aur-risk .intl-aurora .a1 { background:radial-gradient(ellipse,color-mix(in srgb,var(--down) 20%,transparent),transparent 70%); }
-  nav.site-nav, .intl-flow { position:relative; z-index:1; }
+  .intl-flow { position:relative; z-index:1; }
+  /* nav must stack ABOVE the content flow or its dropdowns clip behind the hero
+     (same idiom as canada/flow_desk); the dd-menu's z-index:90 is nav-scoped */
+  nav.site-nav { position:relative; z-index:2; }
   @media (prefers-reduced-motion: reduce) { .intl-aurora b { transition:none; } }
 
   /* ── the hero card ── */

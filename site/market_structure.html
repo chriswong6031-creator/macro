@@ -35,7 +35,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/css/2d31f6c2.css?v=2d31f6c2">
+<link rel="stylesheet" href="assets/css/c2a93604.css?v=c2a93604">
 </head>
 <body class="page-msp">
 
@@ -359,8 +359,8 @@
   </div>
 
   <span class="help">?<span class="tip">
-    <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: 22.2B (53th pctile since 2026-06-14).<br><br><em>Model estimate only — actual dealer books are unobservable. 70/30 SPX/SPY blend reconstruction.</em></span>
-    <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：22.2B（自2026-06-14以来53百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，为SPX/SPY 70/30混合重建。</em></span>
+    <span class="l-en"><b>How shock absorbers work</b><br>When dealer net GEX is positive (long gamma), they sold options and hedge by buying dips / selling rips — damping moves. When negative (short gamma), hedging requires buying rallies and selling dips — amplifying moves.<br><br>Net GEX today: 22.2B (53th pctile since 2026-06-14).<br><br><em>Model estimate only — actual dealer books are unobservable. Reconstructed from the SPX options chain.</em></span>
+    <span class="l-zh"><b>缓冲机制原理</b><br>当做市商净GEX为正（多伽马）时，他们卖出期权，通过逢低买/逢高卖对冲——抑制波动。当GEX为负（空伽马）时，对冲需要追涨杀跌——放大波动。<br><br>当前净GEX：22.2B（自2026-06-14以来53百分位）。<br><br><em>仅为模型估算——做市商实际账簿不可观测，由标普500指数期权链重建。</em></span>
   </span></span>
 
   
@@ -400,9 +400,11 @@
 <div class="sec-head">
   <span class="eyebrow">3</span>
   <h2><span class="l-en">Machine money flows</span><span class="l-zh">机器资金动向</span></h2>
+  
+  <span class="badge est"><span class="l-en">model estimate</span><span class="l-zh">模型估算</span></span>
   <span class="help">?<span class="tip">
     <span class="l-en"><b>What these are</b><br>Volatility-control funds (VC): target ~300.0B AUM; hold SPX at fraction min(1, 10% / max(RV21,RV63)). Pure price arithmetic — full backcast.<br><br>Trend-following funds (CTA): 20/50/100/200d trend z-score; flow estimated from positioning change.<br><br><em>Representative model estimates of mechanical fund behavior — NOT audited positions or actual AUM data.</em></span>
-    <span class="l-zh"><b>说明</b><br>波动率控制基金（VC）：目标约300.0亿美元规模；持仓比例 min(1, 10%/max(RV21,RV63))，纯价格计算，可全程回测。<br><br>趋势跟踪基金（CTA）：20/50/100/200日趋势Z分数；持仓变化估算资金流。<br><br><em>代表性机械基金行为的模型估算，非实际基金审计持仓。</em></span>
+    <span class="l-zh"><b>说明</b><br>波动率控制基金（VC）：目标规模约3000亿美元；持仓比例 min(1, 10%/max(RV21,RV63))，纯价格计算，可全程回测。<br><br>趋势跟踪基金（CTA）：20/50/100/200日趋势Z分数；持仓变化估算资金流。<br><br><em>代表性机械基金行为的模型估算，非实际基金审计持仓。</em></span>
   </span></span>
   
   <div class="range-btns" id="sys-range-btns" style="margin-left:auto">
@@ -603,8 +605,8 @@
   <span class="eyebrow">6</span>
   <h2><span class="l-en">Weekly range</span><span class="l-zh">本周区间</span></h2>
   <span class="help">?<span class="tip">
-    <span class="l-en">The range options paid for at Friday's close, held through the week. ±1σ = 68% of outcomes; ±2σ = 95%. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend.</span>
-    <span class="l-zh">周五收盘时期权定价的本周区间，持有至本周末。±1σ=68%概率；±2σ=95%。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。</span>
+    <span class="l-en">Where the week could reasonably land, measured from Friday's close and the volatility priced in at that close. ±1σ covers about 68% of outcomes, ±2σ about 95% — if vol behaves as priced. Gamma flip line: where the dealer regime changes. Locked at Friday's close, fixed through the week, resets each weekend. A model estimate, not a forecast or a boundary the market must respect.</span>
+    <span class="l-zh">从周五收盘价及当时定价的波动率推算，本周价格可能落在的区间。±1σ约覆盖68%的情形，±2σ约95% — 前提是波动率按定价兑现。伽马翻转线：做市商机制变化位置。周五收盘锁定，本周内保持不变，每周末重置。这是模型估算，既非预测，也非市场必须遵守的边界。</span>
   </span></span>
 </div>
 
@@ -614,8 +616,8 @@
 
 
 <div style="margin-top:36px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)">
-  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions. Shock-absorber series from 2026-06-14; correlation series from 2006.</span>
-  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓。缓冲机制数据自2026-06-14起，相关性数据自2006年起。</span>
+  <span class="l-en">Context for expectations and sizing — not buy or sell signals. Machine-flow figures are model estimates, not audited fund positions: the dollar amounts are arithmetic on one stylised $300B pool run at a 10% volatility target, so read them as scale and direction, not as money that actually moved. Shock-absorber series from 2026-06-14; correlation series from 2006.</span>
+  <span class="l-zh">仅供把握市场环境与仓位预期 — 并非买卖信号。机器资金数据为模型估算，非审计持仓：其中的美元金额是按单一模型化的3000亿美元资金池、10%波动率目标推算而来，应视为量级与方向的参考，而非真实成交的资金。缓冲机制数据自2026-06-14起，相关性数据自2006年起。</span>
    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-22
 </div>
 

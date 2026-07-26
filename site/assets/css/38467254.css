@@ -420,7 +420,7 @@
   /* Perf: loud pulse = pseudo animating ONLY opacity (compositor-run); animating
      box-shadow on the card repainted it every frame (2026-07-21 mobile audit).
      mmGlowBreathe keyframes ship in theme.css (loaded on every placement). */
-  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 5%, var(--panel));
          position: relative;
          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent); }
   .rrx.rrx-loud::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
@@ -448,10 +448,8 @@
          font-variant-numeric: tabular-nums; line-height: 1.1; }
   .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
          color: var(--muted); }
-  /* odds hero */
-  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
-         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
-         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
+  /* odds hero — flat on the card (the amber wash now lives on .rrx itself, not a nested box) */
+  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; }
   .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
   .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
          color: var(--muted); }
@@ -569,7 +567,7 @@
   .rrx .rrx-rec-do-k { font-weight: 800; color: var(--rvc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 9.5px; margin-right: 6px; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx { gap: 10px; padding: 13px 16px; }
-  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-odds { gap: 14px; align-items: center; padding: 8px 12px; }
+  body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-odds { gap: 14px; align-items: center; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-big { font-size: 34px; margin: 2px 0 1px; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-big .pct { font-size: 19px; }
   body:is(.page-macro, .page-china, .page-canada) .ms-front > .rrx .rrx-vsn { font-size: 11px; }
@@ -599,7 +597,6 @@
     .rrx { padding: 14px 15px; gap: 10px; }
     .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev, .rrx .rrx-cyc, .rrx .rrx-audit { display: none; }
     .rrx .rrx-cgl { display: flex; }
-    .rrx .rrx-odds { padding: 11px 13px; }
     .rrx .rrx-big { font-size: 34px; }
     .rrx .rrx-threats { gap: 5px; }
     .rrx .rrx-th:not(.dom) { display: none; }
