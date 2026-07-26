@@ -202,9 +202,10 @@ wage stickiness→margin compression→low-margin retail (ECI in transmission st
 - **W4 — distribution (builder/opus):** world_state/synapse/mastermind wiring (darkpool
   pattern), portfolio_ctx merge, transmission.html "Cascade Monitor" section (designer/
   opus for the surface), WRI watchlist lane (chain flags join L1), Terminal context field.
-- **W5 — Loop C closure (builder/opus + CHF lane):** surprise_queue → chain-proposal packs
-  through `run_causal_brainstorm.py`; lessons-ledger postmortem intake; auto-compile +
-  auto-backtest of proposals; weekly cadence under the EXISTING CHF autonomy gate.
+- **W5 — Loop C closure (builder/opus + CHF lane): SHIPPED — see §11.** surprise_queue →
+  chain-proposal packs through the CHF brainstorm lane; lessons-ledger postmortem intake;
+  auto-compile + auto-backtest of proposals; weekly cadence under the EXISTING CHF autonomy
+  gate (which stays OFF by default — the lane adds its own default-OFF sub-flag).
 - **W6 — WRI coverage extensions (builder/opus):** crypto tickers into the beta universe;
   `factor_betas_hk.json` clock-safe HK/CN model; CA; options/dealer lane when #1845
   stabilizes. (Rides WRI rulings, listed here for one-roadmap visibility.)
@@ -224,3 +225,62 @@ Options/dealer lane join (#1845, ~2026-08); stock-top-hazard arm interaction rev
 (2026-10-07 window per its own ruling); HK/CN factor model calibration study; chain
 promotion candidates' first gauntlet reads (≥1 quarter of forward episodes, per TXI-R4);
 industry-factor extension for WRI implied-ρ (recorded in WRI §5-A).
+
+## 11. W5 — Loop-C closure (shipped)
+
+The self-improving knowledge store closes here: NEW transmission chains can be proposed
+(semi-)autonomously through the EXISTING Causal Hypothesis Factory (CHF) brainstorm lane,
+land as hypothesis-tier chains, and get auto-compiled + auto-backtested — while humans stay
+at exactly the two points TXI-R5 reserves for them (chain-library review, promotion rulings).
+
+**The pathway.**
+
+```
+CHF surprise_queue (unexplained tape anomalies)  ┐
+metabolism lessons ledgers (missed-move postmortems) ┼─▶ propose_transmission_chains.py
+existing chain library (dedup by node-set)       ┘        → PROPOSAL PACK (deterministic)
+                                                                    │
+                                            (rides the EXISTING CHF brainstorm lane —
+                                             run_causal_brainstorm.py: generator→skeptic→…;
+                                             NO second LLM loop, CHF-R1/R2)
+                                                                    ▼
+                                                          chain-shaped JSON replies
+                                                                    │
+   knowledge/transmission/proposed/<slug>.yaml  ◀── ingest_transmission_chains.py
+   (rev:0, tier:hypothesis, source:chf_proposal)     validate_chain + node-resolution + dedup;
+             │                                        unresolvable/malformed/authority-field →
+             │  W1 load_chains globs proposed/ →      data/transmission/proposal_rejects.jsonl
+             │  compiles episode state;               (never a faked resolvable node)
+             │  W3 calibration mines its hop rates
+             ▼
+   HUMAN PR review + promotion  ──▶  git mv out of proposed/ (→ top-level library), the ONLY
+                                     step that lets a chain earn authority (its own gauntlet).
+```
+
+**What ships (one PR).**
+
+- `scripts/propose_transmission_chains.py` — the ONLY new generation surface, and it produces
+  a PACK, not chains. Mirrors `causal_brainstorm_pack.py` (self-contained text pack, live
+  sections, honest "(absent — 0 rows)", no LLM, stdout/`--out`). Constrains the LLM to REAL
+  collectable data — the six resolvable adapters, the on-disk series, the live state-JSON
+  keys, and the whitelisted node-test ops/metrics, all pulled from `engine.transmission_chains`
+  + disk — so a proposed node can only bind to a collected artifact.
+- `scripts/ingest_transmission_chains.py` — rides the SHAPE of `causal_ingest_brainstorm.py`
+  (`--inbox`, dry-run default + `--write`, banned-word check, rejects ledger) but materializes
+  chain YAMLs. Stamps `rev:0, tier:hypothesis, source:chf_proposal, proposed_at` (from pack
+  metadata / arg — never a clock call on the chain); rejects malformed / unresolvable-node /
+  authority-field / duplicate-node-set proposals to `data/transmission/proposal_rejects.jsonl`.
+- `engine/transmission_chains.load_chains` now also globs `knowledge/transmission/proposed/`
+  (tagging chains `_proposed`), so W1 auto-compiles and W3 auto-backtests proposals on the
+  next cycle — the loader change is what makes "auto-compile + auto-backtest" true.
+- `scripts/run_transmission_proposals.py` + `config/transmission_proposals.yml` — the gated
+  weekly runner (declared in `config/dag.yml`, invoked in `weekly.yml`).
+
+**Autonomy stays behind the CHF operator gate (default OFF).** The proposal → ingest cycle
+runs only when BOTH `config/causal_llm.yml:auto_loop` (the EXISTING CHF-R8 operator gate) AND
+`config/transmission_proposals.yml:enabled` are true. The lane's own `enabled` flag **ships
+FALSE**, so wiring the weekly step in can never auto-activate it — the runner no-ops (writes
+nothing, exit 0) until an operator flips it on in a one-line PR. This is not a second LLM loop
+and grants no new authority: proposals are display/context tier only (DNR row 45 / Article
+1/2), and LLMs de-escalate only (CHF-R17) — a chain earns authority solely via a human
+promotion + its own pre-registered gauntlet.
