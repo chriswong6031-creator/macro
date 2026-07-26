@@ -664,6 +664,23 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
+      - name: restore odds desk OHLCV store from R2 (engine hops runners; store is runner-local)
+        # data/odds_ohlcv/*.parquet is gitignored + R2-backed (published back by this job's
+        # R2 publish step) but was never restored, so every runner hop cold-started the
+        # store and build_odds re-fetched all 119 tickers at period="max" nightly — and a
+        # single-night yfinance flake dropped that ticker from site/oddsdata/catalog.json
+        # entirely (AMAT 2026-07-21). With the store restored, build_odds takes its 1mo
+        # upsert path (adjustment-basis guard: tests/test_upsert_basis_guard.py), so a
+        # flaked ticker degrades to one-day-stale-but-present instead of absent. Non-fatal:
+        # on restore failure build_odds cold-backfills exactly as before. Publish-back
+        # needs no gate on this step (unlike attention): a cold rebuild is a COMPLETE
+        # deep store, and publish_r2 never prunes R2 keys absent locally.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs odds_ohlcv || echo "::warning::odds_ohlcv R2 restore failed (non-fatal — build_odds cold-backfills)"
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -988,12 +1005,14 @@ jobs:
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
           run_py "congressional trades desk (build_congress)" scripts.build_congress
           # Odds Desk — historical base-rate analyzer + factor match (research/ODDS_DESK.md).
-          # Backfills/upserts the runner-local data/odds_ohlcv store (yfinance), recomputes the
+          # Backfills/upserts the data/odds_ohlcv store (yfinance; the preamble's R2 restore
+          # step materialises it first, so the normal path is a cheap 1mo upsert — the cold
+          # 119×period="max" backfill runs only when the restore came up empty), recomputes the
           # per-ticker factor matrices (site/oddsmatrix -> R2) + site/oddsdata catalog/factor_match
           # JSON, and renders odds.html. Display-only; returns 0 on error — never breaks the render.
           # DELIBERATELY absent from the render/engine-render express lanes (vetted 2026-07-25):
-          # it is a network collector every run, its store is gitignored (cold-start class),
-          # and its R2 matrices only publish here — see the omission comments in both lanes.
+          # it is a network collector every run, its store is gitignored + R2-restored only
+          # in this job, and its R2 matrices only publish here — see the omission comments in both lanes.
           run_py "odds desk (build_odds)" scripts.build_odds
           # Technical Lab hub — screener + lab profile page. Reads site/factordata/tech_screener.json
           # + tech_lab.json (written by nightly tech signal engine). Falls back to sample fixture if
