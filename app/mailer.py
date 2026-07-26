@@ -616,9 +616,43 @@ def _block_text(b: dict, lang: str) -> str:
     return str(val)
 
 
+def _shared_section_html(blocks: list[dict]) -> str:
+    """The ``once`` blocks, rendered ONCE below both language halves.
+
+    Some content belongs to neither language: a quote of the reader's own words IS their
+    words, untranslated, so rendering it inside each half printed the same text twice and
+    doubled the size of every message carrying one — a 5000-char support message shipped
+    ~10000 chars of duplicated quote. A ``once`` block renders here instead, under its own
+    bilingual micro-label so it still says what it is in whichever language the reader has.
+
+    ``label_en`` / ``label_zh`` are optional; without them the block renders bare.
+    """
+    once = [b for b in blocks if b.get("once")]
+    if not once:
+        return ""
+    out = []
+    for b in once:
+        body = _block_html(b, "en") or _block_html(b, "zh")
+        if not body:
+            continue
+        label = ""
+        l_en, l_zh = b.get("label_en") or "", b.get("label_zh") or ""
+        if l_en or l_zh:
+            joined = " · ".join(x for x in (l_en, l_zh) if x)
+            label = (f'<p style="margin:0 0 8px; font-family:{_F_MONO_ZH}; font-size:10px;'
+                     f' font-weight:600; letter-spacing:1.3px; text-transform:uppercase;'
+                     f' color:{_C_DIM};">{_esc(joined)}</p>')
+        out.append(f'<tr><td class="mx-pad" style="padding:0 32px;">{label}{body}</td></tr>')
+    return "".join(out)
+
+
 def _lang_section_html(title: str, blocks: list[dict], lang: str) -> str:
-    """One language's half of the card: heading + every block, in order."""
-    body = "".join(_block_html(b, lang) for b in blocks)
+    """One language's half of the card: heading + every block, in order.
+
+    ``once`` blocks are skipped here — :func:`_shared_section_html` renders them a single
+    time below both halves.
+    """
+    body = "".join(_block_html(b, lang) for b in blocks if not b.get("once"))
     if lang == "zh":
         head = (f'<h2 class="mx-text" style="margin:0 0 10px; font-family:{_F_ZH};'
                 f' font-size:20px; line-height:1.35; font-weight:700; color:{_C_TEXT};">'
@@ -647,6 +681,12 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         {"kind": "kv",     "en": [(k, v), …], "zh": […]} the detail slip
         {"kind": "button", "en": "…", "zh": "…", "url": "…"}   at most ONE per email
 
+    Any block may add ``"once": True``: it is then rendered a SINGLE time below both
+    language halves rather than inside each, with an optional ``label_en`` / ``label_zh``
+    micro-label above it. That is for content which is not translated because it cannot be
+    — a quote of the sender's own message — where printing it in both halves is pure
+    duplication and, on a long message, doubles the size of the email.
+
     Keyword extras (all optional, all named by PIN §6):
         eyebrow          the email's class label in the dark band — 1-2 words, English,
                          uppercase (RECEIPT · TRIAL · UPGRADE · PAYMENT · SUPPORT · REPLY).
@@ -666,6 +706,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
     blocks = list(blocks or [])
     why_en = _WHY_EN if why_en is None else why_en
     why_zh = _WHY_ZH if why_zh is None else why_zh
+    shared = _shared_section_html(blocks)
 
     # The trailing entity run stops Gmail pulling body copy in after the preheader.
     pre = ""
@@ -754,6 +795,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
             </td>
           </tr>
           {_lang_section_html(title_zh, blocks, "zh")}
+          {shared}
           <tr><td style="height:30px; font-size:0; line-height:0;">&nbsp;</td></tr>
         </table>
       </td>
@@ -771,7 +813,7 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
         <p class="mx-foot" style="margin:0; font-family:{_F_UI}; font-size:12px; line-height:1.6; color:{_C_FOOT};">
           Questions? Reply to this email, or write to
           <a class="mx-link" href="mailto:{_SUPPORT_ADDR}" style="color:{_C_MUTED}; text-decoration:underline;">{_SUPPORT_ADDR}</a>.<br />
-          有问题？直接回复本邮件，或发送至 {_SUPPORT_ADDR}。
+          有问题？直接回复本邮件，或发送至 <a class="mx-link" href="mailto:{_SUPPORT_ADDR}" style="color:{_C_MUTED}; text-decoration:underline;">{_SUPPORT_ADDR}</a>。
         </p>
       </td>
     </tr>
@@ -785,14 +827,27 @@ def render_email(title_en: str, title_zh: str, blocks: list[dict], *,
 </body>
 </html>"""
 
-    en_text = "\n\n".join(t for t in (_block_text(b, "en") for b in blocks) if t)
-    zh_text = "\n\n".join(t for t in (_block_text(b, "zh") for b in blocks) if t)
+    halves = [b for b in blocks if not b.get("once")]
+    en_text = "\n\n".join(t for t in (_block_text(b, "en") for b in halves) if t)
+    zh_text = "\n\n".join(t for t in (_block_text(b, "zh") for b in halves) if t)
+    # The text part mirrors the HTML exactly, `once` included — a plain-text client must
+    # not be the one place a 5000-char message is still pasted twice.
+    shared_text = ""
+    for b in blocks:
+        if not b.get("once"):
+            continue
+        body = _block_text(b, "en") or _block_text(b, "zh")
+        if not body:
+            continue
+        label = " · ".join(x for x in (b.get("label_en") or "", b.get("label_zh") or "") if x)
+        shared_text += (f"{label}\n" if label else "") + body + "\n\n"
     unsub_text = f"\nUnsubscribe / 退订: {unsubscribe_url}\n" if unsubscribe_url else ""
     text = (
         f"{_BRAND}{(' · ' + eyebrow) if eyebrow else ''}\n\n"
         f"{title_en}\n\n{en_text}\n\n"
         f"{'-' * 46}\n\n"
         f"{title_zh}\n\n{zh_text}\n\n"
+        f"{shared_text}"
         f"{'-' * 46}\n"
         f"{_FOOTER_BRAND} · {_SITE_LABEL}\n{why_en}\n{why_zh}\n{unsub_text}"
     )

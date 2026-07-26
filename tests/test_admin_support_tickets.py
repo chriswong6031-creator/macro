@@ -14,6 +14,7 @@ admin.server Handler (401 unauthenticated, 403 write without the CSRF header).
 from __future__ import annotations
 
 import json
+import re
 import sys
 import threading
 import urllib.error
@@ -154,6 +155,122 @@ def test_panel_search_escapes_quotes(wired):
     support_tickets.panel(q="o'brien")
     rows = q.find("t.subject")
     assert "%o''brien%" in rows and "ilike" in rows
+
+
+# ===========================================================================
+# W2 review B4b — the ref a customer quotes has to find the row
+#
+# app/support.py::ticket_ref prints `MX-` + the first 8 hex of the id, uppercased. It is
+# in the ack email's subject, on the page's success slip and in every reply — the ONE
+# identifier we hand out. The search matched only email and subject, so pasting it found
+# nothing, and the ref was decoration.
+#
+# admin/support_tickets.py builds SQL STRINGS for the Supabase Management API with no
+# bound parameters, so these tests carry the injection posture as well as the feature.
+# ===========================================================================
+_SQL_LITERAL = re.compile(r"'(?:[^']|'')*'")
+
+
+def _outside_literals(sql: str) -> str:
+    """The statement with every well-formed quoted literal blanked out — i.e. what
+    Postgres would actually parse as SQL, with the data removed."""
+    return _SQL_LITERAL.sub("''", sql)
+
+
+def test_the_injection_detector_would_catch_an_unescaped_needle():
+    """A stripping assertion that can never fire is a vacuous green. Prove the detector
+    fires: without _lit's quote-doubling the payload closes the literal early and the
+    tokenizer leaves the verb in open SQL."""
+    unescaped = "select * from t where x ilike '%'; drop table t; --%'"
+    assert "drop" in _outside_literals(unescaped).lower()
+    escaped = "select * from t where x ilike '%''; drop table t; --%'"
+    assert "drop" not in _outside_literals(escaped).lower()
+
+
+@pytest.mark.parametrize("needle,expect", [
+    ("MX-F80CB92C", "f80cb92c"),            # exactly what the customer was given
+    ("mx-f80cb92c", "f80cb92c"),            # …retyped in whatever case they felt like
+    ("Mx-F80cb92C", "f80cb92c"),
+    ("f80cb92c", "f80cb92c"),               # the bare hex
+    ("F80C", "f80c"),                       # a half-typed ref still narrows
+    ("f80cb92c159b49619", "f80cb92c159b49619"),   # a pasted uuid head
+    ("ada@example.com", None),              # an email is not a ref
+    ("card declined", None),
+    ("MX-", None),                          # the prefix alone is not a ref
+    ("f80", None),                          # under the 4-char floor
+    ("'; drop table support_tickets; --", None),
+    ("MX-f80c' or 1=1 --", None),
+    ("", None),
+    (None, None),
+])
+def test_ref_prefix_accepts_only_a_ticket_ref(needle, expect):
+    assert support_tickets.ref_prefix(needle) == expect
+
+
+def test_panel_search_finds_a_ticket_by_its_ref(wired):
+    q = wired
+    support_tickets.panel(q="MX-F80CB92C")
+    rows = q.find("t.subject")
+    assert "t.id::text ilike 'f80cb92c%'" in rows
+    # the email/subject clauses are still there — a ref search widens, never replaces
+    assert "t.email ilike" in rows and "t.subject ilike" in rows
+
+
+def test_panel_search_ref_match_is_case_insensitive(wired):
+    q = wired
+    support_tickets.panel(q="mx-f80cb92c")
+    assert "t.id::text ilike 'f80cb92c%'" in q.find("t.subject")
+
+
+def test_panel_search_adds_no_id_clause_for_ordinary_text(wired):
+    q = wired
+    support_tickets.panel(q="card declined")
+    assert "t.id::text" not in q.find("t.subject")
+
+
+def test_panel_search_ref_clause_is_quoted_through_lit(wired):
+    """Hex by regex AND quoted by _lit. 'the regex already proved it safe' is exactly the
+    reasoning that eventually ships an injection into a string-built SQL lane."""
+    q = wired
+    support_tickets.panel(q="MX-F80CB92C")
+    rows = q.find("t.subject")
+    m = re.search(r"t\.id::text ilike ('(?:[^']|'')*')", rows)
+    assert m, "the ref clause must be a quoted literal"
+    assert m.group(1) == "'f80cb92c%'"
+
+
+@pytest.mark.parametrize("payload", [
+    "'; drop table public.support_tickets; --",
+    "MX-f80c'; delete from public.support_tickets where '1'='1",
+    "MX-\x00f80cb92c",
+    "MX-" + "f" * 5000,
+])
+def test_panel_search_injection_payloads_are_inert(wired, payload):
+    """Inert, not absent. The payload is DATA and it is right that it appears inside the
+    ilike literal; what must never happen is it appearing as SQL. So the assertion strips
+    every well-formed literal and looks at what Postgres would be left parsing — which is
+    also what catches a regression in _lit, because an undoubled quote makes the literal
+    tokenizer mis-close and spills the rest of the payload into open SQL."""
+    q = wired
+    support_tickets.panel(q=payload)
+    rows = q.find("t.subject")
+    bare = _outside_literals(rows).lower()
+    for verb in ("drop", "delete", "insert", "update", "--", ";"):
+        assert verb not in bare, f"{verb!r} escaped the literal: {bare}"
+    assert rows.count("'") % 2 == 0
+    assert "\x00" not in rows
+    # none of these is a ref, so no id clause may be built from one
+    assert "t.id::text" not in rows
+    # and the needle is capped long before it becomes a megabyte f-string
+    assert len(rows) < 4000
+
+
+def test_panel_ref_search_counts_are_scoped_to_the_ref(wired):
+    """The chip counts follow the search, so a ref search must not report the whole table."""
+    q = wired
+    support_tickets.panel(q="MX-F80CB92C")
+    summary = q.find("group by 1")
+    assert "t.id::text ilike 'f80cb92c%'" in summary
 
 
 def test_panel_pagination_offsets(wired):

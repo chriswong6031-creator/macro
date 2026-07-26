@@ -22,6 +22,7 @@ mailed yet.
 """
 from __future__ import annotations
 
+import re
 import sys
 import time
 from pathlib import Path
@@ -539,11 +540,18 @@ def test_rate_map_is_hard_capped_within_one_window(wired, monkeypatch):
 # ===========================================================================
 # W2 / M4 — mail runs AFTER the response, and the ack reaches the submitter
 #
-# `create_ticket` is a sync def, so FastAPI runs it in the 40-slot anyio threadpool that
-# every other sync route shares. With SMTP inline, one stalled relay costs a whole slot
-# for the mailer's full retry budget, and 40 concurrent submissions to a route a stranger
-# can call would stall the entire API. These tests pin the property that fixes it: at the
-# moment the caller is told ok:true, NOTHING has been mailed yet.
+# What deferring the sends actually buys, stated correctly (the first version of this
+# comment claimed threadpool isolation and was wrong): the SUBMITTER'S WAIT no longer
+# contains the relay. Inline SMTP put up to `_SMTP_TIMEOUT × _SEND_ATTEMPTS` — ~24s today —
+# in front of the browser hearing anything, on a route a stranger can call.
+#
+# It does NOT move the work off the shared pool. Starlette runs a sync background task via
+# run_in_threadpool -> anyio.to_thread.run_sync, i.e. the same default 40-token limiter
+# that serves every sync route. What bounds concurrent mail jobs is the rate limiter:
+# RATE_LIMIT per claimed IP, PEER_RATE_LIMIT per trusted Caddy peer.
+#
+# These tests pin the property that survives either framing: at the moment the caller is
+# told ok:true the row is stored and NOTHING has been mailed yet.
 # ===========================================================================
 def test_mail_is_queued_not_sent_on_the_request_path(wired, monkeypatch):
     store, _n = wired
@@ -655,3 +663,154 @@ def test_ack_attaches_the_verified_user_id_when_signed_in(wired, monkeypatch):
 def test_ticket_ref_is_the_pinned_short_form():
     assert support.ticket_ref("7f3a2b91-1111-4000-8000-000000000001") == "MX-7F3A2B91"
     assert support.ticket_ref("") == ""
+
+
+# ===========================================================================
+# W2 review B3 — the response says whether mail is real, so the page can be honest
+#
+# The estate ships DARK until SMTP credentials land (docs/ops/email-support-setup.md), and
+# the sends are deferred, so the response structurally cannot know a disposition. It can
+# know whether a relay is configured at all, and that is exactly the fact /support.html
+# needs before it may print "We emailed a copy to …".
+# ===========================================================================
+@pytest.fixture
+def mail_env(monkeypatch):
+    """Turn a real relay on/off through the same env app/mailer.py reads at call time.
+
+    Mail-off DELETES the four keys rather than assuming they are absent: an operator shell
+    that exports them would otherwise make the mail-off branch silently untested.
+    """
+    def _set(on: bool):
+        for k, v in (("MAIL_SMTP_HOST", "smtp.test"), ("MAIL_SMTP_USER", "u"),
+                     ("MAIL_SMTP_PASS", "p"), ("MAIL_FROM", "from@test")):
+            if on:
+                monkeypatch.setenv(k, v)
+            else:
+                monkeypatch.delenv(k, raising=False)
+    return _set
+
+
+def test_mail_false_when_no_relay_is_configured(wired, mail_env):
+    mail_env(False)
+    out = _post()
+    assert out["mail"] is False
+    assert out["ok"] is True                      # …and the ticket is filed regardless
+    assert len(wired[0].tickets) == 1
+
+
+def test_mail_true_when_a_relay_is_configured(wired, mail_env, monkeypatch):
+    mail_env(True)
+    from app import mailer
+    monkeypatch.setattr(mailer, "send", lambda **kw: "sent")
+    assert _post()["mail"] is True
+
+
+def test_mail_flag_is_a_bool_never_a_promise_about_delivery(wired, mail_env, monkeypatch):
+    """`mail` reports the CONFIG, not the send: with the sends deferred there is no
+    disposition to report, and the page's copy only needs to know whether to speak."""
+    mail_env(True)
+    from app import mailer
+    monkeypatch.setattr(mailer, "send",
+                        lambda **kw: (_ for _ in ()).throw(RuntimeError("relay down")))
+    bt = BackgroundTasks()
+    out = _post(bt=bt, drain=False)
+    assert out["mail"] is True                    # answered before a byte was sent
+    _drain(bt)                                    # the send then fails, harmlessly
+    assert out["mail"] is True
+
+
+def test_mail_is_reported_off_when_the_relay_state_cannot_be_read(wired, mail_env, monkeypatch):
+    """Unknown is reported as False. The failure a support page cannot afford is
+    promising a confirmation email that is never coming."""
+    mail_env(True)
+    from app import mailer
+    monkeypatch.setattr(mailer, "is_configured",
+                        lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert support._mail_configured() is False
+    assert _post()["mail"] is False               # and the route still files the ticket
+
+
+# ===========================================================================
+# W2 review B6 — one clock per ticket
+# ===========================================================================
+def test_the_response_carries_the_servers_utc_stamp(wired):
+    """The page printed an UNLABELLED local time while the email printed UTC — one
+    ticket, two contradicting readings. The page now prints this string."""
+    out = _post()
+    assert out["sent"].endswith(" UTC")
+    assert re.match(r"^\d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} UTC$", out["sent"]), out["sent"]
+
+
+def test_the_page_stamp_and_the_email_stamp_are_the_same_string(wired, monkeypatch):
+    """One `_sent_stamp()` per ticket, handed to both consumers. Two calls a few hundred
+    ms apart can straddle a minute boundary and show the same ticket at two times."""
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+
+    calls = {"n": 0}
+    real = support._sent_stamp
+
+    def counting():
+        calls["n"] += 1
+        return real()
+
+    monkeypatch.setattr(support, "_sent_stamp", counting)
+    out = _post()
+    assert calls["n"] == 1, "the stamp must be computed once, not once per consumer"
+    assert out["sent"] in sent[0]["html"]
+
+
+def test_the_zh_slip_carries_the_chinese_date_form(wired, monkeypatch):
+    """The ZH half printed an English month directly under a why-line already reading
+    2026 年 7 月 26 日."""
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+    _post(_body(lang="zh"))
+
+    slip_en, slip_zh, _d_en, date_zh = support._sent_stamp()
+    assert slip_zh.startswith(date_zh) and slip_zh.endswith(" UTC")
+    assert " 年 " in slip_zh and " 月 " in slip_zh and " 日 " in slip_zh
+    html = sent[0]["html"]
+    assert slip_zh in html and slip_en in html          # each in its own half
+
+
+# ===========================================================================
+# W2 review B5 — the honeypot's silent drop must stay indistinguishable
+# ===========================================================================
+def test_the_honeypot_reply_is_shape_identical_to_a_real_one(wired):
+    """A drop a bot can tell apart teaches it which field betrayed it, which is the whole
+    reason this answers 200 instead of 400."""
+    store, _n = wired
+    real = _post(_body(subject="a real one"))
+    support._reset_rate_limiter()
+    dropped = _post(_body(subject="a bot", website="http://spam.test"))
+    assert set(dropped) == set(real)
+    assert dropped["ok"] is True and dropped["ticket_id"] != real["ticket_id"]
+    assert len(store.tickets) == 1                     # …and nothing was written
+
+
+# ===========================================================================
+# W2 review B4a — the ack must not describe threading the product does not do
+# ===========================================================================
+def test_the_ack_claims_a_person_not_a_ticket_thread(wired, monkeypatch):
+    """There is no inbound-mail ingestion anywhere in this estate and none is scheduled,
+    so a reply does NOT attach itself to the row. It reaches the mailbox the operator
+    reads — which is the true claim, and the one the reader actually needs."""
+    store, _n = wired
+    from app import mailer
+    monkeypatch.setattr(support, "_notify_operator", lambda **kw: "sent")
+    sent: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (sent.append(kw), "sent")[1])
+    _post()
+
+    html, text = sent[0]["html"], sent[0]["text"]
+    assert "It reaches the same person." in html
+    assert "它会送到同一个人手里" in html
+    for false_claim in ("lands on the same ticket", "记到同一个工单上"):
+        assert false_claim not in html and false_claim not in text

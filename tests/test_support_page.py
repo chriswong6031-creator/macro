@@ -134,12 +134,20 @@ def test_rate_limit_gets_its_own_honest_message(page):
 # ===========================================================================
 # Abuse hardening (masterplan R2)
 # ===========================================================================
+def _honeypot(page: str) -> str:
+    """The honeypot block: the .hp wrapper plus its label and input."""
+    m = re.search(r'<div class="hp"[^>]*>(.*?)</div>', page, re.S)
+    assert m, "the honeypot block must exist"
+    return m.group(0)
+
+
 def test_honeypot_is_present_offscreen_and_unfocusable(page):
-    field = re.search(r'<input id="s-website"[^>]*>', page)
+    hp = _honeypot(page)
+    field = re.search(r"<input [^>]*>", hp)
     assert field, "the honeypot input must exist"
-    assert 'name="website"' in field.group(0)
     assert 'tabindex="-1"' in field.group(0)
     assert 'autocomplete="off"' in field.group(0)
+    assert 'aria-hidden="true"' in field.group(0)
 
     css = re.search(r"\.hp\{([^}]*)\}", page)
     assert css, "the honeypot needs its own off-screen rule"
@@ -147,6 +155,37 @@ def test_honeypot_is_present_offscreen_and_unfocusable(page):
     assert "left:-9999px" in rule
     # display:none alone is the trap bots learned to skip.
     assert "display:none" not in rule
+
+
+# The tokens Chrome and every password manager key their autofill heuristics on. The
+# honeypot used to be id/name/label = "website" — all three — which is precisely the
+# shape they target, and `autocomplete="off"` is advisory in Chrome. A browser-filled
+# honeypot is the worst failure this page has: app/support.py answers a tripped one with
+# 200 + a throwaway uuid, so the person sees a success slip whose ref matches no row and
+# never hears back.
+_AUTOFILL_MAGNETS = ("website", "url", "homepage", "organization", "organisation",
+                     "company", "address", "email", "phone", "tel", "name", "user")
+
+
+def test_the_honeypot_is_named_something_autofill_never_targets(page):
+    hp = _honeypot(page)
+    ident = " ".join(re.findall(r'\b(?:id|name|for)="([^"]*)"', hp)).lower()
+    assert ident.strip(), "the honeypot must still carry an id/name"
+    label = re.search(r"<label[^>]*>(.*?)</label>", hp, re.S)
+    text = (ident + " " + (label.group(1) if label else "")).lower()
+    for token in _AUTOFILL_MAGNETS:
+        assert token not in text, f"honeypot id/name/label contains the autofill magnet {token!r}"
+
+
+def test_the_honeypot_still_files_under_the_servers_key(page):
+    """Renaming the FIELD must not rename the CONTRACT. app/support.py reads `website`
+    from the JSON body; the page reads the element by id and names the key itself."""
+    from app import support
+    assert "website" in support.TicketRequest.model_fields
+    hp_id = re.search(r'<div class="hp".*?<input id="([^"]+)"', page, re.S)
+    assert hp_id, "the honeypot input needs an id — the JS reads it by id"
+    assert f"var hpEl = $('#{hp_id.group(1)}');" in page
+    assert "website: hpEl ? hpEl.value : ''" in page
 
 
 # ===========================================================================
@@ -282,6 +321,122 @@ def test_the_identity_pill_claims_only_what_is_true(page):
     assert "已验证" not in page
 
 
+def test_the_ref_derivation_matches_ticket_ref(page):
+    """The success slip and the ack email's subject print the SAME number, from two
+    independent implementations of it — app/support.py::ticket_ref and this page's JS.
+    Nothing else in the estate compares them, so a change to either alone would ship a
+    page whose ref finds nothing in the inbox or the admin console.
+
+    Both constants are pinned here, so an edit to one side without the other goes red.
+    (tests/test_support_page_js.py runs the two against the same uuids under node.)"""
+    from app import support
+
+    js = re.search(r"var hex = String\(([^;]*?)\)"
+                   r"\.replace\(/-/g, ''\)\.slice\(0, (\d+)\)\.toUpperCase\(\);", page)
+    assert js, "the page's ref derivation is not in its pinned form"
+    assert int(js.group(2)) == 8
+    assert "'MX-' + hex" in page
+    # …and the python side, on the same constants
+    assert support.ticket_ref("7f3a2b91-1111-4000-8000-000000000001") == "MX-7F3A2B91"
+
+
+# ===========================================================================
+# One request per submit (review B1)
+# ===========================================================================
+def test_a_busy_latch_guards_re_entry_not_just_pointer_events(page):
+    """`pointer-events:none` suppresses MOUSE hit-testing and nothing else: it does not
+    stop Space/Enter on the focused button, and it does not stop implicit submission from
+    Enter in a text field. Three submits during one in-flight request meant three POSTs,
+    three ticket rows, three operator alerts and three ack emails carrying three different
+    numbers — and each has its own real idem_key, so the email_log ledger cannot dedupe
+    them. The guard has to be a latch in the handler plus a disabled button."""
+    assert "var busy = false;" in page
+    assert "if (busy) return;" in page
+    assert "btn.disabled = !!on;" in page
+    # cleared on BOTH exits: the tail .then runs after .catch, so failure re-arms too
+    assert page.count("setBusy(true)") == 1 and page.count("setBusy(false)") == 1
+    assert re.search(r"\}\)\.catch\(function \(\) \{.*?\}\)\.then\(function \(\) \{"
+                     r".*?setBusy\(false\);", page, re.S), "the latch must clear after .catch"
+
+
+# ===========================================================================
+# The page must work when auth does not (review B2)
+# ===========================================================================
+def test_auth_is_skipped_without_a_session_and_time_capped_with_one(page):
+    """This is the page app/regwall.py exists to keep reachable for "the people who most
+    need it — the ones who cannot sign in". MDXAuth.client() loads the Supabase SDK and
+    getSession() can refresh against *.supabase.co, the exact host a visitor behind the
+    GFW cannot reach; a blackholed SYN does not error, it hangs. So an anonymous visitor
+    must never touch it, and a signed-in one must never wait on it forever."""
+    # hasSession() is a cookie probe with no network (templates/theme.js)
+    assert "if (window.MDXAuth.hasSession && !window.MDXAuth.hasSession()) return Promise.resolve(h);" in page
+    assert "Promise.race([live, capped])" in page
+    cap = re.search(r"var AUTH_MS = (\d+);", page)
+    assert cap and 500 <= int(cap.group(1)) <= 5000, "the auth cap must exist and be short"
+
+
+def test_the_submit_fetch_can_be_aborted(page):
+    """A hung POST has to end in the error bar, not in a permanently dimmed button."""
+    assert "new window.AbortController()" in page
+    assert "opt.signal = ctl.signal;" in page
+    ms = re.search(r"var POST_MS = (\d+);", page)
+    assert ms and 3000 <= int(ms.group(1)) <= 60000
+    assert "ctl.abort()" in page
+
+
+# ===========================================================================
+# The page must not promise mail it cannot send (review B3 ruling)
+# ===========================================================================
+def test_the_slip_prints_the_servers_utc_stamp_never_an_unlabelled_clock(page):
+    """The page slip printed local time with no zone while the email slip printed UTC —
+    one ticket, two contradicting readings, and the unlabelled one is the page's."""
+    assert "sent.textContent = (res && res.sent) || localStamp();" in page
+    # the fallback names its zone rather than lying by omission
+    assert "Intl.DateTimeFormat().resolvedOptions().timeZone" in page
+    assert "(zone ? ' ' + zone : '')" in page
+
+
+def test_the_success_copy_has_both_mail_states_and_defaults_to_the_honest_one(page):
+    """The estate ships dark (no SMTP credentials yet, docs/ops/email-support-setup.md)
+    and the sends are deferred, so the response cannot know a disposition — only whether
+    a relay exists. Unknown must render the copy that promises nothing."""
+    css = _page_css(page)
+    assert ".m-on{ display:none; }" in css                       # default: no promise
+    assert 'html[data-mail="on"] .m-on{ display:inline; }' in css
+    assert 'html[data-mail="on"] .m-off{ display:none; }' in css
+    assert "H.setAttribute('data-mail', (res && res.mail === true) ? 'on' : 'off');" in page
+
+    off = re.findall(r'<span class="m-off">(.*?)</span>\s*</(?:p|span)>', page, re.S)
+    assert len(off) == 2, f"expected the slip line and the after-note, got {len(off)}"
+    blob = " ".join(off)
+    # not a vacuous match: the real copy has to be what we just scanned
+    assert "We will reply to" in blob and "Need to add something?" in blob
+    assert "我们会回复到" in blob and "需要补充信息？" in blob
+    for banned in ("emailed", "Check spam", "垃圾箱", "副本"):
+        assert banned not in blob, f"the mail-off copy must not say {banned!r}"
+
+
+@pytest.mark.parametrize("en,zh", [
+    ("We will reply to ", "我们会回复到 "),
+    ("Need to add something? Write to ", "需要补充信息？请发邮件至 "),
+])
+def test_the_mail_off_copy_ships_in_both_languages(page, en, zh):
+    assert en in page and zh in page
+
+
+def test_what_happens_next_is_true_in_both_mail_states(page):
+    """That list renders BEFORE any submit, so the page cannot yet know whether mail is
+    switched on — which means every line in it has to hold either way. It used to promise
+    an email with a ticket number and a reply to that email; the number is stamped on the
+    slip regardless, and the address is how we answer regardless."""
+    block = re.search(r'<div class="next">(.*?)</div>', page, re.S)
+    assert block, "the 'what happens next' rail must exist"
+    items = block.group(1)
+    for promise in ("email", "邮件"):
+        assert promise not in items, f"the pre-submit rail must not promise {promise!r}"
+    assert "ticket number" in items and "工单号" in items
+
+
 # ===========================================================================
 # Entry points (masterplan R6 — funnel, not nav)
 # ===========================================================================
@@ -305,15 +460,67 @@ def test_the_nav_was_not_touched():
 # ===========================================================================
 # The serving boundary (G6) — the page is worthless if it 302s to sign-in
 # ===========================================================================
+def _matcher_body(caddy: str, name: str) -> str:
+    """The body of the `@name { … }` matcher DEFINITION (not the `handle @name {` block).
+
+    Anchored at line start so `handle @reg_html {` cannot be mistaken for the definition;
+    matcher blocks contain no nested braces, so the first dedented `}` closes them.
+    """
+    m = re.search(rf"^[ \t]*@{name}\s*\{{(.*?)\n[ \t]*\}}", caddy, re.S | re.M)
+    assert m, f"@{name} is not defined in the Caddyfile"
+    return m.group(1)
+
+
+def _directive(body: str, name: str) -> list[str]:
+    """The tokens of a `<name> …` line inside a matcher body ('path' / 'not path')."""
+    for raw in body.splitlines():
+        line = raw.strip()
+        if line.startswith("#"):
+            continue
+        if line.startswith(name + " "):
+            return line[len(name):].split()
+    return []
+
+
+# Which list of which matcher /support.html has to appear in, and why. A bare
+# `count(...) == 6` was green for all of these AND for the mutation that moves an
+# occurrence out of @gate_html and into @never_site — which would 404 the page while the
+# arithmetic still balanced.
+CADDY_BOUNDARY = [
+    # matcher,        directive,  what it means
+    ("reg_html",      "not path", "exempt from the registration wall"),
+    ("reg_asset",     "not path", "exempt from the asset wall"),
+    ("gate_html",     "path",     "inside the public funnel"),
+    ("reg_html_err",  "not path", "still exempt when the gate upstream is down"),
+    ("reg_asset_err", "not path", "still exempt when the gate upstream is down"),
+    ("gate_html_err", "path",     "still served when the gate upstream is down"),
+]
+
+
+@pytest.mark.parametrize("matcher,directive,why", CADDY_BOUNDARY)
+def test_support_is_public_in_every_caddy_matcher_by_name(matcher, directive, why):
+    caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
+    tokens = _directive(_matcher_body(caddy, matcher), directive)
+    assert tokens, f"@{matcher} has no `{directive}` line"
+    assert "/support.html" in tokens, f"@{matcher} must list /support.html — {why}"
+
+
+def test_support_is_never_404ed_as_an_internal_preview():
+    """@never_site respond 404s outright. An occurrence relocated here reads as 'still
+    six mentions' to a counting test and as 'page does not exist' to a visitor."""
+    caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
+    assert "/support.html" not in _directive(_matcher_body(caddy, "never_site"), "path")
+
+
 def test_support_is_public_in_all_three_places():
     import yaml
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
     assert "/support.html" in policy["public"]["exact"]
 
     caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
-    # both live matchers AND both handle_errors mirrors, or a gate-upstream blip
-    # redirects the one page a stuck visitor needs.
-    assert caddy.count("/support.html") == 6
+    # The six named above and NOWHERE else — the per-matcher tests prove each one is
+    # present; this proves a seventh has not appeared somewhere nobody reviewed.
+    assert caddy.count("/support.html") == len(CADDY_BOUNDARY)
 
     from app import regwall
     assert "/support.html" in regwall.PUBLIC_PATHS

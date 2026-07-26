@@ -49,13 +49,28 @@ user.
 
 Persist first, mail after (SEE W2 / reviewer M4). The two sends — the operator alert and
 the submitter's acknowledgment — run in a FastAPI ``BackgroundTasks`` job, AFTER the
-response is written. This route is a sync ``def``, so FastAPI runs it in the 40-slot
-anyio threadpool that every other sync route shares: with SMTP inline, one stalled relay
-costs up to ``_SMTP_TIMEOUT × _SEND_ATTEMPTS`` per request (~24s today, and up to ~120s if
-the timeouts are ever relaxed), and 40 concurrent submissions would occupy every slot and
-stall the whole API — from a route a stranger can call. Moving mail off the request path
-means ``ok: true`` keeps its literal meaning: the ticket is STORED. The email is a
-consequence of that, not a precondition for it.
+response is written. Precisely what that buys:
+
+  * **the submitter waits on the insert, not on the relay.** With SMTP inline, a stalled
+    relay costs up to ``_SMTP_TIMEOUT × _SEND_ATTEMPTS`` (~24s today, and more if those
+    timeouts are ever relaxed) BEFORE the browser hears anything. Now the response is
+    written in milliseconds and the relay is talked to afterwards.
+  * **``ok: true`` keeps its literal meaning:** the ticket is STORED. The email is a
+    consequence of that, never a precondition for it, and a mail job that explodes
+    downstream cannot unmake the row.
+
+What it does NOT buy is threadpool isolation — an earlier version of this docstring
+claimed it did, and that was wrong. Starlette runs a *sync* background task through
+``run_in_threadpool`` → ``anyio.to_thread.run_sync``, i.e. the SAME default 40-token
+capacity limiter that serves every sync route. The work moved off the REQUEST, not off the
+pool. What actually bounds how many mail jobs can be in flight is the rate limiter below:
+``RATE_LIMIT`` per claimed IP and ``PEER_RATE_LIMIT`` per trusted Caddy peer, per hour.
+
+Honest about mail (SEE W2 review). The response carries ``mail`` — whether a relay is
+configured at this moment — because the estate ships dark until SMTP credentials land
+(docs/ops/email-support-setup.md) and, with the sends deferred, a response structurally
+cannot know their disposition. /support.html reads it to decide whether it may say a copy
+was emailed. It never gates the ticket: a filed request is filed either way.
 """
 from __future__ import annotations
 
@@ -291,15 +306,40 @@ def ticket_ref(ticket_id: str) -> str:
     return f"MX-{hexpart}" if hexpart else ""
 
 
-def _sent_stamp() -> tuple[str, str, str]:
-    """(slip value, EN date, ZH date) for now, in UTC.
+def _sent_stamp() -> tuple[str, str, str, str]:
+    """(EN slip, ZH slip, EN date, ZH date) for now, in UTC.
 
     UTC and SAID so — the submitter's timezone is not knowable server-side, and a
-    timestamp whose zone is a guess is worse than one that names itself.
+    timestamp whose zone is a guess is worse than one that names itself. Computed ONCE per
+    ticket in :func:`create_ticket` and handed to both consumers, so the success slip on
+    /support.html and the slip in the acknowledgment email can never print one ticket at
+    two different times.
+
+    The ZH slip carries the Chinese date form: an English month inside a 中文 slip sat
+    directly under a why-line already reading ``2026 年 7 月 26 日``.
     """
     now = _dt.datetime.now(_dt.timezone.utc)
-    slip = f"{now.day} {now.strftime('%b')} {now.year}, {now:%H:%M} UTC"
-    return slip, f"{now.day} {now.strftime('%B')} {now.year}", f"{now.year} 年 {_ZH_MONTHS[now.month - 1]} {now.day} 日"
+    hm = f"{now:%H:%M} UTC"
+    date_zh = f"{now.year} 年 {_ZH_MONTHS[now.month - 1]} {now.day} 日"
+    return (f"{now.day} {now.strftime('%b')} {now.year}, {hm}",
+            f"{date_zh} {hm}",
+            f"{now.day} {now.strftime('%B')} {now.year}",
+            date_zh)
+
+
+def _mail_configured() -> bool:
+    """Is a real relay configured RIGHT NOW? Four env reads, no I/O (app/mailer.py reads
+    its settings at call time, so this tracks a live systemd reload).
+
+    Returned to the caller as ``mail`` so /support.html can keep its success slip honest —
+    see the module docstring. Unknown is reported as False: the failure a support page
+    cannot afford is promising a confirmation email that is never coming.
+    """
+    try:
+        from app import mailer  # noqa: PLC0415
+        return bool(mailer.is_configured())
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
@@ -345,7 +385,8 @@ def _notify_operator(*, ticket_id: str, topic: str, subject: str, message: str,
 
 
 def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
-                   email: str, user_id: str | None) -> str:
+                   email: str, user_id: str | None,
+                   stamp: tuple[str, str, str, str] | None = None) -> str:
     """Acknowledge the ticket to the person who filed it. Never raises.
 
     Design pin §7.7. The content is fixed by the pin: what happened, the ticket number
@@ -359,6 +400,10 @@ def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
 
     The ref rides the subject IN BRACES so replies thread and the operator lane can match
     them back to the row.
+
+    ``stamp`` is the tuple :func:`create_ticket` already computed for the response, so the
+    page's slip and this one name the same instant. Absent (a standalone call), one is
+    computed here.
     """
     try:
         from app import mailer  # noqa: PLC0415
@@ -366,7 +411,7 @@ def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
             return "skipped_no_recipient"
         ref = ticket_ref(ticket_id)
         topic_en, topic_zh = TOPIC_LABELS.get(topic, TOPIC_LABELS["other"])
-        slip, date_en, date_zh = _sent_stamp()
+        slip_en, slip_zh, date_en, date_zh = stamp or _sent_stamp()
         html, text = mailer.render_email(
             "We got your message.",
             "我们已收到你的消息。",
@@ -375,13 +420,24 @@ def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
                        "reply within one business day.",
                  "zh": "每一条请求都由真人阅读，不是机器人。通常一个工作日内你就会收到回复。"},
                 {"kind": "kv",
-                 "en": [("Ticket", ref), ("Topic", topic_en), ("Sent", slip)],
-                 "zh": [("工单号", ref), ("类型", topic_zh), ("发送时间", slip)]},
-                {"kind": "quote", "en": message, "zh": message},
+                 "en": [("Ticket", ref), ("Topic", topic_en), ("Sent", slip_en)],
+                 "zh": [("工单号", ref), ("类型", topic_zh), ("发送时间", slip_zh)]},
+                # `once`: the sender's own words are not translated — they ARE the sender's
+                # words — so rendering them inside each language half printed the same text
+                # twice and doubled the size of every ack (a 5000-char message shipped
+                # ~10000). It now renders once, below both halves, under its own bilingual
+                # label. See app/mailer.py::render_email.
+                {"kind": "quote", "once": True,
+                 "label_en": "Your message", "label_zh": "你的原文",
+                 "en": message, "zh": message},
+                # NOT "it lands on the same ticket". There is no inbound-mail ingestion in
+                # this estate and none is scheduled, so a reply does not attach itself to
+                # the row — it arrives in the mailbox the operator reads. That is the true
+                # claim, and it is the one the reader actually needs.
                 {"kind": "fine",
                  "en": "Reply to this email to add anything — a screenshot, a date, "
-                       "the address on the receipt. It lands on the same ticket.",
-                 "zh": "回复这封邮件即可补充信息——截图、日期、收据上的邮箱都可以，它们会记到同一个工单上。"},
+                       "the address on the receipt. It reaches the same person.",
+                 "zh": "回复这封邮件即可补充信息——截图、日期、收据上的邮箱都可以，它会送到同一个人手里。"},
             ],
             eyebrow="SUPPORT",
             preheader="A person reads it. Reply to this email to add anything.",
@@ -408,7 +464,8 @@ def _ack_submitter(*, ticket_id: str, topic: str, subject: str, message: str,
 
 def _send_ticket_mail(*, ticket_id: str, topic: str, subject: str, message: str,
                       email: str, tier: str | None, lang: str | None,
-                      user_id: str | None) -> None:
+                      user_id: str | None,
+                      stamp: tuple[str, str, str, str] | None = None) -> None:
     """Both sends for one new ticket, off the request path (see the module docstring).
 
     Operator FIRST: if only one of the two gets out before the process is restarted, the
@@ -421,7 +478,7 @@ def _send_ticket_mail(*, ticket_id: str, topic: str, subject: str, message: str,
         notified = _notify_operator(ticket_id=ticket_id, topic=topic, subject=subject,
                                     message=message, email=email, tier=tier, lang=lang)
         acked = _ack_submitter(ticket_id=ticket_id, topic=topic, subject=subject,
-                               message=message, email=email, user_id=user_id)
+                               message=message, email=email, user_id=user_id, stamp=stamp)
         log.info("support: ticket %s mail (notify=%s ack=%s)", ticket_id, notified, acked)
     except Exception as exc:  # noqa: BLE001
         log.warning("support: ticket %s mail job failed (%s)", ticket_id, type(exc).__name__)
@@ -470,9 +527,13 @@ def create_ticket(body: TicketRequest, request: Request,
         raise HTTPException(429, "too many requests — please try again later")
 
     # ---- honeypot: answer like a success, write nothing -----------------------
+    # The body must be SHAPE-IDENTICAL to a real one, every key included: a drop that is
+    # distinguishable from a success teaches the bot which field betrayed it, which is the
+    # whole reason this returns 200 instead of 400.
     if (body.website or "").strip():
         log.info("support: honeypot tripped — dropped")
-        return {"ok": True, "ticket_id": str(uuid.uuid4())}
+        return {"ok": True, "ticket_id": str(uuid.uuid4()),
+                "sent": _sent_stamp()[0], "mail": _mail_configured()}
 
     # ---- time-to-fill ---------------------------------------------------------
     # Optional by contract (the W2 form always sends it). A t0 in the FUTURE is clock
@@ -509,6 +570,11 @@ def create_ticket(body: TicketRequest, request: Request,
         raise HTTPException(400, "a valid email address is required")
     tier = _tier_for(user_id) if user_id else None
 
+    # ONE stamp per ticket: the response prints it on the page's success slip and the ack
+    # email prints it in its own. Two clocks read a few hundred ms apart would show the
+    # same ticket at two different minutes.
+    stamp = _sent_stamp()
+
     # ---- write ----------------------------------------------------------------
     row = {
         "email": email,
@@ -544,13 +610,18 @@ def create_ticket(body: TicketRequest, request: Request,
 
     # ---- mail: AFTER the response, never inside it ----------------------------
     # The row exists by this point, so `ok: true` already means "stored". Handing the two
-    # sends to BackgroundTasks keeps a stalled relay out of the shared sync threadpool
-    # (module docstring) — the response is written first, the relay is talked to second.
+    # sends to BackgroundTasks takes the relay off the SUBMITTER'S WAIT — it does not move
+    # the work off the shared sync threadpool, which the module docstring spells out.
     background_tasks.add_task(
         _send_ticket_mail,
         ticket_id=str(ticket_id), topic=topic, subject=subject, message=message,
-        email=email, tier=tier, lang=lang, user_id=user_id,
+        email=email, tier=tier, lang=lang, user_id=user_id, stamp=stamp,
     )
-    log.info("support: ticket %s filed (topic=%s authed=%s mail=deferred)",
-             ticket_id, topic, bool(user_id))
-    return {"ok": True, "ticket_id": str(ticket_id)}
+    # `mail` is what keeps the page's success slip honest: with the sends deferred, the
+    # response cannot know a disposition, but it CAN say whether a relay exists at all.
+    # `sent` is the server's own UTC stamp — the page prints it instead of an unlabelled
+    # local clock, so one ticket never reads as two different times.
+    mail_on = _mail_configured()
+    log.info("support: ticket %s filed (topic=%s authed=%s mail=%s)",
+             ticket_id, topic, bool(user_id), "deferred" if mail_on else "off")
+    return {"ok": True, "ticket_id": str(ticket_id), "sent": stamp[0], "mail": mail_on}
