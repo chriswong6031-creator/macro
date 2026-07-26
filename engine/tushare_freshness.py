@@ -105,7 +105,18 @@ def staleness_badge(table: str, *, expected_cadence_days: int = 1,
     """Consume-time freshness descriptor for a Tushare table:
     ``{table, asof, lag_days, state}`` with state ∈ {fresh, slow, stale, dead}. ``ref`` is
     the comparison date (default: today, UTC). ``dead`` = >10× cadence or missing."""
-    ref = (ref or pd.Timestamp.utcnow()).normalize()
+    # ref must be tz-NAIVE to line up with frame_asof(), which returns naive timestamps.
+    # pandas >= 3 makes Timestamp.utcnow() tz-AWARE (and deprecates it), so the old
+    # `(ref or pd.Timestamp.utcnow()).normalize()` raised
+    # "Cannot subtract tz-naive and tz-aware datetime-like objects" on the lag line below —
+    # for every PRESENT table. build_china_library's invisible-freeze guard caught that
+    # TypeError in its own try/except and logged "health registration failed", so
+    # run_status never carried a `tushare` block and the STALE/DEAD warning could never
+    # fire: the freeze guard was itself silently frozen. Strip the tz, never subtract raw.
+    ref = pd.Timestamp(ref) if ref is not None else pd.Timestamp.now("UTC")
+    if ref.tzinfo is not None:
+        ref = ref.tz_localize(None)
+    ref = ref.normalize()
     asof = tushare_asof(table)
     if asof is None:
         return {"table": table, "asof": None, "lag_days": None, "state": "dead"}

@@ -216,8 +216,10 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_theme_trade_flows" in names
     # SGA-W2 stage-analysis tool must also be present
     assert "read_stage_analysis" in names
-    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis = 27 total read tools (see _ASK_READ_TOOLS)
-    assert len(names) == 27
+    # China flows tool (committed Tushare plane) must also be present
+    assert "read_china_flows" in names
+    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme (state/thesis/pathways) + 1 liquidity + 1 china-packet + 1 china-flows + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis = 28 total read tools (see _ASK_READ_TOOLS)
+    assert len(names) == 28
 
 
 def test_dispatch_refuses_write_tools():
@@ -1487,9 +1489,11 @@ def test_read_tool_schemas_count_and_options_tools_present():
         assert tool in names, f"{tool} missing from _read_tool_schemas()"
     # SGA-W2 stage-analysis read tool present
     assert "read_stage_analysis" in names
-    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis = 27
-    assert len(schemas) == 27, (
-        f"Expected 27 read tools, got {len(schemas)}: {sorted(names)}"
+    # China flows read tool present (committed Tushare plane)
+    assert "read_china_flows" in names
+    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways + 3 theme + 1 liquidity + 1 china-packet + 1 china-flows + 4 TIL page-wiring + 1 special-situations + 1 stage-analysis = 28
+    assert len(schemas) == 28, (
+        f"Expected 28 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):
@@ -2039,3 +2043,209 @@ def test_advice_filter_whole_order_falls_back_to_refusal():
     import engine.neuralweb.ask_brain as _ab
     out, flagged = _ab._post_filter_advice("You should buy NVDA now.", ["s1"])
     assert flagged is True and "buy/sell call" in out and "Sources" in out
+
+
+# ---------------------------------------------------------------------------
+# read_china_flows — committed Tushare plane (context_only, never live)
+# ---------------------------------------------------------------------------
+import pandas as _pd  # noqa: E402
+
+
+def _write_china_plane(root, *, trade_date: str = "20260724", n_names: int = 60):
+    """Synthetic data/tushare/* plane: enough names to prove the caps actually bite."""
+    d = pathlib.Path(root) / "data" / "tushare"
+    d.mkdir(parents=True, exist_ok=True)
+    _pd.DataFrame({
+        "ticker": [f"{600000 + i}.SS" for i in range(n_names)],
+        "name": [f"名字{i}" for i in range(n_names)],
+        "close": [10.0 + i for i in range(n_names)],
+        "pct_change": [(i % 21) - 10.0 for i in range(n_names)],
+        "net_amount": [float(i * 100 - 2000) for i in range(n_names)],
+        "net_amount_rate": [float(i % 15) for i in range(n_names)],
+        "main_net": [float(i * 100 - 2000) for i in range(n_names)],
+        "main_net_rate": [float(i % 15) for i in range(n_names)],
+        "trade_date": [trade_date] * n_names,
+        "asof": ["2026-07-26"] * n_names,
+    }).to_parquet(d / "moneyflow.parquet", index=False)
+
+    kinds = ["行业", "概念", "地域"]
+    _pd.DataFrame({
+        "sector_code": [f"BK{1000 + i}.DC" for i in range(45)],
+        "name": [f"板块{i}" for i in range(45)],
+        "net_amount": [float(i * 1e6 - 2e7) for i in range(45)],
+        "net_amount_rate": [float(i % 9) for i in range(45)],
+        "content_type": [kinds[i % 3] for i in range(45)],
+        "rank": list(range(45)),
+        "trade_date": [trade_date] * 45,
+        "asof": ["2026-07-26"] * 45,
+    }).to_parquet(d / "moneyflow_sector.parquet", index=False)
+
+    _pd.DataFrame({
+        "ticker": [f"{600000 + i}.SS" for i in range(40)],
+        "fin_balance": [float(i * 1e7) for i in range(40)],
+        "short_balance": [float(i * 1e5) for i in range(40)],
+        "fin_buy": [float(i * 1e6) for i in range(40)],
+        "total_balance": [float(i * 1.1e7) for i in range(40)],
+        "fin_pctile": [float(i * 2.5) for i in range(40)],
+        "trade_date": [trade_date] * 40,
+        "asof": ["2026-07-26"] * 40,
+    }).to_parquet(d / "margin.parquet", index=False)
+
+    _pd.DataFrame({
+        "ticker": [f"{600000 + i}.SS" for i in range(30)],
+        "name": [f"名字{i}" for i in range(30)],
+        "n_brokers": list(range(30)),
+        "brokers": ['["券商A"]'] * 30,
+        "month": ["202607"] * 30,
+        "asof": ["2026-07-26"] * 30,
+    }).to_parquet(d / "broker.parquet", index=False)
+    return d
+
+
+def test_china_flows_packet_shape_and_authority(tmp_path):
+    import engine.neuralweb.ask_brain as _ab
+    _write_china_plane(tmp_path)
+    out = _ab._tool_read_china_flows(tmp_path, {})
+
+    assert out["available"] is True
+    assert out["schema"] == "china_flows.v1"
+    assert out["gaps"] == []
+    # as-of is exposed so the model can say "as of <date>" instead of implying live data
+    assert out["as_of"] == "2026-07-24"
+    for block in ("names", "sectors", "margin"):
+        assert out[block]["as_of"] == "2026-07-24"
+        assert isinstance(out[block]["lag_days"], int)
+    assert out["broker_picks"]["month"] == "202607"
+    # authority ceiling: context only, never originates or de-escalates
+    assert out["authority"] == {"originates_signal": False, "can_de_escalate": False,
+                                "validated_components": [], "tier": "context_only"}
+
+
+def test_china_flows_lists_are_size_bounded(tmp_path):
+    """Every list is capped (top 8-12, mirroring _tool_get_movers) — the A-share plane is
+    ~5,900 names, so an uncapped read would blow the tool-result budget."""
+    import engine.neuralweb.ask_brain as _ab
+    _write_china_plane(tmp_path)
+    out = _ab._tool_read_china_flows(tmp_path, {})
+
+    assert len(out["names"]["top_inflow"]) == 10
+    assert len(out["names"]["top_outflow"]) == 10
+    for kind in ("industry", "concept"):
+        assert len(out["sectors"][kind]["top_inflow"]) <= 12
+    assert len(out["margin"]["most_stretched"]) == 10
+    assert len(out["broker_picks"]["most_named"]) == 10
+    # 地域 (regional) boards are deliberately dropped — a geography tally, not a flow theme
+    assert "regional" not in out["sectors"]
+
+    # an over-large request is clamped, not honoured
+    big = _ab._tool_read_china_flows(tmp_path, {"top_n": 500})
+    assert len(big["names"]["top_inflow"]) == 12
+    # a junk value degrades to the default rather than raising
+    junk = _ab._tool_read_china_flows(tmp_path, {"top_n": "lots"})
+    assert len(junk["names"]["top_inflow"]) == 10
+
+
+def test_china_flows_sorts_inflow_and_outflow_correctly(tmp_path):
+    import engine.neuralweb.ask_brain as _ab
+    _write_china_plane(tmp_path)
+    out = _ab._tool_read_china_flows(tmp_path, {})
+    inflow = [r["main_net_wan"] for r in out["names"]["top_inflow"]]
+    outflow = [r["main_net_wan"] for r in out["names"]["top_outflow"]]
+    assert inflow == sorted(inflow, reverse=True), "top_inflow must be descending"
+    assert outflow == sorted(outflow), "top_outflow must be ascending (most negative first)"
+    assert max(outflow) < min(inflow), "the two boards must not overlap"
+
+
+def test_china_flows_is_json_safe(tmp_path):
+    """No NaN/numpy may reach the model — bare NaN is invalid JSON."""
+    import engine.neuralweb.ask_brain as _ab
+    d = _write_china_plane(tmp_path)
+    # poison the frame with the NaNs a real vendor snapshot carries
+    mf = _pd.read_parquet(d / "moneyflow.parquet")
+    mf.loc[0, "close"] = float("nan")
+    mf.loc[1, "pct_change"] = float("nan")
+    mf.to_parquet(d / "moneyflow.parquet", index=False)
+
+    out = _ab._tool_read_china_flows(tmp_path, {})
+    blob = json.dumps(out, ensure_ascii=False)          # must not raise
+    assert "NaN" not in blob and "Infinity" not in blob
+    for row in out["names"]["top_inflow"]:
+        for v in row.values():
+            assert v is None or isinstance(v, (str, int, float))
+
+
+def test_china_flows_fails_open_when_plane_absent(tmp_path):
+    """A missing plane degrades to available=False with gaps — never an exception."""
+    import engine.neuralweb.ask_brain as _ab
+    out = _ab._tool_read_china_flows(tmp_path, {})
+    assert out["available"] is False
+    assert len(out["gaps"]) == 4
+    assert out["authority"]["tier"] == "context_only"
+    assert "no China flow data" in out["note"]
+
+
+def test_china_flows_fails_open_on_partial_plane(tmp_path):
+    """One readable table is enough; the rest are reported as gaps, not errors."""
+    import engine.neuralweb.ask_brain as _ab
+    d = _write_china_plane(tmp_path)
+    for gone in ("moneyflow_sector", "margin", "broker"):
+        (d / f"{gone}.parquet").unlink()
+    out = _ab._tool_read_china_flows(tmp_path, {})
+    assert out["available"] is True
+    assert out["names"]["top_inflow"]
+    assert len(out["gaps"]) == 3
+    assert "sectors" not in out and "margin" not in out
+
+
+def test_china_flows_survives_corrupt_parquet(tmp_path):
+    import engine.neuralweb.ask_brain as _ab
+    d = _write_china_plane(tmp_path)
+    (d / "margin.parquet").write_bytes(b"not a parquet file")
+    out = _ab._tool_read_china_flows(tmp_path, {})
+    assert out["available"] is True
+    assert any("margin" in g for g in out["gaps"])
+
+
+def test_china_flows_makes_no_network_call(tmp_path):
+    """HARD CONTRACT: the brain must never put vendor latency in the chat path — the
+    serving host has no TUSHARE_TOKEN and the packet is committed-artifact-only."""
+    import engine.neuralweb.ask_brain as _ab
+    _write_china_plane(tmp_path)
+    with patch("requests.post", side_effect=AssertionError("live network call!")), \
+         patch("requests.get", side_effect=AssertionError("live network call!")):
+        out = _ab._tool_read_china_flows(tmp_path, {})
+    assert out["available"] is True
+
+
+def test_china_flows_dispatches_through_read_tool_allowlist(tmp_path):
+    """The tool is reachable through the real dispatcher, not just by direct call."""
+    from engine.neuralweb.ask_brain import _dispatch_read_tool, _ASK_READ_TOOLS
+    _write_china_plane(tmp_path)
+    assert "read_china_flows" in _ASK_READ_TOOLS
+    out = _dispatch_read_tool("read_china_flows", {}, tmp_path)
+    assert out["schema"] == "china_flows.v1" and out["available"] is True
+
+
+def test_china_flow_questions_seed_the_flows_tool():
+    """Money-flow phrasing (EN + ZH) seeds read_china_flows on top of the China packet."""
+    import engine.neuralweb.ask_brain as _ab
+    for q in ("which A-shares have the strongest institutional money flow",
+              "哪些A股主力资金流入最多",
+              "A-share net inflow leaders today"):
+        _budget, seeds = _ab._classify_question(q, None)
+        assert "read_china_flows" in seeds, q
+    # a plain China question must NOT pay for the plane read
+    _budget, seeds = _ab._classify_question("what phase is the China market in", None)
+    assert "read_china_flows" not in seeds
+    assert "read_china_decision_packet" in seeds
+
+
+def test_china_trigger_matches_plural_a_shares():
+    """REGRESSION: the trailing \\b meant the PLURAL "A-shares" — the most common English
+    form — never routed to the China branch at all ("a-share" matched, then the "s" blocked
+    the word boundary). Singular-only was a silent routing hole."""
+    import engine.neuralweb.ask_brain as _ab
+    for q in ("A-shares", "which A-shares are leading", "a shares"):
+        assert _ab._CHINA_TRIGGER_TERMS.search(q), q
+    # must not start swallowing ordinary equity phrasing
+    assert not _ab._CHINA_TRIGGER_TERMS.search("apple shares rose")

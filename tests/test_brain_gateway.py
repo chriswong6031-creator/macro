@@ -4403,3 +4403,42 @@ def test_empty_synthesis_falls_over_to_the_next_candidate(tmp_path):
     delta = next(e for e in parsed if e["type"] == "delta")
     assert "temporarily unavailable" not in delta["text"].lower()
     assert healthy.stream_kwargs, "healthy candidate never got its turn"
+
+
+# ---- read_china_flows registration (all four allowlists) -------------------- #
+# The 7-step read-tool contract fails silently if any one allowlist is missed: a tool with a
+# cortex schema but no _BRAIN_TOOLS row is offered to the model and then refused at dispatch.
+
+def test_china_flows_tool_is_registered_everywhere():
+    from engine.neuralweb.ask_brain import _ASK_READ_TOOLS
+    from engine.neuralweb.cortex import _READ_TOOLS, _tool_schemas
+
+    assert "read_china_flows" in _ASK_READ_TOOLS, "missing from ask_brain read whitelist"
+    assert "read_china_flows" in _READ_TOOLS, "missing from the cortex A7 dispatcher guard"
+    assert "read_china_flows" in gw._BRAIN_TOOLS, "missing from the gateway dispatcher"
+    assert "read_china_flows" in gw._TOOL_LABELS, "missing its bilingual label row"
+    assert "read_china_flows" in {s["name"] for s in _tool_schemas()}, "missing cortex schema"
+
+
+def test_china_flows_tool_is_reachable_in_terminal_schemas():
+    root = pathlib.Path(__file__).resolve().parent.parent
+    names = [t["name"] for t in gw._all_brain_tool_schemas(root, page="terminal",
+                                                           internals_allowed=True)]
+    assert "read_china_flows" in names
+
+
+def test_china_flows_label_is_bilingual():
+    en, zh = gw._TOOL_LABELS["read_china_flows"]
+    assert en and zh and en != zh
+    assert any("一" <= ch <= "鿿" for ch in zh), "the zh label must be Chinese"
+
+
+def test_china_flows_schema_declares_staleness_and_authority():
+    """The description must tell the model this is NOT live and that it may not escalate —
+    the packet's as_of is useless if the model presents it as real-time."""
+    from engine.neuralweb.cortex import _tool_schemas
+    desc = next(s["description"] for s in _tool_schemas() if s["name"] == "read_china_flows")
+    low = desc.lower()
+    assert "not live" in low
+    assert "as_of" in low
+    assert "never originate" in low

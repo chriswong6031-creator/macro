@@ -236,6 +236,7 @@ _BRAIN_TOOLS = frozenset({
     "read_cycle_pattern_state",
     "read_mechanism_pathways",
     "read_china_decision_packet",
+    "read_china_flows",
     "read_liquidity_plumbing",
     "read_theme_state",
     "read_theme_thesis",
@@ -4387,6 +4388,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "read_theme_trade_flows":     ("Tracking theme trade flows",    "追踪主题资金流"),
     "read_liquidity_plumbing":    ("Checking market liquidity",     "查看市场流动性"),
     "read_china_decision_packet": ("Reading the China desk brief",  "读取中国市场简报"),
+    "read_china_flows":           ("Tracking A-share money flow",   "追踪A股资金流向"),
     "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
     "read_stage_analysis":        ("Checking the stage analysis",   "查看阶段分析"),
 }

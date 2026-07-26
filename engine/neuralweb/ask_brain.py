@@ -107,7 +107,10 @@ _FACTOR_TRIGGER_TERMS = re.compile(
 _CHINA_TRIGGER_TERMS = re.compile(
     # ASCII keyword triggers with word-boundary anchors
     r"(?i)\b("
-    r"a[- ]share|"
+    # `shares?` — the trailing \b on this group meant the PLURAL "A-shares" (the most common
+    # English form) never matched: "a-share" matched but the following "s" is a word char, so
+    # \b failed and the whole China branch was skipped. Singular-only was a routing hole.
+    r"a[- ]shares?|"
     r"csi\s*300|csi\s*500|csi\s*1000|sse\s*50|"
     r"shcomp|szcomp|chinext|star\s*market|"
     r"china\s*(market|regime|phase|cycle|policy|stock|equity|sector|mainland)|"
@@ -132,6 +135,21 @@ _CHINA_TRIGGER_TERMS = re.compile(
     r"|\b[0-9]{6}\.(SS|SZ)\b"
     # HK-listed Chinese shares (e.g. 0700.HK, 9988.HK)
     r"|\b\d{4}\.HK\b",
+    re.IGNORECASE,
+)
+
+# China FLOW phrasing — seeds read_china_flows ON TOP of the China decision packet.
+# Deliberately narrower than _CHINA_TRIGGER_TERMS: every China question gets the packet,
+# but only money-flow / leverage / broker-pick phrasing pays for the Tushare plane read.
+_CHINA_FLOW_TERMS = re.compile(
+    r"(?i)\b("
+    r"money\s*flow|fund\s*flow|capital\s*flow|net\s*(in|out)flow|inflow|outflow|"
+    r"smart\s*money|institutional\s*(money|flow|buying|participation)|main[- ]force|"
+    r"margin\s*(balance|debt|financing)|broker\s*(pick|recommend\w*)|"
+    r"most\s*bought|accumulat\w+|distribut\w+"
+    r")\b"
+    # CJK flow terms — no \b (word boundaries don't work for CJK).
+    r"|(?:资金流|资金流向|主力|净流入|净流出|大单|超大单|融资余额|金股|机构资金|吸筹)",
     re.IGNORECASE,
 )
 
@@ -200,6 +218,9 @@ _ASK_READ_TOOLS = frozenset({
     "read_mechanism_pathways",
     # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
     "read_china_decision_packet",
+    # China flows: committed Tushare plane — per-name/sector 主力资金, margin, broker picks
+    # (context_only; reads data/tushare/*.parquet, never the vendor API)
+    "read_china_flows",
     # Liquidity plumbing packet (shadow tier, context/entry-quality only)
     "read_liquidity_plumbing",
     # TIL W5 NW citizenship: thematic state read tools (display/context only)
@@ -447,8 +468,13 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # branches.  Keyword + ticker detection is deterministic (no LLM judgment in routing).
     # Seeds: read_world_state (china_market_state sub-block) + read_china_decision_packet
     # (assembles the Codex §11.2 packet from committed artifacts, context_only tier).
+    # Money-flow / margin / broker-pick phrasing additionally seeds read_china_flows, which
+    # reads the committed Tushare plane (per-name + sector 主力资金, margin, 券商金股).
     if _CHINA_TRIGGER_TERMS.search(question):
-        return _BUDGET_CHINA, ["read_world_state", "read_china_decision_packet"]
+        seeds = ["read_world_state", "read_china_decision_packet"]
+        if _CHINA_FLOW_TERMS.search(question):
+            seeds.append("read_china_flows")
+        return _BUDGET_CHINA, seeds
 
     # Liquidity plumbing path — checked after China, before options and generic branches.
     # Seeds: read_world_state (liquidity_plumbing sub-block) + read_liquidity_plumbing.
@@ -665,6 +691,272 @@ def assemble_china_decision_packet(root: "Path | None" = None) -> dict:
             "tier": "context_only",
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# China flows packet assembler (Tushare committed plane)
+# ---------------------------------------------------------------------------
+
+# Per-list cap, mirroring _tool_get_movers' 8-12 band. The A-share plane is ~5,900 names
+# and ~1,000 sector boards; an uncapped read would blow the tool-result budget.
+_CHINA_FLOWS_TOP_N = 10
+_CHINA_FLOWS_MAX_N = 12
+
+# 东财 board taxonomy → the packet's English block names. 地域 (regional boards) is
+# deliberately dropped: it is a geography tally, not a flow theme, and it would spend
+# budget without changing an answer.
+_CN_BOARD_KINDS = {"行业": "industry", "概念": "concept"}
+
+
+def _cf_num(v, nd: int = 2):
+    """A JSON-safe native float (or None) from a possibly-numpy / possibly-NaN cell."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    if f != f or f in (float("inf"), float("-inf")):   # NaN / inf → None
+        return None
+    return round(f, nd)
+
+
+def _cf_str(v):
+    """A clean native str (or None) — guards against numpy scalars and NaN sentinels."""
+    if v is None:
+        return None
+    s = str(v).strip()
+    return s if s and s.lower() not in ("nan", "nat", "none") else None
+
+
+def _cf_read(root: Path, table: str):
+    """Read one committed data/tushare/<table>.parquet → DataFrame, or None. Never raises."""
+    import pandas as pd  # noqa: PLC0415 — guarded: keeps module import cheap
+    p = root / "data" / "tushare" / f"{table}.parquet"
+    if not p.exists():
+        return None
+    try:
+        df = pd.read_parquet(p)
+        return df if len(df) else None
+    except Exception as e:  # noqa: BLE001 — a broken cache must never break the tool
+        log.warning("read_china_flows: %s unreadable (%s)", table, e)
+        return None
+
+
+def _cf_asof(df) -> "tuple[str | None, int | None]":
+    """(data-through date as YYYY-MM-DD, lag in days vs today) for a Tushare frame.
+
+    Uses engine.tushare_freshness.frame_asof, which deliberately prefers the honest
+    market ``trade_date`` over the build ``asof`` stamp — a frozen plane restamps asof
+    but never trade_date, so this is the number that exposes a freeze to the model."""
+    try:
+        from engine.tushare_freshness import frame_asof  # noqa: PLC0415
+        import pandas as pd  # noqa: PLC0415
+        ts = frame_asof(df)
+        if ts is None:
+            return None, None
+        # frame_asof returns tz-NAIVE; pandas >= 3 Timestamp.now("UTC") is tz-aware and
+        # subtracting the two raises. Strip the tz before differencing (same trap that had
+        # silently disabled staleness_badge — see engine/tushare_freshness.py).
+        now = pd.Timestamp.now("UTC").tz_localize(None).normalize()
+        return str(ts.date()), int((now - ts.normalize()).days)
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def _cf_rows(df, sort_col: str, cols: dict, n: int, *, ascending: bool = False) -> list[dict]:
+    """Top-n rows by `sort_col`, projected to `cols` ({out_key: (src_col, kind)}).
+
+    kind ∈ {"num", "str"}. Always size-bounded and always JSON-safe."""
+    if df is None or sort_col not in df.columns:
+        return []
+    try:
+        sub = df.dropna(subset=[sort_col]).sort_values(sort_col, ascending=ascending).head(n)
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for _, r in sub.iterrows():
+        row = {}
+        for key, (src, kind) in cols.items():
+            if src not in sub.columns:
+                continue
+            row[key] = _cf_num(r.get(src)) if kind == "num" else _cf_str(r.get(src))
+        out.append(row)
+    return out
+
+
+def assemble_china_flows_packet(root: "Path | None" = None, top_n: int = _CHINA_FLOWS_TOP_N) -> dict:
+    """Assemble a china_flows.v1 packet FROM COMMITTED ARTIFACTS ONLY.
+
+    Reads the gated Tushare drip plane (``data/tushare/*.parquet``) that the nightly china
+    lane commits — per-name 主力资金 net flow, 东财 sector-board flow, per-name margin
+    financing, and the 券商金股 broker-pick tally. NEVER calls Tushare (or any network):
+    vendor latency and a vendor outage must not sit in the chat path, and the serving host
+    deliberately has no TUSHARE_TOKEN.
+
+    Every block is read independently and fails open — a missing or unreadable parquet drops
+    just that block and is reported in ``gaps``. Every list is capped at ``top_n`` (<= 12).
+
+    Each block carries its own ``as_of`` (the honest market ``trade_date``, not the build
+    stamp) and ``lag_days`` so the model can say "as of <date>" instead of implying live data.
+
+    Authority: context_only — originates_signal=False, can_de_escalate=False. This is a
+    DISPLAY/CONTEXT read (the underlying flow leg is display-tier until china_validation
+    proves a forward edge); it may never rank, size, gate, or originate a signal.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parent.parent.parent
+    else:
+        root = Path(root)
+
+    n = max(1, min(int(top_n or _CHINA_FLOWS_TOP_N), _CHINA_FLOWS_MAX_N))
+    authority = {
+        "originates_signal": False,
+        "can_de_escalate": False,
+        "validated_components": [],
+        "tier": "context_only",
+    }
+    out: dict = {
+        "schema": "china_flows.v1",
+        "note": ("Committed nightly Tushare snapshot of the A-share market — NOT live. "
+                 "Quote the per-block as_of date in any answer."),
+        "sources": [],
+        "gaps": [],
+        "authority": authority,
+    }
+
+    # --- 1. per-name money flow (主力资金 = 超大单 + 大单 net) ------------------ #
+    mf = _cf_read(root, "moneyflow")
+    if mf is None:
+        out["gaps"].append("data/tushare/moneyflow.parquet absent or unreadable")
+    else:
+        as_of, lag = _cf_asof(mf)
+        cols = {"ticker": ("ticker", "str"), "name": ("name", "str"),
+                "close": ("close", "num"), "pct_change": ("pct_change", "num"),
+                "main_net_wan": ("main_net", "num"), "main_net_rate_pct": ("main_net_rate", "num"),
+                "net_amount_wan": ("net_amount", "num")}
+        out["names"] = {
+            "as_of": as_of,
+            "lag_days": lag,
+            "measure": "main-force net inflow (主力净额 = 超大单 + 大单), one session",
+            "units": "main_net_wan / net_amount_wan in 万元 (10k CNY); rates in %",
+            "universe_size": int(len(mf)),
+            "top_inflow": _cf_rows(mf, "main_net", cols, n),
+            "top_outflow": _cf_rows(mf, "main_net", cols, n, ascending=True),
+        }
+        out["as_of"] = as_of          # headline as-of = the per-name leg
+        out["sources"].append("data/tushare/moneyflow.parquet")
+
+    # --- 2. sector-board flow (东财 industry / concept boards) ------------------ #
+    sec = _cf_read(root, "moneyflow_sector")
+    if sec is None:
+        out["gaps"].append("data/tushare/moneyflow_sector.parquet absent or unreadable")
+    else:
+        as_of, lag = _cf_asof(sec)
+        scols = {"sector": ("name", "str"), "sector_code": ("sector_code", "str"),
+                 "net_amount_cny": ("net_amount", "num"),
+                 "net_amount_rate_pct": ("net_amount_rate", "num")}
+        block: dict = {
+            "as_of": as_of,
+            "lag_days": lag,
+            "measure": "东财 board net inflow, one session",
+            "units": "net_amount_cny in CNY (NOT 万元 — differs from the per-name block)",
+        }
+        for zh, en in _CN_BOARD_KINDS.items():
+            part = sec[sec["content_type"] == zh] if "content_type" in sec.columns else None
+            if part is None or not len(part):
+                continue
+            block[en] = {
+                "top_inflow": _cf_rows(part, "net_amount", scols, n),
+                "top_outflow": _cf_rows(part, "net_amount", scols, n, ascending=True),
+            }
+        out["sectors"] = block
+        out["sources"].append("data/tushare/moneyflow_sector.parquet")
+
+    # --- 3. margin financing (融资余额) ----------------------------------------- #
+    # LEVEL, not a mover: the committed plane is a snapshot with no margin history file, so a
+    # day-over-day change is NOT derivable here. fin_pctile (the collector's own percentile of
+    # financing balance) is the honest read — where leverage is stretched, not where it moved.
+    mg = _cf_read(root, "margin")
+    if mg is None:
+        out["gaps"].append("data/tushare/margin.parquet absent or unreadable")
+    else:
+        as_of, lag = _cf_asof(mg)
+        if mf is not None and {"ticker", "name"} <= set(mf.columns) and "ticker" in mg.columns:
+            try:
+                mg = mg.merge(mf[["ticker", "name"]].drop_duplicates("ticker"),
+                              on="ticker", how="left")
+            except Exception:  # noqa: BLE001 — names are decoration, never required
+                pass
+        mcols = {"ticker": ("ticker", "str"), "name": ("name", "str"),
+                 "fin_balance_cny": ("fin_balance", "num"),
+                 "fin_pctile": ("fin_pctile", "num"),
+                 "total_balance_cny": ("total_balance", "num")}
+        out["margin"] = {
+            "as_of": as_of,
+            "lag_days": lag,
+            "measure": ("financing-balance percentile (LEVEL of 融资余额 vs its own history) "
+                        "— NOT a day-over-day change; no margin history is committed"),
+            "units": "balances in CNY; fin_pctile in 0-100",
+            "most_stretched": _cf_rows(mg, "fin_pctile", mcols, n),
+        }
+        out["sources"].append("data/tushare/margin.parquet")
+
+    # --- 4. broker picks (券商金股) — monthly cadence ---------------------------- #
+    br = _cf_read(root, "broker")
+    if br is None:
+        out["gaps"].append("data/tushare/broker.parquet absent or unreadable")
+    else:
+        month = None
+        if "month" in br.columns:
+            try:
+                month = _cf_str(br["month"].max())
+            except Exception:  # noqa: BLE001
+                month = None
+        bcols = {"ticker": ("ticker", "str"), "name": ("name", "str"),
+                 "n_brokers": ("n_brokers", "num")}
+        out["broker_picks"] = {
+            "month": month,
+            "cadence": "monthly (券商金股 lists publish once a month — not a daily read)",
+            "measure": "number of brokers naming the stock a monthly top pick",
+            "most_named": _cf_rows(br, "n_brokers", bcols, n),
+        }
+        out["sources"].append("data/tushare/broker.parquet")
+
+    out["available"] = bool(out.get("sources"))
+    if not out["available"]:
+        out["note"] = ("The committed Tushare plane (data/tushare/*.parquet) is absent — "
+                       "no China flow data available. Say so plainly; do not estimate.")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# read_china_flows tool handler
+# ---------------------------------------------------------------------------
+
+def _tool_read_china_flows(root: Path, params: dict) -> dict:
+    """Tool handler: assemble and return the china_flows.v1 packet.
+
+    Params: ``top_n`` (optional, 1-12, default 10) — the per-list cap.
+    Reads committed artifacts only; never touches the network. Fails open, never raises.
+    """
+    try:
+        top_n = int((params or {}).get("top_n") or _CHINA_FLOWS_TOP_N)
+    except (TypeError, ValueError):
+        top_n = _CHINA_FLOWS_TOP_N
+    try:
+        return assemble_china_flows_packet(root=root, top_n=top_n)
+    except Exception as e:  # noqa: BLE001 — a read tool must degrade, never raise into the loop
+        log.warning("read_china_flows failed (%s)", e)
+        return {
+            "available": False,
+            "schema": "china_flows.v1",
+            "note": f"china flows packet unavailable ({type(e).__name__})",
+            "authority": {
+                "originates_signal": False,
+                "can_de_escalate": False,
+                "validated_components": [],
+                "tier": "context_only",
+            },
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -1953,6 +2245,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
     elif tool_name == "read_china_decision_packet":
         # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
         return _tool_read_china_decision_packet(root, tool_params)
+    elif tool_name == "read_china_flows":
+        # China flows from the committed Tushare plane (context_only, no live vendor call)
+        return _tool_read_china_flows(root, tool_params)
     elif tool_name == "read_liquidity_plumbing":
         # Liquidity plumbing packet (shadow tier, context/entry-quality only)
         return _tool_read_liquidity_plumbing(root, tool_params)

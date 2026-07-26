@@ -350,3 +350,51 @@ def test_weekly_lane_config_threshold_respected(tmp_path):
     p = _stamp(tmp_path, "2026-07-18T16:30:00+00:00")   # ~1.9d old
     r = check_weekly_lane(_NOW_WK, {"max_age_hours": 24}, status_path=p)
     assert r["ok"] is False
+
+
+# ---- committed-data-freeze witness coverage -------------------------------- #
+# The GATED Tushare plane (data/tushare/*.parquet) had NO witness here at all. Its only
+# freeze guard lived inside build_china_library — i.e. inside the very build that degrades
+# when TUSHARE_TOKEN dies — and that guard warns into its own log without failing anything.
+# This heartbeat reads the COMMITTED tree off a fresh checkout and hard-fails, so it is the
+# probe that actually catches a plane-wide freeze. Pin the coverage so it cannot be dropped.
+
+def _shipped_witnesses() -> list[dict]:
+    from lib import config as _config
+    cfg = (_config.load().get("healthcheck", {}) or {}).get("data_freshness", {}) or {}
+    return list(cfg.get("witnesses", []) or [])
+
+
+def test_tushare_plane_registered_as_freeze_witness():
+    """REGRESSION: the shipped config must watch the Tushare plane for a silent freeze."""
+    paths = [w.get("path", "") for w in _shipped_witnesses()]
+    tushare = [p for p in paths if p.startswith("data/tushare/")]
+    assert tushare, ("no data/tushare witness in healthcheck.data_freshness.witnesses — "
+                     "a token death would freeze the whole plane with nothing hard-failing")
+    assert "data/tushare/moneyflow.parquet" in tushare, "the per-name flow leg must be watched"
+
+
+def test_tushare_witnesses_are_daily_cadence_tables_only():
+    """broker/forecast refresh on a ~30-day cadence — registering them here (against
+    fail_after_sessions: 2) would false-alarm every month."""
+    monthly = {"broker", "forecast", "report_rc"}
+    for w in _shipped_witnesses():
+        p = w.get("path", "")
+        if p.startswith("data/tushare/"):
+            stem = p.rsplit("/", 1)[-1].removesuffix(".parquet")
+            assert stem not in monthly, f"{stem} is a monthly table — it will false-alarm"
+
+
+def test_ten_day_stale_tushare_witness_hard_fails():
+    """REGRESSION: a Tushare witness 10 days stale must FAIL the tripwire (not warn)."""
+    cfg = _make_cfg([{"label": "tushare moneyflow", "path": "data/tushare/moneyflow.parquet"}],
+                    fail=2)
+    asof_ts = pd.Timestamp("2026-06-01")          # ~10 sessions before _NOW_CHECK
+    with patch("pathlib.Path.exists", return_value=True), \
+         patch("pandas.read_parquet", return_value=_dummy_df("2026-06-01")):
+        import engine.tushare_freshness as tf
+        with patch.object(tf, "frame_asof", return_value=asof_ts):
+            r = check_committed_data_freshness(_NOW_CHECK, cfg)
+
+    assert r["ok"] is False
+    assert any("tushare moneyflow" in f for f in r["fail_reasons"]), r["fail_reasons"]

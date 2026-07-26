@@ -3113,6 +3113,17 @@ healthcheck:
       # Silent-freeze witness for the Leader Radar forward ledger — the exact store
       # that froze 2026-07-11→16 (#2605) while every liveness probe stayed green.
       - {label: "leader_radar state_history", path: "data/leader_radar/state_history.parquet"}
+      # Silent-freeze witnesses for the GATED Tushare plane.  The existing in-build guard
+      # (build_china_library → run_status tushare.health) only runs INSIDE the china lane,
+      # so a dead/rotated TUSHARE_TOKEN freezes every data/tushare/*.parquet while the very
+      # build that owns the guard is the thing that degraded — it warns into its own log and
+      # nothing hard-fails.  This heartbeat reads the COMMITTED tree off a fresh checkout of
+      # main and FAILS, which is what actually catches a plane-wide freeze.
+      # moneyflow = the per-name 主力资金 leg (the brain's China-flows tool reads it);
+      # valuation = the broadest daily table.  Register DAILY tables only — broker/forecast
+      # are 30-day cadence and would false-alarm against fail_after_sessions: 2.
+      - {label: "tushare moneyflow",      path: "data/tushare/moneyflow.parquet"}
+      - {label: "tushare valuation",      path: "data/tushare/valuation.parquet"}
     # China Golden Week + Spring Festival 2026–27 (starter set; extend as needed).
     # US/HK single-day holidays fall within the 2-session tolerance so are optional.
     holidays:
