@@ -1574,6 +1574,13 @@ on:
       - "tests/test_publish_r2.py"
       - "tests/test_radar_single_writer.py"
       - "tests/test_refresh_regime_if_stale.py"
+      # Arrived on main 2026-07-26 with the international-dashboard render work and
+      # was the only STRICTLY DARK suite in the census (P3).  Its subject half is
+      # already covered: it reads .github/workflows/render.yml and nothing else, and
+      # ".github/workflows/**" above is a broad catch-all, so every edit that can
+      # change its verdict already starts this workflow.  Only the test file was
+      # unmatched — tests/** is deliberately NOT a catch-all here.
+      - "tests/test_render_intl_scope.py"
       - "tests/test_seo_foundation.py"
       - "tests/test_signal_contracts_wiring.py"
       - "tests/test_signal_sanity.py"
@@ -4564,12 +4571,16 @@ jobs:
   # so run_ci_pack.py keeps ONE shared venv across all twenty-one unrun-* jobs; only
   # unrun-russell-breadth declares a different set (yfinance), and since the pack
   # sorts jobs by install string that costs exactly one extra venv per pack.
-  # The 138 is the count of distinct tests/*.py named across these thirteen run: steps —
-  # re-derive it rather than incrementing, since suites also arrive wired via unrelated
-  # PRs.  It read 140 here and 137 in docs/UNRUN_TEST_CENSUS.md until 2026-07-26; the
-  # doc was right and this comment had drifted.
-  # Measured serially in a clean venv carrying exactly these installs: 139 suites /
-  # 429s, plus unrun-import-hygiene's 48s and the release-forecast producer's 13s.
+  # These thirteen run: steps now name 139 distinct tests/*.py — the 138 P1 suites plus
+  # one strictly-dark P3 arrival (the render.yml intl-scope guard, landed 2026-07-26 with
+  # the international-dashboard render work and folded into unrun-publish-ops rather than
+  # buying a whole job for a 2-second file read).  Re-derive both numbers rather than
+  # incrementing, since suites also arrive wired via unrelated PRs.  The P1 figure read
+  # 140 here and 137 in docs/UNRUN_TEST_CENSUS.md until 2026-07-26; the doc was right and
+  # this comment had drifted.
+  # Measured serially in a clean venv carrying exactly these installs: 429s for the P1
+  # set, plus unrun-import-hygiene's 48s and the release-forecast producer's 13s.  (That
+  # 429s predates the P3 arrival above, which adds 1.4s — it reads a single YAML file.)
   #
   # Two P1 suites are deliberately NOT wired.  Both are RED on main and the fix in
   # each case is a program decision, not test rot: a chip whose copy assertions test
@@ -4766,6 +4777,13 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
         run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
+      # render.yml's international-dashboard scope wiring: the `intl` choice, the
+      # dirty-scope map for templates/intl.html.j2 + scripts/build_intl.py, the
+      # region loop, the intl() body and the `all` fan-out.  Nothing else reads
+      # that YAML, so an edit dropping intl out of any of the five ships a render
+      # lane that silently never rebuilds the international dashboard.
+      - name: render.yml international-dashboard scope wiring
+        run: python -m pytest tests/test_render_intl_scope.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
