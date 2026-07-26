@@ -228,6 +228,15 @@ def load_chains(root: Path | None = None, *, include_killed: bool = False,
     STRICT (strict=True): the first bad file RAISES ChainSchemaError — the CI validator
     uses this so a bad edit reds the PR. Killed chains (knowledge/transmission/killed/)
     are excluded unless include_killed.
+
+    TXI-W5 (Loop C): auto-proposed chains live in knowledge/transmission/proposed/ (a
+    SEPARATE subdir so autonomous proposals never silently mix with human-reviewed seeds
+    until a human PR promotes them out). They are loaded here through the SAME validate
+    path as top-level seeds — so W1 auto-compiles their state and W3 auto-backtests them
+    on the next cycle — but are tagged ``_proposed`` and stay hypothesis-tier display-only
+    (TXI-R5 / DNR row 45: authority only ever via the gauntlet, humans stay at library
+    review + promotion). A proposed file with a schema-violating / unresolvable node is
+    still skipped-or-raised exactly like a top-level file.
     """
     import yaml
     base = (Path(root) if root else ROOT).joinpath(*_KNOWLEDGE_DIRNAME)
@@ -248,6 +257,22 @@ def load_chains(root: Path | None = None, *, include_killed: bool = False,
             continue
         data["_filename"] = path.name
         out.append(data)
+    pdir = base / "proposed"
+    if pdir.exists():
+        for path in sorted(pdir.glob("*.yaml")):
+            try:
+                data = yaml.safe_load(path.read_text())
+                if not isinstance(data, dict):
+                    raise ChainSchemaError(f"proposed/{path.name}: top-level YAML must be a mapping")
+                validate_chain(data, path.name)
+            except (yaml.YAMLError, ChainSchemaError) as e:
+                if strict:
+                    raise ChainSchemaError(f"proposed/{path.name}: {e}") from e
+                log.error("skipping malformed/invalid proposed chain file %s: %s", path.name, e)
+                continue
+            data["_filename"] = f"proposed/{path.name}"
+            data["_proposed"] = True
+            out.append(data)
     if include_killed:
         kdir = base / "killed"
         if kdir.exists():
