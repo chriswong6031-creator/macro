@@ -6,6 +6,8 @@ current-tree pass assertion (the #2647 fix state must stay green).
 """
 from __future__ import annotations
 
+import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -396,3 +398,97 @@ def test_current_templates_tree_passes():
     assert violations == [], (
         "templates/ regressed on the #2647 font-ui law: " + repr(violations)
     )
+
+
+# ── the landing's display face must stay self-hosted ─────────────────────────
+# Sibling law to the one above, same failure signature: a font that never
+# arrives raises no error, it just renders in the fallback. fonts.googleapis.com
+# is blocked in mainland China, so a CDN <link> on these surfaces delivers
+# NOTHING there. This has already regressed once — the landing carried a CDN
+# Archivo <link> and onboard.js re-injected the same URL from ensureAssets() —
+# so it is a tripwire, not a one-time fix. Self-hosted files live in
+# templates/fonts/ and are declared in onboard.css (Archivo) and index.html
+# (Inter); see mockups/refs/landing_archivo_wdth/README.md.
+
+_NO_CDN_FONT_SURFACES = ("index.html", "onboard.css", "onboard.js")
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "templates" / "index.html").is_file(),
+    reason="repo templates/ not present",
+)
+@pytest.mark.parametrize("name", _NO_CDN_FONT_SURFACES)
+def test_landing_surfaces_request_no_google_fonts(name):
+    """No live request to the Google Fonts CDN on the landing/onboarding path.
+
+    Matches the URL only where it would be FETCHED — an href/src/url() value or
+    a JS string assigned to one — so the prose in the comments explaining why
+    the CDN was removed does not trip the guard on itself.
+    """
+    text = (_REPO_ROOT / "templates" / name).read_text(encoding="utf-8")
+    fetches = re.findall(
+        r"""(?:href|src)\s*[=:]\s*["']([^"']*fonts\.(?:googleapis|gstatic)\.com[^"']*)"""
+        r"""|url\(\s*["']?([^"')]*fonts\.(?:googleapis|gstatic)\.com[^"')]*)""",
+        text,
+    )
+    found = [u or v for u, v in fetches]
+    assert found == [], (
+        f"templates/{name} fetches a font from the Google Fonts CDN, which is "
+        f"blocked in mainland China — self-host it instead: {found}"
+    )
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "templates" / "onboard.css").is_file(),
+    reason="repo templates/ not present",
+)
+def test_archivo_is_self_hosted_and_variable():
+    """onboard.css must declare Archivo against a real file, keeping both axes.
+
+    font-stretch:125% is used by 21 display rules and .stg asks for the
+    interpolated weight 650 — a static instance satisfies neither, and the
+    failure is silent (headlines quietly render at normal width).
+    """
+    css = (_REPO_ROOT / "templates" / "onboard.css").read_text(encoding="utf-8")
+    face = re.search(r"@font-face\{[^}]*font-family:\s*'?Archivo'?[^}]*\}", css)
+    assert face, "onboard.css no longer declares an @font-face for Archivo"
+    block = face.group(0)
+
+    src = re.search(r"""url\(["']?([^"')]+)["']?\)""", block)
+    assert src, f"Archivo @font-face has no url(): {block[:160]}"
+    assert (_REPO_ROOT / "templates" / src.group(1)).is_file(), (
+        f"Archivo @font-face points at templates/{src.group(1)}, which is missing"
+    )
+    # both axes must be declared as RANGES, not single values
+    assert re.search(r"font-weight:\s*400\s+900", block), (
+        "Archivo @font-face lost its variable font-weight range (400 900)"
+    )
+    assert re.search(r"font-stretch:\s*100%\s+125%", block), (
+        "Archivo @font-face lost its variable font-stretch range (100% 125%) — "
+        "font-stretch:125% has no wide instance to select without it"
+    )
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "site" / "onboard.css").is_file(),
+    reason="repo site/ not present",
+)
+def test_onboard_css_cache_stamp_is_current():
+    """index.html's ?v= stamp must match site/onboard.css's actual bytes.
+
+    app/deploy/Caddyfile serves versioned requests immutable/max-age=1y, so a
+    stale stamp pins returning visitors to the previous stylesheet — which, for
+    this change, means no @font-face and no display face at all.
+    """
+    digest = hashlib.sha256(
+        (_REPO_ROOT / "site" / "onboard.css").read_bytes()
+    ).hexdigest()[:8]
+    for rel in ("templates/index.html", "site/index.html"):
+        stamped = re.search(
+            r"onboard\.css\?v=([0-9a-f]{8})", (_REPO_ROOT / rel).read_text(encoding="utf-8")
+        )
+        assert stamped, f"{rel} no longer links onboard.css with a ?v= stamp"
+        assert stamped.group(1) == digest, (
+            f"{rel} links onboard.css?v={stamped.group(1)} but site/onboard.css "
+            f"hashes to {digest} — re-cut the stamp in BOTH copies"
+        )
