@@ -1299,6 +1299,19 @@ on:
       - "tests/test_context_candidates.py"
       - "tests/test_context_index_eval.py"
       - "tests/test_deploy_update_self_heal.py"
+      # ...and the SUBJECT that suite guards (#3509 lesson: listing only the test
+      # leaves the guarded change unable to trigger its own guard). update.sh
+      # decides which pushed commits restart macro-api; a module the API imports
+      # but its restart regex omits deploys to the VPS and never goes live, because
+      # sys.modules pins the old object — engine/research_vault/* sat in exactly
+      # that hole until #3684, shipping dead download caps with main green. Without
+      # this line a PR editing ONLY the restart regex still runs nothing.
+      - "app/deploy/update.sh"
+      # test_deploy_update_self_heal recomputes the API's load-time import closure
+      # from the AST of app/*.py, so a new module-level engine/lib import in ANY
+      # router must reach it. hub.py was the last one matching no other job here
+      # (brain_runs.py and tape_decode.py are already listed above).
+      - "app/hub.py"
       - "tests/test_ei_f1d_shadow.py"
       - "tests/test_exit_tax_scenarios.py"
       - "tests/test_expanding_mean_benchmark.py"
