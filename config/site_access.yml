@@ -30,6 +30,16 @@ public:
     - /brand-facts.json
     - /onboard.css
     - /onboard.js
+    # Page stylesheets for the two hand-edited plain-copy pages (#3676). They
+    # carry the styling that used to ride inline inside index.html / chat.html,
+    # so they are exactly as public as the pages themselves — and must be, or
+    # the landing ships unstyled to every anonymous visitor. Presentation only:
+    # no signals, no customer data, no application logic. chat_nav.css is
+    # chat.html's second block, kept separate because it is linked from the
+    # BODY to hold its place in the cascade (see templates/chat_nav.css).
+    - /landing.css
+    - /chat.css
+    - /chat_nav.css
     - /theme.css
     # Public visual dependency imported by theme.css. Contains only the shared
     # navigation icon masks; no customer data or application logic.
