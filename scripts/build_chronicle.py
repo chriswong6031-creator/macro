@@ -57,6 +57,7 @@ def main(argv=None) -> int:
         f"chronicle_governor: ok — mode={mode} "
         f"total={result.get('total_events', 0)} added={result.get('added', 0)} "
         f"state_appended={result.get('state_appended')} "
+        f"state_reason={result.get('state_reason')} "
         f"elapsed_s={result.get('elapsed_s')} [{per_adapter}]"
     )
     return 0
