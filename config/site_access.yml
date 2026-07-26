@@ -36,6 +36,13 @@ public:
     - /product-nav-icons.css
     - /theme.js
     - /account.js
+    # Loaded by account.js on every page to fold the non-home country menus into
+    # International. Must be public for the same reason theme.js and account.js
+    # are: account.js requests it before auth resolves, so a 401 here would make
+    # the browser fetch fail on every anonymous page view. Contains nav DOM
+    # transform logic and reads only the market preference already in the user's
+    # own session — no signals, no customer data.
+    - /nav_market.js
     - /supabase.js
     - /data_base.js
     - /live.js
