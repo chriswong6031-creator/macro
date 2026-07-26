@@ -16,8 +16,14 @@ to plain Archivo) - here we ask for the real thing, Archivo at font-stretch 125%
 Faces are downloaded once, cached, and base64-embedded so the SVG is
 self-contained and the raster reproduces offline.
 
+Output lands in site/assets/landing/ because app/deploy/Caddyfile is DEFAULT-DENY
+for static assets: its @reg_asset / @reg_asset_err allowlists name /assets/css/*
+and /assets/landing/* and nothing else, so a public marketing image written
+anywhere else under site/assets/ answers 401 {"locked":true} to every visitor and
+every crawler.
+
 Usage:
-    python3 scripts/make_launch_card.py [--out-dir site/assets/marketing]
+    python3 scripts/make_launch_card.py [--out-dir site/assets/landing]
 """
 from __future__ import annotations
 
@@ -334,7 +340,7 @@ def rasterize(svg: str, scale: int = 2) -> bytes:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out-dir", default="site/assets/marketing")
+    ap.add_argument("--out-dir", default="site/assets/landing")
     ap.add_argument("--scale", type=int, default=2)
     args = ap.parse_args()
 
