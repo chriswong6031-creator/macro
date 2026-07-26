@@ -146,6 +146,8 @@ class ChinaBoardBreadthAdapter(Adapter):
     def _from_sina(self) -> pd.DataFrame:
         trade_date = self._sina_session_date()
         moves: dict[str, float] = {}
+        empty_pages = 0
+        reached_end = False
         for page in range(1, _SINA_MAX_PAGES + 1):
             r = self.http_get(_SINA_URL, retries=self.ycfg["retries"],
                               backoff_base=self.ycfg["backoff_base_s"], timeout=30,
@@ -157,7 +159,15 @@ class ChinaBoardBreadthAdapter(Adapter):
             except Exception:  # noqa: BLE001 — Sina returns null/garbage past the last page
                 data = None
             if not data:
-                break
+                # Sina intermittently serves an empty page MID-walk. Treat one as a hiccup
+                # and keep going; two in a row is the real end of the board.
+                empty_pages += 1
+                if empty_pages >= 2:
+                    reached_end = True
+                    break
+                time.sleep(0.45)
+                continue
+            empty_pages = 0
             for d in data:
                 code = str(d.get("code") or "")
                 if not _is_hushen(code):
@@ -172,6 +182,20 @@ class ChinaBoardBreadthAdapter(Adapter):
                 if last > 0:
                     moves[code] = pct
             time.sleep(0.45)   # a tighter walk gets the connection reset
+
+        # The walk must have run off the END of the board, not out of page budget.
+        # Stopping at _SINA_MAX_PAGES means the board outgrew the cap and we would be
+        # publishing a truncated denominator — the exact defect this collector fixes,
+        # just with a subtler number. Fail instead; the heatmap keeps its tile count.
+        #
+        # Deliberately NOT gated against Market_Center.getHQNodeStockCount: that endpoint
+        # returned 5,530 on 2026-07-24 while the paged hs_a board held ~5,200 沪深 names
+        # (Tushare's independent SH 2,308 + SZ 2,889 = 5,197 agrees with the pages, not
+        # the counter). It counts a broader set, so it is not a valid denominator here.
+        if not reached_end:
+            raise ValueError(f"china_board_breadth: Sina walk hit the {_SINA_MAX_PAGES}-page "
+                             f"cap with {len(moves)} names and never reached the end of the "
+                             f"board — refusing to publish a truncated denominator")
         return _counts(pd.Series(moves, dtype="float64"), "sina", trade_date)
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
