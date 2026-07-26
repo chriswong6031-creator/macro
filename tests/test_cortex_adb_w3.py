@@ -206,6 +206,39 @@ class TestFullWhitelistParity:
             f"update the READ count in the deliberation system prompt to match"
         )
 
+    def test_prompt_names_every_read_tool(self):
+        """...and the count alone is not enough.
+
+        The count guard above is satisfied by bumping the number, which is the
+        WRONG repair: a tool in _READ_TOOLS that the prompt never names is
+        whitelisted and dispatchable but invisible to the model, so it is never
+        called. That is exactly how read_china_flows shipped — wired end to end
+        by #3672 (schema + dispatch) and absent from the prompt, defeating that
+        PR's own purpose on the deliberation path while the count guard read
+        31 == 31. Membership is the real invariant; the count is a shadow of it.
+        """
+        import re
+        import inspect
+        from engine.neuralweb.cortex import _READ_TOOLS
+        import engine.neuralweb.cortex as _cortex_mod
+
+        source = inspect.getsource(_cortex_mod)
+        block = re.search(r"READ\s*\(\d+\):(.*?)\n\n", source, re.S)
+        assert block is not None, "Could not find the 'READ (N): ...' tool block in cortex.py"
+        named = set(re.findall(r"\b(?:read|query|explain|list)_[a-z_]+\b", block.group(1)))
+
+        missing = sorted(set(_READ_TOOLS) - named)
+        assert not missing, (
+            f"{len(missing)} read tool(s) are whitelisted and dispatchable but never "
+            f"named in the deliberation system prompt, so the model cannot call them: "
+            f"{missing}. Add them to the 'READ (N): ...' list (and bump N)."
+        )
+        stale = sorted(named - set(_READ_TOOLS))
+        assert not stale, (
+            f"The prompt advertises read tool(s) that are not in _READ_TOOLS, so a "
+            f"call would be rejected as unauthorized: {stale}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Suite B — Happy-path and absent-path for the two new tools
