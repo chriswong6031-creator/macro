@@ -48,12 +48,14 @@ from lib import config
 log = logging.getLogger(__name__)
 
 # ── horizon configs (windows are in the SOURCE's native bars) ─────────────────
-# BOTH sources are DAILY. The per-name / sector grid was ORIGINALLY a weekly cross-section
-# grid, but collectors/tushare_history._grid_dates() is tail-anchored (`idx[-260:][::5]`), so
-# its stride phase shifts one trading day per build and the append-only store accreted every
-# phase — the panel is now ~1 bar per trading day (verified: median gap 1 day, ~20 distinct
-# dates/month). Windows below are therefore sized in TRADING DAYS so the "4wk"/"13wk" labels
-# the UI prints are true (20 / 65 bars), not 5x short.
+# BOTH sources are DAILY. The per-name / sector grid was WRITTEN as a weekly cross-section grid,
+# but collectors/tushare_history._grid_dates() was tail-anchored (`idx[-260:][::5]`): the stride
+# phase shifted one trading day per build, the append-only store accreted every phase, and the
+# panel became ~1 bar per trading day (verified: median gap 1 day, ~20 distinct dates/month).
+# That collector now emits a CONTIGUOUS daily grid anchored on the newest close, so daily is the
+# declared shape rather than an accident — and the newest bar is no longer 4 trading days stale.
+# Windows below are sized in TRADING DAYS so the "4wk"/"13wk" labels the UI prints are true
+# (20 / 65 bars), not 5x short.
 #
 # `demean` is load-bearing, not cosmetic. slope_z measures drift against ZERO, but neither
 # source has a zero null: 主力净占比 has a structural mean of ~-2.5% (the order-size tiers sum
@@ -255,9 +257,9 @@ def aggregate_velocity() -> list[dict] | None:
     return chans or None
 
 
-# ── 2) A-share per-name + 3) sector velocity (weekly grid) ────────────────────
+# ── 2) A-share per-name + 3) sector velocity (daily grid) ─────────────────────
 def _flow_panel() -> pd.DataFrame | None:
-    """Wide [date × ticker] A-share 主力 net-rate (%) grid from the accrued weekly history."""
+    """Wide [date × ticker] A-share 主力 net-rate (%) grid from the accrued daily history."""
     p = config.data_dir() / "tushare" / "flow_hist.parquet"
     if not p.exists():
         return None
@@ -327,7 +329,7 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = N
     df = pd.DataFrame(list(kmap.values()))
     inflow = df.sort_values("vel", ascending=False).head(top).to_dict("records")
     outflow = df.sort_values("vel").head(top).to_dict("records")
-    return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
+    return {"cadence": "daily", "as_of": str(wide.index.max().date()),
             "n": int(len(df)), "primary": _WK["primary"],
             "note": "主力 net-rate (super-large + large orders); velocity = the 4-week inflow rate standardized against the name's OWN trailing norm (not against zero — main money is a structural net seller), acceleration = its trend.",
             "note_zh": "主力净占比（超大单+大单）；流速＝4周流入率相对该股自身常态的标准化值（非相对零——主力资金结构性净卖出），加速度＝其趋势。",
@@ -379,7 +381,7 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None =
     if len(rows) < 4:
         return None
     rows.sort(key=lambda r: (r["vel"] is None, -(r["vel"] or 0)))
-    return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
+    return {"cadence": "daily", "as_of": str(wide.index.max().date()),
             "n": len(rows), "primary": _WK["primary"],
             "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity vs the sector's own trailing norm. Expand a sector for its biggest-moving member names.",
             "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速（相对板块自身常态）排序。展开板块查看流向最强的成分股。",

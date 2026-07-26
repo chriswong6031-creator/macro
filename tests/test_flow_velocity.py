@@ -157,9 +157,10 @@ def test_rate_read_tooltip_arithmetic_is_exact():
 
 # ── cadence: the windows must match the store the engine actually reads ───────
 def test_windows_are_sized_for_a_daily_grid():
-    """flow_hist is daily (the collector's tail-anchored stride phase-shifts each build and the
-    append-only store accreted every phase), but the UI prints '4wk'/'13wk'. If those labels
-    are to be true the windows must be ~20 / ~65 bars, not 4 / 13."""
+    """flow_hist is daily — first by accident (the tail-anchored stride phase-shifted each build
+    and the append-only store accreted every phase), now by construction (collectors/
+    tushare_history emits a contiguous daily grid anchored on the newest close). The UI prints
+    '4wk'/'13wk'; if those labels are to be true the windows must be ~20 / ~65 bars, not 4 / 13."""
     assert fv._WK["horizons"]["4wk"] == 20
     assert fv._WK["horizons"]["13wk"] == 65
     assert fv._WK["base"] >= 65, "baseline vol shorter than the 13wk horizon it normalizes"

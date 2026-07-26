@@ -1051,7 +1051,7 @@ def main(alpha: dict | None = None) -> dict | None:
                       ("collectors.tushare_chips", {}),       # cyq_perf 筹码胜率 holder cost-basis
                       ("collectors.tushare_broker", {}),      # broker_recommend 券商金股 pick tally
                       ("collectors.tushare_forecast", {}),    # forecast 业绩预告 + report_rc revision
-                      ("collectors.tushare_history", {})):    # weekly-grid flow/chips history → china_validation
+                      ("collectors.tushare_history", {})):    # daily-grid flow/chips history → china_validation
         try:
             importlib.import_module(_mod).refresh(**_kw)
         except Exception as e:  # noqa: BLE001 — additive context, never fatal

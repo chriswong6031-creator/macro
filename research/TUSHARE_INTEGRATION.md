@@ -64,7 +64,7 @@ right-sign family earns weight via `china_signal_lab.leg_weights_for`; a proven 
 zeroed; an unproven family rides its prior (context floor).
 
 **`fundflow` + `chips` families are now live.** `collectors/tushare_history` backfills + accrues a
-compact weekly-grid per-name history (`data/tushare/{flow_hist,chips_hist}.parquet`, panel names
+compact DAILY-grid per-name history (`data/tushare/{flow_hist,chips_hist}.parquet`, panel names
 only) so the cross-sectional rank-IC computes against ~1 year of real history immediately rather
 than waiting months. `china_validation` validates them like the valuation family (forward
 CSI-300-relative rank-IC + an incremental-IC neutralization vs momentum/reversal/size), and

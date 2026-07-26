@@ -93,6 +93,57 @@ def test_history_collector_noop_without_token(monkeypatch):
     assert th._flow_value(R2()) == 7.0
 
 
+# ---- the accrual grid: fresh at the head, and phase-stable ------------------ #
+def _write_closes(tmp_path, n_days: int):
+    """A china_search close panel with `n_days` business-day rows."""
+    d = tmp_path / "china_search"
+    d.mkdir(parents=True, exist_ok=True)
+    idx = pd.bdate_range("2024-01-01", periods=n_days, name="Date")
+    pd.DataFrame({"600519.SS": range(n_days)}, index=idx).to_parquet(d / "closes.parquet")
+    return idx
+
+
+def test_grid_newest_is_the_newest_close(monkeypatch, tmp_path):
+    """The head of the grid must BE the last close. It used to be `idx[-260:][::5]`, whose
+    newest kept element is always position -5 — so the flow page printed an as-of 4 trading
+    days behind the southbound card beside it, every day, structurally."""
+    from collectors import tushare_history as th
+    monkeypatch.setattr(th.config, "data_dir", lambda: tmp_path)
+    idx = _write_closes(tmp_path, 400)
+    grid = th._grid_dates()
+    assert grid[-1] == idx[-1].strftime("%Y%m%d")                    # zero lag, not 4 days
+    assert grid[-1] != list(idx[-260:][::5])[-1].strftime("%Y%m%d")  # the old slice's answer
+    assert grid == [d.strftime("%Y%m%d") for d in idx[-th._GRID_DAYS:]]   # contiguous, in order
+    assert len(grid) == th._GRID_DAYS == len(set(grid))
+
+
+def test_grid_has_no_stride_phase_to_drift(monkeypatch, tmp_path):
+    """A tail-anchored stride has no fixed origin: every build shifted the whole grid one
+    trading day, so the append-only store accreted all five phases and became daily anyway.
+    A contiguous grid is phase-free — consecutive builds differ by exactly the new bar."""
+    from collectors import tushare_history as th
+    monkeypatch.setattr(th.config, "data_dir", lambda: tmp_path)
+    seen = []
+    for n in (400, 401, 402):
+        idx = _write_closes(tmp_path, n)
+        grid = th._grid_dates()
+        assert grid[-1] == idx[-1].strftime("%Y%m%d")   # head tracks the panel, always
+        seen.append(set(grid))
+    # each build adds exactly one date and drops exactly one — no phase, no re-sampling
+    for a, b in zip(seen, seen[1:]):
+        assert len(b - a) == 1 and len(a - b) == 1
+
+
+def test_grid_short_panel_and_missing_panel(monkeypatch, tmp_path):
+    """Shorter-than-grid panels return everything they have; an absent panel returns []."""
+    from collectors import tushare_history as th
+    monkeypatch.setattr(th.config, "data_dir", lambda: tmp_path)
+    assert th._grid_dates() == []                       # no closes.parquet at all
+    idx = _write_closes(tmp_path, 30)
+    grid = th._grid_dates()
+    assert len(grid) == 30 and grid[-1] == idx[-1].strftime("%Y%m%d")
+
+
 # ---- validation families for the new gated legs ---------------------------- #
 def test_validation_has_fundflow_chips_sign_priors():
     from engine import china_validation as cv
