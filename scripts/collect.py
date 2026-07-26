@@ -198,6 +198,7 @@ def all_adapters() -> dict:
         ("china_stocks_raw", "collectors.china_stock_raw", "ChinaStockRawPriceAdapter"),  # RAW (nominal) per-NAME OHLC for level/limit/gap/A-H logic — masterplan §W6-CN fix 3
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
+        ("china_board_breadth", "collectors.china_board_breadth", "ChinaBoardBreadthAdapter"),  # whole-board 沪深 涨跌家数 (~5.2k names) — the count the heatmap card quotes (Tushare daily; Sina walk keyless; fragile->blocked)
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)
         ("china_margin", "collectors.china_margin", "ChinaMarginAdapter"),     # 融资融券 crowd meter
         ("china_margin_detail", "collectors.china_margin_detail", "ChinaMarginDetailAdapter"),  # per-name 融资余额+融券余量 daily accrual (W3-C margin-velocity substrate)

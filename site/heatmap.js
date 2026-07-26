@@ -89,6 +89,10 @@
     var a = Math.abs(v), d = a >= 100 ? 0 : (a >= 10 ? 1 : 2);
     return (v > 0 ? '+' : (v < 0 ? '−' : '')) + a.toFixed(d) + '%';
   }
+  function fmtInt(v) {                 // 5197 -> "5,197" (grouped counts read faster)
+    if (v == null || isNaN(v)) return '—';
+    return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
   var CUR_SYM = { USD: '$', HKD: 'HK$', CAD: 'C$', CNY: '¥' };
   function fmtCap(v, cur) {            // v in absolute units of `cur` (default USD)
     if (v == null || !isFinite(v) || v <= 0) return '';
@@ -272,9 +276,12 @@
   function sectorAgg(data, tiles, tf) {
     return data.size_basis === 'marketcap' ? weightedPc(tiles, tf) : medianPc(tiles, tf);
   }
+  // Same ±0.05% dead-band as computeSummary — the two used to disagree (strict zero
+  // here, banded there), so the status strip and the breadth card printed adv/dec
+  // pairs a couple of names apart for the same timeframe on the same screen.
   function breadth(tiles, tf) {
     var adv = 0, dec = 0;
-    tiles.forEach(function (t) { var v = t.perf[tf]; if (v > 0) adv++; else if (v < 0) dec++; });
+    tiles.forEach(function (t) { var v = t.perf[tf]; if (v > 0.05) adv++; else if (v < -0.05) dec++; });
     return { adv: adv, dec: dec };
   }
   function sectorLabels(data) {
@@ -717,6 +724,11 @@
     // Flat Sector → stock treemap (CN / HK / CA): no curated sub-industry level,
     // so one band per sector with stock tiles directly — TradingView's HSI/TSX look.
     var IS_STOCKS = data.map_type === 'stocks';
+    // Name the breadth denominator only where the map is knowably a SAMPLE of a bigger
+    // board. China is measured: ~1,510 tiles of ~5,200 沪深 names. HK/CA/US carry no
+    // whole-board count yet, so they keep the plain card rather than assert a coverage
+    // claim we have not measured (see research/CHINA_FULL_UNIVERSE_MASTERPLAN_BY_FABLE.md §5).
+    var HAS_SAMPLE_SCOPE = data.market === 'china';
     var STOCK_URL = data.stock_url || 'stock.html#';
     root.classList.add('hm-scope', 'hm-view');
     if (IS_THEMES) root.classList.add('hm-themes');
@@ -836,7 +848,13 @@
         + '<span class="hm-lg-step">' + L('bins', '分档') + ' ±' + edgeFmt(e[0]) + '/' + edgeFmt(e[1]) + '/' + edgeFmt(e[2]) + '</span>';
     }
     function updateRead() {
-      var br = breadth(data.tiles, TF);
+      // Same rule as the breadth card: quote the whole board when the payload carries
+      // it for this session, else the tiles. Two adv/dec pairs on one page disagreeing
+      // by 3x is how the sample-vs-board confusion reads to a user.
+      var b = data.board_breadth;
+      var br = (b && b.n > 0 && TF === (data.default_tf || '1D'))
+        ? { adv: b.adv, dec: b.dec }
+        : breadth(data.tiles, TF);
       var live = data.source === 'polygon-live';
       var when = live ? (fmtUpdated(data) || data.asof || '—') : (data.asof || '—');
       var srcEn, srcZh;
@@ -849,7 +867,7 @@
       }
       readEl.innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
         + '<span class="hm-read-src">' + L(srcEn, srcZh) + '</span>'
-        + '<span class="hm-read-br"><b class="up">' + br.adv + ' ▲</b> <b class="dn">' + br.dec + ' ▼</b></span>';
+        + '<span class="hm-read-br"><b class="up">' + fmtInt(br.adv) + ' ▲</b> <b class="dn">' + fmtInt(br.dec) + ' ▼</b></span>';
     }
 
     /* ----- treemap (desktop) ----- */
@@ -1343,7 +1361,7 @@
         return { name: k, agg: sectorAgg(data, byS[k], tf), n: byS[k].length };
       }).filter(function (s) { return s.agg != null && !isNaN(s.agg); })
         .sort(function (a, b) { return b.agg - a.agg; });
-      return {
+      var sm = {
         n: ts.length, adv: adv, dec: dec, flat: flat,
         pctUp: ts.length ? adv / ts.length * 100 : 0,
         med: medianPc(ts, tf),
@@ -1351,6 +1369,38 @@
         losers: sorted.slice(-5).reverse(),
         secs: secs
       };
+      return applyBoard(sm, tf);
+    }
+    // Whole-board 涨跌家数 overlay. The tiles are a SAMPLE (China: ~1,510 names of a
+    // ~5,200-name board — 82% of market cap, but a third of the count), so counting
+    // them printed a number no one could reconcile against 东方财富. When the payload
+    // carries a same-session whole-board row we quote THAT for the counts, the % up
+    // and the median, so one sentence describes one universe. Per-name detail
+    // (movers, sector strength) stays tile-derived — the board feed has no names in it.
+    //
+    // 1D only: 涨跌家数 is a daily count by definition, and the board feed is a daily
+    // snapshot with no history behind it. Every other timeframe keeps the tile count
+    // and says so, via scopeOf() below.
+    function applyBoard(sm, tf) {
+      var b = data.board_breadth;
+      if (!b || tf !== (data.default_tf || '1D') || !(b.n > 0)) return sm;
+      sm.n = b.n; sm.adv = b.adv; sm.dec = b.dec; sm.flat = b.flat;
+      sm.pctUp = b.pct_up;
+      if (b.med_pct != null) sm.med = b.med_pct;
+      sm.scope = { whole: true, n: b.n, en: b.scope_en, zh: b.scope_zh };
+      return sm;
+    }
+    // The denominator, in plain words — the piece that was missing. Whole-board when
+    // we have it; otherwise name the map's own sample rather than let a partial count
+    // read as the market's.
+    function scopeOf(sm) {
+      if (!HAS_SAMPLE_SCOPE) return '';
+      if (sm.scope && sm.scope.whole) {
+        return L(esc(sm.scope.en) + ' · ' + fmtInt(sm.scope.n) + ' traded',
+                 esc(sm.scope.zh) + ' · ' + fmtInt(sm.scope.n) + ' 只交易');
+      }
+      return L('Map sample · ' + fmtInt(sm.n) + ' names',
+               '本图样本 · ' + fmtInt(sm.n) + ' 只');
     }
     // Deterministic market-state read (breadth + leadership) — a plain-word
     // description of the tape, never an LLM-originated or trade signal.
@@ -1407,6 +1457,7 @@
       if (!statsEl) return;
       var tot = Math.max(1, sm.adv + sm.dec + sm.flat);
       var top = sm.secs[0], bot = sm.secs[sm.secs.length - 1];
+      var scope = scopeOf(sm);
       var h = ''
         + '<div class="hx-stat hx-stat-br">'
         +   '<div class="k">' + L('Breadth · advancing vs declining', '市场广度 · 涨跌家数') + '</div>'
@@ -1414,8 +1465,9 @@
         +   '<div class="hx-bbar"><i class="adv" style="width:' + (100 * sm.adv / tot) + '%"></i>'
         +     '<i class="flt" style="width:' + (100 * sm.flat / tot) + '%"></i>'
         +     '<i class="dec" style="width:' + (100 * sm.dec / tot) + '%"></i></div>'
-        +   '<div class="hx-bleg"><span class="hx-up">▲ ' + sm.adv + '</span>'
-        +     '<span class="hx-dn">' + sm.dec + ' ▼</span></div>'
+        +   '<div class="hx-bleg"><span class="hx-up">▲ ' + fmtInt(sm.adv) + '</span>'
+        +     '<span class="hx-dn">' + fmtInt(sm.dec) + ' ▼</span></div>'
+        +   (scope ? '<div class="hx-bscope">' + scope + '</div>' : '')
         + '</div>'
         + _statCard(L('Median move', '涨跌中位数'), fmtPc(sm.med), _medWord(sm.med),
             sm.med > 0 ? 'up' : sm.med < 0 ? 'down' : '');
@@ -2018,6 +2070,8 @@
       + '.hx-bbar i{display:block;height:100%;} .hx-bbar .adv{background:var(--up);} .hx-bbar .flt{background:var(--g-mid);} .hx-bbar .dec{background:var(--down);}'
       + '.hx-bleg{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
       + '.hx-up{color:var(--up);} .hx-dn{color:var(--down);}'
+      /* the denominator, quietly: it qualifies the count above without competing with it */
+      + '.hx-bscope{margin-top:6px;font-size:10.5px;line-height:1.35;color:var(--muted);font-variant-numeric:tabular-nums;}'
 
       /* leaderboards */
       + '.hx-boards{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:11px;margin:14px 0 2px;}'

@@ -354,6 +354,15 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # Whole-board 涨跌家数: the heatmap card quotes a ~5,200-name count, and the
+      # engine gates the row against the map's own session. Both suites were
+      # previously named by NO job (#1253 wiring law) — test_market_heatmap.py
+      # included — so a regression in either would merge green.
+      - "collectors/china_board_breadth.py"
+      - "tests/test_china_board_breadth.py"
+      - "engine/market_heatmap.py"
+      - "scripts/build_market_heatmap.py"
+      - "tests/test_market_heatmap.py"
       # LHB-W3 winner-autopsy B-family feature columns: engine + builder + test re-run together.
       - "tests/test_winner_autopsy.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
@@ -1927,6 +1936,26 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
+
+  china-board-breadth:
+    if: ${{ false }}
+    # Whole-board 沪深 涨跌家数 (~5,200 names) behind the A-share heatmap's breadth
+    # card. WIRING LAW (#1253 precedent): tests/test_market_heatmap.py was named by
+    # NO job before this — the CN/HK/CA map contract merged untested for its whole
+    # life. Both suites are offline (canned Sina/Tushare payloads, synthetic closes).
+    # numpy is required: engine.market_heatmap imports engine.sp500_heatmap for the
+    # shared timeframe contract, and that module imports numpy at module scope — a
+    # minimal lane without it fails at collection, not at assert.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow requests pyyaml
+      - name: whole-board breadth collector + heatmap payload contract
+        run: python -m pytest tests/test_china_board_breadth.py tests/test_market_heatmap.py -q
 
   cycle-consistency:
     if: ${{ false }}

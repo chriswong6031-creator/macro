@@ -260,6 +260,45 @@ def _float_sizes(
     return {t: 1.0 for t in syms}, "equal"
 
 
+# Scope copy for the whole-board breadth block. Named per market so the card can say
+# WHAT the count is out of — a 涨跌家数 with an unstated denominator is the exact defect
+# this block exists to fix (the tile-derived count read as a whole-board print).
+_BOARD_SCOPE: dict[str, dict[str, str]] = {
+    "china": {"en": "Shanghai + Shenzhen A-shares", "zh": "沪深全市场"},
+}
+
+
+def _board_breadth_block(market: str, row: Mapping | None, asof_date: str) -> dict | None:
+    """Validate + shape one whole-board adv/dec row for the payload, or None.
+
+    Returned ONLY when the row describes the SAME session the tiles do. A board count
+    from a different session sitting beside a fresh tile map is worse than no board
+    count at all — the card would silently mix two days, and the fallback (counting
+    tiles) is at least internally consistent. Anything missing, malformed, or
+    stale-dated falls through to that fallback.
+    """
+    scope = _BOARD_SCOPE.get(market)
+    if not row or not scope or not asof_date:
+        return None
+    if str(row.get("date") or "") != asof_date:
+        return None
+    try:
+        n, adv, dec = int(row["n"]), int(row["adv"]), int(row["dec"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if n <= 0 or adv < 0 or dec < 0 or adv + dec > n:
+        return None
+    flat = n - adv - dec
+    med = row.get("med_pct")
+    return {
+        "n": n, "adv": adv, "dec": dec, "flat": flat,
+        "pct_up": round(100.0 * adv / n, 2),
+        "med_pct": None if med is None else round(float(med), 2),
+        "scope_en": scope["en"], "scope_zh": scope["zh"],
+        "source": str(row.get("source") or ""),
+    }
+
+
 def build_market_heatmap(
     market: str,
     constituents: pd.DataFrame,
@@ -270,6 +309,7 @@ def build_market_heatmap(
     names_zh: Mapping[str, str] | None = None,
     generated_utc: str | None = None,
     asof: pd.Timestamp | None = None,
+    board_breadth: Mapping | None = None,
 ) -> dict:
     """Assemble a flat (Sector → stock) heatmap payload for one market.
 
@@ -281,6 +321,7 @@ def build_market_heatmap(
     caps         : ticker -> market cap (market currency, absolute). Sizes tiles.
     weights      : ticker -> index weight_pct — proxy size when no caps.
     names_zh     : ticker -> Chinese display name (China only; optional).
+    board_breadth: one whole-board adv/dec row (see _board_breadth_block).
     """
     cfg = MARKETS[market]
     if constituents is None or constituents.empty:
@@ -351,6 +392,8 @@ def build_market_heatmap(
                 "zh": sector_zh.get(r["sector"], r["sector"]),
             })
 
+    board = _board_breadth_block(market, board_breadth, asof_date)
+
     return {
         "market": market,
         "map_type": "stocks",
@@ -372,6 +415,9 @@ def build_market_heatmap(
         "tiles": tiles,
         "n_tiles": len(tiles),
         "size_basis": size_basis,
+        # Whole-board 涨跌家数 for the SAME session as the tiles, when we have it.
+        # Absent (or stale) → the front-end counts tiles, as it always did.
+        **({"board_breadth": board} if board else {}),
     }
 
 
