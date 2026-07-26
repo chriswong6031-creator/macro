@@ -208,6 +208,23 @@ def _mentions_html_literal(node: ast.AST) -> bool:
     )
 
 
+def _references_html_name(node: ast.AST, html_names: set[str]) -> bool:
+    """True if this expression is built from a name already known to carry a page
+    path — so html-ness propagates the way the temp-dir taint does.
+
+    Without this the guard misses the module-constant idiom, which is common here:
+
+        PAGE_OUT = "qa_bottom_sensors.html"   # ← the only literal in the file
+        ...
+        out = site / PAGE_OUT                 # no Constant → `out` unmarked
+        out.write_text(html)                  # ← would slip through
+
+    scripts/build_qa_bottom_sensors.py is exactly that shape, and the first
+    version of this guard (#3652) returned [] for it.
+    """
+    return any(isinstance(n, ast.Name) and n.id in html_names for n in ast.walk(node))
+
+
 def _is_tmp_expr(node: ast.AST, tmp_names: set[str]) -> bool:
     """True if this expression is rooted in a throwaway directory — either a
     tempfile factory call, or a name already known to hold one."""
@@ -263,8 +280,8 @@ def _scan_scope(scope, html_names: set[str], tmp_names: set[str], out: list):
                 names = {n.id for n in ast.walk(tgt) if isinstance(n, ast.Name)}
                 if _is_tmp_expr(val, tmp_names):
                     tmp_names.update(names)     # taint propagates down the chain
-                elif _mentions_html_literal(val):
-                    html_names.update(names)
+                elif _mentions_html_literal(val) or _references_html_name(val, html_names):
+                    html_names.update(names)    # ...and so does html-ness
         for child in ast.iter_child_nodes(node):
             walk(child)
 
@@ -394,6 +411,32 @@ def test_source_guard_fires_on_synthetic_offenders():
         "        site_dir = tmp_path / 'site'\n"
         "        fake = site_dir / 'test_h2.html'\n"
         "        fake.write_text('<div/>')\n"
+    ) == []
+
+    # the module-constant idiom — the literal is nowhere near the write
+    # (scripts/build_qa_bottom_sensors.py's shape; #3652's guard returned [] here)
+    assert _raw_html_writes(
+        "PAGE_OUT = 'qa_bottom_sensors.html'\n"
+        "def build(site, html):\n"
+        "    out = site / PAGE_OUT\n"
+        "    out.write_text(html)\n"
+    ) == [(4, "out")]
+
+    # ...and it must survive one more hop through a local
+    assert _raw_html_writes(
+        "PAGE_OUT = 'x.html'\n"
+        "def build(site, html):\n"
+        "    target = site / PAGE_OUT\n"
+        "    final = target\n"
+        "    final.write_text(html)\n"
+    ) == [(5, "final")]
+
+    # a constant with no .html must NOT arm the propagation
+    assert _raw_html_writes(
+        "DEST = 'feed.xml'\n"
+        "def build(site, rss):\n"
+        "    out = site / DEST\n"
+        "    out.write_text(rss)\n"
     ) == []
 
     # write_page is the fix, and must not be flagged
