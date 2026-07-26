@@ -184,12 +184,7 @@ jobs:
   # remains one runner; public contributors retain the original fail-closed
   # behavior instead of being stuck on missing required contexts.
   fork-self-mod-fence:
-    name: >-
-      ${{
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name != github.repository &&
-        'self-mod-fence' || 'fork-self-mod-fence-unused'
-      }}
+    name: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'self-mod-fence' || 'fork-self-mod-fence-unused' }}
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
@@ -221,12 +216,7 @@ jobs:
       - run: python -m pytest tests/test_self_mod_fence.py -q
 
   fork-capability-broker:
-    name: >-
-      ${{
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name != github.repository &&
-        'capability-broker' || 'fork-capability-broker-unused'
-      }}
+    name: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'capability-broker' || 'fork-capability-broker-unused' }}
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
@@ -241,12 +231,7 @@ jobs:
       - run: python3 scripts/check_capability_redline.py
 
   fork-grader-manifest:
-    name: >-
-      ${{
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.head.repo.full_name != github.repository &&
-        'grader-manifest' || 'fork-grader-manifest-unused'
-      }}
+    name: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'grader-manifest' || 'fork-grader-manifest-unused' }}
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name != github.repository
