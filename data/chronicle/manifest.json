@@ -21,7 +21,7 @@
       "gap": "data/chronicle/state_log.jsonl has no rows yet (first nightly capture pending)"
     },
     "research_vault": {
-      "count": 86,
+      "count": 105,
       "dropped_from_source": 0,
       "gap": null
     },
@@ -34,22 +34,22 @@
   "as_of": "2026-07-26",
   "coverage": {
     "end": "2026-07-25",
-    "note": "123 events across 29 distinct date(s)",
+    "note": "142 events across 29 distinct date(s)",
     "start": "2025-07-22"
   },
-  "elapsed_s": 0.398,
+  "elapsed_s": 2.5,
   "gap_notes": [
     "earnings: coverage: 4/1364 tickers carried reported surprises",
     "macro_release: 5/5 release event(s) joined to a scored actual print",
     "regime_flip: data/chronicle/state_log.jsonl has no rows yet (first nightly capture pending)"
   ],
-  "inputs_hash": "sha256:0481eaa909197df7d25b2da09141f9c18f30f41d233d369c610784df00fb0fb3",
+  "inputs_hash": "sha256:ace1072cff1d22ff797a4e4655bea7971da4db2268259a1ea215581f83f2c5c7",
   "ledgers": {
     "events": {
       "path": "data/chronicle/events.jsonl",
       "present": true,
-      "rows": 123,
-      "sha256": "sha256:cd1c7c2498c960afc44bb119ea66f05908afd3dfaa8dd65c66fed1ddcf24b684"
+      "rows": 142,
+      "sha256": "sha256:b4d0079d690ef378b20ed999c129ffd714d1643c5b6c0c041eef44e20b3167b0"
     },
     "state_log": {
       "path": "data/chronicle/state_log.jsonl",
@@ -58,9 +58,12 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   },
-  "produced_at": "2026-07-26T07:42:18Z",
+  "produced_at": "2026-07-26T13:11:04Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
+  "source_fingerprints": {
+    "research_vault_catalog": "sha256:e1a34e0527c14a2a4b7f090ff677e58dc199dded35e7ab2754a1aacccdcf5f98"
+  },
   "tier": "display"
 }

@@ -31,6 +31,7 @@ Chronicle function takes root), mirroring tests/test_marketing_engine.py.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from datetime import datetime, timezone
@@ -1186,7 +1187,39 @@ def test_rebuild_from_committed_sources_reproduces_committed_store():
         assert not result.get("error"), result
         rebuilt_bytes = (tmp_root / "data" / "chronicle" / "events.jsonl").read_bytes()
 
-    assert rebuilt_bytes == committed_bytes, (
-        "rebuilding from the committed sources did not reproduce the committed "
-        "events.jsonl byte-for-byte — the committed store is stale (gate 1)"
-    )
+    # Vintage guard: the research-vault catalog is committed HOURLY by its own
+    # lane, so between chronicle regen commits the checkout's catalog can be
+    # NEWER than the one the committed store was built from. That drift is the
+    # catalog lane doing its job, not a broken store — so when the manifest's
+    # recorded catalog fingerprint no longer matches the checkout's catalog,
+    # enforce the append-only invariant (a rebuild may only ADD events, never
+    # lose one) instead of byte identity. Byte identity stays the gate whenever
+    # the vintages match (and for older manifests that carry no fingerprint).
+    committed_manifest = ROOT / "data" / "chronicle" / "manifest.json"
+    catalog_path = ROOT / "data" / "research_vault" / "catalog.json"
+    vintage_drift = False
+    if committed_manifest.exists() and catalog_path.exists():
+        try:
+            recorded = (json.loads(committed_manifest.read_text(encoding="utf-8"))
+                        .get("source_fingerprints") or {}).get("research_vault_catalog")
+            current = "sha256:" + hashlib.sha256(catalog_path.read_bytes()).hexdigest()
+            vintage_drift = bool(recorded) and recorded != current
+        except Exception:  # noqa: BLE001 — unreadable manifest -> strict gate below
+            vintage_drift = False
+
+    if vintage_drift:
+        committed_ids = {json.loads(line)["id"]
+                         for line in committed_bytes.decode("utf-8").splitlines() if line.strip()}
+        rebuilt_ids = {json.loads(line)["id"]
+                       for line in rebuilt_bytes.decode("utf-8").splitlines() if line.strip()}
+        missing = committed_ids - rebuilt_ids
+        assert not missing, (
+            "catalog advanced past the committed store's vintage (expected between "
+            f"regen commits), but a rebuild LOST {len(missing)} committed event(s) — "
+            f"append-only violated: {sorted(missing)[:5]}"
+        )
+    else:
+        assert rebuilt_bytes == committed_bytes, (
+            "rebuilding from the committed sources did not reproduce the committed "
+            "events.jsonl byte-for-byte — the committed store is stale (gate 1)"
+        )

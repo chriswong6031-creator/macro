@@ -1358,7 +1358,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2 is REQUIRED here: the M8 links.site derivation imports
+        # scripts/build_research_pages (jinja2 at module level); without it the
+        # rebuild fail-softs to link-less events and both the links test and the
+        # byte-reproducibility gate go red in exactly this venv while staying
+        # green in any full env (diagnosed 2026-07-26).
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: chronicle engine tests
         run: python -m pytest tests/test_chronicle.py -q
 
