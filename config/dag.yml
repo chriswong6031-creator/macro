@@ -2046,6 +2046,22 @@ lanes:
           runs AFTER build_transmission, writes data/transmission/chain_calibration.json.
           The nightly transmission_chains read picks it up to fill hop base_rates + promote
           the display tier (calibrated_context). Display-only; additive; no-ops on absent history.
+      - id: run_transmission_proposals
+        module: scripts.run_transmission_proposals
+        args: [--trigger, scheduled]
+        note: >
+          TXI W5 — Loop-C closure: autonomous transmission-chain proposals via the EXISTING
+          CHF brainstorm lane (NOT a second LLM loop). Weekly cadence. GATED behind BOTH
+          config/causal_llm.yml auto_loop (CHF-R8, operator-flipped) AND
+          config/transmission_proposals.yml enabled (ships FALSE) — the runner NO-OPS
+          (writes nothing, exit 0) unless both are on, so declaring this step can never
+          auto-activate it. When on: emits the proposal PACK to the CHF lane's drop location
+          and ingests the CHF lane's chain-shaped replies into hypothesis-tier
+          knowledge/transmission/proposed/ YAMLs (rejects → data/transmission/proposal_rejects.jsonl,
+          run log → data/transmission/proposal_runs.jsonl). Proposals are display-only: W1
+          compiles their state + W3 backtests them next cycle, but they never arm / gain
+          authority until a human PR promotes them out of proposed/ (TXI-R5). No-ops on
+          absent inputs. Non-fatal (exit 0 always).
       - id: build_rates_command
         module: scripts.build_rates_command
       - id: calibrate_vector

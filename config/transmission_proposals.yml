@@ -1,0 +1,34 @@
+# TXI-W5 Loop-C autonomy sub-gate — the transmission-chain proposal lane.
+#
+# This lane runs behind CHF's EXISTING autonomy gate (config/causal_llm.yml `auto_loop`) AND
+# this OWN sub-flag. BOTH must be true for a scheduled run to generate proposal packs / ingest
+# CHF-lane replies:
+#
+#     run allowed  ==  causal_llm.yml:auto_loop  AND  transmission_proposals.yml:enabled
+#
+# HONEST GATE STATE (do not misread this as defense-in-depth): CHF `auto_loop` DEFAULTS to
+# FALSE per CHF-R8, but the operator already flipped it TRUE in this repo (ruling 2026-07-09,
+# see config/causal_llm.yml). So in the CURRENT repo, `enabled` below is the SOLE remaining
+# lock — flipping it true here activates the lane. It ships FALSE so that merely wiring the
+# lane into weekly.yml does NOT auto-activate it; the operator flips it ON in a one-line PR
+# when ready. (If the operator later sets auto_loop back to false, this lane no-ops again
+# regardless of `enabled` — the two are ANDed.)
+#
+# This is NOT a second LLM loop: the LLM proposing happens inside the CHF brainstorm lane
+# (run_causal_brainstorm.py). The proposal runner only (a) emits the pack to the CHF lane's
+# drop location and (b) ingests the CHF lane's chain-shaped replies into hypothesis-tier
+# knowledge/transmission/proposed/ YAMLs. Proposals stay display-only until a human PR
+# promotes them (TXI-R5: humans stay at chain-library review + promotion).
+
+schema: transmission_proposals.v1
+
+# THE SUB-GATE — must be true (AND auto_loop) for the scheduled proposal lane to act.
+enabled: false
+
+# Max chains to request per pack (advisory; the pack renders this into the OUTPUT FORMAT).
+n_requested: 12
+
+# Where the CHF lane drops its chain-shaped replies for ingest. Absent → the ingest no-ops
+# gracefully (parsed=0). Kept OUT of a committed data path by default (a temp/handoff dir);
+# an operator wiring the full autonomous loop points this at the CHF lane's reply location.
+reply_inbox: null

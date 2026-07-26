@@ -152,6 +152,15 @@ jobs:
           # transmission_chains read picks it up to fill hop base_rates + promote the display
           # tier. Display-only, additive, no-ops gracefully on absent history. ~1s wall.
           run_py "calibrate transmission chains (TXI W3 episode miner)" scripts.run_transmission_calibration
+          # TXI W5 — Loop-C closure: autonomous transmission-chain proposals via the EXISTING
+          # CHF brainstorm lane (NOT a second LLM loop). WEEKLY cadence. GATED behind BOTH
+          # config/causal_llm.yml auto_loop (CHF-R8) AND config/transmission_proposals.yml
+          # enabled (ships FALSE) — the runner no-ops (writes nothing, exit 0) unless both are
+          # on, so wiring this step here can never auto-activate it. When on: emits the proposal
+          # PACK to the CHF lane's drop location + ingests chain-shaped replies into
+          # hypothesis-tier knowledge/transmission/proposed/. Display-only; W1 compiles + W3
+          # backtests proposals next cycle; human PR promotes out of proposed/. Non-fatal.
+          run_py "transmission-chain proposals (TXI W5 Loop-C, gated)" scripts.run_transmission_proposals --trigger scheduled
           run_py "forward path board (build_rates_command)" scripts.build_rates_command
           run_py "calibrate vector" scripts.calibrate_vector
           run_py "validate gex (forward-RV gate)" scripts.validate_gex

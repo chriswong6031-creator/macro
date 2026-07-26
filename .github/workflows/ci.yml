@@ -402,6 +402,15 @@ on:
       - "engine/transmission_calibration.py"
       - "scripts/run_transmission_calibration.py"
       - "tests/test_transmission_calibration.py"
+      # TXI W5 Loop-C closure: the proposal pack generator, the ingest, the gated runner, its
+      # config, and the test file must all trigger the chain suite (same #3357 both-halves
+      # rule — paths here AND the run command in the job below). The ingest resolves proposals
+      # through engine/transmission_chains.py (already above).
+      - "scripts/propose_transmission_chains.py"
+      - "scripts/ingest_transmission_chains.py"
+      - "scripts/run_transmission_proposals.py"
+      - "config/transmission_proposals.yml"
+      - "tests/test_transmission_proposals.py"
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
@@ -1916,6 +1925,8 @@ jobs:
         run: python -m pytest tests/test_transmission_publish.py tests/test_transmission_cascade_monitor.py tests/test_transmission_chains_nw.py -q
       - name: transmission calibration — miner + regime split + merge + null honesty
         run: python -m pytest tests/test_transmission_calibration.py -q
+      - name: transmission proposals — W5 Loop-C (pack + ingest + gate + Article 1/2)
+        run: python -m pytest tests/test_transmission_proposals.py -q
 
   research-factory-authority:
     if: ${{ false }}
