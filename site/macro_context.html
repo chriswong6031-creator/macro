@@ -71,9 +71,18 @@ body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 20%, color-mix(in srgb,var(--q1) 5%,transparent) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 35% at 80% 10%, color-mix(in srgb,var(--info) 5%,transparent) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, color-mix(in srgb,var(--warn) 4%,transparent) 0%, transparent 60%);
+    radial-gradient(ellipse 62% 42% at 12% 12%, color-mix(in srgb,var(--au) 11%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 38% at 88% 84%, rgba(99,102,241,.08) 0%, transparent 66%);
+}
+/* --au is the page's ambient hue; set from the risk-score state on <body>. */
+body { --au: var(--muted); }
+body.au-up   { --au: var(--up); }
+body.au-warn { --au: var(--warn); }
+body.au-down { --au: var(--down); }
+html[data-theme="light"] body::before {
+  background:
+    radial-gradient(ellipse 62% 42% at 12% 12%, color-mix(in srgb,var(--au) 6%,transparent) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 38% at 88% 84%, rgba(99,102,241,.045) 0%, transparent 66%);
 }
 
 /* ── Layout ─────────────────────────────────────────────────── */
@@ -87,11 +96,29 @@ body::before {
 .sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
 /* ── Panel ──────────────────────────────────────────────────── */
-.panel {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 20px; box-shadow: 0 1px 0 rgba(255,255,255,.02);
+:root {
+  --mcg-bg:     rgba(16,22,30,.55);
+  --mcg-brd:    rgba(255,255,255,.12);
+  --mcg-shadow: 0 8px 32px rgba(0,0,0,.42), 0 1.5px 0 rgba(255,255,255,.06) inset;
+  --mcg-hover-brd:    rgba(255,255,255,.16);
+  --mcg-hover-shadow: 0 6px 24px rgba(0,0,0,.25);
+  --mcg-blur:   blur(20px);
 }
-.panel2 { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+html[data-theme="light"] {
+  --mcg-bg:     rgba(255,255,255,.82);
+  --mcg-brd:    rgba(0,0,0,.06);
+  --mcg-shadow: 0 4px 24px rgba(0,0,0,.07), 0 1px 0 rgba(255,255,255,.95) inset;
+  --mcg-hover-brd:    rgba(0,0,0,.14);
+  --mcg-hover-shadow: 0 6px 24px rgba(0,0,0,.10);
+}
+.panel {
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 16px;
+  padding: 20px; box-shadow: var(--mcg-shadow); backdrop-filter: var(--mcg-blur);
+}
+.panel2 {
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd); border-radius: 12px; padding: 14px;
+}
 
 /* ── Jump nav ───────────────────────────────────────────────── */
 .jump-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 20px; }
@@ -163,7 +190,8 @@ body::before {
    HERO
    ───────────────────────────────────────────────────────────── */
 .hero {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 18px;
+  backdrop-filter: var(--mcg-blur); box-shadow: var(--mcg-shadow);
   padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden;
   animation: fadeInUp .5s ease both;
 }
@@ -211,11 +239,13 @@ body::before {
 }
 .kpi-chip {
   display: flex; flex-direction: column; gap: 3px;
-  background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd); border-radius: 12px;
   padding: 10px 14px; min-width: 110px;
-  transition: transform .2s, box-shadow .2s;
+  transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out;
 }
-.kpi-chip:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+.kpi-chip:hover { transform: translateY(-1px); border-color: var(--mcg-hover-brd);
+                  box-shadow: var(--mcg-hover-shadow); }
 .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .kpi-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .kpi-sub { font-size: 10px; color: var(--muted); }
@@ -236,7 +266,9 @@ body::before {
    RISK RADAR
    ───────────────────────────────────────────────────────────── */
 .radar-board {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  /* auto-fit, not a hard 6: with 7 scares a fixed six-column grid stranded the
+     seventh tile alone on its own row. */
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;
 }
 @media (max-width: 900px) { .radar-board { grid-template-columns: repeat(3,1fr); } }
 @media (max-width: 480px) { .radar-board { grid-template-columns: repeat(2,1fr); } }
@@ -245,7 +277,8 @@ body::before {
   border-radius: 12px; padding: 18px 16px; border: 1px solid transparent;
   transition: transform .2s, box-shadow .2s; cursor: default; position: relative; overflow: hidden;
 }
-.scare-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.scare-tile { transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out; }
+.scare-tile:hover { transform: translateY(-1px); box-shadow: var(--mcg-hover-shadow); }
 .scare-tile.band-watch { background: color-mix(in srgb,var(--warn) 10%,var(--panel)); border-color: color-mix(in srgb,var(--warn) 30%,transparent); }
 .scare-tile.band-calm  { background: var(--panel); border-color: var(--line); }
 .scare-tile.dominant {
@@ -269,8 +302,9 @@ body::before {
 /* Drawdown ladder */
 .dd-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
 .dd-cell {
-  flex: 1; min-width: 90px; background: var(--panel2); border: 1px solid var(--line);
-  border-radius: 10px; padding: 10px 14px;
+  flex: 1; min-width: 108px; border-radius: 12px; padding: 11px 14px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
 }
 .dd-cell-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .dd-cell-v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--down); margin-top: 2px; }
@@ -300,10 +334,13 @@ body::before {
 @media (max-width: 560px) { .weather-grid { grid-template-columns: 1fr; } }
 
 .domain-card {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 18px 16px; transition: transform .2s, box-shadow .2s; position: relative;
+  background: var(--mcg-bg); border: 1px solid var(--mcg-brd); border-radius: 14px;
+  backdrop-filter: var(--mcg-blur); box-shadow: var(--mcg-shadow);
+  padding: 18px 16px; position: relative;
+  transition: transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out;
 }
-.domain-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.3); }
+.domain-card:hover { transform: translateY(-1px); border-color: var(--mcg-hover-brd);
+                     box-shadow: var(--mcg-hover-shadow); }
 .domain-name {
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .10em;
   color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
@@ -314,7 +351,9 @@ body::before {
 .domain-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .field-chip {
   display: flex; flex-direction: column; gap: 1px;
-  padding: 6px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 9px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
   min-width: 0; position: relative;
 }
 .field-chip.changed-today { box-shadow: 0 0 0 1.5px var(--warn); }
@@ -414,8 +453,9 @@ body::before {
 .liq-block { margin-top: 0; }
 .liq-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .liq-stat {
-  flex: 1; min-width: 80px; background: var(--panel2); border: 1px solid var(--line);
-  border-radius: 8px; padding: 10px 12px;
+  flex: 1; min-width: 92px; border-radius: 10px; padding: 10px 12px;
+  background: color-mix(in srgb,var(--panel2) 55%,transparent);
+  border: 1px solid var(--mcg-brd);
 }
 .liq-stat-k { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
 .liq-stat-v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
@@ -796,7 +836,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 }
 </style>
 </head>
-<body>
+<body class="au-warn">
 
 
 <nav class="site-nav">
@@ -1136,7 +1176,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="hero-sub">
             <span class="chip c-q1">Q1 <span class="l-en">Goldilocks</span><span class="l-zh">金发姑娘</span></span>
             &bull; <span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span>
-            &bull; <span class="l-en">conf</span><span class="l-zh">置信</span> 41%
+            &bull; <span class="l-en">41% confidence</span><span class="l-zh">置信 41%</span>
             &bull; <span class="l-en">Stress expansion</span><span class="l-zh">Stress expansion</span>
             &bull; VIX 18.58
           </div>
@@ -1186,38 +1226,40 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Radar</span><span class="l-zh">雷达</span></span>
           <span class="kpi-val c-warn">CAUTION</span>
-          <span class="kpi-sub">Growth scare / def</span>
+          <span class="kpi-sub" style="white-space:normal"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">Growth scare / defensive rotation</span></span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Repricing</span><span class="l-zh">重定价</span></span>
           <span class="kpi-val c-up">QUIET</span>
-          <span class="kpi-sub"><span class="l-en">coherence</span><span class="l-zh">一致性</span></span>
+          <span class="kpi-sub l-en">how much markets agree</span><span class="kpi-sub l-zh">各市场一致程度</span>
         </div>
         
         
         <div class="kpi-chip"
-             data-tip-en="HMM smoothed posterior (display-only). Scored use requires causal refit against live regime labels."
+             data-tip-en="How confident a hidden-Markov regime model is in the current quadrant — its smoothed posterior probability P(quad), the months already spent in this regime, and the typical dwell time before a switch. Hazard rate 0.42. Display-only: scored use requires a causal refit against live regime labels."
              data-tip-zh="HMM平滑后验（仅展示）。评分使用需对实时周期标签进行因果重拟合。">
-          <span class="kpi-label"><span class="l-en">Regime HMM</span><span class="l-zh">象限HMM</span></span>
-          <span class="kpi-val c-info">P(Q2) 0.89</span>
-          <span class="kpi-sub l-en">hazard 0.42 &middot; ~2.4mo dwell &middot; 3mo in</span>
-          <span class="kpi-sub l-zh">风险0.42 &middot; 预期停留~2.4月 &middot; 已3月</span>
+          <span class="kpi-label"><span class="l-en">Model agrees</span><span class="l-zh">模型判断</span></span>
+          <span class="kpi-val c-info">89%</span>
+          <span class="kpi-sub l-en">on Q2 &middot; 3 months in &middot; usually ~2.4 months</span>
+          <span class="kpi-sub l-zh">判定为 Q2 &middot; 已 3 个月 &middot; 通常约 2.4 个月</span>
         </div>
         
         
         <div class="kpi-chip">
           <span class="kpi-label"><span class="l-en">Net Liquidity</span><span class="l-zh">净流动性</span></span>
           <span class="kpi-val c-info">$5870bn</span>
-          <span class="kpi-sub">&Delta;65d +170bn &bull; p79</span>
+          <span class="kpi-sub l-en">+170bn over 3 months &bull; higher than 79% of history</span>
+          <span class="kpi-sub l-zh">近3个月 +170bn &bull; 高于历史 79%</span>
         </div>
         
         
         <div class="kpi-chip">
-          <span class="kpi-label"><span class="l-en">Transitions 14d</span><span class="l-zh">14日转换</span></span>
+          <span class="kpi-label"><span class="l-en">Labels flipped</span><span class="l-zh">标签变动</span></span>
           <span class="kpi-val c-warn">52</span>
-          <span class="kpi-sub">12 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+          <span class="kpi-sub l-en">in 14 days &middot; 12 today</span>
+          <span class="kpi-sub l-zh">近14日 &middot; 今日 12</span>
         </div>
         
       </div>
@@ -1232,7 +1274,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <div class="recovery-hed"><span class="l-en">Risk receding — liquidity turning supportive</span><span class="l-zh">风险回落 — 流动性转向支持</span></div>
           <div class="recovery-sub"><span class="l-en">Pullback odds 19% → 13% (peaked 19 days ago).</span><span class="l-zh">回撤概率 19% → 13%（19 日前见顶）。</span></div>
           
-          <div style="margin-top:6px" class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></div>
+          <div style="margin-top:6px" class="deesc-chip"
+               data-tip-en="The scare has receded far enough from its peak, for long enough, that the system may stand down a level."
+               data-tip-zh="警戒已自峰值回落足够幅度与时长，系统可下调一级。"><span class="l-en">Safe to stand down</span><span class="l-zh">可降级</span></div>
           
         </div>
         <div class="spark-wrap">
@@ -1376,31 +1420,40 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       
       
       
-      <div class="dd-cell">
-        <div class="dd-cell-h">H5d</div>
+      <div class="dd-cell"
+           data-tip-en="In a normal week this happens about 4% of the time — that is the bar this reading is measured against."
+           data-tip-zh="正常情况下该情形约有 4% 的概率发生——这是本读数的比较基准。">
+        <div class="dd-cell-h"><span class="l-en">Next week</span><span class="l-zh">未来1周</span></div>
         <div class="dd-cell-v">3%</div>
-        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 4%</div>
+        <div class="dd-cell-base"><span class="l-en">normally 4%</span><span class="l-zh">通常 4%</span></div>
       </div>
       
       
       
-      <div class="dd-cell">
-        <div class="dd-cell-h">H10d</div>
+      <div class="dd-cell"
+           data-tip-en="In a normal week this happens about 9% of the time — that is the bar this reading is measured against."
+           data-tip-zh="正常情况下该情形约有 9% 的概率发生——这是本读数的比较基准。">
+        <div class="dd-cell-h"><span class="l-en">Next 2 weeks</span><span class="l-zh">未来2周</span></div>
         <div class="dd-cell-v">8%</div>
-        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 9%</div>
+        <div class="dd-cell-base"><span class="l-en">normally 9%</span><span class="l-zh">通常 9%</span></div>
       </div>
       
       
       
-      <div class="dd-cell">
-        <div class="dd-cell-h">H21d</div>
+      <div class="dd-cell"
+           data-tip-en="In a normal week this happens about 18% of the time — that is the bar this reading is measured against."
+           data-tip-zh="正常情况下该情形约有 18% 的概率发生——这是本读数的比较基准。">
+        <div class="dd-cell-h"><span class="l-en">Next month</span><span class="l-zh">未来1个月</span></div>
         <div class="dd-cell-v">16%</div>
-        <div class="dd-cell-base"><span class="l-en">base</span><span class="l-zh">基准</span> 18%</div>
+        <div class="dd-cell-base"><span class="l-en">normally 18%</span><span class="l-zh">通常 18%</span></div>
       </div>
       
     </div>
     
-    <div style="font-size:11px;color:var(--muted);margin-top:8px;font-style:italic"><span class="l-en">&gt;=5% SPY pullback (empirical 2006-2026; rises with intensity + conjunction)</span><span class="l-zh">≥5% 标普回撤（2006–2026 实证；随强度与共振上升）</span></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">
+      <span class="l-en">Chance of a 5%-or-worse drop in the S&amp;P 500 over each window, against how often that normally happens.</span>
+      <span class="l-zh">各时间窗内标普500下跌5%或以上的概率，并与该情形通常发生的频率对比。</span>
+    </div>
     
 
     <!-- Trajectory -->
@@ -1413,10 +1466,19 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         · 19d <span class="l-en">ago</span><span class="l-zh">前</span></span>
       
       
-      <span><span class="l-en">Velocity</span><span class="l-zh">速度</span> -3.4/d</span>
+      
+      <span data-tip-en="Change in the risk score per day over the recent window (-3.4/day)."
+            data-tip-zh="近期窗口内风险评分的日均变化（-3.4/天）。">
+        <span class="l-en">Cooling 3.4 pts a day</span>
+        <span class="l-zh">降温 每日 3.4 分</span>
+      </span>
       
       
-      <span class="deesc-chip"><span class="l-en">De-escalation eligible</span><span class="l-zh">可降级</span></span>
+      <span class="deesc-chip"
+            data-tip-en="The scare has receded far enough from its peak, for long enough, that the system may stand down a level."
+            data-tip-zh="警戒已自峰值回落足够幅度与时长，系统可下调一级。">
+        <span class="l-en">Safe to stand down</span><span class="l-zh">可降级</span>
+      </span>
       
     </div>
 
@@ -3091,26 +3153,26 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="liq-row">
           <div class="liq-stat">
-            <div class="liq-stat-k"><span class="l-en">Net Liq</span><span class="l-zh">净流动性</span></div>
+            <div class="liq-stat-k"><span class="l-en">Net liquidity</span><span class="l-zh">净流动性</span></div>
             <div class="liq-stat-v c-info">$5870bn</div>
             <div class="liq-stat-sub">2026-07-24</div>
           </div>
           
           <div class="liq-stat">
-            <div class="liq-stat-k">&Delta;20d</div>
+            <div class="liq-stat-k"><span class="l-en">1 month</span><span class="l-zh">近1个月</span></div>
             <div class="liq-stat-v c-up">+36bn</div>
           </div>
           
           
           <div class="liq-stat">
-            <div class="liq-stat-k">&Delta;65d</div>
+            <div class="liq-stat-k"><span class="l-en">3 months</span><span class="l-zh">近3个月</span></div>
             <div class="liq-stat-v c-up">+170bn</div>
           </div>
           
           
           <div class="liq-stat">
-            <div class="liq-stat-k"><span class="l-en">Pctile</span><span class="l-zh">分位数</span></div>
-            <div class="liq-stat-v c-info">p79</div>
+            <div class="liq-stat-k"><span class="l-en">vs history</span><span class="l-zh">历史分位</span></div>
+            <div class="liq-stat-v c-info">79<span style="font-size:10px;font-weight:600"><span class="l-en">th pct</span><span class="l-zh">%</span></span></div>
           </div>
           
         </div>
@@ -3307,97 +3369,97 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Korea</span><span class="l-zh">韩国</span></span>
-          <span class="tl-from">Q2</span>
+          <span class="tl-from"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q3</span>
+          <span class="tl-to"><span class="l-en">Q3</span><span class="l-zh">Q3</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Japan</span><span class="l-zh">日本</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q3</span>
+          <span class="tl-to"><span class="l-en">Q3</span><span class="l-zh">Q3</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">India</span><span class="l-zh">印度</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q2</span>
+          <span class="tl-to"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">UK</span><span class="l-zh">英国</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q2</span>
+          <span class="tl-to"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Australia</span><span class="l-zh">澳大利亚</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q2</span>
+          <span class="tl-to"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q2</span>
+          <span class="tl-to"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fed Path</span><span class="l-zh">美联储路径</span></span>
-          <span class="tl-from">steady</span>
+          <span class="tl-from"><span class="l-en">steady</span><span class="l-zh">稳健</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">hawkish_repricing</span>
+          <span class="tl-to"><span class="l-en">Hawkish repricing</span><span class="l-zh">Hawkish repricing</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">FX Regime Radar</span><span class="l-zh">外汇局势雷达</span></span>
-          <span class="tl-from">—</span>
+          <span class="tl-from"><span class="l-en">—</span><span class="l-zh">—</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">intervention_risk</span>
+          <span class="tl-to"><span class="l-en">Intervention risk</span><span class="l-zh">Intervention risk</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-          <span class="tl-from">RISK_ON</span>
+          <span class="tl-from"><span class="l-en">Risk on</span><span class="l-zh">Risk on</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">MIXED</span>
+          <span class="tl-to"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
-          <span class="tl-from">diverge</span>
+          <span class="tl-from"><span class="l-en">Diverge</span><span class="l-zh">Diverge</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">mixed</span>
+          <span class="tl-to"><span class="l-en">mixed</span><span class="l-zh">喜忧参半</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Dealer Gamma</span><span class="l-zh">做市商Gamma</span></span>
-          <span class="tl-from">short</span>
+          <span class="tl-from"><span class="l-en">Short</span><span class="l-zh">Short</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">—</span>
+          <span class="tl-to"><span class="l-en">—</span><span class="l-zh">—</span></span>
         </div>
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
-          <span class="tl-from">watch</span>
+          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">caution</span>
+          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
         </div>
         
       </div>
@@ -3413,65 +3475,65 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from">Fear</span>
+          <span class="tl-from"><span class="l-en">Fear</span><span class="l-zh">Fear</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Neutral</span>
+          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Oil</span><span class="l-zh">原油</span></span>
-          <span class="tl-from">HOLD</span>
+          <span class="tl-from"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">SELL</span>
+          <span class="tl-to"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Silver</span><span class="l-zh">白银</span></span>
-          <span class="tl-from">SELL</span>
+          <span class="tl-from"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">HOLD</span>
+          <span class="tl-to"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Gold</span><span class="l-zh">黄金</span></span>
-          <span class="tl-from">SELL</span>
+          <span class="tl-from"><span class="l-en">Sell</span><span class="l-zh">Sell</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">HOLD</span>
+          <span class="tl-to"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-          <span class="tl-from">MIXED</span>
+          <span class="tl-from"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">RISK_ON</span>
+          <span class="tl-to"><span class="l-en">Risk on</span><span class="l-zh">Risk on</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Dealer Gamma</span><span class="l-zh">做市商Gamma</span></span>
-          <span class="tl-from">—</span>
+          <span class="tl-from"><span class="l-en">—</span><span class="l-zh">—</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">short</span>
+          <span class="tl-to"><span class="l-en">Short</span><span class="l-zh">Short</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
-          <span class="tl-from">caution</span>
+          <span class="tl-from"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">watch</span>
+          <span class="tl-to"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-          <span class="tl-from">elevated</span>
+          <span class="tl-from"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">caution</span>
+          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
         </div>
         
       </div>
@@ -3487,33 +3549,33 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Overlay</span><span class="l-zh">叠加状态</span></span>
-          <span class="tl-from">Neutral</span>
+          <span class="tl-from"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Risk-on</span>
+          <span class="tl-to"><span class="l-en">Risk-on</span><span class="l-zh">风险偏好</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">USD/MXN</span><span class="l-zh">美元兑墨西哥比索</span></span>
-          <span class="tl-from">FLAT</span>
+          <span class="tl-from"><span class="l-en">Flat</span><span class="l-zh">Flat</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">SHORT</span>
+          <span class="tl-to"><span class="l-en">Short</span><span class="l-zh">Short</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from">rich (vol overpriced — constructive)</span>
+          <span class="tl-from"><span class="l-en">rich (vol overpriced — constructive)</span><span class="l-zh">rich (vol overpriced — constructive)</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">normal</span>
+          <span class="tl-to"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-          <span class="tl-from">caution</span>
+          <span class="tl-from"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">elevated</span>
+          <span class="tl-to"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
         </div>
         
       </div>
@@ -3529,9 +3591,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Taiwan</span><span class="l-zh">台湾</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q3</span>
+          <span class="tl-to"><span class="l-en">Q3</span><span class="l-zh">Q3</span></span>
         </div>
         
       </div>
@@ -3547,89 +3609,89 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Korea</span><span class="l-zh">韩国</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q2</span>
+          <span class="tl-to"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">International</span><span class="l-zh">国际</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Eurozone</span><span class="l-zh">欧元区</span></span>
-          <span class="tl-from">Q2</span>
+          <span class="tl-from"><span class="l-en">Q2</span><span class="l-zh">Q2</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q1</span>
+          <span class="tl-to"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from">Neutral</span>
+          <span class="tl-from"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Fear</span>
+          <span class="tl-to"><span class="l-en">Fear</span><span class="l-zh">Fear</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Verdict</span><span class="l-zh">判定</span></span>
-          <span class="tl-from">RISK_ON</span>
+          <span class="tl-from"><span class="l-en">Risk on</span><span class="l-zh">Risk on</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">MIXED</span>
+          <span class="tl-to"><span class="l-en">Mixed</span><span class="l-zh">Mixed</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
-          <span class="tl-from">mixed</span>
+          <span class="tl-from"><span class="l-en">mixed</span><span class="l-zh">喜忧参半</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">diverge</span>
+          <span class="tl-to"><span class="l-en">Diverge</span><span class="l-zh">Diverge</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from">normal</span>
+          <span class="tl-from"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">rich (vol overpriced — constructive)</span>
+          <span class="tl-to"><span class="l-en">rich (vol overpriced — constructive)</span><span class="l-zh">rich (vol overpriced — constructive)</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Dealer Gamma</span><span class="l-zh">做市商Gamma</span></span>
-          <span class="tl-from">short</span>
+          <span class="tl-from"><span class="l-en">Short</span><span class="l-zh">Short</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">—</span>
+          <span class="tl-to"><span class="l-en">—</span><span class="l-zh">—</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-          <span class="tl-from">calm</span>
+          <span class="tl-from"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">watch</span>
+          <span class="tl-to"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span></span>
-          <span class="tl-from">watch</span>
+          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">caution</span>
+          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-          <span class="tl-from">neutral</span>
+          <span class="tl-from"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">caution</span>
+          <span class="tl-to"><span class="l-en">Caution</span><span class="l-zh">Caution</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
-          <span class="tl-from">WEAKENING</span>
+          <span class="tl-from"><span class="l-en">WEAKENING</span><span class="l-zh">走弱</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">TRANSITIONING</span>
+          <span class="tl-to"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span></span>
         </div>
         
       </div>
@@ -3645,49 +3707,49 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from">Greed</span>
+          <span class="tl-from"><span class="l-en">Greed</span><span class="l-zh">Greed</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Neutral</span>
+          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-          <span class="tl-from">bear_flattener</span>
+          <span class="tl-from"><span class="l-en">Bear flattener</span><span class="l-zh">Bear flattener</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">bear_steepener</span>
+          <span class="tl-to"><span class="l-en">Bear steepener</span><span class="l-zh">Bear steepener</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from">collapsing (de-risk)</span>
+          <span class="tl-from"><span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">normal</span>
+          <span class="tl-to"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
-          <span class="tl-from">ELEVATED</span>
+          <span class="tl-from"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">QUIET</span>
+          <span class="tl-to"><span class="l-en">Quiet</span><span class="l-zh">Quiet</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-          <span class="tl-from">watch</span>
+          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">calm</span>
+          <span class="tl-to"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Transition</span><span class="l-zh">转换状态</span></span>
-          <span class="tl-from">TRANSITIONING</span>
+          <span class="tl-from"><span class="l-en">TRANSITIONING</span><span class="l-zh">转换中</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">WEAKENING</span>
+          <span class="tl-to"><span class="l-en">WEAKENING</span><span class="l-zh">走弱</span></span>
         </div>
         
       </div>
@@ -3703,41 +3765,41 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">China</span><span class="l-zh">中国</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fear / Euphoria</span><span class="l-zh">恐惧/亢奋</span></span>
-          <span class="tl-from">Neutral</span>
+          <span class="tl-from"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Greed</span>
+          <span class="tl-to"><span class="l-en">Greed</span><span class="l-zh">Greed</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
-          <span class="tl-from">diverge</span>
+          <span class="tl-from"><span class="l-en">Diverge</span><span class="l-zh">Diverge</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">mixed</span>
+          <span class="tl-to"><span class="l-en">mixed</span><span class="l-zh">喜忧参半</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Repricing Coherence</span><span class="l-zh">重定价一致性</span></span>
-          <span class="tl-from">QUIET</span>
+          <span class="tl-from"><span class="l-en">Quiet</span><span class="l-zh">Quiet</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">ELEVATED</span>
+          <span class="tl-to"><span class="l-en">Elevated</span><span class="l-zh">Elevated</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-          <span class="tl-from">calm</span>
+          <span class="tl-from"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">watch</span>
+          <span class="tl-to"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fused Risk</span><span class="l-zh">融合风险</span></span>
-          <span class="tl-from">risk-on</span>
+          <span class="tl-from"><span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">neutral</span>
+          <span class="tl-to"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
         </div>
         
       </div>
@@ -3753,17 +3815,17 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
-          <span class="tl-from">supportive</span>
+          <span class="tl-from"><span class="l-en">supportive</span><span class="l-zh">偏积极</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">soft</span>
+          <span class="tl-to"><span class="l-en">Soft</span><span class="l-zh">Soft</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Vol Risk Premium</span><span class="l-zh">波动风险溢价</span></span>
-          <span class="tl-from">normal</span>
+          <span class="tl-from"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">collapsing (de-risk)</span>
+          <span class="tl-to"><span class="l-en">collapsing (de-risk)</span><span class="l-zh">collapsing (de-risk)</span></span>
         </div>
         
       </div>
@@ -3779,25 +3841,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cycle</span><span class="l-zh">周期阶段</span></span>
-          <span class="tl-from">late</span>
+          <span class="tl-from"><span class="l-en">late</span><span class="l-zh">晚期</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">mid</span>
+          <span class="tl-to"><span class="l-en">mid</span><span class="l-zh">中期</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-          <span class="tl-from">Q4</span>
+          <span class="tl-from"><span class="l-en">Q4</span><span class="l-zh">Q4</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q1</span>
+          <span class="tl-to"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span>
-          <span class="tl-from">mixed</span>
+          <span class="tl-from"><span class="l-en">mixed</span><span class="l-zh">喜忧参半</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">diverge</span>
+          <span class="tl-to"><span class="l-en">Diverge</span><span class="l-zh">Diverge</span></span>
         </div>
         
       </div>
@@ -3813,25 +3875,25 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-          <span class="tl-from">Q4</span>
+          <span class="tl-from"><span class="l-en">Q4</span><span class="l-zh">Q4</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q3</span>
+          <span class="tl-to"><span class="l-en">Q3</span><span class="l-zh">Q3</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">FX Regime Radar</span><span class="l-zh">外汇局势雷达</span></span>
-          <span class="tl-from">em_crisis_capital_flight</span>
+          <span class="tl-from"><span class="l-en">EM crisis capital flight</span><span class="l-zh">EM crisis capital flight</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">—</span>
+          <span class="tl-to"><span class="l-en">—</span><span class="l-zh">—</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">US Regime</span><span class="l-zh">美国周期</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Froth / Fragility</span><span class="l-zh">泡沫/脆弱度</span></span>
-          <span class="tl-from">watch</span>
+          <span class="tl-from"><span class="l-en">Watch</span><span class="l-zh">Watch</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">calm</span>
+          <span class="tl-to"><span class="l-en">calm</span><span class="l-zh">平静</span></span>
         </div>
         
       </div>
@@ -3847,33 +3909,33 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Canada</span><span class="l-zh">加拿大</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Quadrant</span><span class="l-zh">象限</span></span>
-          <span class="tl-from">Q1</span>
+          <span class="tl-from"><span class="l-en">Q1</span><span class="l-zh">Q1</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Q4</span>
+          <span class="tl-to"><span class="l-en">Q4</span><span class="l-zh">Q4</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Risk State</span><span class="l-zh">风险状态</span></span>
-          <span class="tl-from">Risk-off</span>
+          <span class="tl-from"><span class="l-en">Risk-off</span><span class="l-zh">风险规避</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">Neutral</span>
+          <span class="tl-to"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
-          <span class="tl-from">soft</span>
+          <span class="tl-from"><span class="l-en">Soft</span><span class="l-zh">Soft</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">supportive</span>
+          <span class="tl-to"><span class="l-en">supportive</span><span class="l-zh">偏积极</span></span>
         </div>
         
         <div class="tl-event">
           <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
           <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-          <span class="tl-from">bull_flattener</span>
+          <span class="tl-from"><span class="l-en">Bull flattener</span><span class="l-zh">Bull flattener</span></span>
           <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to">bear_flattener</span>
+          <span class="tl-to"><span class="l-en">Bear flattener</span><span class="l-zh">Bear flattener</span></span>
         </div>
         
       </div>
@@ -3932,7 +3994,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 07:31 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 07:59 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->

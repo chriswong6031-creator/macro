@@ -234,20 +234,22 @@ class TestFactorsPageRender:
         assert "Where the heat is" in html
         assert "Information Technology" in html
 
-    def test_bh_withheld_after_factor_leaders(self):
-        """BH-WITHHELD content appears AFTER 'Factor leaders' in the page (NW panel demoted)."""
+    def test_nw_panel_after_factor_leaders(self):
+        """The Neural-Web panel stays demoted BELOW 'Factor leaders' (doctrine §1).
+
+        The panel's heading was "How this research feeds the system — technical
+        status" until the 2026-07-26 revamp, which replaced a wall of five
+        identical BH-WITHHELD chips with one honest sentence plus two accrual
+        meters. The heading is now "What this feeds"; the ordering rule it
+        guards is unchanged, so this test pins the ORDER, not the wording.
+        """
         html = _render(seas=None, momo=None)
         leaders_pos = html.find("Factor leaders")
-        bh_pos = html.find("BH-WITHHELD")
-        # NW panel variables are set early but never rendered then — the actual BH-WITHHELD
-        # chip appears in the NW panel which is now at the bottom after Factor leaders.
-        # nw_state=None path renders "DORMANT" not BH-WITHHELD chips, so check
-        # the technical status h2 instead, which must come after Factor leaders.
-        tech_status_pos = html.find("technical status")
+        nw_pos = html.find("What this feeds")
         assert leaders_pos != -1, "'Factor leaders' not found in rendered HTML"
-        assert tech_status_pos != -1, "'technical status' not found — NW panel missing"
-        assert tech_status_pos > leaders_pos, (
-            f"NW panel ('technical status' at {tech_status_pos}) must appear AFTER "
+        assert nw_pos != -1, "'What this feeds' not found — NW panel missing"
+        assert nw_pos > leaders_pos, (
+            f"NW panel ('What this feeds' at {nw_pos}) must appear AFTER "
             f"'Factor leaders' (at {leaders_pos})"
         )
 

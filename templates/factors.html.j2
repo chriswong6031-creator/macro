@@ -800,7 +800,8 @@
       {{ t('Crowding / overlap','拥挤／重叠') }}{{ help("Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.", "彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。") }}:
       {{ t('mean |corr| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' raw → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' de-correlated.',
            '平均 |相关性| ' ~ ic.collinearity.mean_abs_corr_raw ~ ' 原始 → ' ~ ic.collinearity.mean_abs_corr_orth ~ ' 去相关后。') }}
-      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ p.a }} ↔ {{ p.b }} · {{ p.corr }}</span>{% endfor %}
+      {# display labels, not the engine's factor keys (`low_vol ↔ low_beta`) #}
+      {% for p in ic.collinearity.top_pairs %}<span class="chip">{{ fac.factor_labels.get(p.a, p.a) }} ↔ {{ fac.factor_labels.get(p.b, p.b) }} · {{ p.corr }}</span>{% endfor %}
     </p>
     {% endif %}
   </div>
