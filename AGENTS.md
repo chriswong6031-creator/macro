@@ -49,6 +49,35 @@ not “live” until the VPS/render path and live marker are verified.
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 
+### GitHub annotations must start the line (CI-guarded)
+
+Emit `::warning` / `::error` / `::notice` with a bare
+`print("::warning title=<slug>::<msg>", flush=True)` — never through a logger.
+GitHub only parses a workflow command when `::` is the first thing on the line,
+and every builder here logs with a prefixing format, so
+`log.warning("::warning ...")` emits `WARNING ::warning ...` and the annotation
+is silently dropped. The call reviews as an alarm, runs without error, and
+produces nothing in the Actions summary — the worst failure mode for a
+fail-soft, which ships degraded output with its only signal gone.
+
+This shipped dead five separate times (#3487, #3515, #3562, #3563, #3570) before
+#3587 swept 69 sites across 21 modules and added the guard at
+`tests/test_gh_annotation_line_start.py`. Notes:
+
+- `flush=True` is load-bearing: stdout is block-buffered when piped in CI, and
+  these sit on paths that may precede a crash.
+- Modules that never execute inside an Actions step (FastAPI request paths —
+  `brain_gateway`, `download_quota`, `view_ratelimit`) are EXEMPT and listed in
+  that test; check `app/` / `admin/` imports before converting an `engine/`
+  module, because adding a `print` to a request path is wrong.
+- Converting breaks any test that asserts the annotation via `caplog`. Switch it
+  to `capsys` AND assert `line.startswith("::")`, so the test pins the property
+  that was actually broken rather than the message wording.
+- To prove an annotation is live, use GitHub's annotations API — it returns only
+  lines it actually parsed:
+  `gh api "repos/<o>/<r>/actions/runs/<id>/jobs" --jq '.jobs[].id'` then
+  `gh api "repos/<o>/<r>/check-runs/<job_id>/annotations"`.
+
 ### Shared render-lane safety
 
 `render.yml` is one shared, coalescing deploy lane. A successful push render at
