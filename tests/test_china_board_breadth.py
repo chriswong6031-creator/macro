@@ -102,7 +102,7 @@ def test_sina_session_date_raises_on_garbage(monkeypatch):
         a._sina_session_date()
 
 
-def _sina_walk(monkeypatch, rows, adapter=None):
+def _sina_walk(monkeypatch, rows, adapter=None, blank_pages=(), max_pages=None):
     """Drive _from_sina over a canned board, one page of 80 at a time."""
     a = adapter or cbb.ChinaBoardBreadthAdapter()
     pages = [rows[i:i + 80] for i in range(0, len(rows), 80)]
@@ -111,10 +111,15 @@ def _sina_walk(monkeypatch, rows, adapter=None):
         if url == cbb._SINA_DATE_URL:
             return _Resp(text=_SINA_LINE)
         page = kw["params"]["page"]
+        if page in blank_pages:
+            return _Resp(payload=None)
+        page -= sum(1 for b in blank_pages if b < page)
         return _Resp(payload=pages[page - 1] if page <= len(pages) else None)
 
     monkeypatch.setattr(a, "http_get", fake_get)
     monkeypatch.setattr(cbb.time, "sleep", lambda *_: None)
+    if max_pages is not None:
+        monkeypatch.setattr(cbb, "_SINA_MAX_PAGES", max_pages)
     return a._from_sina()
 
 
@@ -231,3 +236,38 @@ def test_adapter_is_registered_and_blocked_when_sources_are_down():
     assert cbb.ChinaBoardBreadthAdapter.name.startswith("china")
     assert cbb.ChinaBoardBreadthAdapter.expected_failure
     assert cbb.ChinaBoardBreadthAdapter.group == "china_board_breadth"
+
+
+# --------------------------------------------------------------------------- #
+#  truncation guard — a short walk must never publish a short denominator
+# --------------------------------------------------------------------------- #
+def test_sina_walk_survives_one_empty_page_midway(monkeypatch):
+    """Sina intermittently serves an empty page mid-walk; ending there would quietly
+    drop everything after it and print a denominator ~80 names light."""
+    rows = [_row(f"6{i:05d}", 1.0) for i in range(4000)]
+    df = _sina_walk(monkeypatch, rows, blank_pages=(10,))
+    assert df.iloc[0]["n"] == 4000
+
+
+def test_sina_walk_refuses_when_it_runs_out_of_page_budget(monkeypatch):
+    """A board that outgrows the page cap must FAIL (→ adapter 'blocked' → heatmap keeps
+    its tile count), never publish the partial walk as the whole market."""
+    rows = [_row(f"6{i:05d}", 1.0) for i in range(4000)]
+    with pytest.raises(ValueError, match="truncated denominator"):
+        _sina_walk(monkeypatch, rows, max_pages=10)      # 10 pages = 800 of 4,000 names
+
+
+def test_heavy_halt_session_is_not_a_truncated_walk(monkeypatch):
+    """Many names listed, few printing, is an ordinary halt-heavy session — the walk
+    still ran off the end of the board, so the row lands with the halted names excluded."""
+    rows = ([_row(f"6{i:05d}", 1.0) for i in range(3200)]
+            + [_row(f"00{i:04d}", 0.0, trade=0.0) for i in range(800)])   # all halted
+    df = _sina_walk(monkeypatch, rows)
+    assert df.iloc[0]["n"] == 3200
+
+
+def test_min_names_floor_still_bites_on_a_tiny_board(monkeypatch):
+    """A walk that ends cleanly but returns a few hundred names is a broken source, not
+    a 5,200-name board."""
+    with pytest.raises(ValueError, match="half-failed"):
+        _sina_walk(monkeypatch, [_row(f"6{i:05d}", 1.0) for i in range(500)])
