@@ -47,21 +47,121 @@
 
   /* ── CSS ─────────────────────────────────────────────────────────────── */
   var CSS = `
+  /* ── palette ───────────────────────────────────────────────────────────────
+     The widget follows the host page's theme (html[data-theme]) — no JS, no
+     re-render: every surface, border and hover reads a token, so flipping the
+     site switch repaints the chat mid-conversation.
+
+     Two direction tokens do the heavy lifting, because "lighter" is not a
+     theme-independent idea:
+       --mmb-ink  the ELEVATION direction. Every raised surface / hairline /
+                  hover is color-mix(ink N%, transparent) — white over the dark
+                  panel, slate over the white one.
+       --mmb-hi   the EMPHASIS direction for text ranked above --mmb-text
+                  (bold, headings, code). White in dark, near-black in light. */
   #mmb-root{--mmb-info:#5b9bf0;--mmb-violet:#8b5cf6;--mmb-text:#e6eaf0;--mmb-muted:#8b93a1;
-    --mmb-panel:#181b21;--mmb-panel2:#1e222a;--mmb-line:color-mix(in srgb,#fff 9%,transparent);
+    --mmb-panel:#181b21;--mmb-panel2:#1e222a;
+    --mmb-ink:#fff;--mmb-hi:#fff;--mmb-line:color-mix(in srgb,var(--mmb-ink) 9%,transparent);
+    --mmb-sheen:color-mix(in srgb,#fff 6%,transparent);
+    --mmb-well:color-mix(in srgb,#000 22%,transparent);
+    --mmb-plate:#0b0e14;--mmb-glow:#5b7bf0;
+    --mmb-card:color-mix(in srgb,var(--mmb-panel) 50%,transparent);
+    --mmb-boxbg:color-mix(in srgb,var(--mmb-panel2) 60%,transparent);
+    --mmb-exp-fg:#fff;--mmb-exp-bg:color-mix(in srgb,var(--mmb-panel) 72%,transparent);--mmb-exp-shadow:none;
+    --mmb-ok:#3da564;--mmb-warn:#e0a030;--mmb-danger:#e05555;--mmb-danger-soft:#e0716b;--mmb-step-o:.68;
+    --mmb-scrim:#05070c;--mmb-scrim-o:.34;--mmb-scrim-o-max:.62;--mmb-sidescrim:rgba(0,0,0,.32);
+    --mmb-shadow-panel:0 40px 100px -30px rgba(0,0,0,.75);
+    --mmb-shadow-box:0 14px 40px -18px rgba(0,0,0,.6);
+    --mmb-shadow-pop:0 10px 30px -12px rgba(0,0,0,.6);
+    --mmb-shadow-side:10px 0 40px -12px rgba(0,0,0,.6);
+    /* launcher — see the presence note at #mmb-launch */
+    --mmb-fab-bg:color-mix(in srgb,var(--mmb-panel) 82%,transparent);
+    --mmb-fab-brd:var(--mmb-line);
+    --mmb-fab-glow:0 12px 40px -12px rgba(0,0,0,.6),
+      0 0 26px -8px color-mix(in srgb,var(--mmb-info) 40%,transparent),
+      0 0 0 1px color-mix(in srgb,var(--mmb-info) 12%,transparent);
+    --mmb-fab-glow-h:0 18px 52px -14px rgba(0,0,0,.7),
+      0 0 36px -8px color-mix(in srgb,var(--mmb-info) 60%,transparent),
+      0 0 0 1px color-mix(in srgb,var(--mmb-info) 26%,transparent);
+    --mmb-rim-w:1.25px;--mmb-rim-o:.85;
     --mmb-font:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}
+  /* Light theme. The house light palette (theme.css) verbatim, so the chat is the
+     same design family as the page behind it: #285fff primary, white panels on a
+     soft #eef1f6 grid, navy-tinted shadows instead of black ones. */
+  html[data-theme="light"] #mmb-root{
+    --mmb-info:#285fff;--mmb-violet:#6d3fd8;--mmb-text:#1c2430;--mmb-muted:#5d6b7e;
+    --mmb-panel:#ffffff;--mmb-panel2:#eef1f6;
+    /* hairlines run a few points heavier than the dark theme's: dark-on-light reads
+       weaker than light-on-dark at the same alpha, and these are the only thing
+       separating a white rail from a white pane. */
+    --mmb-ink:#1c2430;--mmb-hi:#080d16;--mmb-line:color-mix(in srgb,var(--mmb-ink) 14%,transparent);
+    --mmb-sheen:rgba(255,255,255,.9);
+    --mmb-well:color-mix(in srgb,var(--mmb-ink) 6%,transparent);
+    --mmb-plate:#e7ebf2;--mmb-glow:#285fff;
+    --mmb-card:color-mix(in srgb,var(--mmb-panel2) 62%,transparent);
+    --mmb-boxbg:color-mix(in srgb,var(--mmb-panel2) 80%,transparent);
+    /* the explain-panel dot rides ON a white card, so 72% white is nothing to see:
+       in light it earns its edge from a near-opaque fill plus a soft lift. */
+    --mmb-exp-fg:#4b34c9;--mmb-exp-bg:rgba(255,255,255,.94);
+    --mmb-exp-shadow:0 4px 12px -4px rgba(20,32,64,.26);
+    --mmb-ok:#2f8a52;--mmb-warn:#b9791a;--mmb-danger:#cf4040;--mmb-danger-soft:#c12f2f;--mmb-step-o:.82;
+    /* a light-mode veil is a cool navy at low alpha — pure black reads as a power cut */
+    --mmb-scrim:#1b2436;--mmb-scrim-o:.22;--mmb-scrim-o-max:.44;--mmb-sidescrim:rgba(20,30,50,.20);
+    --mmb-shadow-panel:0 34px 84px -28px rgba(20,32,64,.34),0 12px 30px -16px rgba(20,32,64,.18);
+    --mmb-shadow-box:0 12px 30px -16px rgba(20,32,64,.20);
+    --mmb-shadow-pop:0 12px 30px -14px rgba(20,32,64,.26);
+    --mmb-shadow-side:12px 0 34px -14px rgba(20,32,64,.20);
+    /* White on white is the whole problem here: the chip keeps a faint blue floor so it
+       never dissolves into a white card, and its glow is a navy lift rather than the
+       dark theme's black drop, which would read as grime over a light page. */
+    --mmb-fab-bg:linear-gradient(180deg,rgba(255,255,255,.97),
+      color-mix(in srgb,var(--mmb-info) 11%,rgba(255,255,255,.9)));
+    --mmb-fab-brd:color-mix(in srgb,var(--mmb-info) 24%,transparent);
+    --mmb-fab-glow:0 14px 34px -14px rgba(24,52,140,.40),0 6px 16px -8px rgba(24,52,140,.26),
+      0 0 24px -6px color-mix(in srgb,var(--mmb-info) 38%,transparent),inset 0 1px 0 #fff;
+    --mmb-fab-glow-h:0 20px 46px -14px rgba(24,52,140,.48),0 8px 20px -8px rgba(24,52,140,.32),
+      0 0 36px -6px color-mix(in srgb,var(--mmb-info) 56%,transparent),inset 0 1px 0 #fff;
+    --mmb-rim-w:1.75px;--mmb-rim-o:1}
   #mmb-root *{box-sizing:border-box}
-  /* launcher (bottom-right) */
+  /* ── launcher (bottom-right) ────────────────────────────────────────────────
+     Presence is this control's whole job, and a glass pill dissolves on a white
+     canvas — so the launcher carries two devices, one still and one moving:
+
+       · a themed drop-glow (blue-tinted over light, near-black over dark), and
+       · one chromatic arc that travels the rim every 5.2s — the desk sweeping
+         the tape it is offering to read.
+
+     Motion rather than a brightness pulse: a travelling edge catches the eye at
+     the corner of vision without nagging, and it survives on white, where a
+     pulsing white glow has nothing to pulse against. Hover shortens the sweep
+     to 2.4s — the chip acknowledges you before you click it. */
+  @property --mmb-ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+  @keyframes mmb-rim{to{--mmb-ang:360deg}}
   #mmb-launch{position:fixed;right:22px;bottom:22px;z-index:2147483000;display:flex;align-items:center;gap:10px;
-    padding:8px 16px 8px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--mmb-line);font-family:var(--mmb-font);
-    background:color-mix(in srgb,var(--mmb-panel) 82%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
-    box-shadow:0 12px 40px -12px rgba(0,0,0,.6),0 0 0 1px color-mix(in srgb,var(--mmb-info) 12%,transparent);
+    padding:8px 16px 8px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--mmb-fab-brd);font-family:var(--mmb-font);
+    background:var(--mmb-fab-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    box-shadow:var(--mmb-fab-glow);
     transition:transform .18s ease,box-shadow .18s ease}
-  #mmb-launch:hover{transform:translateY(-2px);box-shadow:0 18px 50px -14px color-mix(in srgb,var(--mmb-info) 45%,transparent)}
+  #mmb-launch:hover{transform:translateY(-2px);box-shadow:var(--mmb-fab-glow-h)}
   #mmb-launch.mmb-hide{opacity:0;pointer-events:none;transform:translateY(8px)}
+  /* The arc is a conic gradient masked down to the rim band. Gated on
+     mask-composite: where the mask cannot be composited the ring would paint as a
+     full coloured disc over the pill, so it is better to have no ring at all —
+     the glow and the breathing orb still carry the control. */
+  @supports ((-webkit-mask-composite:xor) or (mask-composite:exclude)){
+    #mmb-launch::before{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+      padding:var(--mmb-rim-w);opacity:var(--mmb-rim-o);
+      background:conic-gradient(from var(--mmb-ang),transparent 0 46%,
+        var(--mmb-violet) 66%,var(--mmb-info) 82%,transparent 92%);
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+      mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;
+      animation:mmb-rim 5.2s linear infinite}
+    #mmb-launch:hover::before{animation-duration:2.4s;opacity:1}
+  }
   .mmb-orb{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;
     background:radial-gradient(circle at 32% 28%,color-mix(in srgb,#a78bfa 92%,#fff),#416aec 60%,#0b1030 100%);
-    box-shadow:inset 0 1px 3px color-mix(in srgb,#fff 45%,transparent),0 0 18px -2px color-mix(in srgb,#5b7bf0 80%,transparent);
+    box-shadow:inset 0 1px 3px color-mix(in srgb,#fff 45%,transparent),0 0 18px -2px color-mix(in srgb,var(--mmb-glow) 80%,transparent);
     animation:mmb-breathe 4.6s ease-in-out infinite}
   .mmb-orb::after{content:'';position:absolute;inset:-6px;border-radius:50%;z-index:-1;
     background:radial-gradient(circle,color-mix(in srgb,#6b8cf0 34%,transparent),transparent 70%);animation:mmb-breathe 4.6s ease-in-out infinite}
@@ -72,7 +172,10 @@
   @keyframes mmb-morph-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
   #mmb-panel.max .mmb-rail{animation:mmb-morph-in .44s .14s both cubic-bezier(.22,1,.36,1)}
   #mmb-panel.max .mmb-threads{animation:mmb-morph-in .5s .2s both cubic-bezier(.22,1,.36,1)}
+  /* reduced motion: the rim parks at its start angle — still a chromatic edge, so the
+     launcher keeps its presence without anything moving. */
   @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,.mmb-think-h::before,
+    #mmb-launch::before,#mmb-launch:hover::before,
     #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{animation:none}
     #mmb-panel{transition:opacity .18s ease!important}
     .mmb-chip,.mmb-chip::after{transition:none}}
@@ -88,16 +191,16 @@
   /* scrim + panel */
   /* Backdrop deepens as you enter focus mode: a light veil behind the compact chatbox,
      full dim behind the expanded overlay. */
-  #mmb-scrim{position:fixed;inset:0;z-index:2147483001;background:#05070c;
+  #mmb-scrim{position:fixed;inset:0;z-index:2147483001;background:var(--mmb-scrim);
     -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);opacity:0;pointer-events:none;
     transition:opacity .5s cubic-bezier(.22,1,.36,1),backdrop-filter .5s ease,-webkit-backdrop-filter .5s ease}
-  #mmb-scrim.open{opacity:.34;pointer-events:auto}
-  #mmb-scrim.open.max{opacity:.62;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+  #mmb-scrim.open{opacity:var(--mmb-scrim-o);pointer-events:auto}
+  #mmb-scrim.open.max{opacity:var(--mmb-scrim-o-max);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
   #mmb-panel{position:fixed;z-index:2147483002;display:flex;flex-direction:column;overflow:hidden;font-family:var(--mmb-font);color:var(--mmb-text);
     right:18px;bottom:18px;width:min(440px,calc(100vw - 36px));height:min(720px,calc(100vh - 96px));
     border-radius:22px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel) 82%,transparent);
     -webkit-backdrop-filter:blur(26px) saturate(1.15);backdrop-filter:blur(26px) saturate(1.15);
-    box-shadow:0 40px 100px -30px rgba(0,0,0,.75),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent);
+    box-shadow:var(--mmb-shadow-panel),inset 0 1px 0 var(--mmb-sheen);
     transform:translateY(16px) scale(.98);opacity:0;pointer-events:none;transform-origin:bottom right;
     /* CSS owns OPACITY only. TRANSFORM is driven entirely by the Web Animations API (entry
        + the compact↔max morph) so nothing ever transitions transform in CSS — a CSS transform
@@ -110,17 +213,17 @@
   #mmb-panel.max{inset:0;margin:auto;width:min(1480px,90vw);height:min(1240px,95vh)}
   .mmb-body{display:flex;flex:1;min-height:0}
   .mmb-rail{width:52px;flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;border-right:1px solid color-mix(in srgb,var(--mmb-line) 55%,transparent)}
-  .mmb-rail .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,#5b7bf0,#8b5cf6);display:grid;place-items:center;margin-bottom:8px}
+  .mmb-rail .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,var(--mmb-glow),var(--mmb-violet));display:grid;place-items:center;margin-bottom:8px}
   .mmb-rail .logo svg{width:16px;height:16px;fill:#fff}
   .mmb-icon{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;transition:background .13s,color .13s}
-  .mmb-icon:hover{background:color-mix(in srgb,#fff 7%,transparent);color:var(--mmb-text)}
+  .mmb-icon:hover{background:color-mix(in srgb,var(--mmb-ink) 7%,transparent);color:var(--mmb-text)}
   .mmb-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
   .mmb-rail .sp{flex:1}
   .mmb-threads{width:0;flex:none;overflow:hidden auto;border-right:1px solid color-mix(in srgb,var(--mmb-line) 55%,transparent);transition:width .26s ease}
   #mmb-panel.max .mmb-threads{width:236px}
   .mmb-th-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
   .mmb-th-h span{font:700 11px/1 var(--mmb-font);letter-spacing:.08em;text-transform:uppercase;color:var(--mmb-muted)}
-  .mmb-search{display:none;align-items:center;gap:8px;margin:2px 10px 8px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
+  .mmb-search{display:none;align-items:center;gap:8px;margin:2px 10px 8px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);border:1px solid var(--mmb-line)}
   .mmb-search.on{display:flex}
   .mmb-search>svg{width:15px;height:15px;stroke:var(--mmb-muted);fill:none;stroke-width:1.8;flex:none}
   .mmb-search input{flex:1;min-width:0;border:none;background:none;outline:none;color:var(--mmb-text);font:13px/1.2 var(--mmb-font)}
@@ -130,7 +233,7 @@
   .mmb-search .x svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
   .mmb-search input:placeholder-shown~.x{opacity:0;pointer-events:none}
   .mmb-ti{position:relative;display:flex;align-items:center;margin:2px 8px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid transparent}
-  .mmb-ti:hover{background:color-mix(in srgb,#fff 6%,transparent)}
+  .mmb-ti:hover{background:color-mix(in srgb,var(--mmb-ink) 6%,transparent)}
   .mmb-ti.on{background:color-mix(in srgb,var(--mmb-info) 14%,transparent);border-color:color-mix(in srgb,var(--mmb-info) 30%,transparent)}
   .mmb-ti-body{flex:1;min-width:0}
   .mmb-ti .tt{font:600 13px/1.3 var(--mmb-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -141,18 +244,18 @@
   @media(hover:none),(pointer:coarse){.mmb-ti-acts{opacity:.7}}
   .mmb-ti.confirming .mmb-ti-acts{display:none}
   .mmb-ti-act{width:22px;height:22px;border:none;background:transparent;border-radius:6px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;padding:0;transition:color .12s,background .12s}
-  .mmb-ti-act:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 9%,transparent)}
+  .mmb-ti-act:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 9%,transparent)}
   .mmb-ti-act svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7}
   /* inline rename input (replaces the title in place) */
-  .mmb-ti-input{width:100%;border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,#000 22%,transparent);color:var(--mmb-text);font:600 13px/1.3 var(--mmb-font);border-radius:7px;padding:4px 7px;outline:none}
+  .mmb-ti-input{width:100%;border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent);background:var(--mmb-well);color:var(--mmb-text);font:600 13px/1.3 var(--mmb-font);border-radius:7px;padding:4px 7px;outline:none}
   /* delete-confirm state: dim title, show Delete? + ✓/✕ */
   .mmb-ti.confirming .mmb-ti-body{opacity:.4}
   .mmb-ti-confirm{display:none;align-items:center;gap:4px;flex:none;margin-left:6px}
   .mmb-ti.confirming .mmb-ti-confirm{display:flex}
-  .mmb-ti-q{font:600 11.5px/1 var(--mmb-font);color:#e0716b;margin-right:2px}
-  .mmb-ti-yes,.mmb-ti-no{width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;padding:0;background:color-mix(in srgb,#fff 6%,transparent);transition:background .12s,color .12s}
-  .mmb-ti-yes{color:#e0716b}.mmb-ti-yes:hover{background:color-mix(in srgb,#e05555 22%,transparent);color:#fff}
-  .mmb-ti-no{color:var(--mmb-muted)}.mmb-ti-no:hover{background:color-mix(in srgb,#fff 12%,transparent);color:var(--mmb-text)}
+  .mmb-ti-q{font:600 11.5px/1 var(--mmb-font);color:var(--mmb-danger-soft);margin-right:2px}
+  .mmb-ti-yes,.mmb-ti-no{width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;display:grid;place-items:center;padding:0;background:color-mix(in srgb,var(--mmb-ink) 6%,transparent);transition:background .12s,color .12s}
+  .mmb-ti-yes{color:var(--mmb-danger-soft)}.mmb-ti-yes:hover{background:color-mix(in srgb,var(--mmb-danger) 22%,transparent);color:#fff}
+  .mmb-ti-no{color:var(--mmb-muted)}.mmb-ti-no:hover{background:color-mix(in srgb,var(--mmb-ink) 12%,transparent);color:var(--mmb-text)}
   .mmb-ti-yes svg,.mmb-ti-no svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2}
   .mmb-th-empty{color:var(--mmb-muted);font:400 12.5px/1.5 var(--mmb-font);padding:14px 16px}
   .mmb-main{flex:1;display:flex;flex-direction:column;min-width:0}
@@ -161,7 +264,7 @@
   .mmb-head .ttl{font:650 14px/1 var(--mmb-font);display:flex;align-items:center;gap:8px;min-width:0}
   .mmb-head .ttl .mmb-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mmb-head .mmb-icon{flex:none}
-  .mmb-head .dot{flex:none;width:7px;height:7px;border-radius:50%;background:#3da564;box-shadow:0 0 8px #3da564;transition:background .2s}
+  .mmb-head .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--mmb-ok);box-shadow:0 0 8px var(--mmb-ok);transition:background .2s}
   /* streaming: violet + soft opacity pulse (opacity-only, house perf law) */
   .mmb-head .dot.busy{background:var(--mmb-violet);box-shadow:0 0 8px var(--mmb-violet);animation:mmb-dotpulse 1s ease-in-out infinite}
   @keyframes mmb-dotpulse{0%,100%{opacity:1}50%{opacity:.45}}
@@ -175,11 +278,11 @@
      The icon had no size rule and collapsed to 0x0 — sized here, so the control
      reads as a toggle rather than a standing label. */
   .mmb-rpill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
-    color:var(--mmb-muted);background:color-mix(in srgb,#fff 5%,transparent);
+    color:var(--mmb-muted);background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);
     border:1px solid var(--mmb-line);border-radius:999px;padding:6px 11px;
     transition:color .13s,background .13s,border-color .13s}
   .mmb-rpill svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.9;flex:none}
-  .mmb-rpill:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 9%,transparent)}
+  .mmb-rpill:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 9%,transparent)}
   .mmb-rpill.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));
     color:#fff;border-color:transparent;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
   .mmb-rpill.mmb-off{display:none}
@@ -188,8 +291,8 @@
   #mmb-panel:not(.max) .mmb-threads{position:absolute;left:0;top:0;bottom:0;width:236px;z-index:6;display:block;
     background:color-mix(in srgb,var(--mmb-panel) 94%,transparent);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
     border-right:1px solid var(--mmb-line);transform:translateX(-101%);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
-  #mmb-panel:not(.max).show-side .mmb-threads{transform:none;box-shadow:10px 0 40px -12px rgba(0,0,0,.6)}
-  #mmb-panel:not(.max) .mmb-sidescrim{position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.32);opacity:0;pointer-events:none;transition:opacity .2s ease}
+  #mmb-panel:not(.max).show-side .mmb-threads{transform:none;box-shadow:var(--mmb-shadow-side)}
+  #mmb-panel:not(.max) .mmb-sidescrim{position:absolute;inset:0;z-index:5;background:var(--mmb-sidescrim);opacity:0;pointer-events:none;transition:opacity .2s ease}
   #mmb-panel:not(.max).show-side .mmb-sidescrim{opacity:1;pointer-events:auto}
   .mmb-scroll{flex:1;overflow-y:auto;overflow-anchor:none;padding:20px clamp(18px,6%,64px);display:flex;flex-direction:column;gap:15px}
   /* thin violet-tinted scrollbars (scroller + threads) */
@@ -202,21 +305,21 @@
   .mmb-empty{flex:1;display:flex;flex-direction:column;justify-content:center}
   .mmb-hero h1{margin:0;font:800 clamp(22px,3vw,38px)/1.1 var(--mmb-font);letter-spacing:-.02em}
   #mmb-panel:not(.max) .mmb-hero h1{font-size:22px}
-  .mmb-hero .g1{background:linear-gradient(90deg,#c7d0e0,#8b93a1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .mmb-hero .nm{background:linear-gradient(90deg,#8b5cf6,#5b7bf0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .mmb-hero .g2{background:linear-gradient(90deg,#e6eaf0 30%,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .mmb-hero .g1{background:linear-gradient(90deg,color-mix(in srgb,var(--mmb-text) 66%,var(--mmb-muted)),var(--mmb-muted));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .mmb-hero .nm{background:linear-gradient(90deg,var(--mmb-violet),var(--mmb-glow));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .mmb-hero .g2{background:linear-gradient(90deg,var(--mmb-text) 30%,var(--mmb-violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .mmb-hero p{margin:11px 0 0;color:var(--mmb-muted);font:400 14px/1.5 var(--mmb-font);max-width:460px}
   #mmb-panel:not(.max) .mmb-hero p{font-size:13px}
   .mmb-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px;max-width:620px}
   #mmb-panel.max .mmb-cards{grid-template-columns:repeat(4,1fr);max-width:920px}
   #mmb-panel:not(.max) .mmb-cards{grid-template-columns:1fr;gap:8px}
   .mmb-cardp{text-align:left;cursor:pointer;font-family:var(--mmb-font);color:var(--mmb-text);
-    background:color-mix(in srgb,var(--mmb-panel) 50%,transparent);border:1px solid var(--mmb-line);
+    background:var(--mmb-card);border:1px solid var(--mmb-line);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:15px;padding:14px;min-height:104px;
     display:flex;flex-direction:column;justify-content:space-between;gap:10px;transition:transform .14s,border-color .14s,background .14s}
   #mmb-panel:not(.max) .mmb-cardp{min-height:0;flex-direction:row;align-items:center;padding:12px 13px}
   .mmb-cardp:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--mmb-info) 42%,transparent);
-    background:color-mix(in srgb,var(--mmb-info) 9%,color-mix(in srgb,var(--mmb-panel) 50%,transparent))}
+    background:color-mix(in srgb,var(--mmb-info) 9%,var(--mmb-card))}
   .mmb-cardp .cp{font:500 12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
   .mmb-cardp .ci{width:26px;height:26px;flex:none;border-radius:8px;display:grid;place-items:center;color:var(--mmb-info);background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
   .mmb-cardp .ci svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
@@ -236,27 +339,27 @@
   .mmb-orbmark svg{width:18px;height:18px;fill:color-mix(in srgb,var(--mmb-violet) 85%,transparent)}
   .mmb-bub p{margin:0 0 9px}.mmb-bub p:last-child{margin-bottom:0}
   .mmb-bub ul,.mmb-bub ol{margin:7px 0 9px 20px;padding:0}.mmb-bub li{margin:4px 0}
-  .mmb-bub strong{font-weight:700;color:color-mix(in srgb,var(--mmb-text) 92%,#fff)}
+  .mmb-bub strong{font-weight:700;color:color-mix(in srgb,var(--mmb-text) 92%,var(--mmb-hi))}
   .mmb-bub em{font-style:italic;color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
-  .mmb-bub h4{margin:14px 0 6px;font:700 15.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 95%,#fff)}
-  .mmb-bub h5{margin:12px 0 5px;font:700 14.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 92%,#fff)}
+  .mmb-bub h4{margin:14px 0 6px;font:700 15.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 95%,var(--mmb-hi))}
+  .mmb-bub h5{margin:12px 0 5px;font:700 14.5px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 92%,var(--mmb-hi))}
   .mmb-bub h4:first-child,.mmb-bub h5:first-child{margin-top:0}
-  .mmb-bub code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in srgb,#fff 7%,transparent);border-radius:6px;padding:1.5px 6px}
+  .mmb-bub code{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in srgb,var(--mmb-ink) 7%,transparent);border-radius:6px;padding:1.5px 6px}
   .mmb-bub a{color:var(--mmb-info);text-decoration:none}.mmb-bub a:hover{text-decoration:underline}
-  .mmb-hr{border:none;border-top:1px solid color-mix(in srgb,#fff 8%,transparent);margin:12px 0}
+  .mmb-hr{border:none;border-top:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);margin:12px 0}
   .mmb-bq{margin:8px 0;padding:2px 0 2px 12px;border-left:2px solid var(--mmb-violet);color:var(--mmb-muted)}
   /* fenced code block */
-  .mmb-code{margin:10px 0;border-radius:10px;border:1px solid color-mix(in srgb,#fff 8%,transparent);background:color-mix(in srgb,#fff 5%,transparent);overflow:hidden}
-  .mmb-code-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-code{margin:10px 0;border-radius:10px;border:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);overflow:hidden}
+  .mmb-code-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
   .mmb-code-lang{font:600 10.5px/1 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--mmb-muted)}
   .mmb-code-copy{border:none;background:transparent;color:var(--mmb-muted);font:600 11px/1 var(--mmb-font);cursor:pointer;padding:3px 6px;border-radius:6px;transition:color .12s,background .12s}
-  .mmb-code-copy:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 8%,transparent)}
+  .mmb-code-copy:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 8%,transparent)}
   .mmb-code pre{margin:0;padding:12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .mmb-code code{background:none;padding:0;border-radius:0;tab-size:2;-moz-tab-size:2;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:color-mix(in srgb,var(--mmb-text) 94%,#fff);white-space:pre}
+  .mmb-code code{background:none;padding:0;border-radius:0;tab-size:2;-moz-tab-size:2;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:color-mix(in srgb,var(--mmb-text) 94%,var(--mmb-hi));white-space:pre}
   /* pipe table */
   .mmb-table{border-collapse:collapse;margin:10px 0;font:13px/1.45 var(--mmb-font);width:100%;display:block;overflow-x:auto}
-  .mmb-table th,.mmb-table td{border:1px solid color-mix(in srgb,#fff 8%,transparent);padding:6px 10px;text-align:left;white-space:nowrap}
-  .mmb-table th{font-weight:700;background:color-mix(in srgb,#fff 4%,transparent);color:color-mix(in srgb,var(--mmb-text) 94%,#fff)}
+  .mmb-table th,.mmb-table td{border:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);padding:6px 10px;text-align:left;white-space:nowrap}
+  .mmb-table th{font-weight:700;background:color-mix(in srgb,var(--mmb-ink) 4%,transparent);color:color-mix(in srgb,var(--mmb-text) 94%,var(--mmb-hi))}
   /* open-block streaming: plain text + per-frame fade-in ink spans */
   .mmb-open{white-space:pre-wrap;word-break:break-word}
   .mmb-ink{animation:mmb-inkin .16s ease both}
@@ -267,7 +370,7 @@
   @keyframes mmb-caret{0%,100%{opacity:1}50%{opacity:.25}}
   @media(prefers-reduced-motion:reduce){.mmb-caret{animation:none}}
   .mmb-stopped{color:var(--mmb-muted);font-style:italic;font-size:13px}
-  .mmb-bub .mmb-chart{margin:10px 0 2px;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,#fff 8%,transparent);background:#0E1420}
+  .mmb-bub .mmb-chart{margin:10px 0 2px;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);background:#0E1420}
   .mmb-bub .mmb-chart svg{display:block;width:100%;height:auto}
   .mmb-txt:empty,.mmb-charts:empty{display:none}
   /* assistant action row (copy · regenerate · timestamp) — space always reserved */
@@ -275,7 +378,7 @@
   .mmb-msg.assistant:hover .mmb-actions,.mmb-msg.assistant:focus-within .mmb-actions{opacity:1}
   @media(hover:none),(pointer:coarse){.mmb-actions{opacity:.75}}
   .mmb-abtn{width:22px;height:22px;border:none;background:transparent;border-radius:7px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;padding:0;transition:color .12s,background .12s}
-  .mmb-abtn:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-abtn:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
   .mmb-abtn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
   .mmb-abtn.mmb-copy svg{width:14px;height:14px}
   .mmb-regen{display:none}
@@ -283,11 +386,11 @@
   .mmb-time{font:11px/1 var(--mmb-font);color:var(--mmb-muted);margin-left:2px}
   /* day separator between history messages */
   .mmb-daysep{display:flex;align-items:center;justify-content:center;margin:6px 0 2px}
-  .mmb-daysep span{font:600 10.5px/1 var(--mmb-font);letter-spacing:.05em;color:var(--mmb-muted);background:color-mix(in srgb,#fff 4%,transparent);border-radius:999px;padding:4px 12px}
+  .mmb-daysep span{font:600 10.5px/1 var(--mmb-font);letter-spacing:.05em;color:var(--mmb-muted);background:color-mix(in srgb,var(--mmb-ink) 4%,transparent);border-radius:999px;padding:4px 12px}
   /* inline error / retry card */
-  .mmb-errcard{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,#e05555 8%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e05555 26%,transparent)}
+  .mmb-errcard{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--mmb-danger) 8%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,var(--mmb-danger) 26%,transparent)}
   .mmb-errline{font:400 13.5px/1.5 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 90%,var(--mmb-muted))}
-  .mmb-retry{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--mmb-line);background:color-mix(in srgb,#fff 5%,transparent);color:var(--mmb-text);font:600 12.5px/1 var(--mmb-font);border-radius:9px;padding:7px 13px;cursor:pointer;transition:border-color .13s,background .13s}
+  .mmb-retry{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);color:var(--mmb-text);font:600 12.5px/1 var(--mmb-font);border-radius:9px;padding:7px 13px;cursor:pointer;transition:border-color .13s,background .13s}
   .mmb-retry:hover{border-color:color-mix(in srgb,var(--mmb-info) 42%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent)}
   .mmb-retry svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8}
   /* visually-hidden live region */
@@ -303,7 +406,9 @@
   .mmb-think-h::before{content:'';width:7px;height:7px;flex:none;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
   .mmb-think-h .lb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mmb-think-t{flex:none;font:11.5px/1 var(--mmb-font);color:var(--mmb-muted);font-variant-numeric:tabular-nums}
-  .mmb-step{display:flex;align-items:center;gap:7px;font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);opacity:.68}
+  /* finished steps sit back, but not as far back in light: muted-on-white loses more
+     contrast per point of opacity than muted-on-panel does. */
+  .mmb-step{display:flex;align-items:center;gap:7px;font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);opacity:var(--mmb-step-o)}
   .mmb-step::before{content:'✓';flex:none;width:7px;font-size:9.5px;color:color-mix(in srgb,var(--mmb-info) 62%,var(--mmb-muted))}
   /* after the answer lands: one muted receipt line; click unfolds what was checked */
   .mmb-recap{margin:0 0 9px}
@@ -320,27 +425,27 @@
   .mmb-cite:hover{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
   .mmb-meta{font:11px/1.4 var(--mmb-font);color:var(--mmb-muted);padding:0 4px}
   .mmb-upgrade{display:none;margin:0 0 12px;padding:13px 15px;border-radius:13px;font:13px/1.5 var(--mmb-font);
-    background:color-mix(in srgb,#e0a030 12%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e0a030 34%,transparent)}
+    background:color-mix(in srgb,var(--mmb-warn) 12%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,var(--mmb-warn) 34%,transparent)}
   .mmb-upgrade a{color:var(--mmb-info);font-weight:700;text-decoration:underline}
   /* composer */
   .mmb-comp{position:relative;flex:none;padding:14px clamp(18px,6%,64px) 14px}
   #mmb-panel.max .mmb-comp{padding:14px clamp(24px,10%,120px) 16px}
-  .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:color-mix(in srgb,var(--mmb-panel2) 60%,transparent);
-    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 40px -18px rgba(0,0,0,.6);overflow:hidden}
+  .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:var(--mmb-boxbg);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--mmb-shadow-box);overflow:hidden}
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
   .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font:600 11.5px/1 var(--mmb-font);
-    color:color-mix(in srgb,var(--mmb-info) 92%,#fff);background:color-mix(in srgb,var(--mmb-info) 13%,transparent);
+    color:color-mix(in srgb,var(--mmb-info) 92%,var(--mmb-hi));background:color-mix(in srgb,var(--mmb-info) 13%,transparent);
     border:1px solid color-mix(in srgb,var(--mmb-info) 30%,transparent);border-radius:999px;padding:4px 11px 4px 8px}
   .mmb-ctx .chip .cx{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;opacity:.9;animation:mmb-breathe 4.6s ease-in-out infinite}
   .mmb-ctx .chip b{font:700 11.5px/1 var(--mmb-font);letter-spacing:.03em;color:var(--mmb-text)}
   .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
   .mmb-thumbs.on{display:flex}
-  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:#0b0e14;flex:none}
+  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none}
   .mmb-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .mmb-thumb .x{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;cursor:pointer;display:grid;place-items:center;
     background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0}
-  .mmb-thumb .x:hover{background:#e05555}
+  .mmb-thumb .x:hover{background:var(--mmb-danger)}
   /* attached-image thumbs inside a sent user bubble */
   .mmb-bub .mmb-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .mmb-bub .mmb-imgs img{width:120px;max-width:44vw;height:auto;border-radius:10px;border:1px solid color-mix(in srgb,#fff 18%,transparent);display:block}
@@ -352,13 +457,13 @@
      also the moment the user is about to press Enter and expect it to go. */
   .mmb-hint{display:none;font:11px/1 var(--mmb-font);color:var(--mmb-muted);white-space:nowrap;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis}
   .mmb-box.mmb-typing .mmb-hint{display:inline}
-  .mmb-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,#fff 5%,transparent);border:1px solid var(--mmb-line)}
+  .mmb-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);border:1px solid var(--mmb-line)}
   .mmb-seg button{border:none;background:transparent;color:var(--mmb-muted);font:600 11.5px/1 var(--mmb-font);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
   .mmb-seg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
   .mmb-q{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);padding:0 2px;white-space:nowrap}
-  .mmb-q.warn{color:#e0a030}.mmb-q.empty{color:#e05555}
+  .mmb-q.warn{color:var(--mmb-warn)}.mmb-q.empty{color:var(--mmb-danger)}
   .mmb-tbtn{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center}
-  .mmb-tbtn:hover{background:color-mix(in srgb,#fff 7%,transparent);color:var(--mmb-text)}
+  .mmb-tbtn:hover{background:color-mix(in srgb,var(--mmb-ink) 7%,transparent);color:var(--mmb-text)}
   .mmb-tbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
   .mmb-send{position:relative;width:36px;height:36px;border:none;border-radius:12px;cursor:pointer;display:grid;place-items:center;color:#fff;
     background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-info) 75%,transparent)}
@@ -372,17 +477,17 @@
   /* jump-to-latest pill (violet glass, above composer) */
   .mmb-jump{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translate(-50%,6px);z-index:8;display:inline-flex;align-items:center;gap:5px;
     border:1px solid color-mix(in srgb,var(--mmb-violet) 34%,transparent);border-radius:999px;padding:6px 13px 6px 10px;cursor:pointer;
-    color:color-mix(in srgb,var(--mmb-violet) 88%,#fff);background:color-mix(in srgb,var(--mmb-violet) 14%,color-mix(in srgb,var(--mmb-panel) 82%,transparent));
+    color:color-mix(in srgb,var(--mmb-violet) 88%,var(--mmb-hi));background:color-mix(in srgb,var(--mmb-violet) 14%,color-mix(in srgb,var(--mmb-panel) 82%,transparent));
     -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font:600 12px/1 var(--mmb-font);opacity:0;pointer-events:none;
-    box-shadow:0 10px 30px -12px rgba(0,0,0,.6);transition:opacity .2s ease,transform .2s ease}
+    box-shadow:var(--mmb-shadow-pop);transition:opacity .2s ease,transform .2s ease}
   .mmb-jump.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
   .mmb-jump svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
   .mmb-main{position:relative}
   @media(prefers-reduced-motion:reduce){.mmb-jump{transition:opacity .2s ease}}
   /* char counter reuses the .mmb-q slot */
-  .mmb-q.mmb-count{color:var(--mmb-muted)}.mmb-q.mmb-count.warn{color:#e05555}
+  .mmb-q.mmb-count{color:var(--mmb-muted)}.mmb-q.mmb-count.warn{color:var(--mmb-danger)}
   /* slash palette (above composer, inside the box) */
-  .mmb-slash{display:flex;flex-direction:column;padding:6px;gap:2px;border-bottom:1px solid color-mix(in srgb,#fff 7%,transparent)}
+  .mmb-slash{display:flex;flex-direction:column;padding:6px;gap:2px;border-bottom:1px solid color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
   .mmb-slash-i{display:grid;grid-template-columns:24px auto 1fr;align-items:center;gap:9px;border:none;background:transparent;border-radius:9px;padding:8px 10px;cursor:pointer;text-align:left;font-family:var(--mmb-font);color:var(--mmb-text)}
   .mmb-slash-i.on{background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
   .mmb-slash-i .si{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--mmb-info);background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
@@ -411,14 +516,14 @@
     .mmb-comp{padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
   /* follow-up suggestion chips (rendered under the latest reply) */
   .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
-  .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,#fff 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
+  .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,var(--mmb-ink) 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
   .mmb-sug:hover{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent);color:var(--mmb-text)}
   .mmb-sug .g{color:var(--mmb-muted);margin-right:6px}
   /* "explain this panel" hover affordance on dashboard island cards */
   .mmb-exp{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
-    background:color-mix(in srgb,var(--mmb-panel) 72%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-    border:1px solid var(--mmb-line);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s,border-color .15s,box-shadow .15s;z-index:5}
-  .mmb-exp svg{width:12px;height:12px;fill:#fff;opacity:.9}
+    background:var(--mmb-exp-bg);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    border:1px solid var(--mmb-line);box-shadow:var(--mmb-exp-shadow);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .15s,border-color .15s,box-shadow .15s;z-index:5}
+  .mmb-exp svg{width:12px;height:12px;fill:var(--mmb-exp-fg);opacity:.9}
   .sx:hover .mmb-exp{opacity:1;pointer-events:auto}
   .mmb-exp:hover{border-color:color-mix(in srgb,var(--mmb-info) 45%,transparent);box-shadow:0 0 12px -4px var(--mmb-info)}
   `;
