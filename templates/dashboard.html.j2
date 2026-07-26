@@ -3023,8 +3023,8 @@ body.page-macro .scare-row{display:grid;grid-template-columns:minmax(140px,220px
 body.page-macro .sc-name{font-size:12px;font-weight:700;color:var(--text);line-height:1.3}
 body.page-macro .sc-bar-track{height:5px;background:color-mix(in srgb,var(--muted) 15%,transparent);border-radius:3px;overflow:hidden}
 body.page-macro .sc-bar-fill{height:5px;border-radius:3px}
-body.page-macro .sc-score{font-size:15px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
-body.page-macro .sc-band{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;text-align:center;white-space:nowrap}
+body.page-macro .sc-score{font-size:15px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+body.page-macro .sc-band{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;text-align:center;white-space:nowrap}
 body.page-macro .sc-band-watch{color:var(--warn);background:rgba(224,160,48,.13);border:1px solid rgba(224,160,48,.25)}
 body.page-macro .sc-band-calm{color:var(--up);background:rgba(62,200,122,.1);border:1px solid rgba(62,200,122,.2)}
 body.page-macro .sc-band-elev{color:var(--info);background:rgba(77,142,245,.1);border:1px solid rgba(77,142,245,.2)}
@@ -4094,7 +4094,7 @@ body.page-macro.mx4-grid #regime-radar.mx5-pop-open{
 .mx5-scare-list{display:flex;flex-direction:column;gap:13px;}
 .mx5-scare-item{display:flex;flex-direction:column;gap:4px;}
 .mx5-scare-item-header{display:flex;justify-content:space-between;align-items:baseline;}
-.mx5-scare-item-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:500;}
+.mx5-scare-item-name{font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));font-weight:600;}
 .mx5-scare-item-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
 .mx5-scare-item-val.top{color:var(--mx5-warn-ink);}
 .mx5-scare-item-val.lower{color:var(--ink-2,rgba(255,255,255,.6));}
@@ -5527,14 +5527,14 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-sig-lbl{font:700 12px/1.25 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
 .rkc-sig-state{font-size:11px;line-height:1.45;color:var(--ink-2,rgba(255,255,255,.62));margin-top:2px;
   display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;}
-.rkc-sig-chip{display:inline-flex;align-items:center;font:700 9.5px/1 var(--font-ui,inherit);
+.rkc-sig-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-ui,inherit);
   letter-spacing:.03em;padding:2px 6px;border-radius:5px;white-space:nowrap;
   color:var(--rkc-c,var(--isle-risk,#e05c5c));
   background:color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 13%,transparent);
   border:1px solid color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 32%,transparent);}
 .rkc-sig-tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;
   border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
-  font:700 9px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
+  font:700 10px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
 .rkc-sig-tip:hover{border-color:var(--isle-risk,#e05c5c);color:var(--isle-risk,#e05c5c);}
 [data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.45);}
 @media(prefers-reduced-motion:no-preference){
@@ -5611,8 +5611,11 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;color:var(--down,#ef4444);
   background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);
   border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
-.rkc-ldr-count small{font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--ink-2));letter-spacing:.02em;}
-.rkc-ldr-bars{display:flex;flex-direction:column;gap:6px;position:relative;}
+.rkc-ldr-count small{font-size:10px;font-weight:600;color:color-mix(in srgb,var(--down,#ef4444) 78%,var(--ink-2));letter-spacing:.02em;}
+/* padding-top reserves a lane for the "index" tick label, which is absolutely
+   positioned at top:-15px off the FIRST row's track. Without it the label escapes
+   the bars block and collides with the state line above (operator, 2026-07-26). */
+.rkc-ldr-bars{display:flex;flex-direction:column;gap:6px;position:relative;padding-top:16px;}
 .rkc-ldr-row{display:grid;grid-template-columns:52px 1fr 46px;align-items:center;gap:9px;}
 .rkc-ldr-tkr{font:700 11px/1 var(--font-mono,ui-monospace,'SF Mono',monospace);
   color:var(--ink-2,rgba(255,255,255,.72));letter-spacing:.02em;}
@@ -5624,7 +5627,11 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-ldr-idx{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;
   background:var(--ink-2,rgba(255,255,255,.55));}
 .rkc-ldr-idx-lbl{position:absolute;top:-15px;left:50%;transform:translateX(-50%);
-  font:600 8.5px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.42));white-space:nowrap;}
+  font:600 10px/1 var(--font-ui,inherit);letter-spacing:.04em;
+  color:var(--ink-3,rgba(255,255,255,.52));white-space:nowrap;}
+/* When the tick sits hard against the left edge of the track a centred label hangs
+   over the ticker gutter — anchor it to the tick instead. */
+.rkc-ldr-idx.at-start .rkc-ldr-idx-lbl{left:0;transform:none;}
 .rkc-ldr-pct{font:800 11px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;text-align:right;color:var(--down,#ef4444);}
 .rkc-ldr-sub{font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));margin-top:9px;line-height:1.5;}
 .rkc-ldr-sub b{color:var(--ink-2,rgba(255,255,255,.62));font-weight:700;font-variant-numeric:tabular-nums;}
@@ -5662,7 +5669,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 [data-theme="light"] .rkc-ov-ring::before{background:#fff;}
 .rkc-ov-val{position:relative;z-index:1;font:800 15px/1 var(--font-ui,inherit);font-variant-numeric:tabular-nums;
   color:var(--rkc-c,var(--isle-risk,#e05c5c));}
-.rkc-ov-name{font:600 10.5px/1.25 var(--font-ui,inherit);color:var(--ink-2,rgba(255,255,255,.66));text-align:center;
+.rkc-ov-name{font:600 11px/1.25 var(--font-ui,inherit);color:var(--ink-2,rgba(255,255,255,.66));text-align:center;
   max-width:100%;overflow-wrap:anywhere;}
 [data-theme="light"] .rkc-ov-name{color:rgba(0,0,0,.62);}
 @media(prefers-reduced-motion:no-preference){
@@ -5677,7 +5684,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 /* — Transmission verdict as a state chip — */
 .rkc-tx-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
 .rkc-tx-ttl{font:700 12px/1 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.86));}
-.rkc-tx-verdict{display:inline-flex;align-items:center;gap:5px;font:700 10.5px/1 var(--font-ui,inherit);
+.rkc-tx-verdict{display:inline-flex;align-items:center;gap:5px;font:700 11px/1 var(--font-ui,inherit);
   letter-spacing:.03em;padding:3px 9px;border-radius:999px;}
 .rkc-tx-verdict::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
 .rkc-tx-verdict.v-alert{color:var(--down,#ef4444);background:color-mix(in srgb,var(--down,#ef4444) 12%,transparent);border:1px solid color-mix(in srgb,var(--down,#ef4444) 30%,transparent);}
@@ -5732,10 +5739,10 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 .rkc-mood-lens-name{font:700 10px/1.25 var(--font-ui,inherit);letter-spacing:.055em;text-transform:uppercase;
   color:var(--ink-2,rgba(255,255,255,.68));padding-top:3px;}
 .rkc-mood-scoreline{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;text-align:right;}
-.rkc-mood-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;
+.rkc-mood-score{font:800 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;
   color:var(--ink-1,rgba(255,255,255,.94));letter-spacing:-.02em;}
-.rkc-mood-unit{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));}
-.rkc-mood-scoreline .chip{font-size:9px;line-height:1;padding:3px 7px;}
+.rkc-mood-unit{font:600 10px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));}
+.rkc-mood-scoreline .chip{font-size:10px;line-height:1;padding:3px 7px;}
 .rkc-mood-mini-track{position:relative;height:9px;border-radius:999px;
   background:linear-gradient(90deg,var(--down,#ef4444) 0%,var(--warn,#f59e0b) 50%,var(--up,#22c55e) 100%);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.24);}
@@ -5746,11 +5753,11 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
   box-shadow:0 1px 5px rgba(0,0,0,.45);z-index:2;}
 [data-theme="light"] .rkc-mood-pin{border-color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.23);}
 .rkc-mood-axis{display:grid;grid-template-columns:repeat(5,1fr);align-items:start;
-  font:600 9px/1.25 var(--font-ui,inherit);color:var(--muted);margin-top:7px;letter-spacing:.01em;}
+  font:600 10px/1.25 var(--font-ui,inherit);color:var(--muted);margin-top:7px;letter-spacing:.01em;}
 .rkc-mood-axis span{text-align:center;}
 .rkc-mood-axis span:first-child{text-align:left;}
 .rkc-mood-axis span:last-child{text-align:right;}
-.rkc-mood-note{font:500 10.5px/1.45 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));margin-top:9px;}
+.rkc-mood-note{font:600 11px/1.45 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.44));margin-top:9px;}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-mood-pin{left:50%;transition:left 760ms cubic-bezier(.34,1.28,.5,1) .2s;}
   #dlg-risk.mx5-dlg-in .rkc-mood-pin{left:var(--rkc-pos,50%);}
@@ -11501,7 +11508,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 {% endif %}
                 {# Index reference tick at |index_dd|% of bar width — first row only, labelled #}
                 {% if loop.first and _lc_idx_pct is not none %}
-                <div class="rkc-ldr-idx" style="left:{{ [_lc_idx_pct, 99] | min }}%">
+                <div class="rkc-ldr-idx{{ ' at-start' if _lc_idx_pct < 12 else '' }}" style="left:{{ [_lc_idx_pct, 99] | min }}%">
                   <span class="rkc-ldr-idx-lbl"><span class="l-en">index</span><span class="l-zh">指数</span></span>
                 </div>
                 {% endif %}

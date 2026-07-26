@@ -6,24 +6,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase>(function () {
-  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
-  var B = window.DATA_BASE;
-  if (!B) return;                                         // no-op when unset -> zero behavior change
-  B = B.replace(/\/+$/, "");                              // strip trailing slash
-  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
-  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
-  var orig = window.fetch;
-  window.fetch = function (u, o) {
-    try {
-      if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
-      }
-    } catch (e) { /* never let the shim break a fetch */ }
-    return orig.call(this, u, o);
-  };
-})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Equity factor rankings — value, quality, low-vol & more</title>
@@ -44,11 +26,296 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/533199e8.css?v=533199e8">
-<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
-<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
-<script src="lightweight-charts.js?v=46fc6953" defer></script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ══════════════════════════════════════════════════════════════════════
+     FACTORS — aurora-glass skin, ported from the macro.html mx5 system so the
+     two pages read as one product. One type scale, one card idiom, one hover.
+
+     TYPE SCALE (the only sizes allowed on this page):
+       10 micro (eyebrows, units)   11 meta (secondary)   12 body
+       13 title                     15 lead               20 / 44 numerals
+     WEIGHTS: 400 body · 600 label · 700 title · 800 numeral
+     ══════════════════════════════════════════════════════════════════════ */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text);
+         font:400 13px/1.55 var(--font-ui); margin:0; padding:18px;
+         -webkit-font-smoothing:antialiased; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:20px; margin:0; letter-spacing:-.02em; }
+  h2 { font-size:11px; margin:0 0 12px; color:var(--muted); text-transform:uppercase;
+       letter-spacing:.10em; font-weight:700; }
+
+  /* ── glass tokens (mirrors dashboard.html.j2 §mx5-css) ─────────────── */
+  :root{
+    --fx-glass:      rgba(16,22,30,.55);
+    --fx-brd:        rgba(255,255,255,.12);
+    --fx-shadow:     0 8px 32px rgba(0,0,0,.42), 0 1.5px 0 rgba(255,255,255,.06) inset;
+    --fx-hover-bg:   rgba(22,29,38,.62);
+    --fx-hover-brd:  rgba(255,255,255,.16);
+    --fx-hover-shadow:0 6px 24px rgba(0,0,0,.25);
+    --fx-blur:       blur(20px);
+    --fx-r:          16px;
+  }
+  html[data-theme="light"]{
+    --fx-glass:      rgba(255,255,255,.82);
+    --fx-brd:        rgba(0,0,0,.06);
+    --fx-shadow:     0 4px 24px rgba(0,0,0,.07), 0 1px 0 rgba(255,255,255,.95) inset;
+    --fx-hover-bg:   rgba(255,255,255,.94);
+    --fx-hover-brd:  rgba(0,0,0,.14);
+    --fx-hover-shadow:0 6px 24px rgba(0,0,0,.10);
+  }
+  /* Ambient aurora — two soft blooms, verdict hue + a neutral indigo companion.
+     Fixed so it does not scroll; purely atmospheric, never carries information. */
+  .fx-aurora{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .fx-aurora::before{ content:""; position:absolute; width:900px; height:700px;
+    top:-220px; left:-160px; border-radius:50%; filter:blur(90px);
+    background:radial-gradient(ellipse,color-mix(in srgb,var(--vh) 13%,transparent) 0%,transparent 70%); }
+  .fx-aurora::after{ content:""; position:absolute; width:760px; height:620px;
+    bottom:-140px; right:-120px; border-radius:50%; filter:blur(90px);
+    background:radial-gradient(ellipse,rgba(99,102,241,.09) 0%,transparent 70%); }
+  html[data-theme="light"] .fx-aurora::before{ background:radial-gradient(ellipse,color-mix(in srgb,var(--vh) 7%,transparent) 0%,transparent 70%); }
+  html[data-theme="light"] .fx-aurora::after { background:radial-gradient(ellipse,rgba(99,102,241,.05) 0%,transparent 70%); }
+  body > nav, body > .panel, body > .twocol, body > script { position:relative; z-index:1; }
+
+  .panel { background:var(--fx-glass); border:1px solid var(--fx-brd);
+           border-radius:var(--fx-r); padding:18px 20px; margin-bottom:16px;
+           backdrop-filter:var(--fx-blur); box-shadow:var(--fx-shadow);
+           position:relative; z-index:1; }
+  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .muted { color:var(--muted); }
+  .sm { font-size:11px; }
+  table { border-collapse:collapse; width:100%; font-size:12px; }
+  th,td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--fx-brd); }
+  th { color:var(--muted); font-weight:600; font-size:10px; text-transform:uppercase;
+       letter-spacing:.07em; }
+  tbody tr:last-child td, table tr:last-child td { border-bottom:0; }
+  td.r, th.r { text-align:right; }
+  td.r, .num { font-variant-numeric:tabular-nums; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
+          height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
+          font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
+  .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%);
+               width:300px; background:var(--panel); border:1px solid var(--line); padding:9px 11px;
+               border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text);
+               font-weight:400; box-shadow:var(--popover-shadow); pointer-events:auto; cursor:auto;
+               max-height:min(60vh,420px); overflow-y:auto; overscroll-behavior:contain; }
+  /* invisible hover pad across the icon→tip gap — keeps :hover alive mid-travel (on .help, not .tip: the tip is a scroll container and clips its pseudos) */
+  .help:hover::before { content:''; position:absolute; top:100%; left:-30px; right:-30px; height:10px; }
+  .help:hover .tip { display:block; }
+  .lead { display:flex; flex-direction:column; gap:6px; }
+  .leadrow { display:grid; grid-template-columns:150px 1fr 64px; align-items:center; gap:10px; }
+  .leadbar { height:14px; border-radius:7px; background:var(--panel2); position:relative; overflow:hidden; }
+  .leadbar > i { position:absolute; top:0; bottom:0; }
+  .cardgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:12px; }
+  .fcard { background:color-mix(in srgb,var(--panel2) 55%,transparent);
+           border:1px solid var(--fx-brd); border-radius:12px; padding:13px 14px;
+           transition:transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out; }
+  .fcard:hover { transform:translateY(-1px); border-color:var(--fx-hover-brd);
+                 box-shadow:var(--fx-hover-shadow); }
+  .fcard h3 { font-size:12px; font-weight:700; margin:0 0 9px; display:flex; align-items:center; }
+  .fcard .badge { margin-left:auto; font-size:10px; font-weight:600; padding:2px 8px;
+                  border-radius:999px; background:color-mix(in srgb,var(--muted) 12%,transparent);
+                  border:1px solid var(--fx-brd); color:var(--muted); }
+  .twocol { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; }
+  @media (max-width:760px){ .twocol{ grid-template-columns:minmax(0,1fr); } }
+  .zpos { color:var(--up); font-weight:700; } .zneg { color:var(--down); font-weight:700; }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+          padding:3px 10px; margin:0 4px 4px 0; border-radius:999px;
+          background:color-mix(in srgb,var(--panel2) 60%,transparent);
+          border:1px solid var(--fx-brd); color:var(--muted); }
+  /* validation chip — status colours (--ok/--act/--muted) do NOT flip in zh mode, unlike --up/--down */
+  .val-chip { display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.03em;
+              padding:1px 6px; margin-left:7px; border-radius:6px; vertical-align:middle; white-space:nowrap; }
+  .val-chip.validated   { color:var(--ok);    border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);
+                          background:color-mix(in srgb,var(--ok) 12%,transparent); }
+  .val-chip.negative-ic { color:var(--act);   border:1px solid color-mix(in srgb,var(--act) 55%,transparent);
+                          background:color-mix(in srgb,var(--act) 14%,transparent); }
+  .val-chip.fdr-fail    { color:var(--muted); border:1px solid var(--line); background:var(--panel2); }
+  .ic-alert { margin:0 0 10px; padding:8px 11px; border-radius:7px; font-size:12px; line-height:1.5;
+              border:1px solid color-mix(in srgb,var(--act) 45%,transparent);
+              background:color-mix(in srgb,var(--act) 9%,var(--panel)); }
+  .ic-alert b { color:var(--act); font-weight:700; }
+  sub { font-size:.72em; }
+  .bbar { display:inline-block; width:150px; max-width:42vw; height:11px; border-radius:6px;
+          background:var(--panel2); position:relative; overflow:hidden; vertical-align:middle; }
+  .bbar > i { position:absolute; left:0; top:0; bottom:0; border-radius:6px; }
+  .spk { width:96px; height:26px; display:block; }
+  .hm { border-collapse:collapse; font-size:11px; }
+  .hm td, .hm th { border:1px solid var(--bg); padding:0; text-align:center; }
+  .hm th { color:var(--muted); font-weight:500; padding:2px 4px; white-space:nowrap; }
+  .hmc { width:30px; height:26px; text-align:center; color:var(--text); font-size:10px; }
+  .quilt { border-collapse:collapse; font-size:10.5px; width:100%; }
+  .quilt th { color:var(--muted); font-weight:500; padding:2px 4px; white-space:nowrap; font-size:10px; }
+  .quilt td { padding:3px 5px; text-align:right; border:1px solid var(--bg); white-space:nowrap; }
+  .quilt2 { border-collapse:separate; border-spacing:2px; font-size:10px; }
+  .quilt2 th { color:var(--muted); font-weight:500; padding:1px 3px; text-align:center; font-size:9.5px; }
+  .quilt2 td.qc { width:54px; height:30px; border-radius:4px; text-align:center; color:#0b1220; vertical-align:middle; }
+  .quilt2 td.qc .qf { display:block; font-weight:600; font-size:9px; line-height:1.05; }
+  .quilt2 td.qc .qv { display:block; font-size:9px; opacity:.85; font-variant-numeric:tabular-nums; }
+  .quilt2 td.qc.hl { outline:2px solid var(--text); outline-offset:-2px; }
+  .r20bars { display:grid; grid-template-columns:auto 1fr auto; gap:2px 8px; align-items:center; margin-top:4px; max-width:560px; }
+  .r20lab { font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .r20track { height:12px; border-radius:6px; background:var(--panel2); position:relative; }
+  .r20track > i { position:absolute; top:0; bottom:0; }
+  .r20track > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
+  .r20val { font-size:11.5px; font-variant-numeric:tabular-nums; text-align:right; }
+  .flip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
+          background:var(--panel2); border:1px solid var(--line); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; background:var(--panel); color:var(--text); cursor:pointer;
+                font-size:12px; padding:4px 10px; }
+  .seg button.on { background:var(--panel2); font-weight:600; }
+  .scroll { overflow-x:auto; }
+  table[data-leg="lo"] .v-ls, table[data-leg="ls"] .v-lo { display:none; }
+  .chartbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin:8px 0 2px; }
+  .tabs { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .tabs button { border:0; background:var(--panel); color:var(--muted); font-size:12px; padding:5px 11px; cursor:pointer; border-right:1px solid var(--line); }
+  .tabs button:last-child { border-right:0; }
+  .tabs button.on { background:var(--panel2); color:var(--text); font-weight:650; }
+  .tabs .rangeN { width:72px; background:var(--panel); color:var(--text); border:0; border-left:1px solid var(--line); padding:5px 8px; font-size:12px; }
+  #fchart { height:400px; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .lchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; }
+  .lchip.off { opacity:.34; }
+  .lchip .ldot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
+  #sector-monitor td.hzc { font-variant-numeric:tabular-nums; text-align:center; }
+  #sector-monitor .zc { font-size:12.5px; font-weight:600; } #sector-monitor .rr { font-size:10px; opacity:.7; display:block; }
+  /* NW status chips */
+  .nw-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; margin:0 4px 4px 0;
+             border-radius:7px; border:1px solid var(--line); background:var(--panel2); color:var(--muted);
+             white-space:nowrap; letter-spacing:.02em; }
+  .nw-chip.live      { color:var(--ok);   border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+                       background:color-mix(in srgb,var(--ok) 10%,transparent); }
+  .nw-chip.dormant   { color:var(--muted); }
+  .nw-chip.shadow    { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+                       background:color-mix(in srgb,var(--act) 8%,transparent); }
+  .nw-chip.accruing  { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+                       background:color-mix(in srgb,var(--act) 8%,transparent); }
+  .nw-chip.bh-withheld { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,transparent);
+                          background:color-mix(in srgb,var(--down) 8%,transparent); }
+  .nw-chip.null      { color:var(--muted); }
+  .nw-chip.gate-passed { color:var(--ok);  border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+                          background:color-mix(in srgb,var(--ok) 10%,transparent); }
+  .nw-chip.pre-fdr   { color:var(--muted); font-style:italic; }
+  .nw-status-grid { display:grid; grid-template-columns:minmax(130px,auto) 1fr; gap:4px 12px;
+                    font-size:12px; align-items:start; margin-top:10px; }
+  .nw-status-grid .nw-lab { color:var(--muted); padding-top:2px; }
+  .nw-influence { display:flex; flex-wrap:wrap; gap:4px 0; margin-top:4px; }
+  .nw-influence .nw-chip { margin-bottom:0; }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     THE VERDICT HERO — this page's signature.
+     Most factor dashboards open with a leaderboard. This one opens with its own
+     scorecard: how many of these rankings actually beat chance on a leak-free
+     point-in-time test. The ruler on the right plots every factor's measured
+     edge against a HARD ZERO LINE, so the honest answer ("almost none of them
+     move off zero") is the first thing the eye resolves — before any ranking.
+     ══════════════════════════════════════════════════════════════════════ */
+  .vhero { display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr);
+           gap:0; padding:0; overflow:hidden; }
+  @media (max-width:860px){ .vhero{ grid-template-columns:minmax(0,1fr); } }
+  .vh-left { padding:24px 26px 22px; border-right:1px solid var(--fx-brd); }
+  @media (max-width:860px){ .vh-left{ border-right:0; border-bottom:1px solid var(--fx-brd); } }
+  .vh-eyebrow { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+                color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .vh-eyebrow .dot { width:6px; height:6px; border-radius:50%; background:var(--vh); flex:none; }
+  .vh-count { display:flex; align-items:baseline; gap:9px; }
+  .vh-num { font-size:44px; font-weight:800; line-height:1; letter-spacing:-.035em;
+            color:var(--vh); font-variant-numeric:tabular-nums; }
+  .vh-of { font-size:12px; font-weight:600; color:var(--muted); line-height:1.35; }
+  .vh-claim { font-size:15px; font-weight:700; letter-spacing:-.01em; margin:12px 0 0;
+              line-height:1.35; color:var(--text); }
+  .vh-stance { font-size:12px; color:var(--muted); line-height:1.55; margin:8px 0 0; }
+  .vh-who { display:flex; flex-wrap:wrap; gap:6px; margin-top:13px; }
+  .vh-who .chip { margin:0; border-color:color-mix(in srgb,var(--vh) 40%,transparent);
+                  color:var(--vh); background:color-mix(in srgb,var(--vh) 11%,transparent); }
+
+  /* ── the ruler ──────────────────────────────────────────────────────── */
+  .vh-right { padding:22px 26px 20px; min-width:0; }
+  .vh-rhead { display:flex; align-items:baseline; justify-content:space-between;
+              gap:12px; margin-bottom:14px; }
+  .vh-rtitle { font-size:10px; font-weight:700; letter-spacing:.10em; text-transform:uppercase;
+               color:var(--muted); }
+  .vh-rnote { font-size:10px; color:var(--muted); }
+  .ruler { display:grid; grid-template-columns:minmax(84px,auto) minmax(0,1fr) 52px 60px;
+           align-items:center; gap:3px 10px; }
+  .rl-name { font-size:11px; color:var(--text); white-space:nowrap; overflow:hidden;
+             text-overflow:ellipsis; }
+  .rl-track { position:relative; height:15px; }
+  /* the zero line is the point of the whole graphic — draw it hard, not as a hint */
+  /* The zero axis. Each track draws its own segment and bleeds 3px past the 3px
+     row gap, so the segments meet and read as ONE continuous axis — the first grid
+     column is auto-width, so a single absolutely-positioned line cannot track it. */
+  .rl-track::before { content:""; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px;
+                      background:color-mix(in srgb,var(--text) 34%,transparent); }
+  .ruler { position:relative; }
+  .rl-bar { position:absolute; top:3px; bottom:3px; border-radius:2px; }
+  .rl-bar.p { left:50%; background:color-mix(in srgb,var(--up) 62%,transparent); }
+  .rl-bar.n { right:50%; background:color-mix(in srgb,var(--down) 62%,transparent); }
+  .rl-row.pass .rl-bar.p { background:var(--up); }
+  .rl-val { font-size:11px; text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
+  .rl-tag { font-size:9px; font-weight:700; letter-spacing:.05em; text-align:right;
+            text-transform:uppercase; color:var(--muted); }
+  .rl-row.pass .rl-tag { color:var(--up); }
+  .rl-row.pass .rl-name { font-weight:700; }
+  .rl-axis { grid-column:2; display:flex; justify-content:space-between; font-size:9px;
+             color:var(--muted); margin-top:4px; }
+  .rl-zero { grid-column:2; text-align:center; font-size:9px; color:var(--muted);
+             letter-spacing:.08em; margin-top:2px; }
+  @media (max-width:640px){
+    .ruler{ grid-template-columns:minmax(70px,auto) minmax(0,1fr) 46px; }
+    .rl-tag{ display:none; }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     STYLE TAPE — the three style spreads the Neural Web already tracks
+     (growth vs value, mega-tech vs market, small vs large), promoted out of the
+     `etf_pulse_summary` debug string into the page's second read.
+     ══════════════════════════════════════════════════════════════════════ */
+  .tape { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+  .tp { background:color-mix(in srgb,var(--panel2) 55%,transparent);
+        border:1px solid var(--fx-brd); border-radius:12px; padding:13px 15px 12px;
+        transition:transform .2s ease-out, border-color .2s ease-out, box-shadow .2s ease-out; }
+  .tp:hover { transform:translateY(-1px); border-color:var(--fx-hover-brd); box-shadow:var(--fx-hover-shadow); }
+  .tp-poles { display:flex; justify-content:space-between; font-size:10px; font-weight:600;
+              letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .tp-rail { position:relative; height:6px; border-radius:3px; margin:9px 0 8px;
+             background:color-mix(in srgb,var(--muted) 16%,transparent); }
+  .tp-rail::before { content:""; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px;
+                     background:color-mix(in srgb,var(--text) 34%,transparent); }
+  .tp-fill { position:absolute; top:0; bottom:0; border-radius:3px; }
+  /* Direction, not merit: neither pole of a style spread is the good one, so the
+     rail uses the neutral info hue in both directions rather than green/red. */
+  .tp-fill.p { left:50%; background:var(--info); }
+  .tp-fill.n { right:50%; background:color-mix(in srgb,var(--info) 62%,var(--muted)); }
+  .tp-read { display:flex; align-items:baseline; gap:8px; }
+  .tp-num { font-size:20px; font-weight:800; line-height:1; letter-spacing:-.02em;
+            font-variant-numeric:tabular-nums; color:var(--text); }
+  .tp-lean { font-size:11px; font-weight:600; color:var(--muted); }
+  .tp-plain { font-size:11px; color:var(--muted); line-height:1.5; margin-top:7px; }
+
+  /* ── NW accrual meters (replaces the five identical BH-WITHHELD chips) ── */
+  .acc { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:4px; }
+  .acc-item { min-width:0; }
+  .acc-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .acc-lab { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .acc-val { font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .acc-rail { height:5px; border-radius:3px; margin-top:7px; overflow:hidden;
+              background:color-mix(in srgb,var(--muted) 16%,transparent); }
+  .acc-fill { height:100%; border-radius:3px; background:var(--info); }
+  .acc-fill.done { background:var(--up); }
+  .acc-sub { font-size:10px; color:var(--muted); margin-top:5px; line-height:1.45; }
+
+  /* ── page header ────────────────────────────────────────────────────── */
+  .fx-head { position:relative; z-index:1; margin:2px 0 16px; }
+  .fx-head h1 { font-size:22px; font-weight:800; letter-spacing:-.025em; margin:0; }
+  .fx-head p { font-size:12px; color:var(--muted); margin:6px 0 0; max-width:74ch; line-height:1.55; }
+</style>
+<script src="lightweight-charts.js"></script>
 </head>
 <body>
 
@@ -204,7 +471,71 @@
       </div>
     </div>
     
-    <link rel="stylesheet" href="assets/css/9cfd4219.css?v=9cfd4219">
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (8px 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
@@ -264,8 +595,8 @@
     </div>
   </div>
   
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -286,25 +617,272 @@
   </div>
 </nav>
 
-  <div class="panel">
-    <div class="topline">
-      <h1>🧮 <span class="l-en">Factors &amp; seasonality</span><span class="l-zh">因子与季节性</span><span class="help">?<span class="tip"><span class="l-en">The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).</span><span class="l-zh">量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。</span></span></span></h1>
-      <span class="muted sm"><span class="l-en">Which styles of stock are working — and what this month usually brings</span><span class="l-zh">哪些风格正在起作用——以及本月的历史规律</span></span>
+  <div class="fx-aurora" aria-hidden="true"></div>
+
+  
+  <header class="fx-head">
+    <h1><span class="l-en">Factors &amp; seasonality</span><span class="l-zh">因子与季节性</span><span class="help">?<span class="tip"><span class="l-en">The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).</span><span class="l-zh">量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。</span></span></span></h1>
+    <p><span class="l-en">Which style of stock is working — cheap, high quality, dividend-paying, recent winners — and whether that has ever meant anything.</span><span class="l-zh">哪种风格的股票正在起作用——低估值、高质量、高分红、近期赢家——以及这是否真的有意义。</span></p>
+  </header>
+
+  
+  
+  
+  
+  
+  
+
+  
+  <div class="panel vhero" style="--vh:var(--warn)">
+    <div class="vh-left">
+      <div class="vh-eyebrow"><span class="dot"></span><span class="l-en">Does any of this predict?</span><span class="l-zh">这些排名能预测吗？</span></div>
+      <div class="vh-count">
+        <span class="vh-num">1</span>
+        <span class="vh-of"><span class="l-en">of 10 rankings<br>beat chance</span><span class="l-zh">项排名（共 10 项）<br>优于随机</span></span>
+      </div>
+      <p class="vh-claim">
+        
+          <span class="l-en">One ranking clears the bar — barely.</span><span class="l-zh">仅一项排名勉强通过检验。</span>
+        
+      </p>
+      <p class="vh-stance">
+        
+          <span class="l-en">Use it as a tilt, not a trade. Every other ranking below is a description of the market, not a forecast of it.</span><span class="l-zh">可作为组合倾斜，而非交易信号。下方其余排名只是对市场的描述，不是预测。</span>
+        
+      </p>
+      
+      <div class="vh-who">
+        <span class="chip"><span class="l-en">Payout</span><span class="l-zh">Shareholder yield</span></span>
+      </div>
+      
     </div>
-    <p class="muted sm" style="margin:10px 0 0"><span class="l-en">Styles — cheap, high-quality, dividend-paying, recent winners — take turns leading. Ranks and history here are descriptions, not buy lists.</span><span class="l-zh">低估值、高质量、高分红、近期赢家等风格轮流领跑。此处的排名与历史是描述，不是买入清单。</span></p>
+
+    <div class="vh-right">
+      <div class="vh-rhead">
+        <span class="vh-rtitle"><span class="l-en">Measured edge vs zero</span><span class="l-zh">实测优势相对零</span></span>
+        <span class="vh-rnote">
+          2011-03-31..2025-12-31 · 60<span class="l-en"> quarters</span><span class="l-zh"> 个季度</span>
+          <span class="help">?<span class="tip"><span class="l-en">Each bar is the factor's mean Information Coefficient — the rank correlation between the factor score and the NEXT 63-day return, rebuilt at every quarter-end from only what was knowable then. The centre line is ZERO: no edge. A bar you can barely see is a factor that does not predict. PASSES = clears Benjamini-Hochberg FDR across every factor screened AND has a positive mean IC. The panel below carries the full statistics.</span><span class="l-zh">每根柱为该因子的平均信息系数（IC）——因子分数与未来 63 日回报的秩相关，在每个季末仅用当时可知的信息重建。中线为零：无优势。几乎看不见的柱意味着该因子没有预测力。PASSES = 通过 BH-FDR 多重检验且平均 IC 为正。完整统计见下方面板。</span></span></span>
+        </span>
+      </div>
+      
+      <div class="ruler">
+        
+        
+        <div class="rl-row pass" style="display:contents">
+          <span class="rl-name"><span class="l-en">Payout</span><span class="l-zh">Shareholder yield</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:41.17%;background:var(--up)"></i>
+            
+          </span>
+          <span class="rl-val">+0.025</span>
+          <span class="rl-tag"><span class="l-en">passes</span><span class="l-zh">通过</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Value</span><span class="l-zh">Value</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:30.67%"></i>
+            
+          </span>
+          <span class="rl-val">+0.018</span>
+          <span class="rl-tag"><span class="l-en">no edge</span><span class="l-zh">无优势</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Profitability</span><span class="l-zh">Profitability</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:23.5%"></i>
+            
+          </span>
+          <span class="rl-val">+0.014</span>
+          <span class="rl-tag"><span class="l-en">no edge</span><span class="l-zh">无优势</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Accruals</span><span class="l-zh">Low accruals</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:11.67%"></i>
+            
+          </span>
+          <span class="rl-val">+0.007</span>
+          <span class="rl-tag"><span class="l-en">no edge</span><span class="l-zh">无优势</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Quality</span><span class="l-zh">Quality</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:7.0%"></i>
+            
+          </span>
+          <span class="rl-val">+0.004</span>
+          <span class="rl-tag"><span class="l-en">no edge</span><span class="l-zh">无优势</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Earnings momentum</span><span class="l-zh">Earnings momentum (SUE)</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar p" style="width:1.0%"></i>
+            
+          </span>
+          <span class="rl-val">+0.001</span>
+          <span class="rl-tag"><span class="l-en">no edge</span><span class="l-zh">无优势</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Investment</span><span class="l-zh">Investment</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar n" style="width:4.83%"></i>
+            
+          </span>
+          <span class="rl-val">-0.003</span>
+          <span class="rl-tag"><span class="l-en">inverts</span><span class="l-zh">反向</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Composite</span><span class="l-zh">Composite</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar n" style="width:12.0%"></i>
+            
+          </span>
+          <span class="rl-val">-0.007</span>
+          <span class="rl-tag"><span class="l-en">inverts</span><span class="l-zh">反向</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Low beta</span><span class="l-zh">Low beta (BAB)</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar n" style="width:25.17%"></i>
+            
+          </span>
+          <span class="rl-val">-0.015</span>
+          <span class="rl-tag"><span class="l-en">inverts</span><span class="l-zh">反向</span></span>
+        </div>
+        
+        
+        <div class="rl-row " style="display:contents">
+          <span class="rl-name"><span class="l-en">Low volatility</span><span class="l-zh">Low volatility</span></span>
+          <span class="rl-track">
+            
+            
+            <i class="rl-bar n" style="width:34.83%"></i>
+            
+          </span>
+          <span class="rl-val">-0.021</span>
+          <span class="rl-tag"><span class="l-en">inverts</span><span class="l-zh">反向</span></span>
+        </div>
+        
+        <div class="rl-zero"><span class="l-en">↑ zero = no edge</span><span class="l-zh">↑ 零 = 无优势</span></div>
+      </div>
+    </div>
   </div>
+  
+
+  
+  
+  
+  
+  
+  <div class="panel">
+    <div class="topline" style="margin-bottom:12px">
+      <h2 style="margin:0"><span class="l-en">Style tape — what is actually leading</span><span class="l-zh">风格行情 — 当前谁在领先</span></h2>
+      <span class="muted sm"><span class="l-en">20-day relative move</span><span class="l-zh">20日相对涨跌</span></span>
+    </div>
+    <div class="tape">
+      
+      
+      
+      
+      
+      <div class="tp">
+        <div class="tp-poles"><span>← <span class="l-en">Value</span><span class="l-zh">价值</span></span><span><span class="l-en">Growth</span><span class="l-zh">成长</span> →</span></div>
+        <div class="tp-rail">
+          <i class="tp-fill n" style="width:12.18%"></i>
+        </div>
+        <div class="tp-read">
+          <span class="tp-num">-1.9%</span>
+          <span class="tp-lean"><span class="l-en">Value</span><span class="l-zh">价值</span> <span class="l-en">ahead</span><span class="l-zh">领先</span></span>
+        </div>
+        <p class="tp-plain"><span class="l-en">Growth stocks vs value stocks, last 20 days (Russell 1000 Growth against Russell 1000 Value).</span><span class="l-zh">成长股相对价值股，近20日（罗素1000成长 对 罗素1000价值）。</span></p>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="tp">
+        <div class="tp-poles"><span>← <span class="l-en">Broad market</span><span class="l-zh">大盘</span></span><span><span class="l-en">Big tech</span><span class="l-zh">科技巨头</span> →</span></div>
+        <div class="tp-rail">
+          <i class="tp-fill n" style="width:31.99%"></i>
+        </div>
+        <div class="tp-read">
+          <span class="tp-num">-5.1%</span>
+          <span class="tp-lean"><span class="l-en">Broad market</span><span class="l-zh">大盘</span> <span class="l-en">ahead</span><span class="l-zh">领先</span></span>
+        </div>
+        <p class="tp-plain"><span class="l-en">The Nasdaq-100 against the S&P 500, last 20 days — whether the megacap tech complex is carrying the tape.</span><span class="l-zh">纳斯达克100 相对 标普500，近20日——科技巨头是否在主导行情。</span></p>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="tp">
+        <div class="tp-poles"><span>← <span class="l-en">Large caps</span><span class="l-zh">大盘股</span></span><span><span class="l-en">Small caps</span><span class="l-zh">小盘股</span> →</span></div>
+        <div class="tp-rail">
+          <i class="tp-fill n" style="width:20.12%"></i>
+        </div>
+        <div class="tp-read">
+          <span class="tp-num">-3.2%</span>
+          <span class="tp-lean"><span class="l-en">Large caps</span><span class="l-zh">大盘股</span> <span class="l-en">ahead</span><span class="l-zh">领先</span></span>
+        </div>
+        <p class="tp-plain"><span class="l-en">Small caps against the S&P 500, last 20 days — a widening tape when small caps lead, a narrowing one when they lag.</span><span class="l-zh">小盘股相对标普500，近20日——小盘领先意味涨势扩散，落后意味集中于头部。</span></p>
+      </div>
+      
+      
+    </div>
+    <p class="muted sm" style="margin:12px 0 0"><span class="l-en">Where the money has actually gone this past month. Descriptive — leadership rotates, and none of these three has been tested for predictive power.</span><span class="l-zh">过去一个月资金实际流向。仅为描述——领先风格会轮换，且这三项均未经过预测力检验。</span></p>
+  </div>
+  
 
   <!-- Factor weather hero — fail-open: seas absent or seas.now absent → panel hides -->
   
   <div class="panel">
+    
     <div class="topline" style="margin-bottom:8px">
-      <h2 style="margin:0"><span class="l-en">Factor weather</span><span class="l-zh">因子风向</span></h2>
+      <h2 style="margin:0"><span class="l-en">Factor weather</span><span class="l-zh">因子风向</span><span class="help">?<span class="tip"><span class="l-en">Current-month per-factor seasonal stats — Cheap stocks (Value), Strong earners (Profitability), Careful spenders (Investment), Recent winners (Momentum), Small companies (Size). Stats from Ken French total-US-market academic portfolios (1926+). Definition mismatch: French HML/RMW/CMA are value-weighted long/short over the whole US market, NOT our S&P-1500 winsorized z-scores — this is the style's long-run seasonal CLIMATE, not a forecast of our daily factor leadership. Kept out of every score.</span><span class="l-zh">当月各因子季节性统计——来自 Ken French 全美市场学术组合（1926年+）。定义差异：French 的多空因子与我们的 S&P 1500 z 分数不同——此为长期季节性气候，非每日因子领先预测，且绝不进入任何评分。</span></span></span></h2>
       <span class="muted sm">2026-05</span>
     </div>
     
-    
     <p style="margin:0 0 8px;font-size:14px">
-      <span class="l-en">July is usually a rough month for the market&#39;s recent winners — the momentum style fell in 7 of the last 10 Julys, including the last 5 straight, while the market itself was up in 100% of them.</span><span class="l-zh">7月通常是市场近期赢家的困难月份——动量风格在过去 10 个7月中下跌了 7 次（含连续 5 年），而大盘在其中 100% 的时间上涨。</span>
+      <span class="l-en">July is usually a rough month for the market's recent winners — the momentum style fell in 7 of the last 10 Julys, including the last 5 straight, while the market itself was up in 100% of them.</span><span class="l-zh">7月通常是市场近期赢家的困难月份——动量风格在过去 10 个7月中下跌了 7 次（含连续 5 年），而大盘在其中 100% 的时间上涨。</span>
     </p>
     
     <div style="margin-bottom:8px">
@@ -314,7 +892,7 @@
         
         
           <span style="display:inline-block;padding:2px 10px;border-radius:8px;border:1px solid var(--act);color:var(--act);background:color-mix(in srgb,var(--act) 10%,var(--panel));font-size:12px;font-weight:600">
-            <span class="l-en">Watch — don&#39;t chase this month&#39;s hottest stocks.</span><span class="l-zh">观望——本月不要追逐最热门的股票。</span>
+            <span class="l-en">Watch — don't chase this month's hottest stocks.</span><span class="l-zh">观望——本月不要追逐最热门的股票。</span>
           </span>
         
       
@@ -334,9 +912,8 @@
     </p>
     
     
-    <span class="help">?<span class="tip"><span class="l-en">Current-month per-factor seasonal stats — Cheap stocks (Value), Strong earners (Profitability), Careful spenders (Investment), Recent winners (Momentum), Small companies (Size). Stats from Ken French total-US-market academic portfolios (1926+). Definition mismatch: French HML/RMW/CMA are value-weighted long/short over the whole US market, NOT our S&amp;P-1500 winsorized z-scores — this is the style&#39;s long-run seasonal CLIMATE, not a forecast of our daily factor leadership. Kept out of every score.</span><span class="l-zh">当月各因子季节性统计——来自 Ken French 全美市场学术组合（1926年+）。定义差异：French 的多空因子与我们的 S&amp;P 1500 z 分数不同——此为长期季节性气候，非每日因子领先预测，且绝不进入任何评分。</span></span></span>
     
-    <p class="muted sm" style="margin:8px 0 0"><span class="l-en">Long-run tendencies and descriptions — not forecasts, and kept out of every score.</span><span class="l-zh">长期倾向与描述——不是预测，也不进入任何评分。</span></p>
+    <p class="muted sm" style="margin:10px 0 0"><span class="l-en">Long-run tendencies and descriptions — not forecasts, and kept out of every score.</span><span class="l-zh">长期倾向与描述——不是预测，也不进入任何评分。</span></p>
   </div>
   
 
@@ -2245,7 +2822,7 @@
   
   <div class="panel">
     <h2><span class="l-en">What is working now</span><span class="l-zh">当前哪种因子在起作用</span>
-      <span class="help">?<span class="tip"><span class="l-en">For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value &amp; low-vol leading often accompanies risk-off / late-cycle.</span><span class="l-zh">每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">For each factor, the trailing-63-day return of its top quintile MINUS its bottom quintile. Positive = that factor has been rewarded recently (descriptive, not a forecast). Compare against the regime above: e.g. value & low-vol leading often accompanies risk-off / late-cycle.</span><span class="l-zh">每个因子最近 63 个交易日内：顶部五分位减底部五分位的回报。正值=该因子近期获得回报（描述性，非预测）。</span></span></span>
     </h2>
     <p class="muted sm" style="margin:0 0 10px"><span class="l-en">What the market has rewarded over the past 3 months. Descriptive — leadership rotates.</span><span class="l-zh">过去3个月市场奖励的风格。仅为描述——领先风格会轮换。</span></p>
     <div class="lead">
@@ -2421,13 +2998,8 @@
   
   <div class="panel">
     <h2><span class="l-en">Do these rankings actually predict? — the honest test</span><span class="l-zh">这些排名真的能预测吗？— 诚实检验</span>
-      <span class="help">?<span class="tip"><span class="l-en">The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT 63-day return: the Information Coefficient (IC). mean IC = average predictive edge; 0 = none. IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can&#39;t escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.</span><span class="l-zh">大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 63 日回报做秩相关，得到信息系数 IC。平均 IC = 平均预测优势；0 = 无优势。IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值（重叠窗口使 IC 序列自相关）；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">The honest test most factor dashboards never show. At each quarter-end we rebuild every factor AS IT WAS KNOWABLE THEN — no look-ahead into a not-yet-filed 10-K (fundamentals are point-in-time) — then rank-correlate the factor score with the NEXT 63-day return: the Information Coefficient (IC). mean IC = average predictive edge; 0 = none. IC-IR (annualized) = IC ÷ its own volatility; t_HAC = Newey-West t-stat (overlapping forward windows autocorrelate the IC series); q_FDR = Benjamini-Hochberg false-discovery rate across every factor screened. One caveat the deep panel can't escape: prices cover only the currently-listed (delisted names are absent), so the deep read is survivorship-biased — an OPTIMISTIC bound. Judge each number against ZERO.</span><span class="l-zh">大多数因子面板从不展示的诚实检验。在每个季末，我们按当时可知的信息重建每个因子（无前视、基本面为时点数据），再将因子分数与未来 63 日回报做秩相关，得到信息系数 IC。平均 IC = 平均预测优势；0 = 无优势。IC-IR（年化）= IC ÷ 自身波动；t_HAC = Newey-West t 值（重叠窗口使 IC 序列自相关）；q_FDR = 跨全部因子的多重检验错误发现率。深度面板的一个无法回避的代价：价格仅覆盖现存名（已退市名缺失），故深度读数含幸存者偏差 — 为乐观上界。每个数字都应与零比较。</span></span></span>
     </h2>
-    
-    
-    <div class="ic-alert" style="border-color:var(--line);background:var(--panel2)">
-      <span class="l-en">Straight talk: of everything on this page, only Payout clears our honest prediction test — and only barely, on data tilted in its favour. Treat the rest as descriptions — what is cheap, what is high quality — not as buy lists.</span><span class="l-zh">直说：本页所有排名中，仅「Payout」勉强通过我们的诚实预测检验——且数据本身对其有利。其余请视为描述——哪些便宜、哪些优质——而非买入清单。</span>
-    </div>
     
     <p class="muted sm" style="margin:0 0 10px">
       <span class="l-en">Deep 2011-2026 test · survivor-tilted data, so treat results as an optimistic upper bound.</span><span class="l-zh">2011-2026 深度检验 · 数据含幸存者偏差，结果应视为乐观上界。</span>
@@ -2519,7 +3091,7 @@
       
       
       <tr>
-        <td><span class="l-en">sue</span><span class="l-zh">Earnings momentum (SUE)</span><span class="val-chip fdr-fail"><span class="l-en">FDR-FAIL</span><span class="l-zh">未过检</span></span></td>
+        <td><span class="l-en">Earnings momentum</span><span class="l-zh">Earnings momentum (SUE)</span><span class="val-chip fdr-fail"><span class="l-en">FDR-FAIL</span><span class="l-zh">未过检</span></span></td>
         <td class="r pos">+0.0006</td>
         <td class="r pos">+0.02</td>
         <td class="r muted">+0.07</td>
@@ -2575,7 +3147,7 @@
     </table>
     
     <p class="muted sm" style="margin:10px 0 0">
-      <span class="l-en">Crowding / overlap</span><span class="l-zh">拥挤／重叠</span><span class="help">?<span class="tip"><span class="l-en">Factors that move together are redundant (a &#39;crowded&#39; tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF &gt; 5 would flag a factor that is a linear combination of the others.</span><span class="l-zh">彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF&gt;5 表示某因子是其它因子的线性组合。</span></span></span>:
+      <span class="l-en">Crowding / overlap</span><span class="l-zh">拥挤／重叠</span><span class="help">?<span class="tip"><span class="l-en">Factors that move together are redundant (a 'crowded' tilt). Mean absolute pairwise factor correlation, raw vs after Löwdin de-correlation; the composite (de-correlated) row above strips this overlap. VIF > 5 would flag a factor that is a linear combination of the others.</span><span class="l-zh">彼此同向移动的因子是冗余的（拥挤的押注）。下为平均 |因子相关性|（原始 vs Löwdin 去相关后）；上方“综合（去相关）”行已剔除该重叠。VIF>5 表示某因子是其它因子的线性组合。</span></span></span>:
       <span class="l-en">mean |corr| 0.137 raw → 0.055 de-correlated.</span><span class="l-zh">平均 |相关性| 0.137 原始 → 0.055 去相关后。</span>
       <span class="chip">low_vol ↔ low_beta · 0.74</span><span class="chip">quality ↔ accruals · 0.71</span>
     </p>
@@ -2587,27 +3159,27 @@
   
   <div class="panel">
     <h2><span class="l-en">Market breadth</span><span class="l-zh">市场广度</span>
-      <span class="help">?<span class="tip"><span class="l-en">Share of index members trading above their own 50-day AND 200-day moving averages, across the S&amp;P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small &amp; mid breadth history starts 2023-07 (the divergence is on that common window).</span><span class="l-zh">指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Share of index members trading above their own 50-day AND 200-day moving averages, across the S&P 500 / 400 / 600 caps. This is MARKET-MEMBER participation (is the rally broad or narrow?), NOT factor-portfolio breadth. Above ~60% = broad; a small/large divergence flags where participation is rotating. Small & mid breadth history starts 2023-07 (the divergence is on that common window).</span><span class="l-zh">指数成分中股价同时高于自身 50 日与 200 日均线的比例，覆盖标普 500／400／600。这是市场成分的参与度（涨势是广泛还是狭窄），并非因子组合广度。约 60% 以上=广泛；大小盘背离提示参与度在轮动。中小盘广度数据自 2023-07 起。</span></span></span>
     </h2>
     <table>
-      <tr><th><span class="l-en">index</span><span class="l-zh">指数</span></th><th class="r"><span class="l-en">% &gt; 50d MA</span><span class="l-zh">% 高于50日线</span></th><th class="r"><span class="l-en">% &gt; 200d MA</span><span class="l-zh">% 高于200日线</span></th><th class="r"><span class="l-en">members</span><span class="l-zh">成分数</span></th></tr>
+      <tr><th><span class="l-en">index</span><span class="l-zh">指数</span></th><th class="r"><span class="l-en">% > 50d MA</span><span class="l-zh">% 高于50日线</span></th><th class="r"><span class="l-en">% > 200d MA</span><span class="l-zh">% 高于200日线</span></th><th class="r"><span class="l-en">members</span><span class="l-zh">成分数</span></th></tr>
       
       <tr>
-        <td><span class="l-en">Large cap (S&amp;P 500)</span><span class="l-zh">大盘 (标普500)</span></td>
+        <td><span class="l-en">Large cap (S&P 500)</span><span class="l-zh">大盘 (标普500)</span></td>
         <td class="r"><span class="bbar"><i style="width:65.8%;background:var(--up)"></i></span> <b class="pos">65.8%</b></td>
         <td class="r"><span class="bbar"><i style="width:66.7%;background:var(--up)"></i></span> <b class="pos">66.7%</b></td>
         <td class="r muted sm">502</td>
       </tr>
       
       <tr>
-        <td><span class="l-en">Mid cap (S&amp;P 400)</span><span class="l-zh">中盘 (标普400)</span></td>
+        <td><span class="l-en">Mid cap (S&P 400)</span><span class="l-zh">中盘 (标普400)</span></td>
         <td class="r"><span class="bbar"><i style="width:68.3%;background:var(--up)"></i></span> <b class="pos">68.3%</b></td>
         <td class="r"><span class="bbar"><i style="width:70.5%;background:var(--up)"></i></span> <b class="pos">70.5%</b></td>
         <td class="r muted sm">400</td>
       </tr>
       
       <tr>
-        <td><span class="l-en">Small cap (S&amp;P 600)</span><span class="l-zh">小盘 (标普600)</span></td>
+        <td><span class="l-en">Small cap (S&P 600)</span><span class="l-zh">小盘 (标普600)</span></td>
         <td class="r"><span class="bbar"><i style="width:67.9%;background:var(--up)"></i></span> <b class="pos">67.9%</b></td>
         <td class="r"><span class="bbar"><i style="width:72.3%;background:var(--up)"></i></span> <b class="pos">72.3%</b></td>
         <td class="r muted sm">605</td>
@@ -2624,12 +3196,12 @@
   
   <div class="panel" id="fchart-section">
     <h2><span class="l-en">Factor performance — interactive</span><span class="l-zh">因子表现 — 交互图</span>
-      <span class="help">?<span class="tip"><span class="l-en">Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&amp;P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&amp;P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.</span><span class="l-zh">在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Rebased to 0% at the start of the selected window. Four relational views: factors LONG-ONLY (carry with the market), factors vs S&P 500, the Q5−Q1 PREMIUM (market-neutral), and cap-weighted GICS SECTORS vs S&P. Click legend entries to toggle series; pick a range. Powered by TradingView Lightweight Charts.</span><span class="l-zh">在所选窗口起点重设为 0%。四种关系视图：因子纯多头、因子相对标普、Q5−Q1 溢价（市场中性）、以及市值加权 GICS 行业相对标普。点击图例切换；可选区间。</span></span></span>
     </h2>
     <div class="chartbar" style="margin-bottom:4px">
       <span class="tabs" id="fc-universe" role="group" aria-label="Universe"></span>
-      <span class="muted" style="font-size:11.5px;flex:1;min-width:240px"><span class="l-en">Broad = S&amp;P 1500 (large+mid+small); Narrow = S&amp;P 500 large-cap. This switch re-ranks only the chart, table &amp; sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.</span><span class="l-zh">广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。</span>
-        <span id="uni-note" style="display:none;color:var(--warn)"> · <span class="l-en">S&amp;P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.</span><span class="l-zh">标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。</span></span>
+      <span class="muted" style="font-size:11.5px;flex:1;min-width:240px"><span class="l-en">Broad = S&P 1500 (large+mid+small); Narrow = S&P 500 large-cap. This switch re-ranks only the chart, table & sector monitor below — the IC scorecard, crowding, quilt and breadth panels stay on the broad universe.</span><span class="l-zh">广义=标普 1500（大+中+小）；狭义=标普 500 大盘。此切换仅重排下方图表、表格与行业监测 — IC 记分卡、拥挤度、拼布与广度面板保持广义口径。</span>
+        <span id="uni-note" style="display:none;color:var(--warn)"> · <span class="l-en">S&P 500 price history starts 2025-03 (~1y) — curves are shorter and σ/z need ~1y+, so some cells show —.</span><span class="l-zh">标普 500 价格历史自 2025-03（约 1 年）— 曲线更短，σ/z 需约 1 年以上，部分单元格显示 —。</span></span>
       </span>
     </div>
     <div class="chartbar"><span class="tabs" id="fc-modes" role="group"></span><span class="tabs" id="fc-ranges" role="group"></span></div>
@@ -2639,15 +3211,15 @@
 
   <div class="panel" id="fperf-section">
     <h2><span class="l-en">Performance table</span><span class="l-zh">表现一览</span>
-      <span class="help">?<span class="tip"><span class="l-en">Every factor across horizons, watchlist-style. SCOPE toggles factor long-only portfolios vs the Q5−Q1 premium; VALUE toggles raw return, return vs the S&amp;P, and σ (the move z-scored vs that series&#39; own trailing year — fixed horizons only). Click a column to sort.</span><span class="l-zh">各因子横跨时间跨度的自选股式表格。SCOPE 切换纯多头与 Q5−Q1 溢价；VALUE 切换原始回报、相对标普、σ（相对自身过去一年的 z，仅限定窗）。点击列排序。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Every factor across horizons, watchlist-style. SCOPE toggles factor long-only portfolios vs the Q5−Q1 premium; VALUE toggles raw return, return vs the S&P, and σ (the move z-scored vs that series' own trailing year — fixed horizons only). Click a column to sort.</span><span class="l-zh">各因子横跨时间跨度的自选股式表格。SCOPE 切换纯多头与 Q5−Q1 溢价；VALUE 切换原始回报、相对标普、σ（相对自身过去一年的 z，仅限定窗）。点击列排序。</span></span></span>
     </h2>
     <div class="chartbar"><span class="tabs" id="fp-scope" role="group"></span><span class="tabs" id="fp-mode" role="group"></span></div>
     <div class="ts"><table id="fperf-table"></table></div>
   </div>
 
   <div class="panel" id="sector-section">
-    <h2><span class="l-en">Sector monitor — cap-weighted GICS vs S&amp;P</span><span class="l-zh">行业监测 — 市值加权 GICS 相对标普</span>
-      <span class="help">?<span class="tip"><span class="l-en">Each cap-weighted GICS sector&#39;s return RELATIVE to the S&amp;P over each horizon, colored by how unusual that move is vs the sector&#39;s own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.</span><span class="l-zh">每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。</span></span></span>
+    <h2><span class="l-en">Sector monitor — cap-weighted GICS vs S&P</span><span class="l-zh">行业监测 — 市值加权 GICS 相对标普</span>
+      <span class="help">?<span class="tip"><span class="l-en">Each cap-weighted GICS sector's return RELATIVE to the S&P over each horizon, colored by how unusual that move is vs the sector's own trailing-year distribution (z). Deep color + |z|≥2 = an outsized rotation. The small number is the relative return; the big number is the z.</span><span class="l-zh">每个市值加权 GICS 行业相对标普的回报（各时间跨度），按该走势相对其自身过去一年分布的异常程度（z）着色。颜色越深、|z|≥2 = 异常轮动。小字为相对回报，大字为 z。</span></span></span>
     </h2>
     <div class="ts"><table id="sector-monitor"></table></div>
   </div>
@@ -2668,7 +3240,7 @@
         <th class="r"><span class="l-en">LO Sharpe</span><span class="l-zh">纯多头夏普</span></th>
         <th class="r"><span class="l-en">Q5−Q1 cum</span><span class="l-zh">多空累计</span></th>
         <th class="r"><span class="l-en">Q5−Q1 Sharpe (95% CI)</span><span class="l-zh">多空夏普（CI）</span></th>
-        <th class="r"><span class="l-en">P(Sharpe&gt;0)</span><span class="l-zh">P(夏普&gt;0)</span></th>
+        <th class="r"><span class="l-en">P(Sharpe>0)</span><span class="l-zh">P(夏普>0)</span></th>
       </tr>
       
       
@@ -2798,7 +3370,7 @@
   <div class="panel">
     <div class="topline" style="margin-bottom:8px">
       <h2 style="margin:0"><span class="l-en">Recent moves — z vs trailing year</span><span class="l-zh">近期变动 — 相对过去一年的 z</span>
-        <span class="help">?<span class="tip"><span class="l-en">Each horizon&#39;s compounded return z-scored against that series&#39; own trailing-252 distribution of overlapping returns (|z|≥2 = a notable move, marked ●). Green/red follows the sign of the move. Toggle the long-only portfolio vs the Q5−Q1 premium.</span><span class="l-zh">各时间跨度的复利回报，相对该序列自身过去 252 日重叠回报分布做 z 标准化（|z|≥2 为显著，标 ●）。绿/红表示方向。可切换纯多头与多空溢价。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Each horizon's compounded return z-scored against that series' own trailing-252 distribution of overlapping returns (|z|≥2 = a notable move, marked ●). Green/red follows the sign of the move. Toggle the long-only portfolio vs the Q5−Q1 premium.</span><span class="l-zh">各时间跨度的复利回报，相对该序列自身过去 252 日重叠回报分布做 z 标准化（|z|≥2 为显著，标 ●）。绿/红表示方向。可切换纯多头与多空溢价。</span></span></span>
       </h2>
       <span style="flex:1"></span>
       <span class="seg" id="legseg">
@@ -3070,7 +3642,7 @@
     
     <div class="panel">
       <h2><span class="l-en">Quilt — Q5−Q1 monthly ranks</span><span class="l-zh">拼布 — 多空月度排名</span>
-        <span class="help">?<span class="tip"><span class="l-en">The periodic-table-of-returns: each column ranks the factor Q5−Q1 premiums best→worst that month (and a YTD column), cells colored by factor IDENTITY so you can trace one factor&#39;s path — hover a cell to highlight it across every column. ~13 months on the free cache; descriptive, not a regime-robust signal.</span><span class="l-zh">收益周期表：每列按当月多空溢价从优到劣排名（含 YTD 列），单元格按因子着色以便追踪某一因子 — 悬停某格可高亮其在各列的位置。免费缓存约13个月；描述性，非稳健信号。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">The periodic-table-of-returns: each column ranks the factor Q5−Q1 premiums best→worst that month (and a YTD column), cells colored by factor IDENTITY so you can trace one factor's path — hover a cell to highlight it across every column. ~13 months on the free cache; descriptive, not a regime-robust signal.</span><span class="l-zh">收益周期表：每列按当月多空溢价从优到劣排名（含 YTD 列），单元格按因子着色以便追踪某一因子 — 悬停某格可高亮其在各列的位置。免费缓存约13个月；描述性，非稳健信号。</span></span></span>
       </h2>
       <div class="scroll"><table class="quilt2">
         <tr><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>YTD</th></tr>
@@ -3123,7 +3695,7 @@
   <!-- Composite leaders / laggards -->
   <div class="panel">
     <h2><span class="l-en">Multi-factor composite</span><span class="l-zh">多因子综合</span>
-      <span class="help">?<span class="tip"><span class="l-en">The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite&#39;s own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.</span><span class="l-zh">此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite's own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.</span><span class="l-zh">此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。</span></span></span>
       <span class="muted sm">· <span class="l-en">ranked by</span><span class="l-zh">排序依据</span>: Value · Quality · Profitability · Shareholder yield · <span class="l-en">excluded (negative IC)</span><span class="l-zh">已排除（负IC）</span>: Investment, Low volatility</span>
     </h2>
     <div class="twocol">
@@ -3172,7 +3744,7 @@
             <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td><td class="r zpos">+2.63</td>
             <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#KSS"><b>KSS</b></a> <span class="muted sm">Kohl&#39;s Corp.</span></td>
+          <tr><td><a href="stock.html#KSS"><b>KSS</b></a> <span class="muted sm">Kohl's Corp.</span></td>
             <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.61</td>
             <td class="r muted sm">$2B</td></tr>
           
@@ -3188,7 +3760,7 @@
             <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.43</td>
             <td class="r muted sm">$1B</td></tr>
           
-          <tr><td><a href="stock.html#HIMS"><b>HIMS</b></a> <span class="muted sm">Hims &amp; Hers Health</span></td>
+          <tr><td><a href="stock.html#HIMS"><b>HIMS</b></a> <span class="muted sm">Hims & Hers Health</span></td>
             <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zpos">+2.40</td>
             <td class="r muted sm">—</td></tr>
           
@@ -3408,7 +3980,7 @@
             <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zpos">+$8.1M</td>
             <td class="r muted sm">4/0</td></tr>
           
-          <tr><td><a href="stock.html#CNS"><b>CNS</b></a> <span class="muted sm">Cohen &amp; Steers, Inc.</span></td>
+          <tr><td><a href="stock.html#CNS"><b>CNS</b></a> <span class="muted sm">Cohen & Steers, Inc.</span></td>
             <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+$15.9M</td>
             <td class="r muted sm">2/1</td></tr>
           
@@ -3668,7 +4240,7 @@
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#DPZ"><b>DPZ</b></a></td>
-            <td class="muted sm">Domino&#39;s</td>
+            <td class="muted sm">Domino's</td>
             <td class="r zpos">+3.00</td></tr>
           
           <tr><td><a href="stock.html#ACI"><b>ACI</b></a></td>
@@ -3813,7 +4385,7 @@
             <td class="r zpos">+1.51</td></tr>
           
           <tr><td><a href="stock.html#PECO"><b>PECO</b></a></td>
-            <td class="muted sm">Phillips Edison &amp; </td>
+            <td class="muted sm">Phillips Edison & </td>
             <td class="r zpos">+1.50</td></tr>
           
           <tr><td><a href="stock.html#FE"><b>FE</b></a></td>
@@ -4047,97 +4619,66 @@
     </div>
   </div>
 
-  <!-- How this research feeds the system — NW technical status (MOVED to bottom per doctrine) -->
-  <div class="panel" style="font-size:12.5px">
-    <div class="topline" style="margin-bottom:8px">
-      <h2 style="margin:0"><span class="l-en">How this research feeds the system — technical status</span><span class="l-zh">本页研究如何接入系统——技术状态</span>
-        <span class="help">?<span class="tip"><span class="l-en">Factor intelligence is context-only inside the Neural Web: it explains regime context and flags attention candidates for the cortex to consider, but it never ranks, scores, or originates signals (RUL-NW7). The BH-WITHHELD chip is mandatory until the 5-hypothesis family FDR sweep completes (per RUL-NW7, display-only interim).</span><span class="l-zh">因子智能在神经网络中仅作为背景：解释市场体制背景，为皮层标记关注候选项，但从不排名、评分或发起信号（RUL-NW7）。BH-WITHHELD 标签为必须项，直至五假设家族 FDR 整体检验完成。</span></span></span>
+  
+  <div class="panel">
+    <div class="topline" style="margin-bottom:10px">
+      <h2 style="margin:0"><span class="l-en">What this feeds</span><span class="l-zh">本页如何接入系统</span>
+        <span class="help">?<span class="tip"><span class="l-en">Factor intelligence is context-only inside the Neural Web: it explains style-regime context and flags attention candidates, but it never ranks, scores, or originates a signal (RUL-NW7). Influence is earned through graded probation against pre-registered gates, never self-asserted — the meters below are that probation, counted honestly. The five registered hypotheses (H1 factor_weather conditioning, H2 Pair-G severity, H3 cross-section alibi, H4 attention earn-in, H5 leader/macro alignment) stay BH-WITHHELD until the family-wide FDR sweep runs.</span><span class="l-zh">因子智能在神经网络中仅作为背景：解释风格体制背景、标记关注候选项，但从不排名、评分或发起信号（RUL-NW7）。影响力须通过预注册关卡的分级试用赚取，不可自我主张——下方计量即为该试用过程。五项已注册假设在家族 FDR 整体检验完成前保持 BH-WITHHELD 状态。</span></span></span>
       </h2>
       
-        <span class="nw-chip accruing"><span class="l-en">ACCRUING</span><span class="l-zh">累积中</span></span>
+        <span class="chip" style="color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent);background:color-mix(in srgb,var(--warn) 9%,transparent)"><span class="l-en">still learning</span><span class="l-zh">累积中</span></span>
       
+      <span class="muted sm" style="margin-left:auto">2026-07-26</span>
     </div>
-    <p class="muted sm" style="margin:0 0 8px"><span class="l-en">For the curious: what this factor research may influence elsewhere. Short version — it explains and observes; it never picks stocks or moves rankings.</span><span class="l-zh">给好奇者：本页因子研究可影响系统的哪些部分。简言之——只解释与观察，从不选股或改动排名。</span></p>
 
     
-    <div class="nw-status-grid">
-      <span class="nw-lab"><span class="l-en">As of</span><span class="l-zh">数据日期</span></span>
-      <span>2026-07-26
-        <span class="muted"> · 10 <span class="l-en">dates</span><span class="l-zh">个日期</span> · <span class="l-en">latest</span><span class="l-zh">最新</span> 2026-07-24</span>
-        <span class="nw-chip dormant" style="font-size:9px;padding:0 5px;margin-left:6px"><span class="l-en">floor pending</span><span class="l-zh">基础待建</span></span>
-      </span>
 
+    
+    <p style="margin:0 0 14px;font-size:13px;line-height:1.55">
       
-      <span class="nw-lab"><span class="l-en">Style regime</span><span class="l-zh">风格体制</span></span>
-      <span>
-        <span class="chip">mixed</span>
-        
-          <span class="muted"><span class="l-en">leader</span><span class="l-zh">领先因子</span></span> <span class="chip">low_beta</span>
-          <span class="muted sm"> IC -0.0151</span>
-        
-      </span>
       
+      
+      <span class="l-en">Right now it tells the rest of the system one thing: the market is leaning toward
+        <b>Low beta (BAB)</b>, in a
+        <b>mixed</b> style regime held 10 days.
+        That same lean has a measured edge of -0.015 — 
+        the wrong way round, so it is context to explain the tape with, never a reason to buy it.</span>
+      <span class="l-zh">当前它只向系统传达一件事：市场正偏向<b>Low beta (BAB)</b>，风格体制为<b>mixed</b>，已持续 10 天。
+        该偏向的实测优势为 -0.015——方向为负，因此只能用于解释行情，绝非买入理由。</span>
+      
+    </p>
 
-      <span class="nw-lab"><span class="l-en">Pair G (contradictions)</span><span class="l-zh">G 对（矛盾）</span>
-        <span class="help">?<span class="tip"><span class="l-en">Pair G is the Neural Web contradiction detector: it flags factor-vs-NW signal mismatches above a severity threshold. Dormant until the factor panel exceeds 60 dates (config/reflexes.yml §555). Severity policy: note is the current ceiling (H2 gate-passed required for tension; RUL-NW12).</span><span class="l-zh">G 对是神经网络矛盾检测器：当因子与神经网络信号之间的不一致超过严重程度阈値时，进行标记。</span></span></span>
-      </span>
-      <span>
-        
-          <span class="nw-chip dormant"><span class="l-en">DORMANT</span><span class="l-zh">休眠</span></span>
-        
-        <span class="muted sm"> · <span class="l-en">severity ceiling: note (H2 gate required for tension)</span><span class="l-zh">严重程度上限：note（tension 需 H2 关卡）</span></span>
-      </span>
-
-      <span class="nw-lab"><span class="l-en">Factor attention</span><span class="l-zh">因子关注度</span>
-        <span class="help">?<span class="tip"><span class="l-en">The factor_attention reflex fires when a factor signal warrants cortex attention. Authority tier shows how much influence the attention reflex has been granted (A0/A1 = shadow only; granted = full attend allowed). Influence is earned through graded probation, never self-asserted.</span><span class="l-zh">因子关注反射在因子信号值得皮层注意时触发。权限等级显示该关注反射被授予的影响力。</span></span></span>
-      </span>
-      <span>
-        <span class="chip"><span class="l-en">tier</span><span class="l-zh">等级</span>: A0/A1 shadow</span>
-        <span class="muted sm"> · 0 <span class="l-en">firings</span><span class="l-zh">次触发</span> · 0 <span class="l-en">graded</span><span class="l-zh">已评级</span></span>
-        
-          <span class="nw-chip dormant" style="font-size:9px;padding:0 5px"><span class="l-en">refused</span><span class="l-zh">未授权</span></span>
-        
-      </span>
-
-      <span class="nw-lab"><span class="l-en">Hypotheses H1–H5</span><span class="l-zh">假设 H1–H5</span>
-        <span class="help">?<span class="tip"><span class="l-en">H1=factor_weather to NW conditioning, H2=Pair G severity elevation, H3=cross-section alibi on board fires, H4=factor_attention earn-in, H5=factor_leader macro alignment. All carry BH-WITHHELD status until the 5-hypothesis family FDR sweep runs (RUL-NW6). PRE-FDR INTERIM = registered, accruing data, but not actionable before family BH.</span><span class="l-zh">H1=因子天气→神经网络条件，H2=G 对严重程度提升，H3=买盘触发的横截面依据，H4=因子关注赚取，H5=因子领先者宏观对齐。</span></span></span>
-      </span>
-      <span>
-        
-          
-          <span class="nw-chip bh-withheld">H1: BH-WITHHELD</span>
-        
-          
-          <span class="nw-chip bh-withheld">H2: BH-WITHHELD</span>
-        
-          
-          <span class="nw-chip bh-withheld">H3: BH-WITHHELD</span>
-        
-          
-          <span class="nw-chip bh-withheld">H4: BH-WITHHELD</span>
-        
-          
-          <span class="nw-chip bh-withheld">H5: BH-WITHHELD</span>
-        
-        <span class="muted sm" style="display:block;margin-top:4px"><span class="l-en">Mandatory interim: BH-WITHHELD on all 5 hypotheses until family FDR sweep completes (est. ≥2027). PRE-FDR INTERIM data is accruing.</span><span class="l-zh">强制过渡期：所有 5 个假设的 BH-WITHHELD 状态将保持至家族 FDR 整体检验完成（预计≥2027）。PRE-FDR INTERIM 数据正在累积。</span></span>
-      </span>
-
-      <span class="nw-lab"><span class="l-en">Allowed influence</span><span class="l-zh">允许的影响</span>
-        <span class="help">?<span class="tip"><span class="l-en">What factor intelligence is and is not permitted to do inside the Neural Web, per RUL-NW7/NW9 and the constitution. Explain and shadow-attend are always permitted for context. De-escalation and ranking are permanently prohibited at this tier.</span><span class="l-zh">根据 RUL-NW7/NW9 和章程，因子智能在神经网络内被允许和禁止的操作。解释和影子关注始终允许用于背景分析。去升级和排名在当前等级下永久禁止。</span></span></span>
-      </span>
-      <span class="nw-influence">
-        <span class="nw-chip live"><span class="l-en">explain — always</span><span class="l-zh">解释 — 始终允许</span></span>
-        <span class="nw-chip shadow"><span class="l-en">attend — shadow only</span><span class="l-zh">关注 — 仅影子</span></span>
-        <span class="nw-chip dormant"><span class="l-en">de-escalate — no</span><span class="l-zh">去升级 — 禁止</span></span>
-        <span class="nw-chip dormant"><span class="l-en">rank — never</span><span class="l-zh">排名 — 永不</span></span>
-      </span>
+    
+    <div class="acc">
+      
+      
+      <div class="acc-item">
+        <div class="acc-top">
+          <span class="acc-lab"><span class="l-en">History collected</span><span class="l-zh">历史累积</span></span>
+          <span class="acc-val ">10 / 60</span>
+        </div>
+        <div class="acc-rail"><i class="acc-fill " style="width:16.7%"></i></div>
+        <p class="acc-sub"><span class="l-en">Days of factor panel history. The contradiction detector — which flags when this page disagrees with the rest of the system — stays switched off until 60.</span><span class="l-zh">因子面板的历史天数。矛盾检测器（当本页与系统其余部分相左时触发）在满 60 天前保持关闭。</span></p>
+      </div>
+      
+      
+      <div class="acc-item">
+        <div class="acc-top">
+          <span class="acc-lab"><span class="l-en">Calls graded</span><span class="l-zh">已评级触发</span></span>
+          <span class="acc-val ">0 / 25</span>
+        </div>
+        <div class="acc-rail"><i class="acc-fill " style="width:0.0%"></i></div>
+        <p class="acc-sub"><span class="l-en">Times the factor lane has raised its hand and had the call graded afterwards. It cannot be granted any real influence before 25 — it is marked in shadow until then.</span><span class="l-zh">因子通道主动提示并在事后被评级的次数。满 25 次前不会被授予任何实际影响力，此前仅以影子模式运行。</span></p>
+      </div>
     </div>
+
+    <p class="muted sm" style="margin:14px 0 0;padding-top:12px;border-top:1px solid var(--fx-brd)"><span class="l-en">What it is allowed to do, today: explain, and quietly flag names worth a look. What it is never allowed to do: rank, score, or downgrade a signal on its own. Five registered ideas about how factors could inform the system are still being tested and none is in use.</span><span class="l-zh">它目前被允许做的：解释行情、低调标记值得关注的个股。它永远不被允许做的：自行排名、评分或下调信号。五项关于因子如何为系统提供信息的注册假设仍在检验中，均未投入使用。</span></p>
     
   </div>
 
   <div class="panel">
-    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL &#39;frames&#39; API (free, keyless) for FY2025 fundamentals, joined to the S&amp;P 1500 price universe; 1498 names with a full composite as of 2026-07-24. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL &#39;frames&#39; API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-24 有 1498 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-26 06:30 UTC</p>
+    <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY2025 fundamentals, joined to the S&P 1500 price universe; 1498 names with a full composite as of 2026-07-24. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL 'frames' API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-24 有 1498 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-26 07:46 UTC</p>
   </div>
   <script>
     (function(){
@@ -4248,6 +4789,6 @@
   })();
   </script>
   
-  <script src="theme.js?v=71e80ee5" defer></script>
+  <script src="theme.js"></script>
 </body>
 </html>

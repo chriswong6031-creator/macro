@@ -26,7 +26,7 @@ from plotly.subplots import make_subplots
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collectors.sponsors import flows_table  # noqa: E402
-from engine.i18n import t as T  # noqa: E402
+from engine.i18n import prettify as _prettify, t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, site_assets, store  # noqa: E402
@@ -2978,6 +2978,7 @@ _IC_LABELS = {
     "investment": "Investment", "payout": "Payout", "low_vol": "Low volatility",
     "low_beta": "Low beta", "accruals": "Accruals", "short_interest": "Low short interest",
     "composite": "Composite", "composite_orth": "Composite (de-correlated)",
+    "sue": "Earnings momentum",
 }
 
 
@@ -2998,7 +2999,9 @@ def _load_ic_scorecard() -> dict | None:
     facs = ic.get("factors") or {}
     if not facs:
         return None
-    rows = [{"factor": k, "label_en": _IC_LABELS.get(k, k), **v} for k, v in facs.items()]
+    # prettified fallback, never the raw key (DESIGN_DOCTRINE Law 2)
+    rows = [{"factor": k, "label_en": _IC_LABELS.get(k) or _prettify(k), **v}
+            for k, v in facs.items()]
     # mirror the report's order: best forward-IC information ratio first
     rows.sort(key=lambda r: -(r["ic_ir_ann"] if r.get("ic_ir_ann") is not None else -9))
     ic["rows"] = rows

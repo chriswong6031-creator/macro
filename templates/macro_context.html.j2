@@ -77,15 +77,31 @@ body::before {
   padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600;
   letter-spacing: .03em; white-space: nowrap;
 }
-.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); color: var(--q1); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
-.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); color: var(--q2); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
-.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); color: var(--q3); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
-.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); color: var(--q4); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
-.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); color: var(--up);   border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
-.c-down { background: color-mix(in srgb,var(--down)  14%,var(--panel)); color: var(--down); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
-.c-warn { background: color-mix(in srgb,var(--warn)  14%,var(--panel)); color: var(--warn); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
-.c-info { background: color-mix(in srgb,var(--info)  14%,var(--panel)); color: var(--info); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
-.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); color: var(--muted); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
+/* Status tokens are COLOUR-ONLY. They are worn by bare text (.kpi-val, .liq-stat-v,
+   .hero-score-num …) as often as by pills, and a tint+border on an element with no
+   padding and no radius paints a hard-edged rectangle hugging the glyphs — the
+   "square background container" defect (operator, 2026-07-26). The tinted surface
+   belongs to the pill form alone, below. */
+.c-q1  { color: var(--q1); }
+.c-q2  { color: var(--q2); }
+.c-q3  { color: var(--q3); }
+.c-q4  { color: var(--q4); }
+.c-up   { color: var(--up); }
+.c-down { color: var(--down); }
+.c-warn { color: var(--warn); }
+.c-info { color: var(--info); }
+.c-muted { color: var(--muted); }
+/* Pill form: only .chip (and anything that opts in via .chip) gets the tinted
+   surface — it is the element that actually carries padding + a 100px radius. */
+.chip.c-q1  { background: color-mix(in srgb,var(--q1) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q1) 30%,transparent); }
+.chip.c-q2  { background: color-mix(in srgb,var(--q2) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q2) 30%,transparent); }
+.chip.c-q3  { background: color-mix(in srgb,var(--q3) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q3) 30%,transparent); }
+.chip.c-q4  { background: color-mix(in srgb,var(--q4) 16%,var(--panel)); border: 1px solid color-mix(in srgb,var(--q4) 30%,transparent); }
+.chip.c-up   { background: color-mix(in srgb,var(--up)   14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--up)   25%,transparent); }
+.chip.c-down { background: color-mix(in srgb,var(--down) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--down) 25%,transparent); }
+.chip.c-warn { background: color-mix(in srgb,var(--warn) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+.chip.c-info { background: color-mix(in srgb,var(--info) 14%,var(--panel)); border: 1px solid color-mix(in srgb,var(--info) 25%,transparent); }
+.chip.c-muted { background: color-mix(in srgb,var(--muted) 12%,var(--panel)); border: 1px solid color-mix(in srgb,var(--muted) 20%,transparent); }
 
 /* ── Stale dots ─────────────────────────────────────────────── */
 .stale-ok   { color: var(--up);   }
@@ -114,32 +130,40 @@ body::before {
   padding: 28px 32px; margin-bottom: 28px; position: relative; overflow: hidden;
   animation: fadeInUp .5s ease both;
 }
+/* Ambient wash — ONE state hue bleeding from the top-left, fading to nothing.
+   --hs is set per-state on .hero (see .hero.s-* below) so the page's atmosphere
+   follows the verdict the way macro.html's aurora does. Single hue on purpose:
+   a multi-hue diagonal reads as decoration, not as a signal. */
 .hero::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg,
-    color-mix(in srgb,var(--up) 5%,transparent) 0%,
-    transparent 50%,
-    color-mix(in srgb,var(--info) 4%,transparent) 100%);
+  background:
+    radial-gradient(ellipse 70% 90% at 0% 0%, color-mix(in srgb,var(--hs) 7%,transparent) 0%, transparent 72%);
   pointer-events: none;
 }
 .hero-content { position: relative; }
 .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+/* Solid ink, tight tracking. The verdict's colour is carried by the score box and
+   the regime chip — a gradient headline spends colour on decoration and, being
+   background-clipped, degrades to invisible text wherever the clip is unsupported. */
 .hero-headline {
-  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
-  background: linear-gradient(135deg, var(--up) 0%, var(--info) 55%, var(--warn) 100%);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  margin-bottom: 8px;
+  font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -.03em; line-height: 1.14;
+  color: var(--text); margin-bottom: 8px; max-width: 20ch; text-wrap: balance;
 }
 .hero-sub { font-size: 13px; color: var(--muted); max-width: 520px; line-height: 1.6; margin-top: 4px; }
+/* State hue for the hero. Default neutral; .s-* set by the score class. */
+.hero { --hs: var(--muted); }
+.hero.s-up   { --hs: var(--up); }
+.hero.s-warn { --hs: var(--warn); }
+.hero.s-down { --hs: var(--down); }
 .hero-score-box {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-width: 110px; padding: 16px 20px; border-radius: 12px;
-  background: color-mix(in srgb,var(--up) 10%,var(--panel2));
-  border: 1px solid color-mix(in srgb,var(--up) 25%,transparent); flex-shrink: 0;
+  background: color-mix(in srgb,var(--hs) 10%,var(--panel2));
+  border: 1px solid color-mix(in srgb,var(--hs) 25%,transparent); flex-shrink: 0;
 }
-.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--up); opacity: .7; }
+.hero-score-label { font-size: 10px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--hs); opacity: .75; }
 .hero-score-num { font-size: 48px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .hero-score-tag { font-size: 11px; font-weight: 600; margin-top: 2px; }
 
@@ -517,7 +541,7 @@ body::before {
   </div>
 
   <!-- ── HERO ──────────────────────────────────────────────────── -->
-  <div id="hero" class="hero">
+  <div id="hero" class="hero{% if vm.hero.score_cls %} s-{{ vm.hero.score_cls[2:] }}{% endif %}">
     <div class="hero-content">
       <div class="hero-top">
         <div class="hero-headline-group">

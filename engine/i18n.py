@@ -27,17 +27,67 @@ def t(en: str, zh: str | None = None) -> Markup:
     return Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(en, zh)
 
 
+# Tokens that must keep their casing when a machine slug is prettified.
+_KEEP_CASE = {
+    "us", "eu", "ez", "uk", "gb", "jp", "cn", "hk", "au", "nz", "in", "kr", "tw",
+    "br", "mx", "ca", "ch", "em", "dm", "fx", "usd", "eur", "gbp", "jpy", "chf",
+    "cad", "aud", "nzd", "cnh", "cny", "brl", "mxn", "krw", "twd", "dxy", "vix",
+    "gdp", "cpi", "ppi", "pce", "pmi", "ism", "etf", "reit", "ai", "ic", "ir",
+    "ytd", "mtd", "qoq", "yoy", "mom", "atr", "rsi", "ma", "sma", "ema", "mtf",
+    "spx", "ndx", "rut", "spy", "qqq", "tga", "rrp", "hy", "ig", "bp", "bps",
+}
+
+
+def prettify(slug: str) -> str:
+    """Turn a machine identifier into a human label.
+
+    The last line of defence for DESIGN_DOCTRINE Law 2 (`raw machine slugs` are
+    banned from the glance tier): a display name that is missing from its label
+    map must degrade to something readable, never to `commodity_ladder`. Splits
+    on `_`/`-`, sentence-cases, and preserves known acronyms and country codes.
+    Anything already containing a space is assumed to be prose and returned as-is.
+    """
+    if not isinstance(slug, str):
+        return slug
+    s = slug.strip()
+    if not s or " " in s:
+        return slug
+    if not any(sep in s for sep in ("_", "-")) and not s.islower() and not s.isupper():
+        return slug  # already CamelCase / mixed prose-ish — leave alone
+    parts = [p for p in s.replace("-", "_").split("_") if p]
+    if not parts:
+        return slug
+    out = []
+    for i, p in enumerate(parts):
+        low = p.lower()
+        if low in _KEEP_CASE:
+            out.append(low.upper())
+        elif i == 0:
+            out.append(low.capitalize())
+        else:
+            out.append(low)
+    return " ".join(out)
+
+
 def tr(en: str) -> str:
     """Canonical Chinese for a finite-vocab English label, else the English."""
     if en is None:
         return en
     if not isinstance(en, str):  # dynamic callers may pass ints/None-likes; pass through
         return en
-    return LEX.get(en, LEX.get(en.strip(), en))
+    hit = LEX.get(en, LEX.get(en.strip()))
+    if hit is not None:
+        return hit
+    # Unknown term: a raw slug reads as broken in BOTH languages, so prettify
+    # before falling through to the English. (A prettified EN label in the zh
+    # column is the existing, accepted fallback for unglossed vocabulary.)
+    return LEX.get(prettify(en), prettify(en))
 
 
 def td(en: str) -> Markup:
     """Bilingual span for a dynamic English label, via the glossary."""
+    if isinstance(en, str) and en.strip() not in LEX:
+        return t(prettify(en), tr(en))
     return t(en, tr(en))
 
 

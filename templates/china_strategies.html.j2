@@ -87,7 +87,7 @@ html[data-theme="dark"] .stance{background:var(--grid)}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:900px}
 /* ===== China Mastermind Flagships — pinned, highlighted hero (byte-faithful copy of the US strategies.html hero) ===== */
 .mm-hero{position:relative;margin:22px 0 8px;padding:20px 20px 22px;border-radius:20px;
-  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,#1FA971,#285fff,#a855f7) border-box;
+  background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(160deg,color-mix(in srgb,var(--ink) 22%,transparent),color-mix(in srgb,var(--ink) 7%,transparent)) border-box;
   border:1.5px solid transparent;box-shadow:0 10px 40px rgba(40,95,255,.10)}
 html[data-theme="dark"] .mm-hero{box-shadow:0 14px 50px rgba(120,80,255,.18)}
 .mm-hero-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
@@ -95,14 +95,12 @@ html[data-theme="dark"] .mm-hero{box-shadow:0 14px 50px rgba(120,80,255,.18)}
    box-shadow spread repainted per frame); shimmer at steps(60) ≈ 6fps — visually
    identical soft drift, ~90% fewer text repaints. */
 .mm-pin{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;position:relative;
-  background:linear-gradient(120deg,#285fff,#a855f7);padding:4px 10px;border-radius:999px}
+  background:var(--blue);padding:4px 10px;border-radius:999px}
 .mm-pin::after{content:"";position:absolute;inset:0;border-radius:999px;pointer-events:none;
-  box-shadow:0 0 0 4px rgba(168,85,247,.45);animation:mm-ping 2.6s ease-out infinite}
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 45%,transparent);animation:mm-ping 2.6s ease-out infinite}
 @keyframes mm-ping{0%{transform:scale(1);opacity:1}70%,100%{transform:scale(1.9);opacity:0}}
 .mm-title{font-size:20px;font-weight:800;letter-spacing:-.02em;
-  background:linear-gradient(90deg,#1FA971,#285fff,#a855f7,#1FA971);background-size:300% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;animation:mm-shimmer 9s steps(60) infinite}
-@keyframes mm-shimmer{to{background-position:300% 0}}
+  color:var(--ink)}
 @media(prefers-reduced-motion:reduce){.mm-pin::after,.mm-title{animation:none}}
 .mm-sub{color:var(--muted);font-size:13px}
 .mm-hub-link{margin-left:auto;font-size:13px;font-weight:700;color:var(--blue);text-decoration:none;white-space:nowrap}
@@ -125,7 +123,7 @@ html[data-theme="dark"] .mm-card{background:var(--grid)}
 .mm-cagr small{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .mm-bench{font-size:11.5px;color:var(--faint);margin:5px 0 10px}
 .mm-bench b{color:var(--accent);font-weight:800}
-.mm-meter{height:6px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);position:relative;margin:2px 2px 13px}
+.mm-meter{height:6px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#e5484d);position:relative;margin:2px 2px 13px}
 .mm-meter::after{content:"";position:absolute;top:50%;left:calc(var(--pos) * 100%);transform:translate(-50%,-50%);width:13px;height:13px;border-radius:50%;background:#fff;border:2.5px solid var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .mm-mets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .mm-mets>div{text-align:center;background:var(--card);border-radius:9px;padding:7px 4px}
@@ -135,9 +133,7 @@ html[data-theme="dark"] .mm-mets>div{background:var(--bg)}
 .mm-d{display:block;font-size:9.5px;color:var(--faint)}
 .mm-go{font-size:13px;font-weight:800;color:var(--accent)}
 /* zh: swap green→red in directional gradients */
-html[data-lang="zh"] .mm-hero{background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(120deg,var(--red),#285fff,#a855f7) border-box}
-html[data-lang="zh"] .mm-title{background:linear-gradient(90deg,var(--red),#285fff,#a855f7,var(--red));background-size:300% 100%;-webkit-background-clip:text;background-clip:text}
-html[data-lang="zh"] .mm-meter{background:linear-gradient(90deg,var(--red),#e0a106,#a855f7)}
+html[data-lang="zh"] .mm-meter{background:linear-gradient(90deg,var(--red),#e0a106,#1FA971)}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
