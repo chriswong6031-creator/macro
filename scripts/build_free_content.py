@@ -10,6 +10,16 @@ Usage:
     python3 -m scripts.build_free_content --check   # validate + render to tmp,
                                                     # compare against site/ output
                                                     # (exit 1 on drift)
+
+A full build writes this builder's own output.  The committed pages are that
+output PLUS the render lanes' post-render sweeps (externalize_css lifts the big
+inline <style> into site/assets/css/<hash>.css; optimize_assets adds ?v= stamps,
+defer and preload hints; inject_wh_banner adds the alert ticker in daily.yml
+only — the data-base shim is injected here at write time via lib.pages.write_page,
+per that module's "ALL builders must write site/**/*.html through this").  So a
+plain build leaves site/ mid-pipeline: run the sweeps, or let a render lane do
+it, before judging the diff.  --check replays them over its temp render so it
+compares like against like (see _check_mode).
 """
 from __future__ import annotations
 
@@ -36,6 +46,7 @@ from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 
+from lib.pages import write_page  # noqa: E402
 from lib.seo import SITE_BASE, page_url  # noqa: E402
 
 _CONTENT_DIR = _REPO / "content" / "seo"
@@ -959,7 +970,7 @@ def render_all(out_dir: Path) -> None:
             sys.exit(2)
 
         html = tmpl.render(**ctx)
-        out_path.write_text(html, encoding="utf-8")
+        write_page(out_path, html, encoding="utf-8")
 
     # ---- Render hubs ----
     # Blog hub
@@ -968,7 +979,7 @@ def render_all(out_dir: Path) -> None:
         blog_ctx = _blog_hub_ctx(pages)
         blog_out = out_dir / "blog" / "index.html"
         blog_out.parent.mkdir(parents=True, exist_ok=True)
-        blog_out.write_text(blog_tmpl.render(**blog_ctx), encoding="utf-8")
+        write_page(blog_out, blog_tmpl.render(**blog_ctx), encoding="utf-8")
     except TemplateNotFound:
         print("ERROR: template 'seo_blog_index.html.j2' not found", file=sys.stderr)
         sys.exit(2)
@@ -979,7 +990,7 @@ def render_all(out_dir: Path) -> None:
         learn_ctx = _learn_hub_ctx(pages)
         learn_out = out_dir / "learn" / "index.html"
         learn_out.parent.mkdir(parents=True, exist_ok=True)
-        learn_out.write_text(learn_tmpl.render(**learn_ctx), encoding="utf-8")
+        write_page(learn_out, learn_tmpl.render(**learn_ctx), encoding="utf-8")
     except TemplateNotFound:
         print("ERROR: template 'seo_learn_index.html.j2' not found", file=sys.stderr)
         sys.exit(2)
@@ -990,7 +1001,7 @@ def render_all(out_dir: Path) -> None:
         tools_ctx = _tools_hub_ctx(calc_registry)
         tools_out = out_dir / "tools" / "index.html"
         tools_out.parent.mkdir(parents=True, exist_ok=True)
-        tools_out.write_text(tools_tmpl.render(**tools_ctx), encoding="utf-8")
+        write_page(tools_out, tools_tmpl.render(**tools_ctx), encoding="utf-8")
     except TemplateNotFound:
         print("ERROR: template 'seo_tools_index.html.j2' not found", file=sys.stderr)
         sys.exit(2)
@@ -1044,11 +1055,21 @@ def render_all(out_dir: Path) -> None:
                  "title": "Free trading journal spreadsheet"}
             ]
 
-            calc_cta: dict[str, str] | None = None
+            # Every calculator page carries a "next step" — it is the only
+            # conversion surface on a free estate page. A matching lesson wins;
+            # otherwise fall back to the product itself (11 of 26 registry
+            # entries carry a related_lesson, and no honest lesson exists for
+            # the rest — inventing one would be fake internal linking).
             if lesson_href:
-                calc_cta = {
+                calc_cta: dict[str, str] = {
                     "href": lesson_href,
                     "label": f"Read the lesson: {lesson_title}",
+                }
+            else:
+                calc_cta = {
+                    "href": "/index.html",
+                    "label": "Open the dashboard",
+                    "label_zh": "打开仪表盘",
                 }
 
             calc_ctx: dict[str, Any] = {
@@ -1076,7 +1097,7 @@ def render_all(out_dir: Path) -> None:
             }
             calc_out = out_dir / "tools" / "calculators" / f"{slug}.html"
             calc_out.parent.mkdir(parents=True, exist_ok=True)
-            calc_out.write_text(calc_tmpl.render(**calc_ctx), encoding="utf-8")
+            write_page(calc_out, calc_tmpl.render(**calc_ctx), encoding="utf-8")
 
     # ---- RSS feed ----
     rss = _build_rss(pages)
@@ -1089,6 +1110,78 @@ def render_all(out_dir: Path) -> None:
 # --check mode: render to tmp, byte-compare with site/
 # ─────────────────────────────────────────────────────────────────────────────
 
+# The committed estate pages are NOT this builder's raw output — the render
+# lanes run idempotent post-render sweeps over site/ after every builder
+# (render.yml: inject_data_base -> externalize_css -> optimize_assets; daily.yml
+# runs inject_wh_banner first). A raw byte-compare therefore diffs a pre-image
+# against a post-image and can never go green, which is exactly how this check
+# rotted unnoticed. So --check replays the same deterministic sweeps over the
+# temp render before comparing — like against like.
+#
+# wh_banner is the one sweep we cannot replay: only daily.yml runs it, so
+# whether a page carries the tag depends on which lane last touched it (the
+# three legal pages from #3592 have been through render.yml but not daily.yml
+# yet). It is a marker-guarded additive tag that changes nothing else, so it is
+# stripped from both sides instead.
+_WHB_TAG_RE = re.compile(r"[ \t]*<script[^>]*\bdata-whb\b[^>]*></script>\n?")
+_EXTERNALIZED_CSS_SUBDIR = ("assets", "css")
+
+# optimize_assets stamps `?v=<hash of the referenced file>`. For shared assets
+# (theme.css, theme.js, …) that hash tracks a file this builder does not own, so
+# any PR touching theme.css would turn every estate page red here until a render
+# lane re-stamped them — a false positive on someone else's change. The stamp is
+# lane-owned and self-healing, so the comparison keeps its *presence* (and the
+# defer/preload rewrites around it) but drops its value. The content hash in an
+# `assets/css/<hash>.css` FILENAME is estate CSS and stays compared exactly.
+_ASSET_STAMP_RE = re.compile(r"\?v=[0-9a-f]+")
+
+
+def _comparable(text: str) -> str:
+    """Project a page into the space this builder is accountable for."""
+    return _ASSET_STAMP_RE.sub("?v=", _WHB_TAG_RE.sub("", text))
+
+
+def _normalize_like_render_lane(tmp_site: Path) -> None:
+    """Replay the render lane's post-render sweeps over a temp site tree.
+
+    Mirrors .github/workflows/render.yml. Each sweep is idempotent and never
+    raises; optimize_assets/externalize_css need the real .css/.js next to the
+    pages to content-hash, so the caller seeds those first.
+    """
+    from scripts.externalize_css import externalize
+    from scripts.inject_data_base import inject as inject_data_base
+    from scripts.optimize_assets import optimize
+
+    inject_data_base(tmp_site)   # no-op: write_page already injected at write time
+    externalize(tmp_site)
+    optimize(tmp_site)
+
+
+def _seed_hashable_assets(tmp_site: Path) -> set[Path]:
+    """Copy site/'s .css/.js next to the temp render; return what was copied.
+
+    optimize_assets stamps `?v=<content-hash>` by hashing the referenced file,
+    so the assets the estate pages link (theme.css, theme.js, …) must exist in
+    the temp tree or the stamps come out blank and every page reports drift.
+
+    site/assets/css/ is deliberately NOT seeded: those files are externalize_css
+    output, so letting the sweep regenerate them from this render turns the
+    committed hashed stylesheets into part of what the check verifies.
+    """
+    seeded: set[Path] = set()
+    css_out = Path(*_EXTERNALIZED_CSS_SUBDIR)
+    for src in _SITE_DIR.rglob("*"):
+        if not src.is_file() or src.suffix not in (".css", ".js"):
+            continue
+        rel = src.relative_to(_SITE_DIR)
+        if css_out in rel.parents:
+            continue
+        dst = tmp_site / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+        seeded.add(rel)
+    return seeded
+
 
 def _check_mode() -> int:
     """Render to a temp dir; compare against committed site/ output.
@@ -1096,22 +1189,36 @@ def _check_mode() -> int:
     Returns 0 if identical, 1 if drift detected.
     """
     with tempfile.TemporaryDirectory() as tmp:
-        tmp_dir = Path(tmp)
+        # Named "site" so lib.pages.dbase_prefix resolves sub-directory depth
+        # the same way it does for the real tree.
+        tmp_dir = Path(tmp) / "site"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
 
-        # Render to tmp
+        # Render to tmp, then replay the render lane's sweeps so the comparison
+        # is post-image against post-image.
         render_all(tmp_dir)
+        seeded = _seed_hashable_assets(tmp_dir)
+        _normalize_like_render_lane(tmp_dir)
 
-        # Compare against site/
+        # Compare against site/ — everything this build produced (the pages, the
+        # RSS feed, and the hashed stylesheets externalize_css lifted out of
+        # them), but not the assets seeded purely so the sweeps could run.
         drifted: list[str] = []
-        # Gather all files rendered to tmp
         for out_path in sorted(tmp_dir.rglob("*")):
             if not out_path.is_file():
                 continue
             rel = out_path.relative_to(tmp_dir)
+            if rel in seeded:
+                continue
             site_path = _SITE_DIR / rel
             if not site_path.exists():
                 drifted.append(f"MISSING in site/: {rel}")
-            elif out_path.read_bytes() != site_path.read_bytes():
+                continue
+            built, committed = out_path.read_bytes(), site_path.read_bytes()
+            if built != committed and rel.suffix == ".html":
+                built = _comparable(built.decode("utf-8")).encode("utf-8")
+                committed = _comparable(committed.decode("utf-8")).encode("utf-8")
+            if built != committed:
                 drifted.append(f"DIFFERS: {rel}")
 
         if drifted:
@@ -1160,7 +1267,11 @@ def _check_mode() -> int:
                 print(f"  {o}", file=sys.stderr)
             return 1
 
-        rendered_count = len(list(tmp_dir.rglob("*")))
+        rendered_count = sum(
+            1
+            for p in tmp_dir.rglob("*")
+            if p.is_file() and p.relative_to(tmp_dir) not in seeded
+        )
         print(f"OK: {rendered_count} files, all byte-identical with site/; no orphans")
         return 0
 

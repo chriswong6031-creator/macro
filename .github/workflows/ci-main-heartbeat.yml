@@ -260,3 +260,19 @@ jobs:
           tests/test_opex_risk.py -q
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+
+  free-content-estate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: install minimal deps
+        run: pip install pytest pyyaml jinja2
+      # Mirrors ci.yml's free-content-estate job. The estate rot this closes was
+      # invisible for exactly the reason this heartbeat exists: ci.yml never runs on
+      # main, and the builder had no workflow anywhere, so 52 pages drifted behind
+      # templates/seo_base.html.j2 with every check green.
+      - name: free-content builder suite (frontmatter contract, RSS, rendered-output pins)
+        run: python -m pytest tests/test_free_content.py -q
+      - name: committed estate must match a fresh render (template↔site drift law)
+        run: python -m scripts.build_free_content --check
