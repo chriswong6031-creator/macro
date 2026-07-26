@@ -2104,7 +2104,7 @@
       </tr>
     
       <tr class="sl-row" id="sig-bitcoin-vector-optimal-momentum-risk-allocation" data-tier="scored" data-mkt="BTC"
-          data-text="bitcoin vector — `optimal` momentum×risk allocation 比特币向量 — optimal 动量×风险配置 btc the one new scored win — a fully-wired live btc allocation whose drawdown/sharpe payoff survives every fatal-mode attack. mechanical (momentum + on-chain risk_index) long/flat grid. provenance: pre-gate figure (dsr 0.9965, sharpe 1.44) retired 2026-07 — it certified a strategy that baked the midterm-blackout human override into every backtest bar. fresh dual-track as of 2026-07: raw (pure engine, ungated) sharpe 1.43 vs hodl 1.01, maxdd −41.2% vs −83.8% (2.04× cut), dsr 0.9945 (n=68 = 65 base + 3 override dof_cost), dsr_effn 0.9236 (t_eff=2523 vs t_raw=4200). gated (live behavior, midterm blackout active through 2026) sharpe 1.56, maxdd −32.3%, dsr 0.9986, dsr_effn 0.9622. bootstrap p(sharpe&gt;0)=1.0 (ci [0.95,1.57,2.17]). dd-cut holds in both split-halves and every leave-one-crisis-out. beats brake-matched 200dma. decomposition proves not a brake artifact. score the drawdown/sharpe only — direction is a coin-flip (p(7d up|long) ~0.58). honest-n ~4 crises.">
+          data-text="bitcoin vector — `optimal` momentum×risk allocation 比特币向量 — optimal 动量×风险配置 btc the one new scored win — a fully-wired live btc allocation whose drawdown/sharpe payoff survives every fatal-mode attack. mechanical (momentum + on-chain risk_index) long/flat grid. provenance: pre-gate figure (dsr 0.9965, sharpe 1.44) retired 2026-07 — it certified a strategy that baked the midterm-blackout human override into every backtest bar. the dual-track pair first shipped here (0.9945 raw / 0.9986 gated) is also retired: it was computed on raw-t at a 68-trial budget, before the override registry declared midterm_blackout dof_cost=6 (n=71 = 65 base + 6 override dof_cost) and before the headline dsr moved onto the block-bootstrap t_eff basis. both haircuts are harsher, so the figures below are lower than the retired pair — and they are read live from the calibrator. as of 2026-07-25: raw (pure engine, ungated) sharpe 1.42 vs hodl 1.02, maxdd −41.2% vs −83.8% (2.03× cut), dsr 0.9661 (n=71 = 65 base + 6 override dof_cost), dsr_effn 0.9146 (t_eff=2511 vs t_raw=4224). gated (live behavior, midterm blackout active through 2026) sharpe 1.59, maxdd −32.3%, dsr 0.9892, dsr_effn 0.9644. bootstrap p(sharpe&gt;0)=1.0 (ci [0.98,1.59,2.19]). dd-cut holds in both split-halves and every leave-one-crisis-out. beats brake-matched 200dma. decomposition proves not a brake artifact. score the drawdown/sharpe only — direction is a coin-flip (p(7d up|long) ~0.58). honest-n ~4 crises.">
         <td style="width:24px;text-align:center">
           <button class="row-expand-btn" data-target="sig-bitcoin-vector-optimal-momentum-risk-allocation-detail">⊕</button>
         </td>
@@ -2118,21 +2118,21 @@
           
           <div class="extra-chips">
             
-            <span class="extra-chip"><span class="el">RAW MaxDD</span><span>−41.2% vs −83.8% (2.04× cut)</span></span>
+            <span class="extra-chip"><span class="el">RAW MaxDD</span><span>−41.2% vs −83.8% (2.03× cut)</span></span>
             
-            <span class="extra-chip"><span class="el">GATED Sharpe / MaxDD</span><span>1.56 / −32.3% (midterm blackout active through 2026)</span></span>
+            <span class="extra-chip"><span class="el">GATED Sharpe / MaxDD</span><span>1.59 / −32.3% (midterm blackout active through 2026)</span></span>
             
-            <span class="extra-chip"><span class="el">DSR gated / raw</span><span>0.9986 / 0.9945 (n=68, incl. override dof_cost=3)</span></span>
+            <span class="extra-chip"><span class="el">DSR gated / raw</span><span>0.9892 / 0.9661 (n=71 = 65 base + 6 override dof_cost) — both SURVIVE (≥0.95)</span></span>
             
-            <span class="extra-chip"><span class="el">dsr_effN gated / raw</span><span>0.9622 / 0.9236 (T_eff≈2520 vs T_raw=4200)</span></span>
+            <span class="extra-chip"><span class="el">dsr_effN gated / raw</span><span>0.9644 / 0.9146 (T_eff≈2495/2511 vs T_raw=4224) — raw leg is MARGINAL under this lens</span></span>
             
-            <span class="extra-chip"><span class="el">bootstrap P(Sh&gt;0)</span><span>1.0 · CI [0.95,1.57,2.17]</span></span>
+            <span class="extra-chip"><span class="el">bootstrap P(Sh&gt;0)</span><span>1.0 · CI [0.98,1.59,2.19]</span></span>
             
             <span class="extra-chip"><span class="el">direction</span><span>coin-flip — NOT scored</span></span>
             
             <span class="extra-chip"><span class="el">honest-N</span><span>~4 crash episodes</span></span>
             
-            <span class="extra-chip"><span class="el">provenance</span><span>pre-gate figure 0.9965 retired 2026-07; dual-track as of W1 N7</span></span>
+            <span class="extra-chip"><span class="el">provenance</span><span>pre-gate 0.9965 retired 2026-07; first dual-track pair (0.9945/0.9986, raw-T @ n=68) retired — now block-bootstrap T_eff @ n=71, read live from data/vector/calibration.json</span></span>
             
           </div>
           
@@ -2142,48 +2142,49 @@
         <td class="r"><span class="muted">—</span></td>
         <td class="r "><span class="muted">—</span></td>
         <td class="r yes">
-          0.995
+          0.966
           
+          <span class="dsr-prov ledger">n=71 ledger-live</span>
         </td>
-        <td class="r pos">+1.43</td>
+        <td class="r pos">+1.42</td>
         <td class="r"><span class="muted">—</span></td>
-        <td class="r">4200</td>
+        <td class="r">4224</td>
         <td><span class="pill v-scored"><span class="l-en">SCORED</span><span class="l-zh">已计分</span></span></td>
         <td style="max-width:34ch">
           <span class="muted sm l-en">The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives every fatal-mode attack…</span>
           <span class="muted sm l-zh">本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中…</span>
-          <div class="src">btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); W1 N7 dual-track calibration 2026-07</div>
+          <div class="src">btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); W1 N7 dual-track calibration — figures read live from data/vector/calibration.json</div>
         </td>
       </tr>
       
       <tr class="row-detail" id="sig-bitcoin-vector-optimal-momentum-risk-allocation-detail">
         <td colspan="11">
-          <div class="why-full l-en">The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid. PROVENANCE: pre-gate figure (DSR 0.9965, Sharpe 1.44) retired 2026-07 — it certified a strategy that baked the midterm-blackout human override into every backtest bar. Fresh dual-track as of 2026-07: RAW (pure engine, ungated) Sharpe 1.43 vs HODL 1.01, MaxDD −41.2% vs −83.8% (2.04× cut), DSR 0.9945 (n=68 = 65 base + 3 override dof_cost), dsr_effN 0.9236 (T_eff=2523 vs T_raw=4200). GATED (live behavior, midterm blackout active through 2026) Sharpe 1.56, MaxDD −32.3%, DSR 0.9986, dsr_effN 0.9622. Bootstrap P(Sharpe&gt;0)=1.0 (CI [0.95,1.57,2.17]). DD-cut holds in both split-halves and every leave-one-crisis-out. Beats brake-matched 200dma. Decomposition proves NOT a brake artifact. SCORE THE DRAWDOWN/SHARPE ONLY — direction is a coin-flip (P(7d up|long) ~0.58). Honest-N ~4 crises.</div>
-          <div class="why-full l-zh">本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中期选举人工覆盖污染了回测。双轨新数字（2026-07）：原始（纯引擎/未覆盖）夏普 1.43 对 HODL 1.01，最大回撤 −41.2% 对 −83.8%（缩小2.04倍），DSR 0.9945（n=68=65基础+3覆盖自由度），dsr_effN 0.9236。带覆盖（实盘，含中期选举封锁）夏普 1.56，回撤 −32.3%，DSR 0.9986。仅计回撤/夏普；方向为掷硬币。</div>
+          <div class="why-full l-en">The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid. PROVENANCE: pre-gate figure (DSR 0.9965, Sharpe 1.44) retired 2026-07 — it certified a strategy that baked the midterm-blackout human override into every backtest bar. The dual-track pair first shipped here (0.9945 raw / 0.9986 gated) is ALSO retired: it was computed on raw-T at a 68-trial budget, before the Override Registry declared midterm_blackout dof_cost=6 (n=71 = 65 base + 6 override dof_cost) and before the headline DSR moved onto the block-bootstrap T_eff basis. Both haircuts are harsher, so the figures below are LOWER than the retired pair — and they are read live from the calibrator. As of 2026-07-25: RAW (pure engine, ungated) Sharpe 1.42 vs HODL 1.02, MaxDD −41.2% vs −83.8% (2.03× cut), DSR 0.9661 (n=71 = 65 base + 6 override dof_cost), dsr_effN 0.9146 (T_eff=2511 vs T_raw=4224). GATED (live behavior, midterm blackout active through 2026) Sharpe 1.59, MaxDD −32.3%, DSR 0.9892, dsr_effN 0.9644. Bootstrap P(Sharpe&gt;0)=1.0 (CI [0.98,1.59,2.19]). DD-cut holds in both split-halves and every leave-one-crisis-out. Beats brake-matched 200dma. Decomposition proves NOT a brake artifact. SCORE THE DRAWDOWN/SHARPE ONLY — direction is a coin-flip (P(7d up|long) ~0.58). Honest-N ~4 crises.</div>
+          <div class="why-full l-zh">本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中期选举人工覆盖污染了回测。首版双轨数字（原始 0.9945／带覆盖 0.9986）同样退役：它按原始 T、68 次试验预算计算，当时覆盖登记表尚未将 midterm_blackout 的自由度成本定为 6（n=71=65基础+6覆盖自由度），且主口径 DSR 尚未改用分块自助 T_eff。两处折扣都更严格，因此以下数字低于已退役的旧值——且均由校准器实时读入。数据截至 2026-07-25：原始（纯引擎/未覆盖）夏普 1.42 对 HODL 1.02，最大回撤 −41.2% 对 −83.8%（缩小2.03倍），DSR 0.9661，dsr_effN 0.9146（T_eff=2511 对 T_raw=4224）。带覆盖（实盘，含中期选举封锁）夏普 1.59，回撤 −32.3%，DSR 0.9892，dsr_effN 0.9644。自助法 P(夏普&gt;0)=1.0（区间 [0.98,1.59,2.19]）。仅计回撤/夏普；方向为掷硬币。</div>
           
           
           <div class="extra-chips" style="margin-top:8px">
             
-            <span class="extra-chip"><span class="el">RAW MaxDD</span><span>−41.2% vs −83.8% (2.04× cut)</span></span>
+            <span class="extra-chip"><span class="el">RAW MaxDD</span><span>−41.2% vs −83.8% (2.03× cut)</span></span>
             
-            <span class="extra-chip"><span class="el">GATED Sharpe / MaxDD</span><span>1.56 / −32.3% (midterm blackout active through 2026)</span></span>
+            <span class="extra-chip"><span class="el">GATED Sharpe / MaxDD</span><span>1.59 / −32.3% (midterm blackout active through 2026)</span></span>
             
-            <span class="extra-chip"><span class="el">DSR gated / raw</span><span>0.9986 / 0.9945 (n=68, incl. override dof_cost=3)</span></span>
+            <span class="extra-chip"><span class="el">DSR gated / raw</span><span>0.9892 / 0.9661 (n=71 = 65 base + 6 override dof_cost) — both SURVIVE (≥0.95)</span></span>
             
-            <span class="extra-chip"><span class="el">dsr_effN gated / raw</span><span>0.9622 / 0.9236 (T_eff≈2520 vs T_raw=4200)</span></span>
+            <span class="extra-chip"><span class="el">dsr_effN gated / raw</span><span>0.9644 / 0.9146 (T_eff≈2495/2511 vs T_raw=4224) — raw leg is MARGINAL under this lens</span></span>
             
-            <span class="extra-chip"><span class="el">bootstrap P(Sh&gt;0)</span><span>1.0 · CI [0.95,1.57,2.17]</span></span>
+            <span class="extra-chip"><span class="el">bootstrap P(Sh&gt;0)</span><span>1.0 · CI [0.98,1.59,2.19]</span></span>
             
             <span class="extra-chip"><span class="el">direction</span><span>coin-flip — NOT scored</span></span>
             
             <span class="extra-chip"><span class="el">honest-N</span><span>~4 crash episodes</span></span>
             
-            <span class="extra-chip"><span class="el">provenance</span><span>pre-gate figure 0.9965 retired 2026-07; dual-track as of W1 N7</span></span>
+            <span class="extra-chip"><span class="el">provenance</span><span>pre-gate 0.9965 retired 2026-07; first dual-track pair (0.9945/0.9986, raw-T @ n=68) retired — now block-bootstrap T_eff @ n=71, read live from data/vector/calibration.json</span></span>
             
           </div>
           
           <div class="meta-row">
-            <span class="l-en">Source:</span><span class="l-zh">来源:</span> btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); W1 N7 dual-track calibration 2026-07
+            <span class="l-en">Source:</span><span class="l-zh">来源:</span> btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); W1 N7 dual-track calibration — figures read live from data/vector/calibration.json
             · <a href="#sig-bitcoin-vector-optimal-momentum-risk-allocation" class="anchor-link" style="opacity:1">¶ <span class="l-en">anchor</span><span class="l-zh">锚点</span></a>
              · <span class="l-en">Wired:</span><span class="l-zh">接线:</span> vector.html / vector_allocation — alloc_optimal (LIVE, midterm-gated); alloc_optimal_raw (pure engine)
           </div>
@@ -3241,7 +3242,7 @@
             
             <span class="extra-chip"><span class="el">MaxDD</span><span>−46.6% vs −94.0% HODL (2.02× cut)</span></span>
             
-            <span class="extra-chip"><span class="el">vs BTC DSR (raw)</span><span>0.5345 vs 0.9945</span></span>
+            <span class="extra-chip"><span class="el">vs BTC DSR (raw)</span><span>0.5345 vs 0.9661</span></span>
             
             <span class="extra-chip"><span class="el">brake-matched 200dma</span><span>BEATS ETH on Sharpe (0.82 vs 0.80)</span></span>
             
@@ -3283,7 +3284,7 @@
             
             <span class="extra-chip"><span class="el">MaxDD</span><span>−46.6% vs −94.0% HODL (2.02× cut)</span></span>
             
-            <span class="extra-chip"><span class="el">vs BTC DSR (raw)</span><span>0.5345 vs 0.9945</span></span>
+            <span class="extra-chip"><span class="el">vs BTC DSR (raw)</span><span>0.5345 vs 0.9661</span></span>
             
             <span class="extra-chip"><span class="el">brake-matched 200dma</span><span>BEATS ETH on Sharpe (0.82 vs 0.80)</span></span>
             
@@ -5926,8 +5927,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-26 13:26 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-26 13:26 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-26 14:50 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-26 14:50 UTC</p>
 </div>
 
 <script src="theme.js?v=c094a665" defer></script>
