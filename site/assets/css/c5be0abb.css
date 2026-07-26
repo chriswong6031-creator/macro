@@ -1,0 +1,190 @@
+
+/* ── /unsubscribe.html page CSS. Same tokens, same recipes and the same two page-local
+   additions as /support.html (PIN.md §1) — this is one surface in two rooms, so nothing
+   is re-tasted here. Single column: the page has exactly one thing to do. ──────────── */
+*{ box-sizing:border-box; }
+body{ margin:0; padding-top:18px;            /* 18px top gap — house law */
+  background:var(--bg); color:var(--text); font:14.5px/1.55 var(--font-ui);
+  -webkit-font-smoothing:antialiased; }
+a{ color:var(--link); text-decoration:none; }
+
+:root{
+  --surface:color-mix(in srgb, var(--panel) 96%, var(--text));
+  --brand-a:#3b82f6; --brand-b:#6366f1; --brand-c:#7c5cff;
+}
+html[data-theme="light"]{ --surface:color-mix(in srgb, var(--panel) 97%, #000); }
+
+/* mono micro-label — the page's type signature, same as /support.html */
+.mlab{ display:block; font:600 10.5px/1 var(--font-mono); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); }
+/* CJK: the mono stack carries no Hanzi, so a ZH label otherwise falls through to
+   whatever the system picks — on some machines a SERIF. Pin a sans CJK face ahead of
+   the mono chain and drop the wide Latin tracking, which reads as broken spacing. */
+html[data-lang="zh"] .mlab{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
+html[data-lang="zh"] .hero .eyebrow{ letter-spacing:.08em; }
+
+/* ── shell ────────────────────────────────────────────────────────────────── */
+.wrap{ max-width:620px; margin:0 auto; padding:20px 18px 64px; }
+@media (min-width:900px){ .wrap{ padding:28px 26px 88px; } }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+.hero{ text-align:center; padding:22px 6px 6px; }
+.hero .eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--muted); display:inline-flex; align-items:center; gap:8px; margin-bottom:15px; }
+.hero .eyebrow::before,.hero .eyebrow::after{ content:""; width:26px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--line)); }
+.hero .eyebrow::after{ background:linear-gradient(90deg,var(--line),transparent); }
+.hero h1{ font:700 clamp(27px,4.6vw,38px)/1.08 var(--font-ui); letter-spacing:-.025em;
+  margin:0 auto; max-width:20ch; }
+/* inline-block keeps the second beat whole, so the headline breaks at the sentence */
+.hero h1 .accent{ display:inline-block;
+  background:linear-gradient(100deg,var(--brand-a),var(--brand-c));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero .sub{ font-size:clamp(14.5px,2.2vw,16px); color:var(--muted); max-width:50ch;
+  margin:15px auto 0; line-height:1.5; }
+
+/* ── the panel ────────────────────────────────────────────────────────────── */
+.panel{ position:relative; border:1px solid var(--glass-brd); border-radius:16px;
+  background:var(--surface); box-shadow:var(--card-shadow); overflow:hidden; margin-top:28px; }
+/* the routing rail — 3px accent edge; --ok once the choice is recorded, --act when the
+   link is dead or the write failed. Health tokens, never the direction pair. */
+.panel::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--accent,var(--info)); transition:background .25s ease; }
+html[data-unsub="off"]   .panel{ --accent:var(--ok); }
+html[data-unsub="on"]    .panel{ --accent:var(--ok); }
+html[data-unsub="bad"]   .panel{ --accent:var(--act); }
+html[data-unsub="error"] .panel{ --accent:var(--act); }
+
+.p-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
+  border-bottom:1px solid var(--line); }
+.p-head .mlab{ flex:1; color:var(--text); }
+html[data-unsub="off"] .p-head .mlab{ color:var(--ok); }
+.p-body{ padding:18px; }
+@media (min-width:600px){ .p-body{ padding:22px 24px 20px; } }
+
+/* one state visible at a time; the page boots in `ready` and the JS decides */
+.st{ display:none; }
+html[data-unsub="ready"] .st-ready,
+html[data-unsub="off"]   .st-off,
+html[data-unsub="on"]    .st-on,
+html[data-unsub="bad"]   .st-bad{ display:block; }
+/* `error` keeps whatever step the reader was on and adds the bar above it, so a failed
+   press never discards the button they were about to press again */
+html[data-unsub="error"] .st-ready{ display:block; }
+/* the state label follows the panel */
+.lb{ display:none; }
+html[data-unsub="ready"] .lb-ready,
+html[data-unsub="error"] .lb-ready,
+html[data-unsub="on"]    .lb-ready,
+html[data-unsub="off"]   .lb-off,
+html[data-unsub="bad"]   .lb-bad{ display:inline; }
+
+.lede{ margin:0 0 18px; color:var(--muted); font-size:14.5px; line-height:1.55; max-width:48ch; }
+
+/* ── the seal + the recorded state ────────────────────────────────────────── */
+.seal{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
+  color:var(--ok); background:color-mix(in srgb,var(--ok) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok) 34%,transparent); margin-bottom:14px; }
+.seal svg{ width:19px; height:19px; }
+.seal.bad{ color:var(--act); background:color-mix(in srgb,var(--act) 12%,transparent);
+  border-color:color-mix(in srgb,var(--act) 34%,transparent); }
+.st h2{ font:700 21px/1.2 var(--font-ui); letter-spacing:-.01em; margin:0 0 8px; }
+.st p{ margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55; max-width:46ch; }
+.st p b.addr{ color:var(--text); font-weight:600; font-family:var(--font-mono); font-size:13.3px; }
+/* keep a fallback address whole — a mid-address break reads as a typo */
+.st a[href^="mailto:"]{ white-space:nowrap; }
+
+/* ── action row ───────────────────────────────────────────────────────────── */
+.act{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  border-top:1px solid var(--line); padding-top:16px; margin-top:2px; }
+.act .note{ font-size:12px; color:var(--muted); flex:1; min-width:180px; line-height:1.4; }
+/* gbtn — house glass button (theme.css), -cta variant, no breathing animation */
+.btn{ position:relative; overflow:hidden; display:inline-flex; align-items:center;
+  justify-content:center; gap:7px; padding:10px 20px; border-radius:11px;
+  border:1px solid color-mix(in srgb,var(--info) 45%,var(--gbtn-brd));
+  background:linear-gradient(180deg, color-mix(in srgb,var(--info) 16%,var(--gbtn-bg)), var(--gbtn-bg));
+  -webkit-backdrop-filter:blur(12px) saturate(140%); backdrop-filter:blur(12px) saturate(140%);
+  color:var(--text); font:600 13.5px/1 var(--font-ui); letter-spacing:.01em; cursor:pointer;
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18);
+  transition:background .2s ease, border-color .2s ease, transform .16s ease, box-shadow .25s ease; }
+.btn:hover{ border-color:var(--info); transform:translateY(-1px);
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 8px 24px -10px color-mix(in srgb,var(--info) 55%,transparent); }
+.btn:active{ transform:translateY(0) scale(.985); }
+.btn:focus-visible{ outline:2px solid var(--link); outline-offset:2px; }
+.btn::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.13) 50%,transparent 60%);
+  transform:translateX(-140%) skewX(-8deg); }
+.btn:hover::after{ transform:translateX(140%) skewX(-8deg); transition:transform .55s ease; }
+.btn[aria-busy="true"]{ pointer-events:none; opacity:.75; }
+/* Turning marketing back on is a SECOND action and never the default: ghost weight,
+   smaller, no accent fill. The page must not nudge anyone back onto a list they left. */
+.btn-ghost{ background:var(--gbtn-bg); border-color:var(--gbtn-brd); color:var(--muted);
+  font-size:12.8px; padding:9px 16px; }
+.btn-ghost:hover{ color:var(--text); border-color:var(--gbtn-brd-hover); box-shadow:none;
+  transform:none; }
+
+/* ── error bar (interface voice: what happened + what to do) ───────────────── */
+.err{ display:none; align-items:flex-start; gap:10px; margin:0 0 16px; padding:12px 14px;
+  border-radius:11px; font-size:13.2px; line-height:1.45; color:var(--text);
+  border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
+  background:color-mix(in srgb,var(--act) 10%,transparent); }
+html[data-unsub="error"] .err{ display:flex; }
+.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
+.err .ic svg{ display:block; width:16px; height:16px; }
+.err a{ white-space:nowrap; }
+
+/* the refused note — a bounce or a complaint is not lifted from a link */
+.refused{ display:none; margin:14px 0 0; padding:10px 12px; border-radius:10px;
+  font-size:12.9px; line-height:1.45; color:var(--muted);
+  background:color-mix(in srgb,var(--info) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
+html[data-refused="1"] .refused{ display:block; }
+html[data-refused="1"] .st-off .btn-ghost{ display:none; }
+
+/* ── footer — landing footer anatomy, colours resolved from theme tokens ───── */
+.mx-footer{ border-top:1px solid var(--line); margin-top:52px;
+  background:color-mix(in srgb,var(--panel) 45%,transparent);
+  padding:38px 0 30px; color:var(--muted); font-size:13px; }
+.mx-footer .f-in{ max-width:1000px; margin:0 auto; padding:0 22px; }
+.mx-footer .f-grid{ display:flex; justify-content:space-between; align-items:flex-start;
+  gap:30px; flex-wrap:wrap; }
+.mx-footer .f-brand .fb-row{ display:flex; align-items:center; gap:9px; }
+.mx-footer .f-brand .fm{ width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg,var(--brand-a),var(--brand-c)); display:grid; place-items:center;
+  font:800 14px/1 var(--font-ui); color:#fff; }
+.mx-footer .f-brand .fn{ font:800 13px/1 var(--font-ui); letter-spacing:.08em; color:var(--text); }
+.mx-footer .f-brand .ft{ margin:10px 0 0; color:var(--muted); font-size:12.5px; }
+.mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
+.mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
+  color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+.mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
+.mx-footer .f-col a:hover{ color:var(--text); }
+.mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;
+  gap:12px 18px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:34px;
+  padding-top:18px; font-size:12px; color:var(--muted); }
+
+/* ── mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width:480px){
+  .wrap{ padding:14px 14px 52px; }
+  .hero{ padding:12px 2px 2px; text-align:left; }
+  /* the eyebrow's leading hairline reads as a stray indent once left-aligned */
+  .hero .eyebrow{ margin-bottom:12px; }
+  .hero .eyebrow::before{ display:none; }
+  .hero h1{ margin:0; max-width:none; }
+  .hero .sub{ margin:12px 0 0; max-width:none; }
+  .panel{ border-radius:14px; margin-top:22px; }
+  .p-head{ padding:11px 14px; gap:8px; }
+  .p-body{ padding:15px 14px 16px; }
+  .act{ gap:10px; }
+  .act .btn{ width:100%; order:-1; }
+  .act .note{ min-width:0; }
+  .mx-footer{ padding:30px 0 24px; margin-top:38px; }
+  .mx-footer .f-in{ padding:0 16px; }
+  .mx-footer .f-grid{ gap:24px; }
+  .mx-footer .f-cols{ gap:40px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .btn, .btn::after, .panel::before{ transition:none; }
+  .btn:hover{ transform:none; }
+}
