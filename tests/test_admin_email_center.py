@@ -433,6 +433,44 @@ def test_an_unknown_campaign_action_is_refused(wired):
     assert code == 400
 
 
+# ---- preview --------------------------------------------------------------- #
+def test_preview_renders_through_the_real_sender_and_stores_nothing(wired):
+    """A preview that used its own renderer could drift from what the drain sends, so it
+    goes through marketing_emails.campaign_message itself."""
+    payload, code = ec.campaign_action(
+        "preview", subject_en="What changed", subject_zh="本周更新",
+        body_en="Sector breadth is live.\n\n[Open the Terminal](https://www.mastermind-x.com/terminal.html)",
+        body_zh="板块广度已上线。\n\n[打开终端](https://www.mastermind-x.com/terminal.html)")
+    assert code == 200 and payload["ok"] is True
+    assert payload["subject"] == "What changed · 本周更新"
+    assert "Sector breadth is live." in payload["text"]
+    assert "板块广度已上线。" in payload["text"]
+    assert payload["cta"]["url"] == "https://www.mastermind-x.com/terminal.html"
+    assert payload["paragraphs"] == 1 and payload["zh_paragraphs"] == 1
+    assert payload["mirrored"] is False
+    # nothing was written
+    assert not wired.all("insert into public.email_campaigns")
+    assert not wired.all("update public.email_campaigns")
+
+
+def test_preview_flags_a_missing_chinese_half(wired):
+    """A one-language body is mirrored into both halves rather than shipping a blank 中文
+    section — the operator should be told, not surprised in someone's inbox."""
+    payload, code = ec.campaign_action("preview", subject_en="Hi", body_en="English only.")
+    assert code == 200 and payload["mirrored"] is True
+
+
+def test_preview_reports_no_cta_when_the_link_line_is_malformed(wired):
+    payload, code = ec.campaign_action(
+        "preview", subject_en="Hi", body_en="text\n\n[Bad](javascript:alert(1))")
+    assert code == 200 and payload["cta"] is None
+
+
+def test_preview_needs_a_subject_and_a_body(wired):
+    assert ec.campaign_action("preview", subject_en="", body_en="x")[1] == 400
+    assert ec.campaign_action("preview", subject_en="x", body_en="")[1] == 400
+
+
 # ===========================================================================
 # The SMTP card
 # ===========================================================================

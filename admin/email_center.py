@@ -60,7 +60,7 @@ VALID_REASONS = ("unsubscribe", "bounce", "complaint", "manual")
 #: available; un-recording a complaint is not.
 LIFTABLE = ("unsubscribe", "manual")
 
-CAMPAIGN_ACTIONS = frozenset({"save", "queue", "abort", "delete"})
+CAMPAIGN_ACTIONS = frozenset({"preview", "save", "queue", "abort", "delete"})
 SUPPRESSION_ACTIONS = frozenset({"add", "remove"})
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -470,6 +470,49 @@ def _compose(subject_en: str, subject_zh: str, body_en: str, body_zh: str) -> tu
     return subject, body
 
 
+def _preview(subject_en: str, subject_zh: str,
+             body_en: str, body_zh: str) -> tuple[dict, int]:
+    """Render the draft through the REAL campaign renderer, without storing anything.
+
+    The preview is the TEXT half of the message plus the parsed block structure, not an
+    iframe of the HTML shell. Two reasons, in order:
+
+    * The console's CSP is ``default-src 'none'`` with no ``frame-src``, so a srcdoc
+      iframe is blocked — and widening a security policy to render a preview is the wrong
+      trade for a nicety.
+    * The text half IS the content the operator is authoring, in both languages, and the
+      block census answers the question the markdown subset actually raises: "why is my
+      button not showing?" A picture of the pinned shell would not — the shell never
+      changes, and it is already proven by tests/test_email_templates.py.
+
+    Rendered through ``marketing_emails.campaign_message`` itself, so a preview can never
+    drift from what the drain would send.
+    """
+    from app import marketing_emails  # noqa: PLC0415
+
+    subject, body = _compose(subject_en, subject_zh, body_en, body_zh)
+    if not subject:
+        return {"ok": False, "error": "a subject is required"}, 400
+    if not body.strip():
+        return {"ok": False, "error": "a body is required"}, 400
+
+    draft = {"subject": subject, "body_md": body}
+    # A placeholder identity: the token is per-recipient, and no recipient is chosen yet.
+    subj, _html, text = marketing_emails.campaign_message(draft, "preview")
+    en_body, zh_body = marketing_emails.split_langs(body)
+    en_blocks = marketing_emails._blocks(en_body)
+    cta = next((b for b in en_blocks if b["kind"] == "button"), None)
+    return {
+        "ok": True,
+        "subject": subj,
+        "text": text,
+        "paragraphs": sum(1 for b in en_blocks if b["kind"] == "p"),
+        "zh_paragraphs": sum(1 for b in marketing_emails._blocks(zh_body) if b["kind"] == "p"),
+        "cta": {"label": cta["label"], "url": cta["url"]} if cta else None,
+        "mirrored": en_body == zh_body,
+    }, 200
+
+
 def campaign_action(action: str, *, campaign_id: str | None = None,
                     subject_en: str = "", subject_zh: str = "",
                     body_en: str = "", body_zh: str = "",
@@ -487,6 +530,9 @@ def campaign_action(action: str, *, campaign_id: str | None = None,
     action = (action or "").strip()
     if action not in CAMPAIGN_ACTIONS:
         return {"ok": False, "error": f"action must be one of {sorted(CAMPAIGN_ACTIONS)}"}, 400
+
+    if action == "preview":
+        return _preview(subject_en, subject_zh, body_en, body_zh)
 
     cid = _uuid(campaign_id) if campaign_id else None
     if action != "save" and not cid:

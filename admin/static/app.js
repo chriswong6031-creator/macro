@@ -8978,9 +8978,11 @@ async function ecLoadCampaigns() {
       <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
         <label class="sub">Segment</label>
         <select id="ecSegPick" class="btn">${segOpts}</select>
+        <button class="btn" onclick="ecCampPreview()">Preview</button>
         <button class="btn primary" onclick="ecCampSave()">Save draft</button>
         <button class="btn" onclick="ecCampNew()">Clear</button>
       </div>
+      <div id="ecPreview"></div>
     </div>
     <div class="section" style="margin-top:16px">Campaigns</div>
     <div id="ecCampTbl"></div>`;
@@ -9029,6 +9031,34 @@ function ecCampEdit(id) {
   set("ecBodyEn", (body[0] || "").trim()); set("ecBodyZh", (body.slice(1).join(EC.zhDelim) || "").trim());
   const pick = $("#ecSegPick"); if (pick && c.segment) pick.value = c.segment;
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* Preview shows the message TEXT (both languages) plus what the markdown subset parsed
+   out of the body — the console's CSP is default-src 'none' with no frame-src, so an
+   iframe of the HTML shell is blocked, and the shell is already covered by
+   tests/test_email_templates.py. What an operator can actually get wrong is the body:
+   a CTA line that did not become a button, or a 中文 half they forgot to write. */
+async function ecCampPreview() {
+  const val = k => { const el = $("#" + k); return el ? el.value : ""; };
+  const r = await post("/api/email_center/campaign", {
+    action: "preview",
+    subject_en: val("ecSubjEn"), subject_zh: val("ecSubjZh"),
+    body_en: val("ecBodyEn"), body_zh: val("ecBodyZh"),
+  });
+  const box = $("#ecPreview"); if (!box) return;
+  if (!r || !r.ok) { box.innerHTML = `<div class="sub" style="margin-top:10px">${esc((r && r.error) || "could not preview")}</div>`; return; }
+  const notes = [
+    `${r.paragraphs} paragraph${r.paragraphs === 1 ? "" : "s"} EN`,
+    `${r.zh_paragraphs} ZH`,
+    r.cta ? `CTA “${esc(r.cta.label)}” → ${esc(r.cta.url)}` : "no CTA",
+  ];
+  if (r.mirrored) notes.push(`<span class="statpill s-warn">no 中文 half — the English is being mirrored</span>`);
+  box.innerHTML = `
+    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+      <div class="sub"><b>Subject:</b> ${esc(r.subject)}</div>
+      <div class="sub" style="margin:4px 0 8px">${notes.join(" · ")}</div>
+      <pre class="mono" style="white-space:pre-wrap;font-size:12px;line-height:1.5;background:var(--surface2);padding:12px;border-radius:8px;max-height:340px;overflow:auto">${esc(r.text)}</pre>
+    </div>`;
 }
 
 async function ecCampSave() {
