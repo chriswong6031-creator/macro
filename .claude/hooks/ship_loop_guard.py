@@ -19,7 +19,7 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -271,27 +271,298 @@ def _latest_merged_pr(owner: str, repo: str, branch: str) -> dict[str, Any] | No
     return max(merged, key=lambda pull: pull.get("merged_at") or "") if merged else None
 
 
-def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
-    """Judge the merged pull request's OWN head commit, never main's current state.
+def _failing_ci_message(display: list[str]) -> str:
+    """The blocking verdict for reds this pull request genuinely owns.
 
-    Deliberate: main's combined status is the product of every concurrent
-    session's merges, so scoring against it would let an unrelated green main
-    mask this pull request's red check (and an unrelated red one block a clean
-    ship). The head commit is the only sha that answers "did THIS work pass".
-
-    Check runs on that sha are not frozen, though — re-running a workflow
-    publishes fresh runs against it, which is why the failure message names that
-    path. A genuinely stuck red still exits through the documented
-    `SHIP LOOP BLOCKED:` report, same as any other external blocker.
+    `_stop` keys `ci_failed` off the "Failing" prefix, so every blocking variant
+    must keep it.
     """
-    payload = _get_json(
-        f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs?per_page=100"
+    return (
+        "Failing CI: "
+        + ", ".join(display[:8])
+        + ". These run against the merged pull request's own head commit, so a later "
+        "fix on main does not clear them: re-run the failed job "
+        "(`gh run rerun --failed <run-id>`) once the cause is fixed, or carry the fix "
+        "through a follow-up pull request with green CI of its own."
     )
-    runs = payload.get("check_runs", [])
+
+
+def _head_check_runs(owner: str, repo: str, head_sha: str) -> list[dict[str, Any]]:
+    """Every check run on ``head_sha``, following pagination to the end.
+
+    A single `per_page=100` call silently truncated: PR #3629's head carries 101
+    check runs, so a red beyond the first page was invisible and the gate failed
+    OPEN — the one direction it may never fail. A short page means nothing is
+    left; a full page with no `total_count` keeps paging rather than guessing the
+    tail away. The 5-page cap bounds a pathological head's share of the API budget.
+    """
+    endpoint = f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs"
+    runs: list[dict[str, Any]] = []
+    for page in range(1, 6):
+        query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
+        payload = _get_json(f"{endpoint}?{query}")
+        batch = payload.get("check_runs") or []
+        runs.extend(batch)
+        total = int(payload.get("total_count") or 0)
+        if len(batch) < 100 or (total and len(runs) >= total):
+            break
+    return runs
+
+
+def _started_stamp(run: dict[str, Any], *keys: str) -> str:
+    """First non-empty stamp among ``keys`` — workflow runs and check runs name it differently."""
+    for key in keys:
+        value = str(run.get(key) or "")
+        if value:
+            return value
+    return ""
+
+
+def _parse_stamp(value: str) -> datetime | None:
+    """A GitHub `...Z` stamp as a datetime, or None when it is absent or malformed."""
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+
+
+def _merged_content_green(
+    root: Path, owner: str, repo: str, merge_sha: str
+) -> dict[str, Any] | None:
+    """A completed+success ci.yml run whose head is a main DESCENDANT of ``merge_sha``.
+
+    A descendant's tree contains the merge, so a full green run there proves the
+    merged content passes — categorically stronger than arguing about any single
+    check name. Ancestry alone is load-bearing, so unlike ``_render_status`` there
+    is deliberately no created_at floor: a descendant carried this merge whenever
+    its run happened.
+
+    The fetch is best-effort because the candidate heads are brand-new main
+    commits this checkout may not know yet, while a fixture or offline checkout
+    must still be able to answer from its local view rather than erroring out.
+    """
+    if not merge_sha:
+        return None
+    try:
+        _run(root, "git", "fetch", "origin", "main", timeout=90)
+    except Exception:
+        pass
+    query = urllib.parse.urlencode({"branch": "main", "per_page": "20"})
+    endpoint = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/ci.yml/runs"
+    for run in _get_json(f"{endpoint}?{query}").get("workflow_runs", []):
+        if run.get("status") != "completed" or run.get("conclusion") != "success":
+            continue
+        head = str(run.get("head_sha") or "")
+        if head and _is_ancestor(root, merge_sha, head):
+            return run
+    return None
+
+
+def _base_side_confirmations(
+    owner: str,
+    repo: str,
+    head_sha: str,
+    head_branch: str,
+    merged_at: str,
+    reference: str,
+    names: list[str],
+) -> dict[str, dict[str, str]]:
+    """For each name in ``names``, the sibling heads that failed it before this merge.
+
+    Returns name -> {sibling head_branch: sibling head_sha}. Independence is
+    structural: a distinct head_branch that is not ours, on a sha that is not ours.
+    Candidate runs must be `failure` runs created inside [merged_at - 24h,
+    merged_at) — only a red that predates our merge is provably not caused by our
+    merged content reaching the sibling's moving base.
+
+    Candidates are keyed BY HEAD SHA, never per branch. A branch whose newer head
+    dodged the defect does not retract the red its older head recorded: on the
+    2026-07-26 live replay w2-support-page's 13:22 head had `ci-pack-1` green, and
+    per-branch keep-newest silently discarded that branch's valid 12:51 red.
+
+    Probe order is PROXIMITY to ``reference`` — the moment our own red started —
+    not newest-first. This class of base-side defect is a temporal STRIPE (the
+    chronicle red depends on the base vintage the merge ref happened to catch), so
+    the siblings that ran nearest our failing check are the most probative, and
+    proximity is immune to a burst of newer candidates crowding the listing.
+    Newest-first UNDER-CONFIRMED a true base-side red in the field: with merged_at
+    13:24:17Z and our `ci-pack-1` red started 12:06:25Z, a 13:14–13:22Z burst of
+    other sessions' pushes filled the top five candidate slots and every one had
+    `ci-pack-1` GREEN (their runs failed on other checks), while the 11:59–12:17Z
+    band around our own red held `ci-pack-1` completed+failure on SIX of seven
+    distinct branches (outbox 12:07:08, cool-allen 12:04:51, w1-china 12:09:53,
+    zealous 12:10:30, inline-shim 11:59:41, pss-f2 12:17:30; only jolly 12:00:48
+    was green). An undated candidate cannot be ranked and sorts last.
+
+    A confirmation is matched by CHECK SUITE, never by the check run's own clock.
+    `github.sha` is frozen at event time, so `started_at` on a check run measures
+    queue latency, not tree vintage: under runner contention (load ~44) a run
+    created 13:22:00 had its `ci-pack-1` job start at 13:25:04 — after the merge —
+    while still testing the pre-merge tree. The suite id is the precise linkage
+    (workflow runs carry `check_suite_id`, check runs carry `check_suite.id`): a
+    rerun replaces check runs within the SAME suite and replays the frozen tree, so
+    it stays valid evidence, whereas a fresh post-merge pull_request event mints a
+    NEW suite and is not. A missing suite id on either side is not a confirmation.
+
+    Costs one listing call plus one probe per candidate head (at most 8). The probe
+    is UNFILTERED so a single call answers every candidate name; truncation there
+    can only UNDER-confirm, which keeps the red.
+    """
+    if not (merged_at and head_branch and names):
+        return {}
+    merged_dt = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+    floor = (merged_dt - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    reference_dt = _parse_stamp(reference) or merged_dt
+
+    def in_window(stamp: str) -> bool:
+        # GitHub emits second-precision `...Z` stamps, so plain string compares
+        # are ordering-correct (same reasoning as `_render_status`).
+        return bool(stamp) and floor <= stamp < merged_at
+
+    def run_start(run: dict[str, Any]) -> str:
+        return _started_stamp(run, "run_started_at", "created_at")
+
+    def proximity(run: dict[str, Any]) -> tuple[int, timedelta]:
+        parsed = _parse_stamp(run_start(run))
+        if parsed is None:
+            return 1, timedelta(0)
+        return 0, abs(parsed - reference_dt)
+
+    endpoint = f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/ci.yml/runs"
+    query = urllib.parse.urlencode({"event": "pull_request", "per_page": "100"})
+    candidates: dict[str, dict[str, Any]] = {}
+    for run in _get_json(f"{endpoint}?{query}").get("workflow_runs", []):
+        if run.get("conclusion") != "failure":
+            continue
+        branch = str(run.get("head_branch") or "")
+        sha = str(run.get("head_sha") or "")
+        if not branch or branch == head_branch or not sha or sha == head_sha:
+            continue
+        if not in_window(run_start(run)):
+            continue
+        # One probe per head sha. The listing is newest-first, so the first run
+        # seen for a sha is the one whose suite owns that head's current checks.
+        candidates.setdefault(sha, run)
+
+    wanted = set(names)
+    found: dict[str, dict[str, str]] = {}
+    for probe in sorted(candidates.values(), key=proximity)[:8]:
+        sha = str(probe.get("head_sha") or "")
+        branch = str(probe.get("head_branch") or "")
+        suite = probe.get("check_suite_id")
+        listing = _get_json(
+            f"https://api.github.com/repos/{owner}/{repo}/commits/{sha}/check-runs"
+            f"?{urllib.parse.urlencode({'per_page': '100'})}"
+        ).get("check_runs", [])
+        for run in listing:
+            name = str(run.get("name") or "")
+            if name not in wanted:
+                continue
+            if run.get("status") != "completed" or run.get("conclusion") != "failure":
+                continue
+            run_suite = (run.get("check_suite") or {}).get("id")
+            if suite is None or run_suite is None or run_suite != suite:
+                continue
+            # Keyed by branch: two heads of one branch are one independent observation.
+            found.setdefault(name, {})[branch] = sha
+        if all(len(found.get(name) or {}) >= 2 for name in wanted):
+            break
+    return found
+
+
+def _check_ci(
+    root: Path,
+    owner: str,
+    repo: str,
+    head_sha: str,
+    merge_sha: str,
+    merged_at: str,
+    head_branch: str,
+) -> tuple[bool, str]:
+    """Judge the merged pull request's OWN head commit, then ask whose red it is.
+
+    Head-only scoring stays deliberate: main's combined status is the product of
+    every concurrent session's merges, so scoring against it would let an
+    unrelated green main mask this pull request's red check (and an unrelated red
+    one block a clean ship). The head commit is the only sha that answers "did
+    THIS work pass".
+
+    What a head sha cannot answer is WHOSE red it is. A defect already on main at
+    pull time lands on the pull request's merge ref, and there it is PERMANENT:
+    `gh run rerun` replays the frozen `refs/pull/N/merge` tree — a merged pull
+    request's merge ref never recomputes against a healed base — and a follow-up
+    pull request is impossible when the fix is already on main. Observed
+    2026-07-26: the chronicle gate-1 staleness window (heal owned by PR #3634,
+    still open) pinned merged PR #3629's `ci-pack-1` red forever; earlier #3503
+    inherited a `tier-gate` red from #3488 the same way. Both sessions shipped
+    green work and were forced into the `SHIP LOOP BLOCKED:` escape.
+
+    The obvious comparisons are structurally unavailable in THIS repo (verified
+    2026-07-26). ci.yml triggers on `pull_request` + `workflow_dispatch` ONLY, so
+    main commits carry ZERO ci.yml check runs — merge base 8773e511b79 held only
+    third-party "Workers Builds"/"Supabase Preview" app runs — which kills
+    "compare the same check on the merge-base sha". ci-main-heartbeat.yml is
+    schedule-only and mirrors a curated subset of individual pure-guard job names
+    (nav-gap, tier-gate, …); it never runs `ci-pack-N`, which is exactly where
+    suite failures like the chronicle pair surface, so name-matching against
+    heartbeat conclusions cannot reach a pack. And a pack's legacy member names
+    exist only as `if: false` definitions that publish `skipped` check runs —
+    member granularity is not available at all.
+
+    So the evidence model uses the two sources that DO exist.
+
+    E1, merged-content-green (strongest; clears EVERY bad conclusion): a
+    completed+success ci.yml run on branch=main whose head_sha is a main
+    descendant of merge_sha. A descendant's tree contains the merge, so one full
+    green run there proves the merged content passes and no per-name argument is
+    needed. No ci.yml run on main has ever existed (total_count=0 today), which is
+    the point: E1 is the OPERATOR'S DELIBERATE UNBLOCK LEVER — dispatch ci.yml on
+    main once the base-side cause is healed and every pinned session clears at
+    once. This mirrors `_render_status` accepting a dispatched render on a
+    descendant.
+
+    E2, base-side-red confirmation (per check name, `failure` conclusions only):
+    the SAME name concluded `failure` on at least TWO INDEPENDENT concurrent
+    sibling pull-request heads — distinct head_branch values, neither ours, on
+    shas that are not ours — in runs created before this merge and no more than 24h
+    before it. Run-level conclusions are NEVER evidence: in the 2026-07-26
+    12:50–13:03Z window three sibling ci.yml runs (gracious-moser, brain-symmetric,
+    brain-consistency) concluded failure with `ci-pack-1` GREEN — their own bugs —
+    so nothing short of a per-head probe of the same NAME counts. The candidate run
+    must PREDATE merged_at: an open pull request's merge ref recomputes against the
+    moving base, so a post-merge sibling red can have OUR merged content as its
+    cause. Inside that window, heads are probed in order of PROXIMITY to the moment
+    our own red started (this defect class is a temporal stripe in the base
+    vintage), and the second hop matches on CHECK SUITE rather than on the check
+    run's clock (a job queued late under contention still tests the event-frozen
+    tree). Both rules replaced weaker ones that under-confirmed a genuine base-side
+    red on the live replay; `_base_side_confirmations` carries the dated evidence.
+    The bar is two distinct BRANCHES — several heads of one branch count once —
+    because pack-level names are the coarsest granularity available (see above):
+    `ci-pack-1` fronts many jobs, so one sibling sharing the name is a real
+    coincidence rather than a shared cause. Evidence is contemporaneous by
+    construction (one listing page is roughly the last few hours on this repo),
+    which matches when the guard actually evaluates: right after the merge.
+
+    Fail-closed throughout. A lone sibling confirmation keeps the red. An absent
+    merged_at, head_branch, or merge_sha skips the gate that depends on it rather
+    than assuming it, and a missing check-suite id on either side of a probe is not
+    a confirmation. The two gates degrade independently — either one's failure
+    means "that gate found no exclusions" and is named in the reason, never a
+    reclassified or swallowed verdict. Conclusions other than `failure`
+    (cancelled, timed_out) are not E2-excludable, because rerunning the frozen
+    tree genuinely can green those, while E1 clears them wholesale by proving the
+    content. Pending checks keep the "CI still running" verdict even when every
+    bad check is excluded. And the head listing is paginated for the same
+    fail-closed reason: PR #3629's head carries 101 check runs, so the old single
+    `per_page=100` call could hide a red past the first page.
+    """
+    runs = _head_check_runs(owner, repo, head_sha)
     if not runs:
         return False, "No CI check runs were found for the pull-request head."
-    bad: list[str] = []
+    bad: list[tuple[str, str]] = []
     pending: list[str] = []
+    failure_starts: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
         lowered = name.lower()
@@ -300,19 +571,82 @@ def _check_ci(owner: str, repo: str, head_sha: str) -> tuple[bool, str]:
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in {"success", "neutral", "skipped"}:
-            bad.append(f"{name} ({run.get('conclusion')})")
-    if bad:
-        return False, (
-            "Failing CI: "
-            + ", ".join(bad[:8])
-            + ". These run against the merged pull request's own head commit, so a later "
-            "fix on main does not clear them: re-run the failed job "
-            "(`gh run rerun --failed <run-id>`) once the cause is fixed, or carry the fix "
-            "through a follow-up pull request with green CI of its own."
+            conclusion = str(run.get("conclusion"))
+            bad.append((name, conclusion))
+            if conclusion == "failure":
+                stamp = _started_stamp(run, "started_at")
+                if stamp:
+                    failure_starts.append(stamp)
+    if not bad:
+        # The green path costs exactly one API call and touches no git: evidence
+        # is only ever gathered to argue about a red.
+        if pending:
+            return False, "CI still running: " + ", ".join(pending[:8])
+        return True, ""
+
+    display = {entry: f"{entry[0]} ({entry[1]})" for entry in bad}
+    excluded: set[tuple[str, str]] = set()
+    evidence: dict[str, list[str]] = {}
+    notes: list[str] = []
+    unavailable: list[str] = []
+
+    try:
+        green = _merged_content_green(root, owner, repo, merge_sha)
+    except Exception as exc:
+        green = None
+        unavailable.append(f"merged-content-green: {str(exc)[:200].strip()}")
+    if green is not None:
+        excluded.update(bad)
+        proof = str(green.get("head_sha") or "")
+        notes.append(
+            "Ignored failing CI on the merged head: "
+            + ", ".join(display[entry] for entry in bad[:8])
+            + f" — full ci.yml run {green.get('id')} concluded success on main descendant "
+            f"{proof[:12]}, proving the merged content green; the head's red is pinned to "
+            "the frozen pull_request merge ref (base-side)."
         )
-    if pending:
-        return False, "CI still running: " + ", ".join(pending[:8])
-    return True, ""
+    else:
+        names: list[str] = []
+        for name, conclusion in bad:
+            if conclusion == "failure" and name not in names:
+                names.append(name)
+        # Proximity anchor: when OUR OWN red started. Same-format `...Z` stamps, so
+        # the string min is the earliest one. Nothing dated falls back to the merge.
+        reference = min(failure_starts) if failure_starts else merged_at
+        try:
+            confirmations = _base_side_confirmations(
+                owner, repo, head_sha, head_branch, merged_at, reference, names
+            )
+        except Exception as exc:
+            confirmations = {}
+            unavailable.append(f"base-side confirmation: {str(exc)[:200].strip()}")
+        for name in names:
+            heads = confirmations.get(name) or {}
+            if len(heads) < 2:
+                continue
+            cited = [f"{sha[:7]}@{branch}" for branch, sha in heads.items()]
+            evidence[name] = cited
+            excluded.add((name, "failure"))
+            notes.append(
+                f"Ignored base-side CI: {name} (failure) — the same check failed on "
+                f"{len(heads)} independent concurrent PR head(s) ({', '.join(cited)}) before "
+                "this merge; the red pre-existed on the shared base, and re-runs replay the "
+                "frozen merge ref so it can never self-clear."
+            )
+
+    unexcluded = [display[entry] for entry in bad if entry not in excluded]
+    if not unexcluded:
+        # A still-running check outranks an exclusion: coverage is unknown, not clear.
+        if pending:
+            return False, "CI still running: " + ", ".join(pending[:8])
+        return True, " ".join(notes)
+    message = _failing_ci_message(unexcluded)
+    if evidence:
+        cited = "; ".join(f"{name} ({', '.join(evidence[name])})" for name in evidence)
+        message = f"{message} (Ignored as base-side: {cited}.)"
+    if unavailable:
+        message = f"{message} (Base-side evidence unavailable: {'; '.join(unavailable)}.)"
+    return False, message
 
 
 def _render_triggering_paths(changed: list[str]) -> bool:
@@ -610,8 +944,16 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
 
     head_sha = str((pull.get("head") or {}).get("sha") or head)
+    # The CI gate needs the merge's identity too: a red on the merged head may be
+    # base-side, and only merge_sha (ancestry), merged_at (the pre-merge window),
+    # and the pull request's own head ref (sibling independence) can show that.
+    head_ref = str((pull.get("head") or {}).get("ref") or "")
+    merge_sha = str(pull.get("merge_commit_sha") or "")
+    merged_at = str(pull.get("merged_at") or "")
     try:
-        ci_ok, ci_reason = _check_ci(owner, repo, head_sha)
+        ci_ok, ci_reason = _check_ci(
+            root, owner, repo, head_sha, merge_sha, merged_at, head_ref
+        )
     except Exception as exc:
         _block(path, state, payload, _github_block_code(exc), str(exc))
         return
@@ -619,8 +961,6 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
         _block(path, state, payload, code, ci_reason)
         return
-
-    merge_sha = str(pull.get("merge_commit_sha") or "")
     try:
         _run(root, "git", "fetch", "origin", "main", timeout=90)
         _run(root, "git", "merge-base", "--is-ancestor", merge_sha, "origin/main")
@@ -631,9 +971,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(
-                root, owner, repo, merge_sha, str(pull.get("merged_at") or "")
-            )
+            status, detail = _render_status(root, owner, repo, merge_sha, merged_at)
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
@@ -656,6 +994,15 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     except Exception as exc:
         _block(path, state, payload, "live_stale", f"Production does not yet contain the merge: {exc}")
         return
+
+    if ci_reason:
+        # A pass that rests on excluded reds is a judgement call; the operator has
+        # to be able to audit which checks were ignored and on what evidence. It is
+        # emitted only here, once every later gate has passed: hook stdout must
+        # stay a single JSON object, and a systemMessage line ahead of a later
+        # block line would make the whole output unparseable — silently defeating
+        # that block, the one direction this guard may never fail.
+        _emit({"systemMessage": f"Ship-loop CI gate: {ci_reason}"})
 
     try:
         path.unlink()

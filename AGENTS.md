@@ -71,3 +71,9 @@ unpushed, unmerged, waiting on the required render, or absent from production.
 Codex must follow the same chain directly from this file. A genuine repeated
 external blocker must be reported as `SHIP LOOP BLOCKED:` with concrete evidence;
 ordinary local cleanup, authentication setup, and waiting are not blockers.
+The CI gate is base-side-aware: a red on the merged head that provably pre-existed
+on main (same check failing on ≥2 independent concurrent PR heads pre-merge, or a
+green ci.yml run on a main descendant) is excluded by name rather than pinning the
+session forever; the operator lever for a healed base is
+`gh workflow run ci.yml --ref main` — one green dispatched run clears every pinned
+merge at once. Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
