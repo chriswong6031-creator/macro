@@ -29,7 +29,12 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-warnings.filterwarnings("ignore")
+if __name__ == "__main__":
+    # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
+    # scope this muted warnings for anything that merely imports this file (pytest
+    # collection, a sibling research harness).  walk_forward.py idiom; ratchet:
+    # tests/test_no_module_level_logging_disable.py.
+    warnings.filterwarnings("ignore")
 
 # ── sys.path: resolve imports from repo root ─────────────────────────────────
 _THIS_DIR = Path(__file__).resolve().parent

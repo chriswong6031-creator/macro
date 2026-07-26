@@ -104,7 +104,12 @@ import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
-warnings.filterwarnings("ignore", category=FutureWarning)
+if __name__ == "__main__":
+    # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
+    # scope this muted warnings for anything that merely imports this file (pytest
+    # collection, a sibling research harness).  walk_forward.py idiom; ratchet:
+    # tests/test_no_module_level_logging_disable.py.
+    warnings.filterwarnings("ignore", category=FutureWarning)
 
 sys.path.insert(0, str(WORKTREE_ROOT))
 from engine.trial_ledger import TrialLedger
