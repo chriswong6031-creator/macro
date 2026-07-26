@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_ad_creative.v1",
+  "title": "Marketing Ad Creative (ad_creative.v1)",
+  "description": "One ad, typed. Emitted by engine/marketing/ad_creative.py. A creative whose claim_type is factual/directional/causal MUST carry a claim_passport_id (AD_CENTRAL_MASTERPLAN.md §0 G-F); assembly refuses rather than truncates when copy exceeds the placement's limits.",
+  "type": "object",
+  "properties": {
+    "creative_id": {"type": "string", "pattern": "^adc-[0-9a-f]{12}$"},
+    "arena_id": {"type": ["string", "null"]},
+    "opportunity_id": {"type": "string"},
+    "format_id": {"type": "string"},
+    "plane": {"type": "string", "enum": ["owned", "organic", "paid", "unknown"]},
+    "angle": {"type": "string"},
+    "hook": {"type": "string"},
+    "proof": {"type": "string"},
+    "cta": {"type": "string"},
+    "headline": {"type": "string"},
+    "body": {"type": "string"},
+    "cta_label": {"type": "string"},
+    "destination": {"type": "string"},
+    "claim_passport_id": {"type": ["string", "null"]},
+    "claim_type": {"type": "string", "enum": ["factual", "directional", "causal", "promotional"]},
+    "media_ref": {"type": ["string", "null"]},
+    "status": {"type": "string", "enum": ["draft", "refused", "live", "retired"]},
+    "refusals": {"type": "array", "items": {"type": "string"}},
+    "mode": {"type": "string", "enum": ["live", "shadow"]}
+  },
+  "required": [
+    "creative_id", "opportunity_id", "format_id", "plane",
+    "headline", "body", "destination", "status", "mode"
+  ]
+}

@@ -504,6 +504,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.campaigns())
             if path == "/api/marketing/experiments":
                 return self._json(marketing.experiments())
+            if path == "/api/marketing/ad-central":
+                return self._json(marketing.ad_central())
             if path == "/api/marketing/lobes":
                 return self._json(marketing.lobes())
             if path == "/api/marketing/content":

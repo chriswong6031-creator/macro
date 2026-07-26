@@ -821,6 +821,39 @@ def experiments(root=None) -> dict:
         return {"ok": False, "error": str(exc)}
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Ad Central — creative fan-out, split tests, budget allocation.
+# research/AD_CENTRAL_MASTERPLAN.md; engine/marketing/ad_central.py
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The operator arm of the G-A triple gate. Phase 1 ships with no UI action that
+# can set it — arming is Phase 5, behind an operator ruling. The env var exists so
+# the gate is exercisable end-to-end; it alone still cannot authorise a cent,
+# because settings.paid_enabled and a non-zero envelope are independent arms.
+_ADS_ARMED_ENV = "MARKETING_ADS_ARMED"
+
+
+def ad_central(root=None) -> dict:
+    """Ad Central: the spend gate, every split test, and today's budget plan.
+
+    Reads the arena ledgers under data/marketing/ad_central/ and returns the
+    payload `engine.marketing.ad_central.state` builds. Degrades to an honest
+    empty state — an arena with no data reads as "still gathering", never as a
+    broken panel.
+    """
+    repo = Path(root) if root is not None else _default_root()
+    try:
+        import os  # noqa: PLC0415
+        from engine.marketing import ad_central as _ac  # noqa: PLC0415
+        armed = str(os.environ.get(_ADS_ARMED_ENV, "")).strip().lower() in {"1", "true", "yes"}
+        payload = _ac.state(repo, cfg=_read_yaml(repo / _CONFIG_REL), operator_armed=armed)
+        payload["as_of"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return payload
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.ad_central failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
 def lobes(root=None) -> dict:
     """Engines-by-department; provenance modes + claims summary; growth-event spine."""
     repo = Path(root) if root is not None else _default_root()

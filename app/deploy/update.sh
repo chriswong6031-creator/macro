@@ -205,12 +205,15 @@ fi
 #                          budget_gate
 #   engine/llm_auth.py     prophet.py deliberation-spend panel
 #   marketing/             marketing.py's outbox approve/reject/decide endpoints →
-#                          outbox + rejections. The other twelve ride the package
-#                          __init__ (→ state → authority, charter, claims, cmo,
-#                          departments, economics, events, ledgers,
-#                          opportunity_bus, publication) — confirmed against a live
-#                          interpreter's sys.modules. Named, not globbed: 34 of the
-#                          48 marketing modules are nightly-only.
+#                          outbox + rejections. marketing.py's Ad Central panel →
+#                          ad_central → ad_allocator, ad_arena, ad_stats. The other
+#                          twelve ride the package __init__ (→ state → authority,
+#                          charter, claims, cmo, departments, economics, events,
+#                          ledgers, opportunity_bus, publication) — confirmed
+#                          against a live interpreter's sys.modules. Named, not
+#                          globbed: 30 of the 53 marketing modules are nightly-only.
+#                          (ad_creative/ad_matrix are NOT here: the panel reads the
+#                          creatives ledger, it does not build creatives.)
 #   scripts/               marketing.py's publish dry-run → marketing_publisher
 #
 # Deliberately NOT here (they would blip the panel for nothing):
@@ -222,7 +225,7 @@ fi
 #     tool dispatcher.
 #   - The rest of engine/marketing (breaking_feed, seo_director, social_publisher,
 #     …) — nightly-only, never imported by a panel.
-if echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/llm_auth\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|authority|charter|claims|cmo|departments|economics|events|ledgers|opportunity_bus|outbox|publication|rejections|state)\.py|scripts/marketing_publisher\.py)$'; then
+if echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log)\.py|engine/llm_auth\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|ad_allocator|ad_arena|ad_central|ad_stats|authority|charter|claims|cmo|departments|economics|events|ledgers|opportunity_bus|outbox|publication|rejections|state)\.py|scripts/marketing_publisher\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 
