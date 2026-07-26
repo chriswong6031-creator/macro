@@ -185,25 +185,62 @@ class TestFullWhitelistParity:
 
     def test_prompt_read_count_matches_read_tools(self):
         """The 'READ (N)' count advertised in the deliberation system prompt must equal
-        len(_READ_TOOLS).  Fails loudly if someone adds a tool without updating the prompt
-        or vice-versa (prompt drift guard)."""
+        len(_READ_TOOLS), AND must equal the number of read tools the prompt actually
+        names.
+
+        Read the RENDERED prompt, not the module source: the count is interpolated from
+        len(_READ_TOOLS), so the source carries no digit at all, and the rendered string
+        is what the model actually receives anyway.
+
+        The count-vs-len half is satisfied by construction while the interpolation
+        stands; it survives as the guard that fires if anyone hand-writes the number
+        back.  The count-vs-named half is the half that carries real information: it
+        ties the advertised number to the visible list, so a count and a list cannot
+        drift apart no matter how the number is produced.
+        """
         import re
-        import inspect
-        from engine.neuralweb.cortex import _READ_TOOLS
+        from engine.neuralweb.cortex import _READ_TOOLS, _SYSTEM_PROMPT
 
-        # Import the module to get the source with the prompt constant
-        import engine.neuralweb.cortex as _cortex_mod
-        source = inspect.getsource(_cortex_mod)
-
-        match = re.search(r"READ\s*\((\d+)\)", source)
+        match = re.search(r"READ\s*\((\d+)\):(.*?)\n\n", _SYSTEM_PROMPT, re.S)
         assert match is not None, (
-            "Could not find 'READ (N)' pattern in cortex.py — prompt format changed"
+            "Could not find 'READ (N): ...' in the rendered prompt — format changed"
         )
         advertised = int(match.group(1))
         actual = len(_READ_TOOLS)
         assert advertised == actual, (
             f"Prompt says 'READ ({advertised})' but _READ_TOOLS has {actual} entries — "
-            f"update the READ count in the deliberation system prompt to match"
+            f"the count is interpolated from len(_READ_TOOLS), so a mismatch means "
+            f"someone replaced the interpolation with a hand-written number"
+        )
+
+        named = set(re.findall(r"\b(?:read|query|explain|list)_[a-z_]+\b", match.group(2)))
+        assert advertised == len(named), (
+            f"Prompt advertises 'READ ({advertised})' but names {len(named)} distinct "
+            f"read tools in the list — the number and the list disagree"
+        )
+
+    def test_prompt_read_count_is_derived_not_hardcoded(self):
+        """The READ/WRITE counts must be INTERPOLATED, never hand-written.
+
+        A correct-today literal passes every other guard in this class and silently
+        re-arms the drift: #3672 added a tool, left 'READ (31)' behind, and turned
+        main red for every open PR until #3688.  Deriving the number is what makes
+        that class of red impossible, so the derivation itself is the invariant worth
+        pinning — a future edit that bakes the digit back in fails here, loudly,
+        while it is still correct and cheap to fix.
+        """
+        import inspect
+        import engine.neuralweb.cortex as _cortex_mod
+
+        source = inspect.getsource(_cortex_mod)
+        assert "READ ({len(_READ_TOOLS)})" in source, (
+            "The prompt's READ count is no longer interpolated from len(_READ_TOOLS). "
+            "Restore 'READ ({len(_READ_TOOLS)})' in _SYSTEM_PROMPT (an f-string) — a "
+            "hand-written count drifts the next time a read tool is added."
+        )
+        assert "WRITE ({len(_WRITE_TOOLS)}," in source, (
+            "The prompt's WRITE count is no longer interpolated from len(_WRITE_TOOLS). "
+            "Restore 'WRITE ({len(_WRITE_TOOLS)}, shadow-tier only)' in _SYSTEM_PROMPT."
         )
 
     def test_prompt_names_every_read_tool(self):
@@ -218,20 +255,20 @@ class TestFullWhitelistParity:
         31 == 31. Membership is the real invariant; the count is a shadow of it.
         """
         import re
-        import inspect
-        from engine.neuralweb.cortex import _READ_TOOLS
-        import engine.neuralweb.cortex as _cortex_mod
+        from engine.neuralweb.cortex import _READ_TOOLS, _SYSTEM_PROMPT
 
-        source = inspect.getsource(_cortex_mod)
-        block = re.search(r"READ\s*\(\d+\):(.*?)\n\n", source, re.S)
-        assert block is not None, "Could not find the 'READ (N): ...' tool block in cortex.py"
+        block = re.search(r"READ\s*\(\d+\):(.*?)\n\n", _SYSTEM_PROMPT, re.S)
+        assert block is not None, (
+            "Could not find the 'READ (N): ...' tool block in the rendered prompt"
+        )
         named = set(re.findall(r"\b(?:read|query|explain|list)_[a-z_]+\b", block.group(1)))
 
         missing = sorted(set(_READ_TOOLS) - named)
         assert not missing, (
             f"{len(missing)} read tool(s) are whitelisted and dispatchable but never "
             f"named in the deliberation system prompt, so the model cannot call them: "
-            f"{missing}. Add them to the 'READ (N): ...' list (and bump N)."
+            f"{missing}. Add them to the 'READ (N): ...' list in _SYSTEM_PROMPT — N "
+            f"itself is interpolated from len(_READ_TOOLS), so only the names need editing."
         )
         stale = sorted(named - set(_READ_TOOLS))
         assert not stale, (
