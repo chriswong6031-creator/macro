@@ -34,7 +34,15 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from engine.research_vault.sidecar import clean_title
+# The id->URL derivation lives in a jinja2-free leaf module so non-rendering
+# consumers (engine/chronicle/adapters.py, whose CI lane installs no jinja2) can
+# reproduce the published URL without importing this renderer. Re-exported under
+# the historical private names so every call site below is unchanged.
+from engine.research_vault.slugs import (
+    report_slug as _slug,
+    report_title as _title,
+    slug_map,  # noqa: F401 — re-export: scripts/build_research_vault.py + tests call rp.slug_map
+)
 
 log = logging.getLogger("build_research_pages")
 
@@ -101,45 +109,6 @@ def _trunc(s: str, n: int) -> str:
     if len(s) <= n:
         return s
     return s[:n].rsplit(" ", 1)[0].rstrip(" ,;:·—-") + "…"
-
-
-def _slug(title: str, idv: str, seen: set[str]) -> str:
-    base = re.sub(r"[^a-z0-9]+", "-", (title or "").lower()).strip("-")[:70].strip("-")
-    suffix = re.sub(r"[^a-z0-9]", "", (idv or "").lower())[-6:] or "report"
-    slug = f"{base}-{suffix}" if base else f"report-{suffix}"
-    # id suffix is already unique per report; guard the rare collision anyway.
-    out, i = slug, 2
-    while out in seen:
-        out = f"{slug}-{i}"
-        i += 1
-    seen.add(out)
-    return out
-
-
-def _title(item: dict) -> str:
-    """The report title as it may become PUBLIC — repaired, never raw.
-
-    These pages put the title in ``<title>``, ``og:title``, ``twitter:title``, the
-    ``<h1>``, the JSON-LD headline and the crawl-hub link text, so an upstream
-    defect here is a defect on the single most SEO-weighted element we ship. The
-    catalog is repaired at ingest AND on load (engine/research_vault), but this
-    builder also runs straight off a committed snapshot a human could edit — so
-    it repairs at the render boundary too, fail-soft, by house rule for public
-    pages. ``clean_title`` is slug-stable, so this never moves an indexed URL.
-    """
-    return clean_title(item.get("title")) or (item.get("title") or "").strip()
-
-
-def slug_map(items: list[dict]) -> dict[str, str]:
-    """id -> URL slug for every catalog item (deterministic). Shared with the vault
-    build so its cards can link straight to ``research/<slug>.html``."""
-    seen: set[str] = set()
-    out: dict[str, str] = {}
-    for it in items:
-        idv = it.get("id") or ""
-        if idv:
-            out[idv] = _slug(_title(it), idv, seen)
-    return out
 
 
 def _norm(item: dict) -> dict:

@@ -1188,5 +1188,186 @@ def test_rebuild_from_committed_sources_reproduces_committed_store():
 
     assert rebuilt_bytes == committed_bytes, (
         "rebuilding from the committed sources did not reproduce the committed "
-        "events.jsonl byte-for-byte — the committed store is stale (gate 1)"
+        "events.jsonl byte-for-byte — the committed store is stale (gate 1)\n"
+        + _stale_store_report(committed_bytes, rebuilt_bytes)
     )
+
+
+def _stale_store_report(committed_bytes: bytes, rebuilt_bytes: bytes) -> str:
+    """Explain a gate-1 failure as EVENTS, not as a byte offset.
+
+    Raw byte-equality reports this defect as ``At index 17454 diff: b'B' != b'C'``,
+    which says nothing about which event moved or what to do — and because event
+    ids sort by (date, id), one inserted event shifts every later line, so a
+    line-by-line read is actively misleading. This gate also fires on whoever
+    happens to touch ci.yml next rather than on whoever made the store stale, so
+    the message has to carry its own remedy.
+    """
+    def parse(raw: bytes) -> dict[str, dict]:
+        out: dict[str, dict] = {}
+        for line in raw.decode("utf-8").splitlines():
+            if line.strip():
+                try:
+                    ev = json.loads(line)
+                except ValueError:
+                    continue
+                if ev.get("id"):
+                    out[ev["id"]] = ev
+        return out
+
+    have, want = parse(committed_bytes), parse(rebuilt_bytes)
+    missing = [want[i] for i in want.keys() - have.keys()]
+    extra = [have[i] for i in have.keys() - want.keys()]
+    changed = [(have[i], want[i]) for i in have.keys() & want.keys() if have[i] != want[i]]
+
+    lines = [
+        f"  committed: {len(have)} events   rebuilt: {len(want)} events",
+        f"  missing from the committed store: {len(missing)}",
+        f"  present only in the committed store: {len(extra)}",
+        f"  same id, different body: {len(changed)}",
+    ]
+    for ev in sorted(missing, key=lambda e: e["id"])[:5]:
+        lines.append(f"    MISSING  {ev['source']}/{ev.get('source_ref')}  {ev.get('title')!r}")
+    for ev in sorted(extra, key=lambda e: e["id"])[:5]:
+        lines.append(f"    ORPHANED {ev['source']}/{ev.get('source_ref')}  {ev.get('title')!r}")
+    for old, new in sorted(changed, key=lambda p: p[0]["id"])[:5]:
+        for field in sorted(set(old) | set(new)):
+            if old.get(field) != new.get(field):
+                lines.append(
+                    f"    CHANGED  {old['source']}/{old.get('source_ref')} .{field}:\n"
+                    f"        committed={old.get(field)!r}\n"
+                    f"        rebuilt  ={new.get(field)!r}"
+                )
+    lines.append(
+        "  remedy: `python -m scripts.build_chronicle --rebuild` regenerates the "
+        "derived store (events + rollups + manifest) from the committed sources; it "
+        "never touches data/chronicle/state_log.jsonl (forward ledger — nightly is "
+        "the sole advancer). Commit the regenerated files."
+    )
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# gate 1, second tooth: the rebuild must be byte-identical ACROSS ENVIRONMENTS,
+# not just across runs in one environment.
+# ---------------------------------------------------------------------------
+
+_JINJA2LESS_PROBE = '''
+import json, sys
+from pathlib import Path
+
+
+class _Blocker:
+    """Make jinja2 unimportable, exactly as a minimal-deps lane leaves it.
+
+    ModuleNotFoundError (with ``name`` set), not a bare ImportError: that is what
+    a genuinely absent module raises, and callers legitimately discriminate on it.
+    """
+
+    def find_spec(self, name, path=None, target=None):
+        if name.split(".")[0] == "jinja2":
+            raise ModuleNotFoundError(
+                "No module named %r (simulated minimal-deps lane)" % name, name=name)
+        return None
+
+
+sys.meta_path.insert(0, _Blocker())
+
+try:
+    import jinja2  # noqa: F401
+    blocked = False
+except ImportError:
+    blocked = True
+
+from engine.chronicle.adapters import adapt_research_vault
+
+events, gap = adapt_research_vault(Path(sys.argv[1]))
+print(json.dumps({
+    "blocked": blocked,
+    "gap": gap,
+    "sites": [e["links"]["site"] for e in events],
+}))
+'''
+
+
+def _write_vault_catalog(root: Path, items: list[dict]) -> None:
+    path = root / "data" / "research_vault" / "catalog.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"items": items}), encoding="utf-8")
+
+
+_SLUG_ITEMS = [
+    {"id": "marketdesk-aaaaaaaaaaa-111111", "title": "Alcon Inc. (ALCC)",
+     "institution": "Goldman Sachs", "published_at": "2026-07-24T09:13:00Z",
+     "summary_points": ["a fact"]},
+    {"id": "marketdesk-bbbbbbbbbbb-222222", "title": "Weekly - Regional View Swiss",
+     "institution": "UBS", "published_at": "2026-07-24T22:06:00Z",
+     "summary_points": []},
+]
+
+
+def test_vault_links_site_survives_a_jinja2less_lane(tmp_path):
+    """links.site must NOT depend on whether jinja2 happens to be installed.
+
+    The adapter derives each vault event's published URL with the same slug
+    function the site builder uses. That function used to be imported from
+    ``scripts.build_research_pages``, which does ``from jinja2 import Environment``
+    at module scope — so in this suite's OWN ci.yml job (``chronicle-suite``
+    installs only pytest/pandas/numpy/pyarrow/pyyaml) the import raised, the
+    adapter's fail-soft swallowed it, and every vault event emitted
+    ``links.site: null``.
+
+    That made the emitted bytes a function of the ENVIRONMENT: the committed store
+    (built where jinja2 exists) and a rebuild in the minimal-deps lane disagreed on
+    every vault event, so gate 1 above could only ever pass in a fat environment —
+    a determinism gate unsatisfiable in the lane meant to enforce it. The
+    derivation now lives in the stdlib-only leaf module
+    ``engine.research_vault.slugs``; this test fails if anything ever puts a
+    renderer back in that import path.
+    """
+    import subprocess  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+
+    _write_vault_catalog(tmp_path, _SLUG_ITEMS)
+    proc = subprocess.run(
+        [sys.executable, "-c", _JINJA2LESS_PROBE, str(tmp_path)],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, f"probe failed: {proc.stderr}"
+    payload = json.loads(proc.stdout.strip().splitlines()[-1])
+
+    assert payload["blocked"] is True, "probe did not actually block jinja2"
+    assert payload["gap"] is None, f"adapter reported a gap: {payload['gap']}"
+    assert len(payload["sites"]) == len(_SLUG_ITEMS)
+    assert all(s is not None for s in payload["sites"]), (
+        "links.site went null with jinja2 absent — the slug derivation is importing "
+        "a renderer again, so events.jsonl bytes depend on the environment "
+        f"(sites={payload['sites']})"
+    )
+    assert payload["sites"] == [
+        "/research/alcon-inc-alcc-111111.html",
+        "/research/weekly-regional-view-swiss-222222.html",
+    ], payload["sites"]
+
+
+def test_slug_leaf_module_is_the_site_builders_own_derivation():
+    """The leaf module must not FORK the published URL — it must BE it.
+
+    A copy that drifts would silently point every chronicle event at a URL the
+    site never emits, so assert the site builder re-exports this exact function
+    rather than keeping a second implementation.
+    """
+    from engine.research_vault import slugs
+
+    try:
+        from scripts import build_research_pages as rp
+    except ImportError as exc:  # noqa: BLE001
+        # The whole point of the leaf module is that THIS suite's lane need not be
+        # able to import the renderer. Skip rather than fail — the jinja2-less test
+        # above is the one that must hold in a minimal-deps lane.
+        pytest.skip(f"site builder unimportable here (expected in a minimal-deps lane): {exc}")
+
+    assert rp.slug_map is slugs.slug_map
+    assert rp._slug is slugs.report_slug
+    assert rp._title is slugs.report_title
+    assert slugs.slug_map(_SLUG_ITEMS) == rp.slug_map(_SLUG_ITEMS)

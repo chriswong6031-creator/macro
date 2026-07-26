@@ -61,12 +61,21 @@ def adapt_research_vault(repo: Path) -> tuple[list[dict], str | None]:
     # M8: every vault item that lands a page gets one at site/research/<slug>.html
     # (scripts/build_research_pages.py). slug_map() is the SAME deterministic
     # id->slug function the site builder uses (pure function of the ordered
-    # items list), so this reproduces the real published URL exactly. Fail-soft
-    # to an empty map -- links.site simply stays None per item if the import
-    # or the derivation ever fails (never blocks the adapter).
+    # items list), so this reproduces the real published URL exactly.
+    #
+    # Imported from engine.research_vault.slugs, NOT from the site builder: that
+    # builder imports jinja2 at module scope, and this lane's CI job installs no
+    # jinja2 (ci.yml chronicle-suite: pytest pandas numpy pyarrow pyyaml). The
+    # import therefore raised, the fail-soft below swallowed it, and every vault
+    # event emitted links.site: null -- so the committed store and a minimal-deps
+    # rebuild disagreed on all 105 events and gate 1 (byte-stable rebuild) could
+    # only ever pass in a fat environment. The leaf module is stdlib-only by
+    # contract; keep it that way or these bytes go environment-dependent again.
+    # Fail-soft is retained as belt-and-braces (links.site stays None), but it is
+    # no longer load-bearing for correctness in any supported lane.
     slug_by_id: dict[str, str] = {}
     try:
-        from scripts.build_research_pages import slug_map  # noqa: PLC0415
+        from engine.research_vault.slugs import slug_map  # noqa: PLC0415
         slug_by_id = slug_map(items)
     except Exception as exc:  # noqa: BLE001
         log.debug("chronicle.research_vault: slug_map unavailable, links.site will be None: %s", exc)
