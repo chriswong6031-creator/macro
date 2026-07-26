@@ -25,6 +25,20 @@ SHELL = ROOT / "site" / "special_situations.html"
 PAYLOAD = ROOT / "site" / "premiumdata" / "special_situations.json"
 TICKER_RE = re.compile(r'data-ticker="([^"]+)"')
 
+# A row's identity is its whole data-* attribute block, NOT its ticker. This desk
+# lists SITUATIONS, and one company routinely carries several: on 2026-07-25 HON
+# held a 2026-06-21 spin-off on the paid board while a 2026-07-24 capital return
+# sat in the free preview — 80 other tickers had more than one locked row. Same
+# company, different rows, so a ticker seen on both sides of the wall is not a
+# leak; a shared ROW is. Keying on the ticker also silently exempted every
+# ticker-less ("—") row — 12 of them — from the leak check entirely.
+CARD_RE = re.compile(r'<div class="ss-row-card"(.*?)>', re.S)
+
+
+def _row_keys(html: str) -> list[str]:
+    """Whitespace-normalised identity of every row card rendered into `html`."""
+    return [" ".join(m.group(1).split()) for m in CARD_RE.finditer(html)]
+
 
 def _env():
     from jinja2 import Environment, FileSystemLoader
@@ -134,6 +148,36 @@ def test_ungated_shell_keeps_every_row_and_no_wall():
     assert "var GATE = null" in shell
 
 
+def test_row_identity_separates_two_situations_on_one_ticker():
+    """Two situations on one ticker are two rows, and only a repeated ROW leaks.
+
+    Proven against the real partial so the leak check below cannot drift from
+    the markup the desk actually ships — and so it can never pass vacuously by
+    keying on something the cards no longer carry.
+    """
+    env = _env()
+    partial = env.get_template("_special_situations_rows.html.j2")
+    spin, capret = _row("HON", 35), _row("HON", 2)
+    spin["cat"], spin["date"] = "Spin-Offs", "2026-06-21"
+    capret["cat"], capret["date"] = "Capital Returns", "2026-07-24"
+
+    free, paid = partial.render(rows=[capret]), partial.render(rows=[spin])
+    # the same ticker sits on both sides of the wall…
+    assert TICKER_RE.findall(free) == TICKER_RE.findall(paid) == ["hon"]
+    # …yet they are different rows, so nothing leaked
+    assert not set(_row_keys(free)) & set(_row_keys(paid))
+    # and the check still bites: the same row on both sides IS caught
+    assert set(_row_keys(partial.render(rows=[spin]))) & set(_row_keys(paid))
+
+
+def test_row_identity_covers_rows_a_ticker_key_would_miss():
+    """A ticker-less row is still paid content; identity must not skip it."""
+    env = _env()
+    partial = env.get_template("_special_situations_rows.html.j2")
+    anon = _row("—", 4)
+    assert len(_row_keys(partial.render(rows=[anon, _row("AAA", 1)]))) == 2
+
+
 # ------------------------------------------------------------- shipped artifacts
 
 
@@ -145,11 +189,16 @@ def test_shipped_shell_leaks_no_paid_row():
     if not payload.get("gated"):
         pytest.skip("desk is running ungated (config.yml special_situations.gated=false)")
     shell = SHELL.read_text(encoding="utf-8")
-    locked = {t for t in TICKER_RE.findall(payload["rows_html"]) if t and t != "—"}
+    locked = _row_keys(payload["rows_html"])
     assert locked, "a gated payload with no rows is a vacuous pass"
-    leaked = sorted(t for t in locked if f'data-ticker="{t}"' in shell)
-    assert leaked == [], f"paid rows readable in the free shell: {leaked[:8]}"
-    assert len(TICKER_RE.findall(shell)) <= payload["preview"] + 1
+    assert len(locked) == payload["locked"], (
+        "row identities must cover the whole paid board or this check is "
+        f"vacuous: keyed {len(locked)} of {payload['locked']} locked rows")
+    shell_rows = _row_keys(shell)
+    leaked = sorted(set(locked) & set(shell_rows))
+    assert leaked == [], ("paid rows readable in the free shell: "
+                          f"{[k[:120] for k in leaked[:3]]}")
+    assert len(shell_rows) <= payload["preview"] + 1
 
 
 # ------------------------------------------------- express-lane thinning guard
