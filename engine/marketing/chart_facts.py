@@ -15,16 +15,16 @@ Public API:
 Salience scale (higher = more remarkable, harder to dismiss):
   10: new 52-week record (all-time-window high/low)
    9: volume record (highest in >=90 days)
-   8: first reclaim/loss of key moving average since a named date;
-      anchored-VWAP reclaim (avwap_reclaim)
-   7: 52-week high/low proximity (within 3%); point-of-control retest & hold
-      (poc_retest_hold)
-   6: 5+ session streak (green or red); anchored-VWAP hold — a passive "still
-      above" state, streak-tier (avwap_hold)
-   5: volume surge (>=2.5× average); point-of-control level (poc_level)
+   8: first reclaim/loss of key moving average since a named date; reclaim of
+      the average price paid since the anchor (avwap_reclaim)
+   7: 52-week high/low proximity (within 3%); retest & hold of the most-traded
+      price (poc_retest_hold)
+   6: 5+ session streak (green or red); holding the average price paid since the
+      anchor — a passive "still above" state, streak-tier (avwap_hold)
+   5: volume surge (>=2.5× average); most-traded-price level (poc_level)
    4: biggest single-day move in >=60 sessions
-   3: tight range (NR7-style compression); trading inside the value area
-      (in_value_area)
+   3: tight range (NR7-style compression); sitting inside the band where most
+      volume traded (in_value_area)
    2: percentage change (4w, 13w)
    1: percentage change (1w)
 
@@ -33,6 +33,27 @@ Polarity contract (M2 facts only):
   posts can filter without brittle text-marker matching (a bull post must
   never lead with a bearish fact). +1 = bullish, -1 = bearish, 0 = neutral.
   Legacy (non-M2) facts have no polarity key and use the text-marker path.
+
+PLAIN-LANGUAGE CONTRACT (2026-07-26 $AAPL incident).
+A fact is not raw material for the writer, it is the SENTENCE the reader ends up
+holding: copywriter ships fact texts verbatim in the LLM prompt and renders
+{top_fact} verbatim in the deterministic templates. So a fact that names a study
+puts that study's name in a public post. The M2 detectors originally emitted
+"Held the anchored VWAP from the Jun 26 volume-spike anchor for 20 straight
+sessions" and the flagship account duly posted "That Jun 26 anchored VWAP has
+held for 20 sessions. I'm watching a close below it" — jargon the reader cannot
+decode, pointing at a line whose price the post never gave. Two rules follow:
+
+  1. NAME THE THING IN PLAIN WORDS. No study names, no acronyms, no
+     "anchored VWAP" / "point of control" / "value area". Say what the level IS
+     ("the average price paid since the Jun 26 volume spike", "the price where
+     the most shares changed hands"). copywriter.validate_copy now rejects the
+     jargon outright, so a fact carrying it costs the post its voice lane.
+  2. A FACT THAT REFERENCES A LEVEL MUST CARRY ITS PRICE, in the text AND in
+     "numbers". avwap_hold used to whitelist only the streak count and the anchor
+     day, so a writer obeying the whitelist literally could not name the line it
+     was told to write about. "Watching a close below it" was the only sentence
+     available to it.
 """
 from __future__ import annotations
 
@@ -72,6 +93,21 @@ def _month_year(date_str: str) -> str:
         return dt.strftime("%b %Y")
     except Exception:
         return date_str[:7]
+
+
+def _window_label(sessions: int) -> str:
+    """Plain-word span for a lookback in trading sessions ('six months').
+
+    A fact that says "the most-traded price of the past six months" is readable
+    cold; "the point of control over a 126-session volume profile" is not. Spelled
+    out, never numeric, so the phrase adds no token to the numbers whitelist.
+    """
+    months = max(1, round(sessions / 21))
+    words = {1: "month", 2: "two months", 3: "three months", 4: "four months",
+             5: "five months", 6: "six months", 7: "seven months",
+             8: "eight months", 9: "nine months", 10: "ten months",
+             11: "eleven months", 12: "year"}
+    return words.get(months, "year")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,8 +222,14 @@ def _fact_52w_high_low(
         if w52_high > 0:
             dist_high_pct = (last_close - w52_high) / w52_high * 100
             if abs(dist_high_pct) <= 3.0:
-                dist_str = _fmt_pct(dist_high_pct)
-                text = f"{ticker} is {dist_str} off its 52-week high ({_fmt_price(w52_high)})"
+                # Unsigned magnitude + an explicit direction word. "-0.6% off its
+                # 52-week high" is a double negative the reader has to resolve
+                # (0.6% below? 0.6% short of being 0.6% below?), and it went out
+                # verbatim in the 2026-07-26 $AAPL post. Sign lives in the word.
+                dist_str = f"{abs(dist_high_pct):.1f}%"
+                side = "below" if dist_high_pct < 0 else "above"
+                text = (f"{ticker} is {dist_str} {side} its 52-week high "
+                        f"({_fmt_price(w52_high)})")
                 facts.append({
                     "id": "near_52w_high",
                     "text": text,
@@ -198,8 +240,12 @@ def _fact_52w_high_low(
         if w52_low > 0:
             dist_low_pct = (last_close - w52_low) / w52_low * 100
             if abs(dist_low_pct) <= 5.0:
-                dist_str = _fmt_pct(dist_low_pct)
-                text = f"{ticker} is {dist_str} above its 52-week low ({_fmt_price(w52_low)})"
+                # Same rule as near_52w_high: magnitude unsigned, direction in
+                # the word. "+2.1% above" reads as two directions at once.
+                dist_str = f"{abs(dist_low_pct):.1f}%"
+                side = "above" if dist_low_pct >= 0 else "below"
+                text = (f"{ticker} is {dist_str} {side} its 52-week low "
+                        f"({_fmt_price(w52_low)})")
                 facts.append({
                     "id": "near_52w_low",
                     "text": text,
@@ -621,15 +667,16 @@ def _fact_avwap_hold(
                 return {
                     "id": "avwap_reclaim",
                     "text": (
-                        f"{ticker} reclaimed the anchored VWAP from the "
-                        f"{anchor_label} volume-spike anchor"
+                        f"{ticker} closed back above {avwap_price}, the average "
+                        f"price paid since the {anchor_label} volume spike"
                     ),
                     "salience": 8,
                     "polarity": 1,
                     # F6: anchor_label (e.g. "Jun 26") embeds the day token "26"
                     # in the fact text; include it in numbers so the copy contract
-                    # holds exactly (avwap_price is unused in the reclaim text but
-                    # kept in the whitelist for the chart overlay label).
+                    # holds exactly. avwap_price is now IN the text (see the
+                    # plain-language note on _fact_avwap_hold) as well as being
+                    # the chart overlay label.
                     "numbers": [avwap_price, anchor_day_str],
                 }
 
@@ -646,11 +693,13 @@ def _fact_avwap_hold(
                     break
             if streak >= 10:
                 count_str = str(streak)
+                avwap_price = _fmt_price(cur_avwap_f)
                 return {
                     "id": "avwap_hold",
                     "text": (
-                        f"Held the anchored VWAP from the {anchor_label} "
-                        f"volume-spike anchor for {count_str} straight sessions"
+                        f"{ticker} has held {avwap_price}, the average price paid "
+                        f"since the {anchor_label} volume spike, for {count_str} "
+                        f"straight sessions"
                     ),
                     # F4: passive "still above" state → streak-tier salience 6
                     # (avwap_reclaim, the ACTIVE cross event, stays at 8).
@@ -658,7 +707,11 @@ def _fact_avwap_hold(
                     "polarity": 1,
                     # F6: anchor_label (e.g. "Jun 26") embeds the day token "26";
                     # include it so every numeric token in the text is whitelisted.
-                    "numbers": [count_str, anchor_day_str],
+                    # avwap_price is whitelisted because it is now IN the text: the
+                    # old wording named the LINE but never its PRICE, so a writer
+                    # obeying the whitelist could only ever say "watching a close
+                    # below it" — a level the reader cannot see (2026-07-26 $AAPL).
+                    "numbers": [avwap_price, count_str, anchor_day_str],
                 }
 
     except Exception as _e:
@@ -703,6 +756,10 @@ def _fact_poc(
         profile = _m2.volume_profile(df, window=window)
         if profile is None:
             return []
+        # Spelled-out span for the fact text ("six months"), so the reader knows
+        # WHICH stretch of tape the level summarises without meeting the words
+        # "volume profile". Spelled, never numeric — adds no whitelist token.
+        win_label = _window_label(window)
 
         poc = float(profile["poc"])
         va_low = float(profile["va_low"])
@@ -723,8 +780,8 @@ def _fact_poc(
                 # strip sign for clean "X% above" phrasing
                 pct_abs_str = f"{abs(pct_away):.1f}%"
                 text = (
-                    f"Volume point of control sits at {poc_str}, "
-                    f"price is {pct_abs_str} {direction} it"
+                    f"{ticker} is {pct_abs_str} {direction} {poc_str}, the price "
+                    f"where the most shares changed hands in the past {win_label}"
                 )
                 facts.append({
                     "id": "poc_level",
@@ -743,8 +800,9 @@ def _fact_poc(
                 facts.append({
                     "id": "in_value_area",
                     "text": (
-                        f"Trading inside the value area "
-                        f"({va_low_str}–{va_high_str})"
+                        f"{ticker} is sitting between {va_low_str} and "
+                        f"{va_high_str}, where most of the past {win_label} of "
+                        f"volume traded"
                     ),
                     "salience": 3,
                     # F1: neutral — inside the value band is not directional.
@@ -762,8 +820,8 @@ def _fact_poc(
                     facts.append({
                         "id": "poc_retest_hold",
                         "text": (
-                            f"Retested the point of control at "
-                            f"{poc_retest_str} and held"
+                            f"{ticker} dipped back to {poc_retest_str}, the "
+                            f"most-traded price of the past {win_label}, and held"
                         ),
                         "salience": 7,
                         # F1: a hold above the POC is a bullish structural event.

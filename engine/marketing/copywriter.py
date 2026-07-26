@@ -35,11 +35,21 @@ from typing import Any
 _MAX_CHARS = 275
 _BANNED_VOCAB: frozenset[str] = frozenset({
     "macd", "rsi", "stochastic", "ichimoku", "bollinger",
+    # M2 study names. The original list was written before the anchored-VWAP and
+    # volume-profile detectors existed, so "VWAP holds" sailed through every gate
+    # and shipped on the flagship account (2026-07-26 $AAPL). An acronym the
+    # reader has to look up is the same defect as "MACD crossed" — the chart may
+    # label the line, the sentence may not.
+    "vwap", "avwap", "poc",
     "validated", "guaranteed", "can't lose", "buy now",
 })
 # Additional banned-vocab substrings (case-insensitive, full-text match, NOT word-boundary).
 # These are longer phrases unlikely to false-positive on a suffix/prefix.
 _BANNED_SUBSTRINGS: tuple[str, ...] = (
+    # M2 study names spelled out (the acronym forms live in _BANNED_VOCAB).
+    "point of control",
+    "value area",
+    "volume profile",
     "vertical",
     "signal stack",
     "accountability layer",
@@ -478,6 +488,147 @@ def _count_emoji(text: str) -> int:
     return count
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Clarity detectors (2026-07-26 $AAPL incident)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# THE DEFECT CLASS THESE CLOSE. The flagship account posted:
+#
+#     Four up, near highs, VWAP holds
+#     $AAPL -0.6% off the 52-week high at 334.99 and up four weeks straight.
+#     That Jun 26 anchored VWAP has held for 20 sessions. I'm watching a close
+#     below it, not chasing.
+#
+# It broke no rule in this validator and no rule in copy_review: the numbers were
+# whitelisted, the cashtag was present, nothing was repeated, nothing was cheesy.
+# It was simply not decodable. "Four up" is a count with no noun (four what?
+# days, weeks, names?); "That ... VWAP" points at a thing the post never
+# introduced; "a close below it" is the whole actionable content of the post and
+# it names no price. Every existing rule asks "is this line CLEAN?" — none asked
+# "can a stranger who was not looking at our chart understand it?"
+#
+# Both detectors are deliberately narrow. copy_review's doctrine applies here too:
+# a gate that cries wolf stops meaning anything, and terseness, fragments and dry
+# understatement are the HOUSE VOICE, not defects. So neither fires on short copy,
+# on fragments, or on pronouns generally — only on the two shapes that are
+# genuinely unreadable. Both are exported because copy_review reuses them to mark
+# floor copy that never reaches validate_copy.
+
+# Counts that read as headless when they stand alone with a bare direction.
+_COUNT_WORDS = (
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve",
+)
+# Bare directions. "Four up" is headless; "Four red days" is not, because the
+# noun arrives. The clause must END at the direction for this to fire.
+_BARE_DIRECTIONS = (
+    "up", "down", "green", "red", "higher", "lower", "flat",
+)
+_HEADLESS_COUNT_RE = re.compile(
+    r"^(?:" + "|".join(_COUNT_WORDS) + r"|\d{1,3})"
+    r"(?:\s+(?:straight|in\s+a\s+row|more))?"
+    r"\s+(?:" + "|".join(_BARE_DIRECTIONS) + r")$",
+    re.IGNORECASE,
+)
+
+# A level referred to only by pronoun. "below it" / "under that" / "through
+# there" is the post's actionable content pointing at a price it never printed.
+# Note what is NOT here: "catching it", "argue with it", "settles it" — those are
+# house-voice pronouns with a clear antecedent (the stock), and the exemplar
+# "watching for a bottom setup, not catching it yet" must stay legal.
+# Noun heads that turn "this"/"that" into a DETERMINER rather than a pronoun.
+# "walk through this chart" is not a dangling level reference, it is a normal
+# noun phrase — caught crying wolf on the deterministic template library, which
+# is the copy every rejected post falls back to.
+_NOUN_HEAD = (
+    "chart", "charts", "level", "levels", "line", "lines", "price", "prices",
+    "point", "zone", "area", "band", "number", "high", "low", "close", "week",
+    "day", "session", "sessions", "name", "names", "move", "setup", "stock",
+    "range", "spot", "one", "thing", "mark", "figure", "trade", "read",
+)
+_DANGLING_LEVEL_RE = re.compile(
+    r"\b(?:below|under|above|over|through|beneath|back\s+to|past)\s+"
+    r"(?:it|that|this|there|them|the\s+line|the\s+level)\b"
+    r"(?!\s+(?:" + "|".join(_NOUN_HEAD) + r")\b)",
+    re.IGNORECASE,
+)
+# A PRICE, not just any digit. "held for 20 sessions" and "-0.6% off the 52-week
+# high" are full of numbers and none of them is a level, which is exactly how the
+# incident post looked numerate while naming no line. Percentages are stripped
+# first, then a price is a decimal (328.40) or a 3+ digit figure (1,204).
+_PCT_RE = re.compile(r"[+-]?\d[\d,]*\.?\d*\s*%")
+_PRICE_LIKE_RE = re.compile(r"\d[\d,]*\.\d+|\b\d[\d,]{2,}\b")
+
+
+def _has_price(sentence: str) -> bool:
+    return bool(_PRICE_LIKE_RE.search(_PCT_RE.sub(" ", sentence or "")))
+
+
+# Punctuation that ends a clause or a sentence — but NEVER the one inside a
+# number. Splitting naively turns "328.40" into two sentences and "1,204" into
+# two clauses, which silently blinds every check downstream to the very prices
+# they exist to look for. Both splitters require a non-digit on at least one
+# side, so decimals and thousands separators stay whole.
+_CLAUSE_SPLIT_RE = re.compile(r"(?<!\d)[,.;:!?]+|[,.;:!?]+(?!\d)|\n+")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<!\d)[.!?]+|[.!?]+(?!\d)|\n+")
+
+
+def _clauses(text: str) -> list[str]:
+    """Split copy into comma/period/newline-delimited clauses, stripped."""
+    return [c.strip() for c in _CLAUSE_SPLIT_RE.split(text or "") if c.strip()]
+
+
+def _sentences(text: str) -> list[str]:
+    """Split copy into sentences (period/newline), stripped."""
+    return [s.strip() for s in _SENTENCE_SPLIT_RE.split(text or "") if s.strip()]
+
+
+def headless_counts(text: str) -> list[str]:
+    """Clauses that are a bare count plus a direction, with no noun.
+
+    "Four up" -> the reader has to guess days, weeks, or names. Returns the
+    offending clauses (empty list = clean).
+
+    Legal and NOT returned: "Eight weeks down" (noun present), "Four red days"
+    (noun present), "up four weeks straight" (the count modifies a noun), "Down
+    3%" (a unit is a noun enough).
+    """
+    return [c for c in _clauses(text) if _HEADLESS_COUNT_RE.match(c)]
+
+
+def dangling_levels(text: str) -> list[str]:
+    """Sentences that watch a level by pronoun that resolves to no price.
+
+    "I'm watching a close below it, not chasing" -> the entire trade instruction
+    rests on a number the post does not contain.
+
+    A pronoun is RESOLVED, and the sentence clean, when a price appears in it or
+    in the sentence immediately before it. That window is the point: naming the
+    level once and referring back to it is normal writing, not a defect.
+
+        "It has stayed above 328.40 for 20 sessions.
+         A close under that is what changes my mind."   <- clean, 'that' = 328.40
+
+    The incident post looked numerate and still failed, because none of its
+    numbers was the line ("...has held for 20 sessions. I'm watching a close
+    below it"): 20 is a session count, and the price of the line it was watching
+    appears nowhere. Hence _has_price rather than a plain digit test, and hence a
+    one-sentence window rather than a whole-post one — a referent further back
+    than that, inside 275 characters, is already a strain on the reader.
+    """
+    out: list[str] = []
+    sentences = _sentences(text)
+    for i, s in enumerate(sentences):
+        if not _DANGLING_LEVEL_RE.search(s):
+            continue
+        if _has_price(s):
+            continue
+        if i > 0 and _has_price(sentences[i - 1]):
+            continue
+        out.append(s)
+    return out
+
+
 def _extract_number_tokens(text: str) -> list[str]:
     """Extract all number-like tokens from text."""
     return _NUMBER_RE.findall(text)
@@ -583,6 +734,20 @@ def validate_copy(
         pattern = r"\b" + re.escape(word) + r"\b"
         if re.search(pattern, full_text, re.IGNORECASE):
             violations.append(f"cheese: '{word}'")
+
+    # 4e. Clarity: a stranger must be able to decode the post cold (2026-07-26).
+    # Both are hard violations, not warnings, and that is deliberate: a failed
+    # violation drops the post to the deterministic floor, which is always
+    # readable. Trading an ambiguous LLM line for a plain template line is the
+    # right swap every time.
+    for clause in headless_counts(full_text):
+        violations.append(
+            f"headless count '{clause}' — a count with no noun (four what?)"
+        )
+    for sentence in dangling_levels(full_text):
+        violations.append(
+            f"level named only by pronoun, no price given: '{sentence[:60]}'"
+        )
 
     # 5. Numbers not in whitelist
     whitelist = set(ctx.get("numbers_whitelist") or [])
@@ -2165,12 +2330,54 @@ def write_posts_llm(
             "- Macro: write only what the data plainly shows ('growth's coming in soft "
             "while inflation's still warm, not a comfortable mix'). Never a regime label "
             "or an internal score. If the facts are thin, say less.\n\n"
+            "CLARITY (the reader is scrolling, has not seen your chart, and will "
+            "not work for it. This is the law the desk broke most recently, so "
+            "read it twice):\n"
+            "- COLD-READ TEST: every post has to make sense to someone who sees "
+            "only these words. No shared context, no chart open, no idea what you "
+            "were looking at. If a line only parses because YOU know what you "
+            "meant, it fails.\n"
+            "- Every count needs its noun. 'Four up' is not a thing anyone can "
+            "read: four days, four weeks, four names? Write 'up four weeks "
+            "straight'. The noun is not optional and it is not clutter.\n"
+            "- Every 'it', 'that', 'this' needs a thing it points at, in the same "
+            "post, already named. 'That Jun 26 line' when no line was ever "
+            "mentioned is a dead reference.\n"
+            "- If the post's whole point is a level, PRINT THE LEVEL. 'Watching a "
+            "close below it' tells the reader nothing they can act on. 'Watching "
+            "a close under 328.40' does. A level with no number is not a level, "
+            "it is a mood.\n"
+            "- Say what a thing IS, never what a study calls it. Not 'the "
+            "anchored VWAP', not 'the point of control', not 'the value area' "
+            "(all three are validator-rejected). Say 'the average price paid "
+            "since the Jun 26 spike', 'the price where the most shares changed "
+            "hands'. The facts you are given are already written this way. Keep "
+            "them that way.\n"
+            "- Short is good; compressed is not. Dropping the words that carry "
+            "the meaning is not brevity, it is a puzzle. Headline fragments are "
+            "welcome, headline TELEGRAMS are not.\n"
+            "- THIS POST SHIPPED AND IT SHOULD NOT HAVE. Study it, it breaks "
+            "four of the rules above at once:\n"
+            "    BAD: 'Four up, near highs, VWAP holds' / '$AAPL -0.6% off the "
+            "52-week high at 334.99 and up four weeks straight. That Jun 26 "
+            "anchored VWAP has held for 20 sessions. I'm watching a close below "
+            "it, not chasing.'\n"
+            "    (headless count; a study name; 'That ... VWAP' pointing at "
+            "nothing; and the level it says it is watching is never printed)\n"
+            "    GOOD: '$AAPL is still holding the line' / '$AAPL is 0.6% off its "
+            "52-week high and up four weeks straight. It has stayed above "
+            "328.40, the average price paid since the Jun 26 volume spike, for 20 "
+            "sessions. A close under that is what changes my mind. Not chasing "
+            "it here.'\n\n"
             "HARD BANS (a validator rejects these, obey exactly):\n"
             "- NO em dashes (—) or spaced en dashes ( – ) anywhere. Use a period, a "
             "comma, or a new sentence. Hyphens in compounds (52-week) are fine.\n"
             "- Banned words: vertical, signal stack, receipt book, accountability layer, "
             "honest model, regime, goldilocks, growth score, inflation score, de-rating, "
             "narrative, positioning in, implications for, the backdrop, '(read:'.\n"
+            "- Banned study names: VWAP, AVWAP, POC, point of control, value "
+            "area, volume profile, MACD, RSI, Stochastic, Ichimoku, Bollinger. "
+            "The chart may label a line; your sentence may not name the study.\n"
             "- Meme cosplay and sitcom beats are validator-banned: stonks, diamond "
             "hands, paper hands, apes, fam, ser, wagmi, ngmi, 'to the moon', 'let that "
             "sink in', 'checks notes', 'narrator:', 'plot twist', 'hold my beer', "

@@ -10,11 +10,18 @@ it structurally cannot catch:
      it was eight posts sharing a skeleton ("$TICKER into the week" x8). Every
      one passed validate_copy individually, because individually each was fine.
 
-The second is the important half and it needs no model at all: repetition is
-measurable. detect_repetition() runs always, costs nothing, and would have
-caught the incident on the first night.
+  3. A post that is clean, unique, on-voice and simply not DECODABLE. "Four up,
+     near highs, VWAP holds" broke no rule anywhere and no reader could parse it
+     (2026-07-26 $AAPL). Ambiguity is not repetition and it is not a style
+     judgement: it has measurable shapes, so detect_ambiguity() handles it
+     mechanically alongside the repetition pass.
 
-The first half is a judgement call, so it is LLM-gated exactly like
+The mechanical halves are the important ones and they need no model at all:
+repetition and ambiguity are both measurable. detect_repetition() and
+detect_ambiguity() run always, cost nothing, and would each have caught their
+incident on the first night.
+
+The remaining half is a judgement call, so it is LLM-gated exactly like
 write_posts_llm (config copywriter.llm.enabled AND MARKETING_LLM_ENABLED) and
 degrades to the mechanical half when unavailable.
 
@@ -108,6 +115,60 @@ def detect_repetition(posts: list[dict]) -> list[dict]:
     return out
 
 
+def detect_ambiguity(posts: list[dict]) -> list[dict]:
+    """Per-post clarity findings. Deterministic, no model, always runs.
+
+    The second blind spot, found the same way as the first. detect_repetition
+    catches eight posts that share a skeleton; nothing caught ONE post that is
+    simply not decodable:
+
+        "Four up, near highs, VWAP holds"
+        "... That Jun 26 anchored VWAP has held for 20 sessions. I'm watching a
+         close below it, not chasing."
+
+    Clean, unique, on-voice, and unreadable. The operator's reaction was the
+    whole spec: "wtf is four up?"
+
+    Unlike detect_repetition this is a PER-POST check, so it runs on batches of
+    any size — a bad post is bad alone. It reuses copywriter's detectors, which
+    means the marker the operator sees in the Outbox and the rule that rejects
+    LLM copy are the same rule, and cannot drift apart. It still applies where
+    the validator does not: deterministic floor copy never passes through
+    validate_copy, so this is the only clarity check that sees it.
+
+    Returns findings shaped like detect_repetition's:
+      {"kind": "headless_count"|"unnamed_level", "detail", "ids", "severity"}
+    """
+    out: list[dict] = []
+    if not posts:
+        return out
+    try:
+        from engine.marketing.copywriter import (  # noqa: PLC0415
+            dangling_levels,
+            headless_counts,
+        )
+    except Exception as exc:  # noqa: BLE001 — review must never break generation
+        log.warning("copy_review: clarity detectors unavailable: %s", exc)
+        return out
+
+    for i, p in enumerate(posts):
+        pid = str(p.get("id") or i)
+        text = f"{p.get('headline', '') or ''}\n{p.get('body', '') or ''}"
+        for clause in headless_counts(text):
+            out.append({
+                "kind": "headless_count", "severity": "high", "ids": [pid],
+                "detail": f"{pid}: {clause!r} is a count with no noun "
+                          f"({clause.split()[0].lower()} what?)",
+            })
+        for sentence in dangling_levels(text):
+            out.append({
+                "kind": "unnamed_level", "severity": "high", "ids": [pid],
+                "detail": f"{pid}: watches a level it never prices: "
+                          f"{sentence[:70]!r}",
+            })
+    return out
+
+
 def lessons_from_rejections(root=None, *, limit: int = _MAX_LESSONS) -> list[str]:
     """The operator's own rejection notes, newest first. Fail-soft to []."""
     try:
@@ -179,11 +240,17 @@ def review_posts_llm(posts: list[dict], cfg: dict, *,
             "than a thing someone said\n"
             "- says nothing: no level, no stance, no real question\n"
             "- stiff or brochure-ish phrasing, corporate register, cheese\n"
-            "- a claim the numbers given do not support\n\n"
+            "- a claim the numbers given do not support\n"
+            "- does not survive a cold read: you cannot tell what it means "
+            "without already knowing what the writer was looking at. A count "
+            "with no noun ('four up' — four what?), a 'that'/'it' pointing at "
+            "something never named, a study name the reader would have to look "
+            "up, or a level the post says it is watching but never prices.\n\n"
             "Do NOT flag: terseness, informality, fragments, dry humour, an "
-            "unexciting take. Those are the house voice, not defects. A post "
-            "with nothing wrong gets an empty issues list, and most posts "
-            "should." + learned + "\n\n"
+            "unexciting take. Those are the house voice, not defects. Unclear is "
+            "not the same as short: a two-word post whose meaning lands is fine, "
+            "a full sentence nobody can decode is not. A post with nothing wrong "
+            "gets an empty issues list, and most posts should." + learned + "\n\n"
             'Return JSON only: [{"i": <index>, "verdict": "ok"|"weak"|"bad", '
             '"issues": ["short specific phrase"]}]'
         )
@@ -237,14 +304,15 @@ def review_batch(posts: list[dict], cfg: dict | None = None, *, root=None) -> di
     if not posts:
         return result
     try:
-        result["batch"] = detect_repetition(posts)
+        result["batch"] = detect_repetition(posts) + detect_ambiguity(posts)
         per = review_posts_llm(posts, (cfg or {}).get("copywriter", {}) or {},
                                lessons=lessons_from_rejections(root))
         if per is not None and len(per) == len(posts):
             result["posts"] = per
             result["mode"] = "llm"
         # Repetition is a per-post problem too: mark the members so the operator
-        # sees WHICH posts collide, not just that some do.
+        # sees WHICH posts collide, not just that some do. Clarity findings are
+        # already per-post and ride the same path.
         by_id = {str(p.get("id") or i): i for i, p in enumerate(posts)}
         for f in result["batch"]:
             for pid in f.get("ids", []):

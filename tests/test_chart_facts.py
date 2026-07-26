@@ -436,7 +436,10 @@ def test_avwap_hold_fact_emitted():
         for token in num_re.findall(result["text"]):
             # Skip small bare integers (day counts don't need the exact format check)
             pass  # text structure validated below
-        assert "volume-spike anchor" in result["text"]
+        # Plain words, and the ANCHOR DATE the reader can find on the chart.
+        # Never "anchored VWAP" — see the plain-language contract in chart_facts.
+        assert "volume spike" in result["text"]
+        assert "vwap" not in result["text"].lower()
 
 
 def test_avwap_hold_numbers_whitelist():
@@ -588,6 +591,79 @@ def test_m2_facts_no_intraday_vocab():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Plain-language contract (2026-07-26 $AAPL incident)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# A fact text is not scratch material — copywriter ships it verbatim to the LLM
+# and renders {top_fact} verbatim in the deterministic templates, so a fact that
+# names a study puts that study's name in a public post. These two tests are the
+# structural guard: a new detector cannot bring jargon back in without failing,
+# and it cannot describe a level it never prices.
+
+def _all_fact_texts(monkeypatch=None) -> list[tuple[str, str]]:
+    """(id, text) for every fact the engine can emit on a rich fixture."""
+    from engine.marketing.chart_facts import _fact_avwap_hold, _fact_poc, compute_facts
+    n = 80
+    dates, o, h, l, c, v = _build_m2_df(n)
+    out = [(f["id"], f["text"]) for f in compute_facts("PLAIN", dates, o, h, l, c, v)["facts"]]
+    # The M2 detectors are conditional; force them so the ban applies to their
+    # text too rather than passing vacuously when the fixture does not fire them.
+    # _build_m2_df spikes volume at bar 10, which falls outside the 63-bar anchor
+    # lookback at n=80, so avwap never fires on it. Move the spike inside.
+    v_late = list(v)
+    v_late[10] = 500_000.0
+    v_late[55] = 5_000_000.0
+    avw = _fact_avwap_hold("PLAIN", dates, c, h, l, v_late)
+    assert avw is not None, "avwap fixture stopped firing — the guard would miss it"
+    out.append((avw["id"], avw["text"]))
+    if monkeypatch is not None:
+        _patch_profile(monkeypatch, poc=c[-1] * 1.01, va_low=c[-1] * 0.98,
+                       va_high=c[-1] * 1.02)
+        out += [(f["id"], f["text"]) for f in _fact_poc("PLAIN", dates, c, h, l, v)]
+    return out
+
+
+def test_no_fact_text_carries_study_jargon(monkeypatch):
+    """The validator's ban list is the single source of truth, so a fact can
+    never ship vocabulary the copy gate would reject downstream."""
+    pytest.importorskip("engine.indicators_m2")
+    from engine.marketing.copywriter import _BANNED_SUBSTRINGS, _BANNED_VOCAB
+
+    texts = _all_fact_texts(monkeypatch)
+    assert texts, "fixture produced no facts — the guard would pass vacuously"
+    for fact_id, text in texts:
+        low = text.lower()
+        for word in _BANNED_VOCAB:
+            assert not re.search(rf"\b{re.escape(word)}\b", low), (
+                f"fact {fact_id!r} carries banned vocab {word!r}: {text!r}"
+            )
+        for phrase in _BANNED_SUBSTRINGS:
+            assert phrase not in low, (
+                f"fact {fact_id!r} carries banned phrase {phrase!r}: {text!r}"
+            )
+
+
+def test_level_facts_print_their_price(monkeypatch):
+    """A fact about a line must carry the line's price, in the text AND in
+    numbers. avwap_hold used to whitelist only the streak count and the anchor
+    day, so a writer obeying the whitelist could not name the level it was
+    describing — which is exactly the post the operator saw."""
+    pytest.importorskip("engine.indicators_m2")
+    price_re = re.compile(r"\d[\d,]*\.\d{2}")
+    level_facts = {"avwap_hold", "avwap_reclaim", "poc_level",
+                   "poc_retest_hold", "in_value_area"}
+
+    seen = set()
+    for fact_id, text in _all_fact_texts(monkeypatch):
+        if fact_id not in level_facts:
+            continue
+        seen.add(fact_id)
+        assert price_re.search(text), (
+            f"{fact_id!r} describes a level but prints no price: {text!r}")
+    assert seen, "no level facts fired — the guard would pass vacuously"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # M2 polarity + gating + cap + salience (F1/F3/F4/F6/F7)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -644,7 +720,11 @@ def test_poc_level_polarity_below(monkeypatch):
     facts = _fact_poc("BELOW", dates, c, h, l, v)
     poc = next(f for f in facts if f["id"] == "poc_level")
     assert poc["polarity"] == -1, "price below POC → polarity -1"
-    assert "below it" in poc["text"]
+    # The text says which side price sits on. Asserted as the word, not the old
+    # "below it" phrasing: the fact now names the level in plain words instead of
+    # pointing at it with a pronoun (see the plain-language contract).
+    assert "below" in poc["text"]
+    assert "above" not in poc["text"]
 
 
 def test_in_value_area_polarity_zero(monkeypatch):
