@@ -1370,3 +1370,51 @@ charters:
       tier mirrored from synapse.yml (display); string-form fitness_sensors = no metabolism
       roster slot consumed. authority.may_rank/gate/size/escalate=false.
 
+  chronicle-events:
+    lobe_id: chronicle-events
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: agentic_media
+    notes: >-
+      Chronicle W0 event spine (agentic_media/Chronicle program). Deterministic derived-event
+      ledger compiled nightly from 6 sources; public-safe by construction (chronicle.event.v1
+      is the field allowlist). tier mirrored from synapse.yml (display); string-form
+      fitness_sensors = no metabolism roster slot consumed. authority.may_rank/gate/size/
+      escalate=false — weight_hint is deterministic salience only, never LLM-set.
+
+  chronicle-state-log:
+    lobe_id: chronicle-state-log
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: agentic_media
+    notes: >-
+      Chronicle W0 forward-capture ledger: one row per nightly run recording world_state.json
+      regime labels (risk-band sources data/risk_radar/forward_log.jsonl directly instead — see
+      chronicle-events, B6). Nightly is the sole advancer (house law, COLLECT_LANE=nightly gated);
+      never rewritten by --rebuild. tier mirrored from synapse.yml (display); string-form
+      fitness_sensors = no metabolism roster slot consumed. authority.may_rank/gate/size/
+      escalate=false.
+
+  chronicle-manifest:
+    lobe_id: chronicle-manifest
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: agentic_media
+    notes: >-
+      Chronicle W0 sidecar envelope (dict payload carrying the 5 envelope keys + per-adapter
+      counts/gap notes + per-ledger row counts/sha256 + compile elapsed_s). tier mirrored from
+      synapse.yml (display); string-form fitness_sensors = no metabolism roster slot consumed.
+      authority.may_rank/gate/size/escalate=false.
+

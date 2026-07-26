@@ -636,8 +636,9 @@ artifacts:
       - engine/risk_radar_review.py
       - engine/run.py
       - engine/crossasset_shadow.py
+      - engine/chronicle/adapters.py
     external_consumers: []
-    notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of. W3-E: engine/crossasset_shadow.py reads last-row state as US incumbent baseline for the CGL-mirror escalator."
+    notes: "Producer: engine/risk_radar_audit.py:35 append, idempotent by as-of. W3-E: engine/crossasset_shadow.py reads last-row state as US incumbent baseline for the CGL-mirror escalator. B6: engine/chronicle/adapters.py (adapt_risk_band) reads it directly as the risk_band chronicle-events source — real committed dated risk-state history, not a forward-capture derivation."
 
   # RR scorecard (data copy) — the canonical data-side artifact written atomically
   # alongside site/riskdata/scorecard.json by engine/risk_radar_scorecard.py.write().
@@ -4211,6 +4212,7 @@ artifacts:
       - engine/neuralweb/mastermind_context.py
       - scripts/build_macro_context.py
       - engine/neuralweb/brief_context.py
+      - engine/chronicle/state_log.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -10058,7 +10060,7 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers: [engine/chronicle/adapters.py]
     external_consumers: []
     notes: >
       Prophet forward outcome ledger. Schema pre-registered in research/PROPHET_LEDGER_SCHEMA.md.
@@ -10293,6 +10295,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_release_forecast.py
+      - engine/chronicle/adapters.py
     notes: >
       MRI PR-C: append-only forward ledger for release projections and
       scored actuals. Row types: projection (nightly frozen snapshot) and
@@ -14438,3 +14441,87 @@ artifacts:
     notes: >
       Public-safe summary of the Marketing lobe for the Neural Web organization graph (no budgets, no
       credentials, no desk handles). Names, lifecycle states, wave status, positioning, channel priority only.
+
+  chronicle-events:
+    path: data/chronicle/events.jsonl
+    format: jsonl
+    producer: scripts/build_chronicle.py
+    known_extra_writers: []
+    owner_program: agentic_media
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: chronicle.event.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py]
+    external_consumers: []
+    notes: >
+      Chronicle W0 event spine (agentic_media/Chronicle program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md).
+      Deterministic, append-only derived-event ledger (B1: source-row-leaves-snapshot is a
+      union-merge retain, never a delete) compiled nightly from 6 sources: research-vault catalog
+      items, Prophet ledger closes, macro-release reactions, earnings surprises, risk-band flips
+      (data/risk_radar/forward_log.jsonl — real committed dated history, B6 correction) and regime
+      flips derived from chronicle-state-log (world_state.json has no committed dated history of
+      its own, hence the forward-capture ledger). Display-only; originates no market signal/
+      score/escalation — weight_hint is deterministic salience only (never LLM-set). Public-safe by
+      construction (chronicle.event.v1 is the field allowlist every adapter projects into; a CI test
+      fails any event carrying a field outside it or a fact string over the 200-char cap). Rebuildable
+      byte-stable via `python -m scripts.build_chronicle --rebuild` (modulo generated_at); regime
+      flip events accrue forward-only from the W0 run date — historical flips are W4 git-archaeology.
+      m13: 2 of 6 sources (data/research_vault/catalog.json, data/earnings/earnings.parquet) have no
+      independent synapse artifact entry of their own (owned by other programs) — the cross-artifact
+      read-gate does not cover those two specifically; deliberate, tracked omission, not an oversight.
+  chronicle-state-log:
+    path: data/chronicle/state_log.jsonl
+    format: jsonl
+    producer: scripts/build_chronicle.py
+    known_extra_writers: []
+    owner_program: agentic_media
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: chronicle.state_log/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/chronicle/state_log.py, engine/chronicle/spine.py, admin/chronicle.py]
+    external_consumers: []
+    notes: >
+      Chronicle W0 forward-capture ledger: one row per nightly run recording data/neuralweb/
+      world_state.json's regime (per-market quad/quad_name/cycle_tag from global_regimes, keyed by
+      the SOURCE as-of date, not ingest time) plus an intl risk label (intl_risk.em_stress_state,
+      captured for informational parity — NOT the risk_band event source; see chronicle-events
+      notes, B6). FORWARD LEDGER — nightly is the sole advancer (house law), enforced by an
+      in-code COLLECT_LANE=nightly lane gate on the write path (B2); NOT regenerated or rewritten by
+      `--rebuild`, which only reads existing rows (state_log is the one W0 ledger `--rebuild` cannot
+      losslessly reconstruct — a declared, documented exemption from the otherwise byte-stable
+      rebuild guarantee). Consecutive-row regime label changes (carry-forward across gap nights, M2)
+      deterministically derive regime_flip events into chronicle-events.
+  chronicle-manifest:
+    path: data/chronicle/manifest.json
+    format: json
+    producer: scripts/build_chronicle.py
+    known_extra_writers: []
+    owner_program: agentic_media
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: chronicle.manifest/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/manifest.py]
+    external_consumers: []
+    notes: >
+      Chronicle W0 sidecar envelope (dict payload — engine.neuralweb.envelope.stamp cannot stamp a
+      JSONL stream directly). Carries the 5 envelope keys + per-adapter event counts/gap notes +
+      per-ledger row counts and sha256 hashes for chronicle-events and chronicle-state-log + compile
+      elapsed_s (binding budget: printed every run; target well under the 200-minute nightly cap).

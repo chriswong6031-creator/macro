@@ -2164,6 +2164,51 @@ jobs:
         # Authority: is_context_only=true, all promotion flags false. No LLM calls. Always exits 0.
         # Outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.grade_thematic || echo "::warning::grade_thematic failed (non-fatal — last committed artifacts stand)"
+      - name: Chronicle — market context timeline spine
+        continue-on-error: true
+        # M10 fix: moved from standout_audit_us (which needs: engine, i.e. runs
+        # AFTER this whole job finishes) into engine, ahead of "build mastermind
+        # context" below — the chronicle lobe was permanently serving the
+        # PREVIOUS night's store because it built after the very context that
+        # was supposed to read it fresh. This placement also gives the build a
+        # COLLECT_LANE=nightly sentinel (job-level env above) — required by the
+        # B2 lane gate on the state_log write path. Measured cost 0.396s;
+        # negligible against the 200-minute cap.
+        run: |
+          set +e
+          python -m scripts.build_chronicle; rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::warning title=chronicle_governor::rc=$rc (chronicle events/state_log/rollups may be stale)"
+          fi
+          exit 0
+      - name: commit chronicle artifacts
+        # Scoped to data/chronicle only (not folded into "commit engine
+        # outputs" below): an early, dedicated commit+push means the chronicle
+        # store survives even if the rest of this job later times out (this
+        # job has a documented cancellation history — see its timeout-minutes
+        # comment above). Own files — no other job writes these paths.
+        run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/chronicle 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no chronicle changes"; exit 0; fi
+          git commit -m "chronicle: nightly event spine + state_log + rollups $(date -u +%F)"
+          PUSH_ALARM=420
+          push_retry_init "chronicle artifacts"
+          while push_attempt; do
+            perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
+            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+              | while IFS= read -r f; do rm -f -- "$f" || true; done
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+              if push_do; then echo "pushed chronicle artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            fi
+            push_abort_rebase
+            push_backoff
+          done
+          push_lost
+          echo "::warning::could not push chronicle artifacts after $PUSH_ATTEMPT attempts ($PUSH_STOP) (non-fatal)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and

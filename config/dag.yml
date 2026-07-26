@@ -914,6 +914,21 @@ lanes:
           Stage 3: qledger falsifier auto-evaluation — evaluates check_by-arrived claims →
           data/qledger/falsifier_evaluations.jsonl (append-only, capped 2000/run).
           Always exits 0. No LLM calls. No scored-path consumers.
+      - id: chronicle_spine
+        module: scripts.build_chronicle
+        note: >
+          Chronicle W0 market-context timeline spine (agentic_media program). Deterministic
+          event compile from research-vault catalog, Prophet ledger, macro-release forward
+          ledger, earnings parquet, risk_radar forward log, and world_state.json regime
+          labels (via the state_log.jsonl forward-capture ledger). Writes:
+          data/chronicle/events.jsonl, data/chronicle/state_log.jsonl (append-only, one
+          row/night), data/chronicle/rollups/{daily,weekly}/*.json,
+          data/chronicle/manifest.json. Never-raise; display-only; no LLM calls; originates
+          no market signal. M10: runs HERE (engine job), ahead of build_nw_mastermind_context
+          below, so the mastermind lobe reads a same-night store instead of the previous
+          night's (moved from standout_audit_us, which needs: engine and therefore always
+          ran after this whole job finished). This placement also supplies the
+          COLLECT_LANE=nightly sentinel the B2 state_log write-path lane gate requires.
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)

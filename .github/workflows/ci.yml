@@ -413,6 +413,16 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # Chronicle W0 (agentic_media program): market-context timeline spine. engine/chronicle/**,
+      # the builder script, the committed seed store, the admin inspector, and the test file must
+      # all trigger the chronicle-suite job below — config/synapse.yml, config/dag.yml,
+      # config/lobe_charters.yml, docs/SIGNAL_BUS.md, and engine/neuralweb/** (mastermind_context.py
+      # registration) are already covered above.
+      - "engine/chronicle/**"
+      - "scripts/build_chronicle.py"
+      - "data/chronicle/**"
+      - "tests/test_chronicle.py"
+      - "admin/chronicle.py"
       # RIC W4 EVW: event-window engine + forward ledger + ex-ante read (P3 RIC program).
       # engine/** already covers engine/event_window.py; test file + research doc +
       # config/lobe_charters.yml + config/metabolism_anomaly.yml need explicit paths.
@@ -1268,6 +1278,25 @@ jobs:
           tests/test_ai_desk.py tests/test_ai_desk_scorer.py
           tests/test_radar_scorer.py tests/test_narrative_brain.py
           tests/test_demand_ledger.py tests/test_policy_intent_desk.py -q
+
+  chronicle-suite:
+    if: ${{ false }}
+    # Chronicle W0 (agentic_media program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md):
+    # deterministic event spine + rollups + context_pack over 6 sources. No paths filter narrows
+    # this beyond the shared top-level trigger above (engine/chronicle/**, scripts/build_chronicle.py,
+    # data/chronicle/**, tests/test_chronicle.py, admin/chronicle.py all listed there; config/synapse.yml,
+    # config/dag.yml, config/lobe_charters.yml, docs/SIGNAL_BUS.md, engine/neuralweb/** already covered
+    # by pre-existing entries).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: chronicle engine tests
+        run: python -m pytest tests/test_chronicle.py -q
 
   cycle-ontology-js:
     if: ${{ false }}

@@ -1,0 +1,274 @@
+{
+  "as_of": "2026-07-26",
+  "coverage": {
+    "end": "2026-07-25",
+    "note": "daily rollup covers 10 session-date(s) from 2026-07-10 to 2026-07-25; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-07-10"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-07-25",
+      "events": []
+    },
+    {
+      "date": "2026-07-24",
+      "events": [
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-8d6e3ee6806a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jtzjieuwmz6-7f06bb",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-e7d30284bf3a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ksuyyfujmgc-4eedee",
+          "tickers": [],
+          "title": "Goldman Sachs: South Africa SARB Keeps Policy Rate on Hold, Against Consensus",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-e99c12bc2772",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-83nrb9puna4-e9fd0f",
+          "tickers": [],
+          "title": "UBS: Blog",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-ec600e342093",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-a4e7fwpzlci-daa27a",
+          "tickers": [],
+          "title": "Goldman Sachs: Alcon Inc. (ALCC",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-edba05d675b9",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-41ocklcrgj2-ef43be",
+          "tickers": [],
+          "title": "Goldman Sachs: Japan Aerospace & Defense RTX 2Q results read across GTF aftermarket strong",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-ef577b0c7e06",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nkuj9j9ver8-914817",
+          "tickers": [],
+          "title": "Deutsche Bank: Reddit July 24",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-f31ef8ad1bd7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-y0nvuigntth-3dc584",
+          "tickers": [],
+          "title": "Goldman Sachs: Japan Focus of the Week BOJ Meeting, July Tokyo CPI, June Industrial Production",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fa139682dcec",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-8urlymoohrf-9573c7",
+          "tickers": [],
+          "title": "Goldman Sachs: Global Credit Trader Defaults Tracking the Persistent 'Left Tail'",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-fb3773745860",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cjtotup7k0s-a5c58f",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-risk_band-40f76052712a",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-24",
+          "tickers": [],
+          "title": "Risk radar: watch → caution",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "events": [
+        {
+          "date": "2026-07-23",
+          "id": "cev-macro_release-2b0a7c2c0b86",
+          "kind": "print",
+          "source": "macro_release",
+          "source_ref": "claims#2026-07-23",
+          "tickers": [],
+          "title": "Macro print: claims = +187 (2026-07-23)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-23",
+          "id": "cev-research_vault-42f29399aef8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ocw3opucwd0-128d5a",
+          "tickers": [],
+          "title": "The Market Ear: The Market Is Starting To Crack",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-23",
+          "id": "cev-research_vault-5451065da26f",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-umrprzixcel-3e20aa",
+          "tickers": [],
+          "title": "RBC: RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-23",
+          "id": "cev-research_vault-62ec1e0aee22",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-c7gm7yebcno-3504c3",
+          "tickers": [],
+          "title": "The Market Ear: Inside The Magnificent 7 Selloff",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-21",
+      "events": [
+        {
+          "date": "2026-07-21",
+          "id": "cev-risk_band-f80f93297f8c",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-21",
+          "tickers": [],
+          "title": "Risk radar: caution → watch",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-20",
+      "events": [
+        {
+          "date": "2026-07-20",
+          "id": "cev-prophet_ledger-3faec3db6c86",
+          "kind": "signal_close",
+          "source": "prophet_ledger",
+          "source_ref": "MS-BULL-20260709",
+          "tickers": [
+            "MS"
+          ],
+          "title": "Prophet close: MS BULL → INVALIDATED (-5.0% in 11d)",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "events": [
+        {
+          "date": "2026-07-16",
+          "id": "cev-prophet_ledger-095ee3b88468",
+          "kind": "signal_close",
+          "source": "prophet_ledger",
+          "source_ref": "QCOM-BULL-20260709",
+          "tickers": [
+            "QCOM"
+          ],
+          "title": "Prophet close: QCOM BULL → INVALIDATED (-10.7% in 7d)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-16",
+          "id": "cev-prophet_ledger-0d4cbc63fe3d",
+          "kind": "signal_close",
+          "source": "prophet_ledger",
+          "source_ref": "QCOM-BULL-20260710",
+          "tickers": [
+            "QCOM"
+          ],
+          "title": "Prophet close: QCOM BULL → INVALIDATED (-9.8% in 6d)",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-16",
+          "id": "cev-risk_band-93ffecf74025",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-16",
+          "tickers": [],
+          "title": "Risk radar: watch → caution",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "events": [
+        {
+          "date": "2026-07-15",
+          "id": "cev-risk_band-8bb15e0f6550",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-15",
+          "tickers": [],
+          "title": "Risk radar: caution → watch",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-14",
+      "events": []
+    },
+    {
+      "date": "2026-07-13",
+      "events": [
+        {
+          "date": "2026-07-13",
+          "id": "cev-risk_band-3cbf5ff03fc3",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-07-13",
+          "tickers": [],
+          "title": "Risk radar: watch → caution",
+          "weight_hint": 2
+        }
+      ]
+    },
+    {
+      "date": "2026-07-10",
+      "events": []
+    }
+  ]
+}

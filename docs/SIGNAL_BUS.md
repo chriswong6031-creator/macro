@@ -12,6 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | XSR | 1 |
 | active-build-map | 1 |
+| agentic_media | 3 |
 | btc-vector | 5 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
@@ -99,7 +100,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 326 |
+| display | 329 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 71 |
@@ -108,7 +109,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 474 |
+| git | 477 |
 | gitignored-local | 15 |
 | r2 | 7 |
 
@@ -125,6 +126,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | active-builds | `data/governance/active_builds.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### agentic_media
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+| chronicle-manifest | `data/chronicle/manifest.json` | json | daily-engine | display | 3 | 0 |
+| chronicle-state-log | `data/chronicle/state_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 
 ### btc-vector
 
@@ -267,7 +276,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 18 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 8 | 0 |
-| risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 6 | 0 |
+| risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 7 | 0 |
 | trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 6 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
@@ -464,9 +473,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 2 | 1 |
+| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
-| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
 | release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
 
@@ -578,7 +587,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 | prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
-| prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+| prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 
 ### narrative-ignition
 
@@ -600,7 +609,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 11 | 1 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 12 | 1 |
 | liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 5 | 0 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 5 | 0 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 5 | 0 |
@@ -1088,7 +1097,7 @@ flowchart LR
     C_scripts_notify_py["scripts/notify.py"]
     C_scripts_build_impulse_py["scripts/build_impulse.py"]
     C_engine_etf_pulse_py["engine/etf_pulse.py"]
-    OVF_world_state["...+8 more"]
+    OVF_world_state["...+9 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
