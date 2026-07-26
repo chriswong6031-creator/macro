@@ -93,6 +93,7 @@ def _dig(obj, path):
 def build_probes() -> list[dict]:
     d8 = _last_weekday("%Y%m%d")
     d_iso = _last_weekday("%Y-%m-%d")
+    d_iso_7 = _weekday_back(5, "%Y-%m-%d")   # ~7 calendar days back (W1 report window)
     d8_10ago = _weekday_back(10, "%Y%m%d")
     m_iso = _prev_month("%Y-%m") + "-01"
     ym = _prev_month("%Y%m")
@@ -112,10 +113,53 @@ def build_probes() -> list[dict]:
              url="https://irm.cninfo.com.cn/newircs/index/queryKeyboardInfo",
              data={"keyWord": "000001"},
              expect=dict(statuses=[200], json_path=["data", 0, "secid"])),
+        # W1: the org-id resolve above only proves the KEYBOARD search. This anchors the
+        # actual per-name Q&A pull collectors/china_irm.py drips nightly — note every
+        # parameter rides in the query string with an empty POST body (the endpoint's
+        # real contract), so a shape change here breaks the probe, not the nightly.
+        dict(name="irm_company_question", family="interaction", cls="candidate", method="POST",
+             url=("https://irm.cninfo.com.cn/newircs/company/question?_t=1691142650&stockcode=000001"
+                  "&orgId=gssz0000001&pageSize=3&pageNum=1&keyWord=&startDay=&endDay="),
+             expect=dict(statuses=[200], json_path=["rows", 0, "indexId"])),
+        # W1: the market-wide 互动易 question total (velocity.parquet's only input).
+        dict(name="irm_index_search", family="interaction", cls="candidate", method="POST",
+             url="https://irm.cninfo.com.cn/newircs/index/search?_t=1691142650",
+             data={"pageNo": "1", "pageSize": "3", "searchTypes": "1,11", "keyWord": ""},
+             expect=dict(statuses=[200], json_path=["totalRecord"])),
+        # W1 build anchor: min_bytes-only was status-adjacent now that
+        # collectors/china_einteraction.py builds its uid map from this fragment —
+        # json_path pins the envelope and min_bytes pins that it carries real markup.
+        # Params corrected W1: the W0 probe posted {pageSize,page}, which is NOT the
+        # endpoint's contract and intermittently answers a near-empty envelope (~375B);
+        # {code,order,areaId,page} is the verified production param set the collector
+        # sends (a full page-1 roster is ~11.6KB).
         dict(name="sse_einteraction", family="interaction", cls="candidate", method="POST",
-             url="https://sns.sseinfo.com/allcompany.do", data={"pageSize": "10", "page": "1"},
+             url="https://sns.sseinfo.com/allcompany.do",
+             data={"code": "0", "order": "2", "areaId": "0", "page": "1"},
              headers={"Referer": "https://sns.sseinfo.com/"},
-             expect=dict(statuses=[200], min_bytes=200)),
+             expect=dict(statuses=[200], json_path=["content"], min_bytes=2000)),
+        # W1: the per-name feed is PURE HTML (no JSON envelope), so min_bytes is the
+        # only content check available; uid=65 (浦发银行) is the pinned live anchor.
+        dict(name="sse_userfeeds", family="interaction", cls="candidate", method="POST",
+             url="https://sns.sseinfo.com/ajax/userfeeds.do?typeCode=company&type=11&pageSize=5&uid=65&page=1",
+             headers={"Referer": "https://sns.sseinfo.com/"},
+             expect=dict(statuses=[200], min_bytes=2000)),
+        # W1: the windowed sell-side report tape (em_report_list above probes the
+        # month-window shape; this one pins the exact ~7-day window + row key the
+        # collectors/china_reports.py nightly pull depends on).
+        dict(name="em_report_window", family="sellside", cls="candidate", method="GET", dated=True,
+             url=("https://reportapi.eastmoney.com/report/list?industryCode=*&pageSize=3&industry=*&rating=*"
+                  "&ratingChange=*&beginTime=" + d_iso_7 + "&endTime=" + d_iso + "&pageNo=1&fields=&qType=0"
+                  "&orgCode=&code=*&rcode=&p=1&pageNum=1&pageNumber=1"),
+             expect=dict(statuses=[200], json_path=["data", 0, "infoCode"])),
+        # W1: em_holdernum above probes a 3-column slice; this pins the FULL column set
+        # collectors/china_holder_counts.py stores, incl. the QoQ ratio.
+        dict(name="em_holdernum_full", family="positioning", cls="candidate", method="GET",
+             url=(dc + "?sortColumns=HOLD_NOTICE_DATE,SECURITY_CODE&sortTypes=-1,-1&pageSize=3&pageNumber=1"
+                  "&reportName=RPT_HOLDERNUMLATEST&columns=SECURITY_CODE,SECURITY_NAME_ABBR,END_DATE,"
+                  "INTERVAL_CHRATE,AVG_MARKET_CAP,AVG_HOLD_NUM,TOTAL_MARKET_CAP,TOTAL_A_SHARES,HOLD_NOTICE_DATE,"
+                  "HOLDER_NUM,PRE_HOLDER_NUM,HOLDER_NUM_CHANGE,HOLDER_NUM_RATIO,PRE_END_DATE&source=WEB&client=WEB"),
+             expect=dict(statuses=[200], json_path=["result", "data", 0, "HOLDER_NUM_RATIO"])),
         dict(name="em_hsgt_quota", family="connect", cls="candidate", method="GET",
              url=(dc + "?reportName=RPT_MUTUAL_QUOTA&columns=ALL&source=WEB&client=WEB"
                   "&pageSize=6&sortColumns=TRADE_DATE&sortTypes=-1"),

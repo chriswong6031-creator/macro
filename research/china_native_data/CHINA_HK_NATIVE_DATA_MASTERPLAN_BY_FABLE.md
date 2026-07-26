@@ -466,3 +466,25 @@ law with gates inline; no child self-merge on the bot repo.
   corrected: RRR is a prereg-frozen event series (not rot); ETF shares deepen the existing
   `china_flows` store (not a new collector); observed OMO ships as `kind=omo_observed` with
   provenance (the `omo_mlf` namespace is occupied by synthetic FR007-z events).
+- 2026-07-26: W1 shipped — `china_irm` / `china_einteraction` / `china_reports` /
+  `china_holder_counts` collectors (display/context tier; four legs registered as
+  `pending` in `engine/china_signal_lab.py`, nothing scored or surfaced), fixture-pinned
+  parser tests against the live 2026-07-25 captures, 5 new probes (`irm_company_question`,
+  `irm_index_search`, `sse_userfeeds`, `em_report_window`, `em_holdernum_full`) plus a
+  strengthened `sse_einteraction` content check (min_bytes-only → `json_path=["content"]`
+  + min_bytes), a `china-native-collectors` CI job, and the §6 clock registered as
+  `cnh-w1-interaction-sellside-planes` (descriptive review 2026-10-25). Budget shape:
+  互动易 and e互动 are per-name planes sharded ≤40 names/night behind a persisted cursor
+  that is written at the TRUE stop position when the in-collector ~100 s guard fires;
+  the e互动 uid map is built once and its build is RESUMABLE, so a truncated directory
+  crawl continues the next night instead of masquerading as complete. Probe baseline
+  re-run 2026-07-26 from the runner: 44 probes — 42 ok / 1 empty-dated (`em_zt_pool`,
+  expected keyless state) / 1 flaky-degraded (`em_fflow_daykline`, CNH-R4) / 0 deviating
+  (the W0 `sse_einteraction` probe's loose `{pageSize,page}` params were corrected to the
+  production `{code,order,areaId,page}` contract — the loose set intermittently answers a
+  near-empty envelope). Live dry-run before merge: all four adapters end-to-end against a
+  scratch store — 1,207 Q&A rows / 27 SZ names + velocity total 94,789 (互动易), map-build
+  night resumed-and-verified (e互动), 29 Sunday reports with honest per-class aggregates,
+  full 5,535-name holder seed in 34 s. One-shot cache seeding committed (off render path):
+  `china_irm/org_ids.json` 50/50 SZ resolved, `china_einteraction/uid_map.json` 2,312 SSE
+  codes `complete=true` (directory exhausted at page 73) — night 1 runs productive.

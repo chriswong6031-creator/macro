@@ -80,6 +80,13 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     # them here takes ~14-19 min off the asia shard's serial phase (china_filings alone
     # is ~6.5 min healthy / ~5 min burning CNInfo 504s).
     "china_filings": "cninfo",             # www.cninfo.com.cn hisAnnouncement pagination
+    # W1 CNH interaction/sell-side planes — pure requests + bs4, verified no akshare.
+    # Each carries its own ≥1 rps pacing and a ~100s wall-clock guard.
+    "china_irm": "cninfo",                 # irm.cninfo.com.cn — org-polite: serializes behind china_filings' www.cninfo.com.cn pagination
+    "china_einteraction": "sseinfo",       # sns.sseinfo.com — distinct host, own group
+    "china_reports": "emreport",           # reportapi.eastmoney.com — distinct host, own group
+    # (china_holder_counts deliberately ABSENT: datacenter-web.eastmoney.com is shared
+    #  with the serial akshare/EM adapters, so it stays in the serial phase.)
     "hk_gdelt": "gdelt",                   # api.gdeltproject.org (rate-limit waits off the serial path)
     "hk_cbbc": "hkex", "hk_cbbc_sld": "hkex",  # www1.hkexnews.hk / www.hkex.com.hk SLD
 }
@@ -210,6 +217,10 @@ def all_adapters() -> dict:
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         ("china_official_corpora", "collectors.china_official_corpora", "ChinaOfficialCorporaAdapter"),  # official policy corpora (State Council/PBOC/NDRC/CSRC/People's Daily) -> date-keyed parquet + qbus; feeds the Communiqué Diff (engine/communique_diff.py, W4 B1)
         ("china_filings", "collectors.china_filings", "ChinaFilingsAdapter"),  # CNInfo A-share filing metadata (SSE+SZSE): investigation/inquiry/earnings/restructuring events → data/china_filings/filings.parquet (W3.2)
+        ("china_irm", "collectors.china_irm", "ChinaIrmAdapter"),              # 互动易 investor Q&A drip (W1 CNH; SZ-half of the board universe, ≤40 names/night cursor) + market-wide Q&A velocity
+        ("china_einteraction", "collectors.china_einteraction", "ChinaEInteractionAdapter"),  # 上证e互动 investor Q&A drip (W1 CNH; SS-half, uid map cached/resumable)
+        ("china_reports", "collectors.china_reports", "ChinaReportsAdapter"),  # sell-side rating/TP/EPS revision stream + daily aggregates (W1 CNH; per-report EVENT tape, distinct from china_analyst's consensus snapshot)
+        ("china_holder_counts", "collectors.china_holder_counts", "ChinaHolderCountsAdapter"),  # 股东户数 quarterly retail-concentration tape (W1 CNH; NOT cn_holder_sale_calendar = 减持 windows)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),

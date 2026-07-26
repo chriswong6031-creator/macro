@@ -201,6 +201,26 @@ CHINA_REGISTRY: list[tuple] = [
      "china_discovery",
      "Names with ≥2 leading legs (LHB-inst/block/buyback/attention) before price confirms.",
      "在价格确认前出现≥2个领先腿（机构席位/大宗/回购/关注度）的个股。"),
+    # --- W1 CNH interaction & sell-side planes — collected + accruing --------- #
+    # Native China data planes shipped by the China/HK native-data program (W1).
+    # Display/context tier by construction: collected nightly, surfaced nowhere,
+    # scored nowhere. Any promotion needs a fresh pre-registration (CNH-R1).
+    ("irm_qa", "Investor Q&A — SZSE 互动易", "互动易问答", "pending",
+     "china_irm (irm.cninfo.com.cn) — collected W1 CNH, sharded board-universe drip + market Q&A velocity",
+     "Per-name investor questions/answers + market-wide question velocity; collected + accruing, not surfaced or scored.",
+     "深市投资者互动问答与全市场提问速度；已采集并累计，尚未展示或评分。"),
+    ("einteraction_qa", "Investor Q&A — SSE e互动", "上证e互动问答", "pending",
+     "china_einteraction (sns.sseinfo.com) — collected W1 CNH, uid-mapped board-universe drip",
+     "The Shanghai half of the same interaction plane, keyed on the venue's own uid map; collected + accruing, not surfaced or scored.",
+     "沪市同一互动平面，按平台uid映射逐只采集问答；已采集并累计，尚未展示或评分。"),
+    ("report_revisions", "Sell-side rating/TP revision stream", "券商评级调整流", "pending",
+     "china_reports (reportapi.eastmoney.com) — collected W1 CNH, per-report tape + daily up/downgrade aggregates",
+     "Per-report rating/target-price/EPS change against the same house's prior call, plus daily class counts; collected + accruing, not surfaced or scored.",
+     "逐篇研报的评级、目标价与EPS较同一机构上次的变化，以及每日各类调整家数；已采集并累计，尚未展示或评分。"),
+    ("holder_counts", "Shareholder count (retail concentration)", "股东户数", "pending",
+     "china_holder_counts (RPT_HOLDERNUMLATEST) — collected W1 CNH, quarterly snapshot + change tape",
+     "Registered holder count per name and its change vs the prior period — the A-share concentration read with no US analogue; collected + accruing, not surfaced or scored.",
+     "个股股东户数及其较上期的变化——A股特有的筹码集中度读数；已采集并累计，尚未展示或评分。"),
     # --- KILLED: tested, no edge -------------------------------------------- #
     ("xmom", "Cross-sectional momentum", "横截面动量", "killed", "—",
      "A-share IC negative; only short-term reversal survives.",

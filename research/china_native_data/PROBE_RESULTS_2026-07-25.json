@@ -1,9 +1,9 @@
 {
  "schema": "china_source_probe.v2",
- "probed_utc": "2026-07-26T06:18:41+00:00",
+ "probed_utc": "2026-07-26T07:36:00+00:00",
  "note": "verdicts are egress-relative; see script docstring",
  "counts": {
-  "OK": 37,
+  "OK": 42,
   "EMPTY": 1,
   "FLAKY": 1,
   "CHANGED": 0,
@@ -41,12 +41,62 @@
    "verdict": "OK"
   },
   {
+   "name": "irm_company_question",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://irm.cninfo.com.cn/newircs/company/question?_t=1691142650&stockcode=000001&orgId=gssz0000001&pageSize=3&pageNum=1&keyWord=&startDay=&endDay=",
+   "status": 200,
+   "bytes": 3187,
+   "field": "2309409449541922816",
+   "verdict": "OK"
+  },
+  {
+   "name": "irm_index_search",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://irm.cninfo.com.cn/newircs/index/search?_t=1691142650",
+   "status": 200,
+   "bytes": 3019,
+   "field": "94789",
+   "verdict": "OK"
+  },
+  {
    "name": "sse_einteraction",
    "family": "interaction",
    "cls": "candidate",
    "url": "https://sns.sseinfo.com/allcompany.do",
    "status": 200,
-   "bytes": 375,
+   "bytes": 11652,
+   "field": "\t<div class='companyBox'>\t\t<a rel='tag' uid=65 href='user.do",
+   "verdict": "OK"
+  },
+  {
+   "name": "sse_userfeeds",
+   "family": "interaction",
+   "cls": "candidate",
+   "url": "https://sns.sseinfo.com/ajax/userfeeds.do?typeCode=company&type=11&pageSize=5&uid=65&page=1",
+   "status": 200,
+   "bytes": 20404,
+   "verdict": "OK"
+  },
+  {
+   "name": "em_report_window",
+   "family": "sellside",
+   "cls": "candidate",
+   "url": "https://reportapi.eastmoney.com/report/list?industryCode=*&pageSize=3&industry=*&rating=*&ratingChange=*&beginTime=2026-07-20&endTime=2026-07-24&pageNo=1&fields=&qType=0&orgCode=&code=*&rcode=&p=1&pageNum=1&pageNumber=1",
+   "status": 200,
+   "bytes": 4399,
+   "field": "AP202607241827321448",
+   "verdict": "OK"
+  },
+  {
+   "name": "em_holdernum_full",
+   "family": "positioning",
+   "cls": "candidate",
+   "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?sortColumns=HOLD_NOTICE_DATE,SECURITY_CODE&sortTypes=-1,-1&pageSize=3&pageNumber=1&reportName=RPT_HOLDERNUMLATEST&columns=SECURITY_CODE,SECURITY_NAME_ABBR,END_DATE,INTERVAL_CHRATE,AVG_MARKET_CAP,AVG_HOLD_NUM,TOTAL_MARKET_CAP,TOTAL_A_SHARES,HOLD_NOTICE_DATE,HOLDER_NUM,PRE_HOLDER_NUM,HOLDER_NUM_CHANGE,HOLDER_NUM_RATIO,PRE_END_DATE&source=WEB&client=WEB",
+   "status": 200,
+   "bytes": 1421,
+   "field": "-0.657462195924",
    "verdict": "OK"
   },
   {
@@ -120,7 +170,7 @@
    "cls": "candidate",
    "url": "https://news.futunn.com/news-site-api/main/get-flash-list?type=1&page=1&pageSize=3",
    "status": 200,
-   "bytes": 4177,
+   "bytes": 4503,
    "field": "True",
    "verdict": "OK"
   },
@@ -130,8 +180,8 @@
    "cls": "candidate",
    "url": "https://news.10jqka.com.cn/tapp/news/push/stock",
    "status": 200,
-   "bytes": 39138,
-   "field": "\\u4f0a\\u6717\\u519b\\u65b9\\u79f0\\u5df2\\u5bf9\\u53ef\\u80fd\\u53d1\\u751f\\u7684\\u7a7a\\u88ad\\u6216\\u5730\\u9762\\u884c\\u52a8\\u505a\\u597d\\u51c6\\u5907",
+   "bytes": 38294,
+   "field": "\\u53f0\\u98ce\\u201c\\u7ea2\\u971e\\u201d\\u9010\\u6e10\\u8fdc\\u79bb \\u9999\\u6e2f\\u6539\\u53d1\\u4e09\\u53f7\\u5f3a\\u98ce\\u4fe1\\u53f7",
    "verdict": "OK"
   },
   {
@@ -179,7 +229,7 @@
    "cls": "candidate",
    "url": "https://fund.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1000_lf",
    "status": 200,
-   "bytes": 69240,
+   "bytes": 69241,
    "verdict": "OK"
   },
   {
@@ -301,8 +351,8 @@
    "cls": "integrated",
    "url": "https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&limit=3",
    "status": 200,
-   "bytes": 5840,
-   "field": "3139814",
+   "bytes": 5889,
+   "field": "3139817",
    "verdict": "OK"
   },
   {
@@ -320,7 +370,7 @@
    "cls": "dead",
    "url": "https://data.stats.gov.cn/easyquery.htm",
    "status": 403,
-   "bytes": 294,
+   "bytes": 293,
    "verdict": "OK"
   },
   {
