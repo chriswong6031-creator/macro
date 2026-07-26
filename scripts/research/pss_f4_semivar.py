@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 """PSS-F4 — Downside-vol asymmetry flip (semivariance regime turn).
 
+POST-STUDY CAUSAL-TIMING ERRATUM (2026-07-26).
+The historical study below labels the FIRST bar of a run that is only known,
+retrospectively, to survive P bars.  That onset label is useful for mechanism
+attribution but is NOT a live fire: a causal P=5 confirmation is observable on
+the fifth bar, four sessions later.  The historical function and report are
+preserved for audit reproducibility.  New work must use
+``_causal_sustained_run_fires`` or an explicit confirmation-day state machine;
+see ``pss_f4_repair.py`` / ``pss_f4_hazard.py``.
+
 PRE-REGISTRATION — this header is the pinned ruler AND the pinned construction,
 committed BEFORE any timing outcome (MAE/W5/proximity) was computed. The prereg
 commit ("prereg: PSS-F4 …") precedes the results commit in git history (audited).
@@ -410,10 +419,12 @@ def _trailing_bands(x: np.ndarray, idx: pd.DatetimeIndex
 
 def _sustained_run_fires(x: np.ndarray, base: np.ndarray, hi: np.ndarray, P: int
                          ) -> np.ndarray:
-    """FIRE = first bar of a run of >= P consecutive 'reset' bars (x <= base), where
-    a down-dominated regime (x >= hi) occurred within the trailing LB bars. Shared by
-    F4 (x=A) and the total-vol analog (x=RV_tot) — the IDENTICAL construction, only
-    the input series x differs (asymmetry ratio vs directionless vol level)."""
+    """Retrospective ONSET label for the historical, pre-registered study.
+
+    This scans the completed run and stamps its first bar.  It is intentionally
+    preserved for report reproducibility and MUST NOT be used as a live fire.
+    New causal work uses ``_causal_sustained_run_fires`` below.
+    """
     n = len(x)
     finite = np.isfinite(x) & np.isfinite(base) & np.isfinite(hi)
     below_base = finite & (x <= base)
@@ -435,13 +446,59 @@ def _sustained_run_fires(x: np.ndarray, base: np.ndarray, hi: np.ndarray, P: int
     return fire
 
 
+def _causal_sustained_run_fires(
+    x: np.ndarray, base: np.ndarray, hi: np.ndarray, P: int
+) -> np.ndarray:
+    """Stamp the P-th reset bar, when persistence first becomes observable.
+
+    The high-regime precondition is evaluated at the run's first bar using only
+    history available by that start.  The output is prefix-invariant and never
+    backdates a completed run to its onset.
+    """
+    if P < 1:
+        raise ValueError("P must be >= 1")
+    n = len(x)
+    finite = np.isfinite(x) & np.isfinite(base) & np.isfinite(hi)
+    below_base = finite & (x <= base)
+    is_hi = finite & (x >= hi)
+    was_hi = (
+        pd.Series(is_hi.astype(float))
+        .rolling(LB, min_periods=1)
+        .max()
+        .to_numpy()
+        > 0
+    )
+    confirmed = (
+        pd.Series(below_base.astype(float))
+        .rolling(P, min_periods=P)
+        .sum()
+        .to_numpy()
+        == P
+    )
+    prior_confirmed = np.concatenate([[False], confirmed[:-1]])
+    first_confirmed = confirmed & ~prior_confirmed
+    fire = np.zeros(n, dtype=bool)
+    for end in np.flatnonzero(first_confirmed):
+        start = int(end) - P + 1
+        if start >= 0 and was_hi[start]:
+            fire[int(end)] = True
+    return fire
+
+
 def f4_fires(close: pd.Series, n: int, P: int) -> np.ndarray:
-    """F4 fire array over the daily index: sustained-symmetric-run start on the
-    asymmetry ratio A (down/up decomposition). PIT bands, persistence gate."""
+    """Historical retrospective onset labels; use ``f4_causal_fires`` live."""
     idx = close.index
     A = asymmetry(close, n)
     base, hi = _trailing_bands(A, idx)
     return _sustained_run_fires(A, base, hi, P)
+
+
+def f4_causal_fires(close: pd.Series, n: int, P: int) -> np.ndarray:
+    """Live-safe F4 confirmations stamped on the observable P-th reset bar."""
+    idx = close.index
+    A = asymmetry(close, n)
+    base, hi = _trailing_bands(A, idx)
+    return _causal_sustained_run_fires(A, base, hi, P)
 
 
 def totvol_analog_fires(close: pd.Series, n: int, P: int) -> np.ndarray:
@@ -454,6 +511,16 @@ def totvol_analog_fires(close: pd.Series, n: int, P: int) -> np.ndarray:
     rvt = total_vol(close, n)
     base, hi = _trailing_bands(rvt, idx)
     return _sustained_run_fires(rvt, base, hi, P)
+
+
+def totvol_analog_causal_fires(
+    close: pd.Series, n: int, P: int
+) -> np.ndarray:
+    """Live-safe total-vol placebo confirmations, stamped on the P-th bar."""
+    idx = close.index
+    rvt = total_vol(close, n)
+    base, hi = _trailing_bands(rvt, idx)
+    return _causal_sustained_run_fires(rvt, base, hi, P)
 
 
 def fit_axis(close: pd.Series, n: int) -> dict[str, float]:

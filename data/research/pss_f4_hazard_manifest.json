@@ -1,0 +1,76 @@
+{
+  "models": {
+    "hazard_f4": {
+      "dev_near_auc": 0.7035376519641242,
+      "dev_near_brier": 0.22157462933372488,
+      "dev_safe_auc": 0.5794412941676121,
+      "dev_safe_brier": 0.24594091050739275,
+      "features": [
+        "x_f4_q",
+        "x_f4_d3",
+        "x_rvd_d3"
+      ],
+      "threshold": 0.5600158026263111
+    },
+    "hazard_full": {
+      "dev_near_auc": 0.8873664045768639,
+      "dev_near_brier": 0.1465609611831275,
+      "dev_safe_auc": 0.6931229373383591,
+      "dev_safe_brier": 0.22532077136530504,
+      "features": [
+        "x_f4_q",
+        "x_f4_d3",
+        "x_rvd_d3",
+        "x_low60_dist",
+        "x_roc20",
+        "x_close_location",
+        "x_lower_wick",
+        "x_volume_ratio",
+        "x_range_ratio",
+        "x_down_share3",
+        "x_rs5",
+        "x_market_roc5",
+        "x_sector_roc5",
+        "x_terminal_recent",
+        "x_price_rejection",
+        "x_volume_exhaustion",
+        "x_relative_turn",
+        "x_systemic_repair"
+      ],
+      "threshold": 0.6637105622273682
+    },
+    "hazard_orthogonal": {
+      "dev_near_auc": 0.8854693218243683,
+      "dev_near_brier": 0.14715186307954523,
+      "dev_safe_auc": 0.6880301151653114,
+      "dev_safe_brier": 0.22617877994477803,
+      "features": [
+        "x_low60_dist",
+        "x_roc20",
+        "x_close_location",
+        "x_lower_wick",
+        "x_volume_ratio",
+        "x_range_ratio",
+        "x_down_share3",
+        "x_rs5",
+        "x_market_roc5",
+        "x_sector_roc5",
+        "x_terminal_recent",
+        "x_price_rejection",
+        "x_volume_exhaustion",
+        "x_relative_turn",
+        "x_systemic_repair"
+      ],
+      "threshold": 0.6642405954734382
+    },
+    "price_matched": {
+      "features": [
+        "x_low60_dist"
+      ],
+      "threshold": -0.03730142110364798
+    }
+  },
+  "seed": 20260802,
+  "target_coverage": 0.2,
+  "train_end": "2022-12-31"
+}
