@@ -2203,7 +2203,17 @@ def test_china_flows_survives_corrupt_parquet(tmp_path):
 
 def test_china_flows_makes_no_network_call(tmp_path):
     """HARD CONTRACT: the brain must never put vendor latency in the chat path — the
-    serving host has no TUSHARE_TOKEN and the packet is committed-artifact-only."""
+    serving host has no TUSHARE_TOKEN and the packet is committed-artifact-only.
+
+    importorskip: patch("requests.post") IMPORTS requests to resolve the target,
+    so in a venv without it (the ci-pack envs install only
+    pytest/pandas/numpy/pyarrow/pyyaml) this test died on ModuleNotFoundError
+    before proving anything — every PR's ci-pack-1 went red within an hour of
+    the test landing (#3672). Where requests is absent the contract is enforced
+    by the environment itself (no requests-based call is even possible), so an
+    honest skip loses nothing; the dev/nightly envs carry requests and still
+    exercise the patched assertion."""
+    pytest.importorskip("requests")
     import engine.neuralweb.ask_brain as _ab
     _write_china_plane(tmp_path)
     with patch("requests.post", side_effect=AssertionError("live network call!")), \
