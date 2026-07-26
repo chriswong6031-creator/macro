@@ -26,16 +26,6 @@
         },
         {
           "date": "2026-07-24",
-          "id": "cev-research_vault-e7d30284bf3a",
-          "kind": "report",
-          "source": "research_vault",
-          "source_ref": "marketdesk-ksuyyfujmgc-4eedee",
-          "tickers": [],
-          "title": "Goldman Sachs: South Africa SARB Keeps Policy Rate on Hold, Against Consensus",
-          "weight_hint": 2
-        },
-        {
-          "date": "2026-07-24",
           "id": "cev-research_vault-e99c12bc2772",
           "kind": "report",
           "source": "research_vault",
@@ -51,7 +41,7 @@
           "source": "research_vault",
           "source_ref": "marketdesk-a4e7fwpzlci-daa27a",
           "tickers": [],
-          "title": "Goldman Sachs: Alcon Inc. (ALCC",
+          "title": "Goldman Sachs: Alcon Inc. (ALCC)",
           "weight_hint": 2
         },
         {
@@ -102,6 +92,16 @@
           "source_ref": "marketdesk-cjtotup7k0s-a5c58f",
           "tickers": [],
           "title": "UBS: Daily US",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-07-24",
+          "id": "cev-research_vault-ff9c5d25ad31",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-s3w35dzupmy-299de6",
+          "tickers": [],
+          "title": "Goldman Sachs: SBI Life (SBIL)",
           "weight_hint": 2
         },
         {
