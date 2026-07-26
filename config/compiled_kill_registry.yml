@@ -60,6 +60,12 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Chronicle store regen in intraday lanes (research-ingest or any hourly job advancing `data/chronicle/*.jsonl`)'
+    verdict: 'FORBIDDEN — gate 5: nightly is the sole advancer, intraday lanes discard writes. Built independently by TWO sessions on 2026-07-26 before the law caught both; the catalog-outruns-store gap is an ASSERTION defect, fixed by the vintage-attested gate 1 (#3648/#3660), never by lane-cadence writes'
+    source: 'Chronicle masterplan §0 gate 5; #3643 revert 90050eb535f + #3647 drop eb769be108c (2026-07-26)'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Parallel shock-vector classifier beside `market_drivers` (12-type re-vocabulary)'
     verdict: 'REJECT-REDUNDANT — `snapshot()` is the canonical shock read; crosswalk printed'
     source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'

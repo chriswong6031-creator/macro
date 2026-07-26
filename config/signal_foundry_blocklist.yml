@@ -386,13 +386,24 @@ entries:
   - id: BL-G010
     match:
       any_of:
+        - 'chronicle.{0,30}store.{0,30}regen'
+    reason: >
+      FORBIDDEN — gate 5: nightly is the sole advancer, intraday lanes
+      discard writes. Built independently by TWO sessions on 2026-07-26
+      before the law caught both; the catalog-outruns-store gap is an
+      ASSER
+    source: 'Chronicle masterplan §0 gate 5; #3643 revert 90050eb535f + #3647 drop eb769be108c (2026-07-26)'
+
+  - id: BL-G011
+    match:
+      any_of:
         - 'parallel.{0,30}shock.{0,30}vector'
     reason: >
       REJECT-REDUNDANT — `snapshot()` is the canonical shock read;
       crosswalk printed
     source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G011
+  - id: BL-G012
     match:
       any_of:
         - 'shock.{0,30}archetype.{0,30}beneficiary'
@@ -401,7 +412,7 @@ entries:
       claims
     source: 'TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G012
+  - id: BL-G013
     match:
       any_of:
         - 'classification.{0,30}narrative.{0,30}only'
@@ -409,7 +420,7 @@ entries:
       FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban
     source: 'TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md`'
 
-  - id: BL-G013
+  - id: BL-G014
     match:
       any_of:
         - 'fused.{0,30}position.{0,30}composite'
@@ -420,7 +431,7 @@ entries:
       watchlist+por
     source: 'PRD-R2 + Amendment 1, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md`; UWP-R1..R7, `UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G014
+  - id: BL-G015
     match:
       any_of:
         - 'causal.{0,30}alpha.{0,30}score'
@@ -428,7 +439,7 @@ entries:
       FORBIDDEN — CHF is proposal/audit tier only; Article 1/2
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G015
+  - id: BL-G016
     match:
       any_of:
         - 'administration.{0,30}timing.{0,30}predictor'
@@ -436,7 +447,7 @@ entries:
       FORBIDDEN — intent unfalsifiable; conditions-framing only
     source: 'PS-R1/PS-R4, `POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G016
+  - id: BL-G017
     match:
       any_of:
         - 'numeric.{0,30}confidence.{0,30}anywhere'
@@ -444,7 +455,7 @@ entries:
       FORBIDDEN — RF-16 extension
     source: 'CHF-R14, `CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G017
+  - id: BL-G018
     match:
       any_of:
         - 'data.{0,30}lane.{0,30}merge'
@@ -455,7 +466,7 @@ entries:
       is a governed
     source: 'Operator-ratified adjudication 2026-07-24, `PROPHET_TOPSETUPS_PRESENTATION_MERGE_MASTERPLAN.md` §2'
 
-  - id: BL-G018
+  - id: BL-G019
     match:
       any_of:
         - 'runtime.{0,30}frame.{0,30}narrative'
@@ -465,7 +476,7 @@ entries:
       display-only
     source: 'NAR-R4, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G019
+  - id: BL-G020
     match:
       any_of:
         - 'chatter.{0,30}only.{0,30}promotion'
@@ -474,7 +485,7 @@ entries:
       authority; veto unconditional
     source: 'NAR-R2, `NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G020
+  - id: BL-G021
     match:
       any_of:
         - 'hypothesis.{0,30}slot.{0,30}reservation'
@@ -484,7 +495,7 @@ entries:
       2)
     source: 'LHB-R5, `LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md`; precedent LR-R9'
 
-  - id: BL-G021
+  - id: BL-G022
     match:
       any_of:
         - 'calendar.{0,30}event.{0,30}window'
@@ -494,7 +505,7 @@ entries:
       calendar-agnostic constructions
     source: 'RIC-R3, `RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md` judge-panel ruling (2026-07-13)'
 
-  - id: BL-G022
+  - id: BL-G023
     match:
       any_of:
         - 'sector.{0,30}rotation.{0,30}schedule'
@@ -505,7 +516,7 @@ entries:
       uncalibrated surface
     source: '`ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md` (2026-07-06, #1750); RL-R10(e), `RATIO_LENS_MASTERPLAN_BY_FABLE.md`'
 
-  - id: BL-G023
+  - id: BL-G024
     match:
       any_of:
         - 'hard.{0,30}gating.{0,30}nightly'
@@ -516,7 +527,7 @@ entries:
       heartbeat detec
     source: 'CSP-R1, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G024
+  - id: BL-G025
     match:
       any_of:
         - 'composite.{0,30}market.{0,30}regime'
@@ -527,7 +538,7 @@ entries:
       into a regime sc
     source: 'MSP-R2, `IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md` (2026-07-18)'
 
-  - id: BL-G025
+  - id: BL-G026
     match:
       any_of:
         - 'second.{0,30}hand.{0,30}maintained'
@@ -538,7 +549,7 @@ entries:
       degenerate form
     source: 'CXI-R12, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` (2026-07-18)'
 
-  - id: BL-G026
+  - id: BL-G027
     match:
       any_of:
         - 'wiring.{0,30}repo.{0,30}internals'
@@ -549,7 +560,7 @@ entries:
       exception
     source: 'CXI-R23, `MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md` Amendment 2 (2026-07-20, operator ruling)'
 
-  - id: BL-G027
+  - id: BL-G028
     match:
       any_of:
         - 'cross.{0,30}organ.{0,30}flip'
@@ -559,7 +570,7 @@ entries:
       93 governs any authority path)
     source: 'RSR-R6a, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G028
+  - id: BL-G029
     match:
       any_of:
         - 'defensive.{0,30}lean.{0,30}floor'
@@ -570,7 +581,7 @@ entries:
       prereg
     source: 'RSR-R6b, `RISK_SCORING_REVAMP_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G029
+  - id: BL-G030
     match:
       any_of:
         - 'tick.{0,30}asymmetric.{0,30}escalation'
@@ -581,7 +592,7 @@ entries:
       surfaced the
     source: 'CSP-R2, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G030
+  - id: BL-G031
     match:
       any_of:
         - 'news.{0,30}intel.{0,30}thematic'
@@ -591,7 +602,7 @@ entries:
       supersede
     source: 'CSP-R3, `CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md` (2026-07-17)'
 
-  - id: BL-G031
+  - id: BL-G032
     match:
       any_of:
         - 'insider.{0,30}interaction'
@@ -599,7 +610,7 @@ entries:
       KILLED
     source: 'Codex buy-decision docket adjudication (#1781)'
 
-  - id: BL-G032
+  - id: BL-G033
     match:
       any_of:
         - 'name.{0,30}timing.{0,30}tool'
@@ -610,7 +621,7 @@ entries:
       bottom-p
     source: 'PTT-W1 §6 + PTT-W1-T §8, `PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md`; `reports/ptt_w1_persistence_of_fit.md` + `reports/ptt_w1_timing_regrade.md` (families `personality_timing_w1`/`_w1t`, 2026'
 
-  - id: BL-G033
+  - id: BL-G034
     match:
       any_of:
         - 'down.{0,30}volume.{0,30}envelope'
@@ -621,7 +632,7 @@ entries:
       new-low
     source: 'PSS-F1, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F1; `reports/pss_f1_downvol.md` (family `pss_f1_downvol`, 2026-07-25)'
 
-  - id: BL-G034
+  - id: BL-G035
     match:
       any_of:
         - 'overnight.{0,30}intraday.{0,30}return'
@@ -632,7 +643,7 @@ entries:
       [−5.66,−0.98] ex
     source: 'PSS-F2, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F2; `reports/pss_f2_overnight.md` (family `pss_f2_overnight`, 2026-07-26)'
 
-  - id: BL-G035
+  - id: BL-G036
     match:
       any_of:
         - 'idiosyncratic.{0,30}residual.{0,30}reset'
@@ -643,7 +654,7 @@ entries:
       — the charter's
     source: 'PSS-F3, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F3; `reports/pss_f3_residual.md` (family `pss_f3_residual`, 2026-07-26)'
 
-  - id: BL-G036
+  - id: BL-G037
     match:
       any_of:
         - 'downside.{0,30}asymmetry.{0,30}semivariance'
