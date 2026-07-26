@@ -5,6 +5,10 @@ name: ci
 # that gates the Pages deploy in pages.yml.
 on:
   pull_request:
+    # The closed event starts a zero-runner replacement in the same concurrency
+    # group, cancelling a long CI pack when its PR merges or closes. Without it,
+    # auto-merged PRs kept both hosted runners busy for up to another hour.
+    types: [opened, synchronize, reopened, closed]
     branches: [main]
     paths:
       # repo-wide pytest conftest: session fixtures/guards run in EVERY pytest
@@ -1668,17 +1672,22 @@ permissions:
 
 concurrency:
   # A newer commit on the same PR makes every older result obsolete.  Cancelling
-  # it here prevents rapid agent pushes from leaving whole 86-job runs in queue.
-  # workflow_dispatch runs stay independent by falling back to the run id.
-  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  # it here prevents rapid agent pushes from leaving full packed runs in queue.
+  # Manual full-CI dispatches are also deduplicated per ref; several ship-loop
+  # sessions may request the same main proof at once, but only the newest matters.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   ci-pack:
-    # The legacy jobs below remain the reviewable source of truth, but are
-    # intentionally skipped by GitHub.  Two pack runners execute every legacy
-    # run step against a clean working tree, sharing one checkout and reusing
-    # only identical dependency sets instead of provisioning 86 separate VMs.
+    # A closed PR needs only the workflow-level concurrency side effect above.
+    # Skipping here cancels the obsolete pack without allocating a replacement.
+    if: github.event.action != 'closed'
+    # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
+    # source of truth, but GitHub sees only this matrix. Two pack runners execute
+    # every legacy run step against a clean working tree, sharing one checkout
+    # and reusing only identical dependency sets instead of provisioning more
+    # than one hundred separate VMs/check records.
     name: ci-pack-${{ matrix.pack }}
     runs-on: ubuntu-latest
     timeout-minutes: 180

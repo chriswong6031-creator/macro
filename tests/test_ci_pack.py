@@ -143,6 +143,7 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     for workflow in (ci, fences):
         assert workflow["concurrency"]["cancel-in-progress"] is True
     assert "pull_request.number" in ci["concurrency"]["group"]
+    assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
 
 
@@ -153,6 +154,7 @@ def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
     assert pack["strategy"]["matrix"]["pack"] == [0, 1]
     assert pack["runs-on"] == "ubuntu-latest"
     assert pack["strategy"]["fail-fast"] is False
+    assert pack["if"] == "github.event.action != 'closed'"
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
@@ -162,6 +164,7 @@ def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
     # manifest itself as a workflow.
     triggers = workflow.get("on") or workflow.get(True)
     assert ".github/ci/legacy-jobs.yml" in triggers["pull_request"]["paths"]
+    assert "closed" in triggers["pull_request"]["types"]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
