@@ -204,6 +204,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Overnight-vs-intraday return DECOMPOSITION flip as a STANDALONE entry-timing signal (PSS-F2)'
+    verdict: 'KILLED — three independent failures under the §7 timing ruler. (1) No MAE edge: U_MAE vs all-days [−1.49,+0.74] includes 0. (2) Fires LESS near-low than the name''s own base rate: U_W5 [−5.66,−0.98] excludes 0 DOWN (worse than random). (3) The decomposition adds NOTHING over the aggregate — F2 − net-return-analog U_MAE [−0.76,+0.50] includes 0 (F2''s positive U_W5-vs-analog is only "less bad": the analog is even further below base, both worse than random). (4) Pre-trough EARLINESS claim RETRACTED: F2 tdt −9td is more POST-trough than the incumbent Stoch-RSI cross (−2td) — a LATE confirmer, earlier than the aggregate only. Gates do not rescue: +ATR-veto barely moves it; +C32 flips positive only by collapsing to a tiny near-low subset (571 names, U_W5 CI [−4.73,+69.11]). 2022 RAW fires into H1-2022 (AAPL 8 / NVDA 9); veto trims ~30–40%, does not zero; NVDA/TSLA behave like mega-caps, not a distinct all-gap class. Closes the standalone decomposition-TIMER construction only — the per-name overnight/intraday split-ratio stays OPEN as a codex descriptor / candidate W-CONF confluence input; session-accumulation detection space NOT closed. F1-class estimator bugs verified ABSENT (per-name-first aggregation self-check + main-loop recompute agree at U_W5 −2.64; placebo is a matched-construction analog, not a contaminated pool).'
+    source: 'PSS-F2, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F2; `reports/pss_f2_overnight.md` (family `pss_f2_overnight`, 2026-07-26)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
