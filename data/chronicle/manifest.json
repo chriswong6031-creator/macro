@@ -37,19 +37,19 @@
     "note": "123 events across 29 distinct date(s)",
     "start": "2025-07-22"
   },
-  "elapsed_s": 0.398,
+  "elapsed_s": 0.394,
   "gap_notes": [
     "earnings: coverage: 4/1364 tickers carried reported surprises",
     "macro_release: 5/5 release event(s) joined to a scored actual print",
     "regime_flip: data/chronicle/state_log.jsonl has no rows yet (first nightly capture pending)"
   ],
-  "inputs_hash": "sha256:0481eaa909197df7d25b2da09141f9c18f30f41d233d369c610784df00fb0fb3",
+  "inputs_hash": "sha256:dae8187f5113016ff97b8ed25273459d46d53e17a1795f6beae5bcec657fc7c2",
   "ledgers": {
     "events": {
       "path": "data/chronicle/events.jsonl",
       "present": true,
       "rows": 123,
-      "sha256": "sha256:cd1c7c2498c960afc44bb119ea66f05908afd3dfaa8dd65c66fed1ddcf24b684"
+      "sha256": "sha256:066b48563d41c446416eebea988bd5994744988fc9c9d3d858208d9f87c17168"
     },
     "state_log": {
       "path": "data/chronicle/state_log.jsonl",
@@ -58,7 +58,7 @@
       "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
   },
-  "produced_at": "2026-07-26T07:42:18Z",
+  "produced_at": "2026-07-26T07:37:55Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,

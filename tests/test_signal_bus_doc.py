@@ -76,8 +76,7 @@ def test_all_artifact_ids_present():
     assert len(artifact_ids) == 502, (
         f"Expected 502 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (china_native W2 added china-funding-store, china-cb-store, china-fund-issuance-store = 499->502;"
-        "(Chronicle W0 added chronicle-events, chronicle-state-log, chronicle-manifest = 496->499;"
+        " (Chronicle W0 added chronicle-events, chronicle-state-log, chronicle-manifest;
         "(PSS-W3 added personality-gate-shadow-ledger, personality-gate-shadow-state = 494->496;"
         "(TXI W4 #3527 added transmission-chains-state = 493->494;"
         "(Personality Codex W2 #3460 added personality-timing-codex = 492->493;"
