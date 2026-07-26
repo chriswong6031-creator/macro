@@ -26,6 +26,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -134,26 +135,40 @@ def _pdf_stem_filename(pdf_key: str) -> str:
     return Path(pdf_key).stem
 
 
-def _already_processed_pdf_keys(store) -> set[str]:
+def _already_processed_pdf_keys(store, max_workers: int = 32) -> set[str]:
     """PDF source keys recorded in any receipt (idempotency across id changes).
 
     A receipt records the source ``pdf_key`` it consumed; we skip re-ingesting
-    the same source object even if the derived id later shifts.
+    the same source object even if the derived id later shifts — so the skip-set
+    must be keyed on ``pdf_key`` (which lives in the receipt body), NOT on the
+    receipt filename: the derived id can differ from the source filename.
+
+    Receipt bodies are fetched CONCURRENTLY. This runs once at the START of every
+    hourly run before any new doc is ingested, and a serial GET-per-receipt is
+    O(n) round-trips; at a multi-thousand-doc backfill that alone would blow the
+    job's wall-clock budget (~20k serial GETs ≈ 20 min > the 15-min timeout). A
+    thread pool turns that into ~one round-trip of latency. (A single aggregate
+    index object would drop it to one GET/run — a worthwhile future optimization.)
     """
-    done: set[str] = set()
-    for rk in store.list_prefix(PROCESSED_PREFIX):
-        if not rk.endswith(".json"):
-            continue
+    receipt_keys = [rk for rk in store.list_prefix(PROCESSED_PREFIX)
+                    if rk.endswith(".json")]
+    if not receipt_keys:
+        return set()
+
+    def _src(rk: str) -> str | None:
         raw = store.get_bytes(rk)
         if not raw:
-            continue
+            return None
         try:
-            rec = json.loads(raw)
-            src = rec.get("pdf_key")
+            return json.loads(raw).get("pdf_key")
+        except Exception:  # noqa: BLE001 — unreadable receipt: skip
+            return None
+
+    done: set[str] = set()
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(receipt_keys))) as ex:
+        for src in ex.map(_src, receipt_keys):
             if src:
                 done.add(src)
-        except Exception:  # noqa: BLE001 — unreadable receipt: fall through
-            continue
     return done
 
 
