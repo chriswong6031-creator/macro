@@ -93,6 +93,14 @@ whole set rather than one per job (it recreates the venv only when the install s
 | `unrun-builders-stores` | 42 | 15s |
 | **total** | **130** (2443 tests) | **~150s local** |
 
+This table records the **#3636 pass**, not a live total — later PRs add suites to these lanes,
+so re-derive from `ci.yml` rather than reading a count off it. Known arrivals since: 2026-07-26
+`unrun-serving-admin` gained a 6th suite (75 tests, 17s local), the `admin/*.py` import +
+`status()`/`panel()` smoke — another zero-workflow orphan, found while auditing
+`neural-web-core` for missing transitive imports (#3717). Its subjects reached the same lane's
+`paths` block, `admin/*.py` included: the suite parametrizes off that glob, so a *new* admin
+module has to be able to start the workflow.
+
 Budget: ci-pack runs two packs under a 180-minute timeout each. The nine jobs add 290 to a
 1637 total balancing weight (+18%, 819/818 → 964/963) and split 5/4 across the packs. Note
 the weight is only the pack **balancer**, not a time estimate: the real budget is wall clock,

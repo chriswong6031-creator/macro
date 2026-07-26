@@ -1252,6 +1252,15 @@ on:
       - "admin/health.py"
       - "app/brain_runs.py"
       - "app/tape_decode.py"
+      # admin/*.py smoke.  Its parametrization is DERIVED from the admin/*.py glob, so a
+      # new admin module silently adds an import case — and the three file-by-file entries
+      # above cover 3 of admin/'s 46 modules, so that new module could not start this
+      # workflow.  Same shape as the unrun-import-hygiene ratchet below: a directory-wide
+      # scanner needs a directory-wide trigger, or the guarded change never reaches the
+      # guard.  `admin/*.py` is top-level-only under GitHub's filter syntax, which is
+      # exactly the non-recursive glob the suite itself walks.
+      - "tests/test_admin_modules_smoke.py"
+      - "admin/*.py"
       # unrun-builders-render — page/render builders whose output ships to the site
       - "tests/test_ai_desk_page.py"
       - "tests/test_build_chart_data.py"
@@ -4507,6 +4516,15 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: admin health, feature flags and the config store
         run: python -m pytest tests/test_admin_health.py tests/test_admin_flags.py tests/test_admin_config_store.py -q
+      # Wired 2026-07-26: run by ZERO workflows before this step — the same orphan class
+      # neural-web-core was created for.  Covers every admin/*.py import (parametrized off
+      # the directory glob) plus the read-only status()/panel() surfaces of ~10 modules.
+      # requests is load-bearing on this job's install line: the suite imports admin.server,
+      # which pulls admin.analytics_first_party's `try: import requests / except: requests =
+      # None`.  Without the dep the whole file still passed (74/74) while exercising the
+      # degraded branch, so test_status_with_pat_is_configured now pins the shipped one.
+      - name: every admin/*.py imports + the read-only status()/panel() surfaces
+        run: python -m pytest tests/test_admin_modules_smoke.py -q
       - name: brain SSE keepalive + tape decode
         run: python -m pytest tests/test_brain_sse_keepalive.py tests/test_tape_decode.py -q
 
