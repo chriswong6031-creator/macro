@@ -422,11 +422,10 @@ does). That half was **already** covered: `.github/workflows/**` has been a broa
 in `paths` since the W5a DAG-conformance entry. Only the test file needed adding — `tests/**`
 is deliberately not a catch-all.
 
-Wired into `unrun-publish-ops` as its own named step rather than a new lane: the lane's
-`pip install` is already the shared byte-identical one, and a 1.4s file read does not justify
-a 124th legacy job in the pack. That lane now carries 20 suites (19 P1 + this P3);
-run serially it is 510 passed / 1 skipped / 30s, and `git status -- data/ site/` is clean
-after.
+Wired into the **`workflow-yaml`** job, which already carries `check_workflow_yaml.py` and
+`tests/test_ci_pack.py` — the workflow-contract guards. That is the lane whose subject *is*
+`.github/workflows/**`, so the suite sits with the things it actually guards rather than in
+an `unrun-*` census lane it only ever belonged to by accident of how it was found.
 
 **Mutation-tested, 6/6.** A wiring PR that only proves the suite passes has proved nothing —
 the census exists to find guards that cannot fail. Each of the five assertions was inverted
@@ -434,6 +433,31 @@ in `render.yml` in turn (drop `intl` from the scope choices; unmap
 `templates/intl.html.j2|scripts/build_intl.py`; drop `intl` from the region loop; point the
 dispatch at a different module; empty the `intl)` arm; drop `intl` from the `all` fan-out)
 and the suite goes red on every one. `render.yml` was restored byte-identically afterwards.
+
+### It was wired twice — the census attracts duplicate fixes
+
+Two sessions ran the auditor within the same hour, both saw strictly-dark go 0 → 1, and both
+wired the same suite: #3731 into `workflow-yaml`, #3729 into `unrun-publish-ops`. The
+insertions were at different points in a 4800-line file, so **git merged them cleanly and
+main ran the suite twice** — two `on.pull_request.paths` entries and two `run:` steps, with
+nothing red to say so. #3741 removed the `unrun-publish-ops` copy and kept `workflow-yaml`.
+
+Two things this class needs:
+
+- **A visible signal is a magnet.** A census that names exactly one regression is a to-do
+  list every session can read, so check `docs/ACTIVE_BUILD_MAP.md` and open PRs for the
+  suite's filename *before* wiring it, not just the tier count. `audit_unrun_tests.py`
+  reports repo state, and an open PR is not repo state.
+- **Duplicate wiring is silent by construction.** Every gate here — the auditor, the pack
+  validator, `check_workflow_yaml.py`, `test_ci_pack.py` — is satisfied by a suite being
+  wired *at least* once; none of them count. The census can go 0 while a suite runs twice
+  per PR. Grep `ci.yml` for the filename after wiring.
+
+**Put a census suite in the lane that owns its subject.** Both placements were green and
+both were defensible in isolation, but only one is right: `workflow-yaml` owns
+`.github/workflows/**`. The `unrun-*` lanes are a wiring vehicle for suites with no natural
+home, not a home in themselves — being *found* by the census says nothing about where a
+suite belongs.
 
 ## Staged remainder
 
