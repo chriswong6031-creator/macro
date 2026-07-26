@@ -110,6 +110,26 @@ def test_write_page_injects_depth_aware(tmp_path):
         assert "window.DATA_BASE" in text and "data_base.js" not in text
 
 
+def test_shim_body_cache_is_per_source_not_per_process(tmp_path, monkeypatch):
+    """A failed read must not pin the REST of the process to the external ref.
+
+    Builder tests patch lib.config.ROOT to a fixture tree that has no templates/
+    (tests/test_build_leader_radar.py does). With one global cache slot, the first
+    write_page under such a patch cached the failure forever, so every later page
+    written in that pytest process came out with `<script data-dbase src=…>`
+    instead of the inline shim — turning this file red only when it happened to
+    run after that suite, with nothing in the failure pointing at the cause."""
+    from lib import pages
+
+    monkeypatch.setattr(pages.config, "ROOT", tmp_path)  # no templates/data_base.js
+    fallback = inject_text("<html><head></head><body></body></html>", "")
+    assert 'src="data_base.js"' in fallback, "unreadable shim must fall back, not vanish"
+
+    monkeypatch.undo()  # back to the real repo root
+    recovered = inject_text("<html><head></head><body></body></html>", "")
+    assert "window.DATA_BASE" in recovered and "data_base.js" not in recovered
+
+
 def test_write_page_keeps_existing_marker(tmp_path):
     site = tmp_path / "site"
     site.mkdir()
