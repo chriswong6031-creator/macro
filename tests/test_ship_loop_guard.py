@@ -1389,6 +1389,166 @@ def test_unpushed_commits_still_block_when_an_upstream_exists(monkeypatch, tmp_p
     assert verdict == "unpushed"
 
 
+def _stand_down_repo(tmp_path: Path) -> tuple[Path, Path]:
+    """A session that found its assigned defect already fixed on origin/main:
+    it fast-forwarded its worktree onto the fix and created nothing."""
+    repo = _repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "checkout", "-b", "claude/stand-down")
+    state_path = tmp_path / "state.json"
+    GUARD._save(state_path, {
+        "root": str(repo),
+        "start_head": start_head,
+        "baseline": GUARD._fingerprint(repo),
+        "last_blocker": "",
+        "blocker_count": 0,
+    })
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "checkout", "main")
+    _commit(repo, "fix.txt", "already fixed on main\n", "fix: landed by another session")
+    _git(repo, "push", "origin", "main")
+    _git(repo, "checkout", "claude/stand-down")
+    _git(repo, "reset", "--hard", "origin/main")
+    return repo, state_path
+
+
+def test_a_stand_down_session_fast_forwarded_onto_main_may_stop(monkeypatch, tmp_path, capsys):
+    """A session that verified its defect was already fixed must be able to stop.
+
+    The no-op exemption only covers a session whose HEAD never moved. A stand-down
+    session syncs to tip first — `git reset --hard origin/main` — to check the fix
+    where it actually landed, so HEAD moves with zero session-created commits and
+    the old check missed it. The chain it was then held to is unsatisfiable:
+    GitHub refuses a zero-diff pull request ("No commits between main and
+    <branch>") and `unmerged` is not an escapable external blocker, so the only
+    exit observed in the field (2026-07-26, claude/serene-colden-e5b716) was
+    resetting back to start_head. Nothing shipped here, so nothing is asked of
+    GitHub either — the stubs below fail the test if it is consulted at all.
+    """
+    repo, state_path = _stand_down_repo(tmp_path)
+    monkeypatch.setattr(
+        GUARD, "_github_slug", lambda *_a: pytest.fail("a fast-forwarded no-op asked GitHub")
+    )
+    monkeypatch.setattr(
+        GUARD, "_latest_merged_pr", lambda *_a: pytest.fail("a fast-forwarded no-op asked GitHub")
+    )
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    assert capsys.readouterr().out.strip() == ""
+
+
+def test_a_direct_push_to_main_is_not_exempted_by_the_fast_forward(monkeypatch, tmp_path, capsys):
+    """Ancestry proves POSITION, not authorship — so the branch gate outranks it.
+
+    This repo satisfies all three of the exemption's own conditions: HEAD equals
+    origin/main, the ahead-count is 0, the tree is clean. But it got there by
+    committing on main and pushing, not by syncing to someone else's fix, and
+    `merge-base` cannot tell those apart. Work pushed straight to main really did
+    ship, so exempting it would skip the render and live gates on live work —
+    fail-open, which this guard may never be. `unsafe_branch` is the correct
+    verdict, and it is only reachable if the branch check runs FIRST.
+    """
+    repo = _repo(tmp_path)
+    start_head = _git(repo, "rev-parse", "HEAD")
+    state_path = tmp_path / "state.json"
+    GUARD._save(state_path, {
+        "root": str(repo),
+        "start_head": start_head,
+        "baseline": GUARD._fingerprint(repo),
+        "last_blocker": "",
+        "blocker_count": 0,
+    })
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _commit(repo, "hotfix.txt", "straight to main\n", "fix: pushed without a PR")
+    _git(repo, "push", "origin", "main")
+
+    assert _git(repo, "rev-parse", "HEAD") == _git(repo, "rev-parse", "origin/main")
+    assert _git(repo, "rev-list", "--count", "origin/main..HEAD") == "0"
+    assert GUARD._fast_forwarded_onto_main(repo), "precondition: the exemption itself would fire"
+
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unsafe_branch"
+
+
+def test_commits_ahead_of_main_still_demand_the_full_chain(monkeypatch, tmp_path, capsys):
+    """Syncing to tip does not buy an exemption for work built on top of it.
+
+    The commit is committed, so the tree is clean and the dirty gate has nothing
+    to say — the verdict has to come from the CHAIN. `--is-ancestor` returns rc=1
+    the moment one session commit sits above origin/main, and the guard falls
+    straight through to ordinary enforcement.
+    """
+    repo, state_path = _stand_down_repo(tmp_path)
+    _commit(repo, "work.txt", "session work\n", "feat: real session work")
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unpushed"
+
+
+def test_a_dirty_stand_down_session_still_blocks_as_uncommitted(monkeypatch, tmp_path, capsys):
+    """Uncommitted work is judged before the exemption and keeps blocking.
+
+    A worktree that is level with origin/main but carries edits is not a
+    stand-down; it is unfinished work that would be lost. The dirty-baseline gate
+    sits above the exemption precisely so a fast-forward cannot launder it.
+    """
+    repo, state_path = _stand_down_repo(tmp_path)
+    (repo / "notes.txt").write_text("session scratch\n", encoding="utf-8")
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "uncommitted"
+
+
+def test_an_unreachable_origin_fails_closed_to_the_full_chain(monkeypatch, tmp_path, capsys):
+    """Ancestry against a STALE local ref is not evidence; the fetch must succeed.
+
+    Everything else about this repo still says "exempt": refs/remotes/origin/main
+    survives the broken remote url, it still names HEAD, the ahead-count is 0 and
+    the tree is clean. Only the fetch fails — so this isolates the fail-closed
+    rule. Offline, the exemption simply does not apply and the normal chain (whose
+    GitHub failures ARE escapable external blockers) takes the session back.
+    """
+    repo, state_path = _stand_down_repo(tmp_path)
+    _git(repo, "remote", "set-url", "origin", str(tmp_path / "gone.git"))
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=None)
+    assert verdict == "unpushed"
+
+
+def test_a_session_that_never_moved_head_may_still_stop(monkeypatch, tmp_path, capsys):
+    """The original no-op exemption, and its ORDER relative to the new one.
+
+    A session that changed nothing has always been free to stop. It must stay
+    free without paying for a network round trip: the start_head comparison has to
+    short-circuit BEFORE `_fast_forwarded_onto_main`, or an offline no-op session
+    would sit through a failing fetch on every Stop. Both stubs fail the test if
+    either is reached.
+    """
+    repo = _repo(tmp_path)
+    state_path = tmp_path / "state.json"
+    GUARD._save(state_path, {
+        "root": str(repo),
+        "start_head": _git(repo, "rev-parse", "HEAD"),
+        "baseline": GUARD._fingerprint(repo),
+        "last_blocker": "",
+        "blocker_count": 0,
+    })
+    monkeypatch.setattr(
+        GUARD, "_github_slug", lambda *_a: pytest.fail("a no-op session asked GitHub")
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_fast_forwarded_onto_main",
+        lambda *_a: pytest.fail("a no-op session paid for a fetch"),
+    )
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    assert capsys.readouterr().out.strip() == ""
+
+
 def test_settings_wire_session_start_and_stop():
     settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
     hooks = settings["hooks"]
