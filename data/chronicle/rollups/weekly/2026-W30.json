@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 86,
+          "n_events": 105,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -27,12 +27,32 @@
             },
             {
               "date": "2026-07-24",
+              "id": "cev-research_vault-033cccade4eb",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-rbcqtukaida-6028e6",
+              "tickers": [],
+              "title": "Goldman Sachs: Americas Healthcare REITs 2Q26 Preview Life Science funding greenshoots, leasing remains subdued",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
               "id": "cev-research_vault-066a90359d72",
               "kind": "report",
               "source": "research_vault",
               "source_ref": "marketdesk-p2imlo0spdy-307064",
               "tickers": [],
               "title": "Goldman Sachs: China 2026 Outlook Exploring New Growth Engines",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-24",
+              "id": "cev-research_vault-069e59fb4382",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-9uuklmjzp4f-d85c1f",
+              "tickers": [],
+              "title": "Goldman Sachs: Akzo Nobel (AKZO.AS) Notes from the Road Constructive outlook commentary follows up solid 2Q26 delivery",
               "weight_hint": 2
             },
             {
@@ -43,26 +63,6 @@
               "source_ref": "marketdesk-nx6cq5mgqpj-dc1c75",
               "tickers": [],
               "title": "Bank of America: BofA Michael Hartnett Bonds bringing the heat",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-research_vault-0f500c0e53bb",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-qa5q0g3y4fw-aee75f",
-              "tickers": [],
-              "title": "Goldman Sachs: Ryder System Inc",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-24",
-              "id": "cev-research_vault-10d7199e047c",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-brepbuioeuo-9a32df",
-              "tickers": [],
-              "title": "Goldman Sachs: Repsol (REP",
               "weight_hint": 2
             }
           ]
