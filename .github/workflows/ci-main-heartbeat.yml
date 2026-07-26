@@ -170,6 +170,29 @@ jobs:
       - name: inline-CSS externalization units
         run: python -m pytest tests/test_externalize_css.py -q
 
+  # ── data-base shim guard (mirror ci.yml: data-base-shim) ──────────────────
+  # This lane matters most HERE: ci.yml's copy only fires on its `paths:` list,
+  # and the offending write lives in a builder (scripts/build_*.py) that no path
+  # filter covers without running the whole pack on most Python PRs. This job has
+  # no path filter — it re-checks main HEAD every 6h regardless of what the
+  # offending PR happened to touch.
+  data-base-shim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install deps (the builder suite runs real builders)
+        run: pip install pytest pyyaml jinja2 pandas numpy pyarrow
+      # test_site_shim.py itself (units + tripwire + source guard) runs on the
+      # template-site-sync lane, which #3635 wired and which needs only pyyaml.
+      # This job exists for the suite that lane CANNOT host: it RUNS each builder,
+      # so it needs the data stack below.
+      - name: every page builder emits the shim (runs each against a fixture root)
+        run: python -m pytest tests/test_builder_shim_writes.py -q
+
   # ── workflow-yaml parse guard (mirror ci.yml: workflow-yaml) ───────────────
   workflow-yaml:
     runs-on: ubuntu-latest

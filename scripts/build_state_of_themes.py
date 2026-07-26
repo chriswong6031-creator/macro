@@ -1428,7 +1428,20 @@ def main(argv: list[str] | None = None) -> int:
         ctx = compose(root)
         html = render(root, ctx)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(html, encoding="utf-8")
+        # write_page, not write_text — state_of_themes.html.j2 carries no
+        # data-base shim, so a raw write ships the page pointed at Pages instead
+        # of R2 outside the render lane's inject_data_base sweep.
+        #
+        # Imported HERE, not at module scope (same idiom as
+        # build_market_structure_page / build_stage_analysis_page /
+        # build_options_command): lib.pages -> lib.config -> `import yaml`, and
+        # this module otherwise imports nothing from lib/. A module-level import
+        # puts pyyaml in the import graph of every `import scripts.
+        # build_state_of_themes`, which reds the lean pytest batch that runs
+        # tests/test_state_of_themes.py with no pyyaml installed.
+        from lib.pages import write_page  # noqa: PLC0415
+
+        write_page(out_path, html, encoding="utf-8")
         log.info("wrote %s", out_path)
         write_theme_lanes(ctx, root)  # never raises; page already written
         return 0

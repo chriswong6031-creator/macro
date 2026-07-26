@@ -704,12 +704,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"::warning title=build_options_command::render failed ({exc}); previous page kept")
         return 0
 
-    try:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        from lib.pages import write_page  # noqa: PLC0415
-        write_page(out_path, html)
-    except Exception:  # noqa: BLE001
-        out_path.write_text(html, encoding="utf-8")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # write_page is the ONLY write path. The fail-soft law above covers a RENDER
+    # failure (keep the previous page); it never licensed shipping a rendered page
+    # without the data-base shim, which is what the raw-write fallback here did —
+    # silently, since the render lane's inject_data_base sweep healed the
+    # committed copy afterwards.
+    from lib.pages import write_page  # noqa: PLC0415
+    write_page(out_path, html)
 
     ctx = build_context(root)
     sess = ctx["session"]

@@ -152,12 +152,13 @@ def build(root: Path, fixture: Path | None = None) -> Path:
 
     out_path = site_dir / "stage_analysis.html"
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        from lib.pages import write_page  # noqa: PLC0415
+    # write_page is the ONLY write path — the raw-write fallback that used to sit
+    # here swallowed every exception and shipped the page without the data-base
+    # shim (fetches pointed at Pages instead of R2), a regression the render
+    # lane's inject_data_base sweep then hid on the committed copy.
+    from lib.pages import write_page  # noqa: PLC0415
 
-        write_page(out_path, html)
-    except Exception:  # noqa: BLE001
-        out_path.write_text(html, encoding="utf-8")
+    write_page(out_path, html)
 
     log.info("wrote %s (%d KB)", out_path, len(html) // 1024)
     return out_path

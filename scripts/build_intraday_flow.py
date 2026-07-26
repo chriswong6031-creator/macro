@@ -50,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
+from lib.pages import write_page
 from engine.intraday_flow import washout_context as _washout_context
 
 log = logging.getLogger(__name__)
@@ -1008,8 +1009,10 @@ def _run_nightly(cfg: dict, data_root: Path, site_root: Path, tpl_root: Path) ->
         # (net_doi, ivspread_rel) would otherwise abort the whole HTML render.
         payload_safe = json.loads(json.dumps(payload, default=_json_default))
         rendered = tpl.render(intraday_flow=payload_safe)
-        html_out = site_root / "intraday_flow.html"
-        html_out.write_text(rendered)
+        # write_page, not write_text — the template carries no data-base shim, so
+        # a raw write drops the R2 reroute for this page's per-ticker fetches in
+        # any run outside the render lane's inject_data_base sweep.
+        html_out = write_page(site_root / "intraday_flow.html", rendered)
         log.info("build_intraday_flow nightly: rendered %s", html_out)
     except Exception as e:  # noqa: BLE001
         log.warning("build_intraday_flow nightly: HTML render failed: %s", e)
