@@ -36,6 +36,11 @@ from scripts.import_equitydesk_backfill import (  # noqa: E402
 )
 
 
+def _seed_path(root: Path) -> Path:
+    """The committed cold-start seed the importer writes the score rows to."""
+    return root / "data" / "stage_analysis" / "backfill" / "earnings_seed.parquet"
+
+
 # ---------------------------------------------------------------------------
 # Minimal fixture builders
 # ---------------------------------------------------------------------------
@@ -288,9 +293,12 @@ class TestSummaryField:
             json.dumps(er_data), encoding="utf-8"
         )
         stats = run(src, tmp_path, dry_run=False)
-        # scores.parquet should have been written
-        scores_path = tmp_path / "data" / "earnings_calls" / "scores.parquet"
-        assert scores_path.exists(), "scores.parquet not created"
+        # The committed cold-start seed carries the score rows.  These assertions
+        # pointed at data/earnings_calls/scores.parquet, which is now the live
+        # gitignored/R2-transported lane the Qwen worker overlays — the importer
+        # writes the seed instead (see "Write 3" in import_equitydesk_backfill).
+        scores_path = _seed_path(tmp_path)
+        assert scores_path.exists(), f"{scores_path.name} not created"
         import pandas as pd
         df = pd.read_parquet(scores_path)
         assert "summary" in df.columns
@@ -315,8 +323,7 @@ class TestIdempotentUpsert:
         # Second import
         run(src, tmp_path, dry_run=False)
         import pandas as pd
-        scores_path = tmp_path / "data" / "earnings_calls" / "scores.parquet"
-        df = pd.read_parquet(scores_path)
+        df = pd.read_parquet(_seed_path(tmp_path))
         # Keyed (ticker, quarter, year, source) — should have exactly 1 row
         msft_rows = df[(df["ticker"] == "MSFT") & (df["source"] == "equitydesk_backfill")]
         assert len(msft_rows) == 1, f"Expected 1 MSFT row, got {len(msft_rows)}"

@@ -10,10 +10,12 @@ Reads the two EquityDesk snapshot files and produces:
      fiscal_qtr, model_used, prompt_version, call_summary, positive_factors(json),
      negative_factors(json), guidance(json), hot_topics(json), their sub-scores.
 
-  3. Seed data/earnings_calls/scores.parquet  (gitignored — R2-transported lane)
+  3. data/stage_analysis/backfill/earnings_seed.parquet  (committed cold-start seed)
      Rows in our canonical schema; mapped from EquityDesk earnings via the join
      described in the W5 mapping below.  Idempotent upsert keyed
-     (ticker, quarter, year, source='equitydesk_backfill').
+     (ticker, quarter, year, source='equitydesk_backfill').  Read by
+     engine.stage_analysis._load_earnings_scores UNDER the live (gitignored,
+     R2-transported) data/earnings_calls/scores.parquet the worker overlays.
 
 ── W5 MAPPING (pinned; amend only with a SGA ruling) ──────────────────────────
 

@@ -329,7 +329,7 @@ def test_qledger_reliability_rows(monkeypatch, tmp_path):
 
 
 def test_qledger_reliability_caveat_present(monkeypatch, tmp_path):
-    """§0.5.8: CI caveat must mention overlapping n_obs and n_dates."""
+    """§0.5.8: the CI caveat must disclose that n_obs is not independent of n_dates."""
     fixture_path = tmp_path / "qledger" / "track_record.json"
     _write_json(fixture_path, TRACK_RECORD_FIXTURE)
     monkeypatch.setattr(bm, "QLEDGER_TRACK_RECORD_PATH", fixture_path)
@@ -337,7 +337,13 @@ def test_qledger_reliability_caveat_present(monkeypatch, tmp_path):
     result = bm.build_qledger_reliability()
 
     caveat_en = result["ci_caveat_en"]
-    assert "overlapping" in caveat_en.lower()
+    # The disclosure requirement is the DEPENDENCE between the raw and clustered
+    # counts, not one particular synonym for it — the wording moved from
+    # "overlapping" to "correlated", which pinned this assertion red while the
+    # substance stayed intact (and the suite runs in no workflow, so nothing saw it).
+    assert any(w in caveat_en.lower() for w in ("overlapping", "correlated", "clustered")), (
+        f"caveat must name the n_obs/n_dates dependence: {caveat_en!r}"
+    )
     assert "n_dates" in caveat_en
     assert "n_obs" in caveat_en
 

@@ -4,7 +4,7 @@ Tests verify:
   1. calibration.json carries both `allocation` (gated) and `allocation_raw` blocks.
   2. multiple_testing_raw block exists and has valid DSR/verdict.
   3. trial_log.json carries n_trials_declared = n_trials_config + override dof.
-  4. override dof > 0 (midterm_blackout dof_cost=3 is registered).
+  4. override dof > 0, and every charged dof_cost matches the declared registry.
   5. dsr_effN sub-dict present in both multiple_testing tracks.
   6. allocation_raw Sharpe differs from gated Sharpe (override has real effect).
 
@@ -204,13 +204,36 @@ def test_midterm_blackout_in_overrides_dof():
 
 
 
-def test_midterm_blackout_dof_cost_is_3():
-    """midterm_blackout dof_cost must be 3 (as declared in config.yml)."""
+def test_overrides_dof_matches_the_declared_registry():
+    """The ledger's charged dof must equal config.yml's DECLARED dof_cost.
+
+    Pinning a literal (this asserted ``== 3``) rots the moment the registry
+    legitimately grows — midterm_blackout went 3 → 6 when W2 registered the
+    Class-1 confirm window (+1) and W4 the staged re-entry (+2), and this suite
+    is named by no workflow, so it sat red and unseen.  The invariant that
+    actually matters is that the DSR trial budget charges exactly what the
+    Override Registry declares: too little silently under-corrects the
+    multiple-testing haircut on a live sizing signal.
+    """
     tl = _load_trial()
-    cost = tl.get("overrides_dof", {}).get("midterm_blackout")
-    if cost is None:
-        pytest.skip("midterm_blackout not in overrides_dof")
-    assert cost == 3, f"midterm_blackout dof_cost={cost} (expected 3)"
+    charged = tl.get("overrides_dof")
+    if not charged:
+        pytest.skip("overrides_dof not in trial_log")
+    from lib import config
+    declared = {
+        ov["id"]: int(ov.get("dof_cost", 1) or 0)
+        for ov in ((config.load().get("vector") or {}).get("overrides") or [])
+        if isinstance(ov, dict) and ov.get("id")
+    }
+    if not declared:
+        pytest.skip("vector.overrides registry empty in config")
+    for oid, cost in charged.items():
+        assert oid in declared, f"ledger charges dof for unregistered override {oid!r}"
+        assert cost == declared[oid], (
+            f"override {oid!r}: ledger charges dof_cost={cost} but config.yml "
+            f"declares {declared[oid]} — the DSR trial budget and the registry "
+            "have drifted apart"
+        )
 
 
 # ---------------------------------------------------------------------------
