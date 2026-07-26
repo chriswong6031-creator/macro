@@ -198,6 +198,12 @@ entries:
     section: 2
     section_name: killed_signal_families
 
+  - topic: 'Down-volume envelope CONTRACTION on new lows as a STANDALONE entry-timing signal (PSS-F1)'
+    verdict: 'KILLED — pre-stated falsifier not cleared under the §7 timing ruler. The near-low property is GENERIC to new-low conditioning, not to the envelope: the treatment-disjoint complement (ordinary new-low bars that did NOT fire F1) shows the SAME near-low rate (F1 U_W5 vs all-days +23..+35pp, complement +23..+34pp), and F1−complement straddles 0 on both inferential metrics both eras (U_MAE [−0.37,+1.17] / [−0.39,+1.18]; U_W5 [−3.68,+4.11] / [−3.60,+4.30]); C32-gated same. A contracting down-volume envelope adds no MAE/proximity information beyond an ordinary new-low bar in the same decline. 2022-containment prediction also not borne out per-name (JPM 7, META 9 H1-2022 fires vs 2–3 near the Oct-2022 low). Closes the standalone contraction-TIMER construction only — down-volume persistence half-life stays OPEN as a codex measurement axis and a candidate W-CONF confluence input; the volume-exhaustion search space is NOT closed. (Errata E1/E2: the initial −7pp U_W5 was a pooled-fire-median-of-a-binary sign-flip artifact, corrected to the pre-registered per-name-first rate−rate; RNL null decontaminated to the disjoint complement.)'
+    source: 'PSS-F1, `PSS_WSIG_SHORTLIST_BY_FABLE.md` §F1; `reports/pss_f1_downvol.md` (family `pss_f1_downvol`, 2026-07-25)'
+    section: 2
+    section_name: killed_signal_families
+
   - topic: 'Washout × turn (2W operator seed)'
     verdict: 'KILLED — operator seed dies in test'
     source: 'Entry-stack Amendment-3 adjudication (#1747)'
