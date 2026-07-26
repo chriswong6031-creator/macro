@@ -335,6 +335,7 @@ class TestRSIDivergence:
 # ---------------------------------------------------------------------------
 
 KOSPI_PATH = ROOT / "data" / "intl" / "_KS11.parquet"
+HSI_PATH = ROOT / "data" / "hk" / "_HSI.parquet"
 
 
 @pytest.mark.skipif(not KOSPI_PATH.exists(), reason="KOSPI parquet not available")
@@ -461,7 +462,45 @@ class TestKOSPIReplay:
 
 
 # ---------------------------------------------------------------------------
-# Test 6: Determinism + fail-open
+# Test 6: HSI crash-rebound replay — repair hysteresis, no -10% threshold flip
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not HSI_PATH.exists(), reason="HSI parquet not available")
+class TestHSIRepairReplay:
+    """The June/July 2026 HSI rebound must not be hidden by crash memory."""
+
+    def setup_method(self):
+        self.close = pd.read_parquet(str(HSI_PATH))["close"].dropna().sort_index()
+        self.result = market_states({"HK": self.close})["HK"]
+        frame = _compute_components(self.close)
+        self.states = _resolve_state_series(frame)
+        self.frame = frame
+
+    def test_latest_state_is_recovery(self):
+        assert self.result["state"] == "recovery"
+        assert self.result["since"] == "2026-07-20"
+
+    def test_recovery_survives_off_high_boundary_wobble(self):
+        """Jul-23 dd=-9.86% and Jul-24 dd=-10.74% carry the same repair evidence."""
+        assert self.states.loc["2026-07-23"] == "recovery"
+        assert self.states.loc["2026-07-24"] == "recovery"
+
+    def test_repair_has_independent_confirmation(self):
+        assert self.result["mom20_pct"] >= 5.0
+        assert self.result["dd_vel_10d"] > 0.0
+        assert self.result["above_ma20"] is True
+        assert self.result["above_ma50"] is True
+        assert self.result["macd_state"] == "bull"
+
+    def test_velocity_crash_still_wins(self):
+        """The repair rule never overrides an active <=-15% 20-session crash."""
+        crash_dates = self.states.index[self.frame["ret20_pct"] <= -15.0]
+        assert len(crash_dates) > 0
+        assert (self.states.loc[crash_dates] == "crash").all()
+
+
+# ---------------------------------------------------------------------------
+# Test 7: Determinism + fail-open
 # ---------------------------------------------------------------------------
 
 class TestDeterminismAndFailOpen:
@@ -488,7 +527,7 @@ class TestDeterminismAndFailOpen:
         # Should still have all required keys
         required_keys = {
             "state", "state_en", "state_zh", "stance_en", "stance_zh",
-            "css", "since", "urgency", "ext_raw_pct", "ext_pctile", "ext_z",
+            "state_trigger", "css", "since", "urgency", "ext_raw_pct", "ext_pctile", "ext_z",
             "mom20_pct", "mom5_pct", "rs20_pct", "rsi", "rsi_at_high",
             "rsi_divergence", "macd_state", "macd_cross_date", "dd_pct",
             "dd_vel_10d", "vol_z", "above_ma20", "above_ma50", "above_ma200",
@@ -514,7 +553,7 @@ class TestDeterminismAndFailOpen:
         r = market_states({"X": close})["X"]
         required_keys = {
             "state", "state_en", "state_zh", "stance_en", "stance_zh",
-            "css", "since", "urgency", "ext_raw_pct", "ext_pctile", "ext_z",
+            "state_trigger", "css", "since", "urgency", "ext_raw_pct", "ext_pctile", "ext_z",
             "mom20_pct", "mom5_pct", "rs20_pct", "rsi", "rsi_at_high",
             "rsi_divergence", "macd_state", "macd_cross_date", "dd_pct",
             "dd_vel_10d", "vol_z", "above_ma20", "above_ma50", "above_ma200",

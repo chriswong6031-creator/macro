@@ -356,6 +356,8 @@
   .tb-state.ts-downtrend { background:color-mix(in srgb,var(--down) 10%,transparent); color:var(--down); border:1px solid color-mix(in srgb,var(--down) 28%,transparent); }
   .tb-state.ts-calm { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
   .tb-stance { font-size:11.5px; color:var(--text); line-height:1.35; margin-bottom:6px; font-weight:500; }
+  .tb-confirm { font-size:10.5px; color:var(--muted); line-height:1.35; margin:-1px 0 6px; }
+  .tb-confirm b { color:var(--text); }
   .tb-metrics { display:flex; gap:10px; flex-wrap:wrap; font-size:11px; color:var(--muted); }
   .tb-metrics .tm-v { font-weight:700; }
   .tb-metrics .tm-v.pos { color:var(--up); }
@@ -599,7 +601,7 @@
 {% set _rdns = namespace(present=false, lifted=false) %}
 {# ---- turn-tile rich-lens popover copy (plain-word reads + accent/glyph maps) ---- #}
 {% set TB_READ_EN = {
-  'crash':     'The selling is heavy and still running — a fast, deep drop, with no floor in sight yet.',
+  'crash':     'A fast, deep selloff still dominates the 20-day tape. Treat the trend as broken until repair signals confirm otherwise.',
   'breaking':  'It ran up, then cracked: price has snapped below its recent floor and momentum rolled over.',
   'topping':   'Still up high, but the first cracks are showing — momentum is fading right near the top.',
   'parabolic': 'Shooting almost straight up. Moves this steep rarely last, and the snap-back tends to be sharp.',
@@ -611,7 +613,7 @@
   'calm':      'Quiet. Nothing stretched, nothing breaking — and nothing that needs a decision today.'
 } %}
 {% set TB_READ_ZH = {
-  'crash':     '抛售沉重、仍在继续——又快又深的下跌，目前仍看不到底。',
+  'crash':     '近20日走势仍由快速深跌主导。在修复信号确认前，应视为趋势已破坏。',
   'breaking':  '先急涨、后破位：价格跌穿近期支撑，动能掉头向下。',
   'topping':   '仍在高位，但已现初步裂痕——顶部附近动能正在减弱。',
   'parabolic': '近乎垂直的拉升。如此陡峭的涨势难以持久，回落往往迅猛。',
@@ -674,6 +676,9 @@
     {% set _kind = TB_KIND.get(tile.state, 'source') %}
     {% set _grp = TB_GRP.get(tile.state, 'flat') %}
     {% set _ext_i = (tile.ext_pctile|round|int) if tile.ext_pctile is not none else none %}
+    {% set _cf = tile.get('confirmation') %}
+    {% set _cf5 = ((_cf.get('windows') or {}).get('5d') or {}) if _cf else {} %}
+    {% set _cf20 = ((_cf.get('windows') or {}).get('20d') or {}) if _cf else {} %}
     {# compact plain fallback (trigger hook + JS-off / older-cache): state + stance, one line #}
     {% set _fb_en = (tile.state_en or tile.state) ~ ': ' ~ tile.stance_en ~ '.' %}
     {% set _fb_zh = (tile.state_zh or tile.state) ~ '：' ~ tile.stance_zh ~ '。' %}
@@ -703,6 +708,12 @@
           <span class="l-en">{{ TB_READ_EN.get(tile.state, '') }} <b>{{ tile.stance_en }}.</b></span>
           <span class="l-zh">{{ TB_READ_ZH.get(tile.state, '') }} <b>{{ tile.stance_zh }}。</b></span>
         </div>
+        {% if _cf and _cf.get('read_en') %}
+        <div class="lens-body">
+          <span class="l-en">{{ _cf.get('read_en') }}</span>
+          <span class="l-zh">{{ _cf.get('read_zh') }}</span>
+        </div>
+        {% endif %}
         {# receipt: precise machine numbers, demoted under the perforation. Built as a list
            so a data-limited stub (all-null) drops the receipt entirely — no empty bar. #}
         {% set _rc_en = [] %}{% set _rc_zh = [] %}
@@ -734,6 +745,12 @@
       <div class="tb-stance">
         <span class="l-en">{{ tile.stance_en }}</span><span class="l-zh">{{ tile.stance_zh }}</span>
       </div>
+      {% if _cf and _cf20.get('available') %}
+      <div class="tb-confirm">
+        <span class="l-en"><b>Tech breadth</b> · 20d {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} up · 5d {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} up</span>
+        <span class="l-zh"><b>科技广度</b> · 20日 {{ _cf20.get('positive') }}/{{ _cf20.get('available') }} 上涨 · 5日 {{ _cf5.get('positive') }}/{{ _cf5.get('available') }} 上涨</span>
+      </div>
+      {% endif %}
       <div class="tb-metrics">
         <span>{{ t('20d', '20日') }} <span class="tm-v {{ 'pos' if tile.mom20_pct is not none and tile.mom20_pct >= 0 else 'neg' if tile.mom20_pct is not none }}">{% if tile.mom20_pct is not none %}{{ '%+.1f'|format(tile.mom20_pct) }}%{% else %}—{% endif %}</span></span>
         <span>{{ t('off-high', '距高') }} <span class="tm-v {{ 'neg' if tile.dd_pct is not none and tile.dd_pct < -2 }}">{% if tile.dd_pct is not none %}{{ '%.1f'|format(tile.dd_pct) }}%{% else %}—{% endif %}</span></span>
