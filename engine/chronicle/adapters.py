@@ -61,15 +61,29 @@ def adapt_research_vault(repo: Path) -> tuple[list[dict], str | None]:
     # M8: every vault item that lands a page gets one at site/research/<slug>.html
     # (scripts/build_research_pages.py). slug_map() is the SAME deterministic
     # id->slug function the site builder uses (pure function of the ordered
-    # items list), so this reproduces the real published URL exactly. Fail-soft
-    # to an empty map -- links.site simply stays None per item if the import
-    # or the derivation ever fails (never blocks the adapter).
+    # items list), so this reproduces the real published URL exactly — imported
+    # from the stdlib-only engine.research_vault.slugs, NEVER through the page
+    # renderer. Routing through the renderer made THIS ADAPTER'S OUTPUT depend on
+    # the runner's installed packages: the import below is fail-soft, so a heavy
+    # module-scope dependency over there (jinja2, historically) silently blanked
+    # links.site on all 105 vault events in ci.yml's minimal-deps chronicle lane,
+    # so a rebuild there produced different bytes than a rebuild anywhere else —
+    # exactly what a store-vs-rebuild gate compares. Deferring jinja2 (#3648)
+    # fixed that one dependency; importing the leaf module closes the class.
     slug_by_id: dict[str, str] = {}
+    slug_gap: str | None = None
     try:
-        from scripts.build_research_pages import slug_map  # noqa: PLC0415
+        from engine.research_vault.slugs import slug_map  # noqa: PLC0415
         slug_by_id = slug_map(items)
     except Exception as exc:  # noqa: BLE001
-        log.debug("chronicle.research_vault: slug_map unavailable, links.site will be None: %s", exc)
+        # Fail-soft, but NEVER silent. As a log.debug this blanked every
+        # links.site indistinguishably from "the catalog legitimately has no
+        # pages", which is how it survived long enough to be committed into the
+        # store. Surfacing it as an adapter gap note puts the null in the
+        # manifest, where the house epistemics law wants it.
+        slug_gap = (f"links.site unavailable for all {len(items)} item(s) — "
+                    f"slug_map import failed ({type(exc).__name__}: {exc})")
+        log.warning("chronicle.research_vault: %s", slug_gap)
 
     events: list[dict] = []
     skipped = 0
@@ -120,6 +134,8 @@ def adapt_research_vault(repo: Path) -> tuple[list[dict], str | None]:
         gap_bits.append(f"{skipped} malformed/incomplete catalog item(s) skipped")
     if facts_dropped:
         gap_bits.append(f"{facts_dropped} fact(s) dropped (too short after word-boundary truncation)")
+    if slug_gap:
+        gap_bits.append(slug_gap)
     gap = "; ".join(gap_bits) if gap_bits else None
     return events, gap
 
