@@ -1,0 +1,329 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- Tell Apple Mail / iOS / Outlook-macOS we handle dark ourselves, so they do
+     not force-invert. Gmail and Outlook.com ignore this and invert anyway — which
+     is why EVERY element below sets background-color AND color together. An
+     inverter that flips both keeps the pair legible; one that flips only the
+     background is what produces black-on-black. -->
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<title>Mastermind</title>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  W-D DESIGN PIN · TRANSACTIONAL / MARKETING EMAIL BASE
+  Support & Email Estate masterplan, wave W-D. BINDING for the W1/W3/W4 builder.
+  Token table + per-template content specs: mockups/support_email/PIN.md
+  Filled reference render:               mockups/support_email/email_receipt_sample.html
+
+  HARD RULES (violating any of these breaks a real client)
+  1. Tables for layout. No flexbox, no grid, no float. Every table carries
+     role="presentation" border="0" cellpadding="0" cellspacing="0".
+  2. All CSS inline on the element. The <style> block below is PROGRESSIVE
+     ENHANCEMENT ONLY (dark-mode + mobile). Gmail strips <style> in several
+     contexts, so nothing in it may be load-bearing.
+  3. No images. The brand is TEXT. Many clients block images by default, and a
+     blocked logo makes a billing email look like a phishing attempt.
+  4. Max width 600px. Fixed 600 for Outlook desktop, fluid under 620px for the
+     webkit clients via the media query.
+  5. Set background-color AND color on the same element, always. See the
+     color-scheme note above.
+  6. Buttons are table-based (bulletproof). border-radius is decoration only —
+     Outlook drops it and renders a square button. That is the accepted degrade.
+  7. Every user-facing sentence obeys docs/DESIGN_DOCTRINE.md: plain words,
+     numbers arrive with their meaning, no internal vocabulary.
+
+  SLOTS are marked  <!-- SLOT: NAME -->  … <!-- /SLOT -->  below.
+  The UNSUBSCRIBE slot is MARKETING-CLASS ONLY — see the note at that slot.
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+
+<style type="text/css">
+  /* Progressive enhancement only — never load-bearing (rule 2 above). */
+  @media (max-width:620px) {
+    .mx-shell   { width:100% !important; max-width:100% !important; }
+    .mx-pad     { padding-left:22px !important; padding-right:22px !important; }
+    .mx-band    { padding-left:22px !important; padding-right:22px !important; }
+    .mx-h1      { font-size:23px !important; line-height:1.25 !important; }
+    .mx-btn a   { display:block !important; text-align:center !important; }
+    .mx-slip-k  { width:auto !important; }
+  }
+  /* Apple Mail / iOS Mail / Outlook-macOS honour this. Gmail does not — the
+     paired bg+color on every element is what protects Gmail. */
+  @media (prefers-color-scheme: dark) {
+    .mx-canvas  { background-color:#0b0d11 !important; }
+    .mx-card    { background-color:#181b21 !important; }
+    .mx-text    { color:#d7dce3 !important; }
+    .mx-muted   { color:#96a0b0 !important; }
+    .mx-rule    { border-color:#2a2f3a !important; }
+    .mx-slip    { background-color:#1e222a !important; border-color:#2a2f3a !important; }
+    .mx-slip-v  { color:#d7dce3 !important; }
+    .mx-link    { color:#7aa7e0 !important; }
+    .mx-foot    { color:#8b93a1 !important; }
+  }
+</style>
+</head>
+
+<!-- The <body> carries the canvas colour so clients that drop the wrapper table
+     background still paint the right shade behind the card. -->
+<body class="mx-canvas" bgcolor="#eef1f5" style="margin:0; padding:0; width:100%;
+  background-color:#eef1f5;
+  -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+<!-- SLOT: PREHEADER — the ~90 chars the inbox list shows next to the subject.
+     Say the ONE fact the reader needs before opening. Never repeat the subject.
+     The trailing entities stop Gmail from pulling body copy in after it. -->
+<div style="display:none; font-size:1px; color:#eef1f5; line-height:1px;
+  max-height:0; max-width:0; opacity:0; overflow:hidden;">
+  One-line preview text goes here.
+  &#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;
+</div>
+<!-- /SLOT -->
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+  class="mx-canvas" bgcolor="#eef1f5" style="background-color:#eef1f5;">
+<tr>
+<td align="center" style="padding:28px 12px 40px;">
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
+    class="mx-shell" style="width:600px; max-width:600px;">
+
+    <!-- ── brand gradient bar ────────────────────────────────────────────────
+         The Mastermind mark's blue→indigo→violet gradient, rendered as THREE
+         SOLID TABLE CELLS. A CSS gradient silently disappears in Outlook and a
+         gradient image would be blocked; three solid cells paint identically in
+         every client on earth. This is the email's signature detail. -->
+    <tr>
+      <td>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+          style="border-collapse:collapse;">
+          <tr>
+            <td width="33.33%" height="4" bgcolor="#3b82f6" style="background-color:#3b82f6; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+            <td width="33.33%" height="4" bgcolor="#6366f1" style="background-color:#6366f1; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+            <td width="33.34%" height="4" bgcolor="#7c5cff" style="background-color:#7c5cff; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- ── dark instrument band: text wordmark + class eyebrow ───────────────
+         Deliberately dark in BOTH schemes. It reads as the product (dark-first
+         terminal), and a band that is already dark is the safest thing to hand
+         a colour inverter. -->
+    <tr>
+      <td class="mx-band" bgcolor="#0f1115" style="background-color:#0f1115; padding:18px 32px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td align="left" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+              font-size:14px; font-weight:700; letter-spacing:2.2px; color:#ffffff; white-space:nowrap;">
+              MASTERMIND
+            </td>
+            <!-- SLOT: EYEBROW — the email's class, 1–2 words, UPPERCASE.
+                 Receipt · Trial · Upgrade · Payment · Cancellation · Welcome ·
+                 Support · Reply. Bilingual is NOT used here: keep it English,
+                 it is a filing label, not a sentence. -->
+            <td align="right" style="font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;
+              font-size:10px; font-weight:600; letter-spacing:1.6px; color:#8b93a1; white-space:nowrap;">
+              EYEBROW
+            </td>
+            <!-- /SLOT -->
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- ── card ──────────────────────────────────────────────────────────── -->
+    <tr>
+      <td class="mx-card" bgcolor="#ffffff" style="background-color:#ffffff;">
+
+        <!-- ═══ ENGLISH (primary) ═══════════════════════════════════════════ -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td class="mx-pad" style="padding:30px 32px 0;">
+
+              <!-- SLOT: HEADLINE — one sentence, states what happened, past
+                   tense, no exclamation mark. ≤ 8 words. -->
+              <h1 class="mx-h1 mx-text" style="margin:0 0 10px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:25px; line-height:1.22; font-weight:700; letter-spacing:-0.4px; color:#1c2430;">
+                Headline goes here
+              </h1>
+              <!-- /SLOT -->
+
+              <!-- SLOT: LEDE — one or two plain sentences. What this means for
+                   the reader and what, if anything, they need to do. -->
+              <p class="mx-muted" style="margin:0 0 22px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:15px; line-height:1.6; color:#5d6b7e;">
+                One or two sentences of plain-word context.
+              </p>
+              <!-- /SLOT -->
+
+              <!-- SLOT: DETAIL SLIP — optional. Key/value facts, one per row.
+                   Mirrors the ticket slip on /support.html so the site and the
+                   inbox read as one product. Values are mono + tabular so money
+                   and dates line up. Delete the whole table if unused. -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                class="mx-slip" bgcolor="#f6f8fb"
+                style="background-color:#f6f8fb; border:1px solid #e3e7ee; border-radius:10px; margin:0 0 22px;">
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    LABEL
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px;
+                    color:#1c2430;">
+                    Value
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    LAST ROW
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px;
+                    color:#1c2430;">
+                    Value
+                  </td>
+                </tr>
+              </table>
+              <!-- /SLOT -->
+
+              <!-- SLOT: CTA — optional, and at most ONE per email. Bulletproof
+                   table button; the label is the verb of the thing that happens
+                   ("Manage billing", never "Click here"). Delete if unused. -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="mx-btn" style="margin:0 0 20px;">
+                <tr>
+                  <td align="center" bgcolor="#285fff" style="background-color:#285fff; border-radius:8px;">
+                    <a href="https://www.mastermind-x.com/plans.html"
+                      style="display:inline-block; padding:13px 26px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                      font-size:15px; font-weight:600; line-height:1; color:#ffffff; text-decoration:none; border-radius:8px;">
+                      Call to action
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!-- /SLOT -->
+
+              <!-- SLOT: FINE PRINT — optional. The honest caveat: cancellation
+                   window, when a charge lands, what happens if they do nothing. -->
+              <p class="mx-muted" style="margin:0 0 4px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:13px; line-height:1.55; color:#5d6b7e;">
+                The honest caveat sits here.
+              </p>
+              <!-- /SLOT -->
+
+            </td>
+          </tr>
+
+          <!-- ── 中文 divider ─────────────────────────────────────────────────
+               Dual-language v1 (masterplan R4): EN primary, ZH secondary, one
+               email, no per-user locale guessing. The rule is LABELLED so a
+               Chinese reader can find their half in one scan. -->
+          <tr>
+            <td class="mx-pad" style="padding:26px 32px 0;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td class="mx-rule" style="border-top:1px solid #e3e7ee; font-size:0; line-height:0;">&nbsp;</td>
+                  <td width="52" align="center" style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+                    font-size:11px; font-weight:600; letter-spacing:1px; color:#8b93a1; padding:0 4px;">中文</td>
+                  <td class="mx-rule" style="border-top:1px solid #e3e7ee; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ 中文 (secondary) ══════════════════════════════════════════
+               Same slots, same order, real plain Chinese — never a machine
+               gloss, and never English state names dropped into ZH text. -->
+          <tr>
+            <td class="mx-pad" style="padding:22px 32px 0;">
+
+              <h2 class="mx-text" style="margin:0 0 10px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                font-size:20px; line-height:1.35; font-weight:700; color:#1c2430;">
+                中文标题
+              </h2>
+
+              <p class="mx-muted" style="margin:0 0 22px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                font-size:14.5px; line-height:1.75; color:#5d6b7e;">
+                中文正文。
+              </p>
+
+              <!-- ZH detail slip / CTA / fine print mirror the EN blocks above -->
+
+            </td>
+          </tr>
+
+          <tr><td style="height:30px; font-size:0; line-height:0;">&nbsp;</td></tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- ── footer ────────────────────────────────────────────────────────── -->
+    <tr>
+      <td class="mx-pad" style="padding:22px 32px 0;">
+
+        <p class="mx-foot" style="margin:0 0 8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          Mastermind · <a class="mx-link" href="https://www.mastermind-x.com" style="color:#5d6b7e; text-decoration:underline;">mastermind-x.com</a>
+        </p>
+
+        <!-- SLOT: WHY YOU RECEIVED THIS — required on EVERY email, both classes.
+             State the actual trigger, in one line, in both languages. Examples:
+             "You received this because you started an Insider trial."
+             "You received this because you wrote to support."
+             Never "because you are a valued member". -->
+        <p class="mx-foot" style="margin:0 0 8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          You received this because &lt;trigger&gt;.<br />
+          你收到这封邮件，是因为&lt;触发原因&gt;。
+        </p>
+        <!-- /SLOT -->
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SLOT: UNSUBSCRIBE — MARKETING CLASS ONLY.  DELETE THIS WHOLE BLOCK
+             ON TRANSACTIONAL SENDS.
+             Transactional = receipts, trial/upgrade/cancellation confirmations,
+             payment failed, trial-ending, ticket acknowledgment, ticket reply.
+             Those must NEVER carry an unsubscribe link: a reader who opts out of
+             a receipt has opted out of information they are owed, and the send
+             happens anyway (masterplan R5 class discipline), so the link would
+             lie about what it does.
+             Marketing  = campaigns and any non-triggered send. Those MUST carry
+             it, together with the List-Unsubscribe and List-Unsubscribe-Post
+             headers set in app/mailer.py.
+             Token = HMAC(user_id|email, MAIL_UNSUB_SECRET); no login required.
+             ═══════════════════════════════════════════════════════════════════ -->
+        <p class="mx-foot" style="margin:0 0 8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          <a class="mx-link" href="https://www.mastermind-x.com/unsubscribe.html?t={{UNSUB_TOKEN}}"
+            style="color:#5d6b7e; text-decoration:underline;">Unsubscribe</a>
+          &nbsp;·&nbsp;
+          <a class="mx-link" href="https://www.mastermind-x.com/unsubscribe.html?t={{UNSUB_TOKEN}}"
+            style="color:#5d6b7e; text-decoration:underline;">退订</a>
+        </p>
+        <!-- /SLOT -->
+
+        <p class="mx-foot" style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          Questions? Reply to this email, or write to
+          <a class="mx-link" href="mailto:support@mastermind-x.com" style="color:#5d6b7e; text-decoration:underline;">support@mastermind-x.com</a>.
+        </p>
+
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>

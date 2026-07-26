@@ -1,0 +1,357 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<title>Your Insider trial has started — Mastermind</title>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  W-D DESIGN PIN · FILLED REFERENCE RENDER — purchase / trial confirmation
+  email_base.html with every slot filled. Open this file raw in a browser: this
+  is the integration reference the W3 builder matches against.
+
+  SUBJECT (dual-language v1 — EN first, ZH after a middot; keep both short):
+    Your Insider trial has started · Insider 试用已开始
+
+  TRIGGER: Stripe `checkout.session.completed` with a trial, hooked in
+    app/billing.py::_handle_event AFTER the entitlement upsert (masterplan W3).
+  CLASS:  transactional → NO unsubscribe link (see the footer note).
+  IDEMPOTENCY KEY: stripe:{event_id}:trial_started  (email_log, masterplan R3).
+
+  Every number here is real: config/plans.yml → insider.prices.monthly
+  unit_amount 6900 (US$69.00/month), insider.trial_days 7.
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+
+<style type="text/css">
+  @media (max-width:620px) {
+    .mx-shell   { width:100% !important; max-width:100% !important; }
+    .mx-pad     { padding-left:22px !important; padding-right:22px !important; }
+    .mx-band    { padding-left:22px !important; padding-right:22px !important; }
+    .mx-h1      { font-size:23px !important; line-height:1.25 !important; }
+    .mx-btn a   { display:block !important; text-align:center !important; }
+    .mx-slip-k  { width:auto !important; }
+  }
+  @media (prefers-color-scheme: dark) {
+    .mx-canvas  { background-color:#0b0d11 !important; }
+    .mx-card    { background-color:#181b21 !important; }
+    .mx-text    { color:#d7dce3 !important; }
+    .mx-muted   { color:#96a0b0 !important; }
+    .mx-rule    { border-color:#2a2f3a !important; }
+    .mx-slip    { background-color:#1e222a !important; border-color:#2a2f3a !important; }
+    .mx-slip-v  { color:#d7dce3 !important; }
+    .mx-slip-k  { color:#96a0b0 !important; }
+    .mx-link    { color:#7aa7e0 !important; }
+    .mx-foot    { color:#8b93a1 !important; }
+  }
+</style>
+</head>
+
+<body class="mx-canvas" bgcolor="#eef1f5" style="margin:0; padding:0; width:100%;
+  background-color:#eef1f5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+
+<!-- preheader: the one fact worth seeing from the inbox list -->
+<div style="display:none; font-size:1px; color:#eef1f5; line-height:1px;
+  max-height:0; max-width:0; opacity:0; overflow:hidden;">
+  Free until 1 Aug 2026. Cancel before then and you are not charged.
+  &#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;&#8199;&#65279;
+</div>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+  class="mx-canvas" bgcolor="#eef1f5" style="background-color:#eef1f5;">
+<tr>
+<td align="center" style="padding:28px 12px 40px;">
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600"
+    class="mx-shell" style="width:600px; max-width:600px;">
+
+    <!-- brand gradient bar: three solid cells, no image, no CSS gradient -->
+    <tr>
+      <td>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          <tr>
+            <td width="33.33%" height="4" bgcolor="#3b82f6" style="background-color:#3b82f6; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+            <td width="33.33%" height="4" bgcolor="#6366f1" style="background-color:#6366f1; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+            <td width="33.34%" height="4" bgcolor="#7c5cff" style="background-color:#7c5cff; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- dark instrument band -->
+    <tr>
+      <td class="mx-band" bgcolor="#0f1115" style="background-color:#0f1115; padding:18px 32px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td align="left" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+              font-size:14px; font-weight:700; letter-spacing:2.2px; color:#ffffff; white-space:nowrap;">
+              MASTERMIND
+            </td>
+            <td align="right" style="font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;
+              font-size:10px; font-weight:600; letter-spacing:1.6px; color:#8b93a1; white-space:nowrap;">
+              TRIAL
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="mx-card" bgcolor="#ffffff" style="background-color:#ffffff;">
+
+        <!-- ═══ ENGLISH ═══════════════════════════════════════════════════ -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td class="mx-pad" style="padding:30px 32px 0;">
+
+              <h1 class="mx-h1 mx-text" style="margin:0 0 10px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:25px; line-height:1.22; font-weight:700; letter-spacing:-0.4px; color:#1c2430;">
+                Your Insider trial has started.
+              </h1>
+
+              <p class="mx-muted" style="margin:0 0 22px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:15px; line-height:1.6; color:#5d6b7e;">
+                You have full Insider access for the next seven days. Nothing is charged
+                until the trial ends — cancel before 1 August and you pay nothing.
+              </p>
+
+              <!-- detail slip — same key/value anatomy as the ticket slip on
+                   /support.html, so the site and the inbox read as one product -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                class="mx-slip" bgcolor="#f6f8fb"
+                style="background-color:#f6f8fb; border:1px solid #e3e7ee; border-radius:10px; margin:0 0 24px;">
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    PLAN
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px; color:#1c2430;">
+                    Insider — monthly
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    PRICE
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px; color:#1c2430;">
+                    US$69.00 per month
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    FREE UNTIL
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px; color:#1c2430;">
+                    1 Aug 2026 <span style="color:#5d6b7e;">(7-day trial)</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    FIRST CHARGE
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px; color:#1c2430;">
+                    1 Aug 2026 · US$69.00
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:10px;
+                    font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#5d6b7e; vertical-align:top;">
+                    THAT COVERS
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace; font-size:13px; color:#1c2430;">
+                    1 Aug – 1 Sep 2026
+                  </td>
+                </tr>
+              </table>
+
+              <!-- one CTA, bulletproof, verb-labelled -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="mx-btn" style="margin:0 0 20px;">
+                <tr>
+                  <td align="center" bgcolor="#285fff" style="background-color:#285fff; border-radius:8px;">
+                    <a href="https://www.mastermind-x.com/plans.html?billing=portal"
+                      style="display:inline-block; padding:13px 26px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                      font-size:15px; font-weight:600; line-height:1; color:#ffffff; text-decoration:none; border-radius:8px;">
+                      Manage billing
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p class="mx-muted" style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+                font-size:13px; line-height:1.55; color:#5d6b7e;">
+                Cancel any time before 1 Aug 2026 and you are not charged. If you do
+                nothing, Insider renews each month until you cancel.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- 中文 divider -->
+          <tr>
+            <td class="mx-pad" style="padding:26px 32px 0;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td class="mx-rule" style="border-top:1px solid #e3e7ee; font-size:0; line-height:0;">&nbsp;</td>
+                  <td width="52" align="center" style="font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+                    font-size:11px; font-weight:600; letter-spacing:1px; color:#8b93a1; padding:0 4px;">中文</td>
+                  <td class="mx-rule" style="border-top:1px solid #e3e7ee; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ 中文 ══════════════════════════════════════════════════════ -->
+          <tr>
+            <td class="mx-pad" style="padding:22px 32px 0;">
+
+              <h2 class="mx-text" style="margin:0 0 10px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                font-size:20px; line-height:1.35; font-weight:700; color:#1c2430;">
+                你的 Insider 试用已开始。
+              </h2>
+
+              <p class="mx-muted" style="margin:0 0 22px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                font-size:14.5px; line-height:1.75; color:#5d6b7e;">
+                接下来七天，你可以使用 Insider 的全部功能。试用结束前不会扣款——
+                在 8 月 1 日前取消，你无需支付任何费用。
+              </p>
+
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%"
+                class="mx-slip" bgcolor="#f6f8fb"
+                style="background-color:#f6f8fb; border:1px solid #e3e7ee; border-radius:10px; margin:0 0 24px;">
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                    font-size:11.5px; font-weight:600; color:#5d6b7e; vertical-align:top;">
+                    方案
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace; font-size:13px; color:#1c2430;">
+                    Insider — 按月
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                    font-size:11.5px; font-weight:600; color:#5d6b7e; vertical-align:top;">
+                    价格
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace; font-size:13px; color:#1c2430;">
+                    每月 69.00 美元
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                    font-size:11.5px; font-weight:600; color:#5d6b7e; vertical-align:top;">
+                    免费至
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace; font-size:13px; color:#1c2430;">
+                    2026 年 8 月 1 日 <span style="color:#5d6b7e;">（7 天试用）</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px; border-bottom:1px solid #e3e7ee;
+                    font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                    font-size:11.5px; font-weight:600; color:#5d6b7e; vertical-align:top;">
+                    首次扣款
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0; border-bottom:1px solid #e3e7ee;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace; font-size:13px; color:#1c2430;">
+                    2026 年 8 月 1 日 · 69.00 美元
+                  </td>
+                </tr>
+                <tr>
+                  <td class="mx-slip-k" width="150" style="padding:11px 16px;
+                    font-family:-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                    font-size:11.5px; font-weight:600; color:#5d6b7e; vertical-align:top;">
+                    对应周期
+                  </td>
+                  <td class="mx-slip-v" style="padding:11px 16px 11px 0;
+                    font-family:SFMono-Regular,Consolas,'Liberation Mono',Menlo,'PingFang SC',monospace; font-size:13px; color:#1c2430;">
+                    2026 年 8 月 1 日 – 9 月 1 日
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="mx-btn" style="margin:0 0 20px;">
+                <tr>
+                  <td align="center" bgcolor="#285fff" style="background-color:#285fff; border-radius:8px;">
+                    <a href="https://www.mastermind-x.com/plans.html?billing=portal"
+                      style="display:inline-block; padding:13px 26px; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+                      font-size:15px; font-weight:600; line-height:1; color:#ffffff; text-decoration:none; border-radius:8px;">
+                      管理账单
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p class="mx-muted" style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+                font-size:13px; line-height:1.7; color:#5d6b7e;">
+                2026 年 8 月 1 日前取消，不会产生任何扣费。若不作任何操作，Insider 将按月自动续订，直到你取消为止。
+              </p>
+
+            </td>
+          </tr>
+
+          <tr><td style="height:30px; font-size:0; line-height:0;">&nbsp;</td></tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- footer -->
+    <tr>
+      <td class="mx-pad" style="padding:22px 32px 0;">
+
+        <p class="mx-foot" style="margin:0 0 8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          Mastermind · <a class="mx-link" href="https://www.mastermind-x.com" style="color:#5d6b7e; text-decoration:underline;">mastermind-x.com</a>
+        </p>
+
+        <p class="mx-foot" style="margin:0 0 8px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          You received this because you started an Insider trial on 25 July 2026.<br />
+          你收到这封邮件，是因为你在 2026 年 7 月 25 日开始了 Insider 试用。
+        </p>
+
+        <!-- NO UNSUBSCRIBE LINK: this is a transactional send. The unsubscribe
+             slot in email_base.html is marketing-class only — a receipt is
+             information the reader is owed, and the send happens regardless of
+             marketing opt-out (masterplan R5), so the link would lie. -->
+
+        <p class="mx-foot" style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang SC','Microsoft YaHei',sans-serif;
+          font-size:12px; line-height:1.6; color:#7b8798;">
+          Questions? Reply to this email, or write to
+          <a class="mx-link" href="mailto:support@mastermind-x.com" style="color:#5d6b7e; text-decoration:underline;">support@mastermind-x.com</a>.<br />
+          有问题？直接回复本邮件，或发送至 support@mastermind-x.com。
+        </p>
+
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
