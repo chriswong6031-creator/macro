@@ -288,7 +288,7 @@ class TestUSEmitLedger:
 
 
 # ===========================================================================
-# 2. CN — build_china_library.emit_cn_track_ledger (board_day×ticker grain)
+# 2. CN — build_china_library.emit_cn_track_ledger (EPISODE grain)
 # ===========================================================================
 
 def _cn_board_parquet(tmp_path: Path) -> Path:

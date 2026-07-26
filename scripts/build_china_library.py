@@ -953,7 +953,7 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
     state = "accruing"
 
     # name/sector display lookup. Today's ranked board carries the freshest name +
-    # sector, but the ledger spans EVERY board_day×ticker back to first-write — most
+    # sector, but the ledger spans EVERY episode back to first-write — most
     # of those tickers have long since rotated off the board, so a board-only lookup
     # left ~85% of rows with no name (the receipt read as bare tickers). Backfill from
     # the curated search universe (china_search/members.parquet, 'EN / 中文' names —
@@ -2467,7 +2467,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
             setups["coverage"] = wide["coverage"]
-            # TRD popup — board_day×ticker ledger (track_ledger/v1). Additive, never
+            # TRD popup — EPISODE ledger (track_ledger/v1). Additive, never
             # fatal: reuses the board.parquet + closes the panel just read. Emitted even
             # when _bt is unavailable (accruing state) so the popup always has a feed.
             try:
