@@ -153,6 +153,36 @@ def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
     assert pack["strategy"]["fail-fast"] is False
 
 
+def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
+    workflow = _yaml(FENCES)
+    assert workflow["permissions"]["checks"] == "write"
+    jobs = workflow["jobs"]
+    pack = jobs["fence-pack"]
+    assert pack["runs-on"] == "ubuntu-latest"
+
+    publish = next(step for step in pack["steps"] if step.get("id") == "publish")
+    assert publish["if"] == "always()"
+    assert publish["uses"].startswith("actions/github-script@")
+    script = publish["with"]["script"]
+    for context in ("self-mod-fence", "capability-broker", "grader-manifest"):
+        assert f"name: '{context}'" in script
+    assert "github.rest.checks.create" in script
+
+    # Fork tokens cannot write check runs. Their compatibility jobs retain the
+    # exact contexts only when the PR truly comes from a fork; on the high-volume
+    # same-repo path their skipped names are deliberately different, so they
+    # cannot satisfy a required fence before fence-pack publishes its verdict.
+    for job_id, context in (
+        ("fork-self-mod-fence", "self-mod-fence"),
+        ("fork-capability-broker", "capability-broker"),
+        ("fork-grader-manifest", "grader-manifest"),
+    ):
+        fallback = jobs[job_id]
+        assert "head.repo.full_name != github.repository" in fallback["if"]
+        assert context in fallback["name"]
+        assert f"fork-{context}-unused" in fallback["name"]
+
+
 # ── every tests/*.py a workflow names must exist ─────────────────────────────
 #
 # `pytest a.py b.py missing.py` does not skip the missing path — it aborts the

@@ -1,5 +1,5 @@
 name: fences
-# ALWAYS-ON metabolism cage fences — the three checks the arming runbook
+# ALWAYS-ON metabolism cage fences — the three check contexts the arming runbook
 # (docs/METABOLISM_ARMING_CHECKLIST.md, Act 2) makes REQUIRED on main.
 #
 # WHY A SEPARATE WORKFLOW: the same three guards also live in ci.yml, but ci.yml
@@ -8,13 +8,14 @@ name: fences
 # REQUIRES a path-gated check blocks every PR that does not trigger it (the
 # required context never reports → "Expected — Waiting for status"). This
 # workflow has NO paths filter, so the three required contexts report on EVERY
-# PR and every push to main: a normal PR passes them in ~1 min (the fences only
-# FAIL a loop-authored PR that touches the IMMUTABLE set, a grader-file hash
-# drift, or a secret-value capture). This is what makes "3 required checks"
-# safe to enforce repo-wide.
+# PR and every push to main.
 #
-# The job NAMES here (self-mod-fence / capability-broker / grader-manifest) are
-# the exact status-check contexts to list in the main ruleset.
+# One runner executes all three guards, then publishes the exact historical
+# check-run contexts (self-mod-fence / capability-broker / grader-manifest).
+# Previously GitHub provisioned three VMs, each repeating checkout, Python setup,
+# and pip install. GITHUB_TOKEN creates these check runs as the GitHub Actions
+# app (integration 15368), so the existing ruleset contract and immune-lane
+# classification stay intact while runner allocation falls from three to one.
 on:
   pull_request:
     branches: [main]
@@ -23,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 concurrency:
   # Only the newest commit on a PR (or newest descendant on main) needs to prove
@@ -32,9 +34,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  self-mod-fence:
-    # F2 (R-AUT-5): loop-authored PRs touching the IMMUTABLE set are blocked;
-    # human/operator PRs pass freely. Fail-closed: unclassifiable → blocked.
+  fence-pack:
+    name: fence-pack
+    # A pull_request token is read-only for forks and cannot publish the three
+    # historical check contexts. Rare fork PRs use the fallback jobs below;
+    # same-repository agent PRs and main pushes take this one-runner fast path.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,9 +52,14 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pyyaml
+
       - name: self-mod-fence selftest (all four cases proven)
+        id: self_mod_selftest
+        continue-on-error: true
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
+        id: self_mod_live
+        continue-on-error: true
         # On push events there is no PR head/base; the selftest above already
         # proves the discriminating behaviour, so the live diff check only runs
         # for pull_request events.
@@ -66,38 +78,184 @@ jobs:
             --files $FILES \
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
+        id: self_mod_tests
+        continue-on-error: true
         run: python -m pytest tests/test_self_mod_fence.py -q
 
-  capability-broker:
-    # F3: the capability broker resolves capability IDs to ref NAMES only; the
-    # redline scanner hard-fails on any secret value or value-capture pattern in
-    # the manifest, broker, key pool, or metabolism authorship modules.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install deps
-        run: pip install pytest pyyaml
       - name: capability-redline selftest (planted secret caught; clean real files pass)
+        id: capability_selftest
+        continue-on-error: true
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
+        id: capability_live
+        continue-on-error: true
         run: python3 scripts/check_capability_redline.py
 
-  grader-manifest:
-    # F1 (R-AUT-7): the fitness-producing grader files are registered in
-    # config/grader_manifest.yml with SHA-256 hashes. Any drift — from a loop PR
-    # or a human PR — fails RED here.
+      - name: grader-manifest selftest (drift detection + fail-closed proof)
+        id: grader_selftest
+        continue-on-error: true
+        run: python3 scripts/check_grader_manifest.py --selftest
+      - name: grader-manifest live check (hash drift is a hard failure)
+        id: grader_live
+        continue-on-error: true
+        run: python3 scripts/check_grader_manifest.py
+
+      - name: publish required fence contexts
+        id: publish
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
+          SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
+          SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
+          CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
+          CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
+          GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
+          GRADER_LIVE: ${{ steps.grader_live.outcome }}
+        with:
+          script: |
+            const pass = values => values.every(value => ['success', 'skipped'].includes(value));
+            const checks = [
+              {
+                name: 'self-mod-fence',
+                values: [
+                  process.env.SELF_MOD_SELFTEST,
+                  process.env.SELF_MOD_LIVE,
+                  process.env.SELF_MOD_TESTS,
+                ],
+              },
+              {
+                name: 'capability-broker',
+                values: [
+                  process.env.CAPABILITY_SELFTEST,
+                  process.env.CAPABILITY_LIVE,
+                ],
+              },
+              {
+                name: 'grader-manifest',
+                values: [
+                  process.env.GRADER_SELFTEST,
+                  process.env.GRADER_LIVE,
+                ],
+              },
+            ];
+            for (const check of checks) {
+              const ok = pass(check.values);
+              await github.rest.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: check.name,
+                head_sha: process.env.HEAD_SHA,
+                status: 'completed',
+                conclusion: ok ? 'success' : 'failure',
+                output: {
+                  title: `${check.name}: ${ok ? 'passed' : 'failed'}`,
+                  summary: check.values.join(', '),
+                },
+              });
+            }
+
+      - name: fail pack when any fence failed
+        if: always()
+        env:
+          SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
+          SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
+          SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
+          CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
+          CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
+          GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
+          GRADER_LIVE: ${{ steps.grader_live.outcome }}
+          PUBLISH: ${{ steps.publish.outcome }}
+        run: |
+          set -euo pipefail
+          for outcome in \
+            "$SELF_MOD_SELFTEST" "$SELF_MOD_LIVE" "$SELF_MOD_TESTS" \
+            "$CAPABILITY_SELFTEST" "$CAPABILITY_LIVE" \
+            "$GRADER_SELFTEST" "$GRADER_LIVE" "$PUBLISH"; do
+            case "$outcome" in
+              success|skipped) ;;
+              *) echo "::error::fence pack failed ($outcome)"; exit 1 ;;
+            esac
+          done
+
+  # Fork fallback: GitHub itself creates these named job check runs, so no
+  # checks:write token is needed. The high-volume same-repository path above
+  # remains one runner; public contributors retain the original fail-closed
+  # behavior instead of being stuck on missing required contexts.
+  fork-self-mod-fence:
+    name: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name != github.repository &&
+        'self-mod-fence' || 'fork-self-mod-fence-unused'
+      }}
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pyyaml
+      - run: python3 scripts/check_self_mod_fence.py --selftest
+      - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          BRANCH="${{ github.head_ref }}"
+          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
+          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+          if [ -z "$FILES" ]; then
+            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
+            exit 1
+          fi
+          python3 scripts/check_self_mod_fence.py \
+            --branch "$BRANCH" \
+            --files $FILES \
+            --trailers "$TRAILERS"
+      - run: python -m pytest tests/test_self_mod_fence.py -q
+
+  fork-capability-broker:
+    name: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name != github.repository &&
+        'capability-broker' || 'fork-capability-broker-unused'
+      }}
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pyyaml
-      - name: grader-manifest selftest (drift detection + fail-closed proof)
-        run: python3 scripts/check_grader_manifest.py --selftest
-      - name: grader-manifest live check (hash drift is a hard failure)
-        run: python3 scripts/check_grader_manifest.py
+      - run: pip install pytest pyyaml
+      - run: python3 scripts/check_capability_redline.py --selftest
+      - run: python3 scripts/check_capability_redline.py
+
+  fork-grader-manifest:
+    name: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name != github.repository &&
+        'grader-manifest' || 'fork-grader-manifest-unused'
+      }}
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest pyyaml
+      - run: python3 scripts/check_grader_manifest.py --selftest
+      - run: python3 scripts/check_grader_manifest.py
