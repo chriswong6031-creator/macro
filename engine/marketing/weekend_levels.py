@@ -204,60 +204,198 @@ _MAX_LEN: int = 280
 # read as one template. {wk}=week clause, {s20}/{s50}/{lo}=levels, {px}=close.
 # One level per post: the doctrine demotes technicals, and a post that names the
 # 20-, the 50-, the high and the range position is a data dump, not a read.
+# FOUR shapes per state, not two. A weekend batch is NOT evenly spread across
+# states: market moves correlate, so a down week puts five of eight names in
+# "downtrend" and they all draw from the same small pool. With two frames that
+# produced literal twins ($AMZN and $META shipped the same sentence with
+# different numbers). Four shapes plus the per-state spread in build_items means
+# a run has to reach five names in ONE state before any shape repeats.
+#
+# No frame may open with the words a headline in the same state uses, or the two
+# halves stutter ("$MSFT is still heavy" over "Still heavy, down 3%...").
 _FRAMES: dict[str, tuple[str, ...]] = {
     "leading": (
         "Up at 52-week highs, {wk}. Nothing broken here, and I'd rather respect "
         "that than argue with it. {s20} is the line I want it to keep.",
         "{wk_cap} and pressing new highs. Strength worth respecting, not chasing "
         "up here. First thing I'd watch on a pullback is {s20}.",
+        "New highs, {wk}. This is what leadership looks like while it lasts. "
+        "{s20} is where I'd start paying attention.",
+        "{wk_cap}, right at the highs. No cracks I can point at. If that changes "
+        "it shows up at {s20} first.",
+        "Sitting at the highs, {wk}. I would rather own strength than argue with "
+        "it. {s20} is the first thing I would watch.",
+        "{wk_cap}. Leadership is a nice problem to have. {s20} is the level that "
+        "keeps it.",
     ),
     "uptrend": (
         "{wk_cap}, still above both its moving averages. Constructive without "
         "being stretched. {s20} is the first line that matters.",
         "Holding its trend, {wk}. Not much to fix. I'm watching {s20} as the "
         "first sign that changes.",
+        "{wk_cap}. It keeps doing enough and nothing more, which is fine by me. "
+        "{s20} is the level I'd want held.",
+        "Trend intact, {wk}. I'm not adding up here, just letting it work. "
+        "{s20} is the line.",
+        "It keeps climbing, {wk}. Nothing exciting, which is usually the point. "
+        "{s20} is the line I care about.",
+        "{wk_cap}, above both lines. I am content to sit with it. {s20} first.",
     ),
     "cooling": (
-        "Lost its 20-day this week, {wk}. Looks like a pause rather than a break "
-        "so far. Getting back over {s20} is what settles it.",
+        "Slipped under its 20-day this week, {wk}. Looks like a pause rather than "
+        "a break so far. Getting back over {s20} is what settles it.",
         "{wk_cap} but it slipped under the 20-day. Still above the 50, so I'm "
         "giving it room. {s20} is the number to get back.",
+        "It gave up the 20-day, {wk}. Not worried yet, but I want it back "
+        "quickly. {s20} is the ask.",
+        "{wk_cap}, and the 20-day went. The 50 is still underneath, so this is a "
+        "pause until it isn't. {s20} is the tell.",
+        "Some air came out this week, {wk}. Still above the longer line, so I am "
+        "patient. {s20} is the reclaim.",
+        "{wk_cap}, and it lost the shorter line. Not a break yet. {s20} decides.",
     ),
     "reclaiming": (
         "Back above its 20-day after a rough stretch, {wk}. Early, and I've been "
         "burned by early. {s50} is the level that would make it real.",
         "{wk_cap} and it's clawed back the 20-day. The 50 at {s50} is the actual "
         "test, so I'm waiting on that.",
+        "It's off the mat, {wk}. One line back does not make a trend. {s50} is "
+        "the one that would.",
+        "{wk_cap}, back over the 20-day. I want to see it hold more than I want "
+        "to see it spike. {s50} next.",
+        "It found a bid, {wk}. I have seen plenty of these fail at the next line. "
+        "{s50} is that line.",
+        "{wk_cap}. Better, not fixed. {s50} is what turns better into fixed.",
     ),
     "basing": (
         "Down near the low end of the year, {wk}. Watching for a bottom setup, "
         "not catching it yet. {lo} is the line that matters.",
         "{wk_cap}, sitting near its 52-week low. No interest until it stops going "
         "down. {lo} is where I find out.",
+        "Still near the lows, {wk}. Cheap is not a reason on its own. {lo} "
+        "holding would be.",
+        "{wk_cap}. It has been falling long enough that people stopped asking "
+        "about it. {lo} is the level I care about.",
+        "It has been left for dead, {wk}. That is usually where they stop going "
+        "down, eventually. {lo} is the marker.",
+        "{wk_cap}, down at the lows. I want evidence, not a discount. {lo} is it.",
     ),
     "downtrend": (
         "{wk_cap}, under both moving averages. No reason to be early in something "
         "going the wrong way. {s20} is the first hurdle back.",
-        "Still heavy, {wk}. I'm not fighting this one. It has to reclaim {s20} "
-        "before it's even a conversation.",
+        "Another week lower, {wk}. I'm not trying to be the hero here. {s20} is "
+        "what it has to take back.",
+        "{wk_cap}. Sellers still have the ball, and I'd rather let someone else "
+        "find the bottom. Watching {s20}.",
+        "It keeps giving back ground, {wk}. Nothing here says the selling is "
+        "done. {s20} would be the first thing that did.",
+        "It is still going out with the tide, {wk}. No urgency to be involved. "
+        "{s20} is the first sign of one.",
+        "{wk_cap}, and every bounce has been sold. {s20} is where that changes.",
     ),
 }
 
 
-def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0) -> tuple[str, str]:
+# Per-state HEADLINES. The first version of this lane hard-coded
+# f"${ticker} into the week" for every post, so a reader scrolling the profile
+# saw the identical headline eight times down the page:
+#     $NVDA into the week / $AAPL into the week / $AMZN into the week ...
+# Nothing marks copy as machine-written faster than a repeated frame, and the
+# headline is the part that repeats VISIBLY — you see eight of them at once in a
+# feed, while the bodies are read one at a time (operator, 2026-07-26).
+#
+# The headline now carries the READ, not a frame, and differs by state. Every
+# shape holds the cashtag exactly once (_assert_clean enforces that), none use an
+# em dash, and none state a level — levels live in the body so the headline stays
+# short enough to survive a mobile timeline.
+_HEADLINES: dict[str, tuple[str, ...]] = {
+    "leading": (
+        "$T keeps making highs",
+        "Still nothing broken in $T",
+        "$T is doing the boring thing well",
+        "$T is at the highs and holding",
+        "$T is not the problem right now",
+        "Hard to argue with $T here",
+    ),
+    "uptrend": (
+        "$T is quietly working",
+        "No complaints about $T here",
+        "$T still has its trend",
+        "$T is behaving itself",
+        "$T is grinding higher",
+        "Nothing wrong with $T",
+    ),
+    "cooling": (
+        "$T lost its 20-day",
+        "First real wobble in $T",
+        "$T is cooling off",
+        "A little air out of $T",
+        "$T took a breather",
+        "Some heat out of $T",
+    ),
+    "reclaiming": (
+        "$T is trying to turn",
+        "Signs of life in $T",
+        "$T got its 20-day back",
+        "$T is picking itself up",
+        "$T is finding its feet",
+        "$T looks less broken than it did",
+    ),
+    "basing": (
+        "$T is scraping the lows",
+        "No floor yet in $T",
+        "$T has not stopped going down",
+        "Nobody wants $T right now",
+        "$T is still for sale",
+        "Nothing has changed in $T yet",
+    ),
+    "downtrend": (
+        "$T keeps leaking",
+        "$T is not finding buyers",
+        "Nothing good happening in $T yet",
+        "$T is still going the wrong way",
+        "$T is grinding lower",
+        "Still no bottom in $T",
+    ),
+}
+
+
+def _headline(ticker: str, state: str, variant: int) -> str:
+    """Short, state-specific headline carrying the read. Falls back to the
+    original frame only for an unknown state (never in practice: _HEADLINES
+    covers every classify_state output)."""
+    pool = _HEADLINES.get(state) or ()
+    if not pool:
+        return f"${ticker} into the week"
+    return pool[variant % len(pool)].replace("$T", f"${ticker}")
+
+
+def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0,
+                state_variant: int | None = None) -> tuple[str, str]:
     """(headline, body) for one ticker — the DETERMINISTIC FLOOR.
 
     Used when the LLM copywriter is unavailable (see write_copy). Deterministic
-    given (ticker, lv, variant). The cashtag appears once (headline); the body
-    carries the substance so the post never reads like a cashtag-stuffed bot.
+    given (ticker, lv, variant, state_variant). The cashtag appears once
+    (headline); the body carries the substance so the post never reads like a
+    cashtag-stuffed bot.
 
-    Shape is chosen by the ticker's structural state, so consecutive posts in a
-    weekend run differ in more than their numbers. Falls back to the legacy
-    single-frame body only if the state-specific frame would breach the X limit.
+    BOTH halves vary by the ticker's structural state, so a weekend run differs
+    in its headline, its sentence shape and its numbers rather than only the
+    last. Falls back to the legacy single-frame body only if the state-specific
+    frame would breach the X limit.
+
+    variant:       position in the batch. Rotates the tail, so the sign-off
+                   varies down the feed regardless of state.
+    state_variant: how many EARLIER posts in this batch share this state.
+                   Selects the headline and body shape, so five downtrend names
+                   in one run take five different shapes instead of colliding on
+                   `variant % len(pool)`. Defaults to `variant` for callers that
+                   render a single post.
     """
-    headline = f"${ticker} into the week"
     tail = _TAILS[variant % len(_TAILS)]
     state = classify_state(lv)
+    sv = variant if state_variant is None else state_variant
+    headline = _headline(ticker, state, sv)
 
     wk = _week_clause(lv["wk_pct"])
     fields = {
@@ -270,7 +408,7 @@ def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0) -> tuple[s
     }
     frames = _FRAMES.get(state) or ()
     if frames:
-        frame = frames[variant % len(frames)]
+        frame = frames[sv % len(frames)]
         body = f"{frame.format(**fields)} {tail}"
         if len(headline) + 2 + len(body) <= _MAX_LEN:
             return headline, body
@@ -552,7 +690,11 @@ def build_items(
     picks = [t.upper() for t in (tickers or _DEFAULT_REACH_TICKERS)]
 
     # ── Pass 1: level math + floor copy + OHLCV for the writer's facts ────────
+    # state_seen spreads same-state names across the shape pools: a down week can
+    # put most of the batch in one state, and without this they all resolve to
+    # the same `variant % len(pool)` and ship as near-twins.
     specs: list[dict[str, Any]] = []
+    state_seen: dict[str, int] = {}
     for idx, ticker in enumerate(picks):
         if len(specs) >= max_items:
             break
@@ -561,7 +703,10 @@ def build_items(
         if lv is None:
             log.info("weekend_levels: skip %s (insufficient data)", ticker)
             continue
-        headline, body = render_post(ticker, lv, variant=idx)
+        _state = classify_state(lv)
+        _sv = state_seen.get(_state, 0)
+        state_seen[_state] = _sv + 1
+        headline, body = render_post(ticker, lv, variant=idx, state_variant=_sv)
         try:
             _assert_clean(f"{headline}\n\n{body}", ticker)
         except ValueError as exc:

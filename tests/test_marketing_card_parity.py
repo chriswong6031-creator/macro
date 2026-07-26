@@ -309,3 +309,70 @@ def test_account_overrides_do_not_leak_into_unit_tests(tmp_path):
     assert load_overrides(tmp_path) == {"receipts": {"enabled": False}}
     by_id = {a["id"]: a["enabled"] for a in effective_accounts(cfg, tmp_path)}
     assert by_id == {"receipts": False, "flagship": True}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. A batch must not read as one template — the HEADLINE is what repeats
+#    visibly (you see eight at once in a feed; bodies are read one at a time)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_headline_is_not_one_fixed_frame():
+    """Shipped as f"${ticker} into the week" for every post: eight identical
+    headlines down the profile (operator, 2026-07-26)."""
+    from engine.marketing import weekend_levels as wl
+    lv = wl.compute_levels([float(x) for x in range(1, 121)])
+    heads = {wl.render_post("NVDA", lv, variant=v)[0] for v in range(4)}
+    assert len(heads) > 1, f"headline does not vary: {heads}"
+    assert not any(h.endswith("into the week") for h in heads), heads
+
+
+def test_every_state_carries_enough_shapes_for_a_correlated_batch():
+    """Market moves correlate, so most of a weekend batch can land in ONE state.
+    Fewer shapes than that means same-state names ship as twins."""
+    from engine.marketing import weekend_levels as wl
+    for state in ("leading", "uptrend", "cooling", "reclaiming", "basing", "downtrend"):
+        assert len(wl._HEADLINES[state]) >= 6, f"{state} headlines too few"
+        assert len(wl._FRAMES[state]) >= 6, f"{state} frames too few"
+
+
+def test_headline_and_body_do_not_stutter():
+    """"$MSFT is still heavy" over "Still heavy, down 3%..." reads broken."""
+    from engine.marketing import weekend_levels as wl
+    for state, frames in wl._FRAMES.items():
+        heads = [h.replace("$T ", "").replace("$T", "") for h in wl._HEADLINES[state]]
+        for frame in frames:
+            opener = " ".join(frame.split()[:3]).lower().strip(".,")
+            for h in heads:
+                assert not h.lower().startswith(opener), \
+                    f"{state}: frame opens with the headline text {opener!r}"
+
+
+def test_a_correlated_batch_ships_no_duplicate_copy(tmp_path, monkeypatch):
+    """Six names all in one state must produce six distinct posts.
+
+    Six is the pool size, i.e. the guaranteed-distinct bound. build_items caps a
+    batch at 8, so a 7th and 8th name in the SAME state would wrap and repeat a
+    shape; that is an accepted limit of the deterministic floor, not of the LLM
+    lane that normally writes these."""
+    from engine.marketing import weekend_levels as wl
+    monkeypatch.setattr(wl, "build_card", lambda *a, **k: None)
+
+    # A falling series puts every ticker in the same structural state.
+    falling = [float(x) for x in range(200, 80, -1)]
+    tickers = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"]
+    for t in tickers:
+        _seed_ohlcv(tmp_path, t, falling)
+
+    items = wl.build_items(tmp_path, tickers=tickers, as_of="2026-07-26",
+                           max_items=6, with_media=False)
+    assert len(items) == 6
+    states = {i["source"]["state"] for i in items}
+    assert len(states) == 1, f"fixture should be single-state, got {states}"
+
+    heads = [i["text"].split("\n")[0] for i in items]
+    bodies = [i["text"].split("\n\n", 1)[1] for i in items]
+    # Strip the cashtag so we compare SHAPE, not ticker.
+    shapes = [h.replace(i["source"]["ticker"], "") for h, i in zip(heads, items)]
+    assert len(set(shapes)) == len(shapes), f"duplicate headline shape: {shapes}"
+    openers = [" ".join(b.split()[:6]) for b in bodies]
+    assert len(set(openers)) == len(openers), f"duplicate body opener: {openers}"
