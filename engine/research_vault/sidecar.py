@@ -148,6 +148,61 @@ def _looks_truncated(title: str) -> bool:
     return title.count("(") > title.count(")")
 
 
+# A trailing "(1)"/"(2)" is the desk's SAVE-AS dedupe marker, not part of the
+# report's name — it arrives when the same filename is downloaded twice
+# ("Carrefour (CARR(1).pdf"). Capped at 2 digits so a real year parenthetical
+# ("Outlook (2027)") can never be mistaken for one.
+_DEDUPE_SUFFIX = re.compile(r"\s*\(\d{1,2}\)\s*$")
+
+
+def clean_title(title: str) -> str:
+    """Repair a title for PUBLIC display: drop the ``(N)`` dedupe marker and
+    balance stray parentheses. Pure, idempotent, never raises.
+
+    MarketDesk truncates its own Reuters ticker parenthetical at the ``.``, so
+    ``"Alcon Inc. (ALCC.SW)"`` arrives as ``"Alcon Inc. (ALCC"`` — an unbalanced
+    "(" that otherwise ships straight into a public ``<title>``/``og:title``.
+    We CLOSE the dangling fragment rather than delete it: the ticker root is real
+    and is exactly what an exact-title search matches on, while the exchange
+    suffix is unknowable here and must never be invented. Closing also leaves the
+    published URL slug byte-identical (the slug strips non-alphanumerics), so a
+    repaired title never orphans an already-indexed ``/research/`` page.
+
+    A fragment with NO content ("Foo (") is dropped instead, and unmatched ")"
+    are stripped. :func:`normalize`'s PDF-``/Title`` recovery is still preferred
+    where it fires — it restores the FULL name; this is the last-resort repair
+    for the documents where it cannot.
+    """
+    s = re.sub(r"\s+", " ", str(title or "")).strip()
+    prev = None
+    while prev != s:                       # "…(1)(2)": strip every trailing marker
+        prev = s
+        s = _DEDUPE_SUFFIX.sub("", s).strip()
+    if not s:
+        return ""
+
+    out: list[str] = []
+    opens: list[int] = []                  # indices in `out` of still-unclosed "("
+    for ch in s:
+        if ch == "(":
+            opens.append(len(out))
+            out.append(ch)
+        elif ch == ")":
+            if not opens:
+                continue                   # unmatched ")" — drop it
+            opens.pop()
+            out.append(ch)
+        else:
+            out.append(ch)
+    # Innermost-first so an outer "(" sees the closer we just added as content.
+    for i in reversed(opens):
+        if "".join(out[i + 1:]).strip():
+            out.append(")")
+        else:
+            del out[i:]                    # bare trailing "(" — nothing to close
+    return re.sub(r"\s+", " ", "".join(out)).strip()
+
+
 def normalize(
     sidecar: dict | None,
     *,
@@ -161,7 +216,8 @@ def normalize(
     """Normalize a (possibly empty/partial) sidecar dict to the v1 item shape.
 
     Fallback ladders (§5):
-      - title: sidecar.title → PDF-embedded title → filename → 'Untitled research'.
+      - title: sidecar.title → PDF-embedded title → filename → 'Untitled research',
+        then :func:`clean_title` (dedupe marker + unbalanced parens).
       - institution: sidecar.institution → caller fallback → 'Unknown' (+needs_metadata).
       - published_at: sidecar.published_at → R2 upload time (caller) → '' (no crash).
       - summary_points: sidecar list → [] ("Summary pending").
@@ -194,6 +250,13 @@ def normalize(
         title = _as_str(fallback_title_filename)
         if title:
             needs_metadata = True
+    if not title:
+        title = "Untitled research"
+        needs_metadata = True
+    # Public-surface repair, LAST: the /Title recovery above needs to see the raw
+    # truncation tell, so the dedupe marker + paren balance are fixed only once
+    # the ladder has settled on a title.
+    title = clean_title(title)
     if not title:
         title = "Untitled research"
         needs_metadata = True

@@ -120,12 +120,79 @@ def test_normalize_recovers_truncated_title_from_pdf():
     assert item["needs_metadata"] is False
 
 
-def test_normalize_keeps_truncated_title_when_pdf_not_better():
-    # PDF title absent, itself truncated, or shorter → keep the sidecar title as-is.
+def test_normalize_repairs_truncated_title_when_pdf_not_better():
+    # PDF title absent, itself truncated, or shorter → no fuller name to recover,
+    # so the dangling "(" is CLOSED rather than published unbalanced. The exchange
+    # suffix stays unknown — we never invent ".PA".
     base = {"title": "Carrefour (CARR", "institution": "GS"}
-    assert sidecar_mod.normalize(base)["title"] == "Carrefour (CARR"                       # no pdf
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour (CARR"   # pdf also truncated
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour (CARR"             # pdf shorter
+    assert sidecar_mod.normalize(base)["title"] == "Carrefour (CARR)"                       # no pdf
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour (CARR)"  # pdf also truncated
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour (CARR)"            # pdf shorter
+
+
+def test_normalize_strips_download_dedupe_suffix():
+    # "Carrefour (CARR(1)" = a truncated parenthetical PLUS the save-as dedupe
+    # marker the desk's second download added. Both go.
+    item = sidecar_mod.normalize({"title": "Carrefour (CARR(1)", "institution": "GS"})
+    assert item["title"] == "Carrefour (CARR)"
+    # ... and on an otherwise-clean title too.
+    assert sidecar_mod.normalize(
+        {"title": "China 2026 Outlook (1)", "institution": "GS"})["title"] == "China 2026 Outlook"
+
+
+# ===========================================================================
+# sidecar: clean_title (the public-surface title repair)
+# ===========================================================================
+
+@pytest.mark.parametrize("raw,want", [
+    # the five production defects (data/research_vault/catalog.json, 2026-07-26)
+    ("Carrefour (CARR", "Carrefour (CARR)"),
+    ("SAP (SAPG", "SAP (SAPG)"),
+    ("Alcon Inc. (ALCC", "Alcon Inc. (ALCC)"),
+    ("Carrefour (CARR(1)", "Carrefour (CARR)"),
+    ("Repsol (REP", "Repsol (REP)"),
+    # dedupe marker on a balanced title
+    ("South Africa SARB Keeps Policy Rate on Hold(1)", "South Africa SARB Keeps Policy Rate on Hold"),
+    ("Report (final)(1)", "Report (final)"),
+    # a fragment with nothing in it is dropped, not closed with "()"
+    ("Morning Briefing (", "Morning Briefing"),
+    # unmatched closer is stripped
+    ("Morning Briefing)", "Morning Briefing"),
+    # nested truncation still balances
+    ("A (B (C", "A (B (C))"),
+    # already-good titles are untouched
+    ("JPM US Market Intel | Morning Briefing", "JPM US Market Intel | Morning Briefing"),
+    ("Allianz SE (ALVG.DE) announced acquisition", "Allianz SE (ALVG.DE) announced acquisition"),
+    # a 4-digit year parenthetical is NOT a dedupe marker
+    ("Global Outlook (2027)", "Global Outlook (2027)"),
+    # whitespace collapse + empties
+    ("  spaced   out  ", "spaced out"),
+    ("(", ""),
+    ("", ""),
+])
+def test_clean_title_cases(raw, want):
+    assert sidecar_mod.clean_title(raw) == want
+
+
+def test_clean_title_is_idempotent():
+    for raw in ("Carrefour (CARR(1)", "Alcon Inc. (ALCC", "A (B (C", "Morning Briefing ("):
+        once = sidecar_mod.clean_title(raw)
+        assert sidecar_mod.clean_title(once) == once
+
+
+def test_clean_title_never_raises_on_junk():
+    for junk in (None, 123, ["x"], {"a": 1}):
+        assert isinstance(sidecar_mod.clean_title(junk), str)
+
+
+def test_clean_title_is_slug_stable_for_paren_repair():
+    """The repair must never move an already-indexed /research/ URL.
+
+    Closing a dangling "(" only adds punctuation, and the slug strips
+    non-alphanumerics — so the published page keeps its exact filename.
+    """
+    for raw in ("Alcon Inc. (ALCC", "SAP (SAPG", "Repsol (REP"):
+        assert sidecar_mod.slug(sidecar_mod.clean_title(raw)) == sidecar_mod.slug(raw)
 
 
 def test_normalize_good_title_never_touched_by_pdf():
@@ -294,6 +361,55 @@ def test_catalog_load_corrupt_degrades_to_empty(tmp_path):
     store.put_bytes(catalog_mod.CATALOG_KEY, b"{ corrupt", "application/json")
     cat = catalog_mod.load(store)
     assert cat == catalog_mod.empty()
+
+
+def test_catalog_upsert_cleans_the_title():
+    cat = catalog_mod.empty()
+    catalog_mod.upsert_item(cat, dict(_item("a", "GS", "2026-07-01"), title="Alcon Inc. (ALCC"))
+    assert cat["items"][0]["title"] == "Alcon Inc. (ALCC)"
+
+
+def test_catalog_load_heals_already_published_titles(tmp_path):
+    """The heal that reaches docs ingest can no longer touch.
+
+    Ingest is receipt-idempotent, so a report already in the vault NEVER
+    re-normalizes — every doc ingested before the sidecar fix would keep its
+    truncated title forever. Repairing on load means the next hourly run
+    republishes them fixed, with no receipt surgery and no re-download.
+    """
+    store = LocalStore(tmp_path / "store")
+    store.put_bytes(catalog_mod.CATALOG_KEY, json.dumps({
+        "schema": "research_vault.catalog.v1", "generated_at": "", "count": 3,
+        "institutions": ["Goldman Sachs"],
+        "items": [
+            {"id": "md-1", "title": "Alcon Inc. (ALCC", "institution": "Goldman Sachs"},
+            {"id": "md-2", "title": "Carrefour (CARR(1)", "institution": "Goldman Sachs"},
+            {"id": "md-3", "title": "Fine As-Is (FOO.PA)", "institution": "Goldman Sachs"},
+        ],
+    }).encode("utf-8"), "application/json")
+
+    cat = catalog_mod.load(store)
+    titles = {it["id"]: it["title"] for it in cat["items"]}
+    assert titles["md-1"] == "Alcon Inc. (ALCC)"
+    assert titles["md-2"] == "Carrefour (CARR)"
+    assert titles["md-3"] == "Fine As-Is (FOO.PA)"      # untouched
+    assert [it["id"] for it in cat["items"]] == ["md-1", "md-2", "md-3"]  # ids never move
+
+    # Idempotent: writing the healed catalog back and reloading changes nothing.
+    catalog_mod.write(store, cat)
+    assert {it["id"]: it["title"] for it in catalog_mod.load(store)["items"]} == titles
+
+
+def test_catalog_load_heal_survives_malformed_rows(tmp_path):
+    store = LocalStore(tmp_path / "store")
+    store.put_bytes(catalog_mod.CATALOG_KEY, json.dumps({
+        "schema": "research_vault.catalog.v1", "items": [
+            "not-a-dict", {"id": "md-1"}, {"id": "md-2", "title": None},
+            {"id": "md-3", "title": "SAP (SAPG"},
+        ],
+    }).encode("utf-8"), "application/json")
+    cat = catalog_mod.load(store)
+    assert cat["items"][-1]["title"] == "SAP (SAPG)"
 
 
 # ===========================================================================

@@ -49,6 +49,17 @@ def test_slug_is_kebab_with_id_suffix():
     assert "jpm-us-market-intel" in s
 
 
+def test_paren_repair_does_not_move_the_published_slug():
+    """A closed ticker parenthetical must keep the page's already-indexed URL.
+
+    The four production truncations ("Alcon Inc. (ALCC" …) ship as live
+    /research/ pages; repairing the title may not orphan them.
+    """
+    for raw in ("Alcon Inc. (ALCC", "SAP (SAPG", "Repsol (REP", "Carrefour (CARR"):
+        item = dict(_ITEM, title=raw)
+        assert rp._slug(raw, _ITEM["id"], set()) == rp.slug_map([item])[_ITEM["id"]]
+
+
 def test_slug_map_unique_and_deterministic():
     items = [dict(_ITEM, id=f"x{i}-aaa{i:03d}", title="Same Title") for i in range(5)]
     a = rp.slug_map(items)
@@ -69,6 +80,47 @@ def test_page_is_marked_paywalled_and_leaks_only_the_teaser():
     assert "Secretbulletthree" not in html
     # markdown emphasis is stripped from the public snippet
     assert "**Teaserbullet" not in html
+
+
+# --- title repair at the render boundary ------------------------------------
+def _head(html: str) -> str:
+    return html.split("</head>", 1)[0]
+
+
+def test_truncated_title_never_ships_unbalanced_into_the_head():
+    """#3505 regression: "Alcon Inc. (ALCC" reached <title>/og:title verbatim.
+
+    The upstream desk truncates its Reuters ticker parenthetical at the "."; these
+    pages are public and the title is the most SEO-weighted element on them, so the
+    builder repairs rather than trusts the catalog.
+    """
+    html = _norm_render(dict(_ITEM, title="Alcon Inc. (ALCC"))
+    head = _head(html)
+    assert "Alcon Inc. (ALCC)" in head
+    assert "<title>Alcon Inc. (ALCC) — J.P. Morgan" in head
+    assert 'og:title" content="Alcon Inc. (ALCC) — J.P. Morgan"' in head
+    assert 'twitter:title" content="Alcon Inc. (ALCC) — J.P. Morgan"' in head
+    assert "<h1>Alcon Inc. (ALCC)</h1>" in html
+    # no dangling "(" anywhere the crawler reads the name
+    assert head.count("(") == head.count(")")
+
+
+def test_dedupe_marker_never_reaches_the_page_or_the_url():
+    item = dict(_ITEM, title="Carrefour (CARR(1)")
+    assert rp._norm(item)["title"] == "Carrefour (CARR)"
+    assert "-1-" not in rp.slug_map([item])[_ITEM["id"]]
+    assert "Carrefour (CARR)" in _head(_norm_render(item))
+
+
+def test_every_committed_report_title_is_balanced():
+    """Production guard over the REAL catalog: no live page ships a stray paren."""
+    from scripts.build_research_vault import _public_catalog, load_catalog
+    items = _public_catalog(load_catalog())["items"]
+    if not items:
+        pytest.skip("committed catalog is empty")
+    bad = [n["title"] for n in map(rp._norm, items)
+           if n["title"].count("(") != n["title"].count(")")]
+    assert not bad, f"unbalanced parens in rendered titles: {bad}"
 
 
 # --- public first-pages excerpt --------------------------------------------
@@ -142,6 +194,34 @@ def test_build_writes_pages_hub_and_sitemap_for_nonempty_catalog(monkeypatch, tm
     assert len(names) == 3                     # 2 report pages + hub
     xml = (tmp_path / "sitemap.xml").read_text(encoding="utf-8")
     assert xml.count("<url>") == 3             # hub + 2 reports merged into sitemap
+
+
+def test_build_prunes_the_page_a_retitle_orphans(monkeypatch, tmp_path):
+    """A repaired title can move a slug; the old file must not survive as a
+    self-canonical near-duplicate that nothing links to."""
+    _redirect_out(monkeypatch, tmp_path)
+    rp.build({"items": [dict(_ITEM, title="Carrefour (CARR(1)")]})
+    stale = tmp_path / "research" / "carrefour-carr-1-71f35b.html"
+    stale.write_text("<html>orphan</html>", encoding="utf-8")
+
+    rp.build({"items": [dict(_ITEM, title="Carrefour (CARR(1)")]})
+    assert not stale.exists()
+    assert (tmp_path / "research" / "carrefour-carr-71f35b.html").exists()
+    assert (tmp_path / "research" / "index.html").exists()      # hub is never pruned
+
+
+def test_build_refuses_to_mass_prune_on_a_partial_catalog(monkeypatch, tmp_path, caplog):
+    """A degraded catalog must not be able to de-index the section."""
+    _redirect_out(monkeypatch, tmp_path)
+    full = [dict(_ITEM, id=f"md-{i}-aaa{i:03d}", title=f"Report {i}") for i in range(12)]
+    rp.build({"items": full})
+    before = {p.name for p in (tmp_path / "research").glob("*.html")}
+
+    with caplog.at_level("WARNING"):
+        rp.build({"items": full[:2]})                          # catalog collapses
+    after = {p.name for p in (tmp_path / "research").glob("*.html")}
+    assert after == before                                     # nothing deleted
+    assert "refusing to prune" in caplog.text
 
 
 def test_build_on_committed_catalog_never_yields_zero_pages(monkeypatch, tmp_path):
