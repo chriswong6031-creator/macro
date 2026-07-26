@@ -4459,6 +4459,21 @@ button.obx-btn-postnow:hover:not(:disabled) {
 
 /* ---- Go-Live checklist (Publisher) -------------------------------------- */
 .golive { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+/* The setup rows collapse behind a disclosure so the ARM control is the only
+   thing competing for attention once go-live is done (operator, 2026-07-26). */
+.golive-setup { margin-top: 12px; }
+.golive-setup > summary {
+  cursor: pointer; user-select: none; list-style: none;
+  font-size: 12px; letter-spacing: .02em; color: var(--faint);
+  padding: 6px 2px; display: inline-flex; align-items: center; gap: 6px;
+}
+.golive-setup > summary::-webkit-details-marker { display: none; }
+.golive-setup > summary::before {
+  content: "▸"; font-size: 10px; color: var(--faint);
+  transition: transform .15s ease;
+}
+.golive-setup[open] > summary::before { transform: rotate(90deg); }
+.golive-setup > summary:hover { color: var(--fg); }
 .golive-row {
   display: grid; grid-template-columns: 26px 1fr auto; align-items: start; gap: 12px;
   padding: 13px 15px; border-top: 1px solid var(--grid);
@@ -4842,3 +4857,64 @@ button.obx-btn-postnow:hover:not(:disabled) {
    click landed, otherwise the natural response to a slow POST is to click again. */
 .sup-reply .ent-act[disabled], .sup-reply-box[disabled] { opacity: .5; cursor: progress; }
 
+/* Publisher status tiles are click-throughs to the Outbox (operator, 2026-07-26:
+   "I see 17 queued but it doesn't actually show the queued posts"). Reset the
+   button chrome so a link-tile is visually identical to the inert zero tiles. */
+button.metric-tile.pub-tile-link {
+  font: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); color: inherit;
+  border: 1px solid var(--border);
+}
+button.metric-tile.pub-tile-link:hover {
+  border-color: var(--accent-cyan);
+  background: var(--surface2);
+}
+
+/* ---- Reject + rejection box (operator feedback loop, 2026-07-26) ---------- */
+/* Reject is destructive-ish and terminal, so it reads warmer than Hold without
+   competing with the primary Approve action. */
+button.obx-btn-reject {
+  border-color: var(--bad); color: var(--bad); background: transparent;
+}
+button.obx-btn-reject:hover:not(:disabled) {
+  background: var(--bad-bg, rgba(220,70,70,.12)); border-color: var(--bad);
+}
+.obx-rejbox .section { display: flex; align-items: center; gap: 10px; }
+.obx-rejbox .obx-btn-export { margin-left: auto; }
+.obx-rej-list {
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  overflow: hidden; background: var(--surface);
+}
+.obx-rej-row {
+  padding: 10px 13px; border-top: 1px solid var(--grid);
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.obx-rej-row:first-child { border-top: none; }
+.obx-rej-head { font-size: 13px; color: var(--fg); }
+.obx-rej-meta { font-size: 11px; color: var(--faint); margin-top: 2px; }
+.obx-rej-why {
+  font-size: 12px; color: var(--warn); margin-top: 4px;
+  border-left: 2px solid var(--warn); padding-left: 8px;
+}
+
+/* ---- Copy-review finding (advisory, 2026-07-26) --------------------------- */
+/* Present only when the reviewer flagged something, so a marker always means
+   something. Never styled as an error: review does not gate, it points. */
+.obx-review {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  margin: 8px 0 0; padding: 7px 10px;
+  border-radius: var(--r-sm, 6px);
+  border-left: 2px solid var(--warn);
+  background: var(--surface2);
+}
+.obx-review-bad { border-left-color: var(--bad); }
+.obx-review-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  color: var(--warn); text-transform: lowercase;
+}
+.obx-review-bad .obx-review-tag { color: var(--bad); }
+.obx-review-issue {
+  font-size: 11px; color: var(--faint);
+  padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface);
+}

@@ -5041,12 +5041,49 @@ let OBX_ACTIVE_KIND = "all";
    instant and network-free. */
 const OBX_MEDIA_CACHE = new Map();
 
+/* The rejection box — everything killed with Reject since the last export.
+   Exists because a rejection used to die in the operator's head: hold parked a
+   post, nothing recorded WHY, and nothing ever reviewed style. Exporting hands
+   the batch over as one annotatable markdown sheet and clears the box, so a
+   sheet never mixes rejections you have already reviewed with fresh ones. */
+function obxRejectionBox(rej) {
+  const rows = (rej && rej.rejections) || [];
+  const n = rows.length;
+  if (!n) {
+    return `<div class="card obx-rejbox">
+      <div class="section">Rejection box <span class="cnt">nothing rejected since the last export</span></div>
+      <div class="note muted">Reject a post to start a batch. Export hands the batch over as a markdown sheet to annotate.</div>
+    </div>`;
+  }
+  const list = rows.slice(0, 40).map(r => {
+    const head = (String(r.text || "").split("\n")[0] || "").slice(0, 90);
+    const why = r.reason ? `<div class="obx-rej-why">${esc(r.reason)}</div>` : "";
+    return `<div class="obx-rej-row">
+      <div class="obx-rej-main">
+        <div class="obx-rej-head">${esc(head)}</div>
+        <div class="obx-rej-meta">${esc([r.ticker, r.provenance, r.as_of].filter(Boolean).join(" · "))}</div>
+        ${why}
+      </div>
+    </div>`;
+  }).join("");
+  const more = n > 40 ? `<div class="note muted">+ ${n - 40} more in the export.</div>` : "";
+  return `<div class="card obx-rejbox">
+    <div class="section">Rejection box <span class="cnt">${n} awaiting review</span>
+      <button class="btn primary obx-btn-export" onclick="obxExportRejections(this)">Export ${n} as .md</button>
+    </div>
+    <div class="obx-rej-list">${list}</div>${more}
+  </div>`;
+}
+
 RENDER.marketing_outbox = async () => {
   const v = $("#view");
   v.innerHTML = `<div class="spin">loading…</div>`;
   const d = await api("/api/marketing/outbox");
   if (!d || !d.ok) { v.innerHTML = nwEmpty("Outbox unavailable", (d && d.error) || "panel error"); return; }
   OBX_LAST = d;
+  /* Fail-soft: the rejection box must never take the Outbox down with it. */
+  let rejBox = null;
+  try { rejBox = await api("/api/marketing/rejections"); } catch (e) { rejBox = null; }
 
   const cap = d.cap != null ? d.cap : "—";
   const asOf = d.as_of || null;
@@ -5275,7 +5312,7 @@ function obxRenderLive(d) {
   live.innerHTML = obxSentinelCard(sentinel, cap) + commandBar + tiles
     + obxActivityStrip(activity)
     + filterChips + acctPills + `<div id="obx-review">${sections}</div>`
-    + decisionHtml + historyHtml;
+    + obxRejectionBox(rejBox) + decisionHtml + historyHtml;
   /* Re-apply any active desk/kind filter (persisted across in-place refreshes). */
   obxApplyDeskFilter();
   obxApplyKindFilter();
@@ -5532,10 +5569,22 @@ function pubGoLive(d) {
       </div>`
     : "";
 
+  /* The checklist was scaffolding for first go-live: once the channel and token
+     are set it is five rows of "done" standing between the operator and the one
+     control they actually use. Collapsed on operator instruction (2026-07-26):
+     the ARM row stays out front, the setup rows move behind a disclosure so a
+     token can still be replaced and the countdown is still reachable. Kept as a
+     <details> rather than deleted — pubSaveToken() drives #pub-token-input and
+     the golive-token-* ids, and dropping them would leave no way to rotate a
+     token from the panel. */
   return `<div class="card">
-    <div class="section">Go-live checklist <span class="cnt">what stands between drafts and live posts</span></div>
-    <div class="con-lede" style="margin-bottom:10px">Paste your token, then Arm. Nothing posts until the channel, token, and ARM toggle are all set and approvals are flowing.</div>
-    <div class="golive">${row1}${row2}${row3}${row4}${cd}</div>
+    <div class="section">Publisher <span class="cnt">arm state and the go-live setup</span></div>
+    <div class="golive">${row3}</div>
+    <details class="golive-setup">
+      <summary>Setup checklist${armed ? "" : " — not fully armed yet"}</summary>
+      <div class="con-lede" style="margin:10px 0">Nothing posts until the channel, token, and ARM toggle are all set and approvals are flowing.</div>
+      <div class="golive">${row1}${row2}${row4}${cd}</div>
+    </details>
   </div>`;
 }
 
@@ -5652,13 +5701,17 @@ RENDER.marketing_publish = async () => {
     ["failed", "Failed", "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
   ];
+  /* Each tile is a LINK to the Outbox, not a dead number. "17 queued" with no
+     way to see the seventeen is a count the operator cannot act on or verify
+     (operator, 2026-07-26). Zero-count tiles stay inert — nothing to show. */
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
       const val = sc[k] != null ? sc[k] : 0;
-      return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
-        <div class="eyebrow">${esc(lbl)}</div>
-        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
-      </div>`;
+      const body = `<div class="eyebrow">${esc(lbl)}</div>
+        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>`;
+      if (!val) return `<div class="metric-tile" style="opacity:.55">${body}</div>`;
+      return `<button class="metric-tile pub-tile-link" onclick="go('marketing_outbox')"
+        title="Show the ${esc(lbl.toLowerCase())} items in the Outbox">${body}</button>`;
     }).join("")}
   </div>`;
 
@@ -6328,6 +6381,24 @@ function obxItemCard(it, acctId) {
     : `${stateMeta.label} · ${stateMeta.stance}`;
   const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${esc(stateLabel)}</span>`;
 
+  /* Copy-review finding (advisory). Present only when the reviewer had
+     something to say, so a clean queue carries no markers and the ones that do
+     appear actually mean something. The batch-level kinds are the ones that
+     caught the 2026-07-26 incident, so they get plain-word labels rather than
+     the raw slug. */
+  const REVIEW_LABEL = {
+    repeated_headline: "same headline shape as the rest of the batch",
+    repeated_opener: "opens like the others",
+    identical_body: "same sentence as another post, different numbers",
+  };
+  const rev = (it.source && it.source.review) || null;
+  const reviewChip = rev
+    ? `<div class="obx-review obx-review-${esc(rev.verdict || "weak")}">
+         <span class="obx-review-tag">${rev.verdict === "bad" ? "reads templated" : "worth a look"}</span>
+         ${(rev.issues || []).map(x => `<span class="obx-review-issue">${esc(REVIEW_LABEL[x] || x)}</span>`).join("")}
+       </div>`
+    : "";
+
   /* Media — lazy-loaded via the media endpoint (populated by obxLoadAllMedia).
      Caption text is passed on the wrapper for the lightbox to read. */
   const media = (it.media || []).filter(m => m && m.path);
@@ -6365,9 +6436,14 @@ function obxItemCard(it, acctId) {
           <span class="obx-ctrl-msg"></span>
         </div>`;
   } else if (obxIsDecidable(it)) {
+    /* Hold parks a post and keeps it here — it is a reversible decision, not a
+       verdict, so a held item deliberately stays in the rail. Reject is the
+       verdict: terminal, and it records WHY into the rejection box for the
+       review sheet (operator, 2026-07-26 — "shouldn't there be reject button?"). */
     controls = `<div class="obx-controls" data-item="${esc(it.id)}">
       <button class="btn primary obx-btn-approve" onclick="obxDecide('${esc(it.id)}','approve',this)">Approve</button>
-      <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)">Hold</button>
+      <button class="btn obx-btn-hold" onclick="obxDecide('${esc(it.id)}','hold',this)" title="Park it — stays here, reversible">Hold</button>
+      <button class="btn obx-btn-reject" onclick="obxReject('${esc(it.id)}',this)" title="Kill it and log why — moves to the rejection box, leaves this list">Reject</button>
       ${postNowBtn}
       <span class="obx-ctrl-msg"></span>
     </div>`;
@@ -6408,6 +6484,7 @@ function obxItemCard(it, acctId) {
         <span class="obx-count ${meterCls}">${n} / ${OBX_CHAR_CAP}${over ? " · over limit" : ""}</span>
       </div>
     </div>
+    ${reviewChip}
     ${mediaHtml}
     ${controls}
   </div>`;
@@ -6524,6 +6601,53 @@ function obxApplyKindFilter() {
 }
 
 /* POST a single approve/hold decision, then refetch to fold the new state in. */
+/* REJECT — terminal kill with a reason. Unlike hold (reversible, item stays in
+   the rail) this drops the post out of the Outbox and into the rejection box,
+   where a run of them can be exported as one annotatable markdown sheet. The
+   reason is optional: an empty prompt still rejects, because forcing a sentence
+   out of an operator mid-triage is how you get "bad" typed fifty times. */
+async function obxReject(id, btn) {
+  const reason = window.prompt(
+    "Reject this post. What is wrong with it? (optional — Enter to skip)\n\n" +
+    "Whatever you write lands in the review sheet, so be specific: name the " +
+    "phrase, not just the feeling.", "");
+  if (reason === null) return;            /* cancelled — do nothing */
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "rejecting…";
+  const r = await post("/api/marketing/outbox/reject", { id, reason: reason || null });
+  if (r && r.ok) {
+    toast(r.logged === false
+      ? "Rejected, but the feedback row could not be written."
+      : "Rejected — moved to the rejection box.");
+    RENDER.marketing_outbox();
+  } else {
+    btn.disabled = false; btn.textContent = orig;
+    toast((r && r.error) || "Could not reject", true);
+  }
+}
+
+/* Export the rejection box as a markdown review sheet and clear it. The file
+   downloads client-side; the server stamps the rows exported so the box only
+   ever shows rejections you have not reviewed yet. */
+async function obxExportRejections(btn) {
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = "exporting…";
+  const r = await post("/api/marketing/rejections/export", {});
+  btn.disabled = false; btn.textContent = orig;
+  if (!r || !r.ok) { toast((r && r.error) || "Nothing to export", true); return; }
+  try {
+    const blob = new Blob([r.markdown], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = r.filename || "rejected-posts.md";
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  } catch (e) {
+    toast("Exported, but the download failed — check the console", true);
+    console.log(r.markdown);
+  }
+  toast(`Exported ${r.count} rejection${r.count === 1 ? "" : "s"}.`);
+  RENDER.marketing_outbox();
+}
+
 async function obxDecide(id, decision, btn) {
   const ctrl = btn ? btn.closest(".obx-controls") : null;
   const msg = ctrl ? ctrl.querySelector(".obx-ctrl-msg") : null;
