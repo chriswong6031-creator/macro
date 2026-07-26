@@ -1340,6 +1340,231 @@ on:
       - "scripts/tech_lab_cli.py"
       - "scripts/vps_live_orchestrator.py"
       - "scripts/watch_release_publications.py"
+      # ── P1 unrun-suite census (2026-07-26) ─────────────────────────────────
+      # Both halves, per #3488: the test files AND the subject modules nothing else
+      # glob-matches. A guard the guarded change cannot trigger is not a guard.
+      # unrun-site-surfaces
+      - "tests/test_action_board_coherence.py"
+      - "tests/test_advanced_breadth.py"
+      - "tests/test_basket_integration.py"
+      - "tests/test_breadth_panel.py"
+      - "tests/test_c4_dollar.py"
+      - "tests/test_factor_ic_panel.py"
+      - "tests/test_macro_glance.py"
+      - "tests/test_macro_signals_vm.py"
+      - "tests/test_market_gamma.py"
+      - "tests/test_market_gamma_contract.py"
+      - "tests/test_regime_snap.py"
+      - "tests/test_spark_zone_band.py"
+      - "tests/test_ts_u3_dashboard_surfaces.py"
+      - "tests/test_wiki_pageviews.py"
+      - "scripts/c4_cnh_basis.py"
+      - "scripts/c4_reer_value.py"
+      # unrun-release-forecast
+      - "tests/test_content_stamp_freshness_sweep2.py"
+      - "tests/test_cpi_postmortem_fixes.py"
+      - "tests/test_release_combined.py"
+      - "tests/test_release_forecast_v2.py"
+      - "tests/test_release_integration_2a.py"
+      - "tests/test_release_integration_2b.py"
+      - "tests/test_release_integration_w11g.py"
+      - "tests/test_release_market_context.py"
+      - "scripts/build_release_forecast.py"
+      - "scripts/check_hazard_model_freshness.py"
+      # unrun-brain-desks
+      - "tests/test_admin_brief_gate.py"
+      - "tests/test_ai_desk_panel.py"
+      - "tests/test_altdata_intel.py"
+      - "tests/test_altdata_price_truth.py"
+      - "tests/test_china_intel_hub.py"
+      - "tests/test_master_brain.py"
+      - "tests/test_master_brain_policy.py"
+      - "tests/test_master_brain_producer.py"
+      - "tests/test_master_brain_scorer.py"
+      - "tests/test_risk_brain.py"
+      - "tests/test_risk_radar_review.py"
+      - "tests/test_shock_deescalation.py"
+      - "tests/test_w7_llm_determinism.py"
+      # unrun-neuralweb-cortex
+      - "tests/test_build_active_build_map.py"
+      - "tests/test_build_cycle_pattern_state.py"
+      - "tests/test_factor_contradictions.py"
+      - "tests/test_nw_consumers_w3.py"
+      - "tests/test_nw_health_escalation.py"
+      - "tests/test_options_nw_wiring.py"
+      - "tests/test_til_nw_citizenship.py"
+      - "tests/test_world_state_special_sits.py"
+      - "tests/test_world_state_stage_analysis.py"
+      - "scripts/build_active_build_map.py"
+      - "scripts/build_cycle_pattern_state.py"
+      - "scripts/build_factor_panel.py"
+      - "scripts/build_sector_central.py"
+      - "scripts/check_nw_health_escalation.py"
+      - "scripts/check_synapse_registry.py"
+      # unrun-vector-baskets
+      - "tests/test_basket_turn_watch.py"
+      - "tests/test_btc_overrides.py"
+      - "tests/test_build_basket_pulse.py"
+      - "tests/test_signal_surface_bugfixes.py"
+      - "tests/test_spvector_page.py"
+      - "tests/test_trial_log_refresh.py"
+      - "tests/test_validation_effective_t.py"
+      - "tests/test_vector_conviction.py"
+      # unrun-picks-boards
+      - "tests/test_b3_forex_consumer.py"
+      - "tests/test_board_contradictions.py"
+      - "tests/test_bottom_ledger.py"
+      - "tests/test_pick_lab_book.py"
+      - "tests/test_pick_lab_cn_runner.py"
+      - "tests/test_pick_lab_render.py"
+      - "tests/test_pick_lab_runner.py"
+      - "tests/test_stock_board_v2.py"
+      - "tests/test_track_ledger_emitters.py"
+      - "tests/test_us_board_lanes.py"
+      - "tests/test_us_board_w3_evidence.py"
+      - "scripts/build_china_pick_lab.py"
+      - "scripts/build_pick_lab.py"
+      - "scripts/build_stock_board_v2.py"
+      - "scripts/grade_bottom_calls.py"
+      # unrun-intl-collectors
+      - "tests/test_action_board_lane_split.py"
+      - "tests/test_china_alpha_w3c_infra.py"
+      - "tests/test_china_fundamentals_collector.py"
+      - "tests/test_content_stamp_freshness.py"
+      - "tests/test_data_quality_audit.py"
+      - "tests/test_earnings_qual.py"
+      - "tests/test_earnings_w5.py"
+      - "tests/test_hk_fundamentals_collector.py"
+      - "tests/test_hk_narrative.py"
+      - "tests/test_hk_track_record_vm.py"
+      - "tests/test_housing_hf.py"
+      - "scripts/audit_earnings_freshness.py"
+      - "scripts/audit_macro.py"
+      - "scripts/audit_prices.py"
+      - "scripts/audit_universe.py"
+      - "scripts/build_canada.py"
+      - "scripts/build_china.py"
+      - "scripts/build_hk.py"
+      - "scripts/collect_nyfed_cmdi.py"
+      - "scripts/collect_payems_vintages.py"
+      - "scripts/collect_redfin_hf.py"
+      - "scripts/collect_zori.py"
+      - "scripts/fetch_earnings_scores.py"
+      - "scripts/publish_earnings_r2.py"
+      # unrun-russell-breadth
+      - "tests/test_russell_breadth.py"
+      # unrun-macro-panels
+      - "tests/test_build_dispersion_regime.py"
+      - "tests/test_build_factor_panel.py"
+      - "tests/test_commodity_mtf_verdict_honesty.py"
+      - "tests/test_congress_score.py"
+      - "tests/test_context_risk.py"
+      - "tests/test_cross_asset_context.py"
+      - "tests/test_crossasset_flows.py"
+      - "tests/test_financial_news.py"
+      - "tests/test_forex.py"
+      - "tests/test_forex_context_bus.py"
+      - "tests/test_news_event_ledger.py"
+      - "tests/test_phase_buildout.py"
+      - "tests/test_policy_lever.py"
+      - "tests/test_rates_command.py"
+      - "tests/test_reflexivity_overlay.py"
+      - "tests/test_scorecard_incremental.py"
+      - "tests/test_us_sector_rotation_wiring.py"
+      - "tests/test_validation.py"
+      - "tests/test_whitehouse_build.py"
+      - "scripts/build_commodities.py"
+      - "scripts/build_congress.py"
+      - "scripts/build_context_risk.py"
+      - "scripts/build_crossasset.py"
+      - "scripts/build_dispersion_regime.py"
+      - "scripts/build_forex.py"
+      - "scripts/build_macro_snapshot.py"
+      - "scripts/build_news.py"
+      - "scripts/build_policy_lever.py"
+      - "scripts/build_rates_command.py"
+      - "scripts/build_reflexivity_overlay.py"
+      - "scripts/build_us_sector_rotation.py"
+      - "scripts/build_whitehouse.py"
+      - "scripts/calibrate_commodities.py"
+      - "scripts/calibrate_forex.py"
+      - "scripts/factor_ic_scorecard.py"
+      - "scripts/grade_news_events.py"
+      - "scripts/inject_wh_banner.py"
+      # unrun-market-plumbing
+      - "tests/test_attention_deterministic.py"
+      - "tests/test_build_live_quotes.py"
+      - "tests/test_clinicaltrials_themes.py"
+      - "tests/test_event_priors.py"
+      - "tests/test_foresight_ledger_lane_gates.py"
+      - "tests/test_gex_archive_snapshot.py"
+      - "tests/test_grade_thematic.py"
+      - "tests/test_live_delay_labeling.py"
+      - "tests/test_options_flow_attention_reflex.py"
+      - "tests/test_prophet_bridge.py"
+      - "tests/test_prophet_stage_tilt.py"
+      - "tests/test_tape_flow.py"
+      - "tests/test_tape_flow_stamp.py"
+      - "tests/test_tech_events_export.py"
+      - "tests/test_techlab_p0_fixes.py"
+      - "tests/test_thematic_state.py"
+      - "tests/test_theme_adoption.py"
+      - "tests/test_theme_clinical.py"
+      - "tests/test_theme_options_witness.py"
+      - "tests/test_theme_trade_flows.py"
+      - "tests/test_thetadata_resolver.py"
+      - "tests/test_validate_gex.py"
+      - "scripts/backtest_event_priors.py"
+      - "scripts/build_attention_deterministic.py"
+      - "scripts/build_discovery_confluence.py"
+      - "scripts/build_foresight.py"
+      - "scripts/build_gex_board.py"
+      - "scripts/build_live_quotes.py"
+      - "scripts/build_options_flow_attention.py"
+      - "scripts/build_special_situations.py"
+      - "scripts/build_tape_flow.py"
+      - "scripts/build_tape_flow_daily.py"
+      - "scripts/build_tech_lab_data.py"
+      - "scripts/build_thematic_state.py"
+      - "scripts/grade_thematic.py"
+      - "scripts/stamp_options_state.py"
+      # unrun-publish-ops
+      - "tests/test_backfill_qledger_us.py"
+      - "tests/test_check_price_store_freshness.py"
+      - "tests/test_demand_chain_phase0.py"
+      - "tests/test_envelope_conformance.py"
+      - "tests/test_importance_v0.py"
+      - "tests/test_oracle_contract.py"
+      - "tests/test_publish_r2.py"
+      - "tests/test_radar_single_writer.py"
+      - "tests/test_refresh_regime_if_stale.py"
+      - "tests/test_seo_foundation.py"
+      - "tests/test_signal_contracts_wiring.py"
+      - "tests/test_signal_sanity.py"
+      - "tests/test_ticker_pages.py"
+      - "tests/test_ts_u1_session_date.py"
+      - "tests/test_w4_pit_fixes.py"
+      - "tests/test_w6b_push_ops.py"
+      - "tests/test_watchlist_sentinel.py"
+      - "tests/test_world_state_migrations.py"
+      - "scripts/backfill_qledger_us.py"
+      - "scripts/build_impulse.py"
+      - "scripts/build_intelligence.py"
+      - "scripts/build_radar_plus.py"
+      - "scripts/build_sector_cycles.py"
+      - "scripts/build_ticker_pages.py"
+      - "scripts/check_price_store_freshness.py"
+      - "scripts/healthcheck.py"
+      - "scripts/notify.py"
+      - "scripts/publish_r2.py"
+      - "scripts/refresh_regime_if_stale.py"
+      - "scripts/report_importance_duel.py"
+      - "scripts/run_watchlist_sentinel.py"
+      - "scripts/shadow_importance_v0.py"
+      - "scripts/shadow_importance_v0_pit.py"
+      - "scripts/signal_sanity.py"
+      # unrun-inline-js-guard
+      - "tests/test_check_inline_js.py"
   workflow_dispatch:
 
 permissions:
@@ -4210,3 +4435,205 @@ jobs:
       - name: tech-lab parity fixtures — structure only (determinism is platform-dependent)
         run: python -m pytest tests/test_tech_parity_fixtures.py -q
           --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
+
+  # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
+  # Twelve lanes covering the 139 wired P1 suites: unrun by any workflow, but on a
+  # publish pipeline and triggerable, so a silent break moved shipped numbers with
+  # nothing going red.  Eleven repeat the P0 lanes' dependency install BYTE-FOR-BYTE
+  # so run_ci_pack.py keeps ONE shared venv across all twenty unrun-* jobs; only
+  # unrun-russell-breadth declares a different set (yfinance), and since the pack
+  # sorts jobs by install string that costs exactly one extra venv per pack.
+  # Measured serially in a clean venv carrying exactly these installs: 139 suites /
+  # 429s.
+  #
+  # Three P1 suites are deliberately NOT wired.  All three are RED on main and the
+  # fix in each case is a program decision, not test rot: an all-null claims
+  # benchmark_set on the shipped release-forecast cards, an import-time warnings
+  # ratchet that has drifted 37 files since it was frozen, and a chip whose copy
+  # assertions test a revision that was deliberately rewritten.  See the PR body and
+  # docs/UNRUN_TEST_CENSUS.md.
+  # Their filenames are deliberately NOT spelled out here: the census that found this
+  # hole tests `name in workflow_text`, so naming a suite in a comment makes it look
+  # covered.  Never reference an unwired suite by filename in this file.
+
+  unrun-site-surfaces:
+    # scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
+        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_wiki_pageviews.py -q
+
+  unrun-release-forecast:
+    # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: the macro-release forecast producer — projections, benchmarks and the graded forward ledger
+        run: python -m pytest tests/test_content_stamp_freshness_sweep2.py tests/test_cpi_postmortem_fixes.py tests/test_release_combined.py tests/test_release_forecast_v2.py tests/test_release_integration_2a.py tests/test_release_integration_2b.py tests/test_release_integration_w11g.py tests/test_release_market_context.py -q
+
+  unrun-brain-desks:
+    # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts
+        run: python -m pytest tests/test_admin_brief_gate.py tests/test_ai_desk_panel.py tests/test_altdata_intel.py tests/test_altdata_price_truth.py tests/test_china_intel_hub.py tests/test_master_brain.py tests/test_master_brain_policy.py tests/test_master_brain_producer.py tests/test_master_brain_scorer.py tests/test_risk_brain.py tests/test_risk_radar_review.py tests/test_shock_deescalation.py tests/test_w7_llm_determinism.py -q
+
+  unrun-neuralweb-cortex:
+    # neural-web cortex world-state consumers + the factor-contradiction plane.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: neural-web cortex world-state consumers + the factor-contradiction plane
+        run: python -m pytest tests/test_build_active_build_map.py tests/test_build_cycle_pattern_state.py tests/test_factor_contradictions.py tests/test_nw_consumers_w3.py tests/test_nw_health_escalation.py tests/test_options_nw_wiring.py tests/test_til_nw_citizenship.py tests/test_world_state_special_sits.py tests/test_world_state_stage_analysis.py -q
+
+  unrun-vector-baskets:
+    # vector allocation surfaces + the calibration ledger and basket pulse they read.
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: vector allocation surfaces + the calibration ledger and basket pulse they read
+        run: python -m pytest tests/test_basket_turn_watch.py tests/test_btc_overrides.py tests/test_build_basket_pulse.py tests/test_signal_surface_bugfixes.py tests/test_spvector_page.py tests/test_trial_log_refresh.py tests/test_validation_effective_t.py tests/test_vector_conviction.py -q
+
+  unrun-picks-boards:
+    # pick lab runners + US board grading — shipped picks and their outcome ledgers.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: pick lab runners + US board grading — shipped picks and their outcome ledgers
+        run: python -m pytest tests/test_b3_forex_consumer.py tests/test_board_contradictions.py tests/test_bottom_ledger.py tests/test_pick_lab_book.py tests/test_pick_lab_cn_runner.py tests/test_pick_lab_render.py tests/test_pick_lab_runner.py tests/test_stock_board_v2.py tests/test_track_ledger_emitters.py tests/test_us_board_lanes.py tests/test_us_board_w3_evidence.py -q
+
+  unrun-intl-collectors:
+    # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: china/HK collectors and the collect.py sweeps + store-freshness tripwires
+        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_earnings_qual.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
+
+  unrun-russell-breadth:
+    # the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks.
+    if: ${{ false }}
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn yfinance
+      - name: the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks
+        run: python -m pytest tests/test_russell_breadth.py -q
+
+  unrun-macro-panels:
+    # commodities / forex / rates / news / policy panels and their calibration guards.
+    if: ${{ false }}
+    timeout-minutes: 7
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: commodities / forex / rates / news / policy panels and their calibration guards
+        run: python -m pytest tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py -q
+
+  unrun-market-plumbing:
+    # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_stage_tilt.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+
+  unrun-publish-ops:
+    # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.
+    if: ${{ false }}
+    timeout-minutes: 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
+        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
+
+  unrun-inline-js-guard:
+    # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
+    if: ${{ false }}
+    timeout-minutes: 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: node must be on PATH — these tests SKIP without it (vacuous green)
+        run: node --version
+      - name: the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone)
+        run: python -m pytest tests/test_check_inline_js.py -q --deselect tests/test_check_inline_js.py::test_real_site_is_clean --deselect tests/test_check_inline_js.py::test_real_tree_handlers_and_curly_clean
