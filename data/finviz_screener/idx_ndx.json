@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-07-25 00:12 UTC",
+"as_of":"2026-07-26 00:20 UTC",
 "n":103,
 "total_reported":103,
 "unmapped_industries":[],
@@ -22,20 +22,20 @@
 "market_cap_b":4891.18
 },
 {
-"ticker":"GOOGL",
-"company":"Alphabet Inc",
-"industry":"Internet Content & Information",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":3895.96
-},
-{
 "ticker":"GOOG",
 "company":"Alphabet Inc",
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":3880.1
+"market_cap_b":3888.81
+},
+{
+"ticker":"GOOGL",
+"company":"Alphabet Inc",
+"industry":"Internet Content & Information",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":3888.81
 },
 {
 "ticker":"MSFT",
@@ -83,7 +83,7 @@
 "industry":"Auto Manufacturers",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":1175.65
+"market_cap_b":1236.33
 },
 {
 "ticker":"MU",
@@ -235,7 +235,7 @@
 "industry":"Telecom Services",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":194.89
+"market_cap_b":193.18
 },
 {
 "ticker":"STX",
@@ -467,7 +467,7 @@
 "industry":"Telecom Services",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":79.64
+"market_cap_b":79.12
 },
 {
 "ticker":"MDLZ",
@@ -483,7 +483,7 @@
 "industry":"Conglomerates",
 "sector":"Industrials",
 "country":"USA",
-"market_cap_b":77.04
+"market_cap_b":77.06
 },
 {
 "ticker":"ROST",

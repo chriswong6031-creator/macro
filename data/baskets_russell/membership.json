@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-07-25",
+ "as_of": "2026-07-26",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -206,11 +206,11 @@
      "name": "Kontoor Brands Inc"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -584,6 +584,10 @@
      "name": "Ameris Bancorp"
     },
     {
+     "ticker": "ASB",
+     "name": "Associated Banc-Corp"
+    },
+    {
      "ticker": "FLG",
      "name": "Flagstar Bank NA"
     },
@@ -594,10 +598,6 @@
     {
      "ticker": "EBC",
      "name": "Eastern Bankshares Inc"
-    },
-    {
-     "ticker": "ASB",
-     "name": "Associated Banc-Corp"
     },
     {
      "ticker": "FFIN",
@@ -2002,6 +2002,10 @@
      "name": "Gyre Therapeutics Inc"
     },
     {
+     "ticker": "RGNX",
+     "name": "Regenxbio Inc"
+    },
+    {
      "ticker": "ACHV",
      "name": "Achieve Life Sciences Inc"
     },
@@ -2028,10 +2032,6 @@
     {
      "ticker": "ALLO",
      "name": "Allogene Therapeutics Inc"
-    },
-    {
-     "ticker": "RGNX",
-     "name": "Regenxbio Inc"
     },
     {
      "ticker": "SPRY",
@@ -4640,12 +4640,12 @@
      "name": "Axogen Inc"
     },
     {
-     "ticker": "NEOG",
-     "name": "Neogen Corp"
-    },
-    {
      "ticker": "NVCR",
      "name": "NovoCure Ltd"
+    },
+    {
+     "ticker": "NEOG",
+     "name": "Neogen Corp"
     },
     {
      "ticker": "UFPT",
@@ -5404,12 +5404,12 @@
      "name": "Vox Royalty Corp"
     },
     {
-     "ticker": "GORO",
-     "name": "Goldgroup Mining Inc"
-    },
-    {
      "ticker": "LODE",
      "name": "Comstock Inc"
+    },
+    {
+     "ticker": "GORO",
+     "name": "Gold Resource Corp"
     }
    ]
   },
@@ -5422,11 +5422,11 @@
      "name": "Marzetti Co"
     },
     {
-     "ticker": "CENTA",
+     "ticker": "CENT",
      "name": "Central Garden & Pet Co"
     },
     {
-     "ticker": "CENT",
+     "ticker": "CENTA",
      "name": "Central Garden & Pet Co"
     },
     {
@@ -6132,10 +6132,6 @@
    "sector": "Consumer Cyclical",
    "members": [
     {
-     "ticker": "TMHC",
-     "name": "Taylor Morrison Home Corp"
-    },
-    {
      "ticker": "IBP",
      "name": "Installed Building Products Inc"
     },
@@ -6240,12 +6236,12 @@
      "name": "Wendy's Co"
     },
     {
-     "ticker": "BH",
-     "name": "Biglari Holdings Inc"
-    },
-    {
      "ticker": "CBRL",
      "name": "Cracker Barrel Old Country Store Inc"
+    },
+    {
+     "ticker": "BH",
+     "name": "Biglari Holdings Inc"
     },
     {
      "ticker": "PZZA",
@@ -6778,12 +6774,12 @@
      "name": "eGain Corp"
     },
     {
-     "ticker": "THRY",
-     "name": "Thryv Holdings Inc"
-    },
-    {
      "ticker": "DOMO",
      "name": "Domo Inc"
+    },
+    {
+     "ticker": "THRY",
+     "name": "Thryv Holdings Inc"
     },
     {
      "ticker": "TRAK",
@@ -7108,12 +7104,12 @@
      "name": "Resolute Holdings Management Inc"
     },
     {
-     "ticker": "KODK",
-     "name": "Eastman Kodak Co"
-    },
-    {
      "ticker": "BKSY",
      "name": "BlackSky Technology Inc"
+    },
+    {
+     "ticker": "KODK",
+     "name": "Eastman Kodak Co"
     },
     {
      "ticker": "TRNS",
@@ -7514,11 +7510,11 @@
      "name": "Liberty Latin America Ltd"
     },
     {
-     "ticker": "GLIBK",
+     "ticker": "GLIBA",
      "name": "Liberty Capital Corp"
     },
     {
-     "ticker": "GLIBA",
+     "ticker": "GLIBK",
      "name": "Liberty Capital Corp"
     },
     {
@@ -8074,10 +8070,6 @@
      "name": "Clearwater Paper Corp"
     },
     {
-     "ticker": "GORO",
-     "name": "Goldgroup Mining Inc"
-    },
-    {
      "ticker": "HDSN",
      "name": "Hudson Technologies Inc"
     },
@@ -8116,6 +8108,10 @@
     {
      "ticker": "SMID",
      "name": "Smith-Midland Corp"
+    },
+    {
+     "ticker": "GORO",
+     "name": "Gold Resource Corp"
     },
     {
      "ticker": "AMTX",
@@ -8272,11 +8268,11 @@
      "name": "EverQuote Inc"
     },
     {
-     "ticker": "GLIBK",
+     "ticker": "GLIBA",
      "name": "Liberty Capital Corp"
     },
     {
-     "ticker": "GLIBA",
+     "ticker": "GLIBK",
      "name": "Liberty Capital Corp"
     },
     {
@@ -8434,10 +8430,6 @@
      "name": "Red Rock Resorts Inc"
     },
     {
-     "ticker": "TMHC",
-     "name": "Taylor Morrison Home Corp"
-    },
-    {
      "ticker": "VSXY",
      "name": "Victoria's Secret & Co"
     },
@@ -8518,12 +8510,12 @@
      "name": "Polaris Inc"
     },
     {
-     "ticker": "GEF",
-     "name": "Greif Inc"
-    },
-    {
      "ticker": "DORM",
      "name": "Dorman Products Inc"
+    },
+    {
+     "ticker": "GEF",
+     "name": "Greif Inc"
     },
     {
      "ticker": "GPI",
@@ -8582,11 +8574,11 @@
      "name": "HNI Corp"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -8794,12 +8786,12 @@
      "name": "Dauch Corp"
     },
     {
-     "ticker": "BH",
-     "name": "Biglari Holdings Inc"
-    },
-    {
      "ticker": "CBRL",
      "name": "Cracker Barrel Old Country Store Inc"
+    },
+    {
+     "ticker": "BH",
+     "name": "Biglari Holdings Inc"
     },
     {
      "ticker": "WINA",
@@ -9224,11 +9216,11 @@
      "name": "Andersons Inc"
     },
     {
-     "ticker": "CENTA",
+     "ticker": "CENT",
      "name": "Central Garden & Pet Co"
     },
     {
-     "ticker": "CENT",
+     "ticker": "CENTA",
      "name": "Central Garden & Pet Co"
     },
     {
@@ -9876,12 +9868,16 @@
      "name": "Mercury General Corp"
     },
     {
+     "ticker": "ENVA",
+     "name": "Enova International Inc"
+    },
+    {
      "ticker": "ABCB",
      "name": "Ameris Bancorp"
     },
     {
-     "ticker": "ENVA",
-     "name": "Enova International Inc"
+     "ticker": "ASB",
+     "name": "Associated Banc-Corp"
     },
     {
      "ticker": "FLG",
@@ -9916,16 +9912,12 @@
      "name": "Sezzle Inc"
     },
     {
-     "ticker": "STEP",
-     "name": "StepStone Group Inc"
-    },
-    {
      "ticker": "RDN",
      "name": "Radian Group Inc"
     },
     {
-     "ticker": "ASB",
-     "name": "Associated Banc-Corp"
+     "ticker": "STEP",
+     "name": "StepStone Group Inc"
     },
     {
      "ticker": "CNO",
@@ -10112,12 +10104,12 @@
      "name": "Artisan Partners Asset Management Inc"
     },
     {
-     "ticker": "ARX",
-     "name": "Accelerant Holdings"
-    },
-    {
      "ticker": "PFS",
      "name": "Provident Financial Services Inc"
+    },
+    {
+     "ticker": "ARX",
+     "name": "Accelerant Holdings"
     },
     {
      "ticker": "CRVL",
@@ -11666,6 +11658,10 @@
      "name": "Aveanna Healthcare Holdings Inc"
     },
     {
+     "ticker": "NVCR",
+     "name": "NovoCure Ltd"
+    },
+    {
      "ticker": "SGRY",
      "name": "Surgery Partners Inc"
     },
@@ -11684,10 +11680,6 @@
     {
      "ticker": "HRMY",
      "name": "Harmony Biosciences Holdings Inc"
-    },
-    {
-     "ticker": "NVCR",
-     "name": "NovoCure Ltd"
     },
     {
      "ticker": "ASTH",
@@ -12202,6 +12194,10 @@
      "name": "Ceribell Inc"
     },
     {
+     "ticker": "RGNX",
+     "name": "Regenxbio Inc"
+    },
+    {
      "ticker": "PHR",
      "name": "Phreesia Inc"
     },
@@ -12240,10 +12236,6 @@
     {
      "ticker": "ALLO",
      "name": "Allogene Therapeutics Inc"
-    },
-    {
-     "ticker": "RGNX",
-     "name": "Regenxbio Inc"
     },
     {
      "ticker": "SPRY",
@@ -13256,12 +13248,12 @@
      "name": "Target Hospitality Corp"
     },
     {
-     "ticker": "RYZ",
-     "name": "Ryerson Holding Corp"
-    },
-    {
      "ticker": "DSGR",
      "name": "Distribution Solutions Group Inc"
+    },
+    {
+     "ticker": "RYZ",
+     "name": "Ryerson Holding Corp"
     },
     {
      "ticker": "WLFC",
@@ -13432,6 +13424,10 @@
      "name": "National Presto Industries Inc"
     },
     {
+     "ticker": "BKSY",
+     "name": "BlackSky Technology Inc"
+    },
+    {
      "ticker": "LMB",
      "name": "Limbach Holdings Inc"
     },
@@ -13462,10 +13458,6 @@
     {
      "ticker": "KODK",
      "name": "Eastman Kodak Co"
-    },
-    {
-     "ticker": "BKSY",
-     "name": "BlackSky Technology Inc"
     },
     {
      "ticker": "EVEX",
@@ -13934,12 +13926,12 @@
      "name": "Curbline Properties Corp"
     },
     {
-     "ticker": "LXP",
-     "name": "LXP Industrial Trust"
-    },
-    {
      "ticker": "JOE",
      "name": "St. Joe Co"
+    },
+    {
+     "ticker": "LXP",
+     "name": "LXP Industrial Trust"
     },
     {
      "ticker": "UE",
@@ -14002,16 +13994,16 @@
      "name": "Sunstone Hotel Investors Inc"
     },
     {
+     "ticker": "GTY",
+     "name": "Getty Realty Corp"
+    },
+    {
      "ticker": "LTC",
      "name": "LTC Properties Inc"
     },
     {
      "ticker": "PEB",
      "name": "Pebblebrook Hotel Trust"
-    },
-    {
-     "ticker": "GTY",
-     "name": "Getty Realty Corp"
     },
     {
      "ticker": "DEI",
@@ -14022,12 +14014,12 @@
      "name": "Smartstop Self Storage REIT Inc"
     },
     {
-     "ticker": "CCS",
-     "name": "Century Communities Inc"
-    },
-    {
      "ticker": "XHR",
      "name": "Xenia Hotels & Resorts Inc"
+    },
+    {
+     "ticker": "CCS",
+     "name": "Century Communities Inc"
     },
     {
      "ticker": "GNL",
@@ -14254,16 +14246,16 @@
      "name": "Gladstone Land Corp"
     },
     {
+     "ticker": "PINE",
+     "name": "Alpine Income Property Trust Inc"
+    },
+    {
      "ticker": "TCI",
      "name": "Transcontinental Realty Investors Inc"
     },
     {
      "ticker": "MLP",
      "name": "Maui Land & Pineapple Co Inc"
-    },
-    {
-     "ticker": "PINE",
-     "name": "Alpine Income Property Trust Inc"
     },
     {
      "ticker": "SEG",
@@ -15276,16 +15268,16 @@
      "name": "eGain Corp"
     },
     {
+     "ticker": "DOMO",
+     "name": "Domo Inc"
+    },
+    {
      "ticker": "INTT",
      "name": "Intest Corp"
     },
     {
      "ticker": "THRY",
      "name": "Thryv Holdings Inc"
-    },
-    {
-     "ticker": "DOMO",
-     "name": "Domo Inc"
     },
     {
      "ticker": "TRAK",
