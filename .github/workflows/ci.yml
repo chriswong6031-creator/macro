@@ -1077,6 +1077,24 @@ on:
       - "templates/seo_learn_index.html.j2"
       - "templates/seo_tools_index.html.j2"
       - "templates/calculators/**"
+      # Production deploy reconciliation (2026-07-26): app/deploy/update.sh decides
+      # which commits restart macro-api. A module import-cached by uvicorn but absent
+      # from its restart regex deploys to the VPS and NEVER goes live (sys.modules
+      # pins the old object) — engine/research_vault/* sat in that hole, so download
+      # caps / anti-scrape limits could ship dead with main staying green. The suite
+      # that guards this ran in ZERO workflows and update.sh matched no job here:
+      # both halves of the same #3418 hole ("a guard the guarded change cannot
+      # trigger is not a guard"). The test recomputes the API's load-time import
+      # closure, so the SOURCES it derives that closure from are listed too — a new
+      # module-level engine/lib import in an app/ router must reach the guard. The
+      # three below complete app/*.py coverage; main/billing/tape/regwall/paywall/
+      # research/support/gate/mailer already trigger above. app/__init__.py is empty
+      # and app/deploy/** holds no importable API code, so neither is listed.
+      - "app/deploy/update.sh"
+      - "tests/test_deploy_update_self_heal.py"
+      - "app/hub.py"
+      - "app/brain_runs.py"
+      - "app/tape_decode.py"
   workflow_dispatch:
 
 permissions:
@@ -3717,6 +3735,37 @@ jobs:
         run: pip install pytest fastapi httpx pyyaml
       - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
         run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py -q
+
+  deploy-reconciliation:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Production deploy reconciliation (2026-07-26): app/deploy/update.sh decides which
+    # pushed commits restart macro-api. uvicorn pins imported modules in sys.modules for
+    # the life of the process, so a module the API imports but the restart regex omits
+    # deploys to the VPS and never goes live — live in git, dead in production, with no
+    # red check anywhere. engine/research_vault/* sat in exactly that hole: a commit
+    # touching only download_quota.py (caps) or view_ratelimit.py (anti-scrape) shipped
+    # dead, and #3654 escaped only because it also touched app/research.py.
+    #
+    # tests/test_deploy_update_self_heal.py ran in ZERO workflows and update.sh matched
+    # no job's paths filter — both halves of the #3418 hole at once. The suite asserts a
+    # must-restart / must-not-restart table through the real `grep -qE` (POSIX ERE, not
+    # Python's re) and recomputes the API's load-time import closure from the AST of
+    # app/*.py, so a new module-level engine/lib import that escapes the regex fails
+    # here instead of silently freezing production behaviour.
+    #
+    # pytest only: the suite shells out to grep and parses the tree with ast — it never
+    # imports app.main, so no fastapi/httpx (and no network) is needed.
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: macro-api restart trigger covers every import-cached module
+        run: python -m pytest tests/test_deploy_update_self_heal.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
