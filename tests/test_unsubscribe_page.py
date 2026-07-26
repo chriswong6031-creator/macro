@@ -85,13 +85,30 @@ def test_the_committed_page_matches_the_template():
     from jinja2 import Environment, FileSystemLoader
 
     from engine import i18n
-    from lib.pages import inject_text
+    from lib.pages import css_imports, inject_text, optimize_assets_text, preload_css_text
     from lib.seo import SITE_BASE
+    from scripts.optimize_assets import _hash_bytes
 
     env = Environment(loader=FileSystemLoader(ROOT / "templates"), autoescape=True)
     env.filters["min"] = lambda seq: min(seq)
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip, SITE_BASE=SITE_BASE)
     fresh = inject_text(env.get_template(TEMPLATE).render(generated_utc="2026-07-26 00:00"))
+    site = (ROOT / "site").resolve()
+
+    def asset(url):
+        target = (site / url.split("?", 1)[0].split("#", 1)[0]).resolve()
+        target.relative_to(site)
+        return target
+
+    def hash_for(url):
+        target = asset(url)
+        return _hash_bytes(target) if target.is_file() else None
+
+    def imports_for(url):
+        target = asset(url)
+        return css_imports(target.read_text(encoding="utf-8")) if target.is_file() else []
+
+    fresh = preload_css_text(optimize_assets_text(fresh, hash_for), imports_for)
     shipped = (ROOT / "site" / "unsubscribe.html").read_text(encoding="utf-8")
     assert shipped == fresh, "re-run the builder and commit site/unsubscribe.html"
 
