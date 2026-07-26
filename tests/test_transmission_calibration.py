@@ -125,6 +125,30 @@ def test_hop_rate_recovered_exact(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# 2b. EPISODE COUNTING — a persistent upstream condition is ONE activation (its rising
+# edge), not one-per-bar. Guards the run-length-artifact defect (per-bar counting inflates
+# n, defeats N_FLOOR, and turns p into a run-length statistic).
+# --------------------------------------------------------------------------- #
+def test_persistent_condition_counts_episodes_not_bars():
+    idx = pd.date_range("2021-01-01", periods=60, freq="D")
+    # upstream True across two contiguous RUNS: bars 10..29 (20 bars) and 40..44 (5 bars).
+    # Per-bar counting → 25 activations; episode (rising-edge) counting → 2 (days 10 and 40).
+    fv = np.zeros(60, dtype=bool); fv[10:30] = True; fv[40:45] = True
+    from_hist = pd.Series(fv, index=idx)
+    tv = np.zeros(60, dtype=bool); tv[12] = True   # confirms the first episode only ([10,15])
+    to_hist = pd.Series(tv, index=idx)
+    flags = cal._confirm_flags(from_hist, to_hist, lag_hi=5)
+    assert len(flags) == 2                          # two episodes, NOT 25 bars
+    assert list(flags.index) == [idx[10], idx[40]]  # dated at the rising edges
+    assert bool(flags.loc[idx[10], "confirmed"]) is True    # down fired day 12 ∈ [10,15]
+    assert bool(flags.loc[idx[40], "confirmed"]) is False   # no down fire in [40,45]
+    # a single persistent run that would clear the floor on bar-count must NOT: 20 True bars → n=1
+    solo = pd.Series(np.concatenate([np.zeros(5, bool), np.ones(20, bool), np.zeros(5, bool)]),
+                     index=pd.date_range("2021-01-01", periods=30, freq="D"))
+    assert len(cal._confirm_flags(solo, pd.Series(np.zeros(30, bool), index=solo.index), 5)) == 1
+
+
+# --------------------------------------------------------------------------- #
 # 3. right-censoring — an upstream firing whose window runs past history is DROPPED
 # --------------------------------------------------------------------------- #
 def test_right_censoring_drops_unresolved_window(tmp_path):
