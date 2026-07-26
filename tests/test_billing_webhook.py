@@ -376,3 +376,57 @@ def test_different_users_are_not_serialised_against_each_other(monkeypatch):
     """The lock is per user — one customer's slow SMTP must not queue everyone else's."""
     assert billing._user_lock("a") is billing._user_lock("a")
     assert billing._user_lock("a") is not billing._user_lock("b")
+
+
+def test_the_send_happens_outside_the_per_user_lock(monkeypatch):
+    """N2 — the lock covers the DECISION, not the SMTP conversation.
+
+    mailer.send is ledger-first on a UNIQUE idem_key, so delivery needs no serialisation;
+    holding the lock across it would make the second of two events that arrive together
+    (invoice.payment_failed + customer.subscription.updated on a failed renewal) wait out
+    the first's entire send while pinning an anyio threadpool token.
+    """
+    from app import billing_emails as be
+
+    seen = {}
+
+    def _spy_deliver(outbox):
+        seen["locked_during_send"] = billing._user_lock("user_1").locked()
+        return "sent"
+
+    monkeypatch.setattr(be, "deliver", _spy_deliver)
+    monkeypatch.setattr(be, "prepare", lambda *a, **kw: "an-outbox")
+    monkeypatch.setattr(billing, "_customer_id_for_event", lambda t, o: "cus_1")
+    monkeypatch.setattr(billing, "_user_id_for_event", lambda t, o, c: "user_1")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda u, c, e: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda u: None)
+
+    billing._handle_event({"id": "evt_lk", "type": "customer.subscription.updated",
+                           "data": {"object": {"customer": "cus_1"}}})
+    assert seen["locked_during_send"] is False, "the SMTP send ran while holding the lock"
+
+
+def test_the_decision_still_happens_inside_the_lock(monkeypatch):
+    """The other half of N2: prepare() must stay serialised or the upgrade comparison
+    can straddle another event's write."""
+    from app import billing_emails as be
+
+    seen = {}
+    monkeypatch.setattr(be, "prepare",
+                        lambda *a, **kw: seen.setdefault(
+                            "locked_during_decide", billing._user_lock("user_1").locked()))
+    monkeypatch.setattr(be, "deliver", lambda outbox: None)
+    monkeypatch.setattr(billing, "_customer_id_for_event", lambda t, o: "cus_1")
+    monkeypatch.setattr(billing, "_user_id_for_event", lambda t, o, c: "user_1")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda u, c, e: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda u: None)
+
+    billing._handle_event({"id": "evt_lk2", "type": "customer.subscription.updated",
+                           "data": {"object": {"customer": "cus_1"}}})
+    assert seen["locked_during_decide"] is True

@@ -1018,10 +1018,44 @@ def test_scheduled_cancel_without_an_end_date_says_nothing():
                          ent=ENT_PRO, pre=ENT_PRO) is None
 
 
-def test_cancel_flag_wins_over_the_upgrade_comparison():
-    """A cancelling subscription is never an upgrade, whatever the tiers say."""
+def test_upgrade_wins_over_the_still_set_cancel_flag():
+    """N1 — the priority is load-bearing, and the old order lost a receipt.
+
+    Upgrading does NOT clear cancel_at_period_end, and `_live_subscription` accepts a
+    cancel-flagged sub (it is still `active`), so /api/billing/upgrade takes it and bills
+    the proration immediately. Checking cancellation first returned the scheduled-cancel
+    spec, whose idem key was claimed when they pressed cancel — the send came back
+    `duplicate` and the customer was charged with NO email at all.
+    """
     spec = be.build_spec(event("customer.subscription.updated", _cancelling_sub()),
                          ent=ENT_PRO, pre=ENT_INSIDER)
+    assert spec.template == "billing_upgrade"
+
+
+def test_cancel_then_change_your_mind_and_upgrade_still_gets_a_receipt(ledger, smtp):
+    """The end-to-end N1 regression: one subscription, cancel then upgrade, TWO emails."""
+    # 1. they press Cancel in the portal -> scheduled-cancel email
+    be.on_event(event("customer.subscription.updated", _cancelling_sub(), event_id="evt_n1a"),
+                user_id="user_1", customer_id="cus_1", ent=ENT_PRO, pre=ENT_PRO)
+    # 2. they change their mind and upgrade. The flag is STILL set on the subscription.
+    upgraded = _cancelling_sub()
+    upgraded["items"]["data"][0]["price"]["lookup_key"] = "pro_annual"
+    be.on_event(event("customer.subscription.updated", upgraded, event_id="evt_n1b"),
+                user_id="user_1", customer_id="cus_1",
+                ent=dict(ENT_PRO, plan_interval="annual"),
+                pre=dict(ENT_PRO, interval="monthly"))
+
+    templates = [r["template"] for r in ledger.inserts]
+    assert len(ledger.inserts) == 2, f"a charge with no receipt: {templates}"
+    assert "billing_cancellation_scheduled" in templates
+    assert "billing_upgrade" in templates, "the customer was charged and told nothing"
+    assert len(smtp.sent) == 2
+
+
+def test_a_plain_cancel_is_still_a_cancellation_not_an_upgrade():
+    """Inverting the order must not swallow the ordinary case: same plan, just cancelled."""
+    spec = be.build_spec(event("customer.subscription.updated", _cancelling_sub()),
+                         ent=ENT_PRO, pre=ENT_PRO)
     assert spec.template == "billing_cancellation_scheduled"
 
 
@@ -1166,3 +1200,102 @@ def test_dispatch_table_is_the_only_source_of_truth():
         "customer.subscription.created", "customer.subscription.updated",
         "invoice.payment_failed", "customer.subscription.deleted"}
     assert "checkout.session.completed" not in be._BUILDERS
+
+
+# --------------------------------------------------------------------------- #
+# 15. N3 / N5 — the switches must be honest about what they parsed
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("raw, expected", [
+    (None, True),          # unset -> ON, so receipts work the moment the relay lands
+    ("1", True), ("true", True), ("TRUE", True), ("yes", True), ("on", True),
+    ("0", False), ("false", False), ("no", False), ("off", False), ("OFF", False),
+])
+def test_billing_switch_accepts_only_explicit_values(monkeypatch, raw, expected):
+    if raw is None:
+        monkeypatch.delenv("MAIL_BILLING_ENABLED", raising=False)
+    else:
+        monkeypatch.setenv("MAIL_BILLING_ENABLED", raw)
+    assert be.billing_mail_enabled() is expected
+
+
+@pytest.mark.parametrize("typo", ["flase", "disabled", "nope", "2", "off ", "N"])
+def test_billing_kill_switch_fails_closed_on_a_typo(monkeypatch, typo):
+    """N3 — `not in _FALSY` let 'flase' leave billing mail ON. An emergency switch that
+    fails OPEN on a typo is the one outcome you cannot recover from at 3am."""
+    monkeypatch.setenv("MAIL_BILLING_ENABLED", typo)
+    assert be.billing_mail_enabled() is False
+
+
+def test_billing_switch_verdict_is_logged(monkeypatch, caplog):
+    monkeypatch.setattr(be, "_BILLING_SWITCH_LOGGED", False)
+    monkeypatch.setenv("MAIL_BILLING_ENABLED", "flase")
+    with caplog.at_level("INFO", logger="macro.billing_emails"):
+        be.billing_mail_enabled()
+    assert "flase" in caplog.text and "OFF" in caplog.text
+
+
+@pytest.mark.parametrize("raw", ["Y", "enabled", "true!", " "])
+def test_lifecycle_off_log_names_the_raw_value(monkeypatch, caplog, raw):
+    """N5 — 'not set' was a lie for a value that IS set but unrecognised, and the
+    runbook's `grep -c` would report the secret as delivered."""
+    monkeypatch.setenv("MAIL_LIFECYCLE_ENABLED", raw)
+    app = types.SimpleNamespace(add_event_handler=lambda *a: pytest.fail("must not arm"),
+                                state=types.SimpleNamespace())
+    with caplog.at_level("INFO", logger="macro.billing_emails"):
+        assert be.register_lifecycle(app) is False
+    assert "not enabled" in caplog.text
+    assert "not set" not in caplog.text
+    assert repr(raw.strip()) in caplog.text
+
+
+def test_lifecycle_off_log_distinguishes_unset(monkeypatch, caplog):
+    monkeypatch.delenv("MAIL_LIFECYCLE_ENABLED", raising=False)
+    app = types.SimpleNamespace(add_event_handler=lambda *a: pytest.fail("must not arm"),
+                                state=types.SimpleNamespace())
+    with caplog.at_level("INFO", logger="macro.billing_emails"):
+        be.register_lifecycle(app)
+    assert "not enabled" in caplog.text and "''" in caplog.text
+
+
+# --------------------------------------------------------------------------- #
+# 16. N2 — prepare/deliver split
+# --------------------------------------------------------------------------- #
+def test_prepare_is_pure_and_deliver_does_the_io(ledger, smtp):
+    ev = event("customer.subscription.created", sub_obj(**TRIAL_SUB), event_id="evt_split")
+    outbox = be.prepare(ev, user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL)
+    assert outbox is not None
+    assert outbox.idem_key == "stripe:evt_split:billing_purchase"
+    assert ledger.inserts == [] and smtp.sent == []      # deciding sends nothing
+
+    assert be.deliver(outbox) == "sent"
+    assert len(ledger.inserts) == 1 and len(smtp.sent) == 1
+
+
+def test_delivering_the_same_decision_twice_sends_once(ledger, smtp):
+    """Why the send is safe outside the lock: the ledger, not the mutex, is the guarantee."""
+    ev = event("customer.subscription.created", sub_obj(**TRIAL_SUB), event_id="evt_split2")
+    outbox = be.prepare(ev, user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL)
+    assert be.deliver(outbox) == "sent"
+    assert be.deliver(outbox) == "duplicate"
+    assert len(ledger.inserts) == 1 and len(smtp.sent) == 1
+
+
+def test_deliver_of_none_is_a_no_op(ledger, smtp):
+    assert be.deliver(None) is None
+    assert ledger.inserts == [] and smtp.sent == []
+
+
+def test_prepare_and_deliver_never_raise(monkeypatch, ledger, smtp):
+    def _boom(*a, **kw):
+        raise ValueError("bug")
+
+    monkeypatch.setattr(be, "build_spec", _boom)
+    assert be.prepare(event("customer.subscription.created", sub_obj(**TRIAL_SUB)),
+                      user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL) is None
+
+    monkeypatch.undo()
+    outbox = be.prepare(event("customer.subscription.created", sub_obj(**TRIAL_SUB),
+                              event_id="evt_dv"),
+                        user_id="user_1", customer_id="cus_1", ent=ENT_INSIDER_TRIAL)
+    monkeypatch.setattr(be, "_render", _boom)
+    assert be.deliver(outbox) is None

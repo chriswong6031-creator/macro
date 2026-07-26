@@ -245,6 +245,10 @@ def plan_name(tier: str | None) -> str:
     return t.title() if t else ""
 
 
+# TODO(SEE): move these into config/plans.yml as a `name_zh` beside each feature's `name`
+# WHEN A FOURTH FEATURE LANDS. At three keys a hand-maintained table is cheaper than a
+# schema change and the fallback below (catalog `name`, never the slug) is honest; past
+# that the table starts drifting from the catalog it mirrors.
 _FEATURE_ZH = {
     "site_full": "整站访问权限",
     "terminal_live_options": "终端实时期权数据",
@@ -991,15 +995,22 @@ def _updated_spec(sub: Any, prev: dict, ent: dict, at: datetime | None) -> Email
     """`customer.subscription.updated` is the busiest event Stripe sends — dispatch it.
 
     It fires for a plan switch, a cancellation scheduled at period end, a trial
-    converting, a card being replaced, and a dozen silent field changes. Cancellation is
-    checked FIRST because a subscription flagged ``cancel_at_period_end`` is not an
-    upgrade under any reading, and only then the upgrade comparison. Everything else
-    returns None and sends nothing.
+    converting, a card being replaced, and a dozen silent field changes.
+
+    **The UPGRADE is checked first, and the order is load-bearing.** A subscription keeps
+    ``cancel_at_period_end`` set after the customer changes their mind and upgrades:
+    ``_live_subscription`` selects ``status in ("active", "trialing")``, which includes a
+    cancel-flagged sub, so ``POST /api/billing/upgrade`` accepts it and bills the
+    proration immediately under ``always_invoice``. Checking cancellation first would
+    return the scheduled-cancel spec, whose idem key was already claimed when they
+    pressed cancel — the send would come back ``duplicate`` and the customer would be
+    charged with no receipt at all. Nothing is lost by this order: the scheduled-cancel
+    email went out when they pressed cancel, and a later unrelated update re-derives the
+    same key and stays silent.
     """
-    scheduled = spec_cancel_scheduled(sub, ent, at)
-    if scheduled is not None:
-        return scheduled
-    return spec_upgrade(sub, prev, ent, at)
+    if is_upgrade(prev, ent):
+        return spec_upgrade(sub, prev, ent, at)
+    return spec_cancel_scheduled(sub, ent, at)
 
 
 # THE dispatch table — read by build_spec, so it can never drift out of use.
@@ -1040,10 +1051,21 @@ def build_spec(event: dict, *, ent: dict, pre: dict | None) -> EmailSpec | None:
     return builder(obj, pre or {}, ent or {}, dt_from_epoch(event.get("created")))
 
 
-def _on_event(event: dict, *, user_id: str | None, customer_id: str | None,
-              ent: dict, pre: dict | None) -> str | None:
+@dataclass(frozen=True)
+class Outbox:
+    """A decided message, ready to send. The hand-off between :func:`prepare` (inside the
+    caller's per-user lock) and :func:`deliver` (outside it)."""
+    spec: EmailSpec
+    idem_key: str
+    obj: dict
+    user_id: str | None = None
+    customer_id: str | None = None
+
+
+def _prepare(event: dict, *, user_id: str | None, customer_id: str | None,
+             ent: dict, pre: dict | None) -> Outbox | None:
     if not billing_mail_enabled():
-        log.info("billing_emails: MAIL_BILLING_ENABLED=0 — %s not mailed", event.get("type"))
+        log.info("billing_emails: MAIL_BILLING_ENABLED is off — %s not mailed", event.get("type"))
         return None
     spec = build_spec(event, ent=ent, pre=pre)
     if spec is None:
@@ -1059,40 +1081,75 @@ def _on_event(event: dict, *, user_id: str | None, customer_id: str | None,
                         event.get("type"))
             return None
         idem_key = f"stripe:{event_id}:{spec.template}"
-    obj = ((event.get("data") or {}).get("object")) or {}
-    to_email = resolve_recipient(obj, customer_id, user_id)
-    if not to_email:
-        log.warning("billing_emails: no address for %s (customer=%s user=%s) — skipped",
-                    spec.template, customer_id, user_id)
+    return Outbox(spec=spec, idem_key=idem_key,
+                  obj=((event.get("data") or {}).get("object")) or {},
+                  user_id=user_id, customer_id=customer_id)
+
+
+def prepare(event: dict, *, user_id: str | None = None, customer_id: str | None = None,
+            ent: dict | None = None, pre: dict | None = None) -> Outbox | None:
+    """DECIDE what this event owes. Cheap and side-effect-free; NEVER raises.
+
+    Runs inside ``billing._handle_event``'s per-user lock, because the upgrade decision
+    is a comparison against the pre-upsert entitlement and must not straddle another
+    event's write. Everything slow — resolving the address, rendering, SMTP — is
+    :func:`deliver`'s job and happens with the lock released.
+    """
+    try:
+        return _prepare(event, user_id=user_id, customer_id=customer_id,
+                        ent=ent or {}, pre=pre)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing_emails: %s could not be prepared (%s: %s)",
+                    (event or {}).get("type"), type(exc).__name__, exc)
         return None
-    subject, html, text = _render(spec)
-    return mailer.send(
-        template=spec.template,
-        cls="transactional",           # PIN §6.7 — never suppressed, never an unsubscribe link
-        to_email=to_email,
-        subject=subject,
-        html=html,
-        text=text,
-        idem_key=idem_key,
-        user_id=user_id,
-    )
+
+
+def deliver(outbox: Outbox | None) -> str | None:
+    """SEND a prepared message. NEVER raises (G2/G7).
+
+    Safe outside the per-user lock: ``mailer.send`` is ledger-first on a UNIQUE
+    ``idem_key``, so two racing deliveries of the same decision produce one send and one
+    ``'duplicate'``. Keeping the SMTP conversation (up to ~21.5s with its retry) plus two
+    Supabase round trips out of the critical section matters because a failed renewal
+    routinely delivers ``invoice.payment_failed`` and ``customer.subscription.updated``
+    together: the second would otherwise wait out the first's entire send while holding
+    an anyio threadpool token, and that 40-token limiter is the real concurrency budget
+    of an app with ~30 sync routes.
+    """
+    if outbox is None:
+        return None
+    try:
+        to_email = resolve_recipient(outbox.obj, outbox.customer_id, outbox.user_id)
+        if not to_email:
+            log.warning("billing_emails: no address for %s (customer=%s user=%s) — skipped",
+                        outbox.spec.template, outbox.customer_id, outbox.user_id)
+            return None
+        subject, html, text = _render(outbox.spec)
+        return mailer.send(
+            template=outbox.spec.template,
+            cls="transactional",       # PIN §6.7 — never suppressed, never an unsubscribe link
+            to_email=to_email,
+            subject=subject,
+            html=html,
+            text=text,
+            idem_key=outbox.idem_key,
+            user_id=outbox.user_id,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("billing_emails: %s could not be delivered (%s: %s)",
+                    outbox.spec.template, type(exc).__name__, exc)
+        return None
 
 
 def on_event(event: dict, *, user_id: str | None = None, customer_id: str | None = None,
              ent: dict | None = None, pre: dict | None = None) -> str | None:
-    """Send the email this webhook event owes, if any. NEVER raises (G2/G7).
+    """prepare + deliver in one call. NEVER raises (G2/G7).
 
-    The webhook already wrote the entitlement row before calling us. If anything here
-    explodes — a malformed object, an unreachable Stripe, a template bug — the event must
-    still be recorded as handled, or Stripe retries it forever and the user's tier flaps.
+    The convenience form for callers with no lock to release — the webhook uses the two
+    halves separately so the send lands outside its critical section.
     """
-    try:
-        return _on_event(event, user_id=user_id, customer_id=customer_id,
-                         ent=ent or {}, pre=pre)
-    except Exception as exc:  # noqa: BLE001
-        log.warning("billing_emails: %s email failed (%s: %s)",
-                    (event or {}).get("type"), type(exc).__name__, exc)
-        return None
+    return deliver(prepare(event, user_id=user_id, customer_id=customer_id,
+                           ent=ent, pre=pre))
 
 
 # --------------------------------------------------------------------------- #
@@ -1219,6 +1276,9 @@ def lifecycle_enabled() -> bool:
     return (os.environ.get("MAIL_LIFECYCLE_ENABLED") or "").strip().lower() in _TRUTHY
 
 
+_BILLING_SWITCH_LOGGED = False
+
+
 def billing_mail_enabled() -> bool:
     """Master switch for THIS module's sends. Default ON, so receipts work the moment the
     relay lands — the operator should not have to arm two things to get a receipt.
@@ -1227,8 +1287,28 @@ def billing_mail_enabled() -> bool:
     mail: ``MAIL_BILLING_ENABLED=0`` stops every webhook receipt and the trial reminder,
     while ticket acknowledgements and operator replies (app/support.py, the admin
     console) keep flowing through the same app/mailer.py.
+
+    UNSET means ON; every other value must be on an explicit list. An unrecognised value
+    resolves to **OFF**, because this is an emergency kill switch: an operator who types
+    ``flase`` at 3am has told us they want the mail stopped, and silently leaving it on
+    is the one outcome that cannot be recovered from. The parsed verdict is logged once
+    per process so the runbook can prove which way it landed.
     """
-    return (os.environ.get("MAIL_BILLING_ENABLED") or "1").strip().lower() not in _FALSY
+    global _BILLING_SWITCH_LOGGED
+    raw = (os.environ.get("MAIL_BILLING_ENABLED") or "").strip()
+    if not raw:
+        enabled, why = True, "unset — ON (default)"
+    elif raw.lower() in _TRUTHY:
+        enabled, why = True, f"{raw!r} — ON"
+    elif raw.lower() in _FALSY:
+        enabled, why = False, f"{raw!r} — OFF"
+    else:
+        enabled, why = False, (f"{raw!r} is not a recognised value — OFF (a kill switch "
+                               f"fails closed; use one of {_TRUTHY + _FALSY})")
+    if not _BILLING_SWITCH_LOGGED:
+        _BILLING_SWITCH_LOGGED = True
+        log.info("billing_emails: MAIL_BILLING_ENABLED=%s", why)
+    return enabled
 
 
 def _lifecycle_interval() -> int:
@@ -1245,12 +1325,18 @@ def register_lifecycle(app: Any) -> bool:
     mount time: a background task that can appear mid-process is a debugging trap, and
     flipping the env is already a `systemctl restart macro-api` step in the runbook.
     """
+    # Log the billing switch here too, so both verdicts land in the startup log.
+    billing_mail_enabled()
     if not lifecycle_enabled():
-        # Log the OFF state too. A silent no-op makes "the operator chose not to arm it"
-        # and "the env never reached the droplet" look identical in journalctl, which is
-        # exactly the failure the runbook's verification step has to be able to tell
-        # apart (docs/ops/email-support-setup.md §5b).
-        log.info("billing_emails: lifecycle sweeper OFF (MAIL_LIFECYCLE_ENABLED not set)")
+        # Log the OFF state AND the raw value. A silent no-op makes "the operator chose
+        # not to arm it" and "the env never reached the droplet" look identical in
+        # journalctl, which is exactly what the runbook's verification step has to tell
+        # apart — and saying "not set" would be a lie for a value that IS set but is not
+        # on the truthy list (``Y``, ``enabled``), where the runbook's `grep -c` reports
+        # the secret as delivered (docs/ops/email-support-setup.md §5b).
+        log.info("billing_emails: lifecycle sweeper not enabled "
+                 "(MAIL_LIFECYCLE_ENABLED=%r; enable with one of %s)",
+                 (os.environ.get("MAIL_LIFECYCLE_ENABLED") or "").strip(), _TRUTHY)
         return False
     import asyncio  # noqa: PLC0415 — only needed on the armed path
 

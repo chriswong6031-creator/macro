@@ -1055,13 +1055,16 @@ def _handle_event(event: dict) -> None:
         return
     if etype in _REVOKING:
         _cancel_subscriptions(customer_id)   # chargeback → cancel so the free downgrade sticks (C1)
+    emails = _billing_emails()
+    outbox = None
     with _user_lock(user_id):
-        # An upgrade is a comparison and a failed payment has already lost its tier by
-        # the time the recompute lands, so those two events need the row as it stands
-        # NOW. The module decides which events pay that extra read; every other event
-        # costs nothing. Snapshot, recompute, upsert and mail all sit inside ONE critical
-        # section so the comparison can never straddle another event's write.
-        emails = _billing_emails()
+        # THE DECISION, serialised per user. An upgrade is a comparison against the
+        # pre-upsert row and a failed payment has already lost its tier by the time the
+        # recompute lands, so those two events need the row as it stands NOW; the
+        # snapshot, the recompute, the upsert and the decision therefore sit in ONE
+        # critical section, and the comparison can never straddle another event's write.
+        # The module decides which events pay for that extra read; every other event
+        # costs nothing.
         pre_ent = None
         if emails is not None:
             try:
@@ -1073,14 +1076,27 @@ def _handle_event(event: dict) -> None:
         _invalidate(user_id)
         log.info("billing: %s -> user %s tier=%s status=%s", etype, user_id, ent["tier"], ent["status"])
         # AFTER the entitlement write, never before: the DB row is the source of truth and
-        # mail is a side effect. on_event never raises; the second guard here covers the
-        # import boundary itself, so a broken composer cannot 5xx the webhook (SEE G2/G7).
+        # mail is a side effect. prepare() never raises; the guard here covers the import
+        # boundary itself, so a broken composer cannot 5xx the webhook (SEE G2/G7).
         if emails is not None:
             try:
-                emails.on_event(event, user_id=user_id, customer_id=customer_id,
-                                ent=ent, pre=pre_ent)
+                outbox = emails.prepare(event, user_id=user_id, customer_id=customer_id,
+                                        ent=ent, pre=pre_ent)
             except Exception as exc:  # noqa: BLE001
-                log.warning("billing: %s email hook failed (%s)", etype, type(exc).__name__)
+                log.warning("billing: %s email prepare failed (%s)", etype, type(exc).__name__)
+
+    # THE SEND, outside the lock. Resolving the address, rendering and the SMTP
+    # conversation (up to ~21.5s with its one retry) need no serialisation: mailer.send is
+    # ledger-first on a UNIQUE idem_key, so racing deliveries of the same decision produce
+    # one send and one 'duplicate'. Holding the lock across it would make the second of
+    # two events that arrive together — invoice.payment_failed and
+    # customer.subscription.updated on a failed renewal, routinely — wait out the first's
+    # entire send while pinning an anyio threadpool token.
+    if outbox is not None and emails is not None:
+        try:
+            emails.deliver(outbox)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("billing: %s email deliver failed (%s)", etype, type(exc).__name__)
 
 
 @router.post("/api/billing/webhook")

@@ -54,7 +54,7 @@ that is mail-off mode, not an error.
 | `MAIL_REPLY_TO` | no | where user replies land, e.g. `support@mastermind-x.com` |
 | `MAIL_SUPPORT_TO` | no | where NEW-ticket alerts go. Unset → no operator alert (tickets still file) |
 | `MAIL_UNSUB_SECRET` | no | HMAC key for one-click unsubscribe tokens. **Also keys the ticket IP hash** — set it: without it the stored `meta.ip_hash` is a bare SHA-256 of an IPv4, which is a 2^32 brute force, i.e. not anonymisation |
-| `MAIL_BILLING_ENABLED` | no | **default ON**, so receipts work the moment the relay lands. `0` silences billing receipts + the trial reminder **without** stopping support/ticket mail — the kill switch for a misbehaving receipt |
+| `MAIL_BILLING_ENABLED` | no | **default ON**, so receipts work the moment the relay lands. `0` silences billing receipts + the trial reminder **without** stopping support/ticket mail — the kill switch for a misbehaving receipt. Only `1/true/yes/on` and `0/false/no/off` are recognised; **anything else resolves to OFF** (a kill switch must not fail open on a typo), and the parsed verdict is logged once at startup |
 | `MAIL_LIFECYCLE_ENABLED` | no | **default OFF.** `1` arms the in-process trial-ending sweeper (§5b). Leave unset until the relay is verified — the billing receipts do not need it |
 | `MAIL_LIFECYCLE_INTERVAL_SEC` | no | sweeper wake interval, default `21600` (6h). Floor 60s. Only for a smoke test — the reminder window is 48h wide, so four wakes a day is plenty |
 | `MAIL_SITE_BASE` | no | public host used in email links, default `https://www.mastermind-x.com`. Only set this if the public host moves |
@@ -133,6 +133,7 @@ With no relay credentials the whole estate still works:
 | Operator alert | `email_log` row with `status='skipped_no_smtp'`; no send attempted |
 | Console reply | message appended, thread shows a **"not emailed"** pill, toast says so |
 | Billing webhook | `POST /api/billing/webhook` still returns **200**, entitlement still written; one `email_log` row per event at `status='skipped_no_smtp'` |
+| `MAIL_BILLING_ENABLED=0` | **NOT the same as mail-off.** The send is abandoned before the ledger is touched, so there is **no `email_log` row at all** — a suppressed receipt is invisible in the ledger, and `select status, count(*) from email_log` will not show it. The upside is that nothing is "already handled": flipping the switch back ON restores mail for every *future* event, with no rows to clean up. Only the receipts suppressed while it was off are unrecoverable |
 | Trial sweeper | ledgers every candidate as `skipped_no_smtp` — the period is then "already handled", so turning the relay on later does NOT backfill that period. This is why `MAIL_LIFECYCLE_ENABLED` stays off until the relay is verified |
 | `send()` return | `'skipped_no_smtp'` — never an exception, never a 500 at a caller |
 
@@ -181,8 +182,10 @@ currencies and dates come off the Stripe objects, plan names and the tier orderi
 gets "your plan is cancelled, you keep access until 1 Dec" on the day they press the
 button, and "your access has ended" on 1 Dec. They are different facts at different
 times. Both are keyed on the subscription (`…:cancel_sched:{date}` and `…:cancel_final`),
-so the dozens of unrelated `subscription.updated` events in between send nothing, and an
-un-cancel is silent.
+so the dozens of unrelated `subscription.updated` events in between send nothing, an
+un-cancel is silent, and so is a re-cancel that does not move the date. An upgrade taken
+*after* a cancellation is scheduled still gets its own receipt — the flag stays set on
+the subscription, so the upgrade comparison is evaluated first.
 
 **Dunning mails once per invoice, not once per retry.** Stripe emits
 `invoice.payment_failed` again for every Smart Retry, each with its own event id, so the
@@ -230,8 +233,12 @@ same period. It is **behaviour-triggered**, not a drip: no calendar chain, no fo
    | What you see | What it means |
    |---|---|
    | `lifecycle sweeper armed (every 21600s)` | armed — you are done |
-   | `lifecycle sweeper OFF (MAIL_LIFECYCLE_ENABLED not set)` | the code is deployed and the switch is off. If you meant to arm it, the secret did not land — check step 1 |
+   | `lifecycle sweeper not enabled (MAIL_LIFECYCLE_ENABLED='')` | the code is deployed and nothing was delivered. If you meant to arm it, the secret did not land — check step 1 |
+   | `lifecycle sweeper not enabled (MAIL_LIFECYCLE_ENABLED='Y')` | the secret DID land but the value is not one we accept. Use `1`/`true`/`yes`/`on` and re-run the workflow. (The `grep -c` below would have said "delivered" — this line is what tells the two apart.) |
    | **no line at all** | this build predates SEE W3, or macro-api did not restart. `systemctl restart macro-api` and look again |
+
+   The line always prints the RAW value, so an unrecognised setting is never mistaken for
+   an absent one.
 
    Belt-and-braces, confirm the value actually reached the box:
    `ssh root@<vps> "grep -c '^MAIL_LIFECYCLE_ENABLED=' /etc/macro-api.env"` → `1`.
