@@ -85,6 +85,14 @@ _DEFAULT_LINKS_ALLOWED = False                 # forbidden until week 5 (D08 R2)
 _DEFAULT_MAX_MEDIA_POSTS_PER_ACCOUNT_PER_DAY = 1   # weeks_1_2 floor (D08 R4)
 _DEFAULT_MAX_CASHTAGS_PER_POST = 3             # per-post breadth cap (D08 R3)
 _DEFAULT_MAX_NEW_FOLLOWS_PER_ACCOUNT_PER_DAY = 0   # follow churn = fastest ban trigger (D08 R7)
+# Whether a `type: signal` post (a directional call) must carry a not-financial-
+# advice / "historical, not a guarantee" / do-your-own-research anchor before it
+# clears the gate. Code default True is the safe missing-key fallback; the operator
+# may disable it via config/marketing.yml sentinel.require_signal_disclosure. This
+# is DISTINCT from the FTC / network-affiliation disclosure regime (Agentic Media
+# rev-3, #3490) — flipping it never touches the advice-lexicon guard below, which
+# always bans reckless phrasing ("guaranteed", "can't lose", "to the moon", …).
+_DEFAULT_REQUIRE_SIGNAL_DISCLOSURE = True
 
 # Financial-advice lexicon — defense-in-depth at the plan layer.
 # Some overlap with copywriter._BANNED_VOCAB is intentional (different layers).
@@ -491,6 +499,9 @@ def gate_plan(
     max_cashtags_per_post = _cap(sc, "max_cashtags_per_post", _DEFAULT_MAX_CASHTAGS_PER_POST)
     lexicon_phrases = list(_get(sc, "lexicon_phrases", _DEFAULT_LEXICON_PHRASES))
     lexicon_patterns = list(_get(sc, "lexicon_patterns", _DEFAULT_LEXICON_PATTERNS))
+    require_signal_disclosure = bool(
+        _get(sc, "require_signal_disclosure", _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE)
+    )
 
     # Per-item violation accumulator {(ai, qi): list[str]}
     violations: dict[tuple[int, int], list[str]] = defaultdict(list)
@@ -520,13 +531,18 @@ def gate_plan(
             lexicon_hits += len(hits)
 
     # --- disclosure law (signal items) ---------------------------------------
+    # Gated on sentinel.require_signal_disclosure (default True). Operator ruling
+    # 2026-07-26 sets it False in config: signal posts are NO LONGER quarantined
+    # for a missing not-advice / historical caveat. The advice-lexicon guard above
+    # (STEP 1) still bans reckless phrasing regardless of this knob.
     disclosure_hits = 0
-    for _acc_id, item, ai, qi in all_items:
-        if item.get("type") != "signal":
-            continue
-        if not _has_disclosure(_item_text(item)):
-            violations[(ai, qi)].append("missing_disclosure")
-            disclosure_hits += 1
+    if require_signal_disclosure:
+        for _acc_id, item, ai, qi in all_items:
+            if item.get("type") != "signal":
+                continue
+            if not _has_disclosure(_item_text(item)):
+                violations[(ai, qi)].append("missing_disclosure")
+                disclosure_hits += 1
 
     # --- link rule -----------------------------------------------------------
     link_re = re.compile(r"https?://|\bt\.co/", re.IGNORECASE)
@@ -880,7 +896,7 @@ def gate_plan(
             },
             "cadence": cadence_stats,
             "lexicon": {"hits": lexicon_hits},
-            "disclosure": {"hits": disclosure_hits},
+            "disclosure": {"hits": disclosure_hits, "required": require_signal_disclosure},
             "cherry_pick": cherry_pick,
             "stale_receipts": receipts_age_check,
             "kill_switch": {

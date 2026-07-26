@@ -94,6 +94,19 @@ sentinel:
   # manual-only, operator-performed. Actuator must never script follows.
   max_new_follows_per_account_per_day: 0
 
+  # Signal-post disclosure law — whether a `type: signal` post (a directional
+  # call) must carry a not-financial-advice / "historical, not a guarantee" /
+  # do-your-own-research anchor before it clears the gate (mirrors the anchor set
+  # in sentinel._has_disclosure and copywriter.validate_copy §6). The in-code
+  # default is True (safe missing-key fallback). Set False here by OPERATOR RULING
+  # 2026-07-26: signal posts are NO LONGER quarantined for a missing disclosure
+  # line. This is a deliberate compliance-posture change and is DISTINCT from the
+  # FTC / network-affiliation disclosure regime the operator struck in Agentic
+  # Media rev-3 (#3490). Reversible: set true (or delete the key) to re-enable.
+  # NOTE: the advice-lexicon guard below ("guaranteed", "can't lose", "to the
+  # moon", …) is UNAFFECTED by this knob and still bans reckless phrasing.
+  require_signal_disclosure: false
+
   # Financial-advice phrasing lexicon (word-boundary, case-insensitive).
   # Defense-in-depth at the plan layer — some overlap with copywriter._BANNED_VOCAB
   # is intentional (different seams).

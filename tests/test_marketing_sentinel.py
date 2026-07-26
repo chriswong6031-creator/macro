@@ -107,6 +107,7 @@ def _cfg(
     max_cashtag: int = 2,
     max_receipt_age: int = 7,
     disabled_accounts: list[str] | None = None,
+    require_signal_disclosure: bool = True,
 ) -> dict:
     accounts = [
         {"id": "flagship", "kind": "branded", "voice": "authoritative desk"},
@@ -125,6 +126,7 @@ def _cfg(
             "max_same_cashtag_per_account_per_day": max_cashtag,
             "max_replies_per_account_per_day": 0,
             "max_receipt_age_days": max_receipt_age,
+            "require_signal_disclosure": require_signal_disclosure,
             "lexicon_phrases": [
                 "you should buy", "guaranteed", "can't lose", "get in now",
                 "to the moon", "all-in", "price target guaranteed",
@@ -352,6 +354,59 @@ class TestDisclosure:
 
         disc_q = [q for q in report["quarantined"] if "missing_disclosure" in (q.get("reasons") or [])]
         assert len(disc_q) == 0
+
+    def test_flag_off_signal_without_disclosure_passes(self):
+        """require_signal_disclosure=False → a disclosure-less signal is NOT quarantined.
+
+        Operator ruling 2026-07-26 (config sentinel.require_signal_disclosure: false):
+        signal posts no longer need a not-advice / historical caveat to clear the gate.
+        """
+        i1 = _item("i1", "flagship", type="signal",
+                   headline="AAPL setup at 180",
+                   body="Breakout above resistance. Entry 180, T1 200.",
+                   cashtag="$AAPL", ticker="AAPL")
+        plan = _plan({"flagship": [i1]})
+
+        annotated, report = gate_plan(plan, _cfg(require_signal_disclosure=False))
+
+        disc_q = [q for q in report["quarantined"] if "missing_disclosure" in (q.get("reasons") or [])]
+        assert len(disc_q) == 0
+        assert report["checks"]["disclosure"]["required"] is False
+        assert report["checks"]["disclosure"]["hits"] == 0
+
+    def test_flag_off_lexicon_still_enforced(self):
+        """Disabling the disclosure law does NOT disable the advice-lexicon guard.
+
+        Surgical-scope guarantee: a signal post with reckless phrasing ("guaranteed")
+        is still quarantined even when require_signal_disclosure is False.
+        """
+        i1 = _item("i1", "flagship", type="signal",
+                   headline="AAPL guaranteed to run",
+                   body="Entry 180. This is guaranteed.",
+                   cashtag="$AAPL", ticker="AAPL")
+        plan = _plan({"flagship": [i1]})
+
+        annotated, report = gate_plan(plan, _cfg(require_signal_disclosure=False))
+
+        q = next((q for q in report["quarantined"] if q["id"] == "i1"), None)
+        assert q is not None
+        assert any(r.startswith("advice_lexicon:") for r in q["reasons"])
+        assert "missing_disclosure" not in q["reasons"]
+
+    def test_flag_on_by_default_still_requires_disclosure(self):
+        """Default (no config key) keeps the disclosure law ON — safe fallback."""
+        i1 = _item("i1", "flagship", type="signal",
+                   headline="AAPL setup at 180",
+                   body="Breakout above resistance. Entry 180, T1 200.",
+                   cashtag="$AAPL", ticker="AAPL")
+        plan = _plan({"flagship": [i1]})
+
+        annotated, report = gate_plan(plan, _cfg())  # default require_signal_disclosure=True
+
+        q = next((q for q in report["quarantined"] if q["id"] == "i1"), None)
+        assert q is not None
+        assert "missing_disclosure" in q["reasons"]
+        assert report["checks"]["disclosure"]["required"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -1324,6 +1379,14 @@ class TestM3ConfigDriftGuard:
         assert sc["max_receipt_age_days"] == _DEFAULT_MAX_RECEIPT_AGE_DAYS
         assert sc["links_allowed"] == _DEFAULT_LINKS_ALLOWED
         assert sc["max_cashtags_per_post"] == _DEFAULT_MAX_CASHTAGS_PER_POST
+        # Signal-disclosure law INTENTIONALLY diverges from the safe code default
+        # (True), same pattern as the unlimited caps above: the operator disabled it
+        # (ruling 2026-07-26 — signal posts are no longer quarantined for a missing
+        # not-advice caveat). The code default stays True as the missing-key fallback;
+        # config carries the live policy. Flip config back to true to re-enable.
+        from engine.marketing.sentinel import _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE
+        assert _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE is True
+        assert sc["require_signal_disclosure"] is False
 
     def test_lexicon_lists_match_in_code_defaults(self):
         """lexicon_phrases and lexicon_patterns lists equal in-code defaults exactly."""
