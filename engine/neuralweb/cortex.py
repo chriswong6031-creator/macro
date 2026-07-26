@@ -129,6 +129,8 @@ _READ_TOOLS = frozenset({
     # without cortex schemas (pre-existing red on test_ask_whitelist_schema_consistency)
     "read_liquidity_plumbing",
     "read_china_decision_packet",
+    # China flows: committed Tushare plane (per-name/sector 主力资金, margin, broker picks)
+    "read_china_flows",
     # CHF W5: read-only causal mechanism cards + screened edges + null count
     "read_causal_candidates",
     # ADB-W3: read-only master_brain thesis ledger + track record summary
@@ -998,6 +1000,12 @@ def _tool_read_china_decision_packet_cx(root: Path, params: dict) -> dict:
     return _f(root, params)
 
 
+def _tool_read_china_flows_cx(root: Path, params: dict) -> dict:
+    """Read the committed-Tushare China flows packet (delegates to ask_brain)."""
+    from engine.neuralweb.ask_brain import _tool_read_china_flows as _f  # noqa: PLC0415
+    return _f(root, params)
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -1574,6 +1582,8 @@ def dispatch_tool(
         return _tool_read_liquidity_plumbing_cx(root, tool_params)
     elif tool_name == "read_china_decision_packet":
         return _tool_read_china_decision_packet_cx(root, tool_params)
+    elif tool_name == "read_china_flows":
+        return _tool_read_china_flows_cx(root, tool_params)
     elif tool_name == "read_causal_candidates":
         # CHF W5: read causal mechanism cards + screened edges + null count
         return _tool_read_causal_candidates(root, tool_params)
@@ -1952,6 +1962,34 @@ def _tool_schemas() -> list[dict]:
                 "Fails open when absent."
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "read_china_flows",
+            "description": (
+                "A-share money flow from the committed nightly Tushare snapshot: top "
+                "per-name main-force net inflow/outflow (主力资金 = 超大单+大单), 东财 "
+                "industry and concept board flow, per-name margin financing stretch, and "
+                "the monthly 券商金股 broker-pick tally. Use for questions like 'which "
+                "A-shares have the strongest institutional money flow' or "
+                "'哪些A股主力资金流入最多'. "
+                "NOT LIVE — this is last night's committed snapshot; every block carries "
+                "its own as_of date and lag_days, and you MUST state the as_of date in the "
+                "answer rather than implying real-time data. Note the units differ per "
+                "block (per-name flow is in 万元, sector flow is in CNY) and that the "
+                "margin block is a LEVEL (percentile), not a day-over-day change. "
+                "Context/display only: it may never originate, score, rank, or escalate a "
+                "signal. Fails open when the plane is absent."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "top_n": {
+                        "type": "integer",
+                        "description": "Rows per list (1-12, default 10).",
+                    },
+                },
+                "required": [],
+            },
         },
         # --- W4 context scanner: context candidates + risk lens (R-CI11) ---
         {

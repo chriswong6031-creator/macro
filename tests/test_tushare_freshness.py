@@ -79,6 +79,63 @@ def test_staleness_badge_states():
     assert tf.staleness_badge("nonexistent_table_xyz", ref=ref)["state"] == "dead"
 
 
+# ---- silent-freeze guard regressions --------------------------------------- #
+# The guard that reports a frozen Tushare feed had itself been silently frozen: on
+# pandas >= 3 `Timestamp.utcnow()` is tz-AWARE while frame_asof() returns tz-NAIVE, so
+# staleness_badge() raised TypeError for every PRESENT table. build_china_library caught
+# that in its own try/except ("tushare health registration failed"), so run_status never
+# carried a `tushare` block and the STALE/DEAD warning could never fire.
+#
+# The pre-existing test above missed it because "nonexistent_table_xyz" returns at the
+# `asof is None` early exit — the ONE branch that never reaches the subtraction — and it
+# passed an explicit tz-naive `ref`, which is not what production uses. These tests use a
+# REAL table and the production default (ref=None).
+
+def _write_table(tmp_path, table: str, trade_date: str) -> None:
+    """Write a minimal Tushare-shaped parquet into a temp data dir."""
+    d = tmp_path / "tushare"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"ticker": ["600519.SS", "000001.SZ"],
+                  "net_amount": [1.0, -1.0],
+                  "trade_date": [trade_date, trade_date]}).to_parquet(d / f"{table}.parquet",
+                                                                     index=False)
+
+
+def test_staleness_badge_present_table_does_not_raise(monkeypatch, tmp_path):
+    """REGRESSION: a PRESENT table with the production default ref (None) must not raise.
+
+    This is the exact call build_china_library makes; it raised TypeError before the fix."""
+    monkeypatch.setattr(tf.config, "data_dir", lambda: tmp_path)
+    _write_table(tmp_path, "moneyflow", pd.Timestamp.now("UTC").strftime("%Y%m%d"))
+    badge = tf.staleness_badge("moneyflow", expected_cadence_days=1)   # ref=None on purpose
+    assert badge["asof"] is not None, "a present, dated table must report an asof"
+    assert badge["lag_days"] is not None
+    assert badge["state"] == "fresh"
+
+
+def test_staleness_badge_flags_ten_day_stale_feed(monkeypatch, tmp_path):
+    """REGRESSION: a feed 10 days stale must be flagged, not read as fresh.
+
+    This is the assertion that would have caught a money-flow feed going 10 days stale."""
+    monkeypatch.setattr(tf.config, "data_dir", lambda: tmp_path)
+    ref = pd.Timestamp("2026-07-26")
+    _write_table(tmp_path, "moneyflow", "20260716")          # 10 days behind ref
+    badge = tf.staleness_badge("moneyflow", expected_cadence_days=1, ref=ref)
+    assert badge["asof"] == "2026-07-16"
+    assert badge["lag_days"] == 10
+    assert badge["state"] in ("stale", "dead"), \
+        f"a 10-day-stale daily feed must not read {badge['state']!r}"
+
+
+def test_staleness_badge_tz_aware_ref_is_accepted(monkeypatch, tmp_path):
+    """A tz-AWARE ref must be normalised, not raise — the shape production passes."""
+    monkeypatch.setattr(tf.config, "data_dir", lambda: tmp_path)
+    _write_table(tmp_path, "valuation", "20260716")
+    badge = tf.staleness_badge("valuation", expected_cadence_days=1,
+                               ref=pd.Timestamp("2026-07-26", tz="UTC"))
+    assert badge["lag_days"] == 10 and badge["state"] in ("stale", "dead")
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-q"]))

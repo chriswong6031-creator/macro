@@ -1508,9 +1508,11 @@
      handler, finds `retracted` already set and does nothing), and it only ever removes
      nodes THIS turn created: a replayed turn (regenerate / retry / resumed run) owns no
      user row, so its question stays exactly where it was. */
+  var retractedAt = 0;   /* when the last retract landed — see the send-button click guard */
   function retractTurn(T) {
     if (!T || T.retracted) return;
     T.retracted = true;
+    retractedAt = Date.now();
     if (T.stream) { try { T.stream.cancel(); } catch (e) {} }   /* drop the caret + any pending rAF */
     thinkTeardown(T.tl);                                        /* belt and braces: never leak the 1s clock */
     dropRow(T.typing);
@@ -1901,8 +1903,14 @@
   window.addEventListener('mm:lang', relabel);
   if (launch) launch.addEventListener('click', open);
   scrim.addEventListener('click', close);
-  /* Send button doubles as Stop mid-stream (the arrow morphs to a square). */
-  sendBtn.addEventListener('click', function () { if (streaming) stopStream(); else send(); });
+  /* Send button doubles as Stop mid-stream (the arrow morphs to a square). A retract
+     flips it straight back to Send with the prompt reloaded, so the SECOND half of an
+     impatient double-click would otherwise re-send what the first half took back. */
+  sendBtn.addEventListener('click', function () {
+    if (streaming) { stopStream(); return; }
+    if (Date.now() - retractedAt < 400) return;   /* the tail of a double-click on Stop */
+    send();
+  });
   ta.addEventListener('input', function () { autosize(); syncSend(); updateCounter(); slashSync(); saveDraft(); });
   /* ── composer keys ───────────────────────────────────────────────────────────
      Enter writes a NEW LINE (operator order: the box is for multi-line prompts first);
@@ -1987,7 +1995,7 @@
     sendBtn.disabled = (!ta.value.trim() && !pendingImages.length) || streaming;
     /* the ⌘↵ hint shows exactly while there is something to send — which is also the
        moment a user is about to press Enter and expect it to go. */
-    if (boxEl) boxEl.classList.toggle('mmb-typing', !!ta.value.trim() && !streaming);
+    if (boxEl) boxEl.classList.toggle('mmb-typing', !sendBtn.disabled);
   }
 
   /* ── voice (best-effort Web Speech) ── */

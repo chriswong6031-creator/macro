@@ -54,6 +54,19 @@ def _scol(df: pd.DataFrame, name: str) -> pd.Series:
     return df[name].fillna(0) if name in df.columns else pd.Series(0.0, index=df.index)
 
 
+def _committed_through() -> str:
+    """Data-through date of the parquet already on disk, for the loud-failure log line.
+
+    Best-effort and never raises — this only ever decorates a warning message."""
+    try:
+        if not OUT.exists():
+            return "absent"
+        s = pd.read_parquet(OUT, columns=["trade_date"])["trade_date"]
+        return str(s.max()) if len(s) else "empty"
+    except Exception:  # noqa: BLE001 — a decoration must never mask the real failure
+        return "unreadable"
+
+
 def refresh() -> int:
     if not tc.enabled():
         return 0
@@ -66,7 +79,15 @@ def refresh() -> int:
             pass
     df, trade_date = tc.snapshot_by_date("moneyflow_dc", fields=_FIELDS)
     if df is None or df.empty:
-        log.warning("tushare moneyflow: no moneyflow_dc snapshot")
+        # LOUD fail-soft: name the ENDPOINT and the consequence (the committed plane stops
+        # advancing) on one line, so a multi-day freeze is greppable instead of silent.
+        # tushare_client.query() has already logged the vendor's own code/msg immediately
+        # above this — 40101 = bad/rotated token, 40203 = rate-limit, 40203+权限 = not
+        # entitled. Still returns 0 and never raises: a dead feed must not break the build.
+        log.warning("tushare moneyflow: endpoint moneyflow_dc returned no snapshot — %s NOT "
+                    "advanced, committed plane still through %s. See the tushare_client "
+                    "warning above for the vendor code (40101=bad/rotated token, "
+                    "40203=rate-limit/entitlement).", OUT.name, _committed_through())
         return 0
     _num_cols(df, ["pct_change", "close", "net_amount", "net_amount_rate",
                    "buy_elg_amount", "buy_elg_amount_rate", "buy_lg_amount", "buy_lg_amount_rate"])
@@ -113,6 +134,12 @@ def refresh() -> int:
                          OUT_SECTOR_HIST, today)
             except Exception as se:  # noqa: BLE001 — history is telemetry, never fatal
                 log.warning("tushare moneyflow: sector history append failed (%s)", se)
+        else:
+            # Was a SILENT skip: an empty moneyflow_ind_dc left the sector radar frozen with
+            # nothing in the log at all. Loud fail-soft — the per-name leg above still stands.
+            log.warning("tushare moneyflow: endpoint moneyflow_ind_dc returned no snapshot — "
+                        "%s NOT advanced (sector radar keeps its previous rows)",
+                        OUT_SECTOR.name)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("tushare moneyflow sector skipped (%s)", e)
     return len(out)
