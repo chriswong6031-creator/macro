@@ -6,13 +6,21 @@ Four test groups (matching the spec):
   3. Loop PR touching non-immutable path → allowed
   4. Unclassifiable input → BLOCKED (fail-closed)
 
-Plus selftest.
+Plus selftest, and group 7: the ci.yml *live check* shell itself, which the
+Python `check()` above never exercised.
 """
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import pytest
+import yaml
 
 from scripts.check_self_mod_fence import check, selftest, IMMUTABLE_PATTERNS, LOOP_BRANCH_PREFIXES
+from scripts.run_ci_pack import render_command
 
 
 # ── 1. Loop PR + immutable path → BLOCKED ────────────────────────────────────
@@ -247,3 +255,218 @@ def test_loop_branch_prefixes_are_defined():
     assert LOOP_BRANCH_PREFIXES, "LOOP_BRANCH_PREFIXES must be non-empty"
     assert "metabolism/" in LOOP_BRANCH_PREFIXES
     assert any("loop-" in p for p in LOOP_BRANCH_PREFIXES)
+
+
+# ── 7. The ci.yml live-check SHELL (not just the Python fence) ────────────────
+#
+# Everything above tests check_self_mod_fence.check().  The step that actually
+# runs in CI is a bash block in .github/workflows/ci.yml, and that block owns a
+# decision `check()` never sees: what to do when the changed-file list comes back
+# EMPTY.  R-AUT-5 says an undeterminable diff must BLOCK — but on
+# `workflow_dispatch --ref main` (the ship-loop guard's E1 unblock lever,
+# CLAUDE.md) HEAD *is* origin/main, so `git diff origin/main...HEAD` is empty by
+# construction and the fail-closed arm redded every dispatch run.  That made the
+# only documented way to clear a base-side red pinned onto an already-merged PR
+# unsatisfiable (observed runs 30207008917 / 30209369270 / 30210445220,
+# 2026-07-26); #3697 added the dispatch arm but shipped it with no test.
+#
+# These tests execute the REAL step text from ci.yml, rendered through the REAL
+# production renderer (run_ci_pack.render_command — the packs are what actually
+# run, every legacy job carries `if: ${{ false }}`), against synthetic git
+# repositories.  Both directions are pinned: the lever must pass, and every other
+# empty-diff shape must still block.
+
+LIVE_CHECK_STEP = "self-mod-fence live check (loop PR + immutable → BLOCKED)"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _fence_step_run(workflow_relpath: str, step_name: str) -> dict:
+    """Return the named self-mod-fence step, failing loudly if it moved.
+
+    A renamed or deleted step must break these tests rather than silently
+    reducing them to a no-op — the guard has to fail when its subject vanishes.
+    """
+    payload = yaml.safe_load((REPO_ROOT / workflow_relpath).read_text())
+    steps = payload["jobs"]["self-mod-fence"]["steps"]
+    for step in steps:
+        if str(step.get("name", "")) == step_name:
+            return step
+    raise AssertionError(
+        f"{workflow_relpath}: self-mod-fence has no step named {step_name!r} "
+        f"(found: {[s.get('name') for s in steps]}). Update this test with the "
+        "step so the live check keeps its coverage."
+    )
+
+
+def _git(*args: str, cwd: Path) -> str:
+    result = subprocess.run(
+        ["git", *args], cwd=cwd, check=True, capture_output=True, text=True
+    )
+    return result.stdout.strip()
+
+
+def _seed_repo(tmp_path: Path) -> Path:
+    """A throwaway origin + clone: one commit on main, fence script in place."""
+    origin = tmp_path / "origin.git"
+    subprocess.run(
+        ["git", "init", "--bare", "-b", "main", str(origin)],
+        check=True, capture_output=True,
+    )
+    work = tmp_path / "work"
+    subprocess.run(
+        ["git", "clone", str(origin), str(work)], check=True, capture_output=True
+    )
+    hooks = tmp_path / "nohooks"
+    hooks.mkdir()
+    for key, value in (
+        ("user.email", "fence-test@example.invalid"),
+        ("user.name", "fence test"),
+        ("commit.gpgsign", "false"),
+        ("core.hooksPath", str(hooks)),
+    ):
+        _git("config", key, value, cwd=work)
+
+    (work / "scripts").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        REPO_ROOT / "scripts/check_self_mod_fence.py",
+        work / "scripts/check_self_mod_fence.py",
+    )
+    (work / "README.md").write_text("base\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "base", cwd=work)
+    _git("push", "origin", "main", cwd=work)
+    return work
+
+
+def _run_live_check(
+    work: Path, *, event: str, head_ref: str, base_ref: str = "main"
+) -> subprocess.CompletedProcess:
+    """Render the ci.yml step exactly as ci-pack does, then run it."""
+    command = render_command(
+        str(_fence_step_run(".github/workflows/ci.yml", LIVE_CHECK_STEP)["run"]),
+        base_ref=base_ref,
+        head_ref=head_ref,
+    )
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GITHUB_EVENT_NAME"] = event
+    # ci-pack runs every legacy step through this exact interpreter invocation.
+    return subprocess.run(
+        ["bash", "-eo", "pipefail", "-c", command],
+        cwd=work, env=env, capture_output=True, text=True,
+    )
+
+
+def test_live_check_passes_workflow_dispatch_on_main(tmp_path):
+    """`gh workflow run ci.yml --ref main` must PASS, not fail closed.
+
+    This is the E1 unblock lever CLAUDE.md documents. HEAD is origin/main, so the
+    three-dot diff is empty by construction; before #3697 that hit the
+    fail-closed arm and the lever could never produce a green run.
+    """
+    work = _seed_repo(tmp_path)
+    result = _run_live_check(work, event="workflow_dispatch", head_ref="")
+    assert result.returncode == 0, (
+        "dispatch-on-main must pass the live check — the E1 lever is "
+        f"unsatisfiable otherwise.\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "zero changes to classify" in result.stdout
+
+
+def test_live_check_passes_dispatch_when_main_advanced_past_head(tmp_path):
+    """The arm tests ancestry, not tip equality, so a moving main stays green.
+
+    main can advance between the dispatch checkout and this step (it is a busy
+    shared branch); HEAD is then a strict ancestor and the diff is still
+    verified-empty.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "advance", cwd=work)
+    (work / "later.txt").write_text("later\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "main advances after checkout", cwd=work)
+    _git("push", "origin", "advance:main", cwd=work)
+    _git("checkout", "main", cwd=work)  # HEAD = the older commit
+
+    result = _run_live_check(work, event="workflow_dispatch", head_ref="")
+    assert result.returncode == 0, (
+        "HEAD strictly behind origin/main is still verified-empty.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "zero changes to classify" in result.stdout
+
+
+def test_live_check_blocks_pull_request_with_empty_diff(tmp_path):
+    """R-AUT-5 fail-closed stays intact: a PR whose diff is empty is BLOCKED.
+
+    The dispatch arm must not widen into "any empty diff passes" — a fence that
+    errors open is worse than no fence.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/loop-no-commits", cwd=work)
+
+    result = _run_live_check(
+        work, event="pull_request", head_ref="claude/loop-no-commits"
+    )
+    assert result.returncode == 1, (
+        "an empty-diff PR must still fail closed.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "fail-closed" in result.stderr
+
+
+def test_live_check_blocks_dispatch_whose_head_is_not_on_main(tmp_path):
+    """The ancestry probe is load-bearing — the event name alone must not pass.
+
+    A dispatched ref that is NOT on main can still produce an empty three-dot
+    diff (a sibling commit whose tree matches the merge base). That diff is not
+    verified-empty, so it must block.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "sibling", cwd=work)
+    _git("commit", "--allow-empty", "-m", "sibling commit, no tree change", cwd=work)
+    _git("checkout", "main", cwd=work)
+    _git("commit", "--allow-empty", "-m", "main diverges", cwd=work)
+    _git("push", "origin", "main", cwd=work)
+    _git("checkout", "sibling", cwd=work)
+
+    result = _run_live_check(work, event="workflow_dispatch", head_ref="")
+    assert result.returncode == 1, (
+        "a dispatched HEAD that is not an ancestor of main is not "
+        f"verified-empty.\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "fail-closed" in result.stderr
+
+
+def test_live_check_still_blocks_loop_pr_touching_immutable(tmp_path):
+    """End-to-end: the shell still reaches the Python fence and blocks."""
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "metabolism/self-edit", cwd=work)
+    (work / ".github/workflows").mkdir(parents=True, exist_ok=True)
+    (work / ".github/workflows/ci.yml").write_text("jobs: {}\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "loop edits an immutable path", cwd=work)
+
+    result = _run_live_check(
+        work, event="pull_request", head_ref="metabolism/self-edit"
+    )
+    assert result.returncode != 0, (
+        "loop branch + immutable path must stay BLOCKED.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "BLOCKED" in result.stderr
+
+
+def test_fences_workflow_live_check_is_pull_request_only():
+    """The fences.yml twin has no dispatch arm — its `if:` is what keeps it sound.
+
+    fences.yml carries a second copy of this shell without the dispatch arm, and
+    it also fires on `push: main` where the diff is likewise empty. It survives
+    only because the step is gated to pull_request events. Dropping that gate
+    reintroduces this exact red on every push to main.
+    """
+    step = _fence_step_run(".github/workflows/fences.yml", LIVE_CHECK_STEP)
+    condition = str(step.get("if", ""))
+    assert "pull_request" in condition and "github.event_name" in condition, (
+        "fences.yml's live check must stay gated to pull_request events (or grow "
+        f"the same verified-empty dispatch arm ci.yml has). Found if: {condition!r}"
+    )
