@@ -41,6 +41,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -338,7 +339,15 @@ def compute_enb(
 
 
 def _append_log(payload: dict) -> None:
-    """Append one row per day to data/foresight/enb_log.jsonl (deduped by date)."""
+    """Append one row per day to data/foresight/enb_log.jsonl (deduped by date).
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    Off-lane, load_cluster_membership() finds no row for today and falls back to the
+    most recent LOGGED row, so cluster consumers still see committed-state clusters.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("foresight_enb._append_log: skipped (COLLECT_LANE != nightly)")
+        return
     d = config.data_dir() / "foresight"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "enb_log.jsonl"

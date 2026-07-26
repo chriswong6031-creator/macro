@@ -702,7 +702,7 @@
         <p>{{ analyst.regime_read }}</p>
         {% for th in analyst.theses %}
         <div class="fx-ai-th">
-          <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span> — {{ th.mechanism }}</div>
+          <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span>{% if th.mechanism %} — {{ th.mechanism }}{% endif %}</div>
           {% if th.non_obvious %}<div class="fx-ai-no">{{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
           {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('breaks if', '失效条件') }}: {% for k in th.kill_criteria %}{% if k is string %}<span class="fx-kc">{{ k }}</span>{% endif %}{% endfor %}</div>{% endif %}
         </div>

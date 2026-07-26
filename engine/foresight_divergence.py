@@ -31,6 +31,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -231,7 +232,15 @@ def _append_divergence_ledger(
     PIT member snapshot: tickers come from config at call time.
 
     Returns number of rows appended.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    Off-lane this returns 0 without touching the file; the board itself still renders
+    (it is computed from the cascade + activity, not from the ledger).
     """
+    if not _ledger_advance_enabled():
+        log.debug("foresight_divergence._append_divergence_ledger: skipped "
+                  "(COLLECT_LANE != nightly)")
+        return 0
     d = (Path(root) if root else config.data_dir()) / "foresight"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "divergence_log.jsonl"

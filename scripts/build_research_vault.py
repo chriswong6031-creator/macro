@@ -235,16 +235,22 @@ def build() -> Path:
         from scripts import build_research_pages
         n_pages = build_research_pages.build(catalog)
         if (catalog.get("items") or []) and not n_pages:
-            log.warning("::warning title=research_pages::catalog has %d items but ZERO "
-                        "report pages were written — /research/ SEO pages missing/stale",
+            log.warning("catalog has %d items but ZERO report pages were written",
                         len(catalog["items"]))
+            # Bare print, NOT log.warning: GitHub Actions parses a workflow command only
+            # when the emitted line STARTS with "::warning". This module logs with
+            # format "%(levelname)s %(message)s", so log.warning("::warning ...") emits
+            # "WARNING ::warning ..." and the annotation is silently dropped.
+            print(f"::warning title=research_pages::catalog has "
+                  f"{len(catalog['items'])} items but ZERO report pages were written — "
+                  f"/research/ SEO pages missing/stale", flush=True)
     except Exception as exc:  # noqa: BLE001 — SEO pages must not break the vault build
         # Fail-soft by law (the vault page ships even if the SEO pages break) but LOUD:
         # full traceback into the builder log + a one-line ::warning that surfaces in
         # the Actions annotations even at rc=0.
         log.warning("research report pages build failed (non-fatal): %s", exc, exc_info=True)
-        log.warning("::warning title=research_pages::report pages build failed "
-                    "(non-fatal, vault page unaffected): %s: %s", type(exc).__name__, exc)
+        print(f"::warning title=research_pages::report pages build failed "
+              f"(non-fatal, vault page unaffected): {type(exc).__name__}: {exc}", flush=True)
     return out
 
 

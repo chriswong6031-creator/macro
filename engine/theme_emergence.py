@@ -26,6 +26,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -189,7 +190,13 @@ def compute_theme_emergence(write_ledger: bool = True,
 
 def _append_ledger(payload: dict) -> None:
     """Append-only forward-grading ledger: one row per (sic, asof) candidate cluster —
-    graded forward (did the untracked-filer basket outperform SPY / eventually re-rate?)."""
+    graded forward (did the untracked-filer basket outperform SPY / eventually re-rate?).
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("theme_emergence._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     d = config.data_dir() / "theme_emergence"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"

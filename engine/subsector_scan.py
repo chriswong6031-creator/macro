@@ -28,6 +28,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -178,7 +179,13 @@ def compute_subsector_scan(write_ledger: bool = True) -> dict | None:
 def _append_ledger(payload: dict, rows: list[dict]) -> None:
     """Append-only forward-grading ledger: one row per (sub_industry, asof) for a
     scarcity-aligned PRECIPICE/BROADENING subsector — graded forward (did the subsector
-    basket outperform?). Deduped."""
+    basket outperform?). Deduped.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("subsector_scan._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     d = config.data_dir() / "subsector_scan"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"
