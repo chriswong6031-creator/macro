@@ -38,6 +38,28 @@ def _ledger_stats(path: Path, repo: Path) -> dict:
     }
 
 
+def _source_fingerprints(repo: Path) -> dict:
+    """sha256 of each LIVE-SNAPSHOT source the spine rebuilds from.
+
+    The research-vault catalog is committed HOURLY by its own lane, so the
+    committed events.jsonl is only byte-reproducible against the exact catalog
+    vintage it was built from. Recording that vintage here lets the CI
+    reproducibility gate distinguish "store is genuinely broken" from "the
+    catalog advanced past the store's build" (expected between regen commits).
+    Fail-soft: an absent/unreadable source records null, never raises.
+    """
+    out: dict[str, str | None] = {}
+    catalog = repo / "data" / "research_vault" / "catalog.json"
+    try:
+        out["research_vault_catalog"] = (
+            "sha256:" + hashlib.sha256(catalog.read_bytes()).hexdigest()
+            if catalog.exists() else None
+        )
+    except Exception:  # noqa: BLE001
+        out["research_vault_catalog"] = None
+    return out
+
+
 def build_manifest(
     *,
     repo: Path,
@@ -69,6 +91,7 @@ def build_manifest(
             "events": _ledger_stats(events_path, repo),
             "state_log": _ledger_stats(state_log_path, repo),
         },
+        "source_fingerprints": _source_fingerprints(repo),
         "gap_notes": gap_notes,
         "elapsed_s": round(float(elapsed_s), 3),
     }
