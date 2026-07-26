@@ -318,9 +318,33 @@
   // not (it is light-only), so its html[data-theme] — which the Preferences step
   // writes — must never darken the sheet there.
   function hostThemed() { try { return !!document.querySelector('link[href*="theme.css"]'); } catch (e) { return false; } }
+  // What the page ACTUALLY looks like, not what it says it is: html[data-theme]
+  // is the fast path, but a dark-by-default page carries no attribute until
+  // theme.js boots (and the render lane can rename stylesheets out from under a
+  // link-based check). The rendered background is the fact we care about — we
+  // are covering it — so fall back to its luminance.
+  function pageIsDark() {
+    try {
+      var nodes = [document.body, document.documentElement];
+      for (var i = 0; i < nodes.length; i++) {
+        if (!nodes[i]) continue;
+        var m = /rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/.exec(getComputedStyle(nodes[i]).backgroundColor || "");
+        if (!m) continue;
+        if (m[4] !== undefined && parseFloat(m[4]) === 0) continue;   // transparent → ask the parent
+        var lum = (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) / 255;
+        return lum < 0.45;
+      }
+    } catch (e) {}
+    return false;
+  }
   function hostSkin() {
-    if (!hostThemed()) return "light";
-    try { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; } catch (e) { return "light"; }
+    if (!hostThemed()) return "light";           // the landing is light-only by design
+    try {
+      var attr = document.documentElement.getAttribute("data-theme");
+      if (attr === "dark") return "dark";
+      if (attr === "light") return "light";
+    } catch (e) {}
+    return pageIsDark() ? "dark" : "light";
   }
   function syncSkin() {
     if (!el.scrim) return;
@@ -2061,7 +2085,23 @@
   // The sheet is SITE-WIDE: theme.js lazy-loads onboard.js on any www page when an
   // auth entry is clicked. Such pages have neither onboard.css nor the landing's
   // display fonts — self-provision both, idempotently, before first build.
-  function _pfx() { return location.pathname.indexOf("/sectors/") > -1 ? "../" : ""; }
+  // Site-root prefix, derived from our OWN (or theme.js's) <script src> — correct
+  // at ANY depth and under subpath hosting. The old "/sectors/"-only check made
+  // every other one-level-deep page (/learn/, /tools/, /stocks/, /blog/) request
+  // `<dir>/onboard.css`, which 404s: the sheet opened completely unstyled there,
+  // and loginDest() pointed at `<dir>/start.html`. Same technique theme.js already
+  // uses for its watchlist link.
+  function _pfx() {
+    try {
+      var s = document.querySelector('script[src$="onboard.js"],script[src*="onboard.js?"],script[src$="theme.js"],script[src*="theme.js?"]');
+      if (s) {
+        var src = s.getAttribute("src") || "";
+        var pfx = src.replace(/(?:onboard|theme)\.js(?:\?.*)?$/, "");
+        if (pfx !== src) return pfx;
+      }
+    } catch (e) {}
+    return location.pathname.indexOf("/sectors/") > -1 ? "../" : "";
+  }
   function ensureAssets() {
     if (!document.querySelector('link[href*="onboard.css"]')) {
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = _pfx() + "onboard.css";

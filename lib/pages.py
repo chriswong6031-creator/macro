@@ -39,6 +39,10 @@ _SRC_ATTR_RE = re.compile(r'\b(src|href)\s*=\s*"([^"]*)"', re.IGNORECASE)
 _HAS_DEFER_ASYNC_RE = re.compile(r"\b(defer|async)\b", re.IGNORECASE)
 _MODULE_RE = re.compile(r'\btype\s*=\s*"module"', re.IGNORECASE)
 _SCHEME_RE = re.compile(r"[a-zA-Z][\w+.-]*:")  # http:, https:, data:, mailto: ...
+# Our OWN stamp, and only ours: `?v=<8 lowercase hex>` with nothing else in the
+# query. A ref wearing this is re-hashed when the file behind it changed; any
+# other query (a hand-written ?v=3, ?foo=bar, a fragment) is still left alone.
+_OUR_STAMP_RE = re.compile(r"^([^?#]+)\?v=[0-9a-f]{8}$")
 
 
 def _is_local_asset(url: str) -> bool:
@@ -57,10 +61,18 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
         are ``async``/``type=module`` or the data-base shim (``data-dbase``),
         which must stay blocking at the top of <head> before any fetch.
 
-    Idempotent: a ref that already carries a query (manual ``?v=N`` or a prior
-    run) is left untouched, and ``defer``/``async`` scripts are not re-marked.
+    Stable, not frozen: a ref already wearing OUR stamp (``?v=<8 hex>`` and
+    nothing else) is RE-hashed, so a re-run after the file changed yields the new
+    URL. Re-running against unchanged files is still a no-op, and ``defer``/
+    ``async`` scripts are not re-marked. Any other query (a hand-written
+    ``?v=3``, ``?foo=bar``) or a fragment is left exactly as authored.
     ``hash_for`` returns ``None`` when the asset can't be hashed (missing on
-    disk) — the ref is then left unversioned but a script still gets ``defer``.
+    disk) — the ref is then left as-is but a script still gets ``defer``.
+
+    Re-stamping is the whole point at the edge: ``app/deploy/Caddyfile`` serves
+    versioned requests ``immutable, max-age=1y``, so a stamp that never moves
+    pins every returning visitor to the bytes that file had when the page was
+    first rendered.
     """
     def _rewrite(m: "re.Match[str]") -> str:
         kind = m.group(1).lower()
@@ -75,13 +87,20 @@ def optimize_assets_text(text: str, hash_for: Callable[[str], Optional[str]]) ->
             return m.group(0)                  # href on <script> etc. — skip
         if not _is_local_asset(url):
             return m.group(0)
-        low = url.lower()
-        if "?" in url or "#" in url or not (low.endswith(".js") or low.endswith(".css")):
-            return m.group(0)                  # already-queried or not a hashed asset
+        # A ref already wearing OUR stamp is re-hashed, not skipped: `immutable,
+        # max-age=1y` at the edge means a frozen stamp pins visitors to the old
+        # bytes forever once the file behind it changes. (theme.js was stamped
+        # stale on 1,509 pages across four generations of hash before this.)
+        # Any other query or a fragment is still left exactly as authored.
+        stamped = _OUR_STAMP_RE.match(url)
+        bare = stamped.group(1) if stamped else url
+        low = bare.lower()
+        if (not stamped and ("?" in url or "#" in url)) or not (low.endswith(".js") or low.endswith(".css")):
+            return m.group(0)                  # foreign query/fragment, or not a hashed asset
         new_attrs = attrs
-        h = hash_for(url)
+        h = hash_for(bare)
         if h:
-            new_url = f'{am.group(1)}="{url}?v={h}"'
+            new_url = f'{am.group(1)}="{bare}?v={h}"'
             new_attrs = new_attrs[: am.start()] + new_url + new_attrs[am.end():]
         if kind == "script" and not _HAS_DEFER_ASYNC_RE.search(new_attrs) and not _MODULE_RE.search(new_attrs):
             new_attrs = new_attrs.rstrip() + " defer"
