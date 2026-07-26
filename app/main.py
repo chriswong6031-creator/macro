@@ -598,7 +598,13 @@ def status() -> dict:
                         }
                     checks[key]["lanes"] = lanes
             except Exception as e:  # noqa: BLE001
-                checks[key] = {"error": str(e), "age_min": age_min(artifact)}
+                # Coarsen the client-facing error: str(e) on a FileNotFoundError /
+                # JSON parse error echoes the absolute artifact path to any anonymous
+                # caller (this endpoint is public, unauthenticated). Keep the real
+                # detail server-side; monitoring still sees WHICH check failed via the
+                # per-check key + age_min. (CWE-209, same class as PR #3615.)
+                log.warning("status: %s artifact unreadable (%s): %s", key, artifact, e)
+                checks[key] = {"error": "unavailable", "age_min": age_min(artifact)}
         else:
             checks[key] = {"status": "missing"}
 
@@ -612,7 +618,10 @@ def status() -> dict:
                 "age_min": age_min(TERMINAL_MANIFEST),
             }
         except Exception as e:  # noqa: BLE001
-            checks["terminal_data"] = {"error": str(e)}
+            # Coarsen the client-facing error (see the live-lane branch above); the
+            # raw str(e) would leak the manifest's absolute path to anonymous callers.
+            log.warning("status: terminal_data manifest unreadable (%s): %s", TERMINAL_MANIFEST, e)
+            checks["terminal_data"] = {"error": "unavailable"}
     else:
         checks["terminal_data"] = {"status": "missing"}
 
