@@ -7,8 +7,8 @@ must never lock out a paying subscriber — availability wins over a perfect cap
 exactly as the brain gateway reasons at its ``_write_quota``).
 
 Limits: ``free``/``insider``/unknown = 0 (viewing + downloading are PRO-only;
-insider is a browse-and-teaser tier) · ``pro`` = 10/day. Period = UTC calendar day
-(``YYYY-MM-DD``).
+insider is a browse-and-teaser tier) · ``pro`` = 10/day · ``pro`` holding a
+LIFETIME grant = 50/day. Period = UTC calendar day (``YYYY-MM-DD``).
 
 State layout (masterplan §4):
     $MACRO_API_STATE_DIR/research_download_quota/dl_{safe_uid}_{YYYY-MM-DD}.json
@@ -39,6 +39,13 @@ log = logging.getLogger("research_vault.download_quota")
 # Daily download allowance per tier. Reading research is PRO-only, so free AND
 # insider both get 0 (insider is a browse-and-teaser tier); pro = 10/day.
 LIMITS: dict[str, int] = {"free": 0, "insider": 0, "pro": 10}
+
+# Raised allowance for a LIFETIME holder — a comp entitlement row with no period
+# end, the same shape the account panel chips as "Lifetime". Applied only ON TOP OF
+# a tier that already has a paid allowance (see `_limit_for`): the flag decides HOW
+# MANY, never IF, so a comp/no-end row parked on free or insider (an admin downgrade
+# writes exactly that shape) still gets 0.
+LIFETIME_LIMITS: dict[str, int] = {"pro": 50}
 
 # State dir mirrors brain_gateway (_STATE_DIR = MACRO_API_STATE_DIR default).
 _STATE_DIR = Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api"))
@@ -116,9 +123,19 @@ def _write(path: Path, data: dict) -> None:
             "advancing, downloads uncapped until the state dir is writable", exc)
 
 
-def _limit_for(tier: str) -> int:
-    """Daily limit for a tier; any unknown/None tier → 0 (blocked)."""
-    return int(LIMITS.get((tier or "").strip().lower(), 0))
+def _limit_for(tier: str, lifetime: bool = False) -> int:
+    """Daily limit for a tier; any unknown/None tier → 0 (blocked).
+
+    ``lifetime=True`` promotes an ALREADY-PAID tier to its :data:`LIFETIME_LIMITS`
+    allowance. The ``base > 0`` guard is the fail-closed half of that promotion —
+    entitlement resolution still decides whether the caller may download at all, so
+    a lifetime flag arriving on a zero-allowance tier can never buy access.
+    """
+    t = (tier or "").strip().lower()
+    base = int(LIMITS.get(t, 0))
+    if lifetime and base > 0:
+        return int(LIFETIME_LIMITS.get(t, base))
+    return base
 
 
 def _info(tier: str, remaining: int, limit: int, used: int,
@@ -139,6 +156,7 @@ def check_and_increment(
     tier: str,
     root: Path | None = None,  # accepted for signature-parity; unused (state is env-rooted)
     now: datetime | None = None,
+    lifetime: bool = False,
 ) -> tuple[bool, dict]:
     """Check the daily download quota and INCREMENT the counter on an allow.
 
@@ -152,13 +170,17 @@ def check_and_increment(
       * otherwise → increment the day counter and return
         ``(True, info[remaining=limit-(count+1)])``.
 
+    ``lifetime=True`` raises a paid tier's cap to :data:`LIFETIME_LIMITS` (pro:
+    50/day) and changes nothing else — same ledger file, same day key, so a holder
+    who is granted a lifetime pass mid-day keeps the downloads already spent.
+
     Fail-open (allow) on ledger I/O error, but LOUD (``_write`` logs ``::error::``).
     The increment happens BEFORE returning the allow, so a scripted caller cannot
     race past the limit — the server is authoritative.
     """
     period = _period_key(now)
     resets = _resets_at(now)
-    limit = _limit_for(tier)
+    limit = _limit_for(tier, lifetime)
 
     # Free / unknown tiers are blocked with zero allowance — never touch the ledger.
     if limit <= 0:
@@ -183,15 +205,18 @@ def peek(
     tier: str,
     root: Path | None = None,  # signature-parity; unused
     now: datetime | None = None,
+    lifetime: bool = False,
 ) -> dict:
     """Read-only view of today's download allowance (NO increment).
 
     Backs ``GET /api/research/quota``. Returns the same info shape as
-    :func:`check_and_increment` without mutating the ledger. Never raises.
+    :func:`check_and_increment` without mutating the ledger, and honors ``lifetime``
+    identically — the button's "N of 50 left today" copy reads this ``limit``.
+    Never raises.
     """
     period = _period_key(now)
     resets = _resets_at(now)
-    limit = _limit_for(tier)
+    limit = _limit_for(tier, lifetime)
 
     if limit <= 0:
         return _info(tier, 0, 0, 0, period, resets)

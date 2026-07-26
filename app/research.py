@@ -9,7 +9,8 @@ Routes
 GET  /api/research/catalog            unauth  — R2 read-through of catalog.json (60s TTL)
 GET  /api/research/search?q=&…        unauth  — FTS over corpus.sqlite (TTL-cached from R2)
 GET  /api/research/view/{doc_id}      PRO     — stream PDF inline (rate-limited, no quota)
-POST /api/research/download/{doc_id}  PRO     — watermark + attachment (daily quota 10/day)
+POST /api/research/download/{doc_id}  PRO     — watermark + attachment (daily quota
+                                                10/day; 50/day on a lifetime grant)
 GET  /api/research/quota              authed  — read-only remaining today
 
 SECURITY INVARIANTS (the red-team probes these — see the block above each guard):
@@ -362,6 +363,49 @@ def _can_view(tier: str) -> bool:
     return tier in _VIEW_TIERS
 
 
+def _is_lifetime(user_id: str) -> bool:
+    """True when the caller holds a LIFETIME entitlement (comp grant, no period end).
+
+    Mirrors the account panel's rule verbatim (``site/theme.js`` ``_sdPlanChip``:
+    ``(tier==='unlimited' || source==='comp') && !current_period_end && status !==
+    'canceled'``) — the exact row ``admin/entitlements.grant_pass(kind='lifetime')``
+    writes. Kept in sync on purpose: a user whose plan is chipped "Lifetime" is the
+    user who gets the lifetime download allowance.
+
+    This only ever RAISES the cap — ``download_quota._limit_for`` refuses to promote
+    a zero-allowance tier, so ``_resolve_tier``/``_can_view`` remain the sole
+    paywall. Fails CLOSED to False (the standard Pro 10/day) on any error: a
+    Supabase hiccup costs a lifetime holder headroom, never hands a stranger access.
+
+    Costs one extra PostgREST read on the two metered routes, which is why callers
+    go through :func:`_lifetime_for` and skip it entirely for tiers that get 0.
+    """
+    if not user_id:
+        return False
+    try:
+        from app.billing import read_entitlement  # noqa: PLC0415 — lazy, mirrors _resolve_tier
+        ent = read_entitlement(user_id) or {}
+    except Exception as exc:  # noqa: BLE001 — a plan lookup must never break a download
+        log.debug("research_vault: lifetime lookup failed (%s) — standard allowance", exc)
+        return False
+    if str(ent.get("status") or "").strip().lower() == "canceled":
+        return False
+    if ent.get("current_period_end"):  # a dated period is a subscription, not a lifetime
+        return False
+    return (str(ent.get("source") or "").strip().lower() == "comp"
+            or str(ent.get("tier") or "").strip().lower() == "unlimited")
+
+
+def _lifetime_for(tier: str, user_id: str) -> bool:
+    """Lifetime flag for the quota call, short-circuited for tiers that cannot download.
+
+    Free/insider have a 0 allowance that a lifetime flag cannot lift, so there is
+    nothing to learn from the lookup — skipping it keeps ``/api/research/quota``
+    a single Supabase round-trip for the non-paid callers who hit it most.
+    """
+    return _can_view(tier) and _is_lifetime(user_id)
+
+
 def _user_id_of(user: dict) -> str:
     """Stable user key: Supabase id, else email, else 'unknown'."""
     return str((user or {}).get("id") or (user or {}).get("email") or "unknown")
@@ -534,9 +578,10 @@ def research_download(doc_id: str, request: Request,
       1. auth (require_user).
       2. tier resolve → non-pro (insider/free/unknown) → 402 paid_required.
       3. doc_id validate (400/404) BEFORE any R2 key.
-      4. ``download_quota.check_and_increment`` (day-keyed, 5/20). allowed=False →
-         402 quota_exhausted (server-authoritative — increments only on allow, so
-         a scripted POST past the limit is refused here regardless of the button).
+      4. ``download_quota.check_and_increment`` (day-keyed; pro 10/day, 50/day for a
+         lifetime holder). allowed=False → 402 quota_exhausted (server-authoritative
+         — increments only on allow, so a scripted POST past the limit is refused
+         here regardless of the button).
       5. fetch PDF (404 if absent), watermark with the buyer's identity, return as
          ``attachment`` · ``private, no-store`` · ``X-Robots-Tag: noindex``.
 
@@ -554,7 +599,8 @@ def research_download(doc_id: str, request: Request,
 
     doc_id = _validate_doc_id(doc_id)  # 400 / 404
 
-    allowed, info = download_quota.check_and_increment(user_id, tier)
+    allowed, info = download_quota.check_and_increment(
+        user_id, tier, lifetime=_lifetime_for(tier, user_id))
     if not allowed:
         return JSONResponse(
             {
@@ -604,7 +650,7 @@ def research_quota(request: Request,
     user_id = _user_id_of(user)
     tier = _resolve_tier(user_id)
 
-    info = download_quota.peek(user_id, tier)
+    info = download_quota.peek(user_id, tier, lifetime=_lifetime_for(tier, user_id))
     out = dict(info)
     # Cheap add-on: remaining views this hour (read-only, no increment).
     try:
