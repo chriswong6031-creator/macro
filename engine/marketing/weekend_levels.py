@@ -734,6 +734,26 @@ def build_items(
     # ── Pass 2: real voice (falls back to the floor per post) ────────────────
     copy = write_copy(specs, cfg, account=account)
 
+    # ── Pass 2b: quality review (advisory, never a gate) ─────────────────────
+    # The mechanical half costs nothing and catches the failure this lane
+    # actually shipped: eight posts sharing one skeleton. Findings ride on the
+    # item so the Outbox can show the operator WHICH posts collide; nothing is
+    # dropped or rewritten here.
+    review_posts: list[dict[str, Any]] = []
+    try:
+        from engine.marketing.copy_review import review_batch  # noqa: PLC0415
+        _rev = review_batch(
+            [{"id": s["ticker"], "headline": h, "body": b}
+             for s, (h, b) in zip(specs, copy)],
+            cfg, root=root,
+        )
+        review_posts = _rev.get("posts") or []
+        for _f in (_rev.get("batch") or []):
+            log.warning("weekend_levels: copy review [%s] %s",
+                        _f.get("severity"), _f.get("detail"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("weekend_levels: copy review unavailable: %s", exc)
+
     # ── Pass 3: assemble items, each with its chart card ─────────────────────
     out: list[dict[str, Any]] = []
     for i, spec in enumerate(specs):
@@ -776,6 +796,15 @@ def build_items(
         # media list (scripts/marketing_publisher._media_urls), so mirror it.
         if media and media[0].get("media_url"):
             source["media_url"] = media[0]["media_url"]
+
+        # Advisory review finding, surfaced next to the post in the Outbox.
+        # Only attached when there IS something to say — a clean post carries
+        # no marker, so a reviewed queue does not look uniformly suspicious.
+        if i < len(review_posts):
+            _r = review_posts[i] or {}
+            if _r.get("issues") or str(_r.get("verdict") or "ok") != "ok":
+                source["review"] = {"verdict": _r.get("verdict") or "ok",
+                                    "issues": _r.get("issues") or []}
 
         try:
             item = make_item(

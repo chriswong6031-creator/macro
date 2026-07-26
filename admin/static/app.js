@@ -6352,6 +6352,24 @@ function obxItemCard(it, acctId) {
     : `${stateMeta.label} · ${stateMeta.stance}`;
   const stateChip = `<span class="statpill obx-state ${stateMeta.cls}">${esc(stateLabel)}</span>`;
 
+  /* Copy-review finding (advisory). Present only when the reviewer had
+     something to say, so a clean queue carries no markers and the ones that do
+     appear actually mean something. The batch-level kinds are the ones that
+     caught the 2026-07-26 incident, so they get plain-word labels rather than
+     the raw slug. */
+  const REVIEW_LABEL = {
+    repeated_headline: "same headline shape as the rest of the batch",
+    repeated_opener: "opens like the others",
+    identical_body: "same sentence as another post, different numbers",
+  };
+  const rev = (it.source && it.source.review) || null;
+  const reviewChip = rev
+    ? `<div class="obx-review obx-review-${esc(rev.verdict || "weak")}">
+         <span class="obx-review-tag">${rev.verdict === "bad" ? "reads templated" : "worth a look"}</span>
+         ${(rev.issues || []).map(x => `<span class="obx-review-issue">${esc(REVIEW_LABEL[x] || x)}</span>`).join("")}
+       </div>`
+    : "";
+
   /* Media — lazy-loaded via the media endpoint (populated by obxLoadAllMedia).
      Caption text is passed on the wrapper for the lightbox to read. */
   const media = (it.media || []).filter(m => m && m.path);
@@ -6437,6 +6455,7 @@ function obxItemCard(it, acctId) {
         <span class="obx-count ${meterCls}">${n} / ${OBX_CHAR_CAP}${over ? " · over limit" : ""}</span>
       </div>
     </div>
+    ${reviewChip}
     ${mediaHtml}
     ${controls}
   </div>`;
