@@ -11,6 +11,7 @@ Run: .venv/bin/python -m pytest tests/test_optimize_assets.py -q
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -211,5 +212,12 @@ def test_preload_sweep_end_to_end(tmp_path):
     # theme.css got stamped, and its hint carries that same stamped URL
     assert 'href="theme.css?v=' in head
     assert '<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">' in head
-    assert '<link rel="preload" as="style" href="assets/css/deep.css?v=deadbeef">' in head
-    assert optimize(site) == 0  # idempotent
+    # deep.css arrived wearing a STALE stamp of our own shape (?v=<8 hex>). It is
+    # re-hashed — a frozen stamp plus the edge's `immutable, max-age=1y` pins
+    # visitors to the old bytes — and the preload hint tracks the new URL, which
+    # is the invariant this test exists to protect.
+    deep = re.search(r'<link rel="stylesheet" href="(assets/css/deep\.css\?v=[0-9a-f]{8})">', out)
+    assert deep, out
+    assert deep.group(1) != "assets/css/deep.css?v=deadbeef", "stale stamp was not refreshed"
+    assert f'<link rel="preload" as="style" href="{deep.group(1)}">' in head
+    assert optimize(site) == 0  # idempotent once the stamps are current
