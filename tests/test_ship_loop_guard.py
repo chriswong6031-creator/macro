@@ -133,6 +133,147 @@ def test_needs_render_still_fires_on_a_real_template_or_builder_merge(tmp_path):
     assert GUARD._needs_render(repo, other, start_head, other) is False
 
 
+def _wf_run(
+    *,
+    status: str = "completed",
+    conclusion: str | None = None,
+    event: str = "push",
+    started: str = "",
+) -> dict:
+    return {
+        "status": status,
+        "conclusion": conclusion,
+        "event": event,
+        "run_started_at": started,
+        "created_at": started or "2026-07-25T22:34:41Z",
+    }
+
+
+def _render_api(monkeypatch, *, pinned: list, later: list | None) -> None:
+    """Serve _render_status's two query shapes.
+
+    The pinned-sha lookup carries head_sha; the covering search carries
+    status=success. ``later=None`` asserts the covering search is never
+    consulted — the fast paths and the hard-failure verdict must not reach it.
+    """
+
+    def fake(url):
+        assert "/actions/workflows/render.yml/runs?" in url
+        query = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        if "head_sha" in query:
+            return {"workflow_runs": pinned}
+        assert query.get("status") == ["success"], "covering search must ask for successes"
+        assert later is not None, "this verdict must not consult the covering-run search"
+        return {"workflow_runs": later}
+
+    monkeypatch.setattr(GUARD, "_get_json", fake)
+
+
+def _merged_template_repo(tmp_path: Path) -> tuple[Path, str]:
+    """A repo whose newest main commit is a render-triggering merge."""
+    repo = _repo(tmp_path)
+    merge = _commit(repo, "templates/x.html.j2", "{{ x }}\n", "feat: page (#1)")
+    return repo, merge
+
+
+def test_a_superseded_render_is_covered_by_a_later_started_success(monkeypatch, tmp_path):
+    """Supersession is not failure, and the pinned run can never be re-created.
+
+    render.yml runs in one concurrency lane with cancel-in-progress: false, so
+    a newer push supersedes the QUEUED run pinned to this merge — reported
+    ``cancelled`` — and main has already moved past the sha, so no run with
+    this head_sha can ever exist again. Observed 2026-07-26 shipping PR #3515:
+    merge 5535b67811d's run 30177837303 was cancelled unstarted, three later
+    scope=all renders baked the page, production served it, and the guard still
+    blocked with "Render workflow concluded cancelled". The workflow checks out
+    main (never the pinned sha) and scope-unions every region dirtied since its
+    last successful watermark, so ANY success that started after the merge
+    landed rendered this merge's pages.
+    """
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(
+        monkeypatch,
+        pinned=[_wf_run(conclusion="cancelled")],
+        later=[
+            # Started BEFORE the merge landed: may have pulled pre-merge main.
+            # Proves the started-after filter is what accepts, not mere success.
+            _wf_run(conclusion="success", started="2000-01-01T00:00:00Z"),
+            # Dispatch runs check out and render main exactly like push runs.
+            _wf_run(
+                conclusion="success",
+                event="workflow_dispatch",
+                started="2099-01-01T00:00:00Z",
+            ),
+        ],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge) == ("success", "")
+
+
+def test_a_superseded_render_with_no_covering_success_still_blocks(monkeypatch, tmp_path):
+    """The gate stays strict: cancellation alone proves nothing shipped."""
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(
+        monkeypatch,
+        pinned=[_wf_run(conclusion="cancelled")],
+        later=[
+            _wf_run(conclusion="success", started="2000-01-01T00:00:00Z"),
+            # An event render.yml does not have must never count as coverage.
+            _wf_run(conclusion="success", event="schedule", started="2099-01-01T00:00:00Z"),
+        ],
+    )
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge)
+    assert status == "pending"
+    assert "superseded" in detail
+
+
+@pytest.mark.parametrize("conclusion", ["failure", "timed_out"])
+def test_a_render_that_ran_and_failed_still_blocks_hard(monkeypatch, tmp_path, conclusion):
+    """Only supersession falls through to the covering-run rule.
+
+    A render that executed and failed most likely crashed on THIS merge's own
+    template/builder change; a later lane success must not paper it over, so
+    the covering search must not even be consulted (later=None asserts that).
+    """
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(monkeypatch, pinned=[_wf_run(conclusion=conclusion)], later=None)
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge)
+    assert status == "failed"
+    assert conclusion in detail
+
+
+def test_a_never_materialised_pinned_run_accepts_a_covering_success(monkeypatch, tmp_path):
+    """_stop proves the merge is on origin/main before calling _render_status,
+    so a missing pinned run means GitHub kept no run for the sha — not that the
+    work is unmerged. A later-started success covers it like a cancelled one."""
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(
+        monkeypatch,
+        pinned=[],
+        later=[_wf_run(conclusion="success", started="2099-01-01T00:00:00Z")],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge) == ("success", "")
+
+
+def test_no_pinned_run_and_no_covering_success_stays_pending(monkeypatch, tmp_path):
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(monkeypatch, pinned=[], later=[])
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge)
+    assert status == "pending"
+    assert detail == "The required render workflow has not started yet."
+
+
+def test_render_fast_paths_do_not_consult_the_covering_search(monkeypatch, tmp_path):
+    """A pinned success or a still-running pinned render answers by itself."""
+    repo, merge = _merged_template_repo(tmp_path)
+    _render_api(monkeypatch, pinned=[_wf_run(conclusion="success")], later=None)
+    assert GUARD._render_status(repo, "acme", "widgets", merge) == ("success", "")
+
+    _render_api(monkeypatch, pinned=[_wf_run(status="in_progress")], later=None)
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge)
+    assert status == "pending"
+    assert "in_progress" in detail
+
+
 @pytest.fixture(autouse=True)
 def _clear_token_cache(monkeypatch):
     """The token is memoised per process; tests must not inherit each other's."""
@@ -408,6 +549,35 @@ def test_unpushed_commits_still_block_when_an_upstream_exists(monkeypatch, tmp_p
     )
     verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=_MERGED_PR)
     assert verdict == "unpushed"
+
+
+def test_stop_hands_the_render_gate_the_repo_root(monkeypatch, tmp_path, capsys):
+    """The supersede-aware gate reads the merge's committed date via git, so
+    _stop must pass it the repo root alongside the GitHub coordinates."""
+    repo, state_path = _session_repo(tmp_path)
+    bare = tmp_path / "origin.git"
+    subprocess.run(("git", "init", "--bare", str(bare)), check=True, capture_output=True)
+    _git(repo, "remote", "add", "origin", str(bare))
+    _git(repo, "push", "-u", "origin", "claude/feature")
+    # The squash-merge on main touched a template, so needs_render fires.
+    _git(repo, "checkout", "main")
+    merge = _commit(repo, "templates/x.html.j2", "{{ x }}\n", "feat: page (#1)")
+    _git(repo, "push", "origin", "main")
+    _git(repo, "checkout", "claude/feature")
+
+    seen: dict = {}
+
+    def fake_render_status(*args):
+        seen["args"] = args
+        return "success", ""
+
+    monkeypatch.setattr(GUARD, "_render_status", fake_render_status)
+    # Only the live-health probe still reaches _get_json on this path.
+    monkeypatch.setattr(GUARD, "_get_json", lambda _url: {"commit": merge})
+    merged = {"merged_at": "2026-07-26T00:00:00Z", "head": {"sha": "a" * 40}, "merge_commit_sha": merge}
+    verdict = _stop_verdict(monkeypatch, capsys, repo, state_path, merged_pr=merged)
+    assert verdict is None, f"expected a clean pass, got {verdict}"
+    assert seen["args"] == (repo, "acme", "widgets", merge)
 
 
 def test_settings_wire_session_start_and_stop():

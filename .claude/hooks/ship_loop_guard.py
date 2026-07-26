@@ -356,7 +356,71 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     return _render_triggering_paths(changed)
 
 
-def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
+def _iso_utc(value: Any) -> datetime | None:
+    """Parse an ISO-8601 stamp from git (``%cI``) or the GitHub API (``...Z``)."""
+    try:
+        stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)
+
+
+def _merge_landed_at(root: Path, merge_sha: str) -> datetime:
+    """When the merge reached main, from the commit GitHub stamped at merge time."""
+    stamp = _iso_utc(_run(root, "git", "show", "-s", "--format=%cI", merge_sha))
+    if stamp is None:
+        raise RuntimeError(f"Could not read the committed date of {merge_sha}.")
+    return stamp
+
+
+def _covering_render(owner: str, repo: str, landed_at: datetime) -> dict[str, Any] | None:
+    """A successful render.yml run that STARTED after the merge landed on main.
+
+    Sound because render.yml never renders its pinned sha: it checks out
+    ``ref: main`` and pulls, then its scope-union step re-renders every region
+    with changes since that region's last successful render watermark — so
+    whichever run eventually executes bakes the superseded merges' pages too,
+    and cancelled/timed-out renders never advance a watermark. ``run_started_at``
+    (not ``created_at``) is what orders a run against the merge: a run created
+    earlier but started later still pulled a main that contains the merge, while
+    a run started before the merge may have pulled pre-merge main no matter when
+    it finished. Dispatch runs render main the same way, so they cover equally.
+    """
+    query = urllib.parse.urlencode({"status": "success", "per_page": "30"})
+    payload = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
+    )
+    for run in payload.get("workflow_runs", []):
+        if run.get("event") not in {"push", "workflow_dispatch"}:
+            continue
+        started = _iso_utc(run.get("run_started_at"))
+        if started is not None and started > landed_at:
+            return run
+    return None
+
+
+def _render_status(root: Path, owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
+    """Judge the merge's render precondition, treating supersession as coverage.
+
+    render.yml runs in one coalescing lane (``concurrency`` group
+    ``pipeline-render``, ``cancel-in-progress: false``): a QUEUED run is
+    superseded — reported ``cancelled`` — the moment a newer push arrives, and
+    once main moves past the merge no run pinned to its sha can ever exist
+    again. Under merge churn the pinned run is therefore cancelled within
+    seconds through no fault of the work, and requiring it to conclude
+    ``success`` was an unsatisfiable gate (2026-07-26, PR #3515: merge
+    5535b67811d's run 30177837303 was superseded unstarted; three later
+    scope=all renders baked the page and production served it, yet the guard
+    blocked forever on "concluded cancelled").
+
+    So: a pinned run that genuinely executed keeps its verdict — ``success``
+    passes, ``failure``/``timed_out`` still block hard, because a render that
+    crashed most likely crashed on THIS merge's own template/builder change and
+    a later lane success must not paper that over. Only supersession
+    (``cancelled``), or a pinned run GitHub never materialised (the caller has
+    already proven the merge is an ancestor of origin/main), falls through to
+    the covering-run rule in ``_covering_render``.
+    """
     query = urllib.parse.urlencode(
         {"event": "push", "head_sha": merge_sha, "per_page": "20"}
     )
@@ -364,14 +428,24 @@ def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
         f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
     )
     runs = payload.get("workflow_runs", [])
-    if not runs:
-        return "pending", "The required render workflow has not started yet."
-    run = max(runs, key=lambda item: item.get("created_at") or "")
-    if run.get("status") != "completed":
-        return "pending", f"Render workflow is {run.get('status') or 'pending'}."
-    if run.get("conclusion") != "success":
-        return "failed", f"Render workflow concluded {run.get('conclusion') or 'unknown'}."
-    return "success", ""
+    pinned = max(runs, key=lambda item: item.get("created_at") or "") if runs else None
+    if pinned is not None:
+        if pinned.get("status") != "completed":
+            return "pending", f"Render workflow is {pinned.get('status') or 'pending'}."
+        conclusion = pinned.get("conclusion")
+        if conclusion == "success":
+            return "success", ""
+        if conclusion != "cancelled":
+            return "failed", f"Render workflow concluded {conclusion or 'unknown'}."
+    if _covering_render(owner, repo, _merge_landed_at(root, merge_sha)) is not None:
+        return "success", ""
+    if pinned is not None:
+        return "pending", (
+            "Render run for the merge was superseded (cancelled by a newer push) and no "
+            "later render.yml success has started since the merge landed. The scope-union "
+            "lane covers superseded merges — wait for the next successful render."
+        )
+    return "pending", "The required render workflow has not started yet."
 
 
 def _find_commit(value: Any) -> str:
@@ -537,7 +611,7 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(owner, repo, merge_sha)
+            status, detail = _render_status(root, owner, repo, merge_sha)
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
