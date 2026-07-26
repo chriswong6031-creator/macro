@@ -57,7 +57,10 @@ wiring all of them at once would blow the ci-pack budget. (The "before" column w
 at 1491 suites; the total is 1497 on current `main` as other PRs land, and the arrivals came
 already wired, so they do not move the unrun count.)
 
-#3636 left two dark; #3645 closed them the same day, so the strictly-dark set is now **empty**.
+#3636 left two dark; #3645 closed them the same day, emptying the strictly-dark set. It is
+**not a one-time cleanup** — a new suite arrives dark whenever it is added without a `paths`
+entry, and one did on 2026-07-26 (see *The strictly-dark set reopened, and closed again*).
+Re-run the auditor rather than trusting these snapshots.
 Measured in CI, the nine jobs cost **~3 min** of pack wall — pack 1 ran its five lanes
 13:36→13:37 and pack 0 its four 13:40→13:42 — against a 180-min timeout.
 
@@ -386,6 +389,51 @@ the ratchet, which was green but equally unrun. `paths` gains the suite plus `sc
 already broad catch-alls, `scripts/` was covered file-by-file (443 of 968 `.py`) and
 `research/` barely at all (1 of 87). A new module-level silencer in any of the other 611
 files could not have started this workflow.
+
+## The strictly-dark set reopened, and closed again (2026-07-26)
+
+`tests/test_render_intl_scope.py` landed on `main` alongside the international-dashboard
+render work (#3718) and took the strictly-dark count 0 → 1 — the first regression since
+#3645 emptied the set. It was P3: unrun by any `run:` step, and its own path unmatched by
+`on.pull_request.paths`, so no edit anywhere produced a signal.
+
+It is green on arrival (2 tests, 1.4s) — no rot, just unwired.
+
+**Its subject is a workflow, not a module**, which is why the auditor prints `(none)`:
+
+```python
+WORKFLOW = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "render.yml").read_text()
+```
+
+`_subject_modules` finds subjects two ways — first-party `import`s, and repo-relative path
+*literals* under `engine|scripts|app|collectors|lib|admin|site|templates|config`. This suite
+has neither: it imports only `pathlib`, and assembles its one subject from path components,
+so there is no literal to match and `.github/` is outside the prefix set anyway. Read
+`(none)` as *"the auditor could not resolve a subject"*, never as *"this suite guards
+nothing"*. The bias is one-directional and therefore safe — an unresolved subject can only
+make a suite look **darker** than it is — but it does mean the subject half has to be worked
+out by hand for any suite that reads a workflow, or that builds a path componentwise.
+
+Worked out by hand, the subject is `.github/workflows/render.yml` and nothing else — the
+suite's five assertions all read that one file, and none of them touch
+`scripts/build_intl.py` or `templates/intl.html.j2` except as string literals *inside* it
+(deleting the builder does not move this suite's verdict; unwiring it from `render.yml`
+does). That half was **already** covered: `.github/workflows/**` has been a broad catch-all
+in `paths` since the W5a DAG-conformance entry. Only the test file needed adding — `tests/**`
+is deliberately not a catch-all.
+
+Wired into `unrun-publish-ops` as its own named step rather than a new lane: the lane's
+`pip install` is already the shared byte-identical one, and a 1.4s file read does not justify
+a 124th legacy job in the pack. That lane now carries 20 suites (19 P1 + this P3);
+run serially it is 510 passed / 1 skipped / 30s, and `git status -- data/ site/` is clean
+after.
+
+**Mutation-tested, 6/6.** A wiring PR that only proves the suite passes has proved nothing —
+the census exists to find guards that cannot fail. Each of the five assertions was inverted
+in `render.yml` in turn (drop `intl` from the scope choices; unmap
+`templates/intl.html.j2|scripts/build_intl.py`; drop `intl` from the region loop; point the
+dispatch at a different module; empty the `intl)` arm; drop `intl` from the `all` fan-out)
+and the suite goes red on every one. `render.yml` was restored byte-identically afterwards.
 
 ## Staged remainder
 
