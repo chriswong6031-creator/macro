@@ -144,3 +144,79 @@ def test_sweep_prunes_orphans(tmp_path):
     externalize(site)
     assert not orphan.exists()  # unreferenced hash file pruned
     assert list(css.glob("*.css"))  # the real (referenced) file remains
+
+
+# ---- plain-copy PAIRS are excluded (ui.template_site_sync) ------------------
+# templates/<name>.html shipping byte-identically as site/<name>.html cannot be
+# externalized by this sweep: the render lanes run `check_template_site_sync
+# --fix` after it and before `git add site/`, re-copying the site page FROM
+# templates/, so a site-only lift is reverted every render — while still minting
+# the hash file, which _prune_orphans can never reclaim (it looks referenced in
+# the same run that creates the link). Writing THROUGH to templates/ is not the
+# fix either: it would leave the hand-edited source holding only a <link> to a
+# hash-named file in the derived tree. See scripts.externalize_css docstrings.
+
+def _pair(tmp_path, name, body):
+    """Create a byte-identical templates/<name> + site/<name> pair."""
+    (tmp_path / "templates").mkdir(exist_ok=True)
+    (tmp_path / "site").mkdir(exist_ok=True)
+    for side in ("templates", "site"):
+        (tmp_path / side / name).write_text(body, encoding="utf-8")
+
+
+def test_sweep_skips_paired_pages_but_sweeps_the_rest(tmp_path):
+    site = tmp_path / "site"
+    page = f"<html><head><style>{_BIG}</style></head><body>hi</body></html>"
+    _pair(tmp_path, "index.html", page)
+    (site / "macro.html").write_text(page, encoding="utf-8")
+
+    assert externalize(site) == 1  # macro only — the pair is not counted
+    assert f"<style>{_BIG}</style>" in (site / "index.html").read_text()  # still inline
+    assert 'href="assets/css/' in (site / "macro.html").read_text()  # unpaired lifted
+
+
+def test_paired_page_stays_byte_identical_to_its_template(tmp_path):
+    # The invariant the sync guard enforces, and the reason a site-only lift is
+    # silently reverted: after the sweep the pair must still match byte-for-byte.
+    site = tmp_path / "site"
+    page = f"<html><head><style>{_BIG}</style></head><body>hi</body></html>"
+    _pair(tmp_path, "chat.html", page)
+    externalize(site)
+    assert (site / "chat.html").read_bytes() == (tmp_path / "templates" / "chat.html").read_bytes()
+
+
+def test_paired_page_css_is_never_minted_as_an_unprunable_orphan(tmp_path):
+    # The measured cost of the old behaviour: 3 hash files (92,412 bytes) sat
+    # committed and shipped, linked by zero pages, unprunable forever.
+    site = tmp_path / "site"
+    _pair(tmp_path, "index.html", f"<html><head><style>{_BIG}</style></head><body></body></html>")
+    externalize(site)
+    css_dir = site / "assets" / "css"
+    assert not css_dir.is_dir() or not list(css_dir.glob("*.css"))
+
+
+def test_subdir_page_sharing_a_pair_name_is_still_swept(tmp_path):
+    # Pairs only ever ship at the site ROOT, so the skip matches the full path —
+    # site/stocks/index.html is an ordinary page and must still be externalized.
+    site = tmp_path / "site"
+    _pair(tmp_path, "index.html", "<html><head></head><body></body></html>")
+    sub = site / "stocks"
+    sub.mkdir(parents=True)
+    (sub / "index.html").write_text(f"<head><style>{_BIG}</style></head><body></body>", encoding="utf-8")
+    externalize(site)
+    assert 'href="../assets/css/' in (sub / "index.html").read_text()
+
+
+def test_pair_set_comes_from_the_guard_that_enforces_it(tmp_path):
+    # Imported from scripts.check_template_site_sync so the two can never drift;
+    # a templates/ file with no site copy is NOT a pair and must not skip anything.
+    from scripts.externalize_css import _paired_page_names
+
+    (tmp_path / "templates").mkdir()
+    (tmp_path / "site").mkdir()
+    _pair(tmp_path, "index.html", "<html></html>")
+    (tmp_path / "templates" / "unshipped.html").write_text("<html></html>", encoding="utf-8")
+    (tmp_path / "templates" / "theme.css").write_text("a{}", encoding="utf-8")
+    (tmp_path / "site" / "theme.css").write_text("a{}", encoding="utf-8")
+
+    assert _paired_page_names(tmp_path / "site") == {"index.html"}  # no .css, no unshipped
