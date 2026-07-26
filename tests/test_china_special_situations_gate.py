@@ -34,6 +34,25 @@ SNAPSHOT = "/chinaspecialdata/special.json"
 # Every named row on this desk, whatever its plane, wears the ticker pill.
 TICKER_RE = re.compile(r'<span class="ssx-tkr"[^>]*>([^<]+)</span>')
 
+# The pill is not the row's IDENTITY, though: a name can hold several distinct
+# situations, within one plane or across planes (301308.SZ and 002368.SZ each
+# carried two locked rows on 2026-07-25). A ticker seen on both sides of the wall
+# is not a leak — a shared ROW is. Card planes open a row with a ssx-row div,
+# table planes with a tr; header rows carry <th> and are not situations.
+ROW_SPLIT_RE = re.compile(r'<div class="ssx-row">|<tr\b[^>]*>')
+
+
+def _row_keys(html: str) -> list[str]:
+    """Whitespace-normalised identity of every named row in `html`."""
+    keys = []
+    for chunk in ROW_SPLIT_RE.split(html)[1:]:
+        if "<th" in chunk.split("</tr>")[0]:
+            continue                        # table header, not a situation
+        key = " ".join(chunk.split())
+        if "ssx-tkr" in key:                # only named rows are paid content
+            keys.append(key)
+    return keys
+
 
 def _env():
     from jinja2 import Environment, FileSystemLoader
@@ -280,6 +299,29 @@ def test_ungated_build_writes_an_empty_payload(tmp_path):
     assert not any(k.endswith("_html") for k in doc)
 
 
+def test_row_identity_separates_two_situations_on_one_ticker():
+    """One name can hold several situations, so only a repeated ROW is a leak."""
+    pledge = ('<div class="ssx-row"><div class="rlead">'
+              '<span class="ssx-tkr">301308.SZ</span></div>'
+              '<div class="rbody">founders have pledged 81%</div></div>')
+    buyback = ('<div class="ssx-row"><div class="rlead">'
+               '<span class="ssx-tkr">301308.SZ</span></div>'
+               '<div class="rbody">buyback completed</div></div>')
+    assert TICKER_RE.findall(pledge) == TICKER_RE.findall(buyback) == ["301308.SZ"]
+    assert not set(_row_keys(pledge)) & set(_row_keys(buyback))   # different rows
+    assert set(_row_keys(pledge)) & set(_row_keys(pledge))        # a repeat IS caught
+
+
+def test_row_identity_reads_table_planes_and_skips_their_headers():
+    """movers/st/blocks render a table, not cards — identity must cover them."""
+    table = ('<table class="ssx-t"><thead><tr><th>Name</th><th>Move</th></tr></thead>'
+             '<tbody>'
+             '<tr><td><span class="ssx-tkr">002368.SZ</span></td><td>+9%</td></tr>'
+             '<tr><td><span class="ssx-tkr">002466.SZ</span></td><td>-4%</td></tr>'
+             '</tbody></table>')
+    assert len(_row_keys(table)) == 2
+
+
 # ------------------------------------------------------------ shipped artifacts
 
 
@@ -291,15 +333,20 @@ def test_shipped_shell_leaks_no_paid_row():
     if not payload.get("gated"):
         pytest.skip("desk is running ungated (config.yml china_special_situations.gated=false)")
     shell = SHELL.read_text(encoding="utf-8")
-    locked = set()
+    locked = []
     for k, v in payload.items():
         if k.endswith("_html") and isinstance(v, str):
-            locked |= {t for t in TICKER_RE.findall(v) if t and t != "—"}
+            locked += _row_keys(v)
     assert locked, "a gated payload with no rows is a vacuous pass"
-    leaked = sorted(locked & set(TICKER_RE.findall(shell)))
-    assert leaked == [], f"paid rows readable in the free shell: {leaked[:8]}"
+    assert len(locked) == payload["locked"], (
+        "row identities must cover every plane's rows or this check is "
+        f"vacuous: keyed {len(locked)} of {payload['locked']} locked rows")
+    shell_rows = _row_keys(shell)
+    leaked = sorted(set(locked) & set(shell_rows))
+    assert leaked == [], ("paid rows readable in the free shell: "
+                          f"{[k[:120] for k in leaked[:3]]}")
     # the shell holds at most the preview slice of the two previewed queues
-    assert len(TICKER_RE.findall(shell)) <= payload["preview"] * 2
+    assert len(shell_rows) <= payload["preview"] * 2
 
 
 def test_shipped_payload_declares_the_required_tier():

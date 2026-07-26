@@ -95,6 +95,20 @@ Deploy is automatic: `app/deploy/update.sh` (cron, every ~3 min) restarts
    full class attributes, never a bare selector substring — the page's own CSS
    mentions every skeleton class, so `"setup-ghost" in html` is vacuously true.
 
+   **Key the leak check on the ROW, not the ticker.** These desks list
+   *situations*, and one company routinely holds several: on 2026-07-25 HON had
+   a June spin-off on the paid board while a July capital return sat in the free
+   preview (80 other US tickers, and 2 Chinese ones, carried more than one locked
+   row). A ticker seen on both sides of the wall is therefore not a leak — a
+   shared *row* is, so compare rendered row identity (the card's whole `data-*`
+   block; on China, the normalised row markup). Keying on the ticker both cries
+   wolf whenever the preview slice happens to touch a repeated name — it went red
+   on `main` and every PR that way — and silently exempts the ticker-less (`—`)
+   rows, which are paid content too. Pair it with a coverage assertion
+   (`len(keyed) == payload["locked"]`) so a markup change can never quietly turn
+   the check vacuous, and a hermetic control that proves a duplicated row IS
+   still caught.
+
 ### Controls (filters, search, sort)
 
 Bake them **fully** and mark the container inert (`.gated` → `pointer-events:
