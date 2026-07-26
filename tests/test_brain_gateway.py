@@ -43,6 +43,30 @@ from engine.neuralweb import brain_gateway as gw  # noqa: E402
 # Helpers / fixtures
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def _ai_costs_ledger_to_tmp(tmp_path, monkeypatch):
+    """Never let a route's usage row reach the REAL data/ai_costs/usage.jsonl.
+
+    The individual ``patch("lib.ai_costs.record_usage", ...)`` wrappers below cover the
+    call sites they wrap, but any path that reaches the recorder outside one of them
+    appends to the repo's own append-only ledger: running this suite dirtied
+    ``data/ai_costs/usage.jsonl`` every time, which fails the session under
+    MM_DATA_GUARD and — worse — makes the row a staged diff in whatever PR happened to
+    run the tests.  Whack-a-mole on 51 call sites cannot close that; redirect the write
+    itself.
+
+    ``_write_ledger_path`` is the single funnel every append goes through
+    (``record_usage`` -> ``_write_ledger_path`` -> ``_ledger_path``/``_shard_dir``), so
+    patching it here covers the shard path too.  Deliberately NOT patching
+    ``_repo_root``: that would also move ``_pricing_path`` off config/ai_pricing.yml and
+    silently zero out the cost maths these tests assert on.
+    """
+    monkeypatch.setattr(
+        "lib.ai_costs._write_ledger_path",
+        lambda root=None: tmp_path / "ai_costs" / "usage.jsonl",
+    )
+
+
 def _make_temp_root() -> pathlib.Path:
     """Minimal repo root with world_state + cortex memo for fallback tests."""
     d = pathlib.Path(tempfile.mkdtemp())
