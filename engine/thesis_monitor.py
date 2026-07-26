@@ -58,6 +58,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -228,7 +229,22 @@ def _read_det_ledger() -> dict[str, dict]:
 
 
 def _append_det_record(record: dict) -> None:
-    """Append a single JSON record to deterministic_theses.jsonl."""
+    """Append a single JSON record to deterministic_theses.jsonl.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    This is the single choke point for EVERY deterministic-thesis state write (open
+    headers via _ensure_deterministic_theses, close events, and per-criterion update
+    events), so gating here makes the whole monitor read-only off-lane.
+
+    Off-lane consequence, by design: _ensure_deterministic_theses() re-reads the
+    ledger and therefore returns the COMMITTED records, statuses are evaluated
+    against the COMMITTED update history, and consecutive-build streaks do not
+    advance. A theme flagged today with no committed header simply is not monitored
+    yet — the nightly opens it.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("thesis_monitor._append_det_record: skipped (COLLECT_LANE != nightly)")
+        return
     p = _det_ledger_path()
     with p.open("a") as fh:
         fh.write(json.dumps(record, separators=(",", ":"), default=str) + "\n")
@@ -710,7 +726,12 @@ def compute_thesis_monitor(convergence: dict | None, write_state: bool = True) -
         ),
     }
 
-    if write_state:
+    # Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    # `out` is still returned in full (derived from the COMMITTED ledger off-lane), so
+    # the page renders the same statuses; only the on-disk state is gated.
+    if write_state and not _ledger_advance_enabled():
+        log.debug("thesis_monitor: state write skipped (COLLECT_LANE != nightly)")
+    elif write_state:
         try:
             d = _foresight_dir()
             (d / "thesis_monitor.json").write_text(

@@ -3,7 +3,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -40,6 +57,7 @@
 
 <link rel="stylesheet" href="product-nav-icons.css?v=7b0290e9">
 <link rel="stylesheet" href="assets/css/4e16fcd2.css?v=4e16fcd2">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body class="page-commod">
 
@@ -4852,11 +4870,11 @@
     </button>
   </div>
   
-  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-07-26 01:55 UTC.</div>
+  <div class="faint" style="margin-top:14px;font-size:12px"><span class="l-en">Alerts refresh from history; intraday price shocks are best-effort. Built</span><span class="l-zh">警报由历史重算；日内价格冲击为尽力更新。生成于</span> 2026-07-26 06:17 UTC.</div>
 </div>
 
 <div class="foot">
-  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-07-26 01:55 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Jul 24, 2026<br>
+  <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> · <span class="l-en">built</span><span class="l-zh">生成于</span> 2026-07-26 06:17 UTC · <span class="l-en">data as of</span><span class="l-zh">数据截至</span> Jul 24, 2026<br>
   <span style="font-size:11px">© 2026 Mastermind Inc</span>
 </div>
 </div>
@@ -5020,6 +5038,5 @@
 })();
 </script>
 <script src="theme.js?v=015c6c36" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

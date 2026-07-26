@@ -2,7 +2,24 @@
 <html lang="en">
 
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
@@ -25,6 +42,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="assets/css/a5a98400.css?v=a5a98400">
+<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body>
 
@@ -1904,7 +1923,7 @@
           <span class="sg-fam-date">2026-07-31</span>
         </div>
         <div class="sg-sync-val" style="color:var(--down,#ef4444)">
-          0.168
+          0.166
         </div>
         <div class="sg-sync-bar">
           <div class="sg-sync-fill" style="width:16%"></div>
@@ -1921,7 +1940,7 @@
           
           
           
-          <span class="sg-frac-chip"><strong>Peak</strong> 26%</span>
+          <span class="sg-frac-chip"><strong>Peak</strong> 25%</span>
           
           
           
@@ -1953,7 +1972,7 @@
           <span class="sg-fam-date">2026-07-31</span>
         </div>
         <div class="sg-sync-val" style="color:var(--down,#ef4444)">
-          0.127
+          0.121
         </div>
         <div class="sg-sync-bar">
           <div class="sg-sync-fill" style="width:12%"></div>
@@ -1974,7 +1993,7 @@
           
           
           
-          <span class="sg-frac-chip"><strong>Decline</strong> 23%</span>
+          <span class="sg-frac-chip"><strong>Decline</strong> 22%</span>
           
           
         </div>
@@ -2002,16 +2021,16 @@
           <span class="sg-fam-date">2026-07-31</span>
         </div>
         <div class="sg-sync-val" style="color:var(--up,#22c55e)">
-          0.794
+          0.782
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:79%"></div>
+          <div class="sg-sync-fill" style="width:78%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 84%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 85%</span>
           
           
           
@@ -2023,7 +2042,7 @@
           
           
           
-          <span class="sg-frac-chip"><strong>Decline</strong> 8%</span>
+          <span class="sg-frac-chip"><strong>Decline</strong> 7%</span>
           
           
         </div>
@@ -3011,20 +3030,20 @@
             </div>
           </td>
           
-          <td class="ac-num">1080</td>
+          <td class="ac-num">1137</td>
           <td class="ac-num">57</td>
-          <td class="ac-num">19</td>
+          <td class="ac-num">20</td>
           <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-28<br>2026-07-22
+            2026-06-28<br>2026-07-26
           </td>
           <td class="ac-num">
             
-            1.3d
+            1.5d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-08-18</span>
+            <span class="ac-proj ac-proj-future">2026-08-25</span>
             
           </td>
           
@@ -3088,8 +3107,8 @@
         <span class="l-zh"><strong>拟合日期：</strong>2026-07-03</span>
       </div>
       <div class="pl-meta-chip">
-        <span class="l-en"><strong>Days since fit:</strong> 22</span>
-        <span class="l-zh"><strong>距拟合天数：</strong>22</span>
+        <span class="l-en"><strong>Days since fit:</strong> 23</span>
+        <span class="l-zh"><strong>距拟合天数：</strong>23</span>
       </div>
       <div class="pl-meta-chip">
         <span class="l-en"><strong>Refit cadence:</strong> quarterly (per D5)</span>
@@ -5830,11 +5849,11 @@
     <div class="mh-prov-grid">
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
-        <dd>2026-07-25</dd>
+        <dd>2026-07-26</dd>
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-26T01:57:17.328431Z</dd>
+        <dd>2026-07-26T06:18:42.594258Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
@@ -5865,7 +5884,7 @@
 
 </div>
 
-<script src="measurementdata/measurement_data.js?v=91571fd1" defer></script>
+<script src="measurementdata/measurement_data.js?v=355af094" defer></script>
 <script>
 (function(){
   "use strict";
@@ -5939,6 +5958,5 @@
 })();
 </script>
 <script src="theme.js?v=015c6c36" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

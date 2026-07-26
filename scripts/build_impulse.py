@@ -69,6 +69,49 @@ def _load_panel(kind: str) -> pd.DataFrame:
     return frame.sort_index().loc[:, lambda x: ~x.columns.duplicated()]
 
 
+def _align_vintage(closes: pd.DataFrame, volumes: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Truncate both panels to their COMMON last session.
+
+    Why this exists: engine.impulse pairs the two panels POSITIONALLY —
+    ``closes.iloc[-1]`` against ``vol.iloc[-1]`` — so a vintage skew silently pairs
+    today's price with a stale volume bar and bakes wrong rvol / vol_vel /
+    dollar_vol.  The express re-render lanes make that skew reachable: they restore
+    ``data/<tier>/_closes_cache.parquet`` from actions/cache (possibly FRESHER than
+    git), while ``_volume_cache.parquet`` is git-tracked, in no cache, and therefore
+    pinned at the committed vintage.
+
+    The tail failure is the loud one: adv20 is index-aligned with min_periods=10
+    over a 20-session window, so past roughly 10 sessions of skew it goes NaN for
+    every name, ``liquid`` is all-False, and EVERY lane renders empty while the
+    payload still reports status "ok" — an empty page that reads as a market call.
+
+    No-op when the panels are aligned (the nightly case, where both come from git).
+    """
+    if closes.empty or volumes.empty:
+        return closes, volumes
+    c_max, v_max = closes.index.max(), volumes.index.max()
+    if pd.isna(c_max) or pd.isna(v_max) or c_max == v_max:
+        return closes, volumes
+
+    common = min(c_max, v_max)
+    c_drop = int((closes.index > common).sum())
+    v_drop = int((volumes.index > common).sum())
+    closes = closes.loc[:common]
+    volumes = volumes.loc[:common]
+    if c_drop or v_drop:
+        msg = (f"closes/volume cache vintage skew — closes end {c_max:%Y-%m-%d}, volumes end "
+               f"{v_max:%Y-%m-%d}; both panels truncated to the common session "
+               f"{common:%Y-%m-%d} (dropped {c_drop} close / {v_drop} volume sessions). "
+               f"Positional pairing would otherwise bake wrong rvol/vol_vel and, past ~10 "
+               f"sessions of skew, empty every lane")
+        log.warning(msg)
+        # Bare print: the ONLY form GitHub Actions parses as an annotation. This module
+        # logs with a "%(levelname)s ..." prefix, so log.warning("::warning ...") emits
+        # "WARNING ::warning ..." and is never picked up.
+        print(f"::warning title=impulse::{msg}", flush=True)
+    return closes, volumes
+
+
 def _meta_map() -> dict[str, dict]:
     """ticker → {name, sector} from the per-tier constituents files."""
     out: dict[str, dict] = {}
@@ -255,6 +298,8 @@ def compute() -> dict:
     if closes.empty:
         log.warning("no close caches found — impulse page degrades to empty")
         return {"status": "no_data"}
+    # pair the panels on a COMMON last session before the engine's positional iloc[-1]
+    closes, volumes = _align_vintage(closes, volumes)
 
     res = impulse.score_panel(closes, volumes, cfg=cfg)
     if res.empty:
@@ -303,34 +348,80 @@ def compute() -> dict:
     return payload
 
 
-def render(payload: dict, site=None) -> None:
-    site = site or (config.ROOT / "site")
+def _render_html(payload: dict) -> str:
+    """Render the page to a STRING. Split out of render() so build() can prove the
+    template succeeds before either artifact is overwritten (see build())."""
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    html = env.get_template("impulse.html.j2").render(d=payload, built=built)
-    write_page(site / "impulse.html", html)
+    return env.get_template("impulse.html.j2").render(d=payload, built=built)
+
+
+def render(payload: dict, site=None) -> None:
+    site = site or (config.ROOT / "site")
+    write_page(site / "impulse.html", _render_html(payload))
     log.info("wrote %s (%.0f KB)", site / "impulse.html",
              (site / "impulse.html").stat().st_size / 1024)
 
 
 def build(write: bool = True) -> dict:
     payload = compute()
-    if write and payload.get("status") == "ok":
-        site = config.ROOT / "site"
-        (site / "factordata").mkdir(parents=True, exist_ok=True)
-        (site / "factordata" / "impulse.json").write_text(
-            json.dumps(_json_safe(payload), separators=(",", ":"), allow_nan=False))
-        log.info("wrote impulse.json (%d buy of %d universe · regime=%s)",
-                 payload.get("n_buy", 0), payload.get("universe", 0),
-                 (payload.get("regime") or {}).get("state"))
-        render(payload, site)
-    elif write:
-        # degrade-safe: still render an honest "no data" page rather than 404
+    if not write:
+        return payload
+
+    site = config.ROOT / "site"
+    status = payload.get("status")
+
+    if status != "ok":
+        # Fail-soft by law (an honest "no data" page beats a 404) but LOUD — the page
+        # bakes its null banner, which a reader must not mistake for a market read.
+        print(f"::warning title=impulse::engine returned status={status!r} — site/impulse.html "
+              f"bakes its honest-null banner (no lanes); site/factordata/impulse.json is "
+              f"deliberately NOT advanced and stays on its last-committed vintage", flush=True)
+        log.warning("impulse status=%s — rendering the null page, JSON left untouched", status)
         try:
-            render(payload, config.ROOT / "site")
+            render(payload, site)
         except Exception as e:  # noqa: BLE001
-            log.warning("impulse render skipped (%s)", e)
+            log.warning("impulse render skipped (%s)", e, exc_info=True)
+            print(f"::warning title=impulse::null-state render also failed — site/impulse.html "
+                  f"was NOT rewritten this run and stays on its last-committed vintage "
+                  f"({type(e).__name__}: {e})", flush=True)
+        return payload
+
+    universe = int(payload.get("universe") or 0)
+    with_volume = int(payload.get("with_volume") or 0)
+    if universe > 0 and with_volume / universe < 0.5:
+        # buy/igniting/coiling all gate on `liquid`, which needs volume — a coverage
+        # collapse renders EMPTY lanes that read as "nothing is igniting today".
+        msg = (f"volume coverage collapse — only {with_volume} of {universe} names carry a "
+               f"volume read ({with_volume / universe:.0%} < 50%); the buy/igniting/coiling "
+               f"lanes gate on volume-derived liquidity and would show EMPTY as if that were "
+               f"the market read")
+        log.warning(msg)
+        print(f"::warning title=impulse::{msg}", flush=True)
+
+    # Split-brain fix: impulse.json used to be written BEFORE render(), so a template
+    # exception left the JSON advanced to today while the HTML stayed frozen at the last
+    # good bake — two artifacts disagreeing, silently, at rc=0. Prove the render first;
+    # write BOTH only after it succeeds, or NEITHER.
+    try:
+        html = _render_html(payload)
+    except Exception as e:  # noqa: BLE001
+        log.warning("impulse render failed — neither artifact rewritten: %s", e, exc_info=True)
+        print(f"::warning title=impulse::template render failed — NEITHER site/impulse.html NOR "
+              f"site/factordata/impulse.json was rewritten this run; both stay on their "
+              f"last-committed vintage ({type(e).__name__}: {e})", flush=True)
+        return payload
+
+    (site / "factordata").mkdir(parents=True, exist_ok=True)
+    write_page(site / "impulse.html", html)
+    log.info("wrote %s (%.0f KB)", site / "impulse.html",
+             (site / "impulse.html").stat().st_size / 1024)
+    (site / "factordata" / "impulse.json").write_text(
+        json.dumps(_json_safe(payload), separators=(",", ":"), allow_nan=False))
+    log.info("wrote impulse.json (%d buy of %d universe · regime=%s)",
+             payload.get("n_buy", 0), payload.get("universe", 0),
+             (payload.get("regime") or {}).get("state"))
     return payload
 
 
@@ -340,7 +431,10 @@ def main() -> int:
         build()
         return 0
     except Exception as e:  # noqa: BLE001 — additive, never aborts the daily run
-        log.error("build_impulse failed: %s", e)
+        log.error("build_impulse failed: %s", e, exc_info=True)
+        print(f"::warning title=impulse::builder failed before writing — site/impulse.html and "
+              f"site/factordata/impulse.json were NOT rewritten this run and stay on their "
+              f"last-committed vintage ({type(e).__name__}: {e})", flush=True)
         return 0
 
 

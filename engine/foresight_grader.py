@@ -39,6 +39,7 @@ import math
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -418,7 +419,12 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
                  "single-horizon rows are tolerated and graded at each HORIZONS entry. "
                  "n_graded=0 until 30d flags mature — never a fabricated hit-rate."),
     }
-    if write:
+    # Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    # `summary` itself is always returned (it is derived from COMMITTED ledger rows, so
+    # n_total / hit-rates are identical either way) — only the on-disk state is gated.
+    if write and not _ledger_advance_enabled():
+        log.debug("foresight_grader.grade: track_record write skipped (COLLECT_LANE != nightly)")
+    elif write:
         try:
             d = config.data_dir() / "foresight"
             d.mkdir(parents=True, exist_ok=True)

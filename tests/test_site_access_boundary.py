@@ -169,6 +169,71 @@ def test_public_estates_stay_committable():
     )
 
 
+def _gh_path_filter_to_re(pattern: str) -> re.Pattern:
+    """GitHub filter-pattern globbing: `*` stays inside a segment, `**` crosses `/`.
+
+    Deliberately not fnmatch, whose `*` crosses `/` — that is looser than GitHub
+    and would report a path as covered when a PR touching it would trigger nothing.
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(pattern):
+        if pattern[i] == "*":
+            if pattern[i + 1:i + 2] == "*":
+                out.append(".*")
+                i += 2
+            else:
+                out.append("[^/]*")
+                i += 1
+        elif pattern[i] == "?":
+            out.append("[^/]")
+            i += 1
+        else:
+            out.append(re.escape(pattern[i]))
+            i += 1
+    return re.compile("^" + "".join(out) + "$")
+
+
+def test_tier_gate_is_reachable_from_its_own_inputs():
+    """A guard the guarded change cannot trigger is not a guard.
+
+    ci.yml is `on: pull_request` with a ~530-entry `paths:` filter, so a job whose
+    inputs are unlisted still exists but fires only as a bystander — on unrelated
+    PRs that happen to touch a listed path. Until 2026-07-25 that was true of ALL
+    eleven of tier-gate's inputs. #3488 changed exactly config/site_access.yml +
+    Caddyfile + regwall.py, triggered no workflow at all, and merged with this
+    suite never executed; `missing public prefix: /research/` then sat red on main
+    and surfaced on everyone else's PR. #3474 gave the test a workflow that NAMES
+    it; nothing gave it a trigger that REACHES it — two separate halves.
+
+    They are all listed today. This keeps them listed, and is derived rather than
+    hand-copied: it reads the tier-gate job's own `run:` steps, so a test file
+    added to the job later is required in the filter automatically.
+    """
+    ci = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    # PyYAML resolves the bare key `on` to True (YAML 1.1 booleans).
+    triggers = ci.get("on") or ci.get(True)
+    matchers = [_gh_path_filter_to_re(p) for p in triggers["pull_request"]["paths"]]
+
+    steps = ci["jobs"]["tier-gate"]["steps"]
+    required = set(re.findall(
+        r"tests/test_[A-Za-z0-9_]+\.py",
+        "\n".join(s["run"] for s in steps if "run" in s),
+    ))
+    assert required, "tier-gate runs no pytest targets — did the job change shape?"
+    # Subjects under test that no `run:` line names: the two halves of the boundary
+    # this module diffs, plus the routers the regwall/paywall suites exercise.
+    required |= {"config/site_access.yml", "app/deploy/Caddyfile",
+                 "app/regwall.py", "app/paywall.py"}
+
+    unreachable = sorted(t for t in required if not any(m.match(t) for m in matchers))
+    assert unreachable == [], (
+        f"tier-gate inputs missing from ci.yml's pull_request paths: {unreachable}. "
+        "A PR touching only these would run no serving-boundary guard at all — the "
+        "#3488 failure mode. Add each to the paths list."
+    )
+
+
 def test_generated_data_is_not_accidentally_public():
     public = _caddy_public_exclusions()
     intentional = {

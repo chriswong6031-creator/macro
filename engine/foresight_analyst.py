@@ -32,6 +32,7 @@ import logging
 import re
 from datetime import datetime, timezone
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -422,9 +423,82 @@ def compute_foresight_analyst(convergence: dict | None, cascade: dict | None = N
     return out
 
 
+def load_committed_theses() -> dict | None:
+    """Read-only replay of the LAST COMMITTED analyst theses — zero LLM, zero network.
+
+    Used by the express re-render lanes (RENDER_NO_DRIP=1), which carry a model
+    credential but must not spend a call per bake.  Returns the same shape the
+    foresight template consumes, assembled STRICTLY from committed ledger rows:
+    one entry per theme, the most recent `asof` wins.
+
+    The ledger stores `confidence` and `kill_criteria` but NOT the model's prose
+    (`mechanism`, `non_obvious`, `regime_read`), so those are read opportunistically
+    and left falsy when absent — the template already guards each one.  `regime_read`
+    is a builder-authored disclosure line, not model output: it exists so the section
+    renders at all (the template gates on it) and it says plainly that this is the
+    last saved read.  Nothing here originates or escalates a signal.
+
+    Returns None when the ledger is absent or carries no usable rows.
+    """
+    p = config.data_dir() / "foresight" / "analyst_theses.jsonl"
+    if not p.exists():
+        return None
+    latest: dict[str, dict] = {}
+    for line in p.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+        except Exception:  # noqa: BLE001
+            continue
+        t = e.get("theme")
+        if not t:
+            continue
+        if t not in latest or str(e.get("asof")) > str(latest[t].get("asof")):
+            latest[t] = e
+    if not latest:
+        return None
+
+    rows = sorted(latest.values(), key=lambda e: str(e.get("asof")), reverse=True)
+    theses = [{
+        "theme": e.get("theme"),
+        "mechanism": e.get("mechanism") or "",
+        "non_obvious": e.get("non_obvious") or "",
+        "kill_criteria": e.get("kill_criteria") or [],
+        "evidence_display": [],
+        "confidence": e.get("confidence") or "low",
+    } for e in rows]
+    asof = str(rows[0].get("asof") or "")
+
+    return {
+        "asof": asof,
+        "n_theses": len(theses),
+        "theses": theses,
+        "from_ledger": True,
+        "regime_read": (
+            f"Last saved analyst read — {asof}. No new read was taken for this rebuild; "
+            f"the break-conditions below are the ones it last set."
+        ),
+        "regime_read_zh": (
+            f"上次保存的分析师解读 — {asof}。本次重建未重新解读；"
+            f"以下失效条件为上次设定。"
+        ),
+        "confidence": "low",
+        "disclaimer": ("An AI reading of the desk's OWN deterministic convergence — "
+                       "falsifiable and forward-graded, never a price forecast. "
+                       "Replayed from the last saved read; not regenerated for this page."),
+    }
+
+
 def _append_ledger(out: dict, convergence: dict) -> None:
     """Append each thesis with the deterministic HEAT it was built on, so thesis_monitor can
-    fire when that convergence decays. Deduped by (theme, asof)."""
+    fire when that convergence decays. Deduped by (theme, asof).
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("foresight_analyst._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     d = config.data_dir() / "foresight"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "analyst_theses.jsonl"

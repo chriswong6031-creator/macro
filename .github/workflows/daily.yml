@@ -955,6 +955,11 @@ jobs:
           # persists data/leader_radar/state_history.parquet + revisions_history.parquet;
           # writes site/leaderradar/radar.json (schema leader_radar.v2).
           # Absent stores → honest nulls. Always exits 0; never breaks the render.
+          # DELIBERATELY absent from the render/engine-render express lanes (vetted
+          # 2026-07-25): the data/ writes are lane-gated and safe, but the bake is not —
+          # pick_lab consumes radar.json fires with no as_of guard, and the payload churns
+          # built_at/elapsed_s per run. See the omission comments in both express lanes;
+          # hardening tracked separately.
           run_py "leader radar (build_leader_radar)" scripts.build_leader_radar
           # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
           # written by build_stock_library, which runs inside build_site above). Enriches the
@@ -986,6 +991,9 @@ jobs:
           # Backfills/upserts the runner-local data/odds_ohlcv store (yfinance), recomputes the
           # per-ticker factor matrices (site/oddsmatrix -> R2) + site/oddsdata catalog/factor_match
           # JSON, and renders odds.html. Display-only; returns 0 on error — never breaks the render.
+          # DELIBERATELY absent from the render/engine-render express lanes (vetted 2026-07-25):
+          # it is a network collector every run, its store is gitignored (cold-start class),
+          # and its R2 matrices only publish here — see the omission comments in both lanes.
           run_py "odds desk (build_odds)" scripts.build_odds
           # Technical Lab hub — screener + lab profile page. Reads site/factordata/tech_screener.json
           # + tech_lab.json (written by nightly tech signal engine). Falls back to sample fixture if
@@ -2877,6 +2885,27 @@ jobs:
           # (config copywriter.llm.enabled AND this env var); any LLM failure or
           # per-post validation failure falls back to the deterministic templates.
           MARKETING_LLM_ENABLED: "1"
+          # …and the credentials that arming actually needs. WITHOUT THESE THE
+          # FLAG ABOVE IS A LIE: lib.config.secret() reads env only, so
+          # llm_auth.build_providers() returned [] on every nightly,
+          # write_posts_llm hit `if not providers: return None`, and EVERY post
+          # silently fell back to the deterministic templates. The whole voice
+          # layer — personas, copy laws, the "sound like a real person" prompt —
+          # had never once run in production, which is what made the flagship
+          # account read machine-written (2026-07-26 incident). copywriter.py now
+          # also emits a ::warning:: when armed-but-credential-less, so this
+          # cannot fail silently again.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_OAUTH_TOKEN_1: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_1 }}
+          CLAUDE_CODE_OAUTH_TOKEN_2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_2 }}
+          CLAUDE_CODE_OAUTH_TOKEN_3: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_3 }}
+          CLAUDE_CODE_OAUTH_TOKEN_4: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_4 }}
+          CLAUDE_CODE_OAUTH_TOKEN_5: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_5 }}
+          CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
+          CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          METAB_KEYS_ENABLED: ${{ vars.METAB_KEYS_ENABLED }}
           # Emits the current D1 content-plan items into the outbox queue
           # (status=queued). Posting stays gated by approval + MARKETING_PUBLISH_ENABLED.
           MARKETING_OUTBOX_ENABLED: "1"

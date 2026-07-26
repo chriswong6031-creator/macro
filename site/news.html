@@ -2,13 +2,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markets News — What matters now · Mastermind</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="assets/css/0bd6e622.css?v=0bd6e622">
+<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 
 
 
@@ -274,8 +293,8 @@
   <div class="nx-eyebrow"><span class="live"></span><span class="l-en">Markets News</span><span class="l-zh">市场新闻</span></div>
   <h1 class="nx-title"><span class="l-en">What matters now</span><span class="l-zh">当下要闻</span></h1>
   <p class="nx-sub"><span class="l-en">The market-moving business and macro news that matters now — importance-ranked, fresh, and de-noised.</span><span class="l-zh">此刻真正影响市场的商业与宏观新闻——按重要性排序、保持新鲜、去除噪音。</span></p>
-  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-26T01:16:55.728860+00:00"></span>
-    · <span class="num">44</span> <span class="l-en">stories ranked</span><span class="l-zh">条已排序</span></div>
+  <div class="nx-updated"><span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="rel-time num" data-ts="2026-07-26T06:11:09.253359+00:00"></span>
+    · <span class="num">45</span> <span class="l-en">stories ranked</span><span class="l-zh">条已排序</span></div>
 </header>
 
 
@@ -395,30 +414,32 @@
 
   
 
+  
+
 
 <div class="nx-pulse">
   <span class="nx-pulse-lbl"><span class="l-en">Theme pulse</span><span class="l-zh">主题热度</span></span>
   
     
-    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>4</b></span>
+    <span class="nx-heat th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span> <b>7</b></span>
   
     
-    <span class="nx-heat th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span> <b>4</b></span>
+    <span class="nx-heat th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <b>5</b></span>
   
     
-    <span class="nx-heat th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span> <b>4</b></span>
+    <span class="nx-heat th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span> <b>4</b></span>
+  
+    
+    <span class="nx-heat th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span> <b>3</b></span>
   
     
     <span class="nx-heat th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span> <b>3</b></span>
   
     
-    <span class="nx-heat th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span> <b>3</b></span>
+    <span class="nx-heat th-deals"><span class="l-en">Deals</span><span class="l-zh">并购</span> <b>2</b></span>
   
     
-    <span class="nx-heat th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>2</b></span>
-  
-    
-    <span class="nx-heat th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span> <b>2</b></span>
+    <span class="nx-heat th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span> <b>1</b></span>
   
   
   <span class="nx-pulse-sent"><span class="dot" style="background:var(--up);"></span>
@@ -623,8 +644,30 @@
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
+  <article class="nx-story" data-lane="companies"
            data-idx="8"
+           data-search="earnings scorecard: communication sector sees 4 of 6 stocks top eps estimates this week  seeking alpha - market currents"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">44</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618340-earnings-scorecard-communication-sector-sees-4-of-6-stocks-top-eps-estimates-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span><span class="l-zh">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:00:53+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="9"
            data-search="‘time will tell whether that was a good bet’: my adviser got me a full spacex ipo allocation. was i lucky?  marketwatch.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">44</div>
@@ -645,8 +688,30 @@
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
+  <article class="nx-story" data-lane="companies"
            data-idx="9"
+           data-search="earnings scorecard: communication sector sees 4 of 6 stocks top eps estimates this week  seeking alpha - market currents"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">43</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618340-earnings-scorecard-communication-sector-sees-4-of-6-stocks-top-eps-estimates-this-week?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span><span class="l-zh">Earnings scorecard: Communication sector sees 4 of 6 stocks top EPS estimates this week</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T17:00:53+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="markets"
+           data-idx="10"
            data-search="analysis: a powerful new coalition of ai skeptics is coalescing right in trump&#39;s blind spot  cnbc.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">43</div>
@@ -668,7 +733,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="10"
+           data-idx="11"
            data-search="how this 70-year-old honey bee farmer is keeping his family farm alive: &#39;we completely rely on mother nature&#39;  cnbc"
            style="--acc:var(--link);">
     <div class="nx-rankdot">43</div>
@@ -690,7 +755,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="11"
+           data-idx="12"
            data-search="big tech debt flood is taking over risk in market: credit weekly  bloomberg.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">43</div>
@@ -712,10 +777,10 @@
   
   
   <article class="nx-story" data-lane="companies"
-           data-idx="12"
+           data-idx="13"
            data-search="trader who successfully shorted tesla into earnings now sets sights on this high flyer tsla cnbc - investing"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">41</div>
+    <div class="nx-rankdot">42</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span></a>
       <div class="nx-chips">
@@ -734,7 +799,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="13"
+           data-idx="14"
            data-search="yes, the ai stock selloff looks terrifying. but it might actually save the bull market.  marketwatch.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">40</div>
@@ -756,7 +821,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="14"
+           data-idx="15"
            data-search="is your index fund an accidental bet on ai? these two massive etfs show why it might be.  marketwatch.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">40</div>
@@ -777,30 +842,8 @@
   </article>
   
   
-  <article class="nx-story" data-lane="companies"
-           data-idx="14"
-           data-search="trader who successfully shorted tesla into earnings now sets sights on this high flyer tsla cnbc - investing"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">43</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.cnbc.com/2026/07/24/trader-who-successfully-shorted-tesla-into-earnings-now-sets-sights-on-this-high-flyer-.html" target="_blank" rel="noopener"><span class="l-en">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span><span class="l-zh">Trader who successfully shorted Tesla into earnings now sets sights on this high flyer</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">CNBC - Investing</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T17:28:15+00:00"></span>
-        <span class="nx-tk">TSLA</span>
-      </div>
-    </div>
-  </article>
-  
-  
   <article class="nx-story" data-lane="markets"
-           data-idx="15"
+           data-idx="16"
            data-search="oil prices may fall, but gasoline prices won’t. look at the trap we’re in.  marketwatch.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">40</div>
@@ -822,7 +865,7 @@
   
   
   <article class="nx-story" data-lane="markets"
-           data-idx="16"
+           data-idx="17"
            data-search="europe’s stock market rally is the most concentrated in years  bloomberg.com"
            style="--acc:var(--link);">
     <div class="nx-rankdot">40</div>
@@ -844,32 +887,10 @@
   
   
   <article class="nx-story" data-lane="companies"
-           data-idx="17"
-           data-search="notable tech headlines for the week: alphabet, intel, amd in focus amd googl intc seeking alpha - market currents"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">39</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618374-notable-tech-headlines-for-the-week-alphabet-intel-amd-in-focus?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Notable tech headlines for the week: Alphabet, Intel, AMD in focus</span><span class="l-zh">Notable tech headlines for the week: Alphabet, Intel, AMD in focus</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:05:10+00:00"></span>
-        <span class="nx-tk">AMD</span><span class="nx-tk">GOOGL</span><span class="nx-tk">INTC</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story" data-lane="companies"
            data-idx="18"
            data-search="nvidia, sk group unveil $500 billion-plus ai data centers initiative, memory partnership nvda reuters"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">38</div>
+    <div class="nx-rankdot">39</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://news.google.com/rss/articles/CBMizAFBVV95cUxPVFFLak9qWnRXdllOXzdoR0dESHJsZnUzb3E4UnpreExzYVZMa1lYa1JESlZiZUw4VFFOazNUSE4wTll5U3kycTg4RjlYaDQtdEp0T0xQejFDYXZUaVROT1gtaFRQM1RlM0Fpei1yNmZ5bFZFZlo5VEVVYkVCbzRvLVdpZVMxcG9TQ3c1VERSQmZiRGRDZ1hDNnd5bUhWUGNmNmZYMk9lSjN4bzRGTWhNd2RvQWowYTRqdVdXcjJNejFManNYLXNzb1BuMlg?oc=5" target="_blank" rel="noopener"><span class="l-en">Nvidia, SK Group unveil $500 billion-plus AI data centers initiative, memory partnership</span><span class="l-zh">Nvidia, SK Group unveil $500 billion-plus AI data centers initiative, memory partnership</span></a>
       <div class="nx-chips">
@@ -889,11 +910,11 @@
   
   <article class="nx-story" data-lane="companies"
            data-idx="19"
-           data-search="apple faces opposition from micron to use chinese memory chips - report xlk aapl mu seeking alpha - market currents"
+           data-search="nvidia to invest $1b in naver to boost south korea ai factory infrastructure qqq nvda seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">38</div>
+    <div class="nx-rankdot">39</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618422-apple-faces-opposition-micron-use-chinese-memory-chips?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Apple faces opposition from Micron to use Chinese memory chips - report</span><span class="l-zh">Apple faces opposition from Micron to use Chinese memory chips - report</span></a>
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618427-nvidia-invest-1b-naver-boost-south-korea-ai-factory-infrastructure?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Nvidia to invest $1B in Naver to boost South Korea AI factory infrastructure</span><span class="l-zh">Nvidia to invest $1B in Naver to boost South Korea AI factory infrastructure</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
         
@@ -902,30 +923,30 @@
       </div>
       <div class="nx-meta">
         <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T13:30:28+00:00"></span>
-        <span class="nx-tk">XLK</span><span class="nx-tk">AAPL</span><span class="nx-tk">MU</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:26:56+00:00"></span>
+        <span class="nx-tk">QQQ</span><span class="nx-tk">NVDA</span>
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story" data-lane="companies"
+  <article class="nx-story" data-lane="macro"
            data-idx="20"
-           data-search="financial stocks win on fund inflows; hut 8, iren among gainers; canadian banks, amex in losers xlf seeking alpha - market currents"
+           data-search="president trump just implemented new tariffs. how are small businesses coping?  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">38</div>
+    <div class="nx-rankdot">37</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618326-financial-stocks-win-on-fund-inflows-hut-8-iren-among-gainers-canadian-banks-amex-in-losers?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Financial stocks win on fund inflows; Hut 8, Iren among gainers; Canadian banks, AmEx in losers</span><span class="l-zh">Financial stocks win on fund inflows; Hut 8, Iren among gainers; Canadian banks, AmEx in losers</span></a>
+      <a class="nx-story-title" href="https://www.npr.org/2026/07/25/nx-s1-5900891/president-trump-just-implemented-new-tariffs-how-are-small-businesses-coping" target="_blank" rel="noopener"><span class="l-en">President Trump just implemented new tariffs. How are small businesses coping?</span><span class="l-zh">President Trump just implemented new tariffs. How are small businesses coping?</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        
-        
+        <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
+        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
+        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
         
       </div>
       <div class="nx-meta">
-        <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:00:33+00:00"></span>
-        <span class="nx-tk">XLF</span>
+        <span class="src">NPR - Business</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T21:04:02+00:00"></span>
+        
       </div>
     </div>
   </article>
@@ -933,6 +954,50 @@
   
   <article class="nx-story" data-lane="companies"
            data-idx="21"
+           data-search="texas instruments vs. qualcomm: one pays out 94% of earnings. the better dividend chip stock is clear. xlk yahoo finance - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">37</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/texas-instruments-vs-qualcomm-one-230002513.html" target="_blank" rel="noopener"><span class="l-en">Texas Instruments vs. Qualcomm: One Pays Out 94% of Earnings. The Better Dividend Chip Stock Is Clear.</span><span class="l-zh">Texas Instruments vs. Qualcomm: One Pays Out 94% of Earnings. The Better Dividend Chip Stock Is Clear.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T23:00:02Z"></span>
+        <span class="nx-tk">XLK</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="companies"
+           data-idx="22"
+           data-search="samsung nabs $200b chip deal with broadcom xlk avgo seeking alpha - market currents"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">36</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618429-samsung-nabs-200b-chip-deal-broadcom?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Samsung nabs $200B chip deal with Broadcom</span><span class="l-zh">Samsung nabs $200B chip deal with Broadcom</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Seeking Alpha - Market Currents</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:45:03+00:00"></span>
+        <span class="nx-tk">XLK</span><span class="nx-tk">AVGO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story" data-lane="companies"
+           data-idx="23"
            data-search="intel rides ai boom to fastest revenue growth in almost 15 years, but shares sink qqq intc cnbc - tech"
            style="--acc:var(--link);">
     <div class="nx-rankdot">36</div>
@@ -953,13 +1018,13 @@
   </article>
   
   
-  <article class="nx-story" data-lane="companies"
-           data-idx="22"
-           data-search="insider trades: johnson &amp; johnson, tsmc among notable names  seeking alpha - market currents"
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="24"
+           data-search="costs of u.s. grid buildout soaring alongside demand for power, to pose headache for consumers  seeking alpha - market currents"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">34</div>
+    <div class="nx-rankdot">35</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://seekingalpha.com/news/4618423-insider-trades-johnson-johnson-tsmc-among-notable-names?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Insider trades: Johnson &amp; Johnson, TSMC among notable names</span><span class="l-zh">Insider trades: Johnson &amp; Johnson, TSMC among notable names</span></a>
+      <a class="nx-story-title" href="https://seekingalpha.com/news/4618411-costs-of-u-s-grid-buildout-soaring-alongside-demand-for-power?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Costs of U.S. grid buildout soaring alongside demand for power, to pose headache for consumers</span><span class="l-zh">Costs of U.S. grid buildout soaring alongside demand for power, to pose headache for consumers</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
         
@@ -968,15 +1033,37 @@
       </div>
       <div class="nx-meta">
         <span class="src">Seeking Alpha - Market Currents</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T15:03:27+00:00"></span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-26T00:25:13+00:00"></span>
         
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story" data-lane="markets"
-           data-idx="23"
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="25"
+           data-search="general motors (gm) lifts 2026 outlook: is gm stock still a buy?  yahoo finance - top stories"
+           style="--acc:var(--up);">
+    <div class="nx-rankdot">34</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/general-motors-gm-lifts-2026-225607325.html" target="_blank" rel="noopener"><span class="l-en">General Motors (GM) Lifts 2026 Outlook: Is GM Stock Still a Buy?</span><span class="l-zh">General Motors (GM) Lifts 2026 Outlook: Is GM Stock Still a Buy?</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+        <span class="nx-chip evt"><span class="l-en">Guidance ↑</span><span class="l-zh">上调指引</span></span>
+        <span class="nx-chip dir-up"><span class="l-en">Positive</span><span class="l-zh">偏多</span></span>
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:56:07Z"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="markets"
+           data-idx="26"
            data-search="ai has completely rewritten the rules of the stock market  barron&#39;s"
            style="--acc:var(--link);">
     <div class="nx-rankdot">34</div>
@@ -998,7 +1085,7 @@
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="24"
+           data-idx="27"
            data-search="gm beats on earnings, raises guidance amid &#39;resilient&#39; consumer, pricing  cnbc - markets"
            style="--acc:var(--up);">
     <div class="nx-rankdot">34</div>
@@ -1020,10 +1107,10 @@
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="25"
+           data-idx="28"
            data-search="tesla shares poised for biggest earnings move in a year tsla cnbc - investing"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">32</div>
+    <div class="nx-rankdot">33</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.cnbc.com/2026/07/21/tesla-shares-poised-for-biggest-earnings-move-in-a-year.html" target="_blank" rel="noopener"><span class="l-en">Tesla shares poised for biggest earnings move in a year</span><span class="l-zh">特斯拉股价或迎一年来最大财报行情</span></a>
       <div class="nx-chips">
@@ -1042,98 +1129,10 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="26"
-           data-search="trump administration employs new legal paths for tariffs after supreme court defeat  npr - economy"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">32</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.npr.org/2026/07/25/nx-s1-5903183/trump-administration-employs-new-legal-paths-for-tariffs-after-supreme-court-defeat" target="_blank" rel="noopener"><span class="l-en">Trump administration employs new legal paths for tariffs after Supreme Court defeat</span><span class="l-zh">Trump administration employs new legal paths for tariffs after Supreme Court defeat</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-        <span class="nx-chip evt"><span class="l-en">Trade controls</span><span class="l-zh">贸易管制</span></span>
-        <span class="nx-chip dir-mixed"><span class="l-en">Mixed</span><span class="l-zh">分化</span></span>
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">NPR - Economy</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T11:43:49+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="fed"
-           data-idx="27"
-           data-search="dow jones futures: market triggers sell signal; apple earnings, iran news, fed meeting in focus aapl yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">31</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.investors.com/market-trend/stock-market-today/dow-jones-futures-apple-earnings-iran-news-fed-meeting-ai-stocks/?src=A00220&amp;yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span><span class="l-zh">Dow Jones Futures: Market Triggers Sell Signal; Apple Earnings, Iran News, Fed Meeting In Focus</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T12:24:40Z"></span>
-        <span class="nx-tk">AAPL</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="28"
-           data-search="a ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager  marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">29</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/a-generational-buying-opportunity-guarantees-inflation-plus-3-a-year-says-this-hedge-fund-manager-eb4cd29c?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">A ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager</span><span class="l-zh">A ‘generational buying opportunity’ guarantees inflation plus 3% a year, says this hedge-fund manager</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:32:00+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
            data-idx="29"
-           data-search="s&amp;p 500 flashes sell signals — options traders are bracing for wild swings in apple, meta and microsoft spy aapl msft meta marketwatch - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">29</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/s-p-500-flashes-sell-signals-options-traders-are-bracing-for-wild-swings-in-apple-meta-and-microsoft-83ff7d65?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">S&amp;P 500 flashes sell signals — options traders are bracing for wild swings in Apple, Meta and Microsoft</span><span class="l-zh">S&amp;P 500 flashes sell signals — options traders are bracing for wild swings in Apple, Meta and Microsoft</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:21:00+00:00"></span>
-        <span class="nx-tk">SPY</span><span class="nx-tk">AAPL</span><span class="nx-tk">MSFT</span><span class="nx-tk">META</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="30"
            data-search="expert shares how trump&#39;s new round of tariffs could affect americans  npr - economy"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">29</div>
+    <div class="nx-rankdot">32</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5905322/expert-shares-how-trumps-new-round-of-tariffs-could-affect-americans" target="_blank" rel="noopener"><span class="l-en">Expert shares how Trump&#39;s new round of tariffs could affect Americans</span><span class="l-zh">Expert shares how Trump&#39;s new round of tariffs could affect Americans</span></a>
       <div class="nx-chips">
@@ -1152,34 +1151,12 @@
   
   
   <article class="nx-story hide" data-lane="companies"
-           data-idx="31"
-           data-search="apple warns scammers are using facetime to steal bank account passwords — here&#39;s what to watch for xlf aapl yahoo finance - top stories"
+           data-idx="30"
+           data-search="‘time will tell whether that was a good bet’: my adviser got me a full spacex ipo allocation. was i lucky?  marketwatch - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">28</div>
+    <div class="nx-rankdot">30</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/technology/articles/apple-warns-scammers-using-facetime-131500866.html" target="_blank" rel="noopener"><span class="l-en">Apple warns scammers are using FaceTime to steal bank account passwords — here&#39;s what to watch for</span><span class="l-zh">Apple warns scammers are using FaceTime to steal bank account passwords — here&#39;s what to watch for</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T13:15:00Z"></span>
-        <span class="nx-tk">XLF</span><span class="nx-tk">AAPL</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="companies"
-           data-idx="32"
-           data-search="paramount says it will pause its warner acquisition while legal challenges play out  npr - business"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">28</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906818/paramount-warner-bros-merger-pause-lawsuits" target="_blank" rel="noopener"><span class="l-en">Paramount says it will pause its Warner acquisition while legal challenges play out</span><span class="l-zh">Paramount says it will pause its Warner acquisition while legal challenges play out</span></a>
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/time-will-tell-whether-that-was-a-good-bet-my-adviser-got-me-a-full-spacex-ipo-allocation-was-i-lucky-7f319645?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span><span class="l-zh">‘Time will tell whether that was a good bet’: My adviser got me a full SpaceX IPO allocation. Was I lucky?</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购</span></span>
         
@@ -1187,8 +1164,8 @@
         
       </div>
       <div class="nx-meta">
-        <span class="src">NPR - Business</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:26:21+00:00"></span>
+        <span class="src">MarketWatch - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T22:30:00+00:00"></span>
         
       </div>
     </div>
@@ -1196,10 +1173,10 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="33"
+           data-idx="31"
            data-search="u.s. allies hit with new tariffs object to trump&#39;s forced labor allegations  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">26</div>
+    <div class="nx-rankdot">29</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906301/us-global-trump-tariffs-reaction" target="_blank" rel="noopener"><span class="l-en">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span><span class="l-zh">U.S. allies hit with new tariffs object to Trump&#39;s forced labor allegations</span></a>
       <div class="nx-chips">
@@ -1217,13 +1194,35 @@
   </article>
   
   
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="34"
-           data-search="the august stock-market slump is a myth — so why does wall street keep repeating it? spy marketwatch - top stories"
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="32"
+           data-search="paramount says it will pause its warner acquisition while legal challenges play out  npr - business"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">26</div>
+    <div class="nx-rankdot">27</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/the-august-stock-market-slump-is-a-myth-so-why-does-wall-street-keep-repeating-it-bc47db44?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">The August stock-market slump is a myth — so why does Wall Street keep repeating it?</span><span class="l-zh">The August stock-market slump is a myth — so why does Wall Street keep repeating it?</span></a>
+      <a class="nx-story-title" href="https://www.npr.org/2026/07/24/nx-s1-5906818/paramount-warner-bros-merger-pause-lawsuits" target="_blank" rel="noopener"><span class="l-en">Paramount says it will pause its Warner acquisition while legal challenges play out</span><span class="l-zh">Paramount says it will pause its Warner acquisition while legal challenges play out</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">NPR - Business</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:26:21+00:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="33"
+           data-search="yes, the ai stock selloff looks terrifying. but it might actually save the bull market. qqq marketwatch - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">27</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/yes-the-ai-stock-selloff-looks-terrifying-but-it-might-actually-save-the-bull-market-3bef59be?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span><span class="l-zh">Yes, the AI stock selloff looks terrifying. But it might actually save the bull market.</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
         
@@ -1232,42 +1231,42 @@
       </div>
       <div class="nx-meta">
         <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:59:00+00:00"></span>
-        <span class="nx-tk">SPY</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:59:00+00:00"></span>
+        <span class="nx-tk">QQQ</span>
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story hide" data-lane="fed"
-           data-idx="35"
-           data-search="are 7% mortgage rates next? the treasury market is flashing a warning sign for home buyers. xhb marketwatch - top stories"
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="34"
+           data-search="central pacific financial corp. q2 2026 earnings call summary  yahoo finance - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">23</div>
+    <div class="nx-rankdot">24</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.marketwatch.com/story/the-treasury-market-is-flashing-a-warning-sign-for-home-buyers-are-7-mortgage-rates-next-58b5b3b1?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Are 7% mortgage rates next? The Treasury market is flashing a warning sign for home buyers.</span><span class="l-zh">Are 7% mortgage rates next? The Treasury market is flashing a warning sign for home buyers.</span></a>
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/central-pacific-financial-corp-q2-002127495.html" target="_blank" rel="noopener"><span class="l-en">Central Pacific Financial Corp. Q2 2026 Earnings Call Summary</span><span class="l-zh">Central Pacific Financial Corp. Q2 2026 Earnings Call Summary</span></a>
       <div class="nx-chips">
-        <span class="nx-chip th-credit"><span class="l-en">Rates</span><span class="l-zh">利率</span></span>
+        <span class="nx-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
         
         
         
       </div>
       <div class="nx-meta">
-        <span class="src">MarketWatch - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T14:08:00+00:00"></span>
-        <span class="nx-tk">XHB</span>
+        <span class="src">Yahoo Finance - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T00:21:27Z"></span>
+        
       </div>
     </div>
   </article>
   
   
-  <article class="nx-story hide" data-lane="fed"
-           data-idx="36"
-           data-search="gold prices today, friday, july 24, 2026: gold price remains below $4,100 ahead of next week’s rate decision gld yahoo finance - top stories"
+  <article class="nx-story hide" data-lane="companies"
+           data-idx="35"
+           data-search="how much do you need invested to match the maximum social security benefit with dividends?  yahoo finance - top stories"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">22</div>
+    <div class="nx-rankdot">24</div>
     <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/personal-finance/investing/article/gold-prices-today-friday-july-24-2026-gold-price-remains-below-4100-ahead-of-next-weeks-rate-decision-152726975.html" target="_blank" rel="noopener"><span class="l-en">Gold prices today, Friday, July 24, 2026: Gold price remains below $4,100 ahead of next week’s rate decision</span><span class="l-zh">Gold prices today, Friday, July 24, 2026: Gold price remains below $4,100 ahead of next week’s rate decision</span></a>
+      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/much-invested-match-maximum-social-221203344.html" target="_blank" rel="noopener"><span class="l-en">How Much Do You Need Invested to Match the Maximum Social Security Benefit With Dividends?</span><span class="l-zh">How Much Do You Need Invested to Match the Maximum Social Security Benefit With Dividends?</span></a>
       <div class="nx-chips">
         <span class="nx-chip th-capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购</span></span>
         
@@ -1276,29 +1275,7 @@
       </div>
       <div class="nx-meta">
         <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-24T15:27:26Z"></span>
-        <span class="nx-tk">GLD</span>
-      </div>
-    </div>
-  </article>
-  
-  
-  <article class="nx-story hide" data-lane="companies"
-           data-idx="37"
-           data-search="citi warns u.s. equity positioning may face further pressure  yahoo finance - top stories"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">21</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://finance.yahoo.com/markets/stocks/articles/citi-warns-u-equity-positioning-153000651.html" target="_blank" rel="noopener"><span class="l-en">Citi Warns U.S. Equity Positioning May Face Further Pressure</span><span class="l-zh">Citi Warns U.S. Equity Positioning May Face Further Pressure</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">Yahoo Finance - Top Stories</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-25T15:30:00Z"></span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-24T22:12:03Z"></span>
         
       </div>
     </div>
@@ -1306,10 +1283,32 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="38"
+           data-idx="36"
+           data-search="is your index fund an accidental bet on ai? these two massive etfs show why it might be. qqq marketwatch - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">22</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/south-korean-stocks-werent-a-big-deal-in-your-emerging-markets-fund-artificial-intelligence-changed-that-21308089?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span><span class="l-zh">Is your index fund an accidental bet on AI? These two massive ETFs show why it might be.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">MarketWatch - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:45:00+00:00"></span>
+        <span class="nx-tk">QQQ</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="37"
            data-search="real personal consumption expenditures by state and real personal income by state, 2024  bea - current releases"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">20</div>
+    <div class="nx-rankdot">21</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.bea.gov/news/2026/real-personal-consumption-expenditures-state-and-real-personal-income-state-2024" target="_blank" rel="noopener"><span class="l-en">Real Personal Consumption Expenditures by State and Real Personal Income by State, 2024</span><span class="l-zh">2024年各州实际个人消费支出与实际个人收入</span></a>
       <div class="nx-chips">
@@ -1328,10 +1327,10 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="39"
+           data-idx="38"
            data-search="how investors learned to live with inflation  the economist - finance &amp; economics"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">19</div>
+    <div class="nx-rankdot">20</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.economist.com/finance-and-economics/2026/07/21/how-investors-learned-to-live-with-inflation" target="_blank" rel="noopener"><span class="l-en">How investors learned to live with inflation</span><span class="l-zh">投资者如何学会与通胀共存</span></a>
       <div class="nx-chips">
@@ -1350,10 +1349,10 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="40"
+           data-idx="39"
            data-search="budget and performance  bea - current releases"
            style="--acc:var(--link);">
-    <div class="nx-rankdot">18</div>
+    <div class="nx-rankdot">20</div>
     <div class="nx-story-main">
       <a class="nx-story-title" href="https://www.bea.gov/about/budget-and-performance" target="_blank" rel="noopener"><span class="l-en">Budget and Performance</span><span class="l-zh">预算与绩效</span></a>
       <div class="nx-chips">
@@ -1372,7 +1371,73 @@
   
   
   <article class="nx-story hide" data-lane="macro"
+           data-idx="40"
+           data-search="oil prices may fall, but gasoline prices won’t. look at the trap we’re in. uso marketwatch - top stories"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">19</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.marketwatch.com/story/oil-prices-may-fall-but-gasoline-prices-wont-look-at-the-trap-were-in-7f4c3738?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span><span class="l-zh">Oil prices may fall, but gasoline prices won’t. Look at the trap we’re in.</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">MarketWatch - Top Stories</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-25T18:34:00+00:00"></span>
+        <span class="nx-tk">USO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
            data-idx="41"
+           data-search="cpi for all items falls 0.4% in june; gasoline down uso bls - cpi"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">18</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bls.gov/news.release/archives/cpi_07142026.htm" target="_blank" rel="noopener"><span class="l-en">CPI for all items falls 0.4% in June; gasoline down</span><span class="l-zh">CPI for all items falls 0.4% in June; gasoline down</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">BLS - CPI</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-14T07:50:27.969-04:00"></span>
+        <span class="nx-tk">USO</span>
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="42"
+           data-search="ppi for final demand declines 0.3% in june; goods fall 1.4%, services increase 0.2%  bls - ppi"
+           style="--acc:var(--link);">
+    <div class="nx-rankdot">16</div>
+    <div class="nx-story-main">
+      <a class="nx-story-title" href="https://www.bls.gov/news.release/archives/ppi_07152026.htm" target="_blank" rel="noopener"><span class="l-en">PPI for final demand declines 0.3% in June; goods fall 1.4%, services increase 0.2%</span><span class="l-zh">PPI for final demand declines 0.3% in June; goods fall 1.4%, services increase 0.2%</span></a>
+      <div class="nx-chips">
+        <span class="nx-chip th-inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></span>
+        
+        
+        
+      </div>
+      <div class="nx-meta">
+        <span class="src">BLS - PPI</span>
+        <span>·</span><span class="rel-time" data-ts="2026-07-15T07:50:27.246-04:00"></span>
+        
+      </div>
+    </div>
+  </article>
+  
+  
+  <article class="nx-story hide" data-lane="macro"
+           data-idx="43"
            data-search="can china dominate ai exports, too? qqq the economist - finance &amp; economics"
            style="--acc:var(--link);">
     <div class="nx-rankdot">16</div>
@@ -1394,7 +1459,7 @@
   
   
   <article class="nx-story hide" data-lane="macro"
-           data-idx="42"
+           data-idx="44"
            data-search="can prediction markets win over wall street? spy the economist - finance &amp; economics"
            style="--acc:var(--link);">
     <div class="nx-rankdot">16</div>
@@ -1414,31 +1479,9 @@
     </div>
   </article>
   
-  
-  <article class="nx-story hide" data-lane="macro"
-           data-idx="43"
-           data-search="the world’s balance-sheet is out of kilter with its economy  the economist - finance &amp; economics"
-           style="--acc:var(--link);">
-    <div class="nx-rankdot">14</div>
-    <div class="nx-story-main">
-      <a class="nx-story-title" href="https://www.economist.com/finance-and-economics/2026/07/23/the-worlds-balance-sheet-is-out-of-kilter-with-its-economy" target="_blank" rel="noopener"><span class="l-en">The world’s balance-sheet is out of kilter with its economy</span><span class="l-zh">The world’s balance-sheet is out of kilter with its economy</span></a>
-      <div class="nx-chips">
-        <span class="nx-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-        
-        
-        
-      </div>
-      <div class="nx-meta">
-        <span class="src">The Economist - Finance &amp; Economics</span>
-        <span>·</span><span class="rel-time" data-ts="2026-07-23T09:42:17+00:00"></span>
-        
-      </div>
-    </div>
-  </article>
-  
   <div class="nx-empty" id="nxEmpty" style="display:none;"><span class="l-en">No stories match — try another lane or clear the search.</span><span class="l-zh">没有匹配的新闻——换个分类或清空搜索。</span></div>
 </section>
-<button class="gbtn nx-more" id="nxMore"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> <span class="num">(+20)</span></button>
+<button class="gbtn nx-more" id="nxMore"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> <span class="num">(+21)</span></button>
 
 
 
@@ -1619,7 +1662,7 @@
     
     <div class="nx-rail-card">
       <div class="nx-rail-hd"><span class="l-en">In focus</span><span class="l-zh">焦点</span></div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"><span class="nx-tk">{&#39;ticker&#39;: &#39;AAPL&#39;, &#39;count&#39;: 4}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;SPY&#39;, &#39;count&#39;: 3}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;TSLA&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;INTC&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;XLF&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;QQQ&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;AMD&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;GOOGL&#39;, &#39;count&#39;: 1}</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"><span class="nx-tk">{&#39;ticker&#39;: &#39;QQQ&#39;, &#39;count&#39;: 5}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;TSLA&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;XLK&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;USO&#39;, &#39;count&#39;: 2}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;NVDA&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;AVGO&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;INTC&#39;, &#39;count&#39;: 1}</span><span class="nx-tk">{&#39;ticker&#39;: &#39;SPY&#39;, &#39;count&#39;: 1}</span></div>
       <div class="nx-rail-note"><span class="l-en">News tone</span><span class="l-zh">新闻情绪</span>: <b style="color:var(--up);"><span class="l-en">upbeat</span><span class="l-zh">偏乐观</span></b> <span class="num">(z 0.6)</span></div>
     </div>
     
@@ -1762,6 +1805,5 @@
 </script>
 
 <script src="theme.js?v=015c6c36" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

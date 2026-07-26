@@ -170,6 +170,59 @@ in all four preregs) + `research/foundry/LENSES.md` (foundry lens config).]*
 
 ## §5. W-LAB audit verdicts — (append here before changing the labs)
 
+*Audit executed 2026-07-25 (sonnet read-only census, file:line-cited; adjudicated
+by the main loop). Findings and rulings:*
+
+**V-LAB-1 (combos ruler — confirmed pre-§7).** `engine/tech_confluence.py`
+grades combos on forward returns at the {10,21,42,63}td ladder; ranking =
+Wilson lower bound of test-half month-collapsed fwd21 win rate minus the
+random baseline (split 2018-01-01, test-half-only ranking). MAE exists as a
+secondary field (`mfe_mae_med`); proximity-to-low does not exist. RULING:
+upgrade adds a TIMING-ruler column pair per combo — median MAE63 and
+within-5%-of-±31td-low rate, each shown NEXT TO the legacy fwd21 column and
+labeled by ruler; legacy column is retained (dual-ruler display, no silent
+ruler swap). Display tier; no gauntlet claim.
+
+**V-LAB-2 (search disclosure — PASS, no action).** "N combos · searched X
+candidates" footer + receipt tooltip (`search_caveat`) are wired
+(`tech_lab.html.j2:1406-1435`, `build_tech_confluence.py:532-557`). Fail-soft
+'—' when artifact stale is acceptable.
+
+**V-LAB-3 (guards — PASS, no action).** Same-direction mining
+(`tech_confluence.py:563`) and pooled-Jaccard forbidden pairs at 0.90
+(`:531-542`) are active; forbidden-pair count is recorded in the artifact.
+
+**V-LAB-4 (copy law — in-lane PASS; badge ordered).** No bottom-caller copy
+in the tech_lab/confluence or us_stocks_lab lanes; chart-formation taxonomy
+names ("double bottom", "pivot low forms") are defensible as formation names
+and stay. RULING: per masterplan, each combo gains an explicit
+"reset-confirmer / early-window" badge derived from its measured median
+td_to_trough sign convention under the timing ruler — the framing becomes
+explicit instead of implicit. (Out-of-lane "buy the bottom" strings exist in
+`vector_allocation.html.j2:280` and `report_second_act.html.j2:1521` — out of
+W-LAB scope, logged for a separate copy sweep.)
+
+**V-LAB-5 (us_stocks_lab pooling — confirmed; cuts ordered).** All Pick Lab
+scoreboard stats are one-size pools over each book's fires
+(`engine/pick_lab/book.py:259-268` and NAV/lift machinery). RULING: add
+codex-class cuts as display-tier stratified tables — by `rung_derived`
+(populated for all 1,631 codex names; join fires on ticker) and by
+`archetype` (populated for the 172-name labeled subset; NaN names go to an
+explicit "unlabeled" row, never silently dropped). Per-class rows carry their
+own n; rows under a minimum n print the n and suppress the rate (plain-word
+null disclosure), never a rate on single-digit fires.
+
+**V-LAB-6 (codex label coverage — clarified, not a defect).**
+`archetype`/`chart_primary` are populated only for the personality-labeled
+subset (172/202 of 1,631) by construction of the PIT label join; the census's
+NaN sample rows were unlabeled names. Rung cuts are universe-wide today;
+archetype cuts are subset-scoped until labels widen.
+
+**Runtime budget.** Combos re-grade adds MAE/prox computation to the
+`tech_lab_offrender` job (40-min timeout, ~8-min current miner) — off the
+render path, headroom confirmed. Pick Lab cuts are joins on existing
+payloads — no new heavy computation.
+
 ## §6. Routing & budget
 
 Opus builds (builder agent), opus reviews; sonnet only for non-code census

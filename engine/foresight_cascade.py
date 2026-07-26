@@ -23,6 +23,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -566,7 +567,14 @@ def _append_ledger(payload: dict) -> None:
         even when the stage is unchanged (so the grader has recent observations to mature).
 
     PIT membership snapshot (leak-free): tickers captured AT LOG TIME, not from today's config.
+
+    Gate: COLLECT_LANE=nightly (US_LANE legacy alias) — nightly is the sole advancer of
+    forward ledgers. The express re-render lanes re-bake this page from committed data
+    and must not advance a single row; they read the ledger, they never extend it.
     """
+    if not _ledger_advance_enabled():
+        log.debug("foresight_cascade._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     d = config.data_dir() / "foresight"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"

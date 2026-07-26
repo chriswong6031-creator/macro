@@ -34,6 +34,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from engine.research_vault.sidecar import clean_title
+
 log = logging.getLogger("build_research_pages")
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -114,6 +116,20 @@ def _slug(title: str, idv: str, seen: set[str]) -> str:
     return out
 
 
+def _title(item: dict) -> str:
+    """The report title as it may become PUBLIC — repaired, never raw.
+
+    These pages put the title in ``<title>``, ``og:title``, ``twitter:title``, the
+    ``<h1>``, the JSON-LD headline and the crawl-hub link text, so an upstream
+    defect here is a defect on the single most SEO-weighted element we ship. The
+    catalog is repaired at ingest AND on load (engine/research_vault), but this
+    builder also runs straight off a committed snapshot a human could edit — so
+    it repairs at the render boundary too, fail-soft, by house rule for public
+    pages. ``clean_title`` is slug-stable, so this never moves an indexed URL.
+    """
+    return clean_title(item.get("title")) or (item.get("title") or "").strip()
+
+
 def slug_map(items: list[dict]) -> dict[str, str]:
     """id -> URL slug for every catalog item (deterministic). Shared with the vault
     build so its cards can link straight to ``research/<slug>.html``."""
@@ -122,7 +138,7 @@ def slug_map(items: list[dict]) -> dict[str, str]:
     for it in items:
         idv = it.get("id") or ""
         if idv:
-            out[idv] = _slug(it.get("title") or "", idv, seen)
+            out[idv] = _slug(_title(it), idv, seen)
     return out
 
 
@@ -133,7 +149,7 @@ def _norm(item: dict) -> dict:
     stamp_txt, stamp_cls = _STAMP.get(side, ("IND", "indep"))
     return {
         "id": item.get("id") or "",
-        "title": (item.get("title") or "Untitled research").strip(),
+        "title": _title(item) or "Untitled research",
         "inst": inst,
         "mono": _monogram(inst),
         "side": side,
@@ -246,6 +262,27 @@ def _load_excerpts() -> dict[str, list[str]]:
 # sitemap merge — preserve every non-/research/ url, replace /research/ block
 # ---------------------------------------------------------------------------
 
+def prune_stale(keep: set[str], names: list[str], max_share: float = 0.34) -> list[str]:
+    """Which of ``names`` to delete so ``site/research/`` holds only ``keep``.
+
+    A page's filename is ``slug(title)-<id suffix>.html``, so correcting a report's
+    title MOVES its page: without a prune, the old URL survives as a second live
+    copy of the same report under the wrong title — the exact string these pages
+    exist to stop competing with. Pages are fully re-rendered from the catalog on
+    every run, so anything not in ``keep`` is unreachable.
+
+    Guard: a wipe that large is a truncated catalog, not 20 renamed reports, so a
+    prune touching more than ``max_share`` of the directory is refused wholesale
+    (the caller logs it). Pure — the caller does the unlinking.
+    """
+    stale = sorted(n for n in names if n.endswith(".html") and n not in keep)
+    if not stale or not names:
+        return []
+    if len(stale) > max(1, int(len(names) * max_share)):
+        return []
+    return stale
+
+
 def build_sitemap(existing_xml: str, entries: list[dict]) -> str:
     kept = [ln for ln in existing_xml.splitlines()
             if not (ln.strip().startswith("<url>") and "/research/" in ln)]
@@ -262,6 +299,45 @@ def build_sitemap(existing_xml: str, entries: list[dict]) -> str:
         parts.append(row)
     parts.append("</urlset>")
     return "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# stale-page prune
+# ---------------------------------------------------------------------------
+
+def _prune_stale(keep: set[str]) -> int:
+    """Delete ``site/research/*.html`` whose slug is no longer in the catalog.
+
+    A report whose title is repaired can land on a new slug, and the builder only
+    ever WRITES — so the old file would survive as a self-canonical near-duplicate
+    of its own replacement: nothing links to it (the sitemap and crawl hub are
+    rebuilt from ``keep``) yet Google still holds both. The directory is
+    exclusively ours, so anything outside ``keep`` is by definition unpublished.
+
+    Bounded on purpose: if the catalog would orphan more than a quarter of the
+    directory we refuse and warn instead. A degraded/partial catalog must never be
+    able to mass-delete live pages — the pages are cheap to regenerate, an
+    unexplained de-indexing is not.
+    """
+    try:
+        present = {p.name for p in RESEARCH_DIR.glob("*.html")}
+    except OSError:  # directory vanished mid-build — nothing to prune
+        return 0
+    stale = sorted(present - keep)
+    if not stale:
+        return 0
+    if len(stale) > max(4, len(present) // 4):
+        log.warning("::warning title=research_pages::refusing to prune %d/%d /research/ "
+                    "pages — catalog looks partial (first: %s)",
+                    len(stale), len(present), ", ".join(stale[:5]))
+        return 0
+    for name in stale:
+        try:
+            (RESEARCH_DIR / name).unlink()
+        except OSError as exc:  # noqa: PERF203 — per-file, never fatal
+            log.warning("research pages: could not prune %s (%s)", name, exc)
+    log.info("research pages: pruned %d stale page(s): %s", len(stale), ", ".join(stale))
+    return len(stale)
 
 
 # ---------------------------------------------------------------------------
@@ -339,17 +415,39 @@ def build(catalog: dict | None = None) -> int:
                                canonical=f"{CANONICAL_BASE}/research/index.html",
                                site_base=CANONICAL_BASE)
     write_page(RESEARCH_DIR / "index.html", idx_html)
+    _prune_stale({f"{s}.html" for s in slug_by_id.values()} | {"index.html"})
     sitemap_entries.insert(0, {
         "loc": f"{CANONICAL_BASE}/research/index.html",
         "lastmod": None, "changefreq": "daily", "priority": 0.6})
+
+    # drop pages whose report has been retitled (new slug) or left the catalog —
+    # otherwise the old URL stays live under the stale title (see prune_stale).
+    try:
+        keep = {f"{s}.html" for s in slug_by_id.values()} | {"index.html"}
+        names = [p.name for p in RESEARCH_DIR.glob("*.html")]
+        orphans = [n for n in names if n not in keep]
+        stale = prune_stale(keep, names)
+        for name in stale:
+            (RESEARCH_DIR / name).unlink()
+        if stale:
+            log.info("research pages: pruned %d stale page(s): %s", len(stale),
+                     ", ".join(stale[:5]) + ("…" if len(stale) > 5 else ""))
+        elif orphans:
+            # Bare print: an annotation behind logging's "%(levelname)s " prefix
+            # never parses as one.
+            print(f"::warning title=research pages::refusing to prune {len(orphans)} "
+                  f"stale /research/ page(s) — too many for one run; the catalog may "
+                  f"be short. Left in place.")
+    except Exception as exc:  # noqa: BLE001 — a stale file never breaks the build
+        log.warning("research pages: prune failed (%s)", exc)
 
     # merge into the real sitemap (preserving /stocks/ and everything else)
     try:
         existing = SITEMAP.read_text(encoding="utf-8") if SITEMAP.exists() else _EMPTY_XML
         SITEMAP.write_text(build_sitemap(existing, sitemap_entries), encoding="utf-8")
         log.info("research pages: sitemap updated (%d /research/ entries)", len(sitemap_entries))
-    except Exception as exc:  # noqa: BLE001
-        log.warning("::warning title=sitemap::research sitemap merge failed: %s", exc)
+    except Exception as exc:  # noqa: BLE001 — bare print: see the prune block above
+        print(f"::warning title=sitemap::research sitemap merge failed: {exc}")
 
     log.info("research pages: wrote %d report pages + index", written)
     return written

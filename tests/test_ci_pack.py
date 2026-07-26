@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -150,3 +151,39 @@ def test_ci_pack_is_two_hosted_jobs_not_eighty_six() -> None:
     assert pack["strategy"]["matrix"]["pack"] == [0, 1]
     assert pack["runs-on"] == "ubuntu-latest"
     assert pack["strategy"]["fail-fast"] is False
+
+
+# ── every tests/*.py a workflow names must exist ─────────────────────────────
+#
+# `pytest a.py b.py missing.py` does not skip the missing path — it aborts the
+# whole invocation with "ERROR: file or directory not found" and runs NOTHING.
+# So one deleted test file silently disables every other test in its step.
+# ci-main-heartbeat's engine-render-guards step listed
+# tests/test_leadership_board.py, deleted with the Mag-7 board in #3359; the job
+# had been erroring out ever since, taking 2084 passing tests in the other 73
+# files down with it, and main's heartbeat red, until #3555.
+#
+# This is the [[ci-trigger-must-reach-the-guard]] class one turn worse: there the
+# guard could not be triggered, here it is triggered and then never runs. A red
+# job is not evidence that the tests under it ran.
+
+_TEST_PATH_RE = re.compile(r'(?<![\w/-])(tests/[A-Za-z0-9_][A-Za-z0-9_./-]*\.py)')
+
+
+def test_every_workflow_test_path_exists() -> None:
+    """No workflow may name a tests/*.py file that is not on disk."""
+    missing: list[str] = []
+    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        text = workflow.read_text(encoding="utf-8")
+        for rel in sorted(set(_TEST_PATH_RE.findall(text))):
+            if not (ROOT / rel).exists():
+                missing.append(f"{workflow.name} -> {rel}")
+
+    assert not missing, (
+        "Workflow steps name test files that do not exist:\n  "
+        + "\n  ".join(missing)
+        + "\n\npytest aborts the ENTIRE invocation on an unresolvable path, so "
+        "every other test listed in that step never runs and the job is red for "
+        "a reason unrelated to the code. Delete the stale path from the workflow "
+        "(or restore the file if the deletion was a mistake)."
+    )

@@ -32,6 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.research_vault.sidecar import clean_title  # noqa: E402
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -79,7 +80,13 @@ def load_catalog() -> dict:
 
 
 def _public_item(item: dict) -> dict:
-    return {k: item.get(k) for k in _ITEM_FIELDS}
+    pub = {k: item.get(k) for k in _ITEM_FIELDS}
+    # Render-side guard: the committed snapshot is data we do not control (the
+    # upstream desk truncates its own ticker parentheticals), and it feeds the SSR
+    # cards + the JSON island + every /research/ landing page below. Repair here so
+    # a stale snapshot can never ship an unbalanced "(" into a public surface.
+    pub["title"] = clean_title(pub.get("title")) or (pub.get("title") or "")
+    return pub
 
 
 def _public_catalog(cat: dict) -> dict:
@@ -235,16 +242,22 @@ def build() -> Path:
         from scripts import build_research_pages
         n_pages = build_research_pages.build(catalog)
         if (catalog.get("items") or []) and not n_pages:
-            log.warning("::warning title=research_pages::catalog has %d items but ZERO "
-                        "report pages were written — /research/ SEO pages missing/stale",
+            log.warning("catalog has %d items but ZERO report pages were written",
                         len(catalog["items"]))
+            # Bare print, NOT log.warning: GitHub Actions parses a workflow command only
+            # when the emitted line STARTS with "::warning". This module logs with
+            # format "%(levelname)s %(message)s", so log.warning("::warning ...") emits
+            # "WARNING ::warning ..." and the annotation is silently dropped.
+            print(f"::warning title=research_pages::catalog has "
+                  f"{len(catalog['items'])} items but ZERO report pages were written — "
+                  f"/research/ SEO pages missing/stale", flush=True)
     except Exception as exc:  # noqa: BLE001 — SEO pages must not break the vault build
         # Fail-soft by law (the vault page ships even if the SEO pages break) but LOUD:
         # full traceback into the builder log + a one-line ::warning that surfaces in
         # the Actions annotations even at rc=0.
         log.warning("research report pages build failed (non-fatal): %s", exc, exc_info=True)
-        log.warning("::warning title=research_pages::report pages build failed "
-                    "(non-fatal, vault page unaffected): %s: %s", type(exc).__name__, exc)
+        print(f"::warning title=research_pages::report pages build failed "
+              f"(non-fatal, vault page unaffected): {type(exc).__name__}: {exc}", flush=True)
     return out
 
 

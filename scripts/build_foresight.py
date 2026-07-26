@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,31 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_foresight")
 
 STAGE_ORDER = ["PRECIPICE", "BROADENING", "RE-RATING", "GLUT-RISK", "WATCH", "UNKNOWN"]
+
+
+def _no_drip() -> bool:
+    """True when RENDER_NO_DRIP=1 — set by the render-only lanes (render.yml /
+    engine-render.yml). Those lanes re-render pages from COMMITTED data, ``git add
+    site/`` ONLY, and discard every data/ write, so the EDGAR / openFDA collector drips
+    below are pure wasted network there: the parquet they persist is thrown away and
+    the desk still renders from the caches the nightly already advanced. The same
+    sentinel gates the LLM analyst call — those lanes DO carry DEEPSEEK_API_KEY, so
+    without it the express re-render would spend a real model call per bake.
+
+    The nightly `daily` engine job (which commits data/) leaves this unset, so the
+    drips and the analyst call still run there. House idiom:
+    scripts/build_stock_library.py ``_no_drip()``."""
+    return os.environ.get("RENDER_NO_DRIP") == "1"
+
+
+def _annotate(message: str) -> None:
+    """Emit a GitHub Actions warning annotation.
+
+    Bare ``print``, NOT ``log.warning``: Actions parses a workflow command only when
+    the emitted line STARTS with ``::warning``. This module logs with format
+    ``"%(levelname)s %(message)s"``, so ``log.warning("::warning ...")`` emits
+    ``"WARNING ::warning ..."`` and the annotation is silently dropped."""
+    print(f"::warning title=foresight::{message}", flush=True)
 
 
 def _track_record() -> dict:
@@ -56,30 +82,36 @@ def _track_record() -> dict:
 
 
 def main() -> int:
-    # T3 drip: refresh the guidance-language 8-K cache (keyless EDGAR FTS, drip + cached,
-    # network failure non-fatal) so engine/guidance_gap.py reads a fresh parquet. Mirrors
-    # scripts/build_theme_addons.py dripping edgar_fts for the T1 bottleneck leg.
-    try:
-        from collectors.edgar_guidance import fetch_guidance_hits
-        fetch_guidance_hits()
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("edgar_guidance drip failed (non-fatal): %s", e)
-    # Discovery drip: market-wide scarcity-language sweep + SIC enrichment (keyless, drip +
-    # cached, bounded) so engine/theme_emergence.py can surface bottlenecks forming OUTSIDE
-    # the tracked themes — the desk's answer to "what should I be looking at that I'm not?"
-    try:
-        from collectors.edgar_emergence import fetch_emergence_hits
-        fetch_emergence_hits()
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("edgar_emergence drip failed (non-fatal): %s", e)
-    # W5b: FDA drug-shortage drip — orphan-rescue physical feed for glp1_obesity.
-    # Fetches the openFDA drug/shortages endpoint (keyless, bounded, non-fatal).
-    # The cascade reads the cache; this drip keeps it fresh.
-    try:
-        from collectors.fda_shortages import fetch_shortages
-        fetch_shortages()
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("fda_shortages drip failed (non-fatal): %s", e)
+    if _no_drip():
+        log.info("RENDER_NO_DRIP=1 — skipping the edgar_guidance / edgar_emergence / "
+                 "fda_shortages collector drips: this lane makes no network calls and "
+                 "discards data/ writes, so the desk reads the committed caches the "
+                 "nightly already advanced")
+    else:
+        # T3 drip: refresh the guidance-language 8-K cache (keyless EDGAR FTS, drip + cached,
+        # network failure non-fatal) so engine/guidance_gap.py reads a fresh parquet. Mirrors
+        # scripts/build_theme_addons.py dripping edgar_fts for the T1 bottleneck leg.
+        try:
+            from collectors.edgar_guidance import fetch_guidance_hits
+            fetch_guidance_hits()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("edgar_guidance drip failed (non-fatal): %s", e)
+        # Discovery drip: market-wide scarcity-language sweep + SIC enrichment (keyless, drip +
+        # cached, bounded) so engine/theme_emergence.py can surface bottlenecks forming OUTSIDE
+        # the tracked themes — the desk's answer to "what should I be looking at that I'm not?"
+        try:
+            from collectors.edgar_emergence import fetch_emergence_hits
+            fetch_emergence_hits()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("edgar_emergence drip failed (non-fatal): %s", e)
+        # W5b: FDA drug-shortage drip — orphan-rescue physical feed for glp1_obesity.
+        # Fetches the openFDA drug/shortages endpoint (keyless, bounded, non-fatal).
+        # The cascade reads the cache; this drip keeps it fresh.
+        try:
+            from collectors.fda_shortages import fetch_shortages
+            fetch_shortages()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("fda_shortages drip failed (non-fatal): %s", e)
     # W1b: policy catalyst calendar — pre-compute before the cascade so policy_reg can be
     # passed in directly (avoids double-loading the parquet inside the cascade lazy-load).
     # Non-fatal: cascade degrades gracefully if policy_calendar fails.
@@ -101,10 +133,16 @@ def main() -> int:
             policy_reg=policy_calendar,
         )
     except Exception as e:  # noqa: BLE001
-        log.warning("foresight cascade unavailable — skipping page: %s", e)
+        log.warning("foresight cascade unavailable — skipping page: %s", e, exc_info=True)
+        _annotate(f"cascade engine raised — site/foresight.html was NOT rewritten this run "
+                  f"and stays on its last-committed vintage ({type(e).__name__}: {e})")
         return 0
     if not cascade:
         log.warning("foresight cascade returned nothing — skipping page")
+        _annotate("cascade returned nothing — bottleneck, revisions and demand were ALL "
+                  "empty (engine/foresight_cascade.py has no theme keys to fuse). "
+                  "site/foresight.html was NOT rewritten this run and stays on its "
+                  "last-committed vintage")
         return 0
 
     # close the learning loop: grade matured flags forward against realized basket return
@@ -198,8 +236,19 @@ def main() -> int:
     # LLM analyst over the convergence (graceful no-op without a credential) + the deterministic
     # thesis monitor that fires when the convergence a thesis was built on decays.
     try:
-        from engine.foresight_analyst import compute_foresight_analyst
-        analyst = compute_foresight_analyst(convergence, cascade)
+        if _no_drip():
+            # Express re-render lane. It DOES carry DEEPSEEK_API_KEY, so the historical
+            # "no credential -> graceful no-op" starvation no longer holds — an ungated
+            # compute would make a real model call on every bake. Replay the last
+            # COMMITTED theses instead: display continuity with zero LLM involvement.
+            from engine.foresight_analyst import load_committed_theses
+            analyst = load_committed_theses()
+            log.info("RENDER_NO_DRIP=1 — no analyst model call; replaying %d committed "
+                     "thesis row(s) from data/foresight/analyst_theses.jsonl",
+                     (analyst or {}).get("n_theses", 0))
+        else:
+            from engine.foresight_analyst import compute_foresight_analyst
+            analyst = compute_foresight_analyst(convergence, cascade)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("foresight_analyst failed (non-fatal): %s", e)
         analyst = None
@@ -305,7 +354,11 @@ def main() -> int:
             active_page="foresight",
         )
     except Exception as e:  # noqa: BLE001
-        log.warning("foresight template render failed — skipping: %s", e)
+        log.warning("foresight template render failed — skipping: %s", e, exc_info=True)
+        _annotate(f"template render failed — site/foresight.html was NOT rewritten this run "
+                  f"and stays on its last-committed vintage (note: "
+                  f"site/basketdata/foresight_cascade.json was already refreshed above, so "
+                  f"page and JSON now disagree) ({type(e).__name__}: {e})")
         return 0
 
     site.mkdir(exist_ok=True)

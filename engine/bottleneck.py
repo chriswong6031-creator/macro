@@ -52,6 +52,7 @@ import numpy as np
 import pandas as pd
 
 from engine import theme_fingerprint as fp
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -278,7 +279,15 @@ def _shadow_log_cutoffs(theme_key: str, asof: str | None, lang_accel: float | No
     For each cutoff in LANG_Z_SHADOW_CUTOFFS, compute what the text band WOULD be and
     append to data/foresight/shadow_bands_log.jsonl (append-only, deduped by theme+asof+cutoff).
     Non-fatal — the live band is unaffected.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers. Kept
+    here as a standalone belt even though the call sites are now also behind the
+    caller's write_ledger flag: this function is pure side effect, so no caller should
+    ever be able to reach the append off-lane.
     """
+    if not _ledger_advance_enabled():
+        log.debug("bottleneck._shadow_log_cutoffs: skipped (COLLECT_LANE != nightly)")
+        return
     if lang_accel is None or asof is None:
         return
     try:
@@ -317,11 +326,16 @@ def _shadow_log_cutoffs(theme_key: str, asof: str | None, lang_accel: float | No
 
 def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dict,
                       asof: str | None = None,
-                      data_dir=None) -> dict | None:
+                      data_dir=None, write_ledger: bool = True) -> dict | None:
     """Compute per-theme bottleneck read including W5a XBRL fingerprint legs.
 
     data_dir: optional override for the fingerprint engine's parquet path
     (test fixtures pass tmp_path here; production passes None → config.data_dir()).
+
+    write_ledger: threaded through from compute_bottleneck so the §3.2 shadow-cutoff
+    append obeys the SAME flag as the main ledger append. It did not before:
+    engine/foresight_cascade.py calls compute_bottleneck(write_ledger=False) precisely
+    to get a read-only compute, and the shadow log wrote anyway.
     """
     spec = THEME_MAP.get(theme_key)
     lang_accel, lang_hits, n_filers = _language_accel(tickers)
@@ -344,7 +358,8 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         # Unmapped theme: W5a extends this path — fingerprint legs (legs 7-8) provide a
         # real numeric path when ≥MIN_MEMBERS members report, making text_only=False.
         # Previously this path was language-only (text_only=True always).
-        _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
+        if write_ledger:
+            _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
         leg6_out = {
             "value": lang_z, "accel": lang_accel, "hits": lang_hits,
             "n_filers": n_filers, "provisional": True,
@@ -567,7 +582,8 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
             mapped_fingerprint_only = False
 
     # Shadow log for all themes with a language read
-    _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
+    if write_ledger:
+        _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
 
     leg6_out = {
         "value": lang_z, "accel": lang_accel, "hits": lang_hits,
@@ -635,7 +651,7 @@ def compute_bottleneck(write_ledger: bool = True, data_dir=None) -> dict | None:
         try:
             r = _theme_bottleneck(
                 key, spec.get("name", key), spec.get("tickers") or [], shared,
-                asof=asof, data_dir=data_dir,
+                asof=asof, data_dir=data_dir, write_ledger=write_ledger,
             )
         except Exception as e:  # noqa: BLE001 — one theme failing never blocks the rest
             log.warning("bottleneck[%s] failed: %s", key, e)

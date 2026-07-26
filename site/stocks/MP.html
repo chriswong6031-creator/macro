@@ -21,10 +21,29 @@
 <link rel="dns-prefetch" href="https://app.mastermind-x.com">
 <link rel="preconnect" href="https://app.mastermind-x.com" crossorigin>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "MP — MP Materials: signals, options & factor profile", "datePublished": "2026-07-26", "dateModified": "2026-07-26", "author": {"@type": "Organization", "name": "Mastermind"}, "publisher": {"@type": "Organization", "name": "Mastermind"}, "about": {"@type": "Corporation", "name": "MP Materials", "tickerSymbol": "MP"}, "url": "https://www.mastermind-x.com/stocks/MP.html"}</script>
-<script data-dbase src="../data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css?v=370c3de0">
 <link rel="stylesheet" href="../assets/css/cd7b7a3c.css?v=cd7b7a3c">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="../assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body class="st-neu">
 <div class="aurora" aria-hidden="true"></div>

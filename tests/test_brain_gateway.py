@@ -1144,6 +1144,55 @@ def test_chat_stream_persists_both_user_and_assistant_turns(tmp_path):
     assert all(tid == "thread_abc" for (tid, _r, _c) in appended)
 
 
+def test_chat_stream_persists_the_user_turn_before_the_model_runs(tmp_path):
+    """The user turn must be written as soon as it is accepted — BEFORE the model runs —
+    and strictly AFTER the thread history is loaded.
+
+    Both halves matter and pull in opposite directions:
+      * a turn now outlives its connection (app/brain_runs.py), so a client that reloads
+        mid-answer re-opens the thread to watch the rest land; if the question were only
+        written post-stream, it would find a reply hanging off nothing;
+      * write it before _load_thread_history and the same message rides in the model's
+        history AND as the live message — the turn duplicated inside its own prompt.
+    """
+    root = _make_temp_root()
+    order: list[str] = []
+    text_response = _MockResponse(
+        [_MockBlock("text", "answer")], "end_turn",
+        usage=_MockUsage(input_tokens=1, output_tokens=1),
+    )
+
+    class _OrderedClient(_MockClient):
+        def __getattribute__(self, name):
+            if name == "messages":
+                order.append("model")
+            return super().__getattribute__(name)
+
+    mock_providers = [{"client": _OrderedClient([text_response]), "model": "deepseek-chat"}]
+
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=mock_providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value="thread_ord"):
+                    with patch.object(gw, "_load_thread_history",
+                                      side_effect=lambda *_a, **_k: (order.append("history"), [])[1]):
+                        with patch.object(gw, "_append_message",
+                                          side_effect=lambda _t, role, *_a, **_k: order.append(role)):
+                            with patch("lib.ai_costs.record_usage", return_value=True):
+                                list(gw.chat_stream(
+                                    "Ordering?", "user_order", lane="fast", root=root,
+                                    thread_id="thread_ord",
+                                ))
+
+    assert "user" in order and "assistant" in order, order
+    assert order.index("history") < order.index("user"), \
+        f"user turn written before history load — it would duplicate into the prompt: {order}"
+    assert order.index("user") < order.index("assistant"), order
+    if "model" in order:
+        assert order.index("user") < order.index("model"), \
+            f"user turn not durable until after the model ran: {order}"
+
+
 # ---------------------------------------------------------------------------
 # New: context sanitization is direct — capture user_content inside the loop
 # ---------------------------------------------------------------------------

@@ -5,7 +5,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hong Kong Regime — 2026-07-24</title>
@@ -29,6 +46,8 @@
 <link rel="stylesheet" href="theme.css?v=370c3de0">
 <link rel="stylesheet" href="illus.css?v=a2237d45">
 <link rel="stylesheet" href="assets/css/3e640dfc.css?v=3e640dfc">
+<link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body class="page-hk">
 
@@ -857,9 +876,9 @@
       <div class="cat-tag"><span class="l-en">USD/oz</span><span class="l-zh">美元/盎司</span></div>
       
       
-      <div class="cat-val hkx-tt-up">4,056</div>
+      <div class="cat-val hkx-tt-up">4,068</div>
       
-      <div class="cat-chg hkx-tt-up">+9.1</div>
+      <div class="cat-chg hkx-tt-up">+21.0</div>
       
       
       
@@ -874,9 +893,9 @@
       <div class="cat-tag"><span class="l-en">DXY</span><span class="l-zh">美元</span></div>
       
       
-      <div class="cat-val hkx-tt-dn">101.46</div>
+      <div class="cat-val hkx-tt-dn">101.47</div>
       
-      <div class="cat-chg hkx-tt-dn">+0.03</div>
+      <div class="cat-chg hkx-tt-dn">+0.04</div>
       
       
       
@@ -1251,7 +1270,7 @@
       
       
       
-      <p style="font-size:12px;margin:4px 0 0"><span class="l-en">Stagflation, just: Growth is improving and inflation is cooling, but still stuck in a tough spot.</span><span class="l-zh">滞胀，只是：增长正在改善，通胀正在降温，但仍陷入困境。</span></p>
+      <p style="font-size:12px;margin:4px 0 0"><span class="l-en">Growth picking up: China's growth has steadied after a soft patch</span><span class="l-zh">增长回升：中国经济在疲软期后已企稳。</span></p>
       
       
       <div class="hkx-foot"><span class="l-en">A plain-English recap of the China & HK dashboards — background, not a signal.</span><span class="l-zh">中港看板的白话摘要 — 仅为背景，非信号。</span></div>
@@ -1804,12 +1823,11 @@
         
         
         <div class="hkx-sep"></div><div class="hkx-kv"><span class="hkx-k"><span class="l-en">Yuan pressure</span><span class="l-zh">人民币压力</span></span>
-          <span class="hkx-v"><span class="l-en">Offshore yuan: no unusual pressure</span><span class="l-zh">离岸人民币：无异常压力</span> <span class="hkx-nchip">-48bp</span></span>
+          <span class="hkx-v"><span class="l-en">Offshore yuan: no unusual pressure</span><span class="l-zh">离岸人民币：无异常压力</span> <span class="hkx-nchip">-40bp</span></span>
         </div>
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Dollar direction</span><span class="l-zh">美元方向</span></span>
           <span class="hkx-v"><span class="l-en">Dollar rising — headwind for EM</span><span class="l-zh">美元走强 — 新兴市场逆风</span></span>
         </div>
-        <div style="font-size:9.5px;color:var(--muted)"><span class="l-en">FX data as of 2026-07-22</span><span class="l-zh">外汇数据截至 2026-07-22</span></div>
         
         <div class="hkx-receipt"><span class="l-en">Display-only risk gauge. HK's swings come mostly from outside — global moves, not local problems.</span><span class="l-zh">仅供展示的风险计。香港波动主要来自外部 — 全球走势，而非本地问题。</span></div>
       </div>
@@ -2068,16 +2086,16 @@
     <div class="aib2-icon" aria-hidden="true">AI</div>
     <div class="aib2-hdr-meta">
       <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div>
-      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-21</span>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-24</span>
         <span class="aib2-cadence"><span class="l-en">Updated daily</span><span class="l-zh">每日更新</span></span></div>
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>Stagflation, just</b>: Growth is improving and inflation is cooling, but still stuck in a tough spot.</span><span class="l-zh"><b>滞胀，只是</b>：增长正在改善，通胀正在降温，但仍陷入困境。</span></li><li><span class="l-en"><b>Leaders stretched</b>: Healthcare, drugs, and staples have surged; be cautious chasing them.</span><span class="l-zh"><b>领涨板块承压</b>：医疗保健、药品和必需品已大涨；追高需谨慎。</span></li><li><span class="l-en"><b>Money shifts quietly</b>: Smart-money flows are moving into beaten-down solar, EVs, and metals.</span><span class="l-zh"><b>资金悄然转移</b>：聪明钱正流入受挫的太阳能、电动汽车和金属板块。</span></li><li><span class="l-en"><b>Easing not flowing</b>: Rate cuts haven't reached the stock market yet — liquidity is tight.</span><span class="l-zh"><b>宽松未传导</b>：降息尚未惠及股市——流动性紧张。</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Growth picking up</b>: China's growth has steadied after a soft patch</span><span class="l-zh"><b>增长回升</b>：中国经济在疲软期后已企稳。</span></li><li><span class="l-en"><b>Prices still high</b>: Inflation is warm but easing off its peak</span><span class="l-zh"><b>物价依然高企</b>：通胀温和但已从峰值回落</span></li><li><span class="l-en"><b>Hong Kong under stress</b>: A strong dollar pulls money out of the city</span><span class="l-zh"><b>香港承压</b>：强势美元导致资金流出</span></li><li><span class="l-en"><b>Rate cuts not flowing</b>: Easing is happening but system money is still tight</span><span class="l-zh"><b>降息未传导</b>：宽松政策在实施但体系资金依然紧张</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
-        <span class="l-en"><b>What to do</b>: Watch — don't chase.</span>
-        <span class="l-zh"><b>如何操作</b>：观望——不追高。</span>
+        <span class="l-en"><b>What to do</b>: Get ready</span>
+        <span class="l-zh"><b>如何应对</b>：做好准备</span>
       </span>
     </div>
   </div>
@@ -2102,58 +2120,50 @@
       <span class="aib2-kf-v"><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span></span>
     </span></div><div class="aib2-conf">
     <div class="aib2-conf-bar" role="img"
-         data-tip-en="Confidence Medium — how firmly the read holds, from the AI synthesis."
-         data-tip-zh="置信度 中 — 该解读的把握程度，来自 AI 综合。">
-      <span class="aib2-conf-seg on"></span>
+         data-tip-en="Confidence Low — how firmly the read holds, from the AI synthesis."
+         data-tip-zh="置信度 低 — 该解读的把握程度，来自 AI 综合。">
       <span class="aib2-conf-seg on"></span>
       <span class="aib2-conf-seg"></span>
+      <span class="aib2-conf-seg"></span>
     </div>
-    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-21</span></div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-24</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">Mainland China is still in stagflation on the map, but growth has stopped falling and inflation is cooling — the drift is toward a better spot. However, the central bank's cash taps are still not reaching companies and stocks, so the improvement is more promise than delivery.
-Hong Kong shares the same stagflation label, but it dances to the dollar's tune. A strong US dollar and a currency peg under pressure mean global money is seeping out, making HK much more fragile than the mainland.</span>
-    <span class="l-zh">中国内地仍处于滞胀状态，但增长已停止下滑，通胀正在降温——正朝着更好的方向移动。然而，央行的资金龙头仍未触及企业和股票，因此改善更多是承诺而非兑现。
-香港同样被贴上滞胀标签，但受美元牵制。美元走强、联系汇率承压，意味着全球资金外流，使香港比内地更加脆弱。</span>
+    <span class="l-en">The map says stagflation — growth weak and prices high. But growth has been firming over the past month, and inflation has come off its peak, though it's still warm. If this continues, the regime could drift toward reflation. However, confidence is low because some signals (like factory output and market breadth) still point to weakness. The big tension now: the central bank has cut rates and reduced the reserve requirement, but system liquidity is still contracting. That means the easing hasn't yet flowed into the real economy. Meanwhile, a rising dollar is a headwind for Hong Kong, where money is leaving due to the currency peg.</span>
+    <span class="l-zh">形势显示滞胀——增长疲弱、物价高企。但过去一个月增长有所企稳，通胀已从峰值回落，尽管仍偏高。如果这种情况持续，经济格局可能向再通胀偏移。然而，信心低迷，因为部分信号（如工厂产出和市场广度）仍指向疲软。当前主要矛盾：央行已降息并下调存款准备金率，但体系流动性仍在收缩。这意味着宽松政策尚未流入实体经济。同时，美元走强对香港构成逆风，由于联系汇率制度，资金正在流出香港。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Easing vs liquidity</b>: The PBoC has cut rates and reserve requirements, but the system's liquidity gauge is still contracting — the medicine hasn't worked yet.</span><span class="l-zh"><b>宽松与流动性</b>：中国央行已降息降准，但系统流动性指标仍在收缩——药效尚未显现。</span></li><li><span class="l-en"><b>Winners vs flows</b>: This month's winners are drugs and consumer stocks, yet fund flows are piling into deeply beaten-down solar, electric-vehicle, and metals shares.</span><span class="l-zh"><b>赢家与资金流向</b>：本月赢家是医药和消费股，但资金却大量涌入遭重创的光伏、电动汽车和金属股。</span></li><li><span class="l-en"><b>Offshore vs onshore</b>: US-listed China ETFs jumped 10% compared to the mainland index, showing global investors are more hopeful — but the onshore market isn't convinced.</span><span class="l-zh"><b>离岸与在岸</b>：美国上市中国ETF相比内地指数上涨10%，显示全球投资者更乐观——但A股市场并不买账。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Easing vs tight money</b>: The central bank is cutting rates, but the system's money supply is still shrinking — easing is stuck in the pipes.</span><span class="l-zh"><b>宽松与紧缩</b>：央行正在降息，但体系货币供应仍在收缩——宽松政策卡在了管道里。</span></li><li><span class="l-en"><b>Growth mixed</b>: Factory output and market breadth are still weak, even though overall growth has improved — the pickup is uneven.</span><span class="l-zh"><b>增长喜忧参半</b>：尽管整体增长有所改善，但工厂产出和市场广度仍然疲弱——复苏不均衡。</span></li><li><span class="l-en"><b>Offshore ahead</b>: U.S.-listed China ETFs lead mainland by 6.7%, but this gap partly reflects a tech sector tilt.</span><span class="l-zh"><b>离岸领先</b>：在美国上市的中国ETF领先内地6.7%，但这一差距部分反映了科技板块的偏向。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If the dollar keeps strengthening → Hong Kong equities will face more outflow pain, and the currency peg may come under visible stress.</span><span class="l-zh">如果美元持续走强 → Hong Kong股市将面临更多资金外流的压力，联系汇率制可能承受明显压力。</span></li><li><span class="l-en">If PBoC easing finally shows up in real lending and interbank rates → rate-sensitive brokers and property stocks could catch a bid.</span><span class="l-zh">如果中国央行的宽松政策最终体现在实际贷款利率和银行间利率上 → 对利率敏感的券商和地产股可能获得买盘。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en">If the dollar keeps strengthening → more money will exit Hong Kong, pressuring the currency peg and dragging on stocks.</span><span class="l-zh">如果美元持续走强 → 更多资金将离开香港，给联系汇率制带来压力，并拖累股市。</span></li><li><span class="l-en">If growth keeps improving and inflation eases → the regime could shift to reflation, favoring industries like metals and machinery.</span><span class="l-zh">如果经济增长持续改善且通胀放缓 → 政策可能转向再通胀，利好金属和机械等行业。</span></li></ul>
     </div></div>
   <div class="aib2-card aib2-card--full aib2-card--playbook">
     <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
     <div class="aib2-prose">
-      <span class="l-en">Cheap laggards are drawing fund flows while defensive leaders look extended — the reversal pattern is starting to build.</span>
-      <span class="l-zh">便宜的落后股正在吸引资金流入，而防御性龙头股显得估值过高——反转模式正在形成。</span>
+      <span class="l-en">The recent surge in banks and coal is fading while last month's tech dump looks overdone — a classic mean-reversion setup.</span>
+      <span class="l-zh">银行和煤炭板块近期的上涨正在消退，而上个月科技股的抛售似乎过度——这是一个经典的均值回归形态。</span>
     </div>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>July 31 PMI</b>: above 50 eases growth fears.</span>
-          <span class="l-zh"><b>7月31日PMI</b>：高于50缓解增长担忧。</span>
+          <span class="l-en"><b>PMI Jul 31</b>: A reading above 50 would confirm the growth improvement is real.</span>
+          <span class="l-zh"><b>7月31日PMI</b>：读数高于50将确认增长改善是真实的。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Interbank rate drop</b>: proves easing is real.</span>
-          <span class="l-zh"><b>银行间利率下降</b>：证明宽松政策是真实的。</span>
+          <span class="l-en"><b>Dollar push</b>: A stronger dollar could force HKD to its weak limit, spurring intervention.</span>
+          <span class="l-zh"><b>美元走强</b>：美元走强可能迫使港元触及弱方兑换保证，引发干预。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Dollar keeps rising</b>: more pain for Hong Kong.</span>
-          <span class="l-zh"><b>美元持续上涨</b>：Hong Kong面临更多痛苦。</span>
-        </span>
-      </li><li class="aib2-watch-row">
-        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
-        <span class="aib2-watch-body">
-          <span class="l-en"><b>Southbound flows reverse</b>: warning for HK.</span>
-          <span class="l-zh"><b>南向资金逆转</b>：对HK的警告。</span>
+          <span class="l-en"><b>PBoC injection</b>: If the 7-day interbank rate falls, easing is finally reaching the market.</span>
+          <span class="l-zh"><b>央行注资</b>：如果7天银行间利率下降，宽松政策终于传导至市场。</span>
         </span>
       </li></ul>
   </div>
@@ -2404,7 +2414,7 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-26 01:26 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-26 06:17 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -2608,6 +2618,5 @@ Hong Kong shares the same stagflation label, but it dances to the dollar's tune.
   }, true);
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

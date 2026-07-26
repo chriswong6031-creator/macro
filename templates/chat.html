@@ -131,8 +131,11 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
 .quota-chip.empty { color: var(--act); border-color: color-mix(in srgb,var(--act) 34%,transparent); }
 #research-toggle { display: none; align-items: center; gap: 8px; }
 #research-toggle.visible { display: flex; }
-#research-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid color-mix(in srgb,#8b5cf6 30%,transparent); border-radius: 99px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: color-mix(in srgb,#a78bfa 82%,var(--text)); background: color-mix(in srgb,#8b5cf6 10%,transparent); transition: background .14s; }
-#research-btn.active { background: linear-gradient(180deg, color-mix(in srgb,#a78bfa 90%,#fff), #8b5cf6); color: #fff; border-color: transparent; box-shadow: 0 3px 14px -4px color-mix(in srgb,#8b5cf6 70%,transparent); }
+/* Deep Research is the Pro lane under another name, so it wears the site's signature
+   blue (--info), not a violet of its own — and is inert until it is actually on. */
+#research-btn { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; color: var(--muted); background: color-mix(in srgb,var(--text) 5%,transparent); transition: background .14s, color .14s, border-color .14s; }
+#research-btn:hover { color: var(--text); }
+#research-btn.active { background: linear-gradient(180deg, color-mix(in srgb,var(--info) 92%,#fff), var(--info)); color: #fff; border-color: transparent; box-shadow: 0 3px 14px -4px color-mix(in srgb,var(--info) 70%,transparent); }
 #research-btn:disabled { opacity: .5; cursor: not-allowed; }
 #research-progress { display: none; font-size: 11.5px; color: color-mix(in srgb,#a78bfa 90%,var(--text)); }
 #research-progress.visible { display: inline-flex; align-items: center; gap: 5px; }
@@ -1036,6 +1039,9 @@ html[data-lang="zh"] .prompt-btn .prompt-zh { display: block; }
       document.querySelectorAll('.lane-btn').forEach(function (b) {
         b.classList.toggle('active', b.dataset.lane === lane);
       });
+      /* Deep Research runs on Pro (the gateway forces it), so Fast and a lit research
+         toggle are the same contradiction setResearchMode already avoids in reverse. */
+      if (lane === 'fast' && researchMode) setResearchMode(false);
     });
   });
 

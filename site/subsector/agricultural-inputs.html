@@ -3,13 +3,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="../data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agricultural Inputs — Subsector Confluence</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css?v=370c3de0">
 <link rel="stylesheet" href="../assets/css/44eeb90b.css?v=44eeb90b">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="../assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body>
 <nav class="site-nav">
@@ -247,7 +266,7 @@
 <script src="../lightweight-charts-v5.js?v=c0992580" defer></script>
 <script src="../chart.js?v=f8f558cb" defer></script>
 <script>
-const DETAIL = {"group":{"key":"agricultural-inputs","kind":"subsector","label":"Agricultural Inputs","label_zh":null,"sector":"Basic Materials","sector_zh":null,"n_members":3,"n_priced":3,"reliability":"low","coverage_pct":1.0,"n_live":3,"start":"2014-01-03","as_of":"2026-07-24","price_level":2.2633,"class":"headwind","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":5,"bars_to_cross":null,"fresh_bars":14,"eligible":false,"buyable":false,"above200":true,"reason":"held but topped/rolled-over \u2014 no longer a fresh entry"},"regime":{"state":"TOPPING","side":"avoid","label":"TOPPING","label_zh":"\u89c1\u9876","action":"Overbought and rolling over \u2014 distribution risk; reduce.","action_zh":"\u8d85\u4e70\u4e14\u5f00\u59cb\u56de\u843d\u2014\u2014\u6d3e\u53d1\u98ce\u9669\uff1b\u51cf\u4ed3\u3002","color":"var(--down)","conviction":1,"rsi_3d":62.0,"stoch_3d":100.0,"rsi_d":66.0,"stoch_d":85.0,"days_to_cross":null,"rs_60d":0.5,"signal_line":"daily momentum rolling down","tailwind":false,"headwind":true,"ok":true},"members":[{"ticker":"CF","name_zh":null,"price":125.07,"ret_20d":18.6,"vs_basket":8.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":5,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"CTVA","name_zh":null,"price":89.25,"ret_20d":9.3,"vs_basket":-0.9,"stock_tier":null,"stock_weight":0.0,"stock_ticks":8,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"MOS","name_zh":null,"price":22.3,"ret_20d":2.6,"vs_basket":-7.6,"stock_tier":null,"stock_weight":0.0,"stock_ticks":11,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"agricultural-inputs","has_signals":true},"kind":"subsector","as_of":"2026-07-24","ohlc_dir":"subsectorohlc","sig_dir":"subsector_signals","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-07-26 02:08 UTC"};
+const DETAIL = {"group":{"key":"agricultural-inputs","kind":"subsector","label":"Agricultural Inputs","label_zh":null,"sector":"Basic Materials","sector_zh":null,"n_members":3,"n_priced":3,"reliability":"low","coverage_pct":1.0,"n_live":3,"start":"2014-01-03","as_of":"2026-07-24","price_level":2.2633,"class":"headwind","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":5,"bars_to_cross":null,"fresh_bars":14,"eligible":false,"buyable":false,"above200":true,"reason":"held but topped/rolled-over \u2014 no longer a fresh entry"},"regime":{"state":"TOPPING","side":"avoid","label":"TOPPING","label_zh":"\u89c1\u9876","action":"Overbought and rolling over \u2014 distribution risk; reduce.","action_zh":"\u8d85\u4e70\u4e14\u5f00\u59cb\u56de\u843d\u2014\u2014\u6d3e\u53d1\u98ce\u9669\uff1b\u51cf\u4ed3\u3002","color":"var(--down)","conviction":1,"rsi_3d":62.0,"stoch_3d":100.0,"rsi_d":66.0,"stoch_d":85.0,"days_to_cross":null,"rs_60d":0.5,"signal_line":"daily momentum rolling down","tailwind":false,"headwind":true,"ok":true},"members":[{"ticker":"CF","name_zh":null,"price":125.07,"ret_20d":18.6,"vs_basket":8.3,"stock_tier":null,"stock_weight":0.0,"stock_ticks":5,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"CTVA","name_zh":null,"price":89.25,"ret_20d":9.3,"vs_basket":-0.9,"stock_tier":null,"stock_weight":0.0,"stock_ticks":8,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"MOS","name_zh":null,"price":22.3,"ret_20d":2.6,"vs_basket":-7.6,"stock_tier":null,"stock_weight":0.0,"stock_ticks":11,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"agricultural-inputs","has_signals":true},"kind":"subsector","as_of":"2026-07-24","ohlc_dir":"subsectorohlc","sig_dir":"subsector_signals","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-07-26 06:06"};
 const CHART_KEY = "agricultural-inputs";
 const HAS_SIGNALS = true;
 const L = (en, zh) => `<span class="l-en">${en}</span><span class="l-zh">${zh == null ? en : zh}</span>`;
@@ -312,6 +331,5 @@ render();
 document.addEventListener('langchange', render);
 </script>
 <script src="../theme.js?v=015c6c36" defer></script>
-<script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

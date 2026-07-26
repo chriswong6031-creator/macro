@@ -3,13 +3,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script data-dbase src="../data_base.js"></script>
+<script data-dbase>(function () {
+  window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Materials (XLB) — cycle & holdings</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css?v=370c3de0">
 <link rel="stylesheet" href="../assets/css/8d5eeee8.css?v=8d5eeee8">
+<link rel="preload" as="style" href="../product-nav-icons.css?v=7b0290e9">
+<link rel="preload" as="style" href="../assets/css/9cfd4219.css?v=9cfd4219">
 </head>
 <body>
 
@@ -928,7 +947,7 @@
       <span class="muted" style="font-weight:700"><span class="l-en">Dollar</span><span class="l-zh">美元</span>
         <span class="help">?<span class="tip"><span class="l-en">The forex Dollar Desk&#39;s MEASURED broad-dollar lean (real-rate regime + trend stack + liquidity + Fed path) as CONTEXT for this dollar-sensitive sector. A strong dollar is a mechanical headwind for multinational / commodity / export cyclicals (cheaper USD-priced commodities + FX-translation drag on overseas revenue); a soft dollar is a tailwind. DISPLAY-ONLY and UNVALIDATED FOR SIZING — it never enters the heat, cycle, or basket score. The forex 60-trial family found no per-pair dollar conviction that clears the DSR door (INTL-43); the direction shown is the MECHANISM, not a measured return coefficient.</span><span class="l-zh">外汇美元台的实测宽美元倾向（实际利率状态+趋势栈+流动性+美联储路径），作为该美元敏感板块的参考背景。强美元对跨国/大宗商品/出口周期股构成机械性逆风（以美元计价的大宗商品更便宜+海外收入折算拖累）；弱美元为顺风。仅供展示、不用于仓位——绝不计入热度、周期或篮子分数。外汇60试验家族未发现任何可过DSR门的单对美元信念（INTL-43）；所示方向为机制，而非实测回报系数。</span></span></span>
       </span>
-      <span style="border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-weight:600;color:var(--muted)">◇ <span class="l-en">Dollar mixed</span><span class="l-zh">美元分化</span><span class="muted" style="font-weight:400;font-size:11px"> · <span class="l-en">mixed backdrop</span><span class="l-zh">分化背景</span></span></span>
+      <span style="border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-weight:600;color:var(--down)">▼ <span class="l-en">Dollar headwind</span><span class="l-zh">美元逆风</span><span class="muted" style="font-weight:400;font-size:11px"> · <span class="l-en">dollar-supportive backdrop</span><span class="l-zh">偏多美元背景</span></span></span>
     </div>
     <p class="muted" style="margin:4px 0 0;font-size:11px"><span class="l-en">materials — global commodity revenue; a strong dollar is a translation + demand headwind</span><span class="l-zh">原材料 —— 全球大宗商品收入；强美元带来折算与需求逆风</span> — <span class="l-en">context only, not sized</span><span class="l-zh">仅供参考，不用于仓位</span></p>
     
@@ -1832,6 +1851,5 @@
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

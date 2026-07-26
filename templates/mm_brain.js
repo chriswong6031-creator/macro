@@ -35,6 +35,7 @@
   /* Optional qualifier on an event (a server-sanitized symbol) — trimmed and capped. */
   function evDetail(j) { return j.detail ? String(j.detail).trim().slice(0, 24) : ''; }
 
+
   /* ── CSS ─────────────────────────────────────────────────────────────── */
   var CSS = `
   #mmb-root{--mmb-info:#5b9bf0;--mmb-violet:#8b5cf6;--mmb-text:#e6eaf0;--mmb-muted:#8b93a1;
@@ -157,10 +158,21 @@
   @keyframes mmb-dotpulse{0%,100%{opacity:1}50%{opacity:.45}}
   @media(prefers-reduced-motion:reduce){.mmb-head .dot.busy{animation:none}}
   .mmb-head .sp{flex:1}
-  .mmb-rpill{display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
-    color:color-mix(in srgb,var(--mmb-violet) 84%,#fff);background:color-mix(in srgb,var(--mmb-violet) 12%,transparent);
-    border:1px solid color-mix(in srgb,var(--mmb-violet) 30%,transparent);border-radius:999px;padding:6px 11px}
-  .mmb-rpill.on{background:linear-gradient(180deg,color-mix(in srgb,#a78bfa 90%,#fff),var(--mmb-violet));color:#fff;border-color:transparent}
+  /* Deep Research is the Pro lane under another name (the gateway forces lane='pro'
+     for mode='research'), so when it is LIT it wears the same signature blue as the
+     Pro segment — one accent for "you are paying for depth". At rest it is inert,
+     like every other header control: the old always-violet tint read as "already on"
+     even with Fast selected, a state setLane/setResearch now make impossible.
+     The icon had no size rule and collapsed to 0x0 — sized here, so the control
+     reads as a toggle rather than a standing label. */
+  .mmb-rpill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
+    color:var(--mmb-muted);background:color-mix(in srgb,#fff 5%,transparent);
+    border:1px solid var(--mmb-line);border-radius:999px;padding:6px 11px;
+    transition:color .13s,background .13s,border-color .13s}
+  .mmb-rpill svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.9;flex:none}
+  .mmb-rpill:hover{color:var(--mmb-text);background:color-mix(in srgb,#fff 9%,transparent)}
+  .mmb-rpill.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));
+    color:#fff;border-color:transparent;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
   .mmb-rpill.mmb-off{display:none}
   #mmb-panel.max .mmb-menu,#mmb-panel.max .mmb-sidescrim{display:none}
   #mmb-panel:not(.max) .mmb-rail{display:none}
@@ -297,9 +309,6 @@
   .mmb-cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .mmb-cite{font:11px/1.3 var(--mmb-font);background:color-mix(in srgb,var(--mmb-info) 11%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:3px 10px;color:color-mix(in srgb,var(--mmb-info) 86%,var(--mmb-text));text-decoration:none;cursor:pointer}
   .mmb-cite:hover{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
-  .mmb-typing{display:inline-flex;gap:4px;padding:6px 3px}
-  .mmb-typing span{width:7px;height:7px;border-radius:50%;background:var(--mmb-info);opacity:.6;animation:mmb-bounce 1.3s ease-in-out infinite}
-  .mmb-typing span:nth-child(2){animation-delay:.18s}.mmb-typing span:nth-child(3){animation-delay:.36s}
   @keyframes mmb-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
   .mmb-meta{font:11px/1.4 var(--mmb-font);color:var(--mmb-muted);padding:0 4px}
   .mmb-upgrade{display:none;margin:0 0 12px;padding:13px 15px;border-radius:13px;font:13px/1.5 var(--mmb-font);
@@ -759,7 +768,7 @@
         /* limit < 0 = unlimited (operator allowlist) → Pro eligible; limit 0 = lane locked. */
         proEligible = !!(quotas.pro && quotas.pro.limit !== 0);
         researchBtn.classList.toggle('mmb-off', !proEligible);
-        if (!proEligible && researchMode) setResearch(false);
+        restorePrefs();   /* re-apply the remembered lane (or clear it if Pro just lapsed) */
         renderQuota();
       }).catch(function () { if (!authed) enterGuest(false); });
   }
@@ -875,7 +884,9 @@
     if (open) { setTimeout(function () { searchIn && searchIn.focus(); }, 0); }
     else if (searchIn) { searchIn.value = ''; paintThreads(); }
   }
-  function openThread(id) {
+  /* openThread(id, done): `done` fires once the messages are painted — the resume path
+     needs it so it can attach a still-running turn to the thread it belongs to. */
+  function openThread(id, done) {
     abortStream();   /* switching threads mid-stream must tear the old stream down first */
     threadId = id;
     root.querySelectorAll('.mmb-ti').forEach(function (el) { el.classList.toggle('on', el.dataset.id === id); });
@@ -892,6 +903,7 @@
         });
         markLastAssistant(); pinned = true; scroll.scrollTop = scroll.scrollHeight;
         ta.value = ''; autosize(); syncSend(); updateCounter(); restoreDraft();
+        if (done) { try { done(d.messages || []); } catch (e) {} }
       }).catch(function () {});
   }
 
@@ -1028,6 +1040,81 @@
     renderQuota();     /* refresh the meter's title in the new language sense */
   }
 
+  /* ── send (SSE) ──────────────────────────────────────────────────────────────
+     send() builds a payload from the live composer + attaches the user bubble, then
+     hands off to runStream(). runStream() is payload-only so Regenerate and Retry can
+     replay the exact same turn (text + images + lane + thread) with no backend change. */
+  var lastTurn = null;   // { text, imgs, lane, mode } — last user turn, for regenerate
+  function send(text) {
+    text = (text || ta.value).trim();
+    var imgs = pendingImages.slice();
+    if ((!text && !imgs.length) || streaming) return;
+    /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
+       signed-out) sessions are bounced to sign-in. */
+    if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
+    var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
+    /* an "explain this panel" request carries the panel key once, then clears */
+    if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
+    var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
+    lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
+    pendingImages = []; renderThumbs();
+    ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
+    pinned = true; hideJump();
+    runStream(payload, true);
+  }
+  /* Replay the last user turn on the same thread/lane (client resend, no backend change). */
+  function regenerate() {
+    if (streaming || !lastTurn) return;
+    runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
+                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
+  }
+  /* ── durable turns ───────────────────────────────────────────────────────────
+     A turn is owned by the SERVER (app/brain_runs.py), not by the socket that
+     started it: POST /api/brain/stream answers with a `run` event carrying a run_id,
+     and the brain keeps generating — and keeps persisting to the thread — whether or
+     not this browser is still listening. So a dropped connection is no longer a lost
+     reply, it is a reconnect: GET /api/brain/runs/{id}/stream?cursor=N replays the
+     events we missed and follows the rest live.
+
+     `cursor` counts the brain events we have consumed. The `run` envelope is never
+     buffered server-side, so it is the one event that must NOT advance the cursor —
+     otherwise every resume would skip a real event.
+
+     Three recovery paths, tried in order:
+       1. re-attach to the run buffer (exact replay, works for guests too);
+       2. re-read the thread tail (survives an API restart / a run past its TTL);
+       3. only then the "didn't make it through" card, with Retry. */
+  var RUN_KEY = 'mm.brain.run';
+  var RUN_MAX_AGE_MS = 25 * 60 * 1000;   /* under the server's 30-min run TTL */
+  var RESUME_TRIES = 6;
+  var PARK_FALLBACK_MS = 20000;          /* re-check even if visibilitychange never fires */
+  var PARK_MAX = 6;                      /* then shelve — the tab is away, not broken */
+
+  /* sessionStorage, NOT localStorage: the record belongs to ONE TAB. It has to survive
+     a reload (the whole point), but it must not be shared — two tabs chatting at once
+     would overwrite each other's run and a reload would drop tab A into tab B's
+     conversation, or tab A's clearRun() would destroy tab B's only way back. */
+  var runStore = (function () {
+    try { var s = window.sessionStorage; s.setItem('mm.t', '1'); s.removeItem('mm.t'); return s; }
+    catch (e) { return null; }
+  })();
+  function saveRun(T) {
+    /* A finished/stopped turn must never re-arm itself: the cursor bump that follows
+       the `done` event would otherwise rewrite the record clearRun() just deleted, and
+       the next page load would try to resume a turn that is already on screen. */
+    if (!T.runId || T.doneSeen || T.stopped || !runStore) return;
+    try {
+      runStore.setItem(RUN_KEY, JSON.stringify({
+        id: T.runId, cursor: T.cursor, thread: T.threadId || threadId || null,
+        q: (T.payload && T.payload.text) || '', ts: Date.now()
+      }));
+    } catch (e) {}
+  }
+  function loadRun() { try { return JSON.parse((runStore && runStore.getItem(RUN_KEY)) || 'null'); } catch (e) { return null; } }
+  function clearRun() { try { if (runStore) runStore.removeItem(RUN_KEY); } catch (e) {} }
+
+  /* Per-turn UI + parse state. Shared by the opening POST and by every later
+     re-attachment, so a resumed stream paints into the same bubble it started in. */
   /* ── reasoning timeline (think*) ──────────────────────────────────────────────
      The gateway holds the whole answer back until it clears the advice filter, so the
      wait is the only thing the user has: this strip narrates it the way a colleague
@@ -1123,34 +1210,180 @@
     if (tl.node.parentNode) tl.node.parentNode.removeChild(tl.node);
   }
 
-  /* ── send (SSE) ──────────────────────────────────────────────────────────────
-     send() builds a payload from the live composer + attaches the user bubble, then
-     hands off to runStream(). runStream() is payload-only so Regenerate and Retry can
-     replay the exact same turn (text + images + lane + thread) with no backend change. */
-  var lastTurn = null;   // { text, imgs, lane, mode } — last user turn, for regenerate
-  function send(text) {
-    text = (text || ta.value).trim();
-    var imgs = pendingImages.slice();
-    if ((!text && !imgs.length) || streaming) return;
-    /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
-       signed-out) sessions are bounced to sign-in. */
-    if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
-    var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
-    /* an "explain this panel" request carries the panel key once, then clears */
-    if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
-    var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
-    lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
-    pendingImages = []; renderThumbs();
-    ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
-    pinned = true; hideJump();
-    runStream(payload, true);
+  function newTurn(payload, typing) {
+    return { payload: payload, typing: typing, bub: null, stream: null, tl: null,
+             suggestions: null, sawDelta: false, doneSeen: false, stopped: false,
+             runId: null, threadId: null, cursor: 0, tries: 0, parks: 0 };
   }
-  /* Replay the last user turn on the same thread/lane (client resend, no backend change). */
-  function regenerate() {
-    if (streaming || !lastTurn) return;
-    runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
-                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
+  function ensureBub(T) {
+    if (!T.bub) {
+      if (T.typing && T.typing.parentNode) T.typing.remove();
+      T.bub = appendMsg('assistant', ''); T.stream = MdStream(bubTxt(T.bub));
+      T.stream.startCaret(); markLastAssistant(); thinkMount(T.tl, T.bub);
+    }
+    return T.bub;
   }
+  function endTurn(T) {
+    streaming = false; streamAbort = null;
+    if (activeStream === T) activeStream = null;
+    setBusy(false); syncSend();
+  }
+
+  /* Parse one SSE event. Returns false for the `run` envelope (cursor must not move). */
+  function handleEvent(j, T) {
+    if (j.type === 'run') { T.runId = j.run_id; if (j.thread_id) T.threadId = j.thread_id; saveRun(T); return false; }
+    T.tries = 0;   /* bytes are flowing again — reset the reconnect backoff */
+    if (j.type === 'meta') { if (j.thread_id) { threadId = j.thread_id; T.threadId = j.thread_id; } if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } }
+    /* stage narration; anything arriving after `done` is stale noise */
+    else if (j.type === 'status') { if (!T.doneSeen) thinkStatus(T.tl, j); }
+    else if (j.type === 'tool') { ensureBub(T); if (!T.doneSeen) thinkTool(T.tl, j); stickAfter(); }
+    else if (j.type === 'chart' && j.svg) { ensureBub(T); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (T.bub.querySelector('.mmb-charts') || T.bub).appendChild(cw); stickAfter(); }
+    else if (j.type === 'delta') {
+      /* the answer has landed: the strip folds into the receipt above the text */
+      ensureBub(T); thinkCollapse(T.tl, T.bub);
+      T.sawDelta = true; T.bub._raw = (T.bub._raw || '') + j.text; T.stream.push(j.text);
+    }
+    else if (j.type === 'suggest') { if (j.items && j.items.length) T.suggestions = j.items.slice(0, 3); }
+    /* host bridges (Terminal): chart-command + annotate events are executed by the
+       host page, not the widget — forward them to the CFG callbacks when provided. */
+    else if (j.type === 'command') { try { if (CFG.onCommand) CFG.onCommand(j); } catch (e) {} }
+    else if (j.type === 'annotate') { try { if (CFG.onAnnotate) CFG.onAnnotate(j); } catch (e) {} }
+    else if (j.type === 'done') { finalizeDone(j, T); }
+    else if (j.type === 'error') {
+      if (!T.sawDelta && !(T.bub && T.bub._raw)) { failTurn(T, j.message || ''); }
+      else { ensureBub(T); T.bub._raw = (T.bub._raw || '') + '\n\n_' + (j.message || 'error') + '_'; T.stream.push('\n\n_' + (j.message || 'error') + '_'); }
+    }
+    return true;
+  }
+  function finalizeDone(j, T) {
+    if (T.doneSeen) return; T.doneSeen = true;
+    clearRun();
+    ensureBub(T); thinkTeardown(T.tl);
+    T.stream.finalize(function () {
+      if (j && j.citations && j.citations.length) addCites(T.bub, j.citations);
+      if (T.suggestions && T.suggestions.length) addSuggest(T.bub, T.suggestions);
+      bumpTime(T.bub); stickAfter();
+    });
+    if (j && j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); }
+  }
+  /* Read an SSE body to its end, then decide what "end" meant (finished vs dropped). */
+  function readSse(res, T) {
+    var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
+    function pump() {
+      return reader.read().then(function (r) {
+        if (r.done) { finish(T); return; }
+        buf += dec.decode(r.value, { stream: true }); var lines = buf.split('\n'); buf = lines.pop() || '';
+        lines.forEach(function (ln) {
+          ln = ln.trim(); if (ln.indexOf('data:') !== 0) return; var data = ln.slice(5).trim(); if (!data) return;
+          /* An unparseable event still occupies a slot in the server's buffer, so the
+             cursor must advance past it — skipping the bump would desync us by one and
+             make every later reconnect re-push the tail into the same bubble. */
+          var j; try { j = JSON.parse(data); } catch (e) { T.cursor++; saveRun(T); return; }
+          if (handleEvent(j, T)) { T.cursor++; saveRun(T); }
+        });
+        return pump();
+      });
+    }
+    return pump();
+  }
+  function finish(T) {
+    if (T.doneSeen || T.stopped) { endTurn(T); loadThreads(); announceDone(); return; }
+    /* The stream ended without a `done`: the CONNECTION died, not the turn. */
+    recover(T);
+  }
+  /* Re-attach with backoff. Stays "busy" throughout — from the user's side the reply
+     is still being worked on, which is the truth. */
+  var parked = null;   /* a turn waiting for the tab to come back to the foreground */
+  function recover(T) {
+    if (T.doneSeen || T.stopped) { endTurn(T); return; }
+    if (!T.runId) { failTurn(T, ''); return; }            /* dropped before we had an id */
+    /* A hidden tab is throttled and frequently offline. Retrying into that burns the
+       whole budget in the first half-minute of an absence that may last an hour — so
+       park instead, on a separate and BOUNDED counter. Unbounded parking would poll
+       forever out of every abandoned tab; the timer is also the safety net for an
+       embedding that reports hidden while perfectly visible, where a visibilitychange
+       is never going to fire. Once the parks run out we SHELVE rather than fail: the
+       stored record survives, so simply coming back to the tab picks the answer up. */
+    if (DOC.hidden) {
+      if (T.parks >= PARK_MAX) { shelve(T); return; }
+      T.parks++; parked = T;
+      setTimeout(function () {
+        if (parked !== T || T.doneSeen || T.stopped) return;
+        parked = null; attachRun(T);
+      }, PARK_FALLBACK_MS);
+      return;
+    }
+    if (T.tries >= RESUME_TRIES) { threadTail(T); return; }
+    var wait = Math.min(8000, 500 * Math.pow(2, T.tries)); T.tries++;
+    setTimeout(function () { if (!T.doneSeen && !T.stopped) attachRun(T); }, wait);
+  }
+  /* Stop FOLLOWING the turn without giving up on it: drop the spinner and free the
+     composer, but leave the stored run alone so open()/visibilitychange can pick it
+     back up from the server. Used when the tab has simply been away a long time. */
+  function shelve(T) {
+    T.stopped = true; parked = null;
+    thinkTeardown(T.tl);
+    if (T.typing && T.typing.parentNode) T.typing.remove();
+    if (T.bub && T.stream && (T.sawDelta || T.bub._raw)) T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); });
+    else if (T.bub && T.bub.parentNode) T.bub.remove();   /* a bare "Reading…" bubble is noise */
+    endTurn(T);
+  }
+  function attachRun(T) {
+    var url = API + '/api/brain/runs/' + encodeURIComponent(T.runId) + '/stream?cursor=' + (T.cursor || 0);
+    var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null; streamAbort = ac;
+    streaming = true; setBusy(true); activeStream = T;
+    withAuth().then(function (h) { return fetch(url, { headers: h, credentials: 'include', signal: ac ? ac.signal : undefined }); })
+      .then(function (res) {
+        if (res.status === 404) { threadTail(T); return; }  /* expired, or the API restarted */
+        if (!res.ok || !res.body) { recover(T); return; }
+        return readSse(res, T);
+      })
+      .catch(function (err) {
+        if (err && err.name === 'AbortError') { endTurn(T); return; }
+        recover(T);
+      });
+  }
+  /* Last resort before the error card: chat_stream persists BOTH turns to the thread,
+     so even a run the registry has forgotten (API restart, past its TTL) left the
+     answer behind. Paint the thread's tail if it is the reply we were waiting for. */
+  function threadTail(T) {
+    if (!threadId || guestMode) { failTurn(T, ''); return; }
+    withAuth().then(function (h) { return fetch(API + '/api/brain/threads/' + encodeURIComponent(threadId), { headers: h, credentials: 'include' }); })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var msgs = (d && d.messages) || [];
+        var last = msgs.length ? msgs[msgs.length - 1] : null;
+        if (!last || last.role !== 'assistant' || !last.content) { failTurn(T, ''); return; }
+        /* Only accept the tail as OUR answer. The gateway writes the question first, so
+           the turn before it must be this question — otherwise the assistant row is a
+           previous exchange's and painting it under a new question would be a lie.
+           (_append_message swallows its errors, so a dropped user write is possible.) */
+        var q = (T.payload && T.payload.text) || '';
+        var prev = msgs.length > 1 ? msgs[msgs.length - 2] : null;
+        if (q && !(prev && prev.role === 'user' && String(prev.content || '').indexOf(q) === 0)) { failTurn(T, ''); return; }
+        clearRun(); T.doneSeen = true;
+        ensureBub(T); thinkTeardown(T.tl);
+        T.bub._raw = last.content; T.stream.push(last.content);
+        T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); });
+        endTurn(T); loadThreads(); announceDone();
+      })
+      .catch(function () { failTurn(T, ''); });
+  }
+  function failTurn(T, msg) {
+    if (T.doneSeen) { endTurn(T); return; }
+    T.doneSeen = true; clearRun(); parked = null;
+    thinkTeardown(T.tl);
+    if (T.typing && T.typing.parentNode) T.typing.remove();
+    if (T.bub && T.stream && (T.sawDelta || T.bub._raw)) { T.stream.finalize(function () { bumpTime(T.bub); stickAfter(); }); }
+    else {
+      /* A bubble with only a "Reading …" step and no text is not a reply — drop it, or
+         the error card stacks under a dead assistant slot. */
+      if (T.bub && T.bub.parentNode) T.bub.remove();
+      errorCard(T.payload, msg || '');
+    }
+    endTurn(T);
+  }
+
   /* runStream(payload, showUser): runs one SSE turn. showUser=false skips drawing a new
      user bubble (used by regenerate — the user turn is already on screen). */
   function runStream(payload, showUser) {
@@ -1168,105 +1401,118 @@
     setBusy(true);
     var typing = el('div', 'mmb-msg assistant');
     typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span></div>';
+    scroll.appendChild(typing); stick();
+    var T = newTurn(payload, typing);
     /* the bouncing dots are replaced by the reasoning strip: it lives in the placeholder
        bubble until the real one exists, then moves across in ensureBub(). */
-    var tl = thinkInit(typing.querySelector('.mmb-bub'));
-    scroll.appendChild(typing); stick();
-    var bub = null, stream = null, suggestions = null, sawDelta = false, doneSeen = false;
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
+    activeStream = T;
     var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
     var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
     var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null; streamAbort = ac;
-    function ensureBub() { if (!bub) { if (typing.parentNode) typing.remove(); bub = appendMsg('assistant', ''); stream = MdStream(bubTxt(bub)); stream.startCaret(); markLastAssistant(); thinkMount(tl, bub); } return bub; }
-    function endStream() { streaming = false; streamAbort = null; setBusy(false); syncSend(); }
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
       return fetch(API + '/api/brain/stream', { method: 'POST', headers: h, credentials: 'include', body: body, signal: ac ? ac.signal : undefined });
     }).then(function (res) {
-      if (res.status === 401) { if (typing.parentNode) typing.remove(); thinkTeardown(tl); endStream(); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
-      if (res.status === 402) { if (typing.parentNode) typing.remove(); thinkTeardown(tl); endStream(); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
-      if (!res.ok || !res.body) { if (typing.parentNode) typing.remove(); thinkTeardown(tl); endStream(); errorCard(payload, ''); return; }
-      var reader = res.body.getReader(), dec = new TextDecoder(), buf = '';
-      function pump() {
-        return reader.read().then(function (r) {
-          if (r.done) { finish(); return; }
-          buf += dec.decode(r.value, { stream: true }); var lines = buf.split('\n'); buf = lines.pop() || '';
-          lines.forEach(function (ln) {
-            ln = ln.trim(); if (ln.indexOf('data:') !== 0) return; var data = ln.slice(5).trim(); if (!data) return;
-            var j; try { j = JSON.parse(data); } catch (e) { return; }
-            if (j.type === 'meta') { if (j.thread_id) threadId = j.thread_id; if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } }
-            /* stage narration; anything arriving after `done` is stale noise */
-            else if (j.type === 'status') { if (!doneSeen) thinkStatus(tl, j); }
-            else if (j.type === 'tool') { ensureBub(); if (!doneSeen) thinkTool(tl, j); stickAfter(); }
-            else if (j.type === 'chart' && j.svg) { ensureBub(); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (bub.querySelector('.mmb-charts') || bub).appendChild(cw); stickAfter(); }
-            else if (j.type === 'delta') {
-              /* the answer has landed: the strip folds into the receipt above the text */
-              ensureBub(); thinkCollapse(tl, bub);
-              sawDelta = true; bub._raw = (bub._raw || '') + j.text; stream.push(j.text);
-            }
-            else if (j.type === 'suggest') { if (j.items && j.items.length) suggestions = j.items.slice(0, 3); }
-            /* host bridges (Terminal): chart-command + annotate events are executed by the
-               host page, not the widget — forward them to the CFG callbacks when provided. */
-            else if (j.type === 'command') { try { if (CFG.onCommand) CFG.onCommand(j); } catch (e) {} }
-            else if (j.type === 'annotate') { try { if (CFG.onAnnotate) CFG.onAnnotate(j); } catch (e) {} }
-            else if (j.type === 'done') { finalizeDone(j); }
-            else if (j.type === 'error') {
-              if (!sawDelta && !(bub && bub._raw)) { if (typing.parentNode) typing.remove(); thinkTeardown(tl); endStream(); errorCard(payload, j.message || ''); }
-              else { ensureBub(); bub._raw = (bub._raw || '') + '\n\n_' + (j.message || 'error') + '_'; stream.push('\n\n_' + (j.message || 'error') + '_'); }
-            }
-          });
-          return pump();
-        });
-      }
-      function finalizeDone(j) {
-        if (doneSeen) return; doneSeen = true;
-        ensureBub(); thinkTeardown(tl);
-        stream.finalize(function () {
-          if (j && j.citations && j.citations.length) addCites(bub, j.citations);
-          if (suggestions && suggestions.length) addSuggest(bub, suggestions);
-          bumpTime(bub); stickAfter();
-        });
-        if (j && j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); }
-      }
-      function finish() {
-        /* stream ended. If a `done` event already finalized (with cites/suggs), don't
-           finalize again — a second finalize would clobber the first's pending callback. */
-        thinkTeardown(tl);
-        if (!doneSeen) {
-          if (bub && stream) { doneSeen = true; stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
-          else if (!bub) { if (typing.parentNode) typing.remove(); errorCard(payload, ''); }
-        }
-        endStream(); loadThreads(); announceDone();
-      }
-      return pump();
+      if (res.status === 401) { T.doneSeen = true; thinkTeardown(T.tl); if (typing.parentNode) typing.remove(); endTurn(T); if (window.MDXAuth && window.MDXAuth.enabled()) window.MDXAuth.open('signin'); else if (CFG.onAuthRequired) { try { CFG.onAuthRequired(); } catch (e) {} } return; }
+      if (res.status === 402) { T.doneSeen = true; thinkTeardown(T.tl); if (typing.parentNode) typing.remove(); endTurn(T); return res.json().then(showUpgrade).catch(function () { showUpgrade({}); }); }
+      if (!res.ok || !res.body) { failTurn(T, ''); return; }
+      return readSse(res, T);
     }).catch(function (err) {
-      /* AbortError = user pressed Stop; keep partial, no error card. */
-      var aborted = err && (err.name === 'AbortError');
-      if (aborted) { thinkTeardown(tl); endStream(); return; }
-      if (typing.parentNode) typing.remove();
-      thinkTeardown(tl);
-      if (bub && stream && (sawDelta || bub._raw)) { stream.finalize(function () { bumpTime(bub); stickAfter(); }); }
-      else { errorCard(payload, ''); }
-      endStream();
+      /* AbortError = user pressed Stop; keep partial, no error card. Anything else is a
+         dropped connection — recover() re-attaches before we ever claim the reply is lost. */
+      if (err && err.name === 'AbortError') { endTurn(T); return; }
+      recover(T);
     });
-    /* expose the live stream to stopStream() so the Stop button can finalize the partial */
-    activeStream = { get bub() { return bub; }, get stream() { return stream; }, get typing() { return typing; }, tl: tl, payload: payload };
   }
   var activeStream = null;
-  /* Stop: abort the reader, keep partial text, append a muted "· stopped" tag, finalize. */
+  /* Stop: abort the reader, keep partial text, append a muted "· stopped" tag, finalize.
+     Also cancels the run server-side so nothing re-attaches to a turn the user abandoned. */
   function stopStream() {
     if (!streaming) return;
-    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
     var a = activeStream;
+    if (a) a.stopped = true;
+    parked = null;
     /* the strip stops with the stream; a receipt chip (delta already landed) stays put */
     if (a) thinkTeardown(a.tl);
+    if (a && a.runId) {
+      withAuth().then(function (h) { return fetch(API + '/api/brain/runs/' + encodeURIComponent(a.runId) + '/cancel', { method: 'POST', headers: h, credentials: 'include' }); }).catch(function () {});
+    }
+    clearRun();
+    if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
     if (a && a.stream && a.bub) {
       a.stream.stop();
       var txt = a.bub.querySelector('.mmb-txt') || a.bub;
       var s = el('span', 'mmb-stopped'); s.textContent = L(' · stopped', ' · 已停止'); txt.appendChild(s);
       bumpTime(a.bub); markLastAssistant();
     } else if (a && a.typing && a.typing.parentNode) { a.typing.remove(); }
-    streaming = false; streamAbort = null; setBusy(false); syncSend(); stickAfter();
+    streaming = false; streamAbort = null; activeStream = null; setBusy(false); syncSend(); stickAfter();
   }
+
+  /* ── pick a turn back up after the page went away ────────────────────────────
+     Covers the reload/freeze case the reconnect above cannot: the tab was discarded,
+     so there is no live turn to recover — only a run id in storage. Re-open the run's
+     thread (which restores the question, persisted the moment it was accepted) and
+     attach for the answer. A finished run needs no attach: the thread already has it. */
+  var resuming = false;   /* open() and visibilitychange can both fire before the status
+                             fetch lands; without this the turn attaches twice */
+  function resumeStoredRun() {
+    if (streaming || resuming || !panel.classList.contains('open')) return;
+    var st = loadRun(); if (!st || !st.id) return;
+    if (!st.ts || (Date.now() - st.ts) > RUN_MAX_AGE_MS) { clearRun(); return; }
+    resuming = true;
+    withAuth().then(function (h) { return fetch(API + '/api/brain/runs/' + encodeURIComponent(st.id), { headers: h, credentials: 'include' }); })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) {
+        if (!s) { clearRun(); return; }        /* gone — the thread store is the record now */
+        if (s.cancelled) { clearRun(); return; }
+        if (s.thread_id) {
+          if (s.done) { clearRun(); if (s.thread_id !== threadId) openThread(s.thread_id); return; }
+          if (s.thread_id !== threadId) {
+            /* `done:false` is a stale snapshot the moment we read it — the gateway
+               writes the assistant row BEFORE the run flips done, and openThread costs
+               another round-trip. So decide from what the thread actually contains: an
+               assistant turn at the tail means the answer already landed and painting
+               the replay too would double it. */
+            openThread(s.thread_id, function (msgs) {
+              var tail = (msgs && msgs.length) ? msgs[msgs.length - 1] : null;
+              if (tail && tail.role === 'assistant') { clearRun(); return; }
+              attachFresh(s, 0, st.q);
+            });
+            return;
+          }
+          attachFresh(s, st.cursor || 0, st.q);
+          return;
+        }
+        /* Guest: nothing is persisted server-side, so replay the whole turn — question
+           included, from the copy we kept when we sent it. */
+        if (st.q) appendMsg('user', st.q);
+        attachFresh(s, 0, st.q);
+      })
+      .catch(function () {})
+      .then(function () { resuming = false; });
+  }
+  /* Build a fresh turn around an existing server run and attach to it. `question` is
+     carried so a Retry on the error card can still replay the real turn. */
+  function attachFresh(status, cursor, question) {
+    root.querySelectorAll('.mmb-sugg').forEach(function (n) { n.remove(); });
+    var typing = el('div', 'mmb-msg assistant');
+    typing.innerHTML = '<div class="mmb-bub"><span class="mmb-orbmark"><svg viewBox="0 0 24 24"><path d="' + ORB_PATH + '"/></svg></span></div>';
+    scroll.appendChild(typing); stick();
+    var T = newTurn({ text: question || '', imgs: [], lane: status.lane || 'fast', mode: status.mode || 'chat' }, typing);
+    /* replayed status events fast-forward the strip to the run's live stage */
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
+    T.runId = status.run_id; T.threadId = status.thread_id || null; T.cursor = cursor || 0;
+    saveRun(T);   /* re-arm immediately — openThread() cleared the record on its way in */
+    attachRun(T);
+  }
+  /* Coming back to the tab is the moment to act: a phone that froze the page never ran
+     a single line of JS while it was away, and a parked turn has been waiting for this. */
+  DOC.addEventListener('visibilitychange', function () {
+    if (DOC.hidden) return;
+    if (parked) { var p = parked; parked = null; p.tries = 0; if (!p.doneSeen && !p.stopped) attachRun(p); return; }
+    resumeStoredRun();
+  });
   /* Header busy dot + send↔stop button morph. */
   function setBusy(on) {
     var dot = root.querySelector('.mmb-head .dot'); if (dot) dot.classList.toggle('busy', on);
@@ -1343,8 +1589,51 @@
     }
   }
 
-  /* ── toggles ── */
-  function setResearch(on) { researchMode = on; researchBtn.classList.toggle('on', on); researchBtn.setAttribute('aria-pressed', on); renderQuota(); }
+  /* ── lane + Deep Research ────────────────────────────────────────────────────
+     One state machine, because the two controls describe the SAME choice: Deep
+     Research runs on Pro (the gateway forces lane='pro' for mode='research'), so
+     "Fast" and a lit Deep Research pill can never both be true. Picking Pro is a
+     deliberate act — it costs Pro quota — so it is remembered rather than reset to
+     Fast on the next page load. */
+  function paintLane() { root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b.dataset.lane === lane); }); }
+  function paintResearch() { researchBtn.classList.toggle('on', researchMode); researchBtn.setAttribute('aria-pressed', researchMode ? 'true' : 'false'); }
+  function setLane(next) {
+    lane = next === 'pro' ? 'pro' : 'fast';
+    if (lane === 'fast' && researchMode) researchMode = false;   /* mutually exclusive */
+    paintLane(); paintResearch(); savePrefs(); renderQuota();
+  }
+  function setResearch(on) {
+    researchMode = !!on;
+    if (researchMode) lane = 'pro';                              /* research IS the Pro lane */
+    paintLane(); paintResearch(); savePrefs(); renderQuota();
+  }
+
+  /* Lane + Deep Research are USER choices, not per-page defaults. The widget is
+     re-constructed on every navigation of a static multi-page site (and on every
+     reload), so without this a Pro user is silently dropped back to Fast the moment
+     they move pages — the "it flips back to Fast after every answer" complaint.
+     Restored only once /api/brain/me confirms Pro eligibility, so a lapsed account
+     is never left pointing at a lane it can no longer use.
+
+     The LANE is remembered; Deep Research is NOT. The lane is a standing preference
+     ("I'm a Pro user, answer me properly"), but research is an intent about one
+     question — it costs a Pro credit and takes minutes, and silently re-arming it on
+     the next page so a one-line follow-up runs as a research report is not a
+     preference, it is a surprise bill. */
+  var PREF_KEY = 'mm.brain.prefs';
+  function savePrefs() {
+    try { localStorage.setItem(PREF_KEY, JSON.stringify({ lane: lane })); } catch (e) {}
+  }
+  function restorePrefs() {
+    if (!proEligible) {
+      if (lane === 'pro' || researchMode) { lane = 'fast'; researchMode = false; paintLane(); paintResearch(); savePrefs(); }
+      return;
+    }
+    var p = null; try { p = JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) {}
+    if (!p) return;
+    lane = p.lane === 'pro' ? 'pro' : 'fast';
+    paintLane();
+  }
   function autosize() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 150) + 'px'; }
 
   /* ── widget mechanics ── */
@@ -1366,19 +1655,28 @@
     if (authed) { loadThreads(); loadQuotas(); }
     else { loadQuotas(); }   /* guests refresh their daily meter; a 401 keeps the gate */
     restoreDraft();
+    resumeStoredRun();       /* a turn started before a reload is still ours to finish */
     setTimeout(function () { ta.focus(); }, 260);
   }
   /* Tear down any in-flight stream: abort the fetch reader, drop the caret, and reset the
-     streaming flags + send button. Called by close/newChat/openThread so switching context
-     mid-stream never leaves the composer wedged (streaming stuck true → send disabled). */
+     streaming flags + send button. Called by newChat/openThread so switching context
+     mid-stream never leaves the composer wedged (streaming stuck true → send disabled).
+     `stopped` suppresses the reconnect — this is a deliberate context switch, not a lost
+     connection — and the stored run is dropped so the widget does not later yank the user
+     back to a turn they navigated away from. The RUN itself keeps going server-side and
+     still lands in its own thread; nothing is thrown away, it just stops following us. */
   function abortStream() {
-    if (!streaming && !streamAbort) return;
+    if (activeStream) activeStream.stopped = true;
+    parked = null; clearRun();
+    if (!streaming && !streamAbort) { activeStream = null; return; }
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} streamAbort = null; }
     if (activeStream && activeStream.stream) { try { activeStream.stream.cancel(); } catch (e) {} }
     if (activeStream) thinkTeardown(activeStream.tl);
     activeStream = null; streaming = false; setBusy(false);
   }
-  function close() { abortStream(); if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
+  /* Closing the panel does NOT tear the turn down — the widget is hidden, not gone, and
+     the answer keeps painting into it. Re-opening shows the finished reply. */
+  function close() { if (panel._morph) { try { panel._morph.cancel(); } catch (e) {} } scrim.classList.remove('open', 'max'); panel.classList.remove('open', 'max', 'show-side'); if (launch) launch.classList.remove('mmb-hide'); }
   function toggle() { panel.classList.contains('open') ? close() : open(); }
   /* ── FLIP morph: animate the compact↔max resize with a transform ONLY (GPU compositor,
      60fps, zero reflow). Measure First rect → apply the class (panel snaps to Last geometry)
@@ -1479,7 +1777,7 @@
     if (t.dataset.lane) {
       /* Guests: the Pro lane is a sign-in prompt (it stays locked); Fast is theirs. */
       if (t.dataset.lane === 'pro' && guestMode) { showUpgrade({ feature: 'pro' }); return; }
-      lane = t.dataset.lane; root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b === t); }); renderQuota(); return;
+      setLane(t.dataset.lane); return;
     }
     var a = t.dataset.act;
     if (a === 'close') close(); else if (a === 'max') toggleMax(); else if (a === 'side') toggleSide();

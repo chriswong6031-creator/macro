@@ -24,8 +24,8 @@ def _new_root():
     return Path(tempfile.mkdtemp())
 
 
-def _write_prices(root, ticker, values, start="2020-01-01"):
-    d = root / "data" / "yahoo"
+def _write_prices(root, ticker, values, start="2020-01-01", group="yahoo"):
+    d = root / "data" / group
     d.mkdir(parents=True, exist_ok=True)
     idx = pd.bdate_range(start, periods=len(values))
     pd.DataFrame({"close": values}, index=idx).to_parquet(d / f"{ticker}.parquet")
@@ -105,6 +105,84 @@ def test_sweeps_need_enough_history():
 def test_missing_ticker_yields_no_null_rather_than_a_guess():
     get = dp._series_cache(_new_root())
     assert dp.placebo_level(get, {"subject_ticker": "NOPE"}, "2020-06-01", "2020-06-08") is None
+
+
+# ------------------------------------------------- thematic_desk: theme_rel_return
+#
+# thematic_desk logs `theme_rel_return`, not `rel_return`. Until it was registered here the
+# whole desk went unmeasured — 28 graded calls reporting "no placebo baseline" while its
+# ledger held every predicate needed to sweep them.
+
+
+def test_theme_rel_return_is_a_sweepable_kind():
+    """The kind must be BOTH registered for the sweep and admitted by the ledger fallback —
+    missing either one silently drops the desk back to an unmeasurable null."""
+    assert "theme_rel_return" in dp._PLACEBOS
+    assert "theme_rel_return" in dp._MACHINE_KINDS
+
+
+def test_theme_rel_return_reads_the_region_aware_store():
+    """thematic_desk's graded set is mostly NON-US (on 2026-07-26: 11 canada, 9 china, 1 hk,
+    9 yahoo). A yahoo-only reader would silently measure a third of the desk."""
+    root = _new_root()
+    _write_prices(root, "XGD.TO", [100 * (1.001 ** i) for i in range(400)], group="canada")
+    _write_prices(root, "XIC.TO", [100.0] * 400, group="canada")
+    get = dp._series_cache(root)
+    res = dp.placebo_theme_rel_return(
+        get, {"kind": "theme_rel_return", "subject_ticker": "XGD.TO", "vs": "XIC.TO",
+              "group": "canada", "op": "<", "threshold": -0.05},
+        "2020-06-01", "2020-06-29")
+    assert res is not None and res["p_hit"] == 1.0
+    # the same tickers are NOT in the yahoo group — a group-blind read would find nothing
+    assert dp._grouped_series(root, "yahoo", "XGD.TO") is None
+
+
+def test_grouped_series_is_scoped_to_the_passed_root():
+    """lib.store.read() keys off the global data dir; a tmp-root caller must not reach the
+    operator's real data plane (that class of leak has bitten this repo before)."""
+    root = _new_root()
+    assert dp._grouped_series(root, "canada", "XGD.TO") is None
+    _write_prices(root, "XGD.TO", [10.0] * 80, group="canada")
+    got = dp._grouped_series(root, "canada", "XGD.TO")
+    assert got is not None and len(got) == 80
+
+
+def test_theme_boundary_is_inclusive_unlike_rel_return():
+    """thematic_desk falsifies on `realized <= threshold` ("wrong way by >= threshold"),
+    desk_scorer on a strict `<`. Sweep under the rule that actually graded the thesis."""
+    root = _new_root()
+    # a dead-flat pair: realized excess is exactly 0.0 on every window
+    _write_prices(root, "A", [100.0] * 300, group="canada")
+    _write_prices(root, "B", [100.0] * 300, group="canada")
+    get = dp._series_cache(root)
+    check = {"subject_ticker": "A", "vs": "B", "op": "<", "threshold": 0.0}
+    strict = dp.placebo_rel_return(get, check, "2020-06-01", "2020-06-29", group="canada")
+    incl = dp.placebo_rel_return(get, check, "2020-06-01", "2020-06-29",
+                                 group="canada", inclusive=True)
+    assert strict["p_hit"] == 1.0      # 0.0 < 0.0 is False → never falsified
+    assert incl["p_hit"] == 0.0        # 0.0 <= 0.0 is True → always falsified
+
+
+def test_thematic_style_desk_gets_a_null_end_to_end():
+    """A thematic-shaped ledger (no scored.jsonl, theme_rel_return, non-US group) must
+    resolve to a usable null via the elapsed-ledger fallback."""
+    root = _new_root()
+    _write_prices(root, "SMH", [100 * (1.001 ** i) for i in range(500)], group="yahoo")
+    _write_prices(root, "SPY", [100.0] * 500, group="yahoo")
+    theses = [{
+        "id": f"us-t{i}", "state_asof": asof, "check_by": cby,
+        "falsifier": {"check": {"kind": "theme_rel_return", "subject_ticker": "SMH",
+                                "vs": "SPY", "group": "yahoo", "op": "<",
+                                "threshold": -0.05}},
+    } for i, (asof, cby) in enumerate([("2021-01-04", "2021-02-01"),
+                                       ("2021-03-01", "2021-03-29")])]
+    _write_desk(root, "thematic_desk", theses)
+    track = {"overall": {"n": 2, "hits": 2, "hit_rate": 1.0, "dir_accuracy": 1.0}}
+    res = dp.null_baseline(root, "thematic_desk", track, "2021-04-01")
+    assert res["available"] is True, res["reason"]
+    assert res["mix_source"] == "ledger_elapsed"
+    assert res["n"] == 2 and res["null_hit_rate"] == 1.0
+    assert res["independent_blocks"] == 2
 
 
 # --------------------------------------------------------------------------- #
@@ -233,16 +311,21 @@ def _theme_thesis(tid, asof, check_by):
 
 
 def test_unsweepable_predicate_kind_is_named_not_reported_as_a_missing_ledger():
-    """thematic_desk has a 141-row ledger, writes no scored.jsonl, and grades a kind with no
-    placebo sweep. The old disclosure for every empty case was 'no thesis ledger to
-    reconstruct the graded predicates from' — false here, and a null we cannot measure has to
-    say what actually stopped us."""
+    """A desk with a real ledger, no scored.jsonl, and only kinds this module cannot sweep
+    must say THAT — the old disclosure for every empty case was 'no thesis ledger to
+    reconstruct the graded predicates from', which was false whenever a ledger existed.
+
+    (`theme_rel_return` used to be the live example; it is swept now, so this pins the
+    behaviour with kinds that genuinely have no sweep — `soft` never will, and a novel kind
+    stands in for the next desk to invent one.)"""
     root = _new_root()
     _write_desk(root, "thematic_desk", [
-        _theme_thesis("a", "2021-01-04", "2021-02-01"),
-        _theme_thesis("b", "2021-01-05", "2021-02-02"),
-        {"id": "c", "state_asof": "2021-01-06", "check_by": "2021-02-03",
+        {"id": "a", "state_asof": "2021-01-04", "check_by": "2021-02-01",
          "falsifier": {"check": {"kind": "soft", "reason": "no scalar etf_proxy"}}},
+        {"id": "b", "state_asof": "2021-01-05", "check_by": "2021-02-02",
+         "falsifier": {"check": {"kind": "soft", "reason": "narrative only"}}},
+        {"id": "c", "state_asof": "2021-01-06", "check_by": "2021-02-03",
+         "falsifier": {"check": {"kind": "basket_spread", "op": "<"}}},
     ])
     track = {"overall": {"n": 21, "hits": 12, "hit_rate": 0.571, "dir_accuracy": 0.429}}
     res = dp.null_baseline(root, "thematic_desk", track, "2021-04-01")
@@ -250,8 +333,8 @@ def test_unsweepable_predicate_kind_is_named_not_reported_as_a_missing_ledger():
     assert res["null_hit_rate"] is None                    # nothing measured to print
     assert "no placebo sweep exists" in res["reason"]
     # itemised by kind, so the reader can see what would need a sweep (and what never will)
-    assert "2 theme_rel_return" in res["reason"] and "1 soft" in res["reason"]
-    assert "rel_return / level can be swept" in res["reason"]
+    assert "2 soft" in res["reason"] and "1 basket_spread" in res["reason"]
+    assert "theme_rel_return can be swept" in res["reason"]
     assert "no thesis ledger" not in res["reason"]
 
 

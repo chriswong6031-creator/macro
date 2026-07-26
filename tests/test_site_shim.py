@@ -41,12 +41,47 @@ def test_inject_text_top_of_head_and_idempotent():
     html = "<!doctype html><html><head><meta charset='utf-8'></head><body>x</body></html>"
     out = inject_text(html, "")
     assert out.index(DBASE_MARKER) < out.index("<meta"), "shim must load before anything in <head>"
-    assert 'src="data_base.js"' in out
+    assert "window.DATA_BASE" in out, "shim body must be INLINE (see below)"
     assert inject_text(out, "") == out, "second injection must be a no-op"
 
 
+def test_shim_is_inlined_not_linked():
+    """The shim is inlined, and must stay that way.
+
+    It has to block at the top of <head> (it patches window.fetch before any page
+    fetch), which as an external ref made it the one resource that stalls the HTML
+    parser for a full round-trip on EVERY page — ~460ms at the measured origin
+    TTFB, to deliver under 1KB. Unversioned, it also carries max-age=300
+    must-revalidate, so returning visitors paid a revalidation RTT in that same
+    blocking position. Reverting to <script src> silently restores that stall."""
+    out = inject_text("<html><head></head><body></body></html>", "")
+    assert "data_base.js" not in out, "shim must not be an external ref"
+    assert out.count(DBASE_MARKER) == 1
+    # the real payload, not a stub
+    assert "window.DATA_BASE" in out and "window.fetch" in out
+    # nothing that would close the tag early
+    assert "</script" not in out[out.index(DBASE_MARKER):out.index("</script>")]
+
+
+def test_inject_text_upgrades_legacy_external_tag():
+    """Pages rendered before inlining carry <script data-dbase src=...>. The sweep
+    must swap it for the inline body IN PLACE (position = ordering guarantee)."""
+    for prefix in ("", "../", "../../"):
+        legacy = (
+            f'<html><head><script {DBASE_MARKER} src="{prefix}data_base.js"></script>'
+            "<title>t</title></head><body></body></html>"
+        )
+        out = inject_text(legacy, prefix)
+        assert "data_base.js" not in out, f"external ref survived at prefix {prefix!r}"
+        assert out.count(DBASE_MARKER) == 1, "upgrade must not duplicate the shim"
+        assert "window.DATA_BASE" in out
+        assert out.index(DBASE_MARKER) < out.index("<title>"), "must stay first in <head>"
+        assert inject_text(out, prefix) == out, "upgrade must be idempotent"
+
+
 def test_inject_text_prefix_and_headless_fallback():
-    assert 'src="../data_base.js"' in inject_text("<head></head>", "../")
+    # inline: the depth prefix no longer appears anywhere, at any depth
+    assert "data_base.js" not in inject_text("<head></head>", "../")
     # no <head> -> lands before </body>
     out = inject_text("<html><body>x</body></html>", "")
     assert out.index(DBASE_MARKER) < out.index("</body>")
@@ -68,8 +103,11 @@ def test_write_page_injects_depth_aware(tmp_path):
     sub.mkdir(parents=True)
     write_page(site / "baskets.html", "<html><head></head><body></body></html>")
     write_page(sub / "ai.html", "<html><head></head><body></body></html>")
-    assert '<script data-dbase src="data_base.js">' in (site / "baskets.html").read_text()
-    assert '<script data-dbase src="../data_base.js">' in (sub / "ai.html").read_text()
+    # inlined -> identical payload at every depth, no src prefix to get wrong
+    for page in (site / "baskets.html", sub / "ai.html"):
+        text = page.read_text()
+        assert f"<script {DBASE_MARKER}>" in text
+        assert "window.DATA_BASE" in text and "data_base.js" not in text
 
 
 def test_write_page_keeps_existing_marker(tmp_path):
