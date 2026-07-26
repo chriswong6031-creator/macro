@@ -40,7 +40,9 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                orchestrator_chat,
                prophet,
                revenue,
-               services, settings, site_gate, system, umami, uptime_board, users, vector_override)
+               services, settings, site_gate,
+               support_tickets,
+               system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
 _CTYPES = {".html": "text/html; charset=utf-8",
@@ -647,6 +649,17 @@ class Handler(BaseHTTPRequestHandler):
                     search=(q.get("search") or q.get("q") or [None])[0],
                     page=_int_param(q, "page", 1, 1, 100_000),
                     page_size=_int_param(q, "page_size", 50, 1, 200)))
+            # support tickets (SEE W1): the operator inbox over public.support_tickets.
+            # Read via the SAME Management-API PAT path as /api/users and /api/entitlements;
+            # the writes are the POST /api/support_tickets/action twin below.
+            if path == "/api/support_tickets":
+                return self._json(support_tickets.panel(
+                    status=(q.get("status") or [None])[0],
+                    q=(q.get("q") or q.get("search") or [None])[0],
+                    page=_int_param(q, "page", 1, 1, 100_000),
+                    page_size=_int_param(q, "page_size", 50, 1, 200)))
+            if path == "/api/support_tickets/detail":
+                return self._json(support_tickets.detail((q.get("id") or [""])[0]))
             # revenue analytics (billing/revenue suite): MRR/ARR, sub counts, real collected
             # cash, forward projections, and comp give-away counts — computed live from Stripe
             # (Subscription/Invoice + the entitlements comp read), ~60s in-process cache. ?force=1
@@ -935,6 +948,17 @@ class Handler(BaseHTTPRequestHandler):
             # Comp-over-live-Stripe is refused unless force+cancel_stripe (see entitlements.py).
             if path == "/api/entitlements/action":
                 payload, code = entitlements.act(b, operator="operator")
+                return self._json(payload, code)
+
+            # Support ticket transitions (SEE W1): reply / resolve / close / reopen.
+            # Legality is decided inside the module against the ticket's CURRENT status
+            # read from the database — a client-sent status is never trusted. A reply
+            # also emails the ticket's address through app/mailer.py (mail-off safe:
+            # the message is still appended and the response carries email_status).
+            if path == "/api/support_tickets/action":
+                payload, code = support_tickets.act(
+                    b.get("ticket_id", ""), b.get("action", ""), b.get("body"),
+                    operator="operator")
                 return self._json(payload, code)
 
             # Allies (MKT-D11): record an operator status transition. This is a

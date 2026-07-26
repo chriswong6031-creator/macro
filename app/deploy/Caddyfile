@@ -59,7 +59,36 @@
 	# fetched server-side by the authed API; they have NO public URL and MUST NOT
 	# gain a public static-file rule here (no *.pdf in @public_static below) — the only
 	# path to a PDF is the require_user + paid + rate-limited/metered API route.
-	reverse_proxy /api/* 127.0.0.1:8000
+	# Pre-parse body cap for the ONE public unauthenticated write surface
+	# (POST /api/support/ticket, SEE W1). The app also refuses an oversized
+	# declared Content-Length, but that check is bypassable with chunked
+	# transfer-encoding — the app never sees a length to refuse. Only the edge can
+	# enforce a real cap, because only the edge sits before the body is read.
+	#
+	# Scoped to /api/support/* on purpose, NOT the whole /api/* tree: a global cap
+	# here would also apply to the Stripe webhook (invoice objects with long line-item
+	# lists) and the /api/collect analytics batch (up to 40 events), and truncating
+	# either to fix a contact form would be a bad trade.
+	request_body /api/support/* {
+		max_size 64KB
+	}
+
+	reverse_proxy /api/* 127.0.0.1:8000 {
+		# TRUSTED peer identity for per-client rate limiting. mastermind-x.com is
+		# behind EdgeOne, so every real-client header the app reads (EO-Client-IP,
+		# CF-Connecting-IP, X-Forwarded-For, …) is ATTACKER-SUPPLIABLE at the origin:
+		# a bot that rotates EO-Client-IP per request lands every hit in a fresh
+		# rate-limit bucket. header_up REPLACES any inbound X-MM-Peer with the real
+		# TCP peer, so this one header cannot be spoofed (same mechanic as
+		# X-Admin-Client-IP on the admin host below). app/support.py rate-limits on
+		# BOTH keys — the claimed IP tightly, the trusted peer loosely (CN traffic
+		# legitimately aggregates behind a handful of EdgeOne edge IPs).
+		#
+		# The eo-*/cf-* headers are deliberately NOT scrubbed: EdgeOne sets them for
+		# real in CN routing and other consumers (analytics geo, the site gate) read
+		# them. This adds a trustworthy signal rather than removing untrusted ones.
+		header_up X-MM-Peer {remote_host}
+	}
 
 	# Live Tape websocket — same-origin relay to macro-api (app/tape.py).
 	# China-reachable (same-origin, like the /sb Supabase proxy). Placed with

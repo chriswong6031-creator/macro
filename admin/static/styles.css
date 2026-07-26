@@ -4806,3 +4806,39 @@ button.obx-btn-postnow:hover:not(:disabled) {
 }
 .rev-proj-assume li { margin: 1px 0; }
 .rev-comps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+/* ---- support tickets (Support → Support Tickets) ------------------------ */
+/* Chips, table, buttons, and dialogs are reused from the entitlements block
+   above; only the message thread and its composer are new here. */
+.sup-row { cursor: pointer; }
+.sup-row:hover td { background: var(--surface2); }
+.sup-thread { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 18px; }
+.sup-msg {
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); padding: 11px 14px;
+}
+/* The operator's own messages sit visually apart from the user's so a thread can be
+   skimmed for "who spoke last" without reading a word. */
+.sup-msg-op { background: var(--surface2); border-color: var(--grid); margin-left: 34px; }
+.sup-msg-user { margin-right: 34px; }
+.sup-msg-head {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  font-size: 12px; color: var(--muted); margin-bottom: 7px;
+}
+.sup-msg-head b { color: var(--text); font-size: 12.5px; }
+.sup-msg-body {
+  color: var(--text); font-size: 13.5px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word;
+}
+.sup-reply { margin-top: 6px; }
+.sup-reply-box {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 10px 12px; font: inherit; font-size: 13.5px; line-height: 1.6;
+  margin-bottom: 10px;
+}
+.sup-reply-box:focus { outline: none; border-color: var(--accent); }
+/* In-flight state for a ticket action: the operator must be able to SEE that the
+   click landed, otherwise the natural response to a slow POST is to click again. */
+.sup-reply .ent-act[disabled], .sup-reply-box[disabled] { opacity: .5; cursor: progress; }
+

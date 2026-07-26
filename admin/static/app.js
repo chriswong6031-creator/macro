@@ -145,6 +145,8 @@ const ICONS = {
   prophet:       NAV_ICO('<ellipse cx="12" cy="12" rx="5" ry="7.5"/><path d="M12 4.5a7.5 5 0 0 1 0 15M12 4.5a7.5 5 0 0 0 0 15"/><circle cx="12" cy="12" r="2"/>'),
   site_gate:     NAV_ICO('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/>'),
   revenue:       NAV_ICO('<path d="M3 21h18"/><rect x="5" y="12" width="3.5" height="6" rx="1"/><rect x="10.25" y="8" width="3.5" height="10" rx="1"/><rect x="15.5" y="4" width="3.5" height="14" rx="1"/><path d="M12 2.2v2M12 8.2v-1"/>'),
+  /* Support: a life-ring — the outer float, the inner hub, and the four lugs. */
+  support_tickets: NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6"/><path d="M12 3v5.4M12 15.6V21M3 12h5.4M15.6 12H21"/>'),
   /* Marketing lobe icons */
   marketing_overview:    NAV_ICO('<path d="M3 17V8l5-3 4 2 5-3v9l-5 3-4-2-5 3Z"/><path d="M8 5v9M12 7v9M17 4v9"/>'),
   marketing_departments: NAV_ICO('<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="5" height="4" rx="1"/><rect x="9" y="15" width="5" height="4" rx="1"/><rect x="17" y="15" width="5" height="4" rx="1"/><path d="M12 7v4M4.5 15v-3h15v3"/>'),
@@ -166,6 +168,7 @@ const NAV_GROUPS = [
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
+  { label: "Support", items: [["support_tickets", "Support Tickets"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
@@ -378,7 +381,7 @@ function setActiveNav(id) {
 
 /* Paint a small pending-count dot on a nav item (or clear it when n<=0). Used to
    flag the Outbox from anywhere so the operator sees where action is needed. */
-function setNavDot(tabId, n) {
+function setNavDot(tabId, n, noun = "post") {
   const nav = $("#sidenav"); if (!nav) return;
   const item = nav.querySelector(`.nav-item[data-tab="${tabId}"]`);
   if (!item) return;
@@ -386,7 +389,7 @@ function setNavDot(tabId, n) {
   if (n > 0) {
     if (!dot) { dot = h(`<span class="nav-dot"></span>`); item.appendChild(dot); }
     dot.textContent = n > 99 ? "99+" : String(n);
-    dot.title = `${n} post${n === 1 ? "" : "s"} awaiting your review`;
+    dot.title = `${n} ${noun}${n === 1 ? "" : "s"} awaiting your review`;
   } else if (dot) {
     dot.remove();
   }
@@ -402,10 +405,21 @@ async function refreshOutboxNavDot() {
     setNavDot("marketing_outbox", obxAwaitingCount(d));
   } catch (e) { /* ignore — advisory only */ }
 }
+
+/* Same idea for Support: the dot counts tickets still in `open` (nobody has answered
+   them yet). Fail-soft — a bad fetch leaves the dot as-is. Called on boot and after
+   every ticket action. */
+async function refreshSupportNavDot() {
+  try {
+    const d = await api("/api/support_tickets?page_size=1");
+    if (!d || !d.ok) return;
+    setNavDot("support_tickets", d.open_count || 0, "ticket");
+  } catch (e) { /* ignore — advisory only */ }
+}
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
-  if (currentLobeId() || currentMktDept() || currentAnalyticsDetail()) history.replaceState(null, "", location.pathname + location.search);
+  if (currentLobeId() || currentMktDept() || currentAnalyticsDetail() || currentTicketId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
   if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
@@ -438,6 +452,17 @@ function backToDepartments() {
   go("marketing_departments");
 }
 
+/* hash router — support ticket threads live at #/ticket/<id> */
+function currentTicketId() {
+  const m = location.hash.match(/^#\/ticket\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function gotoTicket(id) { location.hash = "#/ticket/" + encodeURIComponent(id); }
+function backToTickets() {
+  if (currentTicketId()) history.replaceState(null, "", location.pathname + location.search);
+  go("support_tickets");
+}
+
 function route() {
   const id = currentLobeId();
   if (id) { renderLobeDetail(id); return; }
@@ -445,6 +470,8 @@ function route() {
   if (deptId) { renderMktDept(deptId); return; }
   const det = currentAnalyticsDetail();
   if (det) { (det.kind === "session" ? renderSessionDetail : renderVisitorDetail)(det.id); return; }
+  const tid = currentTicketId();
+  if (tid) { renderTicketDetail(tid); return; }
   go(CURRENT || "overview");
 }
 window.addEventListener("hashchange", route);
@@ -8335,6 +8362,203 @@ RENDER.alerts = async () => {
   });
 };
 
+/* ---- SUPPORT TICKETS (SEE W1) -------------------------------------------
+   List (status chips + search + pager) and a hash-routed thread page at
+   #/ticket/<id>. Every write goes to POST /api/support_tickets/action, which
+   decides legality server-side against the ticket's stored status — the buttons
+   below only mirror the `legal_actions` the server hands back. Reuses the
+   entitlements chip/table/dialog classes; the only new CSS is the thread. */
+const SUP = { status: null, q: "", page: 1, rows: [] };
+const SUP_STATUSES = ["open", "pending", "resolved", "closed"];
+const SUP_ACTION_LABEL = { reply: "Reply", resolve: "Resolve", close: "Close", reopen: "Reopen" };
+/* Past tense for the confirmation toast — spelled out because `action + "d"` turns
+   "reopen" into "reopend". */
+const SUP_ACTION_DONE = { reply: "replied to", resolve: "resolved", close: "closed", reopen: "reopened" };
+
+function supChip(label, active, on) {
+  return `<button class="ent-chip${active ? " on" : ""}" onclick="${on}">${esc(label)}</button>`;
+}
+/* Colour carries WHOSE move it is, not the raw state name: warn = waiting on you,
+   ok = resolved, muted = idle (pending on the user, or closed). */
+function supStatusPill(s) {
+  const cls = s === "open" ? "s-warn" : (s === "resolved" ? "s-ok" : "s-mut");
+  return `<span class="statpill ${cls}">${esc(s || "—")}</span>`;
+}
+
+RENDER.support_tickets = async () => {
+  const v = $("#view");
+  v.innerHTML = `
+    <div class="sub" style="margin-bottom:12px">Support requests filed from the site's contact form
+      (<code>POST /api/support/ticket</code>). Open a ticket to read the thread and reply — a reply is
+      recorded here <b>and</b> emailed to the sender. With no SMTP relay configured the reply is still
+      recorded and the thread says so.</div>
+    <div class="section">Tickets <span class="cnt" id="supCnt"></span></div>
+    <div class="ent-toolbar">
+      <div id="supChips" class="ent-chips"></div>
+      <input id="supSearch" class="ent-search" type="search" placeholder="search email or subject…" autocomplete="off">
+    </div>
+    <div id="supTbl"><div class="spin">loading…</div></div>
+    <div id="supPager" class="ent-pager"></div>`;
+  SUP.status = null; SUP.q = ""; SUP.page = 1;
+  const si = $("#supSearch");
+  if (si) si.addEventListener("input", () => {
+    clearTimeout(SUP._searchT);
+    SUP._searchT = setTimeout(() => { SUP.q = si.value.trim(); SUP.page = 1; supLoad(); }, 300);
+  });
+  supLoad();
+};
+
+async function supLoad() {
+  const qs = new URLSearchParams();
+  if (SUP.status) qs.set("status", SUP.status);
+  if (SUP.q) qs.set("q", SUP.q);
+  qs.set("page", String(SUP.page));
+  qs.set("page_size", "50");
+  const tbl = $("#supTbl");
+  if (!tbl) return;
+  const d = await api("/api/support_tickets?" + qs.toString());
+  if (!d.ok) {
+    tbl.innerHTML = `<div class="card"><h3>Support tickets — not available</h3>
+      <div class="sub" style="color:var(--bad)">${esc(d.reason || d.error || "could not load")}</div>
+      <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+    const ch = $("#supChips"); if (ch) ch.innerHTML = "";
+    const pg = $("#supPager"); if (pg) pg.innerHTML = "";
+    return;
+  }
+  SUP.rows = d.tickets || [];
+  const counts = d.counts || {};
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  $("#supChips").innerHTML = [supChip(`All (${total})`, !SUP.status, "supSetStatus(null)")]
+    .concat(SUP_STATUSES.map(s => supChip(`${s} (${counts[s] || 0})`, SUP.status === s, `supSetStatus(${JSON.stringify(s)})`)))
+    .join("");
+  $("#supCnt").textContent = d.total != null ? d.total : SUP.rows.length;
+  setNavDot("support_tickets", d.open_count || 0, "ticket");
+
+  tbl.innerHTML = SUP.rows.length ? `<table class="ent-table"><thead><tr>
+      <th>Created</th><th>From</th><th>Topic</th><th>Subject</th><th>Tier</th><th>Status</th></tr></thead><tbody>
+    ${SUP.rows.map(t => `<tr class="sup-row" data-id="${esc(t.id)}" title="open this thread">
+        <td class="mono sub" style="white-space:nowrap">${esc(t.created_at || "—")}</td>
+        <td><div class="ent-email mono">${esc(t.email || "—")}</div>
+            <div class="sub">${t.authed ? '<span class="ent-badge">account</span>' : '<span class="sub muted">signed out</span>'}${t.lang ? " · " + esc(t.lang) : ""}</div></td>
+        <td>${esc(t.topic || "—")}</td>
+        <td>${esc(t.subject || "—")}</td>
+        <td class="sub">${esc(t.tier || "—")}</td>
+        <td>${supStatusPill(t.status)}</td>
+      </tr>`).join("")}
+  </tbody></table>` : `<div class="card sub">${SUP.status || SUP.q ? "No tickets match this filter." : "No support tickets yet."}</div>`;
+  tbl.querySelectorAll(".sup-row").forEach(tr => {
+    tr.addEventListener("click", () => gotoTicket(tr.dataset.id));
+  });
+
+  const pages = d.pages || 1;
+  $("#supPager").innerHTML = pages > 1 ? `
+    <button class="ent-chip" ${SUP.page <= 1 ? "disabled" : ""} onclick="supGoto(${SUP.page - 1})">← prev</button>
+    <span class="sub">page ${SUP.page} / ${pages}</span>
+    <button class="ent-chip" ${SUP.page >= pages ? "disabled" : ""} onclick="supGoto(${SUP.page + 1})">next →</button>` : "";
+}
+
+function supSetStatus(s) { SUP.status = s; SUP.page = 1; supLoad(); }
+function supGoto(p) { SUP.page = Math.max(1, p); supLoad(); }
+
+/* ---- ticket thread (hash page #/ticket/<id>) ---------------------------- */
+async function renderTicketDetail(id) {
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  CURRENT = "support_tickets"; setActiveNav("support_tickets"); setTopbarTitle("Support ticket");
+  const v = $("#view");
+  v.innerHTML = `<div class="an-detail-head"><a class="btn" href="#" id="supBack">← Support Tickets</a>
+      <span class="an-detail-title">Ticket <code>${esc(String(id).slice(0, 8))}…</code></span></div>
+    <div id="supDet"><div class="spin">loading…</div></div>`;
+  $("#supBack").onclick = (e) => { e.preventDefault(); backToTickets(); };
+  await supRenderThread(id);
+}
+
+async function supRenderThread(id) {
+  const det = $("#supDet");
+  if (!det) return;
+  const d = await api(`/api/support_tickets/detail?id=${encodeURIComponent(id)}`);
+  if (!d.ok) {
+    det.innerHTML = card("Ticket", `<div class="sub" style="color:var(--bad)">${esc(d.reason || d.error || "not found")}</div>`);
+    return;
+  }
+  const t = d.ticket || {};
+  const msgs = d.messages || [];
+  const legal = d.legal_actions || [];
+  const canReply = legal.includes("reply");
+  const stateButtons = legal.filter(a => a !== "reply")
+    .map(a => `<button class="ent-act" onclick="supAct(${JSON.stringify(id)},${JSON.stringify(a)})">${esc(SUP_ACTION_LABEL[a] || a)}</button>`)
+    .join("");
+
+  det.innerHTML = `
+    <div class="grid">
+      ${card("From", `<div class="big" style="font-size:15px">${esc(t.email || "—")}</div>
+        <div class="sub">${t.user_id ? "registered account" : "signed out"}${t.tier ? " · " + esc(t.tier) : ""}${t.lang ? " · " + esc(t.lang) : ""}</div>`)}
+      ${card("Topic", `<div class="big" style="font-size:15px">${esc(t.topic || "—")}</div>
+        <div class="sub">filed ${esc(t.created_at || "—")}</div>`)}
+      ${card("Status", `<div class="big" style="font-size:15px">${supStatusPill(t.status)}</div>
+        <div class="sub">updated ${esc(t.updated_at || "—")}</div>`)}
+    </div>
+    <div class="section">${esc(t.subject || "(no subject)")}</div>
+    <div class="sup-thread">${msgs.map(m => `
+      <div class="sup-msg sup-msg-${m.author === "operator" ? "op" : "user"}">
+        <div class="sup-msg-head">
+          <b>${m.author === "operator" ? "You" : esc(t.email || "User")}</b>
+          <span class="sub mono">${esc(m.created_at || "")}</span>
+          ${m.author === "operator" ? (m.emailed
+            ? `<span class="statpill s-ok">emailed</span>`
+            : `<span class="statpill s-warn" title="recorded here, but no email left the building — check the SMTP relay">not emailed</span>`) : ""}
+        </div>
+        <div class="sup-msg-body">${esc(m.body || "")}</div>
+      </div>`).join("") || `<div class="card sub">No messages on this ticket.</div>`}
+    </div>
+    <div class="sup-reply">
+      ${canReply ? `<textarea id="supReplyBody" class="sup-reply-box" rows="6" maxlength="5000"
+          placeholder="Write your reply — it is recorded on this ticket and emailed to ${esc(t.email || "the sender")}."></textarea>` : `
+        <div class="sub muted" style="margin-bottom:10px">This ticket is ${esc(t.status || "closed")} — reopen it to reply.</div>`}
+      <div class="ent-form-actions" style="justify-content:flex-start">
+        ${canReply ? `<button class="ent-act ent-primary" onclick="supReply(${JSON.stringify(id)})">Send reply</button>` : ""}
+        ${stateButtons}
+      </div>
+    </div>`;
+}
+
+/* Guard against a double-clicked action: every button in the ticket footer is disabled
+   for the duration of the POST. This is the ergonomic half of the protection only — the
+   durable half is the content-derived idem_key in admin/support_tickets.py, which stops a
+   duplicate email even if this guard is bypassed or the operator hits Enter twice. */
+function supBusy(on) {
+  document.querySelectorAll(".sup-reply .ent-act").forEach(b => { b.disabled = on; });
+  const box = $("#supReplyBody");
+  if (box) box.disabled = on;
+}
+
+async function supAct(id, action, body) {
+  const payload = { ticket_id: id, action };
+  if (body != null) payload.body = body;
+  supBusy(true);
+  let r;
+  try {
+    r = await post("/api/support_tickets/action", payload);
+  } finally {
+    supBusy(false);
+  }
+  if (!r.ok) { toast(r.error || "action failed", true); return r; }
+  let msg = `Ticket ${SUP_ACTION_DONE[action] || action} — now ${r.status}`;
+  if (action === "reply" && r.emailed === false) {
+    msg = `Reply recorded, but NOT emailed (${r.email_status || "no relay"}) — check the SMTP settings`;
+  }
+  toast(msg, action === "reply" && r.emailed === false);
+  await supRenderThread(id);
+  refreshSupportNavDot();
+  return r;
+}
+
+async function supReply(id) {
+  const box = $("#supReplyBody");
+  const body = (box && box.value || "").trim();
+  if (!body) { toast("Write a reply first", true); return; }
+  await supAct(id, "reply", body);
+}
+
 /* ---- LONG-HOLD LOBE ----------------------------------------------------- */
 RENDER.long_hold = async () => {
   const v = $("#view");
@@ -9662,6 +9886,7 @@ async function boot() {
   await refresh();
   route();
   refreshOutboxNavDot();   /* advisory pending-count dot on the Outbox nav item */
+  refreshSupportNavDot();  /* advisory open-ticket dot on the Support Tickets nav item */
 }
 (async function init() {
   SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));
