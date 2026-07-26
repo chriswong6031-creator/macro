@@ -131,7 +131,7 @@
     background: color-mix(in srgb, var(--panel) 72%, transparent);
     -webkit-backdrop-filter: blur(24px) saturate(155%); backdrop-filter: blur(24px) saturate(155%);
     border: 1px solid color-mix(in srgb, var(--text) 13%, transparent);
-    box-shadow: 0 1px 0 color-mix(in srgb,#fff 9%,transparent) inset, 0 30px 70px -30px rgba(3,7,18,.75); }
+    box-shadow: 0 1px 0 color-mix(in srgb,#fff 9%,transparent) inset, 0 12px 30px -22px rgba(3,7,18,.32); }
   .wc-top { display:grid; grid-template-columns: minmax(0,4.3fr) minmax(0,5.7fr); gap:0; }
   @media (max-width:820px){ .wc-top { grid-template-columns:1fr; } }
   .wc-left { padding:22px 24px; border-right:1px solid color-mix(in srgb,var(--text) 9%,transparent); display:flex; flex-direction:column; gap:12px; }
