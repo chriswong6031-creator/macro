@@ -3172,8 +3172,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # stripe is PINNED to app/requirements.txt's range on purpose. The webhook suite
+      # feeds hand-built event payloads to stripe.Webhook.construct_event, and 13+ made
+      # that constructor strict about the envelope (`object: "event"`), so an unpinned
+      # install turns three green tests red against code the droplet never runs. CI must
+      # test the SDK production actually has.
       - name: install deps
-        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests stripe
+        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests "stripe>=11,<13"
       - name: billing + lifecycle email tests (app/billing_emails.py)
         run: python -m pytest tests/test_billing_emails.py -v
       - name: account preference tests (app/account_prefs.py)
