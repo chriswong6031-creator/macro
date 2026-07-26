@@ -520,6 +520,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(marketing.outbox())
             if path == "/api/marketing/publish":
                 return self._json(marketing.publisher())
+            # The rejection box — everything rejected since the last export.
+            if path == "/api/marketing/rejections":
+                return self._json(marketing.rejections_pending())
             if path == "/api/marketing/outbox/media":
                 from .paths import ROOT as _REPO_ROOT  # noqa: PLC0415
                 req_path = (q.get("path") or [""])[0]
@@ -803,6 +806,23 @@ class Handler(BaseHTTPRequestHandler):
                 if settings.deployed():
                     return self._json(github_config.set_int(dotted, value, lo, hi))
                 return self._json(config_store.set_int(dotted, value, lo, hi))
+
+            # REJECT — terminal kill WITH a reason, unlike hold (reversible,
+            # stays in the rail). Writes data/marketing/rejections.jsonl, which
+            # the review-sheet export reads.
+            if path == "/api/marketing/outbox/reject":
+                item_id = b.get("id")
+                reason = b.get("reason") or b.get("note") or None
+                if not item_id or not isinstance(item_id, str):
+                    return self._json({"ok": False, "error": "id required"}, 400)
+                res = marketing.reject_outbox(item_id, reason=reason)
+                return self._json(res, 200 if res.get("ok") else 400)
+
+            # Export the rejection box as an annotatable markdown sheet. Clears
+            # the box by default (rows stay in the ledger; only the view resets).
+            if path == "/api/marketing/rejections/export":
+                res = marketing.export_rejections(mark=b.get("mark", True) is not False)
+                return self._json(res, 200 if res.get("ok") else 400)
 
             if path == "/api/marketing/outbox/decide":
                 item_id = b.get("id")

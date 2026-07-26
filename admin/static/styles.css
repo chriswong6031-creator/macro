@@ -4834,3 +4834,30 @@ button.metric-tile.pub-tile-link:hover {
   border-color: var(--accent-cyan);
   background: var(--surface2);
 }
+
+/* ---- Reject + rejection box (operator feedback loop, 2026-07-26) ---------- */
+/* Reject is destructive-ish and terminal, so it reads warmer than Hold without
+   competing with the primary Approve action. */
+button.obx-btn-reject {
+  border-color: var(--bad); color: var(--bad); background: transparent;
+}
+button.obx-btn-reject:hover:not(:disabled) {
+  background: var(--bad-bg, rgba(220,70,70,.12)); border-color: var(--bad);
+}
+.obx-rejbox .section { display: flex; align-items: center; gap: 10px; }
+.obx-rejbox .obx-btn-export { margin-left: auto; }
+.obx-rej-list {
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  overflow: hidden; background: var(--surface);
+}
+.obx-rej-row {
+  padding: 10px 13px; border-top: 1px solid var(--grid);
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.obx-rej-row:first-child { border-top: none; }
+.obx-rej-head { font-size: 13px; color: var(--fg); }
+.obx-rej-meta { font-size: 11px; color: var(--faint); margin-top: 2px; }
+.obx-rej-why {
+  font-size: 12px; color: var(--warn); margin-top: 4px;
+  border-left: 2px solid var(--warn); padding-left: 8px;
+}

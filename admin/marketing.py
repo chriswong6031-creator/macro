@@ -1929,6 +1929,92 @@ def decide_outbox(item_id: str, decision: str, note: str | None = None, root=Non
         return False
 
 
+def reject_outbox(item_id: str, reason: str | None = None, root=None) -> dict:
+    """REJECT one outbox item: kill it AND record why.
+
+    Hold is a reversible DECISION on a still-queued post, so a held item stays in
+    the review rail — which is correct, but it left the operator no way to say
+    "this one is bad, and here is what is wrong with it". Reject is the verdict:
+    the item transitions to `quarantined` (terminal, drops out of the rail) and a
+    row lands in data/marketing/rejections.jsonl for the review sheet.
+
+    The ledger write is best-effort and deliberately AFTER the transition: a
+    failure to record feedback must never leave a rejected post still queued.
+    Returns {"ok": bool, ...}; never raises.
+    """
+    try:
+        from engine.marketing import outbox as _ob  # noqa: PLC0415
+        from engine.marketing import rejections as _rej  # noqa: PLC0415
+        repo = Path(root) if root is not None else _default_root()
+
+        iid = str(item_id or "").strip()
+        if not iid:
+            return {"ok": False, "error": "id required"}
+
+        state = _ob.fold_state(repo)
+        item = (state.get("items") or {}).get(iid)
+        if item is None:
+            return {"ok": False, "error": "unknown item id"}
+        status = str((state.get("status") or {}).get(iid) or "queued")
+
+        ok = _ob.transition(iid, "quarantined", actor="admin", root=repo,
+                            note=(str(reason or "").strip() or "rejected by operator"))
+        if not ok:
+            return {"ok": False,
+                    "error": f"cannot reject an item that is {status!r}",
+                    "note": "posted and quarantined items are terminal"}
+
+        row = _rej.record(item, reason=reason, actor="admin", root=repo)
+        return {"ok": True, "id": iid, "rejected": True, "logged": bool(row),
+                "note": None if row else
+                        "rejected, but the feedback row could not be written"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.reject_outbox failed: %s", exc)
+        return {"ok": False, "error": str(exc)}
+
+
+def rejections_pending(root=None) -> dict:
+    """Rejections awaiting export — what the rejection box shows."""
+    try:
+        from engine.marketing import rejections as _rej  # noqa: PLC0415
+        repo = Path(root) if root is not None else _default_root()
+        rows = _rej.pending(repo)
+        return {"ok": True, "count": len(rows), "rejections": rows}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.rejections_pending failed: %s", exc)
+        return {"ok": False, "error": str(exc), "count": 0, "rejections": []}
+
+
+def export_rejections(root=None, *, mark: bool = True) -> dict:
+    """Render pending rejections as a markdown review sheet.
+
+    With mark=True (the default, and what the Export button sends) the exported
+    ids are stamped so they leave the box — the operator asked not to mix
+    already-reviewed rejections with new ones. The rows stay in the ledger; only
+    the VIEW is cleared, because that corpus is the whole point of the loop.
+    """
+    try:
+        from datetime import datetime, timezone  # noqa: PLC0415
+        from engine.marketing import rejections as _rej  # noqa: PLC0415
+        repo = Path(root) if root is not None else _default_root()
+        rows = _rej.pending(repo)
+        if not rows:
+            return {"ok": False, "error": "nothing to export — no pending rejections",
+                    "count": 0}
+        stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+        md = _rej.render_markdown(rows, generated_at=stamp)
+        marked = False
+        if mark:
+            marked = _rej.mark_exported([str(r.get("id")) for r in rows], root=repo)
+        return {"ok": True, "count": len(rows), "markdown": md, "cleared": marked,
+                "filename": f"rejected-posts-{stamp[:10]}.md",
+                "note": None if (marked or not mark) else
+                        "exported, but the box could not be cleared"}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.export_rejections failed: %s", exc)
+        return {"ok": False, "error": str(exc), "count": 0}
+
+
 def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
                         root=None) -> dict:
     """Record one decision for many items (bulk approve/hold from the admin).
