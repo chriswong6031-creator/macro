@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -950,6 +951,44 @@ def test_vault_event_carries_site_link(tmp_path):
     )
     site = next(e["links"]["site"] for e in vault_events if e["links"]["site"])
     assert site.startswith("/research/") and site.endswith(".html")
+
+
+def test_vault_site_link_survives_a_minimal_dependency_set():
+    """links.site is stamped from scripts.build_research_pages.slug_map, imported
+    FAIL-SOFT by engine/chronicle/adapters.py — so any ImportError silently blanks
+    the site link on every vault event instead of going red. build_research_pages
+    used to import jinja2 at module scope, which the CI chronicle lane does not
+    install (`pip install pytest pandas numpy pyarrow pyyaml`): every vault event
+    shipped links.site=None there while passing on any dev box that had jinja2.
+
+    The site-link test above only catches that in a lane that happens to LACK
+    jinja2 — add jinja2 to those deps and the guard evaporates. This pins the real
+    invariant instead: the slug derivation is a pure function of the items list and
+    must import with no template engine present.
+    """
+    import importlib
+    from importlib.abc import MetaPathFinder
+
+    class _Blocked(MetaPathFinder):
+        def find_spec(self, name, path=None, target=None):
+            if name == "jinja2" or name.startswith("jinja2."):
+                raise ImportError("jinja2 blocked (simulating the CI minimal-deps lane)")
+            return None
+
+    blocker = _Blocked()
+    saved = {k: v for k, v in sys.modules.items() if k == "jinja2" or k.startswith("jinja2.")}
+    for name in saved:
+        del sys.modules[name]
+    sys.modules.pop("scripts.build_research_pages", None)
+    sys.meta_path.insert(0, blocker)
+    try:
+        mod = importlib.import_module("scripts.build_research_pages")
+        slugs = mod.slug_map([{"id": "test-item-1", "title": "Semis positioning stretched"}])
+        assert slugs.get("test-item-1"), slugs
+    finally:
+        sys.meta_path.remove(blocker)
+        sys.modules.pop("scripts.build_research_pages", None)
+        sys.modules.update(saved)
 
 
 # ---------------------------------------------------------------------------

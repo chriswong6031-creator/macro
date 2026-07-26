@@ -32,8 +32,6 @@ import logging
 import re
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
-
 from engine.research_vault.sidecar import clean_title
 
 log = logging.getLogger("build_research_pages")
@@ -365,6 +363,14 @@ def build(catalog: dict | None = None) -> int:
     if not items:
         log.info("research pages: empty catalog — no report pages to build")
         return 0
+
+    # jinja2 is imported HERE, not at module scope, so `slug_map` stays importable
+    # under a minimal dependency set. engine/chronicle/adapters.py imports slug_map
+    # to stamp links.site on every research_vault event, fail-soft to None; when
+    # this module needed jinja2 to import at all, that fail-soft silently blanked
+    # every site link in any env without jinja2 — which is exactly the CI
+    # chronicle lane (`pip install pytest pandas numpy pyarrow pyyaml`).
+    from jinja2 import Environment, FileSystemLoader  # noqa: PLC0415
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)),
                       autoescape=True, trim_blocks=True, lstrip_blocks=True)
