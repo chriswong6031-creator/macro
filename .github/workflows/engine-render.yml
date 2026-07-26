@@ -582,7 +582,11 @@ jobs:
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
-          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
+          # ::warning::, not a bare echo — this step is the only thing that moves a ?v=
+          # stamp, and the edge serves versioned assets `immutable, max-age=1y`, so a failure
+          # swallowed into a green run pins returning browsers to the old bytes for a year
+          # (#3617/#3624). See render.yml for the full rationale.
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
         if: always()
         run: |
@@ -603,7 +607,18 @@ jobs:
           # the post-rebase --fix below STAYS (it re-copies from fresh post-rebase templates/,
           # guarding the -X theirs mid-render-merge reword case, 2026-07-07 incident).
           python -m scripts.check_template_site_sync --fix || true
+          # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
+          # optimize_assets re-stamps their templates/ side because the --fix above rewrites
+          # their site copy FROM templates/ — a stamp staged site-only is reverted before it
+          # reaches main (#3617's fix never reached one returning browser), and staging site/
+          # alone would land the pair diverged and red the publish gate. Nothing else in the
+          # build path writes templates/. See render.yml.
           git add site/
+          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
+          # matches nothing, and this step runs under `-eo pipefail` — a missing
+          # templates/ would abort the commit and lose the whole render rather than
+          # just the stamp. Staging site/ keeps its hard-fail semantics.
+          git add templates/ 2>/dev/null || true
           git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
@@ -641,6 +656,12 @@ jobs:
               # to the CHECKOUT-TIME template blob, reverting #1793's de-escalation merged
               # 20 min earlier. templates/ is now fresh post-rebase main — re-copy the
               # plain-copy page assets from it and fold any delta into a follow-up commit.
+              # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
+              # the normalizer step stamped — pages a sibling lane lands mid-render arrive here
+              # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped
+              # site/us_track_record.html with a bare `theme.css` this way). Idempotent, ~11s over
+              # 3.2k pages, and BEFORE the --fix so the pairs heal from a re-stamped templates/.
+              python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
               python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): -X theirs resolves whole
               # conflict REGIONS toward this run's replayed render, so racing another
@@ -651,8 +672,8 @@ jobs:
               # origin/main (coherent, at most one render old).
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
-              if ! git diff --quiet -- site/; then
-                git add site/ && git commit -m "render-sync: post-rebase guards (template re-copy + ms-board coherence)" \
+              if ! git diff --quiet -- site/ templates/; then
+                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if push_do; then echo "pushed engine-rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi

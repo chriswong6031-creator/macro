@@ -23,6 +23,20 @@ rewrites live in lib.pages.optimize_assets_text / preload_css_text (kept beside
 the shim logic). Stamping must precede the preload pass — a hint whose URL differs
 from the stylesheet's by a query string is a second cache key, not a warm hit.
 
+It also stamps the ``templates/`` side of every plain-copy HTML pair (index.html,
+chat.html — see paired_html_templates). Those site copies are written by NOTHING
+but ``check_template_site_sync --fix``, which the lanes run AFTER this step and
+which rewrites site/<name> from templates/<name> — so a stamp written only
+site-side is reverted before it ever reaches main. Stamping both sides keeps the
+pair byte-identical (the sync law) with a FRESH stamp, and makes this script a
+true fixed point: a second run over a healed tree modifies nothing.
+
+Because a lane pushes its POST-rebase tree, the lanes run this step again inside
+the push loop: a page un-stamped by a sibling lane that merged mid-render arrives
+only at `git pull --rebase`, long after the pre-commit pass (2026-07-26: render
+6260e5ac8c0 shipped site/us_track_record.html un-stamped for exactly this reason —
+standout-audit-us landed it 14 min after that render's checkout).
+
 Run standalone: python -m scripts.optimize_assets
 """
 from __future__ import annotations
@@ -47,33 +61,55 @@ def _hash_bytes(p: Path) -> Optional[str]:
         return None
 
 
+def paired_html_pages(site_dir: Path):
+    """Yield ``(template, site_copy)`` for every plain-copy HTML pair.
+
+    A pair is a ``templates/<name>.html`` that also ships as ``site/<name>.html``
+    (``index.html``, ``chat.html``; the ``.html.j2`` render inputs are excluded).
+    Their site copy is built by NO builder, so ``check_template_site_sync --fix``
+    re-copying it from ``templates/`` is the only thing that writes it.
+
+    The pair definition is imported from the guard that enforces it so the two
+    cannot drift, with a local glob fallback — mirroring
+    ``scripts.inject_data_base._inject_paired_templates`` (#3625), which sweeps the
+    same two pages for the data-base shim and hit the same freeze.
+    """
+    root = site_dir.parent
+    try:
+        from scripts.check_template_site_sync import find_pairs
+        pairs = [(t, s) for _name, t, s in find_pairs(root)]
+    except Exception:  # noqa: BLE001 — mirror the guard's rule: direct children, no .j2
+        tdir = root / "templates"
+        pairs = [(p, site_dir / p.name) for p in sorted(tdir.glob("*.html"))
+                 if p.is_file() and (site_dir / p.name).is_file()] if tdir.is_dir() else []
+    for tpl, site_copy in pairs:
+        if tpl.suffix.lower() == ".html":   # .js/.css pairs carry no asset refs to stamp
+            yield tpl, site_copy
+
+
 def optimize(site_dir: Path) -> int:
-    """Version + defer local assets in every page under site_dir. Returns the
-    number of files modified. Never raises."""
+    """Version + defer local assets in every page under site_dir, plus the
+    templates/ side of every plain-copy HTML pair. Returns the number of files
+    modified. Never raises."""
     site_dir = Path(site_dir)
     if not site_dir.is_dir():
         return 0
     root = site_dir.resolve()
     cache: Dict[Path, Optional[str]] = {}  # resolved asset path -> hash (once per process)
     imports: Dict[Path, list] = {}         # resolved css path -> its @import urls
-    n = 0
-    for html in site_dir.rglob("*.html"):
-        try:
-            text = html.read_text()
-        except Exception:  # noqa: BLE001
-            continue
-        page_dir = html.parent
 
-        def _resolve(url: str, _page_dir: Path = page_dir) -> Optional[Path]:
+    def optimized(text: str, page_dir: Path) -> str:
+        """`text` with assets stamped + preloaded, resolving refs from page_dir."""
+        def _resolve(url: str) -> Optional[Path]:
             rel = url.split("?", 1)[0].split("#", 1)[0]
             try:
-                target = (_page_dir / rel).resolve()
+                target = (page_dir / rel).resolve()
                 target.relative_to(root)  # never reach outside the site tree
             except Exception:  # noqa: BLE001
                 return None
             return target
 
-        def hash_for(url: str, _resolve=_resolve) -> Optional[str]:
+        def hash_for(url: str) -> Optional[str]:
             target = _resolve(url)
             if target is None:
                 return None
@@ -81,7 +117,7 @@ def optimize(site_dir: Path) -> int:
                 cache[target] = _hash_bytes(target) if target.is_file() else None
             return cache[target]
 
-        def imports_for(url: str, _resolve=_resolve) -> list:
+        def imports_for(url: str) -> list:
             """@import urls inside a linked stylesheet — read once per file."""
             target = _resolve(url)
             if target is None:
@@ -93,11 +129,18 @@ def optimize(site_dir: Path) -> int:
                     imports[target] = []
             return imports[target]
 
+        # ?v= stamping FIRST: preload hints must carry the same final URL as the
+        # stylesheet they warm, or the two are separate cache keys and double-fetch.
+        return preload_css_text(optimize_assets_text(text, hash_for), imports_for)
+
+    n = 0
+    for html in site_dir.rglob("*.html"):
         try:
-            # ?v= stamping FIRST: preload hints must carry the same final URL as the
-            # stylesheet they warm, or the two are separate cache keys and double-fetch.
-            new = optimize_assets_text(text, hash_for)
-            new = preload_css_text(new, imports_for)
+            text = html.read_text()
+        except Exception:  # noqa: BLE001
+            continue
+        try:
+            new = optimized(text, html.parent)
         except Exception as e:  # noqa: BLE001
             log.warning("optimize failed for %s (%s)", html.name, e)
             continue
@@ -107,7 +150,41 @@ def optimize(site_dir: Path) -> int:
                 n += 1
             except Exception as e:  # noqa: BLE001
                 log.warning("write failed for %s (%s)", html.name, e)
-    log.info("asset-optimized %d page(s)", n)
+
+    # Plain-copy HTML pairs: stamp the TEMPLATE, not just the site copy. The lanes
+    # run `check_template_site_sync --fix` after this step (it must, so a cancellation
+    # can never ship a diverged pair — see render.yml), and --fix rewrites
+    # site/<name> FROM templates/<name> — reverting a stamp written only site-side.
+    # That made the stamp structurally unreachable for these pages: #3617's onboard.css
+    # fix was live at the origin while every returning browser kept the pre-#3617
+    # stylesheet, because site/index.html still linked onboard.css?v=cfdca9e2 and the
+    # edge serves versioned assets `immutable, max-age=1y` (#3624 hand-bumped that one
+    # page; this closes the mechanism). Refs resolve against site/ because that is
+    # where the page ships from, and the write is a plain write_text — write_page would
+    # inline the data-base shim into a SOURCE file.
+    for tpl, site_copy in paired_html_pages(site_dir):
+        try:
+            text = tpl.read_text()
+        except Exception:  # noqa: BLE001
+            continue
+        try:
+            new = optimized(text, root)   # refs resolve from site/, where the page ships
+        except Exception as e:  # noqa: BLE001
+            log.warning("optimize failed for templates/%s (%s)", tpl.name, e)
+            continue
+        if new == text:
+            continue
+        try:
+            tpl.write_text(new)
+            n += 1
+            log.info("re-stamped templates/%s (plain-copy pair)", tpl.name)
+            # keep the pair byte-identical in the same pass, so the sync guard is green
+            # whether or not --fix runs afterwards (mirrors #3625's shim sweep)
+            if site_copy.is_file() and site_copy.read_text() != new:
+                site_copy.write_text(new)
+        except Exception as e:  # noqa: BLE001
+            log.warning("write failed for templates/%s (%s)", tpl.name, e)
+    log.info("asset-optimized %d file(s)", n)
     return n
 
 

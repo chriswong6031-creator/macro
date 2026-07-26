@@ -200,7 +200,11 @@ jobs:
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
-          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
+          # ::warning::, not a bare echo — this step is the only thing that moves a ?v=
+          # stamp, and the edge serves versioned assets `immutable, max-age=1y`, so a failure
+          # swallowed into a green run pins returning browsers to the old bytes for a year
+          # (#3617/#3624). See render.yml for the full rationale.
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
           # template↔site re-sync (ui.template_site_sync): externalize_css above lifts the
           # plain-copy landing/chat pages' inline <style> to hashed files, diverging
           # site/index.html + site/chat.html from their templates. This lane's push loop is
@@ -212,7 +216,18 @@ jobs:
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
+          # optimize_assets re-stamps their templates/ side because the --fix above rewrites
+          # their site copy FROM templates/ — a stamp staged site-only is reverted before it
+          # reaches main (#3617's fix never reached one returning browser), and staging site/
+          # alone would land the pair diverged and red the publish gate. Nothing else in the
+          # build path writes templates/. See render.yml.
           git add data/ reports/ site/
+          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
+          # matches nothing, and this step runs under `-eo pipefail` — a missing
+          # templates/ would abort the commit and lose the whole render rather than
+          # just the stamp. Staging site/ keeps its hard-fail semantics.
+          git add templates/ 2>/dev/null || true
           # W0b sibling fix (#1963, 2026-07-08 stale-HK incident): asia-close.yml runs
           # daily at 08:30 UTC INCLUDING Saturdays and is the sole authoritative writer
           # of all china*/hk*/hkma data stores. Weekly runs at 14:00 UTC — AFTER the

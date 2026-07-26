@@ -105,11 +105,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: install minimal deps (theme.js bake reads config.yml)
-        run: pip install pyyaml
+        run: pip install pyyaml pytest
       - name: template-site-sync selftest (gate fires on synthetic divergence)
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # ui.asset_stamp (mirror ci.yml): a lane edit that drops the templates/ staging or
+      # the post-rebase re-stamp silently re-freezes ?v= on the plain-copy pairs and
+      # re-ships un-stamped pages — invisible in a green run, and pinned `immutable,
+      # max-age=1y` at the edge once it lands. Catch it on main too, not only on the PR.
+      - name: "?v= stamps — paired-page round-trip + lane ordering/staging (ui.asset_stamp)"
+        run: >
+          python -m pytest
+          tests/test_asset_stamp_lane_order.py tests/test_optimize_assets.py
+          tests/test_asset_stamp_refresh.py -q
       - name: interfonts-sync selftest (gate fires on synthetic drift)
         run: python3 scripts/check_interfonts_sync.py --selftest
       - name: _interfonts partial @font-face blocks must match templates/theme.css
