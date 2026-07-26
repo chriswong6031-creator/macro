@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!-- Dev-only artifact: it is NOT shipped, so unlike index.html/onboard.css it may
+     pull the RETIRED faces from the CDN — that is the only place Archivo Expanded
+     and Newsreader still exist now that both woff2 files are deleted. The no-CDN
+     guard is scoped to the three shipping surfaces. Outfit loads from the real
+     shipped subset so the "after" column is the actual face, tabular digits and all. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Newsreader:opsz,wght@6..72,200..800&family=Poppins:wght@700;800&family=Plus+Jakarta+Sans:wght@200..800&family=Manrope:wght@200..800&family=Inter:wght@400..900&display=swap">
+<style>
+@font-face{font-family:'Outfit';font-weight:400 900;font-display:swap;src:url("../../../site/fonts/Outfit-latin.woff2") format("woff2");}
+</style>
+<style>
+:root{--bg:#f7f8fa;--panel:#fff;--hair:#eaecf0;--hair-2:#dfe3e9;--ink:#1c2430;--muted:#5d6b7e;--faint:#8a95a4;
+--blue:#285fff;--q-green:#1f8b41;--q-gold:#b07d05;--q-red:#c12f2f;--violet:#7862e0;--teal:#0f9d8f;
+--gold-wash:#faf3e2;--green-wash:#e9f5ec;}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Inter,sans-serif;width:1280px;padding:34px 40px 40px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.col{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:26px 28px 30px;
+  box-shadow:0 1px 3px rgba(20,30,50,.07)}
+.col.after{border-color:#c9d6ff;box-shadow:0 0 0 1px #c9d6ff,0 14px 34px -18px rgba(40,95,255,.35)}
+.hd{display:flex;align-items:baseline;gap:9px;margin-bottom:20px;padding-bottom:13px;border-bottom:1px solid var(--hair)}
+.hd b{font:700 11px/1 Inter,sans-serif;letter-spacing:.15em;text-transform:uppercase}
+.hd.b b{color:var(--q-red)} .hd.a b{color:var(--blue)}
+.hd i{font:400 11.5px/1.4 Inter,sans-serif;font-style:normal;color:var(--faint)}
+h1.t{font:700 19px/1.3 Inter,sans-serif;letter-spacing:-.01em;margin-bottom:5px}
+p.s{font:400 12.5px/1.5 Inter,sans-serif;color:var(--muted);max-width:1000px;margin-bottom:26px}
+.hero{font-size:40px;line-height:.99;letter-spacing:-.02em;font-weight:800}
+.hero .g{background:linear-gradient(96deg,var(--blue),var(--violet) 46%,var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.figs{display:flex;align-items:flex-end;gap:30px;margin-top:24px;padding-top:20px;border-top:1px solid var(--hair)}
+.lb{display:block;font:700 8.5px/1 Inter,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-bottom:7px}
+.score{font-weight:800;font-size:46px;line-height:.96;letter-spacing:-.005em;color:var(--q-gold)}
+.price{font-weight:800;font-size:38px;line-height:1;letter-spacing:-.005em}
+.price .was{font-weight:600;font-size:15px;color:var(--faint);text-decoration:line-through;margin-right:6px}
+.data{margin-top:22px;padding-top:18px;border-top:1px solid var(--hair);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.tk{font-weight:700;font-size:10.5px} .px{font-weight:800;font-size:14px}
+.up{color:var(--q-green)} .dn{color:var(--q-red)}
+.wm{font-weight:800;font-size:15px;display:flex;align-items:center;gap:9px}
+.wm .m{width:26px;height:26px;border-radius:7px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+.col table{border-collapse:collapse;margin-top:22px;width:100%;font:400 11.5px/1 Inter,sans-serif}
+.col td{padding:5px 0;border-bottom:1px solid var(--hair);color:var(--muted)}
+.col td.v{text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.col tr:last-child td{border-bottom:0}
+.bad{color:var(--q-red)} .good{color:var(--q-green)}
+/* BEFORE: two faces — words Archivo Expanded, figures Newsreader serif */
+.before .hero,.before .tk,.before .px,.before .wm,.before .wm .m{font-family:Archivo,sans-serif}
+.before .hero,.before .wm,.before .wm .m{font-stretch:125%}
+.before .score,.before .price{font-family:Newsreader,serif}
+/* AFTER: one face */
+.after .hero,.after .score,.after .price,.after .tk,.after .px,.after .wm,.after .wm .m{font-family:Outfit,sans-serif}
+</style></head><body>
+<h1 class="t">Landing display type — before / after</h1>
+<p class="s">Left: the two-face system as shipped — headlines and chrome in Archivo Expanded (a poster grotesque at <code>font-stretch:125%</code>), display figures in Newsreader ExtraBold (an editorial serif, added in #3655 to fix "squashed" numerals). Right: one geometric face, Outfit, across headlines, chrome and figures.</p>
+<div class="cols">
+  <div class="col before">
+    <div class="hd b"><b>Before</b><i>Archivo Expanded + Newsreader — two voices</i></div>
+    <div class="wm"><span class="m">M</span>MASTERMIND</div>
+    <div class="hero" style="margin-top:20px">Your personal,<br>institutional-grade<br><span class="g">market intelligence.</span></div>
+    <div class="figs">
+      <div><span class="lb">Live score</span><div class="score">50</div></div>
+      <div><span class="lb">Plan price</span><div class="price"><span class="was">$69</span>$49</div></div>
+    </div>
+    <div class="data">
+      <span class="tk">NVDA <span class="up">+2.0%</span></span><span class="tk">AVGO <span class="dn">&minus;1.1%</span></span>
+      <span class="tk">EDGE 74</span><span class="px">$58.50</span><span class="px">57.95 &ndash; 58.60</span><span class="px">96,412</span>
+    </div>
+    <table>
+      <tr><td>“96,412” at 26px</td><td class="v">89.6px</td></tr>
+      <tr><td>digit advances share one width</td><td class="v good">yes</td></tr>
+      <tr><td>faces on the page</td><td class="v bad">2 &nbsp;(grotesque + serif)</td></tr>
+      <tr><td>font payload</td><td class="v bad">111.9 KB</td></tr>
+    </table>
+  </div>
+  <div class="col after">
+    <div class="hd a"><b>After</b><i>Outfit — one geometric voice, figures included</i></div>
+    <div class="wm"><span class="m">M</span>MASTERMIND</div>
+    <div class="hero" style="margin-top:20px">Your personal,<br>institutional-grade<br><span class="g">market intelligence.</span></div>
+    <div class="figs">
+      <div><span class="lb">Live score</span><div class="score">50</div></div>
+      <div><span class="lb">Plan price</span><div class="price"><span class="was">$69</span>$49</div></div>
+    </div>
+    <div class="data">
+      <span class="tk">NVDA <span class="up">+2.0%</span></span><span class="tk">AVGO <span class="dn">&minus;1.1%</span></span>
+      <span class="tk">EDGE 74</span><span class="px">$58.50</span><span class="px">57.95 &ndash; 58.60</span><span class="px">96,412</span>
+    </div>
+    <table>
+      <tr><td>“96,412” at 26px</td><td class="v good">77.0px &nbsp;(14% narrower)</td></tr>
+      <tr><td>digit advances share one width</td><td class="v good">yes &nbsp;(baked into the subset)</td></tr>
+      <tr><td>faces on the page</td><td class="v good">1</td></tr>
+      <tr><td>font payload</td><td class="v good">41.5 KB &nbsp;(&minus;70.4 KB)</td></tr>
+    </table>
+  </div>
+</div>
+</body></html>

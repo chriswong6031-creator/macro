@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>Landing display face — head to head</title>
+<!-- Dev-only artifact: it is NOT shipped, so unlike index.html/onboard.css it may
+     pull the RETIRED faces from the CDN — that is the only place Archivo Expanded
+     and Newsreader still exist now that both woff2 files are deleted. The no-CDN
+     guard is scoped to the three shipping surfaces. Outfit loads from the real
+     shipped subset so the "after" column is the actual face, tabular digits and all. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Newsreader:opsz,wght@6..72,200..800&family=Poppins:wght@700;800&family=Plus+Jakarta+Sans:wght@200..800&family=Manrope:wght@200..800&family=Inter:wght@400..900&display=swap">
+<style>
+@font-face{font-family:'Outfit';font-weight:400 900;font-display:swap;src:url("../../../site/fonts/Outfit-latin.woff2") format("woff2");}
+</style>
+<style>
+
+:root{--bg:#f7f8fa;--panel:#fff;--hair:#eaecf0;--ink:#1c2430;--muted:#5d6b7e;--faint:#8a95a4;
+--blue:#285fff;--q-green:#1f8b41;--q-gold:#b07d05;--gold-wash:#faf3e2;--green-wash:#e9f5ec;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px;padding:28px 32px 60px}
+h1{font:800 20px/1.2 Inter,sans-serif;letter-spacing:-.01em;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 26px;max-width:900px;line-height:1.5}
+.row{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:20px 22px;margin-bottom:14px;
+  box-shadow:0 1px 3px rgba(20,30,50,.07)}
+.tag{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+.tag b{font:800 11px/1 Inter,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:var(--blue)}
+.tag i{font-style:normal;font-size:11px;color:var(--faint)}
+.tag em{font-style:normal;font-size:11px;color:var(--muted);margin-left:auto}
+
+/* real hero size from the page: clamp(1.4rem,7vw,3.05rem) -> 48.8px at desktop, .display is 51.2px */
+.hero{font-size:44px;line-height:.99;letter-spacing:-.02em;font-weight:800;margin:0 0 16px}
+.hero .dim{background:linear-gradient(96deg,#285fff,#7862e0 46%,#0f9d8f);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grid{display:grid;grid-template-columns:auto auto auto 1fr;gap:0 26px;align-items:end}
+.big{font-weight:800;font-size:48px;line-height:.96;letter-spacing:-.005em;color:var(--q-gold)}
+.price{font-weight:800;font-size:41px;line-height:1;letter-spacing:-.01em}
+.px{font-weight:800;font-size:14px}
+.data{font-weight:700;font-size:10.5px;letter-spacing:.02em;color:var(--ink)}
+.dl{display:block;font:700 9px/1 Inter,sans-serif;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:6px}
+.strip{display:flex;gap:14px;align-items:center;margin-top:14px;padding-top:13px;border-top:1px solid var(--hair);flex-wrap:wrap}
+.chip{font-weight:700;font-size:10px;letter-spacing:.08em;padding:3px 9px;border-radius:99px;background:var(--green-wash);color:var(--q-green)}
+.tnum{font-variant-numeric:tabular-nums}
+.digits{font-weight:800;font-size:26px;letter-spacing:0}
+.warn{color:#c12f2f;font-weight:700}
+.ok{color:var(--q-green);font-weight:700}
+table{border-collapse:collapse;font-size:12px;margin-top:22px;background:var(--panel);
+  border:1px solid var(--hair);border-radius:12px;overflow:hidden}
+th,td{padding:8px 13px;text-align:left;border-bottom:1px solid var(--hair)}
+th{font:800 10px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:#fbfcfd}
+tr:last-child td{border-bottom:0}
+td.n{font-variant-numeric:tabular-nums;text-align:right}
+
+.f-archivo{font-family:Archivo,sans-serif;font-stretch:125%}
+.f-archivo-n{font-family:Archivo,sans-serif}
+.f-news{font-family:Newsreader,serif}
+.f-poppins{font-family:Poppins,sans-serif}
+.f-jakarta{font-family:'Plus Jakarta Sans',sans-serif}
+.f-outfit{font-family:Outfit,sans-serif}
+.f-manrope{font-family:Manrope,sans-serif}
+.f-inter{font-family:Inter,sans-serif}
+.f-sf{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif}
+</style></head><body>
+
+<h1>Landing display face — head to head</h1>
+<p class="sub">Every row carries the page's <b>real</b> content at its <b>real</b> sizes: the hero line (44px/800),
+the live gauge score (48px), the plan price (41px), a price cell (14px) and a ticker (10.5px). Incumbents first.</p>
+
+<div id="rows"></div>
+
+<table id="metrics"></table>
+
+<script>
+const FACES = [
+  ['f-archivo','Archivo Expanded 800','INCUMBENT — words today','wide grotesque, font-stretch 125%'],
+  ['f-news','Newsreader ExtraBold','INCUMBENT — figures today (#3655)','editorial serif, opsz axis'],
+  ['f-poppins','Poppins ExtraBold','CANDIDATE — operator named','pure geometric, single-storey a'],
+  ['f-jakarta','Plus Jakarta Sans ExtraBold','CANDIDATE','geometric-humanist, squared bowls'],
+  ['f-outfit','Outfit ExtraBold','CANDIDATE','pure geometric, Poppins-adjacent'],
+  ['f-manrope','Manrope ExtraBold','CANDIDATE','semi-condensed geometric'],
+  ['f-inter','Inter ExtraBold','CANDIDATE — closest libre SF','neo-grotesque, already self-hosted'],
+  ['f-sf','San Francisco (system-ui)','REFERENCE — Apple-only, cannot self-host','falls back off Apple devices'],
+];
+document.getElementById('rows').innerHTML = FACES.map(([cls,name,role,note]) => `
+<div class="row">
+  <div class="tag"><b>${name}</b><i>${note}</i><em>${role}</em></div>
+  <div class="hero ${cls}">Your personal,<br>institutional-grade<br><span class="dim">market intelligence.</span></div>
+  <div class="grid">
+    <div><span class="dl">Gauge score</span><div class="big ${cls} tnum">50</div></div>
+    <div><span class="dl">Plan price</span><div class="price ${cls} tnum">$49</div></div>
+    <div><span class="dl">Price cell</span><div class="px ${cls} tnum">$58.50</div></div>
+    <div><span class="dl">Ticker / edge / zone</span>
+      <div class="data ${cls}">NVDA &nbsp; AVGO &nbsp; <span class="ok">+2.0%</span> &nbsp; <span class="warn">&minus;1.1%</span>
+        &nbsp; EDGE 74 &nbsp; <span class="tnum">57.95&nbsp;&ndash;&nbsp;58.60</span> &nbsp; 96,412</div></div>
+  </div>
+  <div class="strip">
+    <span class="chip ${cls}">BUY NOW</span>
+    <span class="digits ${cls} tnum">0123456789</span>
+    <span class="dl" style="margin:0">MASTERMIND</span>
+    <span class="${cls}" style="font-weight:800;font-size:15px;letter-spacing:.02em">MASTERMIND</span>
+  </div>
+</div>`).join('');
+
+// ── metrics: digit-width spread at 48px/800, and hero width at identical size ──
+const c = document.createElement('canvas').getContext('2d');
+const FAMS = [
+  ['Archivo Expanded 800','800 48px Archivo','800 26px Archivo'],
+  ['Newsreader 800','800 48px Newsreader','800 26px Newsreader'],
+  ['Poppins 800','800 48px Poppins','800 26px Poppins'],
+  ['Plus Jakarta 800','800 48px 'Plus Jakarta Sans'','800 26px 'Plus Jakarta Sans''],
+  ['Outfit 800','800 48px Outfit','800 26px Outfit'],
+  ['Manrope 800','800 48px Manrope','800 26px Manrope'],
+  ['Inter 800','800 48px Inter','800 26px Inter'],
+];
+const HERO = 'Your personal, institutional-grade market intelligence.';
+let html = '<tr><th>Face</th><th>digit widths @48/800</th><th>spread</th>'
+         + '<th class="n">"96,412" @26px</th><th class="n">hero @44px</th><th>verdict</th></tr>';
+for (const [label, f48, f26] of FAMS) {
+  c.font = f48;
+  const w = '0123456789'.split('').map(d => c.measureText(d).width);
+  const spread = (Math.max(...w) - Math.min(...w));
+  c.font = f26;
+  const num = c.measureText('96,412').width;
+  c.font = f48.replace('48px','44px');
+  const hero = c.measureText(HERO).width;
+  const fixed = spread < 0.05;
+  html += `<tr><td>${label}</td><td class="n">${w[0].toFixed(2)} … ${Math.max(...w).toFixed(2)}</td>`
+        + `<td class="n" style="color:${fixed?'#1f8b41':'#c12f2f'};font-weight:700">${spread.toFixed(2)}px ${fixed?'fixed':'PROPORTIONAL'}</td>`
+        + `<td class="n">${num.toFixed(1)}px</td><td class="n">${hero.toFixed(0)}px</td>`
+        + `<td>${fixed?'digits stable on tick':'live number will jitter'}</td></tr>`;
+}
+document.getElementById('metrics').innerHTML = html;
+</script>
+</body></html>
