@@ -1760,7 +1760,7 @@ except Exception as _prefs_exc:  # noqa: BLE001
 # ---------------------------------------------------------------------------
 # Lifecycle mail sweeper (SEE W3 — app/billing_emails.py): the behaviour-triggered
 # trial-ending T-2 reminder. DEFAULT OFF — register_lifecycle is a no-op unless the
-# operator sets MAIL_LIFECYCLE_ENABLED (docs/ops/email-support-setup.md §7), so this is
+# operator sets MAIL_LIFECYCLE_ENABLED (docs/ops/email-support-setup.md §5b), so this is
 # inert on every machine that has not opted in, tests included. Cursor-free and
 # idempotent through email_log, so a restart mid-sweep costs nothing.
 # ---------------------------------------------------------------------------
