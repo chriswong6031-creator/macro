@@ -5181,6 +5181,14 @@ def chat_stream(
             effective_thread_id = resolved_tid
             if thread_id:
                 thread_history = _load_thread_history(resolved_tid)
+            # Persist the USER turn now, not after the stream. A turn survives its
+            # connection (app/brain_runs.py), so a client that reloads mid-answer
+            # re-opens this thread to watch the rest land — and it must find the
+            # question it asked already there, not a reply hanging off nothing.
+            # Strictly AFTER _load_thread_history, or this message would ride in the
+            # model's history AND as the live message (the same turn, twice).
+            _append_message(resolved_tid, "user",
+                            clean_msg + ("\n\n[image attached]" if image_blocks else ""))
 
     # Fix #4: filter client history before passing to the stream loop
     def _filter_client_history_stream(h: list[dict]) -> list[dict]:
@@ -5232,13 +5240,13 @@ def chat_stream(
         yield f"data: {json.dumps({'type': 'delta', 'text': _DEGRADED_USER_MSG})}\n\n"
         yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': quota_info, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
 
-    # 7. Thread message persistence (best-effort, post-stream) — both turns, so
-    #    reload and multi-turn model context see the full conversation (the streamed
-    #    assistant text lives only on the SSE wire otherwise).
-    if effective_thread_id:
-        _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
-        if answer_out:
-            _append_message(effective_thread_id, "assistant", answer_out[0])
+    # 7. Assistant-turn persistence (best-effort, post-stream) — the streamed text lives
+    #    only on the SSE wire otherwise, so reload and multi-turn model context would
+    #    both lose it. The user turn was already written at step 4. This runs on the
+    #    run's own thread (app/brain_runs.py), so it still happens when the client that
+    #    asked the question is long gone — that is what makes the answer recoverable.
+    if effective_thread_id and answer_out:
+        _append_message(effective_thread_id, "assistant", answer_out[0])
 
     # 8. Cost record (fix #1: real tokens; fix #2: accumulate ceiling backstop)
     usage_dict = usage_out[0] if usage_out else {}

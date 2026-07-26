@@ -69,6 +69,11 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Re
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+# Server-side brain runs: a chat turn is owned by the registry, not by the socket
+# that started it, so a backgrounded tab or a culled connection can never destroy
+# an answer the model already produced. Pure stdlib, no app import cycle.
+from app import brain_runs
+
 # Add repo root to sys.path so engine.neuralweb can be imported from /opt/macro
 _REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
@@ -717,7 +722,8 @@ _SSE_BRAIN_HEADERS = {
     "X-Accel-Buffering": "no",
 }
 
-# Idle-cull guard for the brain SSE stream.
+# Idle-cull guard + run durability for the brain SSE stream — both now live in
+# app/brain_runs.py, which owns the pump thread that used to be inlined here.
 #
 # The brain generator has long DEAD-AIR gaps with zero bytes on the wire: the
 # blocking tool-calling turns (the model thinks for 10-15s before the first
@@ -725,56 +731,15 @@ _SSE_BRAIN_HEADERS = {
 # (the advice-filter must run on the full answer before any delta can be sent),
 # so a slow model (a DeepSeek fallback, a long research report) can go 40-60s
 # without emitting a single byte. An idle SSE socket that quiet gets culled by a
-# proxy / the browser / an intermediate → the widget sees the stream end with no
-# delta and shows "The reply didn't make it through." (the tape websocket already
-# ships a 20s heartbeat for exactly this reason — see app/tape.py).
+# proxy / the browser / an intermediate (the tape websocket already ships a 20s
+# heartbeat for exactly this reason — see app/tape.py), so brain_runs.follow()
+# emits `: keepalive` comments through every gap.
 #
-# _sse_keepalive wraps the generator: it runs the source in a thread feeding a
-# queue and emits an SSE COMMENT (`: keepalive`, ignored by the EventSource
-# parser but real bytes on the socket) whenever no event arrives within the
-# interval. It ALSO converts an unexpected source exception into a degraded
-# delta+done so the client never sees a bare mid-stream connection drop.
-_BRAIN_KEEPALIVE_INTERVAL_S = 12.0
-
-
-def _sse_keepalive(source, interval: float = _BRAIN_KEEPALIVE_INTERVAL_S):
-    """Yield from `source`, injecting `: keepalive` comments during dead-air gaps."""
-    import queue as _queue  # noqa: PLC0415
-
-    q: "_queue.Queue" = _queue.Queue()
-    _DONE = object()
-
-    def _pump():
-        try:
-            for item in source:
-                q.put(item)
-        except Exception as exc:  # noqa: BLE001 — surfaced as a degraded turn below
-            q.put(("__brain_exc__", exc))
-        finally:
-            q.put(_DONE)
-
-    threading.Thread(target=_pump, name="brain-sse-pump", daemon=True).start()
-    while True:
-        try:
-            item = q.get(timeout=interval)
-        except Exception:  # queue.Empty → dead air; keep the socket warm  # noqa: BLE001
-            yield ": keepalive\n\n"
-            continue
-        if item is _DONE:
-            return
-        if isinstance(item, tuple) and len(item) == 2 and item[0] == "__brain_exc__":
-            # The generator died before finishing — emit a visible degraded reply
-            # + done instead of dropping the connection with no delta.
-            import logging as _logging  # noqa: PLC0415
-            _logging.getLogger(__name__).warning("brain_stream: generator failed (%s)", item[1])
-            try:
-                from engine.neuralweb.brain_gateway import _DEGRADED_USER_MSG as _msg  # noqa: PLC0415
-            except Exception:  # noqa: BLE001
-                _msg = "The AI assistant is temporarily unavailable. Please try again in a moment."
-            yield f"data: {json.dumps({'type': 'delta', 'text': _msg})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'citations': [], 'quota': {}, 'usage': {}, 'filtered': False, 'degraded': True, 'is_context_only': True})}\n\n"
-            return
-        yield item
+# The keepalive alone was never enough: it keeps a LIVE socket warm, but cannot
+# help a socket that is gone (the tab was backgrounded, the phone slept, the
+# laptop lid closed). brain_runs.start() therefore detaches the generator from the
+# connection entirely — the turn finishes, buffers, and persists to the thread
+# regardless — and the client re-attaches with GET /api/brain/runs/{id}/stream.
 
 
 def _brain_module():
@@ -1052,10 +1017,96 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             guest_ip=guest_ip,
         )
 
-    # _sse_keepalive keeps the socket warm through the brain's dead-air gaps
-    # (blocking tool turns + buffered synthesis) so a slow answer is never culled
-    # to a blank "reply didn't make it through".
-    return StreamingResponse(_sse_keepalive(_gen()), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
+    # The turn is registered as a server-side RUN before a single byte goes out.
+    # brain_runs pumps the generator on its own thread into an ordered event buffer,
+    # so the answer is produced (and persisted to the thread) whether or not this
+    # socket survives — a backgrounded tab, a slept laptop or a culled connection no
+    # longer destroys the reply. `follow` streams that buffer to the current client,
+    # injecting `: keepalive` comments through the brain's dead-air gaps (blocking
+    # tool turns + buffered synthesis) so an idle-culling proxy never cuts us off.
+    # The leading `run` event hands the client the id + cursor it needs to re-attach
+    # via GET /api/brain/runs/{run_id}; it is deliberately NOT buffered, so a buffer
+    # index stays equal to the client's count of received brain events.
+    run = brain_runs.start(_gen(), user_id=user_id, thread_id=body.thread_id,
+                           lane=lane, mode=mode)
+
+    def _attach():
+        yield brain_runs.run_event(run)
+        yield from brain_runs.follow(run)
+
+    return StreamingResponse(_attach(), media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
+
+
+@app.get("/api/brain/runs/active")
+def brain_runs_active(user: dict = Depends(_brain_user_or_guest)):
+    """Recent brain runs for the caller, newest first.
+
+    The recovery path for a signed-in client that lost its stored run id (cleared
+    storage, a second tab, another device). Response: {runs: [{run_id, thread_id,
+    lane, mode, done, events, ...}]}.
+
+    NEVER enumerates for a GUEST. A guest principal is not a user: it is
+    `guest:<mm_aid cookie>`, or `guest:ip:<hash>` / `guest:anon` when there is no
+    cookie — so every anonymous visitor behind one office/CGNAT egress IP shares it,
+    and the cookie half is client-settable. Listing run ids to that principal would
+    hand one visitor another's question and answer verbatim, which is a capability the
+    quota ledger it was designed for never granted (guests write no thread rows at
+    all). A guest's own run id lives in its browser and nowhere else; a 128-bit
+    unguessable id IS the guest's capability, and it is only ever sent to the client
+    that started the run. The throttle applies here because this is the one run route
+    that could otherwise be polled to discover ids.
+    """
+    if user.get("_is_guest"):
+        return {"runs": []}
+    user_id = user.get("id") or user.get("email") or "unknown"
+    _brain_throttle_check(user_id)
+    return {"runs": brain_runs.active_for(user_id)}
+
+
+@app.get("/api/brain/runs/{run_id}")
+def brain_run_status(run_id: str, user: dict = Depends(_brain_user_or_guest)):
+    """Status of one run (no stream). 404 when unknown, expired, or not the caller's.
+
+    Lets a returning client decide cheaply whether to re-attach (still running),
+    replay (finished inside the TTL), or fall back to re-reading the thread.
+    """
+    user_id = user.get("id") or user.get("email") or "unknown"
+    run = brain_runs.get(run_id, user_id)
+    if run is None:
+        raise HTTPException(404, "run not found or expired")
+    return run.status()
+
+
+@app.get("/api/brain/runs/{run_id}/stream")
+def brain_run_resume(run_id: str, cursor: int = 0,
+                     user: dict = Depends(_brain_user_or_guest)):
+    """Re-attach to a run's SSE stream from `cursor` (SSE).
+
+    Replays every buffered event from `cursor` at once, then follows the run live to
+    its `done`. No quota is debited and the model is not re-run — this is a second
+    reader on a turn that is already paid for. 404 when unknown/expired/not owned.
+    """
+    user_id = user.get("id") or user.get("email") or "unknown"
+    run = brain_runs.get(run_id, user_id)
+    if run is None or run.cancelled:
+        # A cancelled run would otherwise `follow` to an instant empty body, and the
+        # client would spend its whole backoff budget re-attaching to nothing.
+        raise HTTPException(404, "run not found or expired")
+    return StreamingResponse(brain_runs.follow(run, cursor=max(0, cursor)),
+                             media_type="text/event-stream", headers=_SSE_BRAIN_HEADERS)
+
+
+@app.post("/api/brain/runs/{run_id}/cancel")
+def brain_run_cancel(run_id: str, user: dict = Depends(_brain_user_or_guest)):
+    """Mark a run cancelled (the user pressed Stop) so it is not re-attached to.
+
+    The in-flight provider call cannot be interrupted, so the gateway still finishes
+    and still persists what it produced — same as today's Stop. 404 when unknown.
+    """
+    user_id = user.get("id") or user.get("email") or "unknown"
+    if not brain_runs.cancel(run_id, user_id):
+        raise HTTPException(404, "run not found or expired")
+    return {"ok": True}
 
 
 @app.get("/api/brain/me")
