@@ -30,11 +30,39 @@
   var lastScrollT = -1e4;        // timestamp of last scroll event (performance.now())
   window.addEventListener("scroll", function () { lastScrollT = performance.now(); _wake(); }, { passive: true });
   // ---- thermal guard -------------------------------------------------------
-  // Ambient (no-interaction) repaints are capped to ~30fps: ProMotion phones
-  // otherwise run this full-canvas repaint at 120Hz and cook in minutes. After
-  // PARK_MS with no real user input the loop, the auto-tour and the decorative
-  // CSS animations park entirely on the last frame; any touch/scroll/key wakes them.
-  var AMBIENT_MS = 30, PARK_MS = 120000;
+  // Ambient (no-interaction) repaints are capped: ProMotion PHONES otherwise run
+  // this full-canvas repaint at 120Hz and cook in minutes. The cap is device-tiered
+  // because the hazard is — a mains/actively-cooled machine has no thermal problem
+  // and the idle auto-rotation is the whole point of the deck, so desktops keep a
+  // 60fps floor and phones/tablets stay at ~33fps. After PARK_MS with no real user
+  // input the loop, the auto-tour and the decorative CSS animations park entirely on
+  // the last frame; any touch/scroll/key wakes them.
+  //
+  // DESKTOP_MS is deliberately BELOW the 16.67ms of a 60Hz vsync (not equal to it):
+  // an at-the-limit cap loses a frame to any scheduling jitter and drops the whole
+  // second to 30fps. 14ms passes every 60Hz frame and halves a 120Hz one -> a clean
+  // 60fps on both. Raise to 8 to let high-refresh desktops run native 120Hz.
+  // Touch tiering (not viewport width): a narrowed desktop window is still a desktop,
+  // while a touchscreen laptop reports coarse pointer yet is actively cooled — so
+  // "has a real mouse" (hover + fine pointer) is the signal that tracks the hazard.
+  var DESKTOP_MS = 14, MOBILE_MS = 30;
+  var DESKTOP_PARK = 600000, MOBILE_PARK = 120000;
+  var _mqDesktop = window.matchMedia ? matchMedia("(hover: hover) and (pointer: fine)") : null;
+  var AMBIENT_MS = MOBILE_MS, PARK_MS = MOBILE_PARK;
+  function _applyTier() {
+    var desktop = !!(_mqDesktop && _mqDesktop.matches);
+    AMBIENT_MS = desktop ? DESKTOP_MS : MOBILE_MS;
+    PARK_MS = desktop ? DESKTOP_PARK : MOBILE_PARK;
+    if (window.__gdPerf) { window.__gdPerf.power = desktop ? "desktop" : "mobile"; window.__gdPerf.ambientMs = AMBIENT_MS; }
+  }
+  _applyTier();
+  // Re-tier live: an iPad gaining/losing a trackpad and DevTools device emulation both
+  // flip these queries after load. _wake() un-parks a globe parked under the old tier.
+  if (_mqDesktop) {
+    var _onTier = function () { _applyTier(); _wake(); };
+    if (_mqDesktop.addEventListener) _mqDesktop.addEventListener("change", _onTier);
+    else if (_mqDesktop.addListener) _mqDesktop.addListener(_onTier);
+  }
   var _lastRenderT = 0, _parked = false, _parkCss = null;
 
   // Quality tier: 2=high dpr≤2, 1=mid dpr≤1.5, 0=low dpr≤1.15
@@ -1617,7 +1645,10 @@
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
     // init instrumentation object once (mutated each frame)
+    // power/ambientMs: the thermal tier resolved above (_applyTier ran before this
+    // object existed, so seed them here as well as on every later re-tier).
     window.__gdPerf = { tier: Q, frames: 0, scale: scale, avg: 0, rot0: rot[0] };
+    _applyTier();
     buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
     // hint chip + eyebrow chips (new self-owned UI)
     buildHintChip();

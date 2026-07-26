@@ -128,6 +128,130 @@ def _svg_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
+# --- head preload hints for late-discovered CSS ------------------------------
+# Every stylesheet on these pages is render-blocking, so first paint waits for the
+# LAST one to arrive — which makes *when the browser learns the URL* as costly as
+# the download. Two structural delays put that discovery late:
+#
+#   1. externalize_css lifts inline <style> in place, so macro.html's 6 biggest
+#      sheets (265KB) sit at byte ~48,000 and one at ~109,000 of a 582KB document.
+#      The preload scanner only sees bytes that have ARRIVED, so on a cold mobile
+#      connection (TCP slow-start) their fetch waits several extra round-trips
+#      that the head's own sheets did not.
+#   2. theme.css opens with `@import url(product-nav-icons.css)`. An @import is
+#      invisible until its parent has downloaded AND begun parsing, so that 33KB
+#      sheet is strictly serialized behind 108KB of theme.css — a guaranteed extra
+#      round-trip (~460ms at the measured origin TTFB) in front of first paint.
+#
+# Both are fixed by hoisting DISCOVERY only: emit `<link rel=preload as=style>` in
+# <head> for each late URL. The real <link rel=stylesheet>/@import stays exactly
+# where it is, so rule order — and therefore the cascade — is untouched; the sheet
+# is simply already in the preload cache when the parser reaches it. Same URL +
+# same-origin, so the preload and the real reference share a cache entry and the
+# byte fetch happens once.
+#
+# Runs LAST (inside scripts/optimize_assets.py, after ?v= stamping) because a
+# preload href that differs from the stylesheet href by so much as a query string
+# is a different cache key — it would double-fetch instead of dedupe.
+_LINK_TAG_RE = re.compile(r"<link\b[^>]*>", re.IGNORECASE)
+_REL_ATTR_RE = re.compile(r'\brel\s*=\s*"([^"]*)"', re.IGNORECASE)
+_HREF_ATTR_RE = re.compile(r'\bhref\s*=\s*"([^"]*)"', re.IGNORECASE)
+_CSS_IMPORT_RE = re.compile(
+    r"""@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?""", re.IGNORECASE
+)
+
+
+def css_imports(css: str) -> list[str]:
+    """Relative URLs @import-ed by a stylesheet, in source order. Only leading
+    @imports matter for preloading (CSS requires them before any rule), so scan
+    just the head of the file — that also keeps an `@import` inside a comment or
+    a string deep in a 100KB sheet from producing a bogus preload."""
+    out: list[str] = []
+    for m in _CSS_IMPORT_RE.finditer(css[:4096]):
+        url = m.group(1).strip()
+        if url and _is_local_asset(url):
+            out.append(url)
+    return out
+
+
+def preload_css_text(text: str, imports_for: Callable[[str], list[str]]) -> str:
+    """Add `<link rel=preload as=style>` to <head> for every stylesheet the parser
+    would otherwise discover late: those linked from the BODY, and those reached
+    via @import from any linked sheet (``imports_for(href) -> [url, …]``, resolved
+    relative to that sheet).
+
+    Hints are inserted after the last existing <head> stylesheet so the head's own
+    render-blocking sheets keep first claim on bandwidth. Idempotent: a URL already
+    preloaded (or already linked in the head) is skipped. Body <link>s inside inline
+    <svg> are ignored — they are inert there and never fetched (see _svg_spans)."""
+    m = _HEAD_RE.search(text)
+    if not m:
+        return text
+    head_close = text.lower().find("</head>", m.end())
+    if head_close == -1:
+        return text
+
+    svg_spans = _svg_spans(text)
+    preloaded: set[str] = set()   # URLs already hinted, anywhere on the page
+    head_sheets: set[str] = set()  # URLs the head already links (discovery is early)
+    late: list[tuple[str, Optional[str]]] = []  # (url, media) needing a hint
+    last_head_sheet_end = m.end()
+
+    for lm in _LINK_TAG_RE.finditer(text):
+        tag = lm.group(0)
+        rel_m, href_m = _REL_ATTR_RE.search(tag), _HREF_ATTR_RE.search(tag)
+        if not rel_m or not href_m:
+            continue
+        rels = rel_m.group(1).lower().split()
+        href = href_m.group(1)
+        if "preload" in rels:
+            preloaded.add(href)
+            continue
+        if "stylesheet" not in rels or not _is_local_asset(href):
+            continue
+        in_head = lm.start() < head_close
+        if in_head:
+            head_sheets.add(href)
+            last_head_sheet_end = max(last_head_sheet_end, lm.end())
+        elif not any(a <= lm.start() < b for a, b in svg_spans):
+            media_m = _MEDIA_ATTR_RE.search(tag)
+            late.append((href, media_m.group(1) if media_m else None))
+        # @imports are late no matter WHERE their parent is linked
+        for imp in imports_for(href):
+            late.append((_resolve_rel(href, imp), None))
+
+    hints, seen = [], set(preloaded)
+    for url, media in late:
+        if url in seen or url in head_sheets:
+            continue
+        seen.add(url)
+        media_attr = f' media="{media}"' if media else ""
+        hints.append(f'<link rel="preload" as="style"{media_attr} href="{url}">')
+    if not hints:
+        return text
+    return text[:last_head_sheet_end] + "\n" + "\n".join(hints) + text[last_head_sheet_end:]
+
+
+def _resolve_rel(base_href: str, url: str) -> str:
+    """Resolve `url` against the DIRECTORY of `base_href` (both page-relative), so
+    an @import inside site/theme.css referenced from site/x/y.html as
+    "../theme.css" yields "../product-nav-icons.css" — the exact string the browser
+    will request, which is what makes the preload dedupe."""
+    if url.startswith("/"):
+        return url
+    base_dir = base_href.split("?", 1)[0].split("#", 1)[0].rsplit("/", 1)
+    if len(base_dir) == 1:
+        return url
+    parts = [p for p in (base_dir[0] + "/" + url).split("/") if p != "."]
+    out: list[str] = []
+    for p in parts:
+        if p == ".." and out and out[-1] != "..":
+            out.pop()
+        else:
+            out.append(p)
+    return "/".join(out)
+
+
 def externalize_css_text(
     text: str, make_href: Callable[[str, int, Optional[str]], Optional[str]]
 ) -> str:
@@ -161,17 +285,67 @@ def externalize_css_text(
     return _STYLE_BLOCK_RE.sub(_repl, text)
 
 
+# The shim is INLINED, not linked. It has to be a blocking script at the top of
+# <head> (it patches window.fetch before any page data fetch), and as an external
+# ref that made it the one resource that stalls the HTML parser for a full
+# round-trip on every cold visit — ~460ms at the measured origin TTFB, on every
+# page of the site, to deliver under 1KB. Unversioned, it also carries
+# `max-age=300, must-revalidate` (Caddyfile @public_static), so returning visitors
+# pay a revalidation RTT in that same blocking position. Inlined it costs zero
+# requests and keeps the ordering guarantee exactly.
+#
+# Site CSP is `base-uri 'self'; object-src 'none'; frame-ancestors 'none'` — no
+# script-src directive, so inline executes. A future nonce migration (noted in the
+# Caddyfile) must give this tag a nonce or it silently stops rerouting to R2.
+_DBASE_LEAD_COMMENT_RE = re.compile(r"\A\s*/\*.*?\*/\s*", re.DOTALL)
+_DBASE_EXTERNAL_TAG_RE = re.compile(
+    rf'<script\s+{DBASE_MARKER}\s+src="[^"]*data_base\.js(?:\?[^"]*)?"\s*>\s*</script>',
+    re.IGNORECASE,
+)
+_shim_body_cache: Optional[str] = None
+
+
+def _shim_body() -> Optional[str]:
+    """The shim source to inline, minus its leading block comment (the rationale
+    lives in templates/data_base.js and in this module). Stripping only a LEADING
+    /*…*/ is safe without a JS parser — nothing can precede it, so it can never be
+    inside a string literal. Cached per process; None when unreadable, which makes
+    _tag() fall back to the external ref rather than dropping the shim."""
+    global _shim_body_cache
+    if _shim_body_cache is None:
+        try:
+            src = (config.ROOT / "templates" / "data_base.js").read_text(encoding="utf-8")
+            body = _DBASE_LEAD_COMMENT_RE.sub("", src).strip()
+            # A literal </script> in the body would close the tag early. The shim has
+            # none today; bail to the external ref rather than emit a broken page.
+            _shim_body_cache = "" if (not body or "</script" in body.lower()) else body
+        except Exception as e:  # noqa: BLE001
+            log.warning("data_base.js shim read failed (%s) — falling back to external ref", e)
+            _shim_body_cache = ""
+    return _shim_body_cache or None
+
+
 def _tag(prefix: str) -> str:
-    return f'<script {DBASE_MARKER} src="{prefix}data_base.js"></script>'
+    body = _shim_body()
+    if body is None:
+        return f'<script {DBASE_MARKER} src="{prefix}data_base.js"></script>'
+    return f"<script {DBASE_MARKER}>{body}</script>"
 
 
 def inject_text(text: str, prefix: str = "") -> str:
     """Return `text` with the shim <script> inserted at the TOP of <head> (so it
-    runs before any body fetch). Idempotent — text already carrying the marker is
-    unchanged."""
-    if DBASE_MARKER in text:
-        return text
+    runs before any body fetch). Idempotent — text already carrying the inline
+    shim is unchanged; a page still carrying the OLD external <script src> tag is
+    upgraded in place (same position, so ordering is preserved)."""
     tag = _tag(prefix)
+    if DBASE_MARKER in text:
+        # Upgrade path: pages rendered before inlining (and any page the CI sweep
+        # re-visits) carry the external ref. Swap it for the inline body in place.
+        # Gate the scan on a cheap substring — once the site is fully upgraded this
+        # runs over every page of every render and must not cost a regex sweep.
+        if "data_base.js" in text and _shim_body() is not None and _DBASE_EXTERNAL_TAG_RE.search(text):
+            return _DBASE_EXTERNAL_TAG_RE.sub(lambda _m: tag, text, count=1)
+        return text
     m = _HEAD_RE.search(text)
     if m:
         i = m.end()
