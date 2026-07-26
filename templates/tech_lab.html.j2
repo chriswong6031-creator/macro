@@ -310,6 +310,11 @@ td.tl-num,th.tl-num { text-align:right;font-variant-numeric:tabular-nums;white-s
 .tl-help { position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:700;cursor:default; }
 .tl-help:hover::before { content:attr(data-tip-en);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);min-width:230px;max-width:300px;padding:9px 11px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:11px;font-weight:400;color:var(--text);line-height:1.55;white-space:normal;z-index:50;text-align:left;padding-bottom:13px; }
 html[data-lang="zh"] .tl-help:hover::before { content:attr(data-tip-zh); }
+/* Entry-timing badge hover (W-LAB-1): reuse the tl-help tooltip look on the
+   reset-confirmer / early-window chips. No translated text in title= (CI). */
+.tl-badge-tip { position:relative;cursor:help; }
+.tl-badge-tip:hover::before { content:attr(data-tip-en);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);min-width:200px;max-width:280px;padding:9px 11px;border-radius:8px;background:var(--panel);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:11px;font-weight:400;color:var(--text);line-height:1.55;white-space:normal;z-index:50;text-align:left; }
+html[data-lang="zh"] .tl-badge-tip:hover::before { content:attr(data-tip-zh); }
 
 /* scrollbar */
 ::-webkit-scrollbar { width:6px;height:6px; }
@@ -557,7 +562,12 @@ html[data-theme="dark"][data-lang="zh"] .dir-down { color:#45b873; }
         <thead>
           <tr>
             <th><span class="l-en">Combo</span><span class="l-zh">组合</span></th>
-            <th class="tl-num"><span class="l-en">Wins per 10 (2018+)</span><span class="l-zh">每10次胜次(2018后)</span></th>
+            <th class="tl-num"><span class="l-en">Wins per 10 (2018+)</span><span class="l-zh">每10次胜次(2018后)</span>
+              <span class="tl-help" data-tip-en="Hold ruler: 21-day forward win rate — the share of entries that were higher 21 trading days later (2018+, month-collapsed)." data-tip-zh="持有标尺：21日前瞻胜率 — 进场后21个交易日更高的比例（2018后、按月去重）。">?</span></th>
+            <th class="tl-num"><span class="l-en">Entry quality (MAE)</span><span class="l-zh">进场质量(MAE)</span>
+              <span class="tl-help" data-tip-en="Entry-timing ruler: median worst drawdown within 63 days of entry (closes-only). Closer to zero = the entry sat through less pain." data-tip-zh="进场择时标尺：进场后63日内最大回撤的中位数（仅收盘价）。越接近零 = 进场后回撤越浅。">?</span></th>
+            <th class="tl-num"><span class="l-en">Near-low hits</span><span class="l-zh">接近低点</span>
+              <span class="tl-help" data-tip-en="Entry-timing ruler: share of fires within 5% of the local low (±31 trading days)." data-tip-zh="进场择时标尺：触发时收盘价处于局部低点5%以内的比例（±31个交易日）。">?</span></th>
             <th class="tl-num"><span class="l-en">vs random</span><span class="l-zh">对比随机</span></th>
             <th><span class="l-en">Both eras?</span><span class="l-zh">两期均稳?</span></th>
             <th class="tl-num"><span class="l-en">Entries/yr</span><span class="l-zh">年均触发</span></th>
@@ -566,7 +576,7 @@ html[data-theme="dark"][data-lang="zh"] .dir-down { color:#45b873; }
           </tr>
         </thead>
         <tbody id="cb-tbody">
-          <tr><td colspan="7" class="tl-empty">
+          <tr><td colspan="9" class="tl-empty">
             <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
           </td></tr>
         </tbody>
@@ -1222,6 +1232,23 @@ function _edgeChip(e) {
   var cls = pp >= 4 ? 'edge-strong' : pp >= 1 ? 'edge-pos' : pp <= -1 ? 'edge-neg' : 'edge-neu';
   return '<span class="tl-edge-chip ' + cls + '">' + (pp >= 0 ? '+' : '') + pp.toFixed(1) + 'pp</span>';
 }
+/* Entry-timing ruler (W-LAB-1). MAE63 is ≤0; show as a signed % (closer to 0 =
+   shallower drawdown). Near-low is a share → wins-per-10 style share. */
+function _maeCell(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+function _nearLowCell(v) { return v != null ? (v * 100).toFixed(0) + '%' : '—'; }
+/* Reset-confirmer / early-window badge from measured median trough timing.
+   Copy law R-W1T-3: never frame this as calling the low; the plain-word hover
+   carries the meaning. */
+function _entryBadge(c) {
+  var b = c.entry_badge;
+  if (b === 'reset_confirmer')
+    return '<span class="era-badge2 era-stable tl-badge-tip" data-tip-en="Tends to fire after the low is in — confirms the reset." data-tip-zh="倾向于在低点确认后触发——确认洗盘。">'
+      + L('reset confirmer', '确认洗盘') + '</span>';
+  if (b === 'early_window')
+    return '<span class="era-badge2 era-divg tl-badge-tip" data-tip-en="Tends to fire before the low — early, expect further downside." data-tip-zh="倾向于在低点前触发——偏早，后续可能仍有下探。">'
+      + L('early window', '抢先入场') + '</span>';
+  return '';
+}
 function _eraChip(sig) {
   var pre = sig.wr_pre2010;
   var post = sig.wr_post2010;
@@ -1370,7 +1397,7 @@ window.tlRenderCombos = function() {
   var tbody = document.getElementById('cb-tbody');
   if (!tbody) return;
   if (!CBD) {
-    tbody.innerHTML = '<tr><td colspan="7" class="tl-empty">' +
+    tbody.innerHTML = '<tr><td colspan="9" class="tl-empty">' +
       L('Combo backtest data pending nightly generation.','组合回测数据等待夜间生成。') + '</td></tr>';
     return;
   }
@@ -1391,9 +1418,12 @@ window.tlRenderCombos = function() {
     var h = c.h21 || {};
     var nNow = (c.active_now || []).length;
     return '<tr onclick="tlOpenCombo(\'' + c.id + '\')">' +
-      '<td style="max-width:340px;"><div class="cb-name">' + _comboName(c) + '</div>' +
+      '<td style="max-width:340px;"><div class="cb-name">' + _comboName(c) +
+        (c.entry_badge ? ' ' + _entryBadge(c) : '') + '</div>' +
         '<div class="cb-legs">' + (c.legs || []).map(_legChip).join('') + '</div></td>' +
       '<td class="tl-num">' + _wrOf10Cell(h.wr_mc_test, base.wr_mc_test) + '</td>' +
+      '<td class="tl-num">' + _maeCell(c.mae63_med) + '</td>' +
+      '<td class="tl-num">' + _nearLowCell(c.near_low_hit) + '</td>' +
       '<td class="tl-num">' + _edgeChip(c.edge_wr_test) + '</td>' +
       '<td>' + _consChip(c) + '</td>' +
       '<td class="tl-num">' + (c.fires_per_year != null ? c.fires_per_year.toFixed(1) : '—') + '</td>' +
@@ -1401,7 +1431,7 @@ window.tlRenderCombos = function() {
       '<td><span class="match-now-btn' + (nNow ? '' : ' zero') + '">' + nNow + ' ' +
         (nNow ? L('now','现在') : L('none','无')) + '</span></td>' +
       '</tr>';
-  }).join('') : '<tr><td colspan="7" class="tl-empty">' + L('No combos under this filter.','该筛选下无组合。') + '</td></tr>';
+  }).join('') : '<tr><td colspan="9" class="tl-empty">' + L('No combos under this filter.','该筛选下无组合。') + '</td></tr>';
 
   var note = document.getElementById('cb-count-note');
   if (note) note.innerHTML = L(
@@ -1446,6 +1476,7 @@ window.tlOpenCombo = function(id) {
   document.getElementById('cbd-name').textContent = isZh() ? (c.name_zh || c.name_en) : c.name_en;
   document.getElementById('cbd-legs').innerHTML = (c.legs || []).map(_legChip).join('');
   document.getElementById('cbd-badges').innerHTML = _consChip(c) +
+    (c.entry_badge ? _entryBadge(c) : '') +
     '<span class="chip">' + c.k + ' ' + L('signals','个信号') + '</span>';
 
   var base = _cbBase(_cbSide);
@@ -1459,7 +1490,14 @@ window.tlOpenCombo = function(id) {
     { k: L('Entries / year','年均进场'), v: c.fires_per_year != null ? c.fires_per_year.toFixed(1) : '—', cls: 'sv-neu',
       b: L(c.fires_last3y + ' in the last 3y', '近3年 ' + c.fires_last3y + ' 次') },
     { k: L('Reward vs risk','盈亏比'), v: c.mfe_mae_med != null ? c.mfe_mae_med.toFixed(2) + '×' : '—',
-      cls: c.mfe_mae_med >= 1 ? 'sv-up' : 'sv-neu', b: L('typical best move ÷ worst move','典型最大有利÷最大不利') }
+      cls: c.mfe_mae_med >= 1 ? 'sv-up' : 'sv-neu', b: L('typical best move ÷ worst move','典型最大有利÷最大不利') },
+    // Entry-timing ruler (W-LAB-1) — shown alongside the hold-ruler cells above.
+    { k: L('Entry quality (MAE)','进场质量(MAE)'), v: _maeCell(c.mae63_med),
+      cls: (c.mae63_med != null && c.mae63_med > -0.06) ? 'sv-up' : 'sv-neu',
+      b: L('median worst drawdown within 63 days of entry','进场后63日内最大回撤中位数') },
+    { k: L('Near-low hits','接近低点'), v: _nearLowCell(c.near_low_hit),
+      cls: (c.near_low_hit != null && c.near_low_hit >= 0.5) ? 'sv-up' : 'sv-neu',
+      b: L('share of fires within 5% of the ±31d local low','触发时处于±31日局部低点5%以内的比例') }
   ];
   document.getElementById('cbd-grid').innerHTML = cells.map(function(x) {
     return '<div class="stat-cell"><div class="sk">' + x.k + '</div><div class="sv ' + x.cls + '">' + x.v + '</div><div class="sb">' + x.b + '</div></div>';

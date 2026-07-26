@@ -1215,6 +1215,155 @@ class TestBuildLegDefs:
 
 
 # ---------------------------------------------------------------------------
+# 13. Entry-timing ruler (W-LAB-1 / V-LAB-4): mae63 / near-low / badge
+# ---------------------------------------------------------------------------
+
+class TestEntryTimingRuler:
+    """Dual-ruler entry-timing fields: median MAE63, near-low hit rate,
+    reset-confirmer / early-window badge from median td_to_trough.
+
+    These are DISPLAY-TIER descriptive stats shown next to (never replacing)
+    the legacy fwd21 hold-return column.
+    """
+
+    def _single_event_panel(
+        self, fire_bar: int, close: np.ndarray, n: int = 350,
+    ) -> tuple[LegPanel, int]:
+        """Panel with one event leg firing exactly at fire_bar (window=1)."""
+        dates = pd.bdate_range("2015-01-02", periods=n)
+        sig = pd.Series(0.0, index=dates)
+        sig.iloc[fire_bar] = 1.0
+        tc = _StubCatalog({"sig_ev": sig})
+        legs = build_leg_defs(tc)
+        legs_ev = [l for l in legs if l["signal_id"] == "sig_ev" and l["tf"] == "D"]
+        cfg = MinerConfig(event_window_d=1)
+        df = _make_ohlcv(n=n, close_values=close)
+        panel = build_panel({"TICK": df}, tc, cfg=cfg, legs=legs_ev)
+        return panel, 0
+
+    def test_panel_carries_timing_arrays(self):
+        """build_panel populates mae63 / near_low / td_to_trough arrays."""
+        n = 350
+        close = np.linspace(100.0, 200.0, n)
+        panel, _ = self._single_event_panel(50, close, n=n)
+        for arr in (panel.mae63, panel.near_low, panel.td_to_trough):
+            assert arr is not None
+            # length = concatenated real bars + 1 guard slot per ticker
+            assert arr.shape[0] == panel.act.shape[1]
+
+    def test_fields_present_in_evaluate_combo(self):
+        """evaluate_combo emits the four dual-ruler fields + badge."""
+        n = 350
+        close = np.linspace(100.0, 200.0, n)
+        panel, li = self._single_event_panel(50, close, n=n)
+        stats = evaluate_combo(panel, (li,), direction=1)
+        assert stats is not None
+        for key in ("mae63_med", "near_low_hit", "near_low_n",
+                    "td_to_trough_med", "entry_badge"):
+            assert key in stats, f"missing dual-ruler field {key}"
+
+    def test_reset_confirmer_at_trough(self):
+        """A fire AT the local trough → median td_to_trough ≤ 0 → reset_confirmer,
+        near-low hit, shallow MAE."""
+        n = 350
+        # V-shape: falls to a trough at bar 100, then recovers.
+        close = np.concatenate([np.linspace(200.0, 100.0, 100),
+                                np.linspace(100.0, 300.0, n - 100)])
+        panel, li = self._single_event_panel(100, close, n=n)
+        stats = evaluate_combo(panel, (li,), direction=1)
+        assert stats is not None
+        assert stats["td_to_trough_med"] is not None and stats["td_to_trough_med"] <= 0
+        assert stats["entry_badge"] == "reset_confirmer"
+        assert stats["near_low_hit"] == 1.0  # sits right on the local low
+        # MAE from a trough entry into a recovery is shallow (≈ 0, not deeply negative)
+        assert stats["mae63_med"] is not None and stats["mae63_med"] > -0.05
+
+    def test_early_window_before_trough(self):
+        """A fire BEFORE the trough (still falling) → trough offset > 0 →
+        early_window."""
+        n = 350
+        close = np.concatenate([np.linspace(200.0, 100.0, 100),
+                                np.linspace(100.0, 300.0, n - 100)])
+        panel, li = self._single_event_panel(80, close, n=n)  # 20 bars before the low
+        stats = evaluate_combo(panel, (li,), direction=1)
+        assert stats is not None
+        assert stats["td_to_trough_med"] is not None and stats["td_to_trough_med"] > 0
+        assert stats["entry_badge"] == "early_window"
+
+    def test_mae63_anchors_on_entry_close(self):
+        """MAE63 anchors on entry = close[t+1] and equals the deepest post-entry
+        drawdown over 63td (closes-only)."""
+        n = 350
+        close = np.full(n, 100.0)
+        tfire = 60
+        close[tfire + 5] = 90.0  # a -10% print within 63td of entry
+        panel, li = self._single_event_panel(tfire, close, n=n)
+        stats = evaluate_combo(panel, (li,), direction=1)
+        assert stats is not None
+        assert abs(stats["mae63_med"] - (-0.10)) < 1e-4
+
+    def test_near_low_hit_is_a_share(self):
+        """near_low_hit is a 0..1 share; a fire far above the ±31d low misses."""
+        n = 350
+        # Monotone rising: fire at bar 200 is far above its ±31d low → miss.
+        close = np.linspace(100.0, 300.0, n)
+        panel, li = self._single_event_panel(200, close, n=n)
+        stats = evaluate_combo(panel, (li,), direction=1)
+        assert stats is not None
+        assert stats["near_low_hit"] == 0.0
+
+    def test_flat_degenerate_tape_no_crash(self):
+        """A perfectly flat tape (zero variance) must not crash the ruler and
+        must classify as reset_confirmer (argmin ties → earliest → td ≤ 0).
+
+        Mirrors the flat-RSI precedent in tests/test_mag7_washout.py."""
+        n = 350
+        close = np.full(n, 100.0)
+        panel, li = self._single_event_panel(50, close, n=n)
+        stats = evaluate_combo(panel, (li,), direction=1)  # must not raise
+        assert stats is not None
+        assert stats["mae63_med"] == 0.0
+        assert stats["near_low_hit"] == 1.0  # prox == 0 ≤ 5%
+        assert stats["entry_badge"] == "reset_confirmer"
+
+    def test_badge_none_when_no_timing_arrays(self):
+        """A hand-built panel without timing arrays yields None fields, no crash
+        (the evaluate_combo guard). Reuses TestComboFires' manual panel."""
+        helper = TestComboFires()
+        n = 350
+        a = [0] * n
+        b = [0] * n
+        for i in range(5, 10):
+            a[i] = 1
+            b[i] = 1
+        panel = helper._make_panel_from_acts([a, b], n=n)
+        assert panel.mae63 is None  # not supplied by the manual builder
+        stats = evaluate_combo(panel, (0, 1), direction=1)
+        assert stats is not None
+        assert stats["mae63_med"] is None
+        assert stats["near_low_hit"] is None
+        assert stats["td_to_trough_med"] is None
+        assert stats["entry_badge"] is None
+
+    def test_no_bottom_caller_language(self):
+        """Copy law R-W1T-3: the badge value the engine emits must not frame the
+        combo as a bottom caller. The only user-facing labels the engine
+        produces are the entry_badge enum values."""
+        n = 350
+        close = np.concatenate([np.linspace(200.0, 100.0, 100),
+                                np.linspace(100.0, 300.0, n - 100)])
+        badges = set()
+        for fb in (80, 100, 120):
+            panel, li = self._single_event_panel(fb, close, n=n)
+            st = evaluate_combo(panel, (li,), direction=1)
+            if st and st.get("entry_badge"):
+                badges.add(st["entry_badge"])
+        assert badges <= {"reset_confirmer", "early_window"}
+        for b in badges:
+            assert "bottom" not in b.lower() and "caller" not in b.lower()
+
+
+# ---------------------------------------------------------------------------
 # Honesty contract: no 'validated' in any string the module produces
 # ---------------------------------------------------------------------------
 

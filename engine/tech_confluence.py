@@ -67,6 +67,14 @@ log = logging.getLogger(__name__)
 HORIZONS: tuple[int, ...] = (10, 21, 42, 63)  # TLT-R6 descriptive ladder
 _Z90 = 1.6449  # one-sided 90% z for Wilson lower bound
 
+# Entry-timing ruler constants (W-LAB-1 / V-LAB-4). These are DISPLAY-TIER
+# descriptive stats shown NEXT TO the legacy fwd21 hold-return column — a
+# dual-ruler display, never a silent ruler swap. Machinery mirrors
+# scripts/research/ptt_w1_timing_regrade.py::metric_arrays.
+_MAE_WINDOW = 63     # worst-adverse-excursion window (trading days from entry)
+_PROX_WINDOW = 31    # ±31td proximity window for the near-low / trough metrics
+_NEAR_LOW_PCT = 5.0  # "within 5% of the local low" threshold (percent)
+
 
 # ---------------------------------------------------------------------------
 # Configuration (pre-registered constants — exported into artifact meta)
@@ -266,6 +274,11 @@ class LegPanel:
     tickers: list[str]
     last_pos: dict[str, int]           # ticker → global index of its last real bar
     cfg: MinerConfig = field(default_factory=MinerConfig)
+    # Entry-timing ruler arrays (W-LAB-1 / V-LAB-4). Optional so hand-built
+    # panels in tests can omit them; evaluate_combo guards on None.
+    mae63: np.ndarray | None = None       # (N,) float32 worst adverse excursion over 63td from entry
+    near_low: np.ndarray | None = None    # (N,) float32 1.0 if fire close within 5% of ±31td low, else 0.0
+    td_to_trough: np.ndarray | None = None  # (N,) float32 argmin offset of close in [t-31,t+31] (neg=trough before fire)
 
 
 def build_panel(
@@ -282,6 +295,7 @@ def build_panel(
     rank_h = cfg.rank_horizon
 
     acts, fwds, mfes, maes, months, tests, tids, dats = [], {h: [] for h in HORIZONS}, [], [], [], [], [], []
+    mae63s, nearlows, tdts = [], [], []  # entry-timing ruler arrays (W-LAB-1)
     tickers = sorted(universe.keys())
     last_pos: dict[str, int] = {}
     offset = 0
@@ -323,6 +337,43 @@ def build_panel(
         mfes.append(np.append(m_fe, np.float32(np.nan)))
         maes.append(np.append(m_ae, np.float32(np.nan)))
 
+        # --- entry-timing ruler arrays (W-LAB-1 / V-LAB-4) -------------------
+        # mae63: worst adverse excursion over 63td from ENTRY (close[t+1]) —
+        #   min(close[t+2 .. t+1+63]) / close[t+1] - 1  (closes-only, ≤0 when
+        #   any post-entry bar prints below entry). Same entry convention as
+        #   the forward returns above (entry = close[t+1]).
+        m63 = np.full(n, np.nan, dtype=np.float32)
+        w63 = _MAE_WINDOW  # 63 forward closes after entry
+        # window at fire t covers close[t+2 .. t+1+63]; defined for t in [0, n-2-63]
+        if n - 2 >= w63:
+            sw63 = np.lib.stride_tricks.sliding_window_view(close[2:], w63)  # row t → close[t+2..t+1+63]
+            entry63 = close[1:1 + sw63.shape[0]]  # entry = close[t+1]
+            with np.errstate(divide="ignore", invalid="ignore"):
+                m63[:sw63.shape[0]] = (sw63.min(axis=1) / entry63 - 1.0).astype(np.float32)
+            m63[:sw63.shape[0]][entry63 <= 0] = np.nan
+        mae63s.append(np.append(m63, np.float32(np.nan)))
+
+        # near_low / td_to_trough: centered ±31td window anchored at the FIRE
+        # bar t (matches ptt_w1_timing_regrade proximity convention).
+        #   prox  = close[t] / min(close[t-31 .. t+31]) - 1   (≥0)
+        #   near  = 1.0 if prox <= 5% else 0.0
+        #   tdt   = argmin offset of close in [t-31, t+31] (neg = trough before fire)
+        nl = np.full(n, np.nan, dtype=np.float32)
+        td = np.full(n, np.nan, dtype=np.float32)
+        p = _PROX_WINDOW
+        if n >= 2 * p + 1:
+            cw = np.lib.stride_tricks.sliding_window_view(close, 2 * p + 1)  # row j → close[j..j+2p]
+            ctr = np.arange(p, n - p)  # center index t for each window row j = t-p
+            cmin = cw.min(axis=1)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                prox = close[ctr] / cmin - 1.0
+            prox[close[ctr] <= 0] = np.nan
+            nl[ctr] = (prox <= (_NEAR_LOW_PCT / 100.0)).astype(np.float32)
+            nl[ctr][~np.isfinite(prox)] = np.nan
+            td[ctr] = (cw.argmin(axis=1).astype(np.float32) - p)
+        nearlows.append(np.append(nl, np.float32(np.nan)))
+        tdts.append(np.append(td, np.float32(np.nan)))
+
         idx = df.index.to_numpy().astype("datetime64[D]")
         mo = (df.index.year * 12 + df.index.month).to_numpy().astype(np.int32)
         acts.append(np.concatenate([act, np.zeros((len(legs), 1), dtype=bool)], axis=1))
@@ -346,6 +397,9 @@ def build_panel(
         tickers=tickers,
         last_pos=last_pos,
         cfg=cfg,
+        mae63=np.concatenate(mae63s),
+        near_low=np.concatenate(nearlows),
+        td_to_trough=np.concatenate(tdts),
     )
     log.info("panel: %d legs × %d bars (%d tickers)", len(legs), panel.act.shape[1], len(tickers))
     return panel
@@ -440,6 +494,43 @@ def evaluate_combo(
             ratio = mfe / np.where(mae > 1e-9, mae, np.nan)
         ratio = ratio[np.isfinite(ratio)]
         out["mfe_mae_med"] = round(float(np.median(ratio)), 3) if len(ratio) else None
+
+    # --- entry-timing ruler (W-LAB-1 / V-LAB-4): dual-ruler descriptive stats ---
+    # Display tier; shown NEXT TO the legacy fwd21 column, never replacing it.
+    # Direction-invariant: MAE, near-low proximity, and trough timing describe
+    # where the fire landed relative to the local low regardless of trade side.
+    if panel.mae63 is not None:
+        m63 = panel.mae63[fi]
+        m63 = m63[np.isfinite(m63)]
+        out["mae63_med"] = round(float(np.median(m63)), 5) if len(m63) else None
+    else:
+        out["mae63_med"] = None
+
+    if panel.near_low is not None:
+        nl = panel.near_low[fi]
+        nl = nl[np.isfinite(nl)]
+        out["near_low_hit"] = round(float(nl.mean()), 4) if len(nl) else None
+        out["near_low_n"] = int(len(nl))
+    else:
+        out["near_low_hit"], out["near_low_n"] = None, 0
+
+    entry_badge = None
+    if panel.td_to_trough is not None:
+        td = panel.td_to_trough[fi]
+        td = td[np.isfinite(td)]
+        if len(td):
+            td_med = float(np.median(td))
+            out["td_to_trough_med"] = round(td_med, 2)
+            # median trough at-or-before the fire → the low is in when it fires
+            # (reset confirmer); trough after the fire → fires early, downside
+            # may still lie ahead (early window). Copy law R-W1T-3: never frame
+            # this as calling the low.
+            entry_badge = "reset_confirmer" if td_med <= 0 else "early_window"
+        else:
+            out["td_to_trough_med"] = None
+    else:
+        out["td_to_trough_med"] = None
+    out["entry_badge"] = entry_badge
 
     out["n_fires"] = int(len(fi))
     out["n_tickers"] = int(len(np.unique(panel.ticker_id[fi])))
