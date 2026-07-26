@@ -53,6 +53,8 @@ measured at 1491 suites; the total grew to 1495 across a rebase, and those four 
 already wired, so the unrun count is unchanged by them.)
 
 The two remaining dark suites are excluded on purpose; see *Red on arrival* below.
+Measured in CI, the nine jobs cost **~9 min** of pack wall (pack 0 ran 12:36→13:00, pack 1
+12:36→13:05, both well inside the 180-min timeout).
 
 ### What P0 was
 
@@ -83,23 +85,25 @@ whole set rather than one per job (it recreates the venv only when the install s
 | `unrun-factor-research` | 19 | 14s |
 | `unrun-serving-admin` | 5 | 5s |
 | `unrun-builders-render` | 19 | 19s |
-| `unrun-builders-stores` | 42 | 14s |
-| **total** | **130** (2420 tests) | **~90s local** |
+| `unrun-builders-stores` | 42 | 15s |
+| **total** | **130** (2443 tests) | **~150s local** |
 
 Budget: ci-pack runs two packs under a 180-minute timeout each. The nine jobs add 290 to a
 1637 total balancing weight (+18%, 819/818 → 964/963) and split 5/4 across the packs. Note
 the weight is only the pack **balancer**, not a time estimate: the real budget is wall clock,
-and the heaviest pre-existing job (`engine-render-guards`) is 481s on its own. ~90s of local
+and the heaviest pre-existing job (`engine-render-guards`) is 481s on its own. ~150s of local
 wall for all nine — call it 4–5 min on the slower hosted runners, split across two packs — is
 comfortably inside budget.
 
 Both halves of every entry are listed in `on.pull_request.paths`: the 130 test files **and**
-the 101 subject modules that were previously unmatched (`paths` grows 643 → 874).
+the 101 subject modules that were previously unmatched (`paths` grows 647 → 878).
 
 ## Red on arrival
 
 Seven of the 132 dark suites were **already failing** on `main` — invisible precisely because
 nothing ran them. Five were repaired here; two are excluded because the fix is a product call.
+An **eighth** was found only once CI ran it, and is platform-dependent rather than rotted (see
+*Green on macOS, red on ubuntu* below).
 
 | suite | root cause | disposition |
 |---|---|---|
@@ -109,6 +113,39 @@ nothing ran them. Five were repaired here; two are excluded because the fix is a
 | `test_import_equitydesk_backfill.py` | the seed artifact moved to `data/stage_analysis/backfill/earnings_seed.parquet`; the test still read `data/earnings_calls/scores.parquet`. The importer's own docstring was stale too. | **fixed** — both repointed |
 | `test_build_measurement_evidence_gap.py` | asserted the literal word *"overlapping"*; the §0.5.8 caveat now says *"correlated"*. Substance intact. | **fixed** — asserts the disclosed dependence, not one synonym |
 | the two FTR template-markup suites | assert markers (`Strategic horizon`, `ftr-dtp-full`) that exist **nowhere** in `templates/` or `site/`, and `basketdata/baskets.json` moved from `allocation.html.j2` to `dashboard.html.j2`. | **NOT wired** — whether the feature or the assertion is wrong is a product decision, not test rot |
+
+### Green on macOS, red on ubuntu — a platform-dependent contract
+
+`tests/test_tech_parity_fixtures.py` passed every local run and then failed in CI. Its
+`TestFixtureDeterminism` class regenerates the Tech-Lab parity fixtures and demands
+**byte-identity** with the committed copies. Two of six fail on `ubuntu-latest` —
+`expected_ribbon.json` and `expected_bollinger.json`, the two built from rolling std / EMA
+accumulation — because the committed fixtures were generated on macOS and a different
+numpy/BLAS build lands different float tails. `ohlcv`, `ichimoku`, `rsi` and `m2` happen to
+agree, which is luck rather than a guarantee.
+
+`docs/TECH_LAB_TESTING.md` states byte-identity as a contract and calls these
+"cross-platform" fixtures, so **the contract itself is platform-dependent** — regenerating on
+ubuntu would only move the failure to macOS and the Mac Studio nightly. Choosing between a
+numeric tolerance, a pinned numpy, and per-platform fixtures is an owner decision.
+
+Disposition: the **24 structural checks run** (fields, warmup nulls, RSI range, band
+ordering, value-area ≥70% — all platform-independent); `TestFixtureDeterminism` is
+`--deselect`ed with the reason inline in `ci.yml`. So the byte-identity gate remains unrun —
+that is the honest status quo, not a fix.
+
+**Generalisation: a local green does not predict a CI green for any suite that compares
+regenerated floats byte-wise.** Run such suites on the target OS, or expect to discover this
+the way it was discovered here.
+
+### Pre-existing reds surfaced, not caused
+
+Editing `ci.yml` puts every job in the run (`paths` is workflow-level and there are no
+job-level filters), so this PR's first CI run also lit up `chronicle-suite` —
+`test_chronicle.py::test_rebuild_from_committed_sources_reproduces_committed_store`, a stale
+committed store from #3588. It reproduces on a tree where this branch changes nothing under
+`tests/test_chronicle.py`, `data/chronicle/` or `engine/chronicle/` (`git diff origin/main`
+touches zero of them). Not this PR's signal; don't attribute it to the diff.
 
 ### Known-stale shipped number (not fixed here)
 

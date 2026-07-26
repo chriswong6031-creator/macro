@@ -3941,4 +3941,21 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: store/ops builders behind the nightly data lanes
-        run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_tech_parity_fixtures.py tests/test_vps_live_orchestration.py -q
+        run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
+      # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup
+      # nulls, RSI range, band ordering, value-area >=70%) are platform-
+      # independent and run here.  TestFixtureDeterminism is DESELECTED: it
+      # regenerates the fixtures and demands byte-identity, which holds on
+      # macOS (where the committed fixtures were generated) but NOT on
+      # ubuntu-latest — expected_ribbon.json and expected_bollinger.json
+      # differ in float tails (rolling std / EMA accumulation) under a
+      # different numpy/BLAS build.  docs/TECH_LAB_TESTING.md asserts
+      # byte-identity as a contract, so the contract itself is
+      # platform-dependent; regenerating on ubuntu would just break macOS.
+      # Picking a resolution (tolerance vs pinned numpy vs per-platform
+      # fixtures) is an owner decision, not a wiring decision — see
+      # docs/UNRUN_TEST_CENSUS.md.  Found by running this suite in CI for
+      # the first time (it was named by no workflow before #3636).
+      - name: tech-lab parity fixtures — structure only (determinism is platform-dependent)
+        run: python -m pytest tests/test_tech_parity_fixtures.py -q
+          --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
