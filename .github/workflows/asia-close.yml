@@ -608,7 +608,11 @@ jobs:
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
-          python -m scripts.optimize_assets || echo "asset optimize skipped (additive)"
+          # ::warning::, not a bare echo — this step is the only thing that moves a ?v=
+          # stamp, and the edge serves versioned assets `immutable, max-age=1y`, so a failure
+          # swallowed into a green run pins returning browsers to the old bytes for a year
+          # (#3617/#3624). See render.yml for the full rationale.
+          python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
       - name: commit engine outputs
         if: always()
         run: |
@@ -624,7 +628,18 @@ jobs:
           # 4b356dd6b1a, pre-#3285). Heal BEFORE staging so the first commit is never
           # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
           python -m scripts.check_template_site_sync --fix || true
+          # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
+          # optimize_assets re-stamps their templates/ side because the --fix above rewrites
+          # their site copy FROM templates/ — a stamp staged site-only is reverted before it
+          # reaches main (#3617's fix never reached one returning browser), and staging site/
+          # alone would land the pair diverged and red the publish gate. Nothing else in the
+          # build path writes templates/. See render.yml.
           git add data/ site/
+          # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
+          # matches nothing, and this step runs under `-eo pipefail` — a missing
+          # templates/ would abort the commit and lose the whole render rather than
+          # just the stamp. Staging site/ keeps its hard-fail semantics.
+          git add templates/ 2>/dev/null || true
           # force-add the gitignored per-market search libraries + reconstructed candles
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: asia dashboards $(date -u +%F)"
@@ -661,6 +676,12 @@ jobs:
               # -X theirs can also resurrect checkout-time copies over a reword that merged
               # mid-render. templates/ is now fresh post-rebase main — re-copy the plain-copy
               # page assets; the render-heal commit below folds the delta.
+              # re-stamp POST-rebase (ui.asset_stamp): the tree this loop PUSHES is not the tree
+              # the normalizer step stamped — pages a sibling lane lands mid-run arrive here
+              # un-stamped and unseen by that pass (2026-07-26 render 6260e5ac8c0 shipped
+              # site/us_track_record.html with a bare `theme.css` this way). Idempotent, ~11s over
+              # 3.2k pages, and BEFORE the --fix so the pairs heal from a re-stamped templates/.
+              python -m scripts.optimize_assets || echo "::warning::post-rebase asset optimize FAILED — ?v= stamps may be stale"
               python -m scripts.check_template_site_sync --fix || true
               # ms-board coherence guard (ui.ms_board_coherence): this lane re-renders the
               # CN/HK dashboards, so -X theirs racing another render can stitch a hybrid
@@ -669,8 +690,8 @@ jobs:
               # origin/main and fold it into a follow-up commit.
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
-              if ! git diff --quiet -- site/; then
-                git add site/ && git commit -m "render-heal: restore coherent ms-board post-rebase (ui.ms_board_coherence)" \
+              if ! git diff --quiet -- site/ templates/; then
+                git add site/ templates/ && git commit -m "render-heal: restore coherent ms-board post-rebase (ui.ms_board_coherence)" \
                   || echo "::warning::render-heal commit failed (non-fatal)"
               fi
               if push_do; then echo "pushed asia engine outputs (attempt $PUSH_ATTEMPT)"; push_won; exit 0; fi

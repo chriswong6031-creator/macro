@@ -106,6 +106,90 @@ def test_optimize_sweep_end_to_end(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# plain-copy HTML pairs: the stamp must survive check_template_site_sync --fix
+# ---------------------------------------------------------------------------
+# site/index.html and site/chat.html are byte-paired plain copies of their
+# templates/ source (scripts.check_template_site_sync), and no builder writes the
+# site copy — `--fix` re-copying it from templates/ is the ONLY thing that does.
+# Every lane runs that `--fix` AFTER this sweep, so a stamp written only site-side
+# is reverted before it can reach main: the stamp was not merely stale on these
+# pages, it was structurally unreachable. #3573 re-hashed our stamp shape and still
+# could not move it here. Live cost (2026-07-26): #3617 fixed onboard.css at the
+# origin while every returning browser kept the pre-#3617 stylesheet, because
+# site/index.html still linked onboard.css?v=cfdca9e2 and the edge serves versioned
+# assets `immutable, max-age=1y`. #3624 hand-bumped that one page; these pin the
+# mechanism, so the next asset change does not need a human to notice.
+
+
+def _pair_tree(tmp_path, page: str):
+    """A repo-shaped tree with one byte-identical templates//site plain-copy pair."""
+    site, templates = tmp_path / "site", tmp_path / "templates"
+    site.mkdir()
+    templates.mkdir()
+    (site / "theme.js").write_bytes(b"console.log('new bytes')")
+    (templates / "index.html").write_text(page)
+    (site / "index.html").write_text(page)
+    return site, templates
+
+
+def test_paired_template_is_restamped_so_fix_cannot_revert_it(tmp_path):
+    from scripts.check_template_site_sync import check
+
+    site, templates = _pair_tree(
+        tmp_path, '<html><head><script src="theme.js?v=deadbeef" defer></script></head></html>'
+    )
+    # both sides move: templates/ is what --fix will copy back over site/
+    assert optimize(site) == 2
+    fresh = re.search(r'theme\.js\?v=([0-9a-f]{8})', (templates / "index.html").read_text())
+    assert fresh and fresh.group(1) != "deadbeef", "templates/ side kept the stale stamp"
+
+    # The lane's next step — this is what used to throw the stamp away. It may well
+    # restore the site copy (write_page injects the data-base shim, which templates/
+    # must never carry), but what it restores now carries the FRESH stamp.
+    check(tmp_path, fix=True)
+    out = (site / "index.html").read_text()
+    assert out == (templates / "index.html").read_text(), "pair left diverged"
+    assert f"theme.js?v={fresh.group(1)}" in out
+    assert "v=deadbeef" not in out
+
+    # and the sweep is a true fixed point afterwards (the acceptance condition)
+    assert optimize(site) == 0
+
+
+def test_pair_converges_even_when_a_normalizer_rewrote_the_site_copy(tmp_path):
+    """The real lane shape: inject_data_base/externalize_css rewrite the site copy
+    before this sweep runs, so the pair is already diverged on entry. It must still
+    converge on a fresh stamp — whether the same-pass sync or a later `--fix` is what
+    re-copies the template over it."""
+    from scripts.check_template_site_sync import check
+
+    site, templates = _pair_tree(
+        tmp_path, '<html><head><script src="theme.js?v=deadbeef" defer></script></head></html>'
+    )
+    (site / "index.html").write_text(  # stand in for the normalizers' rewrite
+        '<html><head><style>.a{}</style><script src="theme.js?v=deadbeef" defer></script></head></html>'
+    )
+    optimize(site)
+    check(tmp_path, fix=True)           # the lane's next step, whether or not it has work
+    out = (site / "index.html").read_text()
+    assert "v=deadbeef" not in out, "the pair converged on the STALE templates/ stamp"
+    assert out == (templates / "index.html").read_text(), "pair left diverged"
+    assert optimize(site) == 0, "not a fixed point after the pair converged"
+
+
+def test_unpaired_template_is_never_written(tmp_path):
+    """A templates/ file with no site/ counterpart is a source, not a shipped pair."""
+    site, templates = _pair_tree(tmp_path, "<html><head></head></html>")
+    lone = templates / "unshipped.html"
+    lone.write_text('<html><head><script src="theme.js?v=deadbeef"></script></head></html>')
+    j2 = templates / "page.html.j2"
+    j2.write_text('<script src="theme.js?v=deadbeef"></script>')
+    optimize(site)
+    assert "v=deadbeef" in lone.read_text(), "wrote a template that does not ship as site/"
+    assert "v=deadbeef" in j2.read_text(), "wrote a .j2 render input"
+
+
+# ---------------------------------------------------------------------------
 # head preload hints for late-discovered CSS (lib.pages.preload_css_text)
 # ---------------------------------------------------------------------------
 # Every stylesheet on these pages is render-blocking, so first paint waits for the

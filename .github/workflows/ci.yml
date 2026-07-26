@@ -59,6 +59,13 @@ on:
       - "tests/test_gh_annotation_line_start.py"
       # template↔site sync guard: plain-copy page assets must byte-match their templates.
       - "scripts/check_template_site_sync.py"
+      # ?v= stamp lane guard (ui.asset_stamp): the sweep that moves a stamp, and the
+      # ordering/staging contract the lanes must keep for it to survive to main. The
+      # lane YAMLs themselves already reach this via ".github/workflows/**" below.
+      - "scripts/optimize_assets.py"
+      - "tests/test_optimize_assets.py"
+      - "tests/test_asset_stamp_lane_order.py"
+      - "tests/test_asset_stamp_refresh.py"
       # interfonts guard: _interfonts.html.j2 @font-face blocks must match theme.css.
       - "scripts/check_interfonts_sync.py"
       - "templates/**"
@@ -2323,11 +2330,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: install minimal deps (theme.js bake reads config.yml)
-        run: pip install pyyaml
+        run: pip install pyyaml pytest
       - name: template-site-sync selftest (gate fires on synthetic divergence)
         run: python3 scripts/check_template_site_sync.py --selftest
       - name: site copies of template assets must byte-match templates/
         run: python3 scripts/check_template_site_sync.py
+      # ui.asset_stamp — the OTHER half of this law, and the reason it bit users. The
+      # `--fix` above rewrites the site copy of every plain-copy pair FROM templates/,
+      # and it runs AFTER the stamping sweep in every lane, so a ?v= stamp written only
+      # site-side was reverted before it could reach main. #3573 fixed the rewrite and
+      # still could not move the stamp on these pages: #3617's onboard.css fix sat live
+      # at the origin while every returning browser kept the old sheet (site/index.html
+      # linked onboard.css?v=cfdca9e2, served `immutable, max-age=1y`); #3624 hand-bumped
+      # that one page. optimize_assets now stamps the templates/ side too — which only
+      # reaches main if the lane STAGES templates/, and only covers pages a sibling lane
+      # lands mid-run if the lane also re-stamps POST-rebase. These pin all three.
+      - name: "?v= stamps — paired-page round-trip + lane ordering/staging (ui.asset_stamp)"
+        run: >
+          python -m pytest
+          tests/test_asset_stamp_lane_order.py tests/test_optimize_assets.py
+          tests/test_asset_stamp_refresh.py -q
       # ui.interfonts_theme_sync: templates/_interfonts.html.j2 carries the six
       # Inter @font-face blocks copied verbatim from templates/theme.css (#2119,
       # for standalone pages that don't link theme.css). A theme.css font edit
