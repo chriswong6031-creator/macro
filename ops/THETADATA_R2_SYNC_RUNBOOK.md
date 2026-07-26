@@ -2,8 +2,32 @@
 
 The deep ThetaData store (`/Users/chriswong/theta-ops-wt/data/thetadata_eod` —
 ~60 GB, ~13k parquets, 380 roots × 2012–2026, tiers `eod/` `oi/` `greeks/`) is
-the foundation of all options research and exists **only on the ops Mac**.
+the foundation of all options research and exists **only on the ops Mac**
+(the M1 since 2026-07-25 — see Host migration below).
 This lane is its sole automated offsite copy.
+
+## Host migration (2026-07-25, M2 → M1)
+
+The 2026-07-25 data-plane migration moved this lane — with the ThetaData
+Terminal, the backfill writer, and the store itself — from the operator's
+M2 Ultra to the always-on M1 (`ssh m1`). What changed and what didn't:
+
+- **Physical store on the M1 is `~/flow-ops-wt/data/thetadata_eod`;**
+  `~/theta-ops-wt/data/thetadata_eod` is a symlink to it, so the canonical
+  `THETADATA_STORE` path in this runbook is unchanged. The M2 retains **no**
+  copy (its `flow-ops-wt/.env` pointer is dead by design and annotated).
+- Log paths, schedule, bucket, and creds layout are unchanged — they just
+  live on the M1 now (`ssh m1 tail -50 /tmp/thetadata_r2sync.stdout.log`).
+- **The M1 `flow-ops-wt` deploy checkout is not a clean clone** (content was
+  rsync'd over an older clone during the migration; hundreds of tracked files
+  show as modified). Never whole-tree reset/commit it — deploy fixes
+  path-scoped (`scp`/`git checkout origin/main -- <file>`), and confirm
+  `scripts/publish_r2.py` carries the #2711 hardened client
+  (`max_attempts: 10, mode: adaptive`) — the 2026-07-26 first M1 run died
+  mid-multipart precisely because the checkout predated #2711.
+- Until a post-migration run completes end-to-end, R2 lags the M2's last
+  successful sync and the M1 copy is the only current full copy — treat
+  `audit_r2`'s staleness tripwire as urgent, not routine, in that state.
 
 **What runs:** `com.macro.thetadata-r2sync` (launchd, [ops/launchd/com.macro.thetadata-r2sync.plist](launchd/com.macro.thetadata-r2sync.plist))
 executes `python -m scripts.publish_r2 --dirs thetadata_eod` from the
