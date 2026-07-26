@@ -4960,7 +4960,7 @@
       "come_back_note": "2026-10-25 (masterplan CHINA_HK_NATIVE_DATA §6: first descriptive review of the interaction/sell-side planes) — DESCRIPTIVE ONLY: coverage, cadence, gap census, whether the sharded drip actually laps the universe. No forward-return read, no scoring.",
       "maturation": "90d of Q&A velocity + revision aggregates on disk; DESCRIPTIVE review only — any scoring requires a fresh pre-registration (CNH-R1).",
       "status": "collecting",
-      "state": "W1 merged 2026-07-25: four collectors registered in the asia lane, legs registered as tier=pending in engine/china_signal_lab.py, stores empty at registration.",
+      "state": "Registered at W1 ship, 2026-07-26: four collectors in the asia lane, legs tier=pending in engine/china_signal_lab.py, stores empty at registration.",
       "next_step": "Accrue. Review 2026-10-25.",
       "phase_hint": "collecting"
     }

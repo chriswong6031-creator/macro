@@ -9,14 +9,22 @@ the only one of the two that can ever answer "what CHANGED, when".
 
 Two stores under data/china_reports/:
   reports.parquet    one row per report (dedup infoCode keep-LAST — a same-day re-pull
-                     corrects; a late-arriving field never duplicates the report).
+                     corrects; a late-arriving field never duplicates the report). Rows
+                     carry fetched_at ("last observed") AND first_seen ("first observed",
+                     preserved through every correction).
   aggregates.parquet one row per publish DATE (dedup date keep-LAST), recomputed FROM
                      THE STORE after every append so the numbers always describe what is
                      actually on disk rather than what one night's page happened to see.
+                     A date is only written when tonight's pull can prove it was fetched
+                     COMPLETELY — see aggregate_rows' boundary rule.
+Both stores are written through a tmp sibling + os.replace, and an existing-but-
+unreadable store ABORTS the append rather than being replaced by tonight's rows.
 
-CONTEXT / INPUT TIER ONLY. Nothing is scored, ranked or promoted; the leg registers as
-tier="pending" in engine/china_signal_lab.py (collected + accruing). REDISTRIBUTION
-LIMIT: machine fields only — pdfUrl/attachments/report bodies are NEVER fetched.
+CONTEXT / INPUT TIER ONLY. Nothing is scored, ranked or promoted, and there is no
+dedicated surface — the leg appears only as a pending-tier inventory row in the
+signal-lab scorecard (engine/china_signal_lab.py, rendered on china_altdata with a 待验
+badge). REDISTRIBUTION LIMIT: machine fields only — pdfUrl/attachments/report bodies are
+NEVER fetched.
 
 VERIFIED ENDPOINT (live 2026-07-25, this runner):
   GET https://reportapi.eastmoney.com/report/list?industryCode=*&pageSize=100&industry=*
@@ -41,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import random
 import time
 from datetime import datetime, timedelta, timezone
@@ -91,7 +100,8 @@ _COLUMNS = (
     "month_count",           # count = 近一月个股研报数
     "market",
     "backfill",              # True only for rows written by the manual --backfill CLI
-    "fetched_at",
+    "fetched_at",            # LAST observation of this info_code
+    "first_seen",            # FIRST observation — never overwritten by a correction
 )
 
 _AGG_COLUMNS = (
@@ -117,23 +127,104 @@ def _aggregates_path() -> Path:
     return _dir() / "aggregates.parquet"
 
 
+def _read_store(path: Path, columns: tuple[str, ...]) -> pd.DataFrame | None:
+    """The store reindexed to ``columns``, an EMPTY frame when ABSENT, None when UNREADABLE.
+
+    Three different facts, which is why this is not a plain try/except returning an
+    empty frame: "absent" is the first night (append freely), while "present but
+    unreadable" means the accrued history is still on disk and we simply cannot see
+    it — taking the empty-store branch there would replace all of it with tonight's
+    handful of rows. The caller ABORTS on None.
+    """
+    if not path.exists():
+        return pd.DataFrame(columns=list(columns))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(columns))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_reports: %s is present but UNREADABLE (%s)", path.name, e)
+        return None
+
+
+def _atomic_write(df: pd.DataFrame, path: Path) -> None:
+    """Write ``df`` via a tmp sibling + os.replace — never a truncated store.
+
+    The asia lane runs under a hard job kill that has fired mid-chain before; a
+    to_parquet() straight onto the live path turns that kill into a corrupt file.
+    """
+    tmp = path.with_name(path.name + ".tmp")
+    try:
+        df.to_parquet(tmp, index=False)
+        os.replace(tmp, path)
+    except Exception:  # noqa: BLE001 — never leave a half-written sibling behind
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _restore_first_seen(merged: pd.DataFrame, existing: pd.DataFrame,
+                        key: list[str]) -> pd.DataFrame:
+    """Carry each key's ORIGINAL first_seen through the keep-LAST merge. Pure.
+
+    fetched_at means "last observed" and advances on every correction; first_seen
+    means "first observed" and must not. It is the one question an append-only PIT
+    store exists to answer, and a keep-LAST dedup would otherwise overwrite it every
+    time a report's target price or EPS is corrected. Keys absent from ``existing``
+    keep tonight's stamp.
+    """
+    if existing.empty or "first_seen" not in existing.columns:
+        return merged
+    prior = existing[[*key, "first_seen"]].astype(str)
+    prior = prior[prior["first_seen"].str.strip().ne("")
+                  & ~prior["first_seen"].isin(("nan", "None", "NaT", "<NA>"))]
+    if prior.empty:
+        return merged
+    prior = prior.sort_values("first_seen").drop_duplicates(subset=key, keep="first")
+    lookup = dict(zip(zip(*(prior[c] for c in key)), prior["first_seen"]))
+    out = merged.copy()
+    out["first_seen"] = [
+        lookup.get(k, cur)
+        for k, cur in zip(zip(*(out[c].astype(str) for c in key)), out["first_seen"])
+    ]
+    return out
+
+
 def load_reports() -> pd.DataFrame:
-    path = _reports_path()
-    if path.exists():
-        try:
-            return pd.read_parquet(path).reindex(columns=list(_COLUMNS))
-        except Exception as e:  # noqa: BLE001
-            log.warning("china_reports: could not read reports.parquet: %s", e)
-    return pd.DataFrame(columns=list(_COLUMNS))
+    """Existing reports.parquet, or an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads as empty HERE — a reader must not
+    crash — but write_reports() checks readability separately and aborts, so the
+    empty frame can never be written back over the real one.
+    """
+    df = _read_store(_reports_path(), _COLUMNS)
+    return pd.DataFrame(columns=list(_COLUMNS)) if df is None else df
 
 
-def write_reports(rows: list[dict]) -> int:
-    """Append report rows, dedup info_code keep-LAST. Returns net-new. Never raises."""
+def write_reports(rows: list[dict], keep_existing: bool = False) -> int:
+    """Append report rows, dedup info_code keep-LAST. Returns net-new. Never raises.
+
+    ``keep_existing`` flips the resolution to keep-FIRST for info_codes ALREADY on
+    disk — the manual backfill path. A row recovered months later must never overwrite
+    the one observed live on the night it published, nor flip that row's backfill flag.
+
+    first_seen is carried through the merge, so a correction advances fetched_at
+    without destroying the first-observation time. An existing-but-UNREADABLE
+    reports.parquet ABORTS the append (returns 0, file left in place for manual
+    recovery) rather than being replaced by tonight's window.
+    """
     if not rows:
         return 0
     try:
+        existing = _read_store(_reports_path(), _COLUMNS)
+        if existing is None:
+            log.error("china_reports: ABORTING the reports.parquet append — the accrued "
+                      "store is unreadable and is left untouched for manual recovery")
+            return 0
         new_df = pd.DataFrame(rows).reindex(columns=list(_COLUMNS))
-        existing = load_reports()
+        new_df["first_seen"] = new_df["first_seen"].fillna(new_df["fetched_at"])
+        if keep_existing and not existing.empty:
+            known = set(existing["info_code"].astype(str))
+            new_df = new_df[~new_df["info_code"].astype(str).isin(known)]
+            if new_df.empty:
+                return 0
         if existing.empty:
             merged = new_df.drop_duplicates(subset=["info_code"], keep="last")
             net_new = len(merged)
@@ -141,10 +232,11 @@ def write_reports(rows: list[dict]) -> int:
             pre = existing["info_code"].nunique()
             merged = pd.concat([existing, new_df], ignore_index=True)
             merged = merged.drop_duplicates(subset=["info_code"], keep="last")
+            merged = _restore_first_seen(merged, existing, ["info_code"])
             net_new = merged["info_code"].nunique() - pre
         merged = merged.sort_values(["publish_date", "info_code"],
                                     na_position="last").reset_index(drop=True)
-        merged.to_parquet(_reports_path(), index=False)
+        _atomic_write(merged, _reports_path())
         return int(net_new)
     except Exception as e:  # noqa: BLE001
         log.error("china_reports.write_reports failed: %s", e)
@@ -152,26 +244,30 @@ def write_reports(rows: list[dict]) -> int:
 
 
 def load_aggregates() -> pd.DataFrame:
-    path = _aggregates_path()
-    if path.exists():
-        try:
-            return pd.read_parquet(path).reindex(columns=list(_AGG_COLUMNS))
-        except Exception as e:  # noqa: BLE001
-            log.warning("china_reports: could not read aggregates.parquet: %s", e)
-    return pd.DataFrame(columns=list(_AGG_COLUMNS))
+    """Existing aggregates.parquet, or an empty canonical frame (see load_reports)."""
+    df = _read_store(_aggregates_path(), _AGG_COLUMNS)
+    return pd.DataFrame(columns=list(_AGG_COLUMNS)) if df is None else df
 
 
 def write_aggregates(rows: list[dict]) -> int:
-    """Append daily aggregate rows, dedup date keep-LAST. Returns rows written."""
+    """Append daily aggregate rows, dedup date keep-LAST. Returns rows written.
+
+    An unreadable store aborts the append exactly as write_reports does.
+    """
     if not rows:
         return 0
     try:
+        existing = _read_store(_aggregates_path(), _AGG_COLUMNS)
+        if existing is None:
+            log.error("china_reports: ABORTING the aggregates.parquet append — the "
+                      "accrued store is unreadable and is left untouched for manual "
+                      "recovery")
+            return 0
         new_df = pd.DataFrame(rows).reindex(columns=list(_AGG_COLUMNS))
-        existing = load_aggregates()
         merged = new_df if existing.empty else pd.concat([existing, new_df], ignore_index=True)
         merged = merged.drop_duplicates(subset=["date"], keep="last")
         merged = merged.sort_values("date").reset_index(drop=True)
-        merged.to_parquet(_aggregates_path(), index=False)
+        _atomic_write(merged, _aggregates_path())
         return len(new_df)
     except Exception as e:  # noqa: BLE001
         log.error("china_reports.write_aggregates failed: %s", e)
@@ -254,16 +350,33 @@ def parse_report_row(raw: dict, fetched_at: str, current_year="", backfill: bool
 
 
 def aggregate_rows(store: pd.DataFrame, dates: list[str], fetched_at: str,
-                   allow_true_zero: bool = True) -> list[dict]:
+                   allow_true_zero: bool = True, boundary_date: str = "") -> list[dict]:
     """Recompute the per-date aggregate FROM THE STORE for ``dates``. Pure.
 
-    A date with no rows on disk yields a TRUE-ZERO row only when ``allow_true_zero``
-    — i.e. the night's fetch succeeded completely. After a partial/capped pull the
-    zero would be an artifact of our own truncation, so the date is SKIPPED and the
-    gap is left visible instead of being written as fact.
+    A daily aggregate is a permanent fact: the rolling window moves forward, so a date
+    that falls out of it is never re-pulled and whatever was written for it stands
+    forever. Two guards therefore keep OUR OWN truncation out of the tape:
+
+      ``boundary_date``   the OLDEST publish date tonight's fetch actually reached.
+                          The vendor serves publishDate DESC, so a capped/failed pull
+                          truncates that day PART-WAY through its reports — its stored
+                          rows are an undercount, not the day's total. Dates ON OR
+                          BEFORE the boundary are SKIPPED; only strictly newer ones,
+                          which the DESC order guarantees were served in full, get a
+                          row. Empty ('' — a clean pull) skips nothing.
+      ``allow_true_zero`` a date with no rows on disk yields a 0-report row only when
+                          the night's fetch completed cleanly. After a partial pull the
+                          zero would be an artifact of our truncation, so the date is
+                          skipped and the gap stays visible instead of becoming fact.
+
+    A suppressed date inside the current window can still earn its aggregate on a later
+    clean night; one that ages out of the window simply never gets one, which is the
+    honest outcome — we never observed it completely.
     """
     out: list[dict] = []
     for date in dates:
+        if boundary_date and date <= boundary_date:
+            continue
         day = (store[store["publish_date"] == date]
                if not store.empty and "publish_date" in store.columns
                else pd.DataFrame(columns=list(_COLUMNS)))
@@ -336,10 +449,16 @@ def _window_dates(begin: str, end: str) -> list[str]:
 
 
 def _pull_window(session, begin: str, end: str, fetched_at: str, t0: float,
-                 backfill: bool = False) -> tuple[list[dict], int, int, bool]:
-    """Page through one [begin, end] window. Returns (rows, ok_pages, failed_pages, capped)."""
+                 backfill: bool = False) -> tuple[list[dict], int, int, bool, int]:
+    """Page through one [begin, end] window.
+
+    Returns (rows, ok_pages, failed_pages, capped, empty_key_rows). ``capped`` means
+    tonight's view of the window is INCOMPLETE for any reason — the page cap, the
+    wall-clock guard, or a vendor envelope we could not read the page count out of —
+    and the caller must not stamp the window's oldest fetched day as a complete fact.
+    """
     rows: list[dict] = []
-    ok_pages = failed_pages = 0
+    ok_pages = failed_pages = empty_key = 0
     capped = False
     page = 1
     while page <= _PAGE_CAP:
@@ -357,23 +476,43 @@ def _pull_window(session, begin: str, end: str, fetched_at: str, t0: float,
         ok_pages += 1
         current_year = payload.get("currentYear")
         data = [r for r in (payload.get("data") or []) if isinstance(r, dict)]
-        rows.extend(parse_report_row(r, fetched_at, current_year, backfill) for r in data)
+        parsed = [parse_report_row(r, fetched_at, current_year, backfill) for r in data]
+        # info_code IS the dedup key: an empty one collapses every keyless row of the
+        # night into a SINGLE stored row, so they are dropped here and counted instead.
+        keyed = [r for r in parsed if r["info_code"]]
+        empty_key += len(parsed) - len(keyed)
+        rows.extend(keyed)
+        raw_total = payload.get("TotalPage")
         try:
-            total_pages = int(payload.get("TotalPage") or 1)
+            total_pages = int(raw_total)
         except (TypeError, ValueError):
-            total_pages = 1
+            # A vendor rename of this field used to read as "1 page" — the plane would
+            # silently shrink to one page a night while still reporting a CLEAN pull.
+            capped = True
+            log.warning(
+                "china_reports: [%s..%s] page %d carried no usable 'TotalPage' (got %r) "
+                "— treating the window as CAPPED, not complete; check the envelope for "
+                "a renamed page-count field", begin, end, page, raw_total,
+            )
+            break
         if page >= total_pages:
             break
         if page >= _PAGE_CAP:
             capped = True
             log.warning(
                 "china_reports: [%s..%s] has %d pages but the nightly cap is %d — "
-                "%d pages NOT fetched tonight (the rolling window re-pull heals the tail)",
+                "%d pages NOT fetched tonight. DESC ordering means the missing pages are "
+                "the window's OLDEST day, so its aggregate is suppressed tonight (it can "
+                "still land on a later clean night while the day stays in the window)",
                 begin, end, total_pages, _PAGE_CAP, total_pages - _PAGE_CAP,
             )
             break
         page += 1
-    return rows, ok_pages, failed_pages, capped
+    if empty_key:
+        log.warning("china_reports: %d fetched row(s) carried no infoCode — SKIPPED, not "
+                    "stored: the dedup key is info_code, so storing them would collapse "
+                    "the whole batch into one row", empty_key)
+    return rows, ok_pages, failed_pages, capped, empty_key
 
 
 # ------------------------------------------------------------------ nightly refresh --
@@ -394,7 +533,8 @@ def refresh() -> dict:
     begin, end = _window()
     session = requests.Session()
 
-    rows, ok_pages, failed_pages, capped = _pull_window(session, begin, end, fetched_at, t0)
+    rows, ok_pages, failed_pages, capped, empty_key = _pull_window(
+        session, begin, end, fetched_at, t0)
     if ok_pages == 0:
         raise RuntimeError(
             f"china_reports: every page of [{begin}..{end}] failed at transport level"
@@ -404,30 +544,53 @@ def refresh() -> dict:
     # Aggregates are recomputed FROM THE STORE (not from tonight's page buffer) so the
     # counts describe everything on disk for those dates, including rows collected on
     # previous nights within the same rolling window.
-    allow_true_zero = failed_pages == 0 and not capped
-    if not allow_true_zero:
-        log.warning("china_reports: partial/capped pull — true-zero aggregate rows "
-                    "suppressed for [%s..%s] (gap logged, not written as fact)", begin, end)
-    n_agg = write_aggregates(
-        aggregate_rows(load_reports(), _window_dates(begin, end), fetched_at, allow_true_zero)
-    )
+    clean = failed_pages == 0 and not capped
+    # After anything less than a clean pull, the OLDEST publish date we reached was
+    # truncated mid-count by the DESC page order — exclude it and everything older.
+    # With no rows at all, nothing tonight is provably complete, so `end` suppresses
+    # the whole window.
+    boundary = "" if clean else min(
+        (r["publish_date"] for r in rows if r["publish_date"]), default=end)
+    if not clean:
+        log.warning("china_reports: partial/capped pull — no aggregate row for [%s..%s] "
+                    "dates on or before %s (gap logged, not written as fact)",
+                    begin, end, boundary)
+    store = _read_store(_reports_path(), _COLUMNS)
+    if store is None:
+        # Recomputing "from the store" when the store cannot be read would stamp a
+        # window of zeros over real daily facts.
+        log.error("china_reports: reports.parquet unreadable — aggregates NOT recomputed")
+        n_agg = 0
+    else:
+        n_agg = write_aggregates(aggregate_rows(
+            store, _window_dates(begin, end), fetched_at, clean, boundary))
 
     codes = {r["code"] for r in rows if r["code"]}
     log.info("china_reports: window=[%s..%s] pages_ok=%d pages_failed=%d rows=%d "
-             "net_new=%d names=%d aggregates=%d%s",
-             begin, end, ok_pages, failed_pages, len(rows), n_new, len(codes), n_agg,
-             " [CAPPED]" if capped else "")
+             "empty_key=%d net_new=%d names=%d aggregates=%d%s",
+             begin, end, ok_pages, failed_pages, len(rows), empty_key, n_new, len(codes),
+             n_agg, " [CAPPED]" if capped else "")
+    # n_nulls: rows dropped for an empty infoCode. There is no per-name resolution step
+    # on this plane, so it is the only coverage null it can produce — the column is kept
+    # for schema uniformity with the other three W1 sentinels.
     return {"n_new": n_new, "n_fetched": len(rows), "n_failed": failed_pages,
-            "universe": len(codes), "shard": ok_pages}
+            "n_nulls": empty_key, "universe": len(codes), "shard": ok_pages}
 
 
 def backfill(start: str, end: str) -> int:
     """MANUAL range backfill in 7-day windows — never called from the adapter path.
 
     Rows are stamped backfill=True so the PIT tape can always separate "observed on
-    the night it published" from "recovered later". Aggregates are NOT written here:
-    a backfilled day was never observed live, and stamping it into the daily tape
-    would blur exactly that distinction.
+    the night it published" from "recovered later", and they are written keep-FIRST
+    (write_reports(keep_existing=True)): a recovered row can never overwrite one that
+    was observed live, nor flip that row's backfill flag to True.
+
+    Aggregates are NOT written here. A backfilled row that lands on a date still
+    inside the nightly rolling window DOES fold into that window's aggregate on the
+    next clean nightly recompute — those are real reports and the aggregate is a
+    recompute from the store, not an append. A backfilled date OUTSIDE any future
+    window simply never gets an aggregate row: it was never observed live, and
+    manufacturing one here would blur exactly the distinction the flag exists for.
     """
     import requests  # lazy
 
@@ -439,12 +602,13 @@ def backfill(start: str, end: str) -> int:
     while lo <= stop:
         hi = min(lo + timedelta(days=_BACKFILL_WINDOW_DAYS - 1), stop)
         t0 = _clock()  # per-window budget: a manual backfill still paces politely
-        rows, ok_pages, failed_pages, _ = _pull_window(
+        rows, ok_pages, failed_pages, _, empty_key = _pull_window(
             session, lo.isoformat(), hi.isoformat(), fetched_at, t0, backfill=True)
-        n = write_reports(rows)
+        n = write_reports(rows, keep_existing=True)
         total += n
-        log.info("china_reports backfill: [%s..%s] pages_ok=%d failed=%d rows=%d net_new=%d",
-                 lo, hi, ok_pages, failed_pages, len(rows), n)
+        log.info("china_reports backfill: [%s..%s] pages_ok=%d failed=%d rows=%d "
+                 "empty_key=%d net_new=%d",
+                 lo, hi, ok_pages, failed_pages, len(rows), empty_key, n)
         lo = hi + timedelta(days=1)
     log.info("china_reports backfill: %d net-new rows [%s..%s]", total, start, end)
     return total
@@ -457,8 +621,15 @@ class ChinaReportsAdapter(Adapter):
 
     Wraps refresh() in the standard run_adapter / circuit-breaker machinery. Group
     ``china_reports`` starts with ``china`` so it is auto-assigned to the asia lane.
-    fetch() returns a COVERAGE sentinel — not a bare count — so
-    data/china_reports/refresh.parquet is a readable run ledger.
+
+    fetch() returns a COVERAGE sentinel rather than a bare count, so
+    data/china_reports/refresh.parquet is a readable run ledger: n_new/n_fetched say
+    what landed, n_failed counts pages that broke at transport, and n_nulls counts rows
+    dropped for an empty infoCode (kept for schema uniformity with the other three W1
+    sentinels — this plane has no per-name resolution step to fail). What the sentinel
+    does NOT prove is that the window was fetched completely: ``shard`` is the number of
+    pages that answered, and whether the pull was capped lives in the log line and in
+    which dates aggregates.parquet gained a row.
     """
 
     name = "china_reports"
@@ -470,7 +641,8 @@ class ChinaReportsAdapter(Adapter):
         # tz-NAIVE normalized UTC day (collectors/china_filings.py precedent).
         idx = pd.Timestamp.now("UTC").normalize().tz_localize(None)
         sentinel = pd.DataFrame(
-            {k: [float(s[k])] for k in ("n_new", "n_fetched", "n_failed", "universe", "shard")},
+            {k: [float(s[k])] for k in
+             ("n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard")},
             index=[idx],
         )
         sentinel.index.name = "collected_at"

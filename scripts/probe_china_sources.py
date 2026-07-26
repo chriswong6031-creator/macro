@@ -93,7 +93,7 @@ def _dig(obj, path):
 def build_probes() -> list[dict]:
     d8 = _last_weekday("%Y%m%d")
     d_iso = _last_weekday("%Y-%m-%d")
-    d_iso_7 = _weekday_back(5, "%Y-%m-%d")   # ~7 calendar days back (W1 report window)
+    d_iso_7 = _weekday_back(5, "%Y-%m-%d")   # 5 weekdays back ≈ a working-week window (W1 report probe)
     d8_10ago = _weekday_back(10, "%Y%m%d")
     m_iso = _prev_month("%Y-%m") + "-01"
     ym = _prev_month("%Y%m")

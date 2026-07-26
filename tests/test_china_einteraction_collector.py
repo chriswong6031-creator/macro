@@ -247,6 +247,14 @@ class TestParseFeedItems:
         assert ce.parse_feed_items("", _TS) == []
         assert ce.parse_feed_items("<html><body></body></html>", _TS) == []
 
+    def test_shard_code_is_authoritative_over_the_text_prefix(self):
+        # F9: the collector knows which company it queried. A question that merely
+        # MENTIONS another listco (or carries no prefix) must never re-key the row —
+        # the text-parsed prefix is only a display-name fallback.
+        rows = ce.parse_feed_items(_FEED_HTML, _TS, code="601999")
+        assert rows and all(r["code"] == "601999" for r in rows)
+        assert rows[0]["name"] == "浦发银行"    # prefix still supplies the display name
+
 
 # --------------------------------------------------------------------------- #
 # store
@@ -331,20 +339,27 @@ class TestMapNeedsBuild:
         assert ce.map_needs_build(state, ["600004"]) is True
 
 
+def _big_page(page: int, n: int = 300) -> dict[str, str]:
+    """n synthetic (code, uid) pairs unique to ``page`` — the completeness gate
+    (``_MIN_MAP_CODES``) needs realistically-sized directory pages."""
+    base = 600000 + page * 1000
+    return {str(base + i): str(page * 10000 + i) for i in range(n)}
+
+
 class TestBuildUidMap:
     def test_full_build_stops_on_the_first_empty_page(self, store, monkeypatch):
-        pages = {1: {"600000": "65"}, 2: {"600004": "92"}, 3: {}}
+        pages = {1: _big_page(1), 2: _big_page(2), 3: {}}
         monkeypatch.setattr(ce, "_fetch_company_page", lambda s, p: pages.get(p, {}))
         monkeypatch.setattr(ce, "_pace", lambda: None)
         state = ce.build_uid_map(None, ce._map_state(), ce._clock())
         assert state["complete"] is True
-        assert state["map"] == {"600000": "65", "600004": "92"}
+        assert len(state["map"]) == 600
         assert state["next_page"] == 1
         assert state["resolved_at"]
 
     def test_truncated_build_resumes_instead_of_claiming_completion(
             self, store, monkeypatch):
-        pages = {1: {"600000": "65"}, 2: {"600004": "92"}, 3: {"600006": "181"}}
+        pages = {1: _big_page(1), 2: _big_page(2), 3: {}}
         monkeypatch.setattr(ce, "_fetch_company_page", lambda s, p: pages.get(p, {}))
         monkeypatch.setattr(ce, "_pace", lambda: None)
         # In budget for page 1, over budget before page 2.
@@ -353,12 +368,60 @@ class TestBuildUidMap:
         state = ce.build_uid_map(None, ce._map_state(), 0.0)
         assert state["complete"] is False        # a partial map is NEVER 'complete'
         assert state["next_page"] == 2           # resumes exactly where it stopped
-        assert state["map"] == {"600000": "65"}
+        assert len(state["map"]) == 300
         # Tomorrow: resume from page 2 and finish.
         monkeypatch.setattr(ce, "_clock", lambda: 0.0)
         state = ce.build_uid_map(None, ce._map_state(), 0.0)
         assert state["complete"] is True
-        assert set(state["map"]) == {"600000", "600004", "600006"}
+        assert len(state["map"]) == 600
+
+    def test_empty_first_page_never_stamps_complete(self, store, monkeypatch):
+        # F4: a blank/shape-drifted page 1 on a from-scratch crawl is AMBIGUOUS —
+        # complete must stay False and the same page must be retried tomorrow,
+        # else an empty map freezes as final for the whole 30-day age window.
+        monkeypatch.setattr(ce, "_fetch_company_page", lambda s, p: {})
+        monkeypatch.setattr(ce, "_pace", lambda: None)
+        state = ce.build_uid_map(None, ce._map_state(), ce._clock())
+        assert state["complete"] is False
+        assert state["map"] == {}
+        assert state["next_page"] == 1
+        assert not state["resolved_at"]
+
+    def test_below_floor_map_never_stamps_complete(self, store, monkeypatch):
+        # F4: a "finished" crawl holding fewer than _MIN_MAP_CODES codes is a parse
+        # failure, not a small directory (the live venue is ~2,312 codes).
+        pages = {1: {"600000": "65"}, 2: {}}
+        monkeypatch.setattr(ce, "_fetch_company_page", lambda s, p: pages.get(p, {}))
+        monkeypatch.setattr(ce, "_pace", lambda: None)
+        state = ce.build_uid_map(None, ce._map_state(), ce._clock())
+        assert state["complete"] is False
+        assert not state["resolved_at"]
+
+    def test_transport_failure_mid_crawl_persists_partial_progress(
+            self, store, monkeypatch):
+        # F5: pages fetched before the failure are KEPT and next_page lands on the
+        # failed page — a flaky host still makes nightly progress.
+        def flaky(session, page):
+            if page >= 3:
+                raise IOError("connection reset")
+            return _big_page(page)
+
+        monkeypatch.setattr(ce, "_fetch_company_page", flaky)
+        monkeypatch.setattr(ce, "_pace", lambda: None)
+        state = ce.build_uid_map(None, ce._map_state(), ce._clock())
+        assert state["complete"] is False
+        assert len(state["map"]) == 600           # pages 1-2 preserved
+        assert state["next_page"] == 3            # resumes on the failed page
+        on_disk = ce._load_json(ce._uid_map_path())
+        assert len(on_disk["map"]) == 600         # persisted, not just returned
+
+    def test_from_scratch_page_one_transport_failure_raises(self, store, monkeypatch):
+        # F5: nothing fetched, nothing to save — the breaker should see this one.
+        monkeypatch.setattr(ce, "_fetch_company_page",
+                            lambda s, p: (_ for _ in ()).throw(IOError("refused")))
+        monkeypatch.setattr(ce, "_pace", lambda: None)
+        with pytest.raises(IOError):
+            ce.build_uid_map(None, ce._map_state(), ce._clock())
 
 
 # --------------------------------------------------------------------------- #
@@ -370,9 +433,10 @@ def _wire(monkeypatch, order, *, feeds=None, clock=None):
     monkeypatch.setattr(ce, "board_universe", lambda: order)
     monkeypatch.setattr(ce, "_pace", lambda: None)
 
-    def _feed(session, uid, fetched_at):
+    def _feed(session, uid, fetched_at, code=""):
         calls["feeds"].append(uid)
-        return (feeds or (lambda u: ce.parse_feed_items(_FEED_HTML, fetched_at)))(uid)
+        rows = (feeds or (lambda u: ce.parse_feed_items(_FEED_HTML, fetched_at)))(uid)
+        return rows, False    # (rows, drift_flag) — the F9/S1 contract
 
     def _page(session, page):
         calls["pages"].append(page)
@@ -421,6 +485,7 @@ class TestRefresh:
         s = ce.refresh()
         assert calls["feeds"] == ["65"]
         assert s["n_failed"] == 0                 # a null is not a failure
+        assert s["n_nulls"] == 1                  # …but it IS visible in the ledger (F6)
 
     def test_time_guard_persists_the_cursor_at_the_true_position(self, store, monkeypatch):
         order = [f"{600000 + i}" for i in range(50)]
@@ -478,24 +543,34 @@ class TestFetchFeedByteRule:
             text = "<html></html>"
 
         monkeypatch.setattr(ce, "_post", lambda *a, **k: _R())
-        assert ce._fetch_feed(None, "65", _TS) == []
+        assert ce._fetch_feed(None, "65", _TS) == ([], False)
 
     def test_full_body_parses(self, store, monkeypatch):
         class _R:
             text = _FEED_HTML
 
         monkeypatch.setattr(ce, "_post", lambda *a, **k: _R())
-        assert len(ce._fetch_feed(None, "65", _TS)) == 2
+        rows, drift = ce._fetch_feed(None, "65", _TS, code="600000")
+        assert len(rows) == 2 and drift is False
+
+    def test_long_body_parsing_to_nothing_is_the_drift_tripwire(self, store, monkeypatch):
+        # S1: a body over the empty-page floor that parses to ZERO items means the
+        # markup moved — flagged as drift (folded into n_nulls), never silent.
+        class _R:
+            text = "<html>" + "x" * (ce._EMPTY_FEED_BYTES + 100) + "</html>"
+
+        monkeypatch.setattr(ce, "_post", lambda *a, **k: _R())
+        assert ce._fetch_feed(None, "65", _TS, code="600000") == ([], True)
 
 
 class TestAdapter:
     def test_sentinel_carries_map_built_and_a_tz_naive_index(self, store, monkeypatch):
         monkeypatch.setattr(ce, "refresh", lambda: {
-            "n_new": 0, "n_fetched": 72, "n_failed": 0, "universe": 60,
+            "n_new": 0, "n_fetched": 72, "n_failed": 0, "n_nulls": 0, "universe": 60,
             "shard": 0, "map_built": 1})
         sentinel = ce.ChinaEInteractionAdapter().fetch()["refresh"]
         assert list(sentinel.columns) == [
-            "n_new", "n_fetched", "n_failed", "universe", "shard", "map_built"]
+            "n_new", "n_fetched", "n_failed", "n_nulls", "universe", "shard", "map_built"]
         assert sentinel["map_built"].iloc[0] == 1.0
         for ts in sentinel.index:
             assert ts.tzinfo is None, "tz-aware index breaks store.upsert combine_first"
