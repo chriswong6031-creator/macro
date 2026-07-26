@@ -45,6 +45,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import billing, billing_emails as be, mailer  # noqa: E402
 
+# Captured BEFORE the autouse fixture stubs it, so one test can exercise the real resolver.
+_REAL_STRIPE_CUSTOMER_EMAIL = be._stripe_customer_email
+
 WHSEC = "whsec_test_secret_123"
 _MAIL_ENV = ("MAIL_SMTP_HOST", "MAIL_SMTP_PORT", "MAIL_SMTP_USER", "MAIL_SMTP_PASS",
              "MAIL_FROM", "MAIL_REPLY_TO", "MAIL_SUPPORT_TO", "MAIL_UNSUB_SECRET",
@@ -571,13 +574,13 @@ def test_recipient_prefers_the_object_then_stripe_then_supabase(monkeypatch):
 
 
 def test_stripe_customer_lookup_failure_is_soft(monkeypatch):
+    """The REAL resolver (captured before the autouse fixture stubs it) must swallow an
+    unreachable / unconfigured Stripe rather than propagate into the webhook."""
     def _boom():
         raise RuntimeError("no stripe key")
 
     monkeypatch.setattr(billing, "_stripe", _boom)
-    monkeypatch.undo()   # keep the autouse patch of _stripe_customer_email out of the way
-    monkeypatch.setattr(billing, "_stripe", _boom)
-    assert be._stripe_customer_email("cus_1") is None
+    assert _REAL_STRIPE_CUSTOMER_EMAIL("cus_1") is None
 
 
 # --------------------------------------------------------------------------- #
