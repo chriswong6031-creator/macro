@@ -416,6 +416,26 @@ class TestUsageSnapshot:
 # ── llm_auth legacy-skip when disabled ───────────────────────────────────────
 
 class TestLlmAuthLegacySkip:
+    """Legacy-token gate in llm_auth.build_providers().
+
+    HERMETICITY (flake postmortem, 2026-07-26).  Four tests in this class
+    assert a provider COUNT, and build_providers() used to derive that count
+    partly from ambient machine state.  Every one of those inputs is pinned by
+    the autouse fixture below — a count assertion must never be able to read
+    the machine.
+
+    The flake that motivated this: _mk_oauth_provider() imported httpx eagerly
+    inside a blanket ``except Exception: return None``.  That import is the
+    FIRST real httpx import of the process and it lands inside
+    test_legacy_kept_for_non_pool_lanes_even_when_disabled, so any transient
+    failure of it (resource pressure on a loaded machine) silently became "the
+    credential does not exist" and the whole class degraded to zero providers
+    at once — 4 failed / 31 passed, with test_legacy_skipped_when_disabled
+    passing precisely because it is the one test that never builds a provider.
+    llm_auth now imports httpx lazily in the only branch that uses it, and
+    test_httpx_import_failure_does_not_delete_the_provider pins that.
+    """
+
     def _fake_anthropic_module(self):
         import types
         mod = types.ModuleType("anthropic")
@@ -429,6 +449,23 @@ class TestLlmAuthLegacySkip:
         mod.DefaultHttpxClient = _FakeClient
         return mod
 
+    @pytest.fixture(autouse=True)
+    def _no_ambient_pool_keys(self, monkeypatch):
+        """Stub the SDK and scrub the pool secrets out of the environment.
+
+        key_pool.discover_present_keys() reads CLAUDE_CODE_OAUTH_TOKEN_1..7
+        straight out of os.environ, so a runner or operator shell that carries
+        real pool tokens sends build_providers() down the pool-expansion branch
+        in tests whose asserted count assumes legacy-only.  Nothing here should
+        depend on which secrets happen to be exported.
+        """
+        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
+
+        from engine.neuralweb import key_pool as _kp
+        for cap_id in _kp.POOL_CAPABILITY_IDS:
+            ref = _kp.get_secret_ref(cap_id) or f"CLAUDE_CODE_OAUTH_TOKEN_{cap_id.rsplit('_', 1)[-1]}"
+            monkeypatch.delenv(ref, raising=False)
+
     def test_legacy_skipped_when_disabled(self, monkeypatch):
         """Legacy provider is excluded when disabled — POOL-AWARE lanes only.
 
@@ -437,8 +474,6 @@ class TestLlmAuthLegacySkip:
         must be provably unaffected even if METAB_KEYS_ENABLED leaks into
         their environment (W2 scope).
         """
-        import sys
-        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
         monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok-legacy")
         monkeypatch.setenv("METAB_KEYS_ENABLED", "1")  # only key 1 enabled; "legacy" not in set
 
@@ -463,8 +498,6 @@ class TestLlmAuthLegacySkip:
     def test_legacy_kept_for_non_pool_lanes_even_when_disabled(self, monkeypatch):
         """WITHOUT oauth_pool_lane the gate must NOT apply (cortex/whitehouse
         class callers keep the legacy token regardless of METAB_KEYS_ENABLED)."""
-        import sys
-        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
         monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "tok-legacy")
         monkeypatch.setenv("METAB_KEYS_ENABLED", "1")  # "legacy" not enabled
 
@@ -485,8 +518,6 @@ class TestLlmAuthLegacySkip:
 
     def test_legacy_included_when_enabled(self, monkeypatch):
         """Legacy single-token provider is included when is_enabled('legacy') is True."""
-        import sys
-        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
         monkeypatch.setenv("METAB_KEYS_ENABLED", "1,legacy")
 
         from engine import llm_auth
@@ -507,8 +538,6 @@ class TestLlmAuthLegacySkip:
 
     def test_legacy_included_when_no_metab_env(self, monkeypatch):
         """Legacy included (fail-open) when METAB_KEYS_ENABLED is absent."""
-        import sys
-        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
 
         from engine import llm_auth
@@ -528,19 +557,30 @@ class TestLlmAuthLegacySkip:
 
     def test_fail_open_on_import_error(self, monkeypatch):
         """If key_pool import fails, legacy is included (fail-open, R-V10-2)."""
-        import sys
-        monkeypatch.setitem(sys.modules, "anthropic", self._fake_anthropic_module())
         monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
 
-        # Poison engine.neuralweb.key_pool to simulate ImportError
+        # Poison engine.neuralweb.key_pool to simulate ImportError.  PEP-562
+        # module __getattr__ so EVERY use of the module raises, not just the
+        # one helper the production code happened to call when this was
+        # written — build_providers() reaches key_pool through four different
+        # names depending on the branch taken.
         import types
         broken_mod = types.ModuleType("engine.neuralweb.key_pool")
 
-        def _broken_is_enabled(key_id):
-            raise ImportError("simulated import failure")
+        def _broken(name):
+            raise ImportError(f"simulated import failure ({name})")
 
-        broken_mod.is_enabled = _broken_is_enabled
+        broken_mod.__getattr__ = _broken
+
+        # Patch BOTH the sys.modules entry and the parent package attribute.
+        # ``from engine.neuralweb import key_pool`` resolves through the
+        # attribute that the submodule's first real import set on the package,
+        # so patching sys.modules alone is a silent no-op in any run where an
+        # earlier test already imported key_pool — which every full-file run
+        # does. monkeypatch restores both.
+        import engine.neuralweb as _nw_pkg
         monkeypatch.setitem(sys.modules, "engine.neuralweb.key_pool", broken_mod)
+        monkeypatch.setattr(_nw_pkg, "key_pool", broken_mod, raising=False)
 
         from engine import llm_auth
         monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
@@ -559,3 +599,40 @@ class TestLlmAuthLegacySkip:
         # Even with broken key_pool, legacy provider must be included (fail-open)
         assert len(provs) == 1
         assert provs[0]["env_var"] == "CLAUDE_CODE_OAUTH_TOKEN"
+
+    def test_httpx_import_failure_does_not_delete_the_provider(self, monkeypatch):
+        """An unusable httpx must cost the usage hook, never the credential.
+
+        _mk_oauth_provider() builds an httpx client only to hang the
+        anthropic-ratelimit header-capture hook off it, and the whole body sits
+        inside ``except Exception: return None``.  When httpx was imported
+        eagerly at the top of that block, an import failure did not degrade the
+        hook — it deleted the key from the waterfall and the lane silently fell
+        through to the next provider (or to no provider at all).
+
+        This is also the flake that made this class intermittently red: that
+        import is the process's FIRST real httpx import and it happens inside
+        these tests, so a transient failure of it under machine load took all
+        four count-asserting tests down together.
+        """
+        monkeypatch.delenv("METAB_KEYS_ENABLED", raising=False)
+        # `import httpx` -> ImportError("... None in sys.modules"); restored by
+        # monkeypatch whether or not httpx was already imported.
+        monkeypatch.setitem(sys.modules, "httpx", None)
+
+        from engine import llm_auth
+        monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
+
+        cfg = {
+            "provider_order": ["oauth"],
+            "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+            "opus_model": "claude-opus-4-8",
+        }
+
+        with monkeypatch.context() as m:
+            m.setattr("lib.config.secret", lambda name: "tok-legacy" if name == "CLAUDE_CODE_OAUTH_TOKEN" else None)
+            provs = llm_auth.build_providers(cfg)
+
+        assert len(provs) == 1, f"httpx outage must not delete the provider, got {provs}"
+        assert provs[0]["env_var"] == "CLAUDE_CODE_OAUTH_TOKEN"
+        assert provs[0]["cred"] == "tok-legacy"

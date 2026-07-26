@@ -604,7 +604,15 @@ def build_providers(
             return None
         try:
             import anthropic  # noqa: PLC0415
-            import httpx  # noqa: PLC0415
+            # NOTE: httpx is imported LAZILY, inside the fallback branch that is
+            # the only place it is actually used (the `response: httpx.Response`
+            # annotation below is never evaluated — this module is
+            # `from __future__ import annotations`).  Do NOT hoist it back up
+            # here: this whole block is wrapped in a blanket `except Exception`
+            # that returns None, so an eager import turned ANY transient failure
+            # of that first heavyweight import into "the credential does not
+            # exist" and silently deleted the provider from the waterfall.  The
+            # usage-capture hook is an optimisation; it must never cost a key.
             hdrs = {"anthropic-beta": OAUTH_BETA}
             if extra_headers:
                 hdrs.update(extra_headers)
@@ -642,6 +650,7 @@ def build_providers(
                     # Fallback: plain httpx.Client mirroring the SDK's default
                     # timeout (600s read) so long Opus completions are not
                     # silently truncated; getattr guards stubbed SDK in tests.
+                    import httpx  # noqa: PLC0415
                     http_client = httpx.Client(
                         timeout=getattr(
                             anthropic, "DEFAULT_TIMEOUT",
