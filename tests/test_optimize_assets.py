@@ -15,6 +15,7 @@ import hashlib
 import re
 import sys
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -139,8 +140,11 @@ def test_paired_template_is_restamped_so_fix_cannot_revert_it(tmp_path):
     site, templates = _pair_tree(
         tmp_path, '<html><head><script src="theme.js?v=deadbeef" defer></script></head></html>'
     )
-    # both sides move: templates/ is what --fix will copy back over site/
-    assert optimize(site) == 2
+    # both sides move: templates/ is what --fix will copy back over site/. (The pair pass
+    # runs first and syncs the site copy itself, so the later walk finds nothing to do —
+    # assert the end state, not the write count.)
+    assert optimize(site) >= 1
+    assert (site / "index.html").read_text() == (templates / "index.html").read_text()
     fresh = re.search(r'theme\.js\?v=([0-9a-f]{8})', (templates / "index.html").read_text())
     assert fresh and fresh.group(1) != "deadbeef", "templates/ side kept the stale stamp"
 
@@ -176,6 +180,42 @@ def test_pair_converges_even_when_a_normalizer_rewrote_the_site_copy(tmp_path):
     assert "v=deadbeef" not in out, "the pair converged on the STALE templates/ stamp"
     assert out == (templates / "index.html").read_text(), "pair left diverged"
     assert optimize(site) == 0, "not a fixed point after the pair converged"
+
+
+def test_pair_is_stamped_before_the_site_walk(tmp_path):
+    """Ordering is load-bearing: the pair must be done BEFORE the 3.2k-page site walk.
+
+    A render is cancelled far more often than it completes on a merge-spree day, and the
+    lane's commit step is `if: always()` — so this sweep can be SIGTERMed part-way and the
+    half-done tree still gets committed. With the site walk first, a kill during it left
+    site/chat.html re-stamped (it sorts early) while templates/chat.html was never
+    reached; `--fix` resolves toward templates/ so it could not repair the pair either,
+    and main landed DIVERGED with the pages.yml publish gate red (2026-07-26, cancelled
+    run 30203476381 -> 886fe25d89e). Pair-first makes every interruption point safe.
+    """
+    site, templates = _pair_tree(
+        tmp_path, '<html><head><script src="theme.js?v=deadbeef" defer></script></head></html>'
+    )
+    # a site page that sorts AFTER index.html, so the walk would reach it late
+    (site / "zzz.html").write_text('<html><head><script src="theme.js?v=deadbeef"></script></head></html>')
+
+    order = []
+    real = Path.write_text
+
+    def spy(self, data, *a, **kw):
+        order.append(str(self.relative_to(tmp_path)))
+        return real(self, data, *a, **kw)
+
+    with mock.patch.object(Path, "write_text", spy):
+        optimize(site)
+
+    tpl_writes = [i for i, p in enumerate(order) if p.startswith("templates/")]
+    walk_writes = [i for i, p in enumerate(order) if p == "site/zzz.html"]
+    assert tpl_writes, "the paired template was never written"
+    assert walk_writes, "the site walk never ran (fixture broken)"
+    assert min(tpl_writes) < min(walk_writes), (
+        f"the site walk started before the pair was stamped (order={order}) — a "
+        "cancellation mid-walk would commit a DIVERGED pair that --fix cannot repair")
 
 
 def test_unpaired_template_is_never_written(tmp_path):
