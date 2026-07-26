@@ -216,6 +216,31 @@ def _edge_cls(edge: float | None) -> str:
     return "mut"
 
 
+def _data_vintage(screener: dict, lab: dict) -> str:
+    """Freshness stamp for the hero chip = the DATA vintage, never the wall clock.
+
+    The chip (#hero-ts in templates/tech_lab.html.j2) reads as "how fresh is this
+    page's data".  Stamping datetime.now() made it claim today even when the
+    nightly's tech_screener.json was days old — on live main the chip overstated
+    freshness by 3 days.  It also made the page unstable byte-for-byte: the
+    express re-render lanes (render.yml / engine-render.yml scope=all) rebake from
+    COMMITTED JSON and `git add site/`, so a wall-clock stamp would commit churn on
+    every run for identical inputs.
+
+    Prefer the screener's vintage (the "what is firing now" half), fall back to the
+    lab's, and only fall back to now() when NEITHER input carries one.
+    """
+    raw = screener.get("generated_utc") or lab.get("generated_utc")
+    if not raw:
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    try:
+        # "2026-07-19T03:43:20Z" — fromisoformat wants the offset spelled out
+        parsed = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return str(raw)          # unparseable (e.g. the sample fixture's "pending")
+    return parsed.strftime("%Y-%m-%d %H:%M UTC")
+
+
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
@@ -228,6 +253,15 @@ def main() -> int:
         lab = _load_json(factordata / "tech_lab.json", _SAMPLE_LAB)
 
         is_sample = screener.get("_sample") or lab.get("_sample")
+        if is_sample:
+            # Fail-soft by law (the hub still ships with an honest-null banner) but LOUD:
+            # a bare `print` is the ONLY form GitHub Actions parses as an annotation —
+            # this module logs with a "%(levelname)s %(message)s" prefix, so a
+            # log.warning("::warning ...") would emit "WARNING ::warning ..." and never
+            # be picked up.
+            print("::warning title=tech_lab::input JSONs unreadable — baking the SAMPLE "
+                  "fixture (honest-null banner); real data needs the nightly "
+                  "tech_lab_offrender artifacts", flush=True)
 
         # Build signal_groups for the <select> dropdown (server-side, lightweight)
         # Merge screener + lab signal IDs so every known signal appears in the dropdown.
@@ -252,7 +286,7 @@ def main() -> int:
         # Build grouped list for Jinja dropdown (reuse _group_signals helper)
         signal_groups = _group_signals(merged_signals_meta)
 
-        built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        built = _data_vintage(screener, lab)
         env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
         try:
             html = env.get_template("tech_lab.html.j2").render(
@@ -271,7 +305,10 @@ def main() -> int:
                 active_page="tech_lab",
             )
         except Exception as e:  # noqa: BLE001
-            log.warning("tech_lab render failed — skipping (additive): %s", e)
+            log.warning("tech_lab render failed — skipping (additive): %s", e, exc_info=True)
+            print(f"::warning title=tech_lab::template render failed — site/tech_lab.html "
+                  f"was NOT rewritten this run and stays on its last-committed vintage "
+                  f"({type(e).__name__}: {e})", flush=True)
             return 0
 
         site.mkdir(exist_ok=True)
@@ -283,7 +320,10 @@ def main() -> int:
         return 0
 
     except Exception as e:  # noqa: BLE001 — never break the daily build
-        log.warning("tech_lab page failed — skipping (additive): %s", e)
+        log.warning("tech_lab page failed — skipping (additive): %s", e, exc_info=True)
+        print(f"::warning title=tech_lab::builder failed before writing — site/tech_lab.html "
+              f"was NOT rewritten this run and stays on its last-committed vintage "
+              f"({type(e).__name__}: {e})", flush=True)
         return 0
 
 

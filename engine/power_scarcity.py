@@ -23,6 +23,7 @@ import json
 import logging
 
 from engine.bottleneck import _band, _series, _yoy, _z
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -113,7 +114,13 @@ def compute_power_scarcity(write_ledger: bool = True) -> dict | None:
 
 def _append_ledger(payload: dict) -> None:
     """Append-only forward-grading ledger: one row per asof when the power cluster reads
-    TIGHT/SOLD_OUT — graded forward (did the power basket outperform after a physical tighten?)."""
+    TIGHT/SOLD_OUT — graded forward (did the power basket outperform after a physical tighten?).
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("power_scarcity._append_ledger: skipped (COLLECT_LANE != nightly)")
+        return
     if payload["band"] not in ("TIGHT", "SOLD_OUT"):
         return
     from datetime import date, datetime, timezone

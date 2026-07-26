@@ -28,6 +28,10 @@ import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+# engine.ledger_lane is a LEAF module (imports os only) — safe to import at module
+# scope even though lib.config is deliberately deferred into _health_log_path().
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
+
 log = logging.getLogger(__name__)
 
 _AWAITING = {"AWAITING_DATA", "INSUFFICIENT_HISTORY"}
@@ -216,7 +220,14 @@ def _assess_analyst(analyst: object) -> dict:
         return _leg("DARK", None,
                     "analyst payload absent — no Anthropic credential (graceful no-op; "
                     "desk functions without LLM)")
-    if not (analyst if isinstance(analyst, dict) else {}).get("regime_read"):
+    a = analyst if isinstance(analyst, dict) else {}
+    if a.get("from_ledger"):
+        # Express re-render lane (RENDER_NO_DRIP=1): the theses on the page are a replay
+        # of the last committed rows, not a fresh read. Never report that as LIVE.
+        return _leg("PARTIAL", None,
+                    "analyst theses replayed from the last committed ledger rows — this "
+                    "lane makes no model call, so the read is as of the last nightly")
+    if not a.get("regime_read"):
         return _leg("PARTIAL", None, "analyst payload present but regime_read absent")
     return _leg("LIVE", None, "LLM analyst read present")
 
@@ -375,7 +386,15 @@ def _health_log_path() -> Path:
 
 
 def _append_health_log(health: dict) -> None:
-    """Append one line per calendar day (dedup by date)."""
+    """Append one line per calendar day (dedup by date).
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    This appender carried NO gate before; the express re-render lanes reached it on
+    every bake and would have stamped a health row from a non-nightly context.
+    """
+    if not _ledger_advance_enabled():
+        log.debug("foresight_health._append_health_log: skipped (COLLECT_LANE != nightly)")
+        return
     p = _health_log_path()
     today = date.today().isoformat()
     p.parent.mkdir(parents=True, exist_ok=True)

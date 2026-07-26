@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -222,8 +223,16 @@ def compute_shadow_stages(
 
     Non-fatal: any error degrades to a warning, the live build is unaffected.
 
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers. This
+    function exists ONLY to append; off-lane it returns 0 without computing, so the
+    express re-render lanes neither write nor pay for the recompute. Nothing on the
+    page reads its return value (the shadow ledger is graded separately).
+
     Returns the number of new rows appended.
     """
+    if not _ledger_advance_enabled():
+        log.debug("compute_shadow_stages: skipped (COLLECT_LANE != nightly)")
+        return 0
     try:
         return _compute_shadow_stages_inner(bottleneck, revisions, glut, asof)
     except Exception as e:  # noqa: BLE001
@@ -331,7 +340,13 @@ def compute_heat_shadow(
     report lists heat_threshold as "accruing, grading not yet wired" (honestly labeled).
     Dedup discipline: one row per (param="heat_threshold", candidate, theme, asof).
     Non-fatal.  Returns the number of new rows appended.
+
+    Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers. Like
+    compute_shadow_stages this function exists only to append; off-lane it returns 0.
     """
+    if not _ledger_advance_enabled():
+        log.debug("compute_heat_shadow: skipped (COLLECT_LANE != nightly)")
+        return 0
     try:
         return _compute_heat_shadow_inner(convergence_payload, asof)
     except Exception as e:  # noqa: BLE001
@@ -499,7 +514,12 @@ def _grade_shadow_inner(today: pd.Timestamp | None, write: bool) -> dict:
         ),
     }
 
-    if write:
+    # Gate: COLLECT_LANE=nightly — nightly is the sole advancer of forward ledgers.
+    # `summary` is still returned in full (graded from COMMITTED shadow rows), so the
+    # promotion report is unchanged off-lane; only the on-disk state is gated.
+    if write and not _ledger_advance_enabled():
+        log.debug("grade_shadow: shadow_track_record write skipped (COLLECT_LANE != nightly)")
+    elif write:
         try:
             d = config.data_dir() / "foresight"
             d.mkdir(parents=True, exist_ok=True)

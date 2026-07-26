@@ -1584,6 +1584,12 @@ lanes:
             - scripts.build_index_changes
             # SGA page-only re-render (committed artifact); engine stays daily-only.
             - scripts.build_stage_analysis_page
+            # TLT hub: ~0.5s page-only rebake from committed site/factordata JSONs; the
+            # heavy data-gen (build_tech_lab_data + confluence miner) stays daily-offrender.
+            - scripts.build_tech_lab
+            # Impulse: pure recompute from tier close/volume caches, zero data/ writes;
+            # builder self-truncates both panels to a common last session (skew ::warning).
+            - scripts.build_impulse
       # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
       # NOTE: build_sector_central runs via central() and build_vector via hub().
       # After the W5a parser fix (_collect() no longer treats single-line function
@@ -1630,6 +1636,23 @@ lanes:
           on a live doctrine surface). Serial post-band, not cl_misc, because
           cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_foresight
+        module: scripts.build_foresight
+        note: >
+          Thematic Foresight desk, page-only re-render (scope=all, serial post-band
+          via foresightpage(), right after flowleaders()). Express-safe via the two
+          sentinels this lane already arms: RENDER_NO_DRIP=1 skips the three keyless
+          collector drips (EDGAR guidance/emergence, openFDA) AND the analyst LLM
+          call (the step env carries DEEPSEEK_API_KEY — the page replays the last
+          COMMITTED analyst_theses.jsonl rows instead, marked from_ledger); with
+          COLLECT_LANE unset every foresight ledger appender self-gates via
+          engine.ledger_lane (the #2598 sweep gap, closed 2026-07-25), so baked
+          track/grade/monitor/ENB numbers derive from committed rows only and the
+          nightly stays the sole forward-ledger advancer. Added 2026-07-25:
+          daily-lane-only membership (last of 22 serial builders) + the 07-22..24
+          dead nightlies froze foresight.html at its pre-revamp render. ~11s
+          measured on committed stores. Also rewrites
+          site/basketdata/foresight_cascade.json in the same pass as its page.
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -1718,6 +1741,12 @@ lanes:
             - scripts.build_index_changes
             # SGA page-only re-render (committed artifact); engine stays daily-only.
             - scripts.build_stage_analysis_page
+            # TLT hub: ~0.5s page-only rebake from committed site/factordata JSONs; the
+            # heavy data-gen (build_tech_lab_data + confluence miner) stays daily-offrender.
+            - scripts.build_tech_lab
+            # Impulse: pure recompute from tier close/volume caches, zero data/ writes;
+            # builder self-truncates both panels to a common last session (skew ::warning).
+            - scripts.build_impulse
       # serial post-band (composition order: spine; band; central; hub; us_pages; libs)
       # NOTE: build_sector_central runs via central() and build_vector via hub().
       # After the W5a parser fix, both are visible and declared here.
@@ -1759,6 +1788,23 @@ lanes:
           froze site/flow_leaders.html at its pre-#3224 render. Serial post-band,
           not cl_misc, because cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_foresight
+        module: scripts.build_foresight
+        note: >
+          Thematic Foresight desk, page-only re-render (scope=all, serial post-band
+          via foresightpage(), right after flowleaders()). Express-safe via the two
+          sentinels this lane already arms: RENDER_NO_DRIP=1 skips the three keyless
+          collector drips (EDGAR guidance/emergence, openFDA) AND the analyst LLM
+          call (the step env carries DEEPSEEK_API_KEY — the page replays the last
+          COMMITTED analyst_theses.jsonl rows instead, marked from_ledger); with
+          COLLECT_LANE unset every foresight ledger appender self-gates via
+          engine.ledger_lane (the #2598 sweep gap, closed 2026-07-25), so baked
+          track/grade/monitor/ENB numbers derive from committed rows only and the
+          nightly stays the sole forward-ledger advancer. Added 2026-07-25:
+          daily-lane-only membership (last of 22 serial builders) + the 07-22..24
+          dead nightlies froze foresight.html at its pre-revamp render. ~11s
+          measured on committed stores. Also rewrites
+          site/basketdata/foresight_cascade.json in the same pass as its page.
       - id: build_special_situations_page_only
         module: scripts.build_special_situations
         args: [--no-refresh]
