@@ -975,6 +975,26 @@ def _book_flow_washout(df: pd.DataFrame, book: dict) -> list[dict]:
 # build_pick_lab consumes the artifact, does NOT recompute legs (LR-R8 law).
 # ---------------------------------------------------------------------------- #
 
+def _radar_expected_as_of() -> str | None:
+    """Tonight's price data-through date (data/yahoo/SPY.parquet last row).
+
+    The same anchor build_leader_radar derives radar.json's as_of from, so the
+    comparison in _load_radar_json is apples-to-apples. None when the store or
+    config is unavailable (cold start / fixture roots) — the gate fails open.
+    """
+    try:
+        from lib import config as _cfg  # noqa: PLC0415
+        p = _cfg.data_dir() / "yahoo" / "SPY.parquet"
+        if not p.exists():
+            return None
+        idx = pd.to_datetime(pd.read_parquet(p).index)
+        if len(idx) == 0:
+            return None
+        return str(idx.max().date())
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _load_radar_json() -> list[dict]:
     """Load site/leaderradar/radar.json; return rows list."""
     try:
@@ -985,6 +1005,22 @@ def _load_radar_json() -> list[dict]:
             return []
         import json  # noqa: PLC0415
         d = json.loads(p.read_text())
+        # LR-EXP provenance gate: express render lanes also commit radar.json.
+        # The forward pick ledger may only advance on fires computed at tonight's
+        # price vintage (nightly-sole-advancer law) — an artifact whose as_of is
+        # not the price store's data-through date is a stale bake (e.g. tonight's
+        # radar step silently failed and this is yesterday's express commit).
+        # Treat it as absent. Fails open when the anchor store itself is missing.
+        expected = _radar_expected_as_of()
+        if expected is not None:
+            artifact_as_of = str(d.get("as_of") or "")[:10]
+            if artifact_as_of != expected:
+                log.warning(
+                    "pick_lab leader_radar: radar.json as_of=%s != price data-through %s — "
+                    "stale artifact gated to [] (nightly-sole-advancer)",
+                    artifact_as_of or "?", expected,
+                )
+                return []
         return d.get("rows", [])
     except Exception as exc:  # noqa: BLE001
         log.warning("pick_lab leader_radar: radar.json load failed: %s", exc)
