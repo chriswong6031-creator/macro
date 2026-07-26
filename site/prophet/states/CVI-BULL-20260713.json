@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CVI-BULL-20260713",
-  "asof": "2026-07-25",
+  "asof": "2026-07-26",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 62.4,
-  "raw_confidence": 57.7,
-  "delta_vs_base": 2.4,
+  "management_confidence": 59.9,
+  "raw_confidence": 57.0,
+  "delta_vs_base": -0.1,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
     "validity": 79.8,
     "progress": 0.0,
-    "pace": 64.7,
+    "pace": 58.8,
     "retention": 50.0,
     "overlay": 47.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.846,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 26.7,
+    "horizon_pct_used": 28.9,
     "p1": -0.1025,
     "p2": -0.0512,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 12,
-  "tau": 0.2667
+  "days_elapsed": 13,
+  "tau": 0.2889
 }

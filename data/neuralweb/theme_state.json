@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_state.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T03:02:32Z",
+  "generated_at": "2026-07-26T09:36:37Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -65,16 +65,16 @@
           "basket_id": "ai_semiconductors",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -1.581,
-          "salience": 1.581,
+          "divergence": -1.706,
+          "salience": 1.706,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "ai_infra",
           "state": "NEGATIVE_DIVERGENCE",
           "lifecycle": "fading",
-          "divergence": -1.239,
-          "salience": 1.239,
+          "divergence": -1.392,
+          "salience": 1.392,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -235,8 +235,8 @@
           "basket_id": "semicap_equipment",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 0.04,
-          "salience": 0.04,
+          "divergence": -0.596,
+          "salience": 0.596,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -282,7 +282,7 @@
       "name_en": "Data Center Power & Cooling",
       "name_zh": "数据中心电力与冷却",
       "foresight": {
-        "stage": "RE-RATING",
+        "stage": "BROADENING (text)",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -328,8 +328,8 @@
           "basket_id": "ai_neoclouds",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.293,
-          "salience": 0.293,
+          "divergence": -0.446,
+          "salience": 0.446,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -407,16 +407,16 @@
           "basket_id": "nuclear_power",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.881,
-          "salience": 1.881,
+          "divergence": 1.947,
+          "salience": 1.947,
           "source": "site/basketdata/radar_enriched.json"
         },
         {
           "basket_id": "uranium_miners",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 4.072,
-          "salience": 4.072,
+          "divergence": 4.222,
+          "salience": 4.222,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -482,8 +482,8 @@
           "basket_id": "power_grid",
           "state": "CONFIRMED_DOWN",
           "lifecycle": "fading",
-          "divergence": 1.225,
-          "salience": 1.225,
+          "divergence": 1.285,
+          "salience": 1.285,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -597,7 +597,7 @@
       "foresight": {
         "stage": "WATCH",
         "tier": "P",
-        "score": 41.3,
+        "score": 42.7,
         "entry_ready": false,
         "bottleneck_band": "NEUTRAL",
         "source": "site/basketdata/foresight_cascade.json"
@@ -621,8 +621,8 @@
           "basket_id": "defense",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": -0.117,
-          "salience": 0.117,
+          "divergence": -0.044,
+          "salience": 0.044,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -773,7 +773,7 @@
       "foresight": {
         "stage": "BROADENING (fingerprint)",
         "tier": "P",
-        "score": 41.8,
+        "score": 54.9,
         "entry_ready": false,
         "bottleneck_band": "TIGHTENING (fingerprint)",
         "source": "site/basketdata/foresight_cascade.json"
@@ -826,10 +826,10 @@
       },
       "divergence_board": {
         "quadrant": "hidden-opportunity",
-        "divergence": -0.4118,
+        "divergence": -0.5294,
         "narrative_pct": 0.2353,
-        "money_pct": 0.6471,
-        "asof": "2026-07-07",
+        "money_pct": 0.7647,
+        "asof": "2026-07-26",
         "source": "data/foresight/divergence_log.jsonl"
       },
       "basket_ids": [
@@ -943,8 +943,8 @@
           "basket_id": "space_economy",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 2.941,
-          "salience": 2.941,
+          "divergence": 3.012,
+          "salience": 3.012,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1009,8 +1009,8 @@
           "basket_id": "critical_minerals",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 4.827,
-          "salience": 4.827,
+          "divergence": 4.262,
+          "salience": 4.262,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1049,7 +1049,7 @@
       "name_en": "Copper, Steel & Electrification",
       "name_zh": "铜、钢铁与电气化",
       "foresight": {
-        "stage": "BROADENING (text)",
+        "stage": "RE-RATING",
         "tier": "P",
         "score": 50.0,
         "entry_ready": false,
@@ -1075,8 +1075,8 @@
           "basket_id": "reshoring",
           "state": "QUIET",
           "lifecycle": "quiet",
-          "divergence": 0.114,
-          "salience": 0.114,
+          "divergence": -0.424,
+          "salience": 0.424,
           "source": "site/basketdata/radar_enriched.json"
         }
       ],
@@ -1321,7 +1321,6 @@
   "stale_legs": [
     "divergence_log[robotics_automation]: stale (as_of=2026-07-17)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
-    "divergence_log[glp1_obesity]: stale (as_of=2026-07-07)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-20)",
     "divergence_log[memory_storage]: stale (as_of=2026-07-09)"
   ],
@@ -1337,7 +1336,7 @@
   },
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-26T03:02:33Z",
-  "inputs_hash": "sha256:de1977d7a83ebcbdbaf3b57af5bc7a40b559a3f22bcaf5d70e6bd9d164200df6",
+  "produced_at": "2026-07-26T09:36:38Z",
+  "inputs_hash": "sha256:ef4086e71873d38b55d835f144290c7df3ede2d6623f9c3c732a36c1f6c17c63",
   "tier": "display"
 }

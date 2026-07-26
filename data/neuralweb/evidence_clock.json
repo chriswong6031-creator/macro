@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-07-26",
-  "generated_utc": "2026-07-26T03:02:45Z",
+  "generated_utc": "2026-07-26T09:36:50Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 308,
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1520,
+        "n_open": 1526,
         "n_past_check_by": 857
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1520,
+        "n_open": 1526,
         "n_past_check_by": 857
       },
       "allowed_actions": [
@@ -806,7 +806,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1206,
+        "n_open": 1214,
         "n_past_check_by": 337
       },
       "allowed_actions": [
@@ -1238,7 +1238,7 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 25861,
+        "n_claims": 25882,
         "n_with_falsifier": 371,
         "falsifier_coverage": "1.4%",
         "blocking_reason": "falsifier coverage 1.4%; not a promotion-grade substrate"
@@ -9353,7 +9353,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 310,
+        "n_open": 311,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9696,17 +9696,17 @@
     {
       "clock_id": "trial_ledger:other",
       "source_system": "trial_ledger",
-      "subject_id": "other_113_families",
+      "subject_id": "other_114_families",
       "subject_type": "family",
       "owner_program": null,
       "clock_type": "fdr_batch_due",
       "due_at": null,
-      "as_of": "2026-07-25",
+      "as_of": "2026-07-26",
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_trials": 375,
-        "n_families": 113
+        "n_trials": 376,
+        "n_families": 114
       },
       "allowed_actions": [
         "inspect",

@@ -1,13 +1,13 @@
 {
   "schema": "radar_ic.v1",
-  "as_of": "2026-07-25",
-  "generated_at": "2026-07-26T02:50:56.937831+00:00",
+  "as_of": "2026-07-26",
+  "generated_at": "2026-07-26T09:23:12.384243+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 6788,
+  "n_snapshots": 7028,
   "n_matured": 2456,
   "ic_all": -0.2906,
   "ic_rolling_90": 0.0966,
@@ -64,7 +64,8 @@
         "t_hac": -4.023,
         "p_hac": 0.0001,
         "hit": 0.077,
-        "n": 13
+        "n": 13,
+        "hac_lags": 21
       },
       "by_bucket": {
         "0-40": {

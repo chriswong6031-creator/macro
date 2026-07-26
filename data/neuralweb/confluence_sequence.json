@@ -1145,10 +1145,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-02",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-14",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1299,10 +1299,10 @@
       "direction": -1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-10",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1636,6 +1636,28 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "AZO",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-14",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PLTR",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-14",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "APH",
       "direction": -1,
       "horizon": "5.0",
@@ -1702,6 +1724,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "SNDK",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "URG",
       "direction": -1,
       "horizon": "5.0",
@@ -1724,7 +1757,29 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "VRSK",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "WDC",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-15",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "WYNN",
       "direction": -1,
       "horizon": "5.0",
       "persistence_streak": 0,
@@ -1867,24 +1922,24 @@
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 1,
+      "persistence_streak": 2,
       "strength_slope": 0.0,
       "state": "stable",
       "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 11
+      "n_sessions_in_tape": 12
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 3
+      "last_as_of": "2026-07-24",
+      "n_sessions_in_tape": 4
     }
   ],
-  "n_tape_rows": 270,
+  "n_tape_rows": 279,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-07-26T02:49:45Z",
+  "produced_at": "2026-07-26T09:21:59Z",
   "authority_check": []
 }

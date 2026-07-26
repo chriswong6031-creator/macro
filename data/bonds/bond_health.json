@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-07-24",
-    "built": "2026-07-26T01:55:51.972945+00:00",
+    "built": "2026-07-26T08:37:40.379596+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -411,7 +411,7 @@
           "key": "macro",
           "label_en": "Macro impulse (reflation)",
           "label_zh": "宏观动能（再通胀）",
-          "value": -0.41,
+          "value": -0.43,
           "weight": 0.5,
           "state": "bearish",
           "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",

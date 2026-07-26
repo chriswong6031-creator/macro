@@ -1,7 +1,7 @@
 {
   "schema": "rates_command.v1",
   "asof": "2026-07-24",
-  "built": "2026-07-26T03:01:39.571260+00:00",
+  "built": "2026-07-26T09:34:20.766809+00:00",
   "display_only": true,
   "authority": false,
   "board": {
@@ -64,7 +64,7 @@
         "release_type": "cpi_headline",
         "period": "2026-07",
         "release_date": "2026-08-12",
-        "days_to": 18,
+        "days_to": 17,
         "point": -0.0843,
         "surprise_skew_tag": "hotter",
         "surprise_skew_sigma": 1.6298
@@ -289,8 +289,8 @@
           "label_en": "Next Fed decision",
           "label_zh": "下次美联储决议",
           "top_outcome": "No change",
-          "top_prob": 78.6,
-          "chg_pp": 5.3,
+          "top_prob": 79.2,
+          "chg_pp": 5.9,
           "source": "Polymarket",
           "type": "market_implied_benchmark"
         },

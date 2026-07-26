@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5543,
-      "effective_factor_bets_pr": 2.7878,
+      "dominant_factor_pc_share": 0.5544,
+      "effective_factor_bets_pr": 2.7869,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -75,7 +75,7 @@
           "reflex.regime_stale_selfheal": 3,
           "stock_personality": 1,
           "tech_signals": 1,
-          "us_board": 4,
+          "us_board": 5,
           "us_importance_v0": 5,
           "us_importance_v0_pit": 5,
           "whitehouse": 3
@@ -112,7 +112,7 @@
       "reflex.regime_stale_selfheal": 3,
       "stock_personality": 1,
       "tech_signals": 1,
-      "us_board": 4,
+      "us_board": 5,
       "us_importance_v0": 5,
       "us_importance_v0_pit": 5,
       "whitehouse": 3

@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "REZI-BULL-20260703",
-  "asof": "2026-07-25",
+  "asof": "2026-07-26",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 69.2,
-  "raw_confidence": 65.0,
-  "delta_vs_base": 9.2,
+  "management_confidence": 67.0,
+  "raw_confidence": 64.4,
+  "delta_vs_base": 7.0,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 38.1,
-    "pace": 54.4,
+    "pace": 51.7,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.693,
     "dist_to_t1_r": 0.807,
     "dist_to_t2_r": 2.307,
-    "horizon_pct_used": 48.9,
+    "horizon_pct_used": 51.1,
     "p1": 0.462,
     "p2": 0.231,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-11",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 22,
-  "tau": 0.4889
+  "days_elapsed": 23,
+  "tau": 0.5111
 }

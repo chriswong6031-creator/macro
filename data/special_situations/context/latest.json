@@ -1,12 +1,12 @@
 {
   "schema": "special_sits_context.v1",
   "asof": "2026-07-26",
-  "built": "2026-07-26T02:01:59Z",
+  "built": "2026-07-26T08:43:08Z",
   "is_context_only": true,
   "disclaimer": "Context only — event tracking + display-tier setup ranking, never a signal or sizing input.",
   "counts": {
-    "total": 1109,
-    "new_today": 122,
+    "total": 1110,
+    "new_today": 123,
     "grade_a": 1,
     "grade_b": 1,
     "with_arb": 14,
@@ -19,7 +19,7 @@
       "category": "Acquisitions",
       "stage": "registered",
       "grade": "A",
-      "score": 70.0,
+      "score": 72.0,
       "tier": "T2",
       "mc_musd": 6349.488021850586,
       "date_filed": "2026-07-17",
@@ -52,6 +52,27 @@
       "why_zh": [
         "买点设置已触发",
         "此类事件历史表现强",
+        "EDGAR申报已确认"
+      ]
+    },
+    {
+      "ticker": "LPG",
+      "company": "DORIAN LPG LTD.",
+      "category": "Capital Returns",
+      "stage": "announced",
+      "grade": "C",
+      "score": 51.0,
+      "tier": "T1",
+      "mc_musd": 1937.1627349155349,
+      "date_filed": "2026-07-16",
+      "why": [
+        "Buy setup live",
+        "Sector leading rotation",
+        "EDGAR filing confirmed"
+      ],
+      "why_zh": [
+        "买点设置已触发",
+        "板块领跑轮动",
         "EDGAR申报已确认"
       ]
     },
@@ -89,27 +110,6 @@
       ],
       "why_zh": [
         "买点设置已触发"
-      ]
-    },
-    {
-      "ticker": "LPG",
-      "company": "DORIAN LPG LTD.",
-      "category": "Capital Returns",
-      "stage": "announced",
-      "grade": "C",
-      "score": 49.0,
-      "tier": "T1",
-      "mc_musd": 1937.1627349155349,
-      "date_filed": "2026-07-16",
-      "why": [
-        "Buy setup live",
-        "Sector leading rotation",
-        "EDGAR filing confirmed"
-      ],
-      "why_zh": [
-        "买点设置已触发",
-        "板块领跑轮动",
-        "EDGAR申报已确认"
       ]
     },
     {
@@ -173,7 +173,7 @@
       "category": "Divestitures",
       "stage": "",
       "grade": "C",
-      "score": 40.0,
+      "score": 42.0,
       "tier": null,
       "mc_musd": 3800.0,
       "date_filed": "2026-06-21",
@@ -732,6 +732,13 @@
       },
       {
         "kind": "new",
+        "ticker": "NDAQ",
+        "category": "Capital Returns",
+        "from": null,
+        "to": "announced"
+      },
+      {
+        "kind": "new",
         "ticker": "EBC",
         "category": "Capital Returns",
         "from": null,
@@ -1214,7 +1221,7 @@
         "to": "C"
       }
     ],
-    "n": 146
+    "n": 147
   },
   "prev_state": {
     "asof": "2026-07-22",
@@ -6078,6 +6085,10 @@
       "stage": "announced",
       "grade": null
     },
+    "NDAQ|Capital Returns": {
+      "stage": "announced",
+      "grade": null
+    },
     "EBC|Capital Returns": {
       "stage": "announced",
       "grade": null
@@ -10180,36 +10191,36 @@
       "ticker": "GBCS",
       "company": "SELECTIS HEALTH, INC.",
       "gross_spread_pct": 76.92,
-      "annualized_pct": 44934774.7,
-      "days_to_close": 16
+      "annualized_pct": 107009425.2,
+      "days_to_close": 15
     },
     {
       "ticker": "CLST",
       "company": "Catalyst Bancorp, Inc.",
       "gross_spread_pct": 16.9,
-      "annualized_pct": 1331490.8,
-      "days_to_close": 6
+      "annualized_pct": 8896927.9,
+      "days_to_close": 5
     },
     {
       "ticker": "RUBI",
       "company": "Rubico Inc.",
       "gross_spread_pct": 68.01,
-      "annualized_pct": 1588.8,
-      "days_to_close": 67
+      "annualized_pct": 1662.7,
+      "days_to_close": 66
     },
     {
       "ticker": "NUVL",
       "company": "Nuvalent, Inc.",
       "gross_spread_pct": 0.52,
-      "annualized_pct": 37.0,
-      "days_to_close": 6
+      "annualized_pct": 45.9,
+      "days_to_close": 5
     },
     {
       "ticker": "FBNC",
       "company": "FIRST BANCORP /NC/",
       "gross_spread_pct": 2.36,
-      "annualized_pct": 9.1,
-      "days_to_close": 98
+      "annualized_pct": 9.2,
+      "days_to_close": 97
     }
   ]
 }

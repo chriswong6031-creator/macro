@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-07-24",
-  "built": "2026-07-26 01:55 UTC",
+  "built": "2026-07-26 08:37 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "arming",
+      "state": "propagating",
       "state_label": {
-        "en": "Arming",
-        "zh": "触发中"
+        "en": "Propagating",
+        "zh": "传导中"
       },
-      "hop": 0,
+      "hop": 1,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-24",
@@ -111,8 +111,8 @@
             0,
             20
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-07-24",
           "value_receipt": [
             {
               "path": "transmission.usd_dir",
@@ -237,20 +237,25 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 10,
+          "n": 15,
           "cuts": {},
-          "unevaluable": 2895,
+          "unevaluable": 2884,
           "names": [
             "AAPL",
             "AMAT",
             "APH",
+            "CNH",
+            "CTVA",
             "FCX",
             "JBL",
             "LEA",
             "LIN",
+            "MGM",
             "MU",
             "NEM",
-            "NVDA"
+            "NVDA",
+            "TEL",
+            "WHR"
           ],
           "resolved": true,
           "note": {
@@ -263,9 +268,9 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 64,
+          "n": 73,
           "cuts": {},
-          "unevaluable": 2824,
+          "unevaluable": 2798,
           "names": [
             "AAPL",
             "ABT",
@@ -273,6 +278,7 @@
             "ADM",
             "AIG",
             "AMAT",
+            "AON",
             "APH",
             "APTV",
             "ARW",
@@ -288,9 +294,12 @@
             "CBRE",
             "CCL",
             "CMI",
+            "CNH",
             "CSCO",
+            "CTVA",
             "DE",
             "DELL",
+            "EMR",
             "FCX",
             "GE",
             "GEHC",
@@ -300,10 +309,13 @@
             "HPE",
             "HPQ",
             "INTC",
+            "ITW",
             "JBL",
             "JCI",
             "JNJ",
+            "KD",
             "KO",
+            "KVUE",
             "LEA",
             "LIN",
             "LYB",
@@ -316,6 +328,7 @@
             "NEM",
             "NFLX",
             "NKE",
+            "OMC",
             "ORCL",
             "PCAR",
             "PEP",
@@ -327,6 +340,7 @@
             "SMCI",
             "SNEX",
             "SW",
+            "TEL",
             "TMO",
             "UBER",
             "V",
@@ -343,15 +357,16 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 3,
+          "n": 4,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2873,
+          "unevaluable": 2857,
           "names": [
             "APTV",
             "AVGO",
-            "BKNG"
+            "BKNG",
+            "ITW"
           ],
           "resolved": true,
           "note": {
@@ -904,10 +919,10 @@
   ],
   "display_only": true,
   "substrate": {
-    "universe": 2936,
+    "universe": 2935,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-07-25"
+      "max": "2026-07-26"
     }
   }
 }

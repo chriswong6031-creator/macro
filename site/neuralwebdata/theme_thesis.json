@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T03:02:33Z",
+  "generated_at": "2026-07-26T09:36:38Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -892,10 +892,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-21",
+      "as_of": "2026-07-26",
       "thesis_id": "defense_aerospace.v1",
-      "content_hash": "sha256:45141535e37338b1acbe7aca15415c59fcac5154d3b235564a7a8da19941274b",
-      "prev_content_hash": "sha256:ec8590d1f6c3156a12c08147ac07692c0fb841d316618529204fc4cde330db8c",
+      "content_hash": "sha256:cbe36f383a9b230bf2576c312946df0faba2c468f8588e5fe44cf03b72fab9f6",
+      "prev_content_hash": "sha256:45141535e37338b1acbe7aca15415c59fcac5154d3b235564a7a8da19941274b",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -960,7 +960,7 @@
           "rule_en": "If tightness turns significantly negative (below -0.3), procurement delays or contract terminations are creating a supply glut.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'tightness' lt -0.3 → value=-0.22"
+          "detail": "threshold check: 'tightness' lt -0.3 → value=-0.08"
         },
         {
           "id": "def_f3",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-26T03:02:33Z",
-  "inputs_hash": "sha256:5a42fd3f79334c567b354b44facaf2461d3643eabf4322f7dc51c4dc183e6cc6",
+  "produced_at": "2026-07-26T09:36:38Z",
+  "inputs_hash": "sha256:60a8d0689155dd7e5bfc11e51b885a1b0044a815d6d4aeab37ee5aa1b35244e3",
   "tier": "display"
 }

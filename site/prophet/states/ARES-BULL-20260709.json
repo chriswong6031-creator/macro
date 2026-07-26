@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ARES-BULL-20260709",
-  "asof": "2026-07-25",
+  "asof": "2026-07-26",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 57.7,
-  "raw_confidence": 64.0,
-  "delta_vs_base": -2.3,
+  "management_confidence": 60.0,
+  "raw_confidence": 62.7,
+  "delta_vs_base": -0.0,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 39.8,
-    "pace": 85.1,
+    "pace": 79.4,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.735,
     "dist_to_t1_r": 0.765,
     "dist_to_t2_r": 2.265,
-    "horizon_pct_used": 35.6,
+    "horizon_pct_used": 37.8,
     "p1": 0.4898,
     "p2": 0.2449,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 16,
-  "tau": 0.3556
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

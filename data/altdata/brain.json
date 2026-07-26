@@ -7,9 +7,9 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-07-26",
-    "evaluated_at": "2026-07-26T02:49:46+00:00"
+    "evaluated_at": "2026-07-26T09:22:00+00:00"
   },
-  "generated_at": "2026-07-26T02:49:46.248522+00:00",
+  "generated_at": "2026-07-26T09:22:00.765996+00:00",
   "state_asof": "2026-07-26",
   "model": "claude-opus-4-8",
   "regime_read": null,
@@ -17,7 +17,7 @@
   "theses": [],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-07-25",
+    "as_of": "2026-07-26",
     "scored_total": 0,
     "open": 0,
     "unscored_soft": 0,

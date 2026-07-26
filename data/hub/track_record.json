@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-07-25",
-  "generated_at": "2026-07-26T02:59:59.112369+00:00",
+  "as_of": "2026-07-26",
+  "generated_at": "2026-07-26T09:32:26.300041+00:00",
   "is_context_only": true,
-  "n_snapshots": 134981,
+  "n_snapshots": 137890,
   "horizons": {
     "5": {
       "n_matured": 13442,
@@ -16,7 +16,8 @@
         "t_hac": 0.284,
         "p_hac": 0.7763,
         "hit": 0.5,
-        "n": 24
+        "n": 24,
+        "hac_lags": 5
       },
       "opportunity_ic": 0.0146,
       "edge_ic_pooled": 0.0659,
@@ -76,7 +77,8 @@
         "t_hac": 0.11,
         "p_hac": 0.9125,
         "hit": 0.526,
-        "n": 19
+        "n": 19,
+        "hac_lags": 10
       },
       "opportunity_ic": 0.0092,
       "edge_ic_pooled": 0.0782,
@@ -136,7 +138,8 @@
         "t_hac": -2.916,
         "p_hac": 0.0035,
         "hit": 0.25,
-        "n": 12
+        "n": 12,
+        "hac_lags": 21
       },
       "opportunity_ic": -0.1292,
       "edge_ic_pooled": 0.0639,

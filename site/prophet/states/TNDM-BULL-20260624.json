@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TNDM-BULL-20260624",
-  "asof": "2026-07-25",
+  "asof": "2026-07-26",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 64.1,
-  "raw_confidence": 61.7,
-  "delta_vs_base": 4.1,
+  "management_confidence": 63.0,
+  "raw_confidence": 61.6,
+  "delta_vs_base": 3.0,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 36.2,
-    "pace": 42.0,
+    "pace": 41.4,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.648,
     "dist_to_t1_r": 0.852,
     "dist_to_t2_r": 2.352,
-    "horizon_pct_used": 68.9,
+    "horizon_pct_used": 71.1,
     "p1": 0.4319,
     "p2": 0.216,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 31,
-  "tau": 0.6889
+  "days_elapsed": 32,
+  "tau": 0.7111
 }

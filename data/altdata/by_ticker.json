@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-26",
-  "generated_utc": "2026-07-26T02:50:08.876944+00:00",
+  "generated_utc": "2026-07-26T09:22:22.859570+00:00",
   "n_tickers": 2578,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -131,7 +131,7 @@
       "wsb_mentions": 51,
       "days_to_earnings": 9,
       "next_earnings": "2026-08-04",
-      "github_stars": 6716,
+      "github_stars": 6717,
       "stocktwits_bull_ratio": 0.86,
       "stocktwits_watchers": 561391,
       "convergence_score": 4,
@@ -367,7 +367,7 @@
       "weighted_score": 2.2,
       "gov_contract_usd_30d": 24097658.0,
       "gov_contract_accel": 17.51,
-      "patents": 328,
+      "patents": 363,
       "hf_downloads_30d": 14723059.0,
       "github_stars": 7641,
       "congress_position_usd": 30008000.0,
@@ -491,10 +491,10 @@
       "dpi": 0.346,
       "dpi_basis": "threshold",
       "dpi_lean": "accumulation",
-      "patents": 213,
+      "patents": 243,
       "wsb_mentions": 40,
-      "stocktwits_bull_ratio": 0.79,
-      "stocktwits_watchers": 205037,
+      "stocktwits_bull_ratio": 0.94,
+      "stocktwits_watchers": 206009,
       "congress_position_usd": 36068500.0,
       "convergence_score": 4,
       "trump_linked": false,
@@ -513,7 +513,7 @@
       "gov_grant_usd": 6540488.0,
       "gov_grant_accel": 0.26,
       "lobbying_usd": 3330000.0,
-      "patents": 83,
+      "patents": 101,
       "days_to_earnings": 9,
       "next_earnings": "2026-08-04",
       "stocktwits_bull_ratio": 1.0,
@@ -562,7 +562,7 @@
       "weighted_score": 1.4,
       "gov_grant_usd": 4694384.0,
       "gov_grant_accel": 3.78,
-      "patents": 180,
+      "patents": 196,
       "analyst_bull_ratio": 1.0,
       "stocktwits_bull_ratio": 0.7,
       "stocktwits_watchers": 210126,
@@ -625,7 +625,7 @@
       "hf_downloads_30d": 100958812.0,
       "days_to_earnings": 3,
       "next_earnings": "2026-07-29",
-      "github_stars": 246727,
+      "github_stars": 246736,
       "stocktwits_bull_ratio": 0.67,
       "stocktwits_watchers": 601506,
       "convergence_score": 5,
@@ -663,7 +663,7 @@
       "app_rating": 4.71,
       "app_reviews": 25931973,
       "hf_downloads_30d": 264443509.0,
-      "github_stars": 196534,
+      "github_stars": 196536,
       "congress_position_usd": 163928000.0,
       "convergence_score": 5,
       "trump_linked": false,
@@ -782,7 +782,7 @@
       ],
       "weighted_score": 1.2,
       "lobbying_usd": 3680000.0,
-      "patents": 279,
+      "patents": 318,
       "wsb_mentions": 36,
       "hf_downloads_30d": 3826371.0,
       "days_to_earnings": 4,
@@ -807,11 +807,11 @@
       "lobbying_usd": 3650000.0,
       "app_rating": 4.77,
       "app_reviews": 19825009,
-      "patents": 180,
+      "patents": 219,
       "hf_downloads_30d": 32237287.0,
       "days_to_earnings": 3,
       "next_earnings": "2026-07-29",
-      "github_stars": 187911,
+      "github_stars": 187917,
       "congress_position_usd": 663601500.0,
       "convergence_score": 6,
       "trump_linked": false,
@@ -1115,11 +1115,11 @@
       "dpi": 0.34,
       "dpi_basis": "threshold",
       "dpi_lean": "accumulation",
-      "patents": 110,
+      "patents": 117,
       "wsb_mentions": 207,
       "hf_downloads_30d": 41352109.0,
       "analyst_bull_ratio": 0.98,
-      "github_stars": 17818,
+      "github_stars": 17821,
       "congress_position_usd": 104067000.0,
       "convergence_score": 9,
       "trump_linked": false,
@@ -2674,7 +2674,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.9,
-      "patents": 497,
+      "patents": 559,
       "days_to_earnings": 3,
       "next_earnings": "2026-07-29",
       "congress_position_usd": 33449000.0,
@@ -2688,7 +2688,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 398,
+      "patents": 435,
       "congress_position_usd": 23730500.0,
       "convergence_score": 1,
       "trump_linked": false,
@@ -2700,7 +2700,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 141,
+      "patents": 157,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2711,18 +2711,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 118,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "SONY": {
-      "ticker": "SONY",
-      "channels": [
-        "patent_cluster"
-      ],
-      "weighted_score": 0.4,
-      "patents": 104,
+      "patents": 134,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2733,8 +2722,19 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 98,
+      "patents": 118,
       "congress_position_usd": 20134500.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "SONY": {
+      "ticker": "SONY",
+      "channels": [
+        "patent_cluster"
+      ],
+      "weighted_score": 0.4,
+      "patents": 117,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2746,7 +2746,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.75,
-      "patents": 91,
+      "patents": 112,
       "analyst_bull_ratio": 1.0,
       "days_to_earnings": 2,
       "next_earnings": "2026-07-28",
@@ -2762,7 +2762,7 @@
         "unusual_options"
       ],
       "weighted_score": 1.05,
-      "patents": 91,
+      "patents": 107,
       "opt_vol_oi": 0.121,
       "opt_put_call": 1.16,
       "congress_position_usd": 15918500.0,
@@ -3287,18 +3287,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "HPE": {
-      "ticker": "HPE",
-      "channels": [
-        "activist_13d",
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.55,
-      "analyst_bull_ratio": 1.0,
-      "convergence_score": 2,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "ADP": {
       "ticker": "ADP",
       "channels": [
@@ -3332,6 +3320,18 @@
       "weighted_score": 0.35,
       "analyst_bull_ratio": 1.0,
       "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "HPE": {
+      "ticker": "HPE",
+      "channels": [
+        "activist_13d",
+        "analyst_upgrade_cluster"
+      ],
+      "weighted_score": 0.55,
+      "analyst_bull_ratio": 1.0,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
     },
@@ -4580,7 +4580,7 @@
         "github_momentum"
       ],
       "weighted_score": 0.3,
-      "github_stars": 14968,
+      "github_stars": 14971,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -4591,7 +4591,7 @@
         "github_momentum"
       ],
       "weighted_score": 0.3,
-      "github_stars": 19577,
+      "github_stars": 19578,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -4600,7 +4600,7 @@
       "ticker": "ESTC",
       "channels": [],
       "weighted_score": 0,
-      "github_stars": 77600,
+      "github_stars": 77605,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -4609,7 +4609,7 @@
       "ticker": "MDB",
       "channels": [],
       "weighted_score": 0,
-      "github_stars": 28470,
+      "github_stars": 28471,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -4618,7 +4618,7 @@
       "ticker": "GTLB",
       "channels": [],
       "weighted_score": 0,
-      "github_stars": 24498,
+      "github_stars": 24502,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false

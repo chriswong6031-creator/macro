@@ -2505,6 +2505,32 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "AZO",
+      "as_of": "2026-07-14",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "COIN",
+      "as_of": "2026-07-14",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "ALM",
       "as_of": "2026-07-15",
       "direction": -1,
@@ -2540,6 +2566,19 @@
       "engines": [
         "intel_hub",
         "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "AVAV",
+      "as_of": "2026-07-15",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
       ],
       "regime_bucket": "Q1"
     },
@@ -2726,6 +2765,19 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "SNDK",
+      "as_of": "2026-07-15",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "TXN",
       "as_of": "2026-07-15",
       "direction": -1,
@@ -2791,6 +2843,19 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "VRSK",
+      "as_of": "2026-07-15",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "WDC",
       "as_of": "2026-07-15",
       "direction": -1,
@@ -2800,6 +2865,19 @@
       "engines": [
         "intel_hub",
         "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "WYNN",
+      "as_of": "2026-07-15",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
       ],
       "regime_bucket": "Q1"
     },
@@ -3205,6 +3283,19 @@
         "us_board"
       ],
       "regime_bucket": "Q1"
+    },
+    {
+      "subject": "PLTR",
+      "as_of": "2026-07-14",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
     }
   ],
   "redundancy_discount": {
@@ -3216,6 +3307,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-07-26T02:48:47Z",
+  "produced_at": "2026-07-26T09:21:10Z",
   "authority_check": []
 }

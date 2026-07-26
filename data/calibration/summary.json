@@ -1,20 +1,20 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-25",
+  "as_of": "2026-07-26",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 18,
-      "open": 27,
+      "open": 30,
       "hit_rate": 0.889,
       "dir_accuracy": 0.889,
       "null_hit_rate": 0.8622,
       "null_dir_rate": 0.4928,
       "p_hit": 0.55121,
-      "p_hit_holm": 0.55121,
+      "p_hit_holm": 1.0,
       "p_dir": 0.00053,
-      "p_dir_holm": 0.00053,
+      "p_dir_holm": 0.00106,
       "independent_blocks": 2,
       "placebo_coverage": 1.0,
       "placebo_available": true,
@@ -139,7 +139,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 45,
-      "open": 90,
+      "open": 95,
       "hit_rate": 0.644,
       "dir_accuracy": 0.333,
       "null_hit_rate": 0.8395,
@@ -205,21 +205,27 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 28,
-      "open": 102,
+      "open": 105,
       "hit_rate": 0.643,
       "dir_accuracy": 0.5,
-      "null_hit_rate": null,
-      "null_dir_rate": null,
-      "p_hit": null,
-      "p_hit_holm": null,
-      "p_dir": null,
-      "p_dir_holm": null,
-      "independent_blocks": 0,
-      "placebo_coverage": null,
-      "placebo_available": false,
-      "placebo_note": "no placebo sweep exists for this desk's predicate kind \u2014 its elapsed theses are 30 theme_rel_return, 3 soft, and only rel_return / level can be swept",
-      "placebo_mix_source": "none",
-      "placebo_by_kind": {},
+      "null_hit_rate": 0.8608,
+      "null_dir_rate": 0.5144,
+      "p_hit": 0.99948,
+      "p_hit_holm": 1.0,
+      "p_dir": 0.6341,
+      "p_dir_holm": 0.6341,
+      "independent_blocks": 1,
+      "placebo_coverage": 1.0,
+      "placebo_available": true,
+      "placebo_note": "",
+      "placebo_mix_source": "scored",
+      "placebo_by_kind": {
+        "theme_rel_return": {
+          "n": 28,
+          "null_hit_rate": 0.8608,
+          "null_dir_rate": 0.5144
+        }
+      },
       "conviction_monotone": null,
       "conviction_note": "conviction ordering untested \u2014 all 28 calls are single-tier (low 28)",
       "conviction_tiers": {
@@ -228,8 +234,8 @@
         "low": 28
       },
       "regimes": [],
-      "health": "unproven",
-      "health_note": "not-falsified 64% vs no placebo baseline (no placebo sweep exists for this desk's predicate kind \u2014 its elapsed theses are 30 theme_rel_return, 3 soft, and only rel_return / level can be swept); direction called right 50% vs 50% a coin flip \u2014 cannot promote without a null covering every graded call (no placebo sweep exists for this desk's predicate kind \u2014 its elapsed theses are 30 theme_rel_return, 3 soft, and only rel_return / level can be swept). conviction ordering untested \u2014 all 28 calls are single-tier (low 28)."
+      "health": "inverted",
+      "health_note": "not-falsified 64% vs 86% of these same falsifiers go untriggered by chance (28 graded, 1 independent window); direction called right 50% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering untested \u2014 all 28 calls are single-tier (low 28)."
     },
     {
       "name": "Narrative Brain",
@@ -265,7 +271,7 @@
       "name": "Master Brain",
       "slug": "master_brain",
       "scored": 3,
-      "open": 6,
+      "open": 8,
       "hit_rate": 0.667,
       "dir_accuracy": 0.667,
       "null_hit_rate": 0.8122,
@@ -305,16 +311,16 @@
     "live": 3,
     "cold": 6,
     "calibrated": 0,
-    "unproven": 2
+    "unproven": 1
   },
   "promotion_gate": {
     "min_sample": 10,
     "min_independent_blocks": 10,
     "alpha": 0.05,
-    "alpha_correction": "Holm-Bonferroni across the 1 of 9 desks eligible for the test",
+    "alpha_correction": "Holm-Bonferroni across the 2 of 9 desks eligible for the test",
     "desks_tracked": 9,
-    "holm_family_hit": 1,
-    "holm_family_dir": 1,
+    "holm_family_hit": 2,
+    "holm_family_dir": 2,
     "holm_family": "desks with a measured null over at least min_sample graded calls",
     "min_margin_over_null": 0.05,
     "min_conviction_bucket": 5,
@@ -1084,10 +1090,16 @@
         "itemized": 1,
         "declared": 0,
         "effective_n": 1
+      },
+      {
+        "family": "pss_f1_downvol",
+        "itemized": 1,
+        "declared": 0,
+        "effective_n": 1
       }
     ],
-    "total_families": 127,
-    "total_effective_n": 3098
+    "total_families": 128,
+    "total_effective_n": 3099
   },
   "summary_note": "3/9 desk loops live; 6 still cold (windows maturing); 0 promoted to calibrated. A desk is judged against the rate ITS OWN falsifiers go untriggered by chance, not against one-half \u2014 'not falsified' is a lenient endpoint, and most leans clear it without any skill. Display-only \u2014 track records calibrate conviction, never size a position.",
   "standout_tracks": [

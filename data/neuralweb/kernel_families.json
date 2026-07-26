@@ -19,9 +19,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 393,
-          "mean": 0.008142,
-          "wilson_ci_low": 0.571945
+          "n_eff": 382,
+          "mean": 0.00896,
+          "wilson_ci_low": 0.584081
         },
         "63d": {
           "n_eff": 527,
@@ -46,10 +46,10 @@
       },
       "staleness": {
         "date_last": "2026-07-15",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 11
       },
-      "armed": true,
-      "armed_reason": "armed: pooled beats equal-weight on held-out tail",
+      "armed": false,
+      "armed_reason": "held: pooled clears equal-weight by +0.000017, under the pre-registered 0.000976 bar",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -99,10 +99,10 @@
       },
       "staleness": {
         "date_last": "2026-07-15",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 11
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "vacuous: the held-out tail carries one contributing member, so pooled and equal weighting are the SAME allocation — no test was run",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -152,57 +152,57 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
-      "armed": true,
-      "armed_reason": "armed: pooled beats equal-weight on held-out tail",
+      "armed": false,
+      "armed_reason": "held: pooled clears equal-weight by +0.000020, under the pre-registered 0.001610 bar",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
     "desk:ai_desk": {
       "horizon_curve": {
-        "63": -0.02074
+        "63": -0.020432
       },
       "horizon_detail": {
         "63": {
-          "ic": -0.02074,
-          "n_eff": 13,
-          "sd": 0.009095
+          "ic": -0.020432,
+          "n_eff": 17,
+          "sd": 0.006579
         }
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 10,
-          "mean": -0.01896,
-          "wilson_ci_low": null
+          "n_eff": 14,
+          "mean": -0.019157,
+          "wilson_ci_low": 0.040093
         },
         "63d": {
-          "n_eff": 13,
-          "mean": -0.034992,
-          "wilson_ci_low": 0.01371
+          "n_eff": 17,
+          "mean": -0.031382,
+          "wilson_ci_low": 0.032879
         },
         "252d": {
-          "n_eff": 13,
-          "mean": -0.034992,
-          "wilson_ci_low": 0.01371
+          "n_eff": 17,
+          "mean": -0.031382,
+          "wilson_ci_low": 0.032879
         },
         "756d": {
-          "n_eff": 13,
-          "mean": -0.034992,
-          "wilson_ci_low": 0.01371
+          "n_eff": 17,
+          "mean": -0.031382,
+          "wilson_ci_low": 0.032879
         },
         "all": {
-          "n_eff": 13,
-          "mean": -0.034992,
-          "wilson_ci_low": 0.01371
+          "n_eff": 17,
+          "mean": -0.031382,
+          "wilson_ci_low": 0.032879
         }
       },
       "staleness": {
-        "date_last": "2026-07-21",
-        "days_since_last_fire": 4
+        "date_last": "2026-07-24",
+        "days_since_last_fire": 2
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "held-out tail too thin to decide: 5/8 effective events",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -252,10 +252,10 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "vacuous: the held-out tail carries one contributing member, so pooled and equal weighting are the SAME allocation — no test was run",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -299,10 +299,10 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "vacuous: the held-out tail carries one contributing member, so pooled and equal weighting are the SAME allocation — no test was run",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -352,10 +352,10 @@
       },
       "staleness": {
         "date_last": "2026-07-10",
-        "days_since_last_fire": 15
+        "days_since_last_fire": 16
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "held-out tail too thin to decide: 7/8 effective events",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -378,9 +378,9 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 1994,
-          "mean": 0.007789,
-          "wilson_ci_low": 0.518691
+          "n_eff": 1771,
+          "mean": 0.007883,
+          "wilson_ci_low": 0.520493
         },
         "63d": {
           "n_eff": 4245,
@@ -405,10 +405,10 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "vacuous: the held-out tail carries one contributing member, so pooled and equal weighting are the SAME allocation — no test was run",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -425,8 +425,8 @@
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 1,
-          "mean": -0.01,
+          "n_eff": 0,
+          "mean": null,
           "wilson_ci_low": null
         },
         "63d": {
@@ -452,7 +452,7 @@
       },
       "staleness": {
         "date_last": "2026-07-04",
-        "days_since_last_fire": 21
+        "days_since_last_fire": 22
       },
       "armed": false,
       "armed_reason": "accruing: 1/12 effective events",
@@ -523,63 +523,63 @@
       },
       "staleness": {
         "date_last": "2026-07-16",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
-      "armed": true,
-      "armed_reason": "armed: pooled beats equal-weight on held-out tail",
+      "armed": false,
+      "armed_reason": "held: pooled clears equal-weight by +0.000161, under the pre-registered 0.002635 bar",
       "outcome_unit": "magnitude_nonneg",
       "regime_coverage": 0.988
     },
     "us_board": {
       "horizon_curve": {
-        "5": 0.01023,
-        "10": 0.011341
+        "5": 0.009291,
+        "10": 0.0111
       },
       "horizon_detail": {
         "5": {
-          "ic": 0.01023,
-          "n_eff": 1140,
-          "sd": 0.000146
+          "ic": 0.009291,
+          "n_eff": 1270,
+          "sd": 0.000129
         },
         "10": {
-          "ic": 0.011341,
-          "n_eff": 452,
-          "sd": 0.00048
+          "ic": 0.0111,
+          "n_eff": 508,
+          "sd": 0.000423
         }
       },
       "recency_trend": {
         "21d": {
-          "n_eff": 177,
-          "mean": 0.012748,
-          "wilson_ci_low": 0.54815
+          "n_eff": 307,
+          "mean": 0.006839,
+          "wilson_ci_low": 0.514123
         },
         "63d": {
-          "n_eff": 1140,
-          "mean": 0.010834,
-          "wilson_ci_low": 0.55713
+          "n_eff": 1270,
+          "mean": 0.009601,
+          "wilson_ci_low": 0.549803
         },
         "252d": {
-          "n_eff": 1140,
-          "mean": 0.010834,
-          "wilson_ci_low": 0.55713
+          "n_eff": 1270,
+          "mean": 0.009601,
+          "wilson_ci_low": 0.549803
         },
         "756d": {
-          "n_eff": 1140,
-          "mean": 0.010834,
-          "wilson_ci_low": 0.55713
+          "n_eff": 1270,
+          "mean": 0.009601,
+          "wilson_ci_low": 0.549803
         },
         "all": {
-          "n_eff": 1140,
-          "mean": 0.010834,
-          "wilson_ci_low": 0.55713
+          "n_eff": 1270,
+          "mean": 0.009601,
+          "wilson_ci_low": 0.549803
         }
       },
       "staleness": {
-        "date_last": "2026-07-10",
-        "days_since_last_fire": 15
+        "date_last": "2026-07-15",
+        "days_since_last_fire": 11
       },
       "armed": false,
-      "armed_reason": "held: pooled does not beat equal-weight out-of-sample",
+      "armed_reason": "held: pooled clears equal-weight by +0.000034, under the pre-registered 0.001383 bar",
       "outcome_unit": "signed_excess",
       "regime_coverage": 1.0
     },
@@ -623,7 +623,7 @@
       },
       "staleness": {
         "date_last": "2026-07-13",
-        "days_since_last_fire": 12
+        "days_since_last_fire": 13
       },
       "armed": false,
       "armed_reason": "accruing: 5/12 effective events",
@@ -631,10 +631,10 @@
       "regime_coverage": 1.0
     }
   },
-  "generated_from": "sha256:86384c259592d0b80e915686800e854fa1a4ad708f04bd765407ea54df3fc581",
+  "generated_from": "sha256:688a4028fc2493899d2a9079f914a95226240faeb68f6112a91f50408523914c",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-26T02:48:40Z",
-  "inputs_hash": "sha256:e84211649a20851782f7439e7d597e4bafc03e5928ab00606dd95976f3756647",
+  "produced_at": "2026-07-26T09:21:03Z",
+  "inputs_hash": "sha256:dca11c21c5e00a22e3ff21ba8946ceda2d840e66468df859a2e87e5d8be036a6",
   "tier": "infrastructure"
 }

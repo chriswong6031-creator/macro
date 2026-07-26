@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AZO-BULL-20260625",
-  "asof": "2026-07-25",
+  "asof": "2026-07-26",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 31.0,
-  "raw_confidence": 26.0,
-  "delta_vs_base": -29.0,
+  "management_confidence": 28.7,
+  "raw_confidence": 25.9,
+  "delta_vs_base": -31.3,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 38.1,
     "progress": 0.0,
-    "pace": 3.7,
+    "pace": 3.1,
     "retention": 50.0,
     "overlay": 59.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.489,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 66.7,
+    "horizon_pct_used": 68.9,
     "p1": -0.3406,
     "p2": -0.1703,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Falling Behind Schedule",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-11",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 30,
-  "tau": 0.6667
+  "days_elapsed": 31,
+  "tau": 0.6889
 }

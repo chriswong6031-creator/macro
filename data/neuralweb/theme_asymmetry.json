@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
   "as_of": "2026-07-26",
-  "generated_at": "2026-07-26T03:02:33Z",
+  "generated_at": "2026-07-26T09:36:38Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -708,7 +708,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.051,
+          "value": 0.122,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -716,8 +716,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.64 → tightness=0.05",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.64，综合紧张度=0.05"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.65 → tightness=0.12",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.65，综合紧张度=0.12"
         },
         "stale_consensus_gap": {
           "value": 0.2,
@@ -778,8 +778,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=30, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=30，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "n_falsifiers=33, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "假证伪器总数=33，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.59,
@@ -912,8 +912,8 @@
           "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.22，综合紧张度=0.22"
         },
         "stale_consensus_gap": {
-          "value": 0.15,
-          "band": "low",
+          "value": 0.35,
+          "band": "med",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -922,8 +922,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.202); no gap. no_dispersion_data",
-          "note_zh": "活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.202）；无差距。no_dispersion_data"
+          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.202); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.202）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.267,
@@ -1753,14 +1753,13 @@
   "stale_legs": [
     "divergence_log[robotics_automation]: stale (as_of=2026-07-17)",
     "divergence_log[defense_aerospace]: stale (as_of=2026-07-14)",
-    "divergence_log[glp1_obesity]: stale (as_of=2026-07-07)",
     "divergence_log[fintech_payments]: stale (as_of=2026-07-20)",
     "divergence_log[memory_storage]: stale (as_of=2026-07-09)",
     "finnhub_recs: parquet absent — per-member revision dispersion unavailable"
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-26T03:02:33Z",
-  "inputs_hash": "sha256:56238700f29fa7e9dfb00d43b7d479461b02b2603483b77d02fdf2a4b9593110",
+  "produced_at": "2026-07-26T09:36:38Z",
+  "inputs_hash": "sha256:0ad660eea77327cd2e32f395abe46f456cb0a8912f67c69bb44b514828af88f7",
   "tier": "display"
 }

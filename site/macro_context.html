@@ -1151,7 +1151,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <a href="#timeline">
       <span class="l-en">Transitions</span><span class="l-zh">转换记录</span>
       
-      <span class="cnt">12 <span class="l-en">today</span><span class="l-zh">今日</span></span>
+      <span class="cnt">13 <span class="l-en">today</span><span class="l-zh">今日</span></span>
       
     </a>
     <a href="#census">
@@ -1256,10 +1256,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         
         <div class="kpi-chip">
-          <span class="kpi-label"><span class="l-en">Labels flipped</span><span class="l-zh">标签变动</span></span>
-          <span class="kpi-val c-warn">52</span>
-          <span class="kpi-sub l-en">in 14 days &middot; 12 today</span>
-          <span class="kpi-sub l-zh">近14日 &middot; 今日 12</span>
+          <span class="kpi-label"><span class="l-en">Transitions 14d</span><span class="l-zh">14日转换</span></span>
+          <span class="kpi-val c-warn">53</span>
+          <span class="kpi-sub">13 <span class="l-en">today</span><span class="l-zh">今日</span></span>
         </div>
         
       </div>
@@ -1999,12 +1998,12 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
             </span>
           </div>
           
-          <div class="field-chip"
-               data-tip-en="USD/CHF"
-               data-tip-zh="美元兑瑞郎">
-            <span class="field-chip-name"><span class="l-en">USD/CHF</span><span class="l-zh">美元兑瑞郎</span></span>
+          <div class="field-chip changed-today"
+               data-tip-en="fx_usdchf_action"
+               data-tip-zh="fx_usdchf_action">
+            <span class="field-chip-name"><span class="l-en">fx_usdchf_action</span><span class="l-zh">fx_usdchf_action</span></span>
             <span class="field-chip-val" style="color:var(--info)">
-              <span class="l-en">Flat</span><span class="l-zh">Flat</span>
+              <span class="l-en">LONG</span><span class="l-zh">LONG</span>
             </span>
           </div>
           
@@ -2664,8 +2663,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="domain-name-en"><span class="l-en">Dispersion</span><span class="l-zh">离散度</span></span>
           
           <span class="domain-asof stale-ok"
-                data-tip-en="Source as-of 2026-07-25"
-                data-tip-zh="数据截至 2026-07-25">2026-07-25</span>
+                data-tip-en="Source as-of 2026-07-26"
+                data-tip-zh="数据截至 2026-07-26">2026-07-26</span>
           
         </div>
         <div class="domain-chips">
@@ -3357,9 +3356,9 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="breaking-slug">
       <span class="breaking-badge"><span class="l-en">TODAY</span><span class="l-zh">今日</span></span>
       <span class="breaking-text">
-        12 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
+        13 <span class="l-en">flip(s) this session</span><span class="l-zh">项转换本轮</span>
         
-        — <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">Korea</span><span class="l-zh">韩国</span>, <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">Japan</span><span class="l-zh">日本</span>, <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">India</span><span class="l-zh">印度</span> +9 <span class="l-en">more</span><span class="l-zh">更多</span>
+        — <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">Korea</span><span class="l-zh">韩国</span>, <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">Japan</span><span class="l-zh">日本</span>, <span class="l-en">International</span><span class="l-zh">国际</span>: <span class="l-en">India</span><span class="l-zh">印度</span> +10 <span class="l-en">more</span><span class="l-zh">更多</span>
         
       </span>
     </div>
@@ -3424,8 +3423,16 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         
         <div class="tl-event hot">
           <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Fed Path</span><span class="l-zh">美联储路径</span></span>
-          <span class="tl-from"><span class="l-en">steady</span><span class="l-zh">稳健</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">fx_usdchf_action</span><span class="l-zh">fx_usdchf_action</span></span>
+          <span class="tl-from">FLAT</span>
+          <span class="tl-arrow">&#8594;</span>
+          <span class="tl-to">LONG</span>
+        </div>
+        
+        <div class="tl-event hot">
+          <span class="tl-domain"><span class="l-en">FX / Dollar</span><span class="l-zh">外汇 / 美元</span></span>
+          <span style="font-size:12px;color:var(--muted)"><span class="l-en">fed_path_lean</span><span class="l-zh">fed_path_lean</span></span>
+          <span class="tl-from">steady</span>
           <span class="tl-arrow">&#8594;</span>
           <span class="tl-to"><span class="l-en">Hawkish repricing</span><span class="l-zh">Hawkish repricing</span></span>
         </div>
@@ -3938,14 +3945,6 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
           <span class="tl-to"><span class="l-en">supportive</span><span class="l-zh">偏积极</span></span>
         </div>
         
-        <div class="tl-event">
-          <span class="tl-domain"><span class="l-en">Rates Transmission</span><span class="l-zh">利率传导</span></span>
-          <span style="font-size:12px;color:var(--muted)"><span class="l-en">Curve Regime</span><span class="l-zh">曲线周期</span></span>
-          <span class="tl-from"><span class="l-en">Bull flattener</span><span class="l-zh">Bull flattener</span></span>
-          <span class="tl-arrow">&#8594;</span>
-          <span class="tl-to"><span class="l-en">Bear flattener</span><span class="l-zh">Bear flattener</span></span>
-        </div>
-        
       </div>
     </div>
     
@@ -3987,11 +3986,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <div id="footnote" class="section">
     <div class="sec-lbl"><span class="l-en">Footnote</span><span class="l-zh">注脚</span></div>
     <div class="footnote">
-      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>fc76199b96a167a2</code>
+      <b><span class="l-en">Context ID</span><span class="l-zh">背景ID</span>:</b> <code>f951edd2170c1778</code>
       &nbsp;·&nbsp;
       <b><span class="l-en">As of</span><span class="l-zh">截至</span>:</b> 2026-07-26
       &nbsp;·&nbsp;
-      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 52
+      <b><span class="l-en">14-day transitions</span><span class="l-zh">14天转换数</span>:</b> 53
       &nbsp;·&nbsp;
       <a href="committee.html"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></a>
       &nbsp;·&nbsp;
@@ -4002,7 +4001,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <b><span class="l-en">Display-only — labels, not signals.</span><span class="l-zh">仅展示标签，非信号。</span></b>
       <span class="l-en">This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.</span><span class="l-zh">本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 08:09 UTC</div>
+    <div class="meta-foot"><span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-07-26 09:20 UTC</div>
   </div>
 
 </div><!-- /page-wrap -->
@@ -4012,6 +4011,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <span><span class="l-en">Macro Weather Station · display-only context · labels, not signals</span><span class="l-zh">宏观气象台 · 仅供展示 · 标签，非信号</span></span>
 </footer>
 
-<script src="theme.js"></script>
+<script src="theme.js?v=c5d9a5f6" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

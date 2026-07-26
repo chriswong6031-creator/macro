@@ -26,14 +26,14 @@
     }
   },
   "harvest": {
-    "n_new_this_run": 4180
+    "n_new_this_run": 0
   },
   "grader": {
-    "n_graded_ok": 8396,
+    "n_graded_ok": 0,
     "n_split_seam": 0,
     "n_not_matured": 26534,
     "n_errors": 86,
-    "elapsed_sec": 5.4
+    "elapsed_sec": 2.73
   },
   "scoring": {
     "enabled": false,
@@ -44,6 +44,6 @@
     "calibration": {},
     "monitor": {}
   },
-  "elapsed_sec": 9.29,
+  "elapsed_sec": 6.31,
   "note": "Flow-event ledger accruing. Scored field remains false until FS-3 pre-registration + FS-4 model training + FS-5 gauntlet pass. Ledger history older than 48h is permanently lost from the R2 archive window (FS-R1); run nightly without gaps."
 }
