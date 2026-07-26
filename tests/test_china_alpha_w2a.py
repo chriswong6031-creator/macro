@@ -1,10 +1,17 @@
 """tests/test_china_alpha_w2a.py — W2-A: narrative heat + name tag unit tests.
 
 Tests are synthetic-fixture-only except for the live-verify block at the bottom,
-which asserts that exemplar tickers (300725.SZ, 688306.SS) resolve tags from
-live data.
+which runs the real pipeline over the committed artifacts and checks that the
+exemplar tickers stay covered and that live records are well-formed.
 
 Nearest sibling: tests/test_china_alpha_w1b.py (same fixture idiom).
+
+Live-block repair, 2026-07-26: this file was never wired into CI, so three
+live-exemplar tests sat red unnoticed.  They asserted market outcomes
+(`ths_synbio rel20 > 0` — "was +17.8pp at design time") against
+data/china_search/closes.parquet, which is committed and advanced nightly.
+Those assertions were deleted, not fixed: they encode market weather, not a code
+contract.  See TestLiveExemplars' docstring for what the block may assert now.
 """
 from __future__ import annotations
 
@@ -99,6 +106,24 @@ def _minimal_radar(basket_id: str, tickers: list[str],
 
 class TestNarrativeHeatThresholds:
     """Spec: HOT = rel20 >= +5pp AND breadth >= 60%; WARMING = rel20 >= 0 AND breadth >= 50%."""
+
+    def test_thresholds_are_the_preregistered_values(self):
+        """Pin the gate values themselves, as literals.
+
+        Every other threshold test — synthetic boundary cases here, and the
+        live census in TestLiveExemplars — imports these constants and grades
+        against them, so loosening a constant moves both sides of the
+        comparison and nothing goes red.  Verified 2026-07-26: dropping
+        HOT_REL20_THRESHOLD 5.0 -> 4.0 left all 1774 china tests green.  These
+        are pre-registered gates (CLAUDE.md §Epistemics), so a change here is a
+        re-registration and must be a deliberate, reviewed diff — not a silent
+        one.
+        """
+        from engine import china_narrative_tags as cnt
+        assert cnt.HOT_REL20_THRESHOLD == 5.0
+        assert cnt.HOT_BREADTH_THRESHOLD == 0.60
+        assert cnt.WARM_REL20_THRESHOLD == 0.0
+        assert cnt.WARM_BREADTH_THRESHOLD == 0.50
 
     def _run_heat(self, basket_id: str, tickers: list[str],
                   multiplier: dict[str, float],
@@ -511,13 +536,29 @@ class TestDegradation:
     reason="requires local closes.parquet",
 )
 class TestLiveExemplars:
-    """Verify live tags for the owner's exemplar tickers.
+    """End-to-end pipeline health on the real artifacts — NOT a market oracle.
 
-    300725.SZ was +17.8% rel20 in Synthetic Biology at time of program design.
-    688306.SS is in 16 THS baskets (Solid-State Battery was +35.6% rel20).
+    What this block may assert (durable, market-independent):
+      · the exemplar tickers stay covered — present in name_tags at all;
+      · the basket the program was designed around stays computable in heat,
+        with its members actually covered by closes.parquet;
+      · every live record is well-formed (keys, types, breadth in [0,1]);
+      · level agrees with the pre-registered thresholds on real data.
 
-    Assertions are intentionally loose: we assert a tag EXISTS with rel20 > 0
-    rather than pinning the specific number (which changes daily).
+    What it may NOT assert: that any particular basket is *hot today*.  The
+    original block pinned `rel20 > 0` on ths_synbio ("was +17.8pp at design
+    time").  rel20 is a 20-day return relative to CSI300 — it changes sign
+    routinely, and on 2026-07-25 ths_synbio was -11.22pp with 0.0 breadth,
+    which is a legitimate cold basket, not a defect.  Only 21 of 259 live
+    baskets qualify at all on a typical day, so "this basket is HOT" is a
+    coin-flip on market weather dressed as a code contract; data/china_search/
+    closes.parquet is committed and advanced nightly, so such an assertion
+    turns CI red on a market move.  A cold basket is a null, and a null never
+    fails a build (CLAUDE.md §Epistemics).
+
+    Threshold *logic* is unit-tested on synthetic fixtures in
+    TestNarrativeHeatThresholds above; this block only checks that the same
+    rule holds when the real pipeline runs.
     """
 
     def _build_live(self):
@@ -525,35 +566,69 @@ class TestLiveExemplars:
         from engine.china_narrative_tags import build_narrative_tags
         return build_narrative_tags()
 
-    def test_300725_resolves_synbio_family_tag(self):
-        """300725.SZ must get a tag with rel20 > 0 from Synthetic Biology or a peer basket."""
-        result = self._build_live()
-        tags = result["tags"]
-        assert "300725.SZ" in tags, (
-            "300725.SZ must appear in name_tags — it is in ths_synbio (8 active members, "
-            "all covered in closes.parquet as of 2026-07-03)")
-        tag = tags["300725.SZ"]
-        # Assert a qualifying theme exists (rel20 > 0 is the loose bound from the spec)
-        assert tag.get("rel20") is not None, "300725.SZ tag must have rel20"
-        assert tag["rel20"] > 0, (
-            f"300725.SZ rel20 must be > 0 (was +17.8pp at program design); "
-            f"got {tag['rel20']}")
+    @pytest.mark.parametrize("ticker", ["300725.SZ", "688306.SS"])
+    def test_exemplar_ticker_stays_covered(self, ticker):
+        """The exemplar tickers must still resolve an entry in name_tags.
 
-    def test_688306_resolves_robotics_or_solid_state_tag(self):
-        """688306.SS must get a tag from a Solid-State/robotics-family basket."""
+        A ticker is emitted when it has EITHER a qualifying theme OR a radar
+        join, so this survives a cold tape — it goes red when coverage is lost
+        (dropped from the basket membership files, or missing from
+        closes.parquet), which is the real failure mode.
+        """
         result = self._build_live()
-        tags = result["tags"]
-        assert "688306.SS" in tags, (
-            "688306.SS must appear in name_tags — it is in 16 THS baskets "
-            "(Humanoid Robots, Solid-State Battery, etc.) as of 2026-07-03")
-        tag = tags["688306.SS"]
-        assert tag.get("level") in ("HOT", "WARMING"), (
-            f"688306.SS must qualify (HOT or WARMING) in at least one basket; "
-            f"got level={tag.get('level')!r}, rel20={tag.get('rel20')}")
-        # Print live values for the report
-        print(f"\n[LIVE] 688306.SS tag: basket={tag.get('basket_id')!r} "
-              f"name={tag.get('theme')!r} level={tag.get('level')!r} "
-              f"rel20={tag.get('rel20')} breadth={tag.get('breadth')}")
+        tag = result["tags"].get(ticker)
+        assert tag is not None, (
+            f"{ticker} must appear in name_tags — lost basket membership or "
+            f"closes.parquet coverage")
+        assert (tag.get("theme") is not None) or (tag.get("radar") is not None), (
+            f"{ticker} tag carries neither a theme nor a radar join: {tag!r}")
+        # Shape is fixed even when every field is a null (cold basket).
+        for key in ("theme", "theme_zh", "basket_id", "level", "rel20",
+                    "breadth", "source", "n_members", "n_covered", "radar"):
+            assert key in tag, f"{ticker} tag missing key {key!r}"
+        if tag.get("level") is not None:
+            assert tag["level"] in ("HOT", "WARMING")
+            assert isinstance(tag["rel20"], float)
+            assert 0.0 <= tag["breadth"] <= 1.0
+
+    def test_live_heat_levels_match_preregistered_thresholds(self):
+        """Every live heat record's level must follow the pre-registered gate.
+
+        The durable replacement for the old `rel20 > 0` assertion: it holds in
+        any market state, and it is a census over all baskets rather than one
+        cherry-picked name, so a silent threshold or comparison drift on real
+        data cannot hide behind a basket that happens to be hot.
+        """
+        from engine.china_narrative_tags import (
+            HOT_BREADTH_THRESHOLD, HOT_REL20_THRESHOLD,
+            WARM_BREADTH_THRESHOLD, WARM_REL20_THRESHOLD,
+        )
+        heat = self._build_live()["heat"]
+        assert heat, "live heat is empty — the narrative pipeline produced nothing"
+
+        for bid, rec in heat.items():
+            rel20, breadth, level = rec["rel20"], rec["breadth"], rec["level"]
+            assert isinstance(rel20, float) and np.isfinite(rel20), (
+                f"{bid}: rel20 must be a finite float, got {rel20!r}")
+            assert 0.0 <= breadth <= 1.0, f"{bid}: breadth out of range: {breadth}"
+            assert rec["n_covered"] <= rec["n_members"], (
+                f"{bid}: n_covered {rec['n_covered']} > n_members {rec['n_members']}")
+
+            if rel20 >= HOT_REL20_THRESHOLD and breadth >= HOT_BREADTH_THRESHOLD:
+                expected = "HOT"
+            elif rel20 >= WARM_REL20_THRESHOLD and breadth >= WARM_BREADTH_THRESHOLD:
+                expected = "WARMING"
+            else:
+                expected = None
+            assert level == expected, (
+                f"{bid}: rel20={rel20} breadth={breadth} should grade {expected!r}, "
+                f"got {level!r}")
+
+        levels = {lv: sum(1 for r in heat.values() if r["level"] == lv)
+                  for lv in ("HOT", "WARMING", None)}
+        print(f"\n[LIVE] heat census: {len(heat)} baskets — "
+              f"HOT={levels['HOT']} WARMING={levels['WARMING']} "
+              f"unqualified={levels[None]}")
 
     def test_live_print_exemplar_values(self, capsys):
         """Print live values for both exemplars to the report."""
@@ -571,17 +646,28 @@ class TestLiveExemplars:
         print(f"[LIVE] n_baskets={result['n_baskets']} n_tagged={result['n_tagged']} as_of={result['as_of']}")
 
     def test_heat_dict_has_synbio_basket(self):
-        """ths_synbio must appear in heat (it has 8 covered members)."""
+        """ths_synbio must stay computable in heat, with its members covered.
+
+        The presence + coverage half of the original test — a real contract:
+        it goes red if the basket loses its membership file or its members drop
+        out of closes.parquet.  The `rel20 > 0` half was deleted (see the class
+        docstring): whether Synthetic Biology is outperforming today is market
+        weather, and it was -11.22pp when this suite was repaired.
+        """
         result = self._build_live()
         heat = result["heat"]
         assert "ths_synbio" in heat, (
             "ths_synbio (Synthetic Biology) must appear in heat — "
-            "8 active members, all in closes.parquet")
+            "active members must resolve in closes.parquet")
         rec = heat["ths_synbio"]
-        assert rec["rel20"] > 0, (
-            f"ths_synbio rel20 must be positive (was +17.8pp at design time); "
-            f"got {rec['rel20']}")
-        print(f"\n[LIVE] ths_synbio: rel20={rec['rel20']}pp, breadth={rec['breadth']}, level={rec['level']!r}")
+        assert rec["source"] == "THS"
+        assert rec["n_members"] > 0, "ths_synbio has no members"
+        assert rec["n_covered"] == rec["n_members"], (
+            f"ths_synbio coverage gap: {rec['n_covered']}/{rec['n_members']} "
+            f"members found in closes.parquet")
+        print(f"\n[LIVE] ths_synbio: rel20={rec['rel20']}pp, "
+              f"breadth={rec['breadth']}, level={rec['level']!r}, "
+              f"covered={rec['n_covered']}/{rec['n_members']}")
 
 
 if __name__ == "__main__":

@@ -5,11 +5,24 @@ Four test groups:
      order-invariance assert.
   2. Ledger schema: append_board + append_ripening carry the W2-B columns.
   3. Template render: narrative theme renders on RIPENING (W8-R1 rip-chip);
-     ENTRY chips + A/B badges stay decluttered (#1400); dual-span (l-en + l-zh),
-     ASCII-only attribute delimiters.
+     the theme + radar tag stay off ENTRY / RAN-LATE cards (#1400); dual-span
+     (l-en + l-zh), ASCII-only attribute delimiters.
   4. ab_tier edge cases from engine.china_narrative_tags.
 
-Nearest sibling: tests/test_china_stocks_w1c_render.py (template idiom).
+Nearest sibling: tests/test_china_stocks_w1c_render.py (template idiom) — keep
+the render harnesses in lockstep.
+
+Group-3 repair, 2026-07-26: this file was never wired into CI, so its render
+group sat red and unnoticed after the Prophet-card redesign (2026-07-21).  Every
+render test was failing on `'pv' is undefined` — the harness had not picked up
+either the _prophet_card import or the W-FCT partition hoist that the sibling
+suite adopted.  With the harness fixed, six assertions turned out to pin markup
+that no longer exists anywhere in china.html.j2 (nb-narr, nb-atier, tier-b, the
+🔥/≈ heat glyphs) — they left with the retired nbcard, so those tests could
+never fail again and were deleted rather than rewritten; the surviving ones now
+pin the *data* contract (a row carries `narrative`; the ENTRY/RAN-LATE cards
+must not print it), which discriminates because the same strings do reach the
+output through the RIPENING rip-chip.
 """
 from __future__ import annotations
 
@@ -24,6 +37,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from engine import i18n  # noqa: E402  — real tr(), injected as a global by the builders
 from engine.china_narrative_tags import ab_tier  # noqa: E402
 
 SRC = (ROOT / "templates" / "china.html.j2").read_text()
@@ -390,11 +404,22 @@ class TestLedgerSchema:
 def _render_w1c_w2b(setups: dict) -> str:
     """Extract and render the W1-C+W2-B block with synthetic context.
 
-    Mirrors _render_w1c() in test_china_stocks_w1c_render.py.
+    Mirrors _render_w1c() in test_china_stocks_w1c_render.py — keep the two in
+    lockstep; this harness silently rotted out of sync once already (see the
+    module docstring).  Two load-bearing details, both inherited from there:
+
+      · Extraction starts at the W-FCT partition anchor, NOT the later
+        "W1-C: ENTRY SHELF" comment.  The shelf row partitions (_entry_rows /
+        _ran_late_rows / _rip* / _ran) were hoisted above the panel div so the
+        facet bar can count them server-side; starting below the anchor leaves
+        them Undefined and every shelf renders empty.
+      · The cards render via {{ pv.pv_card(...) }} (Prophet-card redesign,
+        2026-07-21).  The real template imports the partial at file top, which is
+        outside the snippet, so mirror the import and register the partial.
     """
     from jinja2 import DictLoader, Environment
 
-    start = SRC.index("{# ── W1-C: ENTRY SHELF")
+    start = SRC.index("{# ── W-FCT: shelf partitions hoisted above the panel")
     end = SRC.index("{# ── BOARD TRACK RECORD")
     snippet = SRC[start:end]
 
@@ -414,14 +439,23 @@ def _render_w1c_w2b(setups: dict) -> str:
         '<span class="l-zh">{{ zh }}</span>'
         "{%- endmacro -%}\n"
     )
-    snippet = snippet.replace(
-        '{% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}', ""
-    )
-    full = macros + snippet
+    full = '{% import "_prophet_card.html.j2" as pv %}\n' + macros + snippet
 
     SECZH = {"Technology": "科技", "Healthcare": "医疗保健"}
-    env = Environment(loader=DictLoader({"blk": full}), autoescape=False)
+    env = Environment(
+        loader=DictLoader({
+            "blk": full,
+            "_prophet_card.html.j2": (
+                ROOT / "templates" / "_prophet_card.html.j2").read_text(),
+        }),
+        autoescape=False,
+    )
     env.globals["SECZH"] = SECZH
+    # Real i18n tr() — the W-FCT snippet calls it (limit-state ZH twin); the
+    # builders inject env.globals.update(tr=i18n.tr).  cn_micro_by_ticker is
+    # guarded by a falsy check in the ENTRY loop; {} keeps it explicit.
+    env.globals["tr"] = i18n.tr
+    env.globals["cn_micro_by_ticker"] = {}
     return env.get_template("blk").render(setups=setups)
 
 
@@ -630,61 +664,45 @@ class TestTemplateRender:
         bad = re.findall(pattern, SRC)
         assert not bad, f"Non-ASCII attribute delimiters: {bad}"
 
-    def test_narrative_chip_decluttered_from_entry(self):
-        """ENTRY cards must NOT render the narrative-heat chip (🔥/nb-narr).
+    @pytest.mark.parametrize("level,tier", [("HOT", "A"), ("WARMING", "B")])
+    def test_narrative_theme_decluttered_from_entry(self, level, tier):
+        """ENTRY cards must not surface the narrative theme, at any heat level.
 
-        The chip was added by W2-B (#1118) and deliberately removed by the
+        The narrative chip was added by W2-B (#1118) and removed by the
         standout-board declutter (#1400): narrative heat left the cards; the
-        lens survives in the W2-B ledger and the W8-E JSON data layer. This
-        test pins the declutter so the chip does not silently come back.
-        """
-        html = _render_w1c_w2b(_full_setups())
-        # Card renders (not vacuous) …
-        assert "300725.SZ" in html
-        # … but the narrative chip does not, even though narrative data is present.
-        assert "🔥" not in html
-        assert "nb-narr" not in html
-        assert "Synthetic Biology" not in html
+        lens survives in the W2-B ledger (TestLedgerSchema above) and the W8-E
+        JSON data layer.  The Prophet-card redesign (2026-07-21) then replaced
+        the whole ENTRY card, so this pins the *data* contract, not markup: the
+        row carries `narrative` and the card must not print it.
 
-    def test_warming_chip_decluttered_from_entry(self):
-        """WARMING-level narrative (≈ glyph) must also stay off ENTRY cards.
-
-        Same declutter adjudication as HOT (#1400) — level does not matter.
+        Discriminating because it is data-driven — the same theme string DOES
+        reach the output when a surface renders it (see the RIPENING rip-chip
+        test below).  The old class/glyph spellings (nb-narr, 🔥, ≈) are NOT
+        asserted: they left the file with the retired nbcard, so asserting
+        their absence pins nothing.
         """
-        row = _make_entry_row(narr_level="WARMING", ab_tier_val="B")
+        row = _make_entry_row(narr_level=level, ab_tier_val=tier)
         html = _render_w1c_w2b(_full_setups(entry=[row]))
+        # The ENTRY card really rendered — otherwise the absence below is vacuous.
+        # Full element-class string, not the bare substring: pv_css() emits
+        # ".pv-buy" as literal selector text (sibling-suite GOTCHA).
+        assert 'class="pvcard pv-buy"' in html
         assert "300725.SZ" in html
-        assert "≈" not in html
+        # … and the narrative theme does not appear, though the row carries it.
         assert "Synthetic Biology" not in html
+        assert "合成生物" not in html
 
-    def test_a_badge_decluttered_from_entry_card(self):
-        """A-tier badge must NOT render on ENTRY cards.
+    def test_narrative_theme_decluttered_from_ran_late(self):
+        """RAN/LATE cards must not surface the narrative theme either (#1400).
 
-        nb-atier was added by W2-B (#1118) and removed by the declutter (#1400)
-        ("Removed A/B-tier, narrative heat, …"). ab_tier stays in the row data
-        (ledger + data layer) but must not surface on the card.
+        Same data contract as the ENTRY shelf; _make_ran_row() carries a full
+        narrative dict precisely so this can discriminate.
         """
-        html = _render_w1c_w2b(_full_setups())
-        assert "300725.SZ" in html
-        assert "nb-atier" not in html
-
-    def test_b_badge_decluttered_from_entry_card(self):
-        """B-tier badge (tier-b modifier) must NOT render on ENTRY cards (#1400)."""
-        row = _make_entry_row(narr_level="WARMING", ab_tier_val="B")
-        html = _render_w1c_w2b(_full_setups(entry=[row]))
-        assert "300725.SZ" in html
-        assert "tier-b" not in html
-
-    def test_a_badge_absent_on_ran_late(self):
-        """No A-tier badge on RAN_LATE cards — the spec law.
-
-        RAN_LATE rows have ab_tier=None so neither 'A' nor 'B' branch fires.
-        We pass empty ripening to isolate the RAN/LATE buy-shelf.
-        """
-        ran_row = _make_ran_row()
-        # Empty ripening so the only shelf is RAN_LATE
-        html = _render_w1c_w2b(_full_setups(entry=[], ran=[ran_row], ripening=[]))
-        assert "nb-atier" not in html
+        html = _render_w1c_w2b(_full_setups(entry=[], ran=[_make_ran_row()], ripening=[]))
+        assert 'class="pvcard pv-wait"' in html
+        assert "603129.SS" in html
+        assert "Synthetic Biology" not in html
+        assert "合成生物" not in html
 
     def test_narrative_chip_on_ripening_card(self):
         """Narrative theme must still appear on RIPENING cards, bilingual.
@@ -695,44 +713,49 @@ class TestTemplateRender:
         chip markup (#1400). Pins the current surface.
         """
         html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
+        assert "688306.SS" in html
         assert "rip-chip" in html
         assert "Solid-State Battery" in html
         assert "固态电池" in html
 
-    def test_a_badge_decluttered_from_ripening_card(self):
-        """A-tier badge must NOT render on RIPENING cards.
-
-        Removed with the standout declutter (#1400); the W8-R1 rip-shelf
-        (#2102) never reintroduced tier badges. ab_tier stays in the row data.
-        """
-        html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
-        # Ripening card renders (not vacuous) …
-        assert "688306.SS" in html
-        assert "nb-atier" not in html
-
     def test_no_narrative_chip_when_no_tag(self):
-        """Cards with no narrative tag must not render the chip."""
-        row = _make_entry_row(narr_theme=None, ab_tier_val="B")
+        """A ripening row with no narrative tag must not render the chip.
+
+        Retargeted from the retired nb-narr class to the live rip-chip cp-warn
+        element (template ~L3403: `{% if _rr_narr and _rr_narr.get('theme') %}`).
+        Paired with test_narrative_chip_on_ripening_card this is a real
+        mutation: tag present -> one cp-warn chip, tag absent -> zero.
+        """
         rip = _make_ripening_row(narr_theme=None, ab_tier_val="B")
-        html = _render_w1c_w2b(_full_setups(entry=[row], ripening=[rip]))
-        # nb-narr class should not be present when no tag
-        assert "nb-narr" not in html
+        html = _render_w1c_w2b(_full_setups(entry=[], ran=[], ripening=[rip]))
+        # The ripening card still rendered — the absence below is not vacuous.
+        assert "688306.SS" in html
+        assert 'class="rip-chip cp-warn"' not in html
 
     def test_narrative_chip_has_dual_span(self):
-        """Narrative chip text must use l-en + l-zh dual spans."""
-        html = _render_w1c_w2b(_full_setups())
-        # Both spans should be present inside the narr chip
-        assert 'class="l-en"' in html
-        assert 'class="l-zh"' in html
+        """The narrative chip itself must carry l-en + l-zh spans.
+
+        Asserts the chip's own markup, not merely that some dual span exists
+        somewhere in the block (the block has ~46 of them, which made the old
+        assertion pass regardless of the chip).
+        """
+        html = _render_w1c_w2b(_full_setups(entry=[], ran=[]))
+        chip = re.search(r'<span class="rip-chip cp-warn">(.*?)</span>\s*</span>',
+                         html, re.S)
+        assert chip, "narrative rip-chip (cp-warn) did not render"
+        assert '<span class="l-en">Solid-State Battery</span>' in chip.group(0)
+        assert '<span class="l-zh">固态电池</span>' in chip.group(0)
 
     def test_radar_tag_decluttered_from_chip(self):
-        """The radar validated-tag no longer renders on the board.
+        """The radar validated-tag must not reach the board surface.
 
         It rode the narrative chip's tooltip/label (W2-B #1118) and left with
-        the chip in the declutter (#1400). The tag stays in the radar data
-        (ledger + data layer); "validated" is CI-enforced in user-facing text
-        (scripts/check_validated_claims.py), so its absence here is the honest
-        state — pin it so a chip revival cannot re-emit the word unreviewed.
+        the chip in the declutter (#1400); the Prophet-card redesign
+        (2026-07-21) did not bring it back.  The tag stays in the radar data
+        (ledger + data layer).  Kept — and kept separate from the theme test —
+        because "validated" is CI-enforced in user-facing text
+        (scripts/check_validated_claims.py): pin it so a chip revival cannot
+        re-emit the word unreviewed.  Data-driven, so it discriminates.
         """
         row = _make_entry_row(ab_tier_val="A")
         row["narrative"]["radar"] = {
@@ -746,6 +769,7 @@ class TestTemplateRender:
             },
         }
         html = _render_w1c_w2b(_full_setups(entry=[row]))
+        assert 'class="pvcard pv-buy"' in html
         assert "300725.SZ" in html
         assert "validated" not in html
 
@@ -771,18 +795,12 @@ class TestTemplateRender:
         is the shelf footer note — Score = buy-readiness; forward grades still
         accruing — bilingual. (The (?)-popup caveats are separately enforced
         by test_china_stocks_copy_w09.py.)
+
+        Asserts the footer's own wording, not the loose substrings: the render
+        window starts at the W-FCT anchor, so the board's (?) help popup — which
+        says "track record is still accruing" / "其成绩仍在累积" — is also in the
+        output and would satisfy a bare "still accruing" check on its own.
         """
         html = _render_w1c_w2b(_full_setups())
-        assert "buy-readiness" in html
-        assert "still accruing" in html
-        assert "仍在累积" in html
-
-    def test_entry_chip_title_not_buy_family(self):
-        """Narrative chip tooltip must not contain BUY-family words."""
-        html = _render_w1c_w2b(_full_setups())
-        # Find the narr chip: check its title attribute for BUY-family words
-        narr_chips = re.findall(r'class="nb-narr[^"]*"[^>]*title="([^"]*)"', html)
-        buy_words = re.compile(r'\b(BUY|buy|Buy|购买|买入)\b')
-        for title in narr_chips:
-            assert not buy_words.search(title), (
-                f"BUY-family word in narrative chip title: {title!r}")
+        assert "Score = buy-readiness; forward grades are still accruing." in html
+        assert "评分＝买入就绪度；前瞻成绩仍在累积。" in html
