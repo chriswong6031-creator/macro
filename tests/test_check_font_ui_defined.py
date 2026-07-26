@@ -407,10 +407,10 @@ def test_current_templates_tree_passes():
 # NOTHING there. This has already regressed once — the landing carried a CDN
 # Archivo <link> and onboard.js re-injected the same URL from ensureAssets() —
 # so it is a tripwire, not a one-time fix. Self-hosted files live in
-# templates/fonts/ and are declared in onboard.css (Archivo) and index.html
-# (Inter); see mockups/refs/landing_archivo_wdth/README.md.
+# templates/fonts/ and are declared in onboard.css (the display face) and
+# index.html (Inter); see mockups/refs/landing-modern-sans/.
 
-_NO_CDN_FONT_SURFACES = ("index.html", "onboard.css", "onboard.js")
+_NO_CDN_FONT_SURFACES = ("index.html", "landing.css", "onboard.css", "onboard.js")
 
 
 @pytest.mark.skipif(
@@ -442,30 +442,93 @@ def test_landing_surfaces_request_no_google_fonts(name):
     not (_REPO_ROOT / "templates" / "onboard.css").is_file(),
     reason="repo templates/ not present",
 )
-def test_archivo_is_self_hosted_and_variable():
-    """onboard.css must declare Archivo against a real file, keeping both axes.
+def test_display_face_is_self_hosted_and_variable():
+    """onboard.css must declare Outfit against a real file, keeping wght variable.
 
-    font-stretch:125% is used by 21 display rules and .stg asks for the
-    interpolated weight 650 — a static instance satisfies neither, and the
-    failure is silent (headlines quietly render at normal width).
+    Five rules ask for the interpolated weight 650 (.stg on the landing plus
+    .obm-cmp-cell / .obm-step-lbl / .obm-mini-lbl span / .obm-sum-list li b in
+    the sheet). A static instance satisfies none of them and the failure is
+    silent — they quietly flatten to the nearest shipped weight.
     """
     css = (_REPO_ROOT / "templates" / "onboard.css").read_text(encoding="utf-8")
-    face = re.search(r"@font-face\{[^}]*font-family:\s*'?Archivo'?[^}]*\}", css)
-    assert face, "onboard.css no longer declares an @font-face for Archivo"
+    face = re.search(r"@font-face\{[^}]*font-family:\s*'?Outfit'?[^}]*\}", css)
+    assert face, "onboard.css no longer declares an @font-face for Outfit"
     block = face.group(0)
 
     src = re.search(r"""url\(["']?([^"')]+)["']?\)""", block)
-    assert src, f"Archivo @font-face has no url(): {block[:160]}"
+    assert src, f"Outfit @font-face has no url(): {block[:160]}"
     assert (_REPO_ROOT / "templates" / src.group(1)).is_file(), (
-        f"Archivo @font-face points at templates/{src.group(1)}, which is missing"
+        f"Outfit @font-face points at templates/{src.group(1)}, which is missing"
     )
-    # both axes must be declared as RANGES, not single values
+    # the weight axis must be declared as a RANGE, not a single value
     assert re.search(r"font-weight:\s*400\s+900", block), (
-        "Archivo @font-face lost its variable font-weight range (400 900)"
+        "Outfit @font-face lost its variable font-weight range (400 900) — "
+        "the interpolated 650 has no instance to select without it"
     )
-    assert re.search(r"font-stretch:\s*100%\s+125%", block), (
-        "Archivo @font-face lost its variable font-stretch range (100% 125%) — "
-        "font-stretch:125% has no wide instance to select without it"
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "templates" / "index.html").is_file(),
+    reason="repo templates/ not present",
+)
+@pytest.mark.parametrize("name", ("index.html", "landing.css", "onboard.css"))
+def test_no_rule_asks_the_display_face_for_an_axis_it_lacks(name):
+    """No live font-stretch / opsz on the landing path.
+
+    The retired Archivo carried a `wdth` axis and Newsreader an `opsz` axis, so
+    the CSS drove both. Outfit has NEITHER. A leftover `font-stretch:125%` or
+    `font-variation-settings:'opsz' N` does not error — the declaration is just
+    ignored — so the only symptom is type that silently renders at the wrong
+    width, which is exactly how the CDN-font regression hid for months.
+
+    landing.css is in the list because that is where the display rules actually
+    live since #3676 lifted the landing's inline CSS out of index.html — a
+    parametrization that only covered index.html would pass over an empty set.
+    """
+    text = strip_comments((_REPO_ROOT / "templates" / name).read_text(encoding="utf-8"))
+    stray = re.findall(r"font-stretch\s*:[^;}]+|font-variation-settings\s*:[^;}]+", text)
+    assert stray == [], (
+        f"templates/{name} still drives a variation axis Outfit does not have; "
+        f"Outfit is weight-only, so these declarations are dead: {stray}"
+    )
+
+
+@pytest.mark.skipif(
+    not (_REPO_ROOT / "site" / "fonts" / "Outfit-latin.woff2").is_file(),
+    reason="repo site/ not present",
+)
+def test_display_face_figures_are_tabular_by_default():
+    """The shipped subset must be the one whose digits share a single advance.
+
+    Outfit's stock figures are PROPORTIONAL — 13.45px of digit spread at
+    48px/800. The face it replaced (Archivo) was tabular by default, so the live
+    gauge score (#gz-score, which counts up on load) and every price column on
+    the landing depend on fixed advances that NO CSS rule asks for. The property
+    is baked into the file instead: build_outfit_subset.py remaps the digit
+    codepoints onto Outfit's own `tnum` glyphs.
+
+    Pinning the bytes is the only zero-dependency way to guard that — the CI
+    packs install minimal dep sets, so a fontTools-based check here would be a
+    permanent silent skip rather than a test. The build script is reproducible
+    (it pins SOURCE_DATE_EPOCH and zeroes head.created/modified, without which
+    every run produced different bytes), so this digest is stable across
+    rebuilds of the same input and only moves when the font really changes. If
+    this fails because the font was legitimately rebuilt, re-run the script (it
+    asserts the ten advances are equal) and update the digest in the same commit.
+    """
+    expected = "1cf8df7d11d7fcfb97779d2ea3f2aea3a54ee7e2ca82da50e88ab5ac6745593d"
+    shipped = _REPO_ROOT / "site" / "fonts" / "Outfit-latin.woff2"
+    mirror = _REPO_ROOT / "templates" / "fonts" / "Outfit-latin.woff2"
+    digest = hashlib.sha256(shipped.read_bytes()).hexdigest()
+    assert digest == expected, (
+        f"site/fonts/Outfit-latin.woff2 hashes to {digest[:16]}…, expected "
+        f"{expected[:16]}… — if this was a deliberate rebuild, run "
+        f"`python3 mockups/refs/landing-modern-sans/build_outfit_subset.py` "
+        f"(it asserts the digits stay tabular) and update this digest"
+    )
+    assert mirror.read_bytes() == shipped.read_bytes(), (
+        "templates/fonts/Outfit-latin.woff2 and site/fonts/Outfit-latin.woff2 "
+        "differ — site/fonts is what ships; commit both copies identical"
     )
 
 
@@ -473,22 +536,29 @@ def test_archivo_is_self_hosted_and_variable():
     not (_REPO_ROOT / "site" / "onboard.css").is_file(),
     reason="repo site/ not present",
 )
-def test_onboard_css_cache_stamp_is_current():
-    """index.html's ?v= stamp must match site/onboard.css's actual bytes.
+@pytest.mark.parametrize("sheet", ("onboard.css", "landing.css"))
+def test_landing_stylesheet_cache_stamps_are_current(sheet):
+    """index.html's ?v= stamps must match the site stylesheets' actual bytes.
 
     app/deploy/Caddyfile serves versioned requests immutable/max-age=1y, so a
     stale stamp pins returning visitors to the previous stylesheet — which, for
-    this change, means no @font-face and no display face at all.
+    a font change, means no @font-face and no display face at all. #3617 shipped
+    an onboard.css fix that sat live at the origin while every returning browser
+    kept the old sheet; #3624 had to hand-bump that one page.
+
+    landing.css is covered here because #3676 lifted the landing's inline CSS
+    into it — that gave the page a SECOND stamped stylesheet, carrying the whole
+    display type system and the six Inter @font-face blocks, with no guard on its
+    stamp. Both sheets now have to be re-cut together after any edit.
     """
-    digest = hashlib.sha256(
-        (_REPO_ROOT / "site" / "onboard.css").read_bytes()
-    ).hexdigest()[:8]
+    digest = hashlib.sha256((_REPO_ROOT / "site" / sheet).read_bytes()).hexdigest()[:8]
     for rel in ("templates/index.html", "site/index.html"):
         stamped = re.search(
-            r"onboard\.css\?v=([0-9a-f]{8})", (_REPO_ROOT / rel).read_text(encoding="utf-8")
+            rf"{re.escape(sheet)}\?v=([0-9a-f]{{8}})",
+            (_REPO_ROOT / rel).read_text(encoding="utf-8"),
         )
-        assert stamped, f"{rel} no longer links onboard.css with a ?v= stamp"
+        assert stamped, f"{rel} no longer links {sheet} with a ?v= stamp"
         assert stamped.group(1) == digest, (
-            f"{rel} links onboard.css?v={stamped.group(1)} but site/onboard.css "
+            f"{rel} links {sheet}?v={stamped.group(1)} but site/{sheet} "
             f"hashes to {digest} — re-cut the stamp in BOTH copies"
         )

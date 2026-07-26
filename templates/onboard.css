@@ -2,8 +2,8 @@
    MASTERMIND LANDING — onboarding sheet ("the front door")
    A large floating sheet that opens IN PLACE over www.mastermind-x.com when any
    Start free / trial / Log in CTA is clicked. Account → Preferences → Plan →
-   Billing → Done, in the LANDING's design language (light Swiss, Archivo
-   Expanded display, --blue, hairlines) — NOT the Terminal's dark chart idiom.
+   Billing → Done, in the LANDING's design language (light Swiss, Outfit
+   geometric display, --blue, hairlines) — NOT the Terminal's dark chart idiom.
 
    THE STAGE (left column, 2026-07-25 rebuild). The left column is no longer a
    fixed marketing card: it is a STAGE that plays the desk coming online, one
@@ -23,47 +23,27 @@
    --blue, --hair, --sh-*, --r*) are inherited from index.html's :root.
    ========================================================================== */
 
-/* ── the FIGURE face ─────────────────────────────────────────────────────────
-   Display numerals — the live score, the proof stat, the plan price — are set in
-   Newsreader ExtraBold, not in the Archivo Expanded Black they used to wear.
-   Archivo's black weight is very wide and very heavy, so at 20–48px its figures
-   read short and blocky (operator, 2026-07-26: "kinda squashed"). Newsreader is a
-   screen-first news serif: taller figures, open counters, real contrast — it gives
-   a number the authority of a research page instead of a poster. Words stay on
-   Archivo Expanded, so the page now PAIRS a grotesque voice with serif figures
-   rather than setting everything in one face.
+/* ── the DISPLAY face ────────────────────────────────────────────────────────
+   Outfit — a geometric sans — is the single display face for BOTH the landing and
+   this sheet: every headline, every piece of chrome, and every figure. It replaced
+   a two-face system that had drifted apart (operator, 2026-07-26: "we're a modern
+   SaaS company"):
+     · words were Archivo Expanded, a poster grotesque at font-stretch 125%. Wide
+       AND heavy, so its counters close up and its numerals read short and blocky;
+     · figures were Newsreader ExtraBold, an editorial serif — magazine numbers on
+       a product page, in a voice nothing else on the page spoke.
+   Outfit sets `96,412` at 26px in 77.0px against Archivo Expanded's 89.6px — 14%
+   narrower at identical height — so the "squashed" complaint that put the serif
+   here in the first place is answered by the display face itself, with no second
+   voice required. Measurements + specimen: mockups/refs/landing-modern-sans/.
 
-   Two properties made it the pick over the grotesques we tried (the specimen is
-   committed at mockups/refs/landing-numerals/):
-     · its default figures are already FIXED-WIDTH — all ten digits share one
-       advance — so a live-updating score (#gz-score) cannot jitter;
-     · it carries an `opsz` axis, so 15px and 48px each get their proper optical
-       design instead of one drawing stretched across both.
-
-   SELF-HOSTED, like Inter in theme.css: fonts.googleapis.com is blocked in
-   mainland China, so a CDN face silently never arrives there. Subset to ASCII +
-   currency/dash punctuation and clipped to the axis ranges we actually use
-   (wght 600–800, opsz 14–72) — 54KB for the whole variable family. `unicode-range`
-   keeps everything outside that subset falling through to the serif stack.
-   Regenerate: see mockups/refs/landing-numerals/README.md.
-   Newsreader is SIL Open Font License 1.1 (Production Type). */
-@font-face{
-  font-family:'Newsreader';
-  font-style:normal;
-  font-weight:600 800;
-  font-display:swap;
-  src:url("fonts/Newsreader-figures.woff2") format("woff2");
-  unicode-range:U+0020-007E,U+00A0,U+00A3,U+00A5,U+2013-2014,U+2018-201D,U+2026,U+2212,U+20AC;
-}
-/* Landing and sheet both declare --fig, so neither depends on the other's
-   cascade (the sheet is lazy-injected onto macro pages that have no landing CSS). */
-:root{--fig:'Newsreader',ui-serif,Georgia,'Times New Roman',serif}
-
-/* Archivo — the display face for BOTH the landing and this sheet, self-hosted for
-   the same reason theme.css self-hosts Inter: fonts.googleapis.com is blocked in
-   mainland China, so the old CDN <link> silently delivered nothing there and every
-   .display / .sec-title / .feat-title / .cov-copy h1 / .tier h3 / .kicker / .brand
-   fell back to system sans with no error anywhere.
+   FIGURES ARE TABULAR BY DEFAULT, baked into the subset rather than asked for in
+   CSS. Outfit ships PROPORTIONAL figures (13.45px of digit spread at 48px/800);
+   Archivo's were fixed-width, so the live gauge score and every price column on
+   the landing silently depend on fixed advances. The build script remaps the digit
+   codepoints onto Outfit's own `tnum` glyphs, which is why no rule in here carries
+   `font-variant-numeric` — it cannot be forgotten on the one rule that matters.
+   (`pnum` still maps back to proportional if it is ever wanted.)
 
    It lives HERE, not in index.html, because the sheet is lazy-injected onto macro
    pages that carry none of the landing's CSS (theme.js _mmOpenOnboard -> onboard.js
@@ -71,15 +51,28 @@
    THIS file, which is correct at any page depth, and means neither file depends on
    the other's cascade.
 
-   ONE variable file serves both widths. The wdth axis is load-bearing — the CSS
-   drives it with font-stretch:125% on 21 display rules — and wght must stay live
-   too, because the sheet asks for the interpolated 650. Static instances would
-   break both. Axes are clipped to the ranges actually used (wght 400-900, wdth
-   100-125) and the glyphs subset to latin; unicode-range mirrors that subset so
-   CJK and anything else outside it falls through to the stack instead of tofu.
-   57KB. Regeneration commands: mockups/refs/landing_archivo_wdth/README.md.
-   Archivo is SIL Open Font License 1.1 (Omnibus-Type). */
-@font-face{font-family:'Archivo';font-style:normal;font-weight:400 900;font-stretch:100% 125%;font-display:swap;src:url("fonts/Archivo-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+   SELF-HOSTED, for the same reason theme.css self-hosts Inter: fonts.googleapis.com
+   is blocked in mainland China, so the old CDN <link> silently delivered nothing
+   there and every headline fell back to system sans with no error anywhere.
+
+   The wght axis is load-bearing and must stay a RANGE — the sheet asks for the
+   interpolated 650 four times (.obm-cmp-cell, .obm-step-lbl, .obm-mini-lbl span,
+   .obm-sum-list li b) and the landing once (.stg); a static instance would
+   silently flatten every one of them to the nearest shipped weight.
+   Outfit has no wdth or opsz axis, so no rule may ask for one; the retired
+   font-stretch:125% and font-variation-settings:'opsz' declarations are gone
+   rather than left as dead code. Glyphs are subset to latin against EXACTLY the
+   range Archivo carried, so every symbol that used to fall through to the system
+   stack (→ ⓘ ⚡ ✓ ✗ and all CJK) still does — unicode-range mirrors the subset, so
+   nothing outside it renders as tofu. 41KB, down from 112KB for the two faces it
+   replaces. Regenerate: mockups/refs/landing-modern-sans/build_outfit_subset.py.
+   Outfit is SIL Open Font License 1.1 (Smartsheet / Rodrigo Fuenzalida). */
+@font-face{font-family:'Outfit';font-style:normal;font-weight:400 900;font-display:swap;src:url("fonts/Outfit-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+/* Landing and sheet both declare these, so neither depends on the other's cascade
+   (the sheet is lazy-injected onto macro pages that have no landing CSS). --fig is
+   kept as an alias rather than replaced: the eight figure rules using it are the
+   ones most likely to be re-pointed at a dedicated numeral face again. */
+:root{--display:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;--fig:var(--display)}
 
 /* Self-carried control reset. The sheet was authored against the LANDING, which
    resets `button{font:inherit;color:inherit;background:none;border:0;padding:0}`
@@ -234,12 +227,12 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 }
 @keyframes obmBeam{from{transform:translateX(-10%) rotate(8deg)}to{transform:translateX(430%) rotate(8deg)}}
 
-.obm-brand{display:flex;align-items:center;gap:9px;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:13.5px;letter-spacing:.02em;color:var(--st-ink);padding-right:34px;transition:color .55s ease}
+.obm-brand{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:800;font-size:13.5px;letter-spacing:.02em;color:var(--st-ink);padding-right:34px;transition:color .55s ease}
 .obm-brand svg{width:29px;height:29px;flex:none;border-radius:9px;box-shadow:0 4px 12px -4px rgba(40,95,255,.5)}
 
 .obm-pane-copy{margin-top:24px;max-width:27ch;padding-right:28px}
 .obm-pane-h{
-  font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;letter-spacing:-.022em;
+  font-family:var(--display);font-weight:800;letter-spacing:-.022em;
   line-height:1.08;font-size:clamp(1.4rem,2.05vw,1.8rem);color:var(--st-ink);margin:0;
   transition:color .55s ease;
 }
@@ -265,12 +258,12 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 
 /* nameplate — right padding keeps the state chip inside the desk's cropped edge */
 .obm-plate{display:flex;align-items:center;gap:9px;flex:none;padding:10px 44px 10px 14px;border-bottom:1px solid var(--st-hair);background:color-mix(in srgb,var(--st-card-2) 82%,transparent);min-width:0}
-.obm-plate-ava{flex:none;width:23px;height:23px;border-radius:7px;display:grid;place-items:center;font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;color:#fff;background:linear-gradient(135deg,#3f82f6,#7862e0);box-shadow:0 3px 8px -3px rgba(40,95,255,.55);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+.obm-plate-ava{flex:none;width:23px;height:23px;border-radius:7px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:11px;color:#fff;background:linear-gradient(135deg,#3f82f6,#7862e0);box-shadow:0 3px 8px -3px rgba(40,95,255,.55);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
 .obm-plate-ava.obm-pop{transform:scale(1.14)}
-.obm-plate-nm{font-family:'Archivo',sans-serif;font-weight:800;font-size:10.5px;letter-spacing:.15em;color:var(--st-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .55s ease}
+.obm-plate-nm{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:.15em;color:var(--st-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .55s ease}
 .obm-plate-st{
   margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:5px;
-  font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.12em;
+  font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.12em;
   text-transform:uppercase;border-radius:99px;padding:3px 9px;white-space:nowrap;
   color:var(--st-faint);background:color-mix(in srgb,var(--st-hair) 60%,transparent);
   transition:color .3s,background .3s;
@@ -287,12 +280,12 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-hero{position:relative;height:118px;flex:none;margin:12px 14px 0;border:1px solid var(--st-hair);border-radius:11px;background:var(--st-card);overflow:hidden;transition:background .55s ease,border-color .55s ease}
 .obm-hero svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .obm-hero-hd{position:absolute;top:8px;left:11px;right:11px;z-index:2;display:flex;align-items:center;gap:7px}
-.obm-hero-hd b{font-family:'Archivo',sans-serif;font-weight:800;font-size:11.5px;letter-spacing:.02em;color:var(--st-ink);transition:color .55s ease}
-.obm-hero-tf{font-family:'Archivo',sans-serif;font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--st-faint);border:1px solid var(--st-hair-2);border-radius:5px;padding:1px 5px}
-.obm-hero-sig{margin-left:auto;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.12em;color:#fff;background:var(--blue);border-radius:5px;padding:2.5px 7px;opacity:0;transform:translateY(-4px);transition:opacity .35s,transform .35s}
+.obm-hero-hd b{font-family:var(--display);font-weight:800;font-size:11.5px;letter-spacing:.02em;color:var(--st-ink);transition:color .55s ease}
+.obm-hero-tf{font-family:var(--display);font-weight:700;font-size:8px;letter-spacing:.12em;color:var(--st-faint);border:1px solid var(--st-hair-2);border-radius:5px;padding:1px 5px}
+.obm-hero-sig{margin-left:auto;font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.12em;color:#fff;background:var(--blue);border-radius:5px;padding:2.5px 7px;opacity:0;transform:translateY(-4px);transition:opacity .35s,transform .35s}
 .obm-desk.obm-armed .obm-hero-sig{opacity:1;transform:none}
-.obm-hero-zone{position:absolute;right:11px;bottom:14px;z-index:2;font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue);opacity:.8}
-.obm-hero-note{position:absolute;left:11px;bottom:6px;z-index:2;font-family:'Archivo',sans-serif;font-weight:700;font-size:7px;letter-spacing:.11em;color:var(--st-faint)}
+.obm-hero-zone{position:absolute;right:11px;bottom:14px;z-index:2;font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.14em;color:var(--blue);opacity:.8}
+.obm-hero-note{position:absolute;left:11px;bottom:6px;z-index:2;font-family:var(--display);font-weight:700;font-size:7px;letter-spacing:.11em;color:var(--st-faint)}
 /* the line draws itself in (pathLength=1 → one normalized dashoffset sweep) */
 .obm-hero-line{stroke-dasharray:1;stroke-dashoffset:0}
 .obm-draw .obm-hero-line{animation:obmDraw 1s cubic-bezier(.3,.6,.2,1) both}
@@ -315,7 +308,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 }
 .obm-row.obm-on::before{background:var(--row-hue);transform:scaleY(1)}
 .obm-row-lbl{
-  display:flex;align-items:center;font-family:'Archivo',sans-serif;font-weight:800;
+  display:flex;align-items:center;font-family:var(--display);font-weight:800;
   font-size:8px;letter-spacing:.14em;color:var(--st-faint);white-space:nowrap;
   transition:color .35s;
 }
@@ -362,7 +355,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 /* ── the tape (the second, slower ambient loop) ─────────────────────────── */
 .obm-tape{margin-top:auto;flex:none;overflow:hidden;border-top:1px solid var(--st-hair);padding:8px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 88%,transparent)}
 .obm-tape-in{display:flex;gap:0;width:max-content;animation:obmTape 30s linear infinite}
-.obm-tape-in span{display:inline-flex;align-items:center;gap:6px;padding:0 14px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.11em;color:var(--st-soft);white-space:nowrap}
+.obm-tape-in span{display:inline-flex;align-items:center;gap:6px;padding:0 14px;font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.11em;color:var(--st-soft);white-space:nowrap}
 .obm-tape-in span::before{content:"";width:4px;height:4px;border-radius:50%;background:color-mix(in srgb,var(--blue) 70%,transparent)}
 @keyframes obmTape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
@@ -378,7 +371,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
   transition:transform .5s cubic-bezier(.22,.9,.3,1),opacity .3s ease;
 }
 .obm-pane[data-step="4"] .obm-meter{transform:none;opacity:1;pointer-events:auto}
-.obm-meter-hd{font-family:'Archivo',sans-serif;font-weight:800;font-size:9px;letter-spacing:.13em;color:var(--st-ink);margin:0 0 11px;transition:color .55s ease}
+.obm-meter-hd{font-family:var(--display);font-weight:800;font-size:9px;letter-spacing:.13em;color:var(--st-ink);margin:0 0 11px;transition:color .55s ease}
 .obm-meter-track{display:flex;align-items:flex-end;gap:5px;height:30px}
 .obm-meter-track i{
   flex:1;border-radius:3px;background:color-mix(in srgb,var(--st-hair-2) 90%,transparent);
@@ -388,8 +381,8 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-pane[data-step="4"] .obm-meter-track i{height:calc(10px + var(--h,0) * 1px);background:color-mix(in srgb,var(--blue) calc(20% + var(--h,0) * 3%),var(--st-hair-2))}
 .obm-pane[data-step="4"] .obm-meter-track i:last-child{background:var(--q-gold)}
 .obm-meter-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px}
-.obm-meter-day{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--blue)}
-.obm-meter-chg{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--q-gold);text-align:right}
+.obm-meter-day{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--blue)}
+.obm-meter-chg{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.11em;color:var(--q-gold);text-align:right}
 .obm-meter-note{margin:9px 0 0;font-size:11px;line-height:1.45;color:var(--st-soft);transition:color .55s ease}
 
 /* ── step-conditional stage states ─────────────────────────────────────── */
@@ -418,7 +411,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
   position:relative;display:grid;place-items:center;flex:none;
   width:27px;height:27px;border-radius:50%;
   border:1.5px solid var(--hair-2);background:var(--panel);
-  font-family:'Archivo',sans-serif;font-weight:800;font-size:11px;line-height:1;
+  font-family:var(--display);font-weight:800;font-size:11px;line-height:1;
   color:var(--faint);
   transition:background .28s,color .28s,border-color .28s,box-shadow .28s;
 }
@@ -443,7 +436,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-mini-bar{height:3px;border-radius:3px;background:var(--hair-2);overflow:hidden}
 .obm-mini-bar i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .45s cubic-bezier(.22,.8,.3,1)}
 .obm-mini-lbl{display:flex;align-items:baseline;gap:7px;margin-top:9px;font-size:12px;color:var(--muted)}
-.obm-mini-lbl b{font-family:'Archivo',sans-serif;font-weight:800;font-size:9.5px;letter-spacing:.12em;color:var(--blue)}
+.obm-mini-lbl b{font-family:var(--display);font-weight:800;font-size:9.5px;letter-spacing:.12em;color:var(--blue)}
 .obm-mini-lbl span{font-weight:650;color:var(--ink)}
 
 /* ── the scrolling content region ──────────────────────────────────────── */
@@ -456,7 +449,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-fade{animation:obm-fade .2s cubic-bezier(.22,.8,.3,1)}
 @keyframes obm-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.obm-h1{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;letter-spacing:-.022em;line-height:1.08;font-size:1.55rem;color:var(--ink);margin:0}
+.obm-h1{font-family:var(--display);font-weight:800;letter-spacing:-.022em;line-height:1.08;font-size:1.55rem;color:var(--ink);margin:0}
 .obm-h1:focus{outline:none}
 .obm-sub{color:var(--muted);font-size:13.5px;line-height:1.55;margin:8px 0 20px}
 
@@ -519,7 +512,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-terms a:hover{color:var(--ink)}
 
 /* ── preferences: chips + theme thumbnails ───────────────────────────────── */
-.obm-section-lbl{font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
+.obm-section-lbl{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px}
 .obm-section-lbl:first-child{margin-top:2px}
 .obm-chips{display:flex;flex-wrap:wrap;gap:8px}
 /* The check slot is ALWAYS in the layout (an empty ring when off) — selecting a
@@ -572,7 +565,7 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-toggle{display:inline-flex;margin:2px 0 16px;border:1px solid var(--hair-2);border-radius:99px;padding:4px;font-weight:600;font-size:13px;background:var(--panel);box-shadow:var(--sh-card)}
 .obm-toggle button{padding:8px 16px;border-radius:99px;background:transparent;color:var(--muted);transition:background .18s,color .18s}
 .obm-toggle button[aria-pressed="true"]{background:var(--blue);color:#fff}
-.obm-toggle .obm-save{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.05em;margin-left:5px;color:#bff2cf}
+.obm-toggle .obm-save{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.05em;margin-left:5px;color:#bff2cf}
 .obm-toggle button[aria-pressed="false"] .obm-save{color:var(--q-green)}
 
 .obm-plans{display:flex;flex-direction:column;gap:10px}
@@ -586,15 +579,15 @@ html.obm-lock #mmb-launch{opacity:0;pointer-events:none;transition:opacity .15s 
 .obm-plan.obm-on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
 .obm-plan.obm-hot.obm-on{background:linear-gradient(150deg,rgba(15,157,143,.05),rgba(40,95,255,.055) 55%,rgba(120,98,224,.045)),var(--panel)}
 .obm-plan-l{min-width:0}
-.obm-plan-nm{display:flex;align-items:baseline;gap:8px;font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:16px;color:var(--ink)}
+.obm-plan-nm{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:800;font-size:16px;color:var(--ink)}
 .obm-plan-who{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.4}
 .obm-plan-r{display:flex;align-items:center;gap:13px;flex:none}
 /* figures in --fig (see the @font-face note at the top of this file) */
-.obm-plan-price{text-align:right;font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 30;font-size:24px;letter-spacing:-.005em;color:var(--ink);white-space:nowrap}
+.obm-plan-price{text-align:right;font-family:var(--fig);font-weight:800;font-size:24px;letter-spacing:-.005em;color:var(--ink);white-space:nowrap}
 .obm-plan-price .obm-per{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:10.5px;color:var(--muted);letter-spacing:0;margin-top:1px}
-.obm-plan-price .obm-was{font-family:var(--fig);font-variation-settings:'opsz' 14;font-weight:600;font-size:13px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:5px}
+.obm-plan-price .obm-was{font-family:var(--fig);font-weight:600;font-size:13px;letter-spacing:normal;color:var(--faint);text-decoration:line-through;margin-right:5px}
 .obm-ribbon{
-  position:absolute;top:-10px;left:16px;font-family:'Archivo',sans-serif;font-weight:700;
+  position:absolute;top:-10px;left:16px;font-family:var(--display);font-weight:700;
   font-size:9px;letter-spacing:.14em;color:#fff;background:var(--blue);padding:3px 10px;border-radius:99px;
 }
 html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
@@ -602,16 +595,16 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 /* plan readout — what the stage just lit up. Three lines, never a wall: the
    full feature story is the lattice on the left, not a list on the right. */
 .obm-summary{margin-top:14px;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:14px 16px}
-.obm-sum-hd{display:flex;align-items:center;gap:7px;font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
+.obm-sum-hd{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--blue);margin:0 0 10px}
 .obm-sum-hd::before{content:"";width:6px;height:6px;border-radius:2px;background:currentColor;flex:none}
 .obm-sum-list{list-style:none;margin:0;padding:0}
 .obm-sum-list li{position:relative;padding:5px 0 5px 22px;font-size:12.5px;color:var(--ink-soft);line-height:1.45}
 .obm-sum-list li::before{content:"";position:absolute;left:2px;top:11px;width:9px;height:2px;border-radius:2px;background:var(--blue)}
 .obm-sum-list li b{color:var(--ink);font-weight:650}
 .obm-sum-miss{margin-top:11px;border-top:1px dashed var(--hair-2);padding-top:10px}
-.obm-sum-miss .obm-sum-mhd{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.obm-sum-miss .obm-sum-mhd{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
 .obm-sum-mrow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;color:var(--muted)}
-.obm-mchip{font-family:'Archivo',sans-serif;font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;flex:none;white-space:nowrap}
+.obm-mchip{font-family:var(--display);font-weight:800;font-size:8px;letter-spacing:.1em;border-radius:6px;border:1px solid transparent;padding:2px 7px;flex:none;white-space:nowrap}
 .obm-mchip.obm-ins{background:linear-gradient(90deg,#e7f3f1,#e9eefc) padding-box,linear-gradient(90deg,rgba(15,157,143,.6),rgba(40,95,255,.55)) border-box;color:#0d7f74}
 .obm-mchip.obm-pro{background:linear-gradient(90deg,#f0eafb,#f6efdf) padding-box,linear-gradient(90deg,rgba(120,98,224,.65),rgba(176,125,5,.55)) border-box;color:#6a48d7}
 .obm-mchip.obm-soon{background:var(--gold-wash);color:var(--q-gold);border-color:transparent}
@@ -625,8 +618,8 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-order{margin:2px 0 16px;border:1px solid var(--hair);border-radius:12px;background:var(--panel);box-shadow:var(--sh-card);padding:15px 16px;--obm-accent:var(--blue)}
 .obm-order-hd{display:flex;align-items:center;gap:9px}
 .obm-order-dot{width:9px;height:9px;border-radius:3px;background:var(--obm-accent);flex:none}
-.obm-order-nm{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:16px;color:var(--ink)}
-.obm-order-price{margin-left:auto;font-family:var(--fig);font-weight:800;font-variation-settings:'opsz' 26;font-size:21px;letter-spacing:-.005em;color:var(--ink)}
+.obm-order-nm{font-family:var(--display);font-weight:800;font-size:16px;color:var(--ink)}
+.obm-order-price{margin-left:auto;font-family:var(--fig);font-weight:800;font-size:21px;letter-spacing:-.005em;color:var(--ink)}
 .obm-order-per{font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:var(--muted);margin-left:2px}
 .obm-order-billed{margin-top:6px;font-size:12.5px;color:var(--muted)}
 .obm-order-truth{margin-top:11px;border-top:1px solid var(--hair);padding-top:11px}
@@ -635,7 +628,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-order-cancel{margin:6px 0 0;font-size:12px;color:var(--muted)}
 .obm-bill-el{margin-top:4px;border:1px solid var(--hair-2);border-radius:10px;background:var(--panel);padding:13px}
 .obm-bill-state{margin:6px 0 0;border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:18px 16px;text-align:center}
-.obm-bill-state-hd{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:15px;color:var(--ink);margin-bottom:6px}
+.obm-bill-state-hd{font-family:var(--display);font-weight:800;font-size:15px;color:var(--ink);margin-bottom:6px}
 .obm-bill-state-msg{margin:0 0 12px;font-size:13px;line-height:1.5;color:var(--muted)}
 .obm-bill-state-msg:last-child{margin-bottom:0}
 .obm-bill-skel{display:flex;flex-direction:column;align-items:center;gap:10px;padding:26px 0}
@@ -649,7 +642,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-up-lane:hover{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card)}
 .obm-up-lane.obm-confirming{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),var(--sh-card);background:linear-gradient(150deg,rgba(40,95,255,.045),rgba(120,98,224,.03)),var(--panel)}
 /* computed savings badge — small blue-wash chip (never a hardcoded claim) */
-.obm-up-save{font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.05em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2px 7px;margin-left:2px}
+.obm-up-save{font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.05em;color:var(--blue-ink);background:var(--blue-wash);border-radius:5px;padding:2px 7px;margin-left:2px}
 .obm-up-pitch{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:var(--ink-soft)}
 .obm-up-chev{flex:none;color:var(--faint);display:inline-flex;transition:transform .15s,color .15s}
 .obm-up-chev svg{width:16px;height:16px}
@@ -790,14 +783,14 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 }
 @keyframes obmCmpIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 .obm-cmp-hd{flex:none;display:flex;align-items:center;gap:12px;padding:22px var(--obm-pad) 12px}
-.obm-cmp-h{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;letter-spacing:-.02em;font-size:1.15rem;color:var(--ink);margin:0}
+.obm-cmp-h{font-family:var(--display);font-weight:800;letter-spacing:-.02em;font-size:1.15rem;color:var(--ink);margin:0}
 .obm-cmp-h:focus{outline:none}
 /* the tier header IS the picker — three columns, the live one ringed */
 .obm-cmp-tiers{
   flex:none;display:grid;grid-template-columns:1fr repeat(3,minmax(0,74px));gap:6px;
   align-items:end;padding:0 var(--obm-pad) 10px;border-bottom:1px solid var(--hair);
 }
-.obm-cmp-tiers-lbl{font-family:'Archivo',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);padding-bottom:6px}
+.obm-cmp-tiers-lbl{font-family:var(--display);font-weight:700;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);padding-bottom:6px}
 .obm-cmp-tier{
   display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 4px;
   border:1px solid var(--hair-2);border-radius:10px;background:var(--panel);
@@ -805,13 +798,13 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 }
 .obm-cmp-tier:hover{border-color:var(--faint)}
 .obm-cmp-tier.obm-on{border-color:var(--blue);background:var(--blue-wash);box-shadow:0 0 0 1px var(--blue)}
-.obm-cmp-tier b{font-family:'Archivo',sans-serif;font-stretch:125%;font-weight:800;font-size:11.5px;color:var(--ink);letter-spacing:-.01em}
+.obm-cmp-tier b{font-family:var(--display);font-weight:800;font-size:11.5px;color:var(--ink);letter-spacing:-.01em}
 .obm-cmp-tier span{font-size:9.5px;font-weight:600;color:var(--muted);white-space:nowrap}
 .obm-cmp-tier.obm-on b,.obm-cmp-tier.obm-on span{color:var(--blue-ink)}
 
 .obm-cmp-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px var(--obm-pad) 12px}
 .obm-cmp-grp{
-  font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.13em;
+  font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--blue);margin:16px 0 4px;padding-top:8px;
   border-top:1px solid var(--hair);
 }
@@ -826,7 +819,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
 .obm-cmp-cell svg{width:14px;height:14px;stroke:var(--blue);stroke-width:2.6;fill:none}
 .obm-cmp-cell.obm-cmp-no{color:var(--faint)}
 .obm-cmp-cell.obm-cmp-no::before{content:"–";font-weight:600}
-.obm-cmp-soon{font-family:'Archivo',sans-serif;font-weight:800;font-size:7.5px;letter-spacing:.08em;color:var(--q-gold);background:var(--gold-wash);border-radius:5px;padding:2px 5px}
+.obm-cmp-soon{font-family:var(--display);font-weight:800;font-size:7.5px;letter-spacing:.08em;color:var(--q-gold);background:var(--gold-wash);border-radius:5px;padding:2px 5px}
 /* the live column gets a soft rail so the eye never loses which plan it is reading */
 .obm-cmp-row .obm-cmp-cell.obm-cmp-live,.obm-cmp-tier.obm-on{position:relative}
 .obm-cmp-cell.obm-cmp-live{background:color-mix(in srgb,var(--blue) 6%,transparent);border-radius:6px;padding:4px 0}
@@ -870,7 +863,7 @@ html[data-lang="zh"] .obm-ribbon{letter-spacing:.08em}
    billing), so nothing on screen is a step they have already completed. */
 .obm-up-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .obm-up-cur{
-  font-family:'Archivo',sans-serif;font-weight:700;font-size:9px;letter-spacing:.11em;
+  font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.11em;
   text-transform:uppercase;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);
   border-radius:6px;padding:3px 8px;
 }
