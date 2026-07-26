@@ -473,6 +473,10 @@ on:
       # fail-closed tests must exercise the workflow-yaml legacy job below.
       - "scripts/run_ci_pack.py"
       - "tests/test_ci_pack.py"
+      # render.yml scope contract (job: workflow-yaml). .github/workflows/**
+      # already reaches render.yml itself; this entry is so a test-only edit
+      # still starts CI, per the two-halves law.
+      - "tests/test_render_intl_scope.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -2440,6 +2444,14 @@ jobs:
         run: python scripts/check_workflow_yaml.py .github/workflows
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py -q
+      # render.yml's per-scope publish wiring. #3718 fixed the international
+      # dashboard never publishing because `intl` was missing from the render
+      # lane's scope list, and shipped this suite as the guard — but no `run:`
+      # step named it, so the guard for that fix was itself dark from the hour
+      # it landed. Same class the unrun-* lanes close; caught by
+      # scripts/audit_unrun_tests.py on the very next census.
+      - name: render-lane scope contract (intl must stay in the publish scopes)
+        run: python -m pytest tests/test_render_intl_scope.py -q
 
   causal-factory:
     if: ${{ false }}
