@@ -615,7 +615,7 @@ def test_client_history_used_when_thread_store_absent(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -862,7 +862,7 @@ def test_1500_char_message_reaches_model_loop(tmp_path):
 
     loop_called = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         loop_called.append(message)
         return "OK.", [], [], [], {}, [], []
 
@@ -894,7 +894,7 @@ def test_client_history_injection_filtered(tmp_path):
 
     captured_history: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured_history.extend(history)
         return "OK.", [], [], [], {}, [], []
 
@@ -941,7 +941,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
 
     captured_messages: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         # We can't introspect user_content directly, so we return and check that
         # the loop was called (no crash, no injection)
         return "OK.", [], [], [], {}, [], []
@@ -950,7 +950,7 @@ def test_hostile_context_symbol_neutralized(tmp_path):
     original_loop = gw._run_brain_loop
     built_contents: list[str] = []
 
-    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _capture_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         # Re-run the actual loop with a mock client that ends immediately
         return _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode=mode)
 
@@ -1421,7 +1421,7 @@ def test_research_mode_raises_tool_budget(tmp_path):
     root = _make_temp_root()
     captured_tb: list = []
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured_tb.append(tb)
         return "Research done.", [], [], [], {}, [], []
 
@@ -1921,7 +1921,7 @@ def test_chat_with_image_routes_fast_to_vision_provider(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -1951,7 +1951,7 @@ def test_chat_no_image_stays_on_deepseek(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured["model"] = model
         captured["image_blocks"] = image_blocks
         return "OK. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -1984,7 +1984,7 @@ def test_chat_fast_image_borrows_pro_vision_when_no_in_lane_claude(tmp_path):
             "pro": [{"client": "OPUS", "model": "claude-opus-4-8"}],
         }[lane]
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured["model"] = model
         captured["client"] = client
         captured["image_blocks"] = image_blocks
@@ -2354,7 +2354,7 @@ def test_chat_free_tier_image_is_gated_text_only(tmp_path):
     root = _make_temp_root()
     captured = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         captured["image_blocks"] = image_blocks
         captured["model"] = model
         return "text answer. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
@@ -2518,7 +2518,7 @@ def test_chat_splits_suggestions_from_reply(tmp_path):
     )
     persisted = {}
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         return reply_with_next, [], [], [], {}, [], []
 
     def _cap_append(tid, role, content, meta=None):
@@ -2547,7 +2547,7 @@ def test_chat_omits_suggestions_key_when_absent(tmp_path):
     """No [NEXT] block → no 'suggestions' key in the result."""
     root = _make_temp_root()
 
-    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None):
+    def _mock_loop(message, lane, history, context, root_, tdd, thu, client, model, max_t, tb, mode="chat", image_blocks=None, providers=None, user_id="", user_email="", effort=None, thinking_mode=None, deepseek_thinking=None):
         return "Plain answer, no marker. is_context_only: true — display-tier pending FDR.", [], [], [], {}, [], []
 
     mock_providers = [{"client": _MockClient([]), "model": "deepseek-chat"}]
@@ -3586,3 +3586,476 @@ class _noop_ctx:
 
     def __exit__(self, *a):
         return False
+
+
+# ---------------------------------------------------------------------------
+# Reasoning transparency + latency overhaul (SPEC B1-B6)
+# ---------------------------------------------------------------------------
+# All offline: the stub clients below capture every create()/stream() kwarg set, so
+# cache_control placement and per-candidate model params are asserted without a network.
+
+_CLEAN_ANSWER = ("Steady tape, nothing forcing a move. "
+                 "is_context_only: true — all signals are display-tier pending FDR.")
+
+
+class _FakeStreamCtx:
+    """Fake anthropic streaming context manager (mirrors test_ask_brain's idiom)."""
+
+    def __init__(self, text: str, chunks: int = 3):
+        self._text = text
+        self._chunks = chunks
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    @property
+    def text_stream(self):
+        size = max(1, len(self._text) // self._chunks + 1)
+        for i in range(0, len(self._text), size):
+            yield self._text[i:i + size]
+
+    def get_final_message(self):
+        return _MockResponse([_MockBlock("text", self._text)], "end_turn")
+
+
+class _CaptureClient:
+    """Stub client: scripted create() responses + a canned synthesis stream, with every
+    call's kwargs captured. Runs out of script → a plain end_turn answer."""
+
+    def __init__(self, responses: list | None = None, answer: str = _CLEAN_ANSWER):
+        self._responses = list(responses or [])
+        self._i = 0
+        self._answer = answer
+        self.create_kwargs: list[dict] = []
+        self.stream_kwargs: list[dict] = []
+        self.messages = self
+
+    def create(self, **kwargs):
+        self.create_kwargs.append(kwargs)
+        if self._i >= len(self._responses):
+            return _MockResponse([_MockBlock("text", self._answer)], "end_turn")
+        resp = self._responses[self._i]
+        self._i += 1
+        return resp
+
+    def stream(self, **kwargs):
+        self.stream_kwargs.append(kwargs)
+        return _FakeStreamCtx(self._answer)
+
+
+class _FailingClient:
+    """Stub client whose create() always raises — proves failover reaches the next
+    candidate carrying ITS OWN per-candidate kwargs."""
+
+    def __init__(self, exc: Exception):
+        self._exc = exc
+        self.create_kwargs: list[dict] = []
+        self.messages = self
+
+    def create(self, **kwargs):
+        self.create_kwargs.append(kwargs)
+        raise self._exc
+
+
+def _sse(events: list[str]) -> list[dict]:
+    return [json.loads(e[6:]) for e in events if e.startswith("data: ")]
+
+
+def _two_round_client() -> _CaptureClient:
+    """Round 1 calls get_quote; round 2 comes back stop_reason=tool_use with NO tool_use
+    block (the model narrated instead of calling a tool) — the loop breaks there and
+    Phase 2 synthesizes, which is the real code path for that shape."""
+    return _CaptureClient([
+        _MockResponse([_MockBlock("tool_use", name="get_quote", input_={"symbol": "aapl"}, id_="t1")],
+                      "tool_use"),
+        _MockResponse([_MockBlock("text", "Let me pull that together.")], "tool_use"),
+    ])
+
+
+def _stream_events(client, root, tmp_path, lane="pro", **kwargs) -> list[dict]:
+    """Drive chat_stream() against a stub client with the ledger + tier + thread store
+    patched out (house idiom), returning the parsed SSE events."""
+    providers = [{"client": client, "model": "claude-opus-5" if lane == "pro" else "deepseek-v4-flash"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL", "price": 1.0}):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            return _sse(list(gw.chat_stream("How is AAPL doing?", "user-status",
+                                                            lane=lane, root=root, **kwargs)))
+
+
+# ── B6: status event sequence ────────────────────────────────────────────────
+
+def test_status_event_sequence_two_round_tool_turn(tmp_path):
+    """meta → start → grounding → model(n=1) → tool → model(n=2) → synthesis → review →
+    delta → done. The contract's anchors (meta first, single delta, done last) hold."""
+    root = _make_temp_root()
+    parsed = _stream_events(_two_round_client(), root, tmp_path)
+
+    assert [(e["type"], e.get("phase")) for e in parsed] == [
+        ("meta", None),
+        ("status", "start"),
+        ("status", "grounding"),
+        ("status", "model"),
+        ("tool", None),
+        ("status", "model"),
+        ("status", "synthesis"),
+        ("status", "review"),
+        ("delta", None),
+        ("done", None),
+    ]
+    models = [e for e in parsed if e.get("phase") == "model"]
+    assert [e["n"] for e in models] == [1, 2]
+    # Pro wording, with the pass count baked in from round 2 on
+    assert models[0]["label_en"] == "Analyzing in depth"
+    assert models[1]["label_en"] == "Analyzing in depth · pass 2"
+    assert models[1]["label_zh"] == "深度分析中 · 第 2 轮"
+    # elapsed_ms is loop-local and never goes backwards
+    elapsed = [e["elapsed_ms"] for e in parsed if e["type"] == "status"]
+    assert elapsed == sorted(elapsed) and elapsed[0] >= 0
+
+
+def test_status_model_label_is_lane_specific(tmp_path):
+    """The Fast lane reasons, it does not 'analyze in depth' — labels track the lane."""
+    root = _make_temp_root()
+    parsed = _stream_events(_two_round_client(), root, tmp_path, lane="fast")
+    models = [e for e in parsed if e.get("phase") == "model"]
+    assert models[0]["label_en"] == "Working out the answer"
+    assert models[0]["label_zh"] == "推理中"
+
+
+def test_status_grounding_skipped_when_digest_empty(tmp_path):
+    """No grounding event when there is no digest to attach (never a fake step)."""
+    root = _make_temp_root()
+    with patch.object(gw, "_grounding_digest", return_value=""):
+        parsed = _stream_events(_two_round_client(), root, tmp_path)
+    assert not [e for e in parsed if e.get("phase") == "grounding"]
+
+
+def test_status_events_carry_no_answer_or_prompt_text(tmp_path):
+    """Leak law: a status event carries labels + counters only — never answer text,
+    prompt text, digest text, model ids or tool params."""
+    root = _make_temp_root()
+    parsed = _stream_events(_two_round_client(), root, tmp_path)
+    for ev in [e for e in parsed if e["type"] == "status"]:
+        blob = json.dumps(ev, ensure_ascii=False)
+        assert "Steady tape" not in blob
+        assert "opus" not in blob.lower() and "deepseek" not in blob.lower()
+        assert set(ev) <= {"type", "phase", "label_en", "label_zh", "detail", "elapsed_ms", "n"}
+
+
+def test_status_writing_beats_report_length_only(tmp_path):
+    """Phase-2 writing beats are throttled counters (chars so far) — the text itself
+    stays buffered until the advice filter has run on ALL of it."""
+    root = _make_temp_root()
+    with patch.object(gw, "_WRITING_BEAT_S", 0.0):  # every chunk beats; default is 1.5s
+        parsed = _stream_events(_two_round_client(), root, tmp_path)
+    writing = [e for e in parsed if e.get("phase") == "writing"]
+    assert len(writing) >= 2
+    assert [e["n"] for e in writing] == sorted(e["n"] for e in writing)
+    assert all(e["label_en"] == "Writing your answer" for e in writing)
+    assert all("Steady" not in json.dumps(e) for e in writing)
+    # Still exactly one delta, still after every writing beat
+    types = [e["type"] for e in parsed]
+    assert types.count("delta") == 1
+    assert types.index("delta") > max(i for i, e in enumerate(parsed) if e.get("phase") == "writing")
+
+
+def test_no_status_events_on_prescreen_early_return(tmp_path):
+    """Early returns (prescreen here) still emit meta+delta+done only — no status."""
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+            with patch.object(gw, "_ensure_thread", return_value=None):
+                parsed = _sse(list(gw.chat_stream("How is the world state computed exactly?",
+                                                  "user-screen", lane="fast", root=root)))
+    assert [e["type"] for e in parsed] == ["meta", "delta", "done"]
+
+
+def test_no_status_events_when_no_providers(tmp_path):
+    """No-provider degrade path is unchanged: meta → delta → done, no status."""
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=[]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    parsed = _sse(list(gw.chat_stream("hello", "user-noprov", lane="pro", root=root)))
+    assert [e["type"] for e in parsed] == ["meta", "delta", "done"]
+
+
+# ── B6: tool event labels ────────────────────────────────────────────────────
+
+def test_tool_event_carries_whitelist_label_and_sanitized_detail(tmp_path):
+    """The tool event gains bilingual whitelist labels + a sanitized symbol, and KEEPS
+    `name` for the deployed widget."""
+    ev = json.loads(gw._tool_event("get_quote", {"symbol": "aapl"})[6:])
+    assert ev["type"] == "tool" and ev["name"] == "get_quote"
+    assert ev["label_en"] == "Fetching the latest quote"
+    assert ev["label_zh"] == "获取最新行情"
+    assert ev["detail"] == "AAPL"
+
+
+def test_tool_event_detail_is_symbol_sanitized_and_falls_back_to_ticker():
+    """detail comes from params.symbol/params.ticker through _safe_symbol — a hostile
+    param can never ride out as free text, and unrelated params never appear."""
+    assert json.loads(gw._tool_event("get_movers", {"ticker": " nvda "})[6:])["detail"] == "NVDA"
+    # Hostile param: punctuation/whitespace stripped, uppercased, hard-capped at 10 chars —
+    # nothing free-text can ride out on `detail`.
+    hostile = json.loads(gw._tool_event("get_quote", {"symbol": "x'; drop table users; --"})[6:])
+    assert re.fullmatch(r"[A-Z0-9.\-]{1,10}", hostile["detail"])
+    plain = json.loads(gw._tool_event("screen_universe", {"verdict": "buy", "limit": 5})[6:])
+    assert "detail" not in plain
+    assert "buy" not in json.dumps(plain)
+
+
+def test_tool_event_unknown_name_uses_fallback_label():
+    """A tool shipped before its label falls back to a truthful generic line — never the
+    raw snake_case name as user-visible copy."""
+    ev = json.loads(gw._tool_event("some_future_tool", {})[6:])
+    assert (ev["label_en"], ev["label_zh"]) == ("Gathering data", "整理数据")
+    assert ev["name"] == "some_future_tool"  # machine field still exact
+
+
+def test_tool_label_whitelist_covers_every_tool():
+    """Every tool the model can call has a whitelist row — the fallback is a safety net,
+    not a licence to ship a tool label-less (the raw names are an internals leak)."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    names = [t["name"] for t in gw._all_brain_tool_schemas(root, page="terminal",
+                                                           internals_allowed=True)]
+    assert names, "tool schema enumeration must not be empty"
+    assert [n for n in names if n not in gw._TOOL_LABELS] == []
+    assert [k for k in gw._TOOL_LABELS if k not in names] == [], "stale label rows"
+    for en, zh in gw._TOOL_LABELS.values():
+        assert en and zh and en != zh
+
+
+def test_stage_labels_are_bilingual_and_complete():
+    """Every phase the loop can emit has EN + ZH copy."""
+    for key in ("start", "grounding", "model.fast", "model.pro", "synthesis", "writing", "review"):
+        en, zh = gw._STAGE_LABELS[key]
+        assert en and zh and en != zh
+    assert gw._STAGE_LABELS["synthesis"] == gw._STAGE_LABELS["writing"]
+
+
+# ── B5: prompt caching ───────────────────────────────────────────────────────
+
+def _assert_cached(kwargs: dict) -> None:
+    system = kwargs["system"]
+    assert isinstance(system, list) and len(system) == 1
+    assert system[0]["type"] == "text"
+    assert system[0]["cache_control"] == {"type": "ephemeral"}
+    tools = kwargs["tools"]
+    assert tools[-1]["cache_control"] == {"type": "ephemeral"}
+    assert all("cache_control" not in t for t in tools[:-1]), "one breakpoint only"
+
+
+def test_cache_control_on_system_and_last_tool_in_stream_loop(tmp_path):
+    """Both Phase-1 creates AND the Phase-2 stream carry the cache breakpoints, and the
+    cached surfaces are built ONCE per invocation (same objects every round)."""
+    root = _make_temp_root()
+    client = _two_round_client()
+    _stream_events(client, root, tmp_path)
+
+    assert len(client.create_kwargs) == 2 and len(client.stream_kwargs) == 1
+    for kwargs in client.create_kwargs + client.stream_kwargs:
+        _assert_cached(kwargs)
+    assert client.create_kwargs[0]["tools"] is client.create_kwargs[1]["tools"]
+    assert client.create_kwargs[0]["system"] is client.create_kwargs[1]["system"]
+
+
+def test_cache_control_on_system_and_last_tool_in_chat_loop(tmp_path):
+    """The non-streaming loop caches the same two surfaces."""
+    root = _make_temp_root()
+    client = _CaptureClient()
+    gw._run_brain_loop("hello", "fast", [], {}, root, tmp_path, "http://127.0.0.1:3100",
+                       client, "deepseek-v4-flash", 500, 2)
+    assert client.create_kwargs
+    _assert_cached(client.create_kwargs[0])
+
+
+def test_cache_control_never_mutates_the_schema_builders_output():
+    """The breakpoint rides a COPY — a freshly built schema list stays clean, and the
+    input list handed to the helper is untouched."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    schemas = gw._all_brain_tool_schemas(root, page="terminal", internals_allowed=True)
+    cached = gw._cache_control_tools(schemas)
+    assert cached is not schemas
+    assert cached[-1]["cache_control"] == {"type": "ephemeral"}
+    assert all("cache_control" not in t for t in schemas)
+    assert all("cache_control" not in t
+               for t in gw._all_brain_tool_schemas(root, page="terminal", internals_allowed=True))
+    assert gw._cache_control_tools([]) == []
+
+
+# ── B4: DeepSeek thinking gate ───────────────────────────────────────────────
+
+def test_deepseek_extra_params_gate():
+    """Fires ONLY for a deepseek model on a lane that disabled thinking."""
+    assert gw._deepseek_extra_params("deepseek-v4-flash", "disabled") == {"thinking": {"type": "disabled"}}
+    assert gw._deepseek_extra_params("deepseek-v4-pro", None) == {}          # pro's degraded rung keeps it
+    assert gw._deepseek_extra_params("deepseek-v4-pro", "enabled") == {}
+    assert gw._deepseek_extra_params("claude-opus-5", "disabled") == {}      # never to Claude
+    assert gw._deepseek_extra_params("claude-haiku-4-5", "disabled") == {}
+    assert gw._deepseek_extra_params("", "disabled") == {}
+
+
+def test_deepseek_thinking_rides_per_candidate_kwargs(tmp_path):
+    """In one mixed failover chain the DeepSeek candidate gets thinking disabled and the
+    Claude candidate gets adaptive thinking + effort — never each other's params."""
+    root = _make_temp_root()
+    ds = _FailingClient(Exception("429 rate_limit_error: capacity"))
+    claude = _CaptureClient()
+    providers = [
+        {"name": "deepseek", "client": ds, "model": "deepseek-v4-flash"},
+        {"name": "oauth", "client": claude, "model": "claude-opus-5"},
+    ]
+    gw._run_brain_loop("hello", "fast", [], {}, root, tmp_path, "http://127.0.0.1:3100",
+                       ds, "deepseek-v4-flash", 500, 1, providers=providers,
+                       effort="high", thinking_mode="adaptive", deepseek_thinking="disabled")
+
+    assert ds.create_kwargs[0]["thinking"] == {"type": "disabled"}
+    assert "output_config" not in ds.create_kwargs[0]
+    assert claude.create_kwargs[0]["thinking"] == {"type": "adaptive"}
+    assert claude.create_kwargs[0]["output_config"] == {"effort": "high"}
+
+
+def test_fast_lane_config_disables_deepseek_thinking_end_to_end(tmp_path):
+    """chat() reads deepseek_thinking off the lane config and it reaches the create call
+    (config-not-literals: flipping the yaml key is the whole switch)."""
+    root = pathlib.Path(__file__).resolve().parent.parent  # the SHIPPED config/brain.yml
+    client = _CaptureClient()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers",
+                          return_value=[{"client": client, "model": "deepseek-v4-flash"}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        gw.chat("hello", "user-dst", lane="fast", root=root)
+    assert client.create_kwargs[0]["thinking"] == {"type": "disabled"}
+
+
+def test_pro_lane_keeps_deepseek_thinking_on_its_degraded_rung(tmp_path):
+    """Pro's degraded deepseek-v4-pro rung is the QUALITY backstop — it must keep
+    thinking (no deepseek_thinking key on the pro lane)."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    client = _CaptureClient()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers",
+                          return_value=[{"client": client, "model": "deepseek-v4-pro"}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch("lib.ai_costs.record_usage", return_value=True):
+                        gw.chat("hello", "user-prodeg", lane="pro", root=root)
+    assert "thinking" not in client.create_kwargs[0]
+
+
+# ── B3: cooled-key skip-ahead ────────────────────────────────────────────────
+
+def _pro_chain() -> list[dict]:
+    """A fully built pro chain: 3 opus oauth rungs, then the degraded rungs (metered
+    DeepSeek + one Haiku rung reusing each opus key)."""
+    opus = [{"name": "oauth", "env_var": f"E{i}", "cap_id": f"claude_code_oauth_{i}",
+             "client": object(), "model": "claude-opus-5"} for i in (3, 4, 5)]
+    degraded = [{"name": "deepseek", "env_var": "DEEPSEEK_API_KEY", "client": object(),
+                 "model": "deepseek-v4-pro"}]
+    degraded += [{"name": "oauth", "env_var": f"E{i}", "cap_id": f"claude_code_oauth_{i}",
+                  "client": object(), "model": "claude-haiku-4-5"} for i in (3, 4, 5)]
+    return opus + degraded
+
+
+def test_skip_ahead_moves_all_but_one_cooling_opus_rung_to_the_end(monkeypatch):
+    """Fully capped pool → ONE opus probe, then the degraded rungs serve; the extra
+    cooling opus rungs land last. Haiku rungs share those cap_ids and never move."""
+    monkeypatch.setattr("engine.neuralweb.key_pool.is_cooling", lambda k, root=None: True)
+    chain = _pro_chain()
+    out = gw._skip_ahead_cooled_opus(chain, "claude-opus-5")
+    assert [(p["model"], p.get("cap_id")) for p in out] == [
+        ("claude-opus-5", "claude_code_oauth_3"),
+        ("deepseek-v4-pro", None),
+        ("claude-haiku-4-5", "claude_code_oauth_3"),
+        ("claude-haiku-4-5", "claude_code_oauth_4"),
+        ("claude-haiku-4-5", "claude_code_oauth_5"),
+        ("claude-opus-5", "claude_code_oauth_4"),
+        ("claude-opus-5", "claude_code_oauth_5"),
+    ]
+
+
+def test_skip_ahead_keeps_healthy_pool_order_untouched(monkeypatch):
+    """No cooling keys → the chain is returned exactly as built."""
+    monkeypatch.setattr("engine.neuralweb.key_pool.is_cooling", lambda k, root=None: False)
+    chain = _pro_chain()
+    assert gw._skip_ahead_cooled_opus(chain, "claude-opus-5") is chain
+
+
+def test_skip_ahead_keeps_non_cooling_rungs_in_place(monkeypatch):
+    """A healthy key keeps its slot; only the SURPLUS cooling rungs move."""
+    cooling = {"claude_code_oauth_3", "claude_code_oauth_5"}
+    monkeypatch.setattr("engine.neuralweb.key_pool.is_cooling",
+                        lambda k, root=None: k in cooling)
+    out = gw._skip_ahead_cooled_opus(_pro_chain(), "claude-opus-5")
+    opus = [p["cap_id"] for p in out if p["model"] == "claude-opus-5"]
+    assert opus == ["claude_code_oauth_3", "claude_code_oauth_4", "claude_code_oauth_5"]
+    assert out[-1]["cap_id"] == "claude_code_oauth_5" and out[-1]["model"] == "claude-opus-5"
+
+
+def test_skip_ahead_is_fail_open_on_key_pool_error(monkeypatch):
+    """A key_pool error must never reorder (or blank) the chain."""
+    def _boom(key_id, root=None):
+        raise RuntimeError("ledger unreadable")
+    monkeypatch.setattr("engine.neuralweb.key_pool.is_cooling", _boom)
+    chain = _pro_chain()
+    assert gw._skip_ahead_cooled_opus(chain, "claude-opus-5") is chain
+
+
+# ── B1/B2: client latency guards, config → build_providers ───────────────────
+
+def test_brain_yml_fast_lane_is_the_speed_tier():
+    """The SHIPPED config (not the loader fallback): Fast runs v4-flash with thinking off
+    and no SDK-level retry (the failover chain is the retry)."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    fast = gw._load_brain_config(root)["lanes"]["fast"]
+    assert fast["deepseek_model"] == "deepseek-v4-flash"
+    assert fast["deepseek_thinking"] == "disabled"
+    assert fast["client_max_retries"] == 0
+    assert fast["client_timeout_s"] == 120
+
+
+def test_brain_yml_pro_lane_latency_guards():
+    """Pro carries the same retry guard with a longer ceiling, and deliberately does NOT
+    disable thinking (its degraded DeepSeek rung is the quality backstop)."""
+    root = pathlib.Path(__file__).resolve().parent.parent
+    pro = gw._load_brain_config(root)["lanes"]["pro"]
+    assert pro["client_max_retries"] == 0
+    assert pro["client_timeout_s"] == 240
+    assert "deepseek_thinking" not in pro
+
+
+def test_lane_client_tuning_passthrough_omits_absent_keys():
+    assert gw._lane_client_tuning({"client_max_retries": 0, "client_timeout_s": 120}) == {
+        "client_max_retries": 0, "client_timeout_s": 120}
+    assert gw._lane_client_tuning({"max_tokens": 2000}) == {}
+
+
+def test_build_lane_providers_forwards_client_tuning_to_llm_auth():
+    """The lane's guards reach build_providers for every rung it builds."""
+    from engine import llm_auth
+    root = pathlib.Path(__file__).resolve().parent.parent
+    seen: list[dict] = []
+
+    def _capture(cfg, **kwargs):
+        seen.append(cfg)
+        return []
+
+    with patch.object(llm_auth, "build_providers", _capture):
+        gw._build_lane_providers("fast", root)
+    assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 120 for c in seen)
+
+    seen.clear()
+    with patch.object(llm_auth, "build_providers", _capture):
+        gw._build_lane_providers("pro", root)
+    assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 240 for c in seen)

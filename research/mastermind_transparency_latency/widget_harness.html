@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mm_brain.js — reasoning timeline harness</title>
+<!--
+  Offline self-test for the Mastermind widget's reasoning timeline (SPEC §C).
+  Dependency-free: it stubs window.fetch and replays a canned SSE byte stream at
+  realistic speed against the REAL widget source (../../templates/mm_brain.js).
+
+  Open it straight off disk (file://) or through any static server:
+      open research/mastermind_transparency_latency/widget_harness.html
+
+  Modes — click the buttons top-left (they re-run the turn in place), or preload one
+  with a query flag (some preview panes strip the query string, hence the buttons):
+    (none)    new server: status + labelled tool events → full timeline
+    ?zh=1     Chinese UI (sets <html data-lang="zh">, which is what the widget's
+              zh() helper reads) — same stream, Chinese labels off the events
+    ?old=1    OLD server: no status events, tool events with no label pair →
+              proves the back-compat path (default header + live clock +
+              generic tool label, never a raw tool name)
+    ?slow=N   ms between frames (default 600)
+
+  The default stream also carries two `beat` keepalives (must cause NO visual
+  change) and one late `status` AFTER `done` (must be ignored).
+  Stop-path check: click the send button (it is a Stop square mid-stream) while
+  the timeline is running — the strip must vanish with no orphan node and the
+  clock must stop ticking.
+-->
+<style>
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: radial-gradient(1200px 700px at 70% -10%, #16203a, #080a10 60%) #080a10;
+    color: #e6eaf0; font: 14px/1.6 Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .hx { position: fixed; left: 22px; top: 20px; max-width: 460px; }
+  .hx h1 { margin: 0 0 6px; font: 700 15px/1.3 inherit; letter-spacing: -.01em; }
+  .hx p { margin: 0 0 12px; color: #8b93a1; font-size: 12.5px; }
+  .hx button {
+    display: inline-block; margin: 0 6px 6px 0; padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    background: none; border: 1px solid rgba(255,255,255,.12); color: #9fb4dd; font: 12px inherit;
+  }
+  .hx button:hover { border-color: rgba(91,155,240,.5); color: #e6eaf0; }
+  .hx button.on { background: rgba(91,155,240,.16); border-color: rgba(91,155,240,.45); color: #e6eaf0; }
+  .hx code { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: #8b93a1; }
+</style>
+</head>
+<body>
+  <div class="hx">
+    <h1>mm_brain.js — reasoning timeline harness</h1>
+    <p>Canned SSE replay against the real widget source. No network, no backend.</p>
+    <div id="hx-nav"></div>
+    <p><code id="hx-mode"></code></p>
+  </div>
+
+<script>
+/* ── language must be set BEFORE the widget script runs: the widget bakes its chrome
+      copy at construction time and reads document.documentElement[data-lang] in zh(). ── */
+(function () {
+  var Q = new URLSearchParams(location.search);
+  window.HX = {
+    zh: Q.get('zh') === '1',
+    old: Q.get('old') === '1',
+    gap: Math.max(0, parseInt(Q.get('slow') || '600', 10) || 600)
+  };
+  /* the widget reads document.documentElement[data-lang] in zh(); set it before it boots */
+  document.documentElement.setAttribute('data-lang', window.HX.zh ? 'zh' : 'en');
+})();
+
+/* ── the canned answer (~500 chars of markdown, one buffered delta per the advice-filter law) ── */
+var HX_ANSWER = [
+  '**AAPL — steady, not stretched.**',
+  '',
+  'Price is holding the rising 50-day line after last week\'s pullback, and the pullback came on lighter volume than the advance that preceded it. That combination usually reads as supply drying up rather than distribution.',
+  '',
+  '- Trend: up on the weekly, flat on the daily — the pause is inside the trend, not against it',
+  '- Level that matters: the shelf near the prior breakout; losing it changes the read',
+  '- Earnings sit outside the next two weeks, so the calendar is quiet',
+  '',
+  'Watch, don\'t chase. There is no edge in paying up into a pause of this kind.'
+].join('\n');
+
+/* ── the SSE script: [phase-ish label, event object] replayed one frame apart ──────── */
+function hxEvents() {
+  var E = [];
+  var t = 0, gap = window.HX.gap;
+  function at(obj) { t += gap; E.push({ delay: gap, obj: obj, ms: t }); }
+  function st(phase, en, cn, extra) {
+    var o = { type: 'status', phase: phase, label_en: en, label_zh: cn, elapsed_ms: t + gap };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    at(o);
+  }
+
+  at({ type: 'meta', thread_id: 'harness-1', lane: 'pro' });
+
+  if (window.HX.old) {
+    /* OLD server: no status events at all, tool events carry only `name`. */
+    at({ type: 'tool', name: 'get_symbol_backtest' });
+    at({ type: 'tool', name: 'get_quote' });
+  } else {
+    st('start', 'Reading your question', '正在理解您的问题');
+    st('grounding', "Loading today's market state", '载入今日市场状态');
+    st('model', 'Analyzing in depth', '深度分析中', { n: 1 });
+    at({ type: 'status', phase: 'beat', elapsed_ms: t + 200 });          /* keepalive: no visual change */
+    at({ type: 'tool', name: 'get_quote', label_en: 'Fetching the latest quote', label_zh: '获取最新行情', detail: 'AAPL' });
+    at({ type: 'tool', name: 'get_symbol_backtest', label_en: 'Reviewing the track record', label_zh: '回顾历史表现', detail: 'AAPL' });
+    st('model', 'Analyzing in depth · pass 2', '深度分析中 · 第 2 轮', { n: 2 });
+    at({ type: 'tool', name: 'get_symbol_intel', label_en: 'Checking the current read', label_zh: '查看最新解读', detail: 'MSFT' });
+    at({ type: 'status', phase: 'beat', elapsed_ms: t + 200 });
+    st('synthesis', 'Writing your answer', '撰写回答中');
+    st('writing', 'Writing your answer', '撰写回答中', { n: 180 });
+    st('writing', 'Writing your answer', '撰写回答中', { n: 430 });
+    st('review', 'Final quality check', '最终质量核查');
+  }
+
+  at({ type: 'delta', text: HX_ANSWER });
+  at({ type: 'suggest', items: ['What would change the read on AAPL?', 'How does this compare to the sector?'] });
+  at({ type: 'done', ok: true });
+  /* late status AFTER done — the widget must ignore it (doneSeen guard) */
+  at({ type: 'status', phase: 'review', label_en: 'Final quality check', label_zh: '最终质量核查', elapsed_ms: t + 500 });
+  return E;
+}
+
+/* ── SSE byte stream: one frame per chunk, with the delta deliberately split across
+      two chunks so the widget's newline buffering is exercised too. ── */
+function hxChunks() {
+  var out = [];
+  hxEvents().forEach(function (e) {
+    var frame = 'data: ' + JSON.stringify(e.obj) + '\n\n';
+    if (e.obj.type === 'delta') {
+      var cut = Math.floor(frame.length * 0.55);
+      out.push({ delay: e.delay, text: frame.slice(0, cut) });
+      out.push({ delay: 90, text: frame.slice(cut) });
+    } else {
+      out.push({ delay: e.delay, text: frame });
+    }
+  });
+  return out;
+}
+
+function hxAbortError() {
+  try { return new DOMException('Aborted', 'AbortError'); }
+  catch (e) { var err = new Error('Aborted'); err.name = 'AbortError'; return err; }
+}
+
+/* Minimal ReadableStream-reader stand-in: resolves one encoded chunk per read(),
+   honours the AbortSignal the widget passes to fetch (so Stop / Esc still work). */
+function hxReader(signal) {
+  var chunks = hxChunks(), i = 0, enc = new TextEncoder();
+  return {
+    read: function () {
+      return new Promise(function (resolve, reject) {
+        if (signal && signal.aborted) { reject(hxAbortError()); return; }
+        if (i >= chunks.length) { resolve({ done: true, value: undefined }); return; }
+        var c = chunks[i++];
+        var timer = setTimeout(function () {
+          if (signal && signal.aborted) { reject(hxAbortError()); return; }
+          console.log('[harness] →', c.text.trim().slice(0, 96));
+          resolve({ done: false, value: enc.encode(c.text) });
+        }, c.delay);
+        if (signal) signal.addEventListener('abort', function () {
+          clearTimeout(timer); reject(hxAbortError());
+        }, { once: true });
+      });
+    },
+    cancel: function () { i = chunks.length; }
+  };
+}
+
+/* ── fetch stub: /api/brain/stream replays the canned bytes; everything else is {} ── */
+(function () {
+  window.fetch = function (url, opts) {
+    url = String(url && url.url ? url.url : url);
+    opts = opts || {};
+    if (url.indexOf('/api/brain/stream') !== -1) {
+      return Promise.resolve({
+        ok: true, status: 200,
+        headers: { get: function () { return 'text/event-stream'; } },
+        body: { getReader: function () { return hxReader(opts.signal); } }
+      });
+    }
+    /* /api/brain/me and /api/brain/threads: enough for boot, nothing more */
+    return Promise.resolve({
+      ok: true, status: 200,
+      json: function () { return Promise.resolve({}); },
+      text: function () { return Promise.resolve('{}'); }
+    });
+  };
+})();
+
+window.MM_BRAIN_CFG = { anchor: 'br', api: '' };
+</script>
+
+<script src="../../templates/mm_brain.js"></script>
+
+<script>
+/* ── driver: open the widget and send one turn, so the page shows the timeline
+      progressing the moment it loads (the widget's own boot listener runs first).
+      Mode switches re-run in place — no reload, so they work in preview panes that
+      drop the query string. ── */
+var HX_MODES = [
+  ['New server (EN)', false, false],
+  ['New server (ZH)', true, false],
+  ['Old server (EN)', false, true],
+  ['Old server (ZH)', true, true]
+];
+function hxPaintNav() {
+  var nav = document.getElementById('hx-nav');
+  nav.innerHTML = '';
+  HX_MODES.forEach(function (m, i) {
+    var b = document.createElement('button');
+    b.textContent = m[0];
+    b.className = (window.HX.zh === m[1] && window.HX.old === m[2]) ? 'on' : '';
+    b.addEventListener('click', function () { window.HX.zh = m[1]; window.HX.old = m[2]; hxRun(); });
+    nav.appendChild(b);
+  });
+  var again = document.createElement('button');
+  again.textContent = '↻ Replay';
+  again.addEventListener('click', function () { hxRun(); });
+  nav.appendChild(again);
+  document.getElementById('hx-mode').textContent =
+    (window.HX.old ? 'stream: legacy (no status events)' : 'stream: status + labelled tools') +
+    ' · lang: ' + (window.HX.zh ? 'zh' : 'en') + ' · frame gap: ' + window.HX.gap + 'ms';
+}
+/* one turn: set the language the way the host does (data-lang + langchange), clear the
+   transcript (this also aborts any live stream — a free teardown check), then send. */
+function hxRun() {
+  if (!window.MMBrain || !window.MMBrain.mounted) { console.error('[harness] widget did not mount'); return; }
+  document.documentElement.setAttribute('data-lang', window.HX.zh ? 'zh' : 'en');
+  document.dispatchEvent(new Event('langchange'));
+  hxPaintNav();
+  window.MMBrain.open();
+  var nb = document.querySelector('#mmb-root .mmb-rail [data-act="new"]'); if (nb) nb.click();
+  setTimeout(function () {
+    var ta = document.getElementById('mmb-ta'), send = document.getElementById('mmb-send');
+    if (!ta || !send) { console.error('[harness] composer not found'); return; }
+    ta.value = window.HX.zh ? '看看 AAPL 现在的结构如何？' : "What's the read on AAPL right now?";
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    send.click();
+  }, 300);
+}
+window.addEventListener('load', function () { setTimeout(hxRun, 150); });
+</script>
+</body>
+</html>

@@ -18,9 +18,19 @@ lanes:
       - anthropic        # haiku fallback only — model overridden below
     # DeepSeek renamed its models: "deepseek-chat" was retired and now 400s
     # ("supported API model names are deepseek-v4-pro or deepseek-v4-flash").
-    # v4-pro = flagship successor to deepseek-chat; switch to deepseek-v4-flash for
-    # a cheaper/faster free-tier lane. (Verified live on the VPS key 2026-07-25.)
-    deepseek_model: deepseek-v4-pro
+    # Fast is the SPEED tier: v4-flash answers a one-liner in ~1.45s TTFT vs v4-pro's
+    # 3.68s. v4-pro stays as Pro's degraded rung (quality backstop). Verified live
+    # on the VPS key 2026-07-26.
+    deepseek_model: deepseek-v4-flash
+    # v4 models THINK by default (content[0] is a ThinkingBlock) — the compat endpoint
+    # accepts thinking={"type":"disabled"} (probed: 2.55s → 1.15s, ~4× fewer output
+    # tokens). Fast answers directly; only the pro lane pays for thinking.
+    deepseek_thinking: disabled
+    # The failover chain IS the retry: the SDK's default max_retries=2 re-tries the
+    # SAME dead key with backoff before the next candidate is ever tried.
+    client_max_retries: 0
+    # SDK default is 600s — a hung candidate would stall the turn ~10min.
+    client_timeout_s: 120
     deepseek_key_env: DEEPSEEK_API_KEY
     deepseek_base_url: https://api.deepseek.com/anthropic
     # Fallback model when DeepSeek unavailable (operator-configurable)
@@ -47,6 +57,14 @@ lanes:
     # See _model_supports_effort_thinking() in brain_gateway.py for the gate.
     effort: high        # low | medium | high | xhigh | max
     thinking: adaptive  # adaptive | off
+    # The failover chain IS the retry (see fast lane): with every pool key weekly-capped
+    # on opus, the SDK default re-tried each dead key twice at ~2.4s a candidate — 25-31s
+    # of dead time per turn (measured in journalctl -u macro-api) before DeepSeek served.
+    client_max_retries: 0
+    # Longer than fast: high-effort adaptive-thinking answers legitimately run minutes.
+    client_timeout_s: 240
+    # NOTE: pro's degraded deepseek-v4-pro rung keeps thinking ENABLED (quality backstop
+    # for a capped pool) — deliberately no `deepseek_thinking` key on this lane.
     # Degraded-capacity fallbacks (operator 2026-07-25): when the OAuth pool is fully
     # rate-capped on Opus/Sonnet (every subscription token 429s on the higher tiers —
     # observed live), serve a REAL answer from these instead of a blank/"unavailable"

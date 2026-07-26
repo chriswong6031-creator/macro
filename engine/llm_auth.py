@@ -508,6 +508,43 @@ def _capture_usage(p: dict, usage_obj, context: str) -> None:
 # --------------------------------------------------------------------------- #
 # convenience: build provider list from waterfall config + lib.config secrets
 # --------------------------------------------------------------------------- #
+
+def _client_tuning_kwargs(cfg: dict) -> dict:
+    """Optional SDK client tuning read from cfg — {} when neither key is present.
+
+    ``client_max_retries`` (int): the SDK retries the SAME credential twice by
+    default, so one dead/429 key costs ~2.4s before the waterfall even sees it
+    (probe: 4.23s default vs 0.49s at 0). For a multi-key waterfall the FAILOVER
+    CHAIN is the retry, so a lane that walks its own keys sets this to 0.
+    ``client_timeout_s`` (float): SDK default is 600s — a hung candidate can
+    otherwise stall a user-facing turn for ten minutes.
+
+    Absent keys are OMITTED (never passed as None) so every existing consumer
+    builds byte-identical clients. An unusable value is logged and dropped —
+    a bad config line must never fail client construction.
+    """
+    out: dict = {}
+    retries = cfg.get("client_max_retries")
+    if retries is not None:
+        try:
+            out["max_retries"] = int(retries)
+        except (TypeError, ValueError):
+            log.warning("llm_auth: client_max_retries=%r is not an int — SDK default kept", retries)
+    timeout_s = cfg.get("client_timeout_s")
+    if timeout_s is not None:
+        try:
+            secs = float(timeout_s)
+        except (TypeError, ValueError):
+            log.warning("llm_auth: client_timeout_s=%r is not a number — SDK default kept", timeout_s)
+        else:
+            try:
+                import httpx  # noqa: PLC0415
+                out["timeout"] = httpx.Timeout(secs, connect=5.0)
+            except Exception:  # noqa: BLE001 — httpx absent/stubbed: a plain float is accepted too
+                out["timeout"] = secs
+    return out
+
+
 def build_providers(
     cfg: dict,
     *,
@@ -534,6 +571,10 @@ def build_providers(
           deepseek_base_url (str)        — DeepSeek API base URL
           opus_model        (str)        — model id for oauth/anthropic providers
           deepseek_model    (str)        — model id for deepseek provider
+          client_max_retries (int|None)  — SDK max_retries for every client built
+                                           here; absent → SDK default (2)
+          client_timeout_s  (float|None) — per-request timeout in seconds;
+                                           absent → SDK default (600s)
     opus_model:
         Override for the Claude model id (oauth / anthropic providers).
     deepseek_model:
@@ -550,6 +591,8 @@ def build_providers(
     opus = opus_model or cfg.get("opus_model", "claude-opus-4-8")
     ds_model = deepseek_model or cfg.get("deepseek_model", "deepseek-v4-pro")
     ds_base = cfg.get("deepseek_base_url", DEEPSEEK_DEFAULT_BASE)
+    # Latency guards for every client built below — {} unless the caller's cfg opts in.
+    tuning = _client_tuning_kwargs(cfg)
 
     def _mk_oauth_provider(env: str, cap_id: str | None = None) -> dict | None:
         """Build one oauth provider descriptor from an env-var NAME, or None."""
@@ -613,6 +656,7 @@ def build_providers(
                 "api_key": None,
                 "auth_token": tok,
                 "default_headers": hdrs,
+                **tuning,
             }
             if http_client is not None:
                 client_kwargs["http_client"] = http_client
@@ -737,7 +781,8 @@ def build_providers(
                 import anthropic
                 hdrs = dict(extra_headers) if extra_headers else {}
                 client = anthropic.Anthropic(api_key=key,
-                                             **({"default_headers": hdrs} if hdrs else {}))
+                                             **({"default_headers": hdrs} if hdrs else {}),
+                                             **tuning)
                 out.append({"name": "anthropic", "env_var": env, "cred": key,
                              "client": client, "model": opus})
             except Exception as e:  # noqa: BLE001
@@ -753,7 +798,7 @@ def build_providers(
                 continue
             try:
                 import anthropic
-                client = anthropic.Anthropic(api_key=key, base_url=ds_base)
+                client = anthropic.Anthropic(api_key=key, base_url=ds_base, **tuning)
                 out.append({"name": "deepseek", "env_var": env, "cred": key,
                              "client": client, "model": ds_model})
             except Exception as e:  # noqa: BLE001
