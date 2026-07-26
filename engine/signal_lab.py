@@ -132,7 +132,12 @@ def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
 _BTC_VECTOR_FROZEN: dict = {
     # Stamped from data/vector/calibration.json + trial_log.json @ 2026-07-26
     # (data span 2015-01-01..2026-07-25). Refresh only by re-quoting the artifact.
-    "asof": "2026-07-25", "quoted_on": "2026-07-26",
+    # `expiry` mirrors the row's dsr_expiry: past it, the fallback is not merely
+    # "frozen" but STALE, and the build warning says so. Same idiom (and same
+    # reason) as _resolve_dsr_provenance's expired-quote escalation — a frozen
+    # number that does not announce its own staleness is how this card drifted
+    # in the first place.
+    "asof": "2026-07-25", "quoted_on": "2026-07-26", "expiry": "2026-10-31",
     "n_trials_declared": 71, "n_trials_config": 65, "override_dof": 6,
     "sharpe_raw": 1.42, "sharpe_gated": 1.59, "hodl_sharpe": 1.02,
     "maxdd_raw": -41.2, "maxdd_gated": -32.3, "hodl_maxdd": -83.8,
@@ -1584,10 +1589,15 @@ def _resolve_vector_live_stats(registry: list[dict], warnings: list[str] | None 
     fig = _btc_vector_figures(_read("calibration.json"), _read("trial_log.json"))
     if fig is None:
         if warnings is not None:
+            from datetime import date
+            exp = _BTC_VECTOR_FROZEN.get("expiry")
+            expired = bool(exp and date.today().isoformat() > exp)
             warnings.append(
                 f"BTC Vector card: data/vector/calibration.json+trial_log.json unreadable or "
-                f"incomplete — rendering the frozen quote stamped "
-                f"{_BTC_VECTOR_FROZEN['quoted_on']} (data asof {_BTC_VECTOR_FROZEN['asof']})"
+                f"incomplete — rendering the "
+                f"{'EXPIRED frozen quote (past ' + exp + ' — REFRESH IT from the artifact; the '
+                   'published DSR is no longer the computed one)' if expired else 'frozen quote'} "
+                f"stamped {_BTC_VECTOR_FROZEN['quoted_on']} (data asof {_BTC_VECTOR_FROZEN['asof']})"
             )
         return
     row.update(_btc_vector_copy(fig))
