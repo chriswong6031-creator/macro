@@ -127,3 +127,24 @@ received.
 If step 3 shows **not emailed**, read `journalctl -u admin -n 50 | grep mailer` — the status
 (`skipped_no_smtp`, `failed`) and the exception **class** are logged. Bodies and credentials never
 are, by design.
+
+---
+
+## Appendix — what the operator console looks like
+
+Captured against the real `admin` server with fixture rows (only the Management-API SQL seam
+`admin.users._query` was stubbed; routes, `app.js`, and `styles.css` are production code).
+
+**List** — status chips with live counts, search, and the tier/lang/topic snapshot columns.
+The **Support** nav group sits between Growth and System, with an open-ticket count dot.
+
+![Support Tickets list](img/support-console-list.png)
+
+**Thread** — user and operator messages offset from each other, the `emailed` pill, the reply
+composer, and only the actions that are legal for an `open` ticket.
+
+![Support ticket thread](img/support-console-thread.png)
+
+**Closed ticket** — no composer at all, a plain-word explanation, and only `Reopen`.
+
+![Closed support ticket](img/support-console-closed.png)
