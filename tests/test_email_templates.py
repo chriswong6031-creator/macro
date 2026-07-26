@@ -293,6 +293,78 @@ def test_empty_blocks_are_skipped_not_rendered_blank():
 
 
 # ===========================================================================
+# W2 review B6c — `once` blocks: the reader's own words, printed ONE time
+#
+# Every block renders twice, once per language half. That is right for translated copy and
+# wrong for a quote of the sender's own message, which is not translated because it cannot
+# be: the ack shipped a 5000-char message as ~10000 chars of the same text twice.
+# ===========================================================================
+LONG = "x" * 4000
+
+
+def test_a_once_block_is_rendered_exactly_once_in_html_and_text():
+    html, text = mailer.render_email(
+        "T", "T",
+        [{"en": "lede", "zh": "引言"},
+         {"kind": "quote", "once": True, "label_en": "Your message",
+          "label_zh": "你的原文", "en": LONG, "zh": LONG}])
+    assert html.count(LONG) == 1, "a `once` block must not be printed per language"
+    assert text.count(LONG) == 1
+    # …while ordinary blocks keep both halves
+    assert html.count("lede") == 1 and html.count("引言") == 1
+
+
+def test_a_once_block_carries_its_bilingual_label():
+    html, text = mailer.render_email(
+        "T", "T", [{"kind": "quote", "once": True, "label_en": "Your message",
+                    "label_zh": "你的原文", "en": "hello", "zh": "hello"}])
+    assert "Your message · 你的原文" in html
+    assert "Your message · 你的原文" in text
+
+
+def test_a_once_block_sits_below_both_language_halves():
+    """Below both, not inside either — it belongs to neither language."""
+    html, _text = mailer.render_email(
+        "EN TITLE", "中文标题",
+        [{"en": "english body", "zh": "中文正文"},
+         {"kind": "quote", "once": True, "en": "the quote", "zh": "the quote"}])
+    assert html.index("english body") < html.index("中文正文") < html.index("the quote")
+
+
+def test_a_once_block_without_a_label_renders_bare():
+    html, text = mailer.render_email(
+        "T", "T", [{"kind": "quote", "once": True, "en": "bare", "zh": "bare"}])
+    assert html.count("bare") == 1 and text.count("bare") == 1
+    assert " · " not in text.split("bare")[0].splitlines()[-1]
+
+
+def test_the_ack_quotes_the_submitter_once(monkeypatch):
+    """End-to-end on the real caller."""
+    from app import support
+    captured: list[dict] = []
+    monkeypatch.setattr(mailer, "send", lambda **kw: (captured.append(kw), "sent")[1])
+    support._ack_submitter(
+        ticket_id="7f3a2b91-1111-4000-8000-000000000001", topic="billing",
+        subject="Card declined", message=LONG, email="ada@example.com", user_id=None)
+    assert captured[0]["html"].count(LONG) == 1
+    assert captured[0]["text"].count(LONG) == 1
+    assert "Your message · 你的原文" in captured[0]["html"]
+
+
+# ===========================================================================
+# W2 review B6c — the ZH footer's support address is a link too
+# ===========================================================================
+def test_both_footer_halves_link_the_support_address(rendered):
+    """The EN half linked it and the ZH half printed it as plain text, so a Chinese reader
+    had to select-and-copy an address the English reader could tap."""
+    html, _text = rendered
+    assert html.count(f'href="mailto:{mailer._SUPPORT_ADDR}"') == 2
+    zh_line = re.search(r"有问题？直接回复本邮件，或发送至 (.*?)。", html)
+    assert zh_line, "the ZH footer line must be present"
+    assert zh_line.group(1).startswith('<a class="mx-link" href="mailto:')
+
+
+# ===========================================================================
 # Regression guard: the W1 placeholder base is really gone
 # ===========================================================================
 def test_the_w1_functional_placeholder_base_has_been_replaced():

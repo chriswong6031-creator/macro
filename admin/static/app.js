@@ -8521,7 +8521,7 @@ RENDER.support_tickets = async () => {
     <div class="section">Tickets <span class="cnt" id="supCnt"></span></div>
     <div class="ent-toolbar">
       <div id="supChips" class="ent-chips"></div>
-      <input id="supSearch" class="ent-search" type="search" placeholder="search email or subject…" autocomplete="off">
+      <input id="supSearch" class="ent-search" type="search" placeholder="search email, subject or MX- ref…" autocomplete="off">
     </div>
     <div id="supTbl"><div class="spin">loading…</div></div>
     <div id="supPager" class="ent-pager"></div>`;

@@ -193,7 +193,8 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
 
 /* honeypot — abuse hardening (masterplan R2). Off-screen, never focusable.
    Deliberately NOT display:none: a bot that skips hidden inputs would sail past
-   a display:none trap, and some assistive tech would too. */
+   a display:none trap, and some assistive tech would too.
+   The field's id/name/label are deliberately meaningless — see the markup. */
 .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 
 /* signed-in identity chip (replaces the email input) */
@@ -250,7 +251,14 @@ select.inp{ appearance:none; -webkit-appearance:none; cursor:pointer; padding-ri
   background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.13) 50%,transparent 60%);
   transform:translateX(-140%) skewX(-8deg); }
 .btn:hover::after{ transform:translateX(140%) skewX(-8deg); transition:transform .55s ease; }
+/* Dimming ONLY. pointer-events suppresses mouse hit-testing and nothing else — not the
+   keyboard activating an already-focused button, and not implicit submission from Enter
+   in a text field. The re-entry guard that actually holds is the `busy` latch plus
+   btn.disabled in the submit handler; this rule is the visual half of it. */
 .btn[aria-busy="true"]{ pointer-events:none; opacity:.75; }
+.btn:disabled{ opacity:.75; cursor:default; transform:none; }
+.btn:disabled:hover{ transform:none; border-color:color-mix(in srgb,var(--info) 45%,var(--gbtn-brd));
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18); }
 .btn-ghost{ background:var(--gbtn-bg); border-color:var(--gbtn-brd); color:var(--muted);
   font-size:12.8px; padding:9px 16px; }
 .btn-ghost:hover{ color:var(--text); border-color:var(--gbtn-brd-hover); box-shadow:none; }
@@ -273,6 +281,15 @@ html[data-err="rate"] .err .e-generic{ display:none; }
 html[data-err="rate"] .err .e-rate{ display:inline; }
 
 /* ── success state ────────────────────────────────────────────────────────── */
+/* Two success copies, because there are two truths. The estate ships DARK until SMTP
+   credentials land (docs/ops/email-support-setup.md), and the sends are deferred to a
+   background job, so a response cannot know whether a confirmation went out — it can
+   only know whether a relay exists. The API answers that in `mail`; the page must not
+   claim an email it cannot send, and must not withhold one it can.
+   Default is mail-OFF: an unknown answer never promises. */
+.m-on{ display:none; }
+html[data-mail="on"] .m-on{ display:inline; }
+html[data-mail="on"] .m-off{ display:none; }
 html[data-form="success"] .tk-form{ display:none; }
 .tk-done{ display:none; }
 html[data-form="success"] .tk-done{ display:block; }
@@ -392,10 +409,16 @@ html[data-form="success"] .tk-done{ display:block; }
 
       <div class="next">
         <span class="mlab">{{ t('What happens next', '接下来会发生什么') }}</span>
+        {#- These three run BEFORE any submit, so the page cannot yet know whether mail is
+            switched on — which means every line here has to be true in BOTH states. The
+            first two used to promise an email and a reply to it; the ticket number is
+            stamped on the slip either way, and the address is how we reach you either
+            way, so those are what they say now. The "reply to that email" instruction
+            lives in the success slip, where the page knows it is true. -#}
         <ol>
-          <li>{{ t('You get an email with a <b>ticket number</b>.', '你会收到一封带<b>工单号</b>的邮件。') }}</li>
+          <li>{{ t('You get a <b>ticket number</b> right away.', '你会立刻拿到一个<b>工单号</b>。') }}</li>
           <li>{{ t('A person reads it — not a bot.', '由真人阅读，不是机器人。') }}</li>
-          <li>{{ t('Reply to that email to add anything.', '回复那封邮件即可补充信息。') }}</li>
+          <li>{{ t('We answer at the address you gave.', '我们会回复到你填写的邮箱。') }}</li>
         </ol>
       </div>
     </aside>
@@ -501,10 +524,22 @@ html[data-form="success"] .tk-done{ display:block; }
             <span id="s-hint-txt"></span>
           </p>
 
-          {#- honeypot (masterplan R2 abuse hardening) — never remove -#}
+          {#- honeypot (masterplan R2 abuse hardening) — never remove.
+
+              The id, name and label are deliberately MEANINGLESS. They used to all read
+              "website", which is one of the exact tokens Chrome and every password manager
+              key their autofill heuristics on, and `autocomplete="off"` is advisory in
+              Chrome — so a filled-by-the-browser honeypot was a live risk. A false
+              positive here is the worst outcome the page has: app/support.py answers a
+              tripped honeypot with a 200 and a throwaway uuid, so the person would see a
+              success slip carrying a ref that matches no row, and never hear back.
+
+              The server contract is unchanged: the JSON key is still `website`, because
+              the page JS reads this field by ELEMENT ID and names the key itself. Nothing
+              on the API side knows or cares what the input is called. -#}
           <div class="hp" aria-hidden="true">
-            <label for="s-website">Website</label>
-            <input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off">
+            <label for="s-lx">Leave blank</label>
+            <input id="s-lx" name="lx" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
           </div>
 
           <div class="send">
@@ -517,9 +552,21 @@ html[data-form="success"] .tk-done{ display:block; }
         <div class="tk-done" role="status">
           <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
           <h2>{{ t('Request received.', '已收到你的请求。') }}</h2>
+          {#- The one place the page makes a claim about EMAIL, so it is the one place that
+              has to know whether email works. The API's `mail` flag decides; the page
+              defaults to the m-off copy, so an old or unreachable API never promises a
+              confirmation that is not coming. m-off says nothing about a send, tells the
+              reader the number on screen is the copy they keep, and never mentions spam —
+              there is no message to go looking for. -#}
           <p>
-            <span class="l-en">We emailed a copy to <b class="done-addr"></b>. Reply to that email any time to add detail.</span>
-            <span class="l-zh">我们已把副本发送到 <b class="done-addr"></b>。随时回复那封邮件补充信息。</span>
+            <span class="m-on">
+              <span class="l-en">We emailed a copy to <b class="done-addr"></b>. Reply to that email any time to add detail.</span>
+              <span class="l-zh">我们已把副本发送到 <b class="done-addr"></b>。随时回复那封邮件补充信息。</span>
+            </span>
+            <span class="m-off">
+              <span class="l-en">We will reply to <b class="done-addr"></b>. Keep the ticket number below — this page is the only place it appears.</span>
+              <span class="l-zh">我们会回复到 <b class="done-addr"></b>。请记下下面的工单号——它只出现在这个页面上。</span>
+            </span>
           </p>
 
           <div class="slip">
@@ -539,8 +586,14 @@ html[data-form="success"] .tk-done{ display:block; }
 
           <div class="after">
             <button class="btn btn-ghost" type="button" id="s-again">{{ t('Write another request', '再写一条请求') }}</button>
-            <span class="note">{{ t('No email in a few minutes? Check spam, or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.',
-                                    '几分钟内没收到邮件？请查看垃圾箱，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</span>
+            <span class="note">
+              <span class="m-on">{{ t('No email in a few minutes? Check spam, or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.',
+                                      '几分钟内没收到邮件？请查看垃圾箱，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</span>
+              {#- No "check your spam": with the relay off there is nothing in flight to
+                  find, and sending someone to hunt for it is the unkindest kind of wrong. -#}
+              <span class="m-off">{{ t('Need to add something? Write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a> and quote the ticket number.',
+                                       '需要补充信息？请发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>，并附上工单号。') }}</span>
+            </span>
           </div>
         </div>
 
@@ -641,7 +694,12 @@ html[data-form="success"] .tk-done{ display:block; }
 
   var sel = $('#s-topic'), hint = $('#s-hint-txt'), shortEl = $('#s-shortcut');
   var form = $('#tk-form'), btn = $('#s-send');
-  var emailEl = $('#s-email'), subjEl = $('#s-subject'), msgEl = $('#s-message'), hpEl = $('#s-website');
+  var emailEl = $('#s-email'), subjEl = $('#s-subject'), msgEl = $('#s-message');
+  /* The honeypot, by element id. Its id/name are deliberately meaningless so browser and
+     password-manager autofill never targets it (see the markup); the JSON key stays
+     `website` because that is app/support.py's contract, and it is named right here — not
+     read off the element — so the two can never drift. */
+  var hpEl = $('#s-lx');
 
   function paintTopic() {
     if (!sel) return;
@@ -715,17 +773,40 @@ html[data-form="success"] .tk-done{ display:block; }
   }
 
   /* Supabase bearer, mirroring mm_brain.js withAuth(). Absent/expired session →
-     the request simply goes out unauthenticated and files as signed-out. */
+     the request simply goes out unauthenticated and files as signed-out.
+
+     TIME-BOUNDED, unlike mm_brain.js's, and that is deliberate: this is the page whose
+     whole purpose is working when auth is broken (app/regwall.py — "the people who most
+     need it are the ones who cannot sign in"). MDXAuth.client() loads the Supabase SDK
+     and getSession() can refresh against *.supabase.co, which is exactly the network a
+     visitor behind the GFW cannot reach. A blackholed SYN does not error — it hangs for
+     tens of seconds, and an unbounded promise here means the button dims and NOTHING
+     happens: no ticket, no error bar, no explanation.
+
+     Two guards, in order of cost:
+       1. hasSession() is a COOKIE PROBE with no network at all (templates/theme.js). An
+          anonymous visitor — the common case on a support page — now never touches the
+          SDK, so their submit cannot be delayed by auth infrastructure they are not using.
+       2. anyone who does hold a session gets the real path, raced against a timer. Losing
+          the race costs a signed-in submitter nothing they would notice: the ticket files
+          as signed-out, which app/support.py handles as a first-class case (an invalid or
+          missing bearer never 401s a public form). */
+  var AUTH_MS = 2500;
   function withAuth(h) {
     h = h || {};
     if (!(window.MDXAuth && window.MDXAuth.client)) return Promise.resolve(h);
-    return window.MDXAuth.client().then(function (sb) { return sb.auth.getSession(); })
+    /* Guarded on the function's own existence: an older cached theme.js without
+       hasSession must fall through to the raced path, not silently drop every bearer. */
+    if (window.MDXAuth.hasSession && !window.MDXAuth.hasSession()) return Promise.resolve(h);
+    var live = window.MDXAuth.client().then(function (sb) { return sb.auth.getSession(); })
       .then(function (r) {
         var tok = r && r.data && r.data.session && r.data.session.access_token;
         if (tok) h['Authorization'] = 'Bearer ' + tok;
         return h;
       })
       .catch(function () { return h; });
+    var capped = new Promise(function (res) { setTimeout(function () { res(h); }, AUTH_MS); });
+    return Promise.race([live, capped]);
   }
 
   /* ── validation: never before submit (PIN §4.1) ───────────────────────── */
@@ -753,33 +834,69 @@ html[data-form="success"] .tk-done{ display:block; }
     H.setAttribute('data-form', 'error');
   }
 
-  function succeed(ticketId, payload) {
+  /* Fallback stamp, used only if the API sends no `sent`. NAMED — the email's slip prints
+     UTC, and an unlabelled local clock beside it made one ticket read as two times. */
+  function localStamp() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }, zone = '';
+    try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + ', ' +
+           p(d.getHours()) + ':' + p(d.getMinutes()) + (zone ? ' ' + zone : '');
+  }
+
+  function succeed(res, payload) {
     /* PIN §4.3b: ref short form = 'MX-' + the first 8 hex of the uuid, uppercased.
        Stamped ONCE, in the slip — the header ref hides, so it is never printed
-       twice in one panel. */
-    var hex = String(ticketId || '').replace(/-/g, '').slice(0, 8).toUpperCase();
+       twice in one panel. MUST stay identical to app/support.py::ticket_ref: the
+       number on this slip and the one in the email's subject are the same number,
+       and tests/test_support_page.py asserts the two derivations agree. */
+    var hex = String((res && res.ticket_id) || '').replace(/-/g, '').slice(0, 8).toUpperCase();
     var refEl = $('#slip-ref');
     if (refEl) refEl.textContent = hex ? 'MX-' + hex : '';
     doneTopic = payload.topic;
     paintSlipTopic();
-    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    /* The SERVER's UTC string, so the page and the email name one instant (app/support.py
+       computes it once per ticket and hands it to both). */
     var sent = $('#slip-sent');
-    if (sent) {
-      sent.textContent = d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() +
-                         ', ' + p(d.getHours()) + ':' + p(d.getMinutes());
-    }
+    if (sent) sent.textContent = (res && res.sent) || localStamp();
     Array.prototype.forEach.call(document.querySelectorAll('.done-addr'), function (b) {
       b.textContent = payload.email;
     });
+    /* Strictly `=== true`: an API that does not answer the question has not told us mail
+       works, and the honest copy for "we do not know" is the one that promises nothing. */
+    H.setAttribute('data-mail', (res && res.mail === true) ? 'on' : 'off');
     H.removeAttribute('data-err');
     H.setAttribute('data-form', 'success');
   }
 
+  /* THE re-entry guard. A dimmed button is not one: `pointer-events:none` suppresses
+     mouse hit-testing and nothing else, so with only the aria-busy attribute a person
+     could fire this handler again with Space/Enter on the focused button, or by pressing
+     Enter inside the email or subject field (implicit submission). Three submits during
+     one in-flight request produced three POSTs, three ticket rows, three operator alerts
+     and three acknowledgment emails carrying three different ticket numbers — and the
+     mailer's email_log cannot dedupe them, because each one has its own real idem_key.
+
+     So: a boolean latch, checked before anything else, plus btn.disabled — which the HTML
+     spec makes a hard stop for implicit submission too (a form with a disabled default
+     button is not submitted). Both are cleared on EVERY exit, success and failure alike,
+     in the tail `.then` that runs after `.catch`. */
+  var busy = false;
+  var POST_MS = 15000;
+
+  function setBusy(on) {
+    busy = !!on;
+    if (!btn) return;
+    btn.disabled = !!on;
+    if (on) btn.setAttribute('aria-busy', 'true');
+    else btn.removeAttribute('aria-busy');
+  }
+
   if (form) form.addEventListener('submit', function (e) {
     e.preventDefault();
+    if (busy) return;
     if (!validate()) return;
     H.setAttribute('data-form', 'idle');
-    if (btn) btn.setAttribute('aria-busy', 'true');
+    setBusy(true);
 
     var payload = {
       email: emailEl ? emailEl.value.trim() : '',
@@ -791,22 +908,29 @@ html[data-form="success"] .tk-done{ display:block; }
       t0: T0
     };
 
+    /* A hung POST has to end in the error bar, not in a permanently busy button. Same
+       reasoning as withAuth's cap: on a blackholed network fetch does not reject, it
+       waits, and this page exists for exactly that network. */
+    var ctl = window.AbortController ? new window.AbortController() : null;
+    var killer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (e2) {} }, POST_MS) : 0;
+
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
-      return fetch(API + '/api/support/ticket', {
-        method: 'POST', headers: h, body: JSON.stringify(payload)
-      });
+      var opt = { method: 'POST', headers: h, body: JSON.stringify(payload) };
+      if (ctl) opt.signal = ctl.signal;
+      return fetch(API + '/api/support/ticket', opt);
     }).then(function (r) {
       if (r.status === 429) { fail('rate'); return null; }
       if (!r.ok) { fail('generic'); return null; }
       return r.json();
     }).then(function (j) {
       if (!j) return;                                   /* already handled */
-      if (j.ok && j.ticket_id) succeed(j.ticket_id, payload);
+      if (j.ok && j.ticket_id) succeed(j, payload);
       else fail('generic');
     }).catch(function () {
       fail('generic');                                  /* nothing typed is lost */
     }).then(function () {
-      if (btn) btn.removeAttribute('aria-busy');
+      if (killer) clearTimeout(killer);
+      setBusy(false);
     });
   });
 

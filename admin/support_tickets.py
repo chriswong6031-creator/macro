@@ -13,8 +13,9 @@ intake, and it is this module.
 
 **Injection posture.** The Management endpoint takes a SQL string, not bound parameters,
 so every value is either (a) validated against a fixed allow-list, (b) int-clamped, (c) a
-strict-regex uuid, or (d) passed through :func:`_lit`, which caps length, strips NULs, and
-doubles single quotes. Postgres runs with ``standard_conforming_strings=on`` (the default,
+strict-regex uuid or ticket-ref prefix, or (d) passed through :func:`_lit`, which caps
+length, strips NULs, and doubles single quotes. (c) and (d) are not alternatives for the
+ref prefix — it is regex-proved hex AND quoted through ``_lit``. Postgres runs with ``standard_conforming_strings=on`` (the default,
 and Supabase's), so a doubled-quote literal is closed correctly and a backslash is just a
 backslash. Ticket bodies are stranger-written text — this is the sharp edge of the module
 and it is why nothing reaches SQL unescaped.
@@ -66,6 +67,14 @@ _EMAIL_DELIVERED = ("sent", "duplicate")
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
+# app/support.py::ticket_ref prints `MX-` + the first 8 hex of the id, uppercased, and that
+# is the ONE identifier a customer is ever handed — it is in the ack email's subject, the
+# page's success slip and every reply. The search matched only email/subject, so quoting
+# your own ticket number found nothing. 4..32 hex accepts a half-typed ref and a pasted
+# bare uuid alike; a shorter floor would make every 1-3 character search drag in ids.
+_REF_RE = re.compile(r"^(?:mx-)?([0-9a-f]{4,32})$", re.I)
+REF_PREFIX_MAX = 33          # 32 hex + the trailing '%'
+
 
 # --------------------------------------------------------------------------- #
 # Transition rules
@@ -113,6 +122,21 @@ def _one_line(value, *, limit: int = 200) -> str:
     return " ".join(str(value or "").split())[:limit]
 
 
+def ref_prefix(needle: str) -> str | None:
+    """The lowercase uuid prefix a ticket ref points at, or None when this is not one.
+
+    ``MX-F80CB92C`` → ``f80cb92c``; the bare hex and any 4..32-char prefix work too, and
+    the match is case-insensitive because nobody retypes a ref in the case we printed it.
+
+    Anything else — an email, a word, an injection payload — returns None and contributes
+    no clause at all. The value it DOES return is hex by construction, and it still goes
+    through :func:`_lit` at the call site: this module builds SQL strings, so "the regex
+    already proved it safe" is exactly the reasoning that eventually ships an injection.
+    """
+    m = _REF_RE.match(str(needle or "").strip())
+    return m.group(1).lower() if m else None
+
+
 def _clamp(v, default: int, lo: int, hi: int) -> int:
     try:
         return max(lo, min(hi, int(v)))
@@ -135,6 +159,9 @@ def panel(status: str | None = None, q: str | None = None,
     No joins: tier, lang, and topic are SNAPSHOTTED on the ticket row at submission
     time, so the list is one table scan and it reports what the user's plan was when
     they wrote in — not what it is now.
+
+    ``q`` matches the email, the subject, and — when it looks like one — a ticket ref
+    (:func:`ref_prefix`), because ``MX-XXXXXXXX`` is the only identifier the customer has.
     """
     nc = _not_configured()
     if nc:
@@ -153,7 +180,13 @@ def panel(status: str | None = None, q: str | None = None,
     search_sql = None
     if needle:
         lit = _lit(f"%{needle}%", maxlen=SEARCH_MAX + 2)
-        search_sql = f"(t.email ilike {lit} or t.subject ilike {lit})"
+        clauses = [f"t.email ilike {lit}", f"t.subject ilike {lit}"]
+        # A customer quoting their own MX- ref must find the row. `id::text` is the plain
+        # lowercase uuid, so the ref's hex is a prefix of it.
+        ref = ref_prefix(needle)
+        if ref:
+            clauses.append(f"t.id::text ilike {_lit(ref + '%', maxlen=REF_PREFIX_MAX)}")
+        search_sql = "(" + " or ".join(clauses) + ")"
         where.append(search_sql)
     where_sql = " and ".join(where)
     # The chip counts are scoped to the SEARCH but not to the status filter — that is what

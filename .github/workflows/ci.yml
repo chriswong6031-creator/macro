@@ -961,6 +961,10 @@ on:
       - "site/support.html"
       - "tests/test_support_page.py"
       - "tests/test_email_templates.py"
+      # The page's JS run for real under node (the W2 review's B1/B2/B3 are behaviours a
+      # text assertion cannot reach), plus the DOM shim it runs against.
+      - "tests/test_support_page_js.py"
+      - "tests/fixtures/support_dom_shim.js"
       # The design pin the page and the email base are ported FROM: a change to the pin
       # without a matching change to the implementation is exactly the drift to catch.
       - "mockups/support_email/**"
@@ -3918,6 +3922,17 @@ jobs:
     #                               languages EN-first, and class discipline — the
     #                               unsubscribe slot is ABSENT from every transactional
     #                               send and present for marketing.
+    #   test_support_page_js.py   — the page's own inline JS EXECUTED under node against a
+    #                               DOM shim, for the three W2-review defects that are
+    #                               behaviours a text assertion cannot reach: N submits
+    #                               during one in-flight request must send exactly ONE
+    #                               POST (three sent three ack emails with three different
+    #                               ticket numbers to one person, and each carried its own
+    #                               real idem_key so the ledger could not dedupe them); an
+    #                               anonymous visitor must never load the Supabase SDK and
+    #                               a hung session must not strand the submit; and the
+    #                               success copy must follow the API's `mail` flag. Node
+    #                               ships on ubuntu-latest; the suite skips if it does not.
     # Deps: fastapi+pydantic for the route/model surface; jinja2 renders the support
     # template (markupsafe rides along for engine.i18n); pandas/numpy/pyarrow/pyyaml/
     # requests are what importing admin.server pulls in (same set as the site-gate job).
@@ -3937,6 +3952,8 @@ jobs:
         run: python -m pytest tests/test_admin_support_tickets.py -v
       - name: support page contract + pinned design (templates/support.html.j2)
         run: python -m pytest tests/test_support_page.py -v
+      - name: support page JS behaviour under node (one POST per submit, auth caps, mail flag)
+        run: python -m pytest tests/test_support_page_js.py -v
       - name: pinned email base (app/mailer.py render_email)
         run: python -m pytest tests/test_email_templates.py -v
 
