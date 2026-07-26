@@ -536,9 +536,20 @@ _HEADLESS_COUNT_RE = re.compile(
 # Note what is NOT here: "catching it", "argue with it", "settles it" — those are
 # house-voice pronouns with a clear antecedent (the stock), and the exemplar
 # "watching for a bottom setup, not catching it yet" must stay legal.
+# Noun heads that turn "this"/"that" into a DETERMINER rather than a pronoun.
+# "walk through this chart" is not a dangling level reference, it is a normal
+# noun phrase — caught crying wolf on the deterministic template library, which
+# is the copy every rejected post falls back to.
+_NOUN_HEAD = (
+    "chart", "charts", "level", "levels", "line", "lines", "price", "prices",
+    "point", "zone", "area", "band", "number", "high", "low", "close", "week",
+    "day", "session", "sessions", "name", "names", "move", "setup", "stock",
+    "range", "spot", "one", "thing", "mark", "figure", "trade", "read",
+)
 _DANGLING_LEVEL_RE = re.compile(
     r"\b(?:below|under|above|over|through|beneath|back\s+to|past)\s+"
-    r"(?:it|that|this|there|them|the\s+line|the\s+level)\b",
+    r"(?:it|that|this|there|them|the\s+line|the\s+level)\b"
+    r"(?!\s+(?:" + "|".join(_NOUN_HEAD) + r")\b)",
     re.IGNORECASE,
 )
 # A PRICE, not just any digit. "held for 20 sessions" and "-0.6% off the 52-week

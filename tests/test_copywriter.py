@@ -1061,3 +1061,92 @@ def test_clarity_law_reaches_the_model(monkeypatch):
     assert "COLD-READ TEST" in prompt
     assert "Four up" in prompt, "the worked negative example is missing"
     assert "A level with no number is not a level" in prompt
+
+
+def test_determiner_this_is_not_a_dangling_level():
+    """"walk through this chart" is a noun phrase, not a level reference. Found
+    by auditing the template library, which is what rejected posts fall back to."""
+    from engine.marketing.copywriter import dangling_levels
+    assert dangling_levels("$AAPL, walk through this chart with me") == []
+    assert dangling_levels("A break below that level someday") == []
+    # Still fires when the pronoun really is bare.
+    assert dangling_levels("A close under that changes my mind")
+    assert dangling_levels("Watching a close below it")
+
+
+def test_every_fallback_template_survives_the_clarity_gate():
+    """THE GATE MUST NEVER REJECT BOTH SIDES.
+
+    A clarity violation drops the post to the deterministic floor, so if the
+    floor itself could trip the gate, a rejected post would have nowhere to land
+    and the lane would go quiet. Every template in the copywriter's variant
+    library is rendered and checked, so adding an unreadable template fails here
+    rather than in production.
+    """
+    import re as _re
+    from engine.marketing.copywriter import (
+        _BANNED_SUBSTRINGS, _BANNED_VOCAB, _TEMPLATES,
+        dangling_levels, headless_counts,
+    )
+    subs = {
+        "{cashtag}": "$AAPL", "{ticker}": "AAPL", "{entry}": "328.40",
+        "{t1}": "350.00", "{inv}": "310.00", "{stop}": "310.00",
+        "{win_rate}": "78%", "{mover_pct}": "-14.2%", "{gain_pct}": "+6.2%",
+        "{loss_pct}": "-3.1%", "{theme_name}": "solar",
+        "{cashtag_list}": "$A $B $C $D",
+        "{top_fact}": ("AAPL has held 307.03, the average price paid since the "
+                       "Jun 26 volume spike, for 20 straight sessions"),
+    }
+    checked, bad = 0, []
+
+    def walk(node):
+        nonlocal checked
+        if isinstance(node, str):
+            t = node
+            for k, val in subs.items():
+                t = t.replace(k, val)
+            t = _re.sub(r"\{[a-z_0-9]+\}", "300.00", t)   # any remaining slot
+            checked += 1
+            for clause in headless_counts(t):
+                bad.append(f"headless {clause!r} in {node[:60]!r}")
+            for sent in dangling_levels(t):
+                bad.append(f"dangling {sent[:50]!r} in {node[:60]!r}")
+            low = t.lower()
+            for w in _BANNED_VOCAB:
+                if _re.search(rf"\b{_re.escape(w)}\b", low):
+                    bad.append(f"vocab {w!r} in {node[:60]!r}")
+            for p in _BANNED_SUBSTRINGS:
+                if p in low:
+                    bad.append(f"phrase {p!r} in {node[:60]!r}")
+        elif isinstance(node, (list, tuple)):
+            for y in node:
+                walk(y)
+        elif isinstance(node, dict):
+            for y in node.values():
+                walk(y)
+
+    walk(_TEMPLATES)
+    assert checked > 100, f"only {checked} templates walked — guard is vacuous"
+    assert not bad, "deterministic fallback copy trips the gate:\n" + "\n".join(bad)
+
+
+def test_weekend_levels_floor_survives_the_clarity_gate():
+    """Same contract for the weekend lane, which has its own floor library."""
+    from engine.marketing.copywriter import dangling_levels, headless_counts
+    from engine.marketing.weekend_levels import _FRAMES, _HEADLINES, _TAILS
+
+    checked, bad = 0, []
+    frames = [f.replace("{wk}", "up 3% on the week")
+               .replace("{wk_cap}", "Up 3% on the week")
+               .replace("{s20}", "328.40").replace("{s50}", "310.25")
+               .replace("{lo}", "204.10").replace("{px}", "334.99")
+              for pool in _FRAMES.values() for f in pool]
+    heads = [h.replace("$T", "$AAPL") for pool in _HEADLINES.values() for h in pool]
+    for t in frames + heads + list(_TAILS):
+        checked += 1
+        for clause in headless_counts(t):
+            bad.append(f"headless {clause!r} in {t[:60]!r}")
+        for sent in dangling_levels(t):
+            bad.append(f"dangling {sent[:50]!r} in {t[:60]!r}")
+    assert checked > 50, f"only {checked} floor strings walked — guard is vacuous"
+    assert not bad, "weekend floor copy trips the gate:\n" + "\n".join(bad)
