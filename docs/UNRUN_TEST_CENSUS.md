@@ -48,9 +48,11 @@ modules on the nightly/render publish path, then forward-ledger writers, then th
 
 Two passes so far. #3636 closed the strictly-dark subset — the class where no signal was
 possible. This one closes **P1**, the triggerable-but-unrun suites on a publish pipeline,
-leaving 3 of them deliberately unwired because they are red for reasons that need a program
-decision (see *Red on arrival — P1*; the warnings ratchet was the 4th until its 37-file
-migration landed — *The import-time warnings ratchet* below). `P4`/`P5` remain deliberate backlog, not oversight:
+leaving 2 of them deliberately unwired because they are red for reasons that need a program
+decision (see *Red on arrival — P1*). Two others left that set the same day: the warnings
+ratchet, once its 37-file migration landed (*The import-time warnings ratchet* below), and
+the all-null claims benchmark set, once it was adjudicated (*Resolved — the claims benchmark
+set* below). `P4`/`P5` remain deliberate backlog, not oversight:
 wiring all of them at once would blow the ci-pack budget. (The "before" column was measured
 at 1491 suites; the total is 1497 on current `main` as other PRs land, and the arrivals came
 already wired, so they do not move the unrun count.)
@@ -194,12 +196,12 @@ between) that no workflow ran even though `ci.yml` *could* be triggered by a cha
 or their subject. Blast radius is the same as P0 — these guard
 `build_site`, `build_release_forecast`, `neuralweb/cortex`, `build_vector`, `grade_us_board`
 and 70 further publish-path modules — but a signal was at least *possible*, so they ranked
-below the strictly-dark set. 137 are now wired across thirteen lanes; three are held back.
+below the strictly-dark set. 138 are now wired across thirteen lanes; two are held back.
 
 | job | suites | measured (clean venv) |
 |---|---|---|
 | `unrun-site-surfaces` | 14 | 234 tests / 18s |
-| `unrun-release-forecast` | 8 | 307 / 46s |
+| `unrun-release-forecast` | 9 | 382 / 52s |
 | `unrun-brain-desks` | 13 | 190 / 11s |
 | `unrun-neuralweb-cortex` | 9 | 215 / 7s |
 | `unrun-vector-baskets` | 8 | 146 / 6s |
@@ -211,7 +213,7 @@ below the strictly-dark set. 137 are now wired across thirteen lanes; three are 
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
 | `unrun-import-hygiene` | 1 | 4 / 48s |
-| **total** | **137** | **3692 / 318s** |
+| **total** | **138** | **3767 / 324s** |
 
 Twelve of the thirteen repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
 `run_ci_pack.py` still builds ONE venv across all twenty-two `unrun-*` jobs. The dependency set
@@ -264,7 +266,7 @@ out a measurement trap worth recording:
 | `test_action_board_lane_split.py` | asserted a raw fixture literal `"RRR"`, but the chip renders `td(x.name)` and `td()` prettifies unglossed labels → `"Rrr"`. | **fixed** — pins the chip against `td()`'s own output, inside the hot chip, with a glossed sector so the EN+ZH pair is exercised |
 | `test_earnings_w5.py` | frozen `TODAY = 2026-07-14` vs `audit()`'s `datetime.now(utc)`: the "fresh store, no warnings" case had an expiry date and had already walked past the 2-td SLA. | **fixed** — freshness fixtures read the auditor's own clock; `next_date` windows stay pinned so the bdate_range tests stay deterministic |
 | `test_release_integration_2a.py` | the mocked event calendar returned frozen dates while `build()` runs off the real clock; the PPI event (2026-07-14) had walked into the past and dropped out of `upcoming`. | **fixed** — mock honours the `today` it is handed |
-| `test_release_forecast_producer.py` | **live defect, see below** | **NOT wired** |
+| `test_release_forecast_producer.py` | **live defect, see below** | **fixed + wired** — adjudicated in favour of *both* candidate fixes; runs in `unrun-release-forecast` |
 | `test_no_module_level_logging_disable.py` | **ratchet drift, see below** | **fixed and wired** — the 37 drifted files were migrated under `__main__`; lane `unrun-import-hygiene` |
 | `test_okx_retail.py` | `test_bilingual_render` slices the OKX chip out of `vector.html.j2` and renders it with a hand-copied `t` macro. The markup now also calls `qmark()` → `UndefinedError`. Slicing the template's real macro header fixes the crash, and then **five of its six copy assertions still fail**: the chip copy was deliberately rewritten (`"crowded longs (contrarian caution, not a buy)"` → `"many traders long"`). | **NOT wired** — deciding what the chip must say is a design call under the plain-word doctrine, not test rot |
 | `test_brain_gateway.py` | arrived on `main` mid-flight (2026-07-26). Two blockers, not one: it imports `fastapi`, which the shared `unrun-*` install deliberately lacks (8 of 241 tests fail without it), **and** it appends to the real `data/ai_costs/usage.jsonl` on every run — MM_DATA_GUARD would fail the lane even with the wheel added. | **NOT wired** — the ledger write has to be redirected to `tmp_path` first; that is the author's call, not test rot |
@@ -300,6 +302,41 @@ backfill IC4WSA into the vintage store (it is already listed in `build_release_f
 ALFRED series set, so this is a collection gap), or decouple the ICSA-only benchmarks from
 the IC4WSA guard. Until one lands the suite stays unwired, and 73 good tests stay dark
 with it — the cost of not papering over a real red.
+
+### Resolved — the claims benchmark set (adjudication: both fixes, in that order)
+
+The two candidates are not alternatives — they answer different questions, and shipping only
+one leaves a hole. **(b) decouple** is the invariant: it must hold whether or not the store
+is complete, and it is what makes the card correct *today*. **(a) backfill** is the
+collection repair: without it the point/quantile path stays dead and the store keeps lying
+about what ALFRED serves. Both landed.
+
+**(b)** `project_claims` now guards on `icsa.empty` alone. IC4WSA feeds `point`, the
+quantiles and `n_residuals`; `naive_prior`/`trailing_4w`/`ar_model` are pure ICSA reads and
+no longer degrade with it. The degradation is *disclosed* rather than silent — the absent
+series moves into `pit_provenance.absent_legs` with a plain-word note, `vintaged_legs` is
+declared so MRI-R26 coverage flags stop reading a vacuous `0.0` off an empty denominator,
+and `input_completeness` reports `0.5` (one of two declared legs) instead of `1.0`/`0.0`.
+
+**(a)** Root cause of the gap was *not* the ALFRED fetch. `config.yml`'s
+`fred.vintage_series` **overrides** `collectors/fred.py:DEFAULT_VINTAGE_SERIES` rather than
+extending it, and `fetch_vintages()` rewrites `vintages.parquet` **wholesale** — so a series
+missing from the override is deleted from the store on the next keyed collect, silently,
+because the collector warns on fetch errors and never on omissions. IC4WSA and CCSA were
+present at #809 (891 / 876 rows) and gone by the 2026-07-16 collection. Both are restored to
+the override; the rows land on the next `FRED_API_KEY` collect, which also closes the
+permanently-absent `claims_survey_week_ccsa` leg on the shipped **NFP** card.
+
+Three further `DEFAULT_VINTAGE_SERIES` members are still missing the same way — `PPIFES`,
+`ECIALLCIV`, `ECIWAG`. `PPIFES` holds the CPI bridge's `core_goods_pipeline` block off the
+PIT path. Restoring them moves shipped inflation-lane numbers, so it is left to that lane
+rather than folded into a claims fix; the omission is recorded inline in `config.yml`.
+
+Recomputed for the 2026-07-30 card (asof 2026-07-26): `naive_prior` `null → 187.0`,
+`trailing_4w` `null → 206.25`, `ar_model` `null → 167.88`, all in thousands.
+`projection.mode` stays `benchmark_only` — the §6 kill is untouched; it now has something to
+show. The suite runs in `unrun-release-forecast` (75/75 green) and both halves are listed in
+`on.pull_request.paths`.
 
 ### The import-time warnings ratchet had drifted 37 files — migrated and wired
 

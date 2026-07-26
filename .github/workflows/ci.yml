@@ -1399,6 +1399,7 @@ on:
       - "tests/test_content_stamp_freshness_sweep2.py"
       - "tests/test_cpi_postmortem_fixes.py"
       - "tests/test_release_combined.py"
+      - "tests/test_release_forecast_producer.py"
       - "tests/test_release_forecast_v2.py"
       - "tests/test_release_integration_2a.py"
       - "tests/test_release_integration_2b.py"
@@ -4546,23 +4547,28 @@ jobs:
           --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
-  # Thirteen lanes covering the 140 wired P1 suites: unrun by any workflow, but on a
+  # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
   # publish pipeline and triggerable, so a silent break moved shipped numbers with
   # nothing going red.  Twelve repeat the P0 lanes' dependency install BYTE-FOR-BYTE
   # so run_ci_pack.py keeps ONE shared venv across all twenty-one unrun-* jobs; only
   # unrun-russell-breadth declares a different set (yfinance), and since the pack
   # sorts jobs by install string that costs exactly one extra venv per pack.
+  # The 138 is the count of distinct tests/*.py named across these thirteen run: steps —
+  # re-derive it rather than incrementing, since suites also arrive wired via unrelated
+  # PRs.  It read 140 here and 137 in docs/UNRUN_TEST_CENSUS.md until 2026-07-26; the
+  # doc was right and this comment had drifted.
   # Measured serially in a clean venv carrying exactly these installs: 139 suites /
-  # 429s, plus unrun-import-hygiene's 48s.
+  # 429s, plus unrun-import-hygiene's 48s and the release-forecast producer's 13s.
   #
-  # Three P1 suites are deliberately NOT wired.  All three are RED on main and the
-  # fix in each case is a program decision, not test rot: an all-null claims
-  # benchmark_set on the shipped release-forecast cards, a chip whose copy assertions
-  # test a revision that was deliberately rewritten, and a gateway suite that needs
+  # Two P1 suites are deliberately NOT wired.  Both are RED on main and the fix in
+  # each case is a program decision, not test rot: a chip whose copy assertions test
+  # a revision that was deliberately rewritten, and a gateway suite that needs
   # fastapi (absent from the shared install) AND writes a real data/ ledger.  See the
-  # PR body and docs/UNRUN_TEST_CENSUS.md.  (A fourth — an import-time warnings
-  # ratchet that had drifted 37 files past its frozen allowlist — was migrated and
-  # wired as unrun-import-hygiene below, so it has left this set.)
+  # PR body and docs/UNRUN_TEST_CENSUS.md.  (Two others have left this set: an
+  # import-time warnings ratchet that had drifted 37 files past its frozen allowlist,
+  # migrated and wired as unrun-import-hygiene below; and an all-null claims
+  # benchmark_set on the shipped release-forecast cards, adjudicated and wired into
+  # unrun-release-forecast below.)
   # Their filenames are deliberately NOT spelled out here: the census that found this
   # hole tests `name in workflow_text`, so naming a suite in a comment makes it look
   # covered.  Never reference an unwired suite by filename in this file.
@@ -4595,7 +4601,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: the macro-release forecast producer — projections, benchmarks and the graded forward ledger
-        run: python -m pytest tests/test_content_stamp_freshness_sweep2.py tests/test_cpi_postmortem_fixes.py tests/test_release_combined.py tests/test_release_forecast_v2.py tests/test_release_integration_2a.py tests/test_release_integration_2b.py tests/test_release_integration_w11g.py tests/test_release_market_context.py -q
+        run: python -m pytest tests/test_content_stamp_freshness_sweep2.py tests/test_cpi_postmortem_fixes.py tests/test_release_combined.py tests/test_release_forecast_producer.py tests/test_release_forecast_v2.py tests/test_release_integration_2a.py tests/test_release_integration_2b.py tests/test_release_integration_w11g.py tests/test_release_market_context.py -q
 
   unrun-brain-desks:
     # master brain / AI desk / alt-data / risk brains behind the shipped desk verdicts.
