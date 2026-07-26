@@ -6,8 +6,8 @@ Four test groups (matching the spec):
   3. Loop PR touching non-immutable path → allowed
   4. Unclassifiable input → BLOCKED (fail-closed)
 
-Plus selftest, and group 7: the ci.yml *live check* shell itself, which the
-Python `check()` above never exercised.
+Plus selftest, and group 7: the packed CI manifest's *live check* shell itself,
+which the Python `check()` above never exercised.
 """
 from __future__ import annotations
 
@@ -37,6 +37,12 @@ from scripts.run_ci_pack import render_command
         [".github/workflows/ci.yml"],
         "",
         "claude/loop- prefix + workflow file",
+    ),
+    (
+        "claude/loop-build-something",
+        [".github/ci/legacy-jobs.yml"],
+        "",
+        "claude/loop- prefix + packed CI manifest",
     ),
     (
         "metabolism/owns-broker",
@@ -257,12 +263,12 @@ def test_loop_branch_prefixes_are_defined():
     assert any("loop-" in p for p in LOOP_BRANCH_PREFIXES)
 
 
-# ── 7. The ci.yml live-check SHELL (not just the Python fence) ────────────────
+# ── 7. The packed CI live-check SHELL (not just the Python fence) ─────────────
 #
 # Everything above tests check_self_mod_fence.check().  The step that actually
-# runs in CI is a bash block in .github/workflows/ci.yml, and that block owns a
-# decision `check()` never sees: what to do when the changed-file list comes back
-# EMPTY.  R-AUT-5 says an undeterminable diff must BLOCK — but on
+# runs in CI is a bash block in .github/ci/legacy-jobs.yml, and that block owns
+# a decision `check()` never sees: what to do when the changed-file list comes
+# back EMPTY.  R-AUT-5 says an undeterminable diff must BLOCK — but on
 # `workflow_dispatch --ref main` (the ship-loop guard's E1 unblock lever,
 # CLAUDE.md) HEAD *is* origin/main, so `git diff origin/main...HEAD` is empty by
 # construction and the fail-closed arm redded every dispatch run.  That made the
@@ -270,7 +276,7 @@ def test_loop_branch_prefixes_are_defined():
 # unsatisfiable (observed runs 30207008917 / 30209369270 / 30210445220,
 # 2026-07-26); #3697 added the dispatch arm but shipped it with no test.
 #
-# These tests execute the REAL step text from ci.yml, rendered through the REAL
+# These tests execute the REAL step text from the manifest, rendered through the REAL
 # production renderer (run_ci_pack.render_command — the packs are what actually
 # run, every legacy job carries `if: ${{ false }}`), against synthetic git
 # repositories.  Both directions are pinned: the lever must pass, and every other
@@ -342,9 +348,9 @@ def _seed_repo(tmp_path: Path) -> Path:
 def _run_live_check(
     work: Path, *, event: str, head_ref: str, base_ref: str = "main"
 ) -> subprocess.CompletedProcess:
-    """Render the ci.yml step exactly as ci-pack does, then run it."""
+    """Render the manifest step exactly as ci-pack does, then run it."""
     command = render_command(
-        str(_fence_step_run(".github/workflows/ci.yml", LIVE_CHECK_STEP)["run"]),
+        str(_fence_step_run(".github/ci/legacy-jobs.yml", LIVE_CHECK_STEP)["run"]),
         base_ref=base_ref,
         head_ref=head_ref,
     )

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Run the legacy jobs in ``ci.yml`` using a small number of shared runners.
+"""Run the legacy CI manifest using a small number of shared runners.
 
 GitHub Actions used to provision one fresh VM for every job in ``ci.yml``.
 The repository is large enough that checkout and interpreter setup dominated
 the useful test work, so one PR fanned out to more than eighty hosted runners.
 
-The workflow now keeps those legacy job definitions as an auditable manifest:
-each one has ``if: ${{ false }}`` so GitHub never allocates it a runner.  The
-``ci-pack`` matrix jobs call this script, which validates the manifest and
-executes every legacy ``run`` step.  A hard reset/clean between legacy jobs
-preserves their former clean-checkout isolation.  Jobs with different declared
-pip dependencies also get freshly recreated virtual environments; only jobs
-whose install commands are byte-identical share an environment.
+The workflow now contains only the two real ``ci-pack`` matrix jobs. Legacy job
+definitions live in ``.github/ci/legacy-jobs.yml`` so GitHub does not publish
+roughly one hundred skipped check runs on every pull request. The pack jobs call
+this script, which validates the manifest and executes every legacy ``run``
+step. A hard reset/clean between legacy jobs preserves their former
+clean-checkout isolation. Jobs with different declared pip dependencies also
+get freshly recreated virtual environments; only jobs whose install commands
+are byte-identical share an environment.
 
 The validator is intentionally fail-closed.  A future job using services,
 containers, per-step conditions/environments, or an unfamiliar action must
@@ -105,10 +106,12 @@ def _job_weight(job_id: str, definition: dict[str, Any]) -> int:
 
 
 def load_legacy_jobs(path: Path) -> list[LegacyJob]:
-    """Load and fail-closed validate every non-pack job in the workflow."""
+    """Load and fail-closed validate every job in the legacy manifest.
+
+    PACK_JOB_ID is still ignored when present so small historical test fixtures
+    remain valid; the production manifest intentionally contains no pack job.
+    """
     jobs = _workflow_jobs(path)
-    if PACK_JOB_ID not in jobs:
-        raise ManifestError(f"{path} is missing the {PACK_JOB_ID!r} orchestration job")
 
     legacy: list[LegacyJob] = []
     findings: list[str] = []

@@ -270,11 +270,14 @@ def test_tier_gate_is_reachable_from_its_own_inputs():
     added to the job later is required in the filter automatically.
     """
     ci = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text())
+    manifest = yaml.safe_load(
+        (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text()
+    )
     # PyYAML resolves the bare key `on` to True (YAML 1.1 booleans).
     triggers = ci.get("on") or ci.get(True)
     matchers = [_gh_path_filter_to_re(p) for p in triggers["pull_request"]["paths"]]
 
-    steps = ci["jobs"]["tier-gate"]["steps"]
+    steps = manifest["jobs"]["tier-gate"]["steps"]
     required = set(re.findall(
         r"tests/test_[A-Za-z0-9_]+\.py",
         "\n".join(s["run"] for s in steps if "run" in s),

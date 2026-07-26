@@ -31,8 +31,8 @@ the PR can merge (the meta-guard blocks unregistered check_*.py files):
 
 3. **Wire the CI job** — add a step to the appropriate `ci_wiring` workflow/job that calls
    your script. Match the style of neighboring guard steps (same runner, checkout, pip
-   install pattern). If you need a new job, append it to ci.yml without reordering or
-   reformatting existing jobs.
+   install pattern). If you need a new logical CI job, append it to
+   `.github/ci/legacy-jobs.yml` without reordering or reformatting existing jobs.
 
 4. **Run the meta-guard locally** to verify:
    ```
