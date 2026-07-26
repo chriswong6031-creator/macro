@@ -173,7 +173,7 @@ def _github_token() -> str:
 
     Claude Code sessions set none of the token env vars, which silently dropped
     every guard evaluation onto the anonymous 60-request/hour-per-IP quota. A
-    Stop evaluation spends up to three calls, so a busy session exhausted the
+    Stop evaluation spends up to four calls, so a busy session exhausted the
     budget and the guard then failed closed on `github_unreachable` for the rest
     of the hour (measured 2026-07-25: anonymous 0/60 while `gh` held 4998/5000).
 
@@ -327,11 +327,13 @@ def _render_triggering_paths(changed: list[str]) -> bool:
 def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> bool:
     """Whether a push-triggered render must exist for ``merge_sha``.
 
-    Scoped to THIS merge's own diff, not the whole session range.
-    ``_render_status`` looks for a render.yml run whose head_sha IS merge_sha
-    and whose event is ``push`` — and render.yml's push trigger is path-filtered
-    to templates/** + scripts/build_*.py. So such a run can exist if and only if
-    merge_sha ITSELF touched those paths.
+    Scoped to THIS merge's own diff, not the whole session range. render.yml's
+    push trigger is path-filtered to templates/** + scripts/build_*.py, so a push
+    render attributable to this merge can exist if and only if merge_sha ITSELF
+    touched those paths. (What SATISFIES the requirement is a separate question:
+    ``_render_status`` accepts either the push render at merge_sha or a later
+    successful render on a main descendant, per the shared-lane coalescing law.
+    That widens coverage, not this requirement, which stays scoped as below.)
 
     start_head..head was the wrong basis on a shared main: this repo runs many
     concurrent sessions, and a session that syncs its worktree to origin/main
@@ -342,8 +344,8 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     template/builder files from concurrent merges set needs_render.)
 
     This TIGHTENS alignment rather than loosening the gate: a PR that does touch
-    templates/ still gets a push render on its merge sha, and that run must still
-    conclude ``success`` to pass.
+    templates/ still requires a render, and ``_render_status`` must still find a
+    successful one — at this merge sha or on a later main descendant of it.
     """
     try:
         changed = _run(
@@ -356,22 +358,114 @@ def _needs_render(root: Path, merge_sha: str, start_head: str, head: str) -> boo
     return _render_triggering_paths(changed)
 
 
-def _render_status(owner: str, repo: str, merge_sha: str) -> tuple[str, str]:
-    query = urllib.parse.urlencode(
+def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
+    """Whether ``descendant``'s history contains ``ancestor`` (equal shas count).
+
+    Every failure mode collapses to False on purpose: rc=1 means "not an
+    ancestor" and rc=128 means the sha is unknown to this checkout, and neither
+    one can establish that the descendant's tree carried the merge. Here both
+    read the same way — not covering.
+    """
+    try:
+        _run(root, "git", "merge-base", "--is-ancestor", ancestor, descendant)
+        return True
+    except Exception:
+        return False
+
+
+def _render_status(
+    root: Path, owner: str, repo: str, merge_sha: str, merged_at: str
+) -> tuple[str, str]:
+    """Judge render COVERAGE for ``merge_sha``, not a dedicated run at that sha.
+
+    render.yml is one shared coalescing lane (`concurrency.group: pipeline-render`
+    with `cancel-in-progress: false`): a render already running always finishes,
+    while a run still PENDING is superseded — GitHub displays it ``cancelled`` —
+    the moment a newer merge queues its own. The survivor's scope-union `pick`
+    step then renders every region dirty since its last covering watermark, so ONE
+    success at any later main descendant covers every earlier merge in the train.
+    AGENTS.md §"Shared render-lane safety" states exactly this: do not demand a
+    dedicated successful run for every merge SHA.
+
+    Requiring `head_sha == merge_sha` therefore made every merge-train member
+    except the last unsatisfiable, and permanently — a superseded run can never
+    re-conclude on its own. Observed 2026-07-26: PR #3572 merged as b4449443590,
+    its push render 30190635141 was superseded-cancelled seconds later, and
+    descendant run 30193723520 (push, main, 8f5cfe12a66) concluded ``success``
+    with b4449443590 in its history — yet the guard returned ``failed`` forever
+    and forced a manual ~50-minute rerun of work already covered.
+
+    Coverage is now (a) a successful push render at merge_sha itself — one API
+    call, the common case, unchanged — or (b) a successful later render whose
+    head_sha is a main DESCENDANT of merge_sha. Descendants are the only runs
+    whose checkout contained the merge; a sibling or pre-merge head rendered a
+    tree without it. The ``merged_at`` floor is belt-and-braces (ancestry already
+    excludes pre-merge heads, but a re-run of pre-merge history must not read as
+    coverage). A candidate still in flight keeps the verdict at ``pending``: a
+    queued or running render may yet deliver the coverage this merge needs.
+    """
+    endpoint = (
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs"
+    )
+
+    exact_query = urllib.parse.urlencode(
         {"event": "push", "head_sha": merge_sha, "per_page": "20"}
     )
-    payload = _get_json(
-        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/render.yml/runs?{query}"
-    )
-    runs = payload.get("workflow_runs", [])
-    if not runs:
+    exact = _get_json(f"{endpoint}?{exact_query}").get("workflow_runs", [])
+    if any(
+        run.get("status") == "completed" and run.get("conclusion") == "success"
+        for run in exact
+    ):
+        return "success", ""
+
+    # The descendant scan. Filter client-side: the endpoint takes one `event`
+    # value only, and a rejected server-side parameter would 422 the whole guard.
+    branch_query = urllib.parse.urlencode({"branch": "main", "per_page": "50"})
+    listing = _get_json(f"{endpoint}?{branch_query}").get("workflow_runs", [])
+    covering: list[dict[str, Any]] = []
+    for run in listing:
+        if run.get("event") not in {"push", "workflow_dispatch"}:
+            continue
+        created = str(run.get("created_at") or "")
+        # GitHub emits second-precision `...Z` stamps, so a plain string compare
+        # is ordering-correct. A missing stamp on either side skips the cutoff
+        # rather than guessing at it.
+        if created and merged_at and created < merged_at:
+            continue
+        head = str(run.get("head_sha") or "")
+        if not head or not _is_ancestor(root, merge_sha, head):
+            continue
+        covering.append(run)
+    if any(
+        run.get("status") == "completed" and run.get("conclusion") == "success"
+        for run in covering
+    ):
+        return "success", ""
+
+    # An exact-sha run also appears in the branch listing; key on the run id so
+    # the verdict below weighs it once.
+    candidates = {run.get("id"): run for run in (*exact, *covering)}
+    if not candidates:
         return "pending", "The required render workflow has not started yet."
-    run = max(runs, key=lambda item: item.get("created_at") or "")
-    if run.get("status") != "completed":
+
+    def _created(run: dict[str, Any]) -> str:
+        return str(run.get("created_at") or "")
+
+    in_flight = [run for run in candidates.values() if run.get("status") != "completed"]
+    if in_flight:
+        run = max(in_flight, key=_created)
         return "pending", f"Render workflow is {run.get('status') or 'pending'}."
-    if run.get("conclusion") != "success":
-        return "failed", f"Render workflow concluded {run.get('conclusion') or 'unknown'}."
-    return "success", ""
+
+    newest = max(candidates.values(), key=_created)
+    return "failed", (
+        f"Render workflow concluded {newest.get('conclusion') or 'unknown'} "
+        f"(run {newest.get('id')}), and no later successful render on a main "
+        "descendant of this merge exists yet: re-run that run "
+        f"(`gh run rerun {newest.get('id')}`) once the cause is fixed, or dispatch "
+        "render.yml on main. The lane unions every dirty scope since its last "
+        "covering watermark, so one success at any later main commit covers this "
+        "merge — a dedicated run at this exact sha is not required."
+    )
 
 
 def _find_commit(value: Any) -> str:
@@ -537,7 +631,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
     if needs_render:
         try:
-            status, detail = _render_status(owner, repo, merge_sha)
+            status, detail = _render_status(
+                root, owner, repo, merge_sha, str(pull.get("merged_at") or "")
+            )
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return

@@ -97,10 +97,11 @@ def _commit(repo: Path, rel: str, body: str, message: str) -> str:
 def test_needs_render_only_when_the_merge_itself_touched_render_inputs(tmp_path):
     """The render precondition must match render.yml's push path filter.
 
-    _render_status looks for a `push` render run whose head_sha IS the merge sha,
-    and render.yml only fires on templates/** + scripts/build_*.py. A merge that
-    touched neither can never have such a run, so demanding one is an
-    unsatisfiable block rather than a real gap.
+    render.yml's push trigger only fires on templates/** + scripts/build_*.py, so
+    a merge that touched neither never queues a render of its own, and demanding
+    one is an unsatisfiable block rather than a real gap. (_render_status may now
+    also accept a later main descendant's render — that widens what SATISFIES the
+    requirement, not which merges carry one.)
     """
     repo = _repo(tmp_path)
     start_head = _git(repo, "rev-parse", "HEAD")
@@ -166,7 +167,7 @@ def test_token_prefers_the_environment_over_the_cli(monkeypatch):
 
 
 def test_token_is_cached_for_the_process(monkeypatch):
-    """A Stop evaluation makes three API calls; it must not shell out three times."""
+    """A Stop evaluation makes four API calls; it must not shell out four times."""
     calls: list = []
     monkeypatch.setattr(GUARD.subprocess, "run", _fake_gh(0, "gho_cached", calls))
     assert GUARD._github_token() == GUARD._github_token() == GUARD._github_token()
@@ -315,6 +316,175 @@ def test_check_ci_passes_only_when_every_real_check_is_green(monkeypatch):
 
     monkeypatch.setattr(GUARD, "_get_json", lambda _url: {"check_runs": []})
     assert GUARD._check_ci("acme", "widgets", "0" * 40)[0] is False
+
+
+_RENDER_ENDPOINT = "actions/workflows/render.yml/runs"
+_MERGED_AT = "2026-07-26T06:11:36Z"
+
+
+def _merge_train(tmp_path: Path) -> tuple[Path, str, str, str]:
+    """A real repo shaped like a merge train: parent -> merge -> a later merge.
+
+    Ancestry is decided by git itself, so these are genuine 40-char shas rather
+    than strings that only look related.
+    """
+    repo = _repo(tmp_path)
+    parent = _git(repo, "rev-parse", "HEAD")
+    merge = _commit(repo, "templates/mine.html", "<p>mine</p>\n", "feat: my merge")
+    descendant = _commit(repo, "templates/later.html", "<p>later</p>\n", "feat: a later merge")
+    return repo, parent, merge, descendant
+
+
+def _render_run(run_id: int, head_sha: str, event: str, created_at: str, status: str, conclusion=None):
+    return {
+        "id": run_id,
+        "head_sha": head_sha,
+        "head_branch": "main",
+        "event": event,
+        "created_at": created_at,
+        "status": status,
+        "conclusion": conclusion,
+    }
+
+
+def _fake_render_api(monkeypatch, *, exact: list, branch: list) -> list:
+    """Serve the two render listings by query string and record every URL fetched."""
+    urls: list = []
+
+    def fake_get_json(url: str):
+        urls.append(url)
+        assert _RENDER_ENDPOINT in url, f"unexpected endpoint: {url}"
+        if "head_sha=" in url:
+            return {"workflow_runs": exact}
+        assert "branch=main" in url, f"neither an exact-sha nor a main listing: {url}"
+        return {"workflow_runs": branch}
+
+    monkeypatch.setattr(GUARD, "_get_json", fake_get_json)
+    return urls
+
+
+def test_render_status_accepts_the_exact_sha_success_in_one_call(monkeypatch, tmp_path):
+    """The common case must stay a single API call — the descendant scan is a fallback."""
+    repo, _parent, merge, _descendant = _merge_train(tmp_path)
+    urls = _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(1, merge, "push", "2026-07-26T06:11:38Z", "completed", "success")],
+        branch=[_render_run(2, merge, "push", "2026-07-26T06:11:38Z", "completed", "failure")],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == ("success", "")
+    assert len(urls) == 1 and "head_sha=" in urls[0], "the branch listing must not be fetched"
+
+
+def test_a_superseded_train_member_is_covered_by_a_later_descendant_render(monkeypatch, tmp_path):
+    """THE regression. render.yml coalesces, so exact-sha-only was unsatisfiable.
+
+    2026-07-26 merge train: PR #3572 merged as b4449443590 and its push render
+    30190635141 was superseded-cancelled seconds later by a newer merge queuing
+    its own run (`cancel-in-progress: false` supersedes the PENDING run, not the
+    running one). Descendant run 30193723520 then concluded success at
+    8f5cfe12a66 — whose scope union already covered b4449443590 — yet the guard
+    demanded a dedicated run at the merge sha that could never exist, forcing a
+    manual ~50-minute rerun.
+    """
+    repo, _parent, merge, descendant = _merge_train(tmp_path)
+    urls = _fake_render_api(
+        monkeypatch,
+        exact=[
+            _render_run(30190635141, merge, "push", "2026-07-26T06:11:38Z", "completed", "cancelled")
+        ],
+        branch=[
+            _render_run(
+                30193723520, descendant, "push", "2026-07-26T07:57:25Z", "completed", "success"
+            )
+        ],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == ("success", "")
+    assert len(urls) == 2, "the descendant scan costs exactly one extra call"
+
+
+def test_an_in_flight_descendant_render_holds_the_verdict_at_pending(monkeypatch, tmp_path):
+    """A running render may still deliver coverage; that is pending, never failed."""
+    repo, _parent, merge, descendant = _merge_train(tmp_path)
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(1, merge, "push", "2026-07-26T06:11:38Z", "completed", "cancelled")],
+        branch=[
+            _render_run(2, descendant, "push", "2026-07-26T07:57:25Z", "in_progress")
+        ],
+    )
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)
+    assert status == "pending"
+    assert "in_progress" in detail
+
+
+def test_a_failed_descendant_render_blocks_and_a_pre_merge_success_cannot_rescue_it(
+    monkeypatch, tmp_path
+):
+    """Coverage needs a DESCENDANT: a green re-run of pre-merge history rendered a tree
+    that never contained this merge, even though it ran after the merge landed."""
+    repo, parent, merge, descendant = _merge_train(tmp_path)
+    _fake_render_api(
+        monkeypatch,
+        exact=[_render_run(1, merge, "push", "2026-07-26T06:11:38Z", "completed", "cancelled")],
+        branch=[
+            _render_run(2, descendant, "push", "2026-07-26T07:57:25Z", "completed", "failure"),
+            _render_run(3, parent, "push", "2026-07-26T08:10:00Z", "completed", "success"),
+        ],
+    )
+    status, detail = GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)
+    assert status == "failed", "a success on the merge's PARENT is not coverage"
+    assert "failure" in detail and "descendant" in detail
+    assert "gh run rerun 2" in detail, "the remediation must name the concluded run"
+
+
+def test_only_a_push_lane_render_after_the_merge_can_cover_it(monkeypatch, tmp_path):
+    """The event set and the created-at floor both have to hold, or coverage is fiction."""
+    repo, _parent, merge, descendant = _merge_train(tmp_path)
+    superseded = [
+        _render_run(1, merge, "push", "2026-07-26T06:11:38Z", "completed", "cancelled")
+    ]
+
+    # A nightly `schedule` run is not the push lane this merge queued into.
+    _fake_render_api(
+        monkeypatch,
+        exact=superseded,
+        branch=[
+            _render_run(2, descendant, "schedule", "2026-07-26T07:57:25Z", "completed", "success")
+        ],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)[0] == "failed"
+
+    # Belt-and-braces: a run created BEFORE the merge cannot have carried it.
+    _fake_render_api(
+        monkeypatch,
+        exact=superseded,
+        branch=[
+            _render_run(3, descendant, "push", "2026-07-26T05:00:00Z", "completed", "success")
+        ],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT)[0] == "failed"
+
+    # Same sha, on the lane and inside the window: a manual dispatch does cover it.
+    _fake_render_api(
+        monkeypatch,
+        exact=superseded,
+        branch=[
+            _render_run(
+                4, descendant, "workflow_dispatch", "2026-07-26T07:57:25Z", "completed", "success"
+            )
+        ],
+    )
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == ("success", "")
+
+
+def test_no_render_run_at_all_is_still_the_just_merged_race(monkeypatch, tmp_path):
+    """Nothing has started yet must stay pending — the widened scan must not turn it red."""
+    repo, _parent, merge, _descendant = _merge_train(tmp_path)
+    _fake_render_api(monkeypatch, exact=[], branch=[])
+    assert GUARD._render_status(repo, "acme", "widgets", merge, _MERGED_AT) == (
+        "pending",
+        "The required render workflow has not started yet.",
+    )
 
 
 def _session_repo(tmp_path: Path) -> tuple[Path, Path]:
