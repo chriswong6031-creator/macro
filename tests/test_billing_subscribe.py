@@ -286,3 +286,30 @@ def test_complete_409_double_subscribe(monkeypatch):
         billing.subscribe_complete(_complete_body(), user=USER)
     assert ei.value.status_code == 409 and ei.value.detail == "already subscribed"
     assert "sub_create" not in fake.calls
+
+
+# --------------------------------------------------------------------------- #
+# hardening: a Stripe failure must not leak the raw exception to the client
+# (pre-launch item 11 — genericize 5xx billing errors, keep status + log server-side)
+# --------------------------------------------------------------------------- #
+def test_subscribe_init_502_is_generic_no_raw_exception(monkeypatch):
+    """When Stripe raises, the client sees a GENERIC 502 detail — never the raw
+    exception text (which could carry secrets / internal host detail)."""
+    class _Boom:
+        class Customer:
+            @staticmethod
+            def create(**kw):
+                raise RuntimeError("sk_live_DEADBEEF connecting to 10.1.2.3 failed")
+
+    monkeypatch.setattr(billing, "_stripe", lambda: _Boom)
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: None)
+    monkeypatch.setattr(billing, "_persist_customer", lambda *a, **k: None)
+    with pytest.raises(HTTPException) as ei:
+        billing.subscribe_init(
+            billing.SubscribeInitRequest(tier="pro", interval="annual"), user=USER
+        )
+    assert ei.value.status_code == 502                       # status preserved
+    detail = str(ei.value.detail)
+    assert detail == "subscribe init failed, please try again"
+    assert "sk_live_DEADBEEF" not in detail                  # no secret leak
+    assert "RuntimeError" not in detail and "10.1.2.3" not in detail

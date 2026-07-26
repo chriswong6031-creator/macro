@@ -121,6 +121,32 @@ def test_unregister_removes_client():
     assert q not in hub._clients
 
 
+def test_try_admit_caps_connections_per_ip():
+    """Per-IP cap: the first _MAX_CONNS_PER_IP admits succeed, the next is refused;
+    releasing frees a slot, and a different IP has its own independent budget."""
+    from app.tape import _MAX_CONNS_PER_IP
+
+    hub = TapeHub()
+    ip = "203.0.113.7"
+    assert all(hub.try_admit(ip) for _ in range(_MAX_CONNS_PER_IP))
+    assert hub.try_admit(ip) is False              # one past the cap -> refused
+    hub.release(ip)                                # free a single slot
+    assert hub.try_admit(ip) is True               # now admits again
+    assert hub.try_admit("198.51.100.9") is True   # a different IP is independent
+
+
+def test_release_prunes_bucket_at_zero():
+    """release() removes the per-IP bucket when it returns to zero, and
+    over-releasing is harmless (never negative, never raises)."""
+    hub = TapeHub()
+    ip = "203.0.113.8"
+    assert hub.try_admit(ip) is True
+    hub.release(ip)
+    assert ip not in hub._ip_counts
+    hub.release(ip)                                # over-release is a no-op
+    assert ip not in hub._ip_counts
+
+
 def test_wedged_client_dropped_on_queue_full():
     """A client whose queue is full (slow/wedged) is dropped rather than blocking
     the hub — one bad browser can't stall the fanout."""

@@ -52,6 +52,7 @@ import hashlib
 import hmac
 import ipaddress
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -102,6 +103,8 @@ SUPABASE_ANON_KEY = os.environ.get(
 )
 
 app = FastAPI(title="macro API", version="0.1.0")
+
+log = logging.getLogger("macro.api")
 
 
 def _commit() -> str:
@@ -313,12 +316,52 @@ def _mm_analytics_insert(rows: list, access_token: str | None = None) -> None:
         pass  # analytics ingest is best-effort; never surface to the caller
 
 
+# Per-IP burst throttle for the anonymous analytics beacon. An in-memory sliding
+# window mirroring _brain_throttle_check (below): max 60 requests / 60s per client
+# IP -> 429, so an anonymous client can't flood the beacon into minting unbounded
+# mm_aid cookies + Supabase inserts. The dict is capped so it can never grow unbounded.
+_COLLECT_THROTTLE_MAX = 60
+_COLLECT_THROTTLE_WINDOW = 60.0
+_COLLECT_THROTTLE_CAP = 20000
+_collect_throttle: dict[str, deque] = {}
+_collect_throttle_lock = threading.Lock()
+
+
+def _collect_throttle_ok(ip: str) -> bool:
+    """False when ip exceeds the per-IP sliding-window budget (caller returns 429).
+    Prunes on access; the dict is capped so it can never grow unbounded."""
+    now = time.monotonic()
+    cutoff = now - _COLLECT_THROTTLE_WINDOW
+    with _collect_throttle_lock:
+        dq = _collect_throttle.get(ip)
+        if dq is None:
+            if len(_collect_throttle) >= _COLLECT_THROTTLE_CAP:
+                # Evict the oldest-inserted entry (dict preserves insertion order).
+                try:
+                    _collect_throttle.pop(next(iter(_collect_throttle)))
+                except StopIteration:
+                    pass
+            dq = deque()
+            _collect_throttle[ip] = dq
+        while dq and dq[0] < cutoff:
+            dq.popleft()
+        if len(dq) >= _COLLECT_THROTTLE_MAX:
+            return False
+        dq.append(now)
+        return True
+
+
 @app.post("/api/collect")
 async def collect(request: Request, background: BackgroundTasks) -> Response:
     """Anonymous first-party analytics beacon sink (see block header)."""
     cl = request.headers.get("content-length")
     if cl and cl.isdigit() and int(cl) > 16384:
         return Response(status_code=413)
+    ip = _mm_client_ip(request)
+    if not _collect_throttle_ok(ip):
+        # Per-IP burst cap (see _collect_throttle_ok): shed the flood cheaply,
+        # before parsing the body or touching Supabase.
+        return Response(status_code=429, headers={"retry-after": "60"})
     try:
         payload = json.loads(await request.body() or b"{}")
     except Exception:
@@ -337,7 +380,6 @@ async def collect(request: Request, background: BackgroundTasks) -> Response:
     mint = anon is None
     if mint:
         anon = str(uuid.uuid4())
-    ip = _mm_client_ip(request)
     ua = _mm_clamp(request.headers.get("user-agent") or "", 256)
 
     rows: list = []
@@ -549,7 +591,8 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
     except urllib.error.HTTPError as e:
         raise HTTPException(401, f"invalid token ({e.code})") from None
     except Exception as e:  # noqa: BLE001 - network/upstream failure, not the user's fault
-        raise HTTPException(502, f"auth check failed: {e}") from None
+        log.warning("auth check upstream failure (%s)", e)
+        raise HTTPException(502, "auth check failed, please try again") from None
 
 
 def require_site_full_user(user: dict = Depends(require_user)) -> dict:
@@ -640,7 +683,8 @@ def ask_brain(body: AskRequest, user: dict = Depends(require_site_full_user)) ->
     try:
         from engine.neuralweb.ask_brain import ask  # noqa: PLC0415
     except ImportError as exc:
-        raise HTTPException(503, f"ask_brain module unavailable: {exc}") from exc
+        log.warning("ask_brain module unavailable (%s)", exc)
+        raise HTTPException(503, "brain service unavailable") from exc
 
     user_id = user.get("id") or user.get("email") or "unknown"
     result = ask(
@@ -668,7 +712,8 @@ def ask_brain_stream(body: AskRequest, user: dict = Depends(require_site_full_us
     try:
         from engine.neuralweb.ask_brain import ask_stream  # noqa: PLC0415
     except ImportError as exc:
-        raise HTTPException(503, f"ask_brain module unavailable: {exc}") from exc
+        log.warning("ask_brain module unavailable (%s)", exc)
+        raise HTTPException(503, "brain service unavailable") from exc
 
     user_id = user.get("id") or user.get("email") or "unknown"
 
@@ -748,7 +793,8 @@ def _brain_module():
         from engine.neuralweb import brain_gateway  # noqa: PLC0415
         return brain_gateway
     except ImportError as exc:
-        raise HTTPException(503, f"brain_gateway unavailable: {exc}") from exc
+        log.warning("brain_gateway unavailable (%s)", exc)
+        raise HTTPException(503, "brain service unavailable") from exc
 
 
 # ── Brain security: burst throttle + device-linked identity (PART A/B) ─────────
@@ -1364,7 +1410,8 @@ def portfolio_brief(response: Response, user: dict = Depends(require_user)):
     try:
         from engine.portfolio_brief import compose_brief  # noqa: PLC0415
     except ImportError as exc:
-        raise HTTPException(503, f"portfolio_brief module unavailable: {exc}") from exc
+        log.warning("portfolio_brief module unavailable (%s)", exc)
+        raise HTTPException(503, "portfolio brief unavailable") from exc
 
     today = _date.today().isoformat()
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()

@@ -38,6 +38,16 @@ on:
       - "app/main.py"
       - "admin/analytics_first_party.py"
       - "tests/test_collect_identity.py"
+      # Pre-launch hardening guards (P1): the anonymous /api/collect per-IP throttle
+      # (app/main.py, above), the /ws/tape per-IP connection cap, and generic
+      # billing/auth 5xx errors (no raw-exception leak). Neither app/billing.py nor
+      # app/tape.py triggers any other job, so a billing/tape-only PR must list them
+      # here to reach the prelaunch-hardening guard below.
+      - "app/billing.py"
+      - "app/tape.py"
+      - "tests/test_collect_throttle.py"
+      - "tests/test_tape_relay.py"
+      - "tests/test_billing_subscribe.py"
       # title-i18n guard: bilingual/CJK text must never sit in a title= attribute.
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
@@ -3247,3 +3257,25 @@ jobs:
         run: python -m pytest tests/test_build_options_screener.py -q
       - name: neural-web support-map suite (real-synapse census bands)
         run: python -m pytest tests/test_support_map.py -q
+
+  prelaunch-hardening:
+    if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Pre-launch hardening (P1, 2026-07-26): the anonymous /api/collect per-IP beacon
+    # throttle, the /ws/tape per-IP connection cap, and generic billing/auth 5xx
+    # errors (no raw-exception leak) were guarded by ZERO GitHub workflows —
+    # app/billing.py and app/tape.py match no other job here, so these guards would
+    # rot silently (same class as the tier-gate / options-estate holes). All three
+    # suites are network-free (Stripe + Supabase are monkeypatched / IP-filtered) and
+    # tmp-isolated; test_billing_webhook is intentionally NOT run here (it needs the
+    # pinned Stripe SDK and covers the unchanged signature path, not this hardening).
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest fastapi httpx pyyaml
+      - name: collect beacon throttle + tape per-IP cap + generic billing/auth errors
+        run: python -m pytest tests/test_collect_throttle.py tests/test_tape_relay.py tests/test_billing_subscribe.py -q
