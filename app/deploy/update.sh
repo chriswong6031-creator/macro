@@ -86,16 +86,57 @@ if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-ap
 fi
 
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
-# site/ render commit). "Its own code" includes the engine modules /api/ask and
-# /api/brain import (ask_brain → cortex + llm_auth; brain_gateway → chart_perception
-# + doctrine — CMX W2/W4), all cached in the running uvicorn after first call —
-# without a restart an engine-side fix never goes live. Doctrine CONTENT
-# (engine/neuralweb/doctrine/*.md) is deliberately NOT here: doctrine.py reloads
-# the .md files on mtime change, so prose-only edits go live without an /api blip.
-# Any Python module under app/ is import-cached by uvicorn and therefore needs
-# a restart. The old narrow list omitted routers such as regwall.py/paywall.py:
-# code could deploy while the running API kept the previous access policy.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine)\.py|engine/(llm_auth|portfolio_brief)\.py)$'; then
+# site/ render commit). "Its own code" = every Python module import-cached by the
+# running uvicorn, because sys.modules pins the OLD module object for the life of
+# the process: without a restart the new file sits on disk while the API keeps
+# serving the previous code — live in git, dead in production, with no signal.
+#
+# INCLUSION RULE (keep the list narrow but complete). A path belongs here when the
+# API process imports it, either:
+#   (a) at load     — app/*.py and their module-level engine/lib closure; or
+#   (b) at request  — a function-level import on a path an API endpoint reaches
+#                     (cached after the first call, same trap, just later).
+# Every module below was confirmed against the import graph of app/*.py, not
+# guessed. When adding a lazy `from engine...` / `from lib...` import to any app/
+# router or to a module already listed here, extend this list in the same commit —
+# tests/test_deploy_update_self_heal.py recomputes the load-time closure and fails
+# CI if it drifts out of this regex.
+#
+# Why each group is here:
+#   app/.*\.py             every router is import-cached (the old list omitted
+#                          regwall.py/paywall.py: code could deploy while the
+#                          running API kept the previous access policy)
+#   neuralweb/*            /api/ask + /api/brain: ask_brain → cortex, llm_auth,
+#                          envelope → synapse, tushare_freshness; brain_gateway →
+#                          chart_perception, doctrine, key_pool (CMX W2/W4)
+#   research_vault/        app/research.py imports catalog, corpus, download_quota,
+#                          view_ratelimit, watermark (→ sidecar, r2_store) at MODULE
+#                          level. Whole-package pattern on purpose: this is the
+#                          vault's serving layer, so a new module added here is
+#                          API-cached too and must not need a second fix. Omitting
+#                          it silently froze download caps / anti-scrape limits —
+#                          #3654 escaped only because it also touched app/research.py.
+#   context_index/         brain_gateway → packet.build_packet, which top-level
+#                          imports fusion/gitinfo/lexical/structured. Named, not
+#                          globbed: ingest/chunking/health/schema/sources are
+#                          nightly-only builders the API never imports.
+#   marketing/             brain_gateway's chart path → chart_render (load_ohlcv,
+#                          render_chart_v2) + confluence_source. Named, not globbed:
+#                          the rest of the marketing lane is nightly-only.
+#   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
+#   lib/*                  ai_costs + mastermind_response_log log every chat call;
+#                          config.py is a module-level dep of live_quotes
+#
+# Deliberately NOT here (do not "fix" these — they would blip /api for nothing):
+#   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md): doctrine.py reloads the
+#     .md files on mtime change, so prose-only edits go live with no restart.
+#   - Data/artifact files read from disk per request.
+#   - The nightly-only closure behind cortex.run() (constitution → qledger →
+#     ai_desk → master_brain → china_*): the API imports cortex for its tool
+#     schemas/implementations only and never calls run(), so those ~90 modules are
+#     NOT in the API's sys.modules. Adding them would restart /api on nearly every
+#     engine commit — exactly what this narrow list exists to prevent.
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|envelope|key_pool|synapse)\.py|engine/(llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(chart_render|confluence_source)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
