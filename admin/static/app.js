@@ -8080,6 +8080,15 @@ async function mmlLoad() {
   MML.rows = d.rows || [];
   const st = d.stats || {};
   const bySurf = Object.entries(st.by_surface || {}).map(([k, n]) => `${esc(k)} ${n}`).join(" · ") || "none yet";
+  /* Ingest health — an empty/aging ledger used to look identical to a quiet week. */
+  const ing = d.ingest || {};
+  const darkHtml = ing.dark ? `<div class="banner show" style="position:static;display:block;margin-top:10px">⚠️ Ingest dark${ing.last_ts ? ` since ${esc(String(ing.last_ts).slice(0, 10))}` : ""} — ${ing.last_ts ? `no new AI responses in ${ing.dark_days} day${ing.dark_days === 1 ? "" : "s"}` : "no AI responses have ever been ingested"}. Both surfaces write straight to R2: check the plain R2_* creds in /etc/macro-api.env on the VPS (macro brain) and the Terminal copilot env, then hit “⟳ Refresh from R2”.</div>` : "";
+  /* Asymmetric case: overall ledger looks alive because ONE surface still writes. */
+  const surfDarkHtml = ing.dark ? "" : Object.entries(ing.last_by_surface || {}).map(([s, ts]) => {
+    const days = (Date.now() - Date.parse(ts)) / 86400e3;
+    if (!(days >= (ing.threshold_days || 2))) return "";
+    return `<span class="statpill s-bad" title="no ${esc(s)} responses since ${esc(String(ts).slice(0, 10))}">${esc(s)} dark ${Math.floor(days)}d</span>`;
+  }).join("");
   const heroHtml = `<div class="mb-hero">
     <div class="mb-hero-top">
       <span class="mb-hero-kicker">Mastermind AI</span>
@@ -8098,6 +8107,7 @@ async function mmlLoad() {
       <span class="statpill s-bad">👎 ${st.thumbs_down || 0}</span>
       ${st.errors ? `<span class="statpill s-bad">${st.errors} errored</span>` : ""}
       ${d.read_capped ? `<span class="statpill s-warn" title="showing the most recent window">window capped</span>` : ""}
+      ${surfDarkHtml}
     </div>
   </div>`;
 
@@ -8120,7 +8130,7 @@ async function mmlLoad() {
     <th style="width:120px">Model</th><th class="r" style="width:70px">Tokens</th><th style="width:130px">Eval</th>
   </tr></thead><tbody>${rowsHtml}</tbody></table>`;
 
-  v.innerHTML = heroHtml + filterHtml + tableHtml;
+  v.innerHTML = heroHtml + darkHtml + filterHtml + tableHtml;
   mmlWire();
 }
 

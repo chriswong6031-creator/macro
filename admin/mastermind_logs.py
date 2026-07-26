@@ -47,6 +47,8 @@ _REFRESH_CAP = 5000
 _EXPORT_CAP = 50000
 
 _ALLOWED_TAGS_MAX = 12
+# Ingest-health: warn when the newest ledger row is at least this many days old.
+_DARK_AFTER_DAYS = 2
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
@@ -142,6 +144,52 @@ def _public_eval(ev: dict | None) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Ingest health
+# ---------------------------------------------------------------------------
+
+def ingest_health(rows: list[dict]) -> dict:
+    """How stale is the ledger, overall and per surface — is the ingest dark?
+
+    WHY: through July 2026 macro-api ran without plain R2_* creds, so the writer's
+    `enabled()` was False, zero objects were ever written, and the panel showed an
+    empty corpus with nothing saying anything was wrong. An empty or aging ledger
+    is now loud. Fail-soft: any error reports healthy, never a false alarm."""
+    try:
+        newest: datetime | None = None
+        newest_by_surface: dict[str, datetime] = {}
+        last_by_surface: dict[str, str] = {}
+        for r in rows:
+            ts = r.get("ts")
+            dt = _parse_ts(ts)
+            if dt == _EPOCH:  # unparseable/missing — not evidence of a live ingest
+                continue
+            if newest is None or dt > newest:
+                newest = dt
+            surface = str(r.get("surface") or "?")
+            prev = newest_by_surface.get(surface)
+            if prev is None or dt > prev:
+                newest_by_surface[surface] = dt
+                last_by_surface[surface] = str(ts)
+
+        if newest is None:
+            # No parseable row at all — an empty ledger IS dark (the July-2026 state).
+            return {"dark": True, "dark_days": None, "last_ts": None,
+                    "last_by_surface": {}, "threshold_days": _DARK_AFTER_DAYS}
+
+        age_days = (datetime.now(timezone.utc) - newest).total_seconds() / 86400.0
+        return {
+            "dark": age_days >= _DARK_AFTER_DAYS,
+            "dark_days": int(age_days),
+            "last_ts": newest.isoformat(timespec="seconds"),
+            "last_by_surface": last_by_surface,
+            "threshold_days": _DARK_AFTER_DAYS,
+        }
+    except Exception:  # noqa: BLE001
+        return {"dark": False, "dark_days": None, "last_ts": None,
+                "last_by_surface": {}, "threshold_days": _DARK_AFTER_DAYS}
+
+
+# ---------------------------------------------------------------------------
 # R2 refresh (ingest)
 # ---------------------------------------------------------------------------
 
@@ -160,8 +208,9 @@ def refresh(root: Path | None = None) -> dict:
                     "generated_at": _now_iso()}
 
         # Ids already in the local ledger (dedup key).
+        ledger_rows = _read_jsonl(_log_path(root), _READ_CAP)
         seen: set[str] = set()
-        for r in _read_jsonl(_log_path(root), _READ_CAP):
+        for r in ledger_rows:
             rid = r.get("id")
             if isinstance(rid, str):
                 seen.add(rid)
@@ -206,7 +255,9 @@ def refresh(root: Path | None = None) -> dict:
             _append_jsonl(p, r)
 
         return {"ok": True, "ingested": len(new_rows), "listed": listed,
-                "capped": len(new_rows) >= _REFRESH_CAP, "generated_at": _now_iso()}
+                "capped": len(new_rows) >= _REFRESH_CAP,
+                "ingest": ingest_health(ledger_rows + new_rows),
+                "generated_at": _now_iso()}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "ingested": 0, "note": f"refresh error: {exc}",
                 "generated_at": _now_iso()}
@@ -295,6 +346,7 @@ def logs(limit: int = 100, filters: dict | None = None, root: Path | None = None
             "rows": matched[:limit],
             "matched": len(matched),
             "stats": stats,
+            "ingest": ingest_health(rows),
             "read_capped": len(rows) >= _READ_CAP,
             "generated_at": _now_iso(),
         }

@@ -3,6 +3,7 @@ Mastermind AI response log corpus."""
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -187,3 +188,55 @@ def test_refresh_noop_without_creds(tmp_path, monkeypatch):
     assert out["ok"] is False
     assert out["ingested"] == 0
     assert "note" in out
+
+
+# ---------------------------------------------------------------------------
+# ingest_health() — is the R2 → ledger ingest still running?
+# ---------------------------------------------------------------------------
+def _ago(days: float) -> str:
+    """An ISO ts `days` in the past — never hardcode dates in a staleness test."""
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(timespec="seconds")
+
+
+def test_ingest_health_empty_ledger_is_dark(tmp_path):
+    # The exact July-2026 production state: nothing ever ingested, panel silent.
+    ing = ml.logs(root=tmp_path)["ingest"]
+    assert ing["dark"] is True
+    assert ing["last_ts"] is None
+
+
+def test_ingest_health_fresh_row_not_dark(tmp_path):
+    ts = _ago(0)
+    _seed(tmp_path, [_row("a", ts=ts)])
+    ing = ml.logs(root=tmp_path)["ingest"]
+    assert ing["dark"] is False
+    assert ing["last_by_surface"]["macro"] == ts
+    assert ing["threshold_days"] == 2
+
+
+def test_ingest_health_stale_ledger_is_dark(tmp_path):
+    ts = _ago(5)
+    _seed(tmp_path, [_row("a", ts=ts)])
+    ing = ml.logs(root=tmp_path)["ingest"]
+    assert ing["dark"] is True
+    assert ing["dark_days"] >= 4
+    assert ing["last_ts"].startswith(ts[:10])
+
+
+def test_ingest_health_one_day_old_not_dark(tmp_path):
+    _seed(tmp_path, [_row("a", ts=_ago(1))])
+    assert ml.logs(root=tmp_path)["ingest"]["dark"] is False
+
+
+def test_ingest_health_tracks_newest_per_surface(tmp_path):
+    # One surface still writing keeps the ledger overall-live — per-surface is the tell.
+    old, recent, mid = _ago(5), _ago(1), _ago(3)
+    _seed(tmp_path, [
+        _row("m_old", surface="macro", ts=old),
+        _row("m_new", surface="macro", ts=recent),
+        _row("t_mid", surface="terminal", ts=mid),
+    ])
+    ing = ml.logs(root=tmp_path)["ingest"]
+    assert ing["dark"] is False
+    assert ing["last_by_surface"]["macro"] == recent
+    assert ing["last_by_surface"]["terminal"] == mid
