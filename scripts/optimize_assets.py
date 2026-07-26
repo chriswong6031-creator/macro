@@ -134,33 +134,28 @@ def optimize(site_dir: Path) -> int:
         return preload_css_text(optimize_assets_text(text, hash_for), imports_for)
 
     n = 0
-    for html in site_dir.rglob("*.html"):
-        try:
-            text = html.read_text()
-        except Exception:  # noqa: BLE001
-            continue
-        try:
-            new = optimized(text, html.parent)
-        except Exception as e:  # noqa: BLE001
-            log.warning("optimize failed for %s (%s)", html.name, e)
-            continue
-        if new != text:
-            try:
-                write_page(html, new)  # keeps the data-base shim; avoids raw write_text
-                n += 1
-            except Exception as e:  # noqa: BLE001
-                log.warning("write failed for %s (%s)", html.name, e)
-
-    # Plain-copy HTML pairs: stamp the TEMPLATE, not just the site copy. The lanes
-    # run `check_template_site_sync --fix` after this step (it must, so a cancellation
-    # can never ship a diverged pair — see render.yml), and --fix rewrites
-    # site/<name> FROM templates/<name> — reverting a stamp written only site-side.
-    # That made the stamp structurally unreachable for these pages: #3617's onboard.css
-    # fix was live at the origin while every returning browser kept the pre-#3617
-    # stylesheet, because site/index.html still linked onboard.css?v=cfdca9e2 and the
-    # edge serves versioned assets `immutable, max-age=1y` (#3624 hand-bumped that one
-    # page; this closes the mechanism). Refs resolve against site/ because that is
-    # where the page ships from, and the write is a plain write_text — write_page would
+    # Plain-copy HTML pairs FIRST — this ordering is load-bearing, not cosmetic.
+    #
+    # Stamp the TEMPLATE, not just the site copy: the lanes run
+    # `check_template_site_sync --fix` after this step (they must, so a cancellation can
+    # never ship a diverged pair — see render.yml), and --fix rewrites site/<name> FROM
+    # templates/<name>, reverting a stamp written only site-side. That made the stamp
+    # structurally unreachable for these pages: #3617's onboard.css fix was live at the
+    # origin while every returning browser kept the pre-#3617 stylesheet, because
+    # site/index.html still linked onboard.css?v=cfdca9e2 and the edge serves versioned
+    # assets `immutable, max-age=1y` (#3624 hand-bumped that one page).
+    #
+    # WHY BEFORE the site walk: a render is cancelled far more often than it completes on
+    # a merge-spree day, and the commit step is `if: always()` — so this process can be
+    # SIGTERMed part-way through and the half-done tree still gets committed. With the
+    # site walk first, a kill during it left site/chat.html re-stamped (it sorts early)
+    # while templates/chat.html was never reached, and since --fix resolves toward
+    # templates/ it could not repair the pair either — main landed DIVERGED and the
+    # pages.yml publish gate went red (2026-07-26, cancelled run 30203476381 -> commit
+    # 886fe25d89e). Doing the pair first makes every interruption point safe: --fix always
+    # resolves toward templates/, so if we got here at all the template is already fresh
+    # and --fix carries that freshness into site/. Refs resolve against site/ because that
+    # is where the page ships from, and the write is a plain write_text — write_page would
     # inline the data-base shim into a SOURCE file.
     for tpl, site_copy in paired_html_pages(site_dir):
         try:
@@ -184,6 +179,23 @@ def optimize(site_dir: Path) -> int:
                 site_copy.write_text(new)
         except Exception as e:  # noqa: BLE001
             log.warning("write failed for templates/%s (%s)", tpl.name, e)
+
+    for html in site_dir.rglob("*.html"):
+        try:
+            text = html.read_text()
+        except Exception:  # noqa: BLE001
+            continue
+        try:
+            new = optimized(text, html.parent)
+        except Exception as e:  # noqa: BLE001
+            log.warning("optimize failed for %s (%s)", html.name, e)
+            continue
+        if new != text:
+            try:
+                write_page(html, new)  # keeps the data-base shim; avoids raw write_text
+                n += 1
+            except Exception as e:  # noqa: BLE001
+                log.warning("write failed for %s (%s)", html.name, e)
     log.info("asset-optimized %d file(s)", n)
     return n
 
