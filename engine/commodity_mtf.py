@@ -159,6 +159,20 @@ _VERDICTS = {
     "avoid": ("Downtrend confirmed across timeframes",
               "Both the tape and the bigger picture are down — no edge in catching this knife.",
               "AVOID", "各周期确认下行", "盘面与大格局均向下 — 接飞刀没有优势。", "回避"),
+    # `avoid` is reached from long_sign<0 AND short_sign<0, but BOTH can go negative
+    # without a single timeframe reading down: long_sign folds in the polarity-corrected
+    # driver/trend leans and the cycle penalties, and short_sign is overridden by a
+    # bearish ladder state. When that happens the "across timeframes" copy asserts
+    # something the timeframe table beneath it refutes. Same call, honest basis.
+    "avoid_governor": ("Rally intact — the bigger picture is against it",
+                       "The tape has not turned: every timeframe is still up or flat. What leans "
+                       "bearish is the bigger picture — the macro backdrop and this market's "
+                       "measured tendency to weaken after a run this size. A reason not to chase, "
+                       "not a signal to sell.", "DON'T CHASE",
+                       "反弹未破，但大格局不利",
+                       "盘面尚未转向：各周期仍为上行或走平。偏空来自大格局 — 宏观背景，"
+                       "以及此品种在这样一段涨势后走弱的历史倾向。这是不宜追高的理由，而非卖出信号。",
+                       "勿追高"),
     "wait": ("Mixed / transitional",
              "Timeframes disagree without a clear governor — wait for confluence.", "WAIT",
              "混合 / 过渡", "各周期分歧、缺乏主导 — 等待共振。", "等待"),
@@ -251,6 +265,10 @@ def confluence_verdict(a: dict, asset: str, sig_last: "pd.Series | None" = None,
         key = "avoid"
     else:
         key = "wait"
+    # honesty gate: never claim a confirmed downtrend "across timeframes" when no
+    # timeframe is down. The call is unchanged — only the stated basis is corrected.
+    if key == "avoid" and not any(v == "down" for v in per_tf.values()):
+        key = "avoid_governor"
     head, sub, grade, head_zh, sub_zh, grade_zh = _VERDICTS[key]
 
     # when the calibrated ladder independently fired the counter-trend state, use

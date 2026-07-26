@@ -683,6 +683,7 @@ def _mtf_grade_plain(grade: str | None) -> tuple[str, str]:
         "BUY-THE-DIP":  ("Dip is buyable", "回调可买"),
         "CAUTION":      ("Wait — signals mixed", "等待——信号混乱"),
         "AVOID":        ("Stand aside", "按兵不动"),
+        "DON'T CHASE":  ("Watch — don't chase", "观望——勿追高"),
         "WAIT":         ("Watch — wait", "观望等待"),
     }
     if not grade:
@@ -977,6 +978,12 @@ def _build_sector_vm_inner(
             if len(_close) < 20:
                 continue
             _mtf_a = _cmtf.mtf_ladder(_close)
+            # per-timeframe trend lives on the CONFLUENCE VERDICT, not on the ladder —
+            # `ladder` has no `per_tf` key, so reading it there defaulted all five rows
+            # of all 13 expansion members to "flat" on every build. Same source the
+            # core-4 table renders from, so members and core now agree.
+            _verdict = _cmtf.confluence_verdict(_mtf_a, _mname)
+            _per_tf = (_verdict or {}).get("per_tf") or {}
             _mtf_rows: list[dict] = []
             for _key, _lbl, _lbl_zh in _TF:
                 _s = (_mtf_a.get("mtf") or {}).get(_key) or {}
@@ -989,9 +996,9 @@ def _build_sector_vm_inner(
                     "key": _key, "label": _lbl, "label_zh": _lbl_zh,
                     "rsi14": _s.get("rsi14"), "rsi5": _s.get("rsi5"),
                     "stoch": _s.get("stoch"), "macd": _macd,
-                    "trend": ((_mtf_a.get("ladder") or {}).get("per_tf") or {}).get(_key, "flat"),
+                    "trend": _per_tf.get(_key, "flat"),
                 })
-            _member_mtf[_mname] = {"mtf_rows": _mtf_rows, "verdict": _cmtf.confluence_verdict(_mtf_a, _mname)}
+            _member_mtf[_mname] = {"mtf_rows": _mtf_rows, "verdict": _verdict}
         except Exception:  # noqa: BLE001 — per-member, never fatal
             pass
     log.info("[timing] member MTF ladder (%d members) in %.1fs",
