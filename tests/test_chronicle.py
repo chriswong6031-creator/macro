@@ -1341,6 +1341,105 @@ def test_build_weekly_trim_loop_fires_and_notes_when_over_budget():
 # M9: gate 1 against REAL committed sources (not just the synthetic fixture)
 # ---------------------------------------------------------------------------
 
+# A store advanced every night is at most hours old. Three weeks of silence is
+# not a bad night — it means nothing is regenerating the store (the #3588 seed
+# state, where data/chronicle/ sat frozen at its hand-run seed).
+_MANIFEST_MAX_AGE_DAYS = 21
+
+
+# ---------------------------------------------------------------------------
+# Gate 1 companions: the two cadence-immune teeth (#3648) that #3660 dropped
+#
+# #3648 replaced byte-equality with three teeth; #3660 re-landed a pre-#3648
+# tree and, sharing this file, reverted all three on merge without a conflict.
+# Its vintage-attested gate 1 below is kept as-is — this only restores the two
+# checks nothing else covers. Both gaps were re-proven by mutation against main
+# (9cac7bc0f13) before writing these, and BOTH mutations passed 57/57:
+#
+#   (a) force the vintage-drift path + hand-edit a title in the committed store
+#       (losing no ids): gate 1's append-only branch waves it through. Note the
+#       committed manifest currently records source_fingerprints=null, so the
+#       drift branch — the weaker one — is the branch actually running today.
+#   (b) set the committed manifest's produced_at 6 months stale: nothing fires.
+#       The existing "dead wire" assert (test_daily_yml_*) checks that daily.yml
+#       still CALLS the builder, which a nightly that fails every run satisfies
+#       forever; and test_manifest_envelope_and_row_counts ties rows/sha256 on a
+#       SYNTHETIC fixture root, never on the committed store.
+#
+# Both are cadence-immune: manifest.json and events.jsonl are written by the
+# same governor run and committed together, so they agree regardless of how far
+# any source lane has advanced since.
+# ---------------------------------------------------------------------------
+
+def test_committed_store_matches_its_manifest_receipt():
+    """The committed store must match the receipt its own manifest records.
+
+    This is the "no hand-maintained content" tooth (#3648): the manifest's
+    rows + sha256 are written from the bytes the governor just emitted, so any
+    hand-edit — or a half-written store — breaks the tie. Unlike gate 1 below it
+    never rebuilds, so it holds no matter how stale the sources are relative to
+    the store, and it is the ONLY check that catches a tampered store while the
+    catalog vintage has drifted.
+    """
+    events_path = ROOT / "data" / "chronicle" / "events.jsonl"
+    manifest_path = ROOT / "data" / "chronicle" / "manifest.json"
+    if not events_path.exists() or not manifest_path.exists():
+        pytest.skip("no committed chronicle store/manifest in this checkout")
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    receipt = (manifest.get("ledgers") or {}).get("events") or {}
+    if not receipt.get("present"):
+        pytest.skip("manifest records no events ledger")
+
+    raw = events_path.read_bytes()
+    rows = len([line for line in raw.decode("utf-8").splitlines() if line.strip()])
+    assert receipt.get("rows") == rows, (
+        f"committed events.jsonl has {rows} row(s) but its manifest receipt records "
+        f"{receipt.get('rows')} — the store was modified without regenerating the manifest"
+    )
+
+    recorded = str(receipt.get("sha256") or "")
+    actual = hashlib.sha256(raw).hexdigest()
+    # the writer stamps "sha256:<hex>"; accept a bare hex digest too
+    assert recorded.split(":")[-1] == actual, (
+        "committed events.jsonl does not hash to its own manifest receipt "
+        f"(recorded {recorded}, actual sha256:{actual}) — the store carries content "
+        "no governor run produced (hand-edited or half-written)"
+    )
+
+
+def test_committed_manifest_proves_the_nightly_is_advancing_the_store():
+    """Dead-wire alarm (#3648): the store must be REGENERATED, not just wired.
+
+    This is the defect the whole gate was written for — the #3588 seed state,
+    where data/chronicle/ sat frozen at a hand-run seed, so upstream repairs
+    (e.g. the #3570 report-title repair) never reached the served store. A
+    nightly that fails every single run still satisfies the "daily.yml calls the
+    builder" wiring assert forever; only produced_at proves it actually ran.
+
+    The store advances nightly, so it is at most hours old. Three weeks of
+    silence is not a bad night — it means nothing is regenerating it.
+    """
+    manifest_path = ROOT / "data" / "chronicle" / "manifest.json"
+    if not manifest_path.exists():
+        pytest.skip("no committed data/chronicle/manifest.json in this checkout")
+
+    produced_at = (json.loads(manifest_path.read_text(encoding="utf-8"))
+                   .get("produced_at") or "")
+    assert produced_at, "committed chronicle manifest carries no produced_at"
+
+    stamped = datetime.fromisoformat(produced_at.replace("Z", "+00:00"))
+    if stamped.tzinfo is None:
+        stamped = stamped.replace(tzinfo=timezone.utc)
+    age_days = (datetime.now(timezone.utc) - stamped).total_seconds() / 86400.0
+    assert age_days <= _MANIFEST_MAX_AGE_DAYS, (
+        f"committed chronicle manifest was produced {age_days:.1f} days ago "
+        f"({produced_at}) — the nightly has not advanced the store in over "
+        f"{_MANIFEST_MAX_AGE_DAYS} days, so upstream source repairs are not "
+        "reaching the served store (dead wire)"
+    )
+
+
 def test_rebuild_from_committed_sources_reproduces_committed_store():
     """Gate 1: rebuilding into a scratch root from the ACTUAL committed
     sources must reproduce data/chronicle/events.jsonl byte-for-byte. The
