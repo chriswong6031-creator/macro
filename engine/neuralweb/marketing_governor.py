@@ -270,6 +270,10 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                         _wl_items = _wl.build_items(
                             r, tickers=_reach, as_of=_as_of,
                             schedule=_wl.weekend_schedule(_as_of, 8), max_items=8,
+                            # cfg arms the LLM voice lane (copywriter personas);
+                            # without it this lane ships the deterministic floor.
+                            # Media on: every post carries the v2 chart card.
+                            cfg=cfg, with_media=True,
                         )
                         _cap = _eff_cap(cfg)
                         _nq = sum(1 for _it in _wl_items

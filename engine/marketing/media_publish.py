@@ -117,3 +117,96 @@ def publish_chart_png(png_bytes: bytes, key: str, *, s3=None) -> str | None:
     url = public_url_for_key(key)
     log.info("media_publish: uploaded chart PNG → %s (%d bytes)", url, len(png_bytes))
     return url
+
+
+def publish_card(
+    svg: str,
+    *,
+    chart_id: str,
+    as_of: str,
+    root: "Any" = None,
+    legacy_png: "Any" = None,
+) -> dict:
+    """Persist ONE chart card (SVG + its PNG raster) and publish the PNG to R2.
+
+    This is the single seam every lane goes through so the POSTED image is always
+    a raster of the SAME SVG the Content Studio preview shows. Before the
+    2026-07-26 incident each lane rastered its own lookalike and they drifted:
+    the preview promised the full candlestick card with the mastermind-x.com
+    footer + "Start free 14-day trial" button, the account posted a bare line
+    chart with neither. One seam, one renderer, no drift.
+
+    Writes:
+      data/marketing/outbox/media/<as_of>/<chart_id>.svg   (the artifact/preview)
+      data/marketing/outbox/media/<as_of>/<chart_id>.png   (what X actually gets)
+
+    legacy_png: optional zero-arg callable returning PNG bytes, used ONLY when no
+    Chrome is available to raster the SVG (CI, the ubuntu publish runner). A
+    missing rasteriser must degrade the image, never drop the post.
+
+    Returns {svg_path, media_png_path, media_url, media_render} — any of which
+    may be None/absent. NEVER raises: a card that cannot be written leaves the
+    post text-only rather than failing the run.
+    """
+    from pathlib import Path as _Path  # noqa: PLC0415
+
+    out: dict[str, Any] = {}
+    if not svg or not chart_id:
+        return out
+
+    repo_root = _Path(root) if root is not None else _Path(__file__).resolve().parents[2]
+    media_dir = repo_root / "data" / "marketing" / "outbox" / "media" / str(as_of)
+    rel_svg = f"data/marketing/outbox/media/{as_of}/{chart_id}.svg"
+    rel_png = f"data/marketing/outbox/media/{as_of}/{chart_id}.png"
+
+    # ── SVG (the artifact the admin preview renders) ──────────────────────────
+    try:
+        media_dir.mkdir(parents=True, exist_ok=True)
+        svg_path = media_dir / f"{chart_id}.svg"
+        tmp = svg_path.with_suffix(".svg.tmp")
+        tmp.write_text(svg, encoding="utf-8")
+        tmp.replace(svg_path)
+        out["svg_path"] = rel_svg
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_card: SVG write failed for %s: %s", chart_id, exc)
+
+    # ── PNG (what X actually receives) ────────────────────────────────────────
+    png = b""
+    render_mode = "svg_raster"
+    try:
+        from engine.marketing.chart_render import rasterize_svg  # noqa: PLC0415
+        png = rasterize_svg(svg)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_card: raster failed for %s: %s", chart_id, exc)
+    if not png and legacy_png is not None:
+        log.warning("publish_card: no SVG raster for %s — falling back to the legacy "
+                    "PNG (no footer CTA); install Chrome on this host", chart_id)
+        try:
+            png = legacy_png() or b""
+            render_mode = "legacy_png"
+        except Exception as exc:  # noqa: BLE001
+            log.warning("publish_card: legacy PNG failed for %s: %s", chart_id, exc)
+            png = b""
+    if not png:
+        return out
+
+    try:
+        media_dir.mkdir(parents=True, exist_ok=True)
+        png_path = media_dir / f"{chart_id}.png"
+        # Deterministic bytes → idempotent; overwrite is safe.
+        tmp = png_path.with_suffix(".png.tmp")
+        tmp.write_bytes(png)
+        tmp.replace(png_path)
+        out["media_png_path"] = rel_png
+        out["media_render"] = render_mode
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_card: PNG write failed for %s: %s", chart_id, exc)
+        return out
+
+    # ── Public URL (Buffer hosts no uploads; absent creds → text-only post) ───
+    try:
+        out["media_url"] = publish_chart_png(png, chart_key(str(as_of), str(chart_id)))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_card: upload failed for %s: %s", chart_id, exc)
+        out["media_url"] = None
+    return out

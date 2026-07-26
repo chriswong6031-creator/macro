@@ -703,12 +703,24 @@ def _attach_chart_media(
 ) -> None:
     """Render a PNG variant of a single-name signal chart and stamp it on `fc`.
 
-    Gated by publish.media_enabled. Renders the PNG from the SAME closes the SVG
-    uses (X rejects SVG), writes it to
+    Gated by publish.media_enabled. Writes the PNG to
     data/marketing/outbox/media/<as_of>/<chart_id>.png, and — if R2 creds exist —
     uploads it to the public data plane. Mutates `fc` in place, adding:
       media_png_path : repo-relative local PNG path (always, when rendered)
       media_url      : public https URL (when R2 creds present) else None
+      media_render   : "svg_raster" (the real card) or "legacy_png" (fallback)
+
+    THE POSTED IMAGE IS THE PREVIEWED IMAGE (2026-07-26 incident fix). The PNG is
+    a raster of `fc["svg"]` — the exact artwork the Content Studio preview and
+    the outbox artifact show, footer marketing bar (mastermind-x.com + "Start
+    free 14-day trial") included. Before this, the publish path rendered a
+    SEPARATE hand-drawn PIL lookalike of the older v1 line chart, so the account
+    posted a bare line chart with no URL and no CTA while the mockup promised the
+    full candlestick card. Two renderers = guaranteed drift; there is now one.
+
+    render_signal_chart_png remains ONLY as the fallback for hosts with no Chrome
+    (CI, the ubuntu publish runner) so a missing rasteriser can never turn a post
+    text-only. It is a degraded image, and media_render records when it was used.
 
     Fully fail-soft: any render/write/upload error leaves `fc` SVG-only (no
     media_* keys) and never raises — the post degrades to text-or-SVG. No-op
@@ -721,37 +733,24 @@ def _attach_chart_media(
         return
     try:
         from engine.marketing.chart_render import render_signal_chart_png  # noqa: PLC0415
-        png = render_signal_chart_png(
-            fc.get("ticker") or "", dates or [], closes,
-            marker_index=marker_index, subtitle=subtitle)
-        if not png:
-            return
-        repo_root = Path(root) if root is not None else Path(__file__).resolve().parent.parent.parent
-        media_dir = repo_root / "data" / "marketing" / "outbox" / "media" / str(as_of)
-        rel_path = f"data/marketing/outbox/media/{as_of}/{chart_id}.png"
-        try:
-            media_dir.mkdir(parents=True, exist_ok=True)
-            png_path = media_dir / f"{chart_id}.png"
-            # Deterministic bytes → idempotent; overwrite is safe.
-            tmp = png_path.with_suffix(".png.tmp")
-            tmp.write_bytes(png)
-            tmp.replace(png_path)
-            fc["media_png_path"] = rel_path
-        except Exception as exc:  # noqa: BLE001
-            import logging  # noqa: PLC0415
-            logging.getLogger(__name__).warning(
-                "content_studio: chart PNG write failed for %s: %s", chart_id, exc)
-            return
-        # Best-effort public upload (creds absent → None; post stays text-only).
-        try:
-            from engine.marketing.media_publish import publish_chart_png, chart_key  # noqa: PLC0415
-            url = publish_chart_png(png, chart_key(str(as_of), str(chart_id)))
-            fc["media_url"] = url  # explicit None documents "rendered but not hosted"
-        except Exception as exc:  # noqa: BLE001
-            import logging  # noqa: PLC0415
-            logging.getLogger(__name__).warning(
-                "content_studio: chart PNG upload failed for %s: %s", chart_id, exc)
-            fc["media_url"] = None
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        stamped = publish_card(
+            fc.get("svg") or "",
+            chart_id=str(chart_id),
+            as_of=str(as_of),
+            root=root,
+            # Chrome-less hosts only (CI / ubuntu publish runner).
+            legacy_png=lambda: render_signal_chart_png(
+                fc.get("ticker") or "", dates or [], closes,
+                marker_index=marker_index, subtitle=subtitle),
+        )
+        for key in ("media_png_path", "media_render"):
+            if stamped.get(key):
+                fc[key] = stamped[key]
+        if "media_url" in stamped:
+            # explicit None documents "rendered but not hosted"
+            fc["media_url"] = stamped["media_url"]
     except Exception as exc:  # noqa: BLE001
         import logging  # noqa: PLC0415
         logging.getLogger(__name__).warning(
