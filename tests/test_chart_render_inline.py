@@ -17,6 +17,8 @@ import re
 import sys
 import pathlib
 
+import pytest
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from engine.marketing.chart_render import render_chart_v2, load_ohlcv  # noqa: E402
@@ -121,7 +123,12 @@ def test_setup_mark_in_warmup_is_dropped():
 # only), so load_ohlcv must resolve there and synthesize high/low.
 
 def test_load_ohlcv_crypto_synthesizes_close_to_close_body(tmp_path):
-    import pandas as pd  # noqa: PLC0415
+    # The chart-render lane installs pytest+pyyaml only: chart_render's own imports are
+    # stdlib and pandas is lazy, so this suite is expected to SKIP -- not ERROR -- where
+    # pandas/pyarrow are absent. A bare `import pandas` made that contract a lie and put
+    # the lane red on main the day it was wired.  pyarrow too: .to_parquet needs an engine.
+    pd = pytest.importorskip("pandas")  # noqa: PLC0415
+    pytest.importorskip("pyarrow")      # .to_parquet engine
     (tmp_path / "data" / "yahoo").mkdir(parents=True)
     idx = pd.date_range("2026-01-01", periods=10, freq="D")
     # close-only feed, mirroring data/yahoo/ETH-USD.parquet (no high/low columns)
@@ -140,7 +147,12 @@ def test_load_ohlcv_crypto_synthesizes_close_to_close_body(tmp_path):
 
 
 def test_load_ohlcv_stocks_win_and_keep_real_hl(tmp_path):
-    import pandas as pd  # noqa: PLC0415
+    # The chart-render lane installs pytest+pyyaml only: chart_render's own imports are
+    # stdlib and pandas is lazy, so this suite is expected to SKIP -- not ERROR -- where
+    # pandas/pyarrow are absent. A bare `import pandas` made that contract a lie and put
+    # the lane red on main the day it was wired.  pyarrow too: .to_parquet needs an engine.
+    pd = pytest.importorskip("pandas")  # noqa: PLC0415
+    pytest.importorskip("pyarrow")      # .to_parquet engine
     (tmp_path / "data" / "stocks").mkdir(parents=True)
     (tmp_path / "data" / "yahoo").mkdir(parents=True)
     idx = pd.date_range("2026-01-01", periods=5, freq="D")
