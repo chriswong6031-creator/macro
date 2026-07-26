@@ -419,18 +419,28 @@ def sweep_welcome(*, now: datetime | None = None) -> dict:
     return out
 
 
-def _tally(out: dict, status: str) -> None:
-    """One mailer status into the census. 'skipped_no_smtp' counts as a send: the ledger
-    row is terminal and the message will never be retried, so calling it a failure would
-    make mail-off mode look like an outage."""
+def _bucket(status: str) -> str:
+    """Which census column one mailer status belongs in.
+
+    'skipped_no_smtp' counts as a SEND: the ledger row is terminal and the message will
+    never be retried, so calling it a failure would make mail-off mode look like an
+    outage. 'queued' counts as SKIPPED — it is W3's fail-closed park, and the parked drain
+    owns it from there.
+    """
     if status == "duplicate":
-        out["duplicate"] += 1
-    elif status in ("sent", "skipped_no_smtp"):
-        out["sent"] += 1
-    elif status in ("suppressed", "queued"):
-        out["skipped"] += 1
-    else:
-        out["failed"] += 1
+        return "duplicate"
+    if status in ("sent", "skipped_no_smtp"):
+        return "sent"
+    if status in ("suppressed", "queued"):
+        return "skipped"
+    return "failed"
+
+
+def _tally(out: dict, status: str) -> str:
+    """Record one mailer status in ``out``; returns the bucket it landed in."""
+    b = _bucket(status)
+    out[b] += 1
+    return b
 
 
 # --------------------------------------------------------------------------- #
@@ -574,7 +584,6 @@ def _drain_one(camp: dict, out: dict) -> None:
 
     gap = 60.0 / throttle_per_min()
     tally = {"sent": 0, "skipped": 0, "failed": 0}
-    subject = html = text = ""
     n = 0
     for member in members:
         key = f"campaign:{cid}:{member['user_id']}"
@@ -597,15 +606,12 @@ def _drain_one(camp: dict, out: dict) -> None:
             template=CAMPAIGN_TEMPLATE, cls="marketing", to_email=member["email"],
             subject=subject, html=html, text=text, idem_key=key,
             user_id=member["user_id"], headers=_marketing_headers(member["user_id"]))
-        _tally(out, status)
-        if status == "duplicate":
-            pass
-        elif status in ("sent", "skipped_no_smtp"):
-            tally["sent"] += 1
-        elif status in ("suppressed", "queued"):
-            tally["skipped"] += 1
-        else:
-            tally["failed"] += 1
+        # One classification, two ledgers: the sweep census this wake returns, and the
+        # campaign's own running counters. A 'duplicate' belongs in neither of the
+        # campaign's — it was already counted the wake that actually sent it.
+        bucket = _tally(out, status)
+        if bucket in tally:
+            tally[bucket] += 1
         n += 1
         if gap:
             time.sleep(gap)
