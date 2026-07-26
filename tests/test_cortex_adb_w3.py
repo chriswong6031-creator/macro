@@ -243,6 +243,55 @@ class TestFullWhitelistParity:
             "Restore 'WRITE ({len(_WRITE_TOOLS)}, shadow-tier only)' in _SYSTEM_PROMPT."
         )
 
+    def test_spelled_out_write_tool_tallies_match(self):
+        """The write-tool count is also written out in WORDS in two places, and a
+        spelled numeral cannot be interpolated the way 'WRITE (N)' now is.
+
+        #3708 derived the two parenthesised tallies but left these behind:
+          - _SYSTEM_PROMPT: 'outside the three shadow write-tools available to you'
+          - the module docstring: 'refuses any write tool outside the three shadow
+            surfaces below'  (same set, different noun — so the guard matches both)
+
+        The prompt copy is the load-bearing one — it is an authority statement the
+        model reads, so if it says 'three' while _WRITE_TOOLS holds four, the model is
+        handed a prompt that contradicts the dispatcher enforcing it.  Numbers spelled
+        as words are exactly the copies a `grep '(3'` sweep misses, which is why they
+        outlived the derivation PR that was looking for them.
+        """
+        import inspect
+        import re
+        import engine.neuralweb.cortex as _cortex_mod
+        from engine.neuralweb.cortex import _WRITE_TOOLS, _SYSTEM_PROMPT
+
+        words = {
+            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+        }
+        pattern = re.compile(
+            r"\b(" + "|".join(words) + r")\s+shadow\s+(?:write[- ]tool|surface)", re.I
+        )
+        actual = len(_WRITE_TOOLS)
+
+        for label, text in (
+            ("_SYSTEM_PROMPT", _SYSTEM_PROMPT),
+            ("cortex module docstring", _cortex_mod.__doc__ or ""),
+        ):
+            found = pattern.findall(text)
+            # Not just "every spelled tally that exists agrees" — that passes vacuously
+            # if the phrase is reworded away, leaving the next editor unguarded.
+            assert found, (
+                f"{label} no longer contains a spelled-out '<word> shadow write-tool' "
+                f"tally. If that was a deliberate rewording, update this guard to match "
+                f"the new phrasing rather than deleting it — it is the only thing "
+                f"holding the worded counts to len(_WRITE_TOOLS)."
+            )
+            for word in found:
+                assert words[word.lower()] == actual, (
+                    f"{label} says '{word} shadow write-tools' but _WRITE_TOOLS holds "
+                    f"{actual}. Spelled numerals cannot be interpolated — update the "
+                    f"wording by hand wherever the write-tool set changes."
+                )
+
     def test_prompt_names_every_read_tool(self):
         """...and the count alone is not enough.
 
