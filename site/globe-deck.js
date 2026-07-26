@@ -38,22 +38,37 @@
   // input the loop, the auto-tour and the decorative CSS animations park entirely on
   // the last frame; any touch/scroll/key wakes them.
   //
-  // DESKTOP_MS is deliberately BELOW the 16.67ms of a 60Hz vsync (not equal to it):
-  // an at-the-limit cap loses a frame to any scheduling jitter and drops the whole
-  // second to 30fps. 14ms passes every 60Hz frame and halves a 120Hz one -> a clean
-  // 60fps on both. Raise to 8 to let high-refresh desktops run native 120Hz.
+  // The two tiers are NOT the same rule with different numbers — one is a floor and
+  // the other a ceiling, so they round opposite ways:
+  //   desktop: "never below 60fps"  -> AMBIENT_MS is a target period, round DOWN
+  //   mobile:  "never above ~33fps" -> AMBIENT_MS is a hard budget,  round UP
+  // Skipping is by FRAME COUNT off the measured refresh rate, not by comparing
+  // elapsed-ms to a threshold. A fixed ms threshold beats against the display: a
+  // 14ms cap looks like 60fps reasoning but silently yields 48fps on a 144Hz panel
+  // (two 6.94ms frames = 13.89ms, just under the bar, so it paints every third).
+  // Deriving the skip from the period cannot land between frames like that.
   // Touch tiering (not viewport width): a narrowed desktop window is still a desktop,
   // while a touchscreen laptop reports coarse pointer yet is actively cooled — so
   // "has a real mouse" (hover + fine pointer) is the signal that tracks the hazard.
-  var DESKTOP_MS = 14, MOBILE_MS = 30;
+  var DESKTOP_MS = 1000 / 60, MOBILE_MS = 30;
   var DESKTOP_PARK = 600000, MOBILE_PARK = 120000;
   var _mqDesktop = window.matchMedia ? matchMedia("(hover: hover) and (pointer: fine)") : null;
-  var AMBIENT_MS = MOBILE_MS, PARK_MS = MOBILE_PARK;
+  var AMBIENT_MS = MOBILE_MS, PARK_MS = MOBILE_PARK, _isDesktop = false;
+  var _rafPrevT = 0, _skipN = 1, _skipI = 0;   // paint one rAF in every _skipN
   function _applyTier() {
-    var desktop = !!(_mqDesktop && _mqDesktop.matches);
-    AMBIENT_MS = desktop ? DESKTOP_MS : MOBILE_MS;
-    PARK_MS = desktop ? DESKTOP_PARK : MOBILE_PARK;
-    if (window.__gdPerf) { window.__gdPerf.power = desktop ? "desktop" : "mobile"; window.__gdPerf.ambientMs = AMBIENT_MS; }
+    _isDesktop = !!(_mqDesktop && _mqDesktop.matches);
+    AMBIENT_MS = _isDesktop ? DESKTOP_MS : MOBILE_MS;
+    PARK_MS = _isDesktop ? DESKTOP_PARK : MOBILE_PARK;
+    _skipN = 1; _skipI = 0; _rafPrevT = 0;
+    if (window.__gdPerf) { window.__gdPerf.power = _isDesktop ? "desktop" : "mobile"; window.__gdPerf.ambientMs = AMBIENT_MS; }
+  }
+  // How many rAF callbacks to coalesce into one repaint, given the measured display
+  // period. The 0.05 nudge absorbs vsync jitter so a 120Hz panel reading 8.34ms
+  // instead of 8.33ms doesn't flip the skip count frame to frame.
+  function _skipFor(rafDt) {
+    if (!(rafDt > 0) || rafDt > 100) return _skipN;      // hitch/first frame: keep the current cadence
+    var k = AMBIENT_MS / rafDt;
+    return Math.max(1, _isDesktop ? Math.floor(k + 0.05) : Math.ceil(k - 0.05));
   }
   _applyTier();
   // Re-tier live: an iPad gaining/losing a trackpad and DevTools device emulation both
@@ -902,8 +917,17 @@
     var interacting = !!flying || dragging || !!sweep || Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02;
     // thermal park: nothing but the tour has happened for PARK_MS — freeze on this frame
     if (!interacting && !selected && t - lastInteract > PARK_MS) { _park(); return; }
-    // thermal cap: ambient repaints at ~30fps; interaction keeps the native rate
-    if (!interacting && t - _lastRenderT < AMBIENT_MS) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+    // thermal cap: ambient repaints run at the tier rate (desktop >=60fps floor,
+    // phones ~33fps ceiling); interaction always keeps the native rate.
+    var rafDt = _rafPrevT > 0 ? t - _rafPrevT : 0;
+    _rafPrevT = t;
+    if (interacting) {
+      _skipI = 0; _skipN = 1;
+    } else {
+      _skipN = _skipFor(rafDt);
+      if (++_skipI < _skipN) { _lastFrameT = 0; raf = requestAnimationFrame(frame); return; }
+      _skipI = 0;
+    }
     // quality governor: sample only uncapped frames (capped dt would read as jank)
     if (interacting && _lastFrameT > 0) _pushDt(t - _lastFrameT);
     _lastFrameT = t;
