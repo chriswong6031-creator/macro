@@ -4943,6 +4943,26 @@
       "source": "scripts/s_mlc_3_weekly_wait_cost.py",
       "storage": "data/yahoo/",
       "next_step": "Build harness (scripts/s_mlc_3_weekly_wait_cost.py) using frozen design: 60d RS, time-varying universe, delta=0 PRIMARY, t+1 close fill, SPY-parking for non-confirm. Run on 1998->2026 history. Come-back 2026-09-01."
+    },
+    {
+      "id": "cnh-w1-interaction-sellside-planes",
+      "name": "China interaction & sell-side planes — 90d descriptive accrual (W1 CNH)",
+      "kind": "data_collection",
+      "priority": "medium",
+      "cadence": "daily",
+      "what": "Four native-China planes accruing point-in-time from 2026-07-25. (1) 互动易 SZSE investor Q&A: the SZ half of the board universe is pulled as a <=40-names/night cursor shard (a full per-name sweep does not fit one collect step) plus one market-wide question-count observation per day. (2) 上证e互动 SSE investor Q&A: the SS half, keyed on a cached code->uid map built once from the venue directory. (3) Sell-side per-report event tape: rating / target-price / EPS revisions against the same house's prior call over a rolling 4-day window, plus daily class counts recomputed from the store. (4) 股东户数: whole-market shareholder-count snapshot on a QUARTERLY per-name disclosure cadence, paged notice-date-descending until a page adds no new (code, period) key.",
+      "source": "collectors/china_irm.py + china_einteraction.py + china_reports.py + china_holder_counts.py",
+      "storage": "data/china_irm/ + data/china_einteraction/ + data/china_reports/ + data/china_holder_counts/",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-25",
+      "come_back_on": "2026-10-25",
+      "come_back_note": "2026-10-25 (masterplan CHINA_HK_NATIVE_DATA §6: first descriptive review of the interaction/sell-side planes) — DESCRIPTIVE ONLY: coverage, cadence, gap census, whether the sharded drip actually laps the universe. No forward-return read, no scoring.",
+      "maturation": "90d of Q&A velocity + revision aggregates on disk; DESCRIPTIVE review only — any scoring requires a fresh pre-registration (CNH-R1).",
+      "status": "collecting",
+      "state": "W1 merged 2026-07-25: four collectors registered in the asia lane, legs registered as tier=pending in engine/china_signal_lab.py, stores empty at registration.",
+      "next_step": "Accrue. Review 2026-10-25.",
+      "phase_hint": "collecting"
     }
   ]
 }

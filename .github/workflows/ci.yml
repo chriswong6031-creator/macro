@@ -320,6 +320,12 @@ on:
       - "tests/test_china_news_engine.py"
       # LHB-W2c symbol-directory archival: collector + test must re-run together.
       - "tests/test_symbol_directory.py"
+      # W1 CNH interaction & sell-side collectors: collectors/** already triggers the
+      # job, but a test-only edit (a re-pinned live fixture) must re-run it too.
+      - "tests/test_china_irm_collector.py"
+      - "tests/test_china_einteraction_collector.py"
+      - "tests/test_china_reports_collector.py"
+      - "tests/test_china_holder_counts_collector.py"
       # LHB-W3 winner-autopsy B-family feature columns: engine + builder + test re-run together.
       - "tests/test_winner_autopsy.py"
       # sector_pulse wiring tripwire (#1193 post-mortem): PR #1170 injected sector_pulse
@@ -1577,6 +1583,25 @@ jobs:
       - name: adapter registry must stay populated
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
+
+  china-native-collectors:
+    if: ${{ false }}
+    # W1 of the China/HK native-data program: 互动易 / 上证e互动 / sell-side revision tape /
+    # 股东户数. WIRING LAW (#1253 precedent): a suite that NO job names never runs — these
+    # four files would merge green untested without this job, and their whole point is
+    # fixture-pinned parsers over live CN vendor responses, i.e. exactly the code that
+    # rots silently when the vendor's shape drifts. Offline only (no network in tests);
+    # beautifulsoup4 + lxml are needed because the e互动 planes are HTML, not JSON.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml
+      - name: china native interaction + sell-side collector tests (W1 CNH)
+        run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
 
   cycle-consistency:
     if: ${{ false }}
