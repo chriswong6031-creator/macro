@@ -451,16 +451,20 @@ def test_ladder_segment_class_does_not_collide_with_the_scanner_control(page):
 
 
 def test_stance_vocabulary_is_closed(page):
-    """Only the doctrine six may appear as stance chips."""
-    found = set()
-    for m in re.finditer(r'<span class="oew-stance st-[a-z]+">(.*?)</span>\s*$',
-                         page, re.M | re.S):
-        pass
-    for m in re.finditer(r'class="oew-stance st-([a-z]+)"', page):
-        found.add(m.group(1))
-    assert found <= {"act", "ready", "watch", "protect", "aside", "ignore"}, found
-    text = _visible_text(_workspace(page))
-    assert any(s in text for s in DOCTRINE_SIX)
+    """Only the doctrine six may appear as stance chips — as CLASSES and as WORDS."""
+    classes = set(re.findall(r'class="oew-stance st-([a-z]+)"', page))
+    assert classes, "no stance chips rendered at all"
+    assert classes <= {"act", "ready", "watch", "protect", "aside", "ignore"}, classes
+
+    # Every rendered chip's English text must be one of the six, verbatim.
+    words = {
+        html.unescape(m).strip()
+        for m in re.findall(
+            r'class="oew-stance st-[a-z]+">\s*<span class="l-en">(.*?)</span>', page, re.S
+        )
+    }
+    assert words, "stance chips rendered no English text"
+    assert words <= DOCTRINE_SIX, f"stance words outside the closed vocabulary: {words - DOCTRINE_SIX}"
 
 
 def test_validated_never_appears_in_user_copy(page):
