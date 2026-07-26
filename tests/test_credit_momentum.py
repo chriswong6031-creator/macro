@@ -1113,3 +1113,75 @@ class TestBondsAlertsDebounce:
         from engine.bonds_alerts import compute_credit_events
         events = compute_credit_events(str(tmp_path / "nonexistent.json"))
         assert events == []
+
+
+# ---------------------------------------------------------------------------
+# Test 15: OWN-STORE BREADTH — multi-fund duplicate ISINs (Fix 7)
+# ---------------------------------------------------------------------------
+# Regression: a bond held by more than one fund contributed one row per fund,
+# so indexing the concatenated holdings frame by ISIN produced duplicate index
+# labels and .reindex() raised "cannot reindex on an axis with duplicate
+# labels". The nightly step is non-fatal, so snapshot() died silently and
+# credit_momentum.json froze (observed: stuck at as_of 2026-07-15 while the
+# holdings store advanced to 2026-07-23).
+
+class TestOwnStoreBreadthDuplicateIsins:
+    def _write_holdings(self, root: Path, fund: str, dt: str, rows: list[dict]) -> None:
+        _write_parquet(pd.DataFrame(rows), root / "corp_bonds" / "holdings" / fund / f"{dt}.parquet")
+
+    def _two_dates_with_overlap(self, root: Path) -> None:
+        """SPIB (IG) and JNK (HY) both hold US0001; prices rise on the second date."""
+        for dt, mv in [("2026-07-01", 1_000_000.0), ("2026-07-02", 1_020_000.0)]:
+            self._write_holdings(root, "SPIB", dt, [
+                {"isin": "US0001", "par_value": 1_000_000.0, "market_value": mv, "fund": "SPIB"},
+                {"isin": "US0002", "par_value": 500_000.0, "market_value": mv / 2, "fund": "SPIB"},
+            ])
+            self._write_holdings(root, "JNK", dt, [
+                # Same ISIN as SPIB above — this is what used to blow up.
+                {"isin": "US0001", "par_value": 250_000.0, "market_value": mv / 4, "fund": "JNK"},
+                {"isin": "US0003", "par_value": 400_000.0, "market_value": mv * 0.4, "fund": "JNK"},
+            ])
+
+    def test_duplicate_isin_across_funds_does_not_raise(self, tmp_path):
+        """The exact crash: overlapping ISINs must not raise on reindex."""
+        from engine.credit_momentum import _build_own_store_breadth
+        self._two_dates_with_overlap(tmp_path)
+        result = _build_own_store_breadth(tmp_path)  # must not raise
+        assert result["n_snapshots"] == 2
+        assert result["all"]["n_bonds_latest"] == 3, "US0001 must collapse to ONE bond, not two"
+
+    def test_segment_follows_larger_par_side(self, tmp_path):
+        """House convention (corp_credit.canonicalize_bonds): larger par side wins."""
+        from engine.credit_momentum import _collapse_holdings_by_isin
+        df = pd.DataFrame([
+            {"isin": "US0001", "par_value": 1_000_000.0, "market_value": 1_000_000.0, "fund": "SPIB"},
+            {"isin": "US0001", "par_value": 250_000.0, "market_value": 250_000.0, "fund": "JNK"},
+            {"isin": "US0009", "par_value": 100_000.0, "market_value": 100_000.0, "fund": "JNK"},
+        ])
+        out = _collapse_holdings_by_isin(df, hy_funds={"JNK", "SPHY"})
+        assert out.index.is_unique
+        assert out.loc["US0001", "_segment"] == "ig", "IG par 1.0m > HY par 0.25m"
+        assert out.loc["US0009", "_segment"] == "hy"
+
+    def test_price_is_mv_over_par_not_position_size(self, tmp_path):
+        """Price must be 100*mv/par — a fund resizing its position is NOT a price move."""
+        from engine.credit_momentum import _collapse_holdings_by_isin
+        # Same price (par 100), but wildly different position sizes.
+        df = pd.DataFrame([
+            {"isin": "US0001", "par_value": 1_000_000.0, "market_value": 1_010_000.0, "fund": "SPIB"},
+            {"isin": "US0002", "par_value": 10_000.0, "market_value": 10_100.0, "fund": "SPIB"},
+        ])
+        out = _collapse_holdings_by_isin(df, hy_funds={"JNK", "SPHY"})
+        assert out.loc["US0001", "price"] == pytest.approx(101.0)
+        assert out.loc["US0002", "price"] == pytest.approx(101.0), (
+            "a 100x smaller position at the same price must read as the same price"
+        )
+
+    def test_empty_and_malformed_frames_are_null_safe(self, tmp_path):
+        from engine.credit_momentum import _collapse_holdings_by_isin
+        assert _collapse_holdings_by_isin(pd.DataFrame(), hy_funds={"JNK"}).empty
+        # Missing required columns → empty, not a KeyError.
+        assert _collapse_holdings_by_isin(pd.DataFrame({"isin": ["X"]}), hy_funds={"JNK"}).empty
+        # Nonpositive par must be dropped (guards the 100*mv/par division).
+        bad = pd.DataFrame([{"isin": "US0001", "par_value": 0.0, "market_value": 5.0, "fund": "JNK"}])
+        assert _collapse_holdings_by_isin(bad, hy_funds={"JNK"}).empty

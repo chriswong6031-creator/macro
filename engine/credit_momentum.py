@@ -1336,6 +1336,56 @@ def _load_finra_breadth(root: Path) -> dict:
 # Own-store breadth
 # ---------------------------------------------------------------------------
 
+def _collapse_holdings_by_isin(raw: pd.DataFrame, hy_funds: set[str]) -> pd.DataFrame:
+    """Collapse a multi-fund holdings frame to one row per ISIN.
+
+    A bond held by several funds contributes one row per fund (~2.6k of ~10.3k
+    ISINs on a typical night, e.g. an issue carried by both JNK and SPIB), so
+    indexing the concatenated frame by ISIN produced DUPLICATE index labels and
+    the downstream ``.reindex(common_seg)`` raised ValueError — killing
+    ``snapshot()`` before it wrote credit_momentum.json.
+
+    Mirrors the house convention in ``engine.corp_credit.canonicalize_bonds``:
+    par and market value sum across funds, and the segment follows whichever
+    side holds the larger par. The price is derived as ``100 * mv / par``
+    rather than read off ``market_value`` directly — market value is a POSITION
+    SIZE, so it moves when a fund resizes its holding and not only when the
+    bond reprices, which would misread rebalancing as advancing/declining.
+
+    Returns an ISIN-indexed frame with columns ``price`` and ``_segment``;
+    an empty frame when nothing survives the validity filter.
+    """
+    cols = ["isin", "par_value", "market_value", "fund"]
+    if raw.empty or any(c not in raw.columns for c in cols):
+        return pd.DataFrame(columns=["price", "_segment"])
+
+    d = raw[cols].copy()
+    d["par_value"] = pd.to_numeric(d["par_value"], errors="coerce")
+    d["market_value"] = pd.to_numeric(d["market_value"], errors="coerce")
+    d = d[
+        d["isin"].notna() & (d["isin"] != "")
+        & d["par_value"].notna() & (d["par_value"] > 0)
+        & d["market_value"].notna() & (d["market_value"] > 0)
+    ]
+    if d.empty:
+        return pd.DataFrame(columns=["price", "_segment"])
+
+    is_hy = d["fund"].isin(hy_funds)
+    d["_hy_par"] = d["par_value"].where(is_hy, 0.0)
+    d["_ig_par"] = d["par_value"].where(~is_hy, 0.0)
+
+    grp = d.groupby("isin")
+    out = pd.DataFrame({
+        "par":    grp["par_value"].sum(),
+        "mv":     grp["market_value"].sum(),
+        "hy_par": grp["_hy_par"].sum(),
+        "ig_par": grp["_ig_par"].sum(),
+    })
+    out["_segment"] = np.where(out["hy_par"] > out["ig_par"], "hy", "ig")
+    out["price"] = 100.0 * out["mv"] / out["par"]
+    return out[["price", "_segment"]]
+
+
 def _build_own_store_breadth(root: Path) -> dict:
     """Compute breadth from own holdings store.
 
@@ -1398,17 +1448,20 @@ def _build_own_store_breadth(root: Path) -> dict:
         if "isin" not in prev_df.columns or "isin" not in curr_df.columns:
             continue
 
-        # Matched on ISIN
-        prev_idx = prev_df.set_index("isin")
-        curr_idx = curr_df.set_index("isin")
+        # Matched on ISIN — collapsed to one row per bond first, so the index
+        # is unique and the price is a real price (see _collapse_holdings_by_isin).
+        prev_idx = _collapse_holdings_by_isin(prev_df, hy_funds)
+        curr_idx = _collapse_holdings_by_isin(curr_df, hy_funds)
+        if prev_idx.empty or curr_idx.empty:
+            continue
         common = prev_idx.index.intersection(curr_idx.index)
         if len(common) == 0:
             continue
 
         for seg, seg_label in [("ig", "ig"), ("hy", "hy"), (None, "all")]:
             if seg:
-                p_seg = prev_idx[prev_idx.get("_segment") == seg] if "_segment" in prev_idx.columns else prev_idx
-                c_seg = curr_idx[curr_idx.get("_segment") == seg] if "_segment" in curr_idx.columns else curr_idx
+                p_seg = prev_idx[prev_idx["_segment"] == seg]
+                c_seg = curr_idx[curr_idx["_segment"] == seg]
                 common_seg = p_seg.index.intersection(c_seg.index)
             else:
                 p_seg = prev_idx
@@ -1418,14 +1471,8 @@ def _build_own_store_breadth(root: Path) -> dict:
             if len(common_seg) == 0:
                 continue
 
-            # Price change: use price_clean if available
-            price_col = "price_clean" if "price_clean" in p_seg.columns else (
-                "market_value" if "market_value" in p_seg.columns else None
-            )
-            if price_col is None:
-                continue
-            p_price = p_seg[price_col].reindex(common_seg).astype(float)
-            c_price = c_seg[price_col].reindex(common_seg).astype(float)
+            p_price = p_seg["price"].reindex(common_seg).astype(float)
+            c_price = c_seg["price"].reindex(common_seg).astype(float)
             delta   = c_price - p_price
             n_adv = int((delta > 0).sum())
             n_dec = int((delta < 0).sum())
