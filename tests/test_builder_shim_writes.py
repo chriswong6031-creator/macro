@@ -21,6 +21,7 @@ Run: .venv/bin/python -m pytest tests/test_builder_shim_writes.py -q
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 from pathlib import Path
 
@@ -69,54 +70,54 @@ def _mod(name: str):
     return importlib.import_module(f"scripts.{name}")
 
 
-# (id, needs content/, invoke(fixture_root), page path relative to site/)
+# (id, needs content/, invoke(fixture_root, monkeypatch), page relative to site/)
 CASES = [
     (
         "build_flow_desk",
         False,
-        lambda f: _mod("build_flow_desk")._render_html({}, f / "site"),
+        lambda f, mp: _mod("build_flow_desk")._render_html({}, f / "site"),
         "flow_desk.html",
     ),
     (
         "build_flow_leaders",
         False,
-        lambda f: _mod("build_flow_leaders").build(f / "data", f / "site", ROOT / "templates"),
+        lambda f, mp: _mod("build_flow_leaders").build(f / "data", f / "site", ROOT / "templates"),
         "flow_leaders.html",
     ),
     (
         "build_intraday_flow",
         False,
-        lambda f: _mod("build_intraday_flow")._run_nightly({}, f / "data", f / "site", ROOT / "templates"),
+        lambda f, mp: _mod("build_intraday_flow")._run_nightly({}, f / "data", f / "site", ROOT / "templates"),
         "intraday_flow.html",
     ),
     (
         "build_leader_radar",
         False,
-        lambda f: _mod("build_leader_radar").build(f / "data", f / "site"),
+        lambda f, mp: _mod("build_leader_radar").build(f / "data", f / "site"),
         "leader_radar.html",
     ),
     (
         "build_state_of_themes",
         False,
-        lambda f: _mod("build_state_of_themes").main(["--root", str(f)]),
+        lambda f, mp: _mod("build_state_of_themes").main(["--root", str(f)]),
         "state_of_themes.html",
     ),
     (
         "build_market_structure_page",
         False,
-        lambda f: _mod("build_market_structure_page").main(["--root", str(f)]),
+        lambda f, mp: _mod("build_market_structure_page").main(["--root", str(f)]),
         "market_structure.html",
     ),
     (
         "build_stage_analysis_page",
         False,
-        lambda f: _mod("build_stage_analysis_page").main(["--root", str(f)]),
+        lambda f, mp: _mod("build_stage_analysis_page").main(["--root", str(f)]),
         "stage_analysis.html",
     ),
     (
         "build_options_command",
         False,
-        lambda f: _mod("build_options_command").main(["--root", str(f)]),
+        lambda f, mp: _mod("build_options_command").main(["--root", str(f)]),
         "options.html",
     ),
     # free_content renders many pages from content/seo/; the blog hub stands for
@@ -124,10 +125,57 @@ CASES = [
     (
         "build_free_content",
         True,
-        lambda f: _mod("build_free_content").render_all(f / "site"),
+        lambda f, mp: _mod("build_free_content").render_all(f / "site"),
         "blog/index.html",
     ),
+    # The OTHER guard-blind write in the tree. An AST sweep over all 99 builders
+    # that call write_page found exactly two page writes whose path is never a
+    # source literal at the write: build_free_content's article write (above) and
+    # this one, `out = site / PAGE_OUT` against a module constant. The source
+    # guard now propagates html-ness through names so it can see this shape, but
+    # a runtime proof is what actually holds a path the static layers can lose.
+    (
+        "build_qa_bottom_sensors",
+        False,
+        lambda f, mp: (_seed_bottom_sensors(f), _point_root_at(mp, f),
+                       _mod("build_qa_bottom_sensors").build(f)),
+        "qa_bottom_sensors.html",
+    ),
 ]
+
+
+def _point_root_at(monkeypatch, fixture: Path) -> None:
+    """Repoint config.ROOT at the fixture for builders that ignore their root arg.
+
+    build_qa_bottom_sensors resolves its output through _site_dir(), which reads
+    config.ROOT rather than the `root` it was handed — so calling build(fixture)
+    writes into the REAL site/ and dirties a tracked file. Repointing ROOT is safe
+    HERE only because _fixture_root symlinks the repo's templates/ in: lib.pages
+    still finds templates/data_base.js under the patched ROOT, so the shim it
+    injects is the real one, and its per-source-path cache (#3635) keeps this
+    fixture's entry from leaking into any other suite in the process.
+    """
+    from lib import config as _config
+
+    monkeypatch.setattr(_config, "ROOT", fixture)
+
+
+def _seed_bottom_sensors(fixture: Path) -> None:
+    """Minimal bottom_sensors payload — this builder is NOT fail-soft.
+
+    Unlike the others here it raises FileNotFoundError rather than rendering a
+    warm-up state, so an empty fixture proves nothing. One row is enough to reach
+    the write; the shim does not depend on row content.
+    """
+    out = fixture / "site" / "neuralwebdata"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "bottom_sensors.json").write_text(json.dumps({
+        "as_of": "2026-07-26",
+        "labels_version": "labels_v1",
+        "is_display_only": True,
+        "n_rows": 1,
+        "rows": [{"ticker": "TEST", "state": "watch"}],
+    }))
 
 
 @pytest.mark.parametrize(
@@ -135,10 +183,10 @@ CASES = [
     CASES,
     ids=[c[0] for c in CASES],
 )
-def test_builder_writes_page_with_shim(tmp_path, name, needs_content, invoke, page_rel):
+def test_builder_writes_page_with_shim(tmp_path, monkeypatch, name, needs_content, invoke, page_rel):
     fixture = _fixture_root(tmp_path, content=needs_content)
 
-    invoke(fixture)
+    invoke(fixture, monkeypatch)
 
     page = fixture / "site" / page_rel
     assert page.exists(), f"{name} wrote no page at site/{page_rel}"
