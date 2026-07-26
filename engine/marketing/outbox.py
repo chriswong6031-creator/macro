@@ -636,6 +636,124 @@ def transition(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Regeneration
+# ─────────────────────────────────────────────────────────────────────────────
+
+def decided_source_keys(
+    *,
+    account: str,
+    as_of: str,
+    provenance: str,
+    key: str = "ticker",
+    root: Path | str | None = None,
+) -> set[str]:
+    """`source[key]` values this lane has already SETTLED for a day.
+
+    Settled = the operator approved it, or it has moved past `queued` (posting /
+    posted / failed). supersede_lane refuses to retire those, and rightly — but
+    that alone leaves the door open to the same duplicate by another route: the
+    lane regenerates, the old approved post survives, the new one queues beside
+    it, and the ticker goes out twice. A regenerating lane must therefore also
+    skip GENERATING for a slot that is already settled.
+
+    A `hold` decision does not settle anything — held means "not yet", so better
+    copy for a held ticker is exactly what a re-run should replace it with.
+    """
+    out: set[str] = set()
+    try:
+        state = fold_state(root)
+        statuses, decisions = state["status"], (state.get("decisions") or {})
+        for iid, it in state["items"].items():
+            if (it.get("account") != account or it.get("as_of") != as_of
+                    or it.get("provenance") != provenance):
+                continue
+            settled = (
+                str(statuses.get(iid) or "queued") not in ("queued", "quarantined")
+                or str((decisions.get(iid) or {}).get("decision") or "") == "approve"
+            )
+            if not settled:
+                continue
+            val = str(((it.get("source") or {}).get(key)) or "").strip()
+            if val:
+                out.add(val)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.decided_source_keys failed: %s", exc)
+    return out
+
+
+def supersede_lane(
+    *,
+    account: str,
+    as_of: str,
+    provenance: str,
+    keep_ids: set[str] | list[str],
+    root: Path | str | None = None,
+    actor: str = "governor",
+    note: str | None = None,
+) -> dict[str, Any]:
+    """Retire a lane's PREVIOUS items for a day after it regenerates them.
+
+    WHY: enqueue() dedupes on item id, and make_item() hashes the item's content
+    into that id. So the moment a lane's copy changes, a re-run mints new ids and
+    the new posts land ALONGSIDE the old ones instead of replacing them. On
+    2026-07-26 two governor runs each wrote a full set for the same day and the
+    operator had to delete eight duplicates by hand — the second set was strictly
+    better (it was the first run with the LLM voice lane), but nothing retired
+    the first.
+
+    Only UNDECIDED items are retired. Two separate things can mean "the operator
+    has spoken", and both are honoured:
+      * a folded status past `queued` (approved / posting / posted / failed), and
+      * an `approve` DECISION on an item still folded `queued` — record_decision
+        writes the decision ledger, NOT a status transition, so an item the
+        operator cleared minutes ago still folds as `queued`. Checking status
+        alone silently threw that approval away (caught in test).
+    A `hold` decision is not protection: held means "not yet", so replacing a
+    held post with better copy for the same ticker is the point of a re-run.
+
+    Returns {"superseded": n, "ids": [...], "skipped_decided": m}. Never raises —
+    a failure here leaves duplicates, which is bad, but it must not break a
+    nightly that has already written good content.
+    """
+    out: dict[str, Any] = {"superseded": 0, "ids": [], "skipped_decided": 0}
+    try:
+        keep = {str(i) for i in (keep_ids or set())}
+        state = fold_state(root)
+        items, statuses = state["items"], state["status"]
+        decisions = state.get("decisions") or {}
+
+        stale = [
+            iid for iid, it in items.items()
+            if iid not in keep
+            and it.get("account") == account
+            and it.get("as_of") == as_of
+            and it.get("provenance") == provenance
+        ]
+        if not stale:
+            return out
+
+        msg = note or f"superseded by a later {provenance} run for {as_of}"
+        for iid in stale:
+            if str(statuses.get(iid) or "queued") != "queued":
+                out["skipped_decided"] += 1
+                continue
+            if str((decisions.get(iid) or {}).get("decision") or "") == "approve":
+                out["skipped_decided"] += 1
+                continue
+            if transition(iid, "quarantined", actor=actor, root=root,
+                          note=msg, _state=state):
+                out["superseded"] += 1
+                out["ids"].append(iid)
+        if out["superseded"]:
+            log.info("outbox.supersede_lane: retired %d stale %s item(s) for %s/%s",
+                     out["superseded"], provenance, account, as_of)
+        return out
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.supersede_lane failed: %s", exc)
+        return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Operator decisions
 # ─────────────────────────────────────────────────────────────────────────────
 
