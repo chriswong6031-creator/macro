@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Static a11y regression guard for the hub's globe-deck pages.
 
-Detects five classes of accessibility regressions introduced (or silently
+Detects six classes of accessibility regressions introduced (or silently
 reintroduced) by the hub UX program.  All checks are pure-Python / stdlib:
 html.parser + re + open(); NO browser, NO external deps — safe for ubuntu CI.
 
