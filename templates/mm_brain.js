@@ -1051,7 +1051,10 @@
     /* Guests may send (Fast lane) without the sign-in modal; only fully-gated (non-guest,
        signed-out) sessions are bounced to sign-in. */
     if (!authed && !guestMode && window.MDXAuth && window.MDXAuth.enabled && window.MDXAuth.enabled()) { window.MDXAuth.open('signin'); return; }
-    var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
+    /* lang travels with every turn: the server pins the reply AND the follow-up chips to
+       it, so a Chinese thread history can never drag an English turn's buttons into
+       Chinese. A message typed in the other language still wins (server-side). */
+    var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
     /* an "explain this panel" request carries the panel key once, then clears */
     if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
     var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
@@ -1065,7 +1068,7 @@
   function regenerate() {
     if (streaming || !lastTurn) return;
     runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
-                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
+                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
   }
   /* ── durable turns ───────────────────────────────────────────────────────────
      A turn is owned by the SERVER (app/brain_runs.py), not by the socket that

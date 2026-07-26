@@ -4246,3 +4246,98 @@ def test_writing_beats_never_run_backwards_across_failover(tmp_path):
     ns = [e["n"] for e in parsed if e.get("phase") == "writing"]
     assert len(ns) >= 2, parsed
     assert ns == sorted(ns), f"writing count ran backwards: {ns}"
+
+
+# ── Language consistency (operator 2026-07-26): profile pins the turn, prompt overrides ──
+
+def test_expected_lang_profile_pins_unless_the_message_says_otherwise():
+    """context.lang (the UI/profile language) decides; a message typed in the other
+    language wins. Prior-turn language is never consulted."""
+    assert gw._expected_lang("What is the best sector?", {"lang": "en"}) == "en"
+    assert gw._expected_lang("What is the best sector?", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("What is the best sector?", {"lang": "zh-CN"}) == "zh"
+    # prompt overrides profile in BOTH directions of asking
+    assert gw._expected_lang("苹果现在可以买吗", {"lang": "en"}) == "zh"
+    # missing/garbage lang falls back to English, never to a guess
+    assert gw._expected_lang("hello", {}) == "en"
+    assert gw._expected_lang("hello", None) == "en"
+    assert gw._expected_lang("hello", {"lang": "klingon"}) == "en"
+
+
+def test_language_directive_is_last_in_the_system_prompt():
+    """Recency matters: the LANGUAGE line must come after the doctrine/instruction body,
+    and it must name the body AND the [NEXT] block."""
+    d_en, d_zh = gw._language_directive("en"), gw._language_directive("zh")
+    assert "English" in d_en and "[NEXT]" in d_en
+    assert "Chinese" in d_zh and "[NEXT]" in d_zh
+    full = gw._build_system_prompt("chat", "dashboard") + gw._language_directive("en")
+    assert full.rstrip().endswith(d_en.rstrip())
+
+
+def test_screen_suggestions_drops_wrong_language_chips():
+    """A chip is a BUTTON — a wrong-language chip is worse than no chip. Ticker-only
+    chips survive either language."""
+    zh_chips = ["哪个金融股目前信号最强？", "医疗保健里具体买XLV ETF还是挑个股？"]
+    en_chips = ["Which financial has the strongest signal?", "XLV ETF or single names?"]
+    assert gw._screen_suggestions(zh_chips, "en") == []          # the reported bug
+    assert gw._screen_suggestions(en_chips, "en") == en_chips
+    assert gw._screen_suggestions(zh_chips, "zh") == zh_chips
+    assert gw._screen_suggestions(en_chips, "zh") == []
+    for lang in ("en", "zh"):
+        assert gw._screen_suggestions(["XLF?"], lang) == ["XLF?"]
+    assert gw._screen_suggestions([], "en") == []
+
+
+def test_english_turn_never_emits_chinese_suggestions(tmp_path):
+    """End-to-end: an English question with an English profile whose model returns a
+    Chinese [NEXT] block ships NO suggest event (the exact screenshot bug)."""
+    answer = ("Financials (XLF) has the cleanest setup right now. Watch, don't chase.\n\n"
+              "[NEXT]\n哪个金融股目前信号最强？\n医疗保健里具体买XLV ETF还是挑个股？\n"
+              "FOMC如果鹰派超预期，金融股会怎么走？")
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=[
+                {"name": "deepseek", "model": "deepseek-v4-pro",
+                 "client": _CaptureClient(answer=answer)}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    parsed = _sse(list(gw.chat_stream(
+                        "What is the best sector to buy right now in the US?",
+                        "u-lang-en", lane="pro", root=root,
+                        context={"page": "dashboard", "lang": "en"})))
+    assert not [e for e in parsed if e["type"] == "suggest"], parsed
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "[NEXT]" not in delta["text"] and not gw._has_cjk(delta["text"])
+
+
+def test_chinese_profile_keeps_chinese_suggestions(tmp_path):
+    """The mirror case must still work: a Chinese turn keeps its Chinese chips."""
+    answer = "金融板块目前结构最干净。\n\n[NEXT]\n哪个金融股信号最强？\nXLV还是个股？\n下周FOMC怎么看？"
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=[
+                {"name": "deepseek", "model": "deepseek-v4-pro",
+                 "client": _CaptureClient(answer=answer)}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    parsed = _sse(list(gw.chat_stream("现在美股哪个板块最值得买？", "u-lang-zh",
+                                                      lane="pro", root=root,
+                                                      context={"page": "dashboard", "lang": "zh"})))
+    sug = next((e for e in parsed if e["type"] == "suggest"), None)
+    assert sug and len(sug["items"]) == 3, parsed
+
+
+def test_language_directive_reaches_the_model_kwargs(tmp_path):
+    """The directive is actually ON the request, and it names the profile language."""
+    cap = _CaptureClient()
+    root = _make_temp_root()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=[
+                {"name": "deepseek", "model": "deepseek-v4-flash", "client": cap}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    list(gw.chat_stream("what is beta?", "u-lang-kw", lane="fast", root=root,
+                                        context={"page": "dashboard", "lang": "en"}))
+    sysblocks = cap.create_kwargs[0]["system"]
+    text = sysblocks[0]["text"] if isinstance(sysblocks, list) else sysblocks
+    assert "LANGUAGE FOR THIS TURN: English" in text
