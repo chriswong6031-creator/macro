@@ -14,6 +14,12 @@ public:
     - /
     - /index.html
     - /plans.html
+    # Support desk (SEE W2). Public by construction: the people who most need it
+    # are the ones who cannot sign in, and a contact form behind a registration
+    # wall is a contact form that never receives the account/billing tickets it
+    # exists for. The page ships no signals and no customer data; its one write
+    # surface (POST /api/support/ticket) is abuse-hardened server-side.
+    - /support.html
     # Legal pages — public so anyone (and search crawlers) can read them without
     # an account. Static est-article pages built from content/seo/pages/*.md.
     - /privacy.html

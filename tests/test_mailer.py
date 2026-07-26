@@ -397,7 +397,12 @@ def test_render_email_carries_en_and_zh_in_html_and_text():
                    "billing", "账单", "my card failed", "Open dashboard", "打开面板"):
         assert needle in html, needle
     assert "https://mastermind-x.com/" in html
-    assert "MASTERMIND" in html and "Mastermind · mastermind-x.com" in html
+    # The wordmark is TEXT (no logo image, PIN §6.2 rule 3) and the footer carries the
+    # company line. Since W2 the site link inside that line is an anchor, so the brand
+    # and the domain are asserted as the two parts they now are.
+    assert "MASTERMIND" in html
+    assert "Mastermind ·" in html and ">mastermind-x.com</a>" in html
+    assert "Mastermind · mastermind-x.com" in text
     # plain-text alternative carries both languages too
     for needle in ("Your ticket", "您的工单", "We got your message.", "我们已收到您的留言。"):
         assert needle in text, needle
