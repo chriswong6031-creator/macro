@@ -75,8 +75,44 @@ _ETF_REFRESH_TAIL = 10
 # Recent fires to show per book in the UI (last N fires with grades attached)
 _RECENT_FIRES_PER_BOOK = 30
 
+# Personality codex — source of the display-tier stratified cuts (V-LAB-5/6).
+_CODEX_PATH = Path("data") / "personality_timing" / "codex.parquet"
+# Rung ordering per the masterplan verdict (3D / 1W / 2W).
+_CUT_RUNG_ORDER = ["3D", "1W", "2W"]
+
 
 # ------------------------------------------------------------------ helpers ---
+
+
+def _load_codex_strata() -> dict[str, dict[str, str]]:
+    """Load per-ticker strata from the personality codex (V-LAB-5/6).
+
+    Returns {"rung_derived": {sym: rung}, "archetype": {sym: archetype}}.
+    rung_derived is populated for all codex names; archetype only for the
+    personality-labeled subset (NaN names go to the explicit 'unlabeled' row in
+    stratified_cuts — never silently dropped). Absent artifact → empty maps
+    (the cut section renders nothing; the pooled scoreboard is unaffected).
+    """
+    path = config.ROOT / _CODEX_PATH
+    empty = {"rung_derived": {}, "archetype": {}}
+    if not path.exists():
+        log.info("pick_lab: codex absent (%s) — stratified cuts skipped", _CODEX_PATH)
+        return empty
+    try:
+        cx = pd.read_parquet(path, columns=["sym", "rung_derived", "archetype"])
+    except Exception as exc:  # noqa: BLE001 — additive surface, never fatal
+        log.warning("pick_lab: codex load failed (%s) — cuts skipped", exc)
+        return empty
+    out: dict[str, dict[str, str]] = {}
+    for dim in ("rung_derived", "archetype"):
+        m: dict[str, str] = {}
+        for sym, val in zip(cx["sym"], cx[dim]):
+            if val is not None and not (isinstance(val, float) and pd.isna(val)) and str(val) != "":
+                m[str(sym)] = str(val)
+        out[dim] = m
+    log.info("pick_lab: codex strata — rung=%d names, archetype=%d names",
+             len(out["rung_derived"]), len(out["archetype"]))
+    return out
 
 
 def _load_regime() -> dict:
@@ -943,11 +979,23 @@ def _build_entry_site_payload(
 
     # ── scoreboard (entry only) with name/family denormalized ────────────────
     book_meta = {b["engine_id"]: b for b in REGISTRY}
+    # Display-tier stratified cuts (V-LAB-5/6): join each book's fires onto the
+    # personality codex by ticker and cut by rung_derived / archetype.
+    from engine.pick_lab.book import stratified_cuts
+    codex_strata = _load_codex_strata()
+    _cut_orders = {"rung_derived": _CUT_RUNG_ORDER}
+    _cut_unmapped = {"rung_derived": "unmeasured", "archetype": "unlabeled"}
     scoreboard_out = []
     for sb in scoreboards_entry:
         eid = sb.get("engine_id", "")
         bm = book_meta.get(eid, {})
         row = dict(sb)
+        # Attach cuts only when the codex is present (empty maps → skip section).
+        if codex_strata.get("rung_derived") or codex_strata.get("archetype"):
+            row["cuts"] = stratified_cuts(
+                eid, grades_entry, codex_strata,
+                category_orders=_cut_orders, unmapped_labels=_cut_unmapped,
+            )
         row["name_en"] = bm.get("name_en", eid)
         row["name_zh"] = bm.get("name_zh", eid)
         row["family"] = bm.get("family", "")

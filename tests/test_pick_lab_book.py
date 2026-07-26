@@ -35,6 +35,7 @@ from engine.pick_lab.book import (
     scoreboard,
     universe_base_rate,
     all_scoreboards,
+    stratified_cuts,
     _nav_ladder,
     _months_span,
     _distinct_fire_dates,
@@ -44,6 +45,7 @@ from engine.pick_lab.book import (
     FLOOR_N_FIRES,
     FLOOR_MONTHS_SPAN,
     FLOOR_DISTINCT_FIRE_DATES,
+    CUT_MIN_N,
 )
 
 
@@ -1722,3 +1724,116 @@ class TestLiftVsUniverseBaseNotAlwaysNull:
             "When ctrl proxy is passed as universe_base_rate_21d, both lift columns are equal "
             "(this documents the trap — callers must NOT do this)"
         )
+
+
+# ============================================ stratified cuts (V-LAB-5/6) =====
+
+
+def _cut_grade(engine_id: str, ticker: str, i: int, ret_abs: float,
+               ret_exc: float, mae: float) -> dict:
+    """One h21 return grade for the stratified-cut tests."""
+    return {
+        "engine_id": engine_id, "ticker": ticker,
+        "fire_date": f"2024-01-{(i % 28) + 1:02d}", "horizon": 21, "kind": "ret",
+        "ret_abs": ret_abs, "ret_excess_spy": ret_exc, "mae": mae,
+    }
+
+
+class TestStratifiedCuts:
+    """Display-tier stratified cuts: rung/archetype join, min-n suppression,
+    explicit unmapped rows, coverage counts (V-LAB-5/6)."""
+
+    def _grades(self) -> list[dict]:
+        g: list[dict] = []
+        # AAA: 15 fires, rung 3D, archetype cyclical (rated)
+        for i in range(15):
+            g.append(_cut_grade("b1", "AAA", i, 0.02 if i % 2 else -0.01, 0.01, -0.03))
+        # BBB: 6 fires, rung 1W, no archetype (below CUT_MIN_N → suppressed)
+        for i in range(6):
+            g.append(_cut_grade("b1", "BBB", i, 0.03, 0.02, -0.02))
+        # ZZZ: 3 fires, absent from the codex entirely (→ unmapped bucket)
+        for i in range(3):
+            g.append(_cut_grade("b1", "ZZZ", i, 0.01, 0.005, -0.01))
+        # noise from another book — must be filtered out of the cut
+        g.append(_cut_grade("other", "AAA", 0, 9.9, 9.9, -9.9))
+        return g
+
+    def _strata(self) -> dict:
+        return {
+            "rung_derived": {"AAA": "3D", "BBB": "1W"},
+            "archetype": {"AAA": "cyclical"},
+        }
+
+    def _cut(self) -> dict:
+        return stratified_cuts(
+            "b1", self._grades(), self._strata(),
+            category_orders={"rung_derived": ["3D", "1W", "2W"]},
+            unmapped_labels={"rung_derived": "unmeasured", "archetype": "unlabeled"},
+        )
+
+    def test_other_book_grades_filtered(self):
+        """total_fires counts only this book's h21 fires (AAA15+BBB6+ZZZ3)."""
+        assert self._cut()["rung_derived"]["total_fires"] == 24
+
+    def test_rung_row_order_and_unmapped_last(self):
+        keys = [r["key"] for r in self._cut()["rung_derived"]["rows"]]
+        assert keys == ["3D", "1W", "unmeasured"], keys
+
+    def test_rated_stratum_carries_rates(self):
+        r3d = next(r for r in self._cut()["rung_derived"]["rows"] if r["key"] == "3D")
+        assert r3d["suppressed"] is False
+        assert r3d["n"] == 15
+        # WR21 abs = share of ret_abs>0 = 7/15 (the odd-i wins)
+        assert r3d["wr21_abs"] is not None
+        assert r3d["mae_med"] is not None
+
+    def test_min_n_suppression_prints_n_withholds_rate(self):
+        """A stratum with n < CUT_MIN_N prints n and suppresses the rate."""
+        r1w = next(r for r in self._cut()["rung_derived"]["rows"] if r["key"] == "1W")
+        assert r1w["n"] == 6 and r1w["n"] < CUT_MIN_N
+        assert r1w["suppressed"] is True
+        assert "wr21_abs" not in r1w  # never a rate on single-digit fires
+
+    def test_unmeasured_row_never_dropped(self):
+        """Tickers absent from the codex land in an explicit 'unmeasured' row."""
+        ru = next(r for r in self._cut()["rung_derived"]["rows"] if r["key"] == "unmeasured")
+        assert ru["n"] == 3
+        assert ru["suppressed"] is True  # below CUT_MIN_N here
+
+    def test_archetype_unlabeled_row(self):
+        """Unlabeled names (NaN archetype) go to ONE explicit 'unlabeled' row."""
+        rows = self._cut()["archetype"]["rows"]
+        keys = [r["key"] for r in rows]
+        assert "unlabeled" in keys
+        ru = next(r for r in rows if r["key"] == "unlabeled")
+        assert ru["n"] == 9  # BBB(6) + ZZZ(3) — both unlabeled
+        rc = next(r for r in rows if r["key"] == "cyclical")
+        assert rc["n"] == 15 and rc["suppressed"] is False
+
+    def test_coverage_counts_only_rated_named_strata(self):
+        """covered_fires = fires in a rated, non-unmapped stratum ('covers X of Y')."""
+        rd = self._cut()["rung_derived"]
+        assert rd["covered_fires"] == 15  # only the rated 3D stratum
+        assert rd["total_fires"] == 24
+        ar = self._cut()["archetype"]
+        assert ar["covered_fires"] == 15  # only cyclical is rated
+
+    def test_empty_strata_returns_per_dim_unmapped_only(self):
+        """Empty codex maps → every fire falls into the unmapped bucket."""
+        cut = stratified_cuts(
+            "b1", self._grades(), {"rung_derived": {}, "archetype": {}},
+            unmapped_labels={"rung_derived": "unmeasured", "archetype": "unlabeled"},
+        )
+        rows = cut["rung_derived"]["rows"]
+        assert len(rows) == 1 and rows[0]["key"] == "unmeasured"
+        assert rows[0]["n"] == 24
+        assert cut["rung_derived"]["covered_fires"] == 0
+
+    def test_no_grades_book_is_empty_not_crash(self):
+        """A book with zero fires yields empty rows, not a crash."""
+        cut = stratified_cuts(
+            "nobody", self._grades(), self._strata(),
+            unmapped_labels={"rung_derived": "unmeasured", "archetype": "unlabeled"},
+        )
+        assert cut["rung_derived"]["total_fires"] == 0
+        assert cut["rung_derived"]["rows"] == []

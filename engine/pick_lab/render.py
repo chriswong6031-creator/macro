@@ -139,6 +139,91 @@ def _enrich_horizon_ladder(row: dict) -> dict:
     return {"ladder": ladder, "path_en": path_en, "path_zh": path_zh}
 
 
+# ── stratified-cut display (V-LAB-5/6) ──────────────────────────────────────
+
+# Plain-word bilingual labels for the cut dimensions and their category values.
+# rung_derived: the codex's derived reversion rung (3D/1W/2W).
+# archetype: the personality label (subset-scoped).
+_CUT_DIM_LABELS = {
+    "rung_derived": ("By reversion rung", "按回归级别"),
+    "archetype": ("By archetype", "按性格类型"),
+}
+_CUT_VALUE_LABELS = {
+    # rung
+    "3D": ("3-day", "3日"),
+    "1W": ("1-week", "1周"),
+    "2W": ("2-week", "2周"),
+    "unmeasured": ("unmeasured", "未测量"),
+    "unlabeled": ("unlabeled", "未标注"),
+    # archetype
+    "broken_growth": ("broken growth", "破位成长"),
+    "cyclical": ("cyclical", "周期"),
+    "deep_value": ("deep value", "深度价值"),
+    "distressed": ("distressed", "困境"),
+    "dividend_defensive": ("dividend defensive", "红利防御"),
+    "financial": ("financial", "金融"),
+    "high_beta_momentum": ("high-beta momentum", "高贝塔动量"),
+    "mixed": ("mixed", "混合"),
+    "quality_compounder": ("quality compounder", "优质复利"),
+    "rate_sensitive": ("rate sensitive", "利率敏感"),
+    "secular_growth": ("secular growth", "长期成长"),
+    "speculative_unprofitable": ("speculative / unprofitable", "投机/未盈利"),
+}
+
+
+def _cut_value_label(key: str) -> tuple[str, str]:
+    en, zh = _CUT_VALUE_LABELS.get(key, (key.replace("_", " "), key.replace("_", " ")))
+    return en, zh
+
+
+def _enrich_cut_row(r: dict) -> dict:
+    """Format one stratum row: rates when rated, suppression label otherwise."""
+    out = dict(r)
+    en, zh = _cut_value_label(r.get("key", ""))
+    out["label_en"] = en
+    out["label_zh"] = zh
+    out["n_fmt"] = _fmt_int(r.get("n"))
+    if r.get("suppressed"):
+        # Plain-word null disclosure — n printed, rate withheld.
+        out["too_few_en"] = "too few to rate"
+        out["too_few_zh"] = "样本过少，暂不评级"
+    else:
+        out["wr21_abs_fmt"] = _fmt_pct(r.get("wr21_abs"), signed=False)
+        out["wr21_exc_fmt"] = _fmt_pct(r.get("wr21_exc"), signed=True)
+        out["med_exc21_fmt"] = _fmt_pct(r.get("med_exc21"), signed=True)
+        out["mae_med_fmt"] = _fmt_pct(r.get("mae_med"), signed=False)
+    return out
+
+
+def _enrich_cuts(cuts: dict | None) -> list[dict]:
+    """Normalize the cuts dict into an ordered list of display-ready dimensions.
+
+    Each dimension carries its rows (formatted) and an honest coverage footer
+    string ("covers X of Y fires").
+    """
+    if not cuts:
+        return []
+    out = []
+    for dim in ("rung_derived", "archetype"):  # rung first, then archetype
+        d = cuts.get(dim)
+        if not d:
+            continue
+        dim_en, dim_zh = _CUT_DIM_LABELS.get(dim, (dim, dim))
+        total = d.get("total_fires") or 0
+        covered = d.get("covered_fires") or 0
+        out.append({
+            "dim": dim,
+            "title_en": dim_en,
+            "title_zh": dim_zh,
+            "rows": [_enrich_cut_row(r) for r in (d.get("rows") or [])],
+            "total_fires": total,
+            "covered_fires": covered,
+            "coverage_en": f"covers {covered} of {total} fires",
+            "coverage_zh": f"覆盖 {total} 次触发中的 {covered} 次",
+        })
+    return out
+
+
 def _enrich_scoreboard_row(row: dict) -> dict:
     """Add display-formatted fields to a scoreboard row from the JSON artifact."""
     r = dict(row)
@@ -166,6 +251,9 @@ def _enrich_scoreboard_row(row: dict) -> dict:
 
     # Task 1 — horizon ladder + capture + path detail
     r["horizon_detail"] = _enrich_horizon_ladder(r)
+
+    # V-LAB-5/6 — display-tier stratified cuts (rung_derived / archetype)
+    r["cuts_view"] = _enrich_cuts(r.get("cuts"))
 
     # Task 2 — data_gap badge (plab_sector_trough, plab_revision_accel carry data_gap field)
     dg = r.get("data_gap")
