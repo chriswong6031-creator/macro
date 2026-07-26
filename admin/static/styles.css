@@ -4821,3 +4821,16 @@ button.obx-btn-postnow:hover:not(:disabled) {
 }
 .rev-proj-assume li { margin: 1px 0; }
 .rev-comps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+/* Publisher status tiles are click-throughs to the Outbox (operator, 2026-07-26:
+   "I see 17 queued but it doesn't actually show the queued posts"). Reset the
+   button chrome so a link-tile is visually identical to the inert zero tiles. */
+button.metric-tile.pub-tile-link {
+  font: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); color: inherit;
+  border: 1px solid var(--border);
+}
+button.metric-tile.pub-tile-link:hover {
+  border-color: var(--accent-cyan);
+  background: var(--surface2);
+}

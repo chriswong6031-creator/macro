@@ -5635,13 +5635,17 @@ RENDER.marketing_publish = async () => {
     ["failed", "Failed", "var(--bad)"],
     ["quarantined", "Quarantined", "var(--bad)"],
   ];
+  /* Each tile is a LINK to the Outbox, not a dead number. "17 queued" with no
+     way to see the seventeen is a count the operator cannot act on or verify
+     (operator, 2026-07-26). Zero-count tiles stay inert — nothing to show. */
   const tiles = `<div class="metric-tiles-row">
     ${tileDefs.map(([k, lbl, color]) => {
       const val = sc[k] != null ? sc[k] : 0;
-      return `<div class="metric-tile"${val === 0 ? ' style="opacity:.55"' : ""}>
-        <div class="eyebrow">${esc(lbl)}</div>
-        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>
-      </div>`;
+      const body = `<div class="eyebrow">${esc(lbl)}</div>
+        <div class="tile-value"${color && val > 0 ? ` style="color:${color}"` : ""}>${val}</div>`;
+      if (!val) return `<div class="metric-tile" style="opacity:.55">${body}</div>`;
+      return `<button class="metric-tile pub-tile-link" onclick="go('marketing_outbox')"
+        title="Show the ${esc(lbl.toLowerCase())} items in the Outbox">${body}</button>`;
     }).join("")}
   </div>`;
 
