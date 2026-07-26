@@ -91,16 +91,29 @@ class TestBasketsW3Markers:
 
     def test_v3_ranked_columns(self):
         """Tape band v3 (#2227): ranked two-column body + state-adaptive column labels
-        + full-tape expander replace the old top/bottom mover halves."""
+        + full-tape expander replace the old top/bottom mover halves.
+
+        The expander continues each column (.dtp-colmore) instead of opening one
+        flat #ftr-dtp-full block. #2267 deleted the flat container after a
+        user-reported bug: it sat inside a two-column CSS grid, so auto-flow
+        interleaved the expansion (rank 1 left, 2 right, 3 left …) and restated
+        every preview row, destroying the leaders-left / laggards-right reading.
+        Continuation rows now live inside each preview column and the two columns
+        meet at mid-tape, so each basket appears exactly once.
+        """
         src = _src("baskets.html.j2")
         assert "ftr-dtp-body" in src
         assert "LIVE LEADERS" in src
         assert "SESSION LEADERS — AT THE CLOSE" in src
-        assert "ftr-dtp-full" in src
         assert "ftr-dtp-more" in src
         assert "Show full tape" in src
+        # per-column continuation blocks: emitted hidden, toggled together (#2267)
+        assert 'class="dtp-colmore" hidden' in src
+        assert "querySelectorAll('.dtp-colmore')" in src
+        # the flat interleaving container must not come back
+        assert "ftr-dtp-full" not in src
         # expander law (#2206 double-toggle lesson): own class + [hidden] re-assert
-        assert ".dtp-full[hidden], .dtp-more[hidden] { display:none; }" in src
+        assert ".dtp-colmore[hidden], .dtp-more[hidden] { display:none; }" in src
         assert ".lst-more" not in src
 
     def test_no_raw_rank_idiom(self):
@@ -253,11 +266,26 @@ class TestAllocationW3Markers:
 
     def test_display_names_not_slugs(self):
         """Law 2 (docs/DESIGN_DOCTRINE.md): mover rows show display names from
-        basketdata/baskets.json with a prettified-slug fallback, never raw ids."""
+        the region's baskets.json with a prettified-slug fallback, never raw ids.
+
+        The name map is region-aware since #2380 — HK/CN/CA rows were reading the
+        US-only basketdata/ and so "fell back to slug names", the exact failure
+        this test guards. The directory is now chosen by d.region at render time,
+        so the literal "basketdata/baskets.json" exists only in the rendered US
+        output (site/allocation.html); the template source carries the map.
+        Assert the map and the lookup, which hold for every region.
+        """
         src = _src("allocation.html.j2")
         assert "nameEnOf" in src
         assert "nameZhOf" in src
-        assert "basketdata/baskets.json" in src
+        # region-aware basket-name map (#2380): US default + HK/CN/CA siblings
+        assert "/baskets.json" in src
+        assert '.get(d.region,"basketdata")' in src
+        assert '"china":"chinabasketdata"' in src
+        assert '"hk":"hkbasketdata"' in src
+        assert '"canada":"canadabasketdata"' in src
+        # never a raw id: prettified-slug fallback when the map misses
+        assert "_slugName(id)" in src
 
     def test_plain_fade_footer_with_receipt(self):
         """Plain-word fade footer on Tier 1; 58% receipt demoted to the ? data-tip."""
