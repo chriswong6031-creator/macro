@@ -186,26 +186,48 @@ def capture_row(repo: Path, now: datetime | None = None) -> tuple[dict | None, s
     return row, None
 
 
-def append_row_if_new(repo: Path, now: datetime | None = None) -> tuple[bool, str | None]:
+def append_row_if_new(
+    repo: Path, now: datetime | None = None
+) -> tuple[bool, str | None, str]:
     """Append tonight's capture row unless one already exists for the SAME
     SOURCE as-of (M1 — not the wall-clock calendar date: a nightly run that
     straddles UTC midnight must not discard a genuine new capture, nor should
     two runs that happen to share a source as-of double-append).
 
     Gated on COLLECT_LANE=nightly (B2): off-lane calls no-op with an honest
-    gap note. Returns (appended, gap_note).
+    gap note. Returns ``(appended, gap_note, reason)``.
+
+    ``reason`` (M13) names WHICH no-op happened, because ``appended=False``
+    alone is ambiguous in the one place operators actually read it — the
+    nightly's ``chronicle_governor:`` line. Two of these outcomes are benign
+    and two are defects, and they were previously indistinguishable there:
+
+    * ``appended``        — a row was written.
+    * ``duplicate_as_of`` — BENIGN: this source as-of is already captured, so
+      there is nothing new to record. Carries no gap note precisely because it
+      is not a gap; a run of these just means world_state's as-of has not moved.
+    * ``lane_gate``       — DEFECT in a nightly: COLLECT_LANE was not ``nightly``,
+      so the forward ledger is not advancing at all.
+    * ``no_capture``      — DEFECT: world_state was missing/unreadable (gap note
+      carries the detail).
+    * ``write_failed``    — DEFECT: the append itself raised.
+
+    Callers must not infer the benign case from ``(False, None)``: that coupling
+    is what made the distinction invisible in the first place.
     """
     now = now or datetime.now(timezone.utc)
     if not _nightly_lane():
-        return False, "state_log append skipped — COLLECT_LANE != nightly (lane gate)"
+        return False, "state_log append skipped — COLLECT_LANE != nightly (lane gate)", "lane_gate"
 
     row, gap = capture_row(repo, now=now)
     if row is None:
-        return False, gap
+        return False, gap, "no_capture"
 
     existing = read_state_log(repo)
     if any(r.get("date") == row.get("date") for r in existing):
-        return False, None  # idempotent: this source as-of already captured
+        # idempotent: this source as-of already captured. Deliberately NOT a gap
+        # note — nothing is missing, so the manifest must not claim a gap.
+        return False, None, "duplicate_as_of"
 
     path = repo / STATE_LOG_REL
     try:
@@ -213,10 +235,10 @@ def append_row_if_new(repo: Path, now: datetime | None = None) -> tuple[bool, st
         line = json.dumps(row, ensure_ascii=False, separators=(",", ":"))
         with path.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
-        return True, None
+        return True, None, "appended"
     except Exception as exc:  # noqa: BLE001
         log.warning("chronicle.state_log: append failed: %s", exc)
-        return False, f"state_log append failed: {exc}"
+        return False, f"state_log append failed: {exc}", "write_failed"
 
 
 def derive_flip_events(rows: list[dict]) -> list[dict]:

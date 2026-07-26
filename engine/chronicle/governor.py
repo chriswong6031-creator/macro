@@ -79,8 +79,12 @@ def build_and_write(
 
         state_appended = False
         state_gap: str | None = None
+        # M13: "rebuild" is itself a distinct reason — --rebuild deliberately
+        # never touches the forward ledger, so its state_appended=False is
+        # expected, not a symptom.
+        state_reason = "rebuild_skipped"
         if not rebuild:
-            state_appended, state_gap = state_log.append_row_if_new(repo, now=now)
+            state_appended, state_gap, state_reason = state_log.append_row_if_new(repo, now=now)
 
         events_path = repo / spine.EVENTS_REL
         prev_events = spine.load_events_jsonl(events_path)
@@ -161,6 +165,7 @@ def build_and_write(
         result["total_events"] = len(events_sorted)
         result["added"] = added
         result["state_appended"] = state_appended
+        result["state_reason"] = state_reason
         result["elapsed_s"] = round(elapsed, 3)
         result["rebuild"] = rebuild
     except Exception as exc:  # noqa: BLE001

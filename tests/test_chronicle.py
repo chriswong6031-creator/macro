@@ -711,11 +711,16 @@ def test_append_row_if_new_idempotent_same_day(tmp_path):
 
     env_save = _with_nightly_lane()
     try:
-        appended1, gap1 = state_log.append_row_if_new(root, now=now)
+        appended1, gap1, reason1 = state_log.append_row_if_new(root, now=now)
         assert appended1 is True
         assert gap1 is None
-        appended2, gap2 = state_log.append_row_if_new(root, now=now)
+        assert reason1 == "appended"
+        appended2, gap2, reason2 = state_log.append_row_if_new(root, now=now)
         assert appended2 is False
+        # M13: the benign no-op names itself, and stays a NON-gap — nothing is
+        # missing when the source as-of simply has not moved.
+        assert reason2 == "duplicate_as_of"
+        assert gap2 is None
     finally:
         os.environ["COLLECT_LANE"] = env_save
     rows = state_log.read_state_log(root)
@@ -734,15 +739,17 @@ def test_append_row_if_new_requires_nightly_lane(tmp_path):
     env_save = os.environ.get("COLLECT_LANE", "")
     try:
         os.environ.pop("COLLECT_LANE", None)
-        appended, gap = state_log.append_row_if_new(root, now=now)
+        appended, gap, reason = state_log.append_row_if_new(root, now=now)
         assert appended is False
         assert gap and "nightly" in gap
+        assert reason == "lane_gate"
         assert state_log.read_state_log(root) == []
 
         os.environ["COLLECT_LANE"] = "render"  # any non-nightly value
-        appended2, gap2 = state_log.append_row_if_new(root, now=now)
+        appended2, gap2, reason2 = state_log.append_row_if_new(root, now=now)
         assert appended2 is False
         assert gap2 and "nightly" in gap2
+        assert reason2 == "lane_gate"
     finally:
         os.environ["COLLECT_LANE"] = env_save
 
@@ -817,6 +824,64 @@ def test_nightly_workflow_does_not_pass_rebuild():
     )
 
 
+def test_a_benign_no_op_is_distinguishable_from_a_dead_forward_ledger(tmp_path):
+    """M13: `state_appended=False` must never again mean two opposite things.
+
+    A nightly logs `state_appended=False` in two situations that demand
+    OPPOSITE responses:
+
+      * duplicate_as_of — benign. world_state's as-of has not moved, so there
+        is nothing new to capture. Do nothing.
+      * lane_gate — a defect. COLLECT_LANE was not `nightly`, so the forward
+        ledger is DEAD and every night in that state is unrecoverable history.
+
+    Before this, both printed an identical `state_appended=False` and the only
+    tell lived in the manifest (and the benign case did not even set that), so
+    the honest read of a healthy log line and a dead ledger were the same
+    string. Pin that they are distinguishable at the source.
+    """
+    from engine.chronicle import state_log
+    root = _make_fixture_root(tmp_path)
+    now = datetime(2026, 7, 25, 3, 0, 0, tzinfo=timezone.utc)
+
+    env_save = _with_nightly_lane()
+    try:
+        _, _, first = state_log.append_row_if_new(root, now=now)
+        _, _, benign = state_log.append_row_if_new(root, now=now)
+    finally:
+        os.environ["COLLECT_LANE"] = env_save
+
+    env_save = os.environ.get("COLLECT_LANE", "")
+    try:
+        os.environ["COLLECT_LANE"] = "render"
+        _, _, dead = state_log.append_row_if_new(root, now=now)
+    finally:
+        os.environ["COLLECT_LANE"] = env_save
+
+    assert first == "appended"
+    assert benign != dead, (
+        "a benign duplicate-as_of no-op and a dead forward ledger (lane gate) "
+        f"report the SAME reason ({benign!r}) — an operator reading the nightly's "
+        "chronicle_governor line cannot tell 'nothing new tonight' from 'this "
+        "ledger has stopped advancing', and the second is unrecoverable history"
+    )
+    assert benign == "duplicate_as_of" and dead == "lane_gate"
+
+
+def test_governor_line_prints_the_state_reason():
+    """...and pin it where the operator actually reads it.
+
+    The reason is only useful if it reaches the nightly log line; the test
+    above would still pass if build_chronicle printed only state_appended.
+    """
+    src = (ROOT / "scripts" / "build_chronicle.py").read_text(encoding="utf-8")
+    assert "state_reason=" in src, (
+        "scripts/build_chronicle.py no longer prints state_reason — the "
+        "chronicle_governor line is the only place a nightly reports whether "
+        "the forward ledger advanced, and state_appended alone is ambiguous"
+    )
+
+
 def test_nightly_chronicle_steps_are_reached_after_an_upstream_failure():
     """M12: both chronicle steps must carry `if: always()`.
 
@@ -877,7 +942,7 @@ def test_state_log_seam_production_path_derives_flip(tmp_path):
     env_save = _with_nightly_lane()
     try:
         now1 = datetime(2026, 7, 20, 3, 0, 0, tzinfo=timezone.utc)
-        appended1, gap1 = state_log.append_row_if_new(root, now=now1)
+        appended1, gap1, reason1 = state_log.append_row_if_new(root, now=now1)
         assert appended1 is True
         assert gap1 is None
 
@@ -890,7 +955,7 @@ def test_state_log_seam_production_path_derives_flip(tmp_path):
         ws_path.write_text(json.dumps(ws), encoding="utf-8")
 
         now2 = datetime(2026, 7, 21, 3, 0, 0, tzinfo=timezone.utc)
-        appended2, gap2 = state_log.append_row_if_new(root, now=now2)
+        appended2, gap2, reason2 = state_log.append_row_if_new(root, now=now2)
         assert appended2 is True
         assert gap2 is None
     finally:
