@@ -3173,6 +3173,23 @@ jobs:
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
           if [ -z "$FILES" ]; then
+            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
+               git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
+              # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
+              # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
+              # ancestor of it, so the empty three-dot diff is VERIFIED-empty — there is
+              # no PR and no self-modification to classify. R-AUT-5's fail-closed
+              # contract targets UNDETERMINABLE diffs (git errors, shallow clones,
+              # base-ref failures), not this case. Before this arm existed every
+              # dispatch-at-tip run redded here, which made the green-main E1 evidence
+              # unsatisfiable by construction (observed run 30207008917, 2026-07-26).
+              # The ancestor form (not tip-equality) keeps the arm valid when main
+              # advances between dispatch checkout and this step; a dispatched branch
+              # carrying real commits still has a non-empty diff and is classified
+              # by the python fence below as always.
+              echo "self-mod-fence: workflow_dispatch with HEAD on main — zero changes to classify (pass)"
+              exit 0
+            fi
             # R-AUT-5 fail-closed contract: an empty file list (git diff error, shallow
             # clone, base-ref resolution failure, or merge-commit HEAD) must BLOCK — not
             # silently pass.  A fence that errors open is worse than no fence.
