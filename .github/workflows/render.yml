@@ -50,9 +50,22 @@ on:
     # nightly bot only ever touches data/ + site/ + reports/, so its commits never
     # match these paths — no loop, no double-fire. (The site/ commit this workflow
     # makes triggers pages.yml's committed-tree deploy once more; idempotent.)
+    #
+    # The POST-RENDER SWEEPS are listed too. They rewrite every page in site/ (shim
+    # injection, inline-CSS externalization, ?v= stamping, CSS preload hints), so a
+    # change to one of them alters all 3154 pages — yet none of them live under
+    # templates/ or match scripts/build_*.py, so a sweep change used to reach main
+    # and trigger NOTHING. #3558 shipped exactly that and had to wait for an
+    # unrelated engine-render to carry it. Still disjoint from engine-render.yml's
+    # engine/** , so the two lanes never double-fire on one commit. These files
+    # change rarely, so this adds no meaningful render load.
     paths:
       - "templates/**"
       - "scripts/build_*.py"
+      - "scripts/inject_data_base.py"
+      - "scripts/externalize_css.py"
+      - "scripts/optimize_assets.py"
+      - "lib/pages.py"
 
 permissions:
   contents: write   # commit the rendered site/ to main; the VPS (Caddy) serves from main
