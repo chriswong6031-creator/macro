@@ -110,6 +110,37 @@ def _strip_trailing_run(text: str) -> str:
     return text
 
 
+# Acronyms a lowercased filename stem destroys. Deliberately excludes anything
+# that is also an ordinary English word ("us", "it", "in", "am"), so this can
+# only ever fire on a token no prose would have written lowercase.
+_STEM_ACRONYMS = {
+    "ai", "cpi", "ppi", "pmi", "gdp", "ecb", "boj", "boe", "fomc", "opec",
+    "oecd", "nato", "etf", "ipo", "eps", "reit", "esg", "fx", "usd", "eur",
+    "jpy", "cny", "gbp", "ytd", "nav", "llm", "ev", "oem",
+}
+
+
+def _recase_stem(t: str) -> str:
+    """Sentence-case a title that is ENTIRELY lowercase — the last filename tell.
+
+    ``invesco_an_alternative_model_chinas_low_cost_ai_strategy_july_2026.pdf``
+    carries no date stamp, language token or id run, so every other rule here
+    passes it through and it ships as an ``<h1>`` starting lowercase. No desk
+    publishes an all-lowercase headline, so zero uppercase across a multi-word
+    title is itself the evidence of a de-slugified stem.
+
+    Conservative by construction: fires ONLY when the title contains no uppercase
+    at all and has 3+ words, so a real title — which always capitalises something
+    — is returned byte-identical and never even reaches this rule.
+    """
+    if len(t.split()) < 3 or any(c.isupper() for c in t):
+        return t
+    out = re.sub(r"\b[A-Za-z]{2,5}\b",
+                 lambda m: m.group(0).upper() if m.group(0).lower() in _STEM_ACRONYMS
+                 else m.group(0), t)
+    return out[0].upper() + out[1:] if out else out
+
+
 def clean(title: str) -> str:
     """Strip filename furniture from ``title``; return it unchanged when there is none.
 
@@ -130,7 +161,8 @@ def clean(title: str) -> str:
         t = t.strip()
 
     t = _strip_trailing_run(t)
-    return t.strip(" -_·|,")
+    t = t.strip(" -_·|,")
+    return _recase_stem(t)
 
 
 def looks_filename_derived(title: str) -> bool:

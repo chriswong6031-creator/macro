@@ -123,6 +123,50 @@ def test_every_committed_report_title_is_balanced():
     assert not bad, f"unbalanced parens in rendered titles: {bad}"
 
 
+def test_no_committed_report_title_is_filename_shaped():
+    """Recurrence guard over the REAL catalog — the one this class keeps evading.
+
+    Ingest is receipt-idempotent, so a resolver fix never revisits a document
+    already in the vault: a filename-shaped row can sit in the committed catalog
+    with every synthetic test green, which is how the same defect shipped through
+    #3562 and #3570. This asserts on the DATA the render bakes from, so a new bad
+    source is caught on arrival rather than on a live page.
+
+    Shape, not equality: the slug is derived FROM the title, so
+    ``deslug(filename) == title`` holds for healthy rows too and would fire on
+    all 86. ``looks_filename_derived`` is ``clean(t) != t``, so the detector and
+    the repair can never drift apart.
+
+    Heal with: ``python -m scripts.repair_research_titles``
+    """
+    from engine.research_vault import title as title_mod
+    from scripts.build_research_vault import _public_catalog, load_catalog
+    items = _public_catalog(load_catalog())["items"]
+    if not items:
+        pytest.skip("committed catalog is empty")
+    bad = [it["title"] for it in items
+           if title_mod.looks_filename_derived(it.get("title") or "")]
+    assert not bad, (
+        f"{len(bad)} committed title(s) are filename-shaped — run "
+        f"`python -m scripts.repair_research_titles`: {bad[:5]}")
+
+
+def test_no_rendered_page_title_is_filename_shaped():
+    """The same guard one layer out: what actually reaches <title>/<h1>/JSON-LD.
+
+    Runs on the FULL title only — ``_jsonld`` truncates ``headline`` to 110
+    chars, and a mid-word cut fakes furniture that isn't there.
+    """
+    from engine.research_vault import title as title_mod
+    from scripts.build_research_vault import _public_catalog, load_catalog
+    items = _public_catalog(load_catalog())["items"]
+    if not items:
+        pytest.skip("committed catalog is empty")
+    bad = [n["title"] for n in map(rp._norm, items)
+           if title_mod.looks_filename_derived(n["title"])]
+    assert not bad, f"pages titled after their source filename: {bad[:5]}"
+
+
 # --- public first-pages excerpt --------------------------------------------
 # NOTE: the CSS class names (.rr-x, .rr-x-fade …) are in the <style> block on
 # EVERY page, so a bare 'rr-x' substring proves nothing — assert on the markup.

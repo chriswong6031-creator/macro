@@ -1014,16 +1014,43 @@ def test_r2_client_prefers_research_account_creds(monkeypatch):
     "JPM International Ma 2026 07 24 5381087",        # trailing id run
     "China 2026 Outlook Exploring New Growth (1)",    # re-download marker
     "Consensus(1)",                                   # …with no space
+    # An all-lowercase multi-word title is a de-slugified stem with no other
+    # tell — no date stamp, no language token, no id run. Ground truth for this
+    # one: its own committed excerpt opens "An alternative model: China's
+    # low-cost AI strategy", so the catalog row really is the filename.
+    "invesco an alternative model chinas low cost ai strategy july 2026",
+    "oils next move hinges on three variables",
 ])
 def test_title_detects_filename_furniture(bad):
     assert title_mod.looks_filename_derived(bad) is True
+
+
+@pytest.mark.parametrize("stem,want", [
+    ("oils next move hinges on three variables", "Oils next move hinges on three variables"),
+    ("invesco an alternative model chinas low cost ai strategy july 2026",
+     "Invesco an alternative model chinas low cost AI strategy july 2026"),
+])
+def test_title_recases_an_all_lowercase_stem(stem, want):
+    """Sentence-case + acronyms, so no <h1> ships starting lowercase."""
+    assert title_mod.clean(stem) == want
+    assert title_mod.clean(want) == want                      # idempotent
+
+
+@pytest.mark.parametrize("good", [
+    "US Econ Notes July 24",
+    "iPhone demand tracker",                                  # lowercase FIRST letter is fine…
+    "Semis and IT",                                           # …when something else is capitalised
+    "on hold",                                                # under 3 words: never re-cased
+])
+def test_title_recase_never_touches_a_real_title(good):
+    assert title_mod.clean(good) == good
 
 
 @pytest.mark.parametrize("good", [
     "US Econ Notes July 24",                          # trailing day number
     "European Equities Week Ahead Jul 27 Jul 31",     # two of them
     "Recap 7 24 26",                                  # a date IS the title here
-    "invesco low cost ai strategy july 2026",         # trailing year
+    "Invesco low cost AI strategy july 2026",         # trailing year
     "China 2026 Outlook Exploring New Growth Engines",  # interior year
     "Fed Chatterbox July Edition",
     "Alcon Inc. (ALCC.US)",
