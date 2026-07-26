@@ -4369,6 +4369,19 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_board_outcomes.json unreadable (%s)", e)
 
+    # TRD chip — the SAME artifact the popup's table fetches. Before 2026-07-26 the
+    # server-rendered chip read us_board_outcomes.json while the table below it read
+    # us_track_ledger.json: two different methodologies on one component, so the
+    # headline and the rows it claimed to summarise could not be reconciled. The chip
+    # now reads the ledger summary and the outcomes strip keeps its own separate job.
+    us_track_ledger = None
+    _utl = site / "factordata" / "us_track_ledger.json"
+    if _utl.exists():
+        try:
+            us_track_ledger = json.loads(_utl.read_text())
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("us_track_ledger.json unreadable (%s)", e)
+
     # TRD popup — weekly win-rate sparkline for the Track-record button. Read the h5
     # cohort win-rate series from us_track_history.json (built by build_track_record_page).
     # Presence-gated + fail-open: absent → us_track_series stays None so the button falls
@@ -4974,6 +4987,7 @@ def main() -> int:
         top_setups=top_setups,
         us_standouts=us_standouts,
         us_board_outcomes=us_board_outcomes,
+        us_track_ledger=us_track_ledger,
         us_track_series=us_track_series,
         market_gamma=market_gamma,
         components_confirming=confirming,

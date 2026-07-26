@@ -147,30 +147,32 @@
   <div class="tr-hero">
     {% if win_rate_pct is not none %}
     <div class="tr-hero-stat up">
-      <span class="val">{{ win_rate_pct }}%</span>
-      <span class="lbl">{{ t('above surfacing price', '高于上榜价') }}</span>
+      <span class="val">{{ win_rate_pct|round|int }}%</span>
+      <span class="lbl">{{ t('of finished trades made money', '已完成交易中盈利占比') }}</span>
     </div>
     <div class="tr-hero-divider"></div>
     {% if avg_pct is not none %}
     <div class="tr-hero-stat {{ 'up' if avg_pct > 0 else 'dn' if avg_pct < 0 else '' }}">
       <span class="val">{{ '%+.1f'|format(avg_pct) }}%</span>
-      <span class="lbl">{{ t('avg move since surfaced', '上榜后平均涨跌幅') }}</span>
+      <span class="lbl">{{ t('average trade', '每笔平均') }}</span>
     </div>
     <div class="tr-hero-divider"></div>
     {% endif %}
     {% if n_outcomes is not none %}
     <div class="tr-hero-stat">
       <span class="val">{{ n_outcomes }}</span>
-      <span class="lbl">{{ t('names tracked', '追踪标的数') }}</span>
+      <span class="lbl">{{ t('finished trades', '已完成交易') }}</span>
     </div>
     <div class="tr-hero-divider"></div>
     {% endif %}
     <div class="tr-hero-stance">
       <div class="stance-main">
-        {% if win_rate_pct is not none and win_rate_pct >= 55 %}
-        {{ t('Most exits are still above their surfacing price — watch, do not chase new entries.', '多数标的仍高于上榜价——观察，勿追新入场机会。') }}
-        {% elif win_rate_pct is not none and win_rate_pct < 50 %}
-        {{ t('Under half of exits are above their surfacing price — approach new entries cautiously.', '不足半数标的高于上榜价——对新入场机会需审慎。') }}
+        {#- Stance follows the INTERVAL. While the average-trade range still spans a
+            loss, no win rate — however high — earns a following verdict. -#}
+        {% if hero_ci and hero_ci[0] is not none and hero_ci[0] < 50 %}
+        {{ t('More often right than wrong so far — but on a record this short the honest range still reaches below a coin flip.', '目前胜多于负——但记录尚短，诚实的区间仍低于五五开。') }}
+        {% elif win_rate_pct is not none and win_rate_pct >= 55 %}
+        {{ t('More winners than losers — watch, do not chase new entries.', '盈多于亏——观察，勿追新入场机会。') }}
         {% else %}
         {{ t('Watch — results accruing. Enough data to show direction but not enough for strong conclusions.', '观察——数据积累中。已有初步方向，但尚不足以得出明确结论。') }}
         {% endif %}
@@ -184,7 +186,7 @@
     {% endif %}
   </div>
   {% if win_rate_pct is not none %}
-  <p style="font-size:11.5px;color:var(--muted);margin:-12px 0 20px"><span class="l-en">Counts names still above their surfacing price — the 'vs S&amp;P 500' report cards below use a stricter ruler.</span><span class="l-zh">此处统计仍高于上榜价的标的数——下方"对比标普500"成绩单采用更严格的标准。</span></p>
+  <p style="font-size:11.5px;color:var(--muted);margin:-12px 0 20px"><span class="l-en">Each pick is bought at the next session&#39;s close and sold {{ hero_horizon or 10 }} sessions later, or sooner if it runs hot or breaks its base.{% if hero_ci and hero_ci[0] is not none %} The win rate is likely between {{ hero_ci[0] }}% and {{ hero_ci[1] }}%{% if hero_board_days %} — {{ n_outcomes }} trades, but only {{ hero_board_days }} separate board days behind them{% endif %}.{% endif %}{% if hero_inflight %} {{ hero_inflight }} picks are still running and are not counted.{% endif %}</span><span class="l-zh">每个标的以次日收盘价买入，持有 {{ hero_horizon or 10 }} 个交易日后卖出；若提前冲高或跌破底部则提早离场。{% if hero_ci and hero_ci[0] is not none %}胜率大致介于 {{ hero_ci[0] }}% 与 {{ hero_ci[1] }}% 之间{% if hero_board_days %}——共 {{ n_outcomes }} 笔交易，但仅来自 {{ hero_board_days }} 个不同上榜日{% endif %}。{% endif %}{% if hero_inflight %} 另有 {{ hero_inflight }} 个标的仍在进行中，不计入。{% endif %}</span></p>
   {% endif %}
 
   <!-- ── Section 2: Record over time ── -->

@@ -104,40 +104,60 @@ class TestBuildShell:
 # 1. US — grade_us_board.emit_ledger (buy-lane EPISODE grain)
 # ===========================================================================
 
+_US_DATES = pd.bdate_range("2026-06-01", periods=30)
+
+
 def _us_boards() -> list[dict]:
-    """Two-date board history. AAA on both dates (still on board → onboard). BBB only on
-    the first date (exited). CCC only on the first date, has NO price column (survivorship
-    skip)."""
+    """Board history exercising every path the emitter must distinguish.
+
+    AAA — surfaces on day 0, leaves, and RETURNS on day 2. Two episodes, not one
+          record anchored to the first sighting.
+    BBB — surfaces on day 0 only, with a full horizon behind it → matured.
+    CCC — surfaces on day 0, has NO price column → the only genuine survivorship skip.
+    DDD — surfaces on the LAST board, so its next-bar fill hasn't printed → in flight,
+          and must NOT be counted as unpriceable.
+    """
+    d0, d1, d2 = (str(_US_DATES[0].date()), str(_US_DATES[1].date()), str(_US_DATES[2].date()))
+    last = str(_US_DATES[-1].date())
     return [
-        {"as_of": "2026-06-01", "rows": [
+        {"as_of": d0, "rows": [
             {"lane": "buy", "ticker": "AAA", "sector": "Tech", "position": 0, "align_tier": "T1"},
             {"lane": "buy", "ticker": "BBB", "sector": "Energy", "position": 1, "align_tier": "T2"},
             {"lane": "buy", "ticker": "CCC", "sector": "Health", "position": 2, "align_tier": None},
             {"lane": "watch", "ticker": "ZZZ", "sector": "X", "position": 0},
         ]},
-        {"as_of": "2026-06-20", "rows": [
+        {"as_of": d1, "rows": [
+            {"lane": "buy", "ticker": "BBB", "sector": "Energy", "position": 0, "align_tier": "T2"},
+        ]},
+        {"as_of": d2, "rows": [
             {"lane": "buy", "ticker": "AAA", "sector": "Tech", "position": 0, "align_tier": "T1"},
+        ]},
+        {"as_of": last, "rows": [
+            {"lane": "buy", "ticker": "DDD", "sector": "Utilities", "position": 0, "align_tier": "T3"},
         ]},
     ]
 
 
 def _us_closes() -> pd.DataFrame:
-    idx = pd.to_datetime(["2026-06-01", "2026-06-10", "2026-06-20", "2026-06-30"])
-    # AAA rises; BBB falls hard (stopped). CCC absent (no column → skipped).
+    n = len(_US_DATES)
     return pd.DataFrame({
-        "AAA": [100.0, 104.0, 108.0, 110.0],   # +10% → up
-        "BBB": [50.0, 47.0, 44.0, 43.0],       # −14% → stopped
-    }, index=idx)
+        "AAA": [100.0 + i for i in range(n)],        # steady riser
+        "BBB": [50.0 - i * 0.5 for i in range(n)],   # steady faller
+        "DDD": [20.0 + i * 0.1 for i in range(n)],
+    }, index=_US_DATES)
 
 
-def _run_us_emit(monkeypatch, tmp_path, retro_rows=None):
+def _run_us_emit(monkeypatch, tmp_path, retro_rows=None, etfs=None):
     from scripts import grade_us_board as gub
-    # retro_grades store: matured 21d excess join for (first_surfaced, ticker).
     retro = tmp_path / "retro_grades.parquet"
     if retro_rows:
         pd.DataFrame(retro_rows).to_parquet(retro, index=False)
     monkeypatch.setattr(gub, "RETRO_PARQUET", retro)
-    return gub.emit_ledger(_us_boards(), _us_closes())
+    # Decouple these pins from the production board-definition cut date — the floor
+    # has its own test below. Without this every fixture would silently score zero
+    # episodes the moment LEDGER_HISTORY_FROM moves.
+    monkeypatch.setattr(gub, "LEDGER_HISTORY_FROM", "1900-01-01")
+    return gub.emit_ledger(_us_boards(), _us_closes(), etfs)
 
 
 class TestUSEmitLedger:
@@ -158,39 +178,97 @@ class TestUSEmitLedger:
 
     def test_status_vocabulary_and_marking(self, monkeypatch, tmp_path):
         d = _run_us_emit(monkeypatch, tmp_path)
-        by_t = {r["t"]: r for r in d["rows"]}
-        assert by_t["AAA"]["st"] == "onboard"          # on the current board
-        assert by_t["BBB"]["st"] == "stopped"          # −14% < −2
-        assert "CCC" not in by_t                        # no price → survivorship skip
+        by_t = {}
         for r in d["rows"]:
-            assert r["st"] in tl.STATUS_VOCAB
+            by_t.setdefault(r["t"], []).append(r)
+        assert all(r["st"] in tl.STATUS_VOCAB for r in d["rows"])
+        assert all(r["st"] == "stopped" for r in by_t["BBB"])   # steady faller
+        assert "CCC" not in by_t                                # no price → skip
 
-    def test_survivorship_skip_counted(self, monkeypatch, tmp_path):
+    def test_reentry_becomes_two_episodes(self, monkeypatch, tmp_path):
+        """A name that leaves and returns must be TWO episodes with TWO entries.
+
+        The pre-2026-07-26 emitter keyed on a ticker's first-ever appearance, so a
+        returning name kept its original anchor and sat in `onboard` forever — its
+        completed run was never scored and its live mark was measured over weeks it
+        spent off the board.
+        """
         d = _run_us_emit(monkeypatch, tmp_path)
-        assert d["summary"]["n_skipped_no_price"] == 1
-        assert d["meta"]["survivorship"]["n_skipped_no_price"] == 1
+        aaa = [r for r in d["rows"] if r["t"] == "AAA"]
+        assert len(aaa) == 2, "re-entry must open a second episode"
+        assert len({r["d"] for r in aaa}) == 2, "each episode carries its own entry date"
 
-    def test_matured_excess_join(self, monkeypatch, tmp_path):
-        # BBB matured with 21d excess_spy = -0.05 (fraction) → x = -5.0 pct, m True.
-        d = _run_us_emit(monkeypatch, tmp_path, retro_rows=[
-            {"as_of": "2026-06-01", "ticker": "BBB", "horizon": 21, "lane": "buy", "excess_spy": -0.05},
-            {"as_of": "2026-06-01", "ticker": "BBB", "horizon": 5, "lane": "buy", "excess_spy": 0.9},  # wrong horizon
-        ])
-        bbb = {r["t"]: r for r in d["rows"]}["BBB"]
-        assert bbb["m"] is True
-        assert bbb["x"] == -5.0
-        # AAA has no matured row → m False, x None
-        aaa = {r["t"]: r for r in d["rows"]}["AAA"]
-        assert aaa["m"] is False and aaa["x"] is None
+    def test_fill_pending_is_not_a_survivorship_skip(self, monkeypatch, tmp_path):
+        """DDD surfaced on the newest board: its T+1 fill hasn't printed.
 
-    def test_summary_consistency_with_rows(self, monkeypatch, tmp_path):
+        That is in-flight, not unpriceable. Conflating the two once reported 22
+        episodes — including liquid names like DE and F — as delisted.
+        """
         d = _run_us_emit(monkeypatch, tmp_path)
-        resolved = [r for r in d["rows"] if r["st"] in ("up", "stopped", "flat")]
+        by_t = {r["t"]: r for r in d["rows"]}
+        assert "DDD" in by_t and by_t["DDD"]["st"] == "onboard"
+        assert by_t["DDD"]["m"] is False
+        assert d["summary"]["n_skipped_no_price"] == 1          # CCC only
+        assert "DDD" not in d["meta"]["survivorship"]["tickers_skipped"]
+
+    def test_only_matured_episodes_enter_the_summary(self, monkeypatch, tmp_path):
+        """The maturity gate: n_matured counts rows with m=True, and nothing else.
+
+        Rule 2 of engine/track_scoring — exclusion by AGE is symmetric (it cannot know
+        which way a trade went); exclusion by OUTCOME is not.
+        """
+        d = _run_us_emit(monkeypatch, tmp_path)
         s = d["summary"]
-        assert s["n_resolved"] == len(resolved)
-        assert s["n_up"] == sum(1 for r in resolved if r["st"] == "up")
-        assert s["n_stopped"] == sum(1 for r in resolved if r["st"] == "stopped")
-        assert s["n_onboard"] == sum(1 for r in d["rows"] if r["st"] == "onboard")
+        matured = [r for r in d["rows"] if r["m"]]
+        inflight = [r for r in d["rows"] if not r["m"]]
+        assert s["n_matured"] == len(matured)
+        assert s["n_inflight"] == len(inflight)
+        assert all(r["st"] == "onboard" for r in inflight)
+        assert all(r["p"] is not None for r in matured)
+
+    def test_horizon_is_forced_never_extended(self, monkeypatch, tmp_path):
+        """Rule 1: the rule legs may shorten a hold, never extend it past the horizon."""
+        from scripts import grade_us_board as gub
+        d = _run_us_emit(monkeypatch, tmp_path)
+        for r in d["rows"]:
+            if r["m"]:
+                assert r["dy"] is not None and 1 <= r["dy"] <= gub.LEDGER_HORIZON
+                assert r["xr"] in ("target", "stop", "horizon")
+
+    def test_summary_reports_effective_sample_not_row_count(self, monkeypatch, tmp_path):
+        """n_board_days must ship beside n_matured — it is what makes the CI wide."""
+        s = _run_us_emit(monkeypatch, tmp_path)["summary"]
+        assert "n_board_days" in s
+        assert s["n_board_days"] <= s["n_matured"] or s["n_matured"] == 0
+
+    def test_history_floor_drops_pre_definition_boards_and_discloses_them(self, monkeypatch, tmp_path):
+        """Boards published before the lane narrowed are a different instrument.
+
+        2026-06-15..06-24 put 120 names on the `buy` key against ~780 eligible — a
+        broad screen whose own labels included DOWNTREND and TOPPING. They supplied
+        70% of the matured sample, and including them is what lifted the average-trade
+        interval clear of zero. The cut must be disclosed, never silent.
+        """
+        from scripts import grade_us_board as gub
+        retro = tmp_path / "retro_grades.parquet"
+        monkeypatch.setattr(gub, "RETRO_PARQUET", retro)
+        cut = str(_US_DATES[2].date())
+        monkeypatch.setattr(gub, "LEDGER_HISTORY_FROM", cut)
+        d = gub.emit_ledger(_us_boards(), _us_closes(), None)
+        assert all(r["d"] >= cut for r in d["rows"])
+        hist = d["meta"]["history"]
+        assert hist["scored_from"] == cut
+        assert hist["n_boards_before_current_definition"] == 2   # the two boards below the cut
+
+    def test_no_dead_band_every_matured_row_is_win_or_loss(self, monkeypatch, tmp_path):
+        """No ±2% flat bucket: the old band dropped a third of the sample from the
+        denominator and turned 40% into 60%."""
+        d = _run_us_emit(monkeypatch, tmp_path)
+        assert all(r["st"] in ("up", "stopped") for r in d["rows"] if r["m"])
+        s = d["summary"]
+        if s["n_matured"]:
+            n_up = sum(1 for r in d["rows"] if r["m"] and r["st"] == "up")
+            assert s["win_pct"] == pytest.approx(100.0 * n_up / s["n_matured"], abs=0.11)
 
     def test_json_round_trip(self, monkeypatch, tmp_path):
         d = _run_us_emit(monkeypatch, tmp_path, retro_rows=[
@@ -210,7 +288,7 @@ class TestUSEmitLedger:
 
 
 # ===========================================================================
-# 2. CN — build_china_library.emit_cn_track_ledger (board_day×ticker grain)
+# 2. CN — build_china_library.emit_cn_track_ledger (EPISODE grain)
 # ===========================================================================
 
 def _cn_board_parquet(tmp_path: Path) -> Path:
@@ -286,7 +364,7 @@ class TestCNEmitLedger:
         assert ok is True
         assert d["schema"] == "track_ledger/v1"
         assert d["market"] == "CN"
-        assert d["meta"]["grain"] == "board_day"
+        assert d["meta"]["grain"] == "episode"
         assert d["bench"] == {"code": "510300.SS", "en": "CSI 300", "zh": "沪深300"}
 
     def test_matured_beat_and_lag(self, monkeypatch, tmp_path):
@@ -317,19 +395,35 @@ class TestCNEmitLedger:
             assert r["st"] in tl.STATUS_VOCAB
             assert set(r["fl"]).issubset(set(tl.FLAG_VOCAB))
 
-    def test_state_from_bt_selector(self, monkeypatch, tmp_path):
-        # scored 21d block present (n>=8, hit_vs_csi300 set) → state scored
+    def test_state_comes_from_the_sample_not_from_bt(self, monkeypatch, tmp_path):
+        """The publish state must follow THIS ledger's own matured sample.
+
+        It used to mirror china_standout_track.grade()'s 21d research block, so the
+        chip could read 'scored' off a study with a different horizon than the rows the
+        popup listed underneath it. A rich `bt` must not be able to promote a thin
+        ledger: the 4-row fixture never clears publish_state's floors.
+        """
         bt = {"available": True, "by_horizon": {"21d": {"n": 20, "hit_vs_csi300": 0.55}}}
         _ok, d = _run_cn_emit(monkeypatch, tmp_path, bt=bt)
-        assert d["state"] == "scored"
-        # interim available with n>=8 → interim
-        bt2 = {"available": True, "by_horizon": {"21d": {"n": 3, "note": "accruing"}},
-               "interim": {"available": True, "n": 12, "hit_vs_csi300": 0.5}}
-        _ok2, d2 = _run_cn_emit(monkeypatch, tmp_path, bt=bt2)
-        assert d2["state"] == "interim"
-        # nothing → accruing
+        assert d["state"] == "accruing"
+        assert d["summary"]["n_matured"] < 20
+        # ...and it stays accruing with no bt at all — same sample, same verdict.
         _ok3, d3 = _run_cn_emit(monkeypatch, tmp_path, bt=None)
         assert d3["state"] == "accruing"
+
+    def test_excess_is_the_cn_headline_metric(self, monkeypatch, tmp_path):
+        """CN scores excess vs CSI300: in A-shares beta dominates, so an absolute win
+        rate would mostly measure the index."""
+        _ok, d = _run_cn_emit(monkeypatch, tmp_path)
+        assert d["summary"]["metric"] == "excess"
+
+    def test_locked_limit_rows_flagged_and_excluded(self, monkeypatch, tmp_path):
+        """A T+1 bar printing high==low==close is unfillable at any price."""
+        _ok, d = _run_cn_emit(monkeypatch, tmp_path)
+        locked = [r for r in d["rows"] if "locked" in r["fl"]]
+        assert locked, "fixture must exercise the locked-limit path"
+        assert all(r["m"] is False for r in locked)
+        assert d["summary"]["n_locked_excluded"] >= 1
 
     def test_json_round_trip(self, monkeypatch, tmp_path):
         _ok, d = _run_cn_emit(monkeypatch, tmp_path)

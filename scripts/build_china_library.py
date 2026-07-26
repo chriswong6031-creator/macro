@@ -757,6 +757,21 @@ def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
     return bt, bt.pop("fwd_excess_map_21d", None)
 
 
+# Forced-verdict horizon for the CN Track-record ledger, in sessions. Held equal to
+# the US desk's LEDGER_HORIZON on purpose: the two desks' headline numbers are read
+# side by side, and a horizon that differed per market would make them incomparable
+# for no reason a reader could see. (The board's own 21d research grade in
+# china_standout_track.grade() is a separate, longer-horizon question and is
+# unaffected by this.)
+_CN_HORIZON = 10
+
+# Last ledger doc emit_cn_track_ledger built, so the render path can hand the SAME
+# summary to the template that the popup's table will fetch. A one-slot dict rather
+# than a return-signature change: the emitter's bool return is asserted by
+# tests/test_track_ledger_emitters.py and by the nightly's log line.
+_CN_LAST_LEDGER: dict = {"doc": None}
+
+
 def _cn_track_state(bt: dict | None) -> str:
     """Mirror the template's 3-state selector for the CN track panel:
       • 'scored'   when the matured 21d horizon has n>=8 scored rows,
@@ -779,57 +794,104 @@ def _cn_track_state(bt: dict | None) -> str:
 
 
 def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
-                    _cst) -> tuple[list[dict], int]:
-    """Row loop for emit_cn_track_ledger. The caller has already memoized
-    _cst._price_frame, so the internal reads in _fwd_excess/_interim_excess hit the
-    per-ticker memo instead of re-opening parquets (render budget)."""
-    rows_out: list[dict] = []
-    n_locked = 0
+                    _cst) -> tuple[list[dict], int, list[dict], int, int]:
+    """Row loop for emit_cn_track_ledger — EPISODE grain, forced-horizon verdict.
+
+    Returns (rows, n_locked, scored, n_inflight, n_skipped).
+
+    Rewritten 2026-07-26 onto engine.track_scoring. Three changes from the
+    board_day × ticker version this replaces:
+
+      * EPISODE GRAIN. A name on the board for ten sessions used to emit ten rows that
+        all measured overlapping windows of the same move. The summary counted them as
+        ten independent observations, so `n` read 840 when the desk had made roughly
+        400 distinct calls across 15 nights — and the Wilson interval built on that n
+        was several times too narrow to be honest.
+      * FORCED VERDICT AT H=10 sessions, replacing "21d if matured, else mark to the
+        latest close". Marking unmatured rows to today pooled holding periods of 1 and
+        17 sessions into one hit rate.
+      * DATE-BLOCKED CI (in the caller's summarize()), replacing Wilson-on-raw-n.
+
+    A-share specifics that must NOT be shared with the US desk and are preserved here:
+    the T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill, and the locked-limit exclusion —
+    a bar that printed high==low==close is unfillable at any price, so those episodes
+    are flagged and kept OUT of the summary. No oscillator target exit: the 3D StochRSI
+    thresholds the US desk exits on were fit on US volatility and have not been refit
+    for A-share limit-board dynamics, so CN runs fixed-horizon until they are.
+    """
+    from engine import track_scoring as _ts
+
+    # board_day → tickers, then contiguous runs. Ordered by date so the episode
+    # builder sees the history in sequence.
+    board_days: dict[str, set[str]] = {}
+    meta_by_tk: dict[str, dict] = {}
     for _i, brow in bdf.iterrows():
         tk = str(brow.get("ticker") or "")
         d0s = str(brow.get("date") or "")
         if not tk or not d0s:
             continue
+        board_days.setdefault(d0s, set()).add(tk)
+        meta_by_tk[tk] = {
+            "rank": brow.get("board_rank") if pd.notna(brow.get("board_rank")) else None,
+            "tier": brow.get("tier") if pd.notna(brow.get("tier")) else None,
+        }
+
+    rows_out: list[dict] = []
+    scored: list[dict] = []
+    n_locked = n_inflight = n_skipped = 0
+
+    for ep in _ts.build_episodes(board_days):
+        tk, d0s = ep["ticker"], ep["entry_date"]
         try:
             d0 = pd.Timestamp(d0s)
         except Exception:  # noqa: BLE001
             continue
 
-        # entry / latest price for display (T+1 fill basis; memoized store read)
-        entry_px = latest_px = pct = dy = None
         pdf = _cst._price_frame(tk)  # noqa: SLF001 — memoized by caller
-        fill = None
-        if pdf is not None:
-            fill, locked_flag, _pinned = _cst._t1_fill(pdf, d0)  # noqa: SLF001
-            if fill is not None:
-                entry_px = float(fill)
-                closes = pd.to_numeric(pdf["close"], errors="coerce").dropna()
-                fwd = closes[closes.index > d0]
-                if len(fwd) >= 1 and entry_px > 0:
-                    latest_px = float(fwd.iloc[-1])
-                    pct = (latest_px / entry_px - 1.0) * 100.0
-                    dy = int(len(fwd))
-        else:
-            locked_flag = False
+        if pdf is None or "close" not in pdf:
+            n_skipped += 1
+            continue
+        fill, locked_flag, _pinned = _cst._t1_fill(pdf, d0)  # noqa: SLF001
 
-        # matured 21d excess (CSI300-relative), then unrealized interim mark
-        ex21, pinned = _cst._fwd_excess(tk, d0, 21, bench_ser)  # noqa: SLF001
-        matured = ex21 is not None
-        if matured:
-            x_frac = ex21
-            st = "beat" if x_frac > 0 else "lag"
-        else:
-            iex, _p2, idays = _cst._interim_excess(tk, d0, bench_ser)  # noqa: SLF001
-            x_frac = iex
-            st = "early"
-            if idays is not None:
-                dy = int(idays)
-
-        # locked-limit: the T+1 bar was unfillable (fill is None + locked flag).
         fl: list[str] = []
         if locked_flag:
+            # Unfillable at any price. Flagged for the table, excluded from the stats —
+            # counting a trade nobody could enter is the A-share version of the
+            # unbuyable-entry bug this whole rewrite exists to remove.
             fl.append("locked")
             n_locked += 1
+
+        closes = pd.to_numeric(pdf["close"], errors="coerce").dropna()
+        after = closes.index[closes.index > d0]
+        sc = None
+        if fill is not None and len(after):
+            # include_fill_bar: the fill is the T+1 OPEN, so that same session's close
+            # is already a legitimate day-one exit. (The US desk fills AT a close and
+            # must not treat that same bar as its own exit.)
+            sc = _ts.score_from_fill(closes, after[0], float(fill), _CN_HORIZON,
+                                     bench_close=bench_ser, include_fill_bar=True)
+        if sc is None:
+            n_skipped += 1
+            continue
+
+        matured = bool(sc["matured"]) and not locked_flag
+        if matured:
+            # CN grades on EXCESS vs CSI300: in A-shares beta dominates, so an absolute
+            # win rate would mostly measure the index, not the desk.
+            x = sc.get("excess")
+            st = "beat" if (x or 0) > 0 else "lag"
+            sc["board_date"] = d0s
+            if x is not None:
+                scored.append(sc)
+            entry_px, latest_px, pct, dy = sc["entry"], sc["exit"], sc["pnl"], sc["held"]
+        else:
+            st = "early"
+            if not sc.get("fill_pending"):
+                n_inflight += 1
+            entry_px = sc["entry"]
+            latest_px = float(closes.iloc[-1]) if len(closes) else None
+            pct, dy = sc["mark"], sc["held"]
+            x = None
 
         disp = look.get(tk, {})
         rows_out.append({
@@ -841,46 +903,57 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
             "e": round(entry_px, 2) if entry_px is not None else None,
             "l": round(latest_px, 2) if latest_px is not None else None,
             "p": round(pct, 1) if pct is not None else None,
-            "x": round(x_frac * 100.0, 2) if x_frac is not None else None,
+            "x": round(x, 2) if x is not None else None,
             "dy": dy,
             "st": st,
             "m": bool(matured),
-            "rk": brow.get("board_rank") if pd.notna(brow.get("board_rank")) else None,
-            "tr": brow.get("tier") if pd.notna(brow.get("tier")) else None,
+            "rk": meta_by_tk.get(tk, {}).get("rank"),
+            "tr": meta_by_tk.get(tk, {}).get("tier"),
             "fl": fl,
+            "xr": sc.get("exit_reason") if matured else None,
         })
-    return rows_out, n_locked
+    return rows_out, n_locked, scored, n_inflight, n_skipped
 
 
 def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | None) -> bool:
     """Emit site/factordata/cn_track_ledger.json (track_ledger/v1).
 
-    Grain: board_day × ticker from data/china_standout_track/board.parquet. For each
-    stored board row we compute the CSI300-relative excess with the SAME engine helpers
-    the panel uses (read-only, no write side-effects):
-      • matured (>=21 sessions): china_standout_track._fwd_excess(t, d0, 21, bench)
-        → st='beat'/'lag' by excess sign, m=true, x=excess*100.
-      • unmatured: china_standout_track._interim_excess(t, d0, bench) unrealized
-        mark-to-latest-close → st='early', m=false, x=excess*100 (null when no fwd bar).
-      • locked-limit T+1 rows: fl=['locked'] and EXCLUDED from summary stats
-        (matching the grader's excludes_locked_limit rule).
+    Grain: EPISODE (contiguous board run) from data/china_standout_track/board.parquet,
+    scored on CSI300-relative excess at a forced 10-session verdict via
+    engine.track_scoring — the same core the US desk uses. See _cn_ledger_rows for what
+    changed from the board_day × ticker version and why, and engine/track_scoring.py
+    for the three rules that make the number honest.
 
-    `bt` is grade()'s output already in memory (state selector). `buy_rows` = today's
-    ranked board (wide['buy']) used only as a name/sector display lookup. Render budget:
-    lib.store reads are UNCACHED, and _fwd_excess/_interim_excess each re-open the
-    per-ticker frame internally — so we install a per-ticker memo over
-    _cst._price_frame for the duration of the loop (try/finally restored), collapsing
-    O(rows×3) parquet reads to O(unique tickers).
+    A-share specifics preserved (these are real market differences, not style):
+      • T+1 OPEN (or (H+L)/2 proxy) fill via _t1_fill — CN can trade the open; the US
+        desk fills at the next close.
+      • locked-limit T+1 rows: fl=['locked'], flagged in the table and EXCLUDED from
+        the summary. A bar that printed high==low==close is unfillable at any price.
+      • EXCESS vs CSI300 is the headline, not absolute P&L: in A-shares beta dominates,
+        so an absolute win rate would mostly measure the index rather than the desk.
+      • no oscillator target exit — the US desk's 3D StochRSI thresholds were fit on US
+        volatility and have not been refit for A-share limit boards.
+
+    `bt` is grade()'s output already in memory (kept for callers/back-compat; the
+    publish state now derives from the sample itself via track_scoring.publish_state).
+    `buy_rows` = today's ranked board (wide['buy']) used only as a name/sector display
+    lookup. Render budget: lib.store reads are UNCACHED, so we install a per-ticker
+    memo over _cst._price_frame for the duration of the loop (try/finally restored),
+    collapsing O(rows) parquet reads to O(unique tickers).
     Returns True on a successful atomic write.
     """
     from engine import track_ledger as _tl
+    from engine import track_scoring as _ts
     from engine import china_standout_track as _cst
 
     bench_dict = {"code": "510300.SS", "en": "CSI 300", "zh": "沪深300"}
-    state = _cn_track_state(bt)
+    rows_out: list[dict] = []
+    scored: list[dict] = []
+    n_locked = n_inflight = n_skipped = 0
+    state = "accruing"
 
     # name/sector display lookup. Today's ranked board carries the freshest name +
-    # sector, but the ledger spans EVERY board_day×ticker back to first-write — most
+    # sector, but the ledger spans EVERY episode back to first-write — most
     # of those tickers have long since rotated off the board, so a board-only lookup
     # left ~85% of rows with no name (the receipt read as bare tickers). Backfill from
     # the curated search universe (china_search/members.parquet, 'EN / 中文' names —
@@ -909,8 +982,6 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
             look[str(tk)] = {"nm": r.get("name"), "sec": r.get("sector")}
 
     store_path = _cst._store_path()  # noqa: SLF001 — read-only path accessor
-    rows_out: list[dict] = []
-    n_locked = 0
     if store_path.exists():
         try:
             bdf = pd.read_parquet(store_path)
@@ -928,55 +999,35 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
 
             _cst._price_frame = _pf_cached  # type: ignore[assignment]  # noqa: SLF001
             try:
-                rows_out, n_locked = _cn_ledger_rows(bdf, bench_ser, look, _cst)
+                rows_out, n_locked, scored, n_inflight, n_skipped = \
+                    _cn_ledger_rows(bdf, bench_ser, look, _cst)
             finally:
                 _cst._price_frame = _pf_orig  # noqa: SLF001
                 _pf_memo.clear()
 
-    # Summary: matured + interim stats over NON-locked rows (grader excludes locked).
-    scored = [r for r in rows_out if "locked" not in r["fl"] and r["x"] is not None]
-    matured_rows = [r for r in scored if r["m"]]
-    n_beat = sum(1 for r in matured_rows if r["st"] == "beat")
-    n_lag = sum(1 for r in matured_rows if r["st"] == "lag")
-    n_mat = len(matured_rows)
-    hit_matured = round(n_beat / n_mat, 3) if n_mat else None
-    _mx = [r["x"] for r in matured_rows]
-    median_excess_matured = round(float(pd.Series(_mx).median()), 2) if _mx else None
-
-    interim_rows = [r for r in scored if not r["m"]]
-    n_int = len(interim_rows)
-    n_int_ahead = sum(1 for r in interim_rows if r["x"] is not None and r["x"] > 0)
-    hit_interim = round(n_int_ahead / n_int, 3) if n_int else None
-    _ix = [r["x"] for r in interim_rows if r["x"] is not None]
-    median_excess_interim = round(float(pd.Series(_ix).median()), 2) if _ix else None
-    wl, wh = _tl.wilson_ci(n_int_ahead, n_int)
-
-    summary = {
-        "state": state,
-        # matured (final grade) block — populated once 21d picks mature
-        "n_matured": n_mat,
-        "n_beat": n_beat,
-        "n_lag": n_lag,
-        "hit_matured": hit_matured,
-        "median_excess_matured_pct": median_excess_matured,
-        # interim (unrealized mark) block — the early read the panel shows first
-        "n_interim": n_int,
-        "hit_pct": round((hit_interim or 0.0) * 100.0, 1) if hit_interim is not None else None,
-        "ci_lo_pct": round(wl * 100.0, 1) if wl is not None else None,
-        "ci_hi_pct": round(wh * 100.0, 1) if wh is not None else None,
-        "median_excess_pct": median_excess_interim,
-        "n_logged": len(rows_out),
-        "n_locked_excluded": n_locked,
-    }
+    # Summary over MATURED, non-locked episodes only, scored on CSI300 excess. The CI
+    # is date-blocked (engine.track_scoring) — episodes surfaced on the same board
+    # night share the market's move and the ranker's state, so they are one bet. The
+    # Wilson-on-raw-n this replaces reported 50.5–57.3% off 840 overlapping board-day
+    # rows spanning 15 nights; that interval could not have been right.
+    summary = _ts.summarize(scored, metric="excess", n_inflight=n_inflight,
+                            n_skipped=n_skipped, horizon=_CN_HORIZON)
+    summary["n_logged"] = len(rows_out)
+    summary["n_locked_excluded"] = n_locked
+    state = _ts.publish_state(summary)
 
     as_of = None
     if rows_out:
         as_of = max((r["d"] for r in rows_out if r["d"]), default=None)
 
     doc = _tl.build_shell(
-        "CN", as_of, state, bench_dict, summary, rows_out, grain="board_day",
-        survivorship={"n_locked_excluded": n_locked, "note": "locked-limit T+1 rows excluded from stats"},
+        "CN", as_of, state, bench_dict, summary, rows_out, grain="episode",
+        survivorship={"n_locked_excluded": n_locked, "n_skipped_no_price": n_skipped,
+                      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"},
+        extra_meta={"exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
+                                 "no oscillator target (3D thresholds not yet refit for A-shares)"},
     )
+    _CN_LAST_LEDGER["doc"] = doc
     return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)
 
 
@@ -2416,11 +2467,16 @@ def main(alpha: dict | None = None) -> dict | None:
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
             setups["coverage"] = wide["coverage"]
-            # TRD popup — board_day×ticker ledger (track_ledger/v1). Additive, never
+            # TRD popup — EPISODE ledger (track_ledger/v1). Additive, never
             # fatal: reuses the board.parquet + closes the panel just read. Emitted even
             # when _bt is unavailable (accruing state) so the popup always has a feed.
             try:
                 _cnok = emit_cn_track_ledger(site, _bt, wide.get("buy"))
+                # Hand the ledger's own summary to the template so the chip and the
+                # popup table it heads report the SAME numbers. Before 2026-07-26 the
+                # chip read setups.board_track (the 21d research grade) while the table
+                # fetched this ledger — two methodologies, one component.
+                setups["track_ledger"] = _CN_LAST_LEDGER.get("doc")
                 log.info("cn track_ledger: %s", "wrote cn_track_ledger.json" if _cnok else "write skipped")
             except Exception as _cnle:  # noqa: BLE001 — ledger is additive; never fatal
                 log.warning("cn track_ledger emit failed (%s) — render continues", _cnle)
