@@ -163,3 +163,36 @@ def test_build_on_committed_catalog_never_yields_zero_pages(monkeypatch, tmp_pat
     renderable = [it for it in catalog["items"] if it.get("id")]
     assert written == len(renderable)          # one landing page per id-bearing report
     assert (tmp_path / "research" / "index.html").exists()
+
+
+# --- stale-page prune (a retitled report MOVES; the old URL must not survive) --
+def test_prune_stale_drops_orphans_but_keeps_the_hub():
+    keep = {"a-111111.html", "index.html"}
+    names = ["a-111111.html", "index.html", "old-title-111111.html"]
+    assert rp.prune_stale(keep, names) == ["old-title-111111.html"]
+
+
+def test_prune_stale_refuses_a_mass_delete():
+    """A catalog that came back short must never wipe the estate — the guard
+    refuses wholesale, and build() then logs it instead of deleting."""
+    keep = {"a-111111.html", "index.html"}
+    names = ["a-111111.html", "index.html"] + [f"gone-{i}.html" for i in range(20)]
+    assert rp.prune_stale(keep, names) == []
+
+
+def test_prune_stale_ignores_non_html():
+    keep = {"index.html"}
+    assert rp.prune_stale(keep, ["index.html", "notes.txt"]) == []
+
+
+def test_build_removes_the_page_of_a_retitled_report(monkeypatch, tmp_path):
+    _redirect_out(monkeypatch, tmp_path)
+    rp.build({"items": [_ITEM]})
+    before = {p.name for p in (tmp_path / "research").glob("*.html")}
+    old = next(n for n in before if n != "index.html")
+
+    rp.build({"items": [dict(_ITEM, title="PMI: Fall Seven Times, Get Up Eight")]})
+    after = {p.name for p in (tmp_path / "research").glob("*.html")}
+    assert old not in after                     # the stale URL is gone, not duplicated
+    assert "pmi-fall-seven-times-get-up-eight-71f35b.html" in after
+    assert "index.html" in after

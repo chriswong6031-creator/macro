@@ -25,6 +25,7 @@ from engine.research_vault import corpus as corpus_mod
 from engine.research_vault import excerpt as excerpt_mod
 from engine.research_vault import ingest as ingest_mod
 from engine.research_vault import sidecar as sidecar_mod
+from engine.research_vault import title as title_mod
 from engine.research_vault.r2_store import LocalStore, build_store
 
 
@@ -883,3 +884,180 @@ def test_r2_client_prefers_research_account_creds(monkeypatch):
     for _k in ("R2_RESEARCH_ENDPOINT", "R2_RESEARCH_ACCESS_KEY_ID", "R2_RESEARCH_SECRET_ACCESS_KEY"):
         monkeypatch.delenv(_k, raising=False)
     assert rs._r2_client().meta.endpoint_url == "https://shared.example.com"
+
+
+# ===========================================================================
+# title: filename-derived titles (detection, cleaning, first-page recovery)
+# ===========================================================================
+
+@pytest.mark.parametrize("bad", [
+    "2026 07 24 Rearming Britain's Supply Side en",   # ISO date stamp + language
+    "26 07 24 Focus Europe ECB Reaction",             # 2-digit date stamp
+    "260723 ECB slightly hawkish hold",               # compact date stamp
+    "Daily Asia en 1663849 1",                        # language + document id
+    "JPM International Ma 2026 07 24 5381087",        # trailing id run
+    "China 2026 Outlook Exploring New Growth (1)",    # re-download marker
+    "Consensus(1)",                                   # …with no space
+])
+def test_title_detects_filename_furniture(bad):
+    assert title_mod.looks_filename_derived(bad) is True
+
+
+@pytest.mark.parametrize("good", [
+    "US Econ Notes July 24",                          # trailing day number
+    "European Equities Week Ahead Jul 27 Jul 31",     # two of them
+    "Recap 7 24 26",                                  # a date IS the title here
+    "invesco low cost ai strategy july 2026",         # trailing year
+    "China 2026 Outlook Exploring New Growth Engines",  # interior year
+    "Fed Chatterbox July Edition",
+    "Alcon Inc. (ALCC.US)",
+    "China Property HK",                              # "hk"/"it"/"no" are words,
+    "Semis and IT",                                   # …not language suffixes
+    "",
+])
+def test_title_leaves_real_titles_alone(good):
+    assert title_mod.looks_filename_derived(good) is False
+    assert title_mod.resolve(good) == (good, "sidecar")
+
+
+def test_title_clean_strips_only_the_furniture():
+    assert title_mod.clean("2026 07 24 Rearming Britain's Supply Side en") == \
+        "Rearming Britain's Supply Side"
+    assert title_mod.clean("Daily US en 1663880 1") == "Daily US"   # keeps "US"
+    assert title_mod.clean("US Econ Notes July 24") == "US Econ Notes July 24"
+
+
+def test_title_recovered_from_the_reports_own_first_page():
+    """The headline the PDF prints wins over the prettified filename."""
+    body = ("Europe Watch - Quick Insights 24 Jul 2026\n"
+            "PMI: FALL SEVEN TIMES, GET UP EIGHT\n"
+            "Davide Oneglia\n\n"
+            "July flash Euro Area PMIs surprised to the upside across sectors.\f"
+            "page two: pmi fall seven times get up eight decoy\n")
+    got, src = title_mod.resolve("2026 07 24 Pmi Fall Seven Times Get Up Eight en", body)
+    assert got == "PMI: FALL SEVEN TIMES, GET UP EIGHT"   # punctuation + casing restored
+    assert src == "pdf"
+
+
+def test_title_recovery_drops_the_byline_printed_after_the_headline():
+    body = "REARMING BRITAIN'S SUPPLY SIDE Alexandros Xenofontos\n"
+    got, src = title_mod.resolve("2026 07 24 Rearming Britain's Supply Side en", body)
+    assert got == "REARMING BRITAIN'S SUPPLY SIDE"
+    assert src == "pdf"
+
+
+def test_title_recovery_closes_a_bracket_the_anchor_cut():
+    body = "Transformational Innovation Opportunities (TRIO) — 2026 update\n"
+    got, src = title_mod.resolve("Transformational Innovation Opportunities (TRIO) en 1662393 1", body)
+    assert got == "Transformational Innovation Opportunities (TRIO)"
+    assert src == "pdf"
+
+
+def test_title_recovery_is_anchored_never_generative():
+    """A first page full of other headlines can never rename the report."""
+    body = ("GLOBAL MARKETS DAILY\nA COMPLETELY DIFFERENT HEADLINE\n"
+            "Some prose that mentions daily asia in passing.\n")
+    got, src = title_mod.resolve("Daily Asia Weekly Wrap en 1663849 1", body)
+    assert got == "Daily Asia Weekly Wrap"     # cleaned only — nothing invented
+    assert src == "filename"
+
+
+def test_title_recovery_needs_a_real_anchor():
+    # A 1-2 word title anchors nothing: cleaned, never "recovered".
+    got, src = title_mod.resolve("Platinum en 1663759 1", "CIO View: Platinum\n")
+    assert (got, src) == ("Platinum", "filename")
+
+
+def test_title_resolve_is_idempotent():
+    body = "PMI: FALL SEVEN TIMES, GET UP EIGHT Davide Oneglia\n"
+    once, _ = title_mod.resolve("2026 07 24 Pmi Fall Seven Times Get Up Eight en", body)
+    assert title_mod.resolve(once, body) == (once, "sidecar")   # second pass is a no-op
+
+
+def test_title_never_empties_a_title():
+    got, _src = title_mod.resolve("en 1663849 1", "")
+    assert got.strip()
+
+
+# ===========================================================================
+# ingest: title repair at ingest time + over the EXISTING catalog
+# ===========================================================================
+
+def test_ingest_recovers_a_filename_title_from_the_pdf(tmp_path, monkeypatch):
+    store = LocalStore(tmp_path / "store")
+    monkeypatch.setattr(
+        ingest_mod, "extract_pdf_text",
+        lambda b: "PMI: FALL SEVEN TIMES, GET UP EIGHT Davide Oneglia\n")
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "2026 07 24 Pmi Fall Seven Times Get Up Eight en",
+        "institution": "TS Lombard", "published_at": "2026-07-24T14:48:53Z",
+    })
+    summary = ingest_mod.run(store, tmp_path / "corpus.sqlite")
+    assert summary["ingested"] == 1
+    assert summary["titles_recovered"] == 1
+    row = catalog_mod.load(store)["items"][0]
+    assert row["title"] == "PMI: FALL SEVEN TIMES, GET UP EIGHT"
+    assert row["needs_metadata"] is False       # the sidecar DID carry a title
+
+
+def test_repair_titles_heals_documents_already_in_the_catalog(tmp_path, canned_pdftotext):
+    """The receipted-doc path: ingest never re-reads those PDFs, so the repair pass
+    over the loaded catalog is the only thing that can reach them."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "id": "marketdesk-abc-3a8606", "title": "Rates Weekly Outlook en 1663849 1",
+        "institution": "UBS", "published_at": "2026-07-24T10:00:00Z",
+    })
+    ingest_mod.run(store, corpus_path)
+
+    # Simulate the pre-fix state: put the filename title back into both stores.
+    cat = catalog_mod.load(store)
+    cat["items"][0]["title"] = "Rates Weekly Outlook en 1663849 1"
+    catalog_mod.write(store, cat)
+    conn = corpus_mod.open_db(corpus_path)
+    conn.execute("UPDATE documents SET title=?, body=? WHERE doc_id=?",
+                 ("Rates Weekly Outlook en 1663849 1",
+                  "RATES WEEKLY OUTLOOK: THE LONG END WINS\nMark Haefele\n",
+                  "marketdesk-abc-3a8606"))
+    conn.commit(); conn.close()
+    # The store copy is the source of truth — run() restores it over the local
+    # file, so the edit has to be published to survive into the repair pass.
+    ingest_mod.publish_corpus(store, corpus_path)
+
+    summary = ingest_mod.run(store, corpus_path)
+    assert summary["ingested"] == 0 and summary["skipped"] == 1   # nothing re-ingested
+    assert summary["titles_repaired"] == 1
+    # Casing restored from the PDF; the ": THE LONG END WINS" the filename never
+    # carried is left off — past the anchor, a subtitle and a byline are the same
+    # shape, and a title is not the place to guess.
+    assert catalog_mod.load(store)["items"][0]["title"] == "RATES WEEKLY OUTLOOK"
+
+    # The corpus title is repaired too (title is the heaviest FTS column).
+    conn = corpus_mod.open_db(corpus_path)
+    hits = corpus_mod.search(conn, "Rates Weekly Outlook")
+    assert hits and hits[0]["id"] == "marketdesk-abc-3a8606"
+    assert hits[0]["title"] == "RATES WEEKLY OUTLOOK"
+    conn.close()
+
+    # And a third run is a clean no-op — the repair does not flap.
+    assert ingest_mod.run(store, corpus_path)["titles_repaired"] == 0
+
+
+def test_repair_titles_survives_a_missing_corpus_row(tmp_path, canned_pdftotext):
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/rep.pdf", {
+        "title": "Good Title", "institution": "UBS", "published_at": "2026-07-24",
+    })
+    ingest_mod.run(store, corpus_path)
+    cat = catalog_mod.load(store)
+    # A catalog row with no corpus body at all (id never ingested here).
+    cat["items"].append({"id": "ghost-1", "title": "Swiss economy en 1663943 1",
+                         "institution": "UBS", "published_at": "2026-07-01"})
+    catalog_mod.write(store, cat)
+
+    summary = ingest_mod.run(store, corpus_path)
+    assert summary["titles_repaired"] == 1
+    titles = {it["title"] for it in catalog_mod.load(store)["items"]}
+    assert "Swiss economy" in titles            # cleaned without a body, never dropped

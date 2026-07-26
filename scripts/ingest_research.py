@@ -73,6 +73,7 @@ def main() -> int:
             print(f"ingest_research: DRY-RUN — ingested={summary['ingested']} "
                   f"skipped={summary['skipped']} failed={summary['failed']} "
                   f"needs_metadata={summary['needs_metadata']} "
+                  f"titles_repaired={summary.get('titles_repaired', 0)} "
                   f"(corpus={corpus_path}; nothing published)")
             return 0
 
@@ -111,6 +112,9 @@ def main() -> int:
         print(f"ingest_research: ok — ingested={summary['ingested']} "
               f"skipped={summary['skipped']} failed={summary['failed']} "
               f"needs_metadata={summary['needs_metadata']} "
+              f"titles_repaired={summary.get('titles_repaired', 0)} "
+              f"(from_pdf={summary.get('titles_recovered', 0)}, "
+              f"filename_only={summary.get('titles_unresolved', 0)}) "
               f"corpus_published={summary.get('corpus_published')} "
               f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
         return 0
