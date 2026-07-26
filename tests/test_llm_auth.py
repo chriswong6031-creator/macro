@@ -909,3 +909,83 @@ def test_build_providers_injects_usage_lane(monkeypatch):
     assert provs[0]["usage_lane"] == "my-lane"
     assert provs[0]["usage_cycle_id"] == "cycle-42"
     assert provs[0]["usage_stage"] == "build"
+
+
+# ---------------------------------------------------------------------------
+# Client latency guards (SPEC B1): client_max_retries / client_timeout_s
+# ---------------------------------------------------------------------------
+# The SDK default max_retries=2 re-tries the SAME dead key with backoff before the
+# waterfall ever reaches the next candidate (probe: 4.23s vs 0.49s at 0), and the
+# default 600s timeout lets one hung candidate stall a user-facing turn. Lanes that
+# walk their own keys opt in via config; every other consumer must be untouched.
+
+def _tuned_cfg(**extra) -> dict:
+    cfg = {
+        "provider_order": ["oauth", "anthropic", "deepseek"],
+        "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "deepseek_key_env": "DEEPSEEK_API_KEY",
+    }
+    cfg.update(extra)
+    return cfg
+
+
+def _build_all_three(monkeypatch, cfg: dict) -> dict:
+    """Build one provider per family with a fake SDK, keyed by provider name."""
+    import sys
+    from unittest.mock import patch
+    from engine import llm_auth
+
+    monkeypatch.setitem(sys.modules, "anthropic", _fake_anthropic_module())
+    monkeypatch.setattr(llm_auth, "_oauth_pool_candidates", lambda lane, ceiling_pct=None: [])
+    with patch("lib.config.secret", return_value="tok-abcdef0123456789"):
+        provs = llm_auth.build_providers(cfg)
+    return {p["name"]: p for p in provs}
+
+
+def test_build_providers_omits_client_tuning_when_cfg_absent(monkeypatch):
+    """Default behavior is byte-identical for every existing consumer: neither kwarg is
+    passed, so the SDK defaults stand."""
+    built = _build_all_three(monkeypatch, _tuned_cfg())
+    assert set(built) == {"oauth", "anthropic", "deepseek"}
+    for prov in built.values():
+        kwargs = prov["client"].kwargs
+        assert "max_retries" not in kwargs
+        assert "timeout" not in kwargs
+
+
+def test_build_providers_passes_client_tuning_to_all_three_constructors(monkeypatch):
+    """Both keys reach the oauth, anthropic AND deepseek clients."""
+    built = _build_all_three(monkeypatch,
+                             _tuned_cfg(client_max_retries=0, client_timeout_s=120))
+    assert set(built) == {"oauth", "anthropic", "deepseek"}
+    for name, prov in built.items():
+        kwargs = prov["client"].kwargs
+        assert kwargs["max_retries"] == 0, name
+        timeout = kwargs["timeout"]
+        # httpx.Timeout(120, connect=5.0) when httpx is importable, plain float otherwise
+        assert float(getattr(timeout, "read", timeout)) == 120.0, name
+        assert float(getattr(timeout, "connect", 5.0)) == 5.0, name
+
+
+def test_build_providers_each_tuning_key_is_independent(monkeypatch):
+    """Setting one key must not conjure the other."""
+    retries_only = _build_all_three(monkeypatch, _tuned_cfg(client_max_retries=1))
+    assert retries_only["deepseek"]["client"].kwargs["max_retries"] == 1
+    assert "timeout" not in retries_only["deepseek"]["client"].kwargs
+
+    timeout_only = _build_all_three(monkeypatch, _tuned_cfg(client_timeout_s=30))
+    assert "max_retries" not in timeout_only["deepseek"]["client"].kwargs
+    assert timeout_only["deepseek"]["client"].kwargs["timeout"] is not None
+
+
+def test_client_tuning_kwargs_drops_unusable_values(caplog):
+    """A malformed config line is logged and dropped — never a client-construction crash."""
+    import logging
+    from engine.llm_auth import _client_tuning_kwargs
+
+    assert _client_tuning_kwargs({}) == {}
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        assert _client_tuning_kwargs({"client_max_retries": "two",
+                                      "client_timeout_s": "soon"}) == {}
+    assert "client_max_retries" in caplog.text and "client_timeout_s" in caplog.text

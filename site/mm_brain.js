@@ -1108,7 +1108,7 @@
       btn.addEventListener('click', function () {
         var on = wrap.classList.toggle('on');
         btn.setAttribute('aria-expanded', on ? 'true' : 'false');
-        stickAfter();
+        stick();   /* follow the growth only if the user is riding the bottom — never a jump pill */
       });
     }
     bub.insertBefore(wrap, bubTxt(bub));

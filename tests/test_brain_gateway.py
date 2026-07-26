@@ -4059,3 +4059,21 @@ def test_build_lane_providers_forwards_client_tuning_to_llm_auth():
     with patch.object(llm_auth, "build_providers", _capture):
         gw._build_lane_providers("pro", root)
     assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 240 for c in seen)
+
+
+def test_deepseek_thinking_reaches_the_synthesis_stream(tmp_path):
+    """The Phase-2 stream takes the SAME per-candidate kwargs as the Phase-1 creates —
+    otherwise synthesis (the longest call of the turn) would still think."""
+    root = pathlib.Path(__file__).resolve().parent.parent  # the SHIPPED config/brain.yml
+    client = _two_round_client()
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers",
+                          return_value=[{"client": client, "model": "deepseek-v4-flash"}]):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_ensure_thread", return_value=None):
+                    with patch.object(gw, "_dispatch_brain_tool", return_value={"symbol": "AAPL"}):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            list(gw.chat_stream("How is AAPL doing?", "user-ds-stream",
+                                                lane="fast", root=root))
+    assert client.stream_kwargs[0]["thinking"] == {"type": "disabled"}
+    assert all(k["thinking"] == {"type": "disabled"} for k in client.create_kwargs)
