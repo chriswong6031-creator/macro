@@ -1351,7 +1351,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2: the research_vault adapter derives links.site via the SAME
+        # slug_map() the site builder uses (scripts/build_research_pages.py),
+        # which imports jinja2 at module load. Without it the import fail-softs
+        # to null links — production is unaffected (the nightly engine job has
+        # jinja2) but the isolated test env must carry it to exercise the path.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: chronicle engine tests
         run: python -m pytest tests/test_chronicle.py -q
 
