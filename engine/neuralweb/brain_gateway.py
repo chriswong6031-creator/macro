@@ -2844,6 +2844,15 @@ READING THE CHART BEFORE YOU DRAW:
   is "holds"; if it comes back "weak" or "invalid", say so plainly instead.
 - Pick timeframes and indicators only from what read_chart_state reports the chart can do.
 - Every drawing caption is one short plain sentence — what it shows, no jargon.
+
+DRAW ON THE USER'S CHART, DON'T SEND A PICTURE:
+- The user is already looking at a live chart, so marking it up beats handing them a static
+  image of one. Levels, trendlines, zones, S/R, targets → emit_chart_command / annotate_chart.
+- Do NOT call render_inline_chart in the Terminal unless the user explicitly asks for a
+  picture/image/snapshot, or asks about a symbol OTHER than the one on screen (a second
+  chart in the reply is the only way to show that one).
+- Say what you drew in one plain line ("marked the 178 shelf and the June trendline"); the
+  drawing IS the answer's visual, so don't also describe it at length.
 """
 
 
@@ -4134,6 +4143,10 @@ def _run_brain_loop(
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
+    # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
+    # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
+    if safe_page == "terminal":
+        tool_budget = max(tool_budget, _TERMINAL_TOOL_BUDGET_FLOOR)
 
     # Build the user content with optional context hint
     user_content = message
@@ -4381,6 +4394,11 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
 # Unknown tool name (a new tool shipped before this table) → a truthful generic line.
 _TOOL_LABEL_FALLBACK: tuple[str, str] = ("Gathering data", "整理数据")
 
+# Terminal chart turns read the chart before drawing (chart_digest → read_chart_state
+# → measure_line) and then spend a round per drawing, so they need more rounds than a
+# text answer. Floor, not override: a lane configured higher keeps its own budget.
+_TERMINAL_TOOL_BUDGET_FLOOR = 12
+
 # Minimum gap between `writing` beats during Phase-2 accumulation.
 _WRITING_BEAT_S = 1.5
 
@@ -4497,6 +4515,10 @@ def _run_brain_loop_stream(
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
+    # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
+    # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
+    if safe_page == "terminal":
+        tool_budget = max(tool_budget, _TERMINAL_TOOL_BUDGET_FLOOR)
 
     user_content = message
     hints = []
@@ -4660,7 +4682,11 @@ def _run_brain_loop_stream(
                     model=_p.get("model"),
                     max_tokens=max_tokens,
                     system=system_param,
-                    tools=tools_param,
+                    # NO tools: synthesis must produce PROSE. With tools attached the model
+                    # answers a tool-budget-exhausted turn with yet another tool_use, the
+                    # text stream stays empty, and the user gets the degraded stub with
+                    # nothing logged — the Terminal's chart turns hit this every time,
+                    # because chart work burns all 5 Fast rounds (reported 2026-07-26).
                     messages=messages,
                     **_pmk(_p.get("model")),
                 ) as s:
@@ -4678,6 +4704,14 @@ def _run_brain_loop_stream(
                         "input_tokens": getattr(u, "input_tokens", 0),
                         "output_tokens": getattr(u, "output_tokens", 0),
                     }
+                if not full_answer.strip():
+                    # Empty text from a healthy stream: treat like a provider failure so the
+                    # waterfall gets a turn, instead of silently shipping the degraded stub.
+                    log.warning("brain_gateway: %s returned an EMPTY synthesis — next candidate",
+                                _p.get("model"))
+                    _last_err = RuntimeError("empty synthesis")
+                    if _i < len(_cands) - 1:
+                        continue
                 _pool_record_success(_p, final_resp)  # load-balancing ledger
                 model = _p.get("model") or model
                 break
@@ -4709,6 +4743,13 @@ def _run_brain_loop_stream(
                 }
         except Exception:  # noqa: BLE001
             pass
+
+    if need_synthesis and not full_answer.strip():
+        # Every candidate came back empty — salvage any text the last tool round wrote
+        # rather than degrading a turn whose tool work all succeeded.
+        for block in last_resp_content:
+            if getattr(block, "type", "") == "text":
+                full_answer += block.text
 
     yield _status_event("review", _t0, _STAGE_LABELS["review"])
 
