@@ -120,12 +120,86 @@ def test_normalize_recovers_truncated_title_from_pdf():
     assert item["needs_metadata"] is False
 
 
-def test_normalize_keeps_truncated_title_when_pdf_not_better():
-    # PDF title absent, itself truncated, or shorter → keep the sidecar title as-is.
+def test_normalize_drops_dangling_fragment_when_pdf_not_better():
+    # PDF title absent, itself truncated, or shorter → never swapped in. With no
+    # fuller title available the dangling "(FRAGMENT" is dropped rather than
+    # published: "Carrefour" is an honest <h1>, "Carrefour (CARR" is not.
     base = {"title": "Carrefour (CARR", "institution": "GS"}
-    assert sidecar_mod.normalize(base)["title"] == "Carrefour (CARR"                       # no pdf
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour (CARR"   # pdf also truncated
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour (CARR"             # pdf shorter
+    assert sidecar_mod.normalize(base)["title"] == "Carrefour"                       # no pdf
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour"   # pdf also truncated
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour"             # pdf shorter
+    assert sidecar_mod.normalize(base)["needs_metadata"] is True   # defective title → flagged
+
+
+# ---------------------------------------------------------------------------
+# sidecar: de-slugified-filename title repair
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("raw,want", [
+    # leading filename date stamps
+    ("2026 07 24 Pmi Fall Seven Times Get Up Eight en", "PMI Fall Seven Times Get Up Eight"),
+    ("26 07 24 Focus Europe ECB Reaction", "Focus Europe ECB Reaction"),
+    ("260723 ECB slightly hawkish hold all eyes on September",
+     "ECB slightly hawkish hold all eyes on September"),
+    # export tails: language code, document number, dup counter
+    ("Blog en 1663820 1", "Blog"),
+    ("Daily US en 1663880 1", "Daily US"),
+    ("ubs hv monthly letter 16 July en 1 1", "UBS hv monthly letter 16 July"),
+    ("Transformational Innovation Opportunities (TRIO) en 1662393 1",
+     "Transformational Innovation Opportunities (TRIO)"),
+    ("JPM JPM International Ma 2026 07 24 5381087", "JPM JPM International Ma"),
+    # duplicate-download markers + dangling parens
+    ("China 2026 Outlook Exploring New Growth Engines (1)",
+     "China 2026 Outlook Exploring New Growth Engines"),
+    ("Carrefour (CARR(1)", "Carrefour"),
+    ("Alcon Inc. (ALCC", "Alcon Inc."),            # abbreviation period survives
+    # all-lowercase stem → sentence-cased
+    ("oils next move hinges on three variables", "Oils next move hinges on three variables"),
+])
+def test_repair_title_fixes_filename_shaped_titles(raw, want):
+    got, repaired = sidecar_mod.repair_title(raw)
+    assert got == want
+    assert repaired is True
+    assert sidecar_mod.repair_title(got)[1] is False    # idempotent
+
+
+@pytest.mark.parametrize("good", [
+    "Datacenter demand inflecting",
+    "BofA Michael Hartnett Bonds bringing the heat",
+    "Japan Focus of the Week BOJ Meeting, July Tokyo CPI, June Industrial Production",
+    "Alcon Inc. (ALCC.US) - Q2 Results",            # balanced parens: untouched
+    "China 2026 Outlook Exploring New Growth Engines",
+    "Outlook 2026",                                 # trailing year is not a doc number
+    "600519 Kweichow Moutai",                       # A-share code, not a yymmdd stamp
+    "Americas Business & Information Services Recap 7 24 26",
+    "Top 10 Charts",
+    "",
+])
+def test_repair_title_never_damages_a_real_title(good):
+    got, repaired = sidecar_mod.repair_title(good)
+    assert got == good
+    assert repaired is False
+
+
+def test_repair_title_on_the_committed_catalog_is_do_no_harm():
+    """Every repair over the REAL catalog must shorten-or-clean, never invent."""
+    import json as _json
+    from pathlib import Path as _Path
+    cat = _Path(__file__).resolve().parent.parent / "data" / "research_vault" / "catalog.json"
+    if not cat.is_file():
+        pytest.skip("no committed catalog")
+    items = (_json.loads(cat.read_text(encoding="utf-8")) or {}).get("items") or []
+    if not items:
+        pytest.skip("committed catalog is empty")
+    for it in items:
+        raw = it.get("title") or ""
+        got, repaired = sidecar_mod.repair_title(raw)
+        assert got.strip(), f"repair emptied {raw!r}"
+        assert sidecar_mod.repair_title(got)[1] is False, f"not idempotent: {raw!r}"
+        if repaired:
+            # A repair only ever removes filename noise or re-cases — the result
+            # must stay a subsequence of the original, word for word.
+            assert len(got) <= len(raw), f"repair grew {raw!r} -> {got!r}"
 
 
 def test_normalize_good_title_never_touched_by_pdf():

@@ -56,6 +56,12 @@ try:  # canonical base ("https://www.mastermind-x.com"), trailing slash stripped
 except Exception:  # noqa: BLE001 — never let a missing import break the build
     CANONICAL_BASE = "https://www.mastermind-x.com"
 
+try:  # shared with the ingest title ladder (pure + stdlib-only over there)
+    from engine.research_vault.sidecar import repair_title as _repair_title  # noqa: E402
+except Exception:  # noqa: BLE001 — never let a missing import break the build
+    def _repair_title(t: str) -> tuple[str, bool]:  # type: ignore[misc]
+        return (t or "", False)
+
 _MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 _STAMP = {"buy": ("BUY", "buy"), "sell": ("SELL", "sell"), "independent": ("IND", "indep")}
 _EMPTY_XML = ('<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -114,6 +120,16 @@ def _slug(title: str, idv: str, seen: set[str]) -> str:
     return out
 
 
+def _slug_source(item: dict) -> str:
+    """The string a report's URL is slugged from.
+
+    ``slug_title`` is the RAW catalog title, set by the vault build whenever it
+    repaired a de-slugified-filename title. Slugging from it keeps every already
+    indexed /research/ URL byte-stable while the page's visible title improves.
+    """
+    return (item.get("slug_title") or item.get("title") or "").strip()
+
+
 def slug_map(items: list[dict]) -> dict[str, str]:
     """id -> URL slug for every catalog item (deterministic). Shared with the vault
     build so its cards can link straight to ``research/<slug>.html``."""
@@ -122,8 +138,28 @@ def slug_map(items: list[dict]) -> dict[str, str]:
     for it in items:
         idv = it.get("id") or ""
         if idv:
-            out[idv] = _slug(it.get("title") or "", idv, seen)
+            out[idv] = _slug(_slug_source(it), idv, seen)
     return out
+
+
+def _display_title(item: dict, inst: str, date_disp: str, pts: list[str]) -> str:
+    """The title every public surface shows: <title>, og/twitter, <h1>, JSON-LD headline.
+
+    Repairs a de-slugified-filename title (shared with the ingest ladder, so a
+    row catalogued before that landed still heals here at render). Only when
+    there is no usable title at all do we compose one — institution + the first
+    summary point, or institution + date — which beats both a bare slug and the
+    old flat "Untitled research" placeholder on a page whose entire job is to
+    match a search for the report.
+    """
+    title, _ = _repair_title((item.get("title") or "").strip())
+    if title:
+        return title
+    named = inst if inst != "Unknown" else "Institutional"
+    lead = _trunc(pts[0], 80) if pts else ""
+    if lead:
+        return f"{named} research: {lead}"
+    return f"{named} research — {date_disp}" if date_disp else f"{named} research note"
 
 
 def _norm(item: dict) -> dict:
@@ -131,9 +167,10 @@ def _norm(item: dict) -> dict:
     side = (item.get("side") or "independent").lower()
     pts = [p for p in (item.get("summary_points") or []) if _clean(p)]
     stamp_txt, stamp_cls = _STAMP.get(side, ("IND", "indep"))
+    date_disp = _fmt_date(item.get("published_at") or "")
     return {
         "id": item.get("id") or "",
-        "title": (item.get("title") or "Untitled research").strip(),
+        "title": _display_title(item, inst, date_disp, pts),
         "inst": inst,
         "mono": _monogram(inst),
         "side": side,
@@ -141,7 +178,7 @@ def _norm(item: dict) -> dict:
         "stamp_cls": stamp_cls,
         "desk": item.get("desk") or "",
         "pub_iso": (item.get("published_at") or ""),
-        "date_disp": _fmt_date(item.get("published_at") or ""),
+        "date_disp": date_disp,
         "pages": item.get("pages") or 0,
         "tags": [t for t in (item.get("tags") or []) if t][:6],
         "tickers": [t for t in (item.get("tickers") or []) if t][:6],
@@ -297,7 +334,7 @@ def build(catalog: dict | None = None) -> int:
     slug_by_id: dict[str, str] = {}
     for n, it in zip(all_norm, items):
         s = (it.get("slug") or "").strip()          # reuse the vault build's slug if injected
-        slug_by_id[n["id"]] = s or _slug(n["title"], n["id"], seen)
+        slug_by_id[n["id"]] = s or _slug(_slug_source(it), n["id"], seen)
         seen.add(slug_by_id[n["id"]])
 
     RESEARCH_DIR.mkdir(parents=True, exist_ok=True)

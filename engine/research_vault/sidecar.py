@@ -148,6 +148,149 @@ def _looks_truncated(title: str) -> bool:
     return title.count("(") > title.count(")")
 
 
+# ---------------------------------------------------------------------------
+# filename-shaped title repair
+# ---------------------------------------------------------------------------
+# The upstream MarketDesk uploader supplies ``sidecar.title`` for every document,
+# so our own filename fallback (below) almost never fires — but for some sources
+# the title IT supplies is itself a de-slugified source filename:
+#
+#   "2026 07 24 Pmi Fall Seven Times Get Up Eight en"   (TS Lombard)
+#   "Blog en 1663820 1"                                 (UBS: lang + doc no. + dup)
+#   "260723 ECB slightly hawkish hold all eyes..."      (yymmdd prefix)
+#
+# Those strings become the <title>/<h1>/JSON-LD headline of a public /research/
+# SEO page, which is the whole point of the page. We can't fix the uploader from
+# this repo, so we repair the shape here (ingest, for every new document) and at
+# render (scripts/build_research_pages.py, so already-catalogued rows heal too).
+#
+# The bar is DO NO HARM: every rule below fires only on an unambiguous filename
+# artefact, and a title that trips nothing is returned byte-identical.
+
+# Trailing language codes emitted by document-management exports.
+_FILE_LANG = {"en", "zh", "cn", "de", "fr", "it", "es", "ja", "jp", "pt", "ru", "kr"}
+
+# Uppercased only inside a repaired title (a de-slugified stem loses its casing).
+# Deliberately excludes words that are also ordinary English ("us", "it", "in"…).
+_ACRONYMS = {
+    "pmi", "cpi", "ppi", "gdp", "ecb", "boj", "boe", "fomc", "fx", "eps", "etf",
+    "ipo", "opec", "ai", "eu", "em", "dm", "oecd", "nato", "sarb", "rba", "rbi",
+    "pboc", "ubs", "usd", "eur", "jpy", "cny", "gbp", "nav", "ytd", "reit",
+    "esg", "qe", "qt", "hy", "ig",
+}
+
+# Separator punctuation trimmed off a repaired edge. '.' is NOT in this set:
+# "Alcon Inc. (ALCC" must repair to "Alcon Inc.", not "Alcon Inc".
+_EDGE_TRIM = " ,;:-–—_"
+
+
+def _is_md(mm: int, dd: int) -> bool:
+    return 1 <= mm <= 12 and 1 <= dd <= 31
+
+
+def _strip_lead_date(t: str) -> tuple[str, bool]:
+    """Drop a leading filename date stamp ('2026 07 24 ', '260723 ', '26-07-24 ').
+
+    Two-digit years are accepted only in 20–40 so a leading A-share code like
+    "600519 Kweichow Moutai" is never mistaken for a 60-05-19 date stamp.
+    """
+    for pat, four_digit_year in (
+        (r"^((?:19|20)\d{2})[ _.-](\d{2})[ _.-](\d{2})[ _.-]+(?=\S)", True),
+        (r"^(\d{2})[ _.-](\d{2})[ _.-](\d{2})[ _.-]+(?=\S)", False),
+        (r"^((?:19|20)\d{2})(\d{2})(\d{2})[ _.-]+(?=\S)", True),
+        (r"^(\d{2})(\d{2})(\d{2})[ _.-]+(?=\S)", False),
+    ):
+        m = re.match(pat, t)
+        if m and _is_md(int(m.group(2)), int(m.group(3))) \
+                and (four_digit_year or 20 <= int(m.group(1)) <= 40):
+            return t[m.end():], True
+    return t, False
+
+
+def _strip_file_tail(t: str) -> tuple[str, bool]:
+    """Drop a trailing export tail: language code, document number, date, dup counter.
+
+    Pops tokens right-to-left but only COMMITS when a strong marker (language
+    code, 5+ digit document number, or a spaced YYYY MM DD triple) was seen —
+    so a bare trailing number is never eaten. A trailing year survives too:
+    "Outlook 2026" keeps its year because 2026 alone is no marker.
+    """
+    toks = t.split()
+    i, strong = len(toks), False
+    while i > 0:
+        if (i >= 3 and re.fullmatch(r"(?:19|20)\d{2}", toks[i - 3])
+                and re.fullmatch(r"\d{2}", toks[i - 2])
+                and re.fullmatch(r"\d{2}", toks[i - 1])
+                and _is_md(int(toks[i - 2]), int(toks[i - 1]))):
+            i -= 3
+            strong = True
+            continue
+        w = toks[i - 1]
+        if w.lower() in _FILE_LANG or re.fullmatch(r"\d{5,}", w):
+            i -= 1
+            strong = True
+            continue
+        if re.fullmatch(r"\d{1,2}", w):     # dup counter / stray date piece
+            i -= 1
+            continue
+        break
+    return (" ".join(toks[:i]), True) if strong and i else (t, False)
+
+
+def _strip_dup_marker(t: str) -> tuple[str, bool]:
+    """Drop a browser duplicate-download marker: 'Report (1)' / 'Report(2)'."""
+    m = re.search(r"\s*\(\d{1,2}\)$", t)
+    return (t[:m.start()], True) if m else (t, False)
+
+
+def _drop_dangling_paren(t: str) -> tuple[str, bool]:
+    """Drop a truncated trailing '(FRAGMENT' — "Repsol (REP" -> "Repsol".
+
+    Only for the unbalanced case :func:`_looks_truncated` detects, and only when
+    the PDF /Title recovery above could not supply a fuller title.
+    """
+    if not _looks_truncated(t):
+        return t, False
+    head = t[:t.rfind("(")].rstrip(_EDGE_TRIM)
+    return (head, True) if head else (t, False)
+
+
+def repair_title(title: str) -> tuple[str, bool]:
+    """Repair a de-slugified-filename title. Returns ``(title, was_repaired)``.
+
+    A title that carries no filename artefact is returned unchanged with
+    ``False`` — callers use that flag to decide whether the document still needs
+    real metadata. Idempotent: repairing a repaired title is a no-op. Pure; never
+    raises.
+    """
+    original = " ".join(str(title or "").split())
+    if not original:
+        return "", False
+
+    out, repaired = original, False
+    for step in (_strip_dup_marker, _drop_dangling_paren,
+                 _strip_lead_date, _strip_file_tail):
+        candidate, hit = step(out)
+        candidate = candidate.strip(_EDGE_TRIM)
+        if hit and candidate:               # never repair a title down to nothing
+            out, repaired = candidate, True
+
+    # An all-lowercase multi-word title is a raw filename stem — no institution
+    # writes one. Sentence-case it rather than leaving an <h1> starting lowercase.
+    if not repaired and len(out.split()) >= 3 and not any(c.isupper() for c in out):
+        repaired = True
+
+    if not repaired:
+        return original, False
+
+    out = re.sub(r"\b[A-Za-z]{2,5}\b",
+                 lambda m: m.group(0).upper() if m.group(0).lower() in _ACRONYMS
+                 else m.group(0), out)
+    if out and out[0].islower():
+        out = out[0].upper() + out[1:]
+    return out, True
+
+
 def normalize(
     sidecar: dict | None,
     *,
@@ -197,6 +340,11 @@ def normalize(
     if not title:
         title = "Untitled research"
         needs_metadata = True
+    # Whatever rung supplied it, the title may still BE a de-slugified filename
+    # (the upstream uploader does this for some sources). Repair the shape, and
+    # flag the doc: a filename-shaped title means real metadata never arrived.
+    title, title_repaired = repair_title(title)
+    needs_metadata = needs_metadata or title_repaired
 
     # --- institution facet -------------------------------------------------
     institution = _as_str(sc.get("institution"))

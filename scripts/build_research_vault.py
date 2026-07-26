@@ -35,6 +35,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
+try:  # shared with the ingest title ladder (pure + stdlib-only over there)
+    from engine.research_vault.sidecar import repair_title as _repair_title  # noqa: E402
+except Exception:  # noqa: BLE001 — a title repair is never worth the build
+    def _repair_title(t: str) -> tuple[str, bool]:  # type: ignore[misc]
+        return (t or "", False)
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_research_vault")
 
@@ -79,7 +85,19 @@ def load_catalog() -> dict:
 
 
 def _public_item(item: dict) -> dict:
-    return {k: item.get(k) for k in _ITEM_FIELDS}
+    out = {k: item.get(k) for k in _ITEM_FIELDS}
+    # Some sources hand the uploader a de-slugified PDF filename as the title
+    # ("Blog en 1663820 1"). Ingest repairs that going forward; rows catalogued
+    # before it landed heal HERE, so the SSR cards, the JSON island the feed
+    # hydrates from, and the /research/ landing pages all show one real title.
+    # The raw title is preserved as ``slug_title`` because it is what every
+    # existing /research/ URL was slugged from — a repair must not move a page
+    # Google has already indexed.
+    fixed, repaired = _repair_title(out.get("title") or "")
+    if repaired:
+        out["slug_title"] = out.get("title") or ""
+        out["title"] = fixed
+    return out
 
 
 def _public_catalog(cat: dict) -> dict:
@@ -205,7 +223,13 @@ def render(catalog: dict | None = None) -> str:
         catalog = _public_catalog(load_catalog())
     # Bake as a JSON island. ensure_ascii=False keeps CJK readable; </script> is
     # escaped so a title/summary containing it can't break out of the island.
-    catalog_json = json.dumps(catalog, ensure_ascii=False).replace("</", "<\\/")
+    # ``slug_title`` is build-side plumbing (the pre-repair title the URL was
+    # slugged from) — the client renders ``title`` and ``slug``, so drop it from
+    # the payload rather than shipping a raw filename to the browser. Copied,
+    # never mutated: build() hands this same dict to build_research_pages next.
+    island = dict(catalog, items=[{k: v for k, v in it.items() if k != "slug_title"}
+                                  for it in (catalog.get("items") or [])])
+    catalog_json = json.dumps(island, ensure_ascii=False).replace("</", "<\\/")
     ssr_feed = _ssr_feed(catalog)
     return tmpl.render(catalog_json=catalog_json, ssr_feed=ssr_feed)
 
