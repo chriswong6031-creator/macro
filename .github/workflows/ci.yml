@@ -102,6 +102,14 @@ on:
       - "engine/pooling.py"
       - "engine/passport.py"
       - "engine/desk_scorer.py"
+      # The desk that FEEDS the spine. engine/spine.py registers data/stock_desk/scored.jsonl
+      # in _DESK_SCORED, but nothing wrote that file, so 45 decided outcomes never reached
+      # engine.pooling and the cross-desk family was one member (ai_desk) in practice. Neither
+      # the module nor its suite carried a trigger — the file that decides what a desk
+      # contributes to the pooled weights could not start ci.yml at all (same class as the
+      # tier-gate hole, #3509). Its suite runs in the outcome-spine job below.
+      - "engine/stock_desk.py"
+      - "tests/test_stock_desk.py"
       - "engine/alert_triage.py"
       - "engine/altdata_signals.py"
       - "scripts/check_badge_passport.py"
@@ -1175,6 +1183,13 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: desk → spine wiring — stock_desk's per-thesis outcome ledger
+        # The append-only scored.jsonl engine.spine._DESK_SCORED reads for this desk. Pins the
+        # properties a track record cannot: a published verdict is never re-graded from a
+        # re-based price history, an unpriceable lean stays retryable (this desk emits
+        # `expired` with none of desk_scorer.GRACE_BD's slack), and each row carries `subject`
+        # so 45 leans do not collapse to 8 effective events in engine.pooling.arming.
+        run: python -m pytest tests/test_stock_desk.py -q
       - name: badge-passport ratchet (no new conviction badge without a passport)
         run: python3 scripts/check_badge_passport.py site
       - name: spine contract + partial-pooling safety tests

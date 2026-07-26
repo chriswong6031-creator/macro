@@ -185,3 +185,113 @@ def test_scorer_open_until_check_by(tmp_path):
     (led / "theses.jsonl").write_text(json.dumps(row) + "\n")
     tr = sd.score_ledger(root=tmp_path, today="2026-03-01")
     assert tr["open"] == 1 and tr["scored_total"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# scored.jsonl — the per-thesis outcome spine engine.spine._DESK_SCORED already
+# registered for this desk but nothing wrote. Without it the desk's 45 decided
+# outcomes never reach engine.desk_scorer.desk_weights, and the cross-desk pooling
+# "family" it shrinks toward is a single member (ai_desk) in practice.
+# --------------------------------------------------------------------------- #
+def _ledger(tmp_path, rows):
+    d = tmp_path / "data" / "stock_desk"
+    d.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "site" / "stockdata").mkdir(parents=True, exist_ok=True)
+    (d / "theses.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return d
+
+
+def _row(tid, ticker="AAA", check_by="2026-02-15", kind="rel_return"):
+    return {"id": tid, "ticker": ticker, "lean": "constructive", "conviction": "medium",
+            "state_asof": "2026-01-05", "check_by": check_by,
+            "falsifier": {"check": {"kind": kind, "subject_ticker": ticker, "vs": "SPY",
+                                    "op": "<", "threshold": -0.05, "horizon_d": 20}},
+            "entry_levels": {ticker: 100.0, "SPY": 100.0}}
+
+
+def _series(lo=130.0):
+    """name lo% vs SPY +5% over the window — a HIT at lo=130, a MISS at lo=100."""
+    idx = pd.date_range("2026-01-01", periods=60, freq="B")
+    name = pd.Series(np.linspace(100, lo, 60), index=idx)
+    spy = pd.Series(np.linspace(100, 105, 60), index=idx)
+    return lambda t: spy if t == "SPY" else name
+
+
+def test_scorer_persists_per_thesis_outcomes(monkeypatch, tmp_path):
+    monkeypatch.setattr(sd, "_stock_series", _series())
+    d = _ledger(tmp_path, [_row("s-1"), _row("s-2", check_by="2099-01-01"),
+                           _row("s-3", kind="soft")])
+    sd.score_ledger(root=tmp_path, today="2026-03-01")
+    by_id = {r["id"]: r for r in
+             (json.loads(x) for x in (d / "scored.jsonl").read_text().splitlines())}
+    assert by_id["s-1"]["outcome"] == "hit" and by_id["s-1"]["realized"] is not None
+    assert by_id["s-3"]["outcome"] == "unscored"
+    assert "s-2" not in by_id             # still open — a verdict it has not reached yet
+    assert by_id["s-1"]["scored_at"]      # auditable, like every other desk's spine
+
+
+def test_scored_row_carries_subject_so_the_spine_does_not_collapse_the_desk(monkeypatch, tmp_path):
+    """engine.spine.adapt_desk_scorer reads `subject` for the row's symbol, and event_key
+    defaults to "{symbol}:{as_of}". This desk's ledger keys on `ticker`, so without a
+    `subject` alias every row falls back to the literal "stock_desk" and every lean sharing
+    a check_by date collapses to ONE effective event in engine.pooling.arming — on the live
+    ledger that is 8 events instead of 36."""
+    monkeypatch.setattr(sd, "_stock_series", _series())
+    d = _ledger(tmp_path, [_row("s-1", ticker="AAA"), _row("s-2", ticker="BBB")])
+    sd.score_ledger(root=tmp_path, today="2026-03-01")
+    rows = [json.loads(x) for x in (d / "scored.jsonl").read_text().splitlines()]
+    assert {r["subject"] for r in rows} == {"AAA", "BBB"}
+    assert all(r["subject"] == r["ticker"] for r in rows)
+    from engine import spine
+    got = spine.adapt_desk_scorer(
+        root=tmp_path, desks={"stock_desk": spine._DESK_SCORED["stock_desk"]})
+    assert len({r.event_key for r in got}) == 2      # two names → two effective events
+
+
+def test_scored_ledger_is_append_only_and_idempotent(monkeypatch, tmp_path):
+    monkeypatch.setattr(sd, "_stock_series", _series())
+    d = _ledger(tmp_path, [_row("s-1")])
+    first = sd.score_ledger(root=tmp_path, today="2026-03-01")
+    lines = (d / "scored.jsonl").read_text()
+    again = sd.score_ledger(root=tmp_path, today="2026-03-01")
+    assert (d / "scored.jsonl").read_text() == lines   # no duplicate row for a graded id
+    assert again["overall"] == first["overall"]
+
+
+def test_a_published_verdict_is_not_rewritten_by_a_re_based_history(monkeypatch, tmp_path):
+    """yfinance re-adjusts a name's WHOLE stored series on every dividend, so re-grading
+    from live prices can silently flip a verdict the track record already reported. The
+    graded outcome is the published one."""
+    monkeypatch.setattr(sd, "_stock_series", _series())
+    d = _ledger(tmp_path, [_row("s-1")])
+    assert sd.score_ledger(root=tmp_path, today="2026-03-01")["overall"]["hits"] == 1
+    monkeypatch.setattr(sd, "_stock_series", _series(lo=100.0))   # re-based down → would MISS
+    again = sd.score_ledger(root=tmp_path, today="2026-03-01")
+    assert again["overall"]["hits"] == 1 and again["overall"]["misses"] == 0
+    rows = [json.loads(x) for x in (d / "scored.jsonl").read_text().splitlines()]
+    assert [r["outcome"] for r in rows] == ["hit"]    # one row, still the published verdict
+
+
+def test_unpriceable_lean_stays_retryable(monkeypatch, tmp_path):
+    """`expired` is NOT frozen. This desk emits it on the FIRST unpriceable read, with none
+    of engine.desk_scorer.GRACE_BD's ten business days of slack — freezing it would turn a
+    collector gap (a name missing from today's `_closes()` panel) into a permanent verdict."""
+    monkeypatch.setattr(sd, "_stock_series", lambda t: None)
+    d = _ledger(tmp_path, [_row("s-1")])
+    assert sd.score_ledger(root=tmp_path, today="2026-03-01")["scored_total"] == 0
+    assert not (d / "scored.jsonl").exists()          # nothing final to write
+    monkeypatch.setattr(sd, "_stock_series", _series())   # the collector backfills
+    assert sd.score_ledger(root=tmp_path, today="2026-03-01")["overall"]["hits"] == 1
+
+
+def test_track_record_is_unchanged_by_the_new_spine(monkeypatch, tmp_path):
+    """The scored spine is ADDITIVE: the aggregate the Calibration Hub and the site panel
+    read must be identical whether the outcomes are freshly graded or read back."""
+    monkeypatch.setattr(sd, "_stock_series", _series())
+    _ledger(tmp_path, [_row("s-1"), _row("s-2", ticker="BBB"),
+                       _row("s-3", check_by="2099-01-01"), _row("s-4", kind="soft")])
+    first = sd.score_ledger(root=tmp_path, today="2026-03-01")
+    second = sd.score_ledger(root=tmp_path, today="2026-03-01")
+    for k in ("scored_total", "open", "unscored_neutral", "overall", "by_lean",
+              "by_conviction", "calibration_note"):
+        assert first[k] == second[k], k
