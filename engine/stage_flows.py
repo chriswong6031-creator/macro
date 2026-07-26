@@ -432,5 +432,8 @@ def build(stage_frame=None, root: Path | None = None,
     try:
         _atomic_write_json(dr / "stage_analysis" / "industry_flows.json", contract)
     except Exception as e:  # noqa: BLE001 — write failure never breaks a build
-        log.warning("::warning:: stage_flows: failed to write flows (%s)", e)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning:: stage_flows: failed to write flows ({e})", flush=True)
     return contract

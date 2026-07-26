@@ -210,18 +210,26 @@ def test_build_prunes_the_page_a_retitle_orphans(monkeypatch, tmp_path):
     assert (tmp_path / "research" / "index.html").exists()      # hub is never pruned
 
 
-def test_build_refuses_to_mass_prune_on_a_partial_catalog(monkeypatch, tmp_path, caplog):
+def test_build_refuses_to_mass_prune_on_a_partial_catalog(monkeypatch, tmp_path, capsys):
     """A degraded catalog must not be able to de-index the section."""
     _redirect_out(monkeypatch, tmp_path)
     full = [dict(_ITEM, id=f"md-{i}-aaa{i:03d}", title=f"Report {i}") for i in range(12)]
     rp.build({"items": full})
     before = {p.name for p in (tmp_path / "research").glob("*.html")}
+    capsys.readouterr()                                        # drop the first build's output
 
-    with caplog.at_level("WARNING"):
-        rp.build({"items": full[:2]})                          # catalog collapses
+    rp.build({"items": full[:2]})                              # catalog collapses
     after = {p.name for p in (tmp_path / "research").glob("*.html")}
     assert after == before                                     # nothing deleted
-    assert "refusing to prune" in caplog.text
+
+    # The refusal is a GitHub annotation, so it is a BARE print on stdout — routed
+    # through logging it would emit "WARNING ::warning …" and GitHub would ignore it
+    # (see tests/test_gh_annotation_line_start.py). Assert the column-0 form.
+    out = capsys.readouterr().out
+    warn = [ln for ln in out.splitlines() if "refusing to prune" in ln]
+    assert warn, f"no refusal line on stdout, got: {out!r}"
+    assert warn[0].startswith("::warning title=research_pages::"), (
+        f"annotation must start at column 0 or GitHub drops it, got: {warn[0]!r}")
 
 
 def test_build_on_committed_catalog_never_yields_zero_pages(monkeypatch, tmp_path):

@@ -327,9 +327,12 @@ def _prune_stale(keep: set[str]) -> int:
     if not stale:
         return 0
     if len(stale) > max(4, len(present) // 4):
-        log.warning("::warning title=research_pages::refusing to prune %d/%d /research/ "
-                    "pages — catalog looks partial (first: %s)",
-                    len(stale), len(present), ", ".join(stale[:5]))
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record ("WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning title=research_pages::refusing to prune {len(stale)}/{len(present)} "
+              f"/research/ pages — catalog looks partial (first: {', '.join(stale[:5])})",
+              flush=True)
         return 0
     for name in stale:
         try:
@@ -447,7 +450,7 @@ def build(catalog: dict | None = None) -> int:
         SITEMAP.write_text(build_sitemap(existing, sitemap_entries), encoding="utf-8")
         log.info("research pages: sitemap updated (%d /research/ entries)", len(sitemap_entries))
     except Exception as exc:  # noqa: BLE001 — bare print: see the prune block above
-        print(f"::warning title=sitemap::research sitemap merge failed: {exc}")
+        print(f"::warning title=sitemap::research sitemap merge failed: {exc}", flush=True)
 
     log.info("research pages: wrote %d report pages + index", written)
     return written

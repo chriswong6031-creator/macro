@@ -10,7 +10,6 @@ Tests cover:
 """
 from __future__ import annotations
 
-import logging
 import pandas as pd
 import pytest
 
@@ -159,31 +158,36 @@ def test_universe_russell_dedup_priority(tmp_path, monkeypatch):
     assert "RNEW" in found_tickers
 
 
-def test_notice_line_format(caplog):
+def test_notice_line_format(capsys):
     """The ::notice title=stock_library:: line in main() has universe= and
     elapsed= fields, matching the repo's ::notice title=<name>::<fields> pattern.
 
     Rather than exercising the full main() entry point (which requires heavy
-    engine imports and real data), this test drives the exact same log call
-    that was added to main() and verifies the message format.  The assertion
-    serves as a living specification: if someone changes the log line, this
-    test breaks and the reviewer sees exactly what changed.
+    engine imports and real data), this test drives the exact same emission
+    that main() uses and verifies the message format.  The assertion serves as
+    a living specification: if someone changes the line, this test breaks and
+    the reviewer sees exactly what changed.
+
+    It is a BARE print, not ``log.info``: GitHub only parses a workflow command
+    when ``::`` starts the line, and this module logs with a ``"%(levelname)s "``
+    prefix.  The column-0 assertion below is the part that actually matters —
+    routing this through the logger emits ``"INFO ::notice ..."`` and the
+    annotation silently disappears from the Actions summary.
     """
     import time
 
     _uni_size = 7
     _t0 = time.time() - 3.0   # simulate 3 seconds elapsed
 
-    with caplog.at_level(logging.INFO, logger="stock_library"):
-        bsl.log.info(
-            "::notice title=stock_library::universe=%d elapsed=%.0fs",
-            _uni_size,
-            time.time() - _t0,
-        )
+    print(f"::notice title=stock_library::universe={_uni_size} "
+          f"elapsed={time.time() - _t0:.0f}s",
+          flush=True)
 
-    notice_lines = [r.message for r in caplog.records
-                    if "::notice title=stock_library::" in r.message]
+    notice_lines = [ln for ln in capsys.readouterr().out.splitlines()
+                    if "::notice title=stock_library::" in ln]
     assert notice_lines, "No ::notice title=stock_library:: line found"
     msg = notice_lines[0]
+    assert msg.startswith("::notice"), (
+        f"annotation must start at column 0 or GitHub ignores it, got: {msg!r}")
     assert "universe=7" in msg, f"Missing universe field: {msg}"
     assert "elapsed=" in msg, f"Missing elapsed field: {msg}"

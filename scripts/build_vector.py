@@ -3503,12 +3503,17 @@ def main() -> int:
         regime["context_legs"] = legs
         _cvd = legs.get("intraday_cvd") or {}      # LOUD alarm if the hourly aggressor-CVD
         if _cvd.get("ok") and _cvd.get("stale"):   # feed silently freezes (audit HIGH) — shows
-            log.warning("::warning:: intraday aggressor-CVD STALE — okx hourly lags %s h behind "  # in the daily run summary
-                        "the live reference; the feed has STOPPED accruing — check OKX rubik 1H",
-                        _cvd.get("hours_behind_ref"))
+            # in the daily run summary.  Bare print, NOT a logger call: GitHub only parses a
+            # workflow command when "::" STARTS the line, and this module's logging format
+            # prefixes every record ("WARNING ::warning ..."), silently dropping the alarm.
+            print(f"::warning:: intraday aggressor-CVD STALE — okx hourly lags "
+                  f"{_cvd.get('hours_behind_ref')} h behind the live reference; the feed has "
+                  f"STOPPED accruing — check OKX rubik 1H",
+                  flush=True)
         if _cvd.get("ok") and _cvd.get("gap_detected"):
-            log.warning("::warning:: intraday aggressor-CVD: unbackfillable >30d gap in the hourly "
-                        "history — cumsum restarted after the gap")
+            print("::warning:: intraday aggressor-CVD: unbackfillable >30d gap in the hourly "
+                  "history — cumsum restarted after the gap",
+                  flush=True)
         try:                       # P3 forward-outcome ledger: stamp today + grade matured rows
             from engine import btc_impulse_ledger
             btc_impulse_ledger.stamp(legs.get("impulse_radar"), sig)

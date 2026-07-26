@@ -442,7 +442,10 @@ def build_industry_heatmap(root: Path | None = None,
     try:
         _atomic_write_json(dr / "stage_analysis" / "industry_heatmap.json", contract)
     except Exception as e:  # noqa: BLE001 — write failure never breaks a build
-        log.warning("::warning:: stage_industry: failed to write heatmap (%s)", e)
+        # Bare print, NOT a logger call: GitHub only parses a workflow command when
+        # "::" STARTS the line, and this module's logging format prefixes every
+        # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+        print(f"::warning:: stage_industry: failed to write heatmap ({e})", flush=True)
     return contract
 
 
@@ -524,7 +527,7 @@ def build(stage_frame=None, root: Path | None = None,
     try:
         _atomic_write_json(dr / "stage_analysis" / "industry_ranks.json", contract)
     except Exception as e:  # noqa: BLE001 — write failure never breaks a build
-        log.warning("::warning:: stage_industry: failed to write ranks (%s)", e)
+        print(f"::warning:: stage_industry: failed to write ranks ({e})", flush=True)
 
     try:
         _atomic_write_json(
@@ -534,13 +537,13 @@ def build(stage_frame=None, root: Path | None = None,
              "percentiles": name_pct},
         )
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: stage_industry: failed to write name pctile (%s)", e)
+        print(f"::warning:: stage_industry: failed to write name pctile ({e})", flush=True)
 
     # Rank-over-time heatmap grid (reads the weekly ranks seed directly, so it
     # runs independent of the stage frame). Fail-open — never breaks the build.
     try:
         build_industry_heatmap(root=root, asof=asof)
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: stage_industry: failed to write heatmap (%s)", e)
+        print(f"::warning:: stage_industry: failed to write heatmap ({e})", flush=True)
 
     return contract

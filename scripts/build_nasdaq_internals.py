@@ -46,8 +46,9 @@ def build_and_write(root: Path | None = None) -> dict:
         providing honest staleness signaling without data loss.
       - The all-null (degraded) payload is written only when no valid non-degraded
         prior exists.
-      - A ``::error::``-prefixed log line is emitted whenever the preservation rule
-        fires so CI/monitoring surfaces the outage.
+      - A bare ``::error::`` line is printed to stdout whenever the preservation
+        rule fires so CI/monitoring surfaces the outage.  It must NOT go through
+        logging: GitHub only parses a workflow command at column 0.
 
     On any exception from build(): re-raises after logging (should not occur since
     build() catches internally).
@@ -71,13 +72,13 @@ def build_and_write(root: Path | None = None) -> dict:
     if _is_degraded(artifact):
         prior_artifact = _load_prior_artifact(out_path)
         if prior_artifact is not None and not _is_degraded(prior_artifact):
-            log.error(
-                "::error:: nasdaq_internals: fresh payload is DEGRADED (total price outage); "
-                "prior artifact at %s is valid and non-degraded — leaving prior file unchanged. "
-                "null_reasons=%s",
-                out_path,
-                artifact.get("null_reasons", []),
-            )
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+            print("::error:: nasdaq_internals: fresh payload is DEGRADED (total price "
+                  f"outage); prior artifact at {out_path} is valid and non-degraded — leaving "
+                  f"prior file unchanged. null_reasons={artifact.get('null_reasons', [])}",
+                  flush=True)
             return prior_artifact
 
     out_path.write_text(json.dumps(artifact, indent=2, ensure_ascii=False))

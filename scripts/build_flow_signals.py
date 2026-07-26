@@ -198,11 +198,12 @@ def _audit_staleness(last_ts: str | None, today: date) -> None:
                 break  # cap scan
 
         if trading_days_since >= 2:
-            log.warning(
-                "::warning title=flow_signals_stale::ledger last event %s is "
-                "%d trading days old — check poller / R2 outage",
-                last_date, trading_days_since,
-            )
+            # Bare print, NOT a logger call: GitHub only parses a workflow command when
+            # "::" STARTS the line, and this module's logging format prefixes every
+            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+            print(f"::warning title=flow_signals_stale::ledger last event {last_date} is "
+                  f"{trading_days_since} trading days old — check poller / R2 outage",
+                  flush=True)
         else:
             log.info("build_flow_signals: staleness ok (%d trading days since last event)",
                      trading_days_since)
@@ -666,14 +667,13 @@ def _run_decay_monitor(
             decayed = False
             if realized_ece >= ece_threshold:
                 decayed = True
-                log.warning(
-                    "::warning title=flow_score_decay::bucket=%s realized_ece=%.4f "
-                    ">= threshold=%.4f over %d-day window — advisory decay flag set; "
-                    "NOTE: suppression of score_calibrated for new events is NOT yet "
-                    "wired (single-breach, no persistent breach-count state). "
-                    "Demotion is advisory-only until FS-5 wires persistent state.",
-                    bucket, realized_ece, ece_threshold, window_days,
-                )
+                print(f"::warning title=flow_score_decay::bucket={bucket} "
+                      f"realized_ece={realized_ece:.4f} >= threshold={ece_threshold:.4f} over "
+                      f"{window_days}-day window — advisory decay flag set; NOTE: suppression "
+                      "of score_calibrated for new events is NOT yet wired (single-breach, "
+                      "no persistent breach-count state). Demotion is advisory-only until "
+                      "FS-5 wires persistent state.",
+                      flush=True)
 
             monitor[bucket] = {
                 "realized_ece": float(realized_ece) if realized_ece == realized_ece else None,

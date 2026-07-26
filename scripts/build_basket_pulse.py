@@ -249,7 +249,10 @@ def _load_quotes(quotes_path: Path | None) -> tuple[dict[str, Any], Path | None]
         log.info("loaded %d quotes from %s (asof=%s)", len(qs), p, data.get("asof"))
         return qs, p
 
-    log.warning("::warning::no usable quotes file found; pulse will have null coverage")
+    # Bare print, NOT a logger call: GitHub only parses a workflow command when
+    # "::" STARTS the line, and this module's logging format prefixes every
+    # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+    print("::warning::no usable quotes file found; pulse will have null coverage", flush=True)
     return {}, None
 
 
@@ -263,7 +266,7 @@ def _load_membership(membership_path: Path | None, market: str = "us") -> dict[s
     try:
         data = json.loads(p.read_text())
     except Exception as e:
-        log.warning("::warning::cannot read membership.json: %s", e)
+        print(f"::warning::cannot read membership.json: {e}", flush=True)
         return {}
     return data.get("baskets") or {}
 
@@ -555,7 +558,7 @@ def _save_lastgood(result: dict[str, Any], out_dir: Path,
         p.write_text(json.dumps(result, separators=(",", ":"), allow_nan=False) + "\n")
         log.info("saved lastgood sidecar → %s", p)
     except Exception as e:
-        log.warning("::warning::could not save lastgood sidecar: %s", e)
+        print(f"::warning::could not save lastgood sidecar: {e}", flush=True)
 
 
 # ── shock-day relative bid ─────────────────────────────────────────────────────
@@ -1200,7 +1203,7 @@ def main() -> None:
             market=args.market,
         )
     except Exception as exc:
-        log.error("::warning::basket_pulse build failed: %s", exc)
+        print(f"::warning::basket_pulse build failed: {exc}", flush=True)
         # Emit a degraded placeholder — exit 0 always per contract
         now = datetime.now(timezone.utc)
         result = {

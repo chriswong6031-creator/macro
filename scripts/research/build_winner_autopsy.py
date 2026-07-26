@@ -95,11 +95,12 @@ def _find_massive_dir() -> Path | None:
             if parquets:
                 log.info("Massive store found at %s (%d files)", candidate, len(parquets))
                 return candidate
-    log.warning(
-        "::warning:: no name prices — massive store not found at %s or %s",
-        _MASSIVE_DIR_LOCAL,
-        _MASSIVE_DIR_MAC,
-    )
+    # Bare print, NOT a logger call: GitHub only parses a workflow command when
+    # "::" STARTS the line, and this module's logging format prefixes every
+    # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+    print(f"::warning:: no name prices — massive store not found at {_MASSIVE_DIR_LOCAL} or "
+          f"{_MASSIVE_DIR_MAC}",
+          flush=True)
     return None
 
 
@@ -985,7 +986,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     all_bars, source_map = _merge_bars(yahoo_bars, massive_bars, dead_name_bars)
 
     if not all_bars:
-        log.warning("::warning:: no name prices found in any source — proceeding with degraded output")
+        print("::warning:: no name prices found in any source — proceeding with degraded "
+              "output",
+              flush=True)
 
     bench_closes = _load_bench_closes(all_bars)
     sector_of = _load_sector_of()

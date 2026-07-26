@@ -894,7 +894,10 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
                     key = (str(row.get("date")), str(row.get("ticker")))
                     seen.add(key)
             except Exception as e:  # noqa: BLE001
-                log.warning("::warning:: stage ledger read failed (%s)", e)
+                # Bare print, NOT a logger call: GitHub only parses a workflow command when
+                # "::" STARTS the line, and this module's logging format prefixes every
+                # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
+                print(f"::warning:: stage ledger read failed ({e})", flush=True)
 
         new_rows: list[str] = []
         for row in (contract.get("top_stage2") or []):
@@ -929,7 +932,7 @@ def append_forward_ledger(contract: dict, root: Path | None = None) -> int:
                 fh.write(r + "\n")
         return len(new_rows)
     except Exception as e:  # noqa: BLE001 — ledger append must never break a build
-        log.warning("::warning:: stage forward-ledger append failed (%s)", e)
+        print(f"::warning:: stage forward-ledger append failed ({e})", flush=True)
         return 0
 
 
@@ -1162,7 +1165,7 @@ def _byte_trim_seed_rows(base_contract: dict, seed_rows: list[dict],
         kept = [r for b in buckets.values() for r in b]
         return kept, _count_by_region(kept)
     except Exception as e:  # noqa: BLE001 — never break the build on a size trim
-        log.warning("::warning:: stage_analysis: seed byte-trim failed (%s)", e)
+        print(f"::warning:: stage_analysis: seed byte-trim failed ({e})", flush=True)
         return seed_rows, _count_by_region(seed_rows)
 
 
@@ -1558,7 +1561,7 @@ def build_context_feed(root: Path | None = None,
     try:
         _atomic_write_json(outpath, contract)
     except Exception as e:  # noqa: BLE001 — write failure must not break a build
-        log.warning("::warning:: stage_analysis: failed to write %s (%s)", outpath, e)
+        print(f"::warning:: stage_analysis: failed to write {outpath} ({e})", flush=True)
 
     # --- SGA-2 flagship artifacts: screener.json + stage_board_{daily,weekly} ---
     # Surface A (Screener) is the full combined table; surfaces B are the daily /
@@ -1574,7 +1577,7 @@ def build_context_feed(root: Path | None = None,
     try:
         seed_rows, seed_meta = _seed_screener_rows(root)
     except Exception as e:  # noqa: BLE001 — fail-open; US-only board still ships
-        log.warning("::warning:: stage_analysis: seed screener rows failed (%s)", e)
+        print(f"::warning:: stage_analysis: seed screener rows failed ({e})", flush=True)
         seed_rows, seed_meta = [], {}
     n_live = len(recs[:SCREENER_CAP] if len(recs) > SCREENER_CAP else recs)
 
@@ -1619,7 +1622,7 @@ def build_context_feed(root: Path | None = None,
             dr / "stage_analysis" / "screener.json", _json_safe(screener),
             compact=True)
     except Exception as e:  # noqa: BLE001
-        log.warning("::warning:: stage_analysis: failed to write screener.json (%s)", e)
+        print(f"::warning:: stage_analysis: failed to write screener.json ({e})", flush=True)
 
     for variant, fname in (("daily", "stage_board_daily.json"),
                            ("weekly", "stage_board_weekly.json")):
@@ -1637,7 +1640,7 @@ def build_context_feed(root: Path | None = None,
                 dr / "stage_analysis" / fname, _json_safe(board),
                 compact=True)
         except Exception as e:  # noqa: BLE001
-            log.warning("::warning:: stage_analysis: failed to write %s (%s)", fname, e)
+            print(f"::warning:: stage_analysis: failed to write {fname} ({e})", flush=True)
 
     return contract
 
