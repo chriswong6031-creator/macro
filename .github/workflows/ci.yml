@@ -130,6 +130,20 @@ on:
       - "tests/test_desk_placebo.py"
       - "tests/test_calibration_hub.py"
       - "tests/test_thematic_desk.py"
+      # The Phase-C desks that WRITE the scored ledgers spine._DESK_SCORED reads. The engine
+      # modules are already covered by engine/**, but no job ran these suites at all, so a
+      # silent break in any of them moved the deterministic desk-weight vector
+      # (spine.adapt_desk_scorer → desk_scorer.desk_weights → pooling.arming) with zero CI
+      # signal — and a test-only edit could not even start ci.yml (ci-test-whitelist-rot
+      # guard). Registry coverage: ai_desk (ai_desk + ai_desk_scorer), radar + narrative_brain
+      # (radar_scorer reuses ai_desk_scorer's eval verbatim), demand_chain (demand_ledger),
+      # policy_intent. Run in the outcome-spine job below.
+      - "tests/test_ai_desk.py"
+      - "tests/test_ai_desk_scorer.py"
+      - "tests/test_radar_scorer.py"
+      - "tests/test_narrative_brain.py"
+      - "tests/test_demand_ledger.py"
+      - "tests/test_policy_intent_desk.py"
       # WRI W3: watchlist book-structure math + its node-shelled unit tests. templates/**
       # already covers risk_core.js/watchlist_risk.js; list the test file so a test-only
       # edit still triggers CI (ci-test-whitelist-rot guard).
@@ -1241,6 +1255,19 @@ jobs:
         run: >
           python -m pytest
           tests/test_desk_placebo.py tests/test_calibration_hub.py tests/test_thematic_desk.py -q
+      - name: desk → spine writers — the scored ledgers the pooled weights are built from
+        # The producer side of spine._DESK_SCORED. The tests above pin what the spine does
+        # with a scored.jsonl; these pin that the file says what it claims: grading is
+        # idempotent (an already-scored id is never re-graded, and emit dedupes by vintage),
+        # a thesis whose check_by has not passed stays OPEN instead of being resolved early,
+        # and a soft/non-directional call is unscored — never counted as a hit or a miss.
+        # ai_desk_scorer is load-bearing for three registry keys: radar_scorer reuses its
+        # eval + aggregation verbatim for both radar and narrative_brain.
+        run: >
+          python -m pytest
+          tests/test_ai_desk.py tests/test_ai_desk_scorer.py
+          tests/test_radar_scorer.py tests/test_narrative_brain.py
+          tests/test_demand_ledger.py tests/test_policy_intent_desk.py -q
 
   cycle-ontology-js:
     if: ${{ false }}
