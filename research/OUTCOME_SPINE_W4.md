@@ -59,22 +59,45 @@ Measurement-error inflation from leakage-tax flip rates (Q6) enters as an option
 
 ## The arming predicates (arm-by-evidence, no env flags)
 
-Both conditions required; `engine/pooling.arming` computes the status + distance-to-arming.
+All conditions required; `engine/pooling.arming` computes the status + distance-to-arming.
 
 1. **≥ `MIN_FAMILY_N` (=12) effective graded events** in the family. *Effective* = co-firing
    collapsed: rows sharing an `event_key` count as ONE observation, so 20 channels firing on
    one 8-K = 1 event, not 20.
-2. **Pooled weights beat equal-weight out-of-sample.** On a chronological held-out tail
-   (`HELDOUT_FRAC=0.3`), the pooled weight vector must produce a HIGHER realized edge than
-   equal weights. Pooling must EARN the flip; it is never armed on in-sample fit.
+2. **A held-out tail that can decide.** ≥ `ARM_MIN_HELDOUT_N` (=8) distinct events in the
+   chronological tail (`HELDOUT_FRAC=0.3`), carrying ≥ `ARM_MIN_MEMBERS` (=2) contributing
+   members. With one member the pooled and equal-weight vectors are the SAME allocation, so
+   the comparison is vacuous — arithmetic, not evidence.
+3. **Pooled weights WIN out-of-sample.** The pooled vector's realized held-out edge must be
+   POSITIVE (`ARM_REQUIRE_POSITIVE_EDGE`). `pooled_weights` yields a convex allocation and
+   cannot go short, so a negative held-out edge means every allocation over this family loses
+   — "loses less than equal-weight" is not an edge.
+4. **…by a pre-registered MARGIN.** The edge must clear equal-weight by
+   `max(ARM_MIN_MARGIN=0.0005, ARM_MIN_MARGIN_REL=0.03 × the tail's mean |outcome|)`.
+   Pooling must EARN the flip; it is never armed on in-sample fit, on a hair's-breadth lift,
+   or on float dust.
+
+**Why 3 and 4 exist (added 2026-07-25).** Conditions 1-2 originally read as a bare
+`heldout_edge_pooled > heldout_edge_equal` float comparison with no floor. Measured on the
+live spine, that armed the live weight path on margins down to **3e-18** — machine epsilon —
+and at every armed point BOTH held-out edges were NEGATIVE (the family lost out-of-sample
+either way; pooled just lost ~3bp less). The margins that provoked the change measured
+**1.2% of the held-out outcome scale**, which simulation puts *inside* the pure-noise band
+(p99 ≤ 1.5%, max 2.4% over 2500 noise draws at every permitted tail size), while a genuinely
+separated family delivers 2.3-5.9%. The 3% bar therefore sits above the noise and below the
+`tanh`-bounded mechanism's own ceiling, so a real edge can still arm. Arming is a PROMOTION
+to authority, so it now carries the same class of bar as
+`calibration_hub._PROMOTE_MARGIN = 0.05`; full reasoning in the `engine/pooling` module
+docstring, pinned by `tests/test_pooling.py`.
 
 **First live client — `desk_scorer.desk_weights` (SHADOW-FIRST).** It computes the pooled
 weights, emits them alongside the equal-weight baseline, logs the L1 divergence, and writes
 `data/desk_weights/shadow.json`. `live_weights == equal_weight` until the family arms; once
 armed, `live_weights` becomes the trust-region-stepped pooled vector and the loop is closed.
-Current state (real data): **not armed** (2/12 effective desk events), so live weights held at
-equal-weight — but `ai_desk` (n=2, both misses) already shows a negative pooled edge and a
-shadow weight nudged below equal-weight. The mechanism is proven; the flip waits on evidence.
+Current state (real data): **not armed** — 17 effective desk events, but only `ai_desk`
+contributes, so the held-out tail is 5/8 and no pooled-vs-equal test can run yet. `ai_desk`
+(all-miss) already shows a negative pooled edge and a shadow weight nudged below equal-weight.
+The mechanism is proven; the flip waits on evidence.
 
 ## IC-aware alert severity (#42 durable form)
 

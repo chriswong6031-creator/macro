@@ -6,7 +6,8 @@ These are the load-bearing invariants the closed loop rests on:
   2. TRUST-REGION  — no single weight moves more than MAX_STEP per update.
   3. COLD-START    — n=0 everywhere → equal weights (the honest prior), never a crash.
   4. ARMING        — the predicate needs enough effective events AND pooled-beats-equal on a
-     held-out tail; co-firing events collapse to one effective observation.
+     held-out tail BY A PRE-REGISTERED MARGIN, with a positive held-out edge; co-firing events
+     collapse to one effective observation.
 """
 from __future__ import annotations
 
@@ -154,3 +155,110 @@ def test_arm_status_to_dict_is_json_shaped():
     assert set(d) >= {"armed", "n_eff", "need_n", "reason"}
     import json
     json.dumps(d)   # must be serialisable
+
+
+# --- 5. THE PRE-REGISTERED ARMING MARGIN (2026-07-25) ------------------------------------- #
+# Arming the live desk-weight vector is a PROMOTION to authority — the same class of decision
+# as calibration_hub._PROMOTE_MARGIN — so a hair's-breadth held-out lift must not buy one.
+# Measured on the live spine, the old bare `pooled > equal` predicate armed on margins down to
+# 3e-18 (machine epsilon) while BOTH held-out edges were negative. These tests pin the fix.
+
+def test_arming_refuses_a_1e5_margin():
+    """THE HEADLINE REGRESSION. 'a' beats 'b' by a whisker, so pooling tilts a hair toward it
+    and the OLD predicate (a bare `ep > ee` float comparison) armed the live weight path on a
+    margin of ~1e-5. A margin that small is inside the pure-noise band — it is not evidence."""
+    seq = [pair for _ in range(30) for pair in (("a", 0.025), ("b", 0.020))]
+    st = pooling.arming(_events(seq), min_family_n=12)
+
+    # the OLD predicate's condition still holds — pooled IS nominally ahead...
+    assert st.pooled_beats_equal is True, "precondition: this is a case the old predicate armed"
+    assert 0 < st.margin < 1e-4, f"precondition: hair-thin margin, got {st.margin:.3e}"
+    # ...and that is exactly what must no longer be enough.
+    assert st.armed is False, "a ~1e-5 held-out margin must NOT arm the live weight vector"
+    assert st.margin < st.margin_required
+    assert "bar" in st.reason
+
+
+def test_arming_refuses_float_dust():
+    """The degenerate limit of the same defect. Two legs separated by 2bp leave a held-out
+    margin of ~1e-10 — still strictly positive, so the old `ep > ee` still fired. On the live
+    spine this bottomed out at 3e-18, i.e. machine epsilon. It must never arm."""
+    seq = [pair for _ in range(30) for pair in (("a", 0.02002), ("b", 0.02000))]
+    st = pooling.arming(_events(seq), min_family_n=12)
+
+    assert st.pooled_beats_equal is True, "precondition: strictly positive, the old bar's test"
+    assert 0 < st.margin < 1e-8, f"precondition: float dust, got {st.margin:.3e}"
+    assert st.armed is False
+
+
+def test_arming_refuses_when_heldout_edge_is_negative_in_both_weightings():
+    """SIGN GATE. 'a' loses 1%, 'b' loses 12% — pooling correctly tilts toward the less-bad leg
+    and clears the margin floor comfortably. It still must NOT arm: pooled_weights yields a
+    CONVEX allocation (it cannot go short), so a negative held-out edge means every allocation
+    over this family loses out-of-sample. Losing less than equal-weight is not an edge."""
+    seq = [pair for _ in range(30) for pair in (("a", -0.01), ("b", -0.12))]
+    st = pooling.arming(_events(seq), min_family_n=12)
+
+    assert st.heldout_edge_pooled < 0 and st.heldout_edge_equal < 0
+    assert st.heldout_edge_pooled > st.heldout_edge_equal, "precondition: pooled loses LESS"
+    assert st.margin >= st.margin_required, "precondition: isolates the sign gate, not the margin"
+    assert st.armed is False, "a negative held-out edge must never arm, however big the margin"
+    assert "not an edge" in st.reason
+
+
+def test_arming_refuses_vacuous_single_member_family():
+    """With ONE contributing member the pooled and equal-weight vectors are the SAME allocation,
+    so the margin is identically zero and 'pooled did not beat equal' is arithmetic, not
+    evidence. The predicate must say so rather than report a passed test."""
+    st = pooling.arming(_events([("solo", 0.02 + 0.001 * i) for i in range(30)]),
+                        min_family_n=12)
+    assert st.armed is False
+    assert st.heldout_n >= pooling.ARM_MIN_HELDOUT_N, "precondition: the tail is big enough"
+    assert "vacuous" in st.reason
+
+
+def test_arming_refuses_a_heldout_tail_too_thin_to_decide():
+    """n_eff clears MIN_FAMILY_N but the held-out tail is 4 events — a weighted-mean comparison
+    over four observations cannot decide anything, whatever margin it happens to produce."""
+    st = pooling.arming(_events([("a", 0.02), ("b", 0.021)] * 6), min_family_n=12)
+    assert st.n_eff >= 12
+    assert st.heldout_n < pooling.ARM_MIN_HELDOUT_N
+    assert st.armed is False
+    assert "too thin" in st.reason
+
+
+def test_arming_bar_stays_reachable_by_a_real_edge():
+    """The opposite failure mode, guarded: a bar the tanh-bounded tilt can NEVER clear would
+    make `armed` unreachable while still reading as evidence-based. A cleanly separated family
+    at desk-scale outcomes must still arm."""
+    seq = [pair for _ in range(30) for pair in (("right", 0.05), ("wrong", -0.05))]
+    st = pooling.arming(_events(seq), min_family_n=12)
+    assert st.armed is True, "a family with a REAL edge must still be able to arm"
+    assert st.heldout_edge_pooled > 0
+    assert st.margin >= st.margin_required
+
+
+def test_arming_bars_are_pre_registered():
+    """The constants are the contract (the sibling of calibration_hub._PROMOTE_MARGIN). If a
+    future change relaxes one, that is a deliberate re-registration — not a silent edit."""
+    assert pooling.ARM_MIN_MARGIN == 0.0005
+    assert pooling.ARM_MIN_MARGIN_REL == 0.03
+    assert pooling.ARM_MIN_HELDOUT_N == 8
+    assert pooling.ARM_MIN_MEMBERS == 2
+    assert pooling.ARM_REQUIRE_POSITIVE_EDGE is True
+    # the relative bar rides on the tail's own outcome scale, so the floor stays meaningful
+    # whatever units the caller's endpoint uses.
+    seq = [pair for _ in range(30) for pair in (("a", 0.10), ("b", -0.10))]
+    st = pooling.arming(_events(seq), min_family_n=12)
+    tail_scale = 0.10
+    assert abs(st.margin_required - pooling.ARM_MIN_MARGIN_REL * tail_scale) < 1e-9
+
+
+def test_arm_status_reports_distance_to_arming():
+    """The armory report must show HOW FAR from arming, not just that it is held."""
+    seq = [pair for _ in range(30) for pair in (("a", 0.025), ("b", 0.020))]
+    d = pooling.arming(_events(seq), min_family_n=12).to_dict()
+    assert set(d) >= {"margin", "margin_required", "heldout_n", "need_heldout_n"}
+    assert d["margin_required"] > 0 and d["heldout_n"] > 0
+    import json
+    json.dumps(d)
