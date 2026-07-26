@@ -2,6 +2,15 @@
 
 Reset-CONFIRMER / symmetry-reset construction (copy law R-W1T-3 — no 'bottom caller' / 'calls bottoms'). Pre-registered ruler + construction: script header, committed pre-run (prereg commit precedes results commit in git history; the absolute-threshold → per-name-baseline + dispersion-eligibility re-pin is disclosed there as amendments A1/A2/A3, all pre-outcome). Entry-timing ruler (§7), NOT hold returns (wrong-ruler check performed; motive #1458). Machinery (metric_arrays / null_stats / bars_for / tool_dates / _name_uplift per-name-first / c32_gate) COPIED from the W1 + F1 + F2 + F3 scripts. Inference: month-cluster bootstrap, NB=1000, seed 20260731. F4 makes NO pre-trough claim — it is an AT-TROUGH confirmer; its only path to usefulness is being a BETTER or genuinely COMPLEMENTARY at-trough confirmer than the incumbent. The commissioning session rules the verdict; this reports what was found.
 
+> **Causal-timing erratum (2026-07-26):** the historical construction labels the
+> first bar of a run that is only known retrospectively to survive P bars. For
+> P=5, a live confirmation is observable four sessions later. Therefore the
+> reported median tdt of −9td is an onset-label diagnostic; an actionable
+> persistence confirmation is approximately −13td on the same runs. The
+> historical label remains here for preregistered-result reproducibility. New
+> work must use `_causal_sustained_run_fires` or the explicit confirmation-day
+> state machines in `pss_f4_repair.py` / `pss_f4_hazard.py`.
+
 ## Coverage census (eligible / excluded, with reasons)
 
 - Universe: 1300 W1-panel names with OHLC (semivariance on daily log returns; yahoo close is total-return adjusted, the ratio A nets it out).

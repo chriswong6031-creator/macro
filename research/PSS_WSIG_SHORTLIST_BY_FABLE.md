@@ -101,6 +101,28 @@ rather than mis-graded). Lens: vol-structure. Panel id C10.
 
 > **VERDICT (executed 2026-07-26, `reports/pss_f4_semivar.md`, family `pss_f4_semivar`): KILLED as a standalone timer — fails pre-stated prong 2 (a later-than-incumbent confirmer with no earliness gain).** Coverage 1300/1300. F4 fires at td_to_trough −9td (LATER than incumbent −2td), near-low rate 10.4% vs 16.3% base (U_W5 vs all-days [−8.36,−5.93] excludes 0 DOWN) — strictly worse than the incumbent as a bottom-timer (later AND further from the low). NOTABLE: F4 is the ONLY family to clear its mirror placebo — F4 − total-vol-analog excludes 0 UP on U_MAE [+0.43,+2.92] (U_W5 [+0.54,+3.23] is a "less-bad" artifact, both below base) — so the DIRECTIONAL down/up asymmetry carries information plain vol-normalization does not (F4 selects calmer, shallower-MAE entries: MAE −6.79% vs analog −8.21%, 96% disjoint fires). But that shallow MAE is safe-late-entry, not bottom-timing. Semivariance-asymmetry MEASUREMENT retained as a codex descriptor + the single best candidate for a future incumbent×asymmetry CONFLUENCE probe. Charter's "defensives correctly-null" prediction NOT confirmed (KO/WMT/COST eligible). F1-bug guard held (self-check −5.98pp matches). Re-pin A1/A2/A3 pre-outcome (absolute A_base≈0.96 universe-wide made the absolute threshold degenerate → per-name-baseline crossing + dispersion eligibility, in the prereg commit). DNR §2 row added. **4/4 W-SIG standalone families now killed — see the program conclusion below.**
 
+> **CAUSAL-TIMING ERRATUM:** the historical P=5 study stamps the first bar of a
+> run that is only known after five bars. Its −9td tdt is a retrospective onset
+> label; the same run is actionable approximately four sessions later (about
+> −13td). The legacy label is preserved for audit reproducibility. New code
+> provides `_causal_sustained_run_fires`, which stamps the P-th observable bar.
+
+> **F4R/F4H REPAIR WAVE (executed 2026-07-26; `reports/pss_f4_repair.md`,
+> `reports/pss_f4_hazard.md`): SHADOW INFRASTRUCTURE RETAINED; F4 STILL DOES NOT
+> EARN A HARD-GATE ROLE.** A causal 15td state machine tested fresh-low OHLC
+> rejection, soft decline-deceleration, volume/range exhaustion, stock-vs-sector
+> relative-strength repair, SPY/sector repair, post-rejection survival, and
+> break-of-structure confirmation. A frozen DEV-only shallow hazard then tested
+> F4-only, orthogonal-only, combined, and matched price-distance gates at fixed
+> 20% coverage. The orthogonal locator generalizes on near-low discrimination
+> (AUC 0.838 in 2023–24 / 0.863 in 2025+; W5 46.5% / 54.7% vs incumbent 18.5% /
+> 20.1%), but forward MAE/tail improvement is not CI-clean. Composing the frozen
+> watch with an observable rejection lifts called-window rates to ~33%, but
+> still lacks stable MAE/tail improvement. In every direct and state-machine
+> ablation, adding F4 to the orthogonal construction is effectively zero. The
+> repaired causal engine, fitted thresholds, event tapes, tests, and promotion
+> law ship for prospective shadow monitoring; no authority promotion is made.
+
 ## Program conclusion — W-SIG standalone sweep (4/4 tested, 0 survived as timers)
 
 *Executed 2026-07-25→26. All four pre-registered families ran under the §7 timing ruler with per-name random-day nulls, mirror-placebo falsifiers, era split, and month-cluster bootstrap; each is a scoped DNR §2 kill (reports `pss_f1_downvol` / `pss_f2_overnight` / `pss_f3_residual` / `pss_f4_semivar`).*
