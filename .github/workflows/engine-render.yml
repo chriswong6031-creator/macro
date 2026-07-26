@@ -312,6 +312,25 @@ jobs:
           # instead of cl_misc dodges that parallel read/write window.
           flowleaders() { run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
 
+          # Leader Radar — page-only rebake from COMMITTED stores (LR-EXP). Pure function of
+          # committed data (~40s measured): no network, no LLM. Consumes the stores this lane
+          # has just recomputed upstream, exactly like flow_leaders above (rs_series /
+          # leader_radar state+fire parquets are git-tracked; stockdata + revisions JSONs come
+          # fresh from spine's build_site). Every data/ write is COLLECT_LANE=nightly-gated in
+          # code (HOUSE-U5, CI-pinned by tests/test_build_leader_radar.py), so this lane's
+          # site/-only commit is doubly safe. WHY (2026-07-25): daily-lane-only membership +
+          # 3 dead nightlies (07-22..24) froze the baked page while express lanes refreshed
+          # everything around it — same class + heal as flow_leaders / research_vault (#3487).
+          # MUST run AFTER spine(): _load_stockdata reads the gitignored site/stockdata/*.json
+          # that spine's build_site writes in-lane. Serial post-band, never inside band():
+          # cl_gex's build_options_skew rewrites data/options_skew/snapshots.parquet
+          # non-atomically — a concurrent read drops every call_skew_rich chip. Byte-stable on
+          # unchanged inputs (built_at carried from the committed artifact off-nightly), so an
+          # untouched radar commits nothing and the nightly dead-man reading of built_at stays
+          # honest. pick_lab gates radar.json on as_of == tonight's price-through (#3578), so
+          # an express commit can never advance the forward pick ledger.
+          leaderradar() { run_py "leader radar desk (build_leader_radar)" scripts.build_leader_radar; }
+
           # Thematic Foresight desk — page-only re-render from COMMITTED stores. Express-safe
           # via two sentinels this step already arms: RENDER_NO_DRIP=1 skips the three keyless
           # collector drips (EDGAR guidance/emergence, openFDA — the FDA one fetched on EVERY
@@ -339,14 +358,11 @@ jobs:
           #    site/oddsmatrix payloads are gitignored and R2-published by daily.yml only,
           #    so advancing catalog.json here would silence the page's staleness banner over
           #    stale R2 matrices. odds.html keeps the last nightly's values.
-          #  • build_leader_radar — its data/ writes are already lane-gated (HOUSE-U5,
-          #    CI-pinned) and would be safe here; the BAKE is not: pick_lab consumes
-          #    site/leaderradar/radar.json fires verbatim with no as_of guard (an
-          #    express-committed artifact + one silently-failed nightly would let
-          #    express-computed fires advance the forward pick ledger), the 295KB payload
-          #    churns built_at/elapsed_s on every run (defeats its own dead-man sentinel),
-          #    and rs_series-vs-closes vintage skew bakes undisclosed mixed-vintage state.
-          #    Hardening tracked separately; until then daily-only.
+          #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its three
+          #   named bake-side blockers — the unguarded pick_lab as_of consumption, the
+          #   built_at/elapsed_s churn, and the undisclosed rs_series vintage skew — were
+          #   fixed in #3578, so the builder is now admitted above as a serial
+          #   post-band step.)
 
           band() {
             local ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
@@ -479,7 +495,7 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; central; flowleaders; foresightpage; hub; us_pages; libs ;;
+              spine; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs ;;
             macro)
               spine; hub; us_pages ;;
             china)
