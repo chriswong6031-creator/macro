@@ -279,11 +279,57 @@ def build_and_write(root: Path | str | None = None) -> dict[str, Any]:
                             cfg=cfg, with_media=True,
                         )
                         _cap = _eff_cap(cfg)
-                        _nq = sum(1 for _it in _wl_items
-                                  if _enqueue(_it, root=r, max_per_account_day=_cap) == "queued")
+                        # Never queue a competitor for a slot the operator has
+                        # already settled: supersede_lane (below) refuses to
+                        # retire an approved post, so without this the ticker
+                        # would end up with BOTH the approved item and its
+                        # replacement, and post twice.
+                        from engine.marketing.outbox import decided_source_keys as _decided  # noqa: PLC0415
+                        _settled = _decided(account="flagship", as_of=_as_of,
+                                            provenance="weekend_levels", root=r)
+                        if _settled:
+                            _wl_items = [
+                                _it for _it in _wl_items
+                                if str((_it.get("source") or {}).get("ticker") or "")
+                                not in _settled
+                            ]
+                            log.info("marketing_governor: weekend_levels skipped %s "
+                                     "(already settled for %s)",
+                                     ",".join(sorted(_settled)), _as_of)
+                        _queued_ids: set[str] = set()
+                        for _it in _wl_items:
+                            if _enqueue(_it, root=r, max_per_account_day=_cap) == "queued":
+                                _queued_ids.add(_it["id"])
+                        _nq = len(_queued_ids)
                         result["weekend_levels"] = {"generated": len(_wl_items), "queued": _nq}
                         log.info("marketing_governor: weekend_levels queued %d/%d for %s",
                                  _nq, len(_wl_items), _as_of)
+
+                        # Retire the PREVIOUS run's items for this day. enqueue()
+                        # dedupes on a content-hashed id, so the moment the copy
+                        # changes a re-run lands a second full set beside the
+                        # first rather than replacing it — which is exactly what
+                        # happened on 2026-07-26 (a 03:13 run and a 09:52 run
+                        # both wrote eight items and the operator deleted the
+                        # duplicates by hand). Only run this when something new
+                        # actually queued: superseding after a failed
+                        # regeneration would leave the day with no content at
+                        # all. Items the operator already approved are left
+                        # alone by supersede_lane.
+                        if _queued_ids:
+                            from engine.marketing.outbox import supersede_lane as _sup  # noqa: PLC0415
+                            _sup_res = _sup(
+                                account="flagship", as_of=_as_of,
+                                provenance="weekend_levels", keep_ids=_queued_ids,
+                                root=r, actor="marketing_governor",
+                            )
+                            result["weekend_levels"]["superseded"] = _sup_res["superseded"]
+                            if _sup_res["superseded"] or _sup_res["skipped_decided"]:
+                                log.info(
+                                    "marketing_governor: weekend_levels superseded %d "
+                                    "stale item(s) for %s (%d already decided, left alone)",
+                                    _sup_res["superseded"], _as_of,
+                                    _sup_res["skipped_decided"])
                 except Exception as _wexc:  # noqa: BLE001
                     log.warning("marketing_governor: weekend_levels lane failed: %s", _wexc)
             else:
