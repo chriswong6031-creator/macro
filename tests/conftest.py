@@ -127,6 +127,53 @@ def _redirect_breadth_divergence_stamp(tmp_path_factory):
     mp.undo()
 
 
+@pytest.fixture(autouse=True)
+def _neutralize_implicit_account_overrides(monkeypatch):
+    """engine.marketing.accounts.load_overrides() reads the repo's REAL
+    data/marketing/account_overrides.json whenever the caller passes no explicit
+    root — and the deployed admin panel COMMITS that file to main (admin/
+    marketing.py, GitHub Contents API).  So live operator state silently
+    overrides the synthetic cfg a unit test constructed, and a routine admin
+    click turns CI red on main with no code change at all.
+
+    Not hypothetical: on 2026-07-26T00:16Z the operator switched five desks off
+    (receipts, theme_desk, research_a/b/c) and three test_marketing_content.py
+    tests went red on a pristine main — tests whose entire point is "an account
+    with no ``enabled`` key defaults on".  The accounts each test declared were
+    overwritten by whatever the operator had last toggled.
+
+    Neutralize the IMPLICIT read only (root=None).  An explicit root still hits
+    the real function, so the tests that genuinely exercise the override file
+    (TestEffectiveAccounts.test_override_file_flips_enabled /
+    _malformed_override_file_is_ignored / _missing_override_file_is_no_overrides,
+    all of which build a tmp root) keep their coverage intact, as do the admin
+    tests that write a tmp overrides file.
+
+    Covers every suite reaching this shared seam with an implicit root:
+    content_studio.content_plan (test_marketing_content, test_marketing_links),
+    sentinel.gate_plan (test_marketing_sentinel), publication.desk_network and
+    accounts.effective_accounts (test_marketing_engine) — the latter three were
+    latent, green only because the operator had not yet toggled the specific
+    desks they assert on.
+
+    A test that wants override behaviour passes a root it owns; asserting on
+    whatever the live file happens to say is the bug this removes.
+
+    ImportError guard: runs for EVERY pytest invocation, including the
+    minimal-deps CI jobs whose suites never import the marketing engine.
+    """
+    try:
+        from engine.marketing import accounts as _accounts
+    except Exception:  # noqa: BLE001 — minimal-deps job without engine deps
+        return
+    _real_load_overrides = _accounts.load_overrides
+
+    def _implicit_root_reads_no_overrides(root=None):
+        return _real_load_overrides(root) if root is not None else {}
+
+    monkeypatch.setattr(_accounts, "load_overrides", _implicit_root_reads_no_overrides)
+
+
 # ---------------------------------------------------------------------------
 # data/ write tripwire
 # ---------------------------------------------------------------------------
