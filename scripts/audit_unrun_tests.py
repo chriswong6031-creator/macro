@@ -3,10 +3,10 @@
 
 Two independent holes, deliberately measured separately:
 
-  UNRUN        the suite's filename appears in no `run:` step in any workflow under
-               .github/workflows.  There is no broad `pytest tests/` anywhere in the
-               repo — every invocation carries an explicit file list — so an unnamed
-               suite is genuinely never executed by CI.
+  UNRUN        the suite's filename appears in no `run:` step in any workflow or
+               the packed legacy CI manifest. There is no broad `pytest tests/`
+               anywhere in the repo — every invocation carries an explicit file
+               list — so an unnamed suite is genuinely never executed by CI.
 
   UNTRIGGERABLE  nothing that would change the suite's verdict is matched by
                ci.yml's `on.pull_request.paths`, so the workflow cannot even START.
@@ -41,6 +41,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS = ROOT / ".github/workflows"
+CI_MANIFEST = ROOT / ".github/ci/legacy-jobs.yml"
 TESTS = ROOT / "tests"
 
 FIRST_PARTY = ("engine", "scripts", "app", "collectors", "lib", "admin", "site")
@@ -68,9 +69,10 @@ TIERS = (
 
 
 def _workflow_blob() -> str:
-    return "\n".join(
-        p.read_text(errors="ignore") for p in sorted(WORKFLOWS.glob("*.yml"))
-    )
+    paths = sorted(WORKFLOWS.glob("*.yml"))
+    if CI_MANIFEST.exists():
+        paths.append(CI_MANIFEST)
+    return "\n".join(p.read_text(errors="ignore") for p in paths)
 
 
 def _ci_paths() -> list[str]:

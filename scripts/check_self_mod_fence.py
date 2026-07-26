@@ -11,6 +11,7 @@ The IMMUTABLE set (hard-coded here and in the F1/F3 manifests):
   .claude/hooks/**
   .claude/settings.json
   .claude/settings.local.json
+  .github/ci/**
   .github/workflows/**
   config/grader_manifest.yml
   config/capability_manifest.yml
@@ -56,6 +57,7 @@ from pathlib import Path
 
 IMMUTABLE_PATTERNS: list[str] = [
     ".claude/hooks/**",
+    ".github/ci/**",
     ".github/workflows/**",
     "config/grader_manifest.yml",
     "config/capability_manifest.yml",
@@ -310,6 +312,13 @@ def selftest() -> int:
             "",
             1,  # BLOCKED — loop + .github/workflows/**
             "loop branch + .github/workflows/** → BLOCKED",
+        ),
+        (
+            "metabolism/owns-ci-manifest",
+            [".github/ci/legacy-jobs.yml"],
+            "",
+            1,  # BLOCKED — loop + packed CI manifest
+            "loop branch + .github/ci/** → BLOCKED",
         ),
         (
             "",  # empty branch → unclassifiable → fail-closed
