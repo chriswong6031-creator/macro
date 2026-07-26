@@ -243,16 +243,25 @@ def _strip_dup_marker(t: str) -> tuple[str, bool]:
     return (t[:m.start()], True) if m else (t, False)
 
 
-def _drop_dangling_paren(t: str) -> tuple[str, bool]:
-    """Drop a truncated trailing '(FRAGMENT' — "Repsol (REP" -> "Repsol".
+def _close_dangling_paren(t: str) -> tuple[str, bool]:
+    """CLOSE a truncated trailing '(FRAGMENT' — "Repsol (REP" -> "Repsol (REP)".
 
     Only for the unbalanced case :func:`_looks_truncated` detects, and only when
-    the PDF /Title recovery above could not supply a fuller title.
+    the PDF /Title recovery in normalize() could not supply a fuller title.
+
+    Closing beats dropping on both axes that matter here: the ticker root is real
+    and is exactly what an exact-title search matches on (the exchange suffix is
+    unknowable and must never be invented), and closing leaves the URL slug byte
+    identical because slug() strips non-alphanumerics — so this repair alone can
+    never orphan an already-indexed /research/ page. A fragment with no content
+    at all ("Foo (") is dropped instead, since there is nothing to close around.
     """
     if not _looks_truncated(t):
         return t, False
-    head = t[:t.rfind("(")].rstrip(_EDGE_TRIM)
-    return (head, True) if head else (t, False)
+    cut = t.rfind("(")
+    if t[cut + 1:].strip():
+        return t + ")", True
+    return (t[:cut].rstrip(_EDGE_TRIM) or t), bool(t[:cut].strip())
 
 
 def repair_title(title: str) -> tuple[str, bool]:
@@ -268,7 +277,7 @@ def repair_title(title: str) -> tuple[str, bool]:
         return "", False
 
     out, repaired = original, False
-    for step in (_strip_dup_marker, _drop_dangling_paren,
+    for step in (_strip_dup_marker, _close_dangling_paren,
                  _strip_lead_date, _strip_file_tail):
         candidate, hit = step(out)
         candidate = candidate.strip(_EDGE_TRIM)

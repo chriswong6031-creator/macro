@@ -16,6 +16,7 @@ whole suite offline. stdlib + pytest only.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 
 import pytest
@@ -120,15 +121,18 @@ def test_normalize_recovers_truncated_title_from_pdf():
     assert item["needs_metadata"] is False
 
 
-def test_normalize_drops_dangling_fragment_when_pdf_not_better():
+def test_normalize_closes_dangling_fragment_when_pdf_not_better():
     # PDF title absent, itself truncated, or shorter → never swapped in. With no
-    # fuller title available the dangling "(FRAGMENT" is dropped rather than
-    # published: "Carrefour" is an honest <h1>, "Carrefour (CARR" is not.
+    # fuller title available the dangling "(FRAGMENT" is CLOSED, not deleted: the
+    # ticker root is real and is what an exact-title search matches, and closing
+    # leaves the URL slug byte-identical (slug() strips non-alphanumerics).
     base = {"title": "Carrefour (CARR", "institution": "GS"}
-    assert sidecar_mod.normalize(base)["title"] == "Carrefour"                       # no pdf
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour"   # pdf also truncated
-    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour"             # pdf shorter
+    assert sidecar_mod.normalize(base)["title"] == "Carrefour (CARR)"                       # no pdf
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carrefour (CAR")["title"] == "Carrefour (CARR)"   # pdf also truncated
+    assert sidecar_mod.normalize(base, fallback_title_pdf="Carr")["title"] == "Carrefour (CARR)"             # pdf shorter
     assert sidecar_mod.normalize(base)["needs_metadata"] is True   # defective title → flagged
+    # closing must not move the slug the page was published under
+    assert sidecar_mod.slug("Carrefour (CARR") == sidecar_mod.slug("Carrefour (CARR)")
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +155,8 @@ def test_normalize_drops_dangling_fragment_when_pdf_not_better():
     # duplicate-download markers + dangling parens
     ("China 2026 Outlook Exploring New Growth Engines (1)",
      "China 2026 Outlook Exploring New Growth Engines"),
-    ("Carrefour (CARR(1)", "Carrefour"),
-    ("Alcon Inc. (ALCC", "Alcon Inc."),            # abbreviation period survives
+    ("Carrefour (CARR(1)", "Carrefour (CARR)"),
+    ("Alcon Inc. (ALCC", "Alcon Inc. (ALCC)"),     # ticker root kept, suffix never invented
     # all-lowercase stem → sentence-cased
     ("oils next move hinges on three variables", "Oils next move hinges on three variables"),
 ])
@@ -197,9 +201,12 @@ def test_repair_title_on_the_committed_catalog_is_do_no_harm():
         assert got.strip(), f"repair emptied {raw!r}"
         assert sidecar_mod.repair_title(got)[1] is False, f"not idempotent: {raw!r}"
         if repaired:
-            # A repair only ever removes filename noise or re-cases — the result
-            # must stay a subsequence of the original, word for word.
-            assert len(got) <= len(raw), f"repair grew {raw!r} -> {got!r}"
+            # A repair only ever REMOVES filename noise, re-cases, or adds a
+            # closing paren — it must never invent content. Checked on the
+            # alphanumeric skeleton, which re-casing and ')' both leave alone.
+            skel = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())  # noqa: E731
+            src, dst = iter(skel(raw)), skel(got)
+            assert all(c in src for c in dst), f"repair invented content: {raw!r} -> {got!r}"
 
 
 def test_normalize_good_title_never_touched_by_pdf():
