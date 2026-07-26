@@ -9,11 +9,16 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import threading
+import time
 
 from .paths import ROOT
 
 API = "https://api.github.com"
 _REPO_CACHE: tuple[str, str] | None = None
+_RUNS_CACHE_TTL_SECONDS = 30
+_RUNS_CACHE: dict[tuple[str, str, str], tuple[float, int, list[dict]]] = {}
+_RUNS_CACHE_LOCK = threading.Lock()
 
 # Last actionable error from set_repo_variable, for callers that surface details.
 # Reset to None on success; set to a plain-English message on HTTP 403/error.
@@ -92,7 +97,14 @@ def _slim_run(r: dict) -> dict:
 
 
 def list_runs(per_page: int = 15, workflow: str | None = None) -> dict:
-    """Recent workflow runs (newest first). Works without a token on a public repo."""
+    """Recent workflow runs, with one short shared cache for every admin viewer.
+
+    The browser refreshes its live-run strip every 20 seconds. Without a
+    server-side cache, every open tab and every panel rendered in the same
+    process spent a separate GitHub REST request. Thirty seconds keeps the
+    operator view current while collapsing simultaneous viewers and adjacent
+    polls into one request.
+    """
     if requests is None:
         return {"ok": False, "error": "requests not installed", "runs": []}
     owner, name = repo()
@@ -100,15 +112,30 @@ def list_runs(per_page: int = 15, workflow: str | None = None) -> dict:
         return {"ok": False, "error": "could not detect owner/repo from git remote", "runs": []}
     base = f"{API}/repos/{owner}/{name}/actions"
     url = (f"{base}/workflows/{workflow}/runs" if workflow else f"{base}/runs")
-    try:
-        resp = requests.get(url, headers=_headers(),
-                            params={"per_page": per_page}, timeout=12)
-        if resp.status_code != 200:
-            return {"ok": False, "error": f"HTTP {resp.status_code}", "runs": []}
-        runs = [_slim_run(r) for r in resp.json().get("workflow_runs", [])]
-        return {"ok": True, "runs": runs}
-    except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": str(e), "runs": []}
+    key = (owner, name, workflow or "")
+    now = time.monotonic()
+    with _RUNS_CACHE_LOCK:
+        cached = _RUNS_CACHE.get(key)
+        if (
+            cached
+            and now - cached[0] < _RUNS_CACHE_TTL_SECONDS
+            and cached[1] >= per_page
+        ):
+            return {"ok": True, "runs": [dict(run) for run in cached[2][:per_page]]}
+        try:
+            resp = requests.get(
+                url,
+                headers=_headers(),
+                params={"per_page": per_page},
+                timeout=12,
+            )
+            if resp.status_code != 200:
+                return {"ok": False, "error": f"HTTP {resp.status_code}", "runs": []}
+            runs = [_slim_run(r) for r in resp.json().get("workflow_runs", [])]
+            _RUNS_CACHE[key] = (time.monotonic(), per_page, runs)
+            return {"ok": True, "runs": [dict(run) for run in runs]}
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "error": str(e), "runs": []}
 
 
 def get_repo_variable(name: str) -> str | None:

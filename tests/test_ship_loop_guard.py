@@ -434,6 +434,120 @@ def test_rate_limited_has_the_same_escape_class_as_the_blocker_it_split_from():
     assert "github_unreachable" in GUARD.EXTERNAL_BLOCKERS
 
 
+class _JsonResponse:
+    def __init__(self, payload, headers=None):
+        self.payload = payload
+        self.headers = headers or {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def read(self):
+        return json.dumps(self.payload).encode()
+
+
+def _rate_headers(*, remaining="4499", etag='"guard-v1"'):
+    return {
+        "X-RateLimit-Remaining": remaining,
+        "X-RateLimit-Limit": "5000",
+        "X-RateLimit-Reset": str(int(GUARD.time.time()) + 3600),
+        "ETag": etag,
+    }
+
+
+def test_github_gets_are_shared_across_hook_processes(monkeypatch, tmp_path):
+    """One fresh response serves every worktree instead of spending one call each."""
+    monkeypatch.setenv("MACRO_GITHUB_API_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "shared-token", raising=False)
+    calls = []
+
+    def fake_urlopen(request, *args, **kwargs):
+        calls.append(request)
+        if request.full_url.endswith("/rate_limit"):
+            return _JsonResponse(
+                {
+                    "resources": {
+                        "core": {
+                            "remaining": 4500,
+                            "limit": 5000,
+                            "reset": int(GUARD.time.time()) + 3600,
+                        }
+                    }
+                }
+            )
+        return _JsonResponse({"value": 1}, _rate_headers())
+
+    monkeypatch.setattr(GUARD.urllib.request, "urlopen", fake_urlopen)
+    url = "https://api.github.com/repos/acme/widgets/pulls?state=closed"
+    assert GUARD._get_json(url) == {"value": 1}
+    assert GUARD._get_json(url) == {"value": 1}
+    target_calls = [call for call in calls if not call.full_url.endswith("/rate_limit")]
+    assert len(target_calls) == 1
+
+
+def test_expired_cache_uses_etag_and_a_304_costs_no_new_payload(monkeypatch, tmp_path):
+    """After the short TTL, conditional GET preserves correctness and primary quota."""
+    monkeypatch.setenv("MACRO_GITHUB_API_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "shared-token", raising=False)
+    monkeypatch.setattr(GUARD, "GITHUB_API_CACHE_TTL_SECONDS", 0)
+    target_calls = []
+
+    def fake_urlopen(request, *args, **kwargs):
+        if request.full_url.endswith("/rate_limit"):
+            return _JsonResponse(
+                {
+                    "resources": {
+                        "core": {
+                            "remaining": 4500,
+                            "limit": 5000,
+                            "reset": int(GUARD.time.time()) + 3600,
+                        }
+                    }
+                }
+            )
+        target_calls.append(request)
+        if len(target_calls) == 1:
+            return _JsonResponse({"value": 1}, _rate_headers())
+        assert request.get_header("If-none-match") == '"guard-v1"'
+        message = email.message.Message()
+        for key, value in _rate_headers(remaining="4499").items():
+            message[key] = value
+        raise urllib.error.HTTPError(request.full_url, 304, "Not Modified", message, None)
+
+    monkeypatch.setattr(GUARD.urllib.request, "urlopen", fake_urlopen)
+    url = "https://api.github.com/repos/acme/widgets/check-runs"
+    assert GUARD._get_json(url) == {"value": 1}
+    assert GUARD._get_json(url) == {"value": 1}
+    assert len(target_calls) == 2
+
+
+def test_shared_circuit_breaker_preserves_the_operator_reserve(monkeypatch, tmp_path):
+    """Stop hooks pause before they consume the requests needed to repair/merge."""
+    monkeypatch.setenv("MACRO_GITHUB_API_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(GUARD, "_TOKEN_CACHE", "shared-token", raising=False)
+    directory = GUARD._github_cache_directory("shared-token")
+    GUARD._save_private_json(
+        directory / "rate-limit.json",
+        {
+            "remaining": GUARD.GITHUB_RATE_LIMIT_RESERVE,
+            "limit": 5000,
+            "reset": int(GUARD.time.time()) + 3600,
+            "observed_at": GUARD.time.time(),
+            "refreshed_at": GUARD.time.time(),
+        },
+    )
+    monkeypatch.setattr(
+        GUARD.urllib.request,
+        "urlopen",
+        lambda *_a, **_k: pytest.fail("the reserve must block before a network request"),
+    )
+    with pytest.raises(GUARD.RateLimited, match="safety reserve"):
+        GUARD._get_json("https://api.github.com/repos/acme/widgets/pulls")
+
+
 _CI_RUNS_ENDPOINT = "actions/workflows/ci.yml/runs"
 _CI_HEAD_SHA = "a" * 40
 _CI_MERGE_SHA = "b" * 40
@@ -1329,6 +1443,84 @@ def test_stop_emits_the_exclusion_note_as_a_system_message(monkeypatch, tmp_path
     lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
     assert any(note in str(line.get("systemMessage") or "") for line in lines), lines
     assert not any(line.get("decision") == "block" for line in lines), lines
+
+
+def test_stop_reuses_completed_pr_ci_and_main_proofs_while_render_waits(
+    monkeypatch, tmp_path, capsys
+):
+    """A long render wait must poll only render, not replay earlier GitHub gates."""
+    repo, state_path = _session_repo(tmp_path)
+    calls = {"pull": 0, "ci": 0, "render": 0}
+
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+
+    def merged(*_args):
+        calls["pull"] += 1
+        return _MERGED_PR
+
+    def green(*_args):
+        calls["ci"] += 1
+        return True, ""
+
+    def pending(*_args):
+        calls["render"] += 1
+        return "pending", "Render workflow is queued."
+
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", merged)
+    monkeypatch.setattr(GUARD, "_check_ci", green)
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    monkeypatch.setattr(GUARD, "_render_status", pending)
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    capsys.readouterr()
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    capsys.readouterr()
+
+    assert calls == {"pull": 1, "ci": 1, "render": 2}
+    proofs = json.loads(state_path.read_text(encoding="utf-8"))["ship_proofs"]
+    assert set(proofs) >= {"merged_pull", "ci", "origin_main"}
+    assert "render" not in proofs
+
+
+def test_stop_reuses_render_proof_while_production_catches_up(monkeypatch, tmp_path, capsys):
+    """Once render is green, repeated live-health waits spend zero GitHub API calls."""
+    repo, state_path = _session_repo(tmp_path)
+    calls = {"pull": 0, "ci": 0, "render": 0, "health": 0}
+
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+
+    def merged(*_args):
+        calls["pull"] += 1
+        return _MERGED_PR
+
+    def green(*_args):
+        calls["ci"] += 1
+        return True, ""
+
+    def rendered(*_args):
+        calls["render"] += 1
+        return "success", ""
+
+    def stale_health(_url):
+        calls["health"] += 1
+        return {"commit": "not-a-commit"}
+
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", merged)
+    monkeypatch.setattr(GUARD, "_check_ci", green)
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    monkeypatch.setattr(GUARD, "_render_status", rendered)
+    monkeypatch.setattr(GUARD, "_get_json", stale_health)
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    capsys.readouterr()
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+    capsys.readouterr()
+
+    assert calls == {"pull": 1, "ci": 1, "render": 1, "health": 2}
+    proofs = json.loads(state_path.read_text(encoding="utf-8"))["ship_proofs"]
+    assert set(proofs) >= {"merged_pull", "ci", "origin_main", "render"}
 
 
 def test_a_merged_branch_deleted_on_merge_is_not_reported_as_unpushed(

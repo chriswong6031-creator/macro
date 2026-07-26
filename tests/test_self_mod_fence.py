@@ -287,12 +287,13 @@ def _fence_step_run(workflow_relpath: str, step_name: str) -> dict:
     reducing them to a no-op — the guard has to fail when its subject vanishes.
     """
     payload = yaml.safe_load((REPO_ROOT / workflow_relpath).read_text())
-    steps = payload["jobs"]["self-mod-fence"]["steps"]
+    job_id = "fence-pack" if workflow_relpath.endswith("/fences.yml") else "self-mod-fence"
+    steps = payload["jobs"][job_id]["steps"]
     for step in steps:
         if str(step.get("name", "")) == step_name:
             return step
     raise AssertionError(
-        f"{workflow_relpath}: self-mod-fence has no step named {step_name!r} "
+        f"{workflow_relpath}: {job_id} has no step named {step_name!r} "
         f"(found: {[s.get('name') for s in steps]}). Update this test with the "
         "step so the live check keeps its coverage."
     )
@@ -453,7 +454,10 @@ def test_live_check_still_blocks_loop_pr_touching_immutable(tmp_path):
         "loop branch + immutable path must stay BLOCKED.\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
-    assert "BLOCKED" in result.stderr
+    assert "BLOCKED" in result.stderr, (
+        f"fence failed without its fail-closed diagnostic (rc={result.returncode}).\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
 
 def test_fences_workflow_live_check_is_pull_request_only():

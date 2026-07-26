@@ -17,16 +17,23 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import fcntl
+
 
 LIVE_HEALTH_URL = "https://mastermind-x.com/api/health"
 GITHUB_API_HOST = "api.github.com"
+GITHUB_API_CACHE_TTL_SECONDS = 30
+GITHUB_RATE_LIMIT_RESERVE = 300
+GITHUB_RATE_LIMIT_REFRESH_SECONDS = 60
 EXTERNAL_BLOCKERS = {
     "github_unreachable",
     "github_rate_limited",
@@ -154,6 +161,27 @@ def _save(path: Path, state: dict[str, Any]) -> None:
     temp.replace(path)
 
 
+def _proof(state: dict[str, Any], gate: str, key: str) -> Any | None:
+    """Return a monotonic ship-gate proof only when its identity still matches."""
+    entry = (state.get("ship_proofs") or {}).get(gate) or {}
+    if str(entry.get("key") or "") != key:
+        return None
+    return entry.get("value")
+
+
+def _remember_proof(
+    path: Path,
+    state: dict[str, Any],
+    gate: str,
+    key: str,
+    value: Any,
+) -> None:
+    """Persist completed gates so later Stop turns do not poll GitHub again."""
+    proofs = state.setdefault("ship_proofs", {})
+    proofs[gate] = {"key": key, "value": value}
+    _save(path, state)
+
+
 def _github_slug(root: Path) -> tuple[str, str]:
     remote = _run(root, "git", "remote", "get-url", "origin")
     match = re.search(r"github\.com[/:]([^/]+)/([^/\s]+?)(?:\.git)?$", remote)
@@ -212,6 +240,170 @@ def _github_token() -> str:
     return token
 
 
+def _github_cache_directory(token: str) -> Path:
+    """A private cache shared by every worktree using the same credential.
+
+    A repository can have hundreds of concurrent Claude worktrees. Their Stop
+    hooks ask many of the same GitHub questions, so per-process caching does
+    almost nothing. The temp directory is user-local on macOS and explicitly
+    mode 0700 for Linux hosts. The token itself is never written; only a short
+    digest separates credentials with different visibility.
+    """
+    override = os.environ.get("MACRO_GITHUB_API_CACHE_DIR", "").strip()
+    base = (
+        Path(override)
+        if override
+        else Path(tempfile.gettempdir()) / "macro-github-api-cache"
+    )
+    credential = token or "anonymous"
+    directory = base / hashlib.sha256(credential.encode()).hexdigest()[:16]
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        directory.chmod(0o700)
+    except OSError:
+        pass
+    return directory
+
+
+@contextmanager
+def _file_lock(path: Path):
+    """Cross-process advisory lock for cache entries and the shared budget."""
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with path.open("a+", encoding="utf-8") as handle:
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _save_private_json(path: Path, value: Any) -> None:
+    temp = path.with_suffix(f"{path.suffix}.{os.getpid()}.tmp")
+    temp.write_text(
+        json.dumps(value, ensure_ascii=False, sort_keys=True),
+        encoding="utf-8",
+    )
+    try:
+        temp.chmod(0o600)
+    except OSError:
+        pass
+    temp.replace(path)
+
+
+def _rate_limit_message(remaining: int, limit: int, reset: int) -> str:
+    when = ""
+    if reset:
+        stamp = datetime.fromtimestamp(reset, timezone.utc)
+        when = f", resets {stamp.strftime('%H:%M:%SZ')}"
+    reserve = min(GITHUB_RATE_LIMIT_RESERVE, max(5, limit // 10))
+    if remaining:
+        return (
+            f"GitHub API safety reserve reached ({remaining}/{limit}{when}; "
+            f"reserve {reserve}). The shared Stop-hook circuit breaker is pausing "
+            "GitHub polling until the hourly reset so pushes, merges, and operator "
+            "recovery keep working."
+        )
+    if _github_token():
+        hint = "Wait for the reset; no repository or network fault is implied."
+    else:
+        hint = (
+            "The guard is running UNAUTHENTICATED on the 60/hour per-IP quota. "
+            "Run `gh auth login` (or export GH_TOKEN) to get the 5000/hour quota."
+        )
+    return f"GitHub API quota spent (0/{limit}{when}). {hint}"
+
+
+def _record_rate_limit(directory: Path, headers: Any) -> None:
+    """Persist the most conservative primary-budget snapshot from a response."""
+    remaining = str((headers or {}).get("X-RateLimit-Remaining") or "")
+    limit = str((headers or {}).get("X-RateLimit-Limit") or "")
+    reset = str((headers or {}).get("X-RateLimit-Reset") or "")
+    if not (remaining.isdigit() and limit.isdigit() and reset.isdigit()):
+        return
+    path = directory / "rate-limit.json"
+    with _file_lock(directory / "rate-limit.lock"):
+        current = _load(path) or {}
+        observed = {
+            "remaining": int(remaining),
+            "limit": int(limit),
+            "reset": int(reset),
+            "observed_at": time.time(),
+            "refreshed_at": float(current.get("refreshed_at") or 0),
+        }
+        # Concurrent responses can arrive out of order. Within one reset window,
+        # only the lowest remaining value is safe to publish to sibling hooks.
+        if int(current.get("reset") or 0) == observed["reset"]:
+            observed["remaining"] = min(
+                observed["remaining"], int(current.get("remaining") or observed["remaining"])
+            )
+        _save_private_json(path, observed)
+
+
+def _fresh_rate_limit(directory: Path, token: str) -> dict[str, Any] | None:
+    """Read the core bucket once a minute; GET /rate_limit costs no primary quota."""
+    path = directory / "rate-limit.json"
+    now = time.time()
+    state = _load(path) or {}
+    if (
+        int(state.get("reset") or 0) > int(now)
+        and now - float(state.get("refreshed_at") or 0) < GITHUB_RATE_LIMIT_REFRESH_SECONDS
+    ):
+        return state
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "macro-dashboard-ship-loop-guard",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(
+        f"https://{GITHUB_API_HOST}/rate_limit", headers=headers
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            payload = json.load(response)
+    except Exception:
+        # The real endpoint call will surface a useful network/rate-limit error.
+        return state or None
+    core = (payload.get("resources") or {}).get("core") or {}
+    if not all(str(core.get(key) or "").isdigit() for key in ("remaining", "limit", "reset")):
+        return state or None
+    state = {
+        "remaining": int(core["remaining"]),
+        "limit": int(core["limit"]),
+        "reset": int(core["reset"]),
+        "observed_at": now,
+        "refreshed_at": now,
+    }
+    _save_private_json(path, state)
+    return state
+
+
+def _reserve_github_request(directory: Path, token: str) -> None:
+    """Reserve one primary request or stop before consuming the safety margin."""
+    with _file_lock(directory / "rate-limit.lock"):
+        state = _fresh_rate_limit(directory, token)
+        if not state:
+            return
+        now = int(time.time())
+        reset = int(state.get("reset") or 0)
+        if reset <= now:
+            return
+        remaining = int(state.get("remaining") or 0)
+        limit = int(state.get("limit") or (5000 if token else 60))
+        reserve = min(GITHUB_RATE_LIMIT_RESERVE, max(5, limit // 10))
+        if remaining <= reserve:
+            raise RateLimited(_rate_limit_message(remaining, limit, reset))
+        # Reserve before releasing the lock so a burst of sibling hooks cannot
+        # all make a decision from the same stale remaining value.
+        state["remaining"] = remaining - 1
+        _save_private_json(directory / "rate-limit.json", state)
+
+
 def _http_failure(exc: urllib.error.HTTPError) -> RuntimeError:
     """Classify an HTTP failure so a spent quota does not read as a broken repo.
 
@@ -221,20 +413,9 @@ def _http_failure(exc: urllib.error.HTTPError) -> RuntimeError:
     """
     headers = exc.headers or {}
     if exc.code in {403, 429} and headers.get("X-RateLimit-Remaining") == "0":
-        limit = headers.get("X-RateLimit-Limit") or "?"
+        limit = int(headers.get("X-RateLimit-Limit") or (5000 if _github_token() else 60))
         reset = str(headers.get("X-RateLimit-Reset") or "")
-        when = ""
-        if reset.isdigit():
-            stamp = datetime.fromtimestamp(int(reset), timezone.utc)
-            when = f", resets {stamp.strftime('%H:%M:%SZ')}"
-        if _github_token():
-            hint = "Wait for the reset; no repository or network fault is implied."
-        else:
-            hint = (
-                "The guard is running UNAUTHENTICATED on the 60/hour per-IP quota. "
-                "Run `gh auth login` (or export GH_TOKEN) to get the 5000/hour quota."
-            )
-        return RateLimited(f"GitHub API quota spent (0/{limit}{when}). {hint}")
+        return RateLimited(_rate_limit_message(0, limit, int(reset) if reset.isdigit() else 0))
     return RuntimeError(f"GitHub API request failed: HTTP {exc.code} {exc.reason}.")
 
 
@@ -246,16 +427,55 @@ def _get_json(url: str) -> Any:
     # Authenticate to GitHub and nowhere else. This helper also fetches the
     # public production health endpoint, and attaching the credential to that
     # request would hand a repo-scoped token to an unrelated host.
-    if urllib.parse.urlsplit(url).hostname == GITHUB_API_HOST:
-        token = _github_token()
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-    request = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(request, timeout=25) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        raise _http_failure(exc) from exc
+    if urllib.parse.urlsplit(url).hostname != GITHUB_API_HOST:
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(request, timeout=25) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as exc:
+            raise _http_failure(exc) from exc
+
+    token = _github_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    directory = _github_cache_directory(token)
+    key = hashlib.sha256(url.encode()).hexdigest()
+    cache_path = directory / f"{key}.json"
+    lock_path = directory / f"{key}.lock"
+
+    # The URL lock prevents a hundred sessions from refreshing one shared
+    # workflow listing simultaneously. Different PR/check URLs remain parallel.
+    with _file_lock(lock_path):
+        cached = _load(cache_path) or {}
+        age = time.time() - float(cached.get("fetched_at") or 0)
+        if "payload" in cached and age < GITHUB_API_CACHE_TTL_SECONDS:
+            return cached["payload"]
+
+        _reserve_github_request(directory, token)
+        etag = str(cached.get("etag") or "")
+        if etag:
+            headers["If-None-Match"] = etag
+        request = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(request, timeout=25) as response:
+                payload = json.load(response)
+                _record_rate_limit(directory, response.headers)
+                _save_private_json(
+                    cache_path,
+                    {
+                        "etag": str(response.headers.get("ETag") or ""),
+                        "fetched_at": time.time(),
+                        "payload": payload,
+                    },
+                )
+                return payload
+        except urllib.error.HTTPError as exc:
+            _record_rate_limit(directory, exc.headers)
+            if exc.code == 304 and "payload" in cached:
+                cached["fetched_at"] = time.time()
+                _save_private_json(cache_path, cached)
+                return cached["payload"]
+            raise _http_failure(exc) from exc
 
 
 def _github_block_code(exc: Exception) -> str:
@@ -1141,10 +1361,30 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
 
     try:
         owner, repo = _github_slug(root)
-        pull = _latest_merged_pr(owner, repo, branch)
     except Exception as exc:
-        _block(path, state, payload, _github_block_code(exc), str(exc))
+        _block(path, state, payload, "github_unreachable", str(exc))
         return
+    pull_key = f"{branch}:{head}"
+    pull = _proof(state, "merged_pull", pull_key)
+    if pull is None:
+        try:
+            pull = _latest_merged_pr(owner, repo, branch)
+        except Exception as exc:
+            _block(path, state, payload, _github_block_code(exc), str(exc))
+            return
+        if pull:
+            # A merged PR and its head/merge identities are immutable. Keep only
+            # the fields the remaining gates consume, not the full API payload.
+            pull = {
+                "number": pull.get("number"),
+                "head": {
+                    "sha": (pull.get("head") or {}).get("sha"),
+                    "ref": (pull.get("head") or {}).get("ref"),
+                },
+                "merge_commit_sha": pull.get("merge_commit_sha"),
+                "merged_at": pull.get("merged_at"),
+            }
+            _remember_proof(path, state, "merged_pull", pull_key, pull)
     if not pull:
         # No merged pull request: an absent upstream now genuinely means unpushed.
         if not upstream:
@@ -1162,40 +1402,57 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     head_ref = str((pull.get("head") or {}).get("ref") or "")
     merge_sha = str(pull.get("merge_commit_sha") or "")
     merged_at = str(pull.get("merged_at") or "")
-    try:
-        ci_ok, ci_reason = _check_ci(
-            root, owner, repo, head_sha, merge_sha, merged_at, head_ref
-        )
-    except Exception as exc:
-        _block(path, state, payload, _github_block_code(exc), str(exc))
-        return
+    ci_key = f"{head_sha}:{merge_sha}"
+    ci_proof = _proof(state, "ci", ci_key)
+    if ci_proof is not None:
+        ci_ok, ci_reason = True, str((ci_proof or {}).get("reason") or "")
+    else:
+        try:
+            ci_ok, ci_reason = _check_ci(
+                root, owner, repo, head_sha, merge_sha, merged_at, head_ref
+            )
+        except Exception as exc:
+            _block(path, state, payload, _github_block_code(exc), str(exc))
+            return
+        if ci_ok:
+            _remember_proof(path, state, "ci", ci_key, {"reason": ci_reason})
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
         _block(path, state, payload, code, ci_reason)
         return
-    try:
-        _run(root, "git", "fetch", "origin", "main", timeout=90)
-        _run(root, "git", "merge-base", "--is-ancestor", merge_sha, "origin/main")
-    except Exception as exc:
-        _block(path, state, payload, "github_unreachable", f"Merge is not confirmed on origin/main: {exc}")
-        return
-
-    needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
-    if needs_render:
+    if _proof(state, "origin_main", merge_sha) is None:
         try:
-            status, detail = _render_status(root, owner, repo, merge_sha, merged_at)
+            _run(root, "git", "fetch", "origin", "main", timeout=90)
+            _run(root, "git", "merge-base", "--is-ancestor", merge_sha, "origin/main")
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
-            return
-        if status != "success":
             _block(
                 path,
                 state,
                 payload,
-                "render_failed" if status == "failed" else "render_pending",
-                detail,
+                "github_unreachable",
+                f"Merge is not confirmed on origin/main: {exc}",
             )
             return
+        _remember_proof(path, state, "origin_main", merge_sha, True)
+
+    needs_render = _needs_render(root, merge_sha, str(state.get("start_head")), head)
+    if needs_render:
+        if _proof(state, "render", merge_sha) is None:
+            try:
+                status, detail = _render_status(root, owner, repo, merge_sha, merged_at)
+            except Exception as exc:
+                _block(path, state, payload, _github_block_code(exc), str(exc))
+                return
+            if status != "success":
+                _block(
+                    path,
+                    state,
+                    payload,
+                    "render_failed" if status == "failed" else "render_pending",
+                    detail,
+                )
+                return
+            _remember_proof(path, state, "render", merge_sha, True)
 
     try:
         deployed = _find_commit(_get_json(LIVE_HEALTH_URL))

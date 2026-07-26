@@ -106,3 +106,52 @@ def test_put_file_no_token_errors(monkeypatch):
     r = github_api.put_file("x.json", "{}", "m")
     assert r["ok"] is False
     assert "token" in r["error"].lower()
+
+
+def test_list_runs_shares_one_fresh_response_across_admin_panels(_wired, monkeypatch):
+    calls = []
+
+    def fake_get(url, headers=None, params=None, timeout=None):
+        calls.append((url, params))
+        return _Resp(
+            200,
+            {
+                "workflow_runs": [
+                    {"id": index, "name": f"run-{index}"}
+                    for index in range(50)
+                ]
+            },
+        )
+
+    github_api._RUNS_CACHE.clear()
+    monkeypatch.setattr(github_api.requests, "get", fake_get)
+    try:
+        first = github_api.list_runs(per_page=50)
+        second = github_api.list_runs(per_page=15)
+    finally:
+        github_api._RUNS_CACHE.clear()
+
+    assert first["ok"] and len(first["runs"]) == 50
+    assert second["ok"] and len(second["runs"]) == 15
+    assert len(calls) == 1
+
+
+def test_list_runs_refreshes_after_the_short_ttl(_wired, monkeypatch):
+    clock = [100.0]
+    calls = []
+
+    def fake_get(url, headers=None, params=None, timeout=None):
+        calls.append(url)
+        return _Resp(200, {"workflow_runs": [{"id": len(calls)}]})
+
+    github_api._RUNS_CACHE.clear()
+    monkeypatch.setattr(github_api.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(github_api.requests, "get", fake_get)
+    try:
+        assert github_api.list_runs()["runs"][0]["id"] == 1
+        clock[0] += github_api._RUNS_CACHE_TTL_SECONDS + 1
+        assert github_api.list_runs()["runs"][0]["id"] == 2
+    finally:
+        github_api._RUNS_CACHE.clear()
+
+    assert len(calls) == 2
