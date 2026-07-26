@@ -67,7 +67,7 @@
       "zh": "盈亏平衡大致平稳——无可操作变动。"
     },
     "costate": {
-      "oil_chg_20d_pct": 30.7,
+      "oil_chg_20d_pct": 29.0,
       "real10y_chg_20d_bp": 25.0,
       "nom10y_chg_20d_bp": 33.0,
       "hy_oas_z": -0.64,
@@ -2031,7 +2031,7 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-07-22",
+    "asof": "2026-07-26",
     "usd_dir": "strengthening",
     "roc_pct": null,
     "state": {
@@ -2042,7 +2042,7 @@
       "en": "High real rates",
       "zh": "高实际利率"
     },
-    "lean": "mixed backdrop",
+    "lean": "dollar-supportive backdrop",
     "liquidity_dir": "soft",
     "headwind_for": [
       {
@@ -2085,7 +2085,14 @@
       "UST10": -0.36,
       "BTC": -0.32
     },
-    "scenario": null,
+    "scenario": {
+      "key": "intervention_risk",
+      "label": {
+        "en": "FX intervention risk",
+        "zh": "外汇干预风险"
+      },
+      "n_active": 1
+    },
     "display_only": true
   },
   "hero": {

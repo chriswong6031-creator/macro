@@ -1,16 +1,16 @@
 {
   "schema": "master_brain_track_record.v1",
-  "as_of": "2026-07-21",
-  "scored_total": 2,
-  "open": 7,
+  "as_of": "2026-07-25",
+  "scored_total": 3,
+  "open": 6,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 2,
+    "n": 3,
     "hits": 2,
-    "misses": 0,
-    "hit_rate": 1.0,
-    "dir_accuracy": 1.0
+    "misses": 1,
+    "hit_rate": 0.667,
+    "dir_accuracy": 0.667
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": 1.0
     },
     "low": {
-      "n": 1,
+      "n": 2,
       "hits": 1,
-      "misses": 0,
-      "hit_rate": 1.0,
-      "dir_accuracy": 1.0
+      "misses": 1,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.5
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 2,
+      "n": 3,
       "hits": 2,
-      "misses": 0,
-      "hit_rate": 1.0,
-      "dir_accuracy": 1.0
+      "misses": 1,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.667
     },
     "level": {
       "n": 0,
@@ -53,15 +53,24 @@
   },
   "by_regime": {
     "Goldilocks": {
-      "n": 2,
+      "n": 3,
       "hits": 2,
-      "misses": 0,
-      "hit_rate": 1.0,
-      "dir_accuracy": 1.0
+      "misses": 1,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.667
     }
   },
-  "calibration_note": "2 leans scored, hit-rate 1.0 (directional accuracy 1.0). Sample is tiny \u2014 the brain's leans are accountability, not yet a validated edge.",
+  "calibration_note": "3 leans scored, hit-rate 0.667 (directional accuracy 0.667). Sample is tiny \u2014 the brain's leans are accountability, not yet a validated edge.",
   "recent": [
+    {
+      "id": "mb-2026-06-26-1",
+      "subject": "China equities",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.081,
+      "check_by": "2026-07-24"
+    },
     {
       "id": "mb-2026-06-25-1",
       "subject": "Semiconductors",
@@ -81,5 +90,5 @@
       "check_by": "2026-07-02"
     }
   ],
-  "calibration_note_zh": "\u5df2\u8bc4\u5206 2 \u6761\uff0c\u547d\u4e2d\u7387 1.0\uff08\u65b9\u5411\u51c6\u786e\u7387 1.0\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5927\u8111\u7684\u5224\u65ad\u662f\u95ee\u8d23\uff0c\u5c1a\u975e\u9a8c\u8bc1\u8fc7\u7684\u4f18\u52bf\u3002"
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 3 \u6761\uff0c\u547d\u4e2d\u7387 0.667\uff08\u65b9\u5411\u51c6\u786e\u7387 0.667\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5927\u8111\u7684\u5224\u65ad\u662f\u95ee\u8d23\uff0c\u5c1a\u975e\u9a8c\u8bc1\u8fc7\u7684\u4f18\u52bf\u3002"
 }

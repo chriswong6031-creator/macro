@@ -1,11 +1,11 @@
 {
   "schema": "prophet.index/v1",
-  "asof": "2026-07-21",
+  "asof": "2026-07-25",
   "cadence": "nightly-EOD",
   "authority_tier": "display",
   "gate_go": false,
-  "plan_count": 48,
-  "active_count": 40,
+  "plan_count": 53,
+  "active_count": 44,
   "plans": [
     {
       "id": "TNDM-BULL-20260624",
@@ -23,7 +23,7 @@
       "_conviction_score": 100,
       "_signal_date": "2026-06-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.0,
+      "management_confidence": 64.1,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($19.54).",
@@ -44,7 +44,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "TNDM \u2014 conviction 100/100 (high) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "TNDM \u2014 conviction 100/100 (high) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "TNDM \u2014 \u786e\u4fe1\u5ea6 100/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "PLTR-BULL-20260701",
@@ -62,7 +65,7 @@
       "_conviction_score": 90,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 50.3,
+      "management_confidence": 42.6,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($168.93).",
@@ -83,7 +86,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "PLTR \u2014 conviction 90/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting warn; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "PLTR \u2014 conviction 90/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting warn; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "PLTR \u2014 \u786e\u4fe1\u5ea6 90/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u8b66\u793a; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "REZI-BULL-20260703",
@@ -101,7 +107,7 @@
       "_conviction_score": 89,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 72.6,
+      "management_confidence": 69.2,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($38.62).",
@@ -122,7 +128,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "REZI \u2014 conviction 89/100 (high) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "REZI \u2014 conviction 89/100 (high) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "CRM-BULL-20260706",
@@ -140,7 +149,7 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.7,
+      "management_confidence": 50.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($199.07).",
@@ -161,7 +170,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "CRM \u2014 conviction 87/100 (neutral) Entry grade: strong. Drivers: entry; quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "CRM \u2014 conviction 87/100 (neutral) Entry grade: strong. Drivers: entry; quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "CRM \u2014 \u786e\u4fe1\u5ea6 87/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "PAHC-BULL-20260701",
@@ -179,7 +191,7 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 49.6,
+      "management_confidence": 49.5,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($41.17).",
@@ -200,7 +212,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "PAHC \u2014 conviction 87/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "PAHC \u2014 conviction 87/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "PAHC \u2014 \u786e\u4fe1\u5ea6 87/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "PAHC-BULL-20260629",
@@ -218,7 +233,7 @@
       "_conviction_score": 86,
       "_signal_date": "2026-06-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 47.3,
+      "management_confidence": 48.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($41.27).",
@@ -239,7 +254,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "PAHC \u2014 conviction 86/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "PAHC \u2014 conviction 86/100 (neutral) Entry grade: solid. Drivers: entry. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "PAHC \u2014 \u786e\u4fe1\u5ea6 86/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "STEP-BULL-20260707",
@@ -257,7 +275,7 @@
       "_conviction_score": 84,
       "_signal_date": "2026-07-07",
       "phase": "triggered_pre_t1",
-      "management_confidence": 50.7,
+      "management_confidence": 46.6,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($51.02).",
@@ -278,7 +296,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "STEP \u2014 conviction 84/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "STEP \u2014 conviction 84/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "STEP \u2014 \u786e\u4fe1\u5ea6 84/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "FOXF-BULL-20260526",
@@ -317,7 +338,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "FOXF \u2014 conviction 83/100 (high) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "FOXF \u2014 conviction 83/100 (high) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "FOXF \u2014 \u786e\u4fe1\u5ea6 83/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "ADBE-BULL-20260706",
@@ -335,7 +359,7 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 53.2,
+      "management_confidence": 47.9,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($295.08).",
@@ -356,7 +380,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "ADBE \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "ADBE \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "ADBE \u2014 \u786e\u4fe1\u5ea6 81/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "INTU-BULL-20260706",
@@ -374,7 +401,7 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.9,
+      "management_confidence": 52.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($355.00).",
@@ -395,7 +422,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "INTU \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: entry; quality. Cautions: accounting watch; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "INTU \u2014 conviction 81/100 (neutral) Entry grade: light. Drivers: entry; quality. Cautions: accounting watch; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "INTU \u2014 \u786e\u4fe1\u5ea6 81/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "ENOV-BULL-20260703",
@@ -413,7 +443,7 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 59.4,
+      "management_confidence": 57.3,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($33.89).",
@@ -434,7 +464,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "ENOV \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "ENOV \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "MOS-BULL-20260709",
@@ -452,7 +485,7 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-09",
       "phase": "pre_trigger",
-      "management_confidence": 61.8,
+      "management_confidence": 57.4,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($22.60) before entering. No position until trigger is confirmed.",
@@ -473,7 +506,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "MOS \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: entry. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "MOS \u2014 conviction 80/100 (neutral) Entry grade: solid. Drivers: entry. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "MOS \u2014 \u786e\u4fe1\u5ea6 80/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "ARES-BULL-20260709",
@@ -491,7 +527,7 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-09",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.6,
+      "management_confidence": 57.7,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($131.52).",
@@ -512,7 +548,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "ARES \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "ARES \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "PI-BULL-20260703",
@@ -530,7 +569,7 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-03",
       "phase": "pre_trigger",
-      "management_confidence": 58.3,
+      "management_confidence": 53.1,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($147.20) before entering. No position until trigger is confirmed.",
@@ -551,7 +590,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "PI \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "PI \u2014 conviction 79/100 (neutral) Entry grade: solid. Drivers: entry; quality; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "KKR-BULL-20260318",
@@ -590,7 +632,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "KKR \u2014 conviction 77/100 (neutral) Entry grade: strong. Drivers: entry. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "KKR \u2014 conviction 77/100 (neutral) Entry grade: strong. Drivers: entry. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "KKR \u2014 \u786e\u4fe1\u5ea6 77/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "ENOV-BULL-20260706",
@@ -608,7 +653,7 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 59.3,
+      "management_confidence": 56.6,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($35.22).",
@@ -629,7 +674,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "ENOV \u2014 conviction 75/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "ENOV \u2014 conviction 75/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "ENOV \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "GPI-BULL-20260715",
@@ -647,7 +695,7 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-15",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.3,
+      "management_confidence": 61.5,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($381.50).",
@@ -668,7 +716,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "GPI \u2014 conviction 75/100 (neutral) Entry grade: strong. Cautions: earnings in 8d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "GPI \u2014 conviction 75/100 (neutral) Entry grade: strong. Cautions: earnings in 8d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "GPI \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: 8\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "QCOM-BULL-20260710",
@@ -706,7 +757,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "QCOM \u2014 conviction 75/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "QCOM \u2014 conviction 75/100 (high) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "QCOM \u2014 \u786e\u4fe1\u5ea6 75/100\uff08\u9ad8\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "AEO-BULL-20260415",
@@ -745,7 +799,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "AEO \u2014 conviction 74/100 (neutral) Entry grade: strong. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "AEO \u2014 conviction 74/100 (neutral) Entry grade: strong. Drivers: entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "AEO \u2014 \u786e\u4fe1\u5ea6 74/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "EFX-BULL-20260701",
@@ -763,7 +820,7 @@
       "_conviction_score": 73,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 48.7,
+      "management_confidence": 45.6,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($210.44).",
@@ -784,7 +841,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "EFX \u2014 conviction 73/100 (neutral) Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "EFX \u2014 conviction 73/100 (neutral) Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "EFX \u2014 \u786e\u4fe1\u5ea6 73/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "AZO-BULL-20260625",
@@ -802,7 +862,7 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-25",
       "phase": "triggered_pre_t1",
-      "management_confidence": 35.1,
+      "management_confidence": 31.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($3410.80).",
@@ -823,7 +883,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "AZO \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: Narrative basket (Consumer Discretionary (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "AZO \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: Narrative basket (Consumer Discretionary (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "AZO \u2014 \u786e\u4fe1\u5ea6 72/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u975e\u5fc5\u9700\u6d88\u8d39\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "LMT-BULL-20260626",
@@ -840,13 +903,13 @@
       "_r_unit": 46.31,
       "_conviction_score": 72,
       "_signal_date": "2026-06-26",
-      "phase": "pre_trigger",
-      "management_confidence": 45.0,
-      "recommended_action": "wait",
+      "phase": "triggered_pre_t1",
+      "management_confidence": 71.0,
+      "recommended_action": "hold",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($529.20) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $592.66 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $476.89; exit on a close below that level."
+        "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($592.66).",
+        "Add to the position on short-term pullbacks as long as price remains above $476.89 (invalidation level).",
+        "Continue building as the move confirms. Full position size targets T2 at $662.13. Do not chase \u2014 add into weakness."
       ],
       "profit_plan": [
         {
@@ -862,7 +925,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "LMT \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "LMT \u2014 conviction 72/100 (neutral) Entry grade: strong. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "LMT \u2014 \u786e\u4fe1\u5ea6 72/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "FDS-BULL-20260708",
@@ -880,7 +946,7 @@
       "_conviction_score": 71,
       "_signal_date": "2026-07-08",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.3,
+      "management_confidence": 55.0,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($337.02).",
@@ -901,7 +967,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "FDS \u2014 conviction 71/100 (neutral) Entry grade: light. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "FDS \u2014 conviction 71/100 (neutral) Entry grade: light. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "FDS \u2014 \u786e\u4fe1\u5ea6 71/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "UBER-BULL-20260623",
@@ -918,20 +987,19 @@
       "_r_unit": 7.88,
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
-      "phase": "pre_trigger",
-      "management_confidence": 45.8,
-      "recommended_action": "wait",
+      "phase": "invalidated",
+      "management_confidence": 13.7,
+      "recommended_action": "invalidated",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($75.59) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $86.25 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $66.55; exit on a close below that level."
+        "Invalidation level ($66.55) has been breached. Exit the full position.",
+        "This plan is no longer active. Do not hold through invalidation."
       ],
       "profit_plan": [
         {
           "level": 86.25,
           "label": "T1",
           "action": "Scale out 40%, trail stop to entry",
-          "status": "ACTIVE"
+          "status": "DONE"
         },
         {
           "level": 98.07,
@@ -940,7 +1008,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "UBER [TURN SIGNALED] \u2014 conviction 70/100 (neutral). Drivers: tailwind. Cautions: accounting watch. Entry grade: strong. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact."
+      "thesis": "UBER [TURN SIGNALED] \u2014 conviction 70/100 (neutral). Drivers: tailwind. Cautions: accounting watch. Entry grade: strong. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "PRGO-BULL-20260702",
@@ -958,7 +1029,7 @@
       "_conviction_score": 68,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 52.0,
+      "management_confidence": 50.6,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($10.65) before entering. No position until trigger is confirmed.",
@@ -979,7 +1050,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "PRGO \u2014 conviction 68/100 (neutral) Entry grade: solid. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "PRGO \u2014 conviction 68/100 (neutral) Entry grade: solid. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "PRGO \u2014 \u786e\u4fe1\u5ea6 68/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "COIN-BULL-20260702",
@@ -997,7 +1071,7 @@
       "_conviction_score": 67,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 61.0,
+      "management_confidence": 44.4,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($182.63).",
@@ -1018,7 +1092,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "COIN [HOLD] \u2014 conviction 67/100 (neutral). Drivers: entry. Cautions: accounting watch; Narrative basket (Crypto & Digital Assets) is deteriorating \u2014 risk gate: trim / size down.. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no signal; display-tier artifact."
+      "thesis": "COIN [HOLD] \u2014 conviction 67/100 (neutral). Drivers: entry. Cautions: accounting watch; Narrative basket (Crypto & Digital Assets) is deteriorating \u2014 risk gate: trim / size down.. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no signal; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "QCOM-BULL-20260709",
@@ -1056,7 +1133,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "QCOM \u2014 conviction 67/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch; Narrative basket (AI Semiconductors) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "QCOM \u2014 conviction 67/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Cautions: accounting watch; Narrative basket (AI Semiconductors) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "FBRT-BULL-20260713",
@@ -1074,7 +1154,7 @@
       "_conviction_score": 64,
       "_signal_date": "2026-07-13",
       "phase": "pre_trigger",
-      "management_confidence": 57.3,
+      "management_confidence": 51.2,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($8.22) before entering. No position until trigger is confirmed.",
@@ -1095,7 +1175,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "FBRT \u2014 conviction 64/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "FBRT \u2014 conviction 64/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "FBRT \u2014 \u786e\u4fe1\u5ea6 64/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "KMT-BULL-20260721",
@@ -1112,13 +1195,13 @@
       "_r_unit": 3.6,
       "_conviction_score": 63,
       "_signal_date": "2026-07-21",
-      "phase": "pre_trigger",
-      "management_confidence": 67.7,
-      "recommended_action": "wait",
+      "phase": "triggered_pre_t1",
+      "management_confidence": 68.1,
+      "recommended_action": "hold",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($34.74) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $39.79 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $30.79; exit on a close below that level."
+        "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.79).",
+        "Add to the position on short-term pullbacks as long as price remains above $30.79 (invalidation level).",
+        "Continue building as the move confirms. Full position size targets T2 at $45.19. Do not chase \u2014 add into weakness."
       ],
       "profit_plan": [
         {
@@ -1134,7 +1217,62 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "KMT \u2014 conviction 63/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: Narrative basket (Industrial Distribution & Capital Goods) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "KMT \u2014 conviction 63/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: Narrative basket (Industrial Distribution & Capital Goods) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "KMT \u2014 \u786e\u4fe1\u5ea6 63/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
+    },
+    {
+      "id": "ARES-BULL-20260722",
+      "asset": "ARES",
+      "direction": "BULL",
+      "entry": 126.5,
+      "invalidation": 92.35,
+      "targets": [
+        177.725,
+        228.95
+      ],
+      "trigger": 127.7,
+      "option_contract": null,
+      "_r_unit": 34.15,
+      "_conviction_score": 62,
+      "_signal_date": "2026-07-22",
+      "phase": "pre_trigger",
+      "management_confidence": 67.8,
+      "recommended_action": "wait",
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($127.70) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $177.72 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $92.35; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 177.725,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 228.95,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "ARES \u2014 conviction 62/100 (neutral) Entry grade: solid. Drivers: entry; quality; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. Options positioning (as of 2026-07-26): the heaviest call open interest sat at $130.00, about 2.8% above the entry \u2014 dealer hedging tends to add friction into that level, which is a place price stalls, not a target. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "ARES \u2014 \u786e\u4fe1\u5ea6 62/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry; quality; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u671f\u6743\u6301\u4ed3\uff08\u622a\u81f32026-07-26\uff09\uff1a\u6700\u91cd\u7684\u770b\u6da8\u6301\u4ed3\u4f4d\u4e8e $130.00\uff0c\u7ea6\u5728\u5165\u573a\u4ef7\u4e0a\u65b92.8% \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u901a\u5e38\u5728\u8be5\u4ef7\u4f4d\u5f62\u6210\u963b\u529b\uff1b\u90a3\u662f\u4ef7\u683c\u5bb9\u6613\u505c\u6ede\u4e4b\u5904\uff0c\u5e76\u975e\u76ee\u6807\u4ef7\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 4,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
     },
     {
       "id": "LRN-BULL-20260605",
@@ -1173,7 +1311,62 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "LRN [HOLD] \u2014 conviction 62/100 (neutral). Drivers: quality. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact."
+      "thesis": "LRN [HOLD] \u2014 conviction 62/100 (neutral). Drivers: quality. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
+    },
+    {
+      "id": "CBOE-BULL-20260722",
+      "asset": "CBOE",
+      "direction": "BULL",
+      "entry": 285.1,
+      "invalidation": 224.56,
+      "targets": [
+        375.91,
+        466.72
+      ],
+      "trigger": 287.9,
+      "option_contract": null,
+      "_r_unit": 60.54,
+      "_conviction_score": 61,
+      "_signal_date": "2026-07-22",
+      "phase": "pre_trigger",
+      "management_confidence": 67.6,
+      "recommended_action": "wait",
+      "what_to_do_now": [
+        "Watch for price to reach the trigger level ($287.90) before entering. No position until trigger is confirmed.",
+        "Keep size small on initial entry; the buy zone extends from trigger up to $375.91 (T1). There is no need to rush.",
+        "If trigger confirms, scale in gradually. Invalidation is $224.56; exit on a close below that level."
+      ],
+      "profit_plan": [
+        {
+          "level": 375.91,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 466.72,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "CBOE \u2014 conviction 61/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Cautions: accounting watch. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. Options positioning (as of 2026-07-26): the heaviest call open interest sat at $290.00, about 1.7% above the entry \u2014 dealer hedging tends to add friction into that level, which is a place price stalls, not a target. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "CBOE \u2014 \u786e\u4fe1\u5ea6 61/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u671f\u6743\u6301\u4ed3\uff08\u622a\u81f32026-07-26\uff09\uff1a\u6700\u91cd\u7684\u770b\u6da8\u6301\u4ed3\u4f4d\u4e8e $290.00\uff0c\u7ea6\u5728\u5165\u573a\u4ef7\u4e0a\u65b91.7% \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u901a\u5e38\u5728\u8be5\u4ef7\u4f4d\u5f62\u6210\u963b\u529b\uff1b\u90a3\u662f\u4ef7\u683c\u5bb9\u6613\u505c\u6ede\u4e4b\u5904\uff0c\u5e76\u975e\u76ee\u6807\u4ef7\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 3,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
     },
     {
       "id": "MSFT-BULL-20260720",
@@ -1191,7 +1384,7 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-20",
       "phase": "pre_trigger",
-      "management_confidence": 66.4,
+      "management_confidence": 61.4,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($405.80) before entering. No position until trigger is confirmed.",
@@ -1212,7 +1405,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "MSFT \u2014 conviction 60/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "MSFT \u2014 conviction 60/100 (neutral) Entry grade: solid. Drivers: quality. Cautions: Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "MSFT \u2014 \u786e\u4fe1\u5ea6 60/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: quality\u3002 \u6ce8\u610f\u4e8b\u9879: \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "SONO-BULL-20260716",
@@ -1230,7 +1426,7 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-16",
       "phase": "pre_trigger",
-      "management_confidence": 65.5,
+      "management_confidence": 63.0,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($15.35) before entering. No position until trigger is confirmed.",
@@ -1251,7 +1447,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "SONO \u2014 conviction 60/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "SONO \u2014 conviction 60/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "SONO \u2014 \u786e\u4fe1\u5ea6 60/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "TEL-BULL-20260717",
@@ -1269,7 +1468,7 @@
       "_conviction_score": 56,
       "_signal_date": "2026-07-17",
       "phase": "pre_trigger",
-      "management_confidence": 67.6,
+      "management_confidence": 62.1,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($210.30) before entering. No position until trigger is confirmed.",
@@ -1290,7 +1489,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "TEL \u2014 conviction 56/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Cautions: earnings in 1d \u2014 binary event, size down; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "TEL \u2014 conviction 56/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; quality. Cautions: earnings in 1d \u2014 binary event, size down; Narrative basket (Technology (Equal-Weight)) is deteriorating \u2014 risk gate risk gate: trim / size down.. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "TEL \u2014 \u786e\u4fe1\u5ea6 56/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; quality\u3002 \u6ce8\u610f\u4e8b\u9879: 1\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3; \u6240\u5c5e\u53d9\u4e8b\u7bee\u5b50\uff08\u4fe1\u606f\u6280\u672f\uff08\u7b49\u6743\uff09\uff09\u6b63\u5728\u6076\u5316 \u2014 \u98ce\u9669\u7ba1\u63a7\u98ce\u9669\u95e8\u69db\uff1a\u51cf\u4ed3\u3002\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "ROST-BULL-20260721",
@@ -1307,13 +1509,13 @@
       "_r_unit": 36.1,
       "_conviction_score": 55,
       "_signal_date": "2026-07-21",
-      "phase": "pre_trigger",
-      "management_confidence": 67.6,
-      "recommended_action": "wait",
+      "phase": "triggered_pre_t1",
+      "management_confidence": 65.1,
+      "recommended_action": "hold",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($237.50) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $289.95 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $199.70; exit on a close below that level."
+        "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($289.95).",
+        "Add to the position on short-term pullbacks as long as price remains above $199.70 (invalidation level).",
+        "Continue building as the move confirms. Full position size targets T2 at $344.10. Do not chase \u2014 add into weakness."
       ],
       "profit_plan": [
         {
@@ -1329,7 +1531,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "ROST \u2014 conviction 55/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "ROST \u2014 conviction 55/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; quality. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "ROST \u2014 \u786e\u4fe1\u5ea6 55/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; quality\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "MS-BULL-20260709",
@@ -1346,20 +1551,19 @@
       "_r_unit": 6.8407,
       "_conviction_score": 52,
       "_signal_date": "2026-07-09",
-      "phase": "pre_trigger",
-      "management_confidence": 33.5,
-      "recommended_action": "wait",
+      "phase": "invalidated",
+      "management_confidence": 11.8,
+      "recommended_action": "invalidated",
       "what_to_do_now": [
-        "Watch for price to reach the trigger level ($224.20) before entering. No position until trigger is confirmed.",
-        "Keep size small on initial entry; the buy zone extends from trigger up to $232.36 (T1). There is no need to rush.",
-        "If trigger confirms, scale in gradually. Invalidation is $215.26; exit on a close below that level."
+        "Invalidation level ($215.26) has been breached. Exit the full position.",
+        "This plan is no longer active. Do not hold through invalidation."
       ],
       "profit_plan": [
         {
           "level": 232.361,
           "label": "T1",
           "action": "Scale out 40%, trail stop to entry",
-          "status": "ACTIVE"
+          "status": "DONE"
         },
         {
           "level": 242.622,
@@ -1368,7 +1572,114 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "MS \u2014 conviction 52/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting watch; earnings in 5d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "MS \u2014 conviction 52/100 (constructive) Entry grade: solid. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting watch; earnings in 5d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
+    },
+    {
+      "id": "EXC-BULL-20260609",
+      "asset": "EXC",
+      "direction": "BULL",
+      "entry": 47.53,
+      "invalidation": 41.38,
+      "targets": [
+        56.755,
+        65.98
+      ],
+      "trigger": 47.85,
+      "option_contract": null,
+      "_r_unit": 6.15,
+      "_conviction_score": 51,
+      "_signal_date": "2026-06-09",
+      "phase": "overtime",
+      "management_confidence": 40.0,
+      "recommended_action": "trim",
+      "what_to_do_now": [
+        "Trade has exceeded its intended horizon without reaching T1 ($56.76). Reassess thesis strength.",
+        "Trim position to reduce time-decay risk. A close below $41.38 (invalidation) is a full exit signal.",
+        "Do not add to the position in overtime. Either T1 is reached soon or the setup is deferred."
+      ],
+      "profit_plan": [
+        {
+          "level": 56.755,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 65.98,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "EXC \u2014 conviction 51/100 (constructive) Entry grade: strong. Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Cautions: accounting watch; earnings in 5d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. Options positioning (as of 2026-07-26): the heaviest call open interest sat at $50.00, about 5.2% above the entry \u2014 dealer hedging tends to add friction into that level, which is a place price stalls, not a target. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "EXC \u2014 \u786e\u4fe1\u5ea6 51/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; 5\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u671f\u6743\u6301\u4ed3\uff08\u622a\u81f32026-07-26\uff09\uff1a\u6700\u91cd\u7684\u770b\u6da8\u6301\u4ed3\u4f4d\u4e8e $50.00\uff0c\u7ea6\u5728\u5165\u573a\u4ef7\u4e0a\u65b95.2% \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u901a\u5e38\u5728\u8be5\u4ef7\u4f4d\u5f62\u6210\u963b\u529b\uff1b\u90a3\u662f\u4ef7\u683c\u5bb9\u6613\u505c\u6ede\u4e4b\u5904\uff0c\u5e76\u975e\u76ee\u6807\u4ef7\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 3,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
+    },
+    {
+      "id": "SYK-BULL-20260518",
+      "asset": "SYK",
+      "direction": "BULL",
+      "entry": 330.2,
+      "invalidation": 274.1,
+      "targets": [
+        414.35,
+        498.5
+      ],
+      "trigger": 334.5,
+      "option_contract": null,
+      "_r_unit": 56.1,
+      "_conviction_score": 50,
+      "_signal_date": "2026-05-18",
+      "phase": "overtime",
+      "management_confidence": 40.0,
+      "recommended_action": "trim",
+      "what_to_do_now": [
+        "Trade has exceeded its intended horizon without reaching T1 ($414.35). Reassess thesis strength.",
+        "Trim position to reduce time-decay risk. A close below $274.10 (invalidation) is a full exit signal.",
+        "Do not add to the position in overtime. Either T1 is reached soon or the setup is deferred."
+      ],
+      "profit_plan": [
+        {
+          "level": 414.35,
+          "label": "T1",
+          "action": "Scale out 40%, trail stop to entry",
+          "status": "ACTIVE"
+        },
+        {
+          "level": 498.5,
+          "label": "T2",
+          "action": "Close remaining 60%, exit full position",
+          "status": "PENDING"
+        }
+      ],
+      "thesis": "SYK \u2014 conviction 50/100 (neutral) Entry grade: solid. Drivers: entry. Cautions: earnings in 5d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. Options positioning (as of 2026-07-26): the heaviest call open interest sat at $360.00, about 9.0% above the entry \u2014 dealer hedging tends to add friction into that level, which is a place price stalls, not a target. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "SYK \u2014 \u786e\u4fe1\u5ea6 50/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: solid\u3002 \u9a71\u52a8\u56e0\u7d20: entry\u3002 \u6ce8\u610f\u4e8b\u9879: 5\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u671f\u6743\u6301\u4ed3\uff08\u622a\u81f32026-07-26\uff09\uff1a\u6700\u91cd\u7684\u770b\u6da8\u6301\u4ed3\u4f4d\u4e8e $360.00\uff0c\u7ea6\u5728\u5165\u573a\u4ef7\u4e0a\u65b99.0% \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u901a\u5e38\u5728\u8be5\u4ef7\u4f4d\u5f62\u6210\u963b\u529b\uff1b\u90a3\u662f\u4ef7\u683c\u5bb9\u6613\u505c\u6ede\u4e4b\u5904\uff0c\u5e76\u975e\u76ee\u6807\u4ef7\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": {
+        "leash": 1.0,
+        "eligible": false,
+        "stage_at_entry": 4,
+        "ec_sent": null,
+        "ec_call_date": null,
+        "bear_gate": false,
+        "provisional": true,
+        "demoted": false,
+        "basis": "PSQ 2026-07-20 quality re-grade; provisional \u2014 forward-shadow checked (~2026-12)"
+      }
     },
     {
       "id": "CVI-BULL-20260713",
@@ -1386,7 +1697,7 @@
       "_conviction_score": 48,
       "_signal_date": "2026-07-13",
       "phase": "pre_trigger",
-      "management_confidence": 66.2,
+      "management_confidence": 62.4,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($35.76) before entering. No position until trigger is confirmed.",
@@ -1407,7 +1718,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "CVI \u2014 conviction 48/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "CVI \u2014 conviction 48/100 (constructive) Entry grade: light. Drivers: earnings \u00b7 insider \u00b7 revisions; entry; tailwind. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "CVI \u2014 \u786e\u4fe1\u5ea6 48/100\uff08\u79ef\u6781\uff09 \u5165\u573a\u8bc4\u7ea7: light\u3002 \u9a71\u52a8\u56e0\u7d20: earnings \u00b7 insider \u00b7 revisions; entry; tailwind\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "BA-BULL-20260702",
@@ -1433,7 +1747,7 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 45.3,
+      "management_confidence": 44.4,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($228.50) before entering. No position until trigger is confirmed.",
@@ -1454,7 +1768,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "BA [TURN SIGNALED] \u2014 conviction 46/100 (neutral). Drivers: entry; tailwind. Cautions: accounting warn. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact."
+      "thesis": "BA [TURN SIGNALED] \u2014 conviction 46/100 (neutral). Drivers: entry; tailwind. Cautions: accounting warn. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "LKFN-BULL-20260716",
@@ -1472,7 +1789,7 @@
       "_conviction_score": 43,
       "_signal_date": "2026-07-16",
       "phase": "pre_trigger",
-      "management_confidence": 65.7,
+      "management_confidence": 63.0,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($63.29) before entering. No position until trigger is confirmed.",
@@ -1493,7 +1810,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "LKFN \u2014 conviction 43/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: earnings in 7d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "LKFN \u2014 conviction 43/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: earnings in 7d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "LKFN \u2014 \u786e\u4fe1\u5ea6 43/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: 7\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "SBUX-BULL-20260702",
@@ -1511,7 +1831,7 @@
       "_conviction_score": 42,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 47.9,
+      "management_confidence": 44.5,
       "recommended_action": "hold",
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($135.31).",
@@ -1532,7 +1852,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "SBUX [TURN SIGNALED] \u2014 conviction 42/100 (neutral). Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact."
+      "thesis": "SBUX [TURN SIGNALED] \u2014 conviction 42/100 (neutral). Drivers: earnings \u00b7 insider \u00b7 revisions; entry. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+      "thesis_zh": "",
+      "horizon_days": 45,
+      "stage_tilt": null
     },
     {
       "id": "CUBI-BULL-20260716",
@@ -1550,7 +1873,7 @@
       "_conviction_score": 39,
       "_signal_date": "2026-07-16",
       "phase": "pre_trigger",
-      "management_confidence": 65.2,
+      "management_confidence": 63.5,
       "recommended_action": "wait",
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($78.91) before entering. No position until trigger is confirmed.",
@@ -1571,7 +1894,10 @@
           "status": "PENDING"
         }
       ],
-      "thesis": "CUBI \u2014 conviction 39/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: accounting watch; earnings in 6d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact."
+      "thesis": "CUBI \u2014 conviction 39/100 (neutral) Entry grade: strong. Drivers: entry; tailwind. Cautions: accounting watch; earnings in 6d \u2014 binary event, size down. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; display-tier artifact.",
+      "thesis_zh": "CUBI \u2014 \u786e\u4fe1\u5ea6 39/100\uff08\u4e2d\u6027\uff09 \u5165\u573a\u8bc4\u7ea7: strong\u3002 \u9a71\u52a8\u56e0\u7d20: entry; tailwind\u3002 \u6ce8\u610f\u4e8b\u9879: \u8d22\u52a1\u8d28\u91cf\u5173\u6ce8; 6\u5929\u540e\u8d22\u62a5 \u2014 \u4e8c\u5143\u4e8b\u4ef6\uff0c\u51cf\u4ed3\u3002 \u53ef\u4fe1\u5ea6: \u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca\u3002 \u4ec5\u4f9b\u5c55\u793a\uff1a\u7531\u56e0\u5b50\u5206\u6570\u673a\u5668\u751f\u6210\uff1b\u65e0\u524d\u77bb\u6536\u76ca\u4fdd\u8bc1\uff1b\u5c55\u793a\u5c42\u7ea7\u8f93\u51fa\u3002",
+      "horizon_days": 45,
+      "stage_tilt": null
     }
   ],
   "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. The word 'validated' is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."

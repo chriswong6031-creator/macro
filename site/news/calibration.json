@@ -1,9 +1,9 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-21",
-  "n_events_logged": 137,
-  "n_events_graded": 54,
+  "asof": "2026-07-25",
+  "n_events_logged": 156,
+  "n_events_graded": 63,
   "classes": [
     {
       "event_type": "bankruptcy_restructuring",
@@ -45,6 +45,19 @@
       "verdict": "insufficient"
     },
     {
+      "event_type": "customer_win",
+      "direction": "bullish",
+      "n": 1,
+      "n_graded": 0,
+      "hit_5d": null,
+      "hit_21d": null,
+      "avg_rel_5d": null,
+      "avg_rel_21d": null,
+      "wilson_low_5d": null,
+      "wilson_high_5d": null,
+      "verdict": "insufficient"
+    },
+    {
       "event_type": "dividend_change",
       "direction": "mixed",
       "n": 1,
@@ -60,11 +73,11 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 17,
-      "n_graded": 5,
+      "n": 22,
+      "n_graded": 7,
       "hit_5d": 0.0,
       "hit_21d": null,
-      "avg_rel_5d": -0.008690400000000001,
+      "avg_rel_5d": -0.0027831428571428577,
       "avg_rel_21d": null,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
@@ -73,7 +86,7 @@
     {
       "event_type": "equity_offering",
       "direction": "bearish",
-      "n": 4,
+      "n": 5,
       "n_graded": 1,
       "hit_5d": 1.0,
       "hit_21d": null,
@@ -87,13 +100,13 @@
       "event_type": "guidance_cut",
       "direction": "bearish",
       "n": 5,
-      "n_graded": 1,
-      "hit_5d": 1.0,
+      "n_graded": 3,
+      "hit_5d": 0.3333333333333333,
       "hit_21d": null,
-      "avg_rel_5d": -0.035782,
+      "avg_rel_5d": -0.009538,
       "avg_rel_21d": null,
-      "wilson_low_5d": 0.206543,
-      "wilson_high_5d": 1.0,
+      "wilson_low_5d": 0.06149,
+      "wilson_high_5d": 0.792345,
       "verdict": "insufficient"
     },
     {
@@ -112,14 +125,14 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 63,
-      "n_graded": 32,
-      "hit_5d": 0.28125,
+      "n": 69,
+      "n_graded": 34,
+      "hit_5d": 0.29411764705882354,
       "hit_21d": null,
-      "avg_rel_5d": 0.023032125,
+      "avg_rel_5d": 0.024081264705882354,
       "avg_rel_21d": null,
-      "wilson_low_5d": 0.155644,
-      "wilson_high_5d": 0.453748,
+      "wilson_low_5d": 0.168345,
+      "wilson_high_5d": 0.461692,
       "verdict": "no_edge"
     },
     {
@@ -138,7 +151,7 @@
     {
       "event_type": "management_change",
       "direction": "mixed",
-      "n": 7,
+      "n": 8,
       "n_graded": 2,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -152,32 +165,32 @@
       "event_type": "mna_confirmed",
       "direction": "bullish",
       "n": 6,
-      "n_graded": 2,
+      "n_graded": 3,
       "hit_5d": 0.0,
       "hit_21d": null,
-      "avg_rel_5d": -0.008553,
+      "avg_rel_5d": -0.025414999999999997,
       "avg_rel_21d": null,
       "wilson_low_5d": 0.0,
-      "wilson_high_5d": 0.657628,
+      "wilson_high_5d": 0.561506,
       "verdict": "insufficient"
     },
     {
       "event_type": "mna_rumor",
       "direction": "bullish",
       "n": 2,
-      "n_graded": 0,
-      "hit_5d": null,
+      "n_graded": 1,
+      "hit_5d": 1.0,
       "hit_21d": null,
-      "avg_rel_5d": null,
+      "avg_rel_5d": 0.084247,
       "avg_rel_21d": null,
-      "wilson_low_5d": null,
-      "wilson_high_5d": null,
+      "wilson_low_5d": 0.206543,
+      "wilson_high_5d": 1.0,
       "verdict": "insufficient"
     },
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 7,
+      "n": 11,
       "n_graded": 4,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -203,7 +216,7 @@
     {
       "event_type": "product_launch",
       "direction": "bullish",
-      "n": 3,
+      "n": 4,
       "n_graded": 1,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -217,10 +230,10 @@
       "event_type": "rating_change",
       "direction": "mixed",
       "n": 3,
-      "n_graded": 2,
+      "n_graded": 3,
       "hit_5d": 0.0,
       "hit_21d": null,
-      "avg_rel_5d": 0.006264500000000001,
+      "avg_rel_5d": -0.0006166666666666659,
       "avg_rel_21d": null,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
@@ -241,7 +254,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 312,
+    "n_sampled": 339,
     "n_graded": 0,
     "classes": []
   }

@@ -25,7 +25,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=370c3de0">
-<link rel="stylesheet" href="assets/css/0316678d.css?v=0316678d">
+<link rel="stylesheet" href="assets/css/e9b6f992.css?v=e9b6f992">
 </head>
 <body class="page-flow-desk">
 <div class="fd-aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -243,7 +243,7 @@
   </div>
   
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=a459ef8f" defer></script>
+  <script src="live.js?v=e19f6af3" defer></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -287,8 +287,8 @@
   <h1>🌊 <span class="l-en">US Options Flow</span><span class="l-zh">美股期权资金流</span></h1>
   <span class="lag-tag"><span class="l-en">End of day</span><span class="l-zh">收盘数据</span></span>
   <span class="help">?<span class="tip"><span class="l-en">A once-a-day rollup of the whole US options tape (~370 names), built after the close. SIZE — how much money changed hands — is a solid read. DIRECTION (who was buying vs selling) is approximate, marked with ~, and this page never issues a buy or sell. Sector and theme groups roll up from membership; ETF flows are a creation/redemption proxy.</span><span class="l-zh">每日收盘后对全美期权盘面（约370只标的）的一次汇总。规模（成交金额）为可靠读数；方向（买方或卖方）为近似值，以~标注；本页从不发出买卖信号。板块与主题群组按成分归并；ETF资金流为申购/赎回代理指标。</span></span></span>
-  <span class="asof num" id="fd-asof" data-asof="2026-07-23" style="margin-left:auto">
-    <span class="l-en">as of</span><span class="l-zh">截至</span> <b>2026-07-23</b> · <span class="l-en">updated</span><span class="l-zh">更新</span> 2026-07-24</span>
+  <span class="asof num" id="fd-asof" data-asof="2026-07-24" style="margin-left:auto">
+    <span class="l-en">as of</span><span class="l-zh">截至</span> <b>2026-07-24</b> · <span class="l-en">updated</span><span class="l-zh">更新</span> 2026-07-25</span>
 </div>
 
 
@@ -298,7 +298,7 @@
 
 
 
-<section class="fd-hero" style="--lean-tint:rgba(52,194,211,.07)">
+<section class="fd-hero" style="--lean-tint:rgba(69,184,115,.07)">
 
   <!-- Tide gauge -->
   <div class="fd-gauge-col">
@@ -319,8 +319,8 @@
         <!-- fill -->
         <path id="fd-gauge-arc" class="fd-gauge-arc-fill" d="M 14 75 A 56 56 0 0 1 126 75"
               stroke="url(#fdArcG)" stroke-width="9" stroke-linecap="round"
-              stroke-dasharray="175.93" stroke-dashoffset="43.98"
-              data-fill="131.95" data-arc="175.93"/>
+              stroke-dasharray="175.93" stroke-dashoffset="98.52"
+              data-fill="77.41" data-arc="175.93"/>
         <!-- ticks at 0 / 50 / 100 -->
         <g stroke="color-mix(in srgb,var(--ink-3) 30%,transparent)" stroke-width="1.1">
           <line x1="70" y1="20" x2="70" y2="26" transform="rotate(-90 70 75)"/>
@@ -332,13 +332,13 @@
       </svg>
       <div class="fd-gauge-num">
         
-        <div class="g-n num" id="fd-score" data-to="75">75</div>
+        <div class="g-n num" id="fd-score" data-to="44">44</div>
         
         <div class="g-of num">/ 100</div>
       </div>
     </div>
     <div class="fd-gauge-band">
-      <span class="l-en">Heavy</span><span class="l-zh">汹涌</span>
+      <span class="l-en">Average</span><span class="l-zh">中等</span>
     </div>
   </div>
 
@@ -361,33 +361,33 @@
     
     
     <p class="fd-thesis">
-      <span class="l-en">Options tape is running hot, heavier than the day before — buyers and sellers evenly matched<span class="softmk"> ~approx</span>. A heads-up — <b>not a buy signal</b>.</span>
-      <span class="l-zh">期权盘面火热，较前一日增强 — 买卖大致均衡<span class="softmk"> ~近似</span>。仅为提示，<b>非买入信号</b>。</span>
+      <span class="l-en">Roughly an average day for options — buyers had a slight edge<span class="softmk"> ~approx</span>. A heads-up — <b>not a buy signal</b>.</span>
+      <span class="l-zh">期权资金大致中等 — 略偏买方<span class="softmk"> ~近似</span>。仅为提示，<b>非买入信号</b>。</span>
     </p>
 
     <!-- vitals -->
     <div class="fd-vitals">
       <div class="vital">
         <div class="v-l"><span class="l-en">Options traded</span><span class="l-zh">期权成交额</span></div>
-        <div class="v-n">$24.6B
-          <span class="dod-chip up">+29%</span></div>
+        <div class="v-n">$18.9B
+          <span class="dod-chip ">0%</span></div>
         <div class="v-m"><span class="l-en">premium, all names</span><span class="l-zh">全部标的权利金</span></div>
       </div>
       <div class="vital">
         <div class="v-l"><span class="l-en">Tape lean</span><span class="l-zh">盘面倾向</span> <span class="softmk">~</span></div>
-        <div class="v-n ">
-          58%</div>
+        <div class="v-n pos">
+          61%</div>
         <div class="v-m">
-          <span class="l-en">evenly split~</span><span class="l-zh">买卖均衡~</span></div>
+          <span class="l-en">names bought~</span><span class="l-zh">标的偏买~</span></div>
       </div>
       <div class="vital">
         <div class="v-l"><span class="l-en">Same-day bets</span><span class="l-zh">当日到期</span></div>
-        <div class="v-n">14%</div>
+        <div class="v-n">51%</div>
         <div class="v-m"><span class="l-en">0DTE share</span><span class="l-zh">0DTE占比</span></div>
       </div>
       <div class="vital">
         <div class="v-l"><span class="l-en">Names covered</span><span class="l-zh">覆盖标的</span></div>
-        <div class="v-n">369</div>
+        <div class="v-n">367</div>
         <div class="v-m"><span class="l-en">in the tape</span><span class="l-zh">纳入盘面</span></div>
       </div>
     </div>
@@ -398,8 +398,8 @@
       
         
         <span class="callout"><span class="ci">⚑</span>
-          <span class="l-en"><b>Consumer Disc.</b> flow well above its own norm</span>
-          <span class="l-zh"><b>Consumer Disc.</b>资金远高于自身常态</span></span>
+          <span class="l-en"><b>Memory</b> leaning to puts while the tape buys — hedged</span>
+          <span class="l-zh"><b>存储</b>在大盘偏买时偏向看跌 — 对冲</span></span>
         
       
     </div>
@@ -415,6 +415,32 @@
   
 </section>
 
+
+
+<section class="panel fdu" id="fd-unfold" hidden style="--rail:var(--flow)">
+  <div class="p-head">
+    <h2><span class="l-en">How the day unfolded</span><span class="l-zh">当日资金流演变</span></h2>
+    <span class="help">?<span class="tip"><span class="l-en">The finished session minute by minute: running net call premium minus net put premium, both signed from the tape (~approximate). Above the line means calls were bought and puts sold on balance; below the line, the reverse. Read the shape, not the level — where the lean built, faded, or turned. Source is the live tape store, refreshed about every 2 minutes while the market is open.</span><span class="l-zh">已收盘交易时段的逐分钟走势：累计净看涨权利金减净看跌权利金，方向由盘面推断（~近似）。在零轴上方表示整体买入看涨、卖出看跌；下方则相反。请看形态而非绝对水平 — 关注倾向在何时加强、回落或转向。数据来自实时盘面存储，开市期间约每2分钟更新一次。</span></span></span>
+    <span class="p-sub num" id="fdu-asof"></span>
+  </div>
+  <div class="fdu-row">
+    <div class="fdu-read">
+      <span class="lean-chip fdu-lean" id="fdu-lean"></span>
+      <div class="fdu-net" id="fdu-net"></div>
+      <div class="fdu-shape" id="fdu-shape"></div>
+    </div>
+    <div class="fdu-cv">
+      <canvas id="fdu-spark" role="img"
+              aria-label="Cumulative net options premium through the completed session"></canvas>
+    </div>
+  </div>
+  <div class="fdu-foot">
+    <span class="l-en">Shape only. Direction is approximate<span class="softmk"> ~</span> and this is
+      <b>never a buy or sell signal</b>. Watch — don't chase.</span>
+    <span class="l-zh">仅供观察形态。方向为近似值<span class="softmk"> ~</span>，
+      <b>从不构成买卖信号</b>。观望 — 别追高。</span>
+  </div>
+</section>
 
 
 <div class="fd-grid">
@@ -436,18 +462,18 @@
       
       
       
-      <div class="heat-row" data-tip-en="Technology — $8.2B premium across 51 names; 61% of tape-covered names net buying; net ~+180M (approx); -0.3σ vs own history"
-           data-tip-zh="Technology — $8.2B权利金，51只标的；61%的可测标的净买入；净~+180M（近似）；较自身历史-0.3σ">
+      <div class="heat-row" data-tip-en="Technology — $8.0B premium across 51 names; 61% of tape-covered names net buying; net ~+194M (approx); -0.3σ vs own history"
+           data-tip-zh="Technology — $8.0B权利金，51只标的；61%的可测标的净买入；净~+194M（近似）；较自身历史-0.3σ">
         <div class="h-name">Technology</div>
         <div class="heat-bar">
           <div class="fill" style="--w:100.0%;--hc:var(--up);animation-delay:0ms"></div>
-          <div class="cap num">$8.2B</div>
+          <div class="cap num">$8.0B</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-buy">
             <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">49%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -456,18 +482,38 @@
       
       
       
-      <div class="heat-row" data-tip-en="Consumer Disc. — $5.9B premium across 26 names; 38% of tape-covered names net buying; net ~+1186M (approx); 3.7σ vs own history"
-           data-tip-zh="Consumer Disc. — $5.9B权利金，26只标的；38%的可测标的净买入；净~+1186M（近似）；较自身历史3.7σ">
-        <div class="h-name"><span class="h-star">⚑</span>Consumer Disc.</div>
+      <div class="heat-row" data-tip-en="Index ETFs — $4.6B premium across 4 names; 75% of tape-covered names net buying; net ~+148M (approx); -0.1σ vs own history"
+           data-tip-zh="Index ETFs — $4.6B权利金，4只标的；75%的可测标的净买入；净~+148M（近似）；较自身历史-0.1σ">
+        <div class="h-name">Index ETFs</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:71.7%;--hc:var(--down);animation-delay:45ms"></div>
-          <div class="cap num">$5.9B</div>
+          <div class="fill" style="--w:56.6%;--hc:var(--up);animation-delay:45ms"></div>
+          <div class="cap num">$4.6B</div>
+        </div>
+        <div class="h-right">
+          <span class="lean-chip lean-buy">
+            <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
+          </span>
+          <span class="h-0dte num">69%<span class="muted xs"> 0d</span></span>
+        </div>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="heat-row" data-tip-en="Consumer Disc. — $2.5B premium across 26 names; 38% of tape-covered names net buying; net ~+335M (approx); -0.0σ vs own history"
+           data-tip-zh="Consumer Disc. — $2.5B权利金，26只标的；38%的可测标的净买入；净~+335M（近似）；较自身历史-0.0σ">
+        <div class="h-name">Consumer Disc.</div>
+        <div class="heat-bar">
+          <div class="fill" style="--w:30.8%;--hc:var(--down);animation-delay:90ms"></div>
+          <div class="cap num">$2.5B</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-sell">
             <span class="l-en">selling~</span><span class="l-zh">偏卖~</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">54%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -476,38 +522,18 @@
       
       
       
-      <div class="heat-row" data-tip-en="Index ETFs — $5.9B premium across 4 names; 75% of tape-covered names net buying; net ~+1072M (approx); 0.3σ vs own history"
-           data-tip-zh="Index ETFs — $5.9B权利金，4只标的；75%的可测标的净买入；净~+1072M（近似）；较自身历史0.3σ">
-        <div class="h-name">Index ETFs</div>
+      <div class="heat-row" data-tip-en="Communication — $771M premium across 4 names; 50% of tape-covered names net buying; net ~-77M (approx); -0.4σ vs own history"
+           data-tip-zh="Communication — $771M权利金，4只标的；50%的可测标的净买入；净~-77M（近似）；较自身历史-0.4σ">
+        <div class="h-name">Communication</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:71.5%;--hc:var(--up);animation-delay:90ms"></div>
-          <div class="cap num">$5.9B</div>
-        </div>
-        <div class="h-right">
-          <span class="lean-chip lean-buy">
-            <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
-          </span>
-          <span class="h-0dte num">62%<span class="muted xs"> 0d</span></span>
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="heat-row" data-tip-en="Communication — $1.9B premium across 4 names; 50% of tape-covered names net buying; net ~-115M (approx); 1.1σ vs own history"
-           data-tip-zh="Communication — $1.9B权利金，4只标的；50%的可测标的净买入；净~-115M（近似）；较自身历史1.1σ">
-        <div class="h-name"><span class="h-star">⚑</span>Communication</div>
-        <div class="heat-bar">
-          <div class="fill" style="--w:22.6%;--hc:var(--flow);animation-delay:135ms"></div>
-          <div class="cap num">$1.9B</div>
+          <div class="fill" style="--w:9.6%;--hc:var(--flow);animation-delay:135ms"></div>
+          <div class="cap num">$771M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-bal">
             <span class="l-en">mixed</span><span class="l-zh">中性</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">50%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -516,18 +542,18 @@
       
       
       
-      <div class="heat-row" data-tip-en="Industrials — $341M premium across 40 names; 65% of tape-covered names net buying; net ~+14M (approx); -0.2σ vs own history"
-           data-tip-zh="Industrials — $341M权利金，40只标的；65%的可测标的净买入；净~+14M（近似）；较自身历史-0.2σ">
+      <div class="heat-row" data-tip-en="Industrials — $259M premium across 41 names; 66% of tape-covered names net buying; net ~+2M (approx); -0.4σ vs own history"
+           data-tip-zh="Industrials — $259M权利金，41只标的；66%的可测标的净买入；净~+2M（近似）；较自身历史-0.4σ">
         <div class="h-name">Industrials</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:4.2%;--hc:var(--up);animation-delay:180ms"></div>
-          <div class="cap num">$341M</div>
+          <div class="fill" style="--w:3.2%;--hc:var(--up);animation-delay:180ms"></div>
+          <div class="cap num">$259M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-buy">
             <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">25%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -536,38 +562,18 @@
       
       
       
-      <div class="heat-row" data-tip-en="Health Care — $318M premium across 15 names; 60% of tape-covered names net buying; net ~-8M (approx); -0.1σ vs own history"
-           data-tip-zh="Health Care — $318M权利金，15只标的；60%的可测标的净买入；净~-8M（近似）；较自身历史-0.1σ">
-        <div class="h-name">Health Care</div>
-        <div class="heat-bar">
-          <div class="fill" style="--w:3.9%;--hc:var(--up);animation-delay:225ms"></div>
-          <div class="cap num">$318M</div>
-        </div>
-        <div class="h-right">
-          <span class="lean-chip lean-buy">
-            <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
-          </span>
-          <span class="h-0dte num"></span>
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="heat-row" data-tip-en="Financials — $201M premium across 25 names; 48% of tape-covered names net buying; net ~-22M (approx); -0.5σ vs own history"
-           data-tip-zh="Financials — $201M权利金，25只标的；48%的可测标的净买入；净~-22M（近似）；较自身历史-0.5σ">
+      <div class="heat-row" data-tip-en="Financials — $256M premium across 25 names; 48% of tape-covered names net buying; net ~-23M (approx); -0.5σ vs own history"
+           data-tip-zh="Financials — $256M权利金，25只标的；48%的可测标的净买入；净~-23M（近似）；较自身历史-0.5σ">
         <div class="h-name">Financials</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:2.4%;--hc:var(--flow);animation-delay:270ms"></div>
-          <div class="cap num">$201M</div>
+          <div class="fill" style="--w:3.2%;--hc:var(--flow);animation-delay:225ms"></div>
+          <div class="cap num">$256M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-bal">
             <span class="l-en">mixed</span><span class="l-zh">中性</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">40%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -576,38 +582,18 @@
       
       
       
-      <div class="heat-row" data-tip-en="Staples — $173M premium across 21 names; 56% of tape-covered names net buying; net ~+72M (approx); -0.0σ vs own history"
-           data-tip-zh="Staples — $173M权利金，21只标的；56%的可测标的净买入；净~+72M（近似）；较自身历史-0.0σ">
-        <div class="h-name">Staples</div>
+      <div class="heat-row" data-tip-en="Health Care — $213M premium across 15 names; 60% of tape-covered names net buying; net ~-16M (approx); -0.3σ vs own history"
+           data-tip-zh="Health Care — $213M权利金，15只标的；60%的可测标的净买入；净~-16M（近似）；较自身历史-0.3σ">
+        <div class="h-name">Health Care</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:2.1%;--hc:var(--flow);animation-delay:315ms"></div>
-          <div class="cap num">$173M</div>
-        </div>
-        <div class="h-right">
-          <span class="lean-chip lean-bal">
-            <span class="l-en">mixed</span><span class="l-zh">中性</span>
-          </span>
-          <span class="h-0dte num"></span>
-        </div>
-      </div>
-      
-      
-      
-      
-      
-      
-      <div class="heat-row" data-tip-en="Energy — $148M premium across 19 names; 74% of tape-covered names net buying; net ~-6M (approx); -0.1σ vs own history"
-           data-tip-zh="Energy — $148M权利金，19只标的；74%的可测标的净买入；净~-6M（近似）；较自身历史-0.1σ">
-        <div class="h-name">Energy</div>
-        <div class="heat-bar">
-          <div class="fill" style="--w:1.8%;--hc:var(--up);animation-delay:360ms"></div>
-          <div class="cap num">$148M</div>
+          <div class="fill" style="--w:2.7%;--hc:var(--up);animation-delay:270ms"></div>
+          <div class="cap num">$213M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-buy">
             <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">34%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -616,18 +602,38 @@
       
       
       
-      <div class="heat-row" data-tip-en="Utilities — $47M premium across 11 names; 55% of tape-covered names net buying; net ~+4M (approx); -0.1σ vs own history"
-           data-tip-zh="Utilities — $47M权利金，11只标的；55%的可测标的净买入；净~+4M（近似）；较自身历史-0.1σ">
-        <div class="h-name">Utilities</div>
+      <div class="heat-row" data-tip-en="Energy — $158M premium across 19 names; 74% of tape-covered names net buying; net ~+9M (approx); -0.1σ vs own history"
+           data-tip-zh="Energy — $158M权利金，19只标的；74%的可测标的净买入；净~+9M（近似）；较自身历史-0.1σ">
+        <div class="h-name">Energy</div>
         <div class="heat-bar">
-          <div class="fill" style="--w:0.6%;--hc:var(--flow);animation-delay:405ms"></div>
-          <div class="cap num">$47M</div>
+          <div class="fill" style="--w:2.0%;--hc:var(--up);animation-delay:315ms"></div>
+          <div class="cap num">$158M</div>
+        </div>
+        <div class="h-right">
+          <span class="lean-chip lean-buy">
+            <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
+          </span>
+          <span class="h-0dte num">20%<span class="muted xs"> 0d</span></span>
+        </div>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="heat-row" data-tip-en="Staples — $83M premium across 21 names; 56% of tape-covered names net buying; net ~-8M (approx); -0.6σ vs own history"
+           data-tip-zh="Staples — $83M权利金，21只标的；56%的可测标的净买入；净~-8M（近似）；较自身历史-0.6σ">
+        <div class="h-name">Staples</div>
+        <div class="heat-bar">
+          <div class="fill" style="--w:1.0%;--hc:var(--flow);animation-delay:360ms"></div>
+          <div class="cap num">$83M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-bal">
             <span class="l-en">mixed</span><span class="l-zh">中性</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">22%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -636,18 +642,38 @@
       
       
       
-      <div class="heat-row" data-tip-en="Materials — $11M premium across 3 names; 67% of tape-covered names net buying; net ~+3M (approx); -0.1σ vs own history"
-           data-tip-zh="Materials — $11M权利金，3只标的；67%的可测标的净买入；净~+3M（近似）；较自身历史-0.1σ">
+      <div class="heat-row" data-tip-en="Utilities — $27M premium across 11 names; 55% of tape-covered names net buying; net ~-0M (approx); -0.5σ vs own history"
+           data-tip-zh="Utilities — $27M权利金，11只标的；55%的可测标的净买入；净~-0M（近似）；较自身历史-0.5σ">
+        <div class="h-name">Utilities</div>
+        <div class="heat-bar">
+          <div class="fill" style="--w:0.3%;--hc:var(--flow);animation-delay:405ms"></div>
+          <div class="cap num">$27M</div>
+        </div>
+        <div class="h-right">
+          <span class="lean-chip lean-bal">
+            <span class="l-en">mixed</span><span class="l-zh">中性</span>
+          </span>
+          <span class="h-0dte num">20%<span class="muted xs"> 0d</span></span>
+        </div>
+      </div>
+      
+      
+      
+      
+      
+      
+      <div class="heat-row" data-tip-en="Materials — $6M premium across 3 names; 67% of tape-covered names net buying; net ~+1M (approx); -0.2σ vs own history"
+           data-tip-zh="Materials — $6M权利金，3只标的；67%的可测标的净买入；净~+1M（近似）；较自身历史-0.2σ">
         <div class="h-name">Materials</div>
         <div class="heat-bar">
           <div class="fill" style="--w:0.1%;--hc:var(--up);animation-delay:450ms"></div>
-          <div class="cap num">$11M</div>
+          <div class="cap num">$6M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-buy">
             <span class="l-en">buying~</span><span class="l-zh">偏买~</span>
           </span>
-          <span class="h-0dte num"></span>
+          <span class="h-0dte num">6%<span class="muted xs"> 0d</span></span>
         </div>
       </div>
       
@@ -656,12 +682,12 @@
       
       
       
-      <div class="heat-row" data-tip-en="Real Estate — $1M premium across 1 names; 100% of tape-covered names net buying; net ~+1M (approx)"
-           data-tip-zh="Real Estate — $1M权利金，1只标的；100%的可测标的净买入；净~+1M（近似）">
+      <div class="heat-row" data-tip-en="Real Estate — $3M premium across 1 names; 100% of tape-covered names net buying; net ~+2M (approx)"
+           data-tip-zh="Real Estate — $3M权利金，1只标的；100%的可测标的净买入；净~+2M（近似）">
         <div class="h-name">Real Estate</div>
         <div class="heat-bar">
           <div class="fill" style="--w:0.0%;--hc:var(--up);animation-delay:495ms"></div>
-          <div class="cap num">$1M</div>
+          <div class="cap num">$3M</div>
         </div>
         <div class="h-right">
           <span class="lean-chip lean-buy">
@@ -684,27 +710,10 @@
     </div>
     <div class="coh-strip">
       
-      <div class="coh-tile" data-tip-en="Mag 7 — 7/7 members covered; P/C 0.64; net ~+1232M (approx); 0DTE 0%"
-           data-tip-zh="七巨头 — 覆盖7/7只；看跌看涨比 0.64；净~+1232M（近似）；0DTE 0%">
+      <div class="coh-tile" data-tip-en="Mag 7 — 7/7 members covered; P/C 0.71; net ~+522M (approx); 0DTE 55%"
+           data-tip-zh="七巨头 — 覆盖7/7只；看跌看涨比 0.71；净~+522M（近似）；0DTE 55%">
         <div class="c-nm"><span class="l-en">Mag 7</span><span class="l-zh">七巨头</span></div>
-        <div class="c-gr num">$9.2B</div>
-        <div class="c-chips">
-          <span class="pc-chip pc-call">
-            <span class="l-en">calls</span><span class="l-zh">偏看涨</span>
-          </span>
-          
-          <span class="pc-chip pc-call">
-            <span class="l-en">net buy~</span><span class="l-zh">净买~</span>
-          </span>
-          
-        </div>
-        <div class="c-cov">7/7 <span class="l-en">covered</span><span class="l-zh">覆盖</span></div>
-      </div>
-      
-      <div class="coh-tile" data-tip-en="Memory — 4/4 members covered; P/C 1.22; net ~+186M (approx); 0DTE 0%"
-           data-tip-zh="存储 — 覆盖4/4只；看跌看涨比 1.22；净~+186M（近似）；0DTE 0%">
-        <div class="c-nm"><span class="l-en">Memory</span><span class="l-zh">存储</span></div>
-        <div class="c-gr num">$3.8B</div>
+        <div class="c-gr num">$4.9B</div>
         <div class="c-chips">
           <span class="pc-chip pc-bal">
             <span class="l-en">balanced</span><span class="l-zh">均衡</span>
@@ -715,16 +724,16 @@
           </span>
           
         </div>
-        <div class="c-cov">4/4 <span class="l-en">covered</span><span class="l-zh">覆盖</span></div>
+        <div class="c-cov">7/7 <span class="l-en">covered</span><span class="l-zh">覆盖</span></div>
       </div>
       
-      <div class="coh-tile" data-tip-en="AI chips — 12/12 members covered; P/C 0.57; net ~+156M (approx); 0DTE 0%"
-           data-tip-zh="AI芯片 — 覆盖12/12只；看跌看涨比 0.57；净~+156M（近似）；0DTE 0%">
-        <div class="c-nm"><span class="l-en">AI chips</span><span class="l-zh">AI芯片</span></div>
-        <div class="c-gr num">$1.9B</div>
+      <div class="coh-tile" data-tip-en="Memory — 4/4 members covered; P/C 1.30; net ~+90M (approx); 0DTE 51%"
+           data-tip-zh="存储 — 覆盖4/4只；看跌看涨比 1.30；净~+90M（近似）；0DTE 51%">
+        <div class="c-nm"><span class="l-en">Memory</span><span class="l-zh">存储</span></div>
+        <div class="c-gr num">$4.0B</div>
         <div class="c-chips">
-          <span class="pc-chip pc-call">
-            <span class="l-en">calls</span><span class="l-zh">偏看涨</span>
+          <span class="pc-chip pc-put">
+            <span class="l-en">puts</span><span class="l-zh">偏看跌</span>
           </span>
           
           <span class="pc-chip pc-call">
@@ -732,13 +741,30 @@
           </span>
           
         </div>
+        <div class="c-cov">4/4 <span class="l-en">covered</span><span class="l-zh">覆盖</span></div>
+      </div>
+      
+      <div class="coh-tile" data-tip-en="AI chips — 12/12 members covered; P/C 0.64; net ~-1M (approx); 0DTE 51%"
+           data-tip-zh="AI芯片 — 覆盖12/12只；看跌看涨比 0.64；净~-1M（近似）；0DTE 51%">
+        <div class="c-nm"><span class="l-en">AI chips</span><span class="l-zh">AI芯片</span></div>
+        <div class="c-gr num">$2.1B</div>
+        <div class="c-chips">
+          <span class="pc-chip pc-call">
+            <span class="l-en">calls</span><span class="l-zh">偏看涨</span>
+          </span>
+          
+          <span class="pc-chip pc-bal">
+            <span class="l-en">flat~</span><span class="l-zh">持平~</span>
+          </span>
+          
+        </div>
         <div class="c-cov">12/12 <span class="l-en">covered</span><span class="l-zh">覆盖</span></div>
       </div>
       
-      <div class="coh-tile" data-tip-en="Software — 17/17 members covered; P/C 0.62; net ~-172M (approx); 0DTE 0%"
-           data-tip-zh="软件 — 覆盖17/17只；看跌看涨比 0.62；净~-172M（近似）；0DTE 0%">
+      <div class="coh-tile" data-tip-en="Software — 17/17 members covered; P/C 0.54; net ~-93M (approx); 0DTE 43%"
+           data-tip-zh="软件 — 覆盖17/17只；看跌看涨比 0.54；净~-93M（近似）；0DTE 43%">
         <div class="c-nm"><span class="l-en">Software</span><span class="l-zh">软件</span></div>
-        <div class="c-gr num">$3.6B</div>
+        <div class="c-gr num">$1.8B</div>
         <div class="c-chips">
           <span class="pc-chip pc-call">
             <span class="l-en">calls</span><span class="l-zh">偏看涨</span>
@@ -770,40 +796,40 @@
     <div class="mv-list">
       
       
-      <div class="mv-row" data-tip-en="$5.0B premium traded; 0% 0DTE; 712 fresh positions; P/C 0.8; ~leans bearish/hedging (direction approx)" data-tip-zh="$5.0B premium traded; 0% 0DTE; 712 fresh positions; P/C 0.8; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">TSLA</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$1.0B</span>
-          <span class="mv-tone lean-buy">
-            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$2.9B premium traded; 65% 0DTE; 1180 fresh positions; P/C 1.12; ~leans bearish/hedging (direction approx)" data-tip-zh="$2.9B premium traded; 65% 0DTE; 1180 fresh positions; P/C 1.12; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">QQQ</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$631M</span>
-          <span class="mv-tone lean-buy">
-            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          <span class="mini-tag">64% 0d</span>
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$2.6B premium traded; 65% 0DTE; 948 fresh positions; P/C 1.29; ~leans bearish/hedging (direction approx)" data-tip-zh="$2.6B premium traded; 65% 0DTE; 948 fresh positions; P/C 1.29; ~leans bearish/hedging (direction approx)">
+      <div class="mv-row" data-tip-en="$2.0B premium traded; 70% 0DTE; 740 fresh positions; P/C 1.27; ~leans bearish/hedging (direction approx)" data-tip-zh="$2.0B premium traded; 70% 0DTE; 740 fresh positions; P/C 1.27; ~leans bearish/hedging (direction approx)">
         <div class="mv-tk">SPY</div>
         <div class="mv-mid">
-          <span class="mv-net pos">+$480M</span>
+          <span class="mv-net pos">+$347M</span>
+          <span class="mv-tone lean-buy">
+            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">69% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$2.3B premium traded; 72% 0DTE; 933 fresh positions; P/C 1.18; ~leans bearish/hedging (direction approx)" data-tip-zh="$2.3B premium traded; 72% 0DTE; 933 fresh positions; P/C 1.18; ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">QQQ</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$208M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">72% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$594M premium traded; 65% 0DTE; 254 fresh positions; P/C 0.61; ~leans bullish (direction approx)" data-tip-zh="$594M premium traded; 65% 0DTE; 254 fresh positions; P/C 0.61; ~leans bullish (direction approx)">
+        <div class="mv-tk">AAPL</div>
+        <div class="mv-mid">
+          <span class="mv-net pos">+$202M</span>
           <span class="mv-tone lean-buy">
             <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
           </span>
@@ -815,181 +841,181 @@
       </div>
       
       
-      <div class="mv-row" data-tip-en="$2.1B premium traded; 0% 0DTE; 413 fresh positions; P/C 1.15; ~leans bearish/hedging (direction approx)" data-tip-zh="$2.1B premium traded; 0% 0DTE; 413 fresh positions; P/C 1.15; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">MU</div>
+      <div class="mv-row" data-tip-en="$1.9B premium traded; 60% 0DTE; 462 fresh positions; P/C 1.11; ~leans bearish/hedging (direction approx)" data-tip-zh="$1.9B premium traded; 60% 0DTE; 462 fresh positions; P/C 1.11; ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">TSLA</div>
         <div class="mv-mid">
-          <span class="mv-net pos">+$234M</span>
+          <span class="mv-net pos">+$195M</span>
           <span class="mv-tone lean-buy">
             <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
           </span>
         </div>
         <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$845M premium traded; 0% 0DTE; 219 fresh positions; P/C 0.56; ~leans bullish (direction approx)" data-tip-zh="$845M premium traded; 0% 0DTE; 219 fresh positions; P/C 0.56; ~leans bullish (direction approx)">
-        <div class="mv-tk">NVDA</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$211M</span>
-          <span class="mv-tone lean-buy">
-            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
+          <span class="mini-tag">60% 0d</span>
           
         </div>
       </div>
       
       
-      <div class="mv-row" data-tip-en="$758M premium traded; 0% 0DTE; 200 fresh positions; P/C 0.37; net new CALL positioning (bullish lean) (ΔOI +90,849); ~leans bullish (direction approx)" data-tip-zh="$758M premium traded; 0% 0DTE; 200 fresh positions; P/C 0.37; net new CALL positioning (bullish lean) (ΔOI +90,849); ~leans bullish (direction approx)">
+      <div class="mv-row" data-tip-en="$529M premium traded; 38% 0DTE; 196 fresh positions; P/C 0.48; ~leans bullish (direction approx)" data-tip-zh="$529M premium traded; 38% 0DTE; 196 fresh positions; P/C 0.48; ~leans bullish (direction approx)">
         <div class="mv-tk">AMZN</div>
         <div class="mv-mid">
-          <span class="mv-net pos">+$152M</span>
+          <span class="mv-net pos">+$142M</span>
           <span class="mv-tone lean-buy">
             <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
           </span>
         </div>
         <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$742M premium traded; 0% 0DTE; 330 fresh positions; P/C 0.48; ~leans bullish (direction approx)" data-tip-zh="$742M premium traded; 0% 0DTE; 330 fresh positions; P/C 0.48; ~leans bullish (direction approx)">
-        <div class="mv-tk">META</div>
-        <div class="mv-mid">
-          <span class="mv-net neg">−$143M</span>
-          <span class="mv-tone lean-sell">
-            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
+          <span class="mini-tag">38% 0d</span>
           
         </div>
       </div>
       
       
-      <div class="mv-row" data-tip-en="$91M premium traded; 0% 0DTE; 93 fresh positions; P/C 1.01; net new PUT positioning (defensive / hedging) (ΔOI +14,273); ~leans bullish (direction approx)" data-tip-zh="$91M premium traded; 0% 0DTE; 93 fresh positions; P/C 1.01; net new PUT positioning (defensive / hedging) (ΔOI +14,273); ~leans bullish (direction approx)">
-        <div class="mv-tk">COST</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$68M</span>
-          <span class="mv-tone lean-buy">
-            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$248M premium traded; 0% 0DTE; 100 fresh positions; P/C 0.32; ~leans bearish (direction approx)" data-tip-zh="$248M premium traded; 0% 0DTE; 100 fresh positions; P/C 0.32; ~leans bearish (direction approx)">
-        <div class="mv-tk">MSTR</div>
-        <div class="mv-mid">
-          <span class="mv-net neg">−$66M</span>
-          <span class="mv-tone lean-sell">
-            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$1.5B premium traded; 0% 0DTE; 261 fresh positions; P/C 1.34; ~leans bearish/hedging (direction approx)" data-tip-zh="$1.5B premium traded; 0% 0DTE; 261 fresh positions; P/C 1.34; ~leans bearish/hedging (direction approx)">
+      <div class="mv-row" data-tip-en="$1.8B premium traded; 53% 0DTE; 229 fresh positions; P/C 1.38; ~leans bearish/hedging (direction approx)" data-tip-zh="$1.8B premium traded; 53% 0DTE; 229 fresh positions; P/C 1.38; ~leans bearish/hedging (direction approx)">
         <div class="mv-tk">SNDK</div>
         <div class="mv-mid">
-          <span class="mv-net neg">−$46M</span>
-          <span class="mv-tone lean-sell">
-            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
-          <span class="mini-tag">×4/10d</span>
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$386M premium traded; 0% 0DTE; 116 fresh positions; P/C 0.66; net new CALL positioning (bullish lean) (ΔOI +66,266); ~leans bearish/hedging (direction approx)" data-tip-zh="$386M premium traded; 0% 0DTE; 116 fresh positions; P/C 0.66; net new CALL positioning (bullish lean) (ΔOI +66,266); ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">ORCL</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$40M</span>
+          <span class="mv-net pos">+$107M</span>
           <span class="mv-tone lean-buy">
             <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
           </span>
         </div>
         <div class="mv-meta">
-          
-          
+          <span class="mini-tag">52% 0d</span>
+          <span class="mini-tag">×5/10d</span>
         </div>
       </div>
       
       
-      <div class="mv-row" data-tip-en="$364M premium traded; 37% 0DTE; 278 fresh positions; P/C 2.71; ~leans bearish/hedging (direction approx)" data-tip-zh="$364M premium traded; 37% 0DTE; 278 fresh positions; P/C 2.71; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">IWM</div>
+      <div class="mv-row" data-tip-en="$412M premium traded; 10% 0DTE; 244 fresh positions; P/C 5.59; net new PUT positioning (defensive / hedging) (ΔOI +52,232); ~leans bearish/hedging (direction approx)" data-tip-zh="$412M premium traded; 10% 0DTE; 244 fresh positions; P/C 5.59; net new PUT positioning (defensive / hedging) (ΔOI +52,232); ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">SMH</div>
         <div class="mv-mid">
-          <span class="mv-net neg">−$39M</span>
-          <span class="mv-tone lean-sell">
-            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          <span class="mini-tag">36% 0d</span>
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$307M premium traded; 0% 0DTE; 135 fresh positions; P/C 0.81; ~leans bearish/hedging (direction approx)" data-tip-zh="$307M premium traded; 0% 0DTE; 135 fresh positions; P/C 0.81; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">AAPL</div>
-        <div class="mv-mid">
-          <span class="mv-net neg">−$33M</span>
-          <span class="mv-tone lean-sell">
-            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
-          </span>
-        </div>
-        <div class="mv-meta">
-          
-          
-        </div>
-      </div>
-      
-      
-      <div class="mv-row" data-tip-en="$1.1B premium traded; 0% 0DTE; 421 fresh positions; P/C 0.62; ~leans bearish/hedging (direction approx)" data-tip-zh="$1.1B premium traded; 0% 0DTE; 421 fresh positions; P/C 0.62; ~leans bearish/hedging (direction approx)">
-        <div class="mv-tk">GOOGL</div>
-        <div class="mv-mid">
-          <span class="mv-net pos">+$29M</span>
+          <span class="mv-net pos">+$95M</span>
           <span class="mv-tone lean-buy">
             <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
           </span>
         </div>
         <div class="mv-meta">
-          
+          <span class="mini-tag">10% 0d</span>
           
         </div>
       </div>
       
       
-      <div class="mv-row" data-tip-en="$168M premium traded; 0% 0DTE; 144 fresh positions; P/C 0.68; ~leans bearish (direction approx)" data-tip-zh="$168M premium traded; 0% 0DTE; 144 fresh positions; P/C 0.68; ~leans bearish (direction approx)">
-        <div class="mv-tk">IBM</div>
+      <div class="mv-row" data-tip-en="$436M premium traded; 29% 0DTE; 80 fresh positions; P/C 1.63; net new PUT positioning (defensive / hedging) (ΔOI +31,783); ~leans bearish/hedging (direction approx)" data-tip-zh="$436M premium traded; 29% 0DTE; 80 fresh positions; P/C 1.63; net new PUT positioning (defensive / hedging) (ΔOI +31,783); ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">NBIS</div>
         <div class="mv-mid">
-          <span class="mv-net neg">−$29M</span>
+          <span class="mv-net pos">+$89M</span>
+          <span class="mv-tone lean-buy">
+            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">28% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$866M premium traded; 57% 0DTE; 239 fresh positions; P/C 0.58; ~leans bearish/hedging (direction approx)" data-tip-zh="$866M premium traded; 57% 0DTE; 239 fresh positions; P/C 0.58; ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">NVDA</div>
+        <div class="mv-mid">
+          <span class="mv-net pos">+$77M</span>
+          <span class="mv-tone lean-buy">
+            <span class="l-en">calls~</span><span class="l-zh">看涨~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">57% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$275M premium traded; 35% 0DTE; 92 fresh positions; P/C 0.53; net new PUT positioning (defensive / hedging) (ΔOI +20,244); ~leans bearish (direction approx)" data-tip-zh="$275M premium traded; 35% 0DTE; 92 fresh positions; P/C 0.53; net new PUT positioning (defensive / hedging) (ΔOI +20,244); ~leans bearish (direction approx)">
+        <div class="mv-tk">MSTR</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$71M</span>
           <span class="mv-tone lean-sell">
             <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
           </span>
         </div>
         <div class="mv-meta">
+          <span class="mini-tag">34% 0d</span>
           
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$453M premium traded; 52% 0DTE; 238 fresh positions; P/C 0.43; ~leans bullish (direction approx)" data-tip-zh="$453M premium traded; 52% 0DTE; 238 fresh positions; P/C 0.43; ~leans bullish (direction approx)">
+        <div class="mv-tk">META</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$62M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">52% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$620M premium traded; 54% 0DTE; 424 fresh positions; P/C 0.93; ~leans bearish/hedging (direction approx)" data-tip-zh="$620M premium traded; 54% 0DTE; 424 fresh positions; P/C 0.93; ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">AMD</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$52M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">53% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$142M premium traded; 34% 0DTE; 123 fresh positions; P/C 1.23; ~leans bearish/hedging (direction approx)" data-tip-zh="$142M premium traded; 34% 0DTE; 123 fresh positions; P/C 1.23; ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">LITE</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$22M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">33% 0d</span>
+          <span class="mini-tag">×5/10d</span>
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$2.0B premium traded; 50% 0DTE; 446 fresh positions; P/C 1.25; net new PUT positioning (defensive / hedging) (ΔOI +51,425); ~leans bearish/hedging (direction approx)" data-tip-zh="$2.0B premium traded; 50% 0DTE; 446 fresh positions; P/C 1.25; net new PUT positioning (defensive / hedging) (ΔOI +51,425); ~leans bearish/hedging (direction approx)">
+        <div class="mv-tk">MU</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$21M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">50% 0d</span>
+          
+        </div>
+      </div>
+      
+      
+      <div class="mv-row" data-tip-en="$134M premium traded; 39% 0DTE; 49 fresh positions; P/C 0.9; ~leans bearish (direction approx)" data-tip-zh="$134M premium traded; 39% 0DTE; 49 fresh positions; P/C 0.9; ~leans bearish (direction approx)">
+        <div class="mv-tk">MRVL</div>
+        <div class="mv-mid">
+          <span class="mv-net neg">−$20M</span>
+          <span class="mv-tone lean-sell">
+            <span class="l-en">puts~</span><span class="l-zh">看跌~</span>
+          </span>
+        </div>
+        <div class="mv-meta">
+          <span class="mini-tag">39% 0d</span>
           
         </div>
       </div>
@@ -1005,84 +1031,84 @@
       <span class="help">?<span class="tip"><span class="l-en">Money moving in and out of the 11 sector SPDR ETFs, estimated from the daily change in shares outstanding × NAV. This is a proxy, not a direct flow measurement. Green = money in, red = money out. 5D / 21D are the rolling sums.</span><span class="l-zh">11只板块SPDR ETF的资金进出，按流通份额日变化×净值估算。此为代理指标，非直接资金流。绿=流入，红=流出。5D/21D为滚动合计。</span></span></span>
     </div>
     
-    <p class="xs muted" style="margin:-4px 0 10px"><span class="l-en">Creation / redemption proxy · SSGA</span><span class="l-zh">申购/赎回代理 · SSGA</span> · 26<span class="l-en">-session history</span><span class="l-zh">个交易日</span></p>
+    <p class="xs muted" style="margin:-4px 0 10px"><span class="l-en">Creation / redemption proxy · SSGA</span><span class="l-zh">申购/赎回代理 · SSGA</span> · 27<span class="l-en">-session history</span><span class="l-zh">个交易日</span></p>
     <div class="etf-grid">
       
       <div class="etf-cell">
-        <div class="e-tk">XLF</div>
+        <div class="e-tk">XLB</div>
         <div class="e-1d num pos">
-          +$726M</div>
-        <div class="e-hist">5D +$1.7B · 21D +$2.5B</div>
+          +$124M</div>
+        <div class="e-hist">5D +$133M · 21D +$409M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLV</div>
+        <div class="e-tk">XLK</div>
         <div class="e-1d num pos">
-          +$191M</div>
-        <div class="e-hist">5D +$705M · 21D +$949M</div>
+          +$109M</div>
+        <div class="e-hist">5D +$394M · 21D −$305M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLE</div>
+        <div class="e-tk">XLC</div>
         <div class="e-1d num pos">
-          +$149M</div>
-        <div class="e-hist">5D +$308M · 21D −$507M</div>
+          +$101M</div>
+        <div class="e-hist">5D −$63M · 21D −$912M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLY</div>
+        <div class="e-tk">XLI</div>
         <div class="e-1d num pos">
-          +$50M</div>
-        <div class="e-hist">5D +$103M · 21D +$417M</div>
+          +$9M</div>
+        <div class="e-hist">5D −$544M · 21D +$589M</div>
+      </div>
+      
+      <div class="etf-cell">
+        <div class="e-tk">XLU</div>
+        <div class="e-1d num pos">
+          +$3M</div>
+        <div class="e-hist">5D −$222M · 21D +$266M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLRE</div>
         <div class="e-1d num neg">
-          −$0M</div>
-        <div class="e-hist">5D +$38M · 21D +$431M</div>
-      </div>
-      
-      <div class="etf-cell">
-        <div class="e-tk">XLB</div>
-        <div class="e-1d num neg">
-          −$1M</div>
-        <div class="e-hist">5D +$4M · 21D +$327M</div>
-      </div>
-      
-      <div class="etf-cell">
-        <div class="e-tk">XLI</div>
-        <div class="e-1d num neg">
-          −$8M</div>
-        <div class="e-hist">5D −$617M · 21D +$912M</div>
+          −$5M</div>
+        <div class="e-hist">5D +$28M · 21D +$429M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLP</div>
         <div class="e-1d num neg">
-          −$24M</div>
-        <div class="e-hist">5D −$105M · 21D −$35M</div>
+          −$34M</div>
+        <div class="e-hist">5D −$88M · 21D +$30M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLK</div>
+        <div class="e-tk">XLF</div>
         <div class="e-1d num neg">
-          −$52M</div>
-        <div class="e-hist">5D +$179M · 21D −$429M</div>
+          −$39M</div>
+        <div class="e-hist">5D +$522M · 21D +$2.3B</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLU</div>
+        <div class="e-tk">XLE</div>
         <div class="e-1d num neg">
-          −$65M</div>
-        <div class="e-hist">5D −$151M · 21D +$138M</div>
+          −$76M</div>
+        <div class="e-hist">5D +$188M · 21D −$415M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLC</div>
+        <div class="e-tk">XLY</div>
         <div class="e-1d num neg">
-          −$66M</div>
-        <div class="e-hist">5D −$175M · 21D −$917M</div>
+          −$141M</div>
+        <div class="e-hist">5D −$77M · 21D +$283M</div>
+      </div>
+      
+      <div class="etf-cell">
+        <div class="e-tk">XLV</div>
+        <div class="e-1d num neg">
+          −$574M</div>
+        <div class="e-hist">5D −$118M · 21D +$407M</div>
       </div>
       
     </div>
@@ -1102,7 +1128,7 @@
   </div>
   
   <p class="fd-disc">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-24 ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-25 ·
     <span class="l-en">End-of-day US options flow. Size is a solid read; direction (~) is approximate. ETF flows are a creation/redemption proxy. Display only — no buy or sell signal, no ranking.</span><span class="l-zh">美股期权收盘资金。规模可靠；方向（~）为近似。ETF资金流为申购/赎回代理。仅供展示 — 无买卖信号，不排名。</span>
   </p>
 </div>
@@ -1135,7 +1161,7 @@
   }
 
   // ── 30-session tide sparkline ──────────────────────────────────────────────
-  var SPARK = [{"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}, {"date": "2026-07-13", "net_premium_mn": 484.09000000000003, "premium_mn": 3974.88}, {"date": "2026-07-14", "net_premium_mn": 554.8799999999999, "premium_mn": 3383.13}, {"date": "2026-07-15", "net_premium_mn": 932.0500000000001, "premium_mn": 3943.7799999999997}, {"date": "2026-07-16", "net_premium_mn": 940.18, "premium_mn": 4698.950000000001}, {"date": "2026-07-17", "net_premium_mn": 1969.6299999999999, "premium_mn": 6039.88}, {"date": "2026-07-20", "net_premium_mn": 255.76, "premium_mn": 4558.13}, {"date": "2026-07-23", "net_premium_mn": 1071.78, "premium_mn": 5858.38}];
+  var SPARK = [{"date": "2026-06-04", "net_premium_mn": 0.0, "premium_mn": 4512.27}, {"date": "2026-06-05", "net_premium_mn": 0.0, "premium_mn": 19273.63}, {"date": "2026-06-08", "net_premium_mn": 0.0, "premium_mn": 5012.11}, {"date": "2026-06-09", "net_premium_mn": 0.0, "premium_mn": 10480.45}, {"date": "2026-06-10", "net_premium_mn": 0.0, "premium_mn": 8316.230000000001}, {"date": "2026-06-11", "net_premium_mn": 0.0, "premium_mn": 9615.169999999998}, {"date": "2026-06-12", "net_premium_mn": 0.0, "premium_mn": 7359.450000000001}, {"date": "2026-06-15", "net_premium_mn": 0.0, "premium_mn": 5078.509999999999}, {"date": "2026-06-16", "net_premium_mn": 0.0, "premium_mn": 5554.870000000001}, {"date": "2026-06-17", "net_premium_mn": 0.0, "premium_mn": 9599.03}, {"date": "2026-06-18", "net_premium_mn": 0.0, "premium_mn": 4593.1}, {"date": "2026-06-22", "net_premium_mn": 0.0, "premium_mn": 3584.31}, {"date": "2026-06-23", "net_premium_mn": 0.0, "premium_mn": 5340.05}, {"date": "2026-06-24", "net_premium_mn": 0.0, "premium_mn": 5222.54}, {"date": "2026-06-25", "net_premium_mn": 0.0, "premium_mn": 4612.6}, {"date": "2026-06-26", "net_premium_mn": 0.0, "premium_mn": 4583.38}, {"date": "2026-06-29", "net_premium_mn": 0.0, "premium_mn": 4732.369999999999}, {"date": "2026-06-30", "net_premium_mn": 0.0, "premium_mn": 4570.62}, {"date": "2026-07-01", "net_premium_mn": 0.0, "premium_mn": 4085.89}, {"date": "2026-07-02", "net_premium_mn": 881.3399999999999, "premium_mn": 5028.489999999999}, {"date": "2026-07-06", "net_premium_mn": 614.0600000000001, "premium_mn": 3678.4000000000005}, {"date": "2026-07-09", "net_premium_mn": 377.67, "premium_mn": 3700.68}, {"date": "2026-07-10", "net_premium_mn": 51.18, "premium_mn": 2962.08}, {"date": "2026-07-13", "net_premium_mn": 484.09000000000003, "premium_mn": 3974.88}, {"date": "2026-07-14", "net_premium_mn": 554.8799999999999, "premium_mn": 3383.13}, {"date": "2026-07-15", "net_premium_mn": 932.0500000000001, "premium_mn": 3943.7799999999997}, {"date": "2026-07-16", "net_premium_mn": 940.18, "premium_mn": 4698.950000000001}, {"date": "2026-07-17", "net_premium_mn": 1969.6299999999999, "premium_mn": 6039.88}, {"date": "2026-07-20", "net_premium_mn": 255.76, "premium_mn": 4558.13}, {"date": "2026-07-24", "net_premium_mn": 148.04000000000002, "premium_mn": 4551.66}];
   var canvas = document.getElementById('fd-spark');
   if (!canvas || !SPARK.length) return;
   var ctx = canvas.getContext('2d');
@@ -1169,7 +1195,184 @@
   draw();
   var rt; window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(draw,120); });
 })();
+
+/* ── How the day unfolded — the completed session's ~net-premium tide curve ─────
+   Its own IIFE on purpose: the block above returns early when the 30-session spark
+   is empty, and this panel must not depend on that.
+
+   Data: live_flow/tide_current.json from the R2 tape store, reached through
+   window.DATA_BASE (injected site-wide by scripts/inject_data_base.py). Fetch
+   discipline copied verbatim from templates/intraday_flow.html.j2: r2Url() yields
+   null when DATA_BASE is unset, {cache:'no-cache'}, an .ok check, and .catch(→null).
+   Every failure path lands in the same place — the panel stays hidden and the page
+   is byte-for-byte what it was before. Nothing here can throw into the page.
+
+   minutes[] carries CUMULATIVE ncp/npp (engine/live_flow.build_tide_current), so the
+   directional lean at each minute is ncp − npp: net call premium bought minus net put
+   premium bought. Direction is tape-inferred and SOFT — every readout carries ~.
+
+   Colour: --up/--down are re-read from computed style on every draw and the canvas
+   redraws on 'langchange', because those vars swap to 红涨绿跌 in Chinese
+   (theme.css html[data-lang="zh"]). A cached colour would be wrong after a swap. */
+(function () {
+  var panel = document.getElementById('fd-unfold');
+  if (!panel) return;
+
+  function lz(en, zh) {
+    return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>';
+  }
+  function r2Url(path) {
+    var base = (window.DATA_BASE || '').replace(/\/+$/, '');
+    return base ? base + '/' + path : null;
+  }
+  function money(v) {
+    var a = Math.abs(v), sign = v < 0 ? '−' : '+';
+    if (a >= 1e9) return sign + '$' + (a / 1e9).toFixed(1) + 'B';
+    if (a >= 1e6) return sign + '$' + Math.round(a / 1e6) + 'M';
+    if (a >= 1e3) return sign + '$' + Math.round(a / 1e3) + 'K';
+    return sign + '$' + Math.round(a);
+  }
+
+  var SERIES = [];           // [{t:'HH:MM', net:<cumulative ncp-npp>}]
+
+  function draw() {
+    var cv = document.getElementById('fdu-spark');
+    if (!cv || SERIES.length < 2) return;
+    var W = cv.offsetWidth, H = cv.offsetHeight;
+    if (!W) return;
+    var dpr = window.devicePixelRatio || 1;
+    var ctx = cv.getContext('2d');
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+
+    var cs = getComputedStyle(document.body);
+    var up = (cs.getPropertyValue('--up') || '#45b873').trim();
+    var dn = (cs.getPropertyValue('--down') || '#e06464').trim();
+    var hair = (cs.getPropertyValue('--ink-3') || '#8a8a8a').trim();
+
+    var vals = SERIES.map(function (d) { return d.net; });
+    // Zero-anchored: the baseline is 0, never the series minimum — the sign is the read.
+    var mx = Math.max.apply(null, vals), mn = Math.min.apply(null, vals);
+    var top = Math.max(mx, 0), bot = Math.min(mn, 0), rng = (top - bot) || 1;
+    var pad = 4;
+    function X(i) { return (i / (vals.length - 1)) * W; }
+    function Y(v) { return H - pad - ((v - bot) / rng) * (H - pad * 2); }
+    var zeroY = Y(0);
+
+    // Waterline fill, tinted per side of zero (doctrine's zero-anchored dual-tint).
+    function band(above) {
+      ctx.save();
+      ctx.beginPath();
+      if (above) ctx.rect(0, 0, W, zeroY); else ctx.rect(0, zeroY, W, H - zeroY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(X(0), zeroY);
+      vals.forEach(function (v, i) { ctx.lineTo(X(i), Y(v)); });
+      ctx.lineTo(X(vals.length - 1), zeroY);
+      ctx.closePath();
+      ctx.fillStyle = (above ? up : dn) + '33';
+      ctx.fill();
+      ctx.restore();
+    }
+    band(true); band(false);
+
+    // Zero line.
+    ctx.beginPath(); ctx.moveTo(0, zeroY); ctx.lineTo(W, zeroY);
+    ctx.strokeStyle = hair; ctx.globalAlpha = .45; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]); ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+    // The curve, coloured by where it closed.
+    var last = vals[vals.length - 1];
+    ctx.beginPath();
+    vals.forEach(function (v, i) { i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v)); });
+    ctx.strokeStyle = last >= 0 ? up : dn;
+    ctx.lineWidth = 1.7; ctx.lineJoin = 'round'; ctx.stroke();
+
+    // Close marker.
+    ctx.beginPath(); ctx.arc(X(vals.length - 1), Y(last), 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = last >= 0 ? up : dn; ctx.fill();
+  }
+
+  function render(tide) {
+    var mins = (tide && tide.minutes) || [];
+    if (mins.length < 2) return;                     // nothing honest to draw
+
+    var grossSum = 0;
+    SERIES = mins.map(function (m) {
+      grossSum += Math.abs(m.gross || 0);
+      return { t: m.t || '', net: (m.ncp || 0) - (m.npp || 0) };
+    });
+
+    var vals = SERIES.map(function (d) { return d.net; });
+    var last = vals[vals.length - 1];
+    // Peak = the day's largest absolute lean, whichever side it was on.
+    var peak = 0;
+    vals.forEach(function (v) { if (Math.abs(v) > Math.abs(peak)) peak = v; });
+    var peakAbs = Math.abs(peak);
+
+    // "Two-way" is an honest state, not a rounding artefact: a close inside 2% of the
+    // day's gross premium is noise, not a lean.
+    var flat = grossSum > 0 && Math.abs(last) < grossSum * 0.02;
+
+    var leanEl = document.getElementById('fdu-lean');
+    var netEl = document.getElementById('fdu-net');
+    var shapeEl = document.getElementById('fdu-shape');
+    var asofEl = document.getElementById('fdu-asof');
+
+    if (leanEl) {
+      leanEl.className = 'lean-chip fdu-lean ' +
+        (flat ? 'lean-bal' : (last > 0 ? 'lean-buy' : 'lean-sell'));
+      leanEl.innerHTML = '<span class="softmk">~</span>' + (
+        flat ? lz('Two-way', '多空均衡')
+             : (last > 0 ? lz('Calls led', '看涨主导') : lz('Puts led', '看跌主导')));
+    }
+    if (netEl) {
+      netEl.className = 'fdu-net' + (flat ? '' : (last > 0 ? ' up' : ' dn'));
+      netEl.textContent = money(last);
+    }
+    if (shapeEl) {
+      var shape;
+      if (peakAbs > 0 && !flat && (last > 0) !== (peak > 0)) {
+        shape = lz('turned the other way during the day', '盘中方向反转');
+      } else if (peakAbs > 0 && Math.abs(last) >= peakAbs * 0.95) {
+        shape = lz('the lean built right into the close', '倾向持续加强至收盘');
+      } else if (peakAbs > 0 && Math.abs(last) < peakAbs * 0.6) {
+        shape = lz('it faded well off the day\'s peak', '较当日峰值明显回落');
+      } else {
+        shape = lz('it held one side most of the day', '全天基本维持单边');
+      }
+      shapeEl.innerHTML = shape;
+    }
+    if (asofEl) {
+      var d = (tide.session_date || '').toString();
+      var lastT = SERIES[SERIES.length - 1].t;
+      asofEl.innerHTML = lz('live tape', '实时盘面') + ' · ' +
+        (d ? d + ' · ' : '') + lz('to ', '至 ') + lastT;
+    }
+
+    panel.hidden = false;
+    panel.classList.add('rise');
+    draw();
+  }
+
+  var url = r2Url('live_flow/tide_current.json');
+  if (!url) return;                                  // no store configured — stay hidden
+  fetch(url, { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (tide) {
+      if (!tide) return;                             // unreachable / empty — stay hidden
+      try { render(tide); } catch (e) { /* never break the page for a side panel */ }
+    });
+
+  var rt2;
+  window.addEventListener('resize', function () { clearTimeout(rt2); rt2 = setTimeout(draw, 120); });
+  // --up/--down swap in Chinese — repaint or the curve keeps the wrong direction colour.
+  document.addEventListener('langchange', function () { setTimeout(draw, 0); });
+})();
 </script>
-<script src="theme.js?v=16dc65dc" defer></script>
+<script src="theme.js?v=015c6c36" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

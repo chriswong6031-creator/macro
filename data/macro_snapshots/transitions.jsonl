@@ -51,3 +51,15 @@
 {"asof": "2026-07-22", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "48099c975be2d2b1"}
 {"asof": "2026-07-22", "domain": "commodity", "field": "oil_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "48099c975be2d2b1"}
 {"asof": "2026-07-22", "domain": "china", "field": "china_fe_band", "from_value": "Fear", "to_value": "Neutral", "macro_context_id": "48099c975be2d2b1"}
+{"asof": "2026-07-26", "domain": "us", "field": "us_risk_radar", "from_value": "watch", "to_value": "caution", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "us", "field": "us_gamma_regime", "from_value": "short", "to_value": null, "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "us", "field": "cross_asset_verdict", "from_value": "diverge", "to_value": "mixed", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_ON", "to_value": "MIXED", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "fx", "field": "fx_regime_radar", "from_value": null, "to_value": "intervention_risk", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "fx", "field": "fed_path_lean", "from_value": "steady", "to_value": "hawkish_repricing", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "canada", "field": "canada_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "intl", "field": "intl_au_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "intl", "field": "intl_gb_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "intl", "field": "intl_in_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "intl", "field": "intl_jp_quad", "from_value": "Q1", "to_value": "Q3", "macro_context_id": "fc76199b96a167a2"}
+{"asof": "2026-07-26", "domain": "intl", "field": "intl_kr_quad", "from_value": "Q2", "to_value": "Q3", "macro_context_id": "fc76199b96a167a2"}

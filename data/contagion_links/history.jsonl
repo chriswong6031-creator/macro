@@ -53,3 +53,14 @@
 {"asof":"2026-07-21","market":"au","p_raw":0.4866,"pct":0.9067,"level":"high","top_exporter":"jp"}
 {"asof":"2026-07-21","market":"gb","p_raw":0.4296,"pct":0.8552,"level":"moderate","top_exporter":"jp"}
 {"asof":"2026-07-21","market":"ez","p_raw":0.4013,"pct":0.8492,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"us","p_raw":0.3981,"pct":0.8472,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"cn","p_raw":0.356,"pct":0.8056,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"hk","p_raw":0.4476,"pct":0.8889,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"ca","p_raw":0.4109,"pct":0.8452,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"kr","p_raw":0.4872,"pct":0.8889,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"jp","p_raw":0.4377,"pct":0.871,"level":"moderate","top_exporter":"kr"}
+{"asof":"2026-07-25","market":"tw","p_raw":0.5685,"pct":0.9246,"level":"high","top_exporter":"kr"}
+{"asof":"2026-07-25","market":"in","p_raw":0.3662,"pct":0.8135,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"au","p_raw":0.4958,"pct":0.8988,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"gb","p_raw":0.4485,"pct":0.869,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-07-25","market":"ez","p_raw":0.4213,"pct":0.8512,"level":"moderate","top_exporter":"jp"}

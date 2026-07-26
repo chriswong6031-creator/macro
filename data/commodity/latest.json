@@ -7,11 +7,11 @@
     "Copper"
   ],
   "index": {
-    "ew": 937.04,
-    "vw": 1233.94,
-    "chg_1m_pct": 4.5,
+    "ew": 935.73,
+    "vw": 1232.01,
+    "chg_1m_pct": 4.4,
     "ts_trend": "up",
-    "ts_momentum": 0.641,
+    "ts_momentum": 0.637,
     "mtf": {
       "grade": "CAUTION",
       "headline": "Unconfirmed turn within a bearish bigger picture",
@@ -22,14 +22,14 @@
       "ladder_state": "COUNTERTREND BOUNCE"
     },
     "shock_state": "normal",
-    "shock_z": 0.8,
+    "shock_z": 0.767,
     "velocity": {
-      "r5": 1.1,
-      "r20": 5.3,
-      "r60": -4.9,
-      "r252": 22.8,
-      "accel": 0.095,
-      "impulse": 1.541
+      "r5": 0.9,
+      "r20": 5.2,
+      "r60": -5.0,
+      "r252": 22.6,
+      "accel": 0.091,
+      "impulse": 1.485
     },
     "benchmarks": {
       "DBC": {
@@ -47,8 +47,8 @@
     "n_up_trend": 13,
     "pct_up_trend": 0.765,
     "n_bull_momentum": 11,
-    "n_low_risk": 3,
-    "trend_diversity": 0.513,
+    "n_low_risk": 4,
+    "trend_diversity": 0.507,
     "breadth_pctile": 0.874
   },
   "confluence": {
@@ -312,13 +312,18 @@
         "state": "Extended \u2014 late cycle",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 40.0,
+        "top_score": 50.0,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
-        "euphoria_score": 38.5,
+        "euphoria_score": 53.8,
         "rollover_score": 42.9,
         "bottom_fired": [],
         "top_fired": [
+          {
+            "code": "overbought_ltf",
+            "label_en": "Overbought short-term",
+            "label_zh": "\u77ed\u5468\u671f\u8d85\u4e70"
+          },
           {
             "code": "overbought_htf",
             "label_en": "Overbought longer-term",
@@ -567,7 +572,7 @@
             "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
-        "n_bottom_applicable": 8,
+        "n_bottom_applicable": 7,
         "n_top_applicable": 7
       },
       {
@@ -600,10 +605,10 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 17.4,
-        "top_score": 20.0,
+        "top_score": 10.0,
         "capitulation_score": 0.0,
         "turn_score": 40.0,
-        "euphoria_score": 30.8,
+        "euphoria_score": 15.4,
         "rollover_score": 0.0,
         "bottom_fired": [
           {
@@ -613,11 +618,6 @@
           }
         ],
         "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
           {
             "code": "cot_long",
             "label_en": "COT crowded long",
@@ -655,54 +655,54 @@
   "assets": {
     "gold": {
       "label": "Gold",
-      "price": 4055.7,
-      "chg": -0.6,
+      "price": 4067.6,
+      "chg": -0.3,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -7.9
+      "conviction": -5.8
     },
     "silver": {
       "label": "Silver",
-      "price": 58.49,
-      "chg": -1.2,
+      "price": 58.66,
+      "chg": -0.9,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -9.9
+      "conviction": -8.6
     },
     "copper": {
       "label": "Copper",
-      "price": 6.34,
-      "chg": 3.2,
+      "price": 6.32,
+      "chg": 2.9,
       "alloc": 50,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 3.6
+      "conviction": 3.0
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
-      "price": 90.47,
-      "chg": 30.7,
+      "price": 89.31,
+      "chg": 29.0,
       "alloc": 50,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -21.7
+      "conviction": -20.6
     }
   },
   "ratios": {
     "copper_gold": {
       "value": 0.0016,
-      "chg_20d_pct": 3.11,
+      "chg_20d_pct": 2.49,
       "dir": "up"
     },
     "gold_silver": {
-      "value": 69.3401,
-      "chg_20d_pct": 0.29,
+      "value": 69.3467,
+      "chg_20d_pct": 0.3,
       "dir": "flat"
     }
   }

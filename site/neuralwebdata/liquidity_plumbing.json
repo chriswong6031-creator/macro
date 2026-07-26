@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-07-20",
+  "asof": "2026-07-24",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -23,109 +23,93 @@
     "summary": "Net liquidity is expanding on Treasury/RRP plumbing (e.g. the Treasury spending down its cash account), not Fed asset growth — a real but transient tailwind. Credit and funding stress gauges are not confirming stress. RRP buffer is empty — the next liquidity drain hits bank reserves directly."
   },
   "fed": {
-    "assets_bn": 6743.028,
-    "assets_chg_20d_bn": 6.604,
-    "reserve_balances_bn": 3142.721,
-    "walcl_stale_days": 3,
+    "assets_bn": 6747.378,
+    "assets_chg_20d_bn": 11.733,
+    "reserve_balances_bn": 3062.149,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-07-20"
+    "asof": "2026-07-24"
   },
   "treasury": {
-    "tga_bn": 815.418,
-    "tga_chg_20d_bn": -99.667,
-    "net_issuance_20d_bn": 211.882,
+    "tga_bn": 877.201,
+    "tga_chg_20d_bn": 5.732,
+    "net_issuance_20d_bn": 324.801,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
-      "active": false,
-      "direction": null,
-      "magnitude_bn": null,
-      "days": null,
-      "since": null,
-      "quarter_end_adjacent": false,
-      "summary_en": "No TGA impulse detected.",
-      "summary_zh": "未检测到TGA冲量。"
+      "active": true,
+      "direction": "build",
+      "magnitude_bn": 132.6,
+      "days": 10,
+      "since": "2026-07-09",
+      "quarter_end_adjacent": true,
+      "summary_en": "Treasury rebuilt its cash account by $133B since Jul 9 — that cash is absorbed from the financial system (mild headwind while it lasts). Quarter-end seasonal pattern may be a contributing factor.",
+      "summary_zh": "自7月9日起，美国财政部已向现金账户补充$133B — 这部分资金从金融体系中吸收（短期内为温和阻力）。 季末季节性规律可能是促成因素之一。"
     },
-    "asof": "2026-07-17"
+    "asof": "2026-07-23"
   },
   "rrp": {
-    "rrp_bn": 0.03,
-    "rrp_chg_20d_bn": -3.895,
+    "rrp_bn": 0.675,
+    "rrp_chg_20d_bn": -5.751,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5927.58,
-    "netliq_chg_20d_bn": 137.896,
-    "netliq_chg_65d_bn": 193.197,
-    "netliq_pctile_expanding": 0.809577,
+    "netliq_bn": 5869.502,
+    "netliq_chg_20d_bn": 35.859,
+    "netliq_chg_65d_bn": 169.793,
+    "netliq_pctile_expanding": 0.787648,
     "overlay": "expanding"
   },
   "quality": {
     "label": "stress-expansion",
-    "fed_share": 0.04,
+    "fed_share": 0.1,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.73,
-      "hy_oas_z": 0.47,
-      "nfci": -0.538,
+      "hy_oas_pct": 2.77,
+      "hy_oas_z": -0.23,
+      "nfci": -0.552,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 3
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
     "effr_minus_iorb_d20_bp": 0.0,
-    "effr_minus_iorb_pctile": 0.9117,
-    "sofr_minus_iorb_bp": -6.0,
-    "sofr_minus_iorb_d20_bp": -4.0,
-    "sofr_minus_iorb_pctile": 0.7498,
-    "sofr_99pctl_minus_iorb_bp": 2.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -4.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.4693,
+    "effr_minus_iorb_pctile": 0.912,
+    "sofr_minus_iorb_bp": -1.0,
+    "sofr_minus_iorb_d20_bp": 2.0,
+    "sofr_minus_iorb_pctile": 0.8817,
+    "sofr_99pctl_minus_iorb_bp": 7.0,
+    "sofr_99pctl_minus_iorb_d20_bp": 1.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.8156,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
-    "reserve_scarcity_state": "normalizing",
-    "asof": "2026-07-17"
+    "reserve_scarcity_state": "tightening",
+    "asof": "2026-07-23"
   },
   "components": {
     "walcl": {
-      "level_bn": 6743.0,
-      "d20_bn": 6.6,
-      "d65_bn": 37.3,
-      "pctile": 0.773
+      "level_bn": 6747.4,
+      "d20_bn": 11.7,
+      "d65_bn": 40.0,
+      "pctile": 0.7732
     },
     "rrp": {
-      "level_bn": 0.0,
-      "d20_bn": -3.9,
-      "d65_bn": -0.1,
-      "pctile": 0.0367
+      "level_bn": 0.7,
+      "d20_bn": -5.8,
+      "d65_bn": 0.1,
+      "pctile": 0.163
     },
     "tga": {
-      "level_bn": 815.4,
-      "d20_bn": -127.4,
-      "d65_bn": -155.7,
-      "pctile": 0.8964
+      "level_bn": 877.2,
+      "d20_bn": -18.4,
+      "d65_bn": -130.0,
+      "pctile": 0.9254
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-04-21",
-        "v": 5675.4
-      },
-      {
-        "d": "2026-04-22",
-        "v": 5699.7
-      },
-      {
-        "d": "2026-04-23",
-        "v": 5737.5
-      },
-      {
-        "d": "2026-04-24",
-        "v": 5733.1
-      },
       {
         "d": "2026-04-27",
         "v": 5704.7
@@ -360,23 +344,39 @@
       },
       {
         "d": "2026-07-20",
-        "v": 5927.6
+        "v": 5914.8
+      },
+      {
+        "d": "2026-07-21",
+        "v": 5867.8
+      },
+      {
+        "d": "2026-07-22",
+        "v": 5911.6
+      },
+      {
+        "d": "2026-07-23",
+        "v": 5869.3
+      },
+      {
+        "d": "2026-07-24",
+        "v": 5869.5
       }
     ],
     "reserves": {
-      "level_bn": 3142.7,
-      "d20_bn": 177.0,
-      "d65_bn": -309.3,
-      "pctile": 0.8156
+      "level_bn": 3062.1,
+      "d20_bn": 46.6,
+      "d65_bn": -194.6,
+      "pctile": 0.7914
     }
   },
   "foreign_dollar": {
-    "swap_lines_bn": 0.135,
-    "facility_loans_bn": 4.813,
+    "swap_lines_bn": 0.378,
+    "facility_loans_bn": 4.95,
     "fima_repo_bn": null,
     "state": "quiescent",
     "note": "IRD-R5: swap-line levels are confirmation tier — they grade severity after price signals fire, never trigger alerts. FIMA repo: no free per-facility breakout; aggregate rides H.4.1 repo line.",
-    "asof": "2026-07-15"
+    "asof": "2026-07-22"
   },
   "entry_effect": {
     "direction": "tailwind",
@@ -390,7 +390,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-07-21T03:22:59Z",
-  "inputs_hash": "sha256:d3e5bcee7aaf765bcfb42484f390c1d8d23ecd28a1be8097c3a879637e0c6421",
+  "produced_at": "2026-07-26T03:00:42Z",
+  "inputs_hash": "sha256:57a25fbe053c2fd66481579d93bd9d1815fcfc7f6c88dbff8ad9cf8e88cfc161",
   "tier": "shadow"
 }

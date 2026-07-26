@@ -1,29 +1,29 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-22",
-  "oldest_component_asof": "2026-07-17",
-  "macro_context_id": "48099c975be2d2b1",
+  "asof": "2026-07-26",
+  "oldest_component_asof": "2026-07-24",
+  "macro_context_id": "fc76199b96a167a2",
   "labels": {
     "us": {
       "us_quad": "Q1",
       "us_transition_state": "TRANSITIONING",
       "us_fused_risk": "caution",
       "us_vol_regime": "normalizing",
-      "us_risk_radar": "watch",
+      "us_risk_radar": "caution",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
       "us_liquidity_quality": "stress-expansion",
       "us_liquidity_overlay": "expanding",
       "us_froth_band": "watch",
       "us_dislocation": "calm",
-      "us_gamma_regime": "short",
+      "us_gamma_regime": null,
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
       "us_vrp_state": "normal",
-      "cross_asset_verdict": "diverge"
+      "cross_asset_verdict": "mixed"
     },
     "market": {
-      "market_state_verdict": "RISK_ON"
+      "market_state_verdict": "MIXED"
     },
     "transmission": {
       "yield_curve_regime": "bear_steepener",
@@ -35,10 +35,10 @@
       "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "soft",
-      "fx_regime_radar": null,
+      "fx_regime_radar": "intervention_risk",
       "usd_valuation": "fair",
       "usd_positioning": "neutral",
-      "fed_path_lean": "steady",
+      "fed_path_lean": "hawkish_repricing",
       "fx_eurusd_action": "SHORT",
       "fx_gbpusd_action": "FLAT",
       "fx_usdjpy_action": "SHORT",
@@ -80,7 +80,7 @@
       "hk_peg_state": "weak-side (outflow)"
     },
     "canada": {
-      "canada_quad": "Q1",
+      "canada_quad": "Q2",
       "canada_overlay_state": "Risk-on",
       "canada_cycle_tag": "mid"
     },
@@ -88,33 +88,33 @@
       "dispersion_state": "lean_in"
     },
     "intl": {
-      "intl_au_quad": "Q1",
+      "intl_au_quad": "Q2",
       "intl_ez_quad": "Q1",
-      "intl_gb_quad": "Q1",
-      "intl_in_quad": "Q1",
-      "intl_jp_quad": "Q1",
-      "intl_kr_quad": "Q2",
+      "intl_gb_quad": "Q2",
+      "intl_in_quad": "Q2",
+      "intl_jp_quad": "Q3",
+      "intl_kr_quad": "Q3",
       "intl_tw_quad": "Q3"
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-21",
-    "data/market_state/latest.json": "2026-07-21",
-    "data/transmission/latest.json": "2026-07-21",
-    "data/forex/latest.json": "2026-07-22",
-    "data/bonds/bond_health.json": "2026-07-21",
-    "data/commodity/latest.json": "2026-07-21",
-    "data/china_regime/latest.json": "2026-07-21",
-    "data/hk_regime/latest.json": "2026-07-21",
-    "data/canada_regime/latest.json": "2026-07-21",
-    "data/dispersion/regime.json": "2026-07-21",
-    "data/intl_regime/AU_history.parquet": "2026-07-20",
-    "data/intl_regime/EZ_history.parquet": "2026-07-20",
-    "data/intl_regime/GB_history.parquet": "2026-07-20",
-    "data/intl_regime/IN_history.parquet": "2026-07-20",
-    "data/intl_regime/JP_history.parquet": "2026-07-17",
-    "data/intl_regime/KR_history.parquet": "2026-07-20",
-    "data/intl_regime/TW_history.parquet": "2026-07-20"
+    "data/regime/latest.json": "2026-07-24",
+    "data/market_state/latest.json": "2026-07-24",
+    "data/transmission/latest.json": "2026-07-24",
+    "data/forex/latest.json": "2026-07-26",
+    "data/bonds/bond_health.json": "2026-07-24",
+    "data/commodity/latest.json": "2026-07-24",
+    "data/china_regime/latest.json": "2026-07-24",
+    "data/hk_regime/latest.json": "2026-07-24",
+    "data/canada_regime/latest.json": "2026-07-24",
+    "data/dispersion/regime.json": "2026-07-25",
+    "data/intl_regime/AU_history.parquet": "2026-07-24",
+    "data/intl_regime/EZ_history.parquet": "2026-07-24",
+    "data/intl_regime/GB_history.parquet": "2026-07-24",
+    "data/intl_regime/IN_history.parquet": "2026-07-24",
+    "data/intl_regime/JP_history.parquet": "2026-07-24",
+    "data/intl_regime/KR_history.parquet": "2026-07-24",
+    "data/intl_regime/TW_history.parquet": "2026-07-24"
   },
   "gaps": [],
   "display_only": true

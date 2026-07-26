@@ -8,6 +8,7 @@
   "CEG": "ahead_of_consensus",
   "CMC": "consensus_at_risk",
   "DUK": "ahead_of_consensus",
+  "ENS": "ahead_of_consensus",
   "GEV": "ahead_of_consensus",
   "INTU": "consensus_at_risk",
   "ITRI": "ahead_of_consensus",

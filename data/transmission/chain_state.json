@@ -1,0 +1,913 @@
+{
+  "schema": "transmission_chains.v1",
+  "asof": "2026-07-24",
+  "built": "2026-07-26 01:55 UTC",
+  "chains": [
+    {
+      "chain": "credit_spreads_refinancing",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {
+        "en": "Credit spreads widen → refinancing-dependent cohort de-rate",
+        "zh": "信用利差走阔 → 依赖再融资的板块下修"
+      },
+      "state": "dormant",
+      "state_label": {
+        "en": "Dormant",
+        "zh": "休眠"
+      },
+      "hop": 0,
+      "n_hops": 1,
+      "armable": true,
+      "episode_id": null,
+      "hops": [
+        {
+          "id": "spread_widen->refi_cohort_derate",
+          "from": "spread_widen",
+          "to": "refi_cohort_derate",
+          "lag_d": [
+            0,
+            90
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "series": "IWM",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": 1.378,
+              "op": "lt",
+              "threshold": 0,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "spread_widen",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "series": "HYG/LQD",
+              "metric": "ratio_ret_pct",
+              "window": 22,
+              "value": 1.815,
+              "op": "lt",
+              "threshold": -2.0,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "id": "refi_cohort_derate",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "series": "IWM",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": 1.378,
+              "op": "lt",
+              "threshold": 0,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {},
+      "display_only": true
+    },
+    {
+      "chain": "dollar_spike_em_multinational",
+      "rev": 3,
+      "tier": "hypothesis",
+      "title": {
+        "en": "Dollar spike → EM & multinational-EPS headwind",
+        "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
+      },
+      "state": "arming",
+      "state_label": {
+        "en": "Arming",
+        "zh": "触发中"
+      },
+      "hop": 0,
+      "n_hops": 2,
+      "armable": true,
+      "episode_id": "dollar_spike_em_multinational@r3:2026-07-24",
+      "hops": [
+        {
+          "id": "dollar_spike->usd_transmission_on",
+          "from": "dollar_spike",
+          "to": "usd_transmission_on",
+          "lag_d": [
+            0,
+            20
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "path": "transmission.usd_dir",
+              "op": "eq",
+              "threshold": "strengthening",
+              "value": "strengthening",
+              "passed": true
+            },
+            {
+              "path": "transmission.headwind_for",
+              "op": "in_contains",
+              "threshold": "EM equities",
+              "value": [
+                "US equities",
+                "EM equities",
+                "Gold",
+                "Copper",
+                "10y Treasury",
+                "Bitcoin"
+              ],
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "usd_transmission_on->em_derate",
+          "from": "usd_transmission_on",
+          "to": "em_derate",
+          "lag_d": [
+            0,
+            90
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "series": "FXI",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": -9.537,
+              "op": "lt",
+              "threshold": 0,
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "dollar_spike",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "path": "dollar_desk.trend",
+              "op": "eq",
+              "threshold": "up",
+              "value": "up",
+              "passed": true
+            },
+            {
+              "path": "dollar_desk.usd_pos_pctile",
+              "op": "gte",
+              "threshold": 60,
+              "value": 78.0,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "usd_transmission_on",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "path": "transmission.usd_dir",
+              "op": "eq",
+              "threshold": "strengthening",
+              "value": "strengthening",
+              "passed": true
+            },
+            {
+              "path": "transmission.headwind_for",
+              "op": "in_contains",
+              "threshold": "EM equities",
+              "value": [
+                "US equities",
+                "EM equities",
+                "Gold",
+                "Copper",
+                "10y Treasury",
+                "Bitcoin"
+              ],
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "em_derate",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "series": "FXI",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": -9.537,
+              "op": "lt",
+              "threshold": 0,
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {
+        "em_revenue_exposure": {
+          "label": {
+            "en": "EM revenue exposure",
+            "zh": "新兴市场营收敞口"
+          },
+          "n": 10,
+          "cuts": {},
+          "unevaluable": 2895,
+          "names": [
+            "AAPL",
+            "AMAT",
+            "APH",
+            "FCX",
+            "JBL",
+            "LEA",
+            "LIN",
+            "MU",
+            "NEM",
+            "NVDA"
+          ],
+          "resolved": true,
+          "note": {
+            "en": "names with >=15% of revenue from explicitly-EM-classified regions in their 10-K geographic note (measured per-name; em_pct is a conservative lower bound — mixed aggregates never counted). Names without a parseable disclosure bucket as unevaluable.",
+            "zh": "10-K地区披露中明确属新兴市场的营收占比≥15%的名字（逐名实测；em_pct为保守下限——混合地区聚合不计入）。无可解析披露的名字归入无法评估桶。"
+          }
+        },
+        "multinational_fx_translation": {
+          "label": {
+            "en": "Multinational FX translation",
+            "zh": "跨国汇率折算"
+          },
+          "n": 64,
+          "cuts": {},
+          "unevaluable": 2824,
+          "names": [
+            "AAPL",
+            "ABT",
+            "ADBE",
+            "ADM",
+            "AIG",
+            "AMAT",
+            "APH",
+            "APTV",
+            "ARW",
+            "AVGO",
+            "BA",
+            "BDX",
+            "BG",
+            "BKNG",
+            "BKR",
+            "C",
+            "CARR",
+            "CAT",
+            "CBRE",
+            "CCL",
+            "CMI",
+            "CSCO",
+            "DE",
+            "DELL",
+            "FCX",
+            "GE",
+            "GEHC",
+            "GEV",
+            "GOOGL",
+            "HON",
+            "HPE",
+            "HPQ",
+            "INTC",
+            "JBL",
+            "JCI",
+            "JNJ",
+            "KO",
+            "LEA",
+            "LIN",
+            "LYB",
+            "MDLZ",
+            "MDT",
+            "META",
+            "MMM",
+            "MRK",
+            "MSFT",
+            "NEM",
+            "NFLX",
+            "NKE",
+            "ORCL",
+            "PCAR",
+            "PEP",
+            "PFE",
+            "PPC",
+            "PYPL",
+            "RTX",
+            "SLB",
+            "SMCI",
+            "SNEX",
+            "SW",
+            "TMO",
+            "UBER",
+            "V",
+            "WKC"
+          ],
+          "resolved": true,
+          "note": {
+            "en": "US multinationals with >=40% foreign revenue (10-K geographic note, measured per-name) — overseas EPS shrinks in dollar terms as USD firms. PERCENT 0-100; unparseable names bucket as unevaluable.",
+            "zh": "海外营收占比≥40%的美国跨国企业（10-K地区披露，逐名实测）——美元走强时海外每股盈利以美元计缩水。百分比0-100；无法解析的名字归入无法评估桶。"
+          }
+        },
+        "dollar_debt_burden": {
+          "label": {
+            "en": "Dollar-debt burden",
+            "zh": "美元债务负担"
+          },
+          "n": 3,
+          "cuts": {
+            "financials.debt_to_assets": 31.9
+          },
+          "unevaluable": 2873,
+          "names": [
+            "APTV",
+            "AVGO",
+            "BKNG"
+          ],
+          "resolved": true,
+          "note": {
+            "en": "leveraged names (top-third debt_to_assets) whose revenue is majority non-US (>=50%, 10-K geographic note) — dollar-debt service against non-dollar cash flows. Assumes US filers' debt is USD-denominated (stated assumption; no currency-of-debt field exists).",
+            "zh": "高杠杆（debt_to_assets前三分之一）且营收过半来自美国以外（≥50%，10-K地区披露）的名字——以非美元现金流偿付美元债务。假设美国申报者的债务以美元计价（明示假设；无债务币种字段）。"
+          }
+        },
+        "em_commodity_sector_proxy": {
+          "label": {
+            "en": "EM/commodity sector (proxy)",
+            "zh": "新兴市场/商品行业（代理）"
+          },
+          "n": 209,
+          "cuts": {},
+          "unevaluable": 4,
+          "names": [
+            "AA",
+            "ACDC",
+            "AESI",
+            "ALB",
+            "ALM",
+            "AM",
+            "AMCR",
+            "AMPY",
+            "AMR",
+            "APA",
+            "APD",
+            "AR",
+            "AROC",
+            "ASH",
+            "ATR",
+            "AVNT",
+            "AVY",
+            "AXTA",
+            "BALL",
+            "BCPC",
+            "BHP",
+            "BKR",
+            "BKV",
+            "BORR",
+            "BTU",
+            "CBT",
+            "CC",
+            "CCJ",
+            "CCK",
+            "CE",
+            "CENX",
+            "CF",
+            "CHRD",
+            "CLB",
+            "CLF",
+            "CLNE",
+            "CMC",
+            "CNR",
+            "CNX",
+            "COP",
+            "CRC",
+            "CRGY",
+            "CRH",
+            "CRK",
+            "CTVA",
+            "CVI",
+            "CVX",
+            "DD",
+            "DEC",
+            "DHT",
+            "DINO",
+            "DK",
+            "DNN",
+            "DOW",
+            "DTM",
+            "DVN",
+            "ECL",
+            "EE",
+            "EGY",
+            "EMN",
+            "EOG",
+            "EPM",
+            "EPSN",
+            "EQT",
+            "ESI",
+            "EU",
+            "EXE",
+            "EXP",
+            "FANG",
+            "FCX",
+            "FET",
+            "FLNG",
+            "FLOC",
+            "FMC",
+            "FTI",
+            "FTK",
+            "FUL",
+            "GEF",
+            "GLNG",
+            "GPK",
+            "GRNT",
+            "HAL",
+            "HCC",
+            "HL",
+            "HLX",
+            "HP",
+            "HPK",
+            "HWKN",
+            "IFF",
+            "INR",
+            "INSW",
+            "INVX",
+            "IOSP",
+            "IP",
+            "KALU",
+            "KGEI",
+            "KGS",
+            "KMI",
+            "KNF",
+            "KNTK",
+            "KOP",
+            "KOS",
+            "KWR",
+            "LAC",
+            "LBRT",
+            "LEU",
+            "LIN",
+            "LNG",
+            "LNN",
+            "LPG",
+            "LYB",
+            "MGY",
+            "MLM",
+            "MOS",
+            "MP",
+            "MPC",
+            "MTDR",
+            "MTRN",
+            "MTUS",
+            "MTX",
+            "MUR",
+            "NAT",
+            "NBR",
+            "NC",
+            "NE",
+            "NEM",
+            "NESR",
+            "NEU",
+            "NEXT",
+            "NGS",
+            "NGVT",
+            "NOG",
+            "NOV",
+            "NUE",
+            "NVGS",
+            "NXE",
+            "OI",
+            "OII",
+            "OIS",
+            "OKE",
+            "OLN",
+            "OVV",
+            "OXY",
+            "PARR",
+            "PBF",
+            "PED",
+            "PKG",
+            "PNRG",
+            "PPG",
+            "PR",
+            "PSX",
+            "PTEN",
+            "PUMP",
+            "REI",
+            "REPX",
+            "RES",
+            "REX",
+            "RGLD",
+            "RIG",
+            "RIO",
+            "RNGR",
+            "RPM",
+            "RRC",
+            "RS",
+            "SCL",
+            "SD",
+            "SDRL",
+            "SGML",
+            "SHW",
+            "SLB",
+            "SLGN",
+            "SLVM",
+            "SM",
+            "SMC",
+            "SMG",
+            "SND",
+            "SOC",
+            "SON",
+            "STLD",
+            "STNG",
+            "SW",
+            "SXT",
+            "TALO",
+            "TDW",
+            "TK",
+            "TNK",
+            "TPL",
+            "TRGP",
+            "UEC",
+            "URG",
+            "UROY",
+            "UUUU",
+            "VAL",
+            "VALE",
+            "VLO",
+            "VMC",
+            "VNOM",
+            "VTOL",
+            "VTS",
+            "WFRD",
+            "WHD",
+            "WKC",
+            "WLK",
+            "WMB",
+            "WS",
+            "WTI",
+            "WTTR",
+            "XOM",
+            "XPRO"
+          ],
+          "resolved": true,
+          "note": {
+            "en": "PROXY (sector, not revenue): GICS sector membership stands in for EM-demand exposure — Materials & Energy are the dollar-priced-commodity sectors most EM/dollar-sensitive. Complements em_revenue_exposure (rev 2): sector coverage is ~full, so it also catches names whose 10-K discloses no parseable geography. A coarse sector stand-in, not a revenue measurement.",
+            "zh": "代理（行业而非营收）：以GICS行业归属代表新兴市场需求敞口——材料与能源是对新兴市场/美元最敏感的美元计价商品行业。与rev 2的em_revenue_exposure互补：行业覆盖近乎全库，故也覆盖10-K无可解析地区披露的名字。粗略的行业替代，非营收测度。"
+          }
+        }
+      },
+      "display_only": true
+    },
+    {
+      "chain": "oil_inflation_duration_derate",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {
+        "en": "Oil shock → inflation → yields → long-duration de-rate",
+        "zh": "油价冲击 → 通胀 → 收益率 → 长久期估值下修"
+      },
+      "state": "dormant",
+      "state_label": {
+        "en": "Dormant",
+        "zh": "休眠"
+      },
+      "hop": 0,
+      "n_hops": 3,
+      "armable": true,
+      "episode_id": null,
+      "hops": [
+        {
+          "id": "oil_shock->breakeven_rise",
+          "from": "oil_shock",
+          "to": "breakeven_rise",
+          "lag_d": [
+            5,
+            60
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "series": "T10YIE",
+              "metric": "ret_bp",
+              "window": 22,
+              "value": 5.0,
+              "op": "gt",
+              "threshold": 15,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "id": "breakeven_rise->yield_rise",
+          "from": "breakeven_rise",
+          "to": "yield_rise",
+          "lag_d": [
+            0,
+            90
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "path": "state.rates.direction",
+              "op": "eq",
+              "threshold": "rising",
+              "value": "rising",
+              "passed": true
+            },
+            {
+              "path": "state.rates.real_10y_chg_63d_bp",
+              "op": "gt",
+              "threshold": 30,
+              "value": 51.0,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "yield_rise->duration_derate",
+          "from": "yield_rise",
+          "to": "duration_derate",
+          "lag_d": [
+            0,
+            120
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "series": "QQQ",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": 0.734,
+              "op": "lt",
+              "threshold": 0,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "oil_shock",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "series": "CL=F",
+              "metric": "ret_pct",
+              "window": 60,
+              "value": -12.672,
+              "op": "gt",
+              "threshold": 25,
+              "passed": false
+            },
+            {
+              "series": "CL=F",
+              "metric": "ma50_slope5",
+              "value": -1.7514,
+              "op": "gt",
+              "threshold": 0,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "id": "breakeven_rise",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "series": "T10YIE",
+              "metric": "ret_bp",
+              "window": 22,
+              "value": 5.0,
+              "op": "gt",
+              "threshold": 15,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "id": "yield_rise",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "path": "state.rates.direction",
+              "op": "eq",
+              "threshold": "rising",
+              "value": "rising",
+              "passed": true
+            },
+            {
+              "path": "state.rates.real_10y_chg_63d_bp",
+              "op": "gt",
+              "threshold": 30,
+              "value": 51.0,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "duration_derate",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "series": "QQQ",
+              "vs": "SPY",
+              "metric": "rs_pp",
+              "window": 63,
+              "value": 0.734,
+              "op": "lt",
+              "threshold": 0,
+              "passed": false
+            }
+          ]
+        }
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {},
+      "display_only": true
+    },
+    {
+      "chain": "vol_regime_deleveraging",
+      "rev": 2,
+      "tier": "hypothesis",
+      "title": {
+        "en": "Vol-regime shift → systematic deleveraging → high-beta unwind",
+        "zh": "波动率状态转变 → 系统性去杠杆 → 高贝塔平仓"
+      },
+      "state": "dormant",
+      "state_label": {
+        "en": "Dormant",
+        "zh": "休眠"
+      },
+      "hop": 0,
+      "n_hops": 2,
+      "armable": true,
+      "episode_id": null,
+      "hops": [
+        {
+          "id": "vol_expansion->systematic_delever",
+          "from": "vol_expansion",
+          "to": "systematic_delever",
+          "lag_d": [
+            0,
+            21
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "path": "vol_regime.vol_target_scalar",
+              "op": "lt",
+              "threshold": 0.85,
+              "value": 0.65,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "systematic_delever->highbeta_unwind",
+          "from": "systematic_delever",
+          "to": "highbeta_unwind",
+          "lag_d": [
+            0,
+            42
+          ],
+          "confirmed": false,
+          "asof": null,
+          "value_receipt": [
+            {
+              "series": "SPHB",
+              "vs": "SPLV",
+              "metric": "rs_pp",
+              "window": 21,
+              "value": -10.061,
+              "op": "lt",
+              "threshold": 0,
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "nodes": [
+        {
+          "id": "vol_expansion",
+          "resolved": true,
+          "confirmed": false,
+          "receipts": [
+            {
+              "path": "vol_regime.regime",
+              "op": "in",
+              "threshold": [
+                "warning",
+                "backwardation-stress"
+              ],
+              "value": "normalizing",
+              "passed": false
+            },
+            {
+              "path": "vol_regime.vix",
+              "op": "gte",
+              "threshold": 25,
+              "value": 18.58,
+              "passed": false
+            }
+          ]
+        },
+        {
+          "id": "systematic_delever",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "path": "vol_regime.vol_target_scalar",
+              "op": "lt",
+              "threshold": 0.85,
+              "value": 0.65,
+              "passed": true
+            }
+          ]
+        },
+        {
+          "id": "highbeta_unwind",
+          "resolved": true,
+          "confirmed": true,
+          "receipts": [
+            {
+              "series": "SPHB",
+              "vs": "SPLV",
+              "metric": "rs_pp",
+              "window": 21,
+              "value": -10.061,
+              "op": "lt",
+              "threshold": 0,
+              "passed": true
+            }
+          ]
+        }
+      ],
+      "falsifier_fired": null,
+      "base_rates": null,
+      "blast": {},
+      "display_only": true
+    }
+  ],
+  "caveats": [
+    {
+      "en": "Display-only context — never scored, never a call. A chain state is a WATCH item; it never gates, sizes, ranks, or escalates anything (masterplan §4).",
+      "zh": "仅供展示的上下文——从不计入评分，从不作为交易指令。链状态是观察项；不做任何门控、仓位、排名或升级。"
+    },
+    {
+      "en": "Per-hop base rates come from the WEEKLY historical episode miner (W3) when its artifact is present: pooled + per-regime P(hop confirms | upstream fired) with n. A hop with n below the floor prints \"untested\" WITH its n — never a fabricated rate. Absent the artifact, base_rates is null. A propagating chain is not a forecast; a base rate is a printed conditional frequency, not a signal.",
+      "zh": "各跳基础发生率来自每周历史情景挖掘（W3）——存在其产物时：汇总＋分regime的P(跳确认|上游触发)并附n。样本量低于下限的跳打印“未检验”并附其n——绝不编造发生率。无该产物时base_rates为null。传导中的链并非预测；基础发生率是打印的条件频率，而非信号。"
+    },
+    {
+      "en": "Per-name blast radius (`blast`) is a WATCH-grade membership screen with a field receipt, resolved over the per-ticker substrate — never a call and never a size. Counts always include the unevaluable (missing-field) bucket: a missing field is neither safe nor unsafe. Only ARMED chains resolve; dormant chains carry blast={}.",
+      "zh": "个股层面的传导范围（blast）是带字段凭证的观察级成员筛选，基于个股数据解析——绝非交易指令、绝非仓位。计数始终包含无法评估（字段缺失）的桶：字段缺失既不安全也不危险。仅已触发的链解析；休眠链的blast为空。"
+    }
+  ],
+  "display_only": true,
+  "substrate": {
+    "universe": 2936,
+    "substrate_asof": {
+      "min": "2026-05-07",
+      "max": "2026-07-25"
+    }
+  }
+}

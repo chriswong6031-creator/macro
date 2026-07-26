@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast_scoreboard.v2",
-  "asof": "2026-07-21T03:24:00Z",
+  "asof": "2026-07-26T03:01:38Z",
   "forward_accrual_began": "2026-07-07",
   "note": "Forward-only: no backtest rows enter this scoreboard (MRI-R8).",
   "by_release": {
@@ -77,7 +77,7 @@
       }
     },
     "claims": {
-      "n": 2,
+      "n": 3,
       "model": null,
       "mae_ours": null,
       "mae_naive_prior": 3.5,
@@ -104,7 +104,7 @@
       "block_note": "MRI-R9: weekly claims residuals have strong autocorrelation. Reported MAE and coverage are computed on individual weekly prints; effective sample size is smaller than n due to serial correlation. Era-split results in research/release_forecast/CLAIMS_BACKTEST.md are the authoritative reference.",
       "by_cutoff": {
         "T-1": {
-          "n": 1,
+          "n": 2,
           "mae_ours": null,
           "pinball_loss_5q": null
         }

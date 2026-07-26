@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-22T03:32:11.460482+00:00",
+  "generated_utc": "2026-07-26T02:50:11.212451+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,11 +749,15 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.75,
+      "alt_score": 9,
+      "alt_weighted": 3.05,
       "alt_channels": [
         "affiliation",
+        "analyst_upgrade_cluster",
+        "cnbc_pick",
+        "darkpool_accum",
         "github_momentum",
+        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -798,12 +802,14 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.2,
+      "alt_score": 5,
+      "alt_weighted": 1.65,
       "alt_channels": [
         "affiliation",
         "lobbying",
-        "special_situation"
+        "special_situation",
+        "stocktwits_bull",
+        "trump"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -845,13 +851,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.7,
+      "alt_score": 3,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
-        "lobbying",
-        "special_situation",
-        "trump"
+        "hf_model_momentum",
+        "lobbying"
       ],
       "top_holder": {
         "owner": "BEZOS JEFFREY P",
@@ -893,13 +898,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.7,
+      "alt_score": 3,
+      "alt_weighted": 1.2,
       "alt_channels": [
         "affiliation",
         "lobbying",
-        "patent_cluster",
-        "trump"
+        "patent_cluster"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -934,12 +938,11 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.05,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
       "alt_channels": [
         "affiliation",
-        "retail_buzz",
-        "special_situation"
+        "retail_buzz"
       ],
       "top_holder": {
         "owner": "Musk Elon",
@@ -967,12 +970,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.45,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
       "alt_channels": [
         "affiliation",
-        "material_8k",
-        "special_situation"
+        "material_8k"
       ],
       "top_holder": null
     },
@@ -996,12 +998,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 1.9,
+      "alt_score": 6,
+      "alt_weighted": 2.25,
       "alt_channels": [
         "affiliation",
         "app_demand",
         "github_momentum",
+        "hf_model_momentum",
         "lobbying",
         "patent_cluster"
       ],
@@ -1009,38 +1012,6 @@
         "owner": "BARCLAYS PLC",
         "title": "Institution",
         "shares": 794117000
-      }
-    },
-    {
-      "ticker": "ORCL",
-      "actors": [
-        {
-          "actor": "Larry Ellison",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Larry Ellison",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        }
-      ],
-      "n_actors": 2,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
-      "alt_channels": [
-        "affiliation",
-        "special_situation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 174802084
       }
     },
     {
@@ -1064,7 +1035,7 @@
       "n_actors": 2,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
         "special_situation"
@@ -1091,13 +1062,14 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.6,
+      "alt_score": 5,
+      "alt_weighted": 1.75,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "lobbying",
-        "special_situation"
+        "cnbc_pick",
+        "github_momentum",
+        "lobbying"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1125,12 +1097,14 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 5,
+      "alt_weighted": 1.75,
       "alt_channels": [
         "affiliation",
         "gov_contract",
-        "retail_buzz"
+        "retail_buzz",
+        "stocktwits_bull",
+        "trump"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1152,7 +1126,7 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
         "special_situation"
@@ -1201,13 +1175,14 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.7,
+      "alt_score": 5,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "affiliation",
         "gov_grant",
         "lobbying",
-        "patent_cluster"
+        "patent_cluster",
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1253,11 +1228,13 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 4,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "patent_cluster"
+        "analyst_upgrade_cluster",
+        "patent_cluster",
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1278,12 +1255,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.4,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
       "alt_channels": [
         "affiliation",
-        "special_situation",
-        "trump"
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1330,12 +1306,37 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
         "special_situation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
+      "alt_channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 651076825
+      }
     },
     {
       "ticker": "UBER",
@@ -1351,7 +1352,7 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 3,
-      "alt_weighted": 1.3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
         "app_demand",
@@ -1362,6 +1363,27 @@
         "title": "Institution",
         "shares": 198470000
       }
+    },
+    {
+      "ticker": "COIN",
+      "actors": [
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
+      "alt_channels": [
+        "affiliation",
+        "stocktwits_bull"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "LULU",
@@ -1376,11 +1398,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
+      "alt_score": 3,
+      "alt_weighted": 1.2,
       "alt_channels": [
         "activist_13d",
-        "affiliation"
+        "affiliation",
+        "trump"
       ],
       "top_holder": null
     },
@@ -1398,7 +1421,7 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 3,
-      "alt_weighted": 1.45,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "activist_13d",
         "affiliation",
@@ -1424,7 +1447,7 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
         "special_situation"
@@ -1434,28 +1457,6 @@
         "title": "Institution",
         "shares": 66622798
       }
-    },
-    {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.4,
-      "alt_channels": [
-        "affiliation",
-        "special_situation",
-        "trump"
-      ],
-      "top_holder": null
     },
     {
       "ticker": "ABTC",
@@ -1486,6 +1487,37 @@
         "owner": "BlackRock, Inc.",
         "title": "Institution",
         "shares": 3648400
+      }
+    },
+    {
+      "ticker": "ORCL",
+      "actors": [
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 174802084
       }
     },
     {
@@ -1576,54 +1608,10 @@
       "top_holder": null
     },
     {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 651076825
-      }
-    },
-    {
       "ticker": "CVI",
       "actors": [
         {
           "actor": "Carl Icahn",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "COIN",
-      "actors": [
-        {
-          "actor": "Cathie Wood",
           "kind": "fund",
           "rel": "AFFILIATES_WITH",
           "provenance": "DISCLOSED",
@@ -1658,11 +1646,39 @@
         "affiliation"
       ],
       "top_holder": null
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
     }
   ],
   "recent": [],
   "n_candidates": 0,
   "filings": [
+    {
+      "date": "2026-07-24",
+      "form": "S-1/A",
+      "company": "Cryptex Digital Market Cap ETF",
+      "ticker": "BAGZ",
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/2115027/000121390026081379/ea0299142-s1a2_cryptex.htm"
+    },
     {
       "date": "2026-07-20",
       "form": "8-K",
@@ -1733,14 +1749,6 @@
       "company": "American Bitcoin Corp.",
       "ticker": "ABTC",
       "items": "3.03,5.03,8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-20260702.htm"
-    },
-    {
-      "date": "2026-07-06",
-      "form": "8-K",
-      "company": "American Bitcoin Corp.",
-      "ticker": "ABTC",
-      "items": "3.03,5.03,8.01,9.01",
       "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex3_1.htm"
     },
     {
@@ -1752,12 +1760,12 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex99_1.htm"
     },
     {
-      "date": "2026-07-01",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126027019/ef20077163_425.htm"
+      "date": "2026-07-06",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "3.03,5.03,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-20260702.htm"
     }
   ]
 }

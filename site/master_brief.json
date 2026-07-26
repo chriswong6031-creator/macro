@@ -2,66 +2,102 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-07-22T03:24:06.395007+00:00",
+  "generated_at": "2026-07-26T02:37:11.261545+00:00",
   "model": "deepseek-v4-pro",
-  "state_asof": "2026-07-21",
+  "state_asof": "2026-07-24",
   "tldr": [
-    "Regime shifting: Growth is cooling and inflation is warming, pushing Goldilocks toward Reflation.",
-    "Tech-led de-rating: The AI and semiconductor unwind is the main driver of market weakness.",
-    "Dollar headwind: A strengthening US dollar is weighing on stocks, gold, and Bitcoin.",
-    "Bonds late-cycle: Credit is still healthy but the bond cycle is ahead of equities \u2014 a caution flag.",
-    "What to do: Watch \u2014 don't chase"
+    "Fed repricing: Rising yields and a strong dollar pressure risk assets.",
+    "Regime shifting: Goldilocks with growth cooling, inflation warming \u2014 transitioning.",
+    "Narrow breadth: Risk-on macro but few fresh buy signals \u2014 conviction tempered.",
+    "What to do: Get ready."
   ],
-  "summary": "Growth is cooling and inflation warming, moving the US from Goldilocks toward Reflation while a strong dollar and tech weakness weigh on markets.",
-  "regime_read": "The US is still in Goldilocks, but the ground is shifting. Growth has cooled noticeably over the past three weeks, while inflation has been warming. This pushes the regime toward the Reflation edge, where energy and financials would lead and tech would suffer.\n\nThe dominant driver today is the AI and semiconductor unwind. Chip stocks have lagged the market by a full standard deviation, and growth is underperforming value. The firm US dollar adds pressure across risk assets.",
+  "summary": "Hawkish Fed repricing drives yields up and dollar stronger, pressuring risk assets as Goldilocks transitions.",
+  "regime_read": "The US macro regime is still Goldilocks \u2014 growth above trend and inflation cooling \u2014 but it sits at the edge. Growth has weakened over the past month, while inflation has firmed, pushing the regime toward a transition. The copper/gold ratio, a key growth signal, is barely above its tipping point. The dominant driver is a hawkish Fed repricing: short-term yields and the dollar have surged as the market prices out rate cuts, punishing long-duration assets like tech and Bitcoin.\n\nThis shift creates friction: the Goldilocks backdrop normally supports risk-taking, but the strong dollar acts as a brake on commodities, emerging markets, and crypto. Bond markets remain healthy with no credit stress, yet the steepening yield curve favors value over growth. The result is a market with narrow leadership \u2014 trend breadth is broad but entry-quality is thin, so conviction should be limited.",
   "conflicts": [
-    "Caution gap: Bonds are in a late-cycle phase while equities remain mid-cycle \u2014 this is a warning, not a sell signal.",
-    "Narrow leadership: Only 38% of new buy setups clear the filter despite a broad market uptrend \u2014 conviction is thin."
+    "Macro risk-on vs. entry breadth: Trend is broad but fresh buy signals are scarce \u2014 conviction should be tempered.",
+    "Strong USD vs. Goldilocks: Dollar strength is a headwind for gold, copper, and crypto despite the healthy US backdrop."
   ],
-  "rotation_check": "The semis sell-off breaks the first leg of the liquidity rotation playbook. No subsequent asset \u2014 software, China equities, or crypto \u2014 is picking up the baton yet.",
+  "rotation_check": "Hawkish repricing pressures the later legs (ex-US, crypto) while semis attempt a fragile re-rating \u2014 the sequence is stressed, not progressing.",
   "transmission": [
-    "If inflation keeps warming and growth cools further \u2192 the US regime tips into Reflation, favoring energy and financials over tech.",
-    "If the dollar keeps strengthening \u2192 it will add headwinds to US stocks, gold, copper, and Bitcoin."
+    "If the hawkish repricing and strong dollar persist \u2192 expect continued pressure on tech, gold, and Bitcoin.",
+    "If growth cools further and inflation stays warm \u2192 the regime could flip to Reflation, favoring value and commodities."
   ],
   "watch_items": [
-    "Growth score dips below zero: Goldilocks ends and Reflation begins.",
-    "Semis relative strength recovers: tech de-rating fades and risk-on resumes.",
-    "FOMC July 29: any hawkish surprise would amplify dollar strength and rate pressure.",
-    "PCE July 30: a cold print could offset rate fears and soften the dollar's headwind."
+    "FOMC July 29: a hawkish surprise could extend the dollar and yield squeeze.",
+    "PCE July 30: a cold print would challenge the hawkish repricing and support Goldilocks.",
+    "Copper/gold ratio break below 0.45: triggers regime flip toward Reflation.",
+    "BTC valuation vs. holders' cost basis (Z-score) falling below 0: would signal deeper crypto distribution and risk-off."
   ],
-  "confidence": "low",
-  "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Regime shifting: Growth is cooling and inflation is warming, pushing Goldilocks toward Reflation.\",\n    \"Tech-led de-rating: The AI and semiconductor unwind is the main driver of market weakness.\",\n    \"Dollar headwind: A strengthening US dollar is weighing on stocks, gold, and Bitcoin.\",\n    \"Bonds late-cycle: Credit is still healthy but the bond cycle is ahead of equities \u2014 a caution flag.\",\n    \"What to do: Watch \u2014 don't chase\"\n  ],\n  \"summary\": \"Growth is cooling and inflation warming, moving the US from Goldilocks toward Reflation while a strong dollar and tech weakness weigh on markets.\",\n  \"regime_read\": \"The US is still in Goldilocks, but the ground is shifting. Growth has cooled noticeably over the past three weeks, while inflation has been warming. This pushes the regime toward the Reflation edge, where energy and financials would lead and tech would suffer.\\n\\nThe dominant driver today is the AI and semiconductor unwind. Chip stocks have lagged the market by a full standard deviation, and growth is underperforming value. The firm US dollar adds pressure across risk assets.\",\n  \"conflicts\": [\n    \"Caution gap: Bonds are in a late-cycle phase while equities remain mid-cycle \u2014 this is a warning, not a sell signal.\",\n    \"Narrow leadership: Only 38% of new buy setups clear the filter despite a broad market uptrend \u2014 conviction is thin.\"\n  ],\n  \"transmission\": [\n    \"If inflation keeps warming and growth cools further \u2192 the US regime tips into Reflation, favoring energy and financials over tech.\",\n    \"If the dollar keeps strengthening \u2192 it will add headwinds to US stocks, gold, copper, and Bitcoin.\"\n  ],\n  \"rotation_check\": \"The semis sell-off breaks the first leg of the liquidity rotation playbook. No subsequent asset \u2014 software, China equities, or crypto \u2014 is picking up the baton yet.\",\n  \"watch_items\": [\n    \"Growth score dips below zero: Goldilocks ends and Reflation begins.\",\n    \"Semis relative strength recovers: tech de-rating fades and risk-on resumes.\",\n    \"FOMC July 29: any hawkish surprise would amplify dollar strength and rate pressure.\",\n    \"PCE July 30: a cold print could offset rate fears and soften the dollar's headwind.\"\n  ],\n  \"confidence\": \"low\",\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-07-23\",\n      \"label\": \"Initial jobless claims\",\n      \"kind\": \"release\",\n      \"note\": \"Claims model is benchmark-only \u2014 no projection; watch for any surprise in layoffs.\"\n    },\n    {\n      \"date\": \"2026-07-29\",\n      \"label\": \"FOMC rate decision\",\n      \"kind\": \"FOMC\",\n      \"note\": \"Market prices virtually no cuts (implied -2bp); any hawkish shift could intensify dollar headwind.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"GDP (BEA estimate)\",\n      \"kind\": \"GDP\",\n      \"note\": \"GDPnow estimate stands at 1.68%, a growth benchmark for the release.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"Model projects a cold headline print (median -0.29% MoM), surprise distribution 100% cold.\"\n    }\n  ],\n  \"forward_read\": \"The FOMC decision on July 29 arrives with the market already more hawkish than the Fed (implied cuts at -2bp); any further hawkish signal could intensify the dollar's headwind. The PCE report the next day is projected to show a cold headline print (median -0.29% MoM, surprise distribution 100% cold), which might counterbalance rate fears if realized.\"\n}",
+  "confidence": "medium",
+  "theses": [
+    {
+      "id": "mb-2026-07-24-1",
+      "subject": "Growth over value",
+      "lean": "underweight",
+      "conviction": "medium",
+      "horizon_d": 30,
+      "thesis": "Rising real yields and a bear steepener strongly favor value; the hawkish repricing pressures long-duration growth stocks.",
+      "falsifier": {
+        "text": "If the 10-year yield drops below 4% or the curve bull flattens.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "IWF",
+          "vs": "IWD",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-09-04"
+    },
+    {
+      "id": "mb-2026-07-24-2",
+      "subject": "Bitcoin",
+      "lean": "underweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Bitcoin is in distribution with negative momentum and a strong dollar headwind; macro-neutral adds no tailwind.",
+      "falsifier": {
+        "text": "If BTC reclaims $68,000 with that valuation-vs-cost metric above 0.5.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "BTC-USD",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-08-21"
+    }
+  ],
+  "raw_text": "{\n  \"tldr\": [\n    \"Fed repricing: Rising yields and a strong dollar pressure risk assets.\",\n    \"Regime shifting: Goldilocks with growth cooling, inflation warming \u2014 transitioning.\",\n    \"Narrow breadth: Risk-on macro but few fresh buy signals \u2014 conviction tempered.\",\n    \"What to do: Get ready.\"\n  ],\n  \"summary\": \"Hawkish Fed repricing drives yields up and dollar stronger, pressuring risk assets as Goldilocks transitions.\",\n  \"regime_read\": \"The US macro regime is still Goldilocks \u2014 growth above trend and inflation cooling \u2014 but it sits at the edge. Growth has weakened over the past month, while inflation has firmed, pushing the regime toward a transition. The copper/gold ratio, a key growth signal, is barely above its tipping point. The dominant driver is a hawkish Fed repricing: short-term yields and the dollar have surged as the market prices out rate cuts, punishing long-duration assets like tech and Bitcoin.\\n\\nThis shift creates friction: the Goldilocks backdrop normally supports risk-taking, but the strong dollar acts as a brake on commodities, emerging markets, and crypto. Bond markets remain healthy with no credit stress, yet the steepening yield curve favors value over growth. The result is a market with narrow leadership \u2014 trend breadth is broad but entry-quality is thin, so conviction should be limited.\",\n  \"conflicts\": [\n    \"Macro risk-on vs. entry breadth: Trend is broad but fresh buy signals are scarce \u2014 conviction should be tempered.\",\n    \"Strong USD vs. Goldilocks: Dollar strength is a headwind for gold, copper, and crypto despite the healthy US backdrop.\"\n  ],\n  \"transmission\": [\n    \"If the hawkish repricing and strong dollar persist \u2192 expect continued pressure on tech, gold, and Bitcoin.\",\n    \"If growth cools further and inflation stays warm \u2192 the regime could flip to Reflation, favoring value and commodities.\"\n  ],\n  \"rotation_check\": \"Hawkish repricing pressures the later legs (ex-US, crypto) while semis attempt a fragile re-rating \u2014 the sequence is stressed, not progressing.\",\n  \"watch_items\": [\n    \"FOMC July 29: a hawkish surprise could extend the dollar and yield squeeze.\",\n    \"PCE July 30: a cold print would challenge the hawkish repricing and support Goldilocks.\",\n    \"Copper/gold ratio break below 0.45: triggers regime flip toward Reflation.\",\n    \"BTC MVRV-Z falling below 0: would signal deeper crypto distribution and risk-off.\"\n  ],\n  \"confidence\": \"medium\",\n  \"theses\": [\n    {\n      \"subject\": \"Growth over value\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"medium\",\n      \"horizon_d\": 30,\n      \"thesis\": \"Rising real yields and a bear steepener strongly favor value; the hawkish repricing pressures long-duration growth stocks.\",\n      \"falsifier_text\": \"If the 10-year yield drops below 4% or the curve bull flattens.\"\n    },\n    {\n      \"subject\": \"Bitcoin\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Bitcoin is in distribution with negative momentum and a strong dollar headwind; macro-neutral adds no tailwind.\",\n      \"falsifier_text\": \"If BTC reclaims $68,000 with MVRV-Z above 0.5.\"\n    }\n  ],\n  \"forward_watch\": [\n    {\n      \"date\": \"2026-07-29\",\n      \"label\": \"FOMC rate decision\",\n      \"kind\": \"FOMC\",\n      \"note\": \"Fed decision with hawkish hold expected; any fresh forward guidance could move yields sharply.\"\n    },\n    {\n      \"date\": \"2026-07-30\",\n      \"label\": \"PCE / personal income (BEA)\",\n      \"kind\": \"PCE\",\n      \"note\": \"Model projects a cold print (point -0.2864), with p(cold)=1.0 \u2014 may challenge the hawkish repricing.\"\n    },\n    {\n      \"date\": \"2026-08-07\",\n      \"label\": \"Jobs report (nonfarm payrolls)\",\n      \"kind\": \"NFP\",\n      \"note\": \"Key labor market read; a weak print could revive easing hopes despite the hawkish Fed stance.\"\n    }\n  ],\n  \"forward_read\": \"A dense data week looms: the FOMC decision on July 29, then GDP and PCE the next day. The PCE model leans heavily cold, which would test the current hawkish repricing. The jobs report on August 7 will be the next major labor signal after the recent soft payrolls.\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
-  "style_flags": [],
+  "style_flags": [
+    "sigma/z/pctile: Z-score"
+  ],
   "forward_watch": [
-    {
-      "date": "2026-07-23",
-      "label": "Initial jobless claims",
-      "kind": "release",
-      "note": "Claims model is benchmark-only \u2014 no projection; watch for any surprise in layoffs."
-    },
     {
       "date": "2026-07-29",
       "label": "FOMC rate decision",
       "kind": "FOMC",
-      "note": "Market prices virtually no cuts (implied -2bp); any hawkish shift could intensify dollar headwind."
-    },
-    {
-      "date": "2026-07-30",
-      "label": "GDP (BEA estimate)",
-      "kind": "GDP",
-      "note": "GDPnow estimate stands at 1.68%, a growth benchmark for the release."
+      "note": "Fed decision with hawkish hold expected; any fresh forward guidance could move yields sharply."
     },
     {
       "date": "2026-07-30",
       "label": "PCE / personal income (BEA)",
       "kind": "PCE",
-      "note": "Model projects a cold headline print (median -0.29% MoM), surprise distribution 100% cold."
+      "note": "Model projects a cold print (point -0.2864), with p(cold)=1.0 \u2014 may challenge the hawkish repricing."
+    },
+    {
+      "date": "2026-08-07",
+      "label": "Jobs report (nonfarm payrolls)",
+      "kind": "NFP",
+      "note": "Key labor market read; a weak print could revive easing hopes despite the hawkish Fed stance."
     }
   ],
-  "forward_read": "The FOMC decision on July 29 arrives with the market already more hawkish than the Fed (implied cuts at -2bp); any further hawkish signal could intensify the dollar's headwind. The PCE report the next day is projected to show a cold headline print (median -0.29% MoM, surprise distribution 100% cold), which might counterbalance rate fears if realized.",
+  "forward_read": "A dense data week looms: the FOMC decision on July 29, then GDP and PCE the next day. The PCE model leans heavily cold, which would test the current hawkish repricing. The jobs report on August 7 will be the next major labor signal after the recent soft payrolls.",
   "nw_context_used": true,
   "cortex_status": "degraded",
   "refresh_days": 1,
@@ -94,9 +130,9 @@
       "key": "bonds",
       "label_en": "Bonds vs stocks",
       "label_zh": "\u503a\u80a1\u5173\u7cfb",
-      "value_en": "Disagree \u2014 bonds worried",
-      "value_zh": "\u5206\u6b67 \u2014 \u503a\u5e02\u62c5\u5fe7",
-      "tone": "warn"
+      "value_en": "Mixed",
+      "value_zh": "\u597d\u574f\u53c2\u534a",
+      "tone": "neutral"
     },
     {
       "key": "credit",
@@ -110,35 +146,34 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "AI / semis",
-      "value_zh": "AI / semis",
+      "value_en": "Fed repricing",
+      "value_zh": "Fed repricing",
       "tone": "info"
     }
   ],
   "zh": {
-    "summary": "\u589e\u957f\u6b63\u5728\u653e\u7f13\uff0c\u901a\u80c0\u6b63\u5728\u5347\u6e29\uff0c\u7f8e\u56fd\u7ecf\u6d4e\u4ece\u201c\u91d1\u53d1\u5973\u5b69\u201d\u72b6\u6001\u8f6c\u5411\u518d\u901a\u80c0\uff0c\u800c\u5f3a\u52bf\u7f8e\u5143\u548c\u79d1\u6280\u80a1\u75b2\u8f6f\u5bf9\u5e02\u573a\u6784\u6210\u538b\u529b\u3002",
-    "regime_read": "\u7f8e\u56fd\u4ecd\u5904\u4e8e\u201c\u91d1\u53d1\u5973\u5b69\u201d\u72b6\u6001\uff0c\u4f46\u57fa\u7840\u6b63\u5728\u8f6c\u53d8\u3002\u8fc7\u53bb\u4e09\u5468\uff0c\u589e\u957f\u660e\u663e\u964d\u6e29\uff0c\u800c\u901a\u80c0\u6301\u7eed\u5347\u6e29\u3002\u8fd9\u63a8\u52a8\u7ecf\u6d4e\u72b6\u6001\u8d70\u5411\u518d\u901a\u80c0\u8fb9\u7f18\uff0c\u5c4a\u65f6\u80fd\u6e90\u548c\u91d1\u878d\u677f\u5757\u5c06\u9886\u5148\uff0c\u79d1\u6280\u677f\u5757\u5c06\u627f\u538b\u3002\n\n\u5f53\u524d\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u662f\u4eba\u5de5\u667a\u80fd\u548c\u534a\u5bfc\u4f53\u677f\u5757\u7684\u56de\u843d\u3002\u82af\u7247\u80a1\u843d\u540e\u5e02\u573a\u6574\u6574\u4e00\u4e2a\u6807\u51c6\u5dee\uff0c\u6210\u957f\u80a1\u8868\u73b0\u4e0d\u53ca\u4ef7\u503c\u80a1\u3002\u575a\u633a\u7684\u7f8e\u5143\u7ed9\u98ce\u9669\u8d44\u4ea7\u5e26\u6765\u989d\u5916\u538b\u529b\u3002",
-    "rotation_check": "\u534a\u5bfc\u4f53\u677f\u5757\u7684\u629b\u552e\u6253\u7834\u4e86\u6d41\u52a8\u6027\u8f6e\u52a8\u7b56\u7565\u7684\u7b2c\u4e00\u6b65\u3002\u968f\u540e\u6ca1\u6709\u8d44\u4ea7\u2014\u2014\u8f6f\u4ef6\u3001\u4e2d\u56fd\u80a1\u7968\u6216\u52a0\u5bc6\u8d27\u5e01\u2014\u2014\u63a5\u8fc7\u63a5\u529b\u68d2\u3002",
+    "summary": "\u9e70\u6d3e\u7f8e\u8054\u50a8\u91cd\u65b0\u5b9a\u4ef7\u63a8\u9ad8\u6536\u76ca\u7387\u5e76\u63d0\u632f\u7f8e\u5143\uff0c\u968f\u7740\u91d1\u53d1\u59d1\u5a18\u73af\u5883\u8fc7\u6e21\uff0c\u98ce\u9669\u8d44\u4ea7\u627f\u538b\u3002",
+    "regime_read": "\u7f8e\u56fd\u5b8f\u89c2\u4f53\u5236\u4ecd\u5904\u4e8e\u91d1\u53d1\u59d1\u5a18\u72b6\u6001\u2014\u2014\u589e\u957f\u9ad8\u4e8e\u8d8b\u52bf\u4e14\u901a\u80c0\u964d\u6e29\u2014\u2014\u4f46\u5df2\u5904\u4e8e\u8fb9\u7f18\u3002\u8fc7\u53bb\u4e00\u4e2a\u6708\u589e\u957f\u6709\u6240\u51cf\u5f31\uff0c\u800c\u901a\u80c0\u6709\u6240\u4f01\u7a33\uff0c\u63a8\u52a8\u4f53\u5236\u8d70\u5411\u8f6c\u53d8\u3002\u4f5c\u4e3a\u5173\u952e\u589e\u957f\u4fe1\u53f7\u7684\u94dc\u91d1\u6bd4\uff0c\u7565\u9ad8\u4e8e\u5176\u4e34\u754c\u70b9\u3002\u4e3b\u5bfc\u9a71\u52a8\u56e0\u7d20\u662f\u9e70\u6d3e\u7f8e\u8054\u50a8\u91cd\u65b0\u5b9a\u4ef7\uff1a\u968f\u7740\u5e02\u573a\u5b9a\u4ef7\u6392\u9664\u964d\u606f\uff0c\u77ed\u671f\u6536\u76ca\u7387\u548c\u7f8e\u5143\u98d9\u5347\uff0c\u60e9\u7f5a\u79d1\u6280\u548c\u6bd4\u7279\u5e01\u7b49\u957f\u4e45\u671f\u8d44\u4ea7\u3002\u8fd9\u4e00\u8f6c\u53d8\u9020\u6210\u6469\u64e6\uff1a\u91d1\u53d1\u59d1\u5a18\u80cc\u666f\u901a\u5e38\u652f\u6301\u5192\u9669\uff0c\u4f46\u5f3a\u52bf\u7f8e\u5143\u5bf9\u5927\u5b97\u5546\u54c1\u3001\u65b0\u5174\u5e02\u573a\u548c\u52a0\u5bc6\u8d27\u5e01\u6784\u6210\u5236\u7ea6\u3002\u503a\u5238\u5e02\u573a\u4fdd\u6301\u5065\u5eb7\uff0c\u65e0\u4fe1\u7528\u538b\u529b\uff0c\u4f46\u6536\u76ca\u7387\u66f2\u7ebf\u8d8b\u9661\u6709\u5229\u4e8e\u4ef7\u503c\u80a1\u800c\u975e\u6210\u957f\u80a1\u3002\u7ed3\u679c\u662f\u5e02\u573a\u9886\u5bfc\u529b\u72ed\u7a84\u2014\u2014\u8d8b\u52bf\u5e7f\u5ea6\u5e7f\u9614\u4f46\u5165\u573a\u8d28\u91cf\u8584\u5f31\uff0c\u56e0\u6b64\u5e94\u4fdd\u6301\u6709\u9650\u4fe1\u5fc3\u3002",
+    "rotation_check": "\u9e70\u6d3e\u91cd\u65b0\u5b9a\u4ef7\u65bd\u538b\u540e\u7eed\u677f\u5757\uff08\u7f8e\u56fd\u9664\u5916\u3001\u52a0\u5bc6\u8d27\u5e01\uff09\uff0c\u800c\u534a\u5bfc\u4f53\u5c1d\u8bd5\u8106\u5f31\u7684\u91cd\u65b0\u8bc4\u7ea7\u2014\u2014\u8fd9\u4e00\u5e8f\u5217\u627f\u538b\uff0c\u5e76\u672a\u63a8\u8fdb\u3002",
     "tldr": [
-      "\u5e02\u573a\u683c\u5c40\u8f6c\u6362\uff1a\u589e\u957f\u6b63\u5728\u964d\u6e29\uff0c\u901a\u80c0\u6b63\u5728\u5347\u6e29\uff0c\u5c06\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u63a8\u5411\u518d\u901a\u80c0\u3002",
-      "\u79d1\u6280\u80a1\u4e3b\u5bfc\u7684\u4f30\u503c\u4e0b\u8c03\uff1a\u4eba\u5de5\u667a\u80fd\u548c\u534a\u5bfc\u4f53\u677f\u5757\u7684\u56de\u843d\u662f\u5e02\u573a\u75b2\u8f6f\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u3002",
-      "\u7f8e\u5143\u9006\u98ce\uff1a\u7f8e\u5143\u8d70\u5f3a\u6b63\u5728\u62d6\u7d2f\u80a1\u7968\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u3002",
-      "\u503a\u5238\u5468\u671f\u540e\u671f\uff1a\u4fe1\u8d37\u4f9d\u7136\u5065\u5eb7\uff0c\u4f46\u503a\u5238\u5468\u671f\u9886\u5148\u4e8e\u80a1\u7968\u2014\u2014\u8fd9\u662f\u4e00\u4e2a\u8b66\u793a\u4fe1\u53f7\u3002",
-      "\u5e94\u5bf9\u7b56\u7565\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u8981\u8ffd\u6da8\u3002"
+      "\u7f8e\u8054\u50a8\u91cd\u65b0\u5b9a\u4ef7\uff1a\u6536\u76ca\u7387\u4e0a\u5347\u548c\u7f8e\u5143\u8d70\u5f3a\u65bd\u538b\u98ce\u9669\u8d44\u4ea7\u3002",
+      "\u683c\u5c40\u8f6c\u53d8\uff1a\u589e\u957f\u964d\u6e29\u3001\u901a\u80c0\u5347\u6e29\u7684\u91d1\u53d1\u59d1\u5a18\u72b6\u6001\u2014\u2014\u8fc7\u6e21\u4e2d\u3002",
+      "\u5e02\u573a\u5e7f\u5ea6\u72ed\u7a84\uff1a\u5b8f\u89c2\u98ce\u9669\u504f\u597d\u4f46\u65b0\u9c9c\u4e70\u5165\u4fe1\u53f7\u7a00\u5c11\u2014\u2014\u4fe1\u5ff5\u964d\u6e29\u3002",
+      "\u8be5\u600e\u4e48\u505a\uff1a\u505a\u597d\u51c6\u5907\u3002"
     ],
     "conflicts": [
-      "\u8c28\u614e\u7f3a\u53e3\uff1a\u503a\u5238\u5904\u4e8e\u5468\u671f\u540e\u671f\u9636\u6bb5\uff0c\u800c\u80a1\u7968\u4ecd\u5904\u4e8e\u5468\u671f\u4e2d\u671f\u2014\u2014\u8fd9\u662f\u4e00\u4e2a\u8b66\u544a\uff0c\u800c\u975e\u5356\u51fa\u4fe1\u53f7\u3002",
-      "\u9886\u6da8\u8303\u56f4\u72ed\u7a84\uff1a\u5c3d\u7ba1\u5e02\u573a\u6574\u4f53\u5448\u4e0a\u5347\u8d8b\u52bf\uff0c\u4f46\u53ea\u670938%\u7684\u65b0\u4e70\u5165\u8bbe\u7f6e\u901a\u8fc7\u4e86\u7b5b\u9009\u2014\u2014\u4fe1\u5fc3\u4e0d\u8db3\u3002"
+      "\u5b8f\u89c2\u98ce\u9669\u504f\u597d\u4e0e\u5165\u573a\u5bbd\u5ea6\uff1a\u8d8b\u52bf\u5e7f\u9614\u4f46\u65b0\u9c9c\u4e70\u5165\u4fe1\u53f7\u7a00\u7f3a\u2014\u2014\u5e94\u8282\u5236\u4fe1\u5fc3\u3002",
+      "\u5f3a\u52bf\u7f8e\u5143 vs. \u91d1\u53d1\u59d1\u5a18\uff1a\u5c3d\u7ba1\u7f8e\u56fd\u80cc\u666f\u5065\u5eb7\uff0c\u7f8e\u5143\u5f3a\u52bf\u5bf9\u9ec4\u91d1\u3001\u94dc\u548c\u52a0\u5bc6\u8d27\u5e01\u6784\u6210\u9006\u98ce\u3002"
     ],
     "transmission": [
-      "\u5982\u679c\u901a\u80c0\u6301\u7eed\u5347\u6e29\u4e14\u589e\u957f\u8fdb\u4e00\u6b65\u964d\u6e29\u2192\u7f8e\u56fd\u7ecf\u6d4e\u72b6\u6001\u5c06\u6ed1\u5165\u518d\u901a\u80c0\uff0c\u6709\u5229\u4e8e\u80fd\u6e90\u548c\u91d1\u878d\u677f\u5757\uff0c\u800c\u975e\u79d1\u6280\u677f\u5757\u3002",
-      "\u5982\u679c\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a \u2192 \u5c06\u4e3a\u7f8e\u80a1\u3001\u9ec4\u91d1\u3001\u94dc\u548c\u6bd4\u7279\u5e01\u5e26\u6765\u9006\u98ce\u3002"
+      "\u5982\u679c\u9e70\u6d3e\u91cd\u65b0\u5b9a\u4ef7\u548c\u5f3a\u52bf\u7f8e\u5143\u6301\u7eed\u2192\u9884\u8ba1\u79d1\u6280\u3001\u9ec4\u91d1\u548c\u6bd4\u7279\u5e01\u5c06\u7ee7\u7eed\u627f\u538b\u3002",
+      "\u5982\u679c\u589e\u957f\u8fdb\u4e00\u6b65\u653e\u7f13\u800c\u901a\u80c0\u4fdd\u6301\u6e29\u548c \u2192 \u5e02\u573a\u683c\u5c40\u53ef\u80fd\u8f6c\u5411\u518d\u901a\u80c0\uff0c\u5229\u597d\u4ef7\u503c\u548c\u5546\u54c1\u3002"
     ],
     "watch_items": [
-      "\u589e\u957f\u8bc4\u5206\u964d\u81f3\u96f6\u4ee5\u4e0b\uff1a\u91d1\u53d1\u5973\u5b69\u7ecf\u6d4e\u7ed3\u675f\uff0c\u518d\u901a\u80c0\u5f00\u59cb\u3002",
-      "\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5f31\u6062\u590d\uff1a\u79d1\u6280\u80a1\u4f30\u503c\u4e0b\u8c03\u6d88\u9000\uff0c\u98ce\u9669\u504f\u597d\u6062\u590d\u3002",
-      "FOMC 7\u670829\u65e5\uff1a\u4efb\u4f55\u9e70\u6d3e\u610f\u5916\u90fd\u5c06\u653e\u5927\u7f8e\u5143\u5f3a\u52bf\u548c\u5229\u7387\u538b\u529b\u3002",
-      "PCE 7\u670830\u65e5\uff1a\u75b2\u8f6f\u7684\u6570\u636e\u53ef\u80fd\u62b5\u6d88\u5229\u7387\u62c5\u5fe7\uff0c\u7f13\u89e3\u7f8e\u5143\u9006\u98ce\u3002"
+      "FOMC 7\u670829\u65e5\uff1a\u9e70\u6d3e\u610f\u5916\u53ef\u80fd\u5ef6\u957f\u7f8e\u5143\u6da8\u52bf\u548c\u6536\u76ca\u7387\u6324\u538b\u3002",
+      "PCE 7\u670830\u65e5\uff1a\u75b2\u8f6f\u6570\u636e\u5c06\u6311\u6218\u9e70\u6d3e\u91cd\u65b0\u5b9a\u4ef7\u5e76\u652f\u6491\u91d1\u53d1\u59d1\u5a18\u3002",
+      "\u94dc\u91d1\u6bd4\u8dcc\u78340.45\uff1a\u89e6\u53d1\u5e02\u573a\u683c\u5c40\u8f6c\u5411\u518d\u901a\u80c0\u3002",
+      "BTC\u4f30\u503c\u76f8\u5bf9\u6301\u6709\u8005\u6210\u672c\u57fa\u7840\uff08Z\u5206\u6570\uff09\u8dcc\u78340\uff1a\u5c06\u8868\u660e\u52a0\u5bc6\u8d27\u5e01\u8fdb\u4e00\u6b65\u5206\u6563\u548c\u907f\u9669\u60c5\u7eea\u3002"
     ]
   }
 }

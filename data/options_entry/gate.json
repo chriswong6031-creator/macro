@@ -1,6 +1,6 @@
 {
  "schema": "options_entry.gate.v3",
- "generated_at": "2026-07-22 03:29 UTC",
+ "generated_at": "2026-07-26 02:47 UTC",
  "scored": false,
  "status": "scorable",
  "weight": 0.0,
@@ -10,8 +10,8 @@
   21
  ],
  "min_per_bucket": 30,
- "n_ledger_rows": 1592,
- "n_stamped_rows": 1592,
+ "n_ledger_rows": 1778,
+ "n_stamped_rows": 1778,
  "fdr_family": {
   "alpha": 0.1,
   "method": "Benjamini-Hochberg",
@@ -27,14 +27,14 @@
   "S-TOP_RISK": "no_effect",
   "S-PIN_RISK": "building_history",
   "S-VOI2": "building_history",
-  "S-VANNA-RELIEF": "building_history",
+  "S-VANNA-RELIEF": "no_effect",
   "S-FRONT-CHARM": "building_history"
  },
  "tests": {
   "S-DOI": {
    "bucket": "S-DOI: doi_slope_5d > 0 (call-OI accumulating)",
-   "n_cond": 41,
-   "n_base": 47,
+   "n_cond": 60,
+   "n_base": 60,
    "ready": true,
    "breach": {
     "n_cond": 0,
@@ -70,8 +70,8 @@
   },
   "S-VOI": {
    "bucket": "S-VOI: voi_flag True (vol>prior-OI fresh positioning)",
-   "n_cond": 112,
-   "n_base": 22,
+   "n_cond": 141,
+   "n_base": 25,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -100,8 +100,8 @@
   },
   "S-VOI-fast": {
    "bucket": "S-VOI-fast",
-   "n_cond": 112,
-   "n_base": 22,
+   "n_cond": 141,
+   "n_base": 25,
    "ready": false,
    "fwd_ret_5": {
     "n_cond": 0,
@@ -112,16 +112,16 @@
     "excludes_zero": false
    },
    "fwd_mfe_5": {
-    "n_cond": 44,
-    "n_base": 12,
-    "delta": -0.01747,
-    "ci_lo": -0.04449,
-    "ci_hi": 0.00414,
+    "n_cond": 64,
+    "n_base": 14,
+    "delta": -0.01098,
+    "ci_lo": -0.03578,
+    "ci_hi": 0.00929,
     "excludes_zero": false
    }
   },
   "S-WALL": {
-   "n_eligible": 102,
+   "n_eligible": 124,
    "n_priced": 0,
    "wall_touches": 0,
    "fixed_stop_touches": 0,
@@ -131,8 +131,8 @@
   },
   "S-IVSPREAD-F": {
    "bucket": "S-IVSPREAD-F: ivspread_rel > 0 (calls richening)",
-   "n_cond": 51,
-   "n_base": 37,
+   "n_cond": 65,
+   "n_base": 55,
    "ready": true,
    "breach": {
     "n_cond": 0,
@@ -161,8 +161,8 @@
   },
   "S-SKEW_DECEL": {
    "bucket": "S-SKEW_DECEL: skew top-tercile AND skew_5d_chg < 0 (high skew fading)",
-   "n_cond": 8,
-   "n_base": 80,
+   "n_cond": 12,
+   "n_base": 108,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -191,8 +191,8 @@
   },
   "S-TOP_RISK": {
    "bucket": "S-TOP_RISK: skew_5d_chg>0 OR ivspread_rel<0 (puts richening/dominant \u2014 caution-only)",
-   "n_cond": 49,
-   "n_base": 39,
+   "n_cond": 72,
+   "n_base": 48,
    "ready": true,
    "breach": {
     "n_cond": 0,
@@ -223,8 +223,8 @@
   },
   "S-PIN_RISK": {
    "bucket": "S-PIN_RISK: opex_days<=5 AND gamma=long AND min_wall_dist<=2% (pin-risk window)",
-   "n_cond": 3,
-   "n_base": 87,
+   "n_cond": 9,
+   "n_base": 113,
    "ready": false,
    "breach": {
     "n_cond": 0,
@@ -262,9 +262,9 @@
   },
   "S-VANNA-RELIEF": {
    "bucket": "S-VANNA-RELIEF: opt_vanna_relief=True (IV fell 5d AND vanna_hedge top-tercile)",
-   "n_cond": 24,
-   "n_base": 64,
-   "ready": false,
+   "n_cond": 32,
+   "n_base": 88,
+   "ready": true,
    "breach": {
     "n_cond": 0,
     "n_base": 0,
@@ -309,32 +309,32 @@
   "S-VOI2": "building_history",
   "S-TOP_RISK": "no_effect",
   "S-PIN_RISK": "building_history",
-  "S-VANNA-RELIEF": "building_history",
+  "S-VANNA-RELIEF": "no_effect",
   "S-FRONT-CHARM": "building_history"
  },
  "evidence": [
   "S-IVR: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_iv_rank_252 is null until the post-W1.1 IV-backfill PR (ruling A9)",
-  "S-DOI: n_cond=41 n_base=47 \u2192 verdict=no_effect",
-  "S-VOI: building history (n_cond=112, n_base=22; need 30/bucket)",
-  "S-VOI-fast (5d): building history (n_cond=112, n_base=22; need 30/bucket)",
-  "S-WALL: 0/102 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
-  "S-IVSPREAD-F: n_cond=51 n_base=37 \u2192 verdict=no_effect",
-  "S-SKEW_DECEL: building history (n_cond=8, n_base=80; need 30/bucket)",
-  "S-TOP_RISK: n_cond=49 n_base=39 \u2192 verdict=no_effect",
-  "S-PIN_RISK: building history (n_cond=3, n_base=87; need 30/bucket) \u2014 CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 (pinning suppresses follow-through). de-escalation only, never a short.",
+  "S-DOI: n_cond=60 n_base=60 \u2192 verdict=no_effect",
+  "S-VOI: building history (n_cond=141, n_base=25; need 30/bucket)",
+  "S-VOI-fast (5d): building history (n_cond=141, n_base=25; need 30/bucket)",
+  "S-WALL: 0/124 eligible fires priced (price_store_available=False); wall_touches=0, fixed\u22125%_touches=0, wall_before_fixed=0. LIMITATION: close-path study understates intraday touches; a bar may pierce the wall intraday and close back above it. Full stop-out comparison is W2.3.",
+  "S-IVSPREAD-F: n_cond=65 n_base=55 \u2192 verdict=no_effect",
+  "S-SKEW_DECEL: building history (n_cond=12, n_base=108; need 30/bucket)",
+  "S-TOP_RISK: n_cond=72 n_base=48 \u2192 verdict=no_effect",
+  "S-PIN_RISK: building history (n_cond=9, n_base=113; need 30/bucket) \u2014 CAUTION-ONLY: beneficial direction = flagged fires show lower clean liftoff / mfe21 (pinning suppresses follow-through). de-escalation only, never a short.",
   "S-VOI2: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4).",
-  "S-VANNA-RELIEF: building history (n_cond=24, n_base=64; need 30/bucket) \u2014 CAUTION-ONLY (RO-3): holdability / de-escalation / stop-width state. PRIMARY = breach delta (beneficial = LOWER breach). SECONDARY = clean + mfe21 (reported honestly; no pre-judged direction). Never originates a new entry. Sign note (audit #29): flag uses signed net vanna under long-call/short-put dealer convention; mechanism narrative inherits that assumption.",
+  "S-VANNA-RELIEF: n_cond=32 n_base=88 \u2192 verdict=no_effect",
   "S-FRONT-CHARM: building history (n_cond=0, n_base=0; need 30/bucket) \u2014 opt_front7_charm_share not yet stamped \u2014 W-OVC harness extension (stamp ships in this PR; history accrues from live fires)",
-  "stamp coverage [opt_ivspread_rel]: 88/1592 rows (5.5%)",
-  "stamp coverage [opt_skew]: 90/1592 rows (5.7%)",
-  "stamp coverage [opt_skew_5d_chg]: 88/1592 rows (5.5%)",
-  "stamp coverage [opt_opex_days]: 1545/1592 rows (97.0%)",
-  "stamp coverage [opt_pin_risk]: 90/1592 rows (5.7%)",
-  "stamp coverage [opt_wall_dist_up_pct]: 90/1592 rows (5.7%)",
-  "stamp coverage [opt_wall_dist_down_pct]: 90/1592 rows (5.7%)",
-  "stamp coverage [opt_vanna_relief]: 88/1592 rows (5.5%)",
-  "stamp coverage [opt_front7_charm_share]: 0/1592 rows (0.0%)",
-  "stamp coverage [opt_root_class]: 0/1592 rows (0.0%)"
+  "stamp coverage [opt_ivspread_rel]: 120/1778 rows (6.7%)",
+  "stamp coverage [opt_skew]: 122/1778 rows (6.9%)",
+  "stamp coverage [opt_skew_5d_chg]: 120/1778 rows (6.7%)",
+  "stamp coverage [opt_opex_days]: 1731/1778 rows (97.4%)",
+  "stamp coverage [opt_pin_risk]: 122/1778 rows (6.9%)",
+  "stamp coverage [opt_wall_dist_up_pct]: 122/1778 rows (6.9%)",
+  "stamp coverage [opt_wall_dist_down_pct]: 122/1778 rows (6.9%)",
+  "stamp coverage [opt_vanna_relief]: 120/1778 rows (6.7%)",
+  "stamp coverage [opt_front7_charm_share]: 0/1778 rows (0.0%)",
+  "stamp coverage [opt_root_class]: 0/1778 rows (0.0%)"
  ],
  "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2 + W-OVC: S-VANNA-RELIEF/S-FRONT-CHARM). Display/ledger-seed only until a bucket clears n\u226530 AND a primitive delta's bootstrap CI excludes 0 (doctrine \u00a72.3). Ledger primitives only (ruling A10). FDR family=36 tests, BH \u03b1=0.10. Never scored until a gate passes. S-TOP_RISK/S-PIN_RISK/S-FRONT-CHARM are caution-only: beneficial direction = flagged fires worse/higher-vol (correctly de-escalates). S-VANNA-RELIEF is caution-only: holdability context only, not an entry originator. Never initiates a negative position (RO-3)."
 }

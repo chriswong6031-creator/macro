@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-22",
-  "generated_at": "2026-07-22T03:44:08Z",
+  "as_of": "2026-07-26",
+  "generated_at": "2026-07-26T03:02:33Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -28,10 +28,10 @@
   "theses": [
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-22",
+      "as_of": "2026-07-26",
       "thesis_id": "ai_semiconductors.v1",
-      "content_hash": "sha256:ad975dd37f2f8061ad125832b1fafa4eba1c03294eec869bc1b8c25bb1a217cf",
-      "prev_content_hash": "sha256:09bde81092fee9545a4c676d5d2c77b6e935791fc2d66dec7cf65530ebe401cc",
+      "content_hash": "sha256:b5fe9801ab598d2f1e59524edf6cd9eee24cf5134814e87fa0f707cc6100e86d",
+      "prev_content_hash": "sha256:ad975dd37f2f8061ad125832b1fafa4eba1c03294eec869bc1b8c25bb1a217cf",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -109,7 +109,7 @@
           "rule_en": "If crowding on the ai_semiconductors or ai_infra basket exceeds 0.7 (z-score), the risk-adjusted opportunity is diminished — variant perception has become consensus.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.462"
+          "detail": "threshold check: 'basket_intel[*].crowding' gt 0.7 → value=0.362"
         },
         {
           "id": "ai_semi_f4",
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-22",
+      "as_of": "2026-07-26",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:f8a47f5a8c846c6a7444d608208556b840f835b6b48337c366e2a8fc90edf976",
-      "prev_content_hash": "sha256:659b1214790e3839294f7dce44da415ea9d3d4cc7f9142a605faa306414a0d34",
+      "content_hash": "sha256:3bf4addb6dbe88b81d9f52e8c5bbfac2015ffb5cb3efc0f0f40180d9549794b5",
+      "prev_content_hash": "sha256:f8a47f5a8c846c6a7444d608208556b840f835b6b48337c366e2a8fc90edf976",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=45.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=44.0"
         },
         {
           "id": "robo_f3",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-22T03:44:08Z",
-  "inputs_hash": "sha256:c379dffed69a44179a518e2178ef074441d50f83dc9737ff44ed296163fe0dcd",
+  "produced_at": "2026-07-26T03:02:33Z",
+  "inputs_hash": "sha256:5a42fd3f79334c567b354b44facaf2461d3643eabf4322f7dc51c4dc183e6cc6",
   "tier": "display"
 }

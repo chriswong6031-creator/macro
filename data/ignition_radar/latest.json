@@ -54,8 +54,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=65.8% (was 68.8% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=65.8%\uff0810\u65e5\u524d68.8%\uff09",
+      "detail_en": "pct_above_50=65.8% (was 68.6% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=65.8%\uff0810\u65e5\u524d68.6%\uff09",
       "source": "breadth"
     },
     {
@@ -300,5 +300,5 @@
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 1.93
+  "_timing_s": 1.99
 }

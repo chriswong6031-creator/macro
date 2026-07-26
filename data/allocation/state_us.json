@@ -13,7 +13,6 @@
     "energy_complex",
     "industrial_distribution",
     "insurance",
-    "mag7",
     "managed_care",
     "memory_storage",
     "non_ai_tech",
@@ -37,8 +36,8 @@
   "held": [
     "memory_storage",
     "cybersecurity",
-    "managed_care",
-    "ai_neoclouds"
+    "ai_infra",
+    "managed_care"
   ],
   "leader": "memory_storage",
   "names": {
