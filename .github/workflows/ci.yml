@@ -4271,7 +4271,15 @@ jobs:
     # conftest imports yaml in EVERY pytest run, so pyyaml is not optional
     # (a pytest-only env dies at collection). Matching marketing-engine's
     # dependency set also lets the pack runner reuse its venv. Verified green
-    # against a minimal pytest+pyyaml env: 28 passed, 3 skipped.
+    # against a minimal pytest+pyyaml env: 34 passed, 6 skipped.
+    #
+    # 2026-07-26: "the tests needing them importorskip cleanly" was NOT true when
+    # this lane was wired — test_chart_render_inline's two load_ohlcv tests did a
+    # bare `import pandas`, so the lane went red on main the same day with
+    # ModuleNotFoundError, not a skip. Fixed by making those two importorskip
+    # pandas AND pyarrow (.to_parquet needs an engine). Keep the deps minimal and
+    # the tests skip-clean rather than growing this list: a lane that installs the
+    # world stops being the cheap guard it was added to be.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
