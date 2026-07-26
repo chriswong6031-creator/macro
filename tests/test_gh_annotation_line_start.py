@@ -41,9 +41,9 @@ LEVELS = {"debug", "info", "warning", "error", "critical", "exception"}
 # message is dead decoration rather than a dropped annotation.  Removing the
 # prefix there is a separate, deliberate change to production request paths.
 EXEMPT: dict[str, str] = {
-    "engine/neuralweb/brain_gateway.py": "FastAPI request path (app/main.py) — VPS runtime, not CI",
-    "engine/research_vault/download_quota.py": "FastAPI request path (app/research.py) — VPS runtime",
-    "engine/research_vault/view_ratelimit.py": "FastAPI request path (app/research.py) — VPS runtime",
+    "engine/neuralweb/brain_gateway.py": "FastAPI request path (app/main.py) — VPS, not CI",
+    "engine/research_vault/download_quota.py": "FastAPI request path (app/research.py)",
+    "engine/research_vault/view_ratelimit.py": "FastAPI request path (app/research.py)",
 }
 
 
@@ -123,7 +123,7 @@ def test_exempt_entries_still_exist_and_still_offend():
             for n in ast.walk(tree)
         )
         if not hit:
-            stale.append(f"{rel}: no longer has an annotation-shaped log call — drop the exemption")
+            stale.append(f"{rel}: no annotation-shaped log call left — drop the exemption")
     assert not stale, "EXEMPT is out of date:\n" + "\n".join(f"  {s}" for s in stale)
 
 
