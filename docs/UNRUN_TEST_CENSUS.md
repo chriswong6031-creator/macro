@@ -101,7 +101,8 @@ the 101 subject modules that were previously unmatched (`paths` grows 647 → 87
 ## Red on arrival
 
 Seven of the 132 dark suites were **already failing** on `main` — invisible precisely because
-nothing ran them. Five were repaired here; two are excluded because the fix is a product call.
+nothing ran them. Five were repaired here; two were deferred as a product call and have since
+been resolved in #3645 (*The FTR product call*, below).
 An **eighth** was found only once CI ran it, and is platform-dependent rather than rotted (see
 *Green on macOS, red on ubuntu* below).
 
@@ -112,7 +113,33 @@ An **eighth** was found only once CI ran it, and is platform-dependent rather th
 | `test_btc_vector_w1.py` | asserted a frozen literal `dof_cost == 3`; `config.yml` legitimately declares **6** (W2 confirm window +1, W4 staged re-entry +2). | **fixed** — now asserts the ledger's charged dof equals the registry's declared dof, which cannot rot |
 | `test_import_equitydesk_backfill.py` | the seed artifact moved to `data/stage_analysis/backfill/earnings_seed.parquet`; the test still read `data/earnings_calls/scores.parquet`. The importer's own docstring was stale too. | **fixed** — both repointed |
 | `test_build_measurement_evidence_gap.py` | asserted the literal word *"overlapping"*; the §0.5.8 caveat now says *"correlated"*. Substance intact. | **fixed** — asserts the disclosed dependence, not one synonym |
-| the two FTR template-markup suites | assert markers (`Strategic horizon`, `ftr-dtp-full`) that exist **nowhere** in `templates/` or `site/`, and `basketdata/baskets.json` moved from `allocation.html.j2` to `dashboard.html.j2`. | left unwired by #3636 — whether the feature or the assertion was wrong is a product decision. **Resolved by #3645**, which re-pinned the three assertions to the shipped surface and wired both suites; they pass on `main` |
+| the two FTR template-markup suites | assert markers (`Strategic horizon`, `ftr-dtp-full`) that exist **nowhere** in `templates/` or `site/`, plus a `basketdata/baskets.json` literal no longer in `allocation.html.j2`. | left unwired by #3636 — whether the feature or the assertion was wrong is a product decision. **Resolved by #3645**, which re-pinned the three assertions to the shipped surface and wired both suites; they pass on `main`. Detail: *The FTR product call* below |
+
+### The FTR product call — resolved (#3645)
+
+The verdict was **marker rot, not lost UI**: every feature is still on the page, and each
+missing literal was moved by a deliberate, merged change. Two of the three assertions were
+demanding a fixed bug back.
+
+| marker | moved by | why |
+|---|---|---|
+| `Strategic horizon` | #2635 (07-16) | Law-2 copy port. The label `<div>` and its `<!-- FT-R11 horizon label -->` comment are untouched — only the sentence changed, from *"skip-month momentum by construction"* (a `DESIGN_DOCTRINE.md` Law-2 banned construction-that-needs-a-manual) to plain words. Re-asserting the old string would pin the violation back in place. |
+| `ftr-dtp-full` | #2267 (07-11) | **Bug fix.** Its body: *"Flat `#dtp-full` / `#ftr-dtp-full` container + CSS removed"* — the flat container sat in a two-column CSS grid, so auto-flow interleaved the expansion (rank 1 left, 2 right, 3 left…) and restated every preview row. Continuation moved into per-column `.dtp-colmore` blocks. |
+| `basketdata/baskets.json` | #2380 (07-12) | **Bug fix.** Made region-aware because HK/CN/CA rows read the US-only dir and *"fell back to slug names"* — the exact failure `test_display_names_not_slugs` exists to catch. The literal now only appears post-render; the source carries the region map. (It did **not** migrate to `dashboard.html.j2`; that file's occurrence is an unrelated usage.) |
+
+Assertions were re-pinned to the substance rather than the wording, plus an inverse pin
+(`assert "ftr-dtp-full" not in src`) so the fixed bug cannot silently return. Each rewritten
+assertion was **mutation-tested** — 8/8 planted regressions go red — because a re-pin that
+cannot fail is the same vacuity the census exists to find. No `templates/` or `site/` file was
+touched. Both suites now run in the `ftr-tape-surfaces` job.
+
+**Method note — the pickaxe cannot answer this question in this repo.** The clone is shallow
+(boundary `e9324058fa0`, 2026-07-18), so `git log -S "<marker>"` returns nothing, or
+mis-attributes to the graft commit; `gh search prs` does not index diffs either, so a token
+that only ever lived in code returns `[]`. What works: list the file's commits via
+`gh api "repos/<o>/<r>/commits?path=<file>&since=<iso>"`, then bisect
+`gh api ".../contents/<file>?ref=<sha>"` for the 1→0 transition, and read that commit's
+`.files[].patch` for the rationale.
 
 ### Green on macOS, red on ubuntu — a platform-dependent contract
 
