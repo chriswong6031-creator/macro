@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "marketing_ad_arena.v1",
+  "title": "Marketing Ad Arena (ad_arena.v1)",
+  "description": "One pre-registered split test. Emitted by engine/marketing/ad_arena.py. primary_metric is FROZEN at creation — secondary_metrics are exploratory and may never trigger a stop, a kill, or a budget shift (AD_CENTRAL_MASTERPLAN.md §0 G-E). assignment_weights are likewise frozen: the allocator varies spend, never assignment, so a returning unit cannot change arms mid-test.",
+  "type": "object",
+  "properties": {
+    "schema": {"type": "string", "const": "marketing.ad_arena/v1"},
+    "arena_id": {"type": "string"},
+    "hypothesis": {"type": "string"},
+    "plane": {"type": "string", "enum": ["owned", "organic", "paid"]},
+    "unit": {"type": "string", "enum": ["visitor", "session", "impression", "account"]},
+    "primary_metric": {"type": "string"},
+    "arm_creative_ids": {"type": "array", "items": {"type": "string"}},
+    "control_creative_id": {"type": ["string", "null"]},
+    "assignment_weights": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0.0}
+    },
+    "holdout": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+    "n_floor": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Assignments per arm required before ANY verdict, promotion, kill, or scale-up (G-D)."
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": {"type": "number"},
+      "description": "Ceilings on harm (refund rate, unsubscribe rate). A breach HALTS the arena; a guardrail can never declare a winner."
+    },
+    "secondary_metrics": {"type": "array", "items": {"type": "string"}},
+    "status": {"type": "string", "enum": ["planned", "running", "halted", "concluded"]},
+    "start_at": {"type": ["string", "null"]},
+    "stop_at": {"type": ["string", "null"]},
+    "mode": {"type": "string", "enum": ["live", "shadow"]},
+    "envelope_usd": {"type": "number", "minimum": 0.0}
+  },
+  "required": [
+    "schema", "arena_id", "hypothesis", "plane", "unit",
+    "primary_metric", "arm_creative_ids", "n_floor", "status", "mode"
+  ]
+}
