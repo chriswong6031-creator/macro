@@ -1600,6 +1600,18 @@ on:
       - "scripts/signal_sanity.py"
       # unrun-inline-js-guard
       - "tests/test_check_inline_js.py"
+      # unrun-import-hygiene — the ratchet AST-scans engine/, lib/, scripts/ and
+      # research/ for import-time process-global state.  engine/** and lib/** are
+      # already broad catch-alls above; scripts/ and research/ were only covered
+      # file-by-file (443/968 and 1/87 .py files), so a new module-level silencer
+      # in any of the rest could not start this workflow.  Both spellings per tree:
+      # `dir/*.py` is top-level only under GitHub's filter syntax, `dir/**/*.py`
+      # nested.  Scoped to .py because that is exactly what the ratchet reads.
+      - "tests/test_no_module_level_logging_disable.py"
+      - "scripts/*.py"
+      - "scripts/**/*.py"
+      - "research/*.py"
+      - "research/**/*.py"
   workflow_dispatch:
 
 permissions:
@@ -4534,21 +4546,23 @@ jobs:
           --deselect tests/test_tech_parity_fixtures.py::TestFixtureDeterminism
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
-  # Twelve lanes covering the 139 wired P1 suites: unrun by any workflow, but on a
+  # Thirteen lanes covering the 140 wired P1 suites: unrun by any workflow, but on a
   # publish pipeline and triggerable, so a silent break moved shipped numbers with
-  # nothing going red.  Eleven repeat the P0 lanes' dependency install BYTE-FOR-BYTE
-  # so run_ci_pack.py keeps ONE shared venv across all twenty unrun-* jobs; only
+  # nothing going red.  Twelve repeat the P0 lanes' dependency install BYTE-FOR-BYTE
+  # so run_ci_pack.py keeps ONE shared venv across all twenty-one unrun-* jobs; only
   # unrun-russell-breadth declares a different set (yfinance), and since the pack
   # sorts jobs by install string that costs exactly one extra venv per pack.
   # Measured serially in a clean venv carrying exactly these installs: 139 suites /
-  # 429s.
+  # 429s, plus unrun-import-hygiene's 48s.
   #
   # Three P1 suites are deliberately NOT wired.  All three are RED on main and the
   # fix in each case is a program decision, not test rot: an all-null claims
-  # benchmark_set on the shipped release-forecast cards, an import-time warnings
-  # ratchet that has drifted 37 files since it was frozen, and a chip whose copy
-  # assertions test a revision that was deliberately rewritten.  See the PR body and
-  # docs/UNRUN_TEST_CENSUS.md.
+  # benchmark_set on the shipped release-forecast cards, a chip whose copy assertions
+  # test a revision that was deliberately rewritten, and a gateway suite that needs
+  # fastapi (absent from the shared install) AND writes a real data/ ledger.  See the
+  # PR body and docs/UNRUN_TEST_CENSUS.md.  (A fourth — an import-time warnings
+  # ratchet that had drifted 37 files past its frozen allowlist — was migrated and
+  # wired as unrun-import-hygiene below, so it has left this set.)
   # Their filenames are deliberately NOT spelled out here: the census that found this
   # hole tests `name in workflow_text`, so naming a suite in a comment makes it look
   # covered.  Never reference an unwired suite by filename in this file.
@@ -4734,3 +4748,23 @@ jobs:
         run: node --version
       - name: the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone)
         run: python -m pytest tests/test_check_inline_js.py -q --deselect tests/test_check_inline_js.py::test_real_site_is_clean --deselect tests/test_check_inline_js.py::test_real_tree_handlers_and_curly_clean
+
+  unrun-import-hygiene:
+    # import-time process-global state (logging.disable / warnings filters) across
+    # engine, lib, scripts, research.  Both are process-global: a module-level
+    # silencer mutes warnings for anything that merely IMPORTS the file — pytest
+    # collection, a guarded engine import, a sibling research harness — which is how
+    # the #1115 order-dependent flake happened.  The suite AST-parses all four trees,
+    # so it costs ~48s wall on its own; 5 minutes leaves headroom on a cold runner.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: import-time logging.disable + warnings-filter ratchet over engine, lib, scripts, research
+        run: python -m pytest tests/test_no_module_level_logging_disable.py -q

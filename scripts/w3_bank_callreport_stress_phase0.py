@@ -164,7 +164,12 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-warnings.filterwarnings("ignore")
+if __name__ == "__main__":
+    # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
+    # scope this muted warnings for anything that merely imports this file (pytest
+    # collection, a sibling research harness).  walk_forward.py idiom; ratchet:
+    # tests/test_no_module_level_logging_disable.py.
+    warnings.filterwarnings("ignore")
 
 # MACRO_ROOT: the canonical data directory may differ from ROOT in worktrees.
 # The MACRO_ROOT env var (or inference via data/massive_stock_day presence)

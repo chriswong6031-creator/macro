@@ -46,7 +46,12 @@ sys.path.insert(0, str(REPO_ROOT))
 from engine import dannytrades as dt  # noqa: E402 (whale_buy_fraction)
 from engine.trial_ledger import TrialLedger  # noqa: E402
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+if __name__ == "__main__":
+    # CLI-only silencer: the warnings filter list is PROCESS-GLOBAL, so at module
+    # scope this muted warnings for anything that merely imports this file (pytest
+    # collection, a sibling research harness).  walk_forward.py idiom; ratchet:
+    # tests/test_no_module_level_logging_disable.py.
+    warnings.filterwarnings("ignore", category=FutureWarning)
 
 # ---- frozen constants (DO NOT CHANGE — prereg §4.1) -------------------------
 WHALE_WIN_M = 6          # months accumulation window

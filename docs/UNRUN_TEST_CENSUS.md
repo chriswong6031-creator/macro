@@ -38,7 +38,7 @@ modules on the nightly/render publish path, then forward-ledger writers, then th
 | tier | before | on `main` | after P1 | meaning |
 |---|---|---|---|---|
 | **P0** | **30** | **0** | 0 | unrun + untriggerable + on a publish pipeline |
-| **P1** | 142 | 140 | **4** | unrun, on a publish pipeline (triggerable) |
+| **P1** | 142 | 140 | **3** | unrun, on a publish pipeline (triggerable) |
 | **P2** | **42** | **0** | 0 | unrun + untriggerable + writes a `data/` ledger |
 | **P3** | **60** | **0** | 0 | unrun + untriggerable (other) |
 | P4 | 415 | 416 | 416 | unrun, writes a `data/` ledger (triggerable) |
@@ -48,8 +48,9 @@ modules on the nightly/render publish path, then forward-ledger writers, then th
 
 Two passes so far. #3636 closed the strictly-dark subset — the class where no signal was
 possible. This one closes **P1**, the triggerable-but-unrun suites on a publish pipeline,
-leaving 4 of them deliberately unwired because they are red for reasons that need a program
-decision (see *Red on arrival — P1*). `P4`/`P5` remain deliberate backlog, not oversight:
+leaving 3 of them deliberately unwired because they are red for reasons that need a program
+decision (see *Red on arrival — P1*; the warnings ratchet was the 4th until its 37-file
+migration landed — *The import-time warnings ratchet* below). `P4`/`P5` remain deliberate backlog, not oversight:
 wiring all of them at once would blow the ci-pack budget. (The "before" column was measured
 at 1491 suites; the total is 1497 on current `main` as other PRs land, and the arrivals came
 already wired, so they do not move the unrun count.)
@@ -193,7 +194,7 @@ between) that no workflow ran even though `ci.yml` *could* be triggered by a cha
 or their subject. Blast radius is the same as P0 — these guard
 `build_site`, `build_release_forecast`, `neuralweb/cortex`, `build_vector`, `grade_us_board`
 and 70 further publish-path modules — but a signal was at least *possible*, so they ranked
-below the strictly-dark set. 136 are now wired across twelve lanes; four are held back.
+below the strictly-dark set. 137 are now wired across thirteen lanes; three are held back.
 
 | job | suites | measured (clean venv) |
 |---|---|---|
@@ -209,14 +210,15 @@ below the strictly-dark set. 136 are now wired across twelve lanes; four are hel
 | `unrun-market-plumbing` | 22 | 682 / 25s |
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
-| **total** | **136** | **3688 / 270s** |
+| `unrun-import-hygiene` | 1 | 4 / 48s |
+| **total** | **137** | **3692 / 318s** |
 
-Eleven of the twelve repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
-`run_ci_pack.py` still builds ONE venv across all twenty-one `unrun-*` jobs. The dependency set
+Twelve of the thirteen repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
+`run_ci_pack.py` still builds ONE venv across all twenty-two `unrun-*` jobs. The dependency set
 was re-derived empirically — every suite run in a fresh venv carrying exactly that install
 and nothing else — which turned up **one** gap: `collectors/russell_breadth` imports
 `yfinance` at module scope. That suite gets its own lane with `yfinance` appended rather
-than adding the wheel to all twenty-one; `execute_pack` sorts jobs by install string, so a
+than adding the wheel to all twenty-two; `execute_pack` sorts jobs by install string, so a
 second dependency set costs exactly one extra venv per pack.
 
 Budget: ci-pack goes 109 → 121 legacy jobs and the balancing weight 1978 → 2280
@@ -228,6 +230,8 @@ should be read against) versus a 180-minute per-pack timeout whose heaviest sing
 
 `paths` grows 889 → 1099: the 135 unmatched test files **and** the 75 subject modules that
 nothing else glob-matched. Wiring one half without the other rebuilds the #3488 shape.
+`unrun-import-hygiene` adds five more entries on the same rule — its suite, plus `.py` globs
+over `scripts/` and `research/`, whose *whole trees* are that ratchet's subject.
 
 ### `test_check_inline_js.py` — wired minus two duplicated full-tree scans
 
@@ -261,7 +265,7 @@ out a measurement trap worth recording:
 | `test_earnings_w5.py` | frozen `TODAY = 2026-07-14` vs `audit()`'s `datetime.now(utc)`: the "fresh store, no warnings" case had an expiry date and had already walked past the 2-td SLA. | **fixed** — freshness fixtures read the auditor's own clock; `next_date` windows stay pinned so the bdate_range tests stay deterministic |
 | `test_release_integration_2a.py` | the mocked event calendar returned frozen dates while `build()` runs off the real clock; the PPI event (2026-07-14) had walked into the past and dropped out of `upcoming`. | **fixed** — mock honours the `today` it is handed |
 | `test_release_forecast_producer.py` | **live defect, see below** | **NOT wired** |
-| `test_no_module_level_logging_disable.py` | **ratchet drift, see below** | **NOT wired** |
+| `test_no_module_level_logging_disable.py` | **ratchet drift, see below** | **fixed and wired** — the 37 drifted files were migrated under `__main__`; lane `unrun-import-hygiene` |
 | `test_okx_retail.py` | `test_bilingual_render` slices the OKX chip out of `vector.html.j2` and renders it with a hand-copied `t` macro. The markup now also calls `qmark()` → `UndefinedError`. Slicing the template's real macro header fixes the crash, and then **five of its six copy assertions still fail**: the chip copy was deliberately rewritten (`"crowded longs (contrarian caution, not a buy)"` → `"many traders long"`). | **NOT wired** — deciding what the chip must say is a design call under the plain-word doctrine, not test rot |
 | `test_brain_gateway.py` | arrived on `main` mid-flight (2026-07-26). Two blockers, not one: it imports `fastapi`, which the shared `unrun-*` install deliberately lacks (8 of 241 tests fail without it), **and** it appends to the real `data/ai_costs/usage.jsonl` on every run — MM_DATA_GUARD would fail the lane even with the wheel added. | **NOT wired** — the ledger write has to be redirected to `tmp_path` first; that is the author's call, not test rot |
 
@@ -297,19 +301,46 @@ ALFRED series set, so this is a collection gap), or decouple the ICSA-only bench
 the IC4WSA guard. Until one lands the suite stays unwired, and 73 good tests stay dark
 with it — the cost of not papering over a real red.
 
-### The import-time warnings ratchet has drifted 37 files
+### The import-time warnings ratchet had drifted 37 files — migrated and wired
 
 `test_no_module_level_logging_disable.py` carries an allowlist frozen 2026-07-03 that "MUST
-ONLY SHRINK". Three of its four tests pass. The fourth reports **37 files** that have added
+ONLY SHRINK". Three of its four tests passed. The fourth reported **37 files** that had added
 module-level `warnings.filterwarnings("ignore")` / `simplefilter("ignore")` since — mostly
-`scripts/*_phase0.py` and `research/entry_intel/**` one-off runners. The ratchet never ran,
-so nothing pushed back.
+`scripts/*_phase0.py`, `scripts/_bt_*.py` and `research/entry_intel/**` one-off runners. The
+ratchet never ran, so nothing pushed back.
 
-The test forbids re-baselining ("Do NOT add to the allowlist") and prescribes the fix: move
-each silencer under `if __name__ == "__main__":`. That is a 37-file mechanical migration
-that changes the runtime warning behaviour of research scripts with no coverage of their
-own — deliberately not folded into a CI-wiring PR. Wiring this suite is one commit behind
-that sweep.
+The test forbids re-baselining ("Do NOT add to the allowlist") and prescribes the fix, which
+is what landed: each silencer moved under `if __name__ == "__main__":` (the
+`research/signal_engine/walk_forward.py` idiom), **in place** — so the CLI path still
+installs the filter before the code that follows it, while a plain `import` no longer
+mutates the process-global filter list. No engine module was involved, so no
+`catch_warnings` scoping was needed, and **the allowlist did not move**: none of the 37 were
+on it, and no allowlisted file stopped offending (`test_warnings_ignore_allowlist_only_shrinks`
+fails on that too, so the tree and the list have to move together).
+
+The migration was verified three ways rather than by eyeball, because 37 mechanical edits to
+scripts with no coverage of their own is exactly where a silent breakage hides:
+
+1. **AST equivalence** — for every file, deleting the inserted `if` and splicing its single
+   statement back reproduces the original parse tree exactly. Nothing else moved.
+2. **Control-differenced runtime probe** — each file's module prefix was executed three
+   ways: as `__main__`, as an importer, and as an importer with the silencer deleted
+   outright. `import` must equal the control and `__main__` must differ from it. Comparing
+   against a control is what makes this meaningful: `import pandas` *itself* pushes three
+   narrow `ignore` filters to the front of `warnings.filters`, so a naive "is `filters[0]`
+   an ignore?" probe reports 27 false positives.
+3. **CLI smoke** — `--help` on the six files that parse arguments; the other 31 have no
+   argument parsing, and 8 of them (the straight-line `research/entry_intel` runners)
+   execute their whole study at module scope, so importing them is not a smoke test but a
+   study run. Those are covered by (1) and (2).
+
+Wired as `unrun-import-hygiene`. The lane also carries the older `logging.disable` half of
+the ratchet, which was green but equally unrun. `paths` gains the suite plus `scripts/*.py`,
+`scripts/**/*.py`, `research/*.py`, `research/**/*.py` — the subject half: the ratchet scans
+`engine/`, `lib/`, `scripts/` and `research/`, and while `engine/**` and `lib/**` were
+already broad catch-alls, `scripts/` was covered file-by-file (443 of 968 `.py`) and
+`research/` barely at all (1 of 87). A new module-level silencer in any of the other 611
+files could not have started this workflow.
 
 ## Staged remainder
 
