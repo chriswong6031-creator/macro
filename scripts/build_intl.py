@@ -170,6 +170,7 @@ def main() -> int:
     # latest["records"], the RRG, the correlation map or the USD leaderboard —
     # those loops stay cc-keyed to intl.countries() and naturally skip US/CN/HK.
     _wr_extra_closes: dict[str, "pd.Series"] = {}
+    _wr_confirmation: dict[str, dict] = {}
     try:
         from lib import store as _wr_store
 
@@ -193,6 +194,28 @@ def main() -> int:
                                 _wcc, _wgrp, _wsym)
             except Exception as _we:  # noqa: BLE001 — fail-open per market
                 log.warning("world_risk: %s close read failed (%s) — dropped from dial", _wcc, _we)
+
+        # Hong Kong breadth receipt: the HSI remains the primary state ruler, but
+        # a separate HSTECH proxy + three liquid bellwethers prevents a broad
+        # technology rebound from being invisible behind index drawdown memory.
+        # Display/context only; it never changes a score or position.
+        try:
+            from engine.intl_market_confirmation import breadth_snapshot as _wr_breadth
+
+            _hk_peers = {
+                "Hang Seng TECH ETF": _wr_close("hk", "3033.HK"),
+                "Tencent": _wr_close("hk_stocks", "0700.HK"),
+                "Alibaba": _wr_close("hk_stocks", "9988.HK"),
+                "JD.com": _wr_close("hk_stocks", "9618.HK"),
+            }
+            _hk_peers = {k: v for k, v in _hk_peers.items() if v is not None}
+            _hk_primary = _wr_extra_closes.get("HK")
+            _hk_as_of = _hk_primary.index[-1] if _hk_primary is not None and not _hk_primary.empty else None
+            _hk_confirmation = _wr_breadth(_hk_peers, as_of=_hk_as_of)
+            if _hk_confirmation:
+                _wr_confirmation["HK"] = _hk_confirmation
+        except Exception as _hk_ce:  # noqa: BLE001 — context must fail open
+            log.warning("world_risk: HK breadth confirmation failed (fail-open): %s", _hk_ce)
 
         # USD/CNY (onshore, china store) so the Shanghai Composite momentum leg is
         # expressed in USD terms. Passed under the reserved "_CNY" key: it is NOT a
@@ -249,6 +272,9 @@ def main() -> int:
         except Exception as _wse:  # noqa: BLE001 — fail-open
             log.warning("world_risk market_states failed (fail-open): %s", _wse)
             _world_states = {}
+        for _wcc4, _confirmation in _wr_confirmation.items():
+            if _wcc4 in _world_states:
+                _world_states[_wcc4]["confirmation"] = _confirmation
 
         # US is its own benchmark (rs20 = px/bench), so its relative-strength read is
         # ~0 by construction, not a signal — blank it rather than show a spurious 0.0%.

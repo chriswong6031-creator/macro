@@ -15,7 +15,7 @@ Public interface (frozen — see research/INTL_TURN_ROTATION_REVAMP.md §4):
     ) -> dict[str, dict]
 
 Each returned country dict has exactly these keys (None when unavailable):
-    state, state_en, state_zh, stance_en, stance_zh, css, since,
+    state, state_en, state_zh, stance_en, stance_zh, state_trigger, css, since,
     urgency, ext_raw_pct, ext_pctile, ext_z, mom20_pct, mom5_pct,
     rs20_pct, rsi, rsi_at_high, rsi_divergence, macd_state,
     macd_cross_date, dd_pct, dd_vel_10d, vol_z, above_ma20, above_ma50,
@@ -41,8 +41,8 @@ STATES: dict[str, dict] = {
     "crash": {
         "en": "Crash in progress",
         "zh": "崩跌进行中",
-        "stance_en": "Stand aside — the fall is not over",
-        "stance_zh": "观望离场 — 跌势未止",
+        "stance_en": "Stand aside — selling pressure remains extreme",
+        "stance_zh": "观望离场 — 抛售压力仍然极高",
         "css": "state-crash",
         "urgency": 9,
     },
@@ -123,8 +123,10 @@ STATES: dict[str, dict] = {
 # States that count as "extended-or-parabolic" for the path-memory check
 _EXT_OR_PARA_STATES = {"extended", "parabolic"}
 
-# "Lineage" states that qualify for recovery/basing transitions
-_DOWNWARD_LINEAGE = {"downtrend", "crash", "basing", "breaking"}
+# "Lineage" states that qualify for recovery transitions.  Recovery is included
+# so a confirmed repair persists while its evidence remains intact instead of
+# appearing for one session and then falling through to ``calm``.
+_DOWNWARD_LINEAGE = {"downtrend", "crash", "basing", "breaking", "recovery"}
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +298,7 @@ def _resolve_state_series(f: pd.DataFrame) -> pd.Series:
     arr_consec_below_ma50 = f["consec_below_ma50"].to_numpy()
     arr_macd_bear = macd_bear_day.to_numpy()
     arr_macd_bull = macd_bull_day.to_numpy()
+    arr_macd_positive = (macd_sign > 0).to_numpy()
     arr_is_new_h = f["is_new_252h"].to_numpy()
     arr_rsi = f["rsi"].to_numpy()
 
@@ -312,6 +315,9 @@ def _resolve_state_series(f: pd.DataFrame) -> pd.Series:
         above_ma50 = bool(arr_above_ma50[i])
         above_ma200 = bool(arr_above_ma200[i])
         consec_below50 = int(arr_consec_below_ma50[i]) if np.isfinite(arr_consec_below_ma50[i]) else 0
+        dd_vel = f["dd_vel_10d"].iloc[i] if np.isfinite(f["dd_vel_10d"].iloc[i]) else None
+        macd_positive = bool(arr_macd_positive[i])
+        previous_state = result[i - 1] if i > 0 else None
 
         # Path memory: was extended-or-parabolic within N sessions
         lo60 = max(0, i - 60)
@@ -327,11 +333,36 @@ def _resolve_state_series(f: pd.DataFrame) -> pd.Series:
 
         # --- State resolution (precedence order) ---
 
-        # 1. CRASH — sticky dd clause gated on CURRENT drawdown (ITR-R5, ratified
-        # 2026-07-16): without the dd<=-10 gate a V-recovery stays labeled crash
-        # for 30 sessions, even at a fresh 252d high (KOSPI 2026-05-13 read
-        # "crash" while AT its ATH).
-        if ret20 <= -15.0 or (dd_min30 <= -18.0 and dd <= -10.0):
+        # 1. CRASH — velocity remains an unconditional override.  The slower
+        # damage-memory clause yields only after a multi-signal repair:
+        # price above both short/intermediate averages, +5% or better 20-session
+        # momentum, improving 10-session drawdown, and positive MACD.  Once
+        # recovery has begun, a gentler hold gate prevents a one-day flip caused
+        # solely by oscillating around the arbitrary -10% off-high boundary.
+        #
+        # This closes the HSI 2026-07-23/24 defect: +8.2%/20d, above MA20+MA50
+        # and positive MACD changed Recovery -> Crash because dd moved from
+        # -9.86% to -10.74%.  A state transition must require evidence change,
+        # not a 0.88-point threshold wobble.
+        repair_entry = (
+            above_ma20
+            and above_ma50
+            and mom20 >= 5.0
+            and dd_vel is not None
+            and dd_vel >= 0.0
+            and macd_positive
+        )
+        repair_hold = (
+            previous_state == "recovery"
+            and above_ma20
+            and mom20 > 0.0
+            and (dd_vel is None or dd_vel > -1.0)
+            and macd_positive
+        )
+        repair_confirmed = repair_entry or repair_hold
+        velocity_crash = ret20 <= -15.0
+        damage_memory = dd_min30 <= -18.0 and dd <= -10.0
+        if velocity_crash or (damage_memory and not repair_confirmed):
             result[i] = "crash"
             continue
 
@@ -396,13 +427,13 @@ def _resolve_state_series(f: pd.DataFrame) -> pd.Series:
                 break
 
         # 7. RECOVERY
-        if (lineage_state in _DOWNWARD_LINEAGE
-                and above_ma50 and mom20 > 0):
+        if ((lineage_state in _DOWNWARD_LINEAGE
+                and above_ma50 and mom20 > 0 and not above_ma200)
+                or (repair_hold and not above_ma200)):
             result[i] = "recovery"
             continue
 
         # 8. BASING
-        dd_vel = f["dd_vel_10d"].iloc[i] if np.isfinite(f["dd_vel_10d"].iloc[i]) else None
         if (lineage_state in {"crash", "downtrend", "breaking"}
                 and (dd_vel is None or dd_vel > -1.0)
                 and above_ma20):
@@ -721,13 +752,31 @@ def _single_market(
         ext_pctile = None
 
     state_meta = STATES.get(today_state, STATES["calm"])
+    ret20_latest = _safe_float(latest.get("ret20_pct"))
+    crash_trigger = None
+    if today_state == "crash":
+        crash_trigger = "velocity" if ret20_latest is not None and ret20_latest <= -15.0 else "damage_memory"
+
+    # A damage-memory crash is materially different from an active 20-session
+    # waterfall.  Keep the same risk state for downstream compatibility, but do
+    # not present the slower condition as proof that another leg down is certain.
+    state_en = state_meta["en"]
+    state_zh = state_meta["zh"]
+    stance_en = state_meta["stance_en"]
+    stance_zh = state_meta["stance_zh"]
+    if crash_trigger == "damage_memory":
+        state_en = "Crash damage unresolved"
+        state_zh = "崩跌损伤未修复"
+        stance_en = "Risk remains high — wait for repair"
+        stance_zh = "风险仍高 — 等待修复确认"
 
     return {
         "state": today_state,
-        "state_en": state_meta["en"],
-        "state_zh": state_meta["zh"],
-        "stance_en": state_meta["stance_en"],
-        "stance_zh": state_meta["stance_zh"],
+        "state_en": state_en,
+        "state_zh": state_zh,
+        "stance_en": stance_en,
+        "stance_zh": stance_zh,
+        "state_trigger": crash_trigger,
         "css": state_meta["css"],
         "since": since,
         "urgency": state_meta["urgency"],
@@ -764,6 +813,7 @@ def _stub(data_limited: bool = True) -> dict:
         "state_zh": state_meta["zh"],
         "stance_en": state_meta["stance_en"],
         "stance_zh": state_meta["stance_zh"],
+        "state_trigger": None,
         "css": state_meta["css"],
         "since": None,
         "urgency": 0,
