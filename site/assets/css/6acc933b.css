@@ -268,6 +268,49 @@ html[data-theme="dark"]{--drag:#e58a97;--lift:#54c39a}
 .cx-quiet .q .nm .em{margin-right:9px;opacity:.8}
 .cx-quiet .q .tag{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 
+/* ---------- cascade monitor (TXI W4 — staged chain episode watch) ---------- */
+.cm-eyebrow{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 3px}
+.cm-card{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:6px 22px;margin-top:4px;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.cm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:16px 0}
+.cm-row+.cm-row{border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+@media(max-width:640px){.cm-row{grid-template-columns:auto 1fr;gap:10px}}
+.cm-dot{width:11px;height:11px;border-radius:50%;margin-top:4px;flex:none;background:var(--faint)}
+.cm-dot.arming{background:var(--amber);box-shadow:0 0 0 4px color-mix(in srgb,var(--amber) 18%,transparent)}
+.cm-dot.propagating{background:#e07a2f;box-shadow:0 0 0 4px color-mix(in srgb,#e07a2f 18%,transparent)}
+.cm-dot.expressed{background:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 15%,transparent)}
+.cm-dot.muted{background:var(--faint)}
+.cm-dot.live{animation:txBreathe 2.6s ease-in-out infinite}
+.cm-main{min-width:0}
+.cm-name{font-size:14.5px;font-weight:800;color:var(--ink);letter-spacing:-.01em;line-height:1.25}
+.cm-hops{display:flex;align-items:center;gap:6px;margin:9px 0 8px}
+.cm-hops .hh{display:inline-flex;align-items:center;gap:6px}
+.cm-hops i{width:9px;height:9px;border-radius:50%;background:var(--grid);border:1px solid color-mix(in srgb,var(--faint) 55%,transparent);flex:none;cursor:help}
+.cm-hops i.on{background:var(--accent,#e07a2f);border-color:var(--accent,#e07a2f)}
+.cm-hops .lnk{width:16px;height:2px;border-radius:2px;background:var(--grid)}
+.cm-hops .lnk.on{background:color-mix(in srgb,var(--accent,#e07a2f) 55%,var(--grid))}
+.cm-line{font-size:12.5px;color:var(--text);line-height:1.5}
+.cm-line b{color:var(--ink);font-weight:700}
+.cm-tier{display:inline-block;margin-top:6px;font-size:11px;color:var(--faint);line-height:1.4}
+.cm-state-tag{justify-self:end;align-self:start;margin-top:2px;display:inline-block;padding:4px 11px;border-radius:999px;
+  font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.cm-state-tag.arming{background:color-mix(in srgb,var(--amber) 14%,var(--card));color:#9a6a10}
+.cm-state-tag.propagating{background:color-mix(in srgb,#e07a2f 14%,var(--card));color:#c25c1a}
+.cm-state-tag.expressed{background:color-mix(in srgb,var(--red) 12%,var(--card));color:var(--red)}
+html[data-theme="dark"] .cm-state-tag.arming{color:var(--amber)}
+html[data-theme="dark"] .cm-state-tag.propagating{color:#f0995a}
+@media(max-width:640px){.cm-state-tag{grid-column:2;justify-self:start;margin-top:8px}}
+.cm-quiet{padding:12px 0 13px;font-size:12.5px;color:var(--muted);line-height:1.5;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+.cm-quiet b{color:var(--text);font-weight:600}
+/* the ? receipt tip — CSS-only bilingual popover; data-tip-* consumed here, never title= */
+.cmq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:10px;font-weight:700;cursor:help;flex:none;margin-left:3px;vertical-align:middle}
+.cmq .cmq-tip{display:none;position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:30;width:230px;padding:9px 11px;
+  border-radius:11px;background:var(--card);border:1px solid var(--grid);box-shadow:0 12px 30px -12px rgba(9,17,40,.35);
+  font-size:11.5px;font-weight:500;color:var(--text);line-height:1.5;text-transform:none;letter-spacing:0}
+.cmq:hover .cmq-tip,.cmq:focus .cmq-tip{display:block}
+
 /* ---------- scenarios (if this holds for three months) ---------- */
 .sx-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:820px){.sx-grid{grid-template-columns:1fr}}

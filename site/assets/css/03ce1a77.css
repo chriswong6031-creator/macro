@@ -33,34 +33,37 @@ details.sec-fold>summary:focus-visible{outline-offset:-2px}
 .vhero-asof .vdot{width:7px;height:7px;border-radius:50%;background:var(--btc);animation:vec-breathe 2.8s ease-in-out infinite}
 
 /* ============================================================================
-   THE VECTOR — hero signature. An arrow off a pivot: angle = stance
-   (bear↓ · neutral→ · bull↑), length = conviction, with an orange energy pulse
-   running the shaft. Replaces the speedometer gauge (a templated default).
-   --vtone drives the arrow (blue/red/grey by tone); orange is the pulse only.
+   THE VECTOR DIAL — hero signature. A stance instrument: a graduated half-dial
+   read by a bold arrow needle (bear ↙ · neutral ↑ · bull ↗). The needle carries
+   the tone colour (blue / red / grey); a restrained orange energy pulse runs its
+   shaft and lights the hub — the one bold accent. Swings the full semicircle so
+   stance reads at a glance as a real gauge, not a faint chart.
    ============================================================================ */
-.vvec{position:relative;width:286px;max-width:100%;margin:6px auto 0}
-.vvec-svg{display:block;width:100%;height:auto;overflow:visible}
-.vvec-field{stroke:var(--grid);stroke-width:1.5;fill:none;opacity:.6}
-.vvec-guide{stroke:var(--grid);stroke-width:1.5;stroke-linecap:round;stroke-dasharray:2 5;opacity:.6}
-.vvec-hub{fill:var(--card);stroke:var(--vtone,var(--btc));stroke-width:3.5}
-.vvec-arrow{transform-origin:46px 88px;animation:vvec-swing 1.1s cubic-bezier(.34,1.3,.5,1) both}
-.vvec-shaft{stroke:var(--vtone,var(--muted));stroke-width:6.5;stroke-linecap:round;fill:none}
-.vvec-head{fill:var(--vtone,var(--muted))}
-.vvec-pulse{stroke:var(--btc);stroke-width:6.5;stroke-linecap:round;fill:none;stroke-dasharray:12 88;stroke-dashoffset:100;
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--btc) 70%,transparent));animation:vvec-flow 2.9s linear infinite .9s}
-.vvec-score{fill:var(--vtone,var(--ink));font-weight:800;font-size:34px;letter-spacing:-.03em;text-anchor:middle;
+.vgauge{position:relative;width:100%;max-width:238px;margin:0 auto}
+.vg-svg{display:block;width:100%;height:auto;overflow:visible}
+.vg-track{fill:none;stroke:var(--grid);stroke-width:10;stroke-linecap:round}
+.vg-tick{stroke:var(--faint);stroke-width:2;stroke-linecap:round;opacity:.5}
+.vg-tick.mid{stroke:var(--vtone,var(--muted));stroke-width:2.6;opacity:.85}
+.vg-needle{transform-origin:120px 122px;animation:vg-sweep 1.15s cubic-bezier(.34,1.25,.4,1) both}
+.vg-shaft{stroke:var(--vtone,var(--muted));stroke-width:6;stroke-linecap:round}
+.vg-head{fill:var(--vtone,var(--muted))}
+.vg-pulse{stroke:var(--btc);stroke-width:6;stroke-linecap:round;fill:none;stroke-dasharray:10 90;stroke-dashoffset:100;
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--btc) 70%,transparent));animation:vg-flow 2.9s linear infinite .9s}
+.vg-hub{fill:var(--card);stroke:var(--btc);stroke-width:4;filter:drop-shadow(0 1px 5px color-mix(in srgb,var(--btc) 50%,transparent))}
+.vg-hub-dot{fill:var(--vtone,var(--muted))}
+.vg-ends{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--faint);margin:-4px 4px 0}
+.vg-read{text-align:center;margin-top:10px;line-height:1}
+.vg-score{font-size:38px;font-weight:800;letter-spacing:-.03em;color:var(--vtone,var(--ink));
   font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.vvec-glow{fill:none;stroke:var(--btc);stroke-width:9;stroke-linecap:round;opacity:.22;filter:blur(6px)}
-.vvec-ends{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--faint);margin:2px 8px 0}
-.vvec-band{text-align:center;font-size:21px;font-weight:800;letter-spacing:-.02em;margin-top:8px;color:var(--vtone,var(--ink))}
-.vvec-tally{text-align:center;font-size:12px;color:var(--muted);margin-top:3px}
-.vvec-tally b.bu{color:var(--blue)} .vvec-tally b.be{color:var(--r3)}
+.vg-band{display:block;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:5px}
+.vg-tally{text-align:center;font-size:12px;color:var(--muted);margin-top:7px}
+.vg-tally b.bu{color:var(--blue)} .vg-tally b.be{color:var(--r3)}
 /* balance the hero: vertically centre the vector column against the dense right column */
 .cmd>div:first-child{display:flex;flex-direction:column;justify-content:center}
-.cmd>div:first-child .cmd-h{text-align:center;margin-bottom:6px}
+.cmd>div:first-child .cmd-h{text-align:center;margin-bottom:10px}
 @media(max-width:780px){.cmd>div:first-child{justify-content:flex-start}}
-@keyframes vvec-swing{from{transform:rotate(0deg)}}
-@keyframes vvec-flow{to{stroke-dashoffset:0}}
+@keyframes vg-sweep{from{transform:rotate(0deg)}}
+@keyframes vg-flow{to{stroke-dashoffset:0}}
 @keyframes fmeter-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
 /* ---------- WHAT CHANGED TODAY — chip strip (new, transmission-parity) ---------- */
@@ -142,5 +145,5 @@ details.sec-fold .section-title:first-of-type{margin-top:16px}
 details.sec-fold .js-plotly-plot{border-radius:10px}
 
 @media (prefers-reduced-motion:reduce){
-  .vhero,.vsec,.whatc,.fcard,.vvec-arrow,.vvec-pulse,.vhero-asof .vdot,.wchip .wdot,.fmeter-vec,.fmeter-dot{animation:none}
+  .vhero,.vsec,.whatc,.fcard,.vg-needle,.vg-pulse,.vhero-asof .vdot,.wchip .wdot,.fmeter-vec,.fmeter-dot{animation:none}
 }

@@ -486,7 +486,15 @@
   .wri-lrow .st { flex:none; font-family:var(--wri-mono); font-weight:700; font-size:10px; letter-spacing:.08em; }
   .wri-lrow .st.ok { color:var(--wri-ok); } .wri-lrow .st.watch { color:var(--wri-tilt); }
   .wri-lrow .st.elev { color:var(--wri-one); } .wri-lrow .st.na { color:var(--muted); }
+  .wri-lrow .st.info { color:var(--muted); }   /* TXI chain lane — INFO tier, deliberately cool */
   .wri-lrow .rs { color:var(--text); }
+  /* TXI chain lane — the drawer ? tip (shared data-tip-* tooltip; no title=) */
+  .wri-q { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px;
+    margin-left:5px; border-radius:50%; border:1px solid var(--line); color:var(--muted);
+    font-size:9.5px; font-weight:700; cursor:help; vertical-align:middle; }
+  /* TXI chain lane — the ONE appended hero-rail sentence + its link */
+  .wri-rail-chain { color:var(--muted); }
+  .wri-rail-chain a { color:var(--wri-rail-tint, var(--muted)); font-weight:600; margin-left:4px; white-space:nowrap; }
   .wri-drawer .asof { font-size:11px; color:var(--muted); margin-top:7px; }
 
   /* portfolio table: risk columns (mini-bar mirrors the FX idiom) */
