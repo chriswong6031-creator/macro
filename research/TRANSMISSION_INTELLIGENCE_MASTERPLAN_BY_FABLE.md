@@ -276,11 +276,14 @@ existing chain library (dedup by node-set)       ┘        → PROPOSAL PACK (d
 - `scripts/run_transmission_proposals.py` + `config/transmission_proposals.yml` — the gated
   weekly runner (declared in `config/dag.yml`, invoked in `weekly.yml`).
 
-**Autonomy stays behind the CHF operator gate (default OFF).** The proposal → ingest cycle
-runs only when BOTH `config/causal_llm.yml:auto_loop` (the EXISTING CHF-R8 operator gate) AND
-`config/transmission_proposals.yml:enabled` are true. The lane's own `enabled` flag **ships
-FALSE**, so wiring the weekly step in can never auto-activate it — the runner no-ops (writes
-nothing, exit 0) until an operator flips it on in a one-line PR. This is not a second LLM loop
-and grants no new authority: proposals are display/context tier only (DNR row 45 / Article
-1/2), and LLMs de-escalate only (CHF-R17) — a chain earns authority solely via a human
-promotion + its own pre-registered gauntlet.
+**Autonomy stays behind the CHF operator gate (lane sub-flag ships OFF).** The proposal →
+ingest cycle runs only when BOTH `config/causal_llm.yml:auto_loop` (the EXISTING CHF-R8
+operator gate) AND `config/transmission_proposals.yml:enabled` are true (ANDed). Honest gate
+state — not defense-in-depth: CHF `auto_loop` **defaults false** per CHF-R8 but the operator
+already flipped it **true** in this repo (ruling 2026-07-09), so `enabled` (default **FALSE**)
+is the SOLE remaining lock in the current repo. It ships FALSE so wiring the weekly step in can
+never auto-activate the lane — the runner no-ops (writes nothing, exit 0) until an operator
+flips `enabled` on in a one-line PR (and if `auto_loop` is ever set back to false, the lane
+no-ops again regardless). This is not a second LLM loop and grants no new authority: proposals
+are display/context tier only (DNR row 45 / Article 1/2), and LLMs de-escalate only (CHF-R17)
+— a chain earns authority solely via a human promotion + its own pre-registered gauntlet.

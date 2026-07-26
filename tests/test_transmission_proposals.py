@@ -289,6 +289,74 @@ def test_authority_field_in_proposal_is_rejected(sandbox, tmp_path):
     assert rec["reason"] == "authority_field_forbidden"
 
 
+def test_node_named_like_authority_word_is_not_rejected(sandbox, tmp_path):
+    """A node id / screen flag literally named 'gate'/'size' (its value is a dict body) is a
+    legitimate observable, NOT an authority field — it must NOT trigger the Article-1/2 guard.
+    Only a SCALAR authority field (alpha: 0.9) is forbidden."""
+    cand = _valid_candidate("test_gate_named_node")
+    # rename node 'oil_shock' -> 'gate' (a plausible macro node name) PRESERVING order (hop 0
+    # 'from' must be the first declared node), and update the hop.
+    cand["nodes"] = {
+        "gate": cand["nodes"]["oil_shock"],
+        "hy_stress": cand["nodes"]["hy_stress"],
+    }
+    cand["hops"][0]["from"] = "gate"
+    # also add an exposure_screen flag named 'size' (dict body) — must be tolerated.
+    cand["exposure_screens"] = {"size": {"note": {"en": "position sizing screen", "zh": "x"},
+                                          "all": [{"path": "financials.debt_to_assets",
+                                                   "op": ">", "value": 0.5}]}}
+    inbox = _write_inbox(tmp_path, [cand])
+    stats = ingest_mod.ingest(inbox, proposed_at="2026-07-25", write=True)
+    assert stats["accepted"] == 1, "a node/screen named like an authority word must be accepted"
+    assert (sandbox["proposed"] / "test_gate_named_node.yaml").exists()
+
+
+def test_slug_collision_does_not_overwrite(sandbox, tmp_path):
+    """Two DIFFERENT chains sharing a normalized slug: the second must be rejected as a
+    slug_collision, never silently overwrite the first accepted YAML."""
+    c1 = _valid_candidate("collide")           # nodes bind to CL=F / HYG
+    c2 = _valid_candidate("collide")           # same slug, DIFFERENT node-set
+    c2["nodes"] = {
+        "vix": {"src": "yahoo", "test": {"series": "^VIX", "metric": "ret", "window": 10,
+                                          "op": "gt", "value": 30}},
+        "iwm": {"src": "yahoo", "test": {"series": "IWM", "vs": "SPY", "metric": "rs",
+                                          "window": 21, "op": "lt", "value": 0}},
+    }
+    c2["hops"] = [{"from": "vix", "to": "iwm", "sign": "-", "lag_d": [0, 20],
+                   "condition": {"en": "x", "zh": "x"}, "mechanism": {"en": "x", "zh": "x"},
+                   "prior": "theory"}]
+    c2["falsifiers"] = []
+    inbox = _write_inbox(tmp_path, [c1, c2])
+    stats = ingest_mod.ingest(inbox, proposed_at="2026-07-25", write=True)
+    # exactly one accepted + written; the other rejected as slug_collision
+    assert stats["accepted"] == 1, f"expected 1 accept, got {stats['accepted']}"
+    assert (sandbox["proposed"] / "collide.yaml").exists()
+    import yaml
+    written = yaml.safe_load((sandbox["proposed"] / "collide.yaml").read_text())
+    # the FIRST candidate's node-set survived (its CL=F node), not clobbered by the second
+    assert "oil_shock" in written["nodes"], "the first accepted chain was overwritten"
+    reasons = [r["reason"] for r in stats["rejects"]]
+    assert "slug_collision" in reasons
+
+
+def test_cross_run_slug_collision_refused(sandbox, tmp_path):
+    """A later run must not overwrite an already-on-disk proposed/<slug>.yaml with a different
+    node-set (the collision is checked against disk, not just the in-batch set)."""
+    c1 = _valid_candidate("crossrun")
+    ingest_mod.ingest(_write_inbox(tmp_path / "r1", [c1]), proposed_at="2026-07-25", write=True)
+    assert (sandbox["proposed"] / "crossrun.yaml").exists()
+    # second run: same slug, different node-set
+    c2 = _valid_candidate("crossrun")
+    c2["nodes"]["oil_shock"]["test"]["series"] = "SPY"  # different node-set
+    stats = ingest_mod.ingest(_write_inbox(tmp_path / "r2", [c2]),
+                              proposed_at="2026-07-26", write=True)
+    assert stats["accepted"] == 0
+    assert any(r["reason"] == "slug_collision" for r in stats["rejects"])
+    import yaml
+    written = yaml.safe_load((sandbox["proposed"] / "crossrun.yaml").read_text())
+    assert written["nodes"]["oil_shock"]["test"]["series"] == "CL=F", "disk file was overwritten"
+
+
 def test_stamped_fields_cannot_be_smuggled(sandbox, tmp_path):
     """A candidate that pre-sets tier=calibrated is overridden to hypothesis by the ingest."""
     bad = _valid_candidate("test_tier_smuggle")

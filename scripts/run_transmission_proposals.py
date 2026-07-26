@@ -10,13 +10,16 @@ runner only orchestrates the two DETERMINISTIC ends —
     (2) ingest the CHF lane's chain-shaped REPLIES (scripts.ingest_transmission_chains) into
         hypothesis-tier knowledge/transmission/proposed/ YAMLs.
 
-THE GATE (does NOT flip on by building this — default OFF):
-    A scheduled run acts ONLY when BOTH are true:
+THE GATE (does NOT flip on by building this — the lane sub-flag ships OFF):
+    A scheduled run acts ONLY when BOTH are true (ANDed in _gate_state):
         config/causal_llm.yml         : auto_loop        (CHF's EXISTING operator gate; CHF-R8)
         config/transmission_proposals.yml : enabled      (this lane's OWN sub-flag; ships FALSE)
-    So this rides the SAME operator-flipped CHF switch AND adds a lane sub-flag that ships
-    OFF — wiring it into weekly.yml can never auto-activate it. When either gate is off, the
-    runner NO-OPS (prints the reason, writes nothing, exits 0). Inputs absent → also a no-op.
+    HONEST STATE: CHF `auto_loop` DEFAULTS false per CHF-R8 but the operator already flipped it
+    TRUE in this repo (ruling 2026-07-09). So `enabled` (default FALSE) is the SOLE remaining
+    lock in the current repo — this is NOT two independent operator flips. It ships OFF so
+    wiring the lane into weekly.yml can never auto-activate it; the operator flips `enabled`
+    on in a one-line PR. When EITHER gate is off, the runner NO-OPS (prints the reason, writes
+    nothing, exits 0). Inputs absent → also a no-op.
 
 Proposals are DISPLAY-TIER and behind promotion: W1 auto-compiles their state + W3
 auto-backtests them (the loader globs proposed/), but they stay `hypothesis` and never arm /
@@ -24,9 +27,9 @@ gain authority until a human PR promotes them out of proposed/ (TXI-R5).
 
 No Date.now on chains: the pack meta carries proposed_at (from --asof); the ingest stamps it.
 
-Usage (weekly.yml passes --trigger scheduled):
+Usage (weekly.yml passes --trigger scheduled — this lane runs WEEKLY only, not nightly):
     python -m scripts.run_transmission_proposals --trigger scheduled [--asof YYYY-MM-DD]
-    python -m scripts.run_transmission_proposals --status-only     # nightly non-op probe
+    python -m scripts.run_transmission_proposals --status-only     # ad-hoc gate-state probe
 """
 from __future__ import annotations
 

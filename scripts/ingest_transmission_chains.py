@@ -112,11 +112,17 @@ def _iter_string_leaves(obj):
 
 
 def _find_forbidden_keys(obj) -> list:
-    """Recursively collect any authority keys present anywhere in the candidate."""
+    """Recursively collect any authority FIELD present in the candidate — an authority key
+    (score/rank/gate/size/weight/alpha/…) whose value is a SCALAR (number/bool/str). An
+    authority field that grants power is always a value, never a container, so a *node id* or
+    an *exposure_screen flag* that happens to be named e.g. 'gate'/'size' (its value is the
+    node/screen BODY dict) is correctly NOT flagged — only a real scalar authority field is.
+    """
     found: list = []
     if isinstance(obj, dict):
         for k, v in obj.items():
-            if isinstance(k, str) and k.lower() in _FORBIDDEN_AUTHORITY_KEYS:
+            if (isinstance(k, str) and k.lower() in _FORBIDDEN_AUTHORITY_KEYS
+                    and not isinstance(v, (dict, list, tuple))):
                 found.append(k)
             found.extend(_find_forbidden_keys(v))
     elif isinstance(obj, (list, tuple)):
@@ -210,6 +216,7 @@ def ingest(
 
     existing_sigs = _existing_signatures()
     seen_this_batch: set = set()
+    seen_slugs: set = set()  # slugs accepted earlier in THIS batch (collision guard)
 
     for raw in candidates:
         if not isinstance(raw, dict):
@@ -296,14 +303,34 @@ def ingest(
                     detail="an existing/earlier chain has the same node-set")
             # note: dup is counted in BOTH stats['dup'] and the reject ledger; it is a reject.
             continue
+        # ---- slug-collision guard: a DIFFERENT chain must never clobber an accepted YAML ----
+        # (dedup above only catches identical node-sets; two DIFFERENT chains sharing a
+        # normalized slug would both "accept" and the second write_text would overwrite the
+        # first — silently destroying a distinct proposal awaiting human review, both within
+        # a batch and across weekly runs). Refuse the collision instead of overwriting.
+        existing_yaml = _PROPOSED_DIR / filename
+        collides_on_disk = False
+        if existing_yaml.exists():
+            try:
+                import yaml as _yaml
+                prior = _yaml.safe_load(existing_yaml.read_text(encoding="utf-8")) or {}
+                collides_on_disk = _node_signature(prior) != sig
+            except Exception:  # noqa: BLE001 — an unreadable prior is treated as a collision
+                collides_on_disk = True
+        if slug in seen_slugs or collides_on_disk:
+            _reject(stats, rejects, slug=slug, reason="slug_collision",
+                    detail="a different chain already holds this slug in proposed/ "
+                           "(same slug, different node-set) — not overwriting")
+            continue
         seen_this_batch.add(sig)
+        seen_slugs.add(slug)
 
         # ---- ACCEPT: write the hypothesis-tier YAML ----
         stats["accepted"] += 1
         accepted_paths.append(filename)
         if write:
             _PROPOSED_DIR.mkdir(parents=True, exist_ok=True)
-            (_PROPOSED_DIR / filename).write_text(_to_yaml(chain), encoding="utf-8")
+            existing_yaml.write_text(_to_yaml(chain), encoding="utf-8")
         print(f"  ACCEPT {slug}: hypothesis-tier → knowledge/transmission/proposed/{filename}"
               + ("" if write else "  (dry-run — not written)"))
 
