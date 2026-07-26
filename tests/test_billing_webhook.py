@@ -290,3 +290,143 @@ def test_unresolved_subscription_event_without_metadata_or_row_is_dropped(monkey
     # H2 corollary: no metadata AND no mapping row → unresolved → None (event is skipped, not misapplied).
     monkeypatch.setattr(billing, "_user_for_customer", lambda cid: None)
     assert billing._user_id_for_event("customer.subscription.updated", {"customer": "cus_x"}, "cus_x") is None
+
+
+# --------------------------------------------------------------------------- #
+# 8. SEE W3 — the handler must not block the event loop, and one user's events
+#    must not interleave now that they can run concurrently.
+# --------------------------------------------------------------------------- #
+def test_webhook_runs_the_handler_off_the_event_loop(monkeypatch):
+    """_handle_event is fully blocking (Supabase + Stripe + SMTP). Left inline in the
+    async route it stalls EVERY other request on this single-process API, so it has to
+    take the threadpool hop."""
+    import threading
+
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "sk_test_dummy")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", WHSEC)
+    monkeypatch.setattr(billing, "_event_seen", lambda eid: False)
+    monkeypatch.setattr(billing, "_record_event", lambda eid, t: None)
+
+    seen = {}
+
+    def _slow(ev):
+        seen["thread"] = threading.current_thread().name
+
+    monkeypatch.setattr(billing, "_handle_event", _slow)
+
+    async def _drive():
+        seen["loop_thread"] = threading.current_thread().name
+        payload = _event("customer.subscription.updated", {"customer": "cus_1"}, "evt_tp")
+        req = _FakeRequest(payload, {"stripe-signature": _sign(payload)})
+        return await billing.webhook(req)
+
+    out = asyncio.run(_drive())
+    assert out["status"] == "ok"
+    assert seen["thread"] != seen["loop_thread"], "_handle_event ran ON the event loop"
+
+
+def test_concurrent_events_for_one_user_do_not_interleave(monkeypatch):
+    """The email hook compares the entitlement before the upsert with the one after, so
+    two events for the SAME user must be serialised — otherwise both read the same
+    'before' and both can decide an upgrade happened. Guards the threadpool change."""
+    import threading
+
+    order: list[str] = []
+    barrier_hit = threading.Event()
+
+    def _snapshot(etype, uid):
+        order.append(f"snap-{threading.current_thread().name}")
+        barrier_hit.set()
+        time.sleep(0.05)          # a window wide enough for the other thread to race in
+        return {"tier": "insider"}
+
+    def _upsert(uid, cid, ent):
+        order.append(f"write-{threading.current_thread().name}")
+
+    fake_emails = types.SimpleNamespace(
+        pre_upsert_snapshot=_snapshot,
+        on_event=lambda *a, **kw: None,
+    )
+    monkeypatch.setattr(billing, "_billing_emails", lambda: fake_emails)
+    monkeypatch.setattr(billing, "_customer_id_for_event", lambda t, o: "cus_1")
+    monkeypatch.setattr(billing, "_user_id_for_event", lambda t, o, c: "user_same")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", _upsert)
+    monkeypatch.setattr(billing, "_invalidate", lambda uid: None)
+
+    ev = {"id": "evt_race", "type": "customer.subscription.updated",
+          "data": {"object": {"customer": "cus_1"}}}
+    threads = [threading.Thread(target=billing._handle_event, args=(dict(ev),), name=f"w{i}")
+               for i in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=5)
+
+    # Each snapshot must be followed by ITS OWN write before the other thread snapshots.
+    assert len(order) == 4, order
+    assert order[0].startswith("snap-") and order[1].startswith("write-")
+    assert order[0].split("-")[1] == order[1].split("-")[1], f"interleaved: {order}"
+    assert order[2].split("-")[1] == order[3].split("-")[1], f"interleaved: {order}"
+
+
+def test_different_users_are_not_serialised_against_each_other(monkeypatch):
+    """The lock is per user — one customer's slow SMTP must not queue everyone else's."""
+    assert billing._user_lock("a") is billing._user_lock("a")
+    assert billing._user_lock("a") is not billing._user_lock("b")
+
+
+def test_the_send_happens_outside_the_per_user_lock(monkeypatch):
+    """N2 — the lock covers the DECISION, not the SMTP conversation.
+
+    mailer.send is ledger-first on a UNIQUE idem_key, so delivery needs no serialisation;
+    holding the lock across it would make the second of two events that arrive together
+    (invoice.payment_failed + customer.subscription.updated on a failed renewal) wait out
+    the first's entire send while pinning an anyio threadpool token.
+    """
+    from app import billing_emails as be
+
+    seen = {}
+
+    def _spy_deliver(outbox):
+        seen["locked_during_send"] = billing._user_lock("user_1").locked()
+        return "sent"
+
+    monkeypatch.setattr(be, "deliver", _spy_deliver)
+    monkeypatch.setattr(be, "prepare", lambda *a, **kw: "an-outbox")
+    monkeypatch.setattr(billing, "_customer_id_for_event", lambda t, o: "cus_1")
+    monkeypatch.setattr(billing, "_user_id_for_event", lambda t, o, c: "user_1")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda u, c, e: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda u: None)
+
+    billing._handle_event({"id": "evt_lk", "type": "customer.subscription.updated",
+                           "data": {"object": {"customer": "cus_1"}}})
+    assert seen["locked_during_send"] is False, "the SMTP send ran while holding the lock"
+
+
+def test_the_decision_still_happens_inside_the_lock(monkeypatch):
+    """The other half of N2: prepare() must stay serialised or the upgrade comparison
+    can straddle another event's write."""
+    from app import billing_emails as be
+
+    seen = {}
+    monkeypatch.setattr(be, "prepare",
+                        lambda *a, **kw: seen.setdefault(
+                            "locked_during_decide", billing._user_lock("user_1").locked()))
+    monkeypatch.setattr(be, "deliver", lambda outbox: None)
+    monkeypatch.setattr(billing, "_customer_id_for_event", lambda t, o: "cus_1")
+    monkeypatch.setattr(billing, "_user_id_for_event", lambda t, o, c: "user_1")
+    monkeypatch.setattr(billing, "_compute_entitlement",
+                        lambda cid: {"tier": "pro", "status": "active",
+                                     "current_period_end": None, "features": []})
+    monkeypatch.setattr(billing, "_upsert_entitlement", lambda u, c, e: None)
+    monkeypatch.setattr(billing, "_invalidate", lambda u: None)
+
+    billing._handle_event({"id": "evt_lk2", "type": "customer.subscription.updated",
+                           "data": {"object": {"customer": "cus_1"}}})
+    assert seen["locked_during_decide"] is True

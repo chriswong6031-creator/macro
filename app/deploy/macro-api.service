@@ -31,7 +31,18 @@ EnvironmentFile=-/etc/macro-api.env
 # PAYWALL_ENTITLEMENT_CACHE_SECONDS=60
 # PAYWALL_GRACE_SECONDS=86400        # positive-only store-outage grace, hard-capped at 24h
 # NOTE: the publishable key is NOT needed — the hosted-Checkout redirect flow never loads Stripe.js in the browser.
+# STRIPE_TIMEOUT_SEC=20              # wall-clock cap per Stripe call (the SDK default is NO timeout)
 # Full setup: docs/ops/stripe-setup.md
+# ── Mail env (SEE W1/W3 — app/mailer.py + app/billing_emails.py) ─────────────
+# MAIL_SMTP_HOST/PORT/USER/PASS, MAIL_FROM, MAIL_REPLY_TO, MAIL_SUPPORT_TO, MAIL_UNSUB_SECRET
+#   All absent => mail-off mode: every send is still ledgered, nothing leaves the building.
+# MAIL_BILLING_ENABLED=1             # default ON. 0 silences billing receipts + the trial
+#                                    #   reminder WITHOUT stopping support/ticket mail.
+# MAIL_LIFECYCLE_ENABLED=0           # default OFF. 1 arms the in-process trial-ending
+#                                    #   sweeper; the log says which state it booted in.
+# MAIL_LIFECYCLE_INTERVAL_SEC=21600  # sweeper wake interval (floor 60s); 6h default
+# MAIL_SITE_BASE=https://www.mastermind-x.com   # host used in email links (PIN §7)
+# Full setup: docs/ops/email-support-setup.md
 ExecStart=/opt/macro-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=2

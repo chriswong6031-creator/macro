@@ -712,6 +712,13 @@ def account(user: dict = Depends(require_user)) -> dict:
         # Billing cadence for the plan card ('monthly'|'annual'); None for free/comp. read_entitlement
         # returns it, but this handler rebuilds the payload explicitly, so it must be listed here.
         "interval": ent.get("interval"),
+        # Display preferences, the read side of POST /api/account/prefs (app/account_prefs.py).
+        # account.js::applyPrefs has always looked for `prefs` and never found it; the values
+        # ride the auth record require_user already fetched, so this costs no extra call.
+        "prefs": {
+            "lang": (user.get("user_metadata") or {}).get("lang"),
+            "theme": (user.get("user_metadata") or {}).get("theme"),
+        },
         "plans_url": "/plans.html",
     }
 
@@ -1746,3 +1753,29 @@ try:
 except Exception as _paywall_exc:  # noqa: BLE001
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("paywall router not mounted (wall fails CLOSED at Caddy): %r", _paywall_exc)
+
+# ---------------------------------------------------------------------------
+# Account preferences (SEE W3 — app/account_prefs.py): POST /api/account/prefs.
+# The server side of a call templates/account.js has been making all along. Bearer-authed
+# through require_user, so it mounts AFTER that definition like the billing/support blocks.
+# ---------------------------------------------------------------------------
+try:
+    from app.account_prefs import router as account_prefs_router  # noqa: E402
+    app.include_router(account_prefs_router)
+except Exception as _prefs_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("account prefs router not mounted: %r", _prefs_exc)
+
+# ---------------------------------------------------------------------------
+# Lifecycle mail sweeper (SEE W3 — app/billing_emails.py): the behaviour-triggered
+# trial-ending T-2 reminder. DEFAULT OFF — register_lifecycle is a no-op unless the
+# operator sets MAIL_LIFECYCLE_ENABLED (docs/ops/email-support-setup.md §5b), so this is
+# inert on every machine that has not opted in, tests included. Cursor-free and
+# idempotent through email_log, so a restart mid-sweep costs nothing.
+# ---------------------------------------------------------------------------
+try:
+    from app.billing_emails import register_lifecycle as _register_lifecycle  # noqa: E402
+    _register_lifecycle(app)   # logs the armed interval itself; silent when disabled
+except Exception as _lifecycle_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("lifecycle mail sweeper not armed: %r", _lifecycle_exc)

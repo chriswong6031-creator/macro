@@ -928,6 +928,17 @@ on:
       - "tests/test_mailer.py"
       - "tests/test_support_api.py"
       - "tests/test_admin_support_tickets.py"
+      # Support + Email estate (SEE W3): the Stripe-webhook-driven billing emails, the
+      # trial-ending lifecycle sweeper, and POST /api/account/prefs. Same #3509 lesson —
+      # the SOURCES are listed, not only the tests. config/plans.yml is here because the
+      # money, the plan names AND the tier ordering in every one of those emails are read
+      # from it, so a catalog edit is exactly the change that can break the suite.
+      - "app/billing_emails.py"
+      - "app/account_prefs.py"
+      - "config/plans.yml"
+      - "tests/test_billing_emails.py"
+      - "tests/test_account_prefs.py"
+      - "tests/test_billing_webhook.py"
       # Site Access Gate: gate logic engine, admin backend, test suites.
       # Any change to app/gate.py, admin/site_gate.py, or either test file must
       # re-prove the fail-open + self-lockout + IP/CIDR + country contracts.
@@ -3311,6 +3322,53 @@ jobs:
         run: python -m pytest tests/test_support_api.py -v
       - name: admin support console tests (admin/support_tickets.py)
         run: python -m pytest tests/test_admin_support_tickets.py -v
+
+  billing-emails:
+    if: ${{ false }}
+    # Support + Email estate, W3 (app/billing_emails.py, app/account_prefs.py). A SIBLING
+    # of support-email-spine rather than three more steps inside it: this lane needs the
+    # Stripe SDK, and run_ci_pack only shares a virtualenv between jobs whose install
+    # commands are byte-identical — widening the W1 job's line would split it from
+    # site-gate for no gain.
+    #   test_billing_emails.py  — event→template selection (including the deliberate
+    #                             checkout.session.completed ABSTENTION that stops the two
+    #                             buy lanes double-sending), the G2 replay gate (the same
+    #                             event twice ⇒ one email_log row, one SMTP send), mail-off
+    #                             ledgering with a 200 webhook, tier-rank comparison driven
+    #                             by config/plans.yml (proven with a tier inserted mid-rank),
+    #                             money/date rendering off the objects (non-USD +
+    #                             zero-decimal), dual-language bodies, the fail-soft
+    #                             contract (an exploding composer never breaks the
+    #                             entitlement write), and the trial-ending sweeper's window,
+    #                             per-period idem key, restart safety and second-run silence.
+    #   test_account_prefs.py   — POST /api/account/prefs: bearer-only identity (a
+    #                             client-sent user id is ignored), validation, the
+    #                             user_metadata MERGE, the email_prefs lang mirror, and the
+    #                             honest partial/total failure statuses.
+    #   test_billing_webhook.py — the spine suite that guards _handle_event, which W3 now
+    #                             hooks. It matched NO workflow before this job (it needs
+    #                             the pinned Stripe SDK, which prelaunch-hardening does not
+    #                             install), so the change most able to break it could not
+    #                             turn it red — the #3509 failure mode exactly.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # stripe is PINNED to app/requirements.txt's range on purpose. The webhook suite
+      # feeds hand-built event payloads to stripe.Webhook.construct_event, and 13+ made
+      # that constructor strict about the envelope (`object: "event"`), so an unpinned
+      # install turns three green tests red against code the droplet never runs. CI must
+      # test the SDK production actually has.
+      - name: install deps
+        run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests "stripe>=11,<13"
+      - name: billing + lifecycle email tests (app/billing_emails.py)
+        run: python -m pytest tests/test_billing_emails.py -v
+      - name: account preference tests (app/account_prefs.py)
+        run: python -m pytest tests/test_account_prefs.py -v
+      - name: billing webhook spine regression (app/billing.py::_handle_event)
+        run: python -m pytest tests/test_billing_webhook.py -v
 
   site-gate:
     if: ${{ false }}
