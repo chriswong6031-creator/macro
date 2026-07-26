@@ -19,7 +19,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
-from engine.marketing.chart_render import render_chart_v2  # noqa: E402
+from engine.marketing.chart_render import render_chart_v2, load_ohlcv  # noqa: E402
 
 PAD_L = 14  # left padding used by render_chart_v2 (first drawn bar sits near here)
 
@@ -113,3 +113,50 @@ def test_setup_mark_in_warmup_is_dropped():
     svg2 = render_chart_v2("AAPL", dates, o, h, l, c, vol, warmup=60,
                            volume_overlay=True, highlight_index=100)
     assert ">SETUP<" in svg2, "a visible mark must render"
+
+
+# ── load_ohlcv: crypto source resolution + close-to-close H/L synthesis ──────────
+# Regression for "analyse ETH → ETH 没有可用的日线图表数据 (no daily chart data)": crypto
+# has no data/stocks/<T>.parquet; its bars live in data/yahoo/<T>-USD.parquet (close+volume
+# only), so load_ohlcv must resolve there and synthesize high/low.
+
+def test_load_ohlcv_crypto_synthesizes_close_to_close_body(tmp_path):
+    import pandas as pd  # noqa: PLC0415
+    (tmp_path / "data" / "yahoo").mkdir(parents=True)
+    idx = pd.date_range("2026-01-01", periods=10, freq="D")
+    # close-only feed, mirroring data/yahoo/ETH-USD.parquet (no high/low columns)
+    pd.DataFrame(
+        {"close": [100, 102, 101, 105, 103, 108, 107, 110, 109, 112], "volume": [1e9] * 10},
+        index=idx,
+    ).to_parquet(tmp_path / "data" / "yahoo" / "ETH-USD.parquet")
+
+    out = load_ohlcv("ETH", tmp_path, n=90)
+    assert out is not None, "crypto bars must load from data/yahoo/<SYM>-USD.parquet"
+    _dates, o, h, l, c, _v = out
+    assert len(c) == 10 and c[-1] == 112.0
+    # Each bar is a close-to-close body: high=max(open,close), low=min(open,close), no wicks.
+    assert all(hi == max(op, cl) and lo == min(op, cl) for op, hi, lo, cl in zip(o, h, l, c))
+    assert all(hi >= lo for hi, lo in zip(h, l))
+
+
+def test_load_ohlcv_stocks_win_and_keep_real_hl(tmp_path):
+    import pandas as pd  # noqa: PLC0415
+    (tmp_path / "data" / "stocks").mkdir(parents=True)
+    (tmp_path / "data" / "yahoo").mkdir(parents=True)
+    idx = pd.date_range("2026-01-01", periods=5, freq="D")
+    pd.DataFrame(
+        {"close": [10, 11, 12, 13, 14], "high": [10.5, 11.5, 12.5, 13.5, 14.5],
+         "low": [9.5, 10.5, 11.5, 12.5, 13.5], "volume": [1e6] * 5},
+        index=idx,
+    ).to_parquet(tmp_path / "data" / "stocks" / "AAA.parquet")
+    # decoy crypto file with the same base name — the stocks parquet must win
+    pd.DataFrame({"close": [1, 2, 3, 4, 5], "volume": [1] * 5}, index=idx).to_parquet(
+        tmp_path / "data" / "yahoo" / "AAA-USD.parquet"
+    )
+
+    out = load_ohlcv("AAA", tmp_path, n=90)
+    assert out is not None
+    _dates, _o, h, l, c, _v = out
+    assert c[-1] == 14.0                       # the stocks file, not the decoy
+    assert h[-1] == 14.5 and l[-1] == 13.5     # REAL high/low, not synthesized
+    assert load_ohlcv("NOPE", tmp_path) is None

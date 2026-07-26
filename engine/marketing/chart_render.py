@@ -691,35 +691,57 @@ def load_ohlcv(
     root: Path | str,
     n: int = 90,
 ) -> tuple[list[str], list[float], list[float], list[float], list[float], list[float]] | None:
-    """Load last *n* bars of OHLCV for *ticker* from data/stocks/<TICKER>.parquet.
+    """Load last *n* bars of OHLCV for *ticker*.
 
-    The parquet has no 'open' column so we proxy open_t = close_{t-1} (standard
+    US equities/ETFs come from data/stocks/<TICKER>.parquet (full OHLCV). Crypto
+    (ETH, BTC, SOL, …) has no row in data/stocks/; its daily bars live in
+    data/yahoo/<TICKER>-USD.parquet, which carries close+volume only. For that feed
+    high/low are synthesized as a close-to-close body (no wicks) so crypto charts
+    render instead of coming back "chart unavailable" — the bug where "analyse ETH"
+    reported no daily chart data even though ETH price history exists.
+
+    Neither parquet has an 'open' column so we proxy open_t = close_{t-1} (standard
     prev-close proxy for candlestick rendering; the first bar's open = its close).
 
     Returns (dates, opens, highs, lows, closes, volumes) — all lists of length ≤ n.
     Returns None on any error (missing file, bad data, insufficient rows).
     """
     try:
-        path = Path(root) / "data" / "stocks" / f"{ticker}.parquet"
-        if not path.exists():
+        stock_path = Path(root) / "data" / "stocks" / f"{ticker}.parquet"
+        # Crypto convention in data/yahoo/: <SYMBOL>-USD.parquet (BTC-USD, ETH-USD, …).
+        crypto_path = Path(root) / "data" / "yahoo" / f"{ticker}-USD.parquet"
+        if stock_path.exists():
+            path = stock_path
+        elif crypto_path.exists():
+            path = crypto_path
+        else:
             return None
         import pandas as pd  # only import when needed
         df = pd.read_parquet(path)
-        required = {"close", "high", "low", "volume"}
-        if not required.issubset(set(df.columns)):
+        # close + volume are the hard requirement; high/low are optional and
+        # synthesized below when the source is a close-only crypto feed.
+        if not {"close", "volume"}.issubset(set(df.columns)):
             return None
-        df = df.sort_index().dropna(subset=["close", "high", "low"])
+        has_hl = {"high", "low"}.issubset(set(df.columns))
+        df = df.sort_index().dropna(subset=["close", "high", "low"] if has_hl else ["close"])
         if len(df) < 2:
             return None
         # Take last n rows (need n+1 to compute prev-close open for first bar)
         df = df.iloc[-(n + 1):]
         dates = [str(d)[:10] for d in df.index]
         closes_raw = [float(c) for c in df["close"]]
-        highs_raw = [float(h) for h in df["high"]]
-        lows_raw = [float(l) for l in df["low"]]
         vols_raw = [float(v) if not (v != v) else 0.0 for v in df["volume"]]
         # prev-close proxy for open: open_t = close_{t-1}; first bar open = its close
         opens_raw = [closes_raw[0]] + closes_raw[:-1]
+        if has_hl:
+            highs_raw = [float(h) for h in df["high"]]
+            lows_raw = [float(l) for l in df["low"]]
+        else:
+            # Close-only feed → each bar is a close-to-close body: high/low are the
+            # max/min of (prev close, close). No invented intrabar extremes; up/down
+            # days still read correctly.
+            highs_raw = [max(o, c) for o, c in zip(opens_raw, closes_raw)]
+            lows_raw = [min(o, c) for o, c in zip(opens_raw, closes_raw)]
         # Drop the extra lead row now that opens are computed
         dates = dates[-n:]
         opens_raw = opens_raw[-n:]
