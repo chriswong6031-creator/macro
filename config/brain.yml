@@ -61,8 +61,14 @@ lanes:
     # on opus, the SDK default re-tried each dead key twice at ~2.4s a candidate — 25-31s
     # of dead time per turn (measured in journalctl -u macro-api) before DeepSeek served.
     client_max_retries: 0
-    # Longer than fast: high-effort adaptive-thinking answers legitimately run minutes.
-    client_timeout_s: 240
+    # Longer than fast: high-effort adaptive-thinking answers legitimately run minutes,
+    # and a NO-TOOL pro turn produces its whole 8000-token answer inside ONE
+    # non-streaming create — setting any client timeout DISABLES the SDK's
+    # max_tokens-scaled non-streaming timeout (it only applies at DEFAULT_TIMEOUT), so
+    # this must cover the full long-answer case itself, not just "a hung candidate".
+    # 240 timed out slow-but-healthy answers and then re-paid the wall per rung
+    # (review MAJOR-1 on #3586).
+    client_timeout_s: 600
     # NOTE: pro's degraded deepseek-v4-pro rung keeps thinking ENABLED (quality backstop
     # for a capped pool) — deliberately no `deepseek_thinking` key on this lane.
     # Degraded-capacity fallbacks (operator 2026-07-25): when the OAuth pool is fully

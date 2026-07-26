@@ -309,7 +309,6 @@
   .mmb-cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .mmb-cite{font:11px/1.3 var(--mmb-font);background:color-mix(in srgb,var(--mmb-info) 11%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:3px 10px;color:color-mix(in srgb,var(--mmb-info) 86%,var(--mmb-text));text-decoration:none;cursor:pointer}
   .mmb-cite:hover{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
-  @keyframes mmb-bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
   .mmb-meta{font:11px/1.4 var(--mmb-font);color:var(--mmb-muted);padding:0 4px}
   .mmb-upgrade{display:none;margin:0 0 12px;padding:13px 15px;border-radius:13px;font:13px/1.5 var(--mmb-font);
     background:color-mix(in srgb,#e0a030 12%,color-mix(in srgb,var(--mmb-panel) 55%,transparent));border:1px solid color-mix(in srgb,#e0a030 34%,transparent)}
@@ -1157,7 +1156,10 @@
     if (!tl || tl.dead || !label) return;
     var full = label + (extra ? ' · ' + extra : '');
     var key = label + '|' + (isTool ? (extra || '') : '');
-    if (key !== tl.key) { thinkRetire(tl, tl.label); tl.key = key; if (isTool) tl.checks++; }
+    if (key !== tl.key) { thinkRetire(tl, tl.label); tl.key = key; }
+    /* the chip's "N checks" counts tool EVENTS (work done), not rendered lines — two
+       same-labelled reads in one round are still two checks (review MINOR-5) */
+    if (isTool) tl.checks++;
     /* a finished tool line keeps its symbol (that is a fact worth reading back); a stage
        line drops its size estimate, which is progress, not a result. */
     tl.label = isTool ? full : label;
@@ -1167,7 +1169,12 @@
   /* one `status` event. `beat` is the keepalive heartbeat — liveness only, no visual
      change (the clock is client-side and never stalls). */
   function thinkStatus(tl, j) {
-    if (!tl || tl.dead || j.phase === 'beat') return;
+    if (!tl || tl.dead) return;
+    /* a re-attached turn starts a fresh client clock, but the wire already knows the
+       real age — floor t0 with the server's elapsed_ms so the clock and the final
+       receipt never under-report a resumed run (review MINOR-6) */
+    if (j.elapsed_ms > 0) { var t0s = Date.now() - j.elapsed_ms; if (t0s < tl.t0) tl.t0 = t0s; }
+    if (j.phase === 'beat') return;
     var extra = (j.phase === 'writing' && j.n > 0)
       ? '~' + (zh() ? (j.n + ' 字') : (Math.max(1, Math.round(j.n / 6)) + ' words'))
       : evDetail(j);
@@ -1190,6 +1197,8 @@
     btn.appendChild(line); wrap.appendChild(btn);
     if (record.length) {
       var list = el('div', 'mmb-recap-list');
+      list.id = 'mmb-recap-' + (++recapSeq);
+      btn.setAttribute('aria-controls', list.id);
       record.forEach(function (r) { var s = el('div', 'mmb-step'); s.textContent = r; list.appendChild(s); });
       wrap.appendChild(list);
       btn.addEventListener('click', function () {
@@ -1426,6 +1435,7 @@
     });
   }
   var activeStream = null;
+  var recapSeq = 0;   /* unique ids so each receipt chip can aria-controls its own list */
   /* Stop: abort the reader, keep partial text, append a muted "· stopped" tag, finalize.
      Also cancels the run server-side so nothing re-attaches to a turn the user abandoned. */
   function stopStream() {

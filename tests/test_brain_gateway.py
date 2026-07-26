@@ -4080,7 +4080,7 @@ def test_brain_yml_pro_lane_latency_guards():
     root = pathlib.Path(__file__).resolve().parent.parent
     pro = gw._load_brain_config(root)["lanes"]["pro"]
     assert pro["client_max_retries"] == 0
-    assert pro["client_timeout_s"] == 240
+    assert pro["client_timeout_s"] == 600  # covers a full 8k-token NO-TOOL answer (review MAJOR-1)
     assert "deepseek_thinking" not in pro
 
 
@@ -4107,7 +4107,7 @@ def test_build_lane_providers_forwards_client_tuning_to_llm_auth():
     seen.clear()
     with patch.object(llm_auth, "build_providers", _capture):
         gw._build_lane_providers("pro", root)
-    assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 240 for c in seen)
+    assert seen and all(c["client_max_retries"] == 0 and c["client_timeout_s"] == 600 for c in seen)
 
 
 def test_deepseek_thinking_reaches_the_synthesis_stream(tmp_path):
@@ -4126,3 +4126,123 @@ def test_deepseek_thinking_reaches_the_synthesis_stream(tmp_path):
                                                 lane="fast", root=root))
     assert client.stream_kwargs[0]["thinking"] == {"type": "disabled"}
     assert all(k["thinking"] == {"type": "disabled"} for k in client.create_kwargs)
+
+
+# ── #3586 review fix-forward: param-rejection 400s fail over; beats never regress ──
+
+def test_param_rejection_400_is_failover_worthy():
+    """A 400 rejecting a provider-specific request FEATURE (cache_control / thinking /
+    output_config / a retired model id) must fail over — the Haiku rung right behind
+    DeepSeek accepts the same request. A plain bad request still fails the turn."""
+    class _P400(Exception):
+        status_code = 400
+    assert gw._is_failover_error(_P400("Unsupported parameter: cache_control"))
+    assert gw._is_failover_error(_P400("Invalid request: unknown field 'thinking'"))
+    assert gw._is_failover_error(_P400("output_config is not a permitted key"))
+    # The literal 2026-07-25 incident message (deepseek-chat retirement) — this exact
+    # shape blacked out every Fast tool-turn for hours while Haiku sat unused.
+    assert gw._is_failover_error(_P400(
+        "The supported API model names are deepseek-v4-pro or deepseek-v4-flash, "
+        "but you passed deepseek-chat."))
+    # Inherently malformed requests keep failing the turn (would fail identically anywhere)
+    assert not gw._is_failover_error(_P400("max_tokens: must be a positive integer"))
+    assert not gw._is_failover_error(_P400("messages: at least one message is required"))
+    # Only 400s qualify for the param-rejection clause
+    class _P422(Exception):
+        status_code = 422
+    assert not gw._is_param_rejection_error(_P422("unsupported parameter cache_control"))
+
+
+def test_deepseek_param_400_reaches_next_candidate(tmp_path):
+    """End-to-end: the primary 400s on a compat feature → the next candidate serves a
+    real answer instead of the lane blacking out with quota already debited."""
+    class _CompatErr(Exception):
+        status_code = 400
+    class _Rejecting:
+        def __init__(self):
+            self.messages = self
+        def create(self, **kwargs):
+            raise _CompatErr("This model does not support the cache_control parameter")
+        def stream(self, **kwargs):
+            raise _CompatErr("This model does not support the cache_control parameter")
+    healthy = _CaptureClient()
+    providers = [
+        {"name": "deepseek", "model": "deepseek-v4-flash", "client": _Rejecting()},
+        {"name": "anthropic", "model": "claude-haiku-4-5", "client": healthy},
+    ]
+    root = _make_temp_root()
+    parsed = _stream_events_with_providers(providers, root, tmp_path) \
+        if "_stream_events_with_providers" in globals() else None
+    if parsed is None:
+        # inline: mirror _stream_events but with an explicit provider chain
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        parsed = _sse(list(gw.chat_stream("what is beta?", "u-param400", lane="fast", root=root)))
+    types = [e["type"] for e in parsed]
+    assert types.count("delta") == 1
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "temporarily unavailable" not in delta["text"].lower()
+    assert healthy.create_kwargs, "fallback candidate was never tried"
+
+
+def test_status_event_detail_sanitized_at_the_emitter():
+    """The leak contract holds inside _status_event itself: detail is forced through
+    _safe_symbol (uppercase, [A-Z0-9.-], hard length cap) — not merely at call sites."""
+    line = gw._status_event("model", __import__("time").monotonic(),
+                            ("x", "y"), detail="nv da; rm -rf /", n=1)
+    ev = json.loads(line[len("data: "):])
+    d = ev.get("detail", "")
+    assert d and re.fullmatch(r"[A-Z0-9.\-]{1,10}", d), d
+    line2 = gw._status_event("model", __import__("time").monotonic(), ("x", "y"),
+                             detail="!!!;;;###")
+    assert "detail" not in json.loads(line2[len("data: "):])
+
+
+def test_writing_beats_never_run_backwards_across_failover(tmp_path):
+    """A Phase-2 failover restarts the server-side buffer, but the user-visible count
+    must never shrink (review MINOR-3): n is floored across candidates."""
+    class _RateErr(Exception):
+        status_code = 429
+    class _ExplodingStreamCtx(_FakeStreamCtx):
+        def __init__(self, text):
+            super().__init__(text, chunks=4)
+        @property
+        def text_stream(self):
+            size = max(1, len(self._text) // 4 + 1)
+            emitted = 0
+            for i in range(0, len(self._text), size):
+                yield self._text[i:i + size]
+                emitted += 1
+                if emitted >= 3:
+                    raise _RateErr("429 rate_limit mid-stream")
+    class _ExplodingClient:
+        def __init__(self, long_text):
+            self._t = long_text
+            self.messages = self
+        def create(self, **kwargs):
+            # force need_synthesis: a tool_use round then the loop synthesizes
+            return _MockResponse([_MockBlock("tool_use", name="get_house_view",
+                                             input_={}, id_="t1")], "tool_use")
+        def stream(self, **kwargs):
+            return _ExplodingStreamCtx(self._t)
+    short = _CLEAN_ANSWER  # healthy fallback writes a SHORTER answer than the exploder
+    exploder = _ExplodingClient(long_text=short * 8)
+    healthy = _CaptureClient(responses=[
+        _MockResponse([_MockBlock("tool_use", name="get_house_view", input_={}, id_="t2")], "tool_use"),
+    ], answer=short)
+    providers = [
+        {"name": "deepseek", "model": "deepseek-v4-pro", "client": exploder},
+        {"name": "anthropic", "model": "claude-haiku-4-5", "client": healthy},
+    ]
+    root = _make_temp_root()
+    with patch.object(gw, "_WRITING_BEAT_S", 0.0):
+        with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+            with patch.object(gw, "_build_lane_providers", return_value=providers):
+                with patch.object(gw, "_resolve_tier", return_value={"tier": "pro", "status": "active", "current_period_end": None}):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        parsed = _sse(list(gw.chat_stream("beta?", "u-beatfloor", lane="pro", root=root)))
+    ns = [e["n"] for e in parsed if e.get("phase") == "writing"]
+    assert len(ns) >= 2, parsed
+    assert ns == sorted(ns), f"writing count ran backwards: {ns}"

@@ -3845,11 +3845,40 @@ def _is_failover_error(exc: Exception) -> bool:
         return True
     if _is_provider_unavailable_error(exc):
         return True
+    if _is_param_rejection_error(exc):
+        return True
     try:
         from engine import llm_auth  # noqa: PLC0415
         return llm_auth._is_auth_error(exc) or llm_auth._is_rate_limit_error(exc)
     except Exception:  # noqa: BLE001
         return False
+
+
+def _is_param_rejection_error(exc: Exception) -> bool:
+    """True when a 400 rejects a REQUEST FEATURE some providers accept and others don't
+    — cache_control blocks, the thinking field, output_config — rather than the request
+    being inherently malformed.
+
+    The "a 400 fails identically on the fallback" premise above does not hold for these:
+    the brain lanes send Anthropic request features through DeepSeek's compat endpoint
+    on the strength of a one-time live probe (2026-07-26), and a later DeepSeek
+    validation change would 400 EVERY Fast turn while the Haiku rung right behind it
+    accepts the same request (review MAJOR-2 on #3586). Matching is deliberately narrow:
+    a plain bad request (bad model name, oversized max_tokens, malformed messages)
+    carries none of these markers and still fails the whole turn loudly."""
+    code = getattr(exc, "status_code", None)
+    if not (isinstance(code, int) and code == 400):
+        return False
+    s = str(exc).lower()
+    if "cache_control" in s or "output_config" in s or '"thinking"' in s or "'thinking'" in s:
+        return True
+    # A retired/renamed MODEL id is provider-specific too: DeepSeek's deepseek-chat
+    # retirement 400 ("The supported API model names are …") blacked out every Fast
+    # tool-turn for hours on 2026-07-25 while the Haiku rung sat unused behind it.
+    if re.search(r"model\s+names?\b|no\s+such\s+model|model\s+not\s+found|model_not_found", s):
+        return True
+    return bool(re.search(r"(unsupported|unknown|unrecognized|not\s+support)\w*\s+"
+                          r"(request\s+)?(parameter|param|field|argument|feature)", s))
 
 
 def _mark_provider_dead_if_auth(p: dict, exc: Exception) -> None:
@@ -4355,13 +4384,17 @@ _WRITING_BEAT_S = 1.5
 def _status_event(phase: str, t0: float, label: tuple[str, str] | None = None,
                   detail: str = "", n: int | None = None) -> str:
     """One `status` SSE line — ADDITIVE to the contract (an old widget ignores unknown
-    event types). `elapsed_ms` is loop-local: ms since the caller's monotonic t0."""
+    event types). `elapsed_ms` is loop-local: ms since the caller's monotonic t0.
+    `detail` is forced through _safe_symbol so the leak contract above the label tables
+    holds at the emitter itself, not only at today's call sites."""
     ev: dict = {"type": "status", "phase": phase,
                 "elapsed_ms": int((time.monotonic() - t0) * 1000)}
     if label is not None:
         ev["label_en"], ev["label_zh"] = label
     if detail:
-        ev["detail"] = detail
+        detail = _safe_symbol(str(detail))
+        if detail:
+            ev["detail"] = detail
     if n is not None:
         ev["n"] = n
     return f"data: {json.dumps(ev)}\n\n"
@@ -4605,6 +4638,8 @@ def _run_brain_loop_stream(
         # as one delta below), so a candidate that 429s on open is retried from scratch
         # with a fresh buffer — no partial/duplicated text reaches the client.
         _last_err: Exception | None = None
+        _n_shown = 0  # progress floor across candidates: a failover restarts the buffer,
+        #               but the visible count must never run backwards (review MINOR-3)
         for _i, _p in enumerate(_cands):
             _cl = _p.get("client")
             if _cl is None:
@@ -4626,8 +4661,9 @@ def _run_brain_loop_stream(
                         full_answer += chunk
                         if time.monotonic() - _beat_at >= _WRITING_BEAT_S:
                             _beat_at = time.monotonic()
+                            _n_shown = max(_n_shown, len(full_answer))
                             yield _status_event("writing", _t0, _STAGE_LABELS["writing"],
-                                                n=len(full_answer))
+                                                n=_n_shown)
                 final_resp = s.get_final_message()
                 u = getattr(final_resp, "usage", None)
                 if u:
