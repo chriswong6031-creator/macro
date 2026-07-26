@@ -421,11 +421,17 @@ def compute_name(sym: str, rung: str) -> dict:
                     "tdt": m["tdt"][i], "gate": bool(c32[i]), "sub21": bool(idx[i] >= SUB2021),
                 })
 
-    # F1 falsifier null: RANDOM new-low bars in the same declines (conditional base
-    # rate). Draw, per half, an equal count of random VALID new-low bars (L primary).
+    # F1 falsifier null: ordinary new-low bars in the same declines (conditional base
+    # rate). The placebo pool is the treatment-DISJOINT complement — every valid
+    # new-low bar that did NOT fire F1 (same eligibility fin, same ±31td prox window,
+    # same closes-only plane, same per-name baselines). Using the full complement
+    # (not an equal-count subsample) keeps the null's per-name conditional rate exact.
+    # E2 (errata): the pre-decontamination pool was ALL valid new-low bars, so 100%
+    # of F1 fires sat inside their own null — corrected here to exclude the fires.
     nl_primary = newlow_mask(close, L_PRIMARY) & np.isfinite(np.log((close * volume).replace(0, np.nan)).to_numpy())
+    comp = nl_primary & ~fires_primary          # disjoint complement: new-lows that did NOT fire F1
     for h, mk in (("oos", masks["oos"]), ("oos21", masks["oos21"])):
-        pool = np.where(nl_primary & fin & mk)[0]
+        pool = np.where(comp & fin & mk)[0]
         rec[f"nl_pool_{h}"] = int(len(pool))
         if not nulls[h] or len(pool) == 0:
             continue
@@ -461,20 +467,30 @@ def compute_name(sym: str, rung: str) -> dict:
 
 # ── month-cluster bootstrap (F1 vs random-day null AND vs random-new-low null) ─
 
+def _name_uplift(g: pd.DataFrame, mcol: str, wcol: str) -> tuple[float, float]:
+    """Collapse a subset of signal rows to the cross-name median uplift, per-name FIRST.
+    E1 (errata): mirrors the W1-T machinery (ptt_w1_timing_regrade.bootstrap ~L386):
+    per (sym) the MAE uplift is the median of mae_ex (= name median mae63 − name base)
+    and the W5 uplift is the MEAN of w5_ex (= name signal-day rate − name base rate),
+    THEN the cross-name MEDIAN of those per-name uplifts. The prior code took a pooled
+    median over per-fire w5_ex ∈ {100−base, −base}, which for any hit rate <50% is
+    mechanically ≈ −base regardless of the true uplift (estimator artifact)."""
+    if not len(g):
+        return np.nan, np.nan
+    agg = g.groupby("sym").agg(mae=(mcol, "median"), w5=(wcol, "mean"))
+    return float(np.median(agg["mae"])), float(np.median(agg["w5"]))
+
+
 def bootstrap(sig: pd.DataFrame, sub21: bool) -> dict:
-    """Cluster = signal month. Returns CIs on: F1 median U_MAE/U_W5 (g0 and g1),
-    random-new-low median U_MAE/U_W5, and the F1−randNL differences."""
+    """Cluster = signal month. Returns CIs on: F1 name-median U_MAE/U_W5 (g0 and g1),
+    disjoint-complement new-low name-median U_MAE/U_W5, and the F1−complement diffs.
+    Per-name-first collapse (E1) then cross-name median, exactly as W1-T grades it."""
     mcol = "mae_ex21" if sub21 else "mae_ex"
     wcol = "w5_ex21" if sub21 else "w5_ex"
     s = sig[np.isfinite(sig[mcol])].copy()
     if sub21:
         s = s[s.sub21]
-    f1 = s[s.kind == "f1"]
-    f1g = f1[f1.gate]
-    rnl = s[s.kind.isin(["rnl", "rnl21"])] if not sub21 else s[s.kind == "rnl21"]
-    # for sub21 the random-new-low pool is the rnl21 rows
-    if not sub21:
-        rnl = s[s.kind == "rnl"]
+    rnl_kind = "rnl21" if sub21 else "rnl"
     months = sorted(s["month"].unique())
     by_month = {m: g for m, g in s.groupby("month")}
     keys = ("f1_umae", "f1_uw5", "f1g_umae", "f1g_uw5",
@@ -485,13 +501,10 @@ def bootstrap(sig: pd.DataFrame, sub21: bool) -> dict:
         boot = pd.concat([by_month[mm] for mm in pick])
         bf1 = boot[boot.kind == "f1"]
         bf1g = bf1[bf1.gate]
-        brnl = boot[boot.kind == ("rnl21" if sub21 else "rnl")]
-        f1u = float(np.median(bf1[mcol])) if len(bf1) else np.nan
-        f1w = float(np.median(bf1[wcol])) if len(bf1) else np.nan
-        f1gu = float(np.median(bf1g[mcol])) if len(bf1g) else np.nan
-        f1gw = float(np.median(bf1g[wcol])) if len(bf1g) else np.nan
-        rnu = float(np.median(brnl[mcol])) if len(brnl) else np.nan
-        rnw = float(np.median(brnl[wcol])) if len(brnl) else np.nan
+        brnl = boot[boot.kind == rnl_kind]
+        f1u, f1w = _name_uplift(bf1, mcol, wcol)       # per-name-first, then cross-name median
+        f1gu, f1gw = _name_uplift(bf1g, mcol, wcol)
+        rnu, rnw = _name_uplift(brnl, mcol, wcol)
         acc["f1_umae"].append(f1u); acc["f1_uw5"].append(f1w)
         acc["f1g_umae"].append(f1gu); acc["f1g_uw5"].append(f1gw)
         acc["rnl_umae"].append(rnu); acc["rnl_uw5"].append(rnw)
@@ -622,7 +635,8 @@ def main() -> None:
              f"Envelope window W: median {int(p.W.median())} new-low bars, "
              f"range {int(p.W.min())}–{int(p.W.max())}.")
     L.append(f"- TEST F1 signals (primary cell, pooled): "
-             f"{int((sig.kind=='f1').sum()):,}; random-new-low null pool (TEST): "
+             f"{int((sig.kind=='f1').sum()):,}; disjoint-complement new-low null pool "
+             f"(TEST, new-lows that did NOT fire F1 — E2): "
              f"{int((sig.kind=='rnl').sum()):,}.\n")
 
     # panel base rates
@@ -661,13 +675,16 @@ def main() -> None:
                  f"{float(p[f'umae_{suf}_{pk}_g1'].median()):+.2f}pp | "
                  f"{float(p[f'uw5_{suf}_{pk}_g1'].median()):+.2f}pp |")
 
-    # inferential CIs (pooled month-cluster bootstrap)
-    L.append("\n## Inference — pooled month-cluster bootstrap (primary cell), "
-             "vs BOTH nulls\n")
-    L.append("U_MAE = median signal mae63 − all-days median (pp; + = shallower "
-             "adverse = better entry). U_W5 = within-5%-of-low rate − all-days rate. "
-             "Two nulls: (a) all-DAYS base rate [in the per-name null], (b) random "
-             "NEW-LOW bars in the same declines (F1 falsifier).\n")
+    # inferential CIs (per-name-first month-cluster bootstrap — E1)
+    L.append("\n## Inference — month-cluster bootstrap (primary cell), vs BOTH nulls\n")
+    L.append("Per-name-first collapse then cross-name median (E1 — matches the W1-T "
+             "machinery): within each month-cluster draw, U_MAE = name-median mae63 − "
+             "name all-days median, U_W5 = name signal-day within-5%-of-low rate − name "
+             "all-days rate, THEN the cross-name median of those per-name uplifts (pp; "
+             "for U_MAE + = shallower adverse = better entry). Two nulls: (a) all-DAYS "
+             "base rate [in the per-name uplift], (b) the treatment-DISJOINT complement "
+             "— valid new-low bars that did NOT fire F1, same declines (F1 falsifier, "
+             "E2).\n")
     L.append("| quantity | full TEST | 2021+ |")
     L.append("|---|---|---|")
     rows = [
@@ -675,17 +692,17 @@ def main() -> None:
         ("F1 U_W5 (vs all-days null), no gate", "f1_uw5"),
         ("F1 U_MAE, C32 gate", "f1g_umae"),
         ("F1 U_W5, C32 gate", "f1g_uw5"),
-        ("random-new-low U_MAE (conditional null)", "rnl_umae"),
-        ("random-new-low U_W5 (conditional null)", "rnl_uw5"),
-        ("F1 − random-new-low  U_MAE (FALSIFIER)", "d_umae"),
-        ("F1 − random-new-low  U_W5 (FALSIFIER)", "d_uw5"),
-        ("F1(gate) − random-new-low  U_MAE", "dg_umae"),
-        ("F1(gate) − random-new-low  U_W5", "dg_uw5"),
+        ("disjoint-complement new-low U_MAE (conditional null)", "rnl_umae"),
+        ("disjoint-complement new-low U_W5 (conditional null)", "rnl_uw5"),
+        ("F1 − complement  U_MAE (FALSIFIER)", "d_umae"),
+        ("F1 − complement  U_W5 (FALSIFIER)", "d_uw5"),
+        ("F1(gate) − complement  U_MAE", "dg_umae"),
+        ("F1(gate) − complement  U_W5", "dg_uw5"),
     ]
     for lab, key in rows:
         L.append(f"| {lab} | {ci_str(ci.get(key))} {verdict(ci.get(key))} | "
                  f"{ci_str(ci21.get(key))} {verdict(ci21.get(key))} |")
-    L.append("\nThe FALSIFIER rows are the pre-stated kill: if F1 − random-new-low "
+    L.append("\nThe FALSIFIER rows are the pre-stated kill: if F1 − disjoint-complement "
              "does not exclude 0 (positive) on U_MAE/U_W5, the contracting-envelope "
              "new-low bar carries no information beyond an ordinary new-low bar. "
              "Printed regardless of outcome.\n")
@@ -751,13 +768,57 @@ def main() -> None:
     L.append(f"- F1 (no gate) U_MAE vs the all-days null on full TEST: "
              f"{ci_str(f1_full)} ({verdict(f1_full)}); U_W5 {ci_str(ci.get('f1_uw5'))} "
              f"({verdict(ci.get('f1_uw5'))}).")
-    L.append(f"- The pre-stated FALSIFIER (F1 − random-new-low): U_MAE {ci_str(d_full)} "
-             f"({verdict(d_full)}), U_W5 {ci_str(dw_full)} ({verdict(dw_full)}) on full "
-             f"TEST; 2021+ U_MAE {ci_str(ci21.get('d_umae'))} "
-             f"({verdict(ci21.get('d_umae'))}).")
+    L.append(f"- The pre-stated FALSIFIER (F1 − disjoint-complement new-low): "
+             f"U_MAE {ci_str(d_full)} ({verdict(d_full)}), U_W5 {ci_str(dw_full)} "
+             f"({verdict(dw_full)}) on full TEST; 2021+ U_MAE "
+             f"{ci_str(ci21.get('d_umae'))} ({verdict(ci21.get('d_umae'))}), U_W5 "
+             f"{ci_str(ci21.get('d_uw5'))} ({verdict(ci21.get('d_uw5'))}).")
     L.append("- The C32-gate column pair, the 2022 containment counts, and the "
              "earliness-vs-incumbent table above are the pre-registered conditioner "
              "reads. All nulls are printed.\n")
+
+    # ── ERRATA (post-outcome corrections toward the pre-registered definitions) ──
+    L.append("## Errata (post-outcome corrections toward the pre-registered "
+             "definitions — prompted by adversarial review)\n")
+    L.append("Both corrections move the code TO the pinned ruler/construction in the "
+             "script header; neither changes the pre-registration. They were made "
+             "AFTER outcomes were seen, prompted by an adversarial review, and are "
+             "disclosed here as errata rather than silently patched.\n")
+    L.append("**E1 — estimator conformance (per-name-first U_W5/U_MAE).** The inference "
+             "bootstrap computed `np.median` over the POOLED per-fire uplift rows. Each "
+             "per-fire `w5_ex` ∈ {100−base, −base}; for any name-agnostic hit rate below "
+             "50% the pooled median fire is a miss, so the U_W5 statistic collapsed to "
+             "≈ −base (here ≈ −7pp) MECHANICALLY, independent of the true uplift — which "
+             "is why the old inference U_W5 (≈ −7pp) contradicted this study's own "
+             "name-median grid figure (+28.63pp, unchanged). The registered ruler "
+             "defines U_W5 as a rate−rate and U_MAE as a name-median−base; the fix "
+             "collapses per-name FIRST (name signal-day rate for W5 = mean of `w5_ex`; "
+             "name-median mae63 for MAE) then takes the cross-name median — the exact "
+             "machinery COPIED from ptt_w1_timing_regrade.bootstrap. Month-cluster "
+             "resampling, seed 20260728, NB=1000 are unchanged.\n")
+    L.append("**E2 — falsifier pool decontamination.** The random-new-low (RNL) null "
+             "pool was ALL valid new-low bars — so 100% of the F1 fires sat inside their "
+             "own null, contaminating the F1−RNL falsifier toward 0. The placebo-mirror "
+             "house law requires a treatment-DISJOINT null: the pool is now the "
+             "complement — valid new-low bars that did NOT fire F1 (same eligibility "
+             "filter, same ±31td proximity window, same closes-only plane, same per-name "
+             "baselines). The full complement is used (not an equal-count subsample), so "
+             "the null's per-name conditional rate is exact.\n")
+    L.append("**Invalid-as-printed headline CIs (audit trail).** The pre-correction "
+             "inference table printed the estimator-artifact U_W5 CIs below; retained "
+             "struck through for the audit record, NOT to be cited.\n")
+    L.append("| quantity (E1-invalid) | full TEST (as printed) | 2021+ (as printed) |")
+    L.append("|---|---|---|")
+    L.append("| ~~F1 U_W5 (vs all-days null), no gate~~ | ~~[-7.74, -5.96] excludes 0 ↓~~ "
+             "| ~~[-7.73, -5.56] excludes 0 ↓~~ |")
+    L.append("| ~~F1 U_W5, C32 gate~~ | ~~[-7.90, -6.23] excludes 0 ↓~~ | "
+             "~~[-7.94, -5.63] excludes 0 ↓~~ |")
+    L.append("| ~~random-new-low U_W5 (contaminated null)~~ | ~~[-7.81, -5.34] excludes "
+             "0 ↓~~ | ~~[-7.88, -5.48] excludes 0 ↓~~ |")
+    L.append("\nU_MAE was less distorted than U_W5 by E1 (a continuous statistic, not a "
+             "collapsed binary), but the corrected inference table above re-reports it "
+             "under the same per-name-first collapse for consistency. The F1−complement "
+             "falsifier CIs (both metrics) also change under E2 (decontaminated pool).\n")
 
     # limitations
     L.append("## Limitations\n")
@@ -768,7 +829,8 @@ def main() -> None:
     L.append("- Yahoo close is total-return adjusted; the log-slope envelope is "
              "level-invariant so the adjustment nets out of the contraction test.")
     L.append("- ±31td proximity window is the §7 pin; long bear legs make 'the low' "
-             "window-relative. Random-new-low null shares this window (fair test).")
+             "window-relative. The disjoint-complement new-low null shares this window "
+             "(fair test).")
     L.append("- dv_halflife window derivation (M-final) rests on FIT-era down-day "
              "ACF; the lag-1 form (charter sketch) was degenerate and re-pinned "
              "pre-outcome (M1). W is a bucketed monotone map, not outcome-tuned.")
