@@ -83,12 +83,6 @@ on:
       - "tests/test_externalize_css.py"
       - "scripts/externalize_css.py"
       - "templates/**"
-      # inline-CSS externalization sweep: it must never touch the plain-copy HTML
-      # pairs (index.html/chat.html). Without these two entries a PR that edits
-      # only the sweep or its tests never triggers ci.yml, and the guard below is
-      # decorative — the trap that left 1135 suites run by no workflow (#3509).
-      - "scripts/externalize_css.py"
-      - "tests/test_externalize_css.py"
       # SEO meta rollout guard (D12A): template-source SEO head/desc contract.
       - "tests/test_seo_meta_rollout.py"
       - ".github/workflows/ci.yml"
@@ -3043,35 +3037,17 @@ jobs:
       # Same module, same class of post-render page rewrite: externalize_css lifts
       # inline <style> into hashed sheets via lib.pages.externalize_css_text and
       # writes through write_page. Also unwired until now.
-      - name: inline-CSS externalization units
-        run: python -m pytest tests/test_externalize_css.py -q
-
-  externalize-css:
-    if: ${{ false }}
-    # ui.template_site_sync, sweep side. The inline-CSS externalizer must skip the
-    # plain-copy HTML pairs (templates/<name>.html shipping byte-identically as
-    # site/<name>.html — index.html + chat.html). Every render lane runs
-    # `check_template_site_sync --fix` AFTER the sweeps and BEFORE `git add site/`,
-    # re-copying those pages FROM templates/, so a site-only lift is reverted before
-    # it reaches main — silently, every render, forever — while still minting the
-    # hash file, which the sweep's own prune can never reclaim (it looks referenced
-    # in the same run that creates the link). That accreted 3 dead stylesheets /
-    # 92,412 bytes, linked by zero pages, committed and shipped.
-    #
-    # Writing THROUGH to templates/ (the #3625 resolution for the data-base shim)
-    # is deliberately NOT the fix here: the shim is a tag, but externalizing moves
-    # 70KB of the landing page's CONTENT, leaving the hand-edited source holding
-    # only a <link> to a hash-named file in the derived tree. See the module
-    # docstrings in scripts/externalize_css.py.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: install minimal deps
-        run: pip install pytest pyyaml
-      - name: externalize-css sweep must skip the plain-copy pairs
+      #
+      # The suite also carries the ui.template_site_sync sweep-side guards (#3650):
+      # the sweep must SKIP the plain-copy HTML pairs (index.html/chat.html). Every
+      # lane runs `check_template_site_sync --fix` after the sweeps and before
+      # `git add site/`, re-copying those pages FROM templates/, so a site-only lift
+      # is reverted before it reaches main — while still minting the hash file, which
+      # the sweep's own prune can never reclaim (it looks referenced in the same run
+      # that creates the link). That accreted 3 dead stylesheets / 92,412 bytes.
+      # Writing THROUGH to templates/ is deliberately not the fix — see the module
+      # docstrings in scripts/externalize_css.py.
+      - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
 
   data-base-shim:
