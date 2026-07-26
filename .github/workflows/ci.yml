@@ -3139,7 +3139,7 @@ jobs:
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
           if [ -z "$FILES" ]; then
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ] && \
+            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
                git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
               # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
               # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
