@@ -34,6 +34,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -746,6 +747,76 @@ def test_append_row_if_new_requires_nightly_lane(tmp_path):
         os.environ["COLLECT_LANE"] = env_save
 
 
+def test_nightly_appends_state_log_but_rebuild_never_does(tmp_path):
+    """Trap guard, at the GOVERNOR level (the lane gate above covers
+    append_row_if_new in isolation).
+
+    Every time the store's staleness gate goes red, `--rebuild` on the nightly
+    path looks like the fix. It is not: governor.py skips the state_log append
+    under rebuild, and data/chronicle/state_log.jsonl is a FORWARD-ONLY capture
+    ledger of world_state.json's regime label — world_state carries no committed
+    dated history of its own, so a night that is never captured is unrecoverable
+    (history before W0 is W4 git-archaeology, not a re-run). Passing --rebuild
+    nightly would look green while silently freezing the ledger, and the
+    regime_flip adapter would stay permanently empty.
+
+    Pins both halves: nightly appends; --rebuild neither appends nor rewrites."""
+    from engine.chronicle.governor import build_and_write
+    from engine.chronicle import state_log
+    root = _make_fixture_root(tmp_path)
+    path = root / state_log.STATE_LOG_REL
+    now = datetime(2026, 7, 25, 3, 0, 0, tzinfo=timezone.utc)
+
+    env_save = _with_nightly_lane()
+    try:
+        # --rebuild on a virgin root: no append, ledger stays empty/absent.
+        r_rebuild = build_and_write(root=root, rebuild=True, now=now)
+        assert r_rebuild["state_appended"] is False
+        assert not path.exists() or path.read_text(encoding="utf-8").strip() == ""
+
+        # nightly (incremental): the capture row lands.
+        r_nightly = build_and_write(root=root, rebuild=False, now=now)
+        assert r_nightly["state_appended"] is True, (
+            "the nightly path no longer appends state_log.jsonl — the "
+            "forward-only regime ledger would freeze"
+        )
+        after_nightly = path.read_bytes()
+        assert len(state_log.read_state_log(root)) == 1
+
+        # a later --rebuild must neither append to nor rewrite that history.
+        later = datetime(2026, 7, 26, 3, 0, 0, tzinfo=timezone.utc)
+        r_rebuild2 = build_and_write(root=root, rebuild=True, now=later)
+        assert r_rebuild2["state_appended"] is False
+        assert path.read_bytes() == after_nightly, (
+            "--rebuild rewrote or truncated state_log.jsonl — forward-only "
+            "capture history is unrecoverable"
+        )
+    finally:
+        os.environ["COLLECT_LANE"] = env_save
+
+
+def test_nightly_workflow_does_not_pass_rebuild():
+    """...and pin it where the trap would actually be sprung.
+
+    The test above proves the governor's two modes behave correctly; it cannot
+    notice someone adding `--rebuild` to the nightly invocation, which is the
+    edit that freezes the ledger. daily.yml is the ONLY lane that advances
+    data/chronicle (masterplan §0 gate 5), so its invocation is the single line
+    that has to stay bare."""
+    wf = (ROOT / ".github" / "workflows" / "daily.yml").read_text(encoding="utf-8")
+    calls = [ln.strip() for ln in wf.splitlines()
+             if "scripts.build_chronicle" in ln or "build_chronicle.py" in ln]
+    assert calls, "daily.yml no longer builds the chronicle store at all (dead wire)"
+    offenders = [c for c in calls if "--rebuild" in c]
+    assert not offenders, (
+        "daily.yml invokes the chronicle build with --rebuild: that skips the "
+        "state_log append (governor.py), and state_log.jsonl is a forward-only "
+        "capture of world_state.json's regime label — a night never captured is "
+        "unrecoverable. The nightly invocation must stay bare. Offending: "
+        f"{offenders}"
+    )
+
+
 def test_capture_row_absent_world_state_is_gap(tmp_path):
     from engine.chronicle import state_log
     row, gap = state_log.capture_row(tmp_path)
@@ -951,6 +1022,126 @@ def test_vault_event_carries_site_link(tmp_path):
     )
     site = next(e["links"]["site"] for e in vault_events if e["links"]["site"])
     assert site.startswith("/research/") and site.endswith(".html")
+
+
+def test_vault_site_link_survives_a_minimal_dependency_set():
+    """links.site is stamped from scripts.build_research_pages.slug_map, imported
+    FAIL-SOFT by engine/chronicle/adapters.py — so any ImportError silently blanks
+    the site link on every vault event instead of going red. build_research_pages
+    used to import jinja2 at module scope, which the CI chronicle lane does not
+    install (`pip install pytest pandas numpy pyarrow pyyaml`): every vault event
+    shipped links.site=None there while passing on any dev box that had jinja2.
+
+    The site-link test above only catches that in a lane that happens to LACK
+    jinja2 — add jinja2 to those deps and the guard evaporates. This pins the real
+    invariant instead: the slug derivation is a pure function of the items list and
+    must import with no template engine present.
+    """
+    import importlib
+    from importlib.abc import MetaPathFinder
+
+    class _Blocked(MetaPathFinder):
+        def find_spec(self, name, path=None, target=None):
+            if name == "jinja2" or name.startswith("jinja2."):
+                raise ImportError("jinja2 blocked (simulating the CI minimal-deps lane)")
+            return None
+
+    blocker = _Blocked()
+    saved = {k: v for k, v in sys.modules.items() if k == "jinja2" or k.startswith("jinja2.")}
+    for name in saved:
+        del sys.modules[name]
+    for name in ("scripts.build_research_pages", "engine.research_vault.slugs"):
+        sys.modules.pop(name, None)
+    sys.meta_path.insert(0, blocker)
+    try:
+        item = [{"id": "test-item-1", "title": "Semis positioning stretched"}]
+        # The path the ADAPTER actually takes: a stdlib-only leaf module.
+        pure = importlib.import_module("engine.research_vault.slugs")
+        assert pure.slug_map(item).get("test-item-1"), "leaf slug_map returned no slug"
+        # ...and the renderer's re-export, which must not drift from it and whose
+        # module scope must therefore stay jinja2-free too.
+        mod = importlib.import_module("scripts.build_research_pages")
+        assert mod.slug_map(item) == pure.slug_map(item), "re-export drifted from the leaf module"
+    finally:
+        sys.meta_path.remove(blocker)
+        for name in ("scripts.build_research_pages", "engine.research_vault.slugs"):
+            sys.modules.pop(name, None)
+        sys.modules.update(saved)
+
+
+def test_slug_home_stays_stdlib_only():
+    """The jinja2 blocker above pins ONE dependency by name; this pins the class.
+
+    engine/research_vault/slugs.py exists so the chronicle adapter's fail-soft
+    import cannot be broken by whatever the page renderer happens to import at
+    module scope. That only holds while the leaf module itself stays light — a
+    third-party import added here re-creates the exact defect it was extracted
+    to remove, and the fail-soft would hide it again.
+
+    Walks the whole in-package import closure, not just slugs.py: a relative
+    import is only as light as what IT imports, and `engine/research_vault/
+    __init__.py` executes on the way in too. Following those hops is the
+    difference between pinning a file and pinning the invariant."""
+    import ast
+    pkg_dir = ROOT / "engine" / "research_vault"
+    pending = [("engine.research_vault.slugs", pkg_dir / "slugs.py")]
+    seen, third_party = set(), {}
+
+    while pending:
+        mod_name, path = pending.pop()
+        if mod_name in seen or not path.exists():
+            continue
+        seen.add(mod_name)
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            targets = []
+            if isinstance(node, ast.Import):
+                targets = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                if node.level:  # relative -> stays in engine.research_vault, follow it
+                    for hop in ([node.module] if node.module else [a.name for a in node.names]):
+                        pending.append((f"engine.research_vault.{hop}", pkg_dir / f"{hop.split('.')[0]}.py"))
+                    continue
+                targets = [node.module] if node.module else []
+            for t in targets:
+                root_mod = (t or "").split(".")[0]
+                if root_mod and root_mod not in sys.stdlib_module_names:
+                    third_party.setdefault(root_mod, mod_name)
+
+    # engine/research_vault/__init__.py runs on any import into the package.
+    pending_init = pkg_dir / "__init__.py"
+    if pending_init.exists():
+        for node in ast.walk(ast.parse(pending_init.read_text(encoding="utf-8"))):
+            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                     else ([node.module] if isinstance(node, ast.ImportFrom) and not node.level
+                           and node.module else []))
+            for t in names:
+                root_mod = (t or "").split(".")[0]
+                if root_mod and root_mod not in sys.stdlib_module_names:
+                    third_party.setdefault(root_mod, "engine.research_vault.__init__")
+
+    assert not third_party, (
+        f"the slug import closure must stay stdlib-only — the chronicle adapter's "
+        f"fail-soft import silently blanks links.site when it is not. Found: "
+        f"{ {k: f'imported by {v}' for k, v in sorted(third_party.items())} }"
+    )
+
+
+def test_vault_adapter_reports_a_gap_when_slug_map_is_unavailable(tmp_path, monkeypatch):
+    """The fail-soft must never be SILENT. As a bare log.debug, a blanked
+    links.site was indistinguishable from "this catalog legitimately has no
+    pages" — which is how the defect survived long enough to be committed into
+    the store. The null has to reach the manifest as a gap note (house
+    epistemics: nulls printed, not hidden)."""
+    from engine.chronicle.adapters import adapt_research_vault
+    root = _make_fixture_root(tmp_path)
+
+    # `sys.modules[name] = None` makes `from name import x` raise ImportError.
+    monkeypatch.setitem(sys.modules, "engine.research_vault.slugs", None)
+
+    events, gap = adapt_research_vault(root)
+    assert events, "adapter must still emit events when slug_map is unavailable"
+    assert all(e["links"]["site"] is None for e in events)
+    assert gap and "links.site unavailable" in gap, gap
 
 
 # ---------------------------------------------------------------------------
