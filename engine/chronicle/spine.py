@@ -37,6 +37,28 @@ log = logging.getLogger(__name__)
 
 EVENTS_REL = Path("data") / "chronicle" / "events.jsonl"
 
+# The EXACT file closure a ``--rebuild`` reads, repo-relative.
+# **ADDING AN ADAPTER REQUIRES EXTENDING THIS TUPLE.** Two things key off it:
+# ``manifest._source_fingerprints`` records a per-file sha256 vintage for every
+# entry (the vintage-attested gate 1), and the gate-1 suite copies exactly this
+# list into its scratch root — so an unlisted source surfaces as a byte mismatch
+# the first time the vintage-matched byte gate arms, never as a quiet pass.
+#
+# data/neuralweb/world_state.json is deliberately ABSENT: its only reader is the
+# incremental nightly's state_log capture (``state_log.capture_row``), and
+# --rebuild skips that append entirely (state_log.jsonl is a forward ledger —
+# nightly is its sole advancer), so world_state can never move a rebuilt byte.
+# Attesting it would stand the byte gate down on ~5 commits/week of a file the
+# rebuild does not read.
+REBUILD_SOURCES: tuple[str, ...] = (
+    "data/research_vault/catalog.json",
+    "data/prophet/ledger.jsonl",
+    "data/release_forecast/forward_ledger.jsonl",
+    "data/earnings/earnings.parquet",
+    "data/risk_radar/forward_log.jsonl",
+    "data/chronicle/state_log.jsonl",
+)
+
 _SOURCE_ADAPTERS: tuple[tuple[str, object], ...] = (
     ("research_vault", adapters.adapt_research_vault),
     ("prophet_ledger", adapters.adapt_prophet_ledger),

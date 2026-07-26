@@ -11,6 +11,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+from . import spine  # no cycle: spine does not import manifest
+
 
 def _display_path(path: Path, repo: Path) -> str:
     """Repo-relative path string for the committed manifest (never an absolute
@@ -39,24 +41,40 @@ def _ledger_stats(path: Path, repo: Path) -> dict:
 
 
 def _source_fingerprints(repo: Path) -> dict:
-    """sha256 of each LIVE-SNAPSHOT source the spine rebuilds from.
+    """sha256 vintage of EVERY source the spine's rebuild closure reads.
 
-    The research-vault catalog is committed HOURLY by its own lane, so the
-    committed events.jsonl is only byte-reproducible against the exact catalog
-    vintage it was built from. Recording that vintage here lets the CI
-    reproducibility gate distinguish "store is genuinely broken" from "the
-    catalog advanced past the store's build" (expected between regen commits).
-    Fail-soft: an absent/unreadable source records null, never raises.
+    The committed events.jsonl is byte-reproducible only against the exact
+    vintage of all of its sources, so recording each one lets the CI
+    reproducibility gate distinguish "the store is genuinely broken" from "a
+    source advanced past the store's build" (expected between regen commits) —
+    for whichever source actually moved.
+
+    Introduced catalog-only, because the research-vault catalog is the one
+    INTRADAY-advanced source (~7 commits/day) and so was the incident's trigger.
+    That was a latent red rather than a gate: the rebuild reads all six, the
+    other five advance ~23x/week combined, and any of them moving while the
+    catalog stood still left the attested fingerprint MATCHING — arming strict
+    byte-equality against a legitimately stale store. It had not fired yet only
+    because the committed manifest predated this key, leaving `recorded` null so
+    the gate fell through its own permissive branch. Verified by mutation: stamp
+    the catalog fingerprint, append one prophet ledger row, gate 1 goes red with
+    no chronicle change involved.
+
+    Keyed by repo-relative path (not a nickname) so the recording and the gate
+    can never disagree about what a rebuild reads. Fail-soft: an absent or
+    unreadable source records null, never raises — a null reads as "vintage
+    unknowable" at the gate, which takes the permissive branch.
     """
     out: dict[str, str | None] = {}
-    catalog = repo / "data" / "research_vault" / "catalog.json"
-    try:
-        out["research_vault_catalog"] = (
-            "sha256:" + hashlib.sha256(catalog.read_bytes()).hexdigest()
-            if catalog.exists() else None
-        )
-    except Exception:  # noqa: BLE001
-        out["research_vault_catalog"] = None
+    for rel in spine.REBUILD_SOURCES:
+        path = repo / rel
+        try:
+            out[rel] = (
+                "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+                if path.exists() else None
+            )
+        except Exception:  # noqa: BLE001
+            out[rel] = None
     return out
 
 

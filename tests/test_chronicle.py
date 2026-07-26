@@ -1346,6 +1346,11 @@ def test_build_weekly_trim_loop_fires_and_notes_when_over_budget():
 # state, where data/chronicle/ sat frozen at its hand-run seed).
 _MANIFEST_MAX_AGE_DAYS = 21
 
+# The rebuild closure, shared with engine.chronicle.manifest's fingerprint
+# stamper so the gate and the attestation can never disagree about what a
+# rebuild reads. Adding an adapter means extending this tuple in spine.py.
+from engine.chronicle.spine import REBUILD_SOURCES  # noqa: E402
+
 
 # ---------------------------------------------------------------------------
 # Gate 1 companions: the two cadence-immune teeth (#3648) that #3660 dropped
@@ -1458,15 +1463,9 @@ def test_rebuild_from_committed_sources_reproduces_committed_store():
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
-        for rel in (
-            "data/research_vault/catalog.json",
-            "data/prophet/ledger.jsonl",
-            "data/release_forecast/forward_ledger.jsonl",
-            "data/earnings/earnings.parquet",
-            "data/risk_radar/forward_log.jsonl",
-            "data/neuralweb/world_state.json",
-            "data/chronicle/state_log.jsonl",
-        ):
+        # exactly the closure the rebuild reads, shared with the manifest's
+        # fingerprint stamper so the two can never disagree (spine.REBUILD_SOURCES)
+        for rel in REBUILD_SOURCES:
             src = ROOT / rel
             if src.exists():
                 dst = tmp_root / rel
@@ -1477,40 +1476,122 @@ def test_rebuild_from_committed_sources_reproduces_committed_store():
         assert not result.get("error"), result
         rebuilt_bytes = (tmp_root / "data" / "chronicle" / "events.jsonl").read_bytes()
 
-    # Vintage guard: the research-vault catalog is committed HOURLY by its own
-    # lane, so between chronicle regen commits the checkout's catalog can be
-    # NEWER than the one the committed store was built from. That drift is the
-    # catalog lane doing its job, not a broken store — so byte identity is
-    # enforced exactly when the manifest ATTESTS the matching catalog vintage
-    # (source_fingerprints, stamped by every governor run once this code is
-    # live). On a recorded mismatch, OR when the manifest predates fingerprints
-    # entirely (vintage unknowable), enforce the append-only invariant instead:
-    # a rebuild may only ADD events, never lose one.
-    committed_manifest = ROOT / "data" / "chronicle" / "manifest.json"
-    catalog_path = ROOT / "data" / "research_vault" / "catalog.json"
-    vintage_drift = False
-    if committed_manifest.exists() and catalog_path.exists():
-        try:
-            recorded = (json.loads(committed_manifest.read_text(encoding="utf-8"))
-                        .get("source_fingerprints") or {}).get("research_vault_catalog")
-            current = "sha256:" + hashlib.sha256(catalog_path.read_bytes()).hexdigest()
-            vintage_drift = recorded != current   # unrecorded (None) => unknowable => drift path
-        except Exception:  # noqa: BLE001 — unreadable manifest -> strict gate below
-            vintage_drift = False
+    # Vintage guard. Each source is committed by its OWN lane on its own cadence
+    # (the research-vault catalog intraday at ~7 commits/day, the rest
+    # nightly-ish), so between chronicle regen commits the checkout's sources can
+    # be NEWER than the ones the committed store was built from. That drift is
+    # those lanes doing their job, not a broken store — so byte identity is
+    # enforced exactly when the manifest ATTESTS a matching vintage for EVERY
+    # source in the rebuild closure. On any recorded mismatch, or when a vintage
+    # is unknowable (manifest predates fingerprints, or a source is absent),
+    # enforce the append-only invariant instead: a rebuild may only ADD events,
+    # never lose one.
+    #
+    # "EVERY source" is load-bearing. This guard originally checked
+    # research_vault_catalog alone, so a commit advancing any of the other five
+    # left the catalog fingerprint matching, drove the gate down its strict
+    # branch against a legitimately-stale store, and reddened unrelated PRs —
+    # the same failure the attestation was introduced to end. Verified by
+    # mutation: stamp the catalog fingerprint, append one prophet ledger row, and
+    # the single-source form goes red with no chronicle change involved. It read
+    # as dormant only because the committed manifest predated the fingerprint
+    # key, so `recorded` was null and the gate fell through this permissive
+    # branch on every run — green because the strict branch never executed.
+    drifted: dict[str, str] = {}
+    try:
+        recorded = (json.loads((ROOT / "data" / "chronicle" / "manifest.json")
+                               .read_text(encoding="utf-8")).get("source_fingerprints") or {})
+    except Exception:  # noqa: BLE001 — unreadable manifest -> every vintage unknowable
+        recorded = {}
+    for rel in REBUILD_SOURCES:
+        path = ROOT / rel
+        was = recorded.get(rel)
+        if was is None:
+            drifted[rel] = "vintage not attested by the manifest"
+        elif not path.exists():
+            drifted[rel] = "source absent from this checkout"
+        elif was != "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest():
+            drifted[rel] = "advanced since the store was built"
 
-    if vintage_drift:
+    if drifted:
         committed_ids = {json.loads(line)["id"]
                          for line in committed_bytes.decode("utf-8").splitlines() if line.strip()}
         rebuilt_ids = {json.loads(line)["id"]
                        for line in rebuilt_bytes.decode("utf-8").splitlines() if line.strip()}
         missing = committed_ids - rebuilt_ids
         assert not missing, (
-            "catalog advanced past the committed store's vintage (expected between "
-            f"regen commits), but a rebuild LOST {len(missing)} committed event(s) — "
-            f"append-only violated: {sorted(missing)[:5]}"
+            "source(s) advanced past the committed store's vintage (expected between "
+            f"regen commits: {sorted(drifted)}), but a rebuild LOST {len(missing)} "
+            f"committed event(s) — append-only violated: {sorted(missing)[:5]}"
         )
     else:
         assert rebuilt_bytes == committed_bytes, (
-            "rebuilding from the committed sources did not reproduce the committed "
-            "events.jsonl byte-for-byte — the committed store is stale (gate 1)"
+            "every rebuild source is attested at the committed store's own build "
+            "vintage, yet a rebuild did NOT reproduce events.jsonl byte-for-byte — so "
+            "this is a genuinely stale or hand-maintained store, not lane cadence. "
+            "Heal: python -m scripts.build_chronicle --rebuild"
         )
+
+
+def test_vintage_guard_arms_on_full_closure_not_just_the_catalog():
+    """The arming condition itself needs coverage, not just the assertion it guards.
+
+    A conditioned gate has two failure modes a green run cannot tell apart: the
+    condition held and the assertion passed, or the condition never held and the
+    assertion never ran. Gate 1 above spent its whole life in the second state —
+    the committed manifest predates source_fingerprints, so `recorded` is null,
+    every source reads as unknowable, and the strict byte branch has never
+    executed on a real checkout. That is exactly how attesting 1 of 6 sources
+    survived review: reading the code and running the suite both said "fine".
+
+    So this exercises the arming logic directly, on a synthetic manifest, and
+    pins the property that broke: a fingerprint set covering only SOME of the
+    closure must NOT arm. No committed artifact is touched.
+    """
+    def drift_keys(recorded: dict) -> set[str]:
+        """Mirror of the gate's arming decision, over a supplied fingerprint set."""
+        out = set()
+        for rel in REBUILD_SOURCES:
+            path = ROOT / rel
+            was = recorded.get(rel)
+            if was is None or not path.exists():
+                out.add(rel)
+            elif was != "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest():
+                out.add(rel)
+        return out
+
+    from engine.chronicle.manifest import _source_fingerprints
+    full = _source_fingerprints(ROOT)
+
+    # the stamper must cover the closure exactly — under-attestation is the defect
+    assert set(full) == set(REBUILD_SOURCES), (
+        f"_source_fingerprints stamped {sorted(full)} but the rebuild closure is "
+        f"{sorted(REBUILD_SOURCES)} — the manifest would under-attest, and the gate "
+        "would arm while blind to whichever source is missing."
+    )
+
+    # a complete, matching attestation arms (no drift)
+    assert drift_keys(full) == set(), (
+        "a fingerprint set stamped from the live tree should report zero drift"
+    )
+
+    # the historical defect: catalog-only attestation must NOT arm. Every other
+    # source reads as unattested, so the gate stays on its permissive branch
+    # instead of demanding byte equality it cannot legitimately get.
+    catalog_only = {"data/research_vault/catalog.json": full["data/research_vault/catalog.json"]}
+    unattested = drift_keys(catalog_only)
+    assert unattested == set(REBUILD_SOURCES) - {"data/research_vault/catalog.json"}, (
+        f"catalog-only attestation should leave the other five sources unattested, got "
+        f"{sorted(unattested)}"
+    )
+    assert unattested, (
+        "catalog-only attestation reported zero drift — the gate would arm strict "
+        "byte-equality while five of six sources are unattested and free to advance. "
+        "This is the defect that reddened unrelated PRs; it must never report clean."
+    )
+
+    # and a stale vintage on ANY single source is enough to disarm
+    for rel in REBUILD_SOURCES:
+        stale = dict(full)
+        stale[rel] = "sha256:" + "0" * 64
+        assert rel in drift_keys(stale), f"a stale vintage on {rel} failed to disarm the gate"

@@ -1686,13 +1686,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # jinja2 is deliberately NOT installed here, and the omission is
+      # load-bearing. The M8 links.site derivation resolves slugs through
+      # engine.research_vault.slugs, which engine/chronicle/adapters.py imports
+      # FAIL-SOFT — so while that derivation still lived in the page renderer
+      # (jinja2 at module scope), every vault event silently shipped
+      # links.site=None in exactly this venv while passing on any dev box that
+      # had jinja2. This line used to install jinja2 to make that red go away,
+      # but #3648 and #3669 fixed the ROOT: jinja2 moved off module scope, and
+      # the slug derivation moved into a stdlib-only engine module. Keeping the
+      # lane minimal is now strictly stronger — it exercises the
+      # no-template-engine path for real on every run, so a regression that drags
+      # a renderer back into the adapter's import closure goes red HERE instead
+      # of hiding behind an installed package. The invariant is separately pinned
+      # by test_vault_site_link_survives_a_minimal_dependency_set, which blocks
+      # the jinja2 import explicitly and so holds whatever this lane installs.
+      # Verified: tests/test_chronicle.py is green with these deps alone.
       - name: install minimal deps
-        # jinja2 is REQUIRED here: the M8 links.site derivation imports
-        # scripts/build_research_pages (jinja2 at module level); without it the
-        # rebuild fail-softs to link-less events and both the links test and the
-        # byte-reproducibility gate go red in exactly this venv while staying
-        # green in any full env (diagnosed 2026-07-26).
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
+        run: pip install pytest pandas numpy pyarrow pyyaml
       - name: chronicle engine tests
         run: python -m pytest tests/test_chronicle.py -q
 
