@@ -5,10 +5,26 @@
  * then a slow dissolve back into the MASTERMIND brand.
  *
  * No LLM. Every remark is assembled from the engine data already on the page
- * (#globe-data: per-region regime quadrant, index direction, risk read, breadth) plus
- * light per-visit memory. One idea has many phrasings; topics are mood-gated to the real
- * tape; nothing repeats within a day; repeat visits are recalled and get shorter, fresher
- * reads — so it feels like something that watches the world and remembers you, not a loop.
+ * (#globe-data: per-region regime quadrant, index direction, risk read, breadth — plus
+ * the newest "What changed" alert and the Bitcoin Vector chip) and light per-visit
+ * memory. One idea has many phrasings; topics are mood-gated to the real tape; nothing
+ * repeats within a day; repeat visits are recalled and get shorter, fresher reads.
+ *
+ * It also knows what day it is:
+ *  • WEEKENDS (viewer's local clock) — markets are closed, so the desk stops pretending
+ *    the tape is live: Friday's close is read AS Friday's close, the only open market
+ *    (crypto) gets its beat, and the nudge is about rest, sun, and next week's plan.
+ *  • HOLIDAYS — the viewer's country is guessed from their timezone (refined by
+ *    navigator.language); each country carries its own holiday table (fixed dates,
+ *    nth-weekday rules, Easter computus, and lunar lookup tables for 2026–28). A holiday
+ *    greeting fires ONCE per occurrence (localStorage mm.hub.hols) — never nagged twice.
+ *
+ * The viewer's HOME market drives the tape/mood/regime beats: a Shanghai visitor hears
+ * about the A-share board, not the S&P. Chinese copy is written natively (红涨绿跌 —
+ * in zh, red means up; 端午安康, not 端午快乐; no "happy" Qingming), not translated.
+ *
+ * Test seam: localStorage.setItem('mm.hub.fakeNow','2026-12-25T10:00') pins the clock
+ * for manual verification of weekend/holiday paths. Dev-only; absent in normal use.
  */
 (function () {
   var hdr = document.querySelector('header.h'); if (!hdr) return;
@@ -41,10 +57,15 @@
   name = name.replace(/[<>]/g, '').slice(0, 24);
   if (name && name === name.toLowerCase()) name = name.charAt(0).toUpperCase() + name.slice(1);
 
+  /* ---- the clock (with a dev seam so holiday/weekend paths are testable) --- */
+  var d0 = new Date();
+  try { var fk = localStorage.getItem('mm.hub.fakeNow'); if (fk) { var fkd = new Date(fk); if (!isNaN(fkd)) d0 = fkd; } } catch (e) {}
+  var dow = d0.getDay(), wknd = (dow === 0 || dow === 6);
+
   /* ---- ever-signed-in-before? (greeting flavour) + visits today (recall) --- */
   var everKey = 'mm.hub.welcomed', firstEver = false;
   try { firstEver = !localStorage.getItem(everKey); localStorage.setItem(everKey, '1'); } catch (e) {}
-  var d0 = new Date(), today = d0.getFullYear() + '-' + (d0.getMonth() + 1) + '-' + d0.getDate();
+  var today = d0.getFullYear() + '-' + (d0.getMonth() + 1) + '-' + d0.getDate();
   var MEM; try { MEM = JSON.parse(localStorage.getItem('mm.hub.convo') || 'null'); } catch (e) {}
   if (!MEM || MEM.day !== today) MEM = { day: today, visits: 0, seen: [], mids: [], lastSeen: 0 };
   if (!MEM.mids) MEM.mids = [];
@@ -61,32 +82,207 @@
   function keep(id) { if (MEM.seen.indexOf(id) < 0) MEM.seen.push(id); }
   function save() { try { localStorage.setItem('mm.hub.convo', JSON.stringify(MEM)); } catch (e) {} }
 
-  /* ---- today's market context, read straight off #globe-data -------------- */
+  /* ---- where is the viewer? tz → country (refined by navigator.language) ---
+   * Best-effort only, and it degrades to nothing: an unknown place gets no holiday
+   * beat and the US board as its home read — never a wrong-country greeting. */
+  function guessCC() {
+    var tz = '', lg = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    try { lg = (navigator.language || '').toLowerCase(); } catch (e) {}
+    if (/Shanghai|Chongqing|Urumqi|Harbin|Kashgar|Chungking|Beijing/.test(tz)) return 'CN';
+    if (/Hong_Kong|Macau/.test(tz)) return 'HK';
+    if (/Taipei/.test(tz)) return 'TW';
+    if (/Tokyo/.test(tz)) return 'JP';
+    if (/Seoul/.test(tz)) return 'KR';
+    if (/Singapore/.test(tz)) return 'SG';
+    if (/Kolkata|Calcutta/.test(tz)) return 'IN';
+    if (/^Australia\//.test(tz)) return 'AU';
+    if (/Auckland|Chatham/.test(tz)) return 'NZ';
+    if (/London/.test(tz)) return 'GB';
+    if (/Dublin/.test(tz)) return 'IE';
+    if (/Paris/.test(tz)) return 'FR';
+    if (/Berlin|Busingen|Vienna|Zurich/.test(tz)) return 'DE';
+    if (/Toronto|Montreal|Vancouver|Edmonton|Winnipeg|Halifax|Regina|St_Johns|Moncton|Yellowknife|Whitehorse|Iqaluit/.test(tz)) return 'CA';
+    if (/Honolulu/.test(tz)) return 'US';
+    if (/^America\//.test(tz)) {
+      if (/-ca\b/.test(lg)) return 'CA';
+      if (/New_York|Chicago|Denver|Los_Angeles|Phoenix|Detroit|Anchorage|Boise|Indiana|Kentucky|Juneau|Sitka|Menominee|North_Dakota|Metlakatla|Adak/.test(tz)) return 'US';
+      return null;                       // rest of the Americas: no holiday table, US board
+    }
+    if (/^Europe\//.test(tz)) return 'EU';   // generic EU: Jan 1 / May 1 / Christmas only
+    if (/^zh\b/.test(lg)) return /-tw/.test(lg) ? 'TW' : /-hk|-mo/.test(lg) ? 'HK' : 'CN';
+    return null;
+  }
+  var CC = guessCC();
+
+  /* ---- the holiday calendar -----------------------------------------------
+   * Rules: [m,d] fixed · {w:[m,weekday,n]} nth weekday (n:-1 = last) · {e:days}
+   * offset from Easter Sunday (Gregorian computus) · {t:{year:'MM-DD'}} lookup for
+   * lunar/observed dates (2026–28 baked in; an absent year = no greeting, never a
+   * wrong one). Greetings are written once per holiday, market-closure phrased in. */
+  function easterMD(y) {
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4,
+        f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30,
+        i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7,
+        m = Math.floor((a + 11 * h + 22 * l) / 451), mo = Math.floor((h + l - 7 * m + 114) / 31);
+    return [mo, ((h + l - 7 * m + 114) % 31) + 1];
+  }
+  function nthDow(y, m, wd, n) {
+    if (n > 0) { var f = new Date(y, m - 1, 1).getDay(); return 1 + ((wd - f + 7) % 7) + (n - 1) * 7; }
+    var last = new Date(y, m, 0); return last.getDate() - ((last.getDay() - wd + 7) % 7);
+  }
+  function ruleMD(rule, y) {
+    if (rule.length) return [rule[0], rule[1]];
+    if (rule.w) return [rule.w[0], nthDow(y, rule.w[0], rule.w[1], rule.w[2])];
+    if (rule.e != null) { var em = easterMD(y), dt = new Date(y, em[0] - 1, em[1] + rule.e); return [dt.getMonth() + 1, dt.getDate()]; }
+    if (rule.t) { var s = rule.t[y]; if (!s) return null; var p = s.split('-'); return [+p[0], +p[1]]; }
+    return null;
+  }
+  var HOL = {
+    newyear:      [[1, 1], "Happy New Year — new year, clean slate. Markets are closed today.", '元旦快乐！新的一年，新的开始。今天休市。'],
+    christmas:    [[12, 25], "Merry Christmas — the market's closed, and so am I. Enjoy the day.", '圣诞快乐！市场休市，好好过节。'],
+    boxing:       [[12, 26], 'Happy Boxing Day — still closed, still quiet. Enjoy it.', '节礼日快乐，市场继续休市，继续清净。'],
+    goodfri:      [{ e: -2 }, "It's Good Friday — markets are closed for the long weekend.", '耶稣受难日，市场休市——是个长周末。'],
+    eastermon:    [{ e: 1 }, "Easter Monday — the market's still closed. Enjoy the long weekend.", '复活节星期一，还在休市。好好过长周末。'],
+    may1:         [[5, 1], 'Happy May Day — even the market takes today off.', '五一快乐！劳动节这天，连市场都不劳动。'],
+    cnyeve:       [{ t: { 2026: '2-16', 2027: '2-5', 2028: '1-25' } }, "It's Lunar New Year's Eve — go enjoy the reunion dinner. The market can wait till next year.", '除夕快乐！今晚好好吃年夜饭，行情的事，明年再说。'],
+    cny:          [{ t: { 2026: '2-17', 2027: '2-6', 2028: '1-26' } }, 'Happy Lunar New Year — markets are closed, red envelopes are open.', '新年快乐，恭喜发财！市场休市，红包开市。'],
+    qingming:     [{ t: { 2026: '4-5', 2027: '4-5', 2028: '4-4' } }, "It's the Qingming break — markets are closed today. If the weather's kind, take a walk.", '清明假期，市场休市。天气好的话，出去走走。'],
+    duanwu:       [{ t: { 2026: '6-19', 2027: '6-9', 2028: '5-28' } }, 'Happy Dragon Boat Festival — markets are closed today. Go find a zongzi.', '端午安康！市场休市，记得吃粽子。'],
+    zhongqiu:     [{ t: { 2026: '9-25', 2027: '9-15', 2028: '10-3' } }, "Happy Mid-Autumn Festival — markets closed, moon's full. Head home early.", '中秋快乐，人月两团圆。今天休市，早点回家。'],
+    guoqing:      [[10, 1], 'Happy National Day — the long holiday is on, markets are closed.', '国庆快乐！长假开始，市场休市，好好休息。'],
+    mlk:          [{ w: [1, 1, 3] }, "It's MLK Day — US markets are closed. See you tomorrow.", '马丁·路德·金纪念日，美股休市一天。'],
+    presidents:   [{ w: [2, 1, 3] }, "It's Presidents' Day — US markets are closed.", '总统日，美股休市。'],
+    memorial:     [{ w: [5, 1, -1] }, "It's Memorial Day — markets are closed for the long weekend.", '阵亡将士纪念日，美股休市，长周末。'],
+    juneteenth:   [[6, 19], "It's Juneteenth — US markets are closed today.", '六月节，美股休市一天。'],
+    july4:        [[7, 4], 'Happy Fourth of July — markets are closed. Go find the fireworks.', '美国独立日快乐！美股休市，看烟花去。'],
+    labor:        [{ w: [9, 1, 1] }, "Happy Labor Day — the market's taking the day off too.", '劳动节快乐！市场今天也带薪休假。'],
+    thanksgiving: [{ w: [11, 4, 4] }, 'Happy Thanksgiving — markets are closed. Family first today.', '感恩节快乐！美股休市，今天家人优先。'],
+    familyday:    [{ w: [2, 1, 3] }, "It's Family Day — Canadian markets are closed. The clue is in the name.", '加拿大家庭日，多伦多休市。节日名字已经把今天安排明白了。'],
+    victoria:     [{ t: { 2026: '5-18', 2027: '5-24', 2028: '5-22' } }, "It's Victoria Day — Canadian markets are closed for the long weekend.", '维多利亚日，加拿大休市，长周末。'],
+    canadaday:    [[7, 1], 'Happy Canada Day — markets are closed. Enjoy it.', '加拿大国庆快乐！市场休市。'],
+    civic:        [{ w: [8, 1, 1] }, "It's the civic holiday — Toronto's closed. A long weekend in August: take it.", '八月公民假日，多伦多休市。夏天的长周末，值得好好过。'],
+    labourca:     [{ w: [9, 1, 1] }, "Happy Labour Day — the market's taking the day off too.", '劳动节快乐！市场今天也放假。'],
+    thanksca:     [{ w: [10, 1, 2] }, 'Happy Thanksgiving — Canadian markets are closed today.', '加拿大感恩节快乐！市场休市。'],
+    mayday:       [{ w: [5, 1, 1] }, "It's the early May bank holiday — London's closed. Enjoy the long weekend.", '五月初的银行假日，伦敦休市。长周末愉快。'],
+    springbank:   [{ w: [5, 1, -1] }, "It's the spring bank holiday — London's closed today.", '春季银行假日，伦敦今天休市。'],
+    summerbank:   [{ w: [8, 1, -1] }, "It's the summer bank holiday — London's closed. Squeeze the last out of summer.", '夏末银行假日，伦敦休市。抓住夏天的尾巴。'],
+    australiaday: [[1, 26], "Happy Australia Day — the ASX is closed. It's summer there; go enjoy it.", '澳大利亚国庆日快乐！澳股休市。'],
+    anzac:        [[4, 25], "It's Anzac Day — markets are closed in Australia.", '澳新军团日，澳洲市场休市。'],
+    waitangi:     [[2, 6], "It's Waitangi Day — markets are closed in New Zealand.", '怀唐伊日，新西兰休市。'],
+    stpatrick:    [[3, 17], "Happy St Patrick's Day — Dublin's closed. The one day green is mandatory.", '圣帕特里克节快乐！都柏林休市。'],
+    hksar:        [[7, 1], "It's HKSAR Establishment Day — Hong Kong markets are closed.", '香港回归纪念日，港股休市。'],
+    t228:         [[2, 28], 'Peace Memorial Day — Taiwan markets are closed today.', '和平纪念日，台股休市一天。'],
+    childtomb:    [[4, 4], "It's the Children's Day / Tomb-Sweeping break — Taiwan markets are closed.", '儿童节、清明连假，台股休市。'],
+    double10:     [[10, 10], 'Happy Double Tenth — Taiwan markets are closed today.', '双十节快乐！台股休市。'],
+    goldenweek:   [[5, 3], "It's Golden Week in Japan — Tokyo's closed. Enjoy the break.", '日本黄金周，东京休市。好好休息。'],
+    liberation:   [[8, 15], "It's Liberation Day in Korea — the KOSPI's closed today.", '韩国光复节，首尔休市。'],
+    sgnational:   [[8, 9], 'Happy National Day, Singapore — markets are closed today.', '新加坡国庆快乐！市场休市。'],
+    republic:     [[1, 26], 'Happy Republic Day — Indian markets are closed today.', '印度共和国日快乐！市场休市。'],
+    indep:        [[8, 15], 'Happy Independence Day — Indian markets are closed today.', '印度独立日快乐！市场休市。'],
+    gandhi:       [[10, 2], "It's Gandhi Jayanti — Indian markets are closed today.", '甘地诞辰纪念日，印度市场休市。'],
+    diwali:       [{ t: { 2026: '11-8', 2027: '10-29' } }, 'Happy Diwali — may the year ahead glow.', '排灯节快乐！愿新的一年亮亮堂堂。'],
+    unity:        [[10, 3], "It's German Unity Day — Frankfurt's closed today.", '德国统一日，法兰克福休市。'],
+    bastille:     [[7, 14], 'Happy Bastille Day — Paris is closed today.', '法国国庆日快乐！巴黎休市。']
+  };
+  var HOLCC = {
+    US: ['newyear', 'mlk', 'presidents', 'goodfri', 'memorial', 'juneteenth', 'july4', 'labor', 'thanksgiving', 'christmas'],
+    CA: ['newyear', 'familyday', 'goodfri', 'victoria', 'canadaday', 'civic', 'labourca', 'thanksca', 'christmas', 'boxing'],
+    GB: ['newyear', 'goodfri', 'eastermon', 'mayday', 'springbank', 'summerbank', 'christmas', 'boxing'],
+    IE: ['newyear', 'stpatrick', 'eastermon', 'christmas', 'boxing'],
+    AU: ['newyear', 'australiaday', 'goodfri', 'anzac', 'christmas', 'boxing'],
+    NZ: ['newyear', 'waitangi', 'goodfri', 'anzac', 'christmas', 'boxing'],
+    CN: ['newyear', 'cnyeve', 'cny', 'qingming', 'may1', 'duanwu', 'zhongqiu', 'guoqing'],
+    HK: ['newyear', 'cnyeve', 'cny', 'qingming', 'goodfri', 'may1', 'duanwu', 'hksar', 'zhongqiu', 'guoqing', 'christmas'],
+    TW: ['newyear', 'cnyeve', 'cny', 't228', 'childtomb', 'duanwu', 'zhongqiu', 'double10'],
+    JP: ['newyear', 'goldenweek'],
+    KR: ['newyear', 'cny', 'liberation', 'zhongqiu', 'christmas'],
+    SG: ['newyear', 'cny', 'goodfri', 'may1', 'sgnational', 'christmas'],
+    IN: ['republic', 'indep', 'gandhi', 'diwali'],
+    DE: ['newyear', 'may1', 'unity', 'christmas', 'boxing'],
+    FR: ['newyear', 'may1', 'bastille', 'christmas'],
+    EU: ['newyear', 'may1', 'christmas'],
+    '*': ['newyear']                       // unknown country: only the near-universal one
+  };
+  function holidayToday() {
+    var y = d0.getFullYear(), m = d0.getMonth() + 1, dd = d0.getDate();
+    var L = HOLCC[CC] || HOLCC['*'];
+    for (var i = 0; i < L.length; i++) {
+      var h = HOL[L[i]]; if (!h) continue;
+      var md2 = ruleMD(h[0], y);
+      if (md2 && md2[0] === m && md2[1] === dd) return { id: L[i], en: h[1], zh: h[2], y: y };
+    }
+    return null;
+  }
+  // Each holiday greets ONCE per occurrence — a greeting repeated all day stops being a
+  // greeting and starts being a nag. Marked seen only when actually spoken (see assembly).
+  function holMarkOnce(hol) {
+    var key = hol.id + '@' + hol.y, arr;
+    try { arr = JSON.parse(localStorage.getItem('mm.hub.hols') || '[]'); } catch (e) { arr = []; }
+    if (!Array.isArray(arr)) arr = [];
+    if (arr.indexOf(key) >= 0) return false;
+    arr.push(key); while (arr.length > 16) arr.shift();
+    try { localStorage.setItem('mm.hub.hols', JSON.stringify(arr)); } catch (e) {}
+    return true;
+  }
+  var HOLIDAY = holidayToday();
+  var closedDay = wknd || !!HOLIDAY;       // a matched holiday closes the viewer's home market
+
+  /* ---- today's market context, read straight off #globe-data --------------
+   * The HOME board (by the viewer's country) drives direction, mood and the regime
+   * beats — a Shanghai visitor's "the market" is the A-share board, not the S&P.
+   * Breadth, movers and cross-region color stay global. */
+  var CC2BOARD = { CN: 'CN', HK: 'HK', TW: 'TW', JP: 'JP', KR: 'KR', CA: 'CA', GB: 'GB', IE: 'EZ', FR: 'EZ', DE: 'EZ', EU: 'EZ', US: 'US' };
   function ctx() {
     var el = document.getElementById('globe-data'); if (!el) return null;
     var d; try { d = JSON.parse(el.textContent); } catch (e) { return null; }
     if (!Array.isArray(d) || !d.length) return null;
     var by = {}; d.forEach(function (m) { by[m.cc] = m; });
     var us = by.US || d[0];
+    var home = (CC && by[CC2BOARD[CC]]) || us;
     var chg = d.filter(function (m) { return typeof m.index_chg_pct === 'number' && isFinite(m.index_chg_pct); });
     var up = chg.filter(function (m) { return m.index_chg_pct > 0.05; }).length;
     var down = chg.filter(function (m) { return m.index_chg_pct < -0.05; }).length;
     var stag = d.filter(function (m) { return m.quad === 'q3'; });
     var gold = d.filter(function (m) { return m.quad === 'q1'; });
     var mover = chg.slice().sort(function (a, b) { return Math.abs(b.index_chg_pct) - Math.abs(a.index_chg_pct); })[0] || us;
-    var uc = (us && us.index_chg_pct) || 0;
+    var uc = (home && home.index_chg_pct) || 0;
     // NB: the calm q1 risk_text is "calm — low macro stress" — do NOT match bare "stress"
     // (it flagged every calm day risky). Key off the genuinely-elevated words only.
-    var risky = /elevat|stagfl|scare|fragile|panic|high —/i.test((us && us.risk_text_en) || '');
+    var risky = /elevat|stagfl|scare|fragile|panic|high —/i.test((home && home.risk_text_en) || '');
     var mood;
-    if ((us && us.quad === 'q4') || (risky && uc < -0.8) || down >= chg.length * 0.72) mood = 'off';
-    else if ((us && us.quad === 'q3') || risky || uc < -0.4) mood = 'careful';
-    else if (us && us.quad === 'q1' && uc > 0.3 && !risky) mood = 'on';
+    if ((home && home.quad === 'q4') || (risky && uc < -0.8) || down >= chg.length * 0.72) mood = 'off';
+    else if ((home && home.quad === 'q3') || risky || uc < -0.4) mood = 'careful';
+    else if (home && home.quad === 'q1' && uc > 0.3 && !risky) mood = 'on';
     else if (uc > 0.12 && !risky) mood = 'good';
     else mood = 'mixed';
-    return { d: d, us: us, up: up, down: down, total: chg.length, stag: stag, gold: gold, mover: mover, uc: uc, risky: risky, mood: mood };
+    return { d: d, us: us, home: home, up: up, down: down, total: chg.length, stag: stag, gold: gold, mover: mover, uc: uc, risky: risky, mood: mood };
   }
   var C = ctx();
+
+  /* ---- extra sources already on the page: newest alert + the Bitcoin chip -- */
+  function alertRead() {   // the freshest "What changed" signal, if it's genuinely fresh
+    try {
+      var it = document.querySelector('#alerts .ha-item'); if (!it) return null;
+      var wEl = it.querySelector('.ha-when .l-en');
+      var w = (wEl && wEl.textContent || '').trim();
+      if (!/^\s*(\d+)\s*h\b|^\s*1\s*d\b/.test(w)) return null;   // ≤1 day old only
+      var he = it.querySelector('.ha-head .l-en'), hz = it.querySelector('.ha-head .l-zh');
+      var en = (he && he.textContent || '').replace(/\s+/g, ' ').trim();
+      var zt = (hz && hz.textContent || '').replace(/\s+/g, ' ').trim() || en;
+      if (!en || en.length > 90) return null;
+      return [en, zt];
+    } catch (e) { return null; }
+  }
+  function btcRead() {     // 'on' | 'off' | null — crypto is the only open market on a closed day
+    try {
+      var p = document.querySelector('.card.btc .pill'); if (!p) return null;
+      var en = p.querySelector('.l-en');
+      var m = /risk\s*(on|off)/i.exec((en && en.textContent) || p.textContent || '');
+      return m ? m[1].toLowerCase() : null;
+    } catch (e) { return null; }
+  }
+  var ALERTX = alertRead(), BTC = btcRead();
 
   /* ---- display slots (filled per-language so both sides read naturally) --- */
   function nm(m, en) { return m ? (en ? (m.name_en || m.cc) : (m.name_zh || m.name_en || m.cc)) : ''; }
@@ -100,21 +296,31 @@
     try { var s = C && C.us && C.us.macro_asof; if (!s) return ''; var p = String(s).split('-'); var dt = new Date(+p[0], +p[1] - 1, +p[2]);
       return en ? dt.toLocaleDateString('en', { month: 'short', day: 'numeric' }) : (dt.getMonth() + 1) + '月' + dt.getDate() + '日'; } catch (e) { return ''; }
   }
-  var EN = {}, ZH = {};
+  // ASOF defaults keep the META lines whole even when #globe-data is absent
+  var EN = { V: visit, LASTD: wknd ? 'Friday' : 'The last session', ASOF: 'today' };
+  var ZH = { V: visit, LASTD: wknd ? '周五' : '上个交易日', ASOF: '今天' };
+  if (ALERTX) { EN.ALERT = ALERTX[0]; ZH.ALERT = ALERTX[1]; }
   if (C) {
     var pct = Math.abs(C.uc).toFixed(1);
     var mpct = Math.abs(C.mover.index_chg_pct || 0).toFixed(1);
-    var rd = C.us.rdir;
-    var twEn = C.us.rtoward_en || (rd === 'improving' ? 'firmer ground' : 'a worse spot');
-    var twZh = C.us.rtoward_zh || (rd === 'improving' ? '更稳的位置' : '更差的位置');
-    EN = { PCT: pct, DOWN: C.down, UP: C.up, TOTAL: C.total, MOVER: cname(C.mover, 1), MOVERPCT: mpct,
-      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? 'up' : 'down', STAG: C.stag.length ? cname(firstNonUS(C.stag), 1) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 1) : '', REGIME: regimeName(C.us, 1), TOWARD: twEn, ASOF: asof(1), V: visit };
-    ZH = { PCT: pct, DOWN: C.down, UP: C.up, TOTAL: C.total, MOVER: cname(C.mover, 0), MOVERPCT: mpct,
-      MOVERDIR: (C.mover.index_chg_pct || 0) >= 0 ? '涨' : '跌', STAG: C.stag.length ? cname(firstNonUS(C.stag), 0) : '', GOLD: C.gold.length ? cname(firstNonUS(C.gold), 0) : '', REGIME: regimeName(C.us, 0), TOWARD: twZh, ASOF: asof(0), V: visit };
+    var rd = C.home.rdir;
+    var twEn = C.home.rtoward_en || (rd === 'improving' ? 'firmer ground' : 'a worse spot');
+    var twZh = C.home.rtoward_zh || (rd === 'improving' ? '更稳的位置' : '更差的位置');
+    EN.PCT = pct; EN.DOWN = C.down; EN.UP = C.up; EN.TOTAL = C.total; EN.MOVER = cname(C.mover, 1); EN.MOVERPCT = mpct;
+    EN.MOVERDIR = (C.mover.index_chg_pct || 0) >= 0 ? 'up' : 'down';
+    EN.STAG = C.stag.length ? cname(firstNonUS(C.stag), 1) : ''; EN.GOLD = C.gold.length ? cname(firstNonUS(C.gold), 1) : '';
+    EN.REGIME = regimeName(C.home, 1); EN.TOWARD = twEn; EN.ASOF = asof(1);
+    ZH.PCT = pct; ZH.DOWN = C.down; ZH.UP = C.up; ZH.TOTAL = C.total; ZH.MOVER = cname(C.mover, 0); ZH.MOVERPCT = mpct;
+    ZH.MOVERDIR = (C.mover.index_chg_pct || 0) >= 0 ? '涨' : '跌';
+    ZH.STAG = C.stag.length ? cname(firstNonUS(C.stag), 0) : ''; ZH.GOLD = C.gold.length ? cname(firstNonUS(C.gold), 0) : '';
+    ZH.REGIME = regimeName(C.home, 0); ZH.TOWARD = twZh; ZH.ASOF = asof(0);
   }
   function fill(s, map) { return s.replace(/\{(\w+)\}/g, function (_, k) { return map[k] != null ? map[k] : ''; }); }
 
-  /* ---- the material. draw() returns a phrasing not used today, slots filled. */
+  /* ---- the material. draw() returns a phrasing not used today, slots filled.
+   * The zh side of every pair is WRITTEN, not translated: 红涨绿跌 (in Chinese
+   * copy red is up, green is down — the reverse of the EN screens), native trader
+   * vernacular, full-width punctuation. Keep it that way when adding lines. */
   function draw(poolId, pool) {
     var cands = [], i;
     for (i = 0; i < pool.length; i++) if (fresh(poolId + i)) cands.push(i);
@@ -125,164 +331,224 @@
   }
 
   var dir = C ? (C.uc > 0.12 ? 'up' : C.uc < -0.12 ? 'down' : 'flat') : 'flat';
-  var quad = (C && C.us && C.us.quad) || '';
+  var quad = (C && C.home && C.home.quad) || '';
 
   var OPEN = [
-    ['Give me ten seconds before you dive in.', '先别急,让我说十秒钟。'],
-    ['Quick read while you settle in.', '趁你还没开始,我先说两句。'],
-    ["Alright — here's the lay of the land.", '好,先跟你说说今天的大局。'],
-    ['Let me set the table for you.', '我先给你把桌子摆好。'],
-    ['Two things before you get to work.', '开工之前,先说两件事。'],
-    ["Before you touch anything — here's the temperature.", '动手之前——先跟你说说今天的温度。']
+    ['Give me ten seconds before you dive in.', '先别急，给我十秒钟。'],
+    ['Quick read while you settle in.', '趁你坐下的工夫，我先说两句。'],
+    ["Alright — here's the lay of the land.", '来，先把今天的大盘说清楚。'],
+    ["Let me do this morning's homework for you.", '今天的功课，我先帮你做了。'],
+    ['Two things before you get to work.', '开工之前，先说两件事。'],
+    ["Before you touch anything — here's the temperature.", '下手之前——先感受一下今天的温度。']
   ];
   // Recall lines fire only on a GENUINE return (a real gap of time). Kept clear, not
-  // cryptic — they say what the count means ("at the desk today", "check-ins today").
+  // cryptic — they say what the count means ("look today", "check-ins today").
   var VISIT2 = [
-    ['Good to have you back at the desk today.', '今天又回到台前了,挺好。'],
-    ["Back for a second look today — let's see what moved.", '今天来看第二回——看看动了什么。'],
-    ['Second time on the hub today. Something on your mind?', '今天第二次来了。有什么在想的?'],
-    ["You're back. I'll keep this read shorter.", '你回来了。这回我说短点。']
+    ['Good to have you back at the desk today.', '今天又回来盯盘了，挺好。'],
+    ["Back for a second look — let's see what moved.", '回来看第二眼——瞧瞧有什么动了。'],
+    ['Second visit today. Something on your mind?', '今天第二趟了。心里惦记着什么？'],
+    ["You're back. I'll keep this one short.", '你回来啦。这回我长话短说。']
   ];
   var VISIT3 = [
-    ["That's your {V}th look at the desk today — you're dialed in.", '今天你第 {V} 次到台前了——很投入。'],
-    ['Back again — {V} check-ins today. Markets keeping you busy?', '又回来了——今天第 {V} 次了。市场让你没闲着?'],
-    ["{V} times on the hub today. You know the drill — I'll be quick.", '今天第 {V} 次来 hub 了。你懂流程——我快点。'],
-    ['You keep coming back today. Fine by me — let’s talk.', '你今天来了一趟又一趟。我乐意——来聊。'],
-    ["{V} looks today. When you check in this often, I watch it closer too.", '今天第 {V} 次了。你看得这么勤,我也盯得更紧。']
+    ["That's your {V}th look today — you're locked in.", '今天第 {V} 次来了——够专注的。'],
+    ['Back again — {V} check-ins today. Markets keeping you busy?', '又来了——今天第 {V} 趟。行情让你闲不住？'],
+    ["{V} visits today. You know the drill — I'll be quick.", '今天第 {V} 次了。老规矩——我快点说。'],
+    ['You keep coming back. Fine by me — let’s talk.', '一趟又一趟地来。行啊，我乐意陪聊。'],
+    ["{V} looks today. When you watch this closely, so do I.", '今天第 {V} 眼了。你盯得这么紧，我也不敢松。']
   ];
   // A page REFRESH (same session) — witty, honest, brief. NOT a "you're back".
   var RELOAD = [
-    ['Same desk, same read — you were just here.', '还是这张台子,还是那个结论——你刚来过。'],
-    ["Back that fast? Nothing's moved much since you looked.", '这么快又刷?你刚看过,没什么大变化。'],
+    ['Same desk, same read — you were just here.', '还是这张台子，还是那个结论——你刚来过。'],
+    ["Back that fast? Nothing's moved much since you looked.", '这么快又刷？你刚看过，没什么大变化。'],
     ["I'll save us both the time — the read hasn't changed.", '省点时间——结论没变。'],
-    ['Still here, still watching. Nothing new to add yet.', '还在,还盯着。暂时没有新东西。'],
-    ['Refreshing won’t move the tape — but hi again.', '刷新动不了盘面——不过,再见到你挺好。'],
-    ['You just looked. Give the market a minute to do something.', '你刚看过。给市场一点时间再动。']
+    ['Still here, still watching. Nothing new to add yet.', '我还在，还盯着。暂时没有新东西。'],
+    ['Refreshing won’t move the market — but hi again.', '刷新是刷不出行情的——不过，又见面啦。'],
+    ['You just looked. Give it a minute to do something.', '你刚看过。给市场一分钟，让它自己动动。']
   ];
   var TAPE = { up: [
-      ["Tape's got a bid today. Nothing wild — just green.", '今天盘面有买盘。没什么疯狂的,就是绿。'],
-      ["It's a green one — the kind you don't have to fight.", '今天是绿的——那种不用硬扛的绿。'],
-      ["Bit of lift out there. I'll take an easy up day.", '外面有点起色。轻松的上涨日,我照单全收。'],
-      ['Buyers showed up today. Quiet, steady green.', '今天买家到场了。安静,稳稳的绿。'],
-      ["Green on the screens, and it's holding. I like when it holds.", '屏幕上是绿的,而且守得住。守得住,我就喜欢。'],
-      ["Up day, and nothing forced about it. That's the good kind.", '上涨日,一点都不勉强。这是好的那种。']
+      ['Buyers are in charge today. Nothing wild — a steady green day.', '今天买方说了算。不疯不闹，稳稳的红盘。'],
+      ["It's the kind of up day you don't have to fight. Enjoy those.", '今天是不用硬扛的上涨日。且涨且珍惜。'],
+      ["Some lift out there today — the easy kind. I'll take it.", '今天盘面有点起色——是轻松的那种。我照单全收。'],
+      ['Buyers showed up. Quiet, steady gains.', '买盘来了。安安静静，稳稳地涨。'],
+      ["Green on my screens, and it's holding. I like when it holds.", '我这边满屏飘红，而且守得住。守得住的红，才是好红。'],
+      ["Up day, and nothing forced about it. That's the good kind.", '涨得一点不勉强。这种涨法，最健康。']
     ], down: [
-      ["Tape's heavy today. Nothing broken — just heavy.", '今天盘面偏沉。没出什么事,就是沉。'],
-      ["It's red out there. The kind of day you sit on your hands.", '外面一片红。这种日子,手别痒。'],
-      ["Down day, thin bids. Don't go chasing anything.", '下跌日,买盘薄。什么都别追。'],
-      ['Sellers have the pen today. Let them tire out.', '今天是卖方在写字。等他们累了再说。'],
-      ["It's leaking lower — not a crash, just a slow bleed.", '一路往下渗——不是崩,是慢慢失血。'],
-      ['Red across the screens. Days like this reward patience, not bravado.', '屏幕上一片红。这种日子奖励耐心,不奖励逞强。']
+      ["Heavy day out there. Nothing's broken — it's just heavy.", '今天盘子有点沉。没出大事，就是沉。'],
+      ["Red across the screens. The kind of day you sit on your hands.", '今天绿油油一片。这种日子，手别痒，坐住。'],
+      ['Down day, and buyers are scarce. Not the day to chase anything.', '下跌日，买盘稀稀拉拉。今天什么都别追。'],
+      ['Sellers are writing the story today. Let them tire out.', '今天是卖方在讲故事。等他们讲累了再说。'],
+      ["It's drifting lower — not a crash, a slow leak. Patience.", '阴跌磨人——不是崩，是慢慢渗。耐心点。'],
+      ['A red day like this rewards patience, not bravado.', '这种下跌日，奖励耐心，不奖励逞强。']
     ], flat: [
-      ["Quiet tape. Everyone's waiting on something.", '盘面很静。大家都在等着什么。'],
-      ["Flat and boring — which is honestly fine by me.", '又平又闷——说实话,我挺乐意。'],
-      ['Not much doing today. Coiled, not dead.', '今天没什么大动静。是在盘,不是死。'],
-      ["Sideways and patient. The market's holding its breath.", '横着,耐着。市场在屏着呼吸。']
+      ["Quiet out there. Everyone's waiting on something.", '盘面很静。大家都在等一个说法。'],
+      ['Flat and boring — which is honestly fine by me.', '又平又闷——说实话，我不嫌弃。'],
+      ['Not much moving today. Coiled, not dead.', '今天没什么动静。是在蓄力，不是躺平。'],
+      ["Sideways and patient — the market's holding its breath.", '横盘，有耐心——市场在屏住呼吸。']
+    ] };
+  /* Weekend / holiday tape: the market is CLOSED, so the last session is read as the
+   * last session — never dressed up as a live print. {LASTD} = Friday / last session. */
+  var WTAPE = { up: [
+      ['{LASTD} closed green, so we go into the break on a decent note.', '{LASTD}收红，这个收尾还算体面。'],
+      ["Last look before the close: green, and holding. Nothing to worry about while it's shut.", '休市前最后一眼：红盘，还站得稳。这几天不用惦记。'],
+      ["The board went out with buyers under it. It'll keep till the bell.", '收市前还有买盘托着。放心，开盘它还在。']
+    ], down: [
+      ['{LASTD} closed red — not pretty, but the break came at a good time.', '{LASTD}收绿，不太好看——不过正好趁休市喘口气。'],
+      ["The last session was heavy. Good news: nothing can fall while it's closed.", '上一场收得偏沉。好消息是：休市的时候，它跌不了。'],
+      ["Went out weak. Let it sit — that's a problem for the reopen, not for today.", '收得偏弱。先放着——那是开盘以后的事，不归今天管。']
+    ], flat: [
+      ['{LASTD} went out quiet — flat, no drama. A clean pause.', '{LASTD}收平，波澜不惊。停得干干净净。'],
+      ["Nothing moved much into the close. The board's asleep, as it should be.", '收市前没什么动静。盘面睡了，本来也该睡。']
     ] };
   // Regime beats are DIRECTION-first, never label-first: the same quad means opposite
   // things depending on whether we're firming into it or rolling out of it — and the
   // confirmed label LAGS the score, so a deteriorating "Goldilocks" is the trap. {REGIME}
-  // = current quad, {TOWARD} = where the trajectory is dragging it (from #globe-data rdir).
+  // = the HOME board's quad, {TOWARD} = where its trajectory is dragging it.
   var REGD = [   // DETERIORATING — the label still says {REGIME}, but the trend is down
-      ["We're still calling it {REGIME} — but it's rolling over. The label lags; the trend's the tell, and it's dragging toward {TOWARD}.", '还挂着{REGIME}的牌子——但它在翻。标签滞后,趋势才是真相,而它正被拖向{TOWARD}。'],
-      ["Careful with the {REGIME} tag today — the score's deteriorating, edging toward {TOWARD}. Same word, opposite trade from a month ago.", '今天别太信{REGIME}这个标签——分数在恶化,正滑向{TOWARD}。同一个词,和一个月前反着做。'],
-      ["{REGIME} on paper, but it's aging out — momentum's rolling toward {TOWARD}. I'd lean defensive early, not late.", '纸面上是{REGIME},但在老化——动能正倒向{TOWARD}。我会早点偏防守,别等晚了。'],
-      ["The backdrop still reads {REGIME}, but it's cracking — {TOWARD} is pulling. Trust the change of rate, not the last print.", '背景还写着{REGIME},但在裂——{TOWARD}在拉。信变化率,别信最后一个读数。']
+      ["We're still calling it {REGIME} — but it's rolling over. The label lags; the trend is dragging toward {TOWARD}.", '牌子上还写着「{REGIME}」——但势头在往下翻。标签是滞后的，趋势正把它拖向「{TOWARD}」。'],
+      ["Careful with the {REGIME} tag today — the score's slipping toward {TOWARD}. Same word, opposite trade from a month ago.", '「{REGIME}」这个标签先别全信——分数正往「{TOWARD}」滑。词还是那个词，做法得跟一个月前反着来。'],
+      ["{REGIME} on paper, but it's aging — momentum leans toward {TOWARD}. I'd turn defensive early, not late.", '纸面上是「{REGIME}」，但成色在变——动能偏向「{TOWARD}」。防守要趁早，别拖到晚。'],
+      ["The backdrop still reads {REGIME}, but it's cracking. Trust the direction of change, not the last print.", '大环境还写着「{REGIME}」，但已经有裂缝。信变化的方向，别信最后那个读数。']
     ];
   var REGI = [   // IMPROVING — still {REGIME} on the print, but turning UP toward {TOWARD}
-      ["Still {REGIME} on the label, but it's turning up — the score's climbing toward {TOWARD}. Early, but the direction's finally right.", '标签还是{REGIME},但在往上翻——分数正爬向{TOWARD}。早,但方向终于对了。'],
-      ["{REGIME}'s the print, but the trend's improving — headed for {TOWARD}. This is the good kind of change: bad-to-better.", '读数是{REGIME},但趋势在改善——奔着{TOWARD}去。这是好的那种变化:由坏转好。'],
-      ["Don't over-read the {REGIME} tag — it's thawing, momentum's toward {TOWARD}. Getting less bad is how bottoms start.", '别太当真{REGIME}这个标签——在解冻,动能朝着{TOWARD}。越来越不差,正是底部的开始。']
+      ["Still {REGIME} on the label, but it's turning up — climbing toward {TOWARD}. Early, but the direction's finally right.", '标签还是「{REGIME}」，但在往上走——朝着「{TOWARD}」爬。还早，但方向终于对了。'],
+      ["{REGIME} is the print; the trend is better — headed for {TOWARD}. Bad-to-better is the good kind of change.", '读数还是「{REGIME}」，趋势却在好转——奔着「{TOWARD}」去。由坏转好，是最值钱的那种变化。'],
+      ["Don't over-read the {REGIME} tag — it's thawing. Getting less bad is how bottoms start.", '别把「{REGIME}」看得太死——正在解冻。“没那么差了”，往往就是底部的开场白。']
     ];
   var REGSG = [  // STABLE + good quad — genuinely holding
-      ["Clean {REGIME}, and it's holding — growth without the heat. Enjoy it while the trend cooperates.", '干净的{REGIME},而且守得住——有增长不发烫。趋势配合的时候,好好享受。'],
-      ["{REGIME}, steady — no cracks in the score yet. Rare, so don't waste it.", '{REGIME},很稳——分数还没裂。难得,别浪费。'],
-      ["Backdrop's {REGIME} and it isn't going anywhere. The regime's your friend here.", '背景是{REGIME},而且稳着。这里,大局是你的朋友。']
+      ["Clean {REGIME}, and it's holding — growth without the heat. Enjoy it while it lasts.", '干干净净的「{REGIME}」，而且稳得住——有增长，不发烫。且涨且珍惜。'],
+      ["{REGIME}, steady — no cracks in the score yet. Rare. Don't waste it.", '「{REGIME}」，稳稳的——分数暂时没裂缝。难得，别浪费。'],
+      ["The backdrop's {REGIME}, and it isn't going anywhere fast. The regime is your friend here.", '大环境是「{REGIME}」，一时半会儿变不了。这时候，大势是你的朋友。']
     ];
   var REGSB = [  // STABLE + bad quad — stuck, no thaw
-      ["Still stuck in {REGIME}, and it's not letting up. Nothing to force here.", '还困在{REGIME}里,而且没松口。这里没什么可硬来的。'],
-      ["{REGIME}, and flat — no thaw in the score yet. Patience beats hope.", '{REGIME},而且平——分数还没解冻。耐心胜过指望。']
+      ["Still stuck in {REGIME}, and it's not letting up. Nothing to force here.", '还困在「{REGIME}」里，没有松动的迹象。这里别硬来。'],
+      ["{REGIME}, and flat — no thaw in the score yet. Patience beats hope.", '「{REGIME}」，横着——还没解冻。耐心比指望管用。']
     ];
   var RISK = { calm: [
-      ["Risk board's quiet. Stress readings low — rare, clean water.", '风险盘面很安静。压力读数低——难得的干净水域。'],
-      ["Nothing's flashing red on the risk side. I'll take it.", '风险这边没有红灯在闪。我认。'],
-      ['Under the hood, stress is low. The selling’s mood, not machinery.', '底下压力其实不高。今天的卖,是情绪,不是机器出问题。']
+      ["The risk gauges are quiet. Stress is low — rare, clean water.", '风险仪表很安静。压力不大——难得的干净水域。'],
+      ["Nothing's flashing red on the risk side. I'll take it.", '风险那边没有红灯在闪。这我收下了。'],
+      ['Under the hood, stress is low. If it sells off, that’s mood, not machinery.', '底盘上压力其实不大。就算跌，也是情绪在跌，不是机器坏了。']
     ], hot: [
-      ["Risk's lit up. I'd keep the size honest today.", '风险这边亮了。今天仓位放老实点。'],
-      ['Stress gauges are climbing. Be a little careful out there.', '压力表在往上爬。外面小心点。'],
-      ["The plumbing's tightening. That's the part worth watching.", '底层的管路在收紧。这才是值得盯的部分。']
+      ["The risk gauges are lit up. I'd keep the size honest today.", '风险仪表亮起来了。今天仓位放老实点。'],
+      ['Stress is climbing under the surface. Move a little slower out there.', '水面下的压力在涨。动作放慢半拍。'],
+      ["Credit and stress gauges are tightening — that's the part I watch closest.", '信用和压力的仪表都在收紧——这是我盯得最紧的部分。']
     ] };
   var REGION = [
-    ["China's the odd one out again — running its own cycle. The gap is the trade.", '中国又是那个异类——走自己的周期。这个差距,本身就是机会。'],
-    ["{STAG} is boxed in stagflation. I'd leave that one alone for now.", '{STAG} 困在滞胀里。这个,我暂时不碰。'],
-    ['{GOLD} is sitting pretty in Goldilocks — quietly one of the cleaner boards.', '{GOLD} 稳稳待在金发女孩区——悄悄地,是更干净的盘面之一。'],
-    ["The world's not moving together today — some green, some red. Divergence everywhere.", '今天全球不同步——有绿有红。到处都是分化。']
+    ["China's running its own cycle again — out of step with everyone else. The gap itself is information.", '中国又在走自己的周期——和别人不同步。这个“不同步”，本身就是信息。'],
+    ["{STAG} is boxed into stagflation. I'd leave that one alone for now.", '{STAG}还闷在滞胀里。这个盘，我暂时绕着走。'],
+    ['{GOLD} is sitting in the sweet spot — quietly one of the cleaner boards.', '{GOLD}正待在最舒服的区间——不声不响，却是更干净的盘面之一。'],
+    ["The world isn't moving together today — some up, some down. Divergence everywhere.", '今天全球各走各的——有涨有跌，到处在分化。']
   ];
   var BREADTH = { down: [
-      ["Almost everything's red — {DOWN} of {TOTAL} boards down. Broad, not selective.", '几乎全红——{TOTAL} 个里 {DOWN} 个在跌。是普跌,不是挑着跌。'],
-      ['{DOWN} of {TOTAL} markets lower. When it’s this broad, it’s macro, not stock-picking.', '{TOTAL} 个里 {DOWN} 个在跌。这么普遍,是宏观,不是选股。']
+      ["Almost everything's lower — {DOWN} of {TOTAL} markets down. That's macro, not bad luck.", '几乎全线走低——{TOTAL} 个市场里 {DOWN} 个在跌。这是宏观的事，不是运气差。'],
+      ['{DOWN} of {TOTAL} markets lower. When it’s this broad, it’s the tide, not the boats.', '{TOTAL} 个市场里 {DOWN} 个在跌。跌得这么齐，是潮水的问题，不是哪条船的问题。']
     ], up: [
-      ["Green nearly across the board — {UP} of {TOTAL} up. Everyone's invited today.", '几乎全绿——{TOTAL} 个里 {UP} 个在涨。今天大家都有份。'],
-      ['{UP} of {TOTAL} boards higher. Broad green — the healthy kind of rally.', '{TOTAL} 个里 {UP} 个在涨。普涨——是健康的那种涨。']
+      ["Green nearly everywhere — {UP} of {TOTAL} markets up. Everyone's invited today.", '几乎全线飘红——{TOTAL} 个市场里 {UP} 个在涨。今天人人有份。'],
+      ['{UP} of {TOTAL} markets higher. Broad gains — the healthy kind of rally.', '{TOTAL} 个里 {UP} 个在涨。普涨——健康的那种涨法。']
     ], split: [
-      ["It's split out there — some up, some down. A stock-picker's tape.", '外面是分化的——有涨有跌。挑股票的盘。'],
-      ['Half green, half red. Today rewards selection, not direction.', '一半绿一半红。今天奖励选股,不奖励押方向。']
+      ["It's split out there — some up, some down. A stock-picker's day.", '今天分化——有涨有跌。适合挑着做的日子。'],
+      ['Half up, half down. Today rewards picking, not predicting.', '一半涨一半跌。今天拼的是选股，不是猜方向。']
     ] };
   var MOVER = [
-    ["The big mover today is {MOVER} — {MOVERDIR} {MOVERPCT}%. That's where the story is.", '今天动静最大的是 {MOVER}——{MOVERDIR}{MOVERPCT}%。故事在那儿。'],
-    ['Keep half an eye on {MOVER} — {MOVERPCT}% is a real move, not noise.', '{MOVER} 你留半只眼睛——{MOVERPCT}% 是真动了,不是噪音。'],
-    ["Today's outlier is {MOVER}, at {MOVERPCT}%. Outliers are where I start looking.", '今天的异类是 {MOVER},{MOVERPCT}%。异类,是我开始找机会的地方。']
+    ["The big mover today is {MOVER} — {MOVERDIR} {MOVERPCT}%. That's where the story is.", '今天动静最大的是{MOVER}——{MOVERDIR}了 {MOVERPCT}%。故事在那边。'],
+    ['Keep half an eye on {MOVER} — {MOVERPCT}% is a real move, not noise.', '{MOVER}那边留半只眼——{MOVERPCT}% 是真动了，不是噪音。'],
+    ["Today's outlier: {MOVER}, {MOVERDIR} {MOVERPCT}%. Outliers are where I look first.", '今天的异动是{MOVER}，{MOVERDIR}了 {MOVERPCT}%。有异动的地方，我先看。']
   ];
   var META = [
-    ['Desk re-ran the whole world overnight. This is fresh as of {ASOF}.', '台子昨晚把整个世界重算了一遍。这是 {ASOF} 的最新读数。'],
-    ["Walked every board this morning. That's the honest read, not the pretty one.", '今早每个盘面我都过了一遍。给你的是实话,不是好听话。'],
-    ['The engines check each other before they talk to you. Less noise that way.', '引擎之间先互相核对,才跟你说话。这样噪音少。'],
-    ["I don't guess — everything I just said is measured, as of {ASOF}.", '我不猜——我刚说的每一句,都是量出来的,截至 {ASOF}。'],
-    ['Nine boards, one read. I did the reconciling so you don’t have to.', '九个盘面,一个结论。对账我做了,你不用。']
+    ['The desk re-ran the whole world overnight. This is fresh as of {ASOF}.', '后台昨晚把全世界重算了一遍。这是 {ASOF} 的最新结果。'],
+    ["I walked every board this morning. You're getting the honest read, not the pretty one.", '今早每个盘面我都过了一遍。给你的是实话，不是漂亮话。'],
+    ['The engines cross-check each other before they talk to you. Less noise that way.', '各路引擎先互相对过账，才开口跟你说话。这样噪音少。'],
+    ["I don't guess — everything I just said is measured, as of {ASOF}.", '我不猜行情——我刚说的每一句都是算出来的，截至 {ASOF}。'],
+    ['Nine markets, one read. I did the reconciling so you don’t have to.', '九个市场，一个结论。对账的活我干了，你不用。']
   ];
-  var NUDGE = { on: [
-      ['If you were waiting for a green light, this is about as close as it gets. Within reason.', '你要是在等绿灯,这差不多就是了。别过火。'],
-      ['Feels fine to take on a little adventure today. Sensible size.', '今天可以带点冒险出门。仓位放得体面点。'],
-      ["Green light, within reason. Days this clean don't come often.", '绿灯,别过火。这么干净的日子不常有。'],
-      ['The setup’s clean. Press it a little — just don’t get greedy.', '形态很干净。可以稍微压一压——别贪就行。']
-    ], good: [
-      ['Constructive out there. Lean in a touch — no heroics.', '外面偏建设性。可以稍微前倾一点——别逞能。'],
-      ['Room to be a little brave today. Keep a hand on the wheel.', '今天有空间胆子大一点。手别离方向盘。'],
-      ["The wind's mostly at your back. Use it, don't abuse it.", '风大体上是顺的。用它,别滥用它。'],
-      ['Decent tape. Add to what’s working, leave the rest.', '盘面不错。给跑得好的加码,其余的别碰。']
-    ], mixed: [
-      ["Nothing's screaming either way. Let the setups come to you.", '两边都没在喊。让机会自己走过来。'],
-      ['Mixed tape — patience beats prediction today.', '盘面混着——今天耐心胜过预测。'],
-      ['No clear edge right now. Sit on your best ideas, skip the rest.', '现在没有明显的优势。守住最好的想法,其余的跳过。'],
-      ['Choppy. Trade less, watch more.', '震荡。少做,多看。']
-    ], careful: [
-      ['Careful out there today. Keep the powder dry.', '今天外面小心。子弹留着。'],
-      ['Not a day to be a hero. Small, patient, boring.', '今天别逞英雄。小,耐心,无聊。'],
-      ['Trim the edges, keep the core. Live to trade tomorrow.', '削掉边角,留住核心。留着,明天再打。'],
-      ["If you're unsure, that's the signal. Size down.", '你要是没底,那本身就是信号。仓位缩。'],
-      ['Respect the tape today — it’s telling you to slow down.', '今天尊重盘面——它在让你慢下来。'],
-      ['Tighten the stops, loosen the grip. Let it breathe.', '把止损收紧,把手放松。让它喘口气。']
+  // The freshest "What changed" signal, quoted in the alert's own plain words.
+  var ALERTP = [
+    ['Freshest thing on the wire: “{ALERT}.” The details are just below.', '盘面上最新的一条：「{ALERT}」。详情就在下面。'],
+    ['One thing changed recently — “{ALERT}.” Worth ten seconds of your time.', '最近有个变化——「{ALERT}」。值得花十秒看看。']
+  ];
+  // Crypto never closes — on a weekend/holiday it's the only board still printing.
+  var CRYPTO = { on: [
+      ["Stocks are shut, but Bitcoin never sleeps — and its risk board leans friendly right now. Watch it, don't chase it.", '股市关门了，可币圈从不打烊——比特币那边现在偏乐观。看看就好，别追。'],
+      ["The only market open right now is crypto. Bitcoin's gauges read risk-on — fun to watch from the couch.", '现在唯一还开着门的是币圈。比特币的仪表偏“愿意冒险”——躺在沙发上看看挺好。']
     ], off: [
-      ['Risk-off tape. Protect the book first, opportunities second.', '避险盘。先护住本金,再谈机会。'],
-      ['This is a day to survive, not to swing. Sit tight.', '今天是活下来的日子,不是挥拍的日子。坐稳。'],
-      ['Cash is a position too. No shame in holding it today.', '现金也是一种仓位。今天拿着,不丢人。'],
-      ["When it's like this, the best trade is often no trade.", '这种时候,最好的交易常常是不交易。'],
-      ["Don't try to catch it. Let it find a floor first.", '别去接。等它先找到底再说。'],
-      ['On a tape like this, doing nothing is doing something. Wait.', '这种盘,不动本身就是一种动作。等着。']
+      ["Crypto's the only thing trading, and Bitcoin's board is defensive. Nothing out there needs you today.", '现在只有币圈在交易，而比特币那边偏防守。今天外面没什么需要你操心的。'],
+      ["Bitcoin never closes, but right now its risk board says be careful. Watching is free.", '比特币从不休市，但它的风险盘现在写着“小心”。看看不要钱。']
+    ] };
+  var NUDGE = { on: [
+      ['If you were waiting for a green light — this is about as close as it gets. Within reason.', '要是你一直在等绿灯——现在差不多就是了。别上头就行。'],
+      ['A day you can lean in a little. Sensible size, though.', '今天可以往前多站半步。仓位还是得讲道理。'],
+      ["Conditions this clean don't come often. Use them; don't abuse them.", '这么干净的窗口不常有。用它，别滥用它。'],
+      ['The setup’s clean. Press a little — just don’t get greedy.', '形态很干净。可以加点力——别贪就行。']
+    ], good: [
+      ['Constructive out there. Lean in a touch — no heroics.', '外面偏暖。可以稍微前倾——别逞英雄。'],
+      ['Room to be a little brave today. Keep a hand on the wheel.', '今天有胆子大一点的空间。但手别离方向盘。'],
+      ["The wind's mostly at your back. Add to what's working; leave the rest.", '风大体是顺的。给跑得好的加点码，其余的先不动。'],
+      ['Decent day. Add to what’s working, skip the rest.', '盘面不错。跑得好的加一点，其余的跳过。']
+    ], mixed: [
+      ["Nothing's screaming either way. Let the setups come to you.", '两边都没在喊你。让机会自己走过来。'],
+      ['Mixed day — patience beats prediction.', '震荡市——耐心比预测值钱。'],
+      ['No clear edge right now. Hold your best ideas, skip the rest.', '眼下没有明显的优势。攥住最好的想法，其余的先放放。'],
+      ['Choppy. Trade less, watch more.', '震荡。多看少动。']
+    ], careful: [
+      ['Careful out there today. Keep some cash dry for better prices.', '今天外面小心点。留点现金，等更好的价格。'],
+      ['Not a day for heroes. Small, patient, boring.', '今天别当英雄。小仓位，有耐心，无聊点没关系。'],
+      ['Trim the edges, keep the core. Live to trade tomorrow.', '边角修一修，核心留着。留得青山在，明天接着打。'],
+      ["If you're unsure, that IS the signal. Size down.", '要是心里没底，这本身就是信号。降点仓。'],
+      ["Respect what the market's telling you — it says slow down.", '尊重盘面给的提示——它在让你慢下来。'],
+      ['Tighten the stops, loosen the grip.', '止损收紧一点，心态放松一点。']
+    ], off: [
+      ['Defense first today. Protect the book; opportunities can wait.', '今天防守优先。先保住本金，机会等得起。'],
+      ['A day to survive, not to swing. Sit tight.', '今天求生，不求胜。坐稳了。'],
+      ['Cash is a position too. No shame in holding it today.', '空仓也是一种仓位。今天拿着现金，不丢人。'],
+      ["Sometimes the best trade is no trade. This is one of those days.", '有时候最好的交易，就是不交易。今天就是这种日子。'],
+      ["Don't try to catch the falling knife. Let it hit the floor first.", '别伸手去接飞刀。等它落地插稳了再说。'],
+      ['On a day like this, doing nothing IS doing something. Wait.', '这种日子，什么都不做本身就是在做事。等。']
     ] };
   var CLOSE = [
-    ["Anyway — that's the read. Desk's below whenever you are.", '行了——就这些。台子在下面,你随时。'],
-    ['That’s the brief. Eyes open, size sensible.', '简报完毕。眼睛睁着,仓位得体。'],
-    ['Enough from me. Go make it a good one.', '我就说到这。去,打漂亮点。'],
-    ['Alright, the floor’s yours — everything’s below.', '好,交给你了——都在下面。']
+    ["Anyway — that's the read. The desk is below whenever you're ready.", '好了——今天就说到这。看板都在下面，你随时开工。'],
+    ['That’s the brief. Eyes open, size sensible.', '简报完毕。眼睛放亮，仓位放稳。'],
+    ['Enough from me. Go make it a good one.', '我说完了。去吧，打得漂亮点。'],
+    ['Alright, the floor’s yours — everything’s below.', '行，交给你了——都在下面。']
+  ];
+
+  /* ---- weekend & holiday material ----------------------------------------- */
+  var WOPEN = { sat: [
+      ["It's Saturday — no opening bell, no closing bell. Just us.", '周六啦——没有开盘钟，也没有收盘钟。就咱俩。'],
+      ["Saturday at the desk. The market's off; I'm still around.", '周六还来看盘？市场休息了，我倒是一直都在。'],
+      ["Weekend mode: the screens are resting, and that's healthy.", '周末模式：行情不动了，这是好事。']
+    ], sun: [
+      ['Sunday — one more quiet day before the bell rings again.', '周日了——再安静一天，明天就又开锣了。'],
+      ["It's Sunday. A good day to think slow, before the week makes you think fast.", '周日，适合慢慢想的日子——下周有的是要你快快想的时候。'],
+      ["Sunday's for the plan, not the P&L.", '周日适合做计划，别盯着盈亏看。']
+    ] };
+  var HOPEN = [   // a market-closed holiday, greeting already spoken earlier today
+    ["Quiet day — the market's closed for the holiday.", '今天休市，盘面清清静静。'],
+    ["Still the holiday — nothing's trading. Enjoy the quiet.", '还在放假，没什么可交易的。享受这份清净。']
+  ];
+  // The weekend nudge: compliments for doing the homework, and permission to stop.
+  var WNUDGE = [
+    ["Checking in on a weekend — that's the homework most people skip. Respect.", '大周末的还来做功课——这是多数人偷懒不做的部分。佩服。'],
+    ['Markets are hard right now. Go get some sun — the charts will keep.', '这段行情不好做。出去晒晒太阳吧，图表跑不了。'],
+    ["You've done the work this week. Now go do the living.", '这一周你已经够拼了。剩下的时间，留给生活。'],
+    ['Review the week, jot down the plan, close the laptop. In that order.', '复个盘，写两行计划，然后合上电脑。就按这个顺序来。'],
+    ["The best position this weekend is outside. I'll watch the rest.", '这个周末最好的仓位，是阳光底下。剩下的我来盯。'],
+    ['Rest is part of the strategy. The traders who last all know it.', '休息也是策略的一部分。能在市场里走得远的人，都懂这个。'],
+    ['Get some rest — the bell rings again soon enough, and I’ll be here first.', '好好休息——开盘钟很快会再响，到时候我肯定比你先到。']
+  ];
+  var HNUDGE = [
+    ['Holidays are for living. The market will take your call when it reopens.', '假期就该有假期的样子。等开市了，行情随叫随到。'],
+    ['Even the market knows when to stop. Take the cue.', '连市场都知道该歇就歇。你也别硬撑。']
+  ];
+  var WCLOSE = [
+    ["Enjoy the weekend. I'll be here when the bell rings.", '周末愉快。开盘钟响的时候，我都在。'],
+    ['Go on — the desk will keep. See you Monday.', '去吧，台子我看着。周一见。']
   ];
 
   /* ---- assemble the sequence: greeting + a few reads, tapering on repeat --- */
   var GREET = {
-    morning: [['Good morning', '早上好'], ['Morning', '早'], ['Rise and shine', '起来啦'], ['Up early', '起得早啊'], ['Morning to you', '早安']],
-    afternoon: [['Good afternoon', '下午好'], ['Afternoon', '午安'], ['Good to see you', '又见面了'], ['Midday, then', '午间好'], ['Afternoon to you', '下午好啊']],
-    evening: [['Good evening', '晚上好'], ['Evening', '晚安时分'], ['Good to see you', '又见面了'], ['Evening to you', '晚上好啊'], ['Winding down', '收工时分']],
-    late: [['You’re up late', '夜深了'], ['Burning the midnight oil', '还没睡啊'], ['Still at it', '还在忙'], ['Can’t sleep either', '你也睡不着']]
+    morning: [['Good morning', '早上好'], ['Morning', '早啊'], ['Rise and shine', '起床啦'], ['Up early', '起得真早'], ['Morning to you', '早安']],
+    afternoon: [['Good afternoon', '下午好'], ['Afternoon', '下午好啊'], ['Good to see you', '又见面了'], ['Midday, then', '中午好'], ['Back at it', '继续开工啦']],
+    evening: [['Good evening', '晚上好'], ['Evening', '晚上好啊'], ['Good to see you', '又见面了'], ['Winding down', '忙了一天了吧']],
+    late: [['You’re up late', '夜深了啊'], ['Burning the midnight oil', '又熬夜了'], ['Still at it', '还没歇呢'], ['Can’t sleep either', '你也睡不着啊']]
   };
   function greetingLine() {
     var H = d0.getHours(), tod = H < 5 ? 'late' : H < 12 ? 'morning' : H < 18 ? 'afternoon' : H < 23 ? 'evening' : 'late';
@@ -298,15 +564,41 @@
   } else {
   lines.push({ big: true, s: greetingLine() });                       // the name (large)
 
-  if (C) {
+  // A holiday greets exactly once per occurrence, right after the name — after that,
+  // the day still KNOWS it's a holiday (closed-market framing), it just stops repeating it.
+  var holSpoken = false;
+  if (HOLIDAY && holMarkOnce(HOLIDAY)) { holSpoken = true; lines.push({ s: [HOLIDAY.en, HOLIDAY.zh] }); }
+
+  if (closedDay) {
+    // The market is CLOSED (weekend, or the viewer's holiday). Honest framing: last
+    // session read as the last session, crypto as the only live board, rest as the nudge.
+    if (!holSpoken) {
+      if (wknd) lines.push({ s: draw('wopen.' + (dow === 6 ? 'sat' : 'sun'), WOPEN[dow === 6 ? 'sat' : 'sun']) });
+      else lines.push({ s: draw('hopen', HOPEN) });
+    }
+    if (C && visit < 3) lines.push({ s: draw('wtape.' + dir, WTAPE[dir]) });
+    if (visit < 3) {
+      var wmids = [];
+      if (BTC) wmids.push(['crypto.' + BTC, CRYPTO[BTC]]);
+      if (C) {
+        var wrd = C.home.rdir || 'stable', wgoodQ = (quad === 'q1' || quad === 'q2');
+        wmids.push(wrd === 'deteriorating' ? ['regime.det', REGD] : wrd === 'improving' ? ['regime.imp', REGI] : wgoodQ ? ['regime.sg', REGSG] : ['regime.sb', REGSB]);
+      }
+      wmids.push(['meta', META]);
+      wmids.sort(function (a, b) { return (MEM.mids.indexOf(a[0].split('.')[0]) >= 0 ? 1 : 0) - (MEM.mids.indexOf(b[0].split('.')[0]) >= 0 ? 1 : 0); });
+      if (wmids.length) { MEM.mids.push(wmids[0][0].split('.')[0]); lines.push({ s: draw(wmids[0][0], wmids[0][1]) }); }
+    }
+    lines.push({ s: draw(wknd ? 'wnudge' : 'hnudge', wknd ? WNUDGE : HNUDGE) });
+    if (visit === 1 && wknd) lines.push({ s: draw('wclose', WCLOSE) });
+  } else if (C) {
     // The regime TREND biases the day's advice, symmetrically — the whole point of this:
     //  • a good regime DETERIORATING is a slow headwind → one notch more cautious even on a
     //    green tape (don't let a lagging "Goldilocks" talk you into risk while it rolls over);
     //  • a bad regime IMPROVING toward a better quad is a tailwind → ease one notch (bad-to-
     //    better is when you lean in early). Direction, not just the last print.
-    if (C.us.rdir === 'deteriorating' && (quad === 'q1' || quad === 'q2')) {
+    if (C.home.rdir === 'deteriorating' && (quad === 'q1' || quad === 'q2')) {
       C.mood = { on: 'good', good: 'mixed', mixed: 'careful', careful: 'off', off: 'off' }[C.mood] || C.mood;
-    } else if (C.us.rdir === 'improving' && C.us.rtoward_en) {
+    } else if (C.home.rdir === 'improving' && C.home.rtoward_en) {
       C.mood = { off: 'careful', careful: 'mixed', mixed: 'good', good: 'good', on: 'on' }[C.mood] || C.mood;
     }
     // opener / recall
@@ -319,9 +611,10 @@
     var budget = visit >= 3 ? 0 : 1;
     if (budget) {
       var mids = [];
-      var rdir = C.us.rdir || 'stable', goodQ = (quad === 'q1' || quad === 'q2'), turning = (rdir === 'deteriorating' || rdir === 'improving');
+      var rdir = C.home.rdir || 'stable', goodQ = (quad === 'q1' || quad === 'q2'), turning = (rdir === 'deteriorating' || rdir === 'improving');
       var rgm = rdir === 'deteriorating' ? ['regime.det', REGD] : rdir === 'improving' ? ['regime.imp', REGI] : goodQ ? ['regime.sg', REGSG] : ['regime.sb', REGSB];
-      if (turning) mids.push(rgm);   // a regime that's TURNING is the headline — surface it first
+      if (ALERTX) mids.push(['alert', ALERTP]);   // the freshest change on the board leads
+      if (turning) mids.push(rgm);   // a regime that's TURNING is the headline — surface it early
       mids.push(['region', REGION]);
       mids.push(['risk.' + (C.risky ? 'hot' : 'calm'), RISK[C.risky ? 'hot' : 'calm']]);
       var bk = C.down >= C.total * 0.6 ? 'down' : C.up >= C.total * 0.6 ? 'up' : 'split';
@@ -380,7 +673,8 @@
       tx.textContent = full.slice(0, i);
       if (i <= full.length) {
         var ch = full.charAt(i - 1); i++;
-        var d = (ch === ' ' || ch === '，' || ch === ',') ? 90 : (ch === '.' || ch === '。' || ch === '—' || ch === '?' || ch === '!') ? 150 : 26;
+        // pause at breath points in BOTH scripts (、； and full-width ？！ included)
+        var d = /[\s，,、；;]/.test(ch) ? 90 : /[.。—？?！!…：]/.test(ch) ? 150 : 26;
         setTimeout(type, d);
       } else {
         var hold = ln.big ? 1150 : Math.min(2600, 1250 + full.length * 12);   // longer remarks land longer
