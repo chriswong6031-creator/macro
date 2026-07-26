@@ -278,7 +278,7 @@
       <div class="fl-eyebrow">
         <span>{{ t('Options money flow', '期权资金流') }}</span>
         <span>· {{ t('US', '美股') }} ·</span>
-        <span class="num">{{ fl.as_of[:10] if fl.as_of is defined and fl.as_of is not none else '—' }}</span>
+        <span class="num">{{ fl.session_date if (fl.session_date is defined and fl.session_date is not none) else (fl.as_of[:10] if fl.as_of is defined and fl.as_of is not none else '—') }}</span>
         <span class="approx" data-tip-en="Direction is approximate — we sign flow buy vs sell from the trade tape (or minute bars), which is ~88% accurate on tape names. The SIZE of the money is the reliable part; treat the up/down direction as a lean, not a fact." data-tip-zh="方向为近似值 — 买/卖方向依据成交分笔（或分钟K线）判定，分笔标的约88%准确。可靠的是资金的「规模」；涨跌方向仅供参考，非定论。">~ {{ t('direction approximate', '方向近似') }}</span>
       </div>
       <div class="fl-read">

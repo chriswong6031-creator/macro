@@ -55,6 +55,7 @@ def _stores() -> dict:
         "flow_desk": {
             "asof": "2026-07-24",
             "direction_note": "net premium direction is SOFT — approximate",
+            "direction_reliable": False,
             "read": {
                 "asof": "2026-07-24", "gross_premium_mn": 18912.4, "zerodte_share": 0.515,
                 "intensity_score": 44, "intensity_key": "average",
@@ -77,11 +78,14 @@ def _stores() -> dict:
         "screener": {
             "n_rows": 4,
             "rows": [
-                {"ticker": "QQQ", "sector": "ETF / Index", "asof": "2026-07-26",
+                # These 3 rows share the FLOW DESK'S own asof (2026-07-24) — a
+                # genuinely agreeing "Complete" fixture.  Vintage-mismatch is
+                # exercised separately (test_vintage_mismatch_degrades_quality...).
+                {"ticker": "QQQ", "sector": "ETF / Index", "asof": "2026-07-24",
                  "dist_to_flip_pct": -3.86, "gross_premium_mn": 2316.0},
-                {"ticker": "SPY", "sector": "ETF / Index", "asof": "2026-07-26",
+                {"ticker": "SPY", "sector": "ETF / Index", "asof": "2026-07-24",
                  "dist_to_flip_pct": 0.4, "gross_premium_mn": 2615.0},
-                {"ticker": "AAPL", "sector": "Tech", "asof": "2026-07-26",
+                {"ticker": "AAPL", "sector": "Tech", "asof": "2026-07-24",
                  "dist_to_flip_pct": -0.7, "gross_premium_mn": 307.0},
                 # a STALE row — the remainder the close line must show as missing
                 {"ticker": "OLD", "sector": "Tech", "asof": "2026-06-22",
@@ -106,7 +110,10 @@ def _stores() -> dict:
         "market_structure": {
             "asof": "2026-07-24",
             "gamma": {"regime": "short", "net_gex_pctile": 14.7, "days_in_regime": 3},
-            "state_changes": {"vs_asof": "2026-07-21", "items": [
+            # vs_asof is the SOUND, immediately-preceding session (Thu 07-23 ->
+            # Fri 07-24) — the stale multi-session-gap case is exercised
+            # separately (test_regime_chip_suppressed_when_baseline...).
+            "state_changes": {"vs_asof": "2026-07-23", "items": [
                 {"key": "gamma_regime", "from": "long", "to": "short",
                  "note_en": "Dealer gamma regime flipped", "note_zh": "做市商伽马机制翻转"},
                 # an unrecognised key must be SKIPPED, never machine-phrased at the user
@@ -130,7 +137,7 @@ def _stores() -> dict:
                 "expected_move": {"daily_pct": 0.96},
             } for k in INDEX_KEYS
         },
-        "gex_index": [{"key": k, "asof": "2026-07-25"} for k in INDEX_KEYS],
+        "gex_index": [{"key": k, "asof": "2026-07-24"} for k in INDEX_KEYS],
     }
 
 
@@ -323,6 +330,32 @@ def test_changed_chips_skip_keys_without_plain_copy():
     assert "some_future_key" not in str(chips)
 
 
+def test_regime_chip_carries_its_own_comparison_date_in_its_tooltip(page):
+    """A shared panel-level 'since X's close' header conflated two different
+    baselines (#F2-14) — each chip must carry its own date instead."""
+    assert "'s close</span>" not in page, "the removed panel-level header text is back"
+    ws = _workspace(page)
+    assert re.search(r'data-tip-en="[^"]*Comparison baseline: 2026-07-23[^"]*"', ws), (
+        "regime-flip chip lost its own comparison-date tooltip")
+
+
+def test_regime_chip_suppressed_when_baseline_is_not_the_prior_session():
+    """A multi-session build gap makes 'since <date>' unsound — withhold the
+    chip rather than mislabel it (#F2-14, the exact F3-04 build-gap scenario)."""
+    stores = _stores()
+    stores["market_structure"]["state_changes"]["vs_asof"] = "2026-07-21"  # 3-session gap
+    chips = build_context(REPO, stores)["changed"]["chips"]
+    labels = {c["en"] for c in chips}
+    assert "Dealers now amplify moves" not in labels
+    assert "Tape got heavier" in labels, "the unrelated, sound chip must still fire"
+
+
+def test_regime_chip_fires_when_baseline_is_the_immediately_prior_session():
+    chips = build_context(REPO, _stores())["changed"]["chips"]
+    labels = {c["en"] for c in chips}
+    assert "Dealers now amplify moves" in labels
+
+
 def test_rail_group_b_uses_the_corrected_washout_rule():
     """Board B admission is B5 (the washout-flip verdict), never
     days_since_inflection — which stays populated for stale flips (#3496)."""
@@ -357,6 +390,36 @@ def test_sector_bars_share_one_scale():
     assert sectors["rows"][1]["width"] == 50.0
     assert sectors["rows"][0]["cls"] == "buy" and sectors["rows"][1]["cls"] == "sell"
     assert sectors["top2_pct"] == 99      # (8040+4020)/12160
+
+
+def test_sector_hover_no_longer_claims_a_per_trade_accuracy_figure(page):
+    """The sector tone hover misattributed the PER-TRADE agreement statistic
+    (~80%) to the aggregated net-sign figure the tone actually displays, which
+    the repo's own calibration measures at ~41% and marks permanently
+    unreliable (#F1-critical)."""
+    assert "4 times in 5" not in page
+    assert "recovers true direction" not in page
+    assert "还原真实方向" not in page
+
+
+def test_direction_honesty_is_rendered_not_just_loaded(page):
+    """direction_note / direction_reliable were loaded into the render context
+    but no template ever referenced them (#F2-09) — the sector panel must
+    carry a visible, bilingual caution when the flow desk's own store says
+    direction is unreliable."""
+    ctx = build_context(REPO, _stores())
+    assert ctx["direction_reliable"] is False
+    text = _visible_text(_workspace(page))
+    assert "not reliable alone" in text
+    assert "不足以单独判断" in text
+
+
+def test_direction_caution_is_silent_when_the_flag_is_absent():
+    """No direction_reliable field at all -> no fabricated caution either way."""
+    stores = _stores()
+    del stores["flow_desk"]["direction_reliable"]
+    html = render(REPO, stores)
+    assert "not reliable alone" not in html
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -395,6 +458,52 @@ def test_stale_leader_boards_are_named_in_the_quality_receipt():
     sess = build_context(REPO, stores)["session"]
     assert sess["quality_en"] == "Partial"
     assert "earlier session" in sess["quality_tip_en"]
+
+
+def test_present_but_empty_stores_are_not_complete():
+    """A store that is PRESENT but carries no rows/boards is exactly as
+    unusable as an absent one — `{"rows": []}` and `{"board_a": [],
+    "board_b": []}` are truthy dicts a bare `if not store` waves through (#F2-02)."""
+    stores = _stores()
+    stores["screener"] = {"rows": []}
+    ctx = build_context(REPO, stores)
+    assert "screener" in ctx["missing"]
+    assert ctx["session"]["quality_en"] == "Partial"
+
+    stores2 = _stores()
+    stores2["leaders"] = {"board_a": [], "board_b": []}
+    ctx2 = build_context(REPO, stores2)
+    assert "leaders" in ctx2["missing"]
+    assert ctx2["session"]["quality_en"] == "Partial"
+
+    stores3 = _stores()
+    stores3["flow_desk"] = {"asof": "2026-07-24"}   # present, but no `read`
+    ctx3 = build_context(REPO, stores3)
+    assert "flow_desk" in ctx3["missing"]
+    assert ctx3["session"]["quality_en"] == "Partial"
+
+
+def test_vintage_mismatch_degrades_quality_and_is_named():
+    """flow_desk lagging the screener's freshest chain must not read as
+    Complete — the mismatch must be named, not silently absorbed (#F2-03/#F2-04)."""
+    stores = _stores()
+    for row in stores["screener"]["rows"][:3]:
+        row["asof"] = "2026-07-25"   # a session newer than flow_desk's own asof
+    sess = build_context(REPO, stores)["session"]
+    assert sess["quality_en"] == "Partial"
+    assert sess["coverage_asof"] == "2026-07-25"
+    assert sess["date"] == "2026-07-24"
+    assert "2026-07-25" in sess["quality_tip_en"]
+    assert "2026-07-24" in sess["quality_tip_en"]
+    assert "2026-07-25" in sess["cov_tip_en"], "the coverage tip must say WHEN it was measured"
+
+
+def test_index_levels_vintage_mismatch_also_degrades_quality():
+    stores = _stores()
+    stores["gex_index"] = [{"key": k, "asof": "2026-07-22"} for k in INDEX_KEYS]
+    sess = build_context(REPO, stores)["session"]
+    assert sess["quality_en"] == "Partial"
+    assert "2026-07-22" in sess["quality_tip_en"]
 
 
 def test_partial_stores_degrade_only_their_own_section():
@@ -540,6 +649,151 @@ def test_money_formatting():
     assert money_mn(-143.0) == "−$143M"
     assert money_mn(None) == "—"
     assert money_mn(float("nan")) == "—"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# main() — the "always exits 0" contract (#F1-08)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_main_exits_zero_even_when_write_page_raises(monkeypatch, tmp_path):
+    """The docstring's contract (§5): the builder always exits 0.  write_page
+    and the second, redundant context-build-for-logging used to sit OUTSIDE
+    the render() try/except, so an exception in either escaped main() despite
+    the contract's promise."""
+    import scripts.build_options_command as boc
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr("lib.pages.write_page", _boom)
+    rc = boc.main(["--root", str(REPO), "--out", str(tmp_path / "options.html")])
+    assert rc == 0
+    assert not (tmp_path / "options.html").exists()
+
+
+def test_main_exits_zero_on_a_genuine_render_failure(monkeypatch, tmp_path):
+    import scripts.build_options_command as boc
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("template exploded")
+
+    monkeypatch.setattr(boc, "render", _boom)
+    rc = boc.main(["--root", str(REPO), "--out", str(tmp_path / "options.html")])
+    assert rc == 0
+
+
+def test_main_writes_the_page_on_the_happy_path(tmp_path):
+    import scripts.build_options_command as boc
+    out = tmp_path / "options.html"
+    rc = boc.main(["--root", str(REPO), "--out", str(out)])
+    assert rc == 0
+    assert out.exists() and out.stat().st_size > 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lazy-mode JS renderers actually produce content from their payload (#F2-05c)
+# ─────────────────────────────────────────────────────────────────────────────
+import json as _json  # noqa: E402
+import shutil as _shutil  # noqa: E402
+import subprocess as _subprocess  # noqa: E402
+
+_HAS_NODE = _shutil.which("node") is not None
+_needs_node = pytest.mark.skipif(not _HAS_NODE, reason="node not on PATH")
+
+
+def _extract_workspace_script(rendered: str) -> str:
+    """The workspace's one inline <script>'s IIFE body (everything up to but
+    excluding the closing `})();`) — renderScanner/Ticker/Leaders are
+    closure-local, so a test call must be spliced INSIDE it."""
+    anchor = rendered.index("<!-- /oew -->")
+    start = rendered.index("<script>", anchor) + len("<script>")
+    end = rendered.index("</script>", start)
+    body = rendered[start:end].strip()
+    assert body.endswith("})();"), "options.html.j2's script no longer ends in the expected IIFE close"
+    return body[: -len("})();")]
+
+
+_DOM_STUB = """
+var document = { querySelectorAll: function(){ return []; },
+                  getElementById: function(){ return null; },
+                  addEventListener: function(){} };
+var location = { hash: '', search: '' };
+var history = { replaceState: function(){} };
+var fetch = function(){ return Promise.reject(new Error('fetch disabled in test')); };
+"""
+
+
+@_needs_node
+def test_lazy_mode_renderers_produce_non_empty_markup_from_their_payload(page):
+    """The three lazy modes render as literally empty <section> containers
+    filled at runtime by JS (templates/options.html.j2:850-856).  The existing
+    suite (test_all_four_mode_containers_render,
+    test_lazy_payloads_use_plain_fetch_not_injected_script_loaders) asserts
+    only the container id and the fetch URL literal — never that the renderer
+    produces ANY content from its own fixture payload.  All three could
+    silently render empty and stay green (#F2-05c)."""
+    driver = _DOM_STUB + _extract_workspace_script(page) + """
+    var hostScanner = { innerHTML: '' };
+    renderScanner(hostScanner, { rows: [
+      { ticker: 'AAPL', sector: 'Tech', spot: 210.5, iv30: 0.28,
+        gross_premium_mn: 120.0, net_prem_mn: 40.0, net_prem_tone: 'call-leaning',
+        asof: '2026-07-24', dist_to_flip_pct: 0.5, gamma_regime: 'long' }
+    ] });
+
+    var hostLeaders = { innerHTML: '' };
+    renderLeaders(hostLeaders, {
+      as_of: '2026-07-24T00:00:00+00:00', stale: false,
+      board_a: [{ ticker: 'MARA', sector: 'Crypto', recurrence_count: 6,
+                  A1_flow_recur: true, fire_a: false, de_escalation: {} }],
+      board_b: [],
+    });
+
+    var hostTicker = { innerHTML: '' };
+    renderTicker(hostTicker, 'SPY',
+      { meta: { en: 'SPY name', asof: '2026-07-24' },
+        summary: { spot: 500, regime: 'long', gamma_flip: 490,
+                   call_wall: 520, put_wall: 480, max_pain: 495 },
+        expected_move: { daily_pct: 1.1 } },
+      { premium_mn: 900, zerodte_share: 0.4, pc_ratio: 0.8,
+        net_premium_mn: 120, asof: '2026-07-24' });
+
+    process.stdout.write(JSON.stringify({
+      scanner: hostScanner.innerHTML,
+      leaders: hostLeaders.innerHTML,
+      ticker: hostTicker.innerHTML,
+    }));
+    })();
+    """
+    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
+    out = _json.loads(res.stdout.strip().splitlines()[-1])
+    assert "AAPL" in out["scanner"], "renderScanner produced no visible content from its payload"
+    assert "MARA" in out["leaders"], "renderLeaders produced no visible content from its payload"
+    assert "SPY" in out["ticker"], "renderTicker produced no visible content from its payload"
+    for key, val in out.items():
+        assert val.strip(), f"render{key} produced empty markup"
+
+
+@_needs_node
+def test_lazy_mode_renderers_show_empty_state_for_an_empty_payload(page):
+    """The honest-empty path (no rows / no boards / no chain) must also
+    produce SOME markup — not a silently blank host."""
+    driver = _DOM_STUB + _extract_workspace_script(page) + """
+    var hostScanner = { innerHTML: '' };
+    renderScanner(hostScanner, { rows: [] });
+    var hostLeaders = { innerHTML: '' };
+    renderLeaders(hostLeaders, null);
+    var hostTicker = { innerHTML: '' };
+    renderTicker(hostTicker, 'ZZZZ', null, null);
+    process.stdout.write(JSON.stringify({
+      scanner: hostScanner.innerHTML, leaders: hostLeaders.innerHTML, ticker: hostTicker.innerHTML,
+    }));
+    })();
+    """
+    res = _subprocess.run(["node", "-e", driver], capture_output=True, text=True, timeout=30)
+    assert res.returncode == 0, f"node failed:\nSTDERR:\n{res.stderr}\nSTDOUT:\n{res.stdout}"
+    out = _json.loads(res.stdout.strip().splitlines()[-1])
+    for key, val in out.items():
+        assert "oew-empty" in val, f"render{key} did not show an honest empty state"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

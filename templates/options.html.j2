@@ -638,7 +638,6 @@ html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font
   <div class="oew-panel">
     <div class="oew-phead">
       <h2 class="oew-ph-title">{{ t('What changed', '有何变化') }}</h2>
-      {% if changed.vs %}<span class="oew-ph-sub"><span class="l-en">since {{ changed.vs }}'s close</span><span class="l-zh">较 {{ changed.vs }} 收盘</span></span>{% endif %}
       <div class="oew-ph-right">
         <span class="oew-help" tabindex="0" role="button"
           data-tip-en="Each chip compares this close with the previous close on one measure. Hover a chip for the two numbers behind it."
@@ -719,8 +718,8 @@ html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font
       <span class="oew-ph-sub">{{ t("how concentrated today's options money was", '今日期权资金的集中程度') }}</span>
       <div class="oew-ph-right">
         <span class="oew-help" tabindex="0" role="button"
-          data-tip-en="Bars share one scale, so lengths are directly comparable. Size is a solid read; the buying/selling tone is approximate — it comes from tick-rule signing, which recovers true direction about 4 times in 5."
-          data-tip-zh="所有柱状图共用同一刻度，长度可直接比较。规模数据可靠；买入/卖出方向为近似值 — 来自 tick 规则签署，约五次中有四次能还原真实方向。">?</span>
+          data-tip-en="Bars share one scale, so lengths are directly comparable. Size is a solid read; the buying/selling tone comes from tick-rule signing and is not reliable enough to read as direction on its own."
+          data-tip-zh="所有柱状图共用同一刻度，长度可直接比较。规模数据可靠；买入/卖出方向来自 tick 规则签署，其本身不足以作为方向依据。">?</span>
       </div>
     </div>
     <div class="oew-pbody">
@@ -751,6 +750,11 @@ html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font
              '这是资金去向的记录，而非对后续走向的预测。') }}
         {% endif %}
       </span>
+      {% if direction_reliable == false %}
+      <span class="cau" data-tip-en="{{ direction_note or 'Net premium direction comes from tick-rule signing and is approximate.' }}" data-tip-zh="买卖倾向来自 tick 规则签署，为近似值，不足以单独作为方向依据。">
+        <span class="l-en">tone: not reliable alone</span><span class="l-zh">倾向：不足以单独判断</span>
+      </span>
+      {% endif %}
       {% if sectors and sectors.asof %}<span class="oew-asof mono">{{ sectors.asof }}</span>{% endif %}
     </div>
   </div>
@@ -1229,8 +1233,8 @@ function renderTicker(host, tk, gx, fl){
     + '</div></div>'
     + '<div class="oew-pfoot">'
       + '<span class="oew-stance st-watch">' + bi("Watch — don't chase",'观察—勿追高') + '</span>'
-      + '<span>' + bi('Size is a solid read. Direction is approximate — the signing rule recovers true buy/sell about 4 times in 5.',
-          '规模数据可靠。方向为近似值 — 签署规则约五次中有四次能还原真实买卖方向。') + '</span>'
+      + '<span>' + bi('Size is a solid read. Direction comes from tick-rule signing and is not reliable enough to read on its own.',
+          '规模数据可靠。方向数据来自 tick 规则签署，其本身不足以作为方向依据。') + '</span>'
       + (fl.asof ? '<span class="oew-asof mono">' + esc(fl.asof) + '</span>' : '')
     + '</div>'
   + '</div>' : '')

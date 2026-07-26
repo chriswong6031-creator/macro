@@ -299,6 +299,33 @@ def _load_yahoo(root: str) -> pd.Series | None:
 # per-root builder
 # --------------------------------------------------------------------------- #
 
+def _attach_gex_history(gex_payload: dict, hist: list[dict] | None) -> dict:
+    """Attach the polygon_gex history tail to a gex payload — and disclose it
+    when that history's own last date disagrees with the payload's live asof
+    (#F3-16 / options_hub GEX asof↔history↔coverage disagreement).
+
+    load_gex_history_v2 reads data/polygon_gex/summary_{ROOT}.parquet — a
+    SEPARATELY-CADENCED store with its own updater, not this build's
+    greeks/OI read — so it CAN lag behind the live asof by one or more
+    sessions.  Silently trusting history[-1] to be fresh let the coverage
+    block and the history tail contradict each other with nothing in the
+    payload saying so.  This does not change WHAT ships (still absent when
+    hist is None, per CONTRACT v2 — frontend checks key presence); it only
+    adds the one fact a consumer needs to reconcile the two.
+    """
+    if hist is None:
+        return gex_payload
+    gex_payload = dict(gex_payload)
+    gex_payload["history"] = hist
+    hist_asof = None
+    if hist and isinstance(hist[-1], dict):
+        hist_asof = hist[-1].get("date")
+    cov = dict(gex_payload.get("coverage") or {})
+    cov["history_asof"] = hist_asof
+    gex_payload["coverage"] = cov
+    return gex_payload
+
+
 def build_root(
     root: str,
     asof: str,
@@ -346,9 +373,7 @@ def build_root(
     if polygon_gex_dir is not None:
         try:
             hist = load_gex_history_v2(root, polygon_gex_dir)
-            if hist is not None:
-                gex_payload = dict(gex_payload)
-                gex_payload["history"] = hist
+            gex_payload = _attach_gex_history(gex_payload, hist)
         except Exception as _he:  # noqa: BLE001
             log.warning("build_root: gex_history attach failed for %s — %s", root, _he)
 

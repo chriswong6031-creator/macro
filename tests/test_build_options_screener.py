@@ -434,9 +434,14 @@ def _write_mfix_gex_fixture(gex_dir: pathlib.Path, ticker: str, gamma_regime_las
     Last row: spot=200, max_pain=100 →
         spot denominator (correct): (200-100)/200*100 =  50.0
         max_pain denominator (bug): (200-100)/100*100 = 100.0
+
+    Dates are a plain Mon-Fri business week with NO NYSE holiday in it (2026-06-15
+    is a real week but its Friday, 06-19, is Juneteenth) — the session filter in
+    _load_gex_summary (#F3-17) would otherwise drop the fixture's own last row and
+    silently shift `gamma_regime_last` onto the wrong row.
     """
     n_rows = 5
-    dates = pd.date_range("2026-06-15", periods=n_rows, freq="D")
+    dates = pd.date_range("2026-06-08", periods=n_rows, freq="D")
     df = pd.DataFrame(
         {
             "spot":              [200.0] * n_rows,
@@ -586,3 +591,73 @@ def test_coverage_stamp_says_sessions_observed(tmp_path, monkeypatch):
     assert "已观测交易日" in stamp
     assert "calendar days" not in stamp, "median depth is an observation count, not a calendar span"
     assert "个日历日" not in stamp
+
+
+# ---------------------------------------------------------------------------
+# 10. OEU bug-wave F3-17 — _load_gex_summary must ignore non-session rows
+#     (a per-ticker store accruing a Sat/Sun row makes that ticker's `asof`
+#     a non-trading date, which the Scanner's "Data age" column then treats
+#     as the freshness reference for every OTHER name too).
+# ---------------------------------------------------------------------------
+
+def _write_gex_fixture_with_weekend_tail(gex_dir: pathlib.Path, ticker: str):
+    """A real session week (Mon-Fri) PLUS a trailing Sat/Sun pair whose values
+    are NOT simple carry-forward duplicates — mirrors the committed store's own
+    observed shape (data/polygon_gex/summary_AAPL.parquet: 07-25 Sat and 07-26
+    Sun both carry freshly-computed, non-identical spot/iv30)."""
+    idx = pd.to_datetime([
+        "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24",  # Mon-Fri
+        "2026-07-25", "2026-07-26",                                            # Sat, Sun
+    ])
+    df = pd.DataFrame(
+        {
+            "spot":              [100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0],
+            "iv30":              [0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26],
+            "put_call_oi_ratio": [1.0] * 7,
+            "max_pain":          [99.0] * 7,
+            "magnet_up":         [110.0] * 7,
+            "magnet_down":       [90.0] * 7,
+            "gamma_flip":        [102.0] * 7,
+            "gamma_regime":      ["long"] * 7,
+            "tier":              ["full"] * 7,
+            "n_strikes":         [100] * 7,
+        },
+        index=idx,
+    )
+    df.to_parquet(gex_dir / f"summary_{ticker}.parquet")
+
+
+def test_load_gex_summary_drops_weekend_rows(tmp_path, monkeypatch):
+    monkeypatch.setattr(bos, "GEX_DIR", tmp_path)
+    _write_gex_fixture_with_weekend_tail(tmp_path, "ACME")
+    df = bos._load_gex_summary("ACME")
+    dates = [str(d.date()) for d in df.index]
+    assert "2026-07-25" not in dates
+    assert "2026-07-26" not in dates
+    assert "2026-07-24" in dates
+
+
+def test_asof_date_is_a_real_session_not_a_weekend(tmp_path, monkeypatch):
+    """The regression that shipped: 370 of 403 rows carried a Sunday asof
+    because `.index[-1]` landed on the store's own weekend tail row."""
+    monkeypatch.setattr(bos, "GEX_DIR", tmp_path)
+    _write_gex_fixture_with_weekend_tail(tmp_path, "ACME")
+    df = bos._load_gex_summary("ACME")
+    asof_date = str(df.index[-1])[:10]
+    assert asof_date == "2026-07-24"
+    from lib import nyse_calendar
+    from datetime import date as _date
+    y, m, d = (int(x) for x in asof_date.split("-"))
+    assert nyse_calendar.is_session(_date(y, m, d))
+
+
+def test_load_gex_summary_never_empties_the_store_on_an_all_weekend_frame(tmp_path, monkeypatch):
+    """Fail-open: a (contrived) all-non-session store must fall back to the
+    unfiltered frame rather than vanishing entirely."""
+    monkeypatch.setattr(bos, "GEX_DIR", tmp_path)
+    idx = pd.to_datetime(["2026-07-25", "2026-07-26"])  # Sat, Sun only
+    df_in = pd.DataFrame({"iv30": [0.20, 0.21], "spot": [100.0, 101.0]}, index=idx)
+    df_in.to_parquet(tmp_path / "summary_WEEKEND.parquet")
+    df = bos._load_gex_summary("WEEKEND")
+    assert df is not None and not df.empty
+    assert str(df.index[-1])[:10] == "2026-07-26"

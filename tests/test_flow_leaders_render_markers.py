@@ -124,3 +124,28 @@ def test_render_survives_empty_boards():
     assert "<html" in html
     for slug in BANNED_SLUGS:
         assert slug not in html
+
+
+# ---------------------------------------------------------------------------
+# OEU bug-wave F3-18 — the page stamp renders the underlying SESSION, not the
+# build's wall-clock timestamp (which can be a weekend/holiday date while
+# every board row describes the last real NYSE session).
+# ---------------------------------------------------------------------------
+
+def test_render_prefers_session_date_over_as_of_for_the_stamp():
+    payload = _payload()
+    payload["as_of"] = "2026-07-26T14:36:28+00:00"   # a Sunday build timestamp
+    payload["session_date"] = "2026-07-24"            # the Friday session the boards describe
+    html = _render(payload)
+    assert '<span class="num">2026-07-24</span>' in html
+    assert "2026-07-26" not in html
+
+
+def test_render_falls_back_to_as_of_when_session_date_absent():
+    """Backward-compat: an older payload shape (no session_date key at all)
+    must still render something, not a blank stamp."""
+    payload = _payload()
+    payload["as_of"] = "2026-07-25T09:00:00+00:00"
+    assert "session_date" not in payload
+    html = _render(payload)
+    assert '<span class="num">2026-07-25</span>' in html

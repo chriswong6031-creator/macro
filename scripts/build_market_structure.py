@@ -26,7 +26,7 @@ import logging
 import math
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -34,7 +34,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar  # noqa: E402
 
 log = logging.getLogger("build_market_structure")
 
@@ -89,6 +89,34 @@ def _spx_closes(data_dir: Path) -> pd.Series | None:
     return s if not s.empty else None
 
 
+def _read_gex_spx(data_dir: Path) -> pd.DataFrame | None:
+    """gex_SPX.parquet, restricted to real NYSE sessions (#F3-11/#F3-12).
+
+    The store carries weekend/holiday rows that RECOMPUTE net GEX off a stale,
+    carried-forward spot rather than skipping the non-session day — these are
+    fabricated observations, not genuine closes, and corrupt every reader that
+    takes `iloc[-1]` (the latest reading), the percentile window, and
+    days_in_regime if left in.  Filtering once here means every reader in this
+    module (the gamma block, the weekly-range IV lookup, the em_breach ledger
+    row) inherits the same session-true series.  Falls back to the unfiltered
+    frame if filtering would empty it out — a calendar-arithmetic surprise must
+    degrade to the old behaviour, never to a blank gamma block.
+    """
+    df = _read_parquet(data_dir / "cboe" / "gex_SPX.parquet")
+    if df is None or df.empty:
+        return df
+    try:
+        mask = [nyse_calendar.is_session(ts.date()) for ts in df.index]
+        filtered = df.loc[mask]
+        if filtered.empty:
+            log.warning("market_structure: gex_SPX session filter emptied the store; using unfiltered")
+            return df
+        return filtered
+    except Exception as exc:  # noqa: BLE001
+        log.warning("market_structure: gex_SPX session filter failed (%s); using unfiltered", exc)
+        return df
+
+
 # ---------------------------------------------------------------------------
 # Gamma block
 # ---------------------------------------------------------------------------
@@ -101,7 +129,7 @@ def _build_gamma_block(data_dir: Path) -> dict:
         "days_in_regime": None, "series_start": None, "history": [],
     }
     try:
-        df = _read_parquet(data_dir / "cboe" / "gex_SPX.parquet")
+        df = _read_gex_spx(data_dir)
         if df is None or df.empty:
             return null
         if "net_gex_bn" not in df.columns:
@@ -172,12 +200,27 @@ def _build_gamma_block(data_dir: Path) -> dict:
 _WEEK_TRADING_DAYS = 5   # Mon–Fri: the horizon the weekly band covers
 
 
-def _build_week_map(closes: pd.Series | None, data_dir: Path, gamma_block: dict) -> dict | None:
+def _build_week_map(
+    closes: pd.Series | None,
+    data_dir: Path,
+    gamma_block: dict,
+    build_today: date | None = None,
+) -> dict | None:
     """Weekly expected-move bands, locked at the prior Friday's close.
 
     FORMULA (all of it — no hidden steps):
 
-      week_start          = Monday of the asof session's week
+      today               = build_today, or the current ET calendar date
+      week_start          = Monday of the CURRENT-OR-NEXT trading week: today's
+                            own Mon–Fri week while today is still inside it
+                            (Mon–Fri); the FOLLOWING Monday once today is a
+                            Saturday or Sunday.  THE ANCHOR IS THE BUILD DATE,
+                            NOT closes.index[-1] (#F3-15) — anchoring on the
+                            data cursor freezes the band on a week that has
+                            already fully closed for the entire weekend (and,
+                            if the price store itself lags a session or two,
+                            for even longer), contradicting the page's own
+                            "resets each weekend" disclosure.
       locked_close        = last SPX close STRICTLY BEFORE week_start
                             (i.e. the prior week's final session — normally Friday)
       iv30                = SPX 30-day implied vol from data/cboe/gex_SPX.parquet,
@@ -192,9 +235,10 @@ def _build_week_map(closes: pd.Series | None, data_dir: Path, gamma_block: dict)
                             on the page.
       band_Ksigma_{lo,hi} = locked_close * (1 ∓ K * sigma_week),  K ∈ {1, 2}
 
-    The bands are LOCKED: every run inside the same Mon–Fri week reproduces the
-    same numbers, because both inputs are read strictly before that Monday. They
-    reset when the calendar rolls into the next week.
+    The bands are LOCKED: every run Mon–Fri of the same trading week reproduces
+    the same numbers, because the anchor is the calendar week and both inputs
+    are read strictly before its Monday.  They roll onto the week ahead the
+    moment today is on or past that week's Saturday — not on data arrival.
 
     Returns None when the inputs cannot support the section (no closes, no prior
     week, no IV) — the caller omits the key and the page shows its warming-up
@@ -203,8 +247,15 @@ def _build_week_map(closes: pd.Series | None, data_dir: Path, gamma_block: dict)
     if closes is None or closes.empty:
         return None
     try:
-        asof_ts = pd.Timestamp(closes.index[-1]).normalize()
-        week_start = asof_ts - pd.Timedelta(days=int(asof_ts.weekday()))
+        today = build_today or datetime.now(timezone.utc).astimezone(nyse_calendar.ET).date()
+        candidate_start = today - timedelta(days=today.weekday())
+        candidate_end = candidate_start + timedelta(days=4)
+        # Once today is past that week's Friday (Saturday or Sunday), the week
+        # is functionally over — a forward-looking band must already be locking
+        # in the week ahead, matching the page's own "resets each weekend" copy.
+        week_start_d = (candidate_start + timedelta(days=7)
+                        if today > candidate_end else candidate_start)
+        week_start = pd.Timestamp(week_start_d)
         week_end   = week_start + pd.Timedelta(days=4)
 
         prior = closes[closes.index < week_start]
@@ -215,7 +266,7 @@ def _build_week_map(closes: pd.Series | None, data_dir: Path, gamma_block: dict)
         if not np.isfinite(locked_close) or locked_close <= 0:
             return None
 
-        gex = _read_parquet(data_dir / "cboe" / "gex_SPX.parquet")
+        gex = _read_gex_spx(data_dir)
         if gex is None or gex.empty or "iv30" not in gex.columns:
             return None
         iv_series = gex["iv30"].astype(float).dropna()
@@ -593,9 +644,7 @@ def _build_ledger_rows(
     # L-3: em_breach
     try:
         if closes is not None and len(closes) >= 2:
-            gex_df = _read_parquet(
-                config.data_dir() / "cboe" / "gex_SPX.parquet"
-            )
+            gex_df = _read_gex_spx(config.data_dir())
             if gex_df is not None and "iv30" in gex_df.columns and not gex_df.empty:
                 # Prior-day IV30 (no lookahead: use t-1 iv30)
                 prior_iv30 = float(gex_df["iv30"].iloc[-2]) if len(gex_df) >= 2 else None
@@ -701,6 +750,28 @@ def main() -> int:
         vol_block.get("rv_cross_state"),
         disp_block.get("cor1m"),
     )
+
+    # --- Staleness tripwire (#F3-13) ---------------------------------------
+    # A skipped organ leaves no red signal on its own: latest.json just quietly
+    # keeps carrying an old asof until a human notices the gap in git history
+    # (three sessions, in the incident this closes).  The exchange calendar has
+    # ZERO data dependencies, so it cannot agree-with-and-hide a frozen feed the
+    # way a store-vs-store freshness check can — print LOUD the moment this
+    # build's own session lags what should already exist.
+    try:
+        expected = nyse_calendar.expected_last_session()
+        if asof:
+            asof_d = datetime.strptime(asof, "%Y-%m-%d").date()
+            if asof_d < expected:
+                gap_days = (expected - asof_d).days
+                msg = (f"market_structure asof={asof} is behind the expected last "
+                       f"session {expected} ({gap_days} calendar day(s) old) — the "
+                       "SPX closes store may not have been refreshed, or this "
+                       "organ's own build did not run")
+                log.warning(msg)
+                print(f"::warning title=build_market_structure::{msg}")
+    except Exception as exc:  # noqa: BLE001
+        log.debug("market_structure: staleness tripwire failed: %s", exc)
 
     # --- Write history.parquet (full backcast, deterministic) ---
     if closes is not None and hist_frame is not None:

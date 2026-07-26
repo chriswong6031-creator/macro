@@ -1041,6 +1041,12 @@ def build(
     payload: dict[str, Any] = {
         "schema": "flow_leaders.v1",
         "as_of": as_of,
+        # The underlying session the boards describe (#F3-18) — `as_of` is the
+        # BUILD's wall-clock timestamp, which can read a weekend/holiday date
+        # even though every row on the page is dated to the last real NYSE
+        # session (latest_session).  The page stamp renders THIS field; as_of
+        # stays for whatever else already reads the build timestamp.
+        "session_date": latest_session,
         "stale": stale,
         "cold_start": cold_start,
         "direction_note": (
