@@ -1652,6 +1652,19 @@ lanes:
           on a live doctrine surface). Serial post-band, not cl_misc, because
           cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_leader_radar
+        module: scripts.build_leader_radar
+        note: >
+          Leader Radar, page-only rebake (scope=all, serial post-band via
+          leaderradar()). Pure function of committed stores + build_site's
+          stockdata JSONs (after spine); every data/ write is
+          COLLECT_LANE=nightly-gated (HOUSE-U5, CI-pinned), exit 0. Added
+          2026-07-25 (LR-EXP vetting, #3578): daily-lane-only membership + 3
+          dead nightlies froze the baked page 07-22..24. Serial post-band, not
+          cl_gex/cl_misc, because build_options_skew rewrites
+          data/options_skew/snapshots.parquet non-atomically — a concurrent
+          read drops call_skew_rich chips. Byte-stable off-nightly; pick_lab
+          gates radar.json on as_of freshness (nightly-sole-advancer).
       - id: build_foresight
         module: scripts.build_foresight
         note: >
@@ -1804,6 +1817,19 @@ lanes:
           froze site/flow_leaders.html at its pre-#3224 render. Serial post-band,
           not cl_misc, because cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_leader_radar
+        module: scripts.build_leader_radar
+        note: >
+          Leader Radar, page-only rebake (scope=all, serial post-band via
+          leaderradar()). Pure function of committed stores + build_site's
+          stockdata JSONs (after spine); every data/ write is
+          COLLECT_LANE=nightly-gated (HOUSE-U5, CI-pinned), exit 0. Added
+          2026-07-25 (LR-EXP vetting, #3578): daily-lane-only membership + 3
+          dead nightlies froze the baked page 07-22..24. Serial post-band, not
+          cl_gex/cl_misc, because build_options_skew rewrites
+          data/options_skew/snapshots.parquet non-atomically — a concurrent
+          read drops call_skew_rich chips. Byte-stable off-nightly; pick_lab
+          gates radar.json on as_of freshness (nightly-sole-advancer).
       - id: build_foresight
         module: scripts.build_foresight
         note: >
