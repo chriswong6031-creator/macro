@@ -302,7 +302,8 @@ def test_reply_appends_message_emails_and_sets_emailed(wired, no_mail):
     assert len(no_mail) == 1
     call = no_mail[0]
     assert call["template"] == "ticket_reply" and call["cls"] == "transactional"
-    assert call["idem_key"] == f"ticket-reply:{MID}"
+    # content-derived, not message-id-derived — see test_reply_idem_key_is_content_derived
+    assert call["idem_key"].startswith(f"ticket-reply:{TID}:")
     assert call["to_email"] == "ada@example.com"
     assert "Card declined" in call["subject"]
 
@@ -439,3 +440,106 @@ def test_support_routes_require_auth_and_csrf():
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+# ===========================================================================
+# m4 — chip counts are scoped to the active SEARCH (they were global before)
+# ===========================================================================
+def test_summary_counts_are_scoped_to_the_search(wired):
+    q = wired
+    support_tickets.panel(q="lovelace")
+    summary = q.find("group by 1")
+    assert "ilike '%lovelace%'" in summary, "chip counts must reflect the search"
+    # …but NOT to the status filter: each chip has to show what clicking it would give
+    q.sqls.clear()
+    support_tickets.panel(status="closed", q="lovelace")
+    summary = q.find("group by 1")
+    assert "ilike '%lovelace%'" in summary
+    assert "t.status = 'closed'" not in summary
+
+
+def test_summary_is_unfiltered_without_a_search(wired):
+    q = wired
+    support_tickets.panel()
+    summary = q.find("group by 1")
+    assert "where true" in summary and "ilike" not in summary
+
+
+def test_search_needle_is_capped_before_quoting(wired):
+    q = wired
+    support_tickets.panel(q="z" * 5000)
+    rows = q.find("t.subject")
+    assert "z" * support_tickets.SEARCH_MAX in rows
+    assert "z" * (support_tickets.SEARCH_MAX + 1) not in rows
+
+
+# ===========================================================================
+# B1 defence-in-depth — a stored CRLF subject cannot break the reply lane
+# ===========================================================================
+def test_reply_subject_is_collapsed_from_a_dirty_stored_subject(wired, no_mail):
+    q = wired
+    q.ticket = _ticket(subject="Card declined\r\nBcc: attacker@evil.test")
+    payload, code = support_tickets.act(TID, "reply", "sorted")
+    assert code == 200
+    subject = no_mail[0]["subject"]
+    assert "\n" not in subject and "\r" not in subject
+    assert subject.startswith("Re: Card declined Bcc:")
+
+
+def test_one_line_helper():
+    assert support_tickets._one_line("a\r\nb  c") == "a b c"
+    assert support_tickets._one_line(None) == ""
+    assert len(support_tickets._one_line("x" * 500)) == 200
+
+
+# ===========================================================================
+# M6 — reply idempotency is content-derived, and 'duplicate' means delivered
+# ===========================================================================
+def test_reply_idem_key_is_content_derived(wired, no_mail):
+    """Keyed on ticket + reply TEXT, not the new message id: a double-click mints a fresh
+    message id, so an id-keyed ledger would never see the duplicate."""
+    import hashlib
+    q = wired
+    body = "We refunded the duplicate charge."
+    support_tickets.act(TID, "reply", body)
+    expect = hashlib.sha256(body.encode()).hexdigest()[:16]
+    assert no_mail[0]["idem_key"] == f"ticket-reply:{TID}:{expect}"
+
+
+def test_identical_double_submit_produces_the_same_idem_key(wired, no_mail):
+    q = wired
+    support_tickets.act(TID, "reply", "same text")
+    q.ticket = _ticket(status="pending")
+    support_tickets.act(TID, "reply", "same text")
+    assert no_mail[0]["idem_key"] == no_mail[1]["idem_key"]
+
+
+def test_different_replies_get_different_idem_keys(wired, no_mail):
+    q = wired
+    support_tickets.act(TID, "reply", "first answer")
+    q.ticket = _ticket(status="pending")
+    support_tickets.act(TID, "reply", "second answer")
+    assert no_mail[0]["idem_key"] != no_mail[1]["idem_key"]
+
+
+def test_duplicate_status_counts_as_emailed(wired, monkeypatch):
+    """The ledger says this exact text already went out — flagging it 'not emailed' would
+    send the operator hunting an SMTP fault that does not exist."""
+    q = wired
+    from app import mailer
+    monkeypatch.setattr(mailer, "send", lambda **kw: "duplicate")
+    payload, code = support_tickets.act(TID, "reply", "already sent this")
+    assert code == 200
+    assert payload["email_status"] == "duplicate" and payload["emailed"] is True
+    flag = q.find("update public.support_ticket_messages")
+    assert "emailed = true" in flag
+
+
+@pytest.mark.parametrize("status", ["skipped_no_smtp", "failed", "suppressed", "queued"])
+def test_non_delivered_statuses_do_not_flag_emailed(wired, monkeypatch, status):
+    q = wired
+    from app import mailer
+    monkeypatch.setattr(mailer, "send", lambda **kw: status)
+    payload, code = support_tickets.act(TID, "reply", "answer")
+    assert code == 200 and payload["emailed"] is False
+    assert not any("emailed = true" in s for s in q.sqls)

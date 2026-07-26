@@ -791,6 +791,13 @@ on:
       - "app/support.py"
       - "admin/support_tickets.py"
       - "scripts/deploy/0007_support_email.sql"
+      # The suite's HTTP-level auth/CSRF test drives the real admin.server Handler and the
+      # console tab lives in app.js — routes whose own files could not trigger this job.
+      - "admin/server.py"
+      - "admin/static/app.js"
+      # The public intake's REAL body cap and its unspoofable rate-limit key are Caddy
+      # config, not app code; a change there changes what the suite's assumptions rest on.
+      - "app/deploy/Caddyfile"
       - "tests/test_mailer.py"
       - "tests/test_support_api.py"
       - "tests/test_admin_support_tickets.py"

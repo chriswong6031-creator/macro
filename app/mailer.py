@@ -10,10 +10,10 @@ that is what makes a webhook retry or a double-clicked operator button safe.
          html=…, text=…, idem_key=…, user_id=…, headers=…) -> status str
 
 Returned status is one of: ``'sent'``, ``'failed'``, ``'skipped_no_smtp'``,
-``'suppressed'``, ``'duplicate'``. **send() never raises for a mail reason.** Its callers
-are a Stripe-style webhook and a public unauthenticated form (G2/G7): a broken SMTP relay,
-a suppressed address, or an unreachable Supabase must degrade to a status string and a log
-line, never to a 500 that makes an upstream retry forever.
+``'suppressed'``, ``'queued'``, ``'duplicate'``. **send() never raises for a mail reason.**
+Its callers are a Stripe-style webhook and a public unauthenticated form (G2/G7): a broken
+SMTP relay, a suppressed address, or an unreachable Supabase must degrade to a status string
+and a log line, never to a 500 that makes an upstream retry forever.
 
 Class law
 ---------
@@ -23,6 +23,14 @@ when either says no. ``cls='transactional'`` NEVER consults them — a user who 
 marketing has not opted out of being answered about their own support ticket or of getting
 their receipt. An unrecognised class is coerced to ``'marketing'``, i.e. to the STRICTER
 path, so a future typo can never turn a broadcast into unsuppressable mail.
+
+Marketing is additionally **fail-closed on the lookup itself**: if the suppression/opt-out
+read errors, the message is NOT sent — the ledger row is parked at ``status='queued'`` with
+``detail='suppression_lookup_failed'`` and ``'queued'`` is returned. Mailing an unsubscriber
+because Supabase blinked is a compliance problem and a reputation hit; a delayed campaign is
+neither. **Drain contract (W4):** the drain re-checks suppression for ``queued`` rows and
+completes them by PATCHing THAT row — it must never call :func:`send` again with the same
+idem_key, which would hit the unique constraint and return ``'duplicate'`` without sending.
 
 Mail-off mode
 -------------
@@ -46,6 +54,7 @@ import logging
 import os
 import smtplib
 import ssl
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -56,24 +65,26 @@ log = logging.getLogger("macro.mailer")
 
 # --------------------------------------------------------------------------- #
 # Config / environment
-#
-# Read at CALL time (not import time) so a systemd env reload — and a test's
-# monkeypatch.setenv — takes effect without a process restart. This mirrors
-# billing._stripe() / regwall._enabled() rather than billing's module-level Supabase
-# constants, because mail-off vs mail-on is a live operational state, not a boot flag.
 # --------------------------------------------------------------------------- #
+# Supabase is read at IMPORT time, mirroring app/billing.py's module-level constants —
+# tests monkeypatch the module attribute (or _pg itself), which is the house idiom for
+# this pair.
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://fsldfzlxyavsuwqbceod.supabase.co").rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 _DEFAULT_SMTP_PORT = 587
 _SMTP_TIMEOUT = 10          # seconds, connect + command; two attempts bound the wall clock
 _SEND_ATTEMPTS = 2          # one retry, only on a transient connection failure
+_RETRY_BACKOFF_SEC = 1.5    # a 421 "too many connections" needs a beat, not an instant retry
 
 CLASSES = ("transactional", "marketing")
 STATUSES = ("sent", "failed", "skipped_no_smtp", "suppressed", "queued")
 
 
 def _env(name: str, default: str = "") -> str:
+    """Mail settings are read at CALL time (not import time) so a systemd env reload — and a
+    test's monkeypatch.setenv — takes effect without a process restart. Mail-off vs mail-on is
+    a live operational state, not a boot flag (billing._stripe() / regwall._enabled() idiom)."""
     return (os.environ.get(name) or default).strip()
 
 
@@ -127,6 +138,10 @@ def is_configured() -> bool:
 # --------------------------------------------------------------------------- #
 class DuplicateKey(Exception):
     """The email_log unique idem_key already exists — this message was already handled."""
+
+
+class SuppressionUnavailable(Exception):
+    """The suppression / opt-out lookup could not be completed. Marketing must NOT send."""
 
 
 def _pg(method: str, path: str, body: Any = None, prefer: str | None = None, timeout: int = 6) -> Any:
@@ -193,28 +208,32 @@ def _suppression_reason(to_email: str, user_id: str | None) -> str | None:
     """Why this MARKETING message must not be sent, or None when it may go.
 
     Two independent gates: the address-level kill list (covers people who never
-    registered) and the per-user preference. Fail-OPEN on a lookup error is deliberate
-    and narrow: the caller only reaches this for marketing class, W4 is what actually
-    sends campaigns, and a Supabase hiccup silently swallowing every campaign send would
-    be a worse (and invisible) failure than one message that should have been skipped.
-    The error is logged so the condition is not silent.
+    registered) and the per-user preference.
+
+    FAIL-CLOSED. A lookup error raises SuppressionUnavailable rather than returning None,
+    and the caller parks the message as 'queued' instead of sending it. Mailing someone who
+    unsubscribed because Supabase blinked is a CAN-SPAM/GDPR problem and a complaint that
+    costs sender reputation; a delayed campaign is neither. The transactional class never
+    reaches this function at all, so its fail-open behaviour is unaffected.
     """
     addr = (to_email or "").strip().lower()
     if addr:
         try:
             rows = _pg("GET", f"email_suppression?email=eq.{urllib.parse.quote(addr, safe='')}&select=email,reason")
-            if rows:
-                return str(rows[0].get("reason") or "suppressed")
         except Exception as exc:  # noqa: BLE001
             log.warning("mailer: suppression lookup failed for %s (%s)", addr, type(exc).__name__)
+            raise SuppressionUnavailable(type(exc).__name__) from None
+        if rows:
+            return str(rows[0].get("reason") or "suppressed")
     if user_id:
         try:
             rows = _pg("GET", f"email_prefs?user_id=eq.{urllib.parse.quote(str(user_id), safe='')}"
                               "&select=marketing_opt_out")
-            if rows and rows[0].get("marketing_opt_out"):
-                return "marketing_opt_out"
         except Exception as exc:  # noqa: BLE001
             log.warning("mailer: prefs lookup failed for %s (%s)", user_id, type(exc).__name__)
+            raise SuppressionUnavailable(type(exc).__name__) from None
+        if rows and rows[0].get("marketing_opt_out"):
+            return "marketing_opt_out"
     return None
 
 
@@ -264,15 +283,29 @@ def _smtp_send(msg: EmailMessage) -> None:
         s.send_message(msg)
 
 
+def _header_safe(value: str, *, limit: int = 400) -> str:
+    """Collapse a value to ONE line so it can never inject an email header.
+
+    A CR/LF that reaches ``msg["Subject"]`` makes Python's email library raise, which — on
+    this estate — would not merely garble one message: the operator notification and EVERY
+    future reply on that ticket (subject = ``Re: <stored subject>``) would fail forever. The
+    ticket subject is stranger-written text, so this is the chokepoint that has to hold, and
+    it holds for every caller rather than trusting each one to sanitise first.
+    """
+    return " ".join(str(value or "").split())[:limit]
+
+
 def _build_message(*, to_email: str, subject: str, html: str, text: str,
                    cls: str, headers: dict | None) -> EmailMessage:
     msg = EmailMessage()
-    msg["Subject"] = subject
+    msg["Subject"] = _header_safe(subject)
     msg["From"] = mail_from()
-    msg["To"] = to_email
+    # Same one-line rule for every other header we set. To/Reply-To come from validated or
+    # operator-configured sources today, but "today" is not a security boundary.
+    msg["To"] = _header_safe(to_email, limit=320)
     rt = reply_to()
     if rt:
-        msg["Reply-To"] = rt
+        msg["Reply-To"] = _header_safe(rt, limit=320)
     msg.set_content(text or "")
     if html:
         msg.add_alternative(html, subtype="html")
@@ -283,13 +316,13 @@ def _build_message(*, to_email: str, subject: str, html: str, text: str,
     # signed URL (see unsub_token); we only wire the headers.
     unsub_url = extra.pop("unsubscribe_url", None) or extra.pop("List-Unsubscribe-URL", None)
     if cls == "marketing" and unsub_url:
-        msg["List-Unsubscribe"] = f"<{unsub_url}>"
+        msg["List-Unsubscribe"] = f"<{_header_safe(unsub_url, limit=1000)}>"
         msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     for k, v in extra.items():
         if v is None:
             continue
         try:
-            msg[k] = str(v)
+            msg[_header_safe(k, limit=100)] = _header_safe(v, limit=1000)
         except Exception:  # noqa: BLE001 — a malformed custom header never blocks the send
             log.warning("mailer: dropped malformed header %r", k)
     return msg
@@ -343,9 +376,23 @@ def send(*, template: str, cls: str, to_email: str, subject: str, html: str, tex
             _ledger_finish(idem_key, status, detail)
         return status
 
-    # ---- 2. marketing suppression ---------------------------------------------
+    # ---- 2. marketing suppression (FAIL-CLOSED) --------------------------------
     if cls == "marketing":
-        reason = _suppression_reason(to_email, user_id)
+        try:
+            reason = _suppression_reason(to_email, user_id)
+        except SuppressionUnavailable as exc:
+            # We could not prove this address is still willing to hear from us, so we do
+            # not send. The row is PARKED at 'queued' with a detail the W4 drain looks for.
+            #
+            # DRAIN CONTRACT (W4, documented here because it constrains this row's shape):
+            # the drain re-checks suppression for rows left at status='queued' and, on a
+            # clean lookup, sends and PATCHes THIS row to its terminal status. It must NOT
+            # call send() again with the same idem_key — that would hit the unique
+            # constraint and return 'duplicate' without ever sending. The claimed row is
+            # the work item; the drain completes it in place.
+            log.warning("mailer: %s parked as queued — suppression lookup unavailable (%s)",
+                        template, exc)
+            return _finish("queued", "suppression_lookup_failed")
         if reason:
             log.info("mailer: %s suppressed (%s)", template, reason)
             return _finish("suppressed", reason)
@@ -375,7 +422,12 @@ def send(*, template: str, cls: str, to_email: str, subject: str, html: str, tex
         except _TRANSIENT as exc:
             last = exc
             if attempt + 1 < _SEND_ATTEMPTS:
-                log.info("mailer: %s transient %s — retrying once", template, type(exc).__name__)
+                # A short beat, not an instant retry: the common transient here is a relay
+                # 421 ("too many connections"), and hammering it again in the same
+                # millisecond reproduces the throttle rather than clearing it.
+                log.info("mailer: %s transient %s — retrying once after %.1fs",
+                         template, type(exc).__name__, _RETRY_BACKOFF_SEC)
+                time.sleep(_RETRY_BACKOFF_SEC)
                 continue
         except Exception as exc:  # noqa: BLE001 — anything else: no retry, it will repeat
             last = exc

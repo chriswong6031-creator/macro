@@ -12,11 +12,25 @@ abuse posture is the design, not a decoration:
     teach the bot which field betrayed it).
   * **time-to-fill** — ``t0`` is the epoch-ms the form was rendered. A submission under
     3 seconds old was not typed by a person. Generic 400.
-  * **per-IP rate limit** — 5 tickets per clock hour, in-process fixed window, keyed on
-    the real visitor IP (``app.main._mm_client_ip``: EO-Client-IP first, then the other
-    CDN real-client headers, then XFF — the same precedence the analytics beacon uses,
-    because mastermind-x.com sits behind EdgeOne and a bare XFF is the edge PoP).
-  * **size caps** — subject ≤ 200, message ≤ 5000, request body ≤ 20 KB.
+  * **dual-key rate limit** — every real-client header the app can read (EO-Client-IP,
+    CF-Connecting-IP, XFF …) is attacker-suppliable at the origin, so a bot that rotates
+    one lands every hit in a fresh bucket. Two independent in-process fixed windows,
+    and EITHER can refuse:
+      - the CLAIMED ip (``app.main._mm_client_ip``) at 5/hour — tight, but spoofable;
+      - the TRUSTED peer (``X-MM-Peer``, which Caddy's ``header_up`` overwrites with the
+        real TCP peer, so a client cannot set it) at 60/hour — unspoofable, but loose,
+        because CN traffic legitimately aggregates behind a few EdgeOne edge IPs.
+    An absent key simply does not apply; it is no longer a free pass, because the other
+    key still does.
+  * **size caps** — subject ≤ 200, message ≤ 5000. The declared-Content-Length check here
+    is a cheap early refusal only: a chunked request declares no length, so the REAL cap
+    is ``request_body { max_size 64KB }`` on ``/api/support/*`` in app/deploy/Caddyfile —
+    the edge is the only place that sits before the body is read.
+
+Header safety: the subject is whitespace-collapsed to a single line BEFORE length
+validation, so an embedded CRLF can never reach an email header (app/mailer.py collapses
+again at the chokepoint). Left unhandled this is not a garbled message but a permanent
+outage for that ticket: every reply's subject is derived from the stored one.
 
 Identity law: a Bearer token, when present and valid, WINS. The server-verified email
 replaces whatever the body claimed and the ticket carries the real ``user_id`` plus a
@@ -64,10 +78,12 @@ LANGS = ("en", "zh")
 
 SUBJECT_MAX = 200
 MESSAGE_MAX = 5000
-BODY_BYTES_MAX = 20_000        # a support message is text; 20 KB is generous
+BODY_BYTES_MAX = 20_000        # DECLARED Content-Length only — the real cap is Caddy's
 MIN_FILL_MS = 3_000            # under 3s of form time = not a human
-RATE_LIMIT = 5                 # tickets…
-RATE_WINDOW_SEC = 3_600        # …per clock hour, per IP
+RATE_LIMIT = 5                 # tickets per window per CLAIMED (spoofable) ip…
+PEER_RATE_LIMIT = 60           # …and per TRUSTED Caddy peer, looser: CN traffic aggregates
+RATE_WINDOW_SEC = 3_600        # …per clock hour
+PEER_HEADER = "x-mm-peer"      # set by header_up in app/deploy/Caddyfile; unspoofable
 NOTIFY_EXCERPT = 200           # chars of the first message in the operator alert
 
 # Deliberately loose: this is a SHAPE check, not an RFC 5322 parser. The address's real
@@ -110,30 +126,69 @@ def _pg(method: str, path: str, body: Any = None, prefer: str | None = None, tim
 # runs multi-worker this becomes per-worker and the effective ceiling multiplies — at
 # which point the limiter moves to a shared store, not to a bigger dict.
 # --------------------------------------------------------------------------- #
-_rate: dict[str, tuple[int, int]] = {}      # ip -> (window_index, count_in_window)
+_rate: dict[str, tuple[int, int]] = {}      # key -> (window_index, count_in_window)
 _rate_lock = threading.Lock()
-_RATE_MAX_KEYS = 10_000                     # bounded: a spray attack must not grow the map forever
+_RATE_MAX_KEYS = 10_000                     # HARD cap: a spray must not grow the map, ever
 
 
-def _rate_ok(ip: str) -> bool:
-    """True if this IP may file another ticket right now (and books the attempt)."""
-    if not ip or ip == "unknown":
-        return True     # never punish an un-attributable request; the honeypot still applies
+def _book(key: str, limit: int, window: int) -> bool:
+    """Count one attempt against `key` and report whether it stayed under `limit`.
+
+    Caller holds _rate_lock. A key at its limit is left at the limit (not incremented),
+    so a sustained flood cannot overflow the counter.
+    """
+    w, n = _rate.get(key, (window, 0))
+    if w != window:
+        w, n = window, 0
+    if n >= limit:
+        _rate[key] = (w, n)
+        return False
+    _rate[key] = (w, n + 1)
+    return True
+
+
+# Eviction runs BEFORE the two bookings, so it must leave room for them or the map
+# settles one or two keys above the cap forever.
+_RATE_EVICT_TARGET = _RATE_MAX_KEYS - 2
+
+
+def _evict(window: int) -> None:
+    """Keep the map at or under _RATE_MAX_KEYS. Caller holds _rate_lock.
+
+    Two passes because the first is not sufficient on its own: dropping expired windows
+    frees nothing when a flood arrives inside ONE window (35k distinct spoofed IPs in the
+    same hour), which is exactly the attack this bound exists for. The second pass evicts
+    oldest-inserted — dicts preserve insertion order, and re-booking an existing key
+    reassigns its value without moving it, so "oldest inserted" stays meaningful.
+    """
+    if len(_rate) <= _RATE_EVICT_TARGET:
+        return
+    for k in [k for k, (w, _n) in _rate.items() if w != window]:
+        _rate.pop(k, None)
+    while len(_rate) > _RATE_EVICT_TARGET:
+        _rate.pop(next(iter(_rate)), None)
+
+
+def _rate_ok(claimed_ip: str, peer: str) -> bool:
+    """True if this caller may file another ticket right now (and books the attempt).
+
+    Both keys are booked whenever they are present, and EITHER exceeding its limit
+    refuses — so burning the claimed-ip budget by spoofing still consumes peer budget.
+    An absent key contributes nothing; if BOTH are absent (direct local dev, no proxy)
+    there is nothing to key on and the request passes.
+    """
+    claimed = (claimed_ip or "").strip()
+    if claimed == "unknown":
+        claimed = ""
+    peer = (peer or "").strip()[:64]
+    if not claimed and not peer:
+        return True
     window = int(time.time() // RATE_WINDOW_SEC)
     with _rate_lock:
-        if len(_rate) > _RATE_MAX_KEYS:
-            # Drop everything from older windows in one sweep — cheap, and the only state
-            # lost is counters that were about to expire anyway.
-            for k in [k for k, (w, _n) in _rate.items() if w != window]:
-                _rate.pop(k, None)
-        w, n = _rate.get(ip, (window, 0))
-        if w != window:
-            w, n = window, 0
-        if n >= RATE_LIMIT:
-            _rate[ip] = (w, n)
-            return False
-        _rate[ip] = (w, n + 1)
-        return True
+        _evict(window)
+        ok_claimed = _book(f"ip:{claimed}", RATE_LIMIT, window) if claimed else True
+        ok_peer = _book(f"peer:{peer}", PEER_RATE_LIMIT, window) if peer else True
+        return ok_claimed and ok_peer
 
 
 def _reset_rate_limiter() -> None:
@@ -253,13 +308,23 @@ class TicketRequest(BaseModel):
 def create_ticket(body: TicketRequest, request: Request,
                   authorization: str | None = Header(default=None)) -> dict:
     """File a support ticket. Public — no auth required, auth honoured when offered."""
-    # ---- body size ------------------------------------------------------------
+    # ---- body size (cheap early refusal; the real cap is Caddy's request_body) --
     try:
         declared = int(request.headers.get("content-length") or 0)
     except ValueError:
         declared = 0
     if declared > BODY_BYTES_MAX:
         raise HTTPException(413, "message too long")
+
+    # ---- rate limit -----------------------------------------------------------
+    # Deliberately BEFORE the honeypot and the t0 gate: those are cheap to satisfy, and a
+    # bot that trips them should still burn its quota. Both keys are header-only, so this
+    # costs nothing but a dict lookup.
+    ip = _client_ip(request)
+    peer = request.headers.get(PEER_HEADER) or ""
+    if not _rate_ok(ip, peer):
+        log.info("support: rate limit hit")
+        raise HTTPException(429, "too many requests — please try again later")
 
     # ---- honeypot: answer like a success, write nothing -----------------------
     if (body.website or "").strip():
@@ -275,17 +340,14 @@ def create_ticket(body: TicketRequest, request: Request,
             log.info("support: submission %dms after render — rejected", elapsed_ms)
             raise HTTPException(400, "could not accept this submission")
 
-    # ---- rate limit -----------------------------------------------------------
-    ip = _client_ip(request)
-    if not _rate_ok(ip):
-        log.info("support: rate limit hit")
-        raise HTTPException(429, "too many requests — please try again later")
-
     # ---- validation -----------------------------------------------------------
     topic = (body.topic or "").strip().lower()
     if topic not in TOPICS:
         raise HTTPException(400, f"topic must be one of {list(TOPICS)}")
-    subject = (body.subject or "").strip()
+    # Collapse to ONE line BEFORE the length check: a CRLF here would otherwise reach an
+    # email header and permanently break every send on this ticket (see the module
+    # docstring). Same idiom as app/main.py's thread-title validator.
+    subject = " ".join((body.subject or "").split())
     if not 1 <= len(subject) <= SUBJECT_MAX:
         raise HTTPException(400, f"subject must be 1..{SUBJECT_MAX} characters")
     message = (body.message or "").strip()

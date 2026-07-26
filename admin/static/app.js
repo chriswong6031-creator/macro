@@ -8511,10 +8511,26 @@ async function supRenderThread(id) {
     </div>`;
 }
 
+/* Guard against a double-clicked action: every button in the ticket footer is disabled
+   for the duration of the POST. This is the ergonomic half of the protection only — the
+   durable half is the content-derived idem_key in admin/support_tickets.py, which stops a
+   duplicate email even if this guard is bypassed or the operator hits Enter twice. */
+function supBusy(on) {
+  document.querySelectorAll(".sup-reply .ent-act").forEach(b => { b.disabled = on; });
+  const box = $("#supReplyBody");
+  if (box) box.disabled = on;
+}
+
 async function supAct(id, action, body) {
   const payload = { ticket_id: id, action };
   if (body != null) payload.body = body;
-  const r = await post("/api/support_tickets/action", payload);
+  supBusy(true);
+  let r;
+  try {
+    r = await post("/api/support_tickets/action", payload);
+  } finally {
+    supBusy(false);
+  }
   if (!r.ok) { toast(r.error || "action failed", true); return r; }
   let msg = `Ticket ${SUP_ACTION_DONE[action] || action} — now ${r.status}`;
   if (action === "reply" && r.emailed === false) {

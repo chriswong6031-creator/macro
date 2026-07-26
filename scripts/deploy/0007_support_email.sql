@@ -30,7 +30,7 @@ create table if not exists public.support_tickets (
   -- public). ON DELETE SET NULL, not CASCADE — deleting an account must not silently
   -- destroy the operator's record of a billing dispute.
   user_id     uuid references auth.users(id) on delete set null,
-  topic       text check (topic in ('billing','account','bug','data','feature','other')),
+  topic       text not null check (topic in ('billing','account','bug','data','feature','other')),
   subject     text not null,
   status      text not null default 'open' check (status in ('open','pending','resolved','closed')),
   lang        text,
@@ -54,7 +54,7 @@ create table if not exists public.support_ticket_messages (
   id          uuid primary key default gen_random_uuid(),
   ticket_id   uuid not null references public.support_tickets(id) on delete cascade,
   created_at  timestamptz not null default now(),
-  author      text check (author in ('user','operator')),
+  author      text not null check (author in ('user','operator')),
   body        text not null,
   emailed     boolean not null default false
 );
@@ -75,15 +75,19 @@ create table if not exists public.email_log (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz not null default now(),
   idem_key    text not null unique,
-  template    text,
-  class       text check (class in ('transactional','marketing')),
-  to_email    text,
+  template    text not null,
+  class       text not null check (class in ('transactional','marketing')),
+  to_email    text not null,
   user_id     uuid,
-  status      text check (status in ('sent','failed','skipped_no_smtp','suppressed','queued')),
+  status      text not null check (status in ('sent','failed','skipped_no_smtp','suppressed','queued')),
   detail      text
 );
 create index if not exists email_log_to_created
   on public.email_log (to_email, created_at desc);
+-- Per-template lookups: "did the W4 drain finish the campaign batch", "how many
+-- ticket_reply sends failed last night" — both scan by template, not by address.
+create index if not exists email_log_template
+  on public.email_log (template);
 
 alter table public.email_log enable row level security;
 
@@ -108,7 +112,7 @@ alter table public.email_prefs enable row level security;
 -- ---------------------------------------------------------------------------
 create table if not exists public.email_suppression (
   email       text primary key,
-  reason      text check (reason in ('unsubscribe','bounce','complaint','manual')),
+  reason      text not null check (reason in ('unsubscribe','bounce','complaint','manual')),
   created_at  timestamptz not null default now()
 );
 
@@ -122,11 +126,15 @@ alter table public.email_suppression enable row level security;
 create table if not exists public.email_campaigns (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz not null default now(),
-  subject     text,
-  body_md     text,
-  segment     text,
+  subject     text not null,
+  body_md     text not null,
+  segment     text not null,
   status      text not null default 'draft' check (status in ('draft','queued','sending','done','aborted')),
-  queued_n    integer not null default 0,
+  -- NULLABLE on purpose, unlike the other three: NULL means "the segment has not been
+  -- resolved yet" (a draft), while 0 would claim "we counted, and it is empty". The
+  -- outcome counters below are only ever written once a send is underway, so 0 is honest
+  -- for them from the start.
+  queued_n    integer,
   sent_n      integer not null default 0,
   skipped_n   integer not null default 0,
   failed_n    integer not null default 0

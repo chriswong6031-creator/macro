@@ -105,6 +105,7 @@ class _Ledger:
         self.suppressed = {(e or "").lower(): r for e, r in (suppressed or {}).items()}
         self.opted_out = set(opted_out or [])
         self.lookups: list[str] = []
+        self.lookup_outage = False
 
     def pg(self, method, path, body=None, prefer=None, timeout=6):
         # mailer url-quotes every filter value (safe=''), so '@' and ':' arrive
@@ -123,11 +124,15 @@ class _Ledger:
             return None
         if method == "GET" and path.startswith("email_suppression"):
             self.lookups.append(path)
+            if self.lookup_outage:
+                raise RuntimeError("supabase unreachable")
             addr = path.split("email=eq.", 1)[1].split("&", 1)[0]
             reason = self.suppressed.get(addr.lower())
             return [{"email": addr, "reason": reason}] if reason else []
         if method == "GET" and path.startswith("email_prefs"):
             self.lookups.append(path)
+            if self.lookup_outage:
+                raise RuntimeError("supabase unreachable")
             uid = path.split("user_id=eq.", 1)[1].split("&", 1)[0]
             return [{"marketing_opt_out": uid in self.opted_out}]
         raise AssertionError(f"unexpected PostgREST call {method} {path}")
@@ -445,3 +450,119 @@ def test_unsub_token_is_secret_scoped(monkeypatch):
     tok = mailer.unsub_token("user@example.com")
     monkeypatch.setenv("MAIL_UNSUB_SECRET", "secret-b")
     assert mailer.verify_unsub_token(tok) is None
+
+
+# ===========================================================================
+# B1 regression — header injection must never reach an email header
+#
+# A raw CR/LF in a Subject makes Python's email library raise on send. On this estate
+# that is not one garbled message: the operator notification AND every future reply on
+# that ticket (subject = "Re: <stored subject>") would fail forever. _build_message is
+# the chokepoint, so the guarantee is asserted there and end-to-end through send().
+# ===========================================================================
+_DIRTY_SUBJECT = "Card declined\r\nBcc: attacker@evil.test\nX-Injected: yes"
+
+
+def test_build_message_collapses_a_crlf_subject_to_one_line():
+    msg = mailer._build_message(to_email="user@example.com", subject=_DIRTY_SUBJECT,
+                                html="<p>x</p>", text="x", cls="transactional", headers=None)
+    subject = msg["Subject"]
+    assert "\n" not in subject and "\r" not in subject
+    assert subject == "Card declined Bcc: attacker@evil.test X-Injected: yes"
+    # the injected names are inert text inside Subject, not headers of their own
+    assert msg["Bcc"] is None and msg["X-Injected"] is None
+
+
+def test_send_succeeds_with_a_crlf_subject(wired, monkeypatch):
+    """End-to-end: a dirty subject sends cleanly instead of raising forever."""
+    led, smtp = wired
+    _mail_on(monkeypatch)
+    assert _send(subject=_DIRTY_SUBJECT) == "sent"
+    msg = smtp.connections[0]["messages"][0]
+    assert "\n" not in msg["Subject"] and msg["Bcc"] is None
+    assert _patched_status(led) == "sent"
+
+
+def test_header_injection_blocked_on_recipient_and_custom_headers(wired, monkeypatch):
+    led, smtp = wired
+    _mail_on(monkeypatch)
+    monkeypatch.setenv("MAIL_REPLY_TO", "support@x.test\r\nBcc: leak@evil.test")
+    assert _send(headers={"X-Ticket": "abc\r\nBcc: leak2@evil.test"}) == "sent"
+    msg = smtp.connections[0]["messages"][0]
+    assert "\n" not in msg["Reply-To"] and "\n" not in msg["X-Ticket"]
+    assert msg["Bcc"] is None
+
+
+def test_header_safe_helper():
+    assert mailer._header_safe("a\r\nb\tc   d") == "a b c d"
+    assert mailer._header_safe(None) == ""
+    assert len(mailer._header_safe("x" * 900)) == 400
+
+
+# ===========================================================================
+# M5 — marketing suppression is FAIL-CLOSED; transactional stays fail-open
+# ===========================================================================
+def test_marketing_parks_as_queued_when_the_suppression_lookup_fails(wired, monkeypatch):
+    led, smtp = wired
+    _mail_on(monkeypatch)
+    led.lookup_outage = True
+    assert _send(cls="marketing", user_id="user-1") == "queued"
+    assert smtp.connections == []                       # NOTHING was sent
+    assert _patched_status(led) == "queued"
+    assert led.patches[-1][1]["detail"] == "suppression_lookup_failed"
+    assert len(led.inserts) == 1                        # the row exists for the W4 drain
+
+
+def test_transactional_sends_through_a_suppression_lookup_outage(wired, monkeypatch):
+    """Transactional never consults those tables, so an outage cannot delay a reply."""
+    led, smtp = wired
+    _mail_on(monkeypatch)
+    led.lookup_outage = True
+    assert _send(cls="transactional", user_id="user-1") == "sent"
+    assert len(smtp.connections) == 1
+    assert led.lookups == []
+
+
+def test_marketing_opt_out_lookup_outage_also_parks(wired, monkeypatch):
+    """The second gate (per-user prefs) fails closed too, not just the address list."""
+    led, smtp = wired
+    _mail_on(monkeypatch)
+    monkeypatch.setattr(mailer, "_pg", lambda method, path, **kw:
+                        led.pg(method, path, **kw) if not path.startswith("email_prefs")
+                        else (_ for _ in ()).throw(RuntimeError("prefs down")))
+    assert _send(cls="marketing", user_id="user-1") == "queued"
+    assert smtp.connections == []
+
+
+# ===========================================================================
+# Retry backoff (a 421 throttle needs a beat, not an instant second punch)
+# ===========================================================================
+def test_transient_retry_waits_before_the_second_attempt(wired, monkeypatch):
+    import smtplib as real_smtplib
+    led, _smtp = wired
+    _mail_on(monkeypatch)
+    slept: list[float] = []
+    monkeypatch.setattr(mailer.time, "sleep", lambda s: slept.append(s))
+    calls = {"n": 0}
+
+    def _flaky(msg):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise real_smtplib.SMTPServerDisconnected("421 too many connections")
+
+    monkeypatch.setattr(mailer, "_smtp_send", _flaky)
+    assert _send() == "sent"
+    assert slept == [mailer._RETRY_BACKOFF_SEC]
+
+
+def test_permanent_failure_does_not_sleep(wired, monkeypatch):
+    import smtplib as real_smtplib
+    led, _smtp = wired
+    _mail_on(monkeypatch)
+    slept: list[float] = []
+    monkeypatch.setattr(mailer.time, "sleep", lambda s: slept.append(s))
+    monkeypatch.setattr(mailer, "_smtp_send",
+                        lambda msg: (_ for _ in ()).throw(
+                            real_smtplib.SMTPAuthenticationError(535, b"nope")))
+    assert _send() == "failed"
+    assert slept == []

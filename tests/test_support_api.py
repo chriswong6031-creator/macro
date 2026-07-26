@@ -180,7 +180,7 @@ def test_rate_limit_allows_five_then_429s(wired):
     assert len(store.tickets) == support.RATE_LIMIT
 
 
-def test_rate_limit_is_per_ip(wired, monkeypatch):
+def test_rate_limit_is_per_claimed_ip(wired, monkeypatch):
     store, _n = wired
     for i in range(support.RATE_LIMIT):
         _post(_body(subject=f"s{i}"))
@@ -188,7 +188,13 @@ def test_rate_limit_is_per_ip(wired, monkeypatch):
     assert _post(_body(subject="different visitor"))["ok"] is True
 
 
-def test_oversized_body_is_refused_before_any_work(wired):
+def test_oversized_declared_content_length_is_refused(wired):
+    """The app-side cap only sees a DECLARED Content-Length.
+
+    A chunked request declares none, so this check cannot be the real body cap — that is
+    `request_body { max_size 64KB }` on /api/support/* in app/deploy/Caddyfile, enforced
+    at the edge before the body is read. This asserts the cheap early refusal, nothing more.
+    """
     store, _n = wired
     req = _FakeRequest({"Content-Length": str(support.BODY_BYTES_MAX + 1)})
     with pytest.raises(HTTPException) as ei:
@@ -376,3 +382,115 @@ def test_ticket_insert_failure_is_a_generic_503(wired):
     # the honest, non-leaking message — no table name, no key name, no stack
     assert "SUPABASE" not in str(ei.value.detail)
     assert ei.value.detail == "support intake is temporarily unavailable"
+
+
+# ===========================================================================
+# B1 regression — a CRLF subject is collapsed BEFORE it can reach a header
+# ===========================================================================
+def test_subject_is_collapsed_to_one_line(wired):
+    store, _n = wired
+    _post(_body(subject="Card declined\r\nBcc: attacker@evil.test"))
+    stored = store.tickets[0]["subject"]
+    assert "\n" not in stored and "\r" not in stored
+    assert stored == "Card declined Bcc: attacker@evil.test"
+
+
+def test_subject_length_is_measured_after_collapsing(wired):
+    """A subject that is only over-length because of padding whitespace is accepted."""
+    store, _n = wired
+    _post(_body(subject="  hello" + " " * 400 + "world  "))
+    assert store.tickets[0]["subject"] == "hello world"
+
+
+def test_whitespace_only_subject_is_still_rejected(wired):
+    with pytest.raises(HTTPException) as ei:
+        _post(_body(subject="\r\n\t   "))
+    assert ei.value.status_code == 400
+
+
+# ===========================================================================
+# M1 — dual-key rate limiting: the spoofable key is no longer the only key
+# ===========================================================================
+def _peer_req(peer="10.0.0.1"):
+    return _FakeRequest({"X-MM-Peer": peer})
+
+
+def test_spoofed_rotating_client_ip_is_still_caught_by_the_peer_key(wired, monkeypatch):
+    """The attack the claimed key cannot stop: a bot rotating EO-Client-IP per request.
+
+    Every hit lands in a fresh claimed bucket, so only the trusted peer key — which Caddy
+    overwrites and a client cannot set — holds the line.
+    """
+    store, _n = wired
+    seq = iter(f"198.51.100.{i}" for i in range(1, 500))
+    monkeypatch.setattr(support, "_client_ip", lambda request: next(seq))
+    for i in range(support.PEER_RATE_LIMIT):
+        assert _post(_body(subject=f"s{i}"), request=_peer_req())["ok"] is True
+    with pytest.raises(HTTPException) as ei:
+        _post(_body(subject="over"), request=_peer_req())
+    assert ei.value.status_code == 429
+    assert len(store.tickets) == support.PEER_RATE_LIMIT
+
+
+def test_peer_key_is_per_peer(wired, monkeypatch):
+    store, _n = wired
+    seq = iter(f"198.51.100.{i}" for i in range(1, 500))
+    monkeypatch.setattr(support, "_client_ip", lambda request: next(seq))
+    for i in range(support.PEER_RATE_LIMIT):
+        _post(_body(subject=f"s{i}"), request=_peer_req("10.0.0.1"))
+    assert _post(_body(subject="other edge"), request=_peer_req("10.0.0.2"))["ok"] is True
+
+
+def test_claimed_key_still_applies_when_a_peer_header_is_present(wired):
+    """Both keys are live at once: the tight claimed limit still bites behind a peer."""
+    store, _n = wired
+    for i in range(support.RATE_LIMIT):
+        assert _post(_body(subject=f"s{i}"), request=_peer_req())["ok"] is True
+    with pytest.raises(HTTPException) as ei:
+        _post(_body(subject="sixth"), request=_peer_req())
+    assert ei.value.status_code == 429
+
+
+def test_no_peer_header_direct_dev_still_rate_limits_on_the_claimed_key(wired):
+    """Local/dev with no Caddy in front must keep working — and keep limiting."""
+    store, _n = wired
+    for i in range(support.RATE_LIMIT):
+        assert _post(_body(subject=f"s{i}"))["ok"] is True
+    with pytest.raises(HTTPException) as ei:
+        _post(_body(subject="sixth"))
+    assert ei.value.status_code == 429
+
+
+def test_unknown_claimed_ip_no_longer_fail_opens(wired, monkeypatch):
+    """'unknown' used to be a free pass; now it just means the peer key carries it."""
+    store, _n = wired
+    monkeypatch.setattr(support, "_client_ip", lambda request: "unknown")
+    for i in range(support.PEER_RATE_LIMIT):
+        assert _post(_body(subject=f"s{i}"), request=_peer_req())["ok"] is True
+    with pytest.raises(HTTPException) as ei:
+        _post(_body(subject="over"), request=_peer_req())
+    assert ei.value.status_code == 429
+
+
+def test_rate_limit_is_checked_before_the_honeypot(wired):
+    """A bot tripping the honeypot must still burn quota, or the limit is free to dodge."""
+    store, _n = wired
+    for i in range(support.RATE_LIMIT):
+        _post(_body(subject=f"s{i}", website="http://spam.test"))
+    assert store.tickets == []                       # honeypot: nothing written…
+    with pytest.raises(HTTPException) as ei:         # …but the budget was spent
+        _post(_body(subject="real user now"))
+    assert ei.value.status_code == 429
+
+
+# ===========================================================================
+# M2 — the rate map is bounded even inside a single window
+# ===========================================================================
+def test_rate_map_is_hard_capped_within_one_window(wired, monkeypatch):
+    """The spray this bound exists for arrives in ONE window, so expiring stale windows
+    frees nothing — the cap has to evict live keys."""
+    support._reset_rate_limiter()
+    for i in range(35_000):
+        support._rate_ok(f"203.0.113.{i}", "")
+    assert len(support._rate) <= support._RATE_MAX_KEYS
+    support._reset_rate_limiter()

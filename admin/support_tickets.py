@@ -37,6 +37,7 @@ dead relay degrades the action's ``email_status``, never the action.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 
@@ -58,6 +59,10 @@ _TRANSITIONS: dict[str, tuple[tuple[str, ...], str]] = {
 
 REPLY_MAX = 5000
 SEARCH_MAX = 120
+
+# Mailer statuses that mean "this reply reached the user". 'duplicate' belongs here: it is
+# the ledger reporting that this exact text already went out under the same idem_key.
+_EMAIL_DELIVERED = ("sent", "duplicate")
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
@@ -98,6 +103,16 @@ def _uuid(value) -> str | None:
     return s if _UUID_RE.match(s) else None
 
 
+def _one_line(value, *, limit: int = 200) -> str:
+    """Collapse to a single line — defence in depth for anything used as a mail subject.
+
+    app/mailer.py sanitises at the chokepoint and app/support.py collapses on the way in,
+    so a row written by this estate is already clean. This covers a row that was not: a
+    CRLF in a stored subject would make every reply on that ticket fail to send, forever.
+    """
+    return " ".join(str(value or "").split())[:limit]
+
+
 def _clamp(v, default: int, lo: int, hi: int) -> int:
     try:
         return max(lo, min(hi, int(v)))
@@ -132,11 +147,19 @@ def panel(status: str | None = None, q: str | None = None,
     where = ["true"]
     if status in VALID_STATUSES:                 # allow-list; anything else is ignored
         where.append(f"t.status = '{status}'")
-    needle = str(q or "").strip()
+    # Cap the needle BEFORE building the pattern, so a megabyte of search text never
+    # becomes a megabyte-long f-string on its way to _lit's cap.
+    needle = str(q or "").strip()[:SEARCH_MAX]
+    search_sql = None
     if needle:
         lit = _lit(f"%{needle}%", maxlen=SEARCH_MAX + 2)
-        where.append(f"(t.email ilike {lit} or t.subject ilike {lit})")
+        search_sql = f"(t.email ilike {lit} or t.subject ilike {lit})"
+        where.append(search_sql)
     where_sql = " and ".join(where)
+    # The chip counts are scoped to the SEARCH but not to the status filter — that is what
+    # makes them a usable switcher (each chip shows what you would get by clicking it)
+    # rather than a set of numbers that contradict the table under a search.
+    summary_where = search_sql or "true"
 
     try:
         count_rows = users._query(
@@ -152,7 +175,8 @@ def panel(status: str | None = None, q: str | None = None,
             f"where {where_sql} "
             f"order by t.created_at desc limit {page_size} offset {offset}")
         summary = users._query(
-            "select status, count(*)::int as n from public.support_tickets group by 1 order by 1")
+            "select t.status, count(*)::int as n from public.support_tickets t "
+            f"where {summary_where} group by 1 order by 1")
         counts = {r["status"]: r["n"] for r in (summary or []) if r.get("status")}
         return {
             "ok": True,
@@ -206,12 +230,21 @@ def detail(ticket_id: str) -> dict:
 # WRITE — actions
 # --------------------------------------------------------------------------- #
 def _send_reply_email(ticket: dict, message_id: str, body: str) -> str:
-    """Email an operator reply to the ticket's address. Never raises; returns the status."""
+    """Email an operator reply to the ticket's address. Never raises; returns the status.
+
+    The idem_key is CONTENT-DERIVED (ticket + hash of the reply text), not just the new
+    message id: a double-clicked Send would otherwise mint a fresh message id and therefore
+    a fresh key, and the ledger's unique constraint would never see a duplicate. Keying on
+    the text means an accidental resubmission of the SAME reply cannot mail twice even if
+    the UI guard fails. A deliberate identical re-send is the acknowledged trade — it is
+    recorded in the thread and reported as 'duplicate'.
+    """
+    subject = _one_line(ticket.get("subject")) or "your support request"
     try:
         from app import mailer  # noqa: PLC0415
         html, text = mailer.render_email(
-            f"Re: {ticket.get('subject') or 'your support request'}",
-            f"回复：{ticket.get('subject') or '您的客服请求'}",
+            f"Re: {subject}",
+            f"回复：{subject}",
             [
                 {"en": "Here is the reply from Mastermind support.",
                  "zh": "以下是 Mastermind 客服的回复。"},
@@ -220,14 +253,15 @@ def _send_reply_email(ticket: dict, message_id: str, body: str) -> str:
                  "zh": "直接回复此邮件即可继续沟通。"},
             ],
         )
+        body_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
         return mailer.send(
             template="ticket_reply",
             cls="transactional",
             to_email=ticket.get("email") or "",
-            subject=f"Re: {(ticket.get('subject') or 'your support request')[:120]}",
+            subject=f"Re: {subject[:120]}",
             html=html,
             text=text,
-            idem_key=f"ticket-reply:{message_id}",
+            idem_key=f"ticket-reply:{ticket.get('id')}:{body_hash}",
             user_id=ticket.get("user_id") or None,
         )
     except Exception as exc:  # noqa: BLE001 — the reply is already recorded; mail is best-effort
@@ -289,8 +323,12 @@ def act(ticket_id: str, action: str, body: str | None = None,
             if not message_id:
                 return {"ok": False, "error": "reply insert returned no id"}, 500
             # 2. … then try to mail it, and record what actually happened.
+            #    'duplicate' counts as emailed: the ledger already holds this exact reply
+            #    under the same content-derived key, which means it DID leave the building
+            #    on the first submit. Flagging it "not emailed" would send the operator
+            #    chasing an SMTP problem that does not exist.
             email_status = _send_reply_email(ticket, message_id, reply_body)
-            if email_status == "sent":
+            if email_status in _EMAIL_DELIVERED:
                 users._query("update public.support_ticket_messages set emailed = true "
                              f"where id = '{message_id}'")
 
@@ -309,5 +347,5 @@ def act(ticket_id: str, action: str, body: str | None = None,
         out["message_id"] = message_id
     if email_status is not None:
         out["email_status"] = email_status
-        out["emailed"] = email_status == "sent"
+        out["emailed"] = email_status in _EMAIL_DELIVERED
     return out, 200

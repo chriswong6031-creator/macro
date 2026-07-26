@@ -4838,3 +4838,7 @@ button.obx-btn-postnow:hover:not(:disabled) {
   margin-bottom: 10px;
 }
 .sup-reply-box:focus { outline: none; border-color: var(--accent); }
+/* In-flight state for a ticket action: the operator must be able to SEE that the
+   click landed, otherwise the natural response to a slow POST is to click again. */
+.sup-reply .ent-act[disabled], .sup-reply-box[disabled] { opacity: .5; cursor: progress; }
+

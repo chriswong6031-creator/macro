@@ -85,11 +85,33 @@ policy exists, so the browser can neither read nor write. Every reader/writer is
 * `admin/support_tickets.py` — Supabase **Management-API SQL** with the `SUPABASE_ACCESS_TOKEN`
   PAT the admin already holds. **No new admin secret is needed.**
 
-One consequence worth knowing: the admin process has the PAT but usually not the service-role key,
-so when it mails a reply, `app/mailer.py` cannot write its `email_log` row. It logs
-`ledger unavailable … sending WITHOUT idempotency` and sends anyway — deliberate, because a lost
-support reply is a real product failure and a rare duplicate is an annoyance. Add
-`SUPABASE_SERVICE_ROLE_KEY` to `/etc/macro-admin.env` if you want the operator replies ledgered too.
+`SUPABASE_SERVICE_ROLE_KEY` is delivered to **both** envs by the same workflow, so operator
+replies are ledgered like every other send. If it is ever missing from `/etc/macro-admin.env`,
+`app/mailer.py` logs `ledger unavailable … sending WITHOUT idempotency` and sends anyway —
+deliberate for transactional mail, because a lost support reply is a real product failure and a
+rare duplicate is an annoyance. Grep for that line if you suspect the reply lane is unledgered.
+
+## 3b. Caddy: the body cap and the unspoofable rate-limit key
+
+Two edge-only protections for the public intake live in `app/deploy/Caddyfile`:
+
+* `request_body /api/support/* { max_size 64KB }` — the REAL body cap. The app also refuses an
+  oversized declared `Content-Length`, but a chunked request declares none, so only the edge —
+  which sits before the body is read — can actually enforce a limit. Scoped to `/api/support/*`,
+  deliberately not the whole `/api/*` tree, so it can never truncate a Stripe webhook or an
+  analytics batch.
+* `header_up X-MM-Peer {remote_host}` on the `/api/*` proxy — every real-client header the app can
+  read (`EO-Client-IP`, `CF-Connecting-IP`, `X-Forwarded-For`) is attacker-suppliable at the
+  origin, so a bot that rotates one gets a fresh rate-limit bucket per request. `header_up`
+  **replaces** any inbound `X-MM-Peer` with the real TCP peer, giving `app/support.py` one key a
+  client cannot forge. Same mechanic as `X-Admin-Client-IP` on the admin host.
+
+**Getting it live:** `app/deploy/update.sh` — installed as `/usr/local/bin/macro-update` and run
+by cron — compares the repo's Caddyfile to `/etc/caddy/Caddyfile` and, **only when it differs and
+only if `caddy validate` passes**, installs it and runs `systemctl reload caddy` (falling back to
+`restart`). So merging to `main` is enough; a broken config can never take the site down, it just
+refuses to install. To apply immediately instead of waiting for cron, run `macro-update` on the
+droplet.
 
 ## 4. Mail-off mode (what "not configured yet" looks like)
 
@@ -101,6 +123,13 @@ With no relay credentials the whole estate still works:
 | Operator alert | `email_log` row with `status='skipped_no_smtp'`; no send attempted |
 | Console reply | message appended, thread shows a **"not emailed"** pill, toast says so |
 | `send()` return | `'skipped_no_smtp'` — never an exception, never a 500 at a caller |
+
+One asymmetry to know about once campaigns exist (W4): **marketing mail is fail-closed on the
+suppression lookup.** If `email_suppression` / `email_prefs` cannot be read, the message is NOT
+sent — its ledger row is parked at `status='queued'` with `detail='suppression_lookup_failed'`,
+and the W4 drain completes it later by PATCHing that row. Mailing someone who unsubscribed
+because Supabase blinked is a compliance problem; a delayed campaign is not. Transactional mail
+never consults those tables at all, so a ticket reply is never delayed by this.
 
 Nothing is silently dropped: every attempt lands a ledger row, and the thread tells the truth about
 what left the building.
