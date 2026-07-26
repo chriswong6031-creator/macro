@@ -21,6 +21,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
+from engine.research_vault.sidecar import clean_title
+
 log = logging.getLogger("research_vault.catalog")
 
 SCHEMA = "research_vault.catalog.v1"
@@ -60,15 +62,46 @@ def load(store) -> dict:
         if not isinstance(obj, dict) or not isinstance(obj.get("items"), list):
             log.warning("catalog malformed — starting fresh")
             return empty()
+        _heal_titles(obj)
         return obj
     except Exception as e:  # noqa: BLE001 — corrupt catalog: rebuild from empty
         log.warning("catalog parse failed (%s) — starting fresh", e)
         return empty()
 
 
+def _heal_titles(catalog: dict) -> int:
+    """Repair already-PUBLISHED titles in place; returns the number changed.
+
+    Ingest is receipt-idempotent, so a document already in the vault never
+    re-normalizes — a title defect fixed in :mod:`sidecar` would otherwise stay
+    frozen in the catalog forever for every doc ingested before the fix. Healing
+    on load means the next hourly run republishes those rows repaired, with no
+    receipt surgery and no re-download. Idempotent: a healed catalog re-heals to
+    itself and the row-identifying ``id`` is never touched.
+    """
+    n = 0
+    for it in catalog.get("items") or []:
+        if not isinstance(it, dict):
+            continue
+        old = it.get("title")
+        if not isinstance(old, str) or not old:
+            continue
+        new = clean_title(old)
+        if new and new != old:
+            it["title"] = new
+            n += 1
+    if n:
+        log.info("catalog: repaired %d truncated/deduped title(s)", n)
+    return n
+
+
 def _public_item(item: dict) -> dict:
     """Project a normalized sidecar item to the public-safe catalog subset."""
-    return {k: item.get(k) for k in _ITEM_FIELDS}
+    pub = {k: item.get(k) for k in _ITEM_FIELDS}
+    # Belt-and-braces: normalize() already cleans, but the catalog is the last
+    # stop before a title becomes public (page <title>, og:title, the crawl hub).
+    pub["title"] = clean_title(pub.get("title")) or (pub.get("title") or "")
+    return pub
 
 
 def upsert_item(catalog: dict, item: dict) -> dict:

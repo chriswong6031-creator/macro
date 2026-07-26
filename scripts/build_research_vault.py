@@ -32,6 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.research_vault.sidecar import clean_title  # noqa: E402
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
@@ -79,7 +80,13 @@ def load_catalog() -> dict:
 
 
 def _public_item(item: dict) -> dict:
-    return {k: item.get(k) for k in _ITEM_FIELDS}
+    pub = {k: item.get(k) for k in _ITEM_FIELDS}
+    # Render-side guard: the committed snapshot is data we do not control (the
+    # upstream desk truncates its own ticker parentheticals), and it feeds the SSR
+    # cards + the JSON island + every /research/ landing page below. Repair here so
+    # a stale snapshot can never ship an unbalanced "(" into a public surface.
+    pub["title"] = clean_title(pub.get("title")) or (pub.get("title") or "")
+    return pub
 
 
 def _public_catalog(cat: dict) -> dict:
