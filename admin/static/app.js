@@ -162,10 +162,12 @@ const ICONS = {
   marketing_allies:      NAV_ICO('<path d="M8.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M15.5 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M4 20a4.5 4.5 0 0 1 9 0M11 20a4.5 4.5 0 0 1 9 0"/>'),
   marketing_radar:       NAV_ICO('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15" r="1" fill="currentColor" stroke="none"/>'),
   marketing_seo:         NAV_ICO('<circle cx="11" cy="11" r="7"/><path d="M16 16l4.5 4.5"/><path d="M8 11.5l2 2 4-4.5"/>'),
+  /* Chronicle — market context timeline (clock/timeline glyph) */
+  chronicle:             NAV_ICO('<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2"/><path d="M9 2.5h6"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"]] },
@@ -8843,6 +8845,108 @@ RENDER.context_lobe = async () => {
     <div class="card">${manifestHtml}</div>
     <div class="section">Candidate Context <span class="cnt">${d.n_candidates_total || 0}</span></div>
     <div class="card">${candidatesHtml}</div>`;
+};
+
+/* ---- Chronicle (market context timeline) --------------------------------- */
+RENDER.chronicle = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/chronicle/overview");
+
+  if (d.error) {
+    v.innerHTML = card("Chronicle", `<div class="sub muted">${esc(d.error)}</div>`);
+    return;
+  }
+
+  const banner = `<div class="banner show" style="margin-bottom:12px;padding:8px 12px;border-radius:6px;background:var(--surface2,#1e2030);border:1px solid var(--border,#334)">
+    <span style="font-weight:600">Display-only · context spine</span>
+    <span class="sub" style="margin-left:8px">Deterministic event history — no signals, no escalations, no scores originate here</span>
+  </div>`;
+
+  if (!d.manifest) {
+    v.innerHTML = banner + card("Chronicle", nwEmpty("Accruing", d.note || "No Chronicle run yet."));
+    return;
+  }
+
+  const cov = d.coverage || {};
+  const healthHtml = `
+    <div class="kv"><span>As of</span><b>${esc(d.as_of || "—")}</b></div>
+    <div class="kv"><span>Coverage window</span><b>${esc(cov.start || "—")} → ${esc(cov.end || "—")}</b></div>
+    <div class="kv"><span>Coverage note</span><b class="sub">${esc(cov.note || "—")}</b></div>
+    <div class="kv"><span>Total events</span><b>${d.total_events != null ? d.total_events : "—"}</b></div>
+    <div class="kv"><span>Compile time</span><b>${d.elapsed_s != null ? d.elapsed_s + "s" : "—"}</b></div>
+    <div class="kv"><span>Produced</span><b class="sub">${esc((d.manifest.produced_at || "—").slice(0, 16).replace("T", " "))} UTC</b></div>`;
+
+  const adapters = d.adapters || {};
+  const adapterRows = Object.entries(adapters).map(([name, info]) => `
+    <tr>
+      <td class="mono">${esc(name)}</td>
+      <td class="r">${info && info.count != null ? info.count : "—"}</td>
+      <td><span class="statpill ${info && info.gap ? "s-warn" : "s-ok"}">${info && info.gap ? "note" : "clean"}</span></td>
+      <td class="sub">${esc((info && info.gap) || "—")}</td>
+    </tr>`).join("");
+  const adaptersHtml = adapterRows
+    ? `<table><thead><tr><th>Adapter</th><th class="r">Events</th><th>Status</th><th>Note</th></tr></thead><tbody>${adapterRows}</tbody></table>`
+    : `<div class="sub muted">no adapter report</div>`;
+
+  const ledgers = d.ledgers || {};
+  const ledgerRows = Object.entries(ledgers).map(([name, info]) => `
+    <tr>
+      <td class="mono">${esc(name)}</td>
+      <td class="sub">${esc((info && info.path) || "—")}</td>
+      <td class="r">${info && info.rows != null ? info.rows : "—"}</td>
+      <td class="mono sub" style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc((info && info.sha256) || "—")}</td>
+    </tr>`).join("");
+  const ledgersHtml = ledgerRows
+    ? `<table><thead><tr><th>Ledger</th><th>Path</th><th class="r">Rows</th><th>sha256</th></tr></thead><tbody>${ledgerRows}</tbody></table>`
+    : `<div class="sub muted">no ledger stats</div>`;
+
+  const events = d.recent_events || [];
+  const eventRows = events.map(e => `
+    <tr>
+      <td class="sub">${esc(e.date || "—")}</td>
+      <td><span class="statpill s-mut">${esc(e.source || "—")}</span></td>
+      <td>${esc(e.title || "—")}</td>
+      <td class="r">${e.weight_hint != null ? e.weight_hint : "—"}</td>
+      <td class="sub">${(e.tickers || []).map(esc).join(", ") || "—"}</td>
+    </tr>`).join("");
+  const eventsHtml = eventRows
+    ? `<table><thead><tr><th>Date</th><th>Source</th><th>Title</th><th class="r">Weight</th><th>Tickers</th></tr></thead><tbody>${eventRows}</tbody></table>`
+    : nwEmpty("No events yet", "The event spine accrues on the first nightly run.");
+
+  const stateLog = d.state_log_tail || [];
+  const stateRows = stateLog.map(r => {
+    const regimes = r.regimes || {};
+    const regimeStr = Object.entries(regimes).map(([m, rg]) => `${esc(m)}=${esc((rg && rg.quad_name) || "—")}`).join(" · ") || "—";
+    const riskStr = Object.entries(r.risk || {}).map(([m, lbl]) => `${esc(m)}=${esc(lbl)}`).join(" · ") || "—";
+    return `<tr>
+      <td class="sub">${esc(r.date || "—")}</td>
+      <td>${regimeStr}</td>
+      <td>${riskStr}</td>
+    </tr>`;
+  }).join("");
+  const stateLogHtml = stateRows
+    ? `<table><thead><tr><th>Date</th><th>Regimes</th><th>Risk</th></tr></thead><tbody>${stateRows}</tbody></table>`
+    : nwEmpty("No captures yet", "state_log.jsonl fills in after the first nightly run.");
+
+  const gapNotes = d.gap_notes || [];
+  const gapHtml = gapNotes.length
+    ? `<div class="section">Gap Notes</div><div class="card">${gapNotes.map(n => `<div class="note">${esc(n)}</div>`).join("")}</div>`
+    : "";
+
+  v.innerHTML = `
+    ${banner}
+    <div class="section">Spine Health</div>
+    <div class="card">${healthHtml}</div>
+    <div class="section">Adapters <span class="cnt">${Object.keys(adapters).length}</span></div>
+    <div class="card">${adaptersHtml}</div>
+    <div class="section">Ledgers</div>
+    <div class="card">${ledgersHtml}</div>
+    ${gapHtml}
+    <div class="section">Recent Events <span class="cnt">${events.length}</span></div>
+    <div class="card">${eventsHtml}</div>
+    <div class="section">State Log Tail <span class="cnt">${stateLog.length}</span></div>
+    <div class="card">${stateLogHtml}</div>`;
 };
 
 /* ---- Causal Lab --------------------------------------------------------- */

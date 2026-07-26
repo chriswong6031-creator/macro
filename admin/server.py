@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_first_party, auth, brain_guest, brief, causal_lab,
+               chronicle,
                codex_panel,
                config_store,
                content, context_lobe, entitlements, experiments,
@@ -556,6 +557,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not tid:
                     return self._json({"ok": False, "error": "invalid target_id"}, 400)
                 return self._json(marketing.allies_kit(target_id=tid))
+            # Chronicle (market context timeline) admin inspector — read-only.
+            if path == "/api/chronicle/overview":
+                return self._json(chronicle.overview())
             # W-AI: Mastermind AI response log — batch-evaluatable corpus of every
             # user-facing answer (Macro brain + Terminal copilot), ingested from R2.
             if path == "/api/mastermind_ai/response_logs":

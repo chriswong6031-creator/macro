@@ -1661,6 +1661,76 @@ def _summarize_market_structure(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_chronicle(repo: Path) -> tuple[dict, str | None]:
+    """Distil the Chronicle W0 event spine into a short-horizon digest lobe.
+
+    Source: data/chronicle/events.jsonl (+ data/chronicle/manifest.json for the
+    coverage window). Written by scripts/build_chronicle.py
+    (CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md); absent until the first
+    nightly Chronicle run. Fail-soft: absent/unreadable events.jsonl -> empty
+    lobe with gap note.
+
+    W0: narratives is always [] — the LLM narrative/prose layer (data/chronicle/
+    llm/) is a W1 deliverable; this lobe serves only the deterministic recent-
+    events digest until then.
+
+    Standing laws:
+    - 100% deterministic re-projection of already-computed event rows.
+    - No LLM-originated content; weight_hint on the source events is
+      deterministic salience only, never LLM-set or LLM-raised.
+    - Nothing here may gate, rank, size, or escalate any authority surface.
+    - The word 'validated' is banned from all emitted text.
+    """
+    events_path = repo / "data" / "chronicle" / "events.jsonl"
+    if not events_path.exists():
+        return {}, "data/chronicle/events.jsonl absent or unreadable"
+
+    try:
+        events: list[dict] = []
+        for line in events_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except Exception:  # noqa: BLE001
+                continue
+    except Exception as exc:  # noqa: BLE001
+        return {}, f"data/chronicle/events.jsonl unreadable: {exc}"
+
+    manifest = _read_json(repo / "data" / "chronicle" / "manifest.json") or {}
+    coverage = manifest.get("coverage") or {}
+
+    # Date-ordered (newest first) purely for the as_of fallback below -- this
+    # is about "what's the most recent DATE this store has", unrelated to
+    # salience, so it must NOT be affected by the m4 sort fix just below.
+    events_by_date = sorted(events, key=lambda e: (e.get("date") or "", e.get("id") or ""), reverse=True)
+
+    # m4: sort the digest by (-weight_hint, date, id) -- the deterministic
+    # spine salience the spine already computes -- not plain (date, id). A
+    # heavy day with more than 10 events must surface the highest-weight
+    # ones first, not whatever happens to sort first/last by id.
+    events_for_recent = sorted(
+        events, key=lambda e: (-(e.get("weight_hint") or 0), e.get("date") or "", e.get("id") or "")
+    )
+    recent = [
+        {"date": e.get("date"), "title": e.get("title"), "source": e.get("source")}
+        for e in events_for_recent[:10]
+    ]
+
+    lobe: dict = {
+        "is_context_only":  True,
+        "display_only":     True,
+        "asof":             manifest.get("as_of") or (events_by_date[0].get("date") if events_by_date else None),
+        "coverage":         coverage,
+        "recent":           recent,
+        "narratives":       [],
+        "note":             "narrative layer accruing (W1)",
+        "honesty_note":     "context only — deterministic event digest, never a signal or sizing input",
+    }
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1685,6 +1755,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "theme_rotation": _summarize_theme_rotation,  # theme_context.v1 NW integration
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
     "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
+    "chronicle": _summarize_chronicle,  # Chronicle W0 market-context timeline event-spine digest
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1710,6 +1781,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "theme_rotation": ["theme-context-latest"],  # reads world_state.theme_rotation
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
     "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)
+    "chronicle": ["chronicle-events", "chronicle-manifest"],  # Chronicle W0 event spine + manifest
 }
 
 
@@ -2377,6 +2449,7 @@ def build_context(
         "data/earnings/earnings.parquet",
         "data/edgar/rpo.parquet",
         "data/analyst/targets.parquet",
+        "data/chronicle/events.jsonl",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────
