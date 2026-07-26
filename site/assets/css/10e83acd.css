@@ -83,7 +83,7 @@ html[data-theme="dark"][data-lang="zh"]{--blue:#e06464;--r3:#45b873;--bear:#45b8
   background:linear-gradient(90deg,var(--grid),transparent)}
 /* §3 mono tabular numerals */
 .mini .lab b,.score .v,.cmd-price,.big,.reco-exp-band,.cone-stat b,.vtm-price,.vtm-date,
-.mg-score,.dir-num,.needle-num,.risk-nums b,.scn-line b,.rgc-tier span:last-child{
+.dir-num,.needle-num,.risk-nums b,.scn-line b,.rgc-tier span:last-child{
   font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 /* §6 motion system — global keyframes */
 @keyframes vec-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -142,6 +142,9 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .verdict{display:inline-block;padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700}
 .v-conf{background:#E3F5E9;color:#1a7f43} .v-dir{background:#FFF2D9;color:#9a6a00}
 .v-ctx{background:var(--grid);color:var(--muted)}
+/* verdict badges are theme-fragile pastels — give them dark twins (mirrors .gr-*) */
+html[data-theme="dark"] .v-conf{background:#16331f;color:#5fd08a}
+html[data-theme="dark"] .v-dir{background:#3a2e12;color:#e0b34e}
 .tip{border-bottom:1px dashed var(--faint);cursor:help}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);
   font-size:12px;color:var(--faint);line-height:1.7}
@@ -207,7 +210,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .timeline{position:relative}
 .tl-day{margin-bottom:20px}
 .tl-date{font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;
- letter-spacing:.05em;margin:0 0 10px;position:sticky;top:64px;background:var(--card);padding:4px 0;z-index:5}
+ letter-spacing:.05em;margin:0 0 10px;position:sticky;top:8px;background:var(--card);padding:4px 0;z-index:5}
 .tl-item{border-left:2px solid var(--grid);padding:0 0 0 18px;margin-left:6px;position:relative}
 .tl-item summary{display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;
  list-style:none;flex-wrap:wrap}
@@ -217,10 +220,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .tl-node.n-high{background:var(--red)} .tl-node.n-medium{background:var(--brand)} .tl-node.n-info{background:var(--r3)}
 .tl-node.n-flash_crash{background:var(--red)} .tl-node.n-momentum_trigger{background:var(--indigo)}
 .tl-chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:7px;background:var(--grid);color:var(--muted)}
+/* category tints via the theme-aware tinted-badge formula (was light-only hex that
+   showed pastel blocks in dark mode); f-flash already rode tokens. */
 .tl-chip.f-flash{background:var(--redfill);color:var(--red)}
-.tl-chip.f-risk{background:#FDEBEB;color:var(--red)}
-.tl-chip.f-structure{background:#E8EEFF;color:var(--brand)}
-.tl-chip.f-momentum{background:#ECE9FB;color:var(--indigo)}
+.tl-chip.f-risk{background:color-mix(in srgb,var(--red) 15%,var(--card));color:var(--red)}
+.tl-chip.f-structure{background:color-mix(in srgb,var(--brand) 15%,var(--card));color:var(--brand)}
+.tl-chip.f-momentum{background:color-mix(in srgb,var(--indigo) 16%,var(--card));color:var(--indigo)}
 .tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
 .tl-time{font-size:12px;color:var(--faint);font-weight:600}
 .tl-detail{padding:2px 0 12px;font-size:13px;color:var(--muted);line-height:1.6}

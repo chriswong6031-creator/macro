@@ -10,10 +10,67 @@
    ============================================================================ */
 :root{--btc:#F7931A;--btc-2:#FDB94E;--btc-soft:rgba(247,147,26,.12);--btc-line:rgba(247,147,26,.34);--btc-ink:#8a5210}
 html[data-theme="dark"]{--btc:#ffa63a;--btc-2:#ffc673;--btc-soft:rgba(255,166,58,.15);--btc-line:rgba(255,166,58,.30);--btc-ink:#ffcf8e}
+
+/* ============================================================================
+   MACRO-PARITY TOKENS — this standalone page can't link theme.css, so the macro
+   dashboard's surface / spacing / type vocabulary is ported here and mapped onto
+   Vector's own palette (--card→--panel, --grid→--line). Two payoffs:
+   (a) it DEFINES --hair / --hair-strong / --ink-* / --rail, which the .rgc-*
+       scorecard and other ported idioms referenced but that were never declared
+       here — so their bars and hairline borders rendered fully transparent; and
+   (b) it lets the card + section-header idioms below adopt macro's flat terminal
+       look, so Vector and Macro read as one family. --rail is Bitcoin-orange
+       (Vector's signature) where macro's rail is link-blue — the one deliberate
+       divergence; it never encodes price direction and never swaps in zh. */
+:root{
+  --line:var(--grid); --panel:var(--card); --panel2:color-mix(in srgb,var(--card) 90%,var(--bg));
+  --hair:color-mix(in srgb,var(--grid) 88%,transparent); --hair-strong:var(--grid);
+  --ink-1:var(--ink); --ink-2:color-mix(in srgb,var(--text) 74%,transparent); --ink-3:var(--muted);
+  --rail:var(--btc); --pad:20px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+  --r-sm:8px; --r-md:10px; --r-lg:14px;
+  --fs-display:44px; --fs-h1:28px; --fs-h2:17px; --fs-h3:14px; --fs-body:14px;
+  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  --ms:inset 0 1px 0 0 rgba(255,255,255,.72), 0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+  /* Flatten the translucent-glass surface tokens to the solid macro panel: every
+     --surface consumer (.card, .fcard, .reco, .cmd, .bgrp, .vtm-readout, .wchip,
+     .sec-fold) inherits the terminal look from one place, no per-rule surgery. */
+  --surface:var(--panel); --surface-brd:var(--line);
+  --surface-hover-brd:color-mix(in srgb,var(--btc) 38%,var(--line));
+  --surface-shadow:var(--ms); --surface-shadow-hover:var(--ms);
+}
+html[data-theme="dark"]{
+  --hair:color-mix(in srgb,var(--grid) 66%,transparent);
+  --ink-2:color-mix(in srgb,var(--text) 62%,transparent);
+  --ms:inset 0 1px 0 0 color-mix(in srgb,var(--text) 8%,transparent), 0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.5);
+}
 /* visible keyboard focus (doctrine: every interactive surface) — on-brand orange ring */
 :focus-visible{outline:2px solid var(--btc);outline-offset:2px;border-radius:6px}
 details.sec-fold>summary:focus-visible{outline-offset:-2px}
 .qm:focus-visible,.fmore:focus-visible{outline-offset:1px}
+
+/* ============================================================================
+   CARD SYSTEM — macro's flat "terminal panel": a solid fill on a hairline border
+   with a calm inset+drop shadow, and NO hover-lift on display cards (macro panels
+   sit still; only genuinely clickable a.card responds). This replaces Vector's
+   earlier translucent-glass card (rgba surface, 18px radius, layered shadow,
+   diagonal sheen, translateY lift) — the softer treatment that read as visually
+   noisy beside the crisp macro dashboard. Radius steps 18→14 (--r-lg); padding to
+   macro's 20/22.
+   ============================================================================ */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:var(--sp-5) calc(var(--sp-5) + 2px);box-shadow:var(--ms)}
+.card::before{display:none}                        /* drop the diagonal glass sheen */
+.card:hover{transform:none;box-shadow:var(--ms);border-color:var(--line)}
+a.card{transition:transform .2s cubic-bezier(.2,.7,.3,1),border-color .2s ease,box-shadow .2s ease}
+
+/* card titles wear macro's panel-header idiom: a 3px accent rail (Bitcoin-orange)
+   + the title + a hairline rule beneath. Scoped to DIRECT-child h3 so the few
+   cards whose h3 lives inside a bespoke flex header keep their own layout. */
+.card>h3{display:flex;align-items:center;gap:9px;padding-bottom:11px;
+  margin-bottom:14px;border-bottom:1px solid var(--hair)}
+.card>h3::before{content:"";flex:none;width:3px;height:16px;border-radius:2px;
+  background:linear-gradient(180deg,var(--rail),color-mix(in srgb,var(--rail) 32%,transparent))}
 
 /* ---------- section eyebrow: an orange vector tick + hairline rule ---------- */
 .vsec{display:flex;align-items:center;gap:11px;margin:46px 4px 16px;animation:vec-rise .5s cubic-bezier(.2,.7,.3,1) both}
@@ -169,7 +226,7 @@ details.sec-fold .section-title:first-of-type{margin-top:16px}
 /* ---------- inside an open shelf the PANEL carries the elevation, so its cards
    flatten to sections of it — nested card-on-card chrome was reading as mush.
    Same move as the macro dashboard, where a fold panel holds flat content. ---------- */
-details.sec-fold .card{background:var(--card);border-radius:12px;box-shadow:none}
+details.sec-fold .card{background:var(--panel2);border-radius:12px;box-shadow:none}
 details.sec-fold .card::before{display:none}
 details.sec-fold .card:hover{transform:none;box-shadow:none;border-color:var(--surface-brd)}
 /* a short card must not stretch to a tall neighbour's height — that void was the

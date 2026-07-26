@@ -54,7 +54,7 @@ html[data-lang="zh"] .hero .eyebrow{ letter-spacing:.08em; }
 html[data-unsub="off"]   .panel{ --accent:var(--ok); }
 html[data-unsub="on"]    .panel{ --accent:var(--ok); }
 html[data-unsub="bad"]   .panel{ --accent:var(--act); }
-html[data-unsub="error"] .panel{ --accent:var(--act); }
+html[data-err="1"]       .panel{ --accent:var(--act); }
 
 .p-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
   border-bottom:1px solid var(--line); }
@@ -69,13 +69,15 @@ html[data-unsub="ready"] .st-ready,
 html[data-unsub="off"]   .st-off,
 html[data-unsub="on"]    .st-on,
 html[data-unsub="bad"]   .st-bad{ display:block; }
-/* `error` keeps whatever step the reader was on and adds the bar above it, so a failed
-   press never discards the button they were about to press again */
-html[data-unsub="error"] .st-ready{ display:block; }
-/* the state label follows the panel */
+/* FAILURE IS A SEPARATE AXIS, not a fifth state. `error` used to be a data-unsub VALUE
+   that displayed .st-ready, so a failed press overwrote the step the reader was on: press
+   "Turn them back on" from `off`, have the server 500, and the panel flipped to the label
+   MARKETING EMAIL: ON, the unsubscribe lede, and an "Unsubscribe" button — the inverse of
+   what was attempted, on a compliance surface, next to a bar saying "try again". The bar
+   now rides on data-err, so the step, the label and the button are all still whatever
+   they were and "try again" means what it says. */
 .lb{ display:none; }
 html[data-unsub="ready"] .lb-ready,
-html[data-unsub="error"] .lb-ready,
 html[data-unsub="on"]    .lb-ready,
 html[data-unsub="off"]   .lb-off,
 html[data-unsub="bad"]   .lb-bad{ display:inline; }
@@ -129,7 +131,7 @@ html[data-unsub="bad"]   .lb-bad{ display:inline; }
   border-radius:11px; font-size:13.2px; line-height:1.45; color:var(--text);
   border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
   background:color-mix(in srgb,var(--act) 10%,transparent); }
-html[data-unsub="error"] .err{ display:flex; }
+html[data-err="1"] .err{ display:flex; }
 .err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
 .err .ic svg{ display:block; width:16px; height:16px; }
 .err a{ white-space:nowrap; }
@@ -141,6 +143,10 @@ html[data-unsub="error"] .err{ display:flex; }
   border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
 html[data-refused="1"] .refused{ display:block; }
 html[data-refused="1"] .st-off .btn-ghost{ display:none; }
+/* The way back needs its OWN token — the footer token authorises `unsubscribe` and
+   nothing else — and the server only mints one for the request that actually recorded the
+   opt-out. No token, no button: a button that can only 400 is worse than no button. */
+html:not([data-undo="1"]) .st-off .btn-ghost{ display:none; }
 
 /* ── footer — landing footer anatomy, colours resolved from theme tokens ───── */
 .mx-footer{ border-top:1px solid var(--line); margin-top:52px;
@@ -158,6 +164,11 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
 .mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
 .mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
   color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+/* Same recipe as .mlab, so it needs the same CJK fix: 9px mono + .14em tracking with no
+   Hanzi in the stack renders 产品 / 资源 through whatever the system picks — a serif on
+   some machines — at tracking this file's own comment calls broken spacing. */
+html[data-lang="zh"] .mx-footer .f-col p{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
 .mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
 .mx-footer .f-col a:hover{ color:var(--text); }
 .mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;
@@ -178,6 +189,11 @@ html[data-refused="1"] .st-off .btn-ghost{ display:none; }
   .p-body{ padding:15px 14px 16px; }
   .act{ gap:10px; }
   .act .btn{ width:100%; order:-1; }
+  /* ...but NOT the ghost one. `.act .btn` matches `.btn.btn-ghost` too, so on a phone the
+     "turn them back on" button became full width and jumped ABOVE its own note — the
+     loudest thing on screen and the only button visible, on the exact surface where email
+     links are opened. It is a second, quieter action everywhere or it is not one. */
+  .act .btn-ghost{ width:auto; order:0; }
   .act .note{ min-width:0; }
   .mx-footer{ padding:30px 0 24px; margin-top:38px; }
   .mx-footer .f-in{ padding:0 16px; }
