@@ -1,79 +1,55 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-23",
-  "generated_at": "2026-07-25T01:30:02.660802+00:00",
+  "as_of": "2026-07-24",
+  "generated_at": "2026-07-26T03:10:40.977043+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-23-ROST-1",
+      "id": "2026-07-24-ROST-1",
       "ticker": "ROST",
       "name": null,
-      "lean": "cautious",
+      "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Despite strong earnings momentum, the extended entry (pullback/extended, vol-squeeze) and cycle_blocked signal, combined with a Retail narrative basket headwind, point to likely underperformance vs. the S&P 500 over the next month.",
+      "horizon_d": 30,
+      "thesis": "ROST exhibits high SUE and strong residual momentum with insider buying, and entry conditions are not extended (off-high only -0.5%); the stock is a high-confluence leader with clean quality. The risk control flags Consumer Discretionary basket headwind, so conviction is tempered.",
       "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "entry axis blocked (z -0.32, pct 45, urgency, off-high, rsi, vol-squeeze)",
-        "cycle_blocked: true, caution: NEARING A HIGH",
-        "cautions: Narrative basket (Retail) below long-term trend \u2014 validated drawdown gate"
+        "SUE z=1.9 (validated)",
+        "alpha momentum z=2.09",
+        "insider buying context",
+        "entry not blocked, FRESH BUY state"
       ],
-      "dissent": "Positive SUE (z 1.92, 22 days fresh) and upward revisions could drive outperformance if the tape rotates back to discretionary retail.",
+      "dissent": "Sector basket below trend could overshadow positive stock dynamics if macro weakness intensifies.",
       "falsifier": {
-        "text": "If ROST closes above its 20-day high within the next 10 trading days, the extension brake is invalidated and the cautious lean fails.",
+        "text": "If ROST underperforms the S&P 500 and the Consumer Discretionary sector on a risk-off move, the constructive lean fails.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ROST",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-20",
-      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+      "check_by": "2026-09-04",
+      "engine_verdict": "High-confluence leader (context)"
     },
     {
-      "id": "2026-07-23-RCUS-2",
-      "ticker": "RCUS",
-      "name": null,
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The screen yields a mixed picture: modest selection with stale negative SUE and revisions, offset by positive momentum and tailwind capital, while an accounting watch flag and the engine's no-edge verdict prevent a directional lean.",
-      "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection: SUE z -0.17 (stale, 54 days), revisions z -0.31",
-        "quality: accounting watch flag (z -2.95)",
-        "tailwind: spotlight present (z 0.35)"
-      ],
-      "dissent": "If a fresh earnings beat or clinical catalyst ignites momentum, RCUS could break out of its range.",
-      "falsifier": {
-        "text": "A close above $32 on above-average volume would indicate a breakout, shifting the lean to constructive.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-08-20",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-23-WAB-3",
+      "id": "2026-07-24-WAB-2",
       "ticker": "WAB",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Strong selection factors (SUE, revisions, momentum) are overshadowed by an extended entry and a cycle_blocked signal, suggesting near-term underperformance relative to the S&P 500.",
+      "thesis": "WAB is extended at its high with entry blocked and cycle nearing a high; the Industrial basket is deteriorating, forming a risk-off signal. While earnings momentum is positive, the combination of topping cycle and blocked entry warrants caution relative to the S&P 500.",
       "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "entry axis blocked (z -0.78, pct 38, pullback/extended, rsi, vol-squeeze)",
-        "cycle_blocked: true, caution: NEARING A HIGH"
+        "verdict: Extended \u2014 don't chase",
+        "entry blocked (extended, off-high 0%)",
+        "cycle_blocked true (NEARING A HIGH)",
+        "cautions: basket deteriorating"
       ],
-      "dissent": "A powerful breakout above recent highs could resume the uptrend, negating the extension signal.",
+      "dissent": "Strong SUE (z=1.05) and insider buying could fuel further upside, breaking the topping pattern.",
       "falsifier": {
-        "text": "If WAB makes a new 20-day high on above-average volume, the cautious lean fails.",
+        "text": "If WAB closes above $310 (new high) and holds for 3 days, the cautious lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "WAB",
@@ -83,89 +59,120 @@
           "horizon_d": 20
         }
       },
-      "check_by": "2026-08-20",
+      "check_by": "2026-08-21",
       "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
-      "id": "2026-07-23-VSAT-4",
-      "ticker": "VSAT",
+      "id": "2026-07-24-STBA-3",
+      "ticker": "STBA",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Multiple red flags\u2014accounting warn, extreme extension (+46% over 200dma), cycle unconfirmed turn, and a weak Space Economy basket\u2014indicate a high probability of underperformance vs. the S&P 500.",
+      "horizon_d": 30,
+      "thesis": "STBA shows weak selection (SUE near zero, negative revisions) and extended entry conditions with cycle near a high, triggering a blocked entry and caution from the engine. No drivers further support, making underperformance likely.",
       "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "entry axis blocked (z -2.5, pct 18, pullback/extended, over-200dma, rsi, vol-squeeze)",
-        "cycle_blocked: true, caution: UNCONFIRMED TURN",
-        "cautions: accounting warn, extended +46% over 200dma \u2014 chasing, basket below long-term trend"
+        "verdict: Extended \u2014 don't chase",
+        "selection SUE z=0.14, revisions -0.34, drivers empty",
+        "entry blocked (extended)",
+        "cycle_blocked true (NEARING A HIGH)"
       ],
-      "dissent": "Momentum could persist if the space narrative gains a sudden influx of retail and institutional interest, ignoring fundamentals.",
+      "dissent": "Residual momentum (alpha z=1.24) could keep the stock afloat even as fundamentals stall.",
       "falsifier": {
-        "text": "If VSAT closes above its 50-day high on expanding volume, the cautious lean is invalidated.",
+        "text": "If STBA breaks above $55 on volume, the topping thesis is invalidated and cautious lean fails.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "VSAT",
+          "subject_ticker": "STBA",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-08-20",
+      "check_by": "2026-09-04",
       "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
-      "id": "2026-07-23-CASY-5",
-      "ticker": "CASY",
+      "id": "2026-07-24-GM-4",
+      "ticker": "GM",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "GM is building a base after a 3.9% pullback, with positive revisions and residual momentum. The entry is not blocked, and quality is clean, but the Consumer Discretionary basket headwind tempers conviction.",
+      "evidence": [
+        "verdict: Constructive \u2014 building a base",
+        "revisions z=0.84 and alpha z=1.13",
+        "off-high -3.9% (countertrend bounce)",
+        "cautions: basket drawdown gate"
+      ],
+      "dissent": "Recent negative SUE (z=-0.96) and weak sentiment in auto/consumer discretionary could derail the base if macro turns.",
+      "falsifier": {
+        "text": "If GM falls below $78 (recent swing low), the base-build thesis is broken.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "GM",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-24-VALE-5",
+      "ticker": "VALE",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "VALE shows residual momentum amid a significant -17% drawdown, with entry not blocked and the engine designating a base-building phase. However, no earnings or quality edges exist.",
+      "evidence": [
+        "verdict: Constructive \u2014 building a base",
+        "alpha momentum z=1.11",
+        "off-high -17% (countertrend bounce)",
+        "no cycle block or entry block"
+      ],
+      "dissent": "The lack of any fundamental catalyst and the depth of the drawdown could indicate a value trap rather than a base.",
+      "falsifier": {
+        "text": "If VALE makes a new 52-week low below the recent base low, the constructive lean is invalid.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "VALE",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-09-04",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-24-HP-6",
+      "ticker": "HP",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The constructive insider/SUE signal is stale (136 days) and offset by a deteriorating consumer staples basket, leaving no clear directional edge.",
+      "horizon_d": 30,
+      "thesis": "HP is rallying from a drawdown with positive revisions and mild momentum, but the accounting warning flag ('warn') and negative SUE create uncertainty. The engine's neutral band and 'verify before buying' verdict suggest no clear directional edge.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection: SUE z 2.03 but fresh_days 136 (stale)",
-        "cautions: Narrative basket (Consumer Staples Equal-Weight) is deteriorating \u2014 validated risk gate"
+        "verdict: Leader \u00b7 accounting warning",
+        "accounting warn flag on quality",
+        "SUE z=-0.79, stale 78 days",
+        "entry not blocked but rally from -14.9%"
       ],
-      "dissent": "A fresh earnings catalyst or unexpected insider buying could reignite momentum and push the stock higher.",
+      "dissent": "If the accounting concern is resolved, the stock's momentum and revisions could propel outperformance.",
       "falsifier": {
-        "text": "A close above $900 would invalidate neutrality and suggest a bullish breakout.",
+        "text": "If HP beats the S&P 500 by more than 2% over the horizon without new adverse accounting disclosures, the neutral lean was too cautious.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-20",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-23-LEA-6",
-      "ticker": "LEA",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine's 'building a base' verdict is supported by still-fresh SUE (z 1.14) and an unblocked entry, pointing to potential outperformance vs. the S&P 500 as the stock stabilizes.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection: SUE z 1.14, fresh_days 83",
-        "entry axis not blocked (z 0.05, pct 51, off-high, rsi present but no block)"
-      ],
-      "dissent": "The bounce could fail if the market rotates away from rate-sensitive industrials, and the lack of insider presence weakens the signal.",
-      "falsifier": {
-        "text": "If LEA closes below its 20-day low, the base-building pattern breaks and the constructive lean is wrong.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "LEA",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-08-20",
-      "engine_verdict": "Constructive \u2014 building a base"
+      "check_by": "2026-09-04",
+      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
