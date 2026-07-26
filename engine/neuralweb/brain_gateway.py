@@ -4775,16 +4775,25 @@ def _json_safe(obj: Any) -> Any:
 def _expected_lang(message: str, context: dict | None) -> str:
     """The ONE language this turn must answer in: 'zh' or 'en'.
 
-    Profile first, prompt overrides: the client stamps `context.lang` from the UI/profile
-    language, and a user who types in the other language gets that language back (the
-    operator rule — "always consistent with the profile, unless they specifically ask in a
-    different language"). Prior-turn language is deliberately NOT consulted: a Chinese
-    history used to drag an English turn's follow-ups into Chinese.
+    Operator rule (2026-07-26): "always consistent with user profile, unless they
+    specifically ask prompt in a different language" — so the profile (`context.lang`,
+    stamped by the client from the UI language) is the default, and a message the user
+    actually WROTE in the other language overrides it, in BOTH directions.
+
+    "Specifically asked" needs evidence, not the absence of it: any CJK is Chinese, but
+    English requires real prose (two 3+ letter words), so a Chinese-profile user typing
+    "AAPL?" or "XLF vs XLV" keeps their Chinese — a bare ticker is not a language choice.
+    Prior-turn language is deliberately never consulted: a Chinese history was dragging
+    English turns' follow-up chips into Chinese.
     """
-    if _has_cjk(message or ""):
+    msg = message or ""
+    if _has_cjk(msg):
         return "zh"
     lang = str((context or {}).get("lang") or "").strip().lower() if isinstance(context, dict) else ""
-    return "zh" if lang.startswith("zh") else "en"
+    profile = "zh" if lang.startswith("zh") else "en"
+    if profile == "zh" and len(re.findall(r"[A-Za-z]{3,}", msg)) >= 2:
+        return "en"   # wrote English prose under a Chinese profile → answer English
+    return profile
 
 
 _LANG_NAMES = {"en": "English", "zh": "Chinese (简体中文)"}

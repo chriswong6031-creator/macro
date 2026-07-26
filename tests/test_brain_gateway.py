@@ -4254,10 +4254,15 @@ def test_expected_lang_profile_pins_unless_the_message_says_otherwise():
     """context.lang (the UI/profile language) decides; a message typed in the other
     language wins. Prior-turn language is never consulted."""
     assert gw._expected_lang("What is the best sector?", {"lang": "en"}) == "en"
-    assert gw._expected_lang("What is the best sector?", {"lang": "zh"}) == "zh"
-    assert gw._expected_lang("What is the best sector?", {"lang": "zh-CN"}) == "zh"
-    # prompt overrides profile in BOTH directions of asking
+    assert gw._expected_lang("现在哪个板块最好？", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("现在哪个板块最好？", {"lang": "zh-CN"}) == "zh"
+    # prompt overrides profile in BOTH directions (operator rule)
     assert gw._expected_lang("苹果现在可以买吗", {"lang": "en"}) == "zh"
+    assert gw._expected_lang("Is AAPL a buy right now?", {"lang": "zh"}) == "en"
+    # ...but a bare ticker is NOT a language choice — the profile holds
+    assert gw._expected_lang("AAPL?", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("XLF", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("AAPL?", {"lang": "en"}) == "en"
     # missing/garbage lang falls back to English, never to a guess
     assert gw._expected_lang("hello", {}) == "en"
     assert gw._expected_lang("hello", None) == "en"
