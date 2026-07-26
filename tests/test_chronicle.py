@@ -1400,17 +1400,31 @@ def _load_committed_events():
     return path, [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def _rebuild_committed_sources_into_scratch(tmp_path: Path) -> list[dict]:
+def _rebuild_committed_sources_into_scratch(
+    tmp_path: Path, *, include_prev_store: bool = False,
+) -> list[dict]:
     """Rebuild the store into a scratch root from the ACTUAL committed sources.
 
     Never writes the live store (the governor has no __main__ for the same
     reason): sources are copied into tmp_path and the build is rooted there.
+
+    ``include_prev_store`` seeds data/chronicle/events.jsonl too — the
+    union-merge operation the nightly actually runs, under which a
+    retained-after-drop event (B1: a source row leaves its snapshot, its event
+    is kept) survives the rebuild. Without it the rebuild is from scratch,
+    which only equals the committed store while NO adapter is retaining a
+    dropped row — the first legitimate retention would otherwise read as
+    "append-only violated"/"stale store" here forever, a false red no regen
+    could clear.
     """
     import shutil
     from engine.chronicle.governor import build_and_write
     from engine.chronicle import spine
 
-    for rel in spine.REBUILD_SOURCES:
+    rels = list(spine.REBUILD_SOURCES)
+    if include_prev_store:
+        rels.append("data/chronicle/events.jsonl")
+    for rel in rels:
         src = ROOT / rel
         if src.exists():
             dst = tmp_path / rel
@@ -1541,6 +1555,19 @@ def test_committed_store_matches_its_manifest_receipt():
         f"(recorded {recorded}, actual sha256:{actual}) — the store carries content "
         "no governor run produced (hand-edited or half-written)"
     )
+
+    # Same tie for the one genuinely-incremental ledger: a hand-edited
+    # state_log.jsonl is unrecoverable history damage (forward-only capture of
+    # world_state's regime label — a night never captured cannot be re-run), so
+    # it gets the same receipt binding rather than a weaker presence check.
+    state_log_path = ROOT / "data" / "chronicle" / "state_log.jsonl"
+    state_receipt = (manifest.get("ledgers") or {}).get("state_log") or {}
+    if state_log_path.exists() and state_receipt.get("present"):
+        state_actual = hashlib.sha256(state_log_path.read_bytes()).hexdigest()
+        assert str(state_receipt.get("sha256") or "").split(":")[-1] == state_actual, (
+            "committed state_log.jsonl does not hash to its own manifest receipt — "
+            "the forward-only capture ledger was edited outside the governor"
+        )
 
 
 def test_committed_manifest_proves_the_nightly_is_advancing_the_store():
@@ -1800,10 +1827,19 @@ def test_rebuild_from_committed_sources_reproduces_committed_store(tmp_path):
     the invariant degrades to APPEND-ONLY: a rebuild may add events, never lose
     one. Teeth (1)-(3) above carry the rest of the load in that mode, and none of
     them depends on source cadence.
+
+    Both branches run the rebuild the nightly actually runs — union-merge seeded
+    with the committed store — so a retained-after-drop event (B1) never reads
+    as a loss or a byte mismatch here. The armed branch ADDITIONALLY requires a
+    from-scratch rebuild to reproduce the store whenever the manifest reports
+    zero retained drops: in that state the union seed is not load-bearing, and
+    "delete events.jsonl and lose nothing" (masterplan §0 gate 1) must hold
+    literally.
     """
     committed_path, committed = _load_committed_events()
     committed_bytes = committed_path.read_bytes()
-    rebuilt = _rebuild_committed_sources_into_scratch(tmp_path)
+    # The production-mirror rebuild: union-merge seeded, exactly the nightly op.
+    rebuilt = _rebuild_committed_sources_into_scratch(tmp_path, include_prev_store=True)
     rebuilt_bytes = (tmp_path / "data" / "chronicle" / "events.jsonl").read_bytes()
 
     drifted = _drifted_sources()
@@ -1814,6 +1850,23 @@ def test_rebuild_from_committed_sources_reproduces_committed_store(tmp_path):
             "not. The committed store is stale or was not written by the governor run that "
             "wrote its manifest. Heal: python -m scripts.build_chronicle --rebuild"
         )
+        manifest = json.loads((ROOT / "data" / "chronicle" / "manifest.json")
+                              .read_text(encoding="utf-8"))
+        if all(info.get("dropped_from_source") == 0
+               for info in manifest.get("adapters", {}).values()):
+            import tempfile
+            with tempfile.TemporaryDirectory() as scratch2:
+                scratch_events = _rebuild_committed_sources_into_scratch(
+                    Path(scratch2), include_prev_store=False)
+                scratch_bytes = (Path(scratch2) / "data" / "chronicle" /
+                                 "events.jsonl").read_bytes()
+                assert scratch_events is not None
+            assert scratch_bytes == committed_bytes, (
+                "a FROM-SCRATCH rebuild (no previous store seeded) did not reproduce "
+                "the committed events.jsonl even though the manifest reports zero "
+                "retained-after-drop events — the store carries events its sources "
+                "no longer produce, unrecorded"
+            )
         return
 
     committed_ids = {e["id"] for e in committed}
@@ -1822,7 +1875,38 @@ def test_rebuild_from_committed_sources_reproduces_committed_store(tmp_path):
     why = ("the manifest records no usable per-source vintage (predates the pin, absent, "
            "or unreadable)" if drifted is None else f"these sources advanced: {drifted}")
     assert not missing, (
-        f"a rebuild LOST {len(missing)} committed event(s) — append-only violated. "
+        f"a rebuild LOST {len(missing)} committed event(s) — append-only violated "
+        f"even though the rebuild was union-merge seeded (this can only be a "
+        f"union_events regression or store corruption, never retention). "
         f"Byte identity was not required here because {why}, which is expected between "
         f"regen commits; losing a committed event never is: {sorted(missing)[:5]}"
+    )
+
+
+def test_regen_on_committed_tree_is_deterministic():
+    """Gate 1 tooth (5): the production-mirror regen is byte-deterministic on
+    REAL data, at ANY vintage.
+
+    The synthetic determinism test (build twice on the fixture root) cannot see
+    real-data-only nondeterminism — the full committed catalog, a
+    multi-thousand-ticker parquet and five real ledgers exercise ordering,
+    collision and encoding paths one hand-written row per adapter never
+    reaches. Two INDEPENDENT scratch roots (not a re-run in the same tree)
+    must land on identical bytes. Runs on every PR regardless of source
+    cadence, so nondeterminism cannot hide behind the vintage skip.
+    """
+    import tempfile
+
+    if not (ROOT / "data" / "chronicle" / "events.jsonl").exists():
+        pytest.skip("no committed data/chronicle/events.jsonl in this checkout")
+
+    outputs: list[bytes] = []
+    for _ in range(2):
+        with tempfile.TemporaryDirectory() as tmp:
+            _rebuild_committed_sources_into_scratch(Path(tmp), include_prev_store=True)
+            outputs.append((Path(tmp) / "data" / "chronicle" / "events.jsonl").read_bytes())
+
+    assert outputs[0] == outputs[1], (
+        "two independent regens of the REAL committed tree disagree byte-for-byte "
+        "— real-data nondeterminism the synthetic fixture cannot see"
     )
