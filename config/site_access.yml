@@ -20,6 +20,13 @@ public:
     # exists for. The page ships no signals and no customer data; its one write
     # surface (POST /api/support/ticket) is abuse-hardened server-side.
     - /support.html
+    # Unsubscribe (SEE W4). Public for a harder reason than the support desk: a person
+    # who wants our marketing email to stop must never be asked to sign in first, and
+    # RFC 8058 one-click has no session to present. The page reads a signed HMAC token
+    # and mutates nothing on load; its one write surface (POST /api/email/unsubscribe)
+    # authorises on that token alone. Deliberately kept OUT of the sitemap
+    # (lib/seo.py _EXCLUDE_NAMES) — public to reach, not a page to index.
+    - /unsubscribe.html
     # Legal pages — public so anyone (and search crawlers) can read them without
     # an account. Static est-article pages built from content/seo/pages/*.md.
     - /privacy.html

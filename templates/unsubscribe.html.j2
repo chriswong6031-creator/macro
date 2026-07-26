@@ -1,0 +1,427 @@
+{#- unsubscribe.html.j2 — /unsubscribe.html, the public bilingual unsubscribe page (SEE W4).
+
+   Rendered by scripts.build_site.build_unsubscribe_page. Pure static page: nothing here
+   reaches the network at build time; the button talks to POST /api/email/unsubscribe
+   (app/unsubscribe.py) at run time.
+
+   PUBLIC BY CONSTRUCTION, and for a harder reason than /support.html: someone who wants
+   our marketing email to stop must never be asked to sign in first. Authorisation is the
+   signed HMAC token in ?t= — no session, no account, no lookup.
+
+   NOTHING MUTATES ON LOAD. Corporate mail scanners and link-preview bots fetch every URL
+   in an inbound message; a page that unsubscribed on GET would silently opt out people
+   who never clicked. The page renders inert and the reader presses the button. That is
+   why "Nothing changes until you press it" is on screen — it is a true statement about
+   the implementation, not reassurance copy.
+
+   Visual idiom is /support.html's, deliberately: same shell, same rail, same mono
+   micro-label, same footer, all resolved from theme.css tokens (mockups/support_email/
+   PIN.md). No new palette or type decisions are taken here.
+
+   STATE COLOUR LAW (PIN §1.1 — do not "simplify"):
+     success = var(--ok)   error = var(--act)
+   NEVER --up / --down: those are PRICE-DIRECTION tokens and theme.css swaps them under
+   html[data-lang="zh"] for the Asia red-up convention, so a success panel painted with
+   --up turns RED for every Chinese reader. --ok/--act encode health, never direction.
+
+   Bilingual EN/ZH through the house t() macro (dual l-en/l-zh spans; theme.css hides the
+   wrong one off html[data-lang]). No translated text in title= (CI-guarded). -#}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en" data-unsub="ready">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unsubscribe — Mastermind</title>
+{% set seo_title = "Unsubscribe — Mastermind" %}{% set seo_desc = "Turn off marketing email from Mastermind. Account emails — receipts, sign-in links and support replies — are unaffected." %}{% set seo_path = "unsubscribe.html" %}
+{% include "_seo_head.html.j2" %}
+{#- Public to REACH, not a page to index: it is reached only from a link in an email and
+    only works with a signed token, so a tokenless search result would be a dead end for
+    anyone who found it. Mirrored in lib/seo.py _EXCLUDE_NAMES, which keeps it out of
+    sitemap.xml — both are needed, since a sitemap omission alone does not stop a crawl. -#}
+<meta name="robots" content="noindex, nofollow">
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── /unsubscribe.html page CSS. Same tokens, same recipes and the same two page-local
+   additions as /support.html (PIN.md §1) — this is one surface in two rooms, so nothing
+   is re-tasted here. Single column: the page has exactly one thing to do. ──────────── */
+*{ box-sizing:border-box; }
+body{ margin:0; padding-top:18px;            /* 18px top gap — house law */
+  background:var(--bg); color:var(--text); font:14.5px/1.55 var(--font-ui);
+  -webkit-font-smoothing:antialiased; }
+a{ color:var(--link); text-decoration:none; }
+
+:root{
+  --surface:color-mix(in srgb, var(--panel) 96%, var(--text));
+  --brand-a:#3b82f6; --brand-b:#6366f1; --brand-c:#7c5cff;
+}
+html[data-theme="light"]{ --surface:color-mix(in srgb, var(--panel) 97%, #000); }
+
+/* mono micro-label — the page's type signature, same as /support.html */
+.mlab{ display:block; font:600 10.5px/1 var(--font-mono); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); }
+/* CJK: the mono stack carries no Hanzi, so a ZH label otherwise falls through to
+   whatever the system picks — on some machines a SERIF. Pin a sans CJK face ahead of
+   the mono chain and drop the wide Latin tracking, which reads as broken spacing. */
+html[data-lang="zh"] .mlab{ font-family:"PingFang SC","Hiragino Sans GB",
+  "Microsoft YaHei","Noto Sans CJK SC",var(--font-mono); letter-spacing:.04em; }
+html[data-lang="zh"] .hero .eyebrow{ letter-spacing:.08em; }
+
+/* ── shell ────────────────────────────────────────────────────────────────── */
+.wrap{ max-width:620px; margin:0 auto; padding:20px 18px 64px; }
+@media (min-width:900px){ .wrap{ padding:28px 26px 88px; } }
+
+/* ── hero ─────────────────────────────────────────────────────────────────── */
+.hero{ text-align:center; padding:22px 6px 6px; }
+.hero .eyebrow{ font:600 11px/1 var(--font-ui); letter-spacing:.18em; text-transform:uppercase;
+  color:var(--muted); display:inline-flex; align-items:center; gap:8px; margin-bottom:15px; }
+.hero .eyebrow::before,.hero .eyebrow::after{ content:""; width:26px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--line)); }
+.hero .eyebrow::after{ background:linear-gradient(90deg,var(--line),transparent); }
+.hero h1{ font:700 clamp(27px,4.6vw,38px)/1.08 var(--font-ui); letter-spacing:-.025em;
+  margin:0 auto; max-width:20ch; }
+/* inline-block keeps the second beat whole, so the headline breaks at the sentence */
+.hero h1 .accent{ display:inline-block;
+  background:linear-gradient(100deg,var(--brand-a),var(--brand-c));
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.hero .sub{ font-size:clamp(14.5px,2.2vw,16px); color:var(--muted); max-width:50ch;
+  margin:15px auto 0; line-height:1.5; }
+
+/* ── the panel ────────────────────────────────────────────────────────────── */
+.panel{ position:relative; border:1px solid var(--glass-brd); border-radius:16px;
+  background:var(--surface); box-shadow:var(--card-shadow); overflow:hidden; margin-top:28px; }
+/* the routing rail — 3px accent edge; --ok once the choice is recorded, --act when the
+   link is dead or the write failed. Health tokens, never the direction pair. */
+.panel::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--accent,var(--info)); transition:background .25s ease; }
+html[data-unsub="off"]   .panel{ --accent:var(--ok); }
+html[data-unsub="on"]    .panel{ --accent:var(--ok); }
+html[data-unsub="bad"]   .panel{ --accent:var(--act); }
+html[data-unsub="error"] .panel{ --accent:var(--act); }
+
+.p-head{ display:flex; align-items:center; gap:12px; padding:13px 18px;
+  border-bottom:1px solid var(--line); }
+.p-head .mlab{ flex:1; color:var(--text); }
+html[data-unsub="off"] .p-head .mlab{ color:var(--ok); }
+.p-body{ padding:18px; }
+@media (min-width:600px){ .p-body{ padding:22px 24px 20px; } }
+
+/* one state visible at a time; the page boots in `ready` and the JS decides */
+.st{ display:none; }
+html[data-unsub="ready"] .st-ready,
+html[data-unsub="off"]   .st-off,
+html[data-unsub="on"]    .st-on,
+html[data-unsub="bad"]   .st-bad{ display:block; }
+/* `error` keeps whatever step the reader was on and adds the bar above it, so a failed
+   press never discards the button they were about to press again */
+html[data-unsub="error"] .st-ready{ display:block; }
+/* the state label follows the panel */
+.lb{ display:none; }
+html[data-unsub="ready"] .lb-ready,
+html[data-unsub="error"] .lb-ready,
+html[data-unsub="on"]    .lb-ready,
+html[data-unsub="off"]   .lb-off,
+html[data-unsub="bad"]   .lb-bad{ display:inline; }
+
+.lede{ margin:0 0 18px; color:var(--muted); font-size:14.5px; line-height:1.55; max-width:48ch; }
+
+/* ── the seal + the recorded state ────────────────────────────────────────── */
+.seal{ width:38px; height:38px; border-radius:50%; display:grid; place-items:center;
+  color:var(--ok); background:color-mix(in srgb,var(--ok) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--ok) 34%,transparent); margin-bottom:14px; }
+.seal svg{ width:19px; height:19px; }
+.seal.bad{ color:var(--act); background:color-mix(in srgb,var(--act) 12%,transparent);
+  border-color:color-mix(in srgb,var(--act) 34%,transparent); }
+.st h2{ font:700 21px/1.2 var(--font-ui); letter-spacing:-.01em; margin:0 0 8px; }
+.st p{ margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55; max-width:46ch; }
+.st p b.addr{ color:var(--text); font-weight:600; font-family:var(--font-mono); font-size:13.3px; }
+/* keep a fallback address whole — a mid-address break reads as a typo */
+.st a[href^="mailto:"]{ white-space:nowrap; }
+
+/* ── action row ───────────────────────────────────────────────────────────── */
+.act{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  border-top:1px solid var(--line); padding-top:16px; margin-top:2px; }
+.act .note{ font-size:12px; color:var(--muted); flex:1; min-width:180px; line-height:1.4; }
+/* gbtn — house glass button (theme.css), -cta variant, no breathing animation */
+.btn{ position:relative; overflow:hidden; display:inline-flex; align-items:center;
+  justify-content:center; gap:7px; padding:10px 20px; border-radius:11px;
+  border:1px solid color-mix(in srgb,var(--info) 45%,var(--gbtn-brd));
+  background:linear-gradient(180deg, color-mix(in srgb,var(--info) 16%,var(--gbtn-bg)), var(--gbtn-bg));
+  -webkit-backdrop-filter:blur(12px) saturate(140%); backdrop-filter:blur(12px) saturate(140%);
+  color:var(--text); font:600 13.5px/1 var(--font-ui); letter-spacing:.01em; cursor:pointer;
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 1px 2px rgba(3,7,18,.18);
+  transition:background .2s ease, border-color .2s ease, transform .16s ease, box-shadow .25s ease; }
+.btn:hover{ border-color:var(--info); transform:translateY(-1px);
+  box-shadow:inset 0 1px 0 var(--gbtn-sheen), 0 8px 24px -10px color-mix(in srgb,var(--info) 55%,transparent); }
+.btn:active{ transform:translateY(0) scale(.985); }
+.btn:focus-visible{ outline:2px solid var(--link); outline-offset:2px; }
+.btn::after{ content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.13) 50%,transparent 60%);
+  transform:translateX(-140%) skewX(-8deg); }
+.btn:hover::after{ transform:translateX(140%) skewX(-8deg); transition:transform .55s ease; }
+.btn[aria-busy="true"]{ pointer-events:none; opacity:.75; }
+/* Turning marketing back on is a SECOND action and never the default: ghost weight,
+   smaller, no accent fill. The page must not nudge anyone back onto a list they left. */
+.btn-ghost{ background:var(--gbtn-bg); border-color:var(--gbtn-brd); color:var(--muted);
+  font-size:12.8px; padding:9px 16px; }
+.btn-ghost:hover{ color:var(--text); border-color:var(--gbtn-brd-hover); box-shadow:none;
+  transform:none; }
+
+/* ── error bar (interface voice: what happened + what to do) ───────────────── */
+.err{ display:none; align-items:flex-start; gap:10px; margin:0 0 16px; padding:12px 14px;
+  border-radius:11px; font-size:13.2px; line-height:1.45; color:var(--text);
+  border:1px solid color-mix(in srgb,var(--act) 45%,var(--line));
+  background:color-mix(in srgb,var(--act) 10%,transparent); }
+html[data-unsub="error"] .err{ display:flex; }
+.err .ic{ flex:none; width:16px; height:16px; margin-top:1px; color:var(--act); }
+.err .ic svg{ display:block; width:16px; height:16px; }
+.err a{ white-space:nowrap; }
+
+/* the refused note — a bounce or a complaint is not lifted from a link */
+.refused{ display:none; margin:14px 0 0; padding:10px 12px; border-radius:10px;
+  font-size:12.9px; line-height:1.45; color:var(--muted);
+  background:color-mix(in srgb,var(--info) 7%,transparent);
+  border:1px solid color-mix(in srgb,var(--info) 22%,transparent); }
+html[data-refused="1"] .refused{ display:block; }
+html[data-refused="1"] .st-off .btn-ghost{ display:none; }
+
+/* ── footer — landing footer anatomy, colours resolved from theme tokens ───── */
+.mx-footer{ border-top:1px solid var(--line); margin-top:52px;
+  background:color-mix(in srgb,var(--panel) 45%,transparent);
+  padding:38px 0 30px; color:var(--muted); font-size:13px; }
+.mx-footer .f-in{ max-width:1000px; margin:0 auto; padding:0 22px; }
+.mx-footer .f-grid{ display:flex; justify-content:space-between; align-items:flex-start;
+  gap:30px; flex-wrap:wrap; }
+.mx-footer .f-brand .fb-row{ display:flex; align-items:center; gap:9px; }
+.mx-footer .f-brand .fm{ width:26px; height:26px; border-radius:7px;
+  background:linear-gradient(135deg,var(--brand-a),var(--brand-c)); display:grid; place-items:center;
+  font:800 14px/1 var(--font-ui); color:#fff; }
+.mx-footer .f-brand .fn{ font:800 13px/1 var(--font-ui); letter-spacing:.08em; color:var(--text); }
+.mx-footer .f-brand .ft{ margin:10px 0 0; color:var(--muted); font-size:12.5px; }
+.mx-footer .f-cols{ display:flex; gap:clamp(30px,6vw,84px); }
+.mx-footer .f-col p{ margin:0 0 8px; font:700 9px/1 var(--font-mono); letter-spacing:.14em;
+  color:color-mix(in srgb,var(--muted) 78%,transparent); text-transform:uppercase; }
+.mx-footer .f-col a{ display:block; color:var(--muted); padding:4.5px 0; font-size:13px; }
+.mx-footer .f-col a:hover{ color:var(--text); }
+.mx-footer .f-bot{ display:flex; justify-content:space-between; align-items:center;
+  gap:12px 18px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:34px;
+  padding-top:18px; font-size:12px; color:var(--muted); }
+
+/* ── mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width:480px){
+  .wrap{ padding:14px 14px 52px; }
+  .hero{ padding:12px 2px 2px; text-align:left; }
+  /* the eyebrow's leading hairline reads as a stray indent once left-aligned */
+  .hero .eyebrow{ margin-bottom:12px; }
+  .hero .eyebrow::before{ display:none; }
+  .hero h1{ margin:0; max-width:none; }
+  .hero .sub{ margin:12px 0 0; max-width:none; }
+  .panel{ border-radius:14px; margin-top:22px; }
+  .p-head{ padding:11px 14px; gap:8px; }
+  .p-body{ padding:15px 14px 16px; }
+  .act{ gap:10px; }
+  .act .btn{ width:100%; order:-1; }
+  .act .note{ min-width:0; }
+  .mx-footer{ padding:30px 0 24px; margin-top:38px; }
+  .mx-footer .f-in{ padding:0 16px; }
+  .mx-footer .f-grid{ gap:24px; }
+  .mx-footer .f-cols{ gap:40px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .btn, .btn::after, .panel::before{ transition:none; }
+  .btn:hover{ transform:none; }
+}
+</style>
+</head>
+
+<body>
+{% include "_site_nav.html.j2" %}
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">{{ t('Email settings', '邮件设置') }}</span>
+    {#- the EN word-space lives INSIDE the l-en span: markup whitespace between the two
+        spans would print a stray gap after the ZH full-width comma -#}
+    <h1>{{ t('One click. ', '一次点击，') }}<span class="accent">{{ t('No more marketing email.', '不再收到营销邮件。') }}</span></h1>
+    <p class="sub">{{ t('Account emails — receipts, sign-in links, support replies — keep coming either way.',
+                        '账户邮件——收据、登录链接、客服回复——不受影响，仍会照常发送。') }}</p>
+  </header>
+
+  <section class="panel">
+    <div class="p-head">
+      <span class="mlab">
+        <span class="lb lb-ready">{{ t('Marketing email: on', '营销邮件：开启') }}</span>
+        <span class="lb lb-off">{{ t('Marketing email: off', '营销邮件：已关闭') }}</span>
+        <span class="lb lb-bad">{{ t('Link not valid', '链接无效') }}</span>
+      </span>
+    </div>
+
+    <div class="p-body">
+
+      <div class="err" role="alert">
+        <span class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v4.2M10 13.6v.1"/></svg></span>
+        <span>{{ t('That didn\'t go through. Try again, or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>.',
+                   '没有成功。请重试，或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</span>
+      </div>
+
+      {#- ── READY: the only state with a live button. Nothing has happened yet. ── -#}
+      <div class="st st-ready">
+        <p class="lede">{{ t('Press the button and we stop sending marketing email to this address.',
+                             '点击下面的按钮，我们就不再向这个邮箱发送营销邮件。') }}</p>
+        <div class="act">
+          <button class="btn" type="button" id="u-go">{{ t('Unsubscribe', '退订') }}</button>
+          <span class="note">{{ t('Nothing changes until you press it.', '在你点击之前，什么都不会改变。') }}</span>
+        </div>
+      </div>
+
+      {#- ── OFF: the choice is recorded. ─────────────────────────────────────── -#}
+      <div class="st st-off">
+        <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
+        <h2>{{ t('Marketing emails are off.', '营销邮件已关闭。') }}</h2>
+        <p>{{ t('We stopped marketing email to <b class="addr" data-addr></b>. Receipts, sign-in links and replies from support still reach you.',
+                '我们已停止向 <b class="addr" data-addr></b> 发送营销邮件。收据、登录链接以及客服回复，仍会照常送达。') }}</p>
+        <p class="refused">{{ t('This one cannot be switched back on here: the address bounced or reported us as spam. Write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a> if that was a mistake.',
+                                '这个邮箱无法在此重新开启：它曾退信，或将我们标记为垃圾邮件。如果这是误判，请发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>。') }}</p>
+        {#- The way back is deliberately a second, quieter action — never the default,
+            and never pre-selected. The note is the PIN §7.4 rule applied to a page:
+            one honest exit, no win-back. -#}
+        <div class="act">
+          <button class="btn btn-ghost" type="button" id="u-back">{{ t('Turn them back on', '重新开启') }}</button>
+          <span class="note">{{ t('We will not email to ask you to reconsider.', '我们不会再发邮件劝你回来。') }}</span>
+        </div>
+      </div>
+
+      {#- ── ON: they chose to come back. ─────────────────────────────────────── -#}
+      <div class="st st-on">
+        <div class="seal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg></div>
+        <h2>{{ t('Marketing emails are back on.', '营销邮件已重新开启。') }}</h2>
+        <p>{{ t('You will hear from us again at <b class="addr" data-addr></b>.',
+                '我们会再次通过 <b class="addr" data-addr></b> 与你联系。') }}</p>
+        <div class="act">
+          <button class="btn btn-ghost" type="button" id="u-off">{{ t('Turn them off again', '再次关闭') }}</button>
+          <span class="note">{{ t('You can change this any time from any of our emails.', '你随时可以在我们的任意一封邮件里更改。') }}</span>
+        </div>
+      </div>
+
+      {#- ── BAD: no token, or one that does not verify. ──────────────────────── -#}
+      <div class="st st-bad">
+        <div class="seal bad"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8"/></svg></div>
+        <h2>{{ t('This link does not work.', '这个链接无法使用。') }}</h2>
+        <p>{{ t('It has expired, or your email app cut it short. Open the most recent email from us and use the unsubscribe link at the bottom — or write to <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a> and we will do it for you.',
+                '它可能已失效，或被你的邮件客户端截断。请打开我们最近的一封邮件，点击底部的退订链接——或发邮件至 <a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a>，我们替你处理。') }}</p>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<footer class="mx-footer">
+  <div class="f-in">
+    <div class="f-grid">
+      <div class="f-brand">
+        <div class="fb-row"><span class="fm">M</span><span class="fn">MASTERMIND</span></div>
+        <p class="ft">{{ t('Institutional-grade market intelligence.', '机构级市场情报。') }}</p>
+      </div>
+      <div class="f-cols">
+        <div class="f-col">
+          <p>{{ t('Product', '产品') }}</p>
+          <a href="https://app.mastermind-x.com">Terminal</a>
+          <a href="start.html">{{ t('Dashboards', '仪表盘') }}</a>
+          <a href="plans.html">{{ t('Pricing', '定价') }}</a>
+        </div>
+        <div class="f-col">
+          <p>{{ t('Resources', '资源') }}</p>
+          <a href="methodology.html">{{ t('Methodology', '方法论') }}</a>
+          <a href="learn/index.html">{{ t('Learn', '学习') }}</a>
+          <a href="support.html">{{ t('Support', '支持') }}</a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bot">
+      <span>© 2026 Mastermind · mastermind-x.com</span>
+      <span><a href="mailto:support@mastermind-x.com">support@mastermind-x.com</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="theme.js"></script>
+<script>
+/* /unsubscribe.html page JS. One job: take the token out of the URL and, WHEN THE READER
+   PRESSES A BUTTON, post it to POST /api/email/unsubscribe (app/unsubscribe.py, SEE W4).
+
+   No session, no Supabase client, no auth header — the signed token IS the authorisation,
+   which is the whole point of the page. Origin resolution mirrors support.html.j2 /
+   mm_brain.js: window.MM_BRAIN_CFG.api, '' meaning same origin.
+
+   The token is never written back into the DOM or the URL by this script, and no state
+   here is persisted: a shared or forwarded link leaves nothing behind in the browser. */
+(function () {
+  'use strict';
+  var H = document.documentElement;
+  var $ = function (s) { return document.querySelector(s); };
+  var API = ((window.MM_BRAIN_CFG && window.MM_BRAIN_CFG.api) || '').replace(/\/$/, '');
+
+  /* Read ?t= without URLSearchParams so the page keeps working in the older in-app
+     browsers some mail clients still embed. */
+  function param(name) {
+    var m = new RegExp('[?&]' + name + '=([^&#]*)').exec(location.search || '');
+    return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+  }
+  var TOKEN = param('t');
+
+  /* A missing token is decided here, with no request: the server would answer the same
+     400, and asking it would mean the page briefly offers a button that cannot work. */
+  if (!TOKEN) H.setAttribute('data-unsub', 'bad');
+
+  function paintAddr(masked) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-addr]'), function (b) {
+      b.textContent = masked || '';
+    });
+  }
+
+  function send(action, btn) {
+    if (!TOKEN) { H.setAttribute('data-unsub', 'bad'); return; }
+    H.removeAttribute('data-refused');
+    if (btn) btn.setAttribute('aria-busy', 'true');
+    fetch(API + '/api/email/unsubscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ t: TOKEN, action: action })
+    }).then(function (r) {
+      /* 400 is the server saying the token does not verify — the same dead-link answer
+         the page already knows how to explain. Anything else that is not ok is ours. */
+      if (r.status === 400) { H.setAttribute('data-unsub', 'bad'); return null; }
+      if (!r.ok) { H.setAttribute('data-unsub', 'error'); return null; }
+      return r.json();
+    }).then(function (j) {
+      if (!j) return;                                   /* already handled */
+      paintAddr(j.email_masked);
+      if (j.refused) H.setAttribute('data-refused', '1');
+      H.setAttribute('data-unsub', j.state === 'subscribed' ? 'on' : 'off');
+    }).catch(function () {
+      H.setAttribute('data-unsub', 'error');            /* the button is still there */
+    }).then(function () {
+      if (btn) btn.removeAttribute('aria-busy');
+    });
+  }
+
+  var go = $('#u-go');
+  if (go) go.addEventListener('click', function () { send('unsubscribe', go); });
+  var back = $('#u-back');
+  if (back) back.addEventListener('click', function () { send('resubscribe', back); });
+  var off = $('#u-off');
+  if (off) off.addEventListener('click', function () { send('unsubscribe', off); });
+
+  /* theme.js dispatches langchange on DOCUMENT and it does not bubble, so a window
+     listener would silently never fire. Nothing here is language-dependent today —
+     the dual spans are CSS — but the hook is where the next person will look. */
+  document.addEventListener('langchange', function () { /* dual spans handle themselves */ });
+})();
+</script>
+</body>
+</html>

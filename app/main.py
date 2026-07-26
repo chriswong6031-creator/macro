@@ -1779,3 +1779,37 @@ try:
 except Exception as _lifecycle_exc:  # noqa: BLE001
     import logging as _logging  # noqa: PLC0415
     _logging.getLogger("macro.api").warning("lifecycle mail sweeper not armed: %r", _lifecycle_exc)
+
+# ---------------------------------------------------------------------------
+# Public unsubscribe endpoint (SEE W4 — app/unsubscribe.py): POST /api/email/unsubscribe.
+# PUBLIC and UNAUTHENTICATED by design, like the support intake above: the authorisation
+# is the HMAC token in the URL, and RFC 8058 one-click cannot present a session. Mounted
+# in a try/except like every block above — but note the failure mode is not symmetric
+# with the wall's: if THIS router does not mount, marketing mail can still go out while
+# the unsubscribe link 404s, which is the one combination that is a compliance problem
+# rather than a degraded feature. It is logged at ERROR for that reason.
+# ---------------------------------------------------------------------------
+try:
+    from app.unsubscribe import router as unsubscribe_router  # noqa: E402
+    app.include_router(unsubscribe_router)
+except Exception as _unsub_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").error(
+        "unsubscribe router not mounted — DO NOT send marketing mail until this is fixed: %r",
+        _unsub_exc)
+
+# ---------------------------------------------------------------------------
+# Marketing sweeper (SEE W4 — app/marketing_emails.py): the signup-triggered welcome,
+# the campaign queue drain, and the completion of rows W3 parked when its suppression
+# lookup was unavailable. DEFAULT OFF at three levels — MAIL_MARKETING_ENABLED gates the
+# loop, MAIL_WELCOME_ENABLED and MAIL_CAMPAIGNS_ENABLED gate a leg each, and the welcome
+# leg additionally sends NOTHING until MAIL_WELCOME_AFTER names the activation date. So
+# this is inert on every machine that has not opted in, tests included, and merging it
+# cannot mail anyone.
+# ---------------------------------------------------------------------------
+try:
+    from app.marketing_emails import register_marketing as _register_marketing  # noqa: E402
+    _register_marketing(app)   # logs the armed interval itself; silent when disabled
+except Exception as _marketing_exc:  # noqa: BLE001
+    import logging as _logging  # noqa: PLC0415
+    _logging.getLogger("macro.api").warning("marketing sweeper not armed: %r", _marketing_exc)

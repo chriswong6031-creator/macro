@@ -53,7 +53,7 @@ router = APIRouter()
 # registration wall would never receive the account/billing tickets it exists for.
 # It ships no signals and no customer data, and its one write surface
 # (POST /api/support/ticket) carries its own abuse posture in app/support.py.
-PUBLIC_PATHS = {"/", "/index.html", "/plans.html", "/support.html"}
+PUBLIC_PATHS = {"/", "/index.html", "/plans.html", "/support.html", "/unsubscribe.html"}
 # Public PREFIXES — whole trees that stay FREE + crawlable (operator order
 # 2026-07-24). A registration wall that carries no crawler exception 302s
 # Googlebot (which never has a session) off every page, so the SEO estate must

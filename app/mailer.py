@@ -316,7 +316,15 @@ def _build_message(*, to_email: str, subject: str, html: str, text: str,
     # signed URL (see unsub_token); we only wire the headers.
     unsub_url = extra.pop("unsubscribe_url", None) or extra.pop("List-Unsubscribe-URL", None)
     if cls == "marketing" and unsub_url:
-        msg["List-Unsubscribe"] = f"<{_header_safe(unsub_url, limit=1000)}>"
+        # RFC 8058 wants the https URI (the one-click target). A mailto: alternative is
+        # optional but real: it is the only unsubscribe route that still works for a
+        # reader whose client cannot or will not make the POST, and for the operator
+        # reading a bounce mailbox. Listed FIRST because the RFC's grammar puts the
+        # non-http alternative first and Gmail reads the https one regardless. Absent
+        # MAIL_UNSUB_MAILTO the header is byte-identical to what W1 shipped.
+        mailto = _env("MAIL_UNSUB_MAILTO")
+        prefix = f"<mailto:{_header_safe(mailto, limit=320)}>, " if mailto else ""
+        msg["List-Unsubscribe"] = f"{prefix}<{_header_safe(unsub_url, limit=1000)}>"
         msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     for k, v in extra.items():
         if v is None:
@@ -592,6 +600,22 @@ def _block_html(b: dict, lang: str) -> str:
                 f' font-family:{face}; font-size:15px; font-weight:600; line-height:1;'
                 f' color:#ffffff; text-decoration:none; border-radius:8px;">{_esc(val)}</a>'
                 f'</td></tr></table>')
+    if kind == "links":
+        # PIN §7.6 — "three one-line links, NOT a slip". A slip is for facts you read
+        # (plan, price, date); this is a list of places you go, and rendering it as a
+        # key/value table would make three destinations look like three data points.
+        # One <a> per row, no bullets, no button styling — the CTA below is the one
+        # thing meant to look pressable.
+        rows = []
+        for label, url in list(val):
+            rows.append(
+                f'<tr><td style="padding:0 0 9px; font-family:{face}; font-size:14.5px;'
+                f' line-height:1.5;">'
+                f'<a class="mx-link" href="{_esc(url)}" style="color:{_C_CTA};'
+                f' text-decoration:none; border-bottom:1px solid {_C_RULE};">{_esc(label)}</a>'
+                f'</td></tr>')
+        return ('<table role="presentation" border="0" cellpadding="0" cellspacing="0"'
+                ' width="100%" style="margin:0 0 22px;">' + "".join(rows) + "</table>")
     if kind == "fine":
         lh = "1.7" if lang == "zh" else "1.55"
         return (f'<p class="mx-muted" style="margin:0 0 14px; font-family:{face};'
@@ -613,6 +637,8 @@ def _block_text(b: dict, lang: str) -> str:
         return "\n".join("> " + line for line in str(val).splitlines())
     if kind == "button":
         return f"{val}: {b.get('url') or _SITE_URL}"
+    if kind == "links":
+        return "\n".join(f"{label}: {url}" for label, url in val)
     return str(val)
 
 

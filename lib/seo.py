@@ -109,6 +109,11 @@ _EXCLUDE_NAMES: frozenset[str] = frozenset({
     # Auth-empty until sign-in — fails the index-worthiness test (D12 §3.3);
     # PR B still ships its social meta; Director may revisit.
     "watchlist",
+    # Utility page reached only from an email link, and only with a signed token
+    # (SEE W4). Public so the link works without an account, but indexing it would put
+    # a tokenless "unsubscribe" result in front of people who never asked for one, and
+    # it has no content a searcher is looking for.
+    "unsubscribe",
     # Demo/planning
     "coming-soon",     # placeholder page
     # The serving policy is the final eligibility gate. A page omitted here
