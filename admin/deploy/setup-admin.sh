@@ -14,10 +14,13 @@ log() { echo "[admin-setup] $*"; }
 test -d "$APP_DIR/admin" || { log "FATAL: $APP_DIR/admin missing (repo not cloned?)"; exit 1; }
 test -x "$VENV/bin/python" || { log "FATAL: $VENV/bin/python missing"; exit 1; }
 
-log "[1/5] python deps (pyyaml, requests)"
-"$VENV/bin/python" - <<'PY' || "$VENV/bin/pip" install --quiet --disable-pip-version-check pyyaml requests
+log "[1/5] python deps (pyyaml, requests, boto3)"
+# boto3 backs the AI Response Logs tab's Refresh-from-R2 (lib/mastermind_response_log
+# lazily imports it and no-ops gracefully when absent — creds present + no boto3 is
+# a SILENT dead refresh, found the hard way 2026-07-26).
+"$VENV/bin/python" - <<'PY' || "$VENV/bin/pip" install --quiet --disable-pip-version-check pyyaml requests boto3
 import importlib.util as u, sys
-sys.exit(0 if all(u.find_spec(m) for m in ("yaml", "requests")) else 1)
+sys.exit(0 if all(u.find_spec(m) for m in ("yaml", "requests", "boto3")) else 1)
 PY
 
 log "[2/5] secrets file"

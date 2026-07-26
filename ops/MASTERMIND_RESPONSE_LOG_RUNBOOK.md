@@ -130,7 +130,13 @@ saying so. Recovery recipe from that incident:
    bucket, then **Refresh from R2** in the tab.
 
 If the banner persists with recent R2 objects present, the problem is the
-admin-side pull, not the writers — check R2 creds in the admin's own environment.
+admin-side pull, not the writers. Two known causes, both silent by design
+(`refresh()` reports "no R2 creds — ledger unchanged" for either): missing plain
+`R2_*` creds in the admin's own environment (`/etc/macro-admin.env` for the
+deployed panel), or **boto3 absent from the admin's venv** (`/opt/macro/.venv` on
+the VPS — the import is lazy and fail-soft; `setup-admin.sh` installs it since
+2026-07-26). Both were hit on 2026-07-26: creds + boto3 had to be added before the
+deployed panel's first successful refresh (7 rows).
 
 ## Privacy & retention
 
