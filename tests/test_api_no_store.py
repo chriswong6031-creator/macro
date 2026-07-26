@@ -95,3 +95,35 @@ def test_non_api_paths_are_untouched(client):
     """The static site is SUPPOSED to be edge-cached — the middleware must not reach it."""
     r = client.get("/definitely-not-an-api-path")
     assert r.headers.get("cache-control") != NO_STORE
+
+
+def test_streaming_responses_still_stream():
+    """The middleware is raw ASGI so it never sits in the body path.
+
+    This app streams the brain SSE lane (text/event-stream). Starlette's
+    BaseHTTPMiddleware — what `@app.middleware("http")` gives you — wraps the response
+    body in an anyio stream and has a long history of interfering with StreamingResponse,
+    which is exactly why _NoStoreAPI touches only the http.response.start message. Pin
+    that: a streaming endpoint must keep its own header AND still deliver every chunk.
+    """
+    from fastapi.responses import StreamingResponse
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    @app.get("/api/_test_stream")
+    def _stream():
+        def gen():
+            for i in range(5):
+                yield f"data: chunk{i}\n\n"
+
+        return StreamingResponse(gen(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache"})
+
+    with TestClient(app).stream("GET", "/api/_test_stream") as r:
+        assert r.status_code == 200
+        assert r.headers.get("cache-control") == "no-cache", "route header must survive"
+        body = "".join(chunk for chunk in r.iter_text())
+
+    for i in range(5):
+        assert f"chunk{i}" in body, f"chunk{i} lost through the middleware"
