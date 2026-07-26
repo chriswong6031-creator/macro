@@ -38,7 +38,7 @@ modules on the nightly/render publish path, then forward-ledger writers, then th
 | tier | before | on `main` | after P1 | meaning |
 |---|---|---|---|---|
 | **P0** | **30** | **0** | 0 | unrun + untriggerable + on a publish pipeline |
-| **P1** | 142 | 140 | **3** | unrun, on a publish pipeline (triggerable) |
+| **P1** | 142 | 140 | **2** | unrun, on a publish pipeline (triggerable) |
 | **P2** | **42** | **0** | 0 | unrun + untriggerable + writes a `data/` ledger |
 | **P3** | **60** | **0** | 0 | unrun + untriggerable (other) |
 | P4 | 415 | 416 | 416 | unrun, writes a `data/` ledger (triggerable) |
@@ -267,7 +267,7 @@ out a measurement trap worth recording:
 | `test_release_forecast_producer.py` | **live defect, see below** | **NOT wired** |
 | `test_no_module_level_logging_disable.py` | **ratchet drift, see below** | **fixed and wired** — the 37 drifted files were migrated under `__main__`; lane `unrun-import-hygiene` |
 | `test_okx_retail.py` | `test_bilingual_render` slices the OKX chip out of `vector.html.j2` and renders it with a hand-copied `t` macro. The markup now also calls `qmark()` → `UndefinedError`. Slicing the template's real macro header fixes the crash, and then **five of its six copy assertions still fail**: the chip copy was deliberately rewritten (`"crowded longs (contrarian caution, not a buy)"` → `"many traders long"`). | **NOT wired** — deciding what the chip must say is a design call under the plain-word doctrine, not test rot |
-| `test_brain_gateway.py` | arrived on `main` mid-flight (2026-07-26). Two blockers, not one: it imports `fastapi`, which the shared `unrun-*` install deliberately lacks (8 of 241 tests fail without it), **and** it appends to the real `data/ai_costs/usage.jsonl` on every run — MM_DATA_GUARD would fail the lane even with the wheel added. | **NOT wired** — the ledger write has to be redirected to `tmp_path` first; that is the author's call, not test rot |
+| `test_brain_gateway.py` | arrived on `main` mid-flight (2026-07-26). Two blockers, not one: its FastAPI route tests need `fastapi` + starlette's `TestClient` (`httpx`), which the shared `unrun-*` install deliberately lacks, **and** it appended to the real `data/ai_costs/usage.jsonl` on every run — the suite patches `record_usage` at 51 call sites, but anything reaching the recorder outside one of those wrappers wrote to the repo's own ledger, so MM_DATA_GUARD would have failed the lane even with the wheels added. | **fixed and wired** — one autouse fixture redirects `_write_ledger_path` (the single funnel every append goes through) to `tmp_path`, which closes all 51 escape routes at once; the lane declares `fastapi httpx` on top of the shared install |
 
 ### Shipped claims cards carry an all-null benchmark set
 

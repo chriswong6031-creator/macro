@@ -1492,6 +1492,8 @@ on:
       - "scripts/publish_earnings_r2.py"
       # unrun-russell-breadth
       - "tests/test_russell_breadth.py"
+      # unrun-brain-gateway
+      - "tests/test_brain_gateway.py"
       # unrun-macro-panels
       - "tests/test_build_dispersion_regime.py"
       - "tests/test_build_factor_panel.py"
@@ -4703,6 +4705,24 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn yfinance
       - name: the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks
         run: python -m pytest tests/test_russell_breadth.py -q
+
+  unrun-brain-gateway:
+    # the Mastermind brain gateway — routing, quota ledger, tool allowlist, SSE order.
+    # Its own install: the FastAPI route tests need fastapi + starlette's TestClient
+    # (httpx). Kept off the shared unrun-* line so the other twenty jobs still share
+    # one venv; execute_pack sorts by install string, so this costs one extra venv.
+    if: ${{ false }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
+        run: python -m pytest tests/test_brain_gateway.py -q
 
   unrun-macro-panels:
     # commodities / forex / rates / news / policy panels and their calibration guards.
